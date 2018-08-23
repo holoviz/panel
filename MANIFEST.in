@@ -1,0 +1,3 @@
+include README.md
+include LICENSE.txt
+include pyviz_comms/.version

@@ -1,0 +1,32 @@
+{% set sdata = load_setup_py_data() %}
+
+package:
+  name: pyviz_panels
+  version: {{ sdata['version'] }}
+
+source:
+  path: ..
+
+build:
+  noarch: python
+  number: 1
+  script: python setup.py --quiet install --single-version-externally-managed --record record.txt
+
+
+requirements:
+  build:
+    - python
+    - setuptools
+    - param
+  run:
+    - python
+    - param
+
+test:
+  imports:
+    - pyviz_panels
+
+about:
+  home: www.pyviz.org
+  summary: Bidirectional communication for PyViz
+  license: BSD 3-Clause
