@@ -10,7 +10,7 @@ from bokeh.models import Model, CustomJS, LayoutDOM, Div as BkDiv, Spacer, Row
 from bokeh.protocol import Protocol
 from bokeh.util.string import encode_utf8
 
-from . import JupyterCommManager, bokeh_msg_handler, PYVIZ_PROXY, embed_js
+from .comms import JupyterCommManager, bokeh_msg_handler, PYVIZ_PROXY, embed_js
 
 
 def get_method_owner(meth):

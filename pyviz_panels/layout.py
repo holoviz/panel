@@ -4,7 +4,7 @@ from bokeh.document import Document
 from bokeh.io import curdoc, show
 from bokeh.layouts import Column as BkColumn, Row as BkRow
 
-from . import JupyterCommManager
+from .comms import JupyterCommManager
 from .util import Renderer, render, add_to_doc
 
 
