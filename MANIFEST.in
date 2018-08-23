@@ -1,3 +1,6 @@
 include README.md
 include LICENSE.txt
-include pyviz_comms/.version
+include pyviz_panels/.version
+global-exclude *.py[co]
+global-exclude *~
+global-exclude *.ipynb_checkpoints/*

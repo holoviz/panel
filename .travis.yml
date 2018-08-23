@@ -1,0 +1,122 @@
+git:
+  depth: 100
+
+language: generic
+
+os:
+  - linux
+
+sudo: false
+
+env:
+  global:
+    - PYENV_VERSION=3.6
+    - CHANS_DEV="-c pyviz/label/dev"
+    - CHANS_REL="-c pyviz"
+    - LABELS_DEV="--label dev"
+    - LABELS_REL="--label dev --label main"
+    - PKG_TEST_PYTHON="--test-python=py27 --test-python=py36"
+
+cache:
+  directories:
+    - $HOME/miniconda
+
+before_cache:
+  - rm -rf $HOME/miniconda/pkgs
+  - rm -rf $HOME/miniconda/conda-bld/*
+  - rm -rf $HOME/miniconda/envs/*/conda-bld  
+
+stages:
+  - test
+  - name: conda_dev_package
+    if: tag =~ ^v(\d+|\.)*[a-z]\d*$
+  - name: pip_dev_package
+    if: tag =~ ^v(\d+|\.)*[a-z]\d*$
+  - name: conda_package
+    if: tag =~ ^v(\d+|\.)*[^a-z]\d*$
+  - name: pip_package
+    if: tag =~ ^v(\d+|\.)*[^a-z]\d*$
+  - name: docs
+    if: tag =~ ^v(\d+|\.).*$
+
+
+jobs:
+  include:
+
+    ########## DEVELOPER INSTALL ##########
+
+    - &conda_default
+      stage: test
+      env: DESC="dev test_all"
+      before_install:
+        # install doit/pyctdev and use to install miniconda...
+        - pip install pyctdev && doit miniconda_install && pip uninstall -y doit pyctdev
+        - export PATH="$HOME/miniconda/bin:$PATH" && hash -r
+        - conda config --set always_yes True
+        # ...and now install doit/pyctdev into miniconda
+        - conda install -c pyviz/label/dev pyctdev && doit ecosystem_setup
+      install:
+        - doit env_create $CHANS_DEV --python=$PYENV_VERSION
+        - source activate test-environment
+        - doit develop_install -o examples -o tests $CHANS_DEV
+        - doit env_capture
+      script: doit test_all
+
+    # python 2 flake checking typically catches python 2 syntax
+    # errors where python 3's been assumed...
+    - <<: *conda_default
+      env: DESC="py2 flakes" PYENV_VERSION=2.7
+      script: doit test_lint
+
+    ########## END-USER PACKAGES ##########
+
+    ## dev packages
+
+    - &pip_default
+      env: TRAVIS_NOCACHE=$TRAVIS_JOB_ID PYPI=testpypi PYPIUSER=$TPPU PYPIPASS=$TPPP
+      stage: pip_dev_package
+      before_install: pip install pyctdev && doit ecosystem=pip ecosystem_setup
+      install:
+        - unset PYENV_VERSION && pyenv global 3.6 2.7
+        - doit ecosystem=pip package_build $PKG_TEST_PYTHON --test-group=unit --sdist-install-build-deps
+        - doit ecosystem=pip package_build $PKG_TEST_PYTHON --test-group=examples --sdist-install-build-deps
+      script: doit ecosystem=pip package_upload -u $PYPIUSER -p $PYPIPASS --pypi ${PYPI}
+
+    - &conda_pkg
+      <<: *conda_default
+      stage: conda_dev_package
+      env: DESC="" TRAVIS_NOCACHE=$TRAVIS_JOB_ID LABELS=$LABELS_DEV CHANS=$CHANS_DEV
+      install:
+        - doit package_build $CHANS $PKG_TEST_PYTHON --test-group=unit
+        - doit package_test $CHANS $PKG_TEST_PYTHON --test-group=examples --test-requires=examples
+      script: doit package_upload --token=$ANACONDA_TOKEN $LABELS
+
+    ## release packages
+
+    - <<: *pip_default
+      env: TRAVIS_NOCACHE=$TRAVIS_JOB_ID PYPI=pypi PYPIUSER=$PPU PYPIPASS=$PPP
+      stage: pip_package
+
+    - <<: *conda_pkg
+      stage: conda_package
+      env: DESC="" TRAVIS_NOCACHE=$TRAVIS_JOB_ID LABELS=$LABELS_REL CHANS=$CHANS_REL
+
+
+    ########## DOCS ##########
+
+    - <<: *conda_default
+      stage: docs
+      env: DESC="docs"
+      script:
+        - doit develop_install $CHANS_DEV -o doc -o examples -c conda-forge # phantomjs still not on defaults
+        - doit docs
+      deploy:
+        - provider: pages
+          skip_cleanup: true
+          github_token: $GITHUB_TOKEN
+          local_dir: ./doc/_build/html
+          fqdn: panels.pyviz.org
+          on:
+            tags: true
+            all_branches: true
+            condition: $TRAVIS_TAG =~ [0-9]+[^a-z][0-9]*$
