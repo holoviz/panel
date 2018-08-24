@@ -1,6 +1,6 @@
 [![Linux Build
-Status](https://travis-ci.org/pyviz/pyviz_panels.svg?branch=master)](https://travis-ci.org/pyviz/pyviz_panels)
+Status](https://travis-ci.org/pyviz/panel.svg?branch=master)](https://travis-ci.org/pyviz/panel)
 
-# pyviz_panels
+# Panel
 
 A high-level dashboarding solution for python visualization libraries.

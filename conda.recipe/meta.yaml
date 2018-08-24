@@ -1,7 +1,7 @@
 {% set sdata = load_setup_py_data() %}
 
 package:
-  name: pyviz_panels
+  name: panel
   version: {{ sdata['version'] }}
 
 source:
@@ -24,7 +24,7 @@ requirements:
 
 test:
   imports:
-    - pyviz_panels
+    - panel
 
 about:
   home: www.pyviz.org

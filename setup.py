@@ -29,8 +29,8 @@ def get_setup_version(reponame):
 install_requires = ['param']
 setup_args = {}
 setup_args.update(dict(
-    name='pyviz_panels',
-    version=get_setup_version("pyviz_panels"),
+    name='panel',
+    version=get_setup_version("panel"),
     install_requires = install_requires,
     description='Launch jobs, organize the output, and dissect the results.',
     long_description=open('README.md').read() if os.path.isfile('README.md') else 'Consult README.md',
@@ -42,8 +42,8 @@ setup_args.update(dict(
     platforms=['Windows', 'Mac OS X', 'Linux'],
     license='BSD',
     url='http://pyviz.org',
-    packages = ["pyviz_panels"],
-    package_data={'pyviz_panels': ['.version']},
+    packages = [],
+    package_data={},
     classifiers = [
         "License :: OSI Approved :: BSD License",
         "Development Status :: 5 - Production/Stable",
