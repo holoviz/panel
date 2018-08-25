@@ -12,19 +12,29 @@ build:
   number: 1
   script: python setup.py --quiet install --single-version-externally-managed --record record.txt
 
+extra:
+  channels:
+    - pyviz
 
 requirements:
   build:
-    - python
-    - setuptools
-    - param
+    - python {{ sdata['python_requires'] }}
+    {% for dep in sdata['extras_require']['build'] %}
+    - {{ dep }}
+    {% endfor %}
   run:
-    - python
-    - param
+    - python {{ sdata['python_requires'] }}
+    {% for dep in sdata.get('install_requires',{}) %}
+    - {{ dep }}
+    {% endfor %}
 
 test:
   imports:
     - panel
+  requires:
+    {% for dep in sdata['extras_require']['tests'] %}
+    - {{ dep }}
+    {% endfor %}
 
 about:
   home: www.pyviz.org
