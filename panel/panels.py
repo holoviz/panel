@@ -4,13 +4,10 @@ from io import BytesIO
 
 import param
 
-from bokeh.document import Document
-from bokeh.io import curdoc, show
-from bokeh.layouts import Column as BkColumn, Row as BkRow
+from bokeh.layouts import Column as BkColumn
 from bokeh.models import LayoutDOM, CustomJS
-from pyviz_comms import JS_CALLBACK, JupyterCommManager
 
-from .util import render_mimebundle, add_to_doc, get_method_owner, push, Div
+from .util import get_method_owner, push, Div
 from .viewable import Reactive, Viewable
 
 

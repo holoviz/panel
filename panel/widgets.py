@@ -1,26 +1,14 @@
 import ast
-import functools
 
 import param
 from bokeh.models import WidgetBox
 from bokeh.models.widgets import (
-    Button, TextInput as BkTextInput, Div, Slider, CheckboxGroup,
+    TextInput as BkTextInput, Select as BkSelect, Slider, CheckboxGroup,
     DateRangeSlider as BkDateRangeSlider, RangeSlider as BkRangeSlider,
-    DatePicker as BkDatePicker, MultiSelect as BkMultiSelect, Select as BkSelect
+    DatePicker as BkDatePicker, MultiSelect as BkMultiSelect
 )
-from .viewable import Reactive, Viewable
-from .util import push, as_unicode, named_objs
-
-from functools import partial
-
-import param
-
-from bokeh.document import Document
-from bokeh.io import curdoc, show
-from bokeh.models import LayoutDOM, CustomJS
-from pyviz_comms import JS_CALLBACK, JupyterCommManager
-
-from .util import render_mimebundle, add_to_doc, get_method_owner, push, Div
+from .viewable import Reactive
+from .util import as_unicode
 
 
 
@@ -151,19 +139,6 @@ class RangeSlider(Widget):
         return msg
 
 
-class DateWidget(Widget):
-
-    value = param.Date(default=None)
-
-    start = param.Date(default=None)
-
-    end = param.Date(default=None)
-
-    _widget_type = BkDatePicker
-
-    _renames = {'start': 'min_date', 'end': 'max_date'}
-
-
 class DateRangeSlider(Widget):
 
     value = param.Tuple(default=None, length=2)
@@ -175,19 +150,6 @@ class DateRangeSlider(Widget):
     step = param.Number(default=1)
 
     _widget_type = BkDateRangeSlider
-
-
-class DatePicker(Widget):
-
-    value = param.Date(default=None)
-
-    start = param.Date(default=None)
-
-    end = param.Date(default=None)
-
-    _widget_type = BkDatePicker
-
-    _renames = {'start': 'min_date', 'end': 'max_date'}
 
 
 class LiteralInput(Widget):

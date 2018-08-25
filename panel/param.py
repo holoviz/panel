@@ -1,13 +1,14 @@
+import os
+import json
 import itertools
 from functools import partial
 
 import param
-
 from bokeh.models import Div
 
 from .panels import Panel
 from .layout import WidgetBox
-from .util import default_label_formatter
+from .util import default_label_formatter, named_objs
 from .widgets import (
     LiteralInput, Select, Checkbox, FloatSlider, IntSlider, RangeSlider,
     MultiSelect, DatePicker
@@ -15,6 +16,10 @@ from .widgets import (
 
 
 class ParamPanel(Panel):
+    """
+    ParamPanel renders a Parameterized class to a set of widgets which
+    are linke to the parameter values on the class.
+    """
 
     show_labels = param.Boolean(default=True)
 
@@ -81,8 +86,6 @@ class ParamPanel(Panel):
                 kw['value'] = ''
             else:
                 kw['value'] = lookup[value]
-            opt_lookup = {k: v for k, v in options}
-            self._widget_options[p_name] = opt_lookup
             options = [(k, k) for k, v in options]
             kw['options'] = options
 
@@ -121,6 +124,7 @@ class ParamPanel(Panel):
 
     def _get_root(self, doc, comm=None):
         return self._get_model(doc, comm=comm)
+
 
 
 class JSONInit(param.Parameterized):

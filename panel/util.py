@@ -1,8 +1,6 @@
 import json
 import sys
-import base64
 import inspect
-from io import BytesIO
 
 import param
 import bokeh
@@ -13,7 +11,7 @@ from bokeh.util.string import encode_utf8
 from pyviz_comms import JupyterCommManager, bokeh_msg_handler, PYVIZ_PROXY, embed_js
 
 try:
-    unicode = unicode
+    unicode = unicode # noqa
 except:
     unicode = str
 

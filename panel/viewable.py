@@ -4,10 +4,10 @@ import param
 
 from bokeh.document import Document
 from bokeh.io import curdoc, show
-from bokeh.models import LayoutDOM, CustomJS
+from bokeh.models import CustomJS
 from pyviz_comms import JS_CALLBACK, JupyterCommManager
 
-from .util import render_mimebundle, add_to_doc, get_method_owner, push, Div
+from .util import render_mimebundle, add_to_doc, push
 
 
 class Viewable(param.Parameterized):
@@ -111,8 +111,8 @@ class Reactive(Viewable):
 
     def _link_params(self, model, params, doc, plot_id, comm=None):
         for p in params:
-            def set_value(change, param=p):
-                msg = self._process_param_change({param: change.new})
+            def set_value(change, parameter=p):
+                msg = self._process_param_change({parameter: change.new})
                 model.update(**msg)
                 if comm:
                     push(doc, comm)
