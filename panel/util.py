@@ -12,6 +12,36 @@ from bokeh.protocol import Protocol
 from bokeh.util.string import encode_utf8
 from pyviz_comms import JupyterCommManager, bokeh_msg_handler, PYVIZ_PROXY, embed_js
 
+try:
+    unicode = unicode
+except:
+    unicode = str
+
+
+def as_unicode(obj):
+    """
+    Safely casts any object to unicode including regular string
+    (i.e. bytes) types in python 2.
+    """
+    if sys.version_info.major < 3 and isinstance(obj, str):
+        obj = obj.decode('utf-8')
+    return unicode(obj)
+
+
+def named_objs(objlist):
+    """
+    Given a list of objects, returns a dictionary mapping from
+    string name for the object to the object itself.
+    """
+    objs = []
+    for k, obj in objlist:
+        if hasattr(k, '__name__'):
+            k = k.__name__
+        else:
+            k = as_unicode(k)
+        objs.append((k, obj))
+    return objs
+
 
 def get_method_owner(meth):
     """
@@ -23,6 +53,31 @@ def get_method_owner(meth):
             return meth.im_class if meth.im_self is None else meth.im_self
         else:
             return meth.__self__
+
+
+class default_label_formatter(param.ParameterizedFunction):
+    "Default formatter to turn parameter names into appropriate widget labels."
+
+    capitalize = param.Boolean(default=True, doc="""
+        Whether or not the label should be capitalized.""")
+
+    replace_underscores = param.Boolean(default=True, doc="""
+        Whether or not underscores should be replaced with spaces.""")
+
+    overrides = param.Dict(default={}, doc="""
+        Allows custom labels to be specified for specific parameter
+        names using a dictionary where key is the parameter name and the
+        value is the desired label.""")
+
+    def __call__(self, pname):
+        if pname in self.overrides:
+            return self.overrides[pname]
+        if self.replace_underscores:
+            pname = pname.replace('_',' ')
+        if self.capitalize:
+            pname = pname.capitalize()
+        return pname
+
 
 ################################
 # Display and update utilities #

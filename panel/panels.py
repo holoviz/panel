@@ -8,76 +8,23 @@ from bokeh.document import Document
 from bokeh.io import curdoc, show
 from bokeh.layouts import Column as BkColumn, Row as BkRow
 from bokeh.models import LayoutDOM, CustomJS
-from pyviz_comms import JupyterCommManager
+from pyviz_comms import JS_CALLBACK, JupyterCommManager
 
 from .util import render_mimebundle, add_to_doc, get_method_owner, push, Div
+from .viewable import Reactive, Viewable
 
 
-class Viewable(param.Parameterized):
-    """
-    Viewable is the baseclass all objects in the panel library are
-    built on. It defines the interface for declaring any object that
-    displays itself by transforming the object(s) being wrapped into
-    models that can be served using bokeh's layout engine. The class
-    also defines various methods that allow Viewable objects to be
-    displayed in the notebook and on bokeh server.
-    """
-
-    __abstract = True
-
-    def _get_model(self, doc, root=None, parent=None, comm=None):
-        """
-        Converts the objects being wrapped by the viewable into a
-        bokeh model that can be composed in a bokeh layout.
-
-        doc: bokeh.Document
-          Bokeh document the bokeh model will be attached to.
-
-        root: bokeh.Model
-          The root layout the viewable will become part of.
-
-        parent: bokeh.Model
-          The parent layout the viewable will become part of.
-
-        comm: pyviz_comms.Comm
-          Optional pyviz_comms when working in notebook
-        """
-
-    def cleanup(self, model):
-        """
-        Clean up method which is called when a Viewable is destroyed.
-        """
-        pass
-
-    def _repr_mimebundle_(self, include=None, exclude=None):
-        doc = Document()
-        comm = JupyterCommManager.get_server_comm()
-        model = self._get_root(doc, comm)
-        return render_mimebundle(model, doc, comm)
-
-    def server_doc(self, doc=None):
-        doc = doc or curdoc()
-        model = self._get_root(doc)
-        add_to_doc(model, doc)
-        return doc
-
-    def _modify_doc(self, doc):
-        return self.server_doc(doc)
-
-    def app(self, notebook_url="localhost:8888"):
-        """
-        Displays a bokeh server app in the notebook.
-        """
-        show(self._modify_doc, notebook_url=notebook_url)
-
-
-
-class Panel(Viewable):
+class Panel(Reactive):
     """
     Panel is the abstract baseclass for all atomic displayable units
     in the panel library. Panel defines an extensible interface for
     wrapping arbitrary objects and transforming them into bokeh models
-    which can be laid out.
+    allowing the panel to display itself in the notebook or be served
+    using bokeh server.
+
+    Panels are reactive in the sense that when the object they are
+    wrapping is changed any plots containing the panel will update
+    in response.
 
     To define a concrete Panel type subclass this class and implement
     the applies classmethod and the _get_model private method.
@@ -124,11 +71,33 @@ class Panel(Viewable):
         root.children = [model]
         return root
 
+    def _link_object(self, model, doc, root, parent, comm=None, panel=None):
+        """
+        Links the object parameter to the rendered bokeh model, triggering
+        an update when the object changes.
+        """
+        def update_panel(change, history=[(panel, model)]):
+            new_model, new_panel = self._get_model(doc, root, parent, comm, rerender=True)
+            old_panel, old_model = history[0]
+            if old_panel is not None:
+                old_panel.cleanup()
+            def update_models():
+                if old_model is new_model: return
+                index = parent.children.index(old_model)
+                parent.children[index] = new_model
+                history[:] = [new_model]
+            if comm:
+                update_models()
+                push(doc, comm)
+            else:
+                doc.add_next_tick_callback(update_models)
+        self.param.watch('object', 'value', update_panel)
+
+
 
 class BokehPanel(Panel):
     """
-    A wrapper for bokeh plots model that can be converted to
-    bokeh plots.
+    BokehPanel allows including any bokeh model in a plot directly.
     """
 
     object = param.Parameter(default=None)
@@ -137,18 +106,25 @@ class BokehPanel(Panel):
     def applies(cls, obj):
         return isinstance(obj, LayoutDOM)
 
-    def _get_model(self, doc, root, parent=None, comm=None):
+    def _get_model(self, doc, root, parent=None, comm=None, rerender=False):
         """
-        Should return the bokeh model to be rendered. 
+        Should return the bokeh model to be rendered.
         """
         plot_id = root.ref['id']
         if plot_id:
             for js in self.object.select({'type': CustomJS}):
                 js.code = js.code.replace(self.object.ref['id'], plot_id)
+        if not rerender:
+            self._link_object(self.object, doc, root, parent, comm)
+            return model, None
         return self.object
 
 
 class HoloViewsPanel(Panel):
+    """
+    HoloViewsPanel renders any HoloViews object to a corresponding
+    bokeh model while respecting the currently selected backend.
+    """
 
     @classmethod
     def applies(cls, obj):
@@ -179,9 +155,9 @@ class HoloViewsPanel(Panel):
                         if owner.state is model:
                             owner.cleanup()
 
-    def _get_model(self, doc, root, parent=None, comm=None):
+    def _get_model(self, doc, root, parent=None, comm=None, rerender=False):
         """
-        Should return the bokeh model to be rendered. 
+        Should return the bokeh model to be rendered.
         """
         from holoviews import Store
         renderer = Store.renderers[Store.current_backend]
@@ -191,10 +167,19 @@ class HoloViewsPanel(Panel):
         self._patch_plot(plot, root.ref['id'], comm)
         panel = Panel.to_panel(plot.state)
         model = panel._get_model(doc, root, parent, comm)
+        if not rerender:
+            self._link_object(model, doc, root, parent, comm, panel)
+            return model, panel
         return model
 
 
 class ParamMethodPanel(Panel):
+    """
+    ParamMethodPanel wraps methods annotated with the param.depends
+    decorator and rerenders the plot when any of the methods parameters
+    change. The method may return any object which itself can be rendered
+    as a Panel.
+    """
 
     @classmethod
     def applies(cls, obj):
@@ -205,21 +190,18 @@ class ParamMethodPanel(Panel):
         params = parameterized.param.params_depended_on(self.object.__name__)
         panel = self.to_panel(self.object())
         model = panel._get_model(doc, root, parent, comm)
-        history = []
         for p in params:
-            def update_panel(change, history=history):
+            def update_panel(change, history=[(panel, model)]):
                 if change.what != 'value': return
-                old_panel, old_model = history[0] if history else (panel, model)
+                old_panel, old_model = history[0]
                 old_panel.cleanup(old_model)
                 new_panel = self.to_panel(self.object())
                 new_model = new_panel._get_model(doc, root, parent, comm)
                 def update_models():
-                    if old_model is new_model:
-                        old_model.update(**new_model.properties_with_values())
-                    else:
-                        index = parent.children.index(old_model)
-                        parent.children[index] = new_model
-                        history[:] = [(new_panel, new_model)]
+                    if old_model is new_model: return
+                    index = parent.children.index(old_model)
+                    parent.children[index] = new_model
+                    history[:] = [(new_panel, new_model)]
                 if comm:
                     update_models()
                     push(doc, comm)
@@ -230,12 +212,16 @@ class ParamMethodPanel(Panel):
 
 
 class MatplotlibPanel(Panel):
+    """
+    A MatplotlibPanel renders a matplotlib figure to png and wraps
+    the base64 encoded data in a bokeh Div model.
+    """
 
     @classmethod
     def applies(self, obj):
         return obj.__class__.__name__ == 'Figure' and hasattr(obj, '_cachedRenderer')
 
-    def _get_model(self, doc, root=None, parent=None, comm=None):
+    def _get_model(self, doc, root=None, parent=None, comm=None, rerender=False):
         bytes_io = BytesIO()
         self.object.canvas.print_figure(bytes_io)
         data = bytes_io.getvalue()
@@ -243,10 +229,18 @@ class MatplotlibPanel(Panel):
         src = "data:image/png;base64,{b64}".format(b64=b64)
         width, height = self.object.canvas.get_width_height()
         html = "<img src='{src}'></img>".format(src=src)
-        return Div(text=html, width=width, height=height)
+        model = Div(text=html, width=width, height=height)
+        if not rerender:
+            self._link_object(model, doc, root, parent, comm)
+            return model, None
+        return model
 
 
 class HTML(Panel):
+    """
+    HTML renders any object which has a _repr_html_ method and wraps
+    the HTML in a bokeh Div model.
+    """
 
     precedence = 1
 
@@ -254,5 +248,9 @@ class HTML(Panel):
     def applies(self, obj):
         return hasattr(obj, '_repr_html_')
 
-    def _get_model(self, doc, root=None, parent=None, comm=None):
-        return Div(text=self.object._repr_html_())
+    def _get_model(self, doc, root=None, parent=None, comm=None, rerender=False):
+        model = Div(text=self.object._repr_html_())
+        if not rerender:
+            self._link_object(model, doc, root, parent, comm)
+            return model, None
+        return model

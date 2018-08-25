@@ -1,8 +1,9 @@
 import param
 
-from bokeh.layouts import Column as BkColumn, Row as BkRow
+from bokeh.layouts import Column as BkColumn, Row as BkRow, WidgetBox as BkWidgetBox
 
-from .panels import Panel, Viewable
+from .panels import Panel
+from .viewable import Viewable
 
 
 class Layout(Viewable):
@@ -47,3 +48,12 @@ class Column(Layout):
     """
 
     _bokeh_model = BkColumn
+
+
+class WidgetBox(Layout):
+    """
+    Box to group widgets.
+    """
+
+    _bokeh_model = BkWidgetBox
+
