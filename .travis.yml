@@ -28,7 +28,7 @@ stages:
   - name: pip_package
     if: tag =~ ^v(\d+|\.)*[^a-z]\d*$
   - name: docs
-    if: tag =~ ^v(\d+|\.).*$
+    ##if: tag =~ ^v(\d+|\.).*$
 
 
 jobs:
