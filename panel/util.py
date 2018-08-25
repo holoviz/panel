@@ -8,7 +8,7 @@ import bokeh.embed.notebook
 from bokeh.models import Model, LayoutDOM, Div as BkDiv, Spacer, Row
 from bokeh.protocol import Protocol
 from bokeh.util.string import encode_utf8
-from pyviz_comms import JupyterCommManager, bokeh_msg_handler, PYVIZ_PROXY, embed_js
+from pyviz_comms import JupyterCommManager, bokeh_msg_handler, PYVIZ_PROXY
 
 try:
     unicode = unicode # noqa
@@ -133,6 +133,19 @@ def add_to_doc(obj, doc, hold=False):
     doc.add_root(obj)
     if doc._hold is None and hold:
         doc.hold()
+
+
+embed_js = """
+// Ugly hack - see HoloViews #2574 for more information
+if (!(document.getElementById('{plot_id}')) && !(document.getElementById('_anim_img{widget_id}'))) {{
+  console.log("Creating DOM nodes dynamically for assumed nbconvert export. To generate clean HTML output set HV_DOC_HTML as an environment variable.")
+  var htmlObject = document.createElement('div');
+  htmlObject.innerHTML = `{html}`;
+  var scriptTags = document.getElementsByTagName('script');
+  var parentTag = scriptTags[scriptTags.length-1].parentNode;
+  parentTag.append(htmlObject)
+}}
+"""
 
 
 def render_mimebundle(model, doc, comm):
