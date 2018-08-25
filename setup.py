@@ -1,10 +1,7 @@
 #!/usr/bin/env python
 
 import sys, os
-try:
-    from setuptools import setup
-except ImportError:
-    from distutils.core import setup
+from setuptools import setup, find_packages
 
 
 def get_setup_version(reponame):
@@ -62,25 +59,21 @@ extras_require['build'] = [
 
 extras_require['all'] = sorted(set(sum(extras_require.values(), [])))
 
-setup_args = {}
-setup_args.update(dict(
+setup_args = dict(
     name='panel',
     version=get_setup_version("panel"),
     description='A high level dashboarding library for python visualization libraries.',
     long_description=open('README.md').read() if os.path.isfile('README.md') else 'Consult README.md',
     long_description_content_type="text/markdown",
     author= "PyViz developers",
-    author_email= "",
+    author_email= "developers@pyviz.org",
     maintainer= "PyViz",
-    maintainer_email= "holoviews@gmail.com",
+    maintainer_email= "developers@pyviz.org",
     platforms=['Windows', 'Mac OS X', 'Linux'],
     license='BSD',
     url='http://pyviz.org',
-    packages = ["panel"],
+    packages=find_packages(),
     package_data={'panel': ['.version']},
-    install_requires=install_requires,
-    extras_require=extras_require,
-    tests_require=extras_require['tests'],
     classifiers = [
         "License :: OSI Approved :: BSD License",
         "Development Status :: 5 - Production/Stable",
@@ -92,8 +85,12 @@ setup_args.update(dict(
         "Intended Audience :: Developers",
         "Natural Language :: English",
         "Topic :: Scientific/Engineering",
-        "Topic :: Software Development :: Libraries"]
-))
+        "Topic :: Software Development :: Libraries"],
+    python_requires=">=2.7",
+    install_requires=install_requires,
+    extras_require=extras_require,
+    tests_require=extras_require['tests']
+)
 
 
 if __name__=="__main__":
