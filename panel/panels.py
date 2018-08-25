@@ -114,9 +114,9 @@ class BokehPanel(Panel):
         if plot_id:
             for js in self.object.select({'type': CustomJS}):
                 js.code = js.code.replace(self.object.ref['id'], plot_id)
-        if not rerender:
+        if rerender:
             self._link_object(self.object, doc, root, parent, comm)
-            return model, None
+            return self.object, None
         return self.object
 
 
@@ -167,7 +167,7 @@ class HoloViewsPanel(Panel):
         self._patch_plot(plot, root.ref['id'], comm)
         panel = Panel.to_panel(plot.state)
         model = panel._get_model(doc, root, parent, comm)
-        if not rerender:
+        if rerender:
             self._link_object(model, doc, root, parent, comm, panel)
             return model, panel
         return model
@@ -230,7 +230,7 @@ class MatplotlibPanel(Panel):
         width, height = self.object.canvas.get_width_height()
         html = "<img src='{src}'></img>".format(src=src)
         model = Div(text=html, width=width, height=height)
-        if not rerender:
+        if rerender:
             self._link_object(model, doc, root, parent, comm)
             return model, None
         return model
@@ -250,7 +250,7 @@ class HTML(Panel):
 
     def _get_model(self, doc, root=None, parent=None, comm=None, rerender=False):
         model = Div(text=self.object._repr_html_())
-        if not rerender:
+        if rerender:
             self._link_object(model, doc, root, parent, comm)
             return model, None
         return model
