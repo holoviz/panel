@@ -26,12 +26,46 @@ def get_setup_version(reponame):
         return json.load(open(version_file_path, 'r'))['version_string']
 
 
-install_requires = ['param']
+########## dependencies ##########
+
+install_requires = [
+    'bokeh >=0.12.15',
+    'param >=1.6.1'
+]
+
+_examples_extra = [
+    'notebook >=5.4'
+]
+
+extras_require = {
+    'tests': [
+        'coveralls',
+        'nose',
+        'flake8',
+        'parameterized',
+        'pytest',
+        'nbsmoke >=0.2.0'
+    ],
+    'examples': _examples_extra,
+    'doc': _examples_extra + [
+        'nbsite',
+        'sphinx_ioam_theme'
+    ]
+}
+
+# until pyproject.toml/equivalent is widely supported (setup_requires
+# doesn't work well with pip)
+extras_require['build'] = [
+    'param >=1.6.1',
+    'setuptools' # should make this pip now
+]
+
+extras_require['all'] = sorted(set(sum(extras_require.values(), [])))
+
 setup_args = {}
 setup_args.update(dict(
     name='panel',
     version=get_setup_version("panel"),
-    install_requires = install_requires,
     description='A high level dashboarding library for python visualization libraries.',
     long_description=open('README.md').read() if os.path.isfile('README.md') else 'Consult README.md',
     long_description_content_type="text/markdown",
@@ -44,6 +78,9 @@ setup_args.update(dict(
     url='http://pyviz.org',
     packages = ["panel"],
     package_data={'panel': ['.version']},
+    install_requires=install_requires,
+    extras_require=extras_require,
+    tests_require=extras_require['tests'],
     classifiers = [
         "License :: OSI Approved :: BSD License",
         "Development Status :: 5 - Production/Stable",
