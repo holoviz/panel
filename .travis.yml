@@ -17,16 +17,6 @@ env:
     - LABELS_REL="--label dev --label main"
     - PKG_TEST_PYTHON="--test-python=py27 --test-python=py36"
 
-cache:
-  timeout: 300
-  directories:
-    - $HOME/miniconda
-
-before_cache:
-  - rm -rf $HOME/miniconda/pkgs
-  - rm -rf $HOME/miniconda/conda-bld/*
-  - rm -rf $HOME/miniconda/envs/*/conda-bld  
-
 stages:
   - test
   - name: conda_dev_package
@@ -62,14 +52,15 @@ jobs:
         # TODO: Use released param version
         - pip install https://github.com/ioam/param/archive/param_mthd_deps_simplified.zip
         - doit develop_install -o recommended -o tests $CHANS_DEV
+        - pip install https://github.com/ioam/param/archive/param_mthd_deps_simplified.zip
         - doit env_capture
-      script: doit test_all
+      script: doit test_all_recommended
 
     # python 2 flake checking typically catches python 2 syntax
     # errors where python 3's been assumed...
-    - <<: *conda_default
-      env: DESC="py2 flakes" PYENV_VERSION=2.7
-      script: doit test_lint
+    #- <<: *conda_default
+    #  env: DESC="py2 flakes" PYENV_VERSION=2.7
+    #  script: doit test_lint
 
     ########## END-USER PACKAGES ##########
 
@@ -118,8 +109,9 @@ jobs:
           skip_cleanup: true
           github_token: $GITHUB_TOKEN
           local_dir: ./doc/_build/html
-          fqdn: panels.pyviz.org
+          ## fqdn: panel.pyviz.org
           on:
-            tags: true
-            all_branches: true
-            condition: $TRAVIS_TAG =~ [0-9]+[^a-z][0-9]*$
+            branch: master
+            ## tags: true
+            ## all_branches: true
+            ## condition: $TRAVIS_TAG =~ [0-9]+[^a-z][0-9]*$

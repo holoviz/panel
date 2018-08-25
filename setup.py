@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import sys, os
+import os
 from setuptools import setup, find_packages
 
 
@@ -27,10 +27,12 @@ def get_setup_version(reponame):
 
 install_requires = [
     'bokeh >=0.12.15',
-    'param >=1.6.1'
+    'param >=1.6.1',
+    'pyviz_comms'
 ]
 
-_examples_extra = [
+_recommended = [
+    'param >=1.6.1',
     'notebook >=5.4'
 ]
 
@@ -43,12 +45,15 @@ extras_require = {
         'pytest',
         'nbsmoke >=0.2.0'
     ],
-    'examples': _examples_extra,
-    'doc': _examples_extra + [
+    'recommended': _recommended,
+    'examples_extra': _recommended,
+    'doc': _recommended + [
         'nbsite',
         'sphinx_ioam_theme'
     ]
 }
+
+extras_require['all'] = sorted(set(sum(extras_require.values(), [])))
 
 # until pyproject.toml/equivalent is widely supported (setup_requires
 # doesn't work well with pip)
@@ -56,8 +61,6 @@ extras_require['build'] = [
     'param >=1.6.1',
     'setuptools' # should make this pip now
 ]
-
-extras_require['all'] = sorted(set(sum(extras_require.values(), [])))
 
 setup_args = dict(
     name='panel',
