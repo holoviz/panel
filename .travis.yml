@@ -18,6 +18,7 @@ env:
     - PKG_TEST_PYTHON="--test-python=py27 --test-python=py36"
 
 cache:
+  timeout: 300
   directories:
     - $HOME/miniconda
 
@@ -58,7 +59,9 @@ jobs:
       install:
         - doit env_create $CHANS_DEV --python=$PYENV_VERSION
         - source activate test-environment
-        - doit develop_install -o examples -o tests $CHANS_DEV
+        # TODO: Use released param version
+        - pip install https://github.com/ioam/param/archive/param_mthd_deps_simplified.zip
+        - doit develop_install -o recommended -o tests $CHANS_DEV
         - doit env_capture
       script: doit test_all
 
