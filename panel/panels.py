@@ -1,3 +1,7 @@
+"""
+Panels allow wrapping external objects and rendering them as part of
+a dashboard.
+"""
 import inspect
 import base64
 from io import BytesIO
@@ -20,7 +24,7 @@ class Panel(Reactive):
     using bokeh server.
 
     Panels are reactive in the sense that when the object they are
-    wrapping is changed any plots containing the panel will update
+    wrapping is changed any dashboard containing the panel will update
     in response.
 
     To define a concrete Panel type subclass this class and implement
@@ -82,14 +86,13 @@ class Panel(Reactive):
                 if old_model is new_model: return
                 index = parent.children.index(old_model)
                 parent.children[index] = new_model
-                history[:] = [new_model]
+                history[:] = [(new_panel, new_model)]
             if comm:
                 update_models()
                 push(doc, comm)
             else:
                 doc.add_next_tick_callback(update_models)
         self.param.watch('object', 'value', update_panel)
-
 
 
 class BokehPanel(Panel):
@@ -111,9 +114,10 @@ class BokehPanel(Panel):
         if plot_id:
             for js in self.object.select({'type': CustomJS}):
                 js.code = js.code.replace(self.object.ref['id'], plot_id)
+
         if rerender:
-            self._link_object(self.object, doc, root, parent, comm)
             return self.object, None
+        self._link_object(self.object, doc, root, parent, comm)
         return self.object
 
 
@@ -164,9 +168,10 @@ class HoloViewsPanel(Panel):
         self._patch_plot(plot, root.ref['id'], comm)
         panel = Panel.to_panel(plot.state)
         model = panel._get_model(doc, root, parent, comm)
+
         if rerender:
-            self._link_object(model, doc, root, parent, comm, panel)
             return model, panel
+        self._link_object(model, doc, root, parent, comm, panel)
         return model
 
 
@@ -227,9 +232,10 @@ class MatplotlibPanel(Panel):
         width, height = self.object.canvas.get_width_height()
         html = "<img src='{src}'></img>".format(src=src)
         model = Div(text=html, width=width, height=height)
+
         if rerender:
-            self._link_object(model, doc, root, parent, comm)
             return model, None
+        self._link_object(model, doc, root, parent, comm)
         return model
 
 
@@ -247,7 +253,8 @@ class HTML(Panel):
 
     def _get_model(self, doc, root=None, parent=None, comm=None, rerender=False):
         model = Div(text=self.object._repr_html_())
+
         if rerender:
-            self._link_object(model, doc, root, parent, comm)
             return model, None
+        self._link_object(model, doc, root, parent, comm)
         return model

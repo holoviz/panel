@@ -1,3 +1,8 @@
+"""
+Defines Layout classes which may be used to arrange panels and widgets
+in flexible ways to build complex dashboards.
+"""
+
 import param
 
 from bokeh.layouts import Column as BkColumn, Row as BkRow, WidgetBox as BkWidgetBox

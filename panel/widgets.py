@@ -1,3 +1,8 @@
+"""
+Provides a set of reactive widgets which provide bi-directional
+communication between the rendered dashboard and the Widget parameters.
+"""
+
 import ast
 
 import param

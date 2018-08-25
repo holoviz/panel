@@ -1,3 +1,8 @@
+"""
+Defines the ParamPanel which converts Parameterized classes into a
+set of widgets.
+"""
+
 import os
 import json
 import itertools
@@ -96,10 +101,8 @@ class ParamPanel(Panel):
         widget.param.watch('value', 'value', partial(self._apply_change, p_name))
         return widget
 
-
     def _apply_change(self, p_name, change):
         setattr(self.object, p_name, change.new)
-
 
     def _get_widgets(self):
         """Return name,widget boxes for all parameters (i.e., a property sheet)"""
@@ -153,9 +156,7 @@ class JSONInit(param.Parameterized):
     json_file = param.String(default=None, doc="""
         Optional path to a JSON file containing the parameter settings.""")
 
-
     def __call__(self, parameterized):
-
         warnobj = param.main if isinstance(parameterized, type) else parameterized
         param_class = (parameterized if isinstance(parameterized, type)
                        else parameterized.__class__)
