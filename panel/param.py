@@ -2,6 +2,7 @@
 Defines the ParamPanel which converts Parameterized classes into a
 set of widgets.
 """
+from __future__ import absolute_import
 
 import os
 import json

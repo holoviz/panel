@@ -6,11 +6,11 @@ communication between the rendered dashboard and the Widget parameters.
 import ast
 
 import param
-from bokeh.models import WidgetBox
+from bokeh.models import WidgetBox as _BkWidgetBox
 from bokeh.models.widgets import (
-    TextInput as BkTextInput, Select as BkSelect, Slider, CheckboxGroup,
-    DateRangeSlider as BkDateRangeSlider, RangeSlider as BkRangeSlider,
-    DatePicker as BkDatePicker, MultiSelect as BkMultiSelect
+    TextInput as _BkTextInput, Select as _BkSelect, Slider, CheckboxGroup,
+    DateRangeSlider as _BkDateRangeSlider, RangeSlider as _BkRangeSlider,
+    DatePicker as _BkDatePicker, MultiSelect as _BkMultiSelect
 )
 from .viewable import Reactive
 from .util import as_unicode
@@ -70,7 +70,7 @@ class Widget(Reactive):
         return model
 
     def _get_root(self, doc, comm=None):
-        root = WidgetBox()
+        root = _BkWidgetBox()
         model = self._get_model(doc, root, root, comm)
         root.children = [model]
         return root
@@ -81,7 +81,7 @@ class TextInput(Widget):
 
     value = param.String(default='')
 
-    _widget_type = BkTextInput
+    _widget_type = _BkTextInput
 
 
 class FloatSlider(Widget):
@@ -121,7 +121,7 @@ class DatePicker(Widget):
 
     end = param.Date(default=None)
 
-    _widget_type = BkDatePicker
+    _widget_type = _BkDatePicker
 
     _renames = {'start': 'min_date', 'end': 'max_date'}
 
@@ -136,7 +136,7 @@ class RangeSlider(Widget):
 
     step = param.Number(default=0.1)
 
-    _widget_type = BkRangeSlider
+    _widget_type = _BkRangeSlider
 
     def _process_param_change(self, msg):
         if 'value' in msg:
@@ -154,14 +154,14 @@ class DateRangeSlider(Widget):
 
     step = param.Number(default=1)
 
-    _widget_type = BkDateRangeSlider
+    _widget_type = _BkDateRangeSlider
 
 
 class LiteralInput(Widget):
 
     value = param.Parameter(default=None)
 
-    _widget_type = BkTextInput
+    _widget_type = _BkTextInput
 
     def _process_property_change(self, msg):
         if 'value' in msg:
@@ -205,7 +205,7 @@ class Select(Widget):
 
     value = param.Parameter(default=None)
 
-    _widget_type = BkSelect
+    _widget_type = _BkSelect
 
     def _process_property_change(self, msg):
         mapping = {as_unicode(o): o for o in self.options}
@@ -228,7 +228,7 @@ class MultiSelect(Select):
 
     value = param.List(default=[])
 
-    _widget_type = BkMultiSelect
+    _widget_type = _BkMultiSelect
 
     def _process_param_change(self, msg):
         mapping = {o: as_unicode(o) for o in self.options}
