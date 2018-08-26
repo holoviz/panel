@@ -11,7 +11,7 @@ import param
 from bokeh.layouts import Column as BkColumn
 from bokeh.models import LayoutDOM, CustomJS
 
-from .util import get_method_owner, push, Div
+from .util import get_method_owner, push, remove_root, Div
 from .viewable import Reactive, Viewable
 
 
@@ -172,7 +172,7 @@ class HoloViewsPanel(Panel):
         child_panel = Panel.to_panel(plot.state)
         model = child_panel._get_model(doc, root, parent, comm)
         if rerender:
-            return model, panel
+            return model, child_panel
         self._link_object(model, doc, root, parent, comm, child_panel)
         return model
 

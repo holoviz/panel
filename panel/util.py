@@ -177,7 +177,6 @@ def render_mimebundle(model, doc, comm):
     Displays bokeh output inside a notebook using the PyViz display
     and comms machinery.
     """
-    from IPython.display import publish_display_data
     if not isinstance(model, LayoutDOM): 
         raise ValueError('Can only render bokeh LayoutDOM models')
 

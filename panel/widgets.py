@@ -13,7 +13,7 @@ from bokeh.models.widgets import (
     DatePicker as _BkDatePicker, MultiSelect as _BkMultiSelect
 )
 
-from .layout import WidgetBox
+from .layout import WidgetBox # noqa
 from .viewable import Reactive
 from .util import as_unicode
 

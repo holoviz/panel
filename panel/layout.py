@@ -10,7 +10,7 @@ from bokeh.models.widgets import Tabs as BkTabs, Panel as BkPanel
 
 from .panels import Panel
 from .util import push
-from .viewable import Reactive, Viewable
+from .viewable import Reactive
 
 
 class Layout(Reactive):
@@ -143,7 +143,7 @@ class Tabs(Layout):
     _renames = {'panels': 'tabs'}
 
     def __init__(self, *items, **params):
-        names, panels = [], []
+        panels = []
         for panel in items:
             if isinstance(panel, tuple):
                 name, panel = panel
