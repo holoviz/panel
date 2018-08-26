@@ -9,3 +9,4 @@ PyVizPanels
    :maxdepth: 2
 
    Introduction <self>
+   User Guide <user_guide/index>
