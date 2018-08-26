@@ -5,8 +5,10 @@ import inspect
 import param
 import bokeh
 import bokeh.embed.notebook
+from bokeh.io.notebook import load_notebook as bk_load_notebook
 from bokeh.models import Model, LayoutDOM, Div as BkDiv, Spacer, Row
 from bokeh.protocol import Protocol
+from bokeh.resources import CDN, INLINE
 from bokeh.util.string import encode_utf8
 from pyviz_comms import JupyterCommManager, bokeh_msg_handler, PYVIZ_PROXY
 
@@ -135,6 +137,9 @@ def add_to_doc(obj, doc, hold=False):
         doc.hold()
 
 
+LOAD_MIME = 'application/vnd.holoviews_load.v0+json'
+EXEC_MIME = 'application/vnd.holoviews_exec.v0+json'
+
 embed_js = """
 // Ugly hack - see HoloViews #2574 for more information
 if (!(document.getElementById('{plot_id}')) && !(document.getElementById('_anim_img{widget_id}'))) {{
@@ -146,6 +151,20 @@ if (!(document.getElementById('{plot_id}')) && !(document.getElementById('_anim_
   parentTag.append(htmlObject)
 }}
 """
+
+def load_notebook(inline=True):
+    from IPython.display import publish_display_data
+
+    # Create a message for the logo (if shown)
+    LOAD_MIME_TYPE = bokeh.io.notebook.LOAD_MIME_TYPE
+    bokeh.io.notebook.LOAD_MIME_TYPE = LOAD_MIME
+    bk_load_notebook(hide_banner=True, resources=INLINE if inline else CDN)
+    bokeh.io.notebook.LOAD_MIME_TYPE = LOAD_MIME_TYPE
+    bokeh.io.notebook.curstate().output_notebook()
+
+    # Publish comm manager
+    JS = '\n'.join([PYVIZ_PROXY, JupyterCommManager.js_manager])
+    publish_display_data(data={LOAD_MIME: JS, 'application/javascript': JS})
 
 
 def render_mimebundle(model, doc, comm):
@@ -160,16 +179,10 @@ def render_mimebundle(model, doc, comm):
     add_to_doc(model, doc, True)
 
     target = model.ref['id']
-    load_mime = 'application/vnd.holoviews_load.v0+json'
-    exec_mime = 'application/vnd.holoviews_exec.v0+json'
 
     # Publish plot HTML
     bokeh_script, bokeh_div, _ = bokeh.embed.notebook.notebook_content(model, comm.id)
     html = encode_utf8(bokeh_div)
-
-    # Publish comm manager
-    JS = '\n'.join([PYVIZ_PROXY, JupyterCommManager.js_manager])
-    publish_display_data(data={load_mime: JS, 'application/javascript': JS})
 
     # Publish bokeh plot JS
     msg_handler = bokeh_msg_handler.format(plot_id=target)
@@ -177,6 +190,6 @@ def render_mimebundle(model, doc, comm):
     bokeh_js = '\n'.join([comm_js, bokeh_script])
     bokeh_js = embed_js.format(widget_id=target, plot_id=target, html=html) + bokeh_js
 
-    data = {exec_mime: '', 'text/html': html, 'application/javascript': bokeh_js}
-    metadata = {exec_mime: {'id': target}}
+    data = {EXEC_MIME: '', 'text/html': html, 'application/javascript': bokeh_js}
+    metadata = {EXEC_MIME: {'id': target}}
     return data, metadata
