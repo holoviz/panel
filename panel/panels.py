@@ -48,14 +48,15 @@ class Panel(Reactive):
         return None
 
     @classmethod
-    def to_panel(cls, obj):
+    def to_panel(cls, obj, name=None):
         if isinstance(obj, Viewable):
             return obj
+        kwargs = {} if name is None else dict(name=name)
         descendents = [(p.precedence, p) for p in param.concrete_descendents(Panel).values()]
         panel_types = sorted(descendents, key=lambda x: x[0])
         for _, panel_type in panel_types:
             if not panel_type.applies(obj): continue
-            return panel_type(obj)
+            return panel_type(obj, **kwargs)
         raise TypeError('%s type could not be rendered.' % type(obj).__name__)
 
     def __init__(self, object, **params):
@@ -80,10 +81,11 @@ class Panel(Reactive):
         def update_panel(change, history=[(panel, model)]):
             new_model, new_panel = self._get_model(doc, root, parent, comm, rerender=True)
             old_panel, old_model = history[0]
-            if old_panel is not None:
+            if old_model is new_model:
+                return
+            elif old_panel is not None:
                 old_panel.cleanup()
             def update_models():
-                if old_model is new_model: return
                 index = parent.children.index(old_model)
                 parent.children[index] = new_model
                 history[:] = [(new_panel, new_model)]
@@ -166,12 +168,11 @@ class HoloViewsPanel(Panel):
         kwargs = {'doc': doc} if renderer.backend == 'bokeh' else {}
         plot = renderer.get_plot(self.object, **kwargs)
         self._patch_plot(plot, root.ref['id'], comm)
-        panel = Panel.to_panel(plot.state)
-        model = panel._get_model(doc, root, parent, comm)
-
+        child_panel = Panel.to_panel(plot.state)
+        model = child_panel._get_model(doc, root, parent, comm)
         if rerender:
             return model, panel
-        self._link_object(model, doc, root, parent, comm, panel)
+        self._link_object(model, doc, root, parent, comm, child_panel)
         return model
 
 
@@ -192,8 +193,9 @@ class ParamMethodPanel(Panel):
         params = parameterized.param.params_depended_on(self.object.__name__)
         panel = self.to_panel(self.object())
         model = panel._get_model(doc, root, parent, comm)
+        history = [(panel, model)]
         for p in params:
-            def update_panel(change, history=[(panel, model)]):
+            def update_panel(change, history=history):
                 if change.what != 'value': return
                 old_panel, old_model = history[0]
                 old_panel.cleanup(old_model)

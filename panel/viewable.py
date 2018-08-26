@@ -46,11 +46,21 @@ class Viewable(param.Parameterized):
           Optional pyviz_comms when working in notebook
         """
 
+    def _get_root(self, doc, comm=None):
+        """
+        Returns the root model
+
+        doc: bokeh.Document
+          Bokeh document the bokeh model will be attached to.
+
+        comm: pyviz_comms.Comm
+          Optional pyviz_comms when working in notebook
+        """
+
     def cleanup(self, model):
         """
         Clean up method which is called when a Viewable is destroyed.
         """
-        pass
 
     def _repr_mimebundle_(self, include=None, exclude=None):
         doc = Document()
@@ -74,6 +84,7 @@ class Viewable(param.Parameterized):
         show(self._modify_doc, notebook_url=notebook_url)
 
 
+
 class Reactive(Viewable):
     """
     Reactive is a Viewable object that also supports syncing between
@@ -92,7 +103,10 @@ class Reactive(Viewable):
     _timeout = 20000
 
     # Timeout before the first event is processed
-    _debounce = 20
+    _debounce = 50
+
+    # Mapping from parameter name to bokeh model property name
+    _renames = {}
 
     def __init__(self, **params):
         super(Reactive, self).__init__(**params)
@@ -103,19 +117,24 @@ class Reactive(Viewable):
         """
         Transform bokeh model property changes into parameter updates.
         Should be overridden to provide appropriate mapping between
-        parameter value and bokeh model change.
+        parameter value and bokeh model change. By default uses the
+        _renames class level attribute to map between parameter and
+        property names.
         """
-        return msg
+        inverted = {v: k for k, v in self._renames}
+        return {inverted.get(k, k): v for k, v in msg.items()}
 
     def _process_param_change(self, msg):
         """
         Transform parameter changes into bokeh model property updates.
         Should be overridden to provide appropriate mapping between
-        parameter value and bokeh model change.
+        parameter value and bokeh model change. By default uses the
+        _renames class level attribute to map between parameter and
+        property names.
         """
-        return msg
+        return {self._renames.get(k, k): v for k, v in msg.items()}
 
-    def _link_params(self, model, params, doc, plot_id, comm=None):
+    def _link_params(self, model, params, doc, root, comm=None):
         for p in params:
             def set_value(change, parameter=p):
                 msg = self._process_param_change({parameter: change.new})
@@ -124,14 +143,14 @@ class Reactive(Viewable):
                     push(doc, comm)
             self.param.watch(p, 'value', set_value)
 
-    def _link_props(self, model, properties, doc, plot_id, comm=None):
+    def _link_props(self, model, properties, doc, root, comm=None):
         if comm is None:
             for p in properties:
                 model.on_change(p, partial(self._server_change, doc))
         else:
             client_comm = JupyterCommManager.get_client_comm(on_msg=self._comm_change)
             for p in properties:
-                customjs = self._get_customjs(p, client_comm, plot_id)
+                customjs = self._get_customjs(p, client_comm, root.ref['id'])
                 model.js_on_change(p, customjs)
 
     def _comm_change(self, msg):

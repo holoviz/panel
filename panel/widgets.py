@@ -12,6 +12,8 @@ from bokeh.models.widgets import (
     DateRangeSlider as _BkDateRangeSlider, RangeSlider as _BkRangeSlider,
     DatePicker as _BkDatePicker, MultiSelect as _BkMultiSelect
 )
+
+from .layout import WidgetBox
 from .viewable import Reactive
 from .util import as_unicode
 
@@ -47,26 +49,12 @@ class Widget(Reactive):
         properties['title'] = self.name
         return self._process_param_change(properties)
 
-    def _process_property_change(self, msg):
-        """
-        Transform bokeh model property changes into parameter updates.
-        """
-        inverted = {v: k for k, v in self._renames}
-        return {inverted.get(k, k): v for k, v in msg.items()}
-
-    def _process_param_change(self, msg):
-        """
-        Transform parameter changes into bokeh model property updates.
-        """
-        return {self._renames.get(k, k): v for k, v in msg.items()}
-
     def _get_model(self, doc, root=None, parent=None, comm=None):
         model = self._widget_type(**self._init_properties())
-        params = [p for p in self.params() if p != 'name']
-        plot_id = root.ref['id']
+        params = [p for p in self.params()]
         properties = list(self._process_param_change(dict(self.get_param_values())))
-        self._link_params(model, properties, doc, plot_id, comm)
-        self._link_props(model, params, doc, plot_id, comm)
+        self._link_params(model, params, doc, root, comm)
+        self._link_props(model, properties, doc, root, comm)
         return model
 
     def _get_root(self, doc, comm=None):
