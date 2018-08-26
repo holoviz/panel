@@ -33,8 +33,6 @@ class Widget(Reactive):
 
     _widget_type = None
 
-    # Mapping from parameter name to bokeh model property name
-    _renames = {}
 
     def __init__(self, **params):
         if 'name' not in params:
@@ -68,6 +66,8 @@ class Widget(Reactive):
 class TextInput(Widget):
 
     value = param.String(default='')
+
+    placeholder = param.String(default='')
 
     _widget_type = _BkTextInput
 
@@ -146,6 +146,13 @@ class DateRangeSlider(Widget):
 
 
 class LiteralInput(Widget):
+    """
+    LiteralInput allows declaring Python literals using a text
+    input widget. Optionally a type may be declared.
+    """
+
+    type = param.ClassSelector(default=None, class_=type,
+                               is_instance=True)
 
     value = param.Parameter(default=None)
 
@@ -153,10 +160,15 @@ class LiteralInput(Widget):
 
     def _process_property_change(self, msg):
         if 'value' in msg:
-            msg['value'] = ast.literal_eval(msg['value'])
+            value = ast.literal_eval(msg['value'])
+            if self.type and not isinstance(value, self.type):
+                raise TypeError('Expected %s type, found %s type.' %
+                                (self.type.__name__, type(value).__name__))
+            msg['value'] = value
         return msg
 
     def _process_param_change(self, msg):
+        msg.pop('type', None)
         if 'value' in msg:
             msg['value'] = as_unicode(msg['value'])
         return msg
