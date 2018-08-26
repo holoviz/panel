@@ -15,9 +15,23 @@ from .util import get_method_owner, push, remove_root, Div
 from .viewable import Reactive, Viewable
 
 
-class Panel(Reactive):
+def Panel(obj, **kwargs):
     """
-    Panel is the abstract baseclass for all atomic displayable units
+    Converts any object to a Panel if a matching Panel class exists.
+    """
+    if isinstance(obj, Viewable):
+        return obj
+    descendents = [(p.precedence, p) for p in param.concrete_descendents(PanelBase).values()]
+    panel_types = sorted(descendents, key=lambda x: x[0])
+    for _, panel_type in panel_types:
+        if not panel_type.applies(obj): continue
+        return panel_type(obj, **kwargs)
+    raise TypeError('%s type could not be rendered.' % type(obj).__name__)
+
+
+class PanelBase(Reactive):
+    """
+    PanelBase is the abstract baseclass for all atomic displayable units
     in the panel library. Panel defines an extensible interface for
     wrapping arbitrary objects and transforming them into bokeh models
     allowing the panel to display itself in the notebook or be served
@@ -47,25 +61,13 @@ class Panel(Reactive):
         """
         return None
 
-    @classmethod
-    def to_panel(cls, obj, name=None):
-        if isinstance(obj, Viewable):
-            return obj
-        kwargs = {} if name is None else dict(name=name)
-        descendents = [(p.precedence, p) for p in param.concrete_descendents(Panel).values()]
-        panel_types = sorted(descendents, key=lambda x: x[0])
-        for _, panel_type in panel_types:
-            if not panel_type.applies(obj): continue
-            return panel_type(obj, **kwargs)
-        raise TypeError('%s type could not be rendered.' % type(obj).__name__)
-
     def __init__(self, object, **params):
         if not self.applies(object):
             name = type(self).__name__
             raise ValueError('%s object not understood by %s, '
                              'expected %s object.' %
                              (type(object).__name__, name, name[:-5]))
-        super(Panel, self).__init__(object=object, **params)
+        super(PanelBase, self).__init__(object=object, **params)
 
     def _get_root(self, doc, comm=None):
         root = BkColumn()
@@ -97,7 +99,7 @@ class Panel(Reactive):
         self.param.watch('object', 'value', update_panel)
 
 
-class BokehPanel(Panel):
+class BokehPanel(PanelBase):
     """
     BokehPanel allows including any bokeh model in a plot directly.
     """
@@ -124,7 +126,7 @@ class BokehPanel(Panel):
         return self.object
 
 
-class HoloViewsPanel(Panel):
+class HoloViewsPanel(PanelBase):
     """
     HoloViewsPanel renders any HoloViews object to a corresponding
     bokeh model while respecting the currently selected backend.
@@ -169,7 +171,7 @@ class HoloViewsPanel(Panel):
         kwargs = {'doc': doc} if renderer.backend == 'bokeh' else {}
         plot = renderer.get_plot(self.object, **kwargs)
         self._patch_plot(plot, root.ref['id'], comm)
-        child_panel = Panel.to_panel(plot.state)
+        child_panel = Panel(plot.state)
         model = child_panel._get_model(doc, root, parent, comm)
         if rerender:
             return model, child_panel
@@ -177,7 +179,7 @@ class HoloViewsPanel(Panel):
         return model
 
 
-class ParamMethodPanel(Panel):
+class ParamMethodPanel(PanelBase):
     """
     ParamMethodPanel wraps methods annotated with the param.depends
     decorator and rerenders the plot when any of the methods parameters
@@ -216,7 +218,7 @@ class ParamMethodPanel(Panel):
         return model
 
 
-class MatplotlibPanel(Panel):
+class MatplotlibPanel(PanelBase):
     """
     A MatplotlibPanel renders a matplotlib figure to png and wraps
     the base64 encoded data in a bokeh Div model.
@@ -242,7 +244,7 @@ class MatplotlibPanel(Panel):
         return model
 
 
-class HTML(Panel):
+class HTML(PanelBase):
     """
     HTML renders any object which has a _repr_html_ method and wraps
     the HTML in a bokeh Div model.

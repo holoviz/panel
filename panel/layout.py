@@ -28,7 +28,7 @@ class Layout(Reactive):
     _renames = {'panels': 'children'}
 
     def __init__(self, *panels, **params):
-        panels = [Panel.to_panel(panel) for panel in panels]
+        panels = [Panel(panel) for panel in panels]
         super(Layout, self).__init__(panels=panels, **params)
 
     def _get_root(self, doc, comm=None):
@@ -64,7 +64,7 @@ class Layout(Reactive):
         old_children = getattr(model, self._renames.get('panels', 'panels'))
         new_models = []
         for i, panel in enumerate(self.panels):
-            panel = Panel.to_panel(panel)
+            panel = Panel(panel)
             self.panels[i] = panel
             if panel in old_panels:
                 child = old_children[old_panels.index(panel)]
@@ -89,12 +89,12 @@ class Layout(Reactive):
 
     def __setitem__(self, index, panel):
         new_panels = list(self.panels)
-        new_panels[index] = Panel.to_panel(panel)
+        new_panels[index] = Panel(panel)
         self.panels = new_panels
 
     def append(self, panel):
         new_panels = list(self.panels)
-        new_panels.append(Panel.to_panel(panel))
+        new_panels.append(Panel(panel))
         self.panels = new_panels
 
 
@@ -149,7 +149,7 @@ class Tabs(Layout):
                 name, panel = panel
             else:
                 name = None
-            panels.append(Panel.to_panel(panel, name=name))
+            panels.append(Panel(panel, name=name))
         super(Tabs, self).__init__(*panels, **params)
 
     def _get_panels(self, model, old_panels, doc, root, comm=None):
@@ -178,7 +178,7 @@ class Tabs(Layout):
         if isinstance(panel, tuple):
             name, panel = panel
         new_panels = list(self.panels)
-        new_panels[index] = Panel.to_panel(panel, name=name)
+        new_panels[index] = Panel(panel, name=name)
         self.panels = new_panels
 
     def append(self, panel):
@@ -186,5 +186,5 @@ class Tabs(Layout):
         if isinstance(panel, tuple):
             name, panel = panel
         new_panels = list(self.panels)
-        new_panels.append(Panel.to_panel(panel, name=name))
+        new_panels.append(Panel(panel, name=name))
         self.panels = new_panels

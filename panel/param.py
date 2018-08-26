@@ -12,7 +12,7 @@ from functools import partial
 import param
 from bokeh.models import Div
 
-from .panels import Panel
+from .panels import PanelBase, Panel
 from .layout import WidgetBox
 from .util import default_label_formatter, named_objs
 from .widgets import (
@@ -21,7 +21,7 @@ from .widgets import (
 )
 
 
-class ParamPanel(Panel):
+class ParamPanel(PanelBase):
     """
     ParamPanel renders a Parameterized class to a set of widgets which
     are linke to the parameter values on the class.
@@ -118,7 +118,7 @@ class ParamPanel(Panel):
 
         # Format name specially
         ordered_params.pop(ordered_params.index('name'))
-        widgets = [Panel.to_panel(Div(text='<b>{0}</b>'.format(self.object.name)))]
+        widgets = [Panel(Div(text='<b>{0}</b>'.format(self.object.name)))]
         widgets += [self.widget(pname) for pname in ordered_params]
         return widgets
 
