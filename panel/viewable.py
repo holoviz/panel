@@ -115,6 +115,25 @@ class Reactive(Viewable):
         self._active = False
         self._events = {}
 
+    def link(self, obj, **links):
+        """
+        Links the parameters on this object to parameters on another
+        object.
+
+        obj: object
+
+        links: dict
+            Maps between parameters on this object to the parameters
+            on the supplied object.
+        """
+        def link(change):
+            setattr(obj, links[change.attribute], change.new)
+        for param, other_param in links.items():
+            self.param.watch(param, fn=link)
+            if not hasattr(obj, other_param):
+                raise AttributeError('Linked object %s has no attribute %s.'
+                                     % (obj, other_param))
+
     def _process_property_change(self, msg):
         """
         Transform bokeh model property changes into parameter updates.
