@@ -56,6 +56,8 @@ class Viewable(param.Parameterized):
         comm: pyviz_comms.Comm
           Optional pyviz_comms when working in notebook
         """
+        return self._get_model(doc, comm=comm)
+
 
     def cleanup(self, model):
         """

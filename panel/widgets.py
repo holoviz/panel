@@ -48,18 +48,23 @@ class Widget(Reactive):
         return self._process_param_change(properties)
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
+        in_box = isinstance(parent, _BkWidgetBox)
+        if not in_box:
+            parent = _BkWidgetBox()
+        root = parent if root is None else root
+
         model = self._widget_type(**self._init_properties())
+
+        # Link parameters and bokeh model
         params = [p for p in self.params()]
         properties = list(self._process_param_change(dict(self.get_param_values())))
         self._link_params(model, params, doc, root, comm)
         self._link_props(model, properties, doc, root, comm)
-        return model
 
-    def _get_root(self, doc, comm=None):
-        root = _BkWidgetBox()
-        model = self._get_model(doc, root, root, comm)
-        root.children = [model]
-        return root
+        if not in_box:
+            parent.children = [model]
+            return parent
+        return model
 
 
 

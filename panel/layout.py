@@ -31,9 +31,6 @@ class Layout(Reactive):
         panels = [Panel(panel) for panel in panels]
         super(Layout, self).__init__(panels=panels, **params)
 
-    def _get_root(self, doc, comm=None):
-        return self._get_model(doc, comm=comm)
-
     def _init_properties(self):
         properties = {k: v for k, v in self.param.get_param_values()
                       if v is not None}
