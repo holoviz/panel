@@ -119,6 +119,10 @@ class WidgetBox(Layout):
     Box to group widgets.
     """
 
+    height = param.Integer(default=None, bounds=(0, None))
+
+    width = param.Integer(default=None, bounds=(0, None))
+
     _bokeh_model = BkWidgetBox
 
 
