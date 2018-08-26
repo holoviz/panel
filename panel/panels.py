@@ -116,6 +116,7 @@ class BokehPanel(Panel):
         if plot_id:
             for js in self.object.select({'type': CustomJS}):
                 js.code = js.code.replace(self.object.ref['id'], plot_id)
+        remove_root(self.object)
 
         if rerender:
             return self.object, None

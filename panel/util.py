@@ -120,18 +120,23 @@ def push(doc, comm, binary=True):
         comm.send(buffers=[payload])
 
 
-def add_to_doc(obj, doc, hold=False):
+def remove_root(obj):
     """
-    Adds a model to the supplied Document removing it from any existing Documents.
+    Removes the document from any previously displayed bokeh object
     """
-    # Handle previously displayed models
     for model in obj.select({'type': Model}):
         prev_doc = model.document
         model._document = None
         if prev_doc:
             prev_doc.remove_root(model)
 
+
+def add_to_doc(obj, doc, hold=False):
+    """
+    Adds a model to the supplied Document removing it from any existing Documents.
+    """
     # Add new root
+    remove_root(obj)
     doc.add_root(obj)
     if doc._hold is None and hold:
         doc.hold()
