@@ -86,7 +86,7 @@ class PanelBase(Reactive):
             if old_model is new_model:
                 return
             elif old_panel is not None:
-                old_panel.cleanup()
+                old_panel.cleanup(old_model)
             def update_models():
                 index = parent.children.index(old_model)
                 parent.children[index] = new_model
@@ -97,6 +97,7 @@ class PanelBase(Reactive):
             else:
                 doc.add_next_tick_callback(update_models)
         self.param.watch('object', 'value', update_panel)
+
 
 
 class BokehPanel(PanelBase):
@@ -114,16 +115,17 @@ class BokehPanel(PanelBase):
         """
         Should return the bokeh model to be rendered.
         """
+        model = self.object
         plot_id = root.ref['id']
         if plot_id:
-            for js in self.object.select({'type': CustomJS}):
+            for js in model.select({'type': CustomJS}):
                 js.code = js.code.replace(self.object.ref['id'], plot_id)
 
         if rerender:
-            return self.object, None
+            return model, None
 
-        self._link_object(self.object, doc, root, parent, comm)
-        return self.object
+        self._link_object(model, doc, root, parent, comm)
+        return model
 
 
 class HoloViewsPanel(PanelBase):
