@@ -10,6 +10,8 @@ Contents:
 * `Layouts <Layouts.html>`_
    Declaring and working with layouts
 
+* `Usage with param <Layouts.html>`_
+   Using param to express panels in a self-contained class
 
 .. toctree::
     :titlesonly:
@@ -18,3 +20,4 @@ Contents:
 
     Widgets <Widgets>
     Layouts <Layouts>
+	Usage with param <Param>
