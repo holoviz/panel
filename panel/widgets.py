@@ -163,19 +163,34 @@ class LiteralInput(Widget):
 
     _widget_type = _BkTextInput
 
+    def __init__(self, **params):
+        super(LiteralInput, self).__init__(**params)
+        self._state = ''
+
     def _process_property_change(self, msg):
+        if 'title' in msg:
+            msg['name'] = msg.pop('title').replace(self._state, '')
         if 'value' in msg:
-            value = ast.literal_eval(msg['value'])
+            value = msg.pop('value')
+            try:
+                value = ast.literal_eval(value)
+            except:
+                self._state = ' (invalid)'
+                value = self.value
+
             if self.type and not isinstance(value, self.type):
-                raise TypeError('Expected %s type, found %s type.' %
-                                (self.type.__name__, type(value).__name__))
+                self._state = ' (wrong type)'
+                value = self.value
+            else:
+                self._state = ''
             msg['value'] = value
         return msg
 
     def _process_param_change(self, msg):
         msg.pop('type', None)
         if 'value' in msg:
-            msg['value'] = as_unicode(msg['value'])
+            msg['value'] = '' if msg['value'] is None else as_unicode(msg['value'])
+        msg['title'] = self.name + self._state
         return msg
 
 
