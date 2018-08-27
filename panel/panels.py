@@ -33,7 +33,7 @@ class PanelBase(Reactive):
     """
     PanelBase is the abstract baseclass for all atomic displayable units
     in the panel library. Panel defines an extensible interface for
-    wrapping arbitrary objects and transforming them into bokeh models
+    wrapping arbitrary objects and transforming them into bokeh models.
     allowing the panel to display itself in the notebook or be served
     using bokeh server.
 
@@ -225,7 +225,7 @@ class MatplotlibPanel(PanelBase):
     """
 
     @classmethod
-    def applies(self, obj):
+    def applies(cls, obj):
         return obj.__class__.__name__ == 'Figure' and hasattr(obj, '_cachedRenderer')
 
     def _get_model(self, doc, root=None, parent=None, comm=None, rerender=False):
@@ -253,7 +253,7 @@ class HTML(PanelBase):
     precedence = 1
 
     @classmethod
-    def applies(self, obj):
+    def applies(cls, obj):
         return hasattr(obj, '_repr_html_')
 
     def _get_model(self, doc, root=None, parent=None, comm=None, rerender=False):

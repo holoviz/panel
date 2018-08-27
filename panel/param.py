@@ -10,6 +10,7 @@ import itertools
 from functools import partial
 
 import param
+from param.parameterized import classlist
 from bokeh.models import Div
 
 from .panels import PanelBase, Panel
@@ -64,15 +65,22 @@ class ParamPanel(PanelBase):
     }
 
     @classmethod
-    def applies(self, obj):
+    def applies(cls, obj):
         return isinstance(obj, param.Parameterized)
 
+    @classmethod
+    def widget_type(cls, pobj):
+        if pobj.constant: # Ensure constant parameters cannot be edited
+            return Div
+        for t in classlist(type(pobj))[::-1]:
+            if t in cls._mapping:
+                return cls._mapping[t]
 
     def widget(self, p_name):
         """Get widget for param_name"""
         p_obj = self.object.params(p_name)
 
-        widget_class = self._mapping[type(p_obj)]
+        widget_class = self.widget_type(p_obj)
         value = getattr(self.object, p_name)
 
         kw = dict(value=value)
