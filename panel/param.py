@@ -18,7 +18,7 @@ from .layout import WidgetBox
 from .util import default_label_formatter, named_objs
 from .widgets import (
     LiteralInput, Select, Checkbox, FloatSlider, IntSlider, RangeSlider,
-    MultiSelect, DatePicker
+    MultiSelect, DatePicker, StaticText
 )
 
 
@@ -68,10 +68,9 @@ class ParamPanel(PanelBase):
     def applies(cls, obj):
         return isinstance(obj, param.Parameterized)
 
-    @classmethod
     def widget_type(cls, pobj):
         if pobj.constant: # Ensure constant parameters cannot be edited
-            return Div
+            return StaticText
         for t in classlist(type(pobj))[::-1]:
             if t in cls._mapping:
                 return cls._mapping[t]
@@ -91,27 +90,19 @@ class ParamPanel(PanelBase):
             kw['name'] = p_name
 
         if hasattr(p_obj, 'get_range') and not isinstance(kw['value'], dict):
-            options = named_objs(p_obj.get_range().items())
-            value = kw['value']
-            lookup = {v: k for k, v in options}
-            if isinstance(value, list):
-                kw['value'] = [lookup[v] for v in value]
-            elif isinstance(p_obj, param.FileSelector) and value is None:
-                kw['value'] = ''
-            else:
-                kw['value'] = lookup[value]
-            options = [(k, k) for k, v in options]
-            kw['options'] = options
+            options = p_obj.get_range().values()
+            kw['options'] = list(options)
 
         if hasattr(p_obj, 'get_soft_bounds'):
-            kw['start'], kw['end'] = p_obj.get_soft_bounds()
+            bounds = p_obj.get_soft_bounds()
+            if None not in bounds:
+                kw['start'], kw['end'] = bounds
+            else:
+                widget_class = StaticText
 
         widget = widget_class(**kw)
-        widget.param.watch('value', 'value', partial(self._apply_change, p_name))
+        widget.link(self.object, **{'value': p_name})
         return widget
-
-    def _apply_change(self, p_name, change):
-        setattr(self.object, p_name, change.new)
 
     def _get_widgets(self):
         """Return name,widget boxes for all parameters (i.e., a property sheet)"""
