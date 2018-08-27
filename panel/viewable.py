@@ -95,12 +95,12 @@ class Reactive(Viewable):
 
     In order to link parameters with bokeh model instances the
     _link_params and _link_props methods may be called in the
-     _get_model method. Since there may not be a 1-to-1 mapping
-    between parameter and the model property the _process_property_change
-    and _process_param_change may be overridden to apply any necessary
+    _get_model method. Since there may not be a 1-to-1 mapping between
+    parameter and the model property the _process_property_change and
+    _process_param_change may be overridden to apply any necessary
     transformations.
     """
-    
+
     # Timeout if a notebook comm message is swallowed
     _timeout = 20000
 
