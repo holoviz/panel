@@ -10,7 +10,7 @@ from bokeh.models import WidgetBox as _BkWidgetBox
 from bokeh.models.widgets import (
     TextInput as _BkTextInput, Select as _BkSelect, Slider, CheckboxGroup,
     DateRangeSlider as _BkDateRangeSlider, RangeSlider as _BkRangeSlider,
-    DatePicker as _BkDatePicker, MultiSelect as _BkMultiSelect
+    DatePicker as _BkDatePicker, MultiSelect as _BkMultiSelect, Div as _BkDiv
 )
 
 from .layout import WidgetBox # noqa
@@ -75,6 +75,24 @@ class TextInput(Widget):
     placeholder = param.String(default='')
 
     _widget_type = _BkTextInput
+
+
+class StaticText(Widget):
+
+    value = param.Parameter(default=None)
+
+    _widget_type = _BkDiv
+
+    _format = '<b>{title}</b>: {value}'
+
+    def _process_param_change(self, msg):
+        msg.pop('name', None)
+        msg.pop('title', None)
+        if 'value' in msg:
+            value = msg.pop('value')
+            text = self._format.format(title=self.name, value=as_unicode(value))
+            msg['text'] = text
+        return msg
 
 
 class FloatSlider(Widget):
@@ -235,7 +253,7 @@ class Select(Widget):
 
     def _process_param_change(self, msg):
         mapping = {o: as_unicode(o) for o in self.options}
-        if msg.get('value', None) is not None:
+        if msg.get('value') is not None:
             msg['value'] = mapping[msg['value']]
         if 'options' in msg:
             msg['options'] = [mapping[o] for o in msg['options']]
