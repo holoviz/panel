@@ -2,8 +2,10 @@
 Panels allow wrapping external objects and rendering them as part of
 a dashboard.
 """
+import os
 import inspect
 import base64
+import tempfile
 from io import BytesIO
 
 import param
@@ -261,6 +263,39 @@ class HTML(PanelBase):
     def _get_model(self, doc, root=None, parent=None, comm=None, rerender=False):
         model = Div(text=self.object._repr_html_())
 
+        if rerender:
+            return model, None
+        self._link_object(model, doc, root, parent, comm)
+        return model
+
+
+class GGPlotPanel(PanelBase):
+    """
+    A GGPlotPanel renders a r2py based ggplot to png and wraps
+    the base64 encoded data in a bokeh Div model.
+    """
+
+    height = param.Integer(default=400, bounds=(0, None))
+
+    width = param.Integer(default=400, bounds=(0, None))
+
+    dpi = param.Integer(default=144, bounds=(1, None))
+
+    @classmethod
+    def applies(cls, obj):
+        return type(obj).__name__ == 'GGPlot' and hasattr(obj, 'r_repr')
+
+    def _get_model(self, doc, root=None, parent=None, comm=None, rerender=False):
+        filename = tempfile.mktemp()
+        width, height = self.width/self.dpi, self.height/self.dpi
+        self.object.save(filename, device='png', width=width, height=height, dpi=self.dpi)
+        with open(filename, 'rb') as f:
+            data = f.read()
+        os.remove(filename)
+        b64 = base64.b64encode(data).decode("utf-8")
+        src = "data:image/png;base64,{b64}".format(b64=b64)
+        html = "<img src='{src}'></img>".format(src=src)
+        model = Div(text=html, width=self.width, height=self.height)
         if rerender:
             return model, None
         self._link_object(model, doc, root, parent, comm)
