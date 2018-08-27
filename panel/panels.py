@@ -11,7 +11,7 @@ import param
 from bokeh.layouts import Column as BkColumn
 from bokeh.models import LayoutDOM, CustomJS
 
-from .util import get_method_owner, push, remove_root, Div
+from .util import get_method_owner, push, Div
 from .viewable import Reactive, Viewable
 
 
@@ -118,10 +118,10 @@ class BokehPanel(PanelBase):
         if plot_id:
             for js in self.object.select({'type': CustomJS}):
                 js.code = js.code.replace(self.object.ref['id'], plot_id)
-        remove_root(self.object)
 
         if rerender:
             return self.object, None
+
         self._link_object(self.object, doc, root, parent, comm)
         return self.object
 
@@ -194,7 +194,7 @@ class ParamMethodPanel(PanelBase):
     def _get_model(self, doc, root=None, parent=None, comm=None):
         parameterized = get_method_owner(self.object)
         params = parameterized.param.params_depended_on(self.object.__name__)
-        panel = self.to_panel(self.object())
+        panel = Panel(self.object())
         model = panel._get_model(doc, root, parent, comm)
         history = [(panel, model)]
         for p in params:
@@ -202,7 +202,7 @@ class ParamMethodPanel(PanelBase):
                 if change.what != 'value': return
                 old_panel, old_model = history[0]
                 old_panel.cleanup(old_model)
-                new_panel = self.to_panel(self.object())
+                new_panel = Panel(self.object())
                 new_model = new_panel._get_model(doc, root, parent, comm)
                 def update_models():
                     if old_model is new_model: return
