@@ -126,8 +126,11 @@ class Reactive(Viewable):
             Maps between parameters on this object to the parameters
             on the supplied object.
         """
-        def link(change):
-            setattr(obj, links[change.attribute], change.new)
+        def link(change, _updating=[]):
+            if change.attribute not in _updating:
+                _updating.append(change.attribute)
+                setattr(obj, links[change.attribute], change.new)
+                _updating.pop(_updating.index(change.attribute))
         for param, other_param in links.items():
             self.param.watch(param, fn=link)
             if not hasattr(obj, other_param):
