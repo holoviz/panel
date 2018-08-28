@@ -98,7 +98,7 @@ class PanelBase(Reactive):
                 push(doc, comm)
             else:
                 doc.add_next_tick_callback(update_models)
-        self.param.watch('object', 'value', update_panel)
+        self.param.watch(update_panel, 'object')
 
 
 
@@ -218,7 +218,7 @@ class ParamMethodPanel(PanelBase):
                     push(doc, comm)
                 else:
                     doc.add_next_tick_callback(update_models)
-            parameterized.param.watch(p.name, p.what, update_panel)
+            parameterized.param.watch(update_panel, p.name, p.what)
         return model
 
 

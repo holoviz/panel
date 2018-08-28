@@ -132,7 +132,7 @@ class Reactive(Viewable):
                 setattr(obj, links[change.attribute], change.new)
                 _updating.pop(_updating.index(change.attribute))
         for param, other_param in links.items():
-            self.param.watch(param, fn=link)
+            self.param.watch(link, param)
             if not hasattr(obj, other_param):
                 raise AttributeError('Linked object %s has no attribute %s.'
                                      % (obj, other_param))
@@ -162,10 +162,14 @@ class Reactive(Viewable):
         for p in params:
             def set_value(change, parameter=p):
                 msg = self._process_param_change({parameter: change.new})
-                model.update(**msg)
+                def update_model():
+                    model.update(**msg)
                 if comm:
+                    update_model()
                     push(doc, comm)
-            self.param.watch(p, 'value', set_value)
+                else:
+                    doc.add_next_tick_callback(update_model)
+            self.param.watch(set_value, p)
 
     def _link_props(self, model, properties, doc, root, comm=None):
         if comm is None:

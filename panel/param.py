@@ -102,7 +102,12 @@ class ParamPanel(PanelBase):
 
         widget = widget_class(**kw)
         widget.link(self.object, **{'value': p_name})
-        self.object.param.watch(p_name, fn=lambda change: setattr(widget, 'value', change.new))
+        def link(change, _updating=[]):
+            if change.attribute not in _updating:
+                _updating.append(change.attribute)
+                setattr(widget, 'value', change.new)
+                _updating.pop(_updating.index(change.attribute))
+        self.object.param.watch(link, p_name)
         return widget
 
     def _get_widgets(self):

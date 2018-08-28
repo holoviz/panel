@@ -51,7 +51,7 @@ class Layout(Reactive):
                     push(doc, comm)
                 else:
                     doc.add_next_tick_callback(update_model)
-            self.param.watch(p, 'value', set_value)
+            self.param.watch(set_value, p)
 
     def _get_panels(self, model, old_panels, doc, root, comm=None):
         """
