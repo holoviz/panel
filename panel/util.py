@@ -1,3 +1,4 @@
+import os
 import json
 import sys
 import inspect
@@ -168,7 +169,10 @@ def load_notebook(inline=True):
     bokeh.io.notebook.curstate().output_notebook()
 
     # Publish comm manager
-    JS = '\n'.join([PYVIZ_PROXY, JupyterCommManager.js_manager])
+    nbjs_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'js', 'notebook.js')
+    with open(nbjs_file) as f:
+        nb_js = f.read()
+    JS = '\n'.join([PYVIZ_PROXY, JupyterCommManager.js_manager, nb_js])
     publish_display_data(data={LOAD_MIME: JS, 'application/javascript': JS})
 
 
