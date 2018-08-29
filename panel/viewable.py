@@ -5,6 +5,7 @@ response to changes to parameters and the underlying bokeh models.
 """
 
 from functools import partial
+from collections import defaultdict
 
 import param
 
@@ -58,8 +59,7 @@ class Viewable(param.Parameterized):
         """
         return self._get_model(doc, comm=comm)
 
-
-    def cleanup(self, model):
+    def _cleanup(self, model):
         """
         Clean up method which is called when a Viewable is destroyed.
         """
@@ -110,6 +110,8 @@ class Reactive(Viewable):
     # Mapping from parameter name to bokeh model property name
     _renames = {}
 
+    _callbacks = defaultdict(dict)
+
     def __init__(self, **params):
         super(Reactive, self).__init__(**params)
         self._active = False
@@ -136,6 +138,12 @@ class Reactive(Viewable):
             if not hasattr(obj, other_param):
                 raise AttributeError('Linked object %s has no attribute %s.'
                                      % (obj, other_param))
+
+    def _cleanup(self, model):
+        super(Reactive, self)._cleanup(model)
+        callbacks = self._callbacks[model.ref['id']]
+        for p, cb in callbacks.items():
+            self.param.unwatch(cb, p)
 
     def _process_property_change(self, msg):
         """
@@ -170,6 +178,7 @@ class Reactive(Viewable):
                 else:
                     doc.add_next_tick_callback(update_model)
             self.param.watch(set_value, p)
+            self._callbacks[model.ref['id']][p] = set_value
 
     def _link_props(self, model, properties, doc, root, comm=None):
         if comm is None:

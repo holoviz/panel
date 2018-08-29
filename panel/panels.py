@@ -68,6 +68,11 @@ class PanelBase(Reactive):
             raise ValueError('%s object not understood by %s, '
                              'expected %s object.' %
                              (type(object).__name__, name, name[:-5]))
+
+        # temporary flag denotes panels created for temporary, internal
+        # use which should be garbage collected once they have been used
+        self._temporary = params.pop('_temporary', False)
+
         super(PanelBase, self).__init__(object=object, **params)
 
     def _get_root(self, doc, comm=None):
@@ -76,18 +81,27 @@ class PanelBase(Reactive):
         root.children = [model]
         return root
 
+    def _cleanup(self, model):
+        super(PanelBase, self)._cleanup(model)
+        if self._temporary:
+            self.object = None
+
     def _link_object(self, model, doc, root, parent, comm=None, panel=None):
         """
         Links the object parameter to the rendered bokeh model, triggering
         an update when the object changes.
         """
+        if self._temporary:
+             # If the object has no user handle don't bother linking params
+            return
+
         def update_panel(change, history=[(panel, model)]):
             new_model, new_panel = self._get_model(doc, root, parent, comm, rerender=True)
             old_panel, old_model = history[0]
             if old_model is new_model:
                 return
             elif old_panel is not None:
-                old_panel.cleanup(old_model)
+                old_panel._cleanup(old_model)
             def update_models():
                 index = parent.children.index(old_model)
                 parent.children[index] = new_model
@@ -98,7 +112,7 @@ class PanelBase(Reactive):
             else:
                 doc.add_next_tick_callback(update_models)
         self.param.watch(update_panel, 'object')
-
+        self._callbacks[model.ref['id']]['object'] = update_panel
 
 
 class BokehPanel(PanelBase):
@@ -149,7 +163,7 @@ class HoloViewsPanel(PanelBase):
                 for c in cb.callbacks:
                     c.code = c.code.replace(plot.id, plot_id)
 
-    def cleanup(self, model):
+    def _cleanup(self, model):
         """
         Traverses HoloViews object to find and clean up any streams
         connected to existing plots.
@@ -163,6 +177,7 @@ class HoloViewsPanel(PanelBase):
                         owner = get_method_owner(sub)
                         if owner.state is model:
                             owner.cleanup()
+        super(HoloViewsPanel, self)._cleanup(model)
 
     def _get_model(self, doc, root, parent=None, comm=None, rerender=False):
         """
@@ -174,7 +189,7 @@ class HoloViewsPanel(PanelBase):
         kwargs = {'doc': doc} if renderer.backend == 'bokeh' else {}
         plot = renderer.get_plot(self.object, **kwargs)
         self._patch_plot(plot, root.ref['id'], comm)
-        child_panel = Panel(plot.state)
+        child_panel = Panel(plot.state, _temporary=True)
         model = child_panel._get_model(doc, root, parent, comm)
         if rerender:
             return model, child_panel
@@ -197,15 +212,15 @@ class ParamMethodPanel(PanelBase):
     def _get_model(self, doc, root=None, parent=None, comm=None):
         parameterized = get_method_owner(self.object)
         params = parameterized.param.params_depended_on(self.object.__name__)
-        panel = Panel(self.object())
+        panel = Panel(self.object(), _temporary=True)
         model = panel._get_model(doc, root, parent, comm)
         history = [(panel, model)]
         for p in params:
             def update_panel(change, history=history):
                 if change.what != 'value': return
                 old_panel, old_model = history[0]
-                old_panel.cleanup(old_model)
-                new_panel = Panel(self.object())
+                old_panel._cleanup(old_model)
+                new_panel = Panel(self.object(), _temporary=True)
                 new_model = new_panel._get_model(doc, root, parent, comm)
                 def update_models():
                     if old_model is new_model: return
@@ -219,6 +234,17 @@ class ParamMethodPanel(PanelBase):
                     doc.add_next_tick_callback(update_models)
             parameterized.param.watch(update_panel, p.name, p.what)
         return model
+
+    def _cleanup(self, model):
+        """
+        Clean up method which is called when a Viewable is destroyed.
+        """
+        model_id = model.ref['id']
+        callbacks = self._callbacks[model_id]
+        parameterized = get_method_owner(self.object)
+        for p, cb in callbacks.items():
+            parameterized.param.unwatch(fn, cb)
+        super(ParamMethodPanel, self)._cleanup(model)
 
 
 class MatplotlibPanel(PanelBase):

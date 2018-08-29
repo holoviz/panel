@@ -71,7 +71,7 @@ class Layout(Reactive):
 
         for panel, old_child in zip(old_panels, old_children):
             if old_child not in new_models:
-                panel.cleanup(old_child)
+                panel._cleanup(old_child)
         return new_models
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
@@ -166,7 +166,7 @@ class Tabs(Layout):
 
         for panel, old_child in zip(old_panels, old_children):
             if old_child not in new_models:
-                panel.cleanup(old_child)
+                panel._cleanup(old_child)
 
         return new_models
 
