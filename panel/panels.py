@@ -248,9 +248,9 @@ class MatplotlibPanel(PanelBase):
         return model
 
 
-class HTML(PanelBase):
+class HTMLPanel(PanelBase):
     """
-    HTML renders any object which has a _repr_html_ method and wraps
+    HTMLPanel renders any object which has a _repr_html_ method and wraps
     the HTML in a bokeh Div model.
     """
 
