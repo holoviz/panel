@@ -5,7 +5,6 @@ a dashboard.
 import os
 import inspect
 import base64
-import tempfile
 from io import BytesIO
 
 import param
@@ -279,19 +278,23 @@ class GGPlotPanel(PanelBase):
 
     width = param.Integer(default=400, bounds=(0, None))
 
-    dpi = param.Integer(default=144, bounds=(1, None))
+    dpi = param.Integer(default=72, bounds=(1, None))
 
     @classmethod
     def applies(cls, obj):
         return type(obj).__name__ == 'GGPlot' and hasattr(obj, 'r_repr')
 
     def _get_model(self, doc, root=None, parent=None, comm=None, rerender=False):
-        filename = tempfile.mktemp()
-        width, height = self.width/self.dpi, self.height/self.dpi
-        self.object.save(filename, device='png', width=width, height=height, dpi=self.dpi)
-        with open(filename, 'rb') as f:
-            data = f.read()
-        os.remove(filename)
+        from rpy2.robjects.lib import grdevices
+        from rpy2 import robjects
+        with grdevices.render_to_bytesio(grdevices.png,
+                                         type="cairo-png",
+                                         width=self.width,
+                                         height=self.height,
+                                         res=self.dpi,
+                                         antialias="subpixel") as b:
+            robjects.r("print")(self.object)
+        data = b.getvalue()
         b64 = base64.b64encode(data).decode("utf-8")
         src = "data:image/png;base64,{b64}".format(b64=b64)
         html = "<img src='{src}'></img>".format(src=src)
