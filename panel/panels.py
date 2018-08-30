@@ -327,7 +327,41 @@ class DivBasePanel(PanelBase):
         div.update(**self._get_properties())
 
 
-class MatplotlibPanel(DivBasePanel):
+class PNGPanel(DivBasePanel):
+    """
+    Encodes a PNG as base64 and wraps it in a Bokeh Div model.
+    This base class supports anything with a _repr_png_ method, but
+    subclasses can provide their own way of obtaining or generating a PNG.
+    """
+
+    @classmethod
+    def applies(cls, obj):
+        return hasattr(obj, '_repr_png_')
+
+    def _png(self):
+        return self.object._repr_png_()
+    
+    def _pngshape(self, data):
+        """Calculate and return PNG width,height"""
+        import struct
+        w, h = struct.unpack('>LL', data[16:24])
+        return int(w), int(h)
+    
+    def _get_properties(self):
+        data = self._png()
+        b64 = base64.b64encode(data).decode("utf-8")
+        src = "data:image/png;base64,{b64}".format(b64=b64)
+        html = "<img src='{src}'></img>".format(src=src)
+        
+        p = super(PNGPanel,self)._get_properties()
+        width, height = self._pngshape(data)
+        if self.width  is None: p["width"]  = width
+        if self.height is None: p["height"] = height
+        p["text"]=html
+        return p
+
+
+class MatplotlibPanel(PNGPanel):
     """
     A MatplotlibPanel renders a matplotlib figure to png and wraps
     the base64 encoded data in a bokeh Div model.
@@ -335,22 +369,13 @@ class MatplotlibPanel(DivBasePanel):
 
     @classmethod
     def applies(cls, obj):
-        return obj.__class__.__name__ == 'Figure' and hasattr(obj, '_cachedRenderer')
+        return type(obj).__name__ == 'Figure' and hasattr(obj, '_cachedRenderer')
 
-    def _get_properties(self):
-        bytes_io = BytesIO()
-        self.object.canvas.print_figure(bytes_io)
-        data = bytes_io.getvalue()
-        b64 = base64.b64encode(data).decode("utf-8")
-        src = "data:image/png;base64,{b64}".format(b64=b64)
-        width, height = self.object.canvas.get_width_height()
-        html = "<img src='{src}'></img>".format(src=src)
-        
-        p = super(MatplotlibPanel,self)._get_properties()
-        if self.width  is None: p["width"]  = width
-        if self.height is None: p["height"] = height
-        p["text"]=html
-        return p
+    def _png(self):
+        b = BytesIO()
+        self.object.canvas.print_figure(b)
+        return b.getvalue()
+
 
 
 class HTMLPanel(DivBasePanel):
@@ -371,7 +396,7 @@ class HTMLPanel(DivBasePanel):
                     **super(HTMLPanel,self)._get_properties())
 
 
-class RGGPlotPanel(DivBasePanel):
+class RGGPlotPanel(PNGPanel):
     """
     An RGGPlotPanel renders an r2py-based ggplot2 figure to png
     and wraps the base64-encoded data in a bokeh Div model.
@@ -387,18 +412,11 @@ class RGGPlotPanel(DivBasePanel):
     def applies(cls, obj):
         return type(obj).__name__ == 'GGPlot' and hasattr(obj, 'r_repr')
 
-    def _get_properties(self):
+    def _png(self):
         from rpy2.robjects.lib import grdevices
         from rpy2 import robjects
         with grdevices.render_to_bytesio(grdevices.png,
-                                         type="cairo-png",
-                                         width=self.width,
-                                         height=self.height,
-                                         res=self.dpi,
-                                         antialias="subpixel") as b:
+                 type="cairo-png", width=self.width, height=self.height,
+                 res=self.dpi, antialias="subpixel") as b:
             robjects.r("print")(self.object)
-        data = b.getvalue()
-        b64 = base64.b64encode(data).decode("utf-8")
-        src = "data:image/png;base64,{b64}".format(b64=b64)
-        html = "<img src='{src}'></img>".format(src=src)
-        return dict(text=html, **super(RGGPlotPanel,self)._get_properties())
+        return b.getvalue()
