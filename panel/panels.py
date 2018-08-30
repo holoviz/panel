@@ -308,8 +308,8 @@ class DivBasePanel(PanelBase):
         objects=["fixed", "scale_width", "scale_height", "scale_both", "stretch_both"], 
         doc="How the item being displayed should size itself.")
                                        
-    style = param.Parameter(default=None, doc="""
-        Raw CSS style declaration for this Div.""")
+    style = param.Dict(default=None, doc="""
+        Dictionary of CSS property:value pairs to apply to this Div.""")
 
     def _get_properties(self):
         return {p : getattr(self,p) for p in ["width", "height", "sizing_mode", "style"]
