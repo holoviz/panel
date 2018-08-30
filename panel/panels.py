@@ -338,18 +338,25 @@ class MatplotlibPanel(DivBasePanel):
 class HTMLPanel(DivBasePanel):
     """
     HTMLPanel renders any object which has a _repr_html_ method and wraps
-    the HTML in a bokeh Div model.
+    the HTML in a bokeh Div model. The height and width can optionally
+    be specified, to allow room for whatever is being wrapped.
     """
 
     precedence = 1
+
+    height = param.Integer(default=None, bounds=(0, None))
+
+    width = param.Integer(default=None, bounds=(0, None))
 
     @classmethod
     def applies(cls, obj):
         return hasattr(obj, '_repr_html_')
 
     def _get_properties(self):
-        return dict(text=self.object._repr_html_())
-
+        p = dict(text=self.object._repr_html_())
+        if self.width  is not None: p["width"] =self.width
+        if self.height is not None: p["height"]=self.height
+        return p
 
 
 class GGPlotPanel(DivBasePanel):
