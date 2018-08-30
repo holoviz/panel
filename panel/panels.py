@@ -304,7 +304,7 @@ class DivBasePanel(PanelBase):
 
     width = param.Integer(default=None, bounds=(0, None))
 
-    sizing_mode = param.ObjectSelector(default=None,
+    sizing_mode = param.ObjectSelector(default=None, allow_None=True,
         objects=["fixed", "scale_width", "scale_height", "scale_both", "stretch_both"], 
         doc="How the item being displayed should size itself.")
                                        
