@@ -7,7 +7,6 @@ from __future__ import absolute_import
 import os
 import json
 import itertools
-from functools import partial
 
 import param
 from param.parameterized import classlist
@@ -15,7 +14,7 @@ from bokeh.models import Div
 
 from .panels import PanelBase, Panel
 from .layout import WidgetBox
-from .util import default_label_formatter, named_objs
+from .util import default_label_formatter
 from .widgets import (
     LiteralInput, Select, Checkbox, FloatSlider, IntSlider, RangeSlider,
     MultiSelect, DatePicker, StaticText

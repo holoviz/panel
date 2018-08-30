@@ -139,8 +139,8 @@ class Reactive(Viewable):
                 _updating.append(change.attribute)
                 setattr(obj, links[change.attribute], change.new)
                 _updating.pop(_updating.index(change.attribute))
-        for param, other_param in links.items():
-            self.param.watch(link, param)
+        for p, other_param in links.items():
+            self.param.watch(link, p)
             if not hasattr(obj, other_param):
                 raise AttributeError('Linked object %s has no attribute %s.'
                                      % (obj, other_param))

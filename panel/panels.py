@@ -2,7 +2,6 @@
 Panels allow wrapping external objects and rendering them as part of
 a dashboard.
 """
-import os
 import inspect
 import base64
 from io import BytesIO
@@ -289,7 +288,7 @@ class ParamMethodPanel(PanelBase):
         callbacks = self._callbacks[model_id]
         parameterized = get_method_owner(self.object)
         for p, cb in callbacks.items():
-            parameterized.param.unwatch(fn, cb)
+            parameterized.param.unwatch(cb, p)
         super(ParamMethodPanel, self)._cleanup(model)
 
 
