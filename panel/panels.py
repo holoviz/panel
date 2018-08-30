@@ -22,12 +22,8 @@ def Panel(obj, **kwargs):
     """
     if isinstance(obj, Viewable):
         return obj
-    descendents = [(p.precedence, p) for p in param.concrete_descendents(PanelBase).values()]
-    panel_types = sorted(descendents, key=lambda x: x[0])
-    for _, panel_type in panel_types:
-        if not panel_type.applies(obj): continue
-        return panel_type(obj, **kwargs)
-    raise TypeError('%s type could not be rendered.' % type(obj).__name__)
+    return PanelBase.get_panel_type(obj)(obj, **kwargs)
+
 
 
 class PanelBase(Reactive):
@@ -61,6 +57,17 @@ class PanelBase(Reactive):
         can render the object.
         """
         return None
+
+    @classmethod
+    def get_panel_type(cls, obj):
+        if isinstance(obj, Viewable):
+            return type(obj)
+        descendents = [(p.precedence, p) for p in param.concrete_descendents(PanelBase).values()]
+        panel_types = sorted(descendents, key=lambda x: x[0])
+        for _, panel_type in panel_types:
+            if not panel_type.applies(obj): continue
+            return panel_type
+        raise TypeError('%s type could not be rendered.' % type(obj).__name__)
 
     def __init__(self, object, **params):
         if not self.applies(object):
