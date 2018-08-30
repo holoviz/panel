@@ -8,8 +8,8 @@ from io import BytesIO
 
 import param
 
-from bokeh.layouts import Column as BkColumn
-from bokeh.models import LayoutDOM, CustomJS
+from bokeh.layouts import Column as _BkColumn
+from bokeh.models import LayoutDOM, CustomJS, Div as _BkDiv
 
 from .util import get_method_owner, push, Div
 from .viewable import Reactive, Viewable
@@ -85,7 +85,7 @@ class PanelBase(Reactive):
         super(PanelBase, self).__init__(object=object, **params)
 
     def _get_root(self, doc, comm=None):
-        root = BkColumn()
+        root = _BkColumn()
         model = self._get_model(doc, root, root, comm)
         root.children = [model]
         return root
@@ -108,10 +108,6 @@ class PanelBase(Reactive):
         Links the object parameter to the rendered bokeh model, triggering
         an update when the object changes.
         """
-        if self._temporary:
-             # If the object has no user handle don't bother linking params
-            return
-
         def update_panel(change, history=[(panel, model)]):
             old_panel, old_model = history[0]
 
@@ -292,10 +288,15 @@ class ParamMethodPanel(PanelBase):
         super(ParamMethodPanel, self)._cleanup(model)
 
 
-class DivPanel(PanelBase):
+class DivBasePanel(PanelBase):
+    """
+    Baseclass for Panels which render HTML inside a bokeh div.
+    """
 
     # DivPanel supports updates to the model
     _updates = True
+
+    __abstract = True
 
     def _get_properties(self):
         return {}
@@ -308,11 +309,11 @@ class DivPanel(PanelBase):
         return model
 
     def _update(self, model):
-        div = model.children[0].children[0]
+        div = model if isinstance(model, _BkDiv) else model.children[0].children[0]
         div.update(**self._get_properties())
 
 
-class MatplotlibPanel(DivPanel):
+class MatplotlibPanel(DivBasePanel):
     """
     A MatplotlibPanel renders a matplotlib figure to png and wraps
     the base64 encoded data in a bokeh Div model.
@@ -329,12 +330,12 @@ class MatplotlibPanel(DivPanel):
         b64 = base64.b64encode(data).decode("utf-8")
         src = "data:image/png;base64,{b64}".format(b64=b64)
         width, height = self.object.canvas.get_width_height()
-        return dict(text="<img src='{src}'></img>".format(src=src),
-                    width=width, height=height)
+        html = "<img src='{src}'></img>".format(src=src)
+        return dict(text=html, width=width, height=height)
 
 
 
-class HTMLPanel(DivPanel):
+class HTMLPanel(DivBasePanel):
     """
     HTMLPanel renders any object which has a _repr_html_ method and wraps
     the HTML in a bokeh Div model.
@@ -347,11 +348,11 @@ class HTMLPanel(DivPanel):
         return hasattr(obj, '_repr_html_')
 
     def _get_properties(self):
-        return {'text': self.object._repr_html_()}
+        return dict(text=self.object._repr_html_())
 
 
 
-class GGPlotPanel(DivPanel):
+class GGPlotPanel(DivBasePanel):
     """
     A GGPlotPanel renders a r2py based ggplot to png and wraps
     the base64 encoded data in a bokeh Div model.
