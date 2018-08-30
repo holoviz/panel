@@ -293,7 +293,27 @@ class ParamMethodPanel(PanelBase):
         super(ParamMethodPanel, self)._cleanup(model)
 
 
-class MatplotlibPanel(PanelBase):
+class DivPanel(PanelBase):
+
+    # DivPanel supports updates to the model
+    _updates = True
+
+    def _get_properties(self):
+        return {}
+
+    def _get_model(self, doc, root=None, parent=None, comm=None, rerender=False):
+        model = Div(**self._get_properties())
+        if rerender:
+            return model, None
+        self._link_object(model, doc, root, parent, comm)
+        return model
+
+    def _update(self, model):
+        div = model.children[0].children[0]
+        div.update(**self._get_properties())
+
+
+class MatplotlibPanel(DivPanel):
     """
     A MatplotlibPanel renders a matplotlib figure to png and wraps
     the base64 encoded data in a bokeh Div model.
@@ -303,23 +323,19 @@ class MatplotlibPanel(PanelBase):
     def applies(cls, obj):
         return obj.__class__.__name__ == 'Figure' and hasattr(obj, '_cachedRenderer')
 
-    def _get_model(self, doc, root=None, parent=None, comm=None, rerender=False):
+    def _get_properties(self):
         bytes_io = BytesIO()
         self.object.canvas.print_figure(bytes_io)
         data = bytes_io.getvalue()
         b64 = base64.b64encode(data).decode("utf-8")
         src = "data:image/png;base64,{b64}".format(b64=b64)
         width, height = self.object.canvas.get_width_height()
-        html = "<img src='{src}'></img>".format(src=src)
-        model = Div(text=html, width=width, height=height)
-
-        if rerender:
-            return model, None
-        self._link_object(model, doc, root, parent, comm)
-        return model
+        return dict(text="<img src='{src}'></img>".format(src=src),
+                    width=width, height=height)
 
 
-class HTMLPanel(PanelBase):
+
+class HTMLPanel(DivPanel):
     """
     HTMLPanel renders any object which has a _repr_html_ method and wraps
     the HTML in a bokeh Div model.
@@ -331,16 +347,12 @@ class HTMLPanel(PanelBase):
     def applies(cls, obj):
         return hasattr(obj, '_repr_html_')
 
-    def _get_model(self, doc, root=None, parent=None, comm=None, rerender=False):
-        model = Div(text=self.object._repr_html_())
-
-        if rerender:
-            return model, None
-        self._link_object(model, doc, root, parent, comm)
-        return model
+    def _get_properties(self):
+        return {'text': self.object._repr_html_()}
 
 
-class GGPlotPanel(PanelBase):
+
+class GGPlotPanel(DivPanel):
     """
     A GGPlotPanel renders a r2py based ggplot to png and wraps
     the base64 encoded data in a bokeh Div model.
@@ -356,7 +368,7 @@ class GGPlotPanel(PanelBase):
     def applies(cls, obj):
         return type(obj).__name__ == 'GGPlot' and hasattr(obj, 'r_repr')
 
-    def _get_model(self, doc, root=None, parent=None, comm=None, rerender=False):
+    def _get_properties(self):
         from rpy2.robjects.lib import grdevices
         from rpy2 import robjects
         with grdevices.render_to_bytesio(grdevices.png,
@@ -370,8 +382,4 @@ class GGPlotPanel(PanelBase):
         b64 = base64.b64encode(data).decode("utf-8")
         src = "data:image/png;base64,{b64}".format(b64=b64)
         html = "<img src='{src}'></img>".format(src=src)
-        model = Div(text=html, width=self.width, height=self.height)
-        if rerender:
-            return model, None
-        self._link_object(model, doc, root, parent, comm)
-        return model
+        return dict(text=html, width=self.width, height=self.height)
