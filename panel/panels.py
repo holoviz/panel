@@ -290,7 +290,9 @@ class ParamMethodPanel(PanelBase):
 
 class DivBasePanel(PanelBase):
     """
-    Baseclass for Panels which render HTML inside a bokeh div.
+    Baseclass for Panels which render HTML inside a Bokeh Div.
+    See the documentation for Bokeh Div for more detail about
+    the supported options like style and sizing_mode.
     """
 
     # DivPanel supports updates to the model
@@ -298,8 +300,20 @@ class DivBasePanel(PanelBase):
 
     __abstract = True
 
+    height = param.Integer(default=None, bounds=(0, None))
+
+    width = param.Integer(default=None, bounds=(0, None))
+
+    sizing_mode = param.ObjectSelector(default=None,
+        objects=["fixed", "scale_width", "scale_height", "scale_both", "stretch_both"], 
+        doc="How the item being displayed should size itself.")
+                                       
+    style = param.Parameter(default=None, doc="""
+        Raw CSS style declaration for this Div.""")
+
     def _get_properties(self):
-        return {}
+        return {p : getattr(self,p) for p in ["width", "height", "sizing_mode", "style"]
+                if getattr(self,p) is not None}
 
     def _get_model(self, doc, root=None, parent=None, comm=None, rerender=False):
         model = Div(**self._get_properties())
@@ -331,8 +345,12 @@ class MatplotlibPanel(DivBasePanel):
         src = "data:image/png;base64,{b64}".format(b64=b64)
         width, height = self.object.canvas.get_width_height()
         html = "<img src='{src}'></img>".format(src=src)
-        return dict(text=html, width=width, height=height)
-
+        
+        p = super(MatplotlibPanel,self)._get_properties()
+        if self.width  is None: p["width"]  = width
+        if self.height is None: p["height"] = height
+        p["text"]=html
+        return p
 
 
 class HTMLPanel(DivBasePanel):
@@ -344,32 +362,26 @@ class HTMLPanel(DivBasePanel):
 
     precedence = 1
 
-    height = param.Integer(default=None, bounds=(0, None))
-
-    width = param.Integer(default=None, bounds=(0, None))
-
     @classmethod
     def applies(cls, obj):
         return hasattr(obj, '_repr_html_')
 
     def _get_properties(self):
-        p = dict(text=self.object._repr_html_())
-        if self.width  is not None: p["width"] =self.width
-        if self.height is not None: p["height"]=self.height
-        return p
+        return dict(text=self.object._repr_html_(),
+                    **super(HTMLPanel,self)._get_properties())
 
 
-class GGPlotPanel(DivBasePanel):
+class RGGPlotPanel(DivBasePanel):
     """
-    A GGPlotPanel renders a r2py based ggplot to png and wraps
-    the base64 encoded data in a bokeh Div model.
+    An RGGPlotPanel renders an r2py-based ggplot2 figure to png
+    and wraps the base64-encoded data in a bokeh Div model.
     """
 
-    height = param.Integer(default=400, bounds=(0, None))
+    height = param.Integer(default=400)
 
-    width = param.Integer(default=400, bounds=(0, None))
+    width = param.Integer(default=400)
 
-    dpi = param.Integer(default=72, bounds=(1, None))
+    dpi = param.Integer(default=144, bounds=(1, None))
 
     @classmethod
     def applies(cls, obj):
@@ -389,4 +401,4 @@ class GGPlotPanel(DivBasePanel):
         b64 = base64.b64encode(data).decode("utf-8")
         src = "data:image/png;base64,{b64}".format(b64=b64)
         html = "<img src='{src}'></img>".format(src=src)
-        return dict(text=html, width=self.width, height=self.height)
+        return dict(text=html, **super(RGGPlotPanel,self)._get_properties())
