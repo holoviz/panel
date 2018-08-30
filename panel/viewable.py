@@ -59,9 +59,15 @@ class Viewable(param.Parameterized):
         """
         return self._get_model(doc, comm=comm)
 
-    def _cleanup(self, model):
+    def _cleanup(self, model, final=False):
         """
         Clean up method which is called when a Viewable is destroyed.
+
+        model: bokeh.model.Model
+            Bokeh model for the view being cleaned up
+
+        final: boolean
+            Whether the Panel can be destroyed entirely
         """
 
     def _repr_mimebundle_(self, include=None, exclude=None):
@@ -139,8 +145,10 @@ class Reactive(Viewable):
                 raise AttributeError('Linked object %s has no attribute %s.'
                                      % (obj, other_param))
 
-    def _cleanup(self, model):
-        super(Reactive, self)._cleanup(model)
+    def _cleanup(self, model, final=False):
+        super(Reactive, self)._cleanup(model, final)
+        if model is None:
+            return
         callbacks = self._callbacks[model.ref['id']]
         for p, cb in callbacks.items():
             self.param.unwatch(cb, p)

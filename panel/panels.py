@@ -48,6 +48,9 @@ class PanelBase(Reactive):
     # When multiple Panels apply to an object the precedence is used
     precedence = 0
 
+    # Declares whether Panel supports updates to the bokeh model
+    _updates = False
+
     __abstract = True
 
     @classmethod
@@ -88,10 +91,18 @@ class PanelBase(Reactive):
         root.children = [model]
         return root
 
-    def _cleanup(self, model):
-        super(PanelBase, self)._cleanup(model)
-        if self._temporary:
+    def _cleanup(self, model, final=False):
+        super(PanelBase, self)._cleanup(model, final)
+        if self._temporary or final:
             self.object = None
+
+    def _update(self, model):
+        """
+        If _updates=True this method is used to update an existing bokeh
+        model instead of replacing the model entirely. The supplied model
+        should be updated with the current state.
+        """
+        raise NotImplementedError
 
     def _link_object(self, model, doc, root, parent, comm=None, panel=None):
         """
@@ -103,12 +114,26 @@ class PanelBase(Reactive):
             return
 
         def update_panel(change, history=[(panel, model)]):
-            new_model, new_panel = self._get_model(doc, root, parent, comm, rerender=True)
             old_panel, old_model = history[0]
+
+            # Panel supports model updates
+            if self._updates:
+                def update_models():
+                    self._update(old_model)
+                if comm:
+                    update_models()
+                    push(doc, comm)
+                else:
+                    doc.add_next_tick_callback(update_models)
+                return
+
+            # Otherwise replace the whole model
+            new_model, new_panel = self._get_model(doc, root, parent, comm, rerender=True)
             if old_model is new_model:
                 return
             elif old_panel is not None:
-                old_panel._cleanup(old_model)
+                old_panel._cleanup(old_model, final=True)
+
             def update_models():
                 index = parent.children.index(old_model)
                 parent.children[index] = new_model
@@ -126,8 +151,6 @@ class BokehPanel(PanelBase):
     """
     BokehPanel allows including any bokeh model in a plot directly.
     """
-
-    object = param.Parameter(default=None)
 
     @classmethod
     def applies(cls, obj):
@@ -225,7 +248,22 @@ class ParamMethodPanel(PanelBase):
         for p in params:
             def update_panel(change, history=history):
                 if change.what != 'value': return
+
+                # Try updating existing panel
                 old_panel, old_model = history[0]
+                new_object = self.object()
+                panel_type = self.get_panel_type(new_object)
+                if type(old_panel) is panel_type and panel_type._updates:
+                    if isinstance(new_object, PanelBase):
+                        new_params = {k: v for k, v in new_object.get_param_values()
+                                      if k != 'name'}
+                        old_panel.set_param(**new_params)
+                        new_object._cleanup(None, final=True)
+                    else:
+                        old_panel.object = new_object
+                    return
+
+                # Replace panel entirely
                 old_panel._cleanup(old_model)
                 new_panel = Panel(self.object(), _temporary=True)
                 new_model = new_panel._get_model(doc, root, parent, comm)
@@ -239,6 +277,7 @@ class ParamMethodPanel(PanelBase):
                     push(doc, comm)
                 else:
                     doc.add_next_tick_callback(update_models)
+
             parameterized.param.watch(update_panel, p.name, p.what)
         return model
 
