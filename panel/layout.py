@@ -2,6 +2,7 @@
 Defines Layout classes which may be used to arrange panels and widgets
 in flexible ways to build complex dashboards.
 """
+from __future__ import absolute_import
 
 import param
 

@@ -20,16 +20,11 @@ env:
 stages:
   - test
   - name: conda_dev_package
-    if: tag =~ ^v(\d+|\.)*[a-z]\d*$
-  - name: pip_dev_package
-    if: tag =~ ^v(\d+|\.)*[a-z]\d*$
+    if: tag =~ ^v(\d+|\.)+[a-z]\d+$
   - name: conda_package
-    if: tag =~ ^v(\d+|\.)*[^a-z]\d*$
-  - name: pip_package
-    if: tag =~ ^v(\d+|\.)*[^a-z]\d*$
+    if: tag =~ ^v(\d+|\.)+[^a-z]\d+$ 
   - name: docs
-    ##if: tag =~ ^v(\d+|\.).*$
-
+    if: (branch = master) AND (type != pull_request)
 
 jobs:
   include:
@@ -49,10 +44,7 @@ jobs:
       install:
         - doit env_create $CHANS_DEV --python=$PYENV_VERSION
         - source activate test-environment
-        # TODO: Use released param version
-        - pip install https://github.com/ioam/param/archive/param_mthd_deps_simplified.zip
         - doit develop_install -o recommended -o tests $CHANS_DEV
-        - pip install https://github.com/ioam/param/archive/param_mthd_deps_simplified.zip
         - doit env_capture
       script: doit test_all_recommended
 
@@ -66,30 +58,15 @@ jobs:
 
     ## dev packages
 
-    - &pip_default
-      env: TRAVIS_NOCACHE=$TRAVIS_JOB_ID PYPI=testpypi PYPIUSER=$TPPU PYPIPASS=$TPPP
-      stage: pip_dev_package
-      before_install: pip install pyctdev && doit ecosystem=pip ecosystem_setup
-      install:
-        - unset PYENV_VERSION && pyenv global 3.6 2.7
-        - doit ecosystem=pip package_build $PKG_TEST_PYTHON --test-group=unit --sdist-install-build-deps
-        - doit ecosystem=pip package_build $PKG_TEST_PYTHON --test-group=examples --sdist-install-build-deps
-      script: doit ecosystem=pip package_upload -u $PYPIUSER -p $PYPIPASS --pypi ${PYPI}
-
     - &conda_pkg
       <<: *conda_default
       stage: conda_dev_package
       env: DESC="" TRAVIS_NOCACHE=$TRAVIS_JOB_ID LABELS=$LABELS_DEV CHANS=$CHANS_DEV
       install:
         - doit package_build $CHANS $PKG_TEST_PYTHON --test-group=unit
-        - doit package_test $CHANS $PKG_TEST_PYTHON --test-group=examples --test-requires=examples
       script: doit package_upload --token=$ANACONDA_TOKEN $LABELS
 
     ## release packages
-
-    - <<: *pip_default
-      env: TRAVIS_NOCACHE=$TRAVIS_JOB_ID PYPI=pypi PYPIUSER=$PPU PYPIPASS=$PPP
-      stage: pip_package
 
     - <<: *conda_pkg
       stage: conda_package
@@ -118,9 +95,6 @@ jobs:
           skip_cleanup: true
           github_token: $GITHUB_TOKEN
           local_dir: ./doc/_build/html
-          ## fqdn: panel.pyviz.org
+          fqdn: panel.pyviz.org
           on:
             branch: master
-            ## tags: true
-            ## all_branches: true
-            ## condition: $TRAVIS_TAG =~ [0-9]+[^a-z][0-9]*$
