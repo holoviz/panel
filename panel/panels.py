@@ -2,6 +2,8 @@
 Panels allow wrapping external objects and rendering them as part of
 a dashboard.
 """
+from __future__ import absolute_import
+
 import inspect
 import base64
 from io import BytesIO

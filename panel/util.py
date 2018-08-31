@@ -1,9 +1,12 @@
+from __future__ import absolute_import
+
 import os
 import json
 import sys
 import inspect
 
 import param
+
 import bokeh
 import bokeh.embed.notebook
 from bokeh.io.notebook import load_notebook as bk_load_notebook

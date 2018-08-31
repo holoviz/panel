@@ -4,6 +4,8 @@ to display themselves, communicate with a Python process and react in
 response to changes to parameters and the underlying bokeh models.
 """
 
+from __future__ import absolute_import
+
 from functools import partial
 from collections import defaultdict
 
