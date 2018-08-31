@@ -10,7 +10,8 @@ from bokeh.models import WidgetBox as _BkWidgetBox
 from bokeh.models.widgets import (
     TextInput as _BkTextInput, Select as _BkSelect, Slider, CheckboxGroup,
     DateRangeSlider as _BkDateRangeSlider, RangeSlider as _BkRangeSlider,
-    DatePicker as _BkDatePicker, MultiSelect as _BkMultiSelect, Div as _BkDiv
+    DatePicker as _BkDatePicker, MultiSelect as _BkMultiSelect,
+    Div as _BkDiv, Button as _BkButton, Toggle as _BkToggle
 )
 
 from .layout import WidgetBox # noqa
@@ -33,7 +34,6 @@ class Widget(Reactive):
 
     _widget_type = None
 
-
     def __init__(self, **params):
         if 'name' not in params:
             params['name'] = ''
@@ -52,7 +52,6 @@ class Widget(Reactive):
         if not in_box:
             parent = _BkWidgetBox()
         root = parent if root is None else root
-
         model = self._widget_type(**self._init_properties())
 
         # Link parameters and bokeh model
@@ -65,7 +64,6 @@ class Widget(Reactive):
             parent.children = [model]
             return parent
         return model
-
 
 
 class TextInput(Widget):
@@ -281,3 +279,29 @@ class MultiSelect(Select):
         if 'value' in msg:
             msg['value'] = [mapping[v] for v in msg['value']]
         return msg
+
+
+class _ButtonBase(Widget):
+
+    button_type = param.ObjectSelector(default='default', objects=[
+        'default', 'primary', 'success', 'info', 'danger'])
+
+    disabled = param.Boolean(default=False, doc="""
+       Whether the button is togglable.""")
+
+    _renames = {'title': 'label'}
+
+
+class Button(_ButtonBase):
+
+    clicks = param.Integer(default=0)
+
+    _widget_type = _BkButton
+
+
+class Toggle(_ButtonBase):
+
+    active = param.Boolean(default=False, doc="""
+        Whether the button is currently toggled.""")
+
+    _widget_type = _BkToggle

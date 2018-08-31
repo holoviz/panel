@@ -161,7 +161,7 @@ class Reactive(Viewable):
         _renames class level attribute to map between parameter and
         property names.
         """
-        inverted = {v: k for k, v in self._renames}
+        inverted = {v: k for k, v in self._renames.items()}
         return {inverted.get(k, k): v for k, v in msg.items()}
 
     def _process_param_change(self, msg):
