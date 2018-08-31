@@ -1,0 +1,6 @@
+[build-system]
+requires = [
+    "param >=1.7.0",
+    "pyct >=0.4.4",
+    "setuptools >=30.3.0"
+]

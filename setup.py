@@ -27,12 +27,11 @@ def get_setup_version(reponame):
 
 install_requires = [
     'bokeh >=0.12.15',
-    'param >=1.6.1',
     'pyviz_comms'
 ]
 
 _recommended = [
-    'param >=1.6.1',
+    'param >=1.8.0a0',
     'notebook >=5.4'
 ]
 
@@ -46,7 +45,6 @@ extras_require = {
         'nbsmoke >=0.2.0'
     ],
     'recommended': _recommended,
-    'examples_extra': _recommended,
     'doc': _recommended + [
         'nbsite',
         'sphinx_ioam_theme'
@@ -58,8 +56,9 @@ extras_require['all'] = sorted(set(sum(extras_require.values(), [])))
 # until pyproject.toml/equivalent is widely supported (setup_requires
 # doesn't work well with pip)
 extras_require['build'] = [
-    'param >=1.6.1',
-    'setuptools' # should make this pip now
+    'param >=1.7.0'
+    'pyct >=0.4.4',
+    'setuptools >=30.3.0'
 ]
 
 setup_args = dict(
