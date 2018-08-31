@@ -20,16 +20,14 @@ env:
 stages:
   - test
   - name: conda_dev_package
-    if: tag =~ ^v(\d+|\.)*[a-z]\d*$
+    if: tag =~ ^v(\d+|\.)+[a-z]\d+$
   - name: pip_dev_package
-    if: tag =~ ^v(\d+|\.)*[a-z]\d*$
+    if: tag =~ ^v(\d+|\.)+[a-z]\d+$
   - name: conda_package
-    if: tag =~ ^v(\d+|\.)*[^a-z]\d*$
+    if: tag =~ ^v(\d+|\.)+[^a-z]\d+$ 
   - name: pip_package
-    if: tag =~ ^v(\d+|\.)*[^a-z]\d*$
+    if: tag =~ ^v(\d+|\.)+[^a-z]\d+$
   - name: docs
-    ##if: tag =~ ^v(\d+|\.).*$
-
 
 jobs:
   include:
@@ -49,10 +47,7 @@ jobs:
       install:
         - doit env_create $CHANS_DEV --python=$PYENV_VERSION
         - source activate test-environment
-        # TODO: Use released param version
-        - pip install https://github.com/ioam/param/archive/param_mthd_deps_simplified.zip
         - doit develop_install -o recommended -o tests $CHANS_DEV
-        - pip install https://github.com/ioam/param/archive/param_mthd_deps_simplified.zip
         - doit env_capture
       script: doit test_all_recommended
 
@@ -82,7 +77,7 @@ jobs:
       env: DESC="" TRAVIS_NOCACHE=$TRAVIS_JOB_ID LABELS=$LABELS_DEV CHANS=$CHANS_DEV
       install:
         - doit package_build $CHANS $PKG_TEST_PYTHON --test-group=unit
-        - doit package_test $CHANS $PKG_TEST_PYTHON --test-group=examples --test-requires=examples
+        - doit package_test $CHANS $PKG_TEST_PYTHON --test-group=examples --test-requires=recommended
       script: doit package_upload --token=$ANACONDA_TOKEN $LABELS
 
     ## release packages
@@ -118,9 +113,6 @@ jobs:
           skip_cleanup: true
           github_token: $GITHUB_TOKEN
           local_dir: ./doc/_build/html
-          ## fqdn: panel.pyviz.org
+          fqdn: panel.pyviz.org
           on:
             branch: master
-            ## tags: true
-            ## all_branches: true
-            ## condition: $TRAVIS_TAG =~ [0-9]+[^a-z][0-9]*$
