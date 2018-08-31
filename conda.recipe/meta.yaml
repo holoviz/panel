@@ -9,12 +9,7 @@ source:
 
 build:
   noarch: python
-  number: 1
   script: python setup.py --quiet install --single-version-externally-managed --record record.txt
-
-extra:
-  channels:
-    - pyviz
 
 requirements:
   build:
