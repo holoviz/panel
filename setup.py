@@ -27,11 +27,11 @@ def get_setup_version(reponame):
 
 install_requires = [
     'bokeh >=0.12.15',
-    'pyviz_comms'
+    'pyviz_comms',
+    'param >=1.8.0a0',
 ]
 
 _recommended = [
-    'param >=1.8.0a0',
     'notebook >=5.4'
 ]
 
