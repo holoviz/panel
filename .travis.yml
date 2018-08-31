@@ -21,12 +21,8 @@ stages:
   - test
   - name: conda_dev_package
     if: tag =~ ^v(\d+|\.)+[a-z]\d+$
-  - name: pip_dev_package
-    if: tag =~ ^v(\d+|\.)+[a-z]\d+$
   - name: conda_package
     if: tag =~ ^v(\d+|\.)+[^a-z]\d+$ 
-  - name: pip_package
-    if: tag =~ ^v(\d+|\.)+[^a-z]\d+$
   - name: docs
     if: (branch = master) AND (type != pull_request)
 
@@ -62,15 +58,6 @@ jobs:
 
     ## dev packages
 
-    - &pip_default
-      env: TRAVIS_NOCACHE=$TRAVIS_JOB_ID PYPI=testpypi PYPIUSER=$TPPU PYPIPASS=$TPPP
-      stage: pip_dev_package
-      before_install: pip install pyctdev && doit ecosystem=pip ecosystem_setup
-      install:
-        - unset PYENV_VERSION && pyenv global 3.6 2.7
-        - doit ecosystem=pip package_build $PKG_TEST_PYTHON --test-group=unit --sdist-install-build-deps
-      script: doit ecosystem=pip package_upload -u $PYPIUSER -p $PYPIPASS --pypi ${PYPI}
-
     - &conda_pkg
       <<: *conda_default
       stage: conda_dev_package
@@ -80,10 +67,6 @@ jobs:
       script: doit package_upload --token=$ANACONDA_TOKEN $LABELS
 
     ## release packages
-
-    - <<: *pip_default
-      env: TRAVIS_NOCACHE=$TRAVIS_JOB_ID PYPI=pypi PYPIUSER=$PPU PYPIPASS=$PPP
-      stage: pip_package
 
     - <<: *conda_pkg
       stage: conda_package
