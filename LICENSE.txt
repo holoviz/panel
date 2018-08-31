@@ -1,4 +1,4 @@
-Copyright (c) 2005-2018, IOAM (ioam.github.com)
+Copyright (c) 2018, PyViz contributors (pyviz.org)
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -13,7 +13,7 @@ met:
    documentation and/or other materials provided with the
    distribution.
 
- * Neither the name of IOAM nor the names of its contributors
+ * Neither the name of PyViz nor the names of its contributors
    may be used to endorse or promote products derived from this
    software without specific prior written permission.
 
