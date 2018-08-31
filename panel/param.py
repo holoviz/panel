@@ -17,7 +17,7 @@ from .layout import WidgetBox
 from .util import default_label_formatter
 from .widgets import (
     LiteralInput, Select, Checkbox, FloatSlider, IntSlider, RangeSlider,
-    MultiSelect, DatePicker, StaticText
+    MultiSelect, DatePicker, StaticText, Button
 )
 
 
@@ -52,6 +52,7 @@ class ParamPanel(PanelBase):
     precedence = 1
 
     _mapping = {
+        param.Action:        Button,
         param.Parameter:     LiteralInput,
         param.Dict:          LiteralInput,
         param.Selector:      Select,
@@ -99,14 +100,19 @@ class ParamPanel(PanelBase):
             else:
                 widget_class = StaticText
 
-        widget = widget_class(**kw)
-        widget.link(self.object, **{'value': p_name})
-        def link(change, _updating=[]):
-            if change.attribute not in _updating:
-                _updating.append(change.attribute)
-                setattr(widget, 'value', change.new)
-                _updating.pop(_updating.index(change.attribute))
-        self.object.param.watch(link, p_name)
+        widget = widget_class(**{k: v for k, v in kw.items() if k in widget_class.params()})
+        if isinstance(p_obj, param.Action):
+            def action(change):
+                value(self.object)
+            widget.param.watch(action, 'clicks')
+        else:
+            widget.link(self.object, **{'value': p_name})
+            def link(change, _updating=[]):
+                if change.attribute not in _updating:
+                    _updating.append(change.attribute)
+                    setattr(widget, 'value', change.new)
+                    _updating.pop(_updating.index(change.attribute))
+            self.object.param.watch(link, p_name)
         return widget
 
     def _get_widgets(self):
