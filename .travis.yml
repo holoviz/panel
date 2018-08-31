@@ -69,7 +69,6 @@ jobs:
       install:
         - unset PYENV_VERSION && pyenv global 3.6 2.7
         - doit ecosystem=pip package_build $PKG_TEST_PYTHON --test-group=unit --sdist-install-build-deps
-        - doit ecosystem=pip package_build $PKG_TEST_PYTHON --test-group=examples --sdist-install-build-deps
       script: doit ecosystem=pip package_upload -u $PYPIUSER -p $PYPIPASS --pypi ${PYPI}
 
     - &conda_pkg
@@ -78,7 +77,6 @@ jobs:
       env: DESC="" TRAVIS_NOCACHE=$TRAVIS_JOB_ID LABELS=$LABELS_DEV CHANS=$CHANS_DEV
       install:
         - doit package_build $CHANS $PKG_TEST_PYTHON --test-group=unit
-        - doit package_test $CHANS $PKG_TEST_PYTHON --test-group=examples --test-requires=recommended
       script: doit package_upload --token=$ANACONDA_TOKEN $LABELS
 
     ## release packages
