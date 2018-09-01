@@ -1,11 +1,12 @@
 from bokeh.layouts import WidgetBox
 from bokeh.models import (
     TextInput as BkTextInput, Div, Slider, RangeSlider as BkRangeSlider,
-    CheckboxGroup, Select as BkSelect, MultiSelect as BkMultiSelect
+    CheckboxGroup, Select as BkSelect, MultiSelect as BkMultiSelect,
+    Button as BkButton, Toggle as BkToggle
 )
 from panel.widgets import (
     TextInput, StaticText, FloatSlider, IntSlider, RangeSlider,
-    LiteralInput, Checkbox, Select, MultiSelect
+    LiteralInput, Checkbox, Select, MultiSelect, Button, Toggle
 )
 
 
@@ -215,3 +216,40 @@ def test_multi_select(document, comm):
 
     select.value = [object, 'A']
     assert widget.value == ['C', 'A']
+
+
+def test_button(document, comm):
+    button = Button(name='Button')
+
+    box = button._get_model(document, comm=comm)
+
+    assert isinstance(box, WidgetBox)
+
+    widget = box.children[0]
+    assert isinstance(widget, BkButton)
+    assert widget.clicks == 0
+    assert widget.label == 'Button'
+
+    widget.clicks = 1
+    button._comm_change({'clicks': 1})
+    assert button.clicks == 1
+
+
+def test_toggle(document, comm):
+    toggle = Toggle(name='Toggle', active=True)
+
+    box = toggle._get_model(document, comm=comm)
+
+    assert isinstance(box, WidgetBox)
+
+    widget = box.children[0]
+    assert isinstance(widget, BkToggle)
+    assert widget.active == True
+    assert widget.label == 'Toggle'
+
+    widget.active = False
+    toggle._comm_change({'active': False})
+    assert toggle.active == False
+
+    toggle.active = True
+    assert widget.active == True

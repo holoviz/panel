@@ -293,7 +293,7 @@ class _ButtonBase(Widget):
     button_type = param.ObjectSelector(default='default', objects=[
         'default', 'primary', 'success', 'info', 'danger'])
 
-    _rename = {'title': 'label'}
+    _rename = {'name': 'label'}
 
 
 class Button(_ButtonBase):
