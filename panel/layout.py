@@ -123,6 +123,30 @@ class WidgetBox(Layout):
 
     _bokeh_model = BkWidgetBox
 
+    def _get_panels(self, model, old_panels, doc, root, comm=None):
+        """
+        Returns new child models for the layout while reusing unchanged
+        models and cleaning up any dropped panels.
+        """
+        old_children = getattr(model, self._rename.get('panels', 'panels'))
+        new_models = []
+        for i, panel in enumerate(self.panels):
+            panel = Panel(panel)
+            self.panels[i] = panel
+            if panel in old_panels:
+                child = old_children[old_panels.index(panel)]
+            else:
+                child = panel._get_model(doc, root, model, comm)
+            if isinstance(child, BkWidgetBox):
+                new_models += child.children
+            else:
+                new_models.append(child)
+
+        for panel, old_child in zip(old_panels, old_children):
+            if old_child not in new_models:
+                panel._cleanup(old_child)
+        return new_models
+
 
 class Tabs(Layout):
     """
