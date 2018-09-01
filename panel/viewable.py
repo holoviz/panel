@@ -14,7 +14,6 @@ import param
 from bokeh.document import Document
 from bokeh.io import curdoc, show
 from bokeh.models import CustomJS
-from bokeh.server.server import Server
 from pyviz_comms import JS_CALLBACK, CommManager, JupyterCommManager
 
 from .util import render_mimebundle, add_to_doc, push
