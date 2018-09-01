@@ -71,16 +71,16 @@ class ParamPanel(PanelBase):
     def widget_type(cls, pobj):
         for t in classlist(type(pobj))[::-1]:
             if t in cls._mapping:
-                return cls._mapping[t], {'disabled': pobj.constant}
+                return cls._mapping[t]
 
     def widget(self, p_name):
         """Get widget for param_name"""
         p_obj = self.object.params(p_name)
 
-        widget_class, kwargs = self.widget_type(p_obj)
+        widget_class = self.widget_type(p_obj)
         value = getattr(self.object, p_name)
 
-        kw = dict(value=value)
+        kw = dict(value=value, disabled=p_obj.constant)
 
         if self.label_formatter is not None:
             kw['name'] = self.label_formatter(p_name)
@@ -97,7 +97,7 @@ class ParamPanel(PanelBase):
             else:
                 widget_class = StaticText
 
-        kwargs.update({k: v for k, v in kw.items() if k in widget_class.params()})
+        kwargs = {k: v for k, v in kw.items() if k in widget_class.params()}
         widget = widget_class(**kwargs)
         if isinstance(p_obj, param.Action):
             def action(change):
