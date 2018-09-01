@@ -108,13 +108,25 @@ class ParamPanel(PanelBase):
             def link(change, _updating=[]):
                 if change.attribute not in _updating:
                     _updating.append(change.attribute)
+                    updates = {}
                     if change.what == 'constant':
-                        setattr(widget, 'disabled', change.new)
+                        updates['disabled'] = change.new
+                    elif change.what == 'objects':
+                        updates['options'] = p_obj.get_range()
+                    elif change.what == 'bounds':
+                        start, end = p_obj.get_soft_bounds()
+                        updates['start'] = start
+                        updates['end'] = end
                     else:
-                        setattr(widget, 'value', change.new)
+                        updates['value'] = change.new
+                    widget.set_param(**updates)
                     _updating.pop(_updating.index(change.attribute))
             self.object.param.watch(link, p_name, 'constant')
             self.object.param.watch(link, p_name)
+            if hasattr(p_obj, 'get_range'):
+                self.object.param.watch(link, p_name, 'objects')
+            if hasattr(p_obj, 'get_soft_bounds'):
+                self.object.param.watch(link, p_name, 'bounds')
         return widget
 
     def _get_widgets(self):
