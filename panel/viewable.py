@@ -75,7 +75,7 @@ class Viewable(param.Parameterized):
         """
 
     def _repr_mimebundle_(self, include=None, exclude=None):
-        self._comm_manager = JupyterCommManager
+        Viewable._comm_manager = JupyterCommManager
         doc = Document()
         comm = self._comm_manager.get_server_comm()
         model = self._get_root(doc, comm)
