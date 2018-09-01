@@ -69,17 +69,15 @@ class ParamPanel(PanelBase):
         return isinstance(obj, param.Parameterized)
 
     def widget_type(cls, pobj):
-        if pobj.constant: # Ensure constant parameters cannot be edited
-            return StaticText
         for t in classlist(type(pobj))[::-1]:
             if t in cls._mapping:
-                return cls._mapping[t]
+                return cls._mapping[t], {'disabled': pobj.constant}
 
     def widget(self, p_name):
         """Get widget for param_name"""
         p_obj = self.object.params(p_name)
 
-        widget_class = self.widget_type(p_obj)
+        widget_class, kwargs = self.widget_type(p_obj)
         value = getattr(self.object, p_name)
 
         kw = dict(value=value)
@@ -99,7 +97,8 @@ class ParamPanel(PanelBase):
             else:
                 widget_class = StaticText
 
-        widget = widget_class(**{k: v for k, v in kw.items() if k in widget_class.params()})
+        kwargs.update({k: v for k, v in kw.items() if k in widget_class.params()})
+        widget = widget_class(**kwargs)
         if isinstance(p_obj, param.Action):
             def action(change):
                 value(self.object)
@@ -109,8 +108,12 @@ class ParamPanel(PanelBase):
             def link(change, _updating=[]):
                 if change.attribute not in _updating:
                     _updating.append(change.attribute)
-                    setattr(widget, 'value', change.new)
+                    if change.what == 'constant':
+                        setattr(widget, 'disabled', change.new)
+                    else:
+                        setattr(widget, 'value', change.new)
                     _updating.pop(_updating.index(change.attribute))
+            self.object.param.watch(link, p_name, 'constant')
             self.object.param.watch(link, p_name)
         return widget
 
