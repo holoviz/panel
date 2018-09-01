@@ -297,6 +297,7 @@ class Select(Widget):
         msg = super(Select, self)._process_property_change(msg)
         if 'value' in msg:
             msg['value'] = self.options[msg['value']]
+        msg.pop('options', None)
         return msg
 
 
@@ -319,6 +320,7 @@ class MultiSelect(Select):
         msg = super(Select, self)._process_property_change(msg)
         if 'value' in msg:
             msg['value'] = [self.options[v] for v in msg['value']]
+        msg.pop('options', None)
         return msg
 
 

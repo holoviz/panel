@@ -127,6 +127,7 @@ class Reactive(Viewable):
         super(Reactive, self).__init__(**params)
         self._active = []
         self._events = {}
+        self._expecting = []
 
     def link(self, obj, **links):
         """
@@ -144,6 +145,7 @@ class Reactive(Viewable):
                 _updating.append(change.attribute)
                 setattr(obj, links[change.attribute], change.new)
                 _updating.pop(_updating.index(change.attribute))
+
         for p, other_param in links.items():
             self.param.watch(link, p)
             if not hasattr(obj, other_param):
@@ -188,6 +190,7 @@ class Reactive(Viewable):
             def update_model():
                 model.update(**msg)
             if comm:
+                self._expecting += list(msg)
                 update_model()
                 push(doc, comm)
             else:
@@ -208,7 +211,11 @@ class Reactive(Viewable):
                 model.js_on_change(p, customjs)
 
     def _comm_change(self, msg):
-        self._events.update(msg)
+        filtered = {k: v for k, v in msg.items() if k not in self._expecting}
+        self._expecting = [m for m in self._expecting if m not in msg]
+        if not filtered:
+            return
+        self._events.update(filtered)
         self._active = list(self._events)
         self._change_event()
 
