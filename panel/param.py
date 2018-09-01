@@ -90,8 +90,7 @@ class ParamPanel(PanelBase):
             kw['name'] = p_name
 
         if hasattr(p_obj, 'get_range') and not isinstance(kw['value'], dict):
-            options = p_obj.get_range().values()
-            kw['options'] = list(options)
+            kw['options'] = p_obj.get_range()
 
         if hasattr(p_obj, 'get_soft_bounds'):
             bounds = p_obj.get_soft_bounds()

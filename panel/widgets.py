@@ -80,7 +80,7 @@ class TextInput(Widget):
 
 class StaticText(Widget):
 
-    value = param.String(default=None)
+    value = param.Parameter(default=None)
 
     _widget_type = _BkDiv
 
