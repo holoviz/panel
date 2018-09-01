@@ -5,6 +5,7 @@ communication between the rendered dashboard and the Widget parameters.
 from __future__ import absolute_import
 
 import ast
+from datetime import datetime
 from collections import OrderedDict
 
 import param
@@ -19,7 +20,7 @@ from bokeh.models.widgets import (
 
 from .layout import WidgetBox # noqa
 from .viewable import Reactive
-from .util import as_unicode, push
+from .util import as_unicode, push, value_as_datetime
 
 
 class Widget(Reactive):
@@ -148,6 +149,12 @@ class DatePicker(Widget):
 
     _rename = {'start': 'min_date', 'end': 'max_date'}
 
+    def _process_property_change(self, msg):
+        msg = super(DatePicker, self)._process_property_change(msg)
+        if 'value' in msg:
+            msg['value'] = datetime.strptime(msg['value'][4:], '%b %d %Y')
+        return msg
+
 
 class RangeSlider(Widget):
 
@@ -162,7 +169,7 @@ class RangeSlider(Widget):
     _widget_type = _BkRangeSlider
 
     def _process_property_change(self, msg):
-        msg = super(RangeSlider, self)._process_param_change(msg)
+        msg = super(RangeSlider, self)._process_property_change(msg)
         if 'value' in msg:
             msg['value'] = tuple(msg['value'])
         return msg
@@ -179,6 +186,13 @@ class DateRangeSlider(Widget):
     step = param.Number(default=1)
 
     _widget_type = _BkDateRangeSlider
+
+    def _process_property_change(self, msg):
+        msg = super(DateRangeSlider, self)._process_property_change(msg)
+        if 'value' in msg:
+            v1, v2 = msg['value']
+            msg['value'] = (value_as_datetime(v1), value_as_datetime(v2))
+        return msg
 
 
 class _ButtonBase(Widget):
