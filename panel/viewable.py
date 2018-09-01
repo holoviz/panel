@@ -14,7 +14,8 @@ import param
 from bokeh.document import Document
 from bokeh.io import curdoc, show
 from bokeh.models import CustomJS
-from pyviz_comms import JS_CALLBACK, JupyterCommManager
+from bokeh.server.server import Server
+from pyviz_comms import JS_CALLBACK, CommManager, JupyterCommManager
 
 from .util import render_mimebundle, add_to_doc, push
 
@@ -30,6 +31,8 @@ class Viewable(param.Parameterized):
     """
 
     __abstract = True
+
+    _comm_manager = CommManager
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         """
@@ -73,8 +76,9 @@ class Viewable(param.Parameterized):
         """
 
     def _repr_mimebundle_(self, include=None, exclude=None):
+        self._comm_manager = JupyterCommManager
         doc = Document()
-        comm = JupyterCommManager.get_server_comm()
+        comm = self._comm_manager.get_server_comm()
         model = self._get_root(doc, comm)
         return render_mimebundle(model, doc, comm)
 
@@ -116,13 +120,13 @@ class Reactive(Viewable):
     _debounce = 50
 
     # Mapping from parameter name to bokeh model property name
-    _renames = {}
+    _rename = {}
 
     _callbacks = defaultdict(dict)
 
     def __init__(self, **params):
         super(Reactive, self).__init__(**params)
-        self._active = False
+        self._active = []
         self._events = {}
 
     def link(self, obj, **links):
@@ -151,7 +155,7 @@ class Reactive(Viewable):
         super(Reactive, self)._cleanup(model, final)
         if model is None:
             return
-        callbacks = self._callbacks[model.ref['id']]
+        callbacks = self._callbacks.pop(model.ref['id'])
         for p, cb in callbacks.items():
             self.param.unwatch(cb, p)
 
@@ -160,10 +164,10 @@ class Reactive(Viewable):
         Transform bokeh model property changes into parameter updates.
         Should be overridden to provide appropriate mapping between
         parameter value and bokeh model change. By default uses the
-        _renames class level attribute to map between parameter and
+        _rename class level attribute to map between parameter and
         property names.
         """
-        inverted = {v: k for k, v in self._renames.items()}
+        inverted = {v: k for k, v in self._rename.items()}
         return {inverted.get(k, k): v for k, v in msg.items()}
 
     def _process_param_change(self, msg):
@@ -171,49 +175,54 @@ class Reactive(Viewable):
         Transform parameter changes into bokeh model property updates.
         Should be overridden to provide appropriate mapping between
         parameter value and bokeh model change. By default uses the
-        _renames class level attribute to map between parameter and
+        _rename class level attribute to map between parameter and
         property names.
         """
-        return {self._renames.get(k, k): v for k, v in msg.items()}
+        return {self._rename.get(k, k): v for k, v in msg.items()}
 
     def _link_params(self, model, params, doc, root, comm=None):
+        def param_change(change):
+            msg = self._process_param_change({change.attribute: change.new})
+            msg = {k: v for k, v in msg.items() if k not in self._active}
+            if not msg: return
+
+            def update_model():
+                model.update(**msg)
+            if comm:
+                update_model()
+                push(doc, comm)
+            else:
+                doc.add_next_tick_callback(update_model)
+
         for p in params:
-            def set_value(change, parameter=p):
-                msg = self._process_param_change({parameter: change.new})
-                def update_model():
-                    model.update(**msg)
-                if comm:
-                    update_model()
-                    push(doc, comm)
-                else:
-                    doc.add_next_tick_callback(update_model)
-            self.param.watch(set_value, p)
-            self._callbacks[model.ref['id']][p] = set_value
+            self.param.watch(param_change, p)
+            self._callbacks[model.ref['id']][p] = param_change
 
     def _link_props(self, model, properties, doc, root, comm=None):
         if comm is None:
             for p in properties:
                 model.on_change(p, partial(self._server_change, doc))
         else:
-            client_comm = JupyterCommManager.get_client_comm(on_msg=self._comm_change)
+            client_comm = self._comm_manager.get_client_comm(on_msg=self._comm_change)
             for p in properties:
                 customjs = self._get_customjs(p, client_comm, root.ref['id'])
                 model.js_on_change(p, customjs)
 
     def _comm_change(self, msg):
         self._events.update(msg)
+        self._active = list(self._events)
         self._change_event()
 
     def _server_change(self, doc, attr, old, new):
         self._events.update({attr: new})
         if not self._active:
             doc.add_timeout_callback(self._change_event, self._debounce)
-            self._active = True
+        self._active = list(self._events)
 
     def _change_event(self):
         self.set_param(**self._process_property_change(self._events))
         self._events = {}
-        self._active = False
+        self._active = []
 
     def _get_customjs(self, change, client_comm, plot_id):
         """
