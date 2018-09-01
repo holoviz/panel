@@ -5,6 +5,7 @@ communication between the rendered dashboard and the Widget parameters.
 from __future__ import absolute_import
 
 import ast
+from collections import OrderedDict
 
 import param
 from bokeh.models import WidgetBox as _BkWidgetBox
@@ -20,12 +21,14 @@ from .viewable import Reactive
 from .util import as_unicode
 
 
-
 class Widget(Reactive):
     """
     Widgets allow syncing changes in bokeh widget models with the
     parameters on the Widget instance.
     """
+
+    disabled = param.Boolean(default=False, doc="""
+       Whether the widget is disabled.""")
 
     height = param.Integer(default=None, bounds=(0, None))
 
@@ -35,17 +38,16 @@ class Widget(Reactive):
 
     _widget_type = None
 
+    _rename = {'name': 'title'}
+
     def __init__(self, **params):
         if 'name' not in params:
             params['name'] = ''
         super(Widget, self).__init__(**params)
-        self._active = False
-        self._events = {}
 
     def _init_properties(self):
         properties = {k: v for k, v in self.param.get_param_values()
                       if v is not None}
-        properties['title'] = self.name
         return self._process_param_change(properties)
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
@@ -85,7 +87,7 @@ class StaticText(Widget):
     _format = '<b>{title}</b>: {value}'
 
     def _process_param_change(self, msg):
-        msg.pop('name', None)
+        msg = super(StaticText, self)._process_property_change(msg)
         msg.pop('title', None)
         if 'value' in msg:
             value = msg.pop('value')
@@ -133,7 +135,7 @@ class DatePicker(Widget):
 
     _widget_type = _BkDatePicker
 
-    _renames = {'start': 'min_date', 'end': 'max_date'}
+    _rename = {'start': 'min_date', 'end': 'max_date'}
 
 
 class RangeSlider(Widget):
@@ -149,6 +151,7 @@ class RangeSlider(Widget):
     _widget_type = _BkRangeSlider
 
     def _process_param_change(self, msg):
+        msg = super(RangeSlider, self)._process_param_change(msg)
         if 'value' in msg:
             msg['value'] = tuple(msg['value'])
         return msg
@@ -185,7 +188,8 @@ class LiteralInput(Widget):
         self._state = ''
 
     def _process_property_change(self, msg):
-        if 'title' in msg:
+        msg = super(LiteralInput, self)._process_property_change(msg)
+        if 'name' in msg:
             msg['name'] = msg.pop('title').replace(self._state, '')
         if 'value' in msg:
             value = msg.pop('value')
@@ -194,12 +198,12 @@ class LiteralInput(Widget):
             except:
                 self._state = ' (invalid)'
                 value = self.value
-
-            if self.type and not isinstance(value, self.type):
-                self._state = ' (wrong type)'
-                value = self.value
             else:
-                self._state = ''
+                if self.type and not isinstance(value, self.type):
+                    self._state = ' (wrong type)'
+                    value = self.value
+                else:
+                    self._state = ''
             msg['value'] = value
         return msg
 
@@ -217,18 +221,14 @@ class Checkbox(Widget):
 
     _widget_type = CheckboxGroup
 
-    def _init_properties(self):
-        properties = super(Checkbox, self)._init_properties()
-        properties = self._process_param_change(properties)
-        properties['labels'] = [properties.pop('name')]
-        return properties
-
     def _process_property_change(self, msg):
+        msg = super(Checkbox, self)._process_property_change(msg)
         if 'active' in msg:
             msg['value'] = 0 in msg.pop('active')
         return msg
 
     def _process_param_change(self, msg):
+        msg = super(Checkbox, self)._process_param_change(msg)
         if 'value' in msg:
              msg['active'] = [0] if msg.pop('value', None) else []
         if 'title' in msg:
@@ -238,47 +238,53 @@ class Checkbox(Widget):
 
 class Select(Widget):
 
-    options = param.List(default=[])
+    options = param.Dict(default={})
 
     value = param.Parameter(default=None)
 
     _widget_type = _BkSelect
 
-    def _process_property_change(self, msg):
-        mapping = {as_unicode(o): o for o in self.options}
-        if 'value' in msg:
-            msg['value'] = mapping[msg['value']]
-        return msg
+    def __init__(self, **params):
+        options = params.get('options', None)
+        if isinstance(options, list):
+            params['options'] = OrderedDict([(as_unicode(o), o) for o in options])
+        super(Select, self).__init__(**params)
 
     def _process_param_change(self, msg):
-        mapping = {o: as_unicode(o) for o in self.options}
+        msg = super(Select, self)._process_param_change(msg)
+        mapping = {v: k for k, v in self.options.items()}
         if msg.get('value') is not None:
             msg['value'] = mapping[msg['value']]
         if 'options' in msg:
-            msg['options'] = [mapping[o] for o in msg['options']]
+            msg['options'] = list(msg['options'])
+        return msg
+
+    def _process_property_change(self, msg):
+        msg = super(Select, self)._process_property_change(msg)
+        if 'value' in msg:
+            msg['value'] = self.options[msg['value']]
         return msg
 
 
 class MultiSelect(Select):
-
-    options = param.List(default=[])
 
     value = param.List(default=[])
 
     _widget_type = _BkMultiSelect
 
     def _process_param_change(self, msg):
-        mapping = {o: as_unicode(o) for o in self.options}
+        msg = super(Select, self)._process_param_change(msg)
+        mapping = {v: k for k, v in self.options.items()}
         if 'value' in msg:
             msg['value'] = [mapping[v] for v in msg['value']]
         if 'options' in msg:
-            msg['options'] = [mapping[o] for o in msg['options']]
+            msg['options'] = list(msg['options'])
         return msg
 
     def _process_property_change(self, msg):
-        mapping = {as_unicode(o): o for o in self.options}
+        msg = super(Select, self)._process_property_change(msg)
         if 'value' in msg:
-            msg['value'] = [mapping[v] for v in msg['value']]
+            msg['value'] = [self.options[v] for v in msg['value']]
         return msg
 
 
@@ -287,10 +293,7 @@ class _ButtonBase(Widget):
     button_type = param.ObjectSelector(default='default', objects=[
         'default', 'primary', 'success', 'info', 'danger'])
 
-    disabled = param.Boolean(default=False, doc="""
-       Whether the button is togglable.""")
-
-    _renames = {'title': 'label'}
+    _rename = {'name': 'label'}
 
 
 class Button(_ButtonBase):

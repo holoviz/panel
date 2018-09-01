@@ -26,7 +26,7 @@ class Layout(Reactive):
 
     __abstract = True
 
-    _renames = {'panels': 'children'}
+    _rename = {'panels': 'children'}
 
     def __init__(self, *panels, **params):
         panels = [Panel(panel) for panel in panels]
@@ -59,7 +59,7 @@ class Layout(Reactive):
         Returns new child models for the layout while reusing unchanged
         models and cleaning up any dropped panels.
         """
-        old_children = getattr(model, self._renames.get('panels', 'panels'))
+        old_children = getattr(model, self._rename.get('panels', 'panels'))
         new_models = []
         for i, panel in enumerate(self.panels):
             panel = Panel(panel)
@@ -138,7 +138,7 @@ class Tabs(Layout):
 
     _bokeh_model = BkTabs
 
-    _renames = {'panels': 'tabs'}
+    _rename = {'panels': 'tabs'}
 
     def __init__(self, *items, **params):
         panels = []
@@ -155,7 +155,7 @@ class Tabs(Layout):
         Returns new child models for the layout while reusing unchanged
         models and cleaning up any dropped panels.
         """
-        old_children = getattr(model, self._renames.get('panels', 'panels'))
+        old_children = getattr(model, self._rename.get('panels', 'panels'))
         new_models = []
         for i, panel in enumerate(self.panels):
             if panel in old_panels:
