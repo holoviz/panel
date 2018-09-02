@@ -47,6 +47,7 @@ jobs:
         - doit develop_install -o recommended -o tests $CHANS_DEV
         - doit env_capture
       script: doit test_all_recommended
+      after_success: codecov
 
     # python 2 flake checking typically catches python 2 syntax
     # errors where python 3's been assumed...
