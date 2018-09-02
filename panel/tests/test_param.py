@@ -1,3 +1,4 @@
+import os
 import param
 
 from bokeh.models import (
@@ -6,7 +7,7 @@ from bokeh.models import (
     TextInput as BkTextInput, Tabs as BkTabs, Panel as BkPanel)
 from panel.panels import Panel
 from panel.layout import Tabs
-from panel.param import ParamPanel
+from panel.param import ParamPanel, JSONInit
 
 
 def test_instantiate_from_class():
@@ -249,7 +250,7 @@ def test_object_selector_param(document, comm):
     a_param.objects = [1, 'c', 'd']
     test.a = 'd'
     assert slider.value == '1'
-    assert slider.options == ['c', 'd', '1'] 
+    assert slider.options == ['c', 'd', '1']
     assert slider.disabled == True
 
 
@@ -285,7 +286,7 @@ def test_list_selector_param(document, comm):
     a_param.objects = [1, 'c', 'd']
     test.a = 'd'
     assert slider.value == ['c', '1']
-    assert slider.options == ['c', 'd', '1'] 
+    assert slider.options == ['c', 'd', '1']
     assert slider.disabled == True
 
 
@@ -365,3 +366,32 @@ def test_expand_param_subobject_tabs(document, comm):
     test_panel._widgets['a'].active = False
     assert len(model.tabs) == 1
     assert subpanel._callbacks == {}
+
+
+def test_jsoninit_class_from_env_var():
+    os.environ['PARAM_JSON_INIT'] = '{"a": 1}'
+
+    json_init = JSONInit()
+
+    class Test(param.Parameterized):
+        a = param.Integer()
+
+    json_init(Test)
+
+    assert Test.a == 1
+    del os.environ['PARAM_JSON_INIT']
+
+
+def test_jsoninit_instance_from_env_var():
+    os.environ['PARAM_JSON_INIT'] = '{"a": 2}'
+
+    json_init = JSONInit()
+
+    class Test(param.Parameterized):
+        a = param.Integer()
+
+    test = Test()
+    json_init(test)
+
+    assert test.a == 2
+    del os.environ['PARAM_JSON_INIT']
