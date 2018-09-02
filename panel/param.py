@@ -80,34 +80,43 @@ class ParamPanel(PanelBase):
         self._widgets = self._get_widgets()
         self._widget_box = WidgetBox(*self._widgets.values(), height=self.height,
                                      width=self.width, name=self.name)
-        if self.height is None:
-            panels = [self._widget_box]
-        else:
-            panels = [Row(self._widget_box, Spacer(height=self.height),
-                          name=self.name)]
+        panels = [self._widget_box]
+        if self.height is not None:
+            panels.append(Spacer(height=self.height))
+
         kwargs = {'name': self.name}
         if self.subpanel_layout is Tabs:
             kwargs['width'] = self.width
         self._layout = self.subpanel_layout(*panels, **kwargs)
+        self._link_subpanels()
+
+    def _link_subpanels(self):
         for pname, widget in self._widgets.items():
             if not isinstance(widget, Toggle): continue
+
             def update_panels(change, parameter=pname):
+                "Adds or removes subpanel from layout"
                 parameterized = getattr(self.object, parameter)
-                existing = [p for p in self._layout.panels if isinstance(p, ParamPanel)
+                existing = [p for p in self._layout.panels
+                            if isinstance(p, ParamPanel)
                             and p.object is parameterized]
                 if existing:
                     if not change.new:
                         self._layout.pop(existing[0])
                 elif change.new:
-                    kwargs = {k: v for k, v in self.get_param_values() if k not in ['name', 'object']}
-                    panel = ParamPanel(parameterized, name=parameterized.name, _temporary=True, **kwargs)
+                    kwargs = {k: v for k, v in self.get_param_values()
+                              if k not in ['name', 'object']}
+                    panel = ParamPanel(parameterized, name=parameterized.name,
+                                       _temporary=True, **kwargs)
                     self._layout.append(panel)
+
             widget.param.watch(update_panels, 'active')
             self._callbacks[pname]['active'] = (update_panels, ['value'])
 
     @classmethod
     def applies(cls, obj):
-        return isinstance(obj, param.Parameterized) or issubclass(obj, param.Parameterized)
+        return (isinstance(obj, param.Parameterized) or
+                issubclass(obj, param.Parameterized))
 
     def widget_type(cls, pobj):
         for t in classlist(type(pobj))[::-1]:
