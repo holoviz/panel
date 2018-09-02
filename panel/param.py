@@ -69,6 +69,32 @@ class ParamPanel(PanelBase):
         param.Date:          DatePicker,
     }
 
+    def __init__(self, object, **params):
+        super(ParamPanel, self).__init__(object, **params)
+        self._widgets = self._get_widgets()
+        self._widget_box = WidgetBox(*self._widgets.values(), height=self.height,
+                                     width=self.width)
+        if self.height is None:
+            panels = [self._widget_box]
+        else:
+            panels = [self._widget_box, Panel(Spacer(height=self.height))]
+        self._layout = Row(*panels)
+        for pname, widget in self._widgets.items():
+            if not isinstance(widget, Toggle): continue
+            def update_panels(change, parameter=pname):
+                parameterized = getattr(self.object, parameter)
+                existing = [p for p in self._layout.panels if isinstance(p, ParamPanel)
+                            and p.object is parameterized]
+                if existing:
+                    if not change.new:
+                        self._layout.pop(existing[0])
+                elif change.new:
+                    panel = ParamPanel(parameterized, _temporary=True)
+                    self._layout.append(panel)
+            widget.param.watch(update_panels, 'active')
+            self._callbacks[pname]['active'] = (update_panels, ['value'])
+
+
     @classmethod
     def applies(cls, obj):
         return isinstance(obj, param.Parameterized) or issubclass(obj, param.Parameterized)
@@ -78,7 +104,7 @@ class ParamPanel(PanelBase):
             if t in cls._mapping:
                 return cls._mapping[t]
 
-    def widget(self, p_name, container):
+    def widget(self, p_name):
         """Get widget for param_name"""
         p_obj = self.object.params(p_name)
 
@@ -145,20 +171,26 @@ class ParamPanel(PanelBase):
             if hasattr(p_obj, 'get_soft_bounds'):
                 self.object.param.watch(link, p_name, 'bounds')
                 what.append('bounds')
-            self._callbacks[container.ref['id']][p_name] = (link, what)
+            self._callbacks['object'][p_name] = (link, what)
         return widget
 
     def _cleanup(self, model, final=False):
         if model is None:
             return
-        callbacks = self._callbacks.pop(model.ref['id'], {})
-        for p, (cb, what) in callbacks.items():
-            for w in what:
-                self.object.param.unwatch(cb, p, w)
         if self._temporary or final:
+            if self.object is not None:
+                for obj, callbacks in self._callbacks.items():
+                    for p, (cb, what) in callbacks.items():
+                        for w in what:
+                            if obj == 'object':
+                                self.object.param.unwatch(cb, p, w)
+                            else:
+                                self._widgets[obj].param.unwatch(cb, p, w)
+                self._callbacks.clear()
+            self._layout._cleanup(model)
             self.object = None
 
-    def _get_widgets(self, container):
+    def _get_widgets(self):
         """Return name,widget boxes for all parameters (i.e., a property sheet)"""
         params = self.object.params().items()
         key_fn = lambda x: x[1].precedence if x[1].precedence is not None else self.default_precedence
@@ -171,31 +203,12 @@ class ParamPanel(PanelBase):
 
         # Format name specially
         ordered_params.pop(ordered_params.index('name'))
-        widgets = [('name', Panel(Div(text='<b>{0}</b>'.format(self.object.name))))]
-        widgets += [(pname, self.widget(pname, container)) for pname in ordered_params]
+        widgets = [('name', StaticText(value='<b>{0}</b>'.format(self.object.name)))]
+        widgets += [(pname, self.widget(pname)) for pname in ordered_params]
         return OrderedDict(widgets)
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        row = Row()
-        model = row._get_model(doc, root, parent, comm)
-        widgets = self._get_widgets(model)
-        box = WidgetBox(*widgets.values(), height=self.height, width=self.width)
-        row.panels = [box] if self.height is None else [box, Spacer(height=self.height)]
-
-        for pname, widget in widgets.items():
-            if not isinstance(widget, Toggle): continue
-            def update_panels(change, parameter=pname):
-                parameterized = getattr(self.object, parameter)
-                if change.new:
-                    panel = ParamPanel(parameterized, _temporary=True)
-                    row.append(panel)
-                else:
-                    panel = [p for p in row.panels if isinstance(p, ParamPanel)
-                             and p.object is parameterized][0]
-                    row.pop(panel)
-            widget.param.watch(update_panels, 'active')
-
-        return model
+        return self._layout._get_model(doc, root, parent, comm)
 
     def _get_root(self, doc, comm=None):
         return self._get_model(doc, comm=comm)

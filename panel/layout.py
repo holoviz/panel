@@ -54,6 +54,11 @@ class Layout(Reactive):
                     doc.add_next_tick_callback(update_model)
             self.param.watch(set_value, p)
 
+    def _cleanup(self, model, final=False):
+        super(Layout, self)._cleanup(model, final)
+        for p, c in zip(self.panels, model.children):
+            p._cleanup(c, final)
+
     def _get_panels(self, model, old_panels, doc, root, comm=None):
         """
         Returns new child models for the layout while reusing unchanged
