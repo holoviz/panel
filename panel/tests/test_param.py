@@ -2,7 +2,8 @@ import param
 
 from bokeh.models import (
     Div, Slider, Select, RangeSlider, MultiSelect, Row as BkRow,
-    WidgetBox as BkWidgetBox, CheckboxGroup, Toggle, Button)
+    WidgetBox as BkWidgetBox, CheckboxGroup, Toggle, Button,
+    TextInput as BkTextInput)
 from panel.panels import Panel
 from panel.param import ParamPanel
 
@@ -283,9 +284,21 @@ def test_expand_param_subobject(document, comm):
     class Test(param.Parameterized):
         a = param.Parameter()
 
-    test = Test(a=Test())
+    test = Test(a=Test(name='Nested'))
     test_panel = Panel(test, _temporary=True)
     model = test_panel._get_model(document, comm=comm)
 
-    slider = model.children[0].children[1]
-    assert isinstance(slider, Toggle)
+    toggle = model.children[0].children[1]
+    assert isinstance(toggle, Toggle)
+
+    test_panel._widgets['a'].active = True
+    assert len(model.children) == 2
+    row = model.children[1]
+    assert isinstance(row, BkRow)
+    assert len(row.children) == 1
+    box = row.children[0]
+    assert isinstance(box, BkWidgetBox)
+    assert len(box.children) == 2
+    div, widget = box.children
+    assert div.text == '<b>Nested</b>'
+    assert isinstance(widget, BkTextInput)
