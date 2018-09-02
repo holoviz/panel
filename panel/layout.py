@@ -62,7 +62,7 @@ class Layout(Reactive):
         old_children = getattr(model, self._rename.get('panels', 'panels'))
         new_models = []
         for i, panel in enumerate(self.panels):
-            panel = Panel(panel)
+            panel = Panel(panel, _temporary=True)
             self.panels[i] = panel
             if panel in old_panels:
                 child = old_children[old_panels.index(panel)]
