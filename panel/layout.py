@@ -210,7 +210,7 @@ class Tabs(Layout):
 
         for panel, old_child in zip(old_panels, old_children):
             if old_child not in new_models:
-                panel._cleanup(old_child)
+                panel._cleanup(old_child.child)
 
         return new_models
 

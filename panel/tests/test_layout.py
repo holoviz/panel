@@ -123,7 +123,7 @@ def test_tabs_implicit_constructor(document, comm):
     assert tab2.child is div2
 
 
-def test_layout_set_panels(document, comm):
+def test_tabs_set_panels(document, comm):
     div1, div2 = Div(), Div()
     p1 = Panel(div1, name='Div1')
     p2 = Panel(div2, name='Div2')
@@ -146,3 +146,64 @@ def test_layout_set_panels(document, comm):
     assert tab2.child is div2
     assert tab3.title == 'Div3'
     assert tab3.child is div3
+
+
+def test_tabs_append(document, comm):
+    div1, div2 = Div(), Div()
+    p1 = Panel(div1, name='Div1')
+    p2 = Panel(div2, name='Div2')
+    tabs = Tabs(p1, p2)
+
+    model = tabs._get_model(document, comm=comm)
+
+    div3 = Div()
+    tabs.append(div3)
+    tab1, tab2, tab3 = model.tabs
+
+
+def test_tabs_insert(document, comm):
+    div1 = Div()
+    div2 = Div()
+    tabs = Tabs(div1, div2)
+
+    model = tabs._get_model(document, comm=comm)
+
+    div3 = Div()
+    tabs.insert(1, div3)
+    tab1, tab2, tab3 = model.tabs
+    assert tab1.child is div1
+    assert tab2.child is div3
+    assert tab3.child is div2
+
+
+def test_tabs_setitem(document, comm):
+    div1 = Div()
+    div2 = Div()
+    tabs = Tabs(div1, div2)
+    p1, p2 = tabs.panels
+
+    model = tabs._get_model(document, comm=comm)
+
+    assert div1.ref['id'] in p1._callbacks
+    div3 = Div()
+    tabs[0] = div3
+    tab1, tab2 = model.tabs
+    assert tab1.child is div3
+    assert tab2.child is div2
+    assert p1._callbacks == {}
+
+
+def test_tabs_pop(document, comm):
+    div1 = Div()
+    div2 = Div()
+    tabs = Tabs(div1, div2)
+    p1, p2 = tabs.panels
+
+    model = tabs._get_model(document, comm=comm)
+
+    assert div1.ref['id'] in p1._callbacks
+    tabs.pop(0)
+    assert len(model.tabs) == 1
+    tab1 = model.tabs[0]
+    assert tab1.child is div2
+    assert p1._callbacks == {}
