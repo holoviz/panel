@@ -130,7 +130,8 @@ class ParamPanel(PanelBase):
 
         if isinstance(value, param.Parameterized):
             widget_class = Toggle
-            kw['name'] = 'Expand ' + value.name
+            kw['button_type'] = 'primary'
+            kw['name'] = value.name
 
         if hasattr(p_obj, 'get_range') and not isinstance(kw['value'], dict):
             kw['options'] = p_obj.get_range()
@@ -145,6 +146,7 @@ class ParamPanel(PanelBase):
         kwargs = {k: v for k, v in kw.items() if k in widget_class.params()}
         widget = widget_class(**kwargs)
         if isinstance(p_obj, param.Action):
+            widget.button_type = 'success'
             def action(change):
                 value(self.object)
             widget.param.watch(action, 'clicks')
