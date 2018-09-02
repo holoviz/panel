@@ -121,13 +121,12 @@ class Reactive(Viewable):
     # Mapping from parameter name to bokeh model property name
     _rename = {}
 
-    _callbacks = defaultdict(dict)
-
     def __init__(self, **params):
         super(Reactive, self).__init__(**params)
         self._active = []
         self._events = {}
         self._expecting = []
+        self._callbacks = defaultdict(dict)
 
     def link(self, obj, **links):
         """

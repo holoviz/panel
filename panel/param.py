@@ -11,7 +11,7 @@ from collections import OrderedDict
 
 import param
 from param.parameterized import classlist
-from bokeh.models import Div
+from bokeh.models import Div, Spacer
 from bokeh.layouts import Column as _BkColumn
 
 from .panels import PanelBase, Panel
@@ -72,7 +72,7 @@ class ParamPanel(PanelBase):
 
     @classmethod
     def applies(cls, obj):
-        return isinstance(obj, param.Parameterized)
+        return isinstance(obj, param.Parameterized) or issubclass(obj, param.Parameterized)
 
     def widget_type(cls, pobj):
         for t in classlist(type(pobj))[::-1]:
@@ -137,21 +137,25 @@ class ParamPanel(PanelBase):
                 widget.set_param(**updates)
                 _updating.pop(_updating.index(key))
 
+            what = ['value', 'constant']
             self.object.param.watch(link, p_name, 'constant')
             self.object.param.watch(link, p_name)
             if hasattr(p_obj, 'get_range'):
                 self.object.param.watch(link, p_name, 'objects')
+                what.append('objects')
             if hasattr(p_obj, 'get_soft_bounds'):
                 self.object.param.watch(link, p_name, 'bounds')
-            self._callbacks[container.ref['id']][p_name] = link
+                what.append('bounds')
+            self._callbacks[container.ref['id']][p_name] = (link, what)
         return widget
 
     def _cleanup(self, model, final=False):
         if model is None:
             return
         callbacks = self._callbacks.pop(model.ref['id'], {})
-        for p, cb in callbacks.items():
-            self.object.param.unwatch(cb, p, 'value')
+        for p, (cb, what) in callbacks.items():
+            for w in what:
+                self.object.param.unwatch(cb, p, w)
         if self._temporary or final:
             self.object = None
 
@@ -177,7 +181,7 @@ class ParamPanel(PanelBase):
         model = row._get_model(doc, root, parent, comm)
         widgets = self._get_widgets(model)
         box = WidgetBox(*widgets.values(), height=self.height, width=self.width)
-        row.panels = [box]
+        row.panels = [box] if self.height is None else [box, Spacer(height=self.height)]
 
         for pname, widget in widgets.items():
             if not isinstance(widget, Toggle): continue
