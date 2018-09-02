@@ -33,21 +33,6 @@ def as_unicode(obj):
     return unicode(obj)
 
 
-def named_objs(objlist):
-    """
-    Given a list of objects, returns a dictionary mapping from
-    string name for the object to the object itself.
-    """
-    objs = []
-    for k, obj in objlist:
-        if hasattr(k, '__name__'):
-            k = k.__name__
-        else:
-            k = as_unicode(k)
-        objs.append((k, obj))
-    return objs
-
-
 def get_method_owner(meth):
     """
     Returns the instance owning the supplied instancemethod or
