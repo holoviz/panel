@@ -9,7 +9,7 @@ import param
 from bokeh.layouts import Column as BkColumn, Row as BkRow, WidgetBox as BkWidgetBox
 from bokeh.models.widgets import Tabs as BkTabs, Panel as BkPanel
 
-from .panels import Panel
+from .panels import Panel, PanelBase
 from .util import push
 from .viewable import Reactive
 
@@ -186,6 +186,8 @@ class Tabs(Layout):
         for panel in items:
             if isinstance(panel, tuple):
                 name, panel = panel
+            elif isinstance(panel, PanelBase):
+                name = panel.name
             else:
                 name = None
             panels.append(Panel(panel, name=name))
@@ -226,4 +228,19 @@ class Tabs(Layout):
             name, panel = panel
         new_panels = list(self.panels)
         new_panels.append(Panel(panel, name=name))
+        self.panels = new_panels
+
+    def insert(self, index, panel):
+        name = None
+        if isinstance(panel, tuple):
+            name, panel = panel
+        new_panels = list(self.panels)
+        new_panels.insert(index, Panel(panel))
+        self.panels = new_panels
+
+    def pop(self, index):
+        new_panels = list(self.panels)
+        if index in new_panels:
+            index = new_panels.index(index)
+        new_panels.pop(index)
         self.panels = new_panels

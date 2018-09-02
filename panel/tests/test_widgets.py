@@ -317,7 +317,7 @@ def test_discrete_slider(document, comm):
     assert isinstance(label, BkDiv)
     assert isinstance(widget, BkSlider)
     assert widget.value == 1
-    assert widget.start == 0 
+    assert widget.start == 0
     assert widget.end == 3
     assert widget.step == 1
     assert label.text == '<b>DiscreteSlider</b>: 1'
