@@ -95,6 +95,18 @@ class Layout(Reactive):
         new_panels.append(Panel(panel))
         self.panels = new_panels
 
+    def insert(self, index, panel):
+        new_panels = list(self.panels)
+        new_panels.insert(index, Panel(panel))
+        self.panels = new_panels
+
+    def pop(self, index):
+        new_panels = list(self.panels)
+        if index in new_panels:
+            index = new_panels.index(index)
+        new_panels.pop(index)
+        self.panels = new_panels
+
 
 class Row(Layout):
     """

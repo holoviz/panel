@@ -262,7 +262,7 @@ class ParamMethodPanel(PanelBase):
 
                 # Replace panel entirely
                 old_panel._cleanup(old_model)
-                new_panel = Panel(self.object(), _temporary=True)
+                new_panel = Panel(new_object, _temporary=True)
                 new_model = new_panel._get_model(doc, root, parent, comm)
                 def update_models():
                     if old_model is new_model: return

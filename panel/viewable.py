@@ -156,7 +156,7 @@ class Reactive(Viewable):
         super(Reactive, self)._cleanup(model, final)
         if model is None:
             return
-        callbacks = self._callbacks.pop(model.ref['id'])
+        callbacks = self._callbacks.pop(model.ref['id'], {})
         for p, cb in callbacks.items():
             self.param.unwatch(cb, p)
 
