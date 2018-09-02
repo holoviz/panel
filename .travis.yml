@@ -45,6 +45,7 @@ jobs:
         - doit env_create $CHANS_DEV --python=$PYENV_VERSION
         - source activate test-environment
         - doit develop_install -o recommended -o tests $CHANS_DEV
+        - pip install codecov
         - doit env_capture
       script: doit test_all_recommended
       after_success: codecov
