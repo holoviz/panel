@@ -11,9 +11,8 @@ from collections import OrderedDict
 
 import param
 from param.parameterized import classlist
-from bokeh.models import Spacer
 
-from .panels import PanelBase, Panel
+from .panels import PanelBase
 from .layout import WidgetBox, Row, Layout, Tabs, Spacer
 from .util import default_label_formatter
 from .widgets import (
@@ -183,6 +182,7 @@ class ParamPanel(PanelBase):
                 widget.set_param(**updates)
                 _updating.pop(_updating.index(key))
 
+            # Set up links to parameterized object
             what = ['value', 'constant']
             self.object.param.watch(link, p_name, 'constant')
             self.object.param.watch(link, p_name)
