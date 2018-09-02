@@ -6,6 +6,7 @@ response to changes to parameters and the underlying bokeh models.
 
 from __future__ import absolute_import
 
+import re
 from functools import partial
 from collections import defaultdict
 
@@ -158,6 +159,18 @@ class Reactive(Viewable):
         callbacks = self._callbacks.pop(model.ref['id'], {})
         for p, cb in callbacks.items():
             self.param.unwatch(cb, p)
+
+        # Clean up comms
+        customjs = model.select({'type': CustomJS})
+        pattern = "data\['comm_id'\] = \"(.*)\""
+        for js in customjs:
+            comm_ids = list(re.findall(pattern, js.code))
+            if not comm_ids:
+                continue
+            comm_id = comm_ids[0]
+            comm = self._comm_manager._comms.pop(comm_id, None)
+            if hasattr(comm, 'close'):
+                comm.close()
 
     def _process_property_change(self, msg):
         """
