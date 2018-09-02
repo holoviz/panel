@@ -11,7 +11,7 @@ from collections import OrderedDict
 
 import param
 from param.parameterized import classlist
-from bokeh.models import Div, Spacer
+from bokeh.models import Spacer
 
 from .panels import PanelBase, Panel
 from .layout import WidgetBox, Row

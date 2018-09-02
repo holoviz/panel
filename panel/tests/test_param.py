@@ -2,7 +2,7 @@ import param
 
 from bokeh.models import (
     Div, Slider, Select, RangeSlider, MultiSelect, Row as BkRow,
-    WidgetBox as BkWidgetBox, CheckboxGroup)
+    WidgetBox as BkWidgetBox, CheckboxGroup, Toggle, Button)
 from panel.panels import Panel
 from panel.param import ParamPanel
 
@@ -31,7 +31,7 @@ def test_get_model(document, comm):
         pass
 
     test = Test()
-    test_panel = Panel(test)
+    test_panel = Panel(test, _temporary=True)
     model = test_panel._get_model(document, comm=comm)
 
     assert isinstance(model, BkRow)
@@ -51,7 +51,7 @@ def test_number_param(document, comm):
         a = param.Number(default=1.2, bounds=(0, 5))
 
     test = Test()
-    test_panel = Panel(test)
+    test_panel = Panel(test, _temporary=True)
     model = test_panel._get_model(document, comm=comm)
 
     slider = model.children[0].children[1]
@@ -91,7 +91,7 @@ def test_boolean_param(document, comm):
         a = param.Boolean(default=False)
 
     test = Test()
-    test_panel = Panel(test)
+    test_panel = Panel(test, _temporary=True)
     model = test_panel._get_model(document, comm=comm)
 
     checkbox = model.children[0].children[1]
@@ -122,7 +122,7 @@ def test_range_param(document, comm):
         a = param.Range(default=(0.1, 0.5), bounds=(0, 1.1))
 
     test = Test()
-    test_panel = Panel(test)
+    test_panel = Panel(test, _temporary=True)
     model = test_panel._get_model(document, comm=comm)
 
     widget = model.children[0].children[1]
@@ -159,7 +159,7 @@ def test_integer_param(document, comm):
         a = param.Integer(default=2, bounds=(0, 5))
 
     test = Test()
-    test_panel = Panel(test)
+    test_panel = Panel(test, _temporary=True)
     model = test_panel._get_model(document, comm=comm)
 
     slider = model.children[0].children[1]
@@ -199,7 +199,7 @@ def test_object_selector_param(document, comm):
         a = param.ObjectSelector(default='b', objects=[1, 'b', 'c'])
 
     test = Test()
-    test_panel = Panel(test)
+    test_panel = Panel(test, _temporary=True)
     model = test_panel._get_model(document, comm=comm)
 
     slider = model.children[0].children[1]
@@ -230,13 +230,12 @@ def test_object_selector_param(document, comm):
     assert slider.disabled == True
 
 
-
 def test_list_selector_param(document, comm):
     class Test(param.Parameterized):
         a = param.ListSelector(default=['b', 1], objects=[1, 'b', 'c'])
 
     test = Test()
-    test_panel = Panel(test)
+    test_panel = Panel(test, _temporary=True)
     model = test_panel._get_model(document, comm=comm)
 
     slider = model.children[0].children[1]
@@ -265,3 +264,28 @@ def test_list_selector_param(document, comm):
     assert slider.value == ['c', '1']
     assert slider.options == ['c', 'd', '1'] 
     assert slider.disabled == True
+
+
+def test_action_param(document, comm):
+    class Test(param.Parameterized):
+        a = param.Action(lambda x: x.b.append(1))
+        b = param.List(default=[])
+
+    test = Test()
+    test_panel = Panel(test, _temporary=True)
+    model = test_panel._get_model(document, comm=comm)
+
+    slider = model.children[0].children[1]
+    assert isinstance(slider, Button)
+
+
+def test_expand_param_subobject(document, comm):
+    class Test(param.Parameterized):
+        a = param.Parameter()
+
+    test = Test(a=Test())
+    test_panel = Panel(test, _temporary=True)
+    model = test_panel._get_model(document, comm=comm)
+
+    slider = model.children[0].children[1]
+    assert isinstance(slider, Toggle)
