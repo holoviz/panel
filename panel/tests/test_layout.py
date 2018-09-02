@@ -3,7 +3,7 @@ from __future__ import absolute_import
 import pytest
 
 from bokeh.models import Div, Row as BkRow, Tabs as BkTabs, Column as BkColumn, Panel as BkPanel
-from panel.layout import Column, Row, Tabs
+from panel.layout import Column, Row, Tabs, Spacer
 from panel.panels import BokehPanel, Panel
 
 
@@ -207,3 +207,17 @@ def test_tabs_pop(document, comm):
     tab1 = model.tabs[0]
     assert tab1.child is div2
     assert p1._callbacks == {}
+
+
+def test_spacer(document, comm):
+
+    spacer = Spacer(width=400, height=300)
+
+    model = spacer._get_model(document, comm=comm)
+
+    assert isinstance(model, spacer._bokeh_model)
+    assert model.width == 400
+    assert model.height == 300
+
+    spacer.height = 400
+    assert model.height == 400

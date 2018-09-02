@@ -14,7 +14,7 @@ from param.parameterized import classlist
 from bokeh.models import Spacer
 
 from .panels import PanelBase, Panel
-from .layout import WidgetBox, Row
+from .layout import WidgetBox, Row, Layout, Tabs, Spacer
 from .util import default_label_formatter
 from .widgets import (
     LiteralInput, Select, Checkbox, FloatSlider, IntSlider, RangeSlider,
@@ -33,6 +33,10 @@ class ParamPanel(PanelBase):
     width = param.Integer(default=None, bounds=(0, None))
 
     show_labels = param.Boolean(default=True)
+
+    subpanel_layout = param.ClassSelector(default=Row, class_=Layout,
+                                          is_instance=False, doc="""
+        Layout of subpanels.""")
 
     display_threshold = param.Number(default=0,precedence=-10,doc="""
         Parameters with precedence below this value are not displayed.""")
@@ -70,15 +74,21 @@ class ParamPanel(PanelBase):
     }
 
     def __init__(self, object, **params):
+        if 'name' not in params:
+            params['name'] = object.name
         super(ParamPanel, self).__init__(object, **params)
         self._widgets = self._get_widgets()
         self._widget_box = WidgetBox(*self._widgets.values(), height=self.height,
-                                     width=self.width)
+                                     width=self.width, name=self.name)
         if self.height is None:
             panels = [self._widget_box]
         else:
-            panels = [self._widget_box, Panel(Spacer(height=self.height))]
-        self._layout = Row(*panels)
+            panels = [Row(self._widget_box, Spacer(height=self.height),
+                          name=self.name)]
+        kwargs = {'name': self.name}
+        if self.subpanel_layout is Tabs:
+            kwargs['width'] = self.width
+        self._layout = self.subpanel_layout(*panels, **kwargs)
         for pname, widget in self._widgets.items():
             if not isinstance(widget, Toggle): continue
             def update_panels(change, parameter=pname):
@@ -89,11 +99,11 @@ class ParamPanel(PanelBase):
                     if not change.new:
                         self._layout.pop(existing[0])
                 elif change.new:
-                    panel = ParamPanel(parameterized, _temporary=True)
+                    kwargs = {k: v for k, v in self.get_param_values() if k not in ['name', 'object']}
+                    panel = ParamPanel(parameterized, name=parameterized.name, _temporary=True, **kwargs)
                     self._layout.append(panel)
             widget.param.watch(update_panels, 'active')
             self._callbacks[pname]['active'] = (update_panels, ['value'])
-
 
     @classmethod
     def applies(cls, obj):
@@ -120,7 +130,7 @@ class ParamPanel(PanelBase):
 
         if isinstance(value, param.Parameterized):
             widget_class = Toggle
-            kw['name'] = 'Expand ' + kw['name']
+            kw['name'] = 'Expand ' + value.name
 
         if hasattr(p_obj, 'get_range') and not isinstance(kw['value'], dict):
             kw['options'] = p_obj.get_range()
@@ -203,7 +213,10 @@ class ParamPanel(PanelBase):
 
         # Format name specially
         ordered_params.pop(ordered_params.index('name'))
-        widgets = [('name', StaticText(value='<b>{0}</b>'.format(self.object.name)))]
+        if self.subpanel_layout is Tabs:
+            widgets = []
+        else:
+            widgets = [('name', StaticText(value='<b>{0}</b>'.format(self.object.name)))]
         widgets += [(pname, self.widget(pname)) for pname in ordered_params]
         return OrderedDict(widgets)
 

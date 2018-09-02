@@ -3,8 +3,9 @@ import param
 from bokeh.models import (
     Div, Slider, Select, RangeSlider, MultiSelect, Row as BkRow,
     WidgetBox as BkWidgetBox, CheckboxGroup, Toggle, Button,
-    TextInput as BkTextInput)
+    TextInput as BkTextInput, Tabs as BkTabs, Panel as BkPanel)
 from panel.panels import Panel
+from panel.layout import Tabs
 from panel.param import ParamPanel
 
 
@@ -45,6 +46,27 @@ def test_get_model(document, comm):
     div = box.children[0]
     assert isinstance(div, Div)
     assert div.text == '<b>'+test.name+'</b>'
+
+
+def test_get_model_tabs(document, comm):
+
+    class Test(param.Parameterized):
+        pass
+
+    test = Test()
+    test_panel = Panel(test, subpanel_layout=Tabs, _temporary=True)
+    model = test_panel._get_model(document, comm=comm)
+
+    assert isinstance(model, BkTabs)
+    assert len(model.tabs) == 1
+
+    panel = model.tabs[0]
+    assert isinstance(panel, BkPanel)
+    panel.title = test.name
+
+    box = panel.child
+    assert isinstance(box, BkWidgetBox)
+    assert len(box.children) == 0
 
 
 def test_number_param(document, comm):
@@ -309,4 +331,37 @@ def test_expand_param_subobject(document, comm):
     # Collapse subpanel
     test_panel._widgets['a'].active = False
     assert len(model.children) == 1
+    assert subpanel._callbacks == {}
+
+
+def test_expand_param_subobject_tabs(document, comm):
+    class Test(param.Parameterized):
+        a = param.Parameter()
+
+    test = Test(a=Test(name='Nested'))
+    test_panel = Panel(test, subpanel_layout=Tabs, _temporary=True)
+    model = test_panel._get_model(document, comm=comm)
+
+    toggle = model.tabs[0].child.children[0]
+    assert isinstance(toggle, Toggle)
+
+    # Expand subpanel
+    test_panel._widgets['a'].active = True
+    assert len(model.tabs) == 2
+    _, subpanel = test_panel._layout.panels
+    subtabs = model.tabs[1].child
+    assert model.tabs[1].title == 'Nested'
+    assert 'object' in subpanel._callbacks
+    assert isinstance(subtabs, BkTabs)
+    assert len(subtabs.tabs) == 1
+    assert subtabs.tabs[0].title == 'Nested'
+    box = subtabs.tabs[0].child
+    assert isinstance(box, BkWidgetBox)
+    assert len(box.children) == 1
+    widget = box.children[0]
+    assert isinstance(widget, BkTextInput)
+
+    # Collapse subpanel
+    test_panel._widgets['a'].active = False
+    assert len(model.tabs) == 1
     assert subpanel._callbacks == {}

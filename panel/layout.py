@@ -6,7 +6,8 @@ from __future__ import absolute_import
 
 import param
 
-from bokeh.layouts import Column as BkColumn, Row as BkRow, WidgetBox as BkWidgetBox
+from bokeh.layouts import (Column as BkColumn, Row as BkRow,
+                           WidgetBox as BkWidgetBox, Spacer as BkSpacer)
 from bokeh.models.widgets import Tabs as BkTabs, Panel as BkPanel
 
 from .panels import Panel, PanelBase
@@ -244,3 +245,29 @@ class Tabs(Layout):
             index = new_panels.index(index)
         new_panels.pop(index)
         self.panels = new_panels
+
+    def _cleanup(self, model, final=False):
+        super(Layout, self)._cleanup(model, final)
+        for p, c in zip(self.panels, model.tabs):
+            p._cleanup(c.child, final)
+
+
+class Spacer(Reactive):
+
+    height = param.Integer(default=None, bounds=(0, None))
+
+    width = param.Integer(default=None, bounds=(0, None))
+
+    _bokeh_model = BkSpacer
+
+    def _init_properties(self):
+        properties = {k: v for k, v in self.param.get_param_values()
+                      if v not in [None, 'name']}
+        return self._process_param_change(properties)
+
+    def _get_model(self, doc, root=None, parent=None, comm=None):
+        model = self._bokeh_model(**self._init_properties())
+        params = [p for p in self.params()]
+        properties = list(self._process_param_change(dict(self.get_param_values())))
+        self._link_params(model, params, doc, root, comm)
+        return model
