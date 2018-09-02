@@ -153,7 +153,7 @@ class DatePicker(Widget):
 
     _widget_type = _BkDatePicker
 
-    _rename = {'start': 'min_date', 'end': 'max_date'}
+    _rename = {'start': 'min_date', 'end': 'max_date', 'name': 'title'}
 
     def _process_property_change(self, msg):
         msg = super(DatePicker, self)._process_property_change(msg)

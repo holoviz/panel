@@ -1,10 +1,11 @@
 from datetime import datetime
 
 from bokeh.layouts import WidgetBox
+from bokeh.models import Div as BkDiv, Slider as BkSlider
 from panel.widgets import (
     TextInput, StaticText, FloatSlider, IntSlider, RangeSlider,
     LiteralInput, Checkbox, Select, MultiSelect, Button, Toggle,
-    DatePicker
+    DatePicker, DateRangeSlider, DiscreteSlider
 )
 
 
@@ -229,7 +230,7 @@ def test_button(document, comm):
     assert widget.label == 'Button'
 
     widget.clicks = 1
-    button._comm_change({'clicks': 1})
+    button._comm_change({'clicks': widget.clicks})
     assert button.clicks == 1
 
 
@@ -246,7 +247,7 @@ def test_toggle(document, comm):
     assert widget.label == 'Toggle'
 
     widget.active = False
-    toggle._comm_change({'active': False})
+    toggle._comm_change({'active': widget.active})
     assert toggle.active == False
 
     toggle.active = True
@@ -263,6 +264,7 @@ def test_date_picker(document, comm):
 
     widget = box.children[0]
     assert isinstance(widget, date_picker._widget_type)
+    assert widget.title == 'DatePicker'
     assert widget.value == datetime(2018, 9, 2)
     assert widget.min_date == datetime(2018, 9, 1)
     assert widget.max_date == datetime(2018, 9, 10)
@@ -274,3 +276,57 @@ def test_date_picker(document, comm):
     date_picker.value = datetime(2018, 9, 4)
     assert widget.value == date_picker.value
 
+
+def test_date_range_slider(document, comm):
+    date_slider = DateRangeSlider(name='DateRangeSlider',
+                                  value=(datetime(2018, 9, 2), datetime(2018, 9, 4)),
+                                  start=datetime(2018, 9, 1), end=datetime(2018, 9, 10))
+
+    box = date_slider._get_model(document, comm=comm)
+
+    assert isinstance(box, WidgetBox)
+
+    widget = box.children[0]
+    assert isinstance(widget, date_slider._widget_type)
+    assert widget.title == 'DateRangeSlider'
+    assert widget.value == (datetime(2018, 9, 2), datetime(2018, 9, 4))
+    assert widget.start == datetime(2018, 9, 1)
+    assert widget.end == datetime(2018, 9, 10)
+
+    epoch = datetime(1970, 1, 1)
+    widget.value = ((datetime(2018, 9, 3)-epoch).total_seconds()*1000,
+                    (datetime(2018, 9, 6)-epoch).total_seconds()*1000)
+    date_slider._comm_change({'value': widget.value})
+    assert date_slider.value == (datetime(2018, 9, 3), datetime(2018, 9, 6))
+
+    date_slider.value = (datetime(2018, 9, 4), datetime(2018, 9, 6))
+    assert widget.value == date_slider.value
+
+
+
+def test_discrete_slider(document, comm):
+    discrete_slider = DiscreteSlider(name='DiscreteSlider', value=1,
+                                     options=[0.1, 1, 10, 100])
+
+    box = discrete_slider._get_model(document, comm=comm)
+
+    assert isinstance(box, WidgetBox)
+
+    label = box.children[0]
+    widget = box.children[1]
+    assert isinstance(label, BkDiv)
+    assert isinstance(widget, BkSlider)
+    assert widget.value == 1
+    assert widget.start == 0 
+    assert widget.end == 3
+    assert widget.step == 1
+    assert label.text == '<b>DiscreteSlider</b>: 1'
+
+    widget.value = 2
+    discrete_slider._comm_change({'value': 2})
+    assert discrete_slider.value == 10
+    assert label.text == '<b>DiscreteSlider</b>: 10'
+
+    discrete_slider.value = 100
+    assert widget.value == 3
+    assert label.text == '<b>DiscreteSlider</b>: 100'
