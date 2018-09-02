@@ -12,11 +12,10 @@ from collections import OrderedDict
 import param
 from param.parameterized import classlist
 from bokeh.models import Div, Spacer
-from bokeh.layouts import Column as _BkColumn
 
 from .panels import PanelBase, Panel
 from .layout import WidgetBox, Row
-from .util import default_label_formatter, push
+from .util import default_label_formatter
 from .widgets import (
     LiteralInput, Select, Checkbox, FloatSlider, IntSlider, RangeSlider,
     MultiSelect, DatePicker, StaticText, Button, Toggle

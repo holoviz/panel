@@ -1,5 +1,3 @@
-import param
-
 from bokeh.models import Div, Row as BkRow
 from panel.layout import Row
 from panel.panels import BokehPanel

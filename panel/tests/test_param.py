@@ -3,7 +3,6 @@ import param
 from bokeh.models import (
     Div, Slider, Select, RangeSlider, MultiSelect, Row as BkRow,
     WidgetBox as BkWidgetBox, CheckboxGroup)
-from panel.layout import Row
 from panel.panels import Panel
 from panel.param import ParamPanel
 
