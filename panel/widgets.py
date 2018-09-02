@@ -44,6 +44,11 @@ class Widget(Reactive):
 
     _rename = {'name': 'title'}
 
+    def __init__(self, **params):
+        if 'name' not in params:
+            params['name'] = ''
+        super(Widget, self).__init__(**params)
+
     def _init_properties(self):
         properties = {k: v for k, v in self.param.get_param_values()
                       if v is not None}
@@ -89,8 +94,9 @@ class StaticText(Widget):
         msg = super(StaticText, self)._process_property_change(msg)
         msg.pop('title', None)
         if 'value' in msg:
-            value = msg.pop('value')
-            text = self._format.format(title=self.name, value=as_unicode(value))
+            text = as_unicode(msg.pop('value'))
+            if self.name:
+                text = self._format.format(title=self.name, value=text)
             msg['text'] = text
         return msg
 
