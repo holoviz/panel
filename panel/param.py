@@ -7,17 +7,17 @@ from __future__ import absolute_import
 import os
 import json
 import itertools
+from collections import OrderedDict
 
 import param
 from param.parameterized import classlist
-from bokeh.models import Div
 
-from .panels import PanelBase, Panel
-from .layout import WidgetBox
+from .panels import PanelBase
+from .layout import WidgetBox, Row, Layout, Tabs, Spacer
 from .util import default_label_formatter
 from .widgets import (
     LiteralInput, Select, Checkbox, FloatSlider, IntSlider, RangeSlider,
-    MultiSelect, DatePicker, StaticText, Button
+    MultiSelect, DatePicker, StaticText, Button, Toggle
 )
 
 
@@ -27,7 +27,15 @@ class ParamPanel(PanelBase):
     are linke to the parameter values on the class.
     """
 
+    height = param.Integer(default=None, bounds=(0, None))
+
+    width = param.Integer(default=None, bounds=(0, None))
+
     show_labels = param.Boolean(default=True)
+
+    subpanel_layout = param.ClassSelector(default=Row, class_=Layout,
+                                          is_instance=False, doc="""
+        Layout of subpanels.""")
 
     display_threshold = param.Number(default=0,precedence=-10,doc="""
         Parameters with precedence below this value are not displayed.""")
@@ -64,13 +72,52 @@ class ParamPanel(PanelBase):
         param.Date:          DatePicker,
     }
 
+    def __init__(self, object, **params):
+        if 'name' not in params:
+            params['name'] = object.name
+        super(ParamPanel, self).__init__(object, **params)
+        self._widgets = self._get_widgets()
+        self._widget_box = WidgetBox(*self._widgets.values(), height=self.height,
+                                     width=self.width, name=self.name)
+        panels = [self._widget_box]
+        if self.height is not None:
+            panels.append(Spacer(height=self.height))
+
+        kwargs = {'name': self.name}
+        if self.subpanel_layout is Tabs:
+            kwargs['width'] = self.width
+        self._layout = self.subpanel_layout(*panels, **kwargs)
+        self._link_subpanels()
+
+    def _link_subpanels(self):
+        for pname, widget in self._widgets.items():
+            if not isinstance(widget, Toggle): continue
+
+            def update_panels(change, parameter=pname):
+                "Adds or removes subpanel from layout"
+                parameterized = getattr(self.object, parameter)
+                existing = [p for p in self._layout.panels
+                            if isinstance(p, ParamPanel)
+                            and p.object is parameterized]
+                if existing:
+                    if not change.new:
+                        self._layout.pop(existing[0])
+                elif change.new:
+                    kwargs = {k: v for k, v in self.get_param_values()
+                              if k not in ['name', 'object']}
+                    panel = ParamPanel(parameterized, name=parameterized.name,
+                                       _temporary=True, **kwargs)
+                    self._layout.append(panel)
+
+            widget.param.watch(update_panels, 'active')
+            self._callbacks[pname]['active'] = (update_panels, ['value'])
+
     @classmethod
     def applies(cls, obj):
-        return isinstance(obj, param.Parameterized)
+        return (isinstance(obj, param.Parameterized) or
+                issubclass(obj, param.Parameterized))
 
     def widget_type(cls, pobj):
-        if pobj.constant: # Ensure constant parameters cannot be edited
-            return StaticText
         for t in classlist(type(pobj))[::-1]:
             if t in cls._mapping:
                 return cls._mapping[t]
@@ -82,12 +129,17 @@ class ParamPanel(PanelBase):
         widget_class = self.widget_type(p_obj)
         value = getattr(self.object, p_name)
 
-        kw = dict(value=value)
+        kw = dict(value=value, disabled=p_obj.constant)
 
         if self.label_formatter is not None:
             kw['name'] = self.label_formatter(p_name)
         else:
             kw['name'] = p_name
+
+        if isinstance(value, param.Parameterized):
+            widget_class = Toggle
+            kw['button_type'] = 'primary'
+            kw['name'] = value.name
 
         if hasattr(p_obj, 'get_range') and not isinstance(kw['value'], dict):
             kw['options'] = p_obj.get_range()
@@ -99,20 +151,65 @@ class ParamPanel(PanelBase):
             else:
                 widget_class = StaticText
 
-        widget = widget_class(**{k: v for k, v in kw.items() if k in widget_class.params()})
+        kwargs = {k: v for k, v in kw.items() if k in widget_class.params()}
+        widget = widget_class(**kwargs)
         if isinstance(p_obj, param.Action):
+            widget.button_type = 'success'
             def action(change):
                 value(self.object)
             widget.param.watch(action, 'clicks')
+        elif isinstance(widget, Toggle):
+            pass
         else:
             widget.link(self.object, **{'value': p_name})
             def link(change, _updating=[]):
-                if change.attribute not in _updating:
-                    _updating.append(change.attribute)
-                    setattr(widget, 'value', change.new)
-                    _updating.pop(_updating.index(change.attribute))
+                key = (change.attribute, change.what)
+                if key in _updating:
+                    return
+
+                _updating.append(key)
+                updates = {}
+                if change.what == 'constant':
+                    updates['disabled'] = change.new
+                elif change.what == 'objects':
+                    updates['options'] = p_obj.get_range()
+                elif change.what == 'bounds':
+                    start, end = p_obj.get_soft_bounds()
+                    updates['start'] = start
+                    updates['end'] = end
+                else:
+                    updates['value'] = change.new
+                widget.set_param(**updates)
+                _updating.pop(_updating.index(key))
+
+            # Set up links to parameterized object
+            what = ['value', 'constant']
+            self.object.param.watch(link, p_name, 'constant')
             self.object.param.watch(link, p_name)
+            if hasattr(p_obj, 'get_range'):
+                self.object.param.watch(link, p_name, 'objects')
+                what.append('objects')
+            if hasattr(p_obj, 'get_soft_bounds'):
+                self.object.param.watch(link, p_name, 'bounds')
+                what.append('bounds')
+            self._callbacks['object'][p_name] = (link, what)
         return widget
+
+    def _cleanup(self, model, final=False):
+        if model is None:
+            return
+        if self._temporary or final:
+            if self.object is not None:
+                for obj, callbacks in self._callbacks.items():
+                    for p, (cb, what) in callbacks.items():
+                        for w in what:
+                            if obj == 'object':
+                                self.object.param.unwatch(cb, p, w)
+                            else:
+                                self._widgets[obj].param.unwatch(cb, p, w)
+                self._callbacks.clear()
+            self._layout._cleanup(model)
+            self.object = None
 
     def _get_widgets(self):
         """Return name,widget boxes for all parameters (i.e., a property sheet)"""
@@ -127,13 +224,15 @@ class ParamPanel(PanelBase):
 
         # Format name specially
         ordered_params.pop(ordered_params.index('name'))
-        widgets = [Panel(Div(text='<b>{0}</b>'.format(self.object.name)))]
-        widgets += [self.widget(pname) for pname in ordered_params]
-        return widgets
+        if self.subpanel_layout is Tabs:
+            widgets = []
+        else:
+            widgets = [('name', StaticText(value='<b>{0}</b>'.format(self.object.name)))]
+        widgets += [(pname, self.widget(pname)) for pname in ordered_params]
+        return OrderedDict(widgets)
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        panels = self._get_widgets()
-        return WidgetBox(*panels)._get_model(doc, root, parent, comm)
+        return self._layout._get_model(doc, root, parent, comm)
 
     def _get_root(self, doc, comm=None):
         return self._get_model(doc, comm=comm)

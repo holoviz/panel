@@ -6,10 +6,11 @@ from __future__ import absolute_import
 
 import param
 
-from bokeh.layouts import Column as BkColumn, Row as BkRow, WidgetBox as BkWidgetBox
+from bokeh.layouts import (Column as BkColumn, Row as BkRow,
+                           WidgetBox as BkWidgetBox, Spacer as BkSpacer)
 from bokeh.models.widgets import Tabs as BkTabs, Panel as BkPanel
 
-from .panels import Panel
+from .panels import Panel, PanelBase
 from .util import push
 from .viewable import Reactive
 
@@ -54,6 +55,11 @@ class Layout(Reactive):
                     doc.add_next_tick_callback(update_model)
             self.param.watch(set_value, p)
 
+    def _cleanup(self, model, final=False):
+        super(Layout, self)._cleanup(model, final)
+        for p, c in zip(self.panels, model.children):
+            p._cleanup(c, final)
+
     def _get_panels(self, model, old_panels, doc, root, comm=None):
         """
         Returns new child models for the layout while reusing unchanged
@@ -62,7 +68,7 @@ class Layout(Reactive):
         old_children = getattr(model, self._rename.get('panels', 'panels'))
         new_models = []
         for i, panel in enumerate(self.panels):
-            panel = Panel(panel)
+            panel = Panel(panel, _temporary=True)
             self.panels[i] = panel
             if panel in old_panels:
                 child = old_children[old_panels.index(panel)]
@@ -95,6 +101,18 @@ class Layout(Reactive):
         new_panels.append(Panel(panel))
         self.panels = new_panels
 
+    def insert(self, index, panel):
+        new_panels = list(self.panels)
+        new_panels.insert(index, Panel(panel))
+        self.panels = new_panels
+
+    def pop(self, index):
+        new_panels = list(self.panels)
+        if index in new_panels:
+            index = new_panels.index(index)
+        new_panels.pop(index)
+        self.panels = new_panels
+
 
 class Row(Layout):
     """
@@ -123,6 +141,30 @@ class WidgetBox(Layout):
 
     _bokeh_model = BkWidgetBox
 
+    def _get_panels(self, model, old_panels, doc, root, comm=None):
+        """
+        Returns new child models for the layout while reusing unchanged
+        models and cleaning up any dropped panels.
+        """
+        old_children = getattr(model, self._rename.get('panels', 'panels'))
+        new_models = []
+        for i, panel in enumerate(self.panels):
+            panel = Panel(panel)
+            self.panels[i] = panel
+            if panel in old_panels:
+                child = old_children[old_panels.index(panel)]
+            else:
+                child = panel._get_model(doc, root, model, comm)
+            if isinstance(child, BkWidgetBox):
+                new_models += child.children
+            else:
+                new_models.append(child)
+
+        for panel, old_child in zip(old_panels, old_children):
+            if old_child not in new_models:
+                panel._cleanup(old_child)
+        return new_models
+
 
 class Tabs(Layout):
     """
@@ -145,6 +187,8 @@ class Tabs(Layout):
         for panel in items:
             if isinstance(panel, tuple):
                 name, panel = panel
+            elif isinstance(panel, PanelBase):
+                name = panel.name
             else:
                 name = None
             panels.append(Panel(panel, name=name))
@@ -167,7 +211,7 @@ class Tabs(Layout):
 
         for panel, old_child in zip(old_panels, old_children):
             if old_child not in new_models:
-                panel._cleanup(old_child)
+                panel._cleanup(old_child.child)
 
         return new_models
 
@@ -186,3 +230,42 @@ class Tabs(Layout):
         new_panels = list(self.panels)
         new_panels.append(Panel(panel, name=name))
         self.panels = new_panels
+
+    def insert(self, index, panel):
+        name = None
+        if isinstance(panel, tuple):
+            name, panel = panel
+        new_panels = list(self.panels)
+        new_panels.insert(index, Panel(panel))
+        self.panels = new_panels
+
+    def pop(self, index):
+        new_panels = list(self.panels)
+        if index in new_panels:
+            index = new_panels.index(index)
+        new_panels.pop(index)
+        self.panels = new_panels
+
+    def _cleanup(self, model, final=False):
+        super(Layout, self)._cleanup(model, final)
+        for p, c in zip(self.panels, model.tabs):
+            p._cleanup(c.child, final)
+
+
+class Spacer(Reactive):
+
+    height = param.Integer(default=None, bounds=(0, None))
+
+    width = param.Integer(default=None, bounds=(0, None))
+
+    _bokeh_model = BkSpacer
+
+    def _init_properties(self):
+        properties = {k: v for k, v in self.param.get_param_values()
+                      if v not in [None, 'name']}
+        return self._process_param_change(properties)
+
+    def _get_model(self, doc, root=None, parent=None, comm=None):
+        model = self._bokeh_model(**self._init_properties())
+        self._link_params(model, ['width', 'height'], doc, root, comm)
+        return model

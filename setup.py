@@ -42,7 +42,8 @@ extras_require = {
         'flake8',
         'parameterized',
         'pytest',
-        'nbsmoke >=0.2.0'
+        'nbsmoke >=0.2.0',
+        'pytest-cov'
     ],
     'recommended': _recommended,
     'doc': _recommended + [

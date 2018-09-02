@@ -4,6 +4,8 @@ import os
 import json
 import sys
 import inspect
+import numbers
+from datetime import datetime
 
 import param
 import bokeh
@@ -31,21 +33,6 @@ def as_unicode(obj):
     return unicode(obj)
 
 
-def named_objs(objlist):
-    """
-    Given a list of objects, returns a dictionary mapping from
-    string name for the object to the object itself.
-    """
-    objs = []
-    for k, obj in objlist:
-        if hasattr(k, '__name__'):
-            k = k.__name__
-        else:
-            k = as_unicode(k)
-        objs.append((k, obj))
-    return objs
-
-
 def get_method_owner(meth):
     """
     Returns the instance owning the supplied instancemethod or
@@ -56,6 +43,15 @@ def get_method_owner(meth):
             return meth.im_class if meth.im_self is None else meth.im_self
         else:
             return meth.__self__
+
+
+def value_as_datetime(value):
+    """
+    Retrieve the value tuple as a tuple of datetime objects.
+    """
+    if isinstance(value, numbers.Number):
+        value = datetime.utcfromtimestamp(value / 1000)
+    return value
 
 
 class default_label_formatter(param.ParameterizedFunction):

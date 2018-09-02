@@ -5,20 +5,22 @@ communication between the rendered dashboard and the Widget parameters.
 from __future__ import absolute_import
 
 import ast
+from datetime import datetime
 from collections import OrderedDict
 
 import param
 from bokeh.models import WidgetBox as _BkWidgetBox
 from bokeh.models.widgets import (
-    TextInput as _BkTextInput, Select as _BkSelect, Slider, CheckboxGroup,
-    DateRangeSlider as _BkDateRangeSlider, RangeSlider as _BkRangeSlider,
-    DatePicker as _BkDatePicker, MultiSelect as _BkMultiSelect,
-    Div as _BkDiv, Button as _BkButton, Toggle as _BkToggle
+    TextInput as _BkTextInput, Select as _BkSelect, Slider as _BkSlider,
+    CheckboxGroup as _BkCheckboxGroup, DateRangeSlider as _BkDateRangeSlider,
+    RangeSlider as _BkRangeSlider, DatePicker as _BkDatePicker,
+    MultiSelect as _BkMultiSelect, Div as _BkDiv,Button as _BkButton,
+    Toggle as _BkToggle, AutocompleteInput as _BkAutocompleteInput
 )
 
 from .layout import WidgetBox # noqa
 from .viewable import Reactive
-from .util import as_unicode
+from .util import as_unicode, push, value_as_datetime
 
 
 class Widget(Reactive):
@@ -29,6 +31,8 @@ class Widget(Reactive):
 
     disabled = param.Boolean(default=False, doc="""
        Whether the widget is disabled.""")
+
+    name = param.String(default='')
 
     height = param.Integer(default=None, bounds=(0, None))
 
@@ -90,10 +94,24 @@ class StaticText(Widget):
         msg = super(StaticText, self)._process_property_change(msg)
         msg.pop('title', None)
         if 'value' in msg:
-            value = msg.pop('value')
-            text = self._format.format(title=self.name, value=as_unicode(value))
+            text = as_unicode(msg.pop('value'))
+            if self.name:
+                text = self._format.format(title=self.name, value=text)
             msg['text'] = text
         return msg
+
+
+class AutocompleteInput(Widget):
+
+    options = param.List(default=[])
+
+    placeholder = param.String(default='')
+
+    value = param.Parameter(default=None)
+
+    _widget_type = _BkAutocompleteInput
+
+    _rename = {'name': 'title', 'options': 'completions'}
 
 
 class FloatSlider(Widget):
@@ -106,7 +124,7 @@ class FloatSlider(Widget):
 
     step = param.Number(default=0.1)
 
-    _widget_type = Slider
+    _widget_type = _BkSlider
 
 
 class IntSlider(Widget):
@@ -117,7 +135,7 @@ class IntSlider(Widget):
 
     end = param.Integer(default=1)
 
-    _widget_type = Slider
+    _widget_type = _BkSlider
 
     def _init_properties(self):
         properties = super(IntSlider, self)._init_properties()
@@ -135,7 +153,13 @@ class DatePicker(Widget):
 
     _widget_type = _BkDatePicker
 
-    _rename = {'start': 'min_date', 'end': 'max_date'}
+    _rename = {'start': 'min_date', 'end': 'max_date', 'name': 'title'}
+
+    def _process_property_change(self, msg):
+        msg = super(DatePicker, self)._process_property_change(msg)
+        if 'value' in msg:
+            msg['value'] = datetime.strptime(msg['value'][4:], '%b %d %Y')
+        return msg
 
 
 class RangeSlider(Widget):
@@ -150,8 +174,8 @@ class RangeSlider(Widget):
 
     _widget_type = _BkRangeSlider
 
-    def _process_param_change(self, msg):
-        msg = super(RangeSlider, self)._process_param_change(msg)
+    def _process_property_change(self, msg):
+        msg = super(RangeSlider, self)._process_property_change(msg)
         if 'value' in msg:
             msg['value'] = tuple(msg['value'])
         return msg
@@ -168,6 +192,36 @@ class DateRangeSlider(Widget):
     step = param.Number(default=1)
 
     _widget_type = _BkDateRangeSlider
+
+    def _process_property_change(self, msg):
+        msg = super(DateRangeSlider, self)._process_property_change(msg)
+        if 'value' in msg:
+            v1, v2 = msg['value']
+            msg['value'] = (value_as_datetime(v1), value_as_datetime(v2))
+        return msg
+
+
+class _ButtonBase(Widget):
+
+    button_type = param.ObjectSelector(default='default', objects=[
+        'default', 'primary', 'success', 'info', 'danger'])
+
+    _rename = {'name': 'label'}
+
+
+class Button(_ButtonBase):
+
+    clicks = param.Integer(default=0)
+
+    _widget_type = _BkButton
+
+
+class Toggle(_ButtonBase):
+
+    active = param.Boolean(default=False, doc="""
+        Whether the button is currently toggled.""")
+
+    _widget_type = _BkToggle
 
 
 class LiteralInput(Widget):
@@ -190,7 +244,7 @@ class LiteralInput(Widget):
     def _process_property_change(self, msg):
         msg = super(LiteralInput, self)._process_property_change(msg)
         if 'name' in msg:
-            msg['name'] = msg.pop('title').replace(self._state, '')
+            msg['name'] = msg.pop('name').replace(self._state, '')
         if 'value' in msg:
             value = msg.pop('value')
             try:
@@ -219,7 +273,7 @@ class Checkbox(Widget):
 
     value = param.Boolean(default=False)
 
-    _widget_type = CheckboxGroup
+    _widget_type = _BkCheckboxGroup
 
     def _process_property_change(self, msg):
         msg = super(Checkbox, self)._process_property_change(msg)
@@ -263,6 +317,7 @@ class Select(Widget):
         msg = super(Select, self)._process_property_change(msg)
         if 'value' in msg:
             msg['value'] = self.options[msg['value']]
+        msg.pop('options', None)
         return msg
 
 
@@ -285,27 +340,83 @@ class MultiSelect(Select):
         msg = super(Select, self)._process_property_change(msg)
         if 'value' in msg:
             msg['value'] = [self.options[v] for v in msg['value']]
+        msg.pop('options', None)
         return msg
 
 
-class _ButtonBase(Widget):
+class DiscreteSlider(Widget):
 
-    button_type = param.ObjectSelector(default='default', objects=[
-        'default', 'primary', 'success', 'info', 'danger'])
+    options = param.List(default=[])
 
-    _rename = {'name': 'label'}
+    value = param.Parameter()
 
+    formatter = param.String(default='%.3g')
 
-class Button(_ButtonBase):
+    def __init__(self, **params):
+        super(DiscreteSlider, self).__init__(**params)
+        if self.value not in self.options:
+            raise ValueError('Value %s not a valid option, '
+                             'ensure that the supplied value '
+                             'is one of the declared options.'
+                             % self.value)
 
-    clicks = param.Integer(default=0)
+    def _get_model(self, doc, root=None, parent=None, comm=None):
+        model = _BkWidgetBox()
+        parent = parent or model
+        root = root or parent
+        msg = self._init_properties()
+        div = _BkDiv(text=msg['text'])
+        slider = _BkSlider(start=msg['start'], end=msg['end'], value=msg['value'],
+                           title=None, step=1, show_value=False, tooltips=None)
 
-    _widget_type = _BkButton
+        # Link parameters and bokeh model
+        self._link_params(slider, div, ['value', 'options'], doc, root, comm)
+        self._link_props(slider, ['value'], doc, root, comm)
 
+        model.children = [div, slider]
+        return model
 
-class Toggle(_ButtonBase):
+    def _link_params(self, slider, div, params, doc, root, comm=None):
+        def param_change(change):
+            msg = self._process_param_change({change.attribute: change.new})
+            msg = {k: v for k, v in msg.items() if k not in self._active}
+            if not msg: return
 
-    active = param.Boolean(default=False, doc="""
-        Whether the button is currently toggled.""")
+            def update_model():
+                slider.update(**{k: v for k, v in msg.items() if k in slider.properties()})
+                div.update(**{k: v for k, v in msg.items() if k in div.properties()})
 
-    _widget_type = _BkToggle
+            if comm:
+                update_model()
+                push(doc, comm)
+            else:
+                doc.add_next_tick_callback(update_model)
+
+        for p in params:
+            self.param.watch(param_change, p)
+            self._callbacks[slider.ref['id']][p] = param_change
+
+    def _process_param_change(self, msg):
+        title = '<b>%s</b>: ' % (self.name if self.name else '')
+        if 'name' in msg:
+            msg['text'] = title + self.formatter % self.value
+        if 'options' in msg:
+            msg['start'] = 0
+            msg['end'] = len(msg['options']) - 1
+            msg['labels'] = [title + (self.formatter % o) for o in msg['options']]
+            if self.value not in msg['options']:
+                self.value = msg['options'][0]
+        if 'value' in msg:
+            label = self.formatter % msg['value']
+            if msg['value'] not in self.options:
+                self.value = self.options[0]
+                msg.pop('value')
+                return msg
+            msg['value'] = self.options.index(msg['value'])
+            msg['text'] = title + label
+        return msg
+
+    def _process_property_change(self, msg):
+        if 'value' in msg:
+            msg['value'] = self.options[msg['value']]
+        return msg
