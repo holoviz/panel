@@ -291,9 +291,12 @@ def test_expand_param_subobject(document, comm):
     toggle = model.children[0].children[1]
     assert isinstance(toggle, Toggle)
 
+    # Expand subpanel
     test_panel._widgets['a'].active = True
     assert len(model.children) == 2
+    _, subpanel = test_panel._layout.panels
     row = model.children[1]
+    assert 'object' in subpanel._callbacks
     assert isinstance(row, BkRow)
     assert len(row.children) == 1
     box = row.children[0]
@@ -302,3 +305,8 @@ def test_expand_param_subobject(document, comm):
     div, widget = box.children
     assert div.text == '<b>Nested</b>'
     assert isinstance(widget, BkTextInput)
+
+    # Collapse subpanel
+    test_panel._widgets['a'].active = False
+    assert len(model.children) == 1
+    assert subpanel._callbacks == {}
