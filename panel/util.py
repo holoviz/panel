@@ -119,7 +119,7 @@ def push(doc, comm, binary=True):
         comm.send(buffers=[payload])
 
 
-def remove_root(obj):
+def remove_root(obj, replace=None):
     """
     Removes the document from any previously displayed bokeh object
     """
@@ -128,6 +128,8 @@ def remove_root(obj):
         model._document = None
         if prev_doc:
             prev_doc.remove_root(model)
+        if replace:
+            model._document = replace
 
 
 def add_to_doc(obj, doc, hold=False):

@@ -1,5 +1,5 @@
 """
-Defines the ParamPanel which converts Parameterized classes into a
+Defines the ParamPane which converts Parameterized classes into a
 set of widgets.
 """
 from __future__ import absolute_import
@@ -12,7 +12,7 @@ from collections import OrderedDict
 import param
 from param.parameterized import classlist
 
-from .panels import PanelBase
+from .panes import PaneBase
 from .layout import WidgetBox, Row, Layout, Tabs, Spacer
 from .util import default_label_formatter
 from .widgets import (
@@ -21,9 +21,9 @@ from .widgets import (
 )
 
 
-class ParamPanel(PanelBase):
+class ParamPane(PaneBase):
     """
-    ParamPanel renders a Parameterized class to a set of widgets which
+    ParamPane renders a Parameterized class to a set of widgets which
     are linke to the parameter values on the class.
     """
 
@@ -75,29 +75,29 @@ class ParamPanel(PanelBase):
     def __init__(self, object, **params):
         if 'name' not in params:
             params['name'] = object.name
-        super(ParamPanel, self).__init__(object, **params)
+        super(ParamPane, self).__init__(object, **params)
         self._widgets = self._get_widgets()
         self._widget_box = WidgetBox(*self._widgets.values(), height=self.height,
                                      width=self.width, name=self.name)
-        panels = [self._widget_box]
+        panes = [self._widget_box]
         if self.height is not None:
-            panels.append(Spacer(height=self.height))
+            panes.append(Spacer(height=self.height))
 
         kwargs = {'name': self.name}
         if self.subpanel_layout is Tabs:
             kwargs['width'] = self.width
-        self._layout = self.subpanel_layout(*panels, **kwargs)
+        self._layout = self.subpanel_layout(*panes, **kwargs)
         self._link_subpanels()
 
     def _link_subpanels(self):
         for pname, widget in self._widgets.items():
             if not isinstance(widget, Toggle): continue
 
-            def update_panels(change, parameter=pname):
+            def update_panes(change, parameter=pname):
                 "Adds or removes subpanel from layout"
                 parameterized = getattr(self.object, parameter)
-                existing = [p for p in self._layout.panels
-                            if isinstance(p, ParamPanel)
+                existing = [p for p in self._layout.objects
+                            if isinstance(p, ParamPane)
                             and p.object is parameterized]
                 if existing:
                     if not change.new:
@@ -105,17 +105,17 @@ class ParamPanel(PanelBase):
                 elif change.new:
                     kwargs = {k: v for k, v in self.get_param_values()
                               if k not in ['name', 'object']}
-                    panel = ParamPanel(parameterized, name=parameterized.name,
-                                       _temporary=True, **kwargs)
-                    self._layout.append(panel)
+                    pane = ParamPane(parameterized, name=parameterized.name,
+                                     _temporary=True, **kwargs)
+                    self._layout.append(pane)
 
-            widget.param.watch(update_panels, 'active')
-            self._callbacks[pname]['active'] = (update_panels, ['value'])
+            widget.param.watch(update_panes, 'active')
+            self._callbacks[pname]['active'] = (update_panes, ['value'])
 
     @classmethod
     def applies(cls, obj):
         return (isinstance(obj, param.Parameterized) or
-                issubclass(obj, param.Parameterized))
+                (isinstance(obj, type) and issubclass(obj, param.Parameterized)))
 
     def widget_type(cls, pobj):
         for t in classlist(type(pobj))[::-1]:

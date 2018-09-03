@@ -72,7 +72,7 @@ class Viewable(param.Parameterized):
             Bokeh model for the view being cleaned up
 
         final: boolean
-            Whether the Panel can be destroyed entirely
+            Whether the Viewable should be destroyed entirely
         """
 
     def _repr_mimebundle_(self, include=None, exclude=None):
