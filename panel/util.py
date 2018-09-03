@@ -1,6 +1,5 @@
 from __future__ import absolute_import
 
-import os
 import json
 import sys
 import inspect
@@ -15,7 +14,8 @@ from bokeh.models import Model, LayoutDOM, Div as BkDiv, Spacer, Row
 from bokeh.protocol import Protocol
 from bokeh.resources import CDN, INLINE
 from bokeh.util.string import encode_utf8
-from pyviz_comms import JupyterCommManager, bokeh_msg_handler, PYVIZ_PROXY
+from pyviz_comms import (PYVIZ_PROXY, JupyterCommManager, bokeh_msg_handler,
+                         nb_mime_js, embed_js)
 
 try:
     unicode = unicode # noqa
@@ -146,17 +146,6 @@ def add_to_doc(obj, doc, hold=False):
 LOAD_MIME = 'application/vnd.holoviews_load.v0+json'
 EXEC_MIME = 'application/vnd.holoviews_exec.v0+json'
 
-embed_js = """
-// Ugly hack - see HoloViews #2574 for more information
-if (!(document.getElementById('{plot_id}')) && !(document.getElementById('_anim_img{widget_id}'))) {{
-  console.log("Creating DOM nodes dynamically for assumed nbconvert export. To generate clean HTML output set HV_DOC_HTML as an environment variable.")
-  var htmlObject = document.createElement('div');
-  htmlObject.innerHTML = `{html}`;
-  var scriptTags = document.getElementsByTagName('script');
-  var parentTag = scriptTags[scriptTags.length-1].parentNode;
-  parentTag.append(htmlObject)
-}}
-"""
 
 def load_notebook(inline=True):
     from IPython.display import publish_display_data
@@ -169,10 +158,7 @@ def load_notebook(inline=True):
     bokeh.io.notebook.curstate().output_notebook()
 
     # Publish comm manager
-    nbjs_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'js', 'notebook.js')
-    with open(nbjs_file) as f:
-        nb_js = f.read()
-    JS = '\n'.join([PYVIZ_PROXY, JupyterCommManager.js_manager, nb_js])
+    JS = '\n'.join([PYVIZ_PROXY, JupyterCommManager.js_manager, nb_mime_js])
     publish_display_data(data={LOAD_MIME: JS, 'application/javascript': JS})
 
 
