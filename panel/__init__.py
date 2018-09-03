@@ -4,6 +4,7 @@ from .layout import Row, Column # noqa
 from .panes import Pane # noqa
 from .param import ParamPane # noqa
 from .util import load_notebook as _load_nb
+from .viewable import Viewable
 
 import param
 from pyviz_comms import JupyterCommManager
@@ -39,6 +40,7 @@ class extension(param.ParameterizedFunction):
                                                "hv-extension-comm")
         _load_nb(p.inline)
         self._loaded = True
+        Viewable._comm_manager = JupyterCommManager
 
     @classmethod
     def _process_comm_msg(cls, msg):

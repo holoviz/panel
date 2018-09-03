@@ -28,7 +28,7 @@ def get_setup_version(reponame):
 install_requires = [
     'bokeh >=0.12.15',
     'param >=1.8.0a0',    
-    'pyviz_comms'
+    'pyviz_comms >=0.6.0'
 ]
 
 _recommended = [
@@ -76,8 +76,7 @@ setup_args = dict(
     license='BSD',
     url='http://pyviz.org',
     packages=find_packages(),
-    package_data={'panel': ['.version'],
-                  'panel.js': ['notebook.js']},
+    package_data={'panel': ['.version']},
     classifiers = [
         "License :: OSI Approved :: BSD License",
         "Development Status :: 5 - Production/Stable",

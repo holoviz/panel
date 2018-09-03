@@ -169,7 +169,7 @@ class Reactive(Viewable):
                 continue
             comm_id = comm_ids[0]
             comm = self._comm_manager._comms.pop(comm_id, None)
-            if hasattr(comm, 'close'):
+            if comm:
                 comm.close()
 
     def _process_property_change(self, msg):
