@@ -1,5 +1,5 @@
 """
-Panels allow wrapping external objects and rendering them as part of
+Panes allow wrapping external objects and rendering them as part of
 a dashboard.
 """
 from __future__ import absolute_import
@@ -13,43 +13,40 @@ import param
 from bokeh.layouts import Column as _BkColumn
 from bokeh.models import LayoutDOM, CustomJS, Div as _BkDiv
 
-from .util import get_method_owner, push, Div
+from .util import get_method_owner, push, remove_root, Div
 from .viewable import Reactive, Viewable
 
 
-def Panel(obj, **kwargs):
+def Pane(obj, **kwargs):
     """
-    Converts any object to a Panel if a matching Panel class exists.
+    Converts any object to a Pane if a matching Pane class exists.
     """
     if isinstance(obj, Viewable):
         return obj
-    return PanelBase.get_panel_type(obj)(obj, **kwargs)
+    return PaneBase.get_pane_type(obj)(obj, **kwargs)
 
 
-
-class PanelBase(Reactive):
+class PaneBase(Reactive):
     """
-    PanelBase is the abstract baseclass for all atomic displayable units
-    in the panel library. Panel defines an extensible interface for
+    PaneBase is the abstract baseclass for all atomic displayable units
+    in the panel library. Pane defines an extensible interface for
     wrapping arbitrary objects and transforming them into bokeh models.
-    allowing the panel to display itself in the notebook or be served
-    using bokeh server.
 
-    Panels are reactive in the sense that when the object they are
-    wrapping is changed any dashboard containing the panel will update
+    Panes are reactive in the sense that when the object they are
+    wrapping is changed any dashboard containing the pane will update
     in response.
 
-    To define a concrete Panel type subclass this class and implement
+    To define a concrete Pane type subclass this class and implement
     the applies classmethod and the _get_model private method.
     """
 
     object = param.Parameter(default=None, doc="""
         The object being wrapped, which will be converted into a bokeh model.""")
 
-    # When multiple Panels apply to an object the precedence is used
+    # When multiple Panes apply to an object the precedence is used
     precedence = 0
 
-    # Declares whether Panel supports updates to the bokeh model
+    # Declares whether Pane supports updates to the bokeh model
     _updates = False
 
     __abstract = True
@@ -57,20 +54,20 @@ class PanelBase(Reactive):
     @classmethod
     def applies(cls, obj):
         """
-        Given the object return a boolean indicating whether the Panel
+        Given the object return a boolean indicating whether the Pane
         can render the object.
         """
         return None
 
     @classmethod
-    def get_panel_type(cls, obj):
+    def get_pane_type(cls, obj):
         if isinstance(obj, Viewable):
             return type(obj)
-        descendents = [(p.precedence, p) for p in param.concrete_descendents(PanelBase).values()]
-        panel_types = sorted(descendents, key=lambda x: x[0])
-        for _, panel_type in panel_types:
-            if not panel_type.applies(obj): continue
-            return panel_type
+        descendents = [(p.precedence, p) for p in param.concrete_descendents(PaneBase).values()]
+        pane_types = sorted(descendents, key=lambda x: x[0])
+        for _, pane_type in pane_types:
+            if not pane_type.applies(obj): continue
+            return pane_type
         raise TypeError('%s type could not be rendered.' % type(obj).__name__)
 
     def __init__(self, object, **params):
@@ -80,11 +77,11 @@ class PanelBase(Reactive):
                              'expected %s object.' %
                              (type(object).__name__, name, name[:-5]))
 
-        # temporary flag denotes panels created for temporary, internal
+        # temporary flag denotes panes created for temporary, internal
         # use which should be garbage collected once they have been used
         self._temporary = params.pop('_temporary', False)
 
-        super(PanelBase, self).__init__(object=object, **params)
+        super(PaneBase, self).__init__(object=object, **params)
 
     def _get_root(self, doc, comm=None):
         root = _BkColumn()
@@ -93,7 +90,7 @@ class PanelBase(Reactive):
         return root
 
     def _cleanup(self, model, final=False):
-        super(PanelBase, self)._cleanup(model, final)
+        super(PaneBase, self)._cleanup(model, final)
         if self._temporary or final:
             self.object = None
 
@@ -105,15 +102,15 @@ class PanelBase(Reactive):
         """
         raise NotImplementedError
 
-    def _link_object(self, model, doc, root, parent, comm=None, panel=None):
+    def _link_object(self, model, doc, root, parent, comm=None):
         """
         Links the object parameter to the rendered bokeh model, triggering
         an update when the object changes.
         """
-        def update_panel(change, history=[(panel, model)]):
-            old_panel, old_model = history[0]
+        def update_pane(change, history=[model]):
+            old_model = history[0]
 
-            # Panel supports model updates
+            # Pane supports model updates
             if self._updates:
                 def update_models():
                     self._update(old_model)
@@ -125,35 +122,31 @@ class PanelBase(Reactive):
                 return
 
             # Otherwise replace the whole model
-            new_model, new_panel = self._get_model(doc, root, parent, comm, rerender=True)
-            if old_model is new_model:
-                return
-            elif old_panel is not None:
-                old_panel._cleanup(old_model, final=True)
-
+            new_model = self._get_model(doc, root, parent, comm)
             def update_models():
                 index = parent.children.index(old_model)
                 parent.children[index] = new_model
-                history[:] = [(new_panel, new_model)]
+                history[0] = new_model
+
             if comm:
                 update_models()
                 push(doc, comm)
             else:
                 doc.add_next_tick_callback(update_models)
-        self.param.watch(update_panel, 'object')
-        self._callbacks[model.ref['id']]['object'] = update_panel
+        self.param.watch(update_pane, 'object')
+        self._callbacks[model.ref['id']]['object'] = update_pane
 
 
-class BokehPanel(PanelBase):
+class BokehPane(PaneBase):
     """
-    BokehPanel allows including any bokeh model in a plot directly.
+    BokehPane allows including any bokeh model in a panel.
     """
 
     @classmethod
     def applies(cls, obj):
         return isinstance(obj, LayoutDOM)
 
-    def _get_model(self, doc, root, parent=None, comm=None, rerender=False):
+    def _get_model(self, doc, root, parent=None, comm=None):
         """
         Should return the bokeh model to be rendered.
         """
@@ -163,16 +156,16 @@ class BokehPanel(PanelBase):
             for js in model.select({'type': CustomJS}):
                 js.code = js.code.replace(self.object.ref['id'], plot_id)
 
-        if rerender:
-            return model, None
+        if model._document and doc is not model._document:
+            remove_root(model, doc)
 
         self._link_object(model, doc, root, parent, comm)
         return model
 
 
-class HoloViewsPanel(PanelBase):
+class HoloViewsPane(PaneBase):
     """
-    HoloViewsPanel renders any HoloViews object to a corresponding
+    HoloViewsPane renders any HoloViews object to a corresponding
     bokeh model while respecting the currently selected backend.
     """
 
@@ -204,9 +197,9 @@ class HoloViewsPanel(PanelBase):
                         owner = get_method_owner(sub)
                         if owner.state is model:
                             owner.cleanup()
-        super(HoloViewsPanel, self)._cleanup(model)
+        super(HoloViewsPane, self)._cleanup(model)
 
-    def _get_model(self, doc, root, parent=None, comm=None, rerender=False):
+    def _get_model(self, doc, root, parent=None, comm=None):
         """
         Should return the bokeh model to be rendered.
         """
@@ -216,21 +209,26 @@ class HoloViewsPanel(PanelBase):
         kwargs = {'doc': doc} if renderer.backend == 'bokeh' else {}
         plot = renderer.get_plot(self.object, **kwargs)
         self._patch_plot(plot, root.ref['id'], comm)
-        child_panel = Panel(plot.state, _temporary=True)
-        model = child_panel._get_model(doc, root, parent, comm)
-        if rerender:
-            return model, child_panel
-        self._link_object(model, doc, root, parent, comm, child_panel)
+        child_pane = Pane(plot.state, _temporary=True)
+        model = child_pane._get_model(doc, root, parent, comm)
+        self._link_object(model, doc, root, parent, comm)
         return model
 
 
-class ParamMethodPanel(PanelBase):
+class ParamMethodPane(PaneBase):
     """
-    ParamMethodPanel wraps methods annotated with the param.depends
+    ParamMethodPane wraps methods annotated with the param.depends
     decorator and rerenders the plot when any of the methods parameters
     change. The method may return any object which itself can be rendered
-    as a Panel.
+    as a Pane.
     """
+
+    def __init__(self, object, **params):
+        self._kwargs =  {p: params.pop(p) for p in list(params)
+                         if p not in self.params()}
+        super(ParamMethodPane, self).__init__(object, **params)
+        self._pane = Pane(self.object(), name=self.name,
+                          **dict(_temporary=True, **self._kwargs))
 
     @classmethod
     def applies(cls, obj):
@@ -239,43 +237,42 @@ class ParamMethodPanel(PanelBase):
     def _get_model(self, doc, root=None, parent=None, comm=None):
         parameterized = get_method_owner(self.object)
         params = parameterized.param.params_depended_on(self.object.__name__)
-        panel = Panel(self.object(), _temporary=True)
-        model = panel._get_model(doc, root, parent, comm)
-        history = [(panel, model)]
+        model = self._pane._get_model(doc, root, parent, comm)
+        history = [model]
         for p in params:
-            def update_panel(change, history=history):
+            def update_pane(change, history=history):
                 if change.what != 'value': return
 
-                # Try updating existing panel
-                old_panel, old_model = history[0]
+                # Try updating existing pane
+                old_model = history[0]
                 new_object = self.object()
-                panel_type = self.get_panel_type(new_object)
-                if type(old_panel) is panel_type and panel_type._updates:
-                    if isinstance(new_object, PanelBase):
+                pane_type = self.get_pane_type(new_object)
+                if type(self._pane) is pane_type and pane_type._updates:
+                    if isinstance(new_object, PaneBase):
                         new_params = {k: v for k, v in new_object.get_param_values()
                                       if k != 'name'}
-                        old_panel.set_param(**new_params)
+                        self._pane.set_param(**new_params)
                         new_object._cleanup(None, final=True)
                     else:
-                        old_panel.object = new_object
+                        self._pane.object = new_object
                     return
 
-                # Replace panel entirely
-                old_panel._cleanup(old_model)
-                new_panel = Panel(new_object, _temporary=True)
-                new_model = new_panel._get_model(doc, root, parent, comm)
+                # Replace pane entirely
+                self._pane._cleanup(old_model)
+                self._pane = Pane(new_object, _temporary=True, **self._kwargs)
+                new_model = self._pane._get_model(doc, root, parent, comm)
                 def update_models():
                     if old_model is new_model: return
                     index = parent.children.index(old_model)
                     parent.children[index] = new_model
-                    history[:] = [(new_panel, new_model)]
+                    history[0] = new_model
                 if comm:
                     update_models()
                     push(doc, comm)
                 else:
                     doc.add_next_tick_callback(update_models)
 
-            parameterized.param.watch(update_panel, p.name, p.what)
+            parameterized.param.watch(update_pane, p.name, p.what)
         return model
 
     def _cleanup(self, model):
@@ -287,17 +284,17 @@ class ParamMethodPanel(PanelBase):
         parameterized = get_method_owner(self.object)
         for p, cb in callbacks.items():
             parameterized.param.unwatch(cb, p)
-        super(ParamMethodPanel, self)._cleanup(model)
+        super(ParamMethodPane, self)._cleanup(model)
 
 
-class DivBasePanel(PanelBase):
+class DivBasePane(PaneBase):
     """
-    Baseclass for Panels which render HTML inside a Bokeh Div.
+    Baseclass for Panes which render HTML inside a Bokeh Div.
     See the documentation for Bokeh Div for more detail about
     the supported options like style and sizing_mode.
     """
 
-    # DivPanel supports updates to the model
+    # DivPane supports updates to the model
     _updates = True
 
     __abstract = True
@@ -317,10 +314,8 @@ class DivBasePanel(PanelBase):
         return {p : getattr(self,p) for p in ["width", "height", "sizing_mode", "style"]
                 if getattr(self,p) is not None}
 
-    def _get_model(self, doc, root=None, parent=None, comm=None, rerender=False):
+    def _get_model(self, doc, root=None, parent=None, comm=None):
         model = Div(**self._get_properties())
-        if rerender:
-            return model, None
         self._link_object(model, doc, root, parent, comm)
         return model
 
@@ -329,7 +324,7 @@ class DivBasePanel(PanelBase):
         div.update(**self._get_properties())
 
 
-class PNGPanel(DivBasePanel):
+class PNGPane(DivBasePane):
     """
     Encodes a PNG as base64 and wraps it in a Bokeh Div model.
     This base class supports anything with a _repr_png_ method, but
@@ -355,7 +350,7 @@ class PNGPanel(DivBasePanel):
         src = "data:image/png;base64,{b64}".format(b64=b64)
         html = "<img src='{src}'></img>".format(src=src)
         
-        p = super(PNGPanel,self)._get_properties()
+        p = super(PNGPane,self)._get_properties()
         width, height = self._pngshape(data)
         if self.width  is None: p["width"]  = width
         if self.height is None: p["height"] = height
@@ -363,9 +358,9 @@ class PNGPanel(DivBasePanel):
         return p
 
 
-class MatplotlibPanel(PNGPanel):
+class MatplotlibPane(PNGPane):
     """
-    A MatplotlibPanel renders a matplotlib figure to png and wraps
+    A MatplotlibPane renders a matplotlib figure to png and wraps
     the base64 encoded data in a bokeh Div model.
     """
 
@@ -380,9 +375,9 @@ class MatplotlibPanel(PNGPanel):
 
 
 
-class HTMLPanel(DivBasePanel):
+class HTMLPane(DivBasePane):
     """
-    HTMLPanel renders any object which has a _repr_html_ method and wraps
+    HTMLPane renders any object which has a _repr_html_ method and wraps
     the HTML in a bokeh Div model. The height and width can optionally
     be specified, to allow room for whatever is being wrapped.
     """
@@ -395,12 +390,12 @@ class HTMLPanel(DivBasePanel):
 
     def _get_properties(self):
         return dict(text=self.object._repr_html_(),
-                    **super(HTMLPanel,self)._get_properties())
+                    **super(HTMLPane,self)._get_properties())
 
 
-class RGGPlotPanel(PNGPanel):
+class RGGPlotPane(PNGPane):
     """
-    An RGGPlotPanel renders an r2py-based ggplot2 figure to png
+    An RGGPlotPane renders an r2py-based ggplot2 figure to png
     and wraps the base64-encoded data in a bokeh Div model.
     """
 

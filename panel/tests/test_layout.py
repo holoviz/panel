@@ -4,7 +4,7 @@ import pytest
 
 from bokeh.models import Div, Row as BkRow, Tabs as BkTabs, Column as BkColumn, Panel as BkPanel
 from panel.layout import Column, Row, Tabs, Spacer
-from panel.panels import BokehPanel, Panel
+from panel.panes import BokehPane, Pane
 
 
 @pytest.mark.parametrize('panel', [Column, Row])
@@ -13,7 +13,7 @@ def test_layout_constructor(panel):
     div2 = Div()
     layout = panel(div1, div2)
 
-    assert all(isinstance(p, BokehPanel) for p in layout.panels)
+    assert all(isinstance(p, BokehPane) for p in layout.objects)
 
 
 @pytest.mark.parametrize(['panel', 'model_type'], [(Column, BkColumn), (Row, BkRow)])
@@ -59,7 +59,7 @@ def test_layout_setitem(panel, document, comm):
     div1 = Div()
     div2 = Div()
     layout = panel(div1, div2)
-    p1, p2 = layout.panels
+    p1, p2 = layout.objects
 
     model = layout._get_model(document, comm=comm)
 
@@ -75,7 +75,7 @@ def test_layout_pop(panel, document, comm):
     div1 = Div()
     div2 = Div()
     layout = panel(div1, div2)
-    p1, p2 = layout.panels
+    p1, p2 = layout.objects
 
     model = layout._get_model(document, comm=comm)
 
@@ -89,7 +89,7 @@ def test_tabs_constructor(document, comm):
     div1 = Div()
     div2 = Div()
     tabs = Tabs(('Div1', div1), ('Div2', div2))
-    p1, p2 = tabs.panels
+    p1, p2 = tabs.objects
 
     model = tabs._get_model(document, comm=comm)
 
@@ -106,8 +106,8 @@ def test_tabs_constructor(document, comm):
 
 def test_tabs_implicit_constructor(document, comm):
     div1, div2 = Div(), Div()
-    p1 = Panel(div1, name='Div1')
-    p2 = Panel(div2, name='Div2')
+    p1 = Pane(div1, name='Div1')
+    p2 = Pane(div2, name='Div2')
     tabs = Tabs(p1, p2)
 
     model = tabs._get_model(document, comm=comm)
@@ -123,17 +123,17 @@ def test_tabs_implicit_constructor(document, comm):
     assert tab2.child is div2
 
 
-def test_tabs_set_panels(document, comm):
+def test_tabs_set_panes(document, comm):
     div1, div2 = Div(), Div()
-    p1 = Panel(div1, name='Div1')
-    p2 = Panel(div2, name='Div2')
+    p1 = Pane(div1, name='Div1')
+    p2 = Pane(div2, name='Div2')
     tabs = Tabs(p1, p2)
 
     model = tabs._get_model(document, comm=comm)
 
     div3 = Div()
-    p3 = Panel(div3, name='Div3')
-    tabs.panels = [p1, p2, p3]
+    p3 = Pane(div3, name='Div3')
+    tabs.objects = [p1, p2, p3]
 
     assert isinstance(model, BkTabs)
     assert len(model.tabs) == 3
@@ -150,8 +150,8 @@ def test_tabs_set_panels(document, comm):
 
 def test_tabs_append(document, comm):
     div1, div2 = Div(), Div()
-    p1 = Panel(div1, name='Div1')
-    p2 = Panel(div2, name='Div2')
+    p1 = Pane(div1, name='Div1')
+    p2 = Pane(div2, name='Div2')
     tabs = Tabs(p1, p2)
 
     model = tabs._get_model(document, comm=comm)
@@ -180,7 +180,7 @@ def test_tabs_setitem(document, comm):
     div1 = Div()
     div2 = Div()
     tabs = Tabs(div1, div2)
-    p1, p2 = tabs.panels
+    p1, p2 = tabs.objects
 
     model = tabs._get_model(document, comm=comm)
 
@@ -197,7 +197,7 @@ def test_tabs_pop(document, comm):
     div1 = Div()
     div2 = Div()
     tabs = Tabs(div1, div2)
-    p1, p2 = tabs.panels
+    p1, p2 = tabs.objects
 
     model = tabs._get_model(document, comm=comm)
 

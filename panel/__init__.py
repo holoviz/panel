@@ -1,8 +1,8 @@
 from __future__ import absolute_import
 
 from .layout import Row, Column # noqa
-from .panels import Panel # noqa
-from .param import ParamPanel # noqa
+from .panes import Pane # noqa
+from .param import ParamPane # noqa
 from .util import load_notebook as _load_nb
 
 import param
