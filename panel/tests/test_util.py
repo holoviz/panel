@@ -1,5 +1,3 @@
-import pytest
-
 from bokeh.models import Div
 
 from panel.panes import PaneBase
