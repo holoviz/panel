@@ -34,7 +34,8 @@ install_requires = [
 _recommended = [
     'notebook >=5.4',
     'holoviews>1.10.5',
-    'matplotlib'
+    'matplotlib',
+    'plotly'
 ]
 
 extras_require = {
@@ -78,7 +79,8 @@ setup_args = dict(
     license='BSD',
     url='http://pyviz.org',
     packages=find_packages(),
-    package_data={'panel': ['.version']},
+    package_data={'panel': ['.version'],
+                  'panel.models': ['*.ts']},
     classifiers = [
         "License :: OSI Approved :: BSD License",
         "Development Status :: 5 - Production/Stable",
