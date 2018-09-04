@@ -1,5 +1,5 @@
 """
-Defines the ParamPane which converts Parameterized classes into a
+Defines the Param pane which converts Parameterized classes into a
 set of widgets.
 """
 from __future__ import absolute_import
@@ -21,10 +21,10 @@ from .widgets import (
 )
 
 
-class ParamPane(PaneBase):
+class Param(PaneBase):
     """
-    ParamPane renders a Parameterized class to a set of widgets which
-    are linke to the parameter values on the class.
+    Param panes render a Parameterized class to a set of widgets which
+    are linked to the parameter values on the class.
     """
 
     height = param.Integer(default=None, bounds=(0, None))
@@ -75,7 +75,7 @@ class ParamPane(PaneBase):
     def __init__(self, object, **params):
         if 'name' not in params:
             params['name'] = object.name
-        super(ParamPane, self).__init__(object, **params)
+        super(Param, self).__init__(object, **params)
         self._widgets = self._get_widgets()
         self._widget_box = WidgetBox(*self._widgets.values(), height=self.height,
                                      width=self.width, name=self.name)
@@ -98,7 +98,7 @@ class ParamPane(PaneBase):
                 "Adds or removes subpanel from layout"
                 parameterized = getattr(self.object, parameter)
                 existing = [p for p in self._layout.objects
-                            if isinstance(p, ParamPane)
+                            if isinstance(p, Param)
                             and p.object is parameterized]
                 if existing:
                     if not change.new:
@@ -106,8 +106,8 @@ class ParamPane(PaneBase):
                 elif change.new:
                     kwargs = {k: v for k, v in self.get_param_values()
                               if k not in ['name', 'object']}
-                    pane = ParamPane(parameterized, name=parameterized.name,
-                                     _temporary=True, **kwargs)
+                    pane = Param(parameterized, name=parameterized.name,
+                                 _temporary=True, **kwargs)
                     self._layout.append(pane)
 
             widget.param.watch(update_panes, 'active')

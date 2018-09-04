@@ -41,8 +41,9 @@ export class PlotlyPlotView extends LayoutDOMView {
         let array = cds.get_array(column)
         if (shape.length > 1) {
           const arrays = []
-          for (s = 0; s < shape[0].length; s++)
+          for (const s = 0; s < shape[0]; s++) {
             arrays.push(array.slice(s*shape[1], (s+1)*shape[1]))
+          }
           array = arrays
         }
         trace[column] = array

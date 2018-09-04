@@ -12,26 +12,26 @@ plotly_available = pytest.mark.skipif(plotly is None, reason="requires matplotli
 import numpy as np
 from bokeh.models import Row as BkRow
 from panel.panes import Pane, PaneBase
-from panel.plotly import PlotlyPane, PlotlyPlot
+from panel.plotly import Plotly, PlotlyPlot
 
 
 @plotly_available
 def test_get_plotly_pane_type_from_figure():
     trace = go.Scatter(x=[0, 1], y=[2, 3])
     fig = go.Figure([trace])
-    assert PaneBase.get_pane_type(fig) is PlotlyPane
+    assert PaneBase.get_pane_type(fig) is Plotly
 
 
 @plotly_available
 def test_get_plotly_pane_type_from_traces():
     trace = go.Scatter(x=[0, 1], y=[2, 3])
-    assert PaneBase.get_pane_type([trace]) is PlotlyPane
+    assert PaneBase.get_pane_type([trace]) is Plotly
 
 
 @plotly_available
 def test_get_plotly_pane_type_from_trace():
     trace = go.Scatter(x=[0, 1], y=[2, 3])
-    assert PaneBase.get_pane_type(trace) is PlotlyPane
+    assert PaneBase.get_pane_type(trace) is Plotly
 
 
 @plotly_available

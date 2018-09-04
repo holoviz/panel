@@ -23,9 +23,9 @@ class PlotlyPlot(LayoutDOM):
     data_sources = List(Instance(ColumnDataSource))
 
 
-class PlotlyPane(PaneBase):
+class Plotly(PaneBase):
     """
-    PlotlyPane allows rendering a plotly Figure.
+    Plotly panes allow rendering plotly Figures and traces.
 
     For efficiency any array objects found inside a Figure are added
     to a ColumnDataSource which allows using binary transport to sync
@@ -37,8 +37,8 @@ class PlotlyPane(PaneBase):
     _updates = True
 
     def __init__(self, object, layout=None, **params):
-        super(PlotlyPane, self).__init__(self._to_figure(object, layout),
-                                         layout=layout, **params)
+        super(Plotly, self).__init__(self._to_figure(object, layout),
+                                     layout=layout, **params)
 
     @classmethod
     def applies(cls, obj):
