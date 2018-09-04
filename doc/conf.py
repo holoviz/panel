@@ -13,9 +13,8 @@ version = release = str(panel.__version__)
 html_static_path += ['_static']
 html_theme = 'sphinx_ioam_theme'
 html_theme_options = {
-    'logo':'param-logo.png',
-    'favicon':'favicon.ico',
-#    'css':'parambokeh.css'
+    'logo':'logo.png',
+    'favicon':'favicon.ico'
 }
 
 _NAV =  (
