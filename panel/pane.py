@@ -12,8 +12,8 @@ from io import BytesIO
 
 import param
 
-from bokeh.layouts import Row as _BkRow
-from bokeh.models import LayoutDOM, CustomJS, Div as _BkDiv
+from bokeh.layouts import Row as _BkRow, WidgetBox as _BkWidgetBox
+from bokeh.models import LayoutDOM, CustomJS, Widget as _BkWidget, Div as _BkDiv
 
 from .util import basestring, get_method_owner, push, remove_root, Div
 from .viewable import Reactive, Viewable
@@ -154,6 +154,9 @@ class Bokeh(PaneBase):
         Should return the bokeh model to be rendered.
         """
         model = self.object
+        if isinstance(model, _BkWidget):
+            model = _BkWidgetBox(model, width=model.width)
+
         if root:
             plot_id = root.ref['id']
             if plot_id:
