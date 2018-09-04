@@ -140,9 +140,9 @@ class PaneBase(Reactive):
         self._callbacks[model.ref['id']]['object'] = update_pane
 
 
-class BokehPane(PaneBase):
+class Bokeh(PaneBase):
     """
-    BokehPane allows including any bokeh model in a panel.
+    Bokeh panes allow including any bokeh model in a panel.
     """
 
     @classmethod
@@ -167,9 +167,9 @@ class BokehPane(PaneBase):
         return model
 
 
-class HoloViewsPane(PaneBase):
+class HoloViews(PaneBase):
     """
-    HoloViewsPane renders any HoloViews object to a corresponding
+    HoloViews panes render any HoloViews object to a corresponding
     bokeh model while respecting the currently selected backend.
     """
 
@@ -204,7 +204,7 @@ class HoloViewsPane(PaneBase):
                         owner = get_method_owner(sub)
                         if owner.state is model:
                             owner.cleanup()
-        super(HoloViewsPane, self)._cleanup(model, final)
+        super(HoloViews, self)._cleanup(model, final)
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         """
@@ -222,9 +222,9 @@ class HoloViewsPane(PaneBase):
         return model
 
 
-class ParamMethodPane(PaneBase):
+class ParamMethod(PaneBase):
     """
-    ParamMethodPane wraps methods annotated with the param.depends
+    ParamMethod panes wrap methods annotated with the param.depends
     decorator and rerenders the plot when any of the methods parameters
     change. The method may return any object which itself can be rendered
     as a Pane.
@@ -233,7 +233,7 @@ class ParamMethodPane(PaneBase):
     def __init__(self, object, **params):
         self._kwargs =  {p: params.pop(p) for p in list(params)
                          if p not in self.params()}
-        super(ParamMethodPane, self).__init__(object, **params)
+        super(ParamMethod, self).__init__(object, **params)
         self._pane = Pane(self.object(), name=self.name,
                           **dict(_temporary=True, **self._kwargs))
 
@@ -293,10 +293,10 @@ class ParamMethodPane(PaneBase):
         for p, cb in callbacks.items():
             parameterized.param.unwatch(cb, p)
         self._pane._cleanup(model, final)
-        super(ParamMethodPane, self)._cleanup(model, final)
+        super(ParamMethod, self)._cleanup(model, final)
 
 
-class DivBasePane(PaneBase):
+class DivPaneBase(PaneBase):
     """
     Baseclass for Panes which render HTML inside a Bokeh Div.
     See the documentation for Bokeh Div for more detail about
@@ -333,7 +333,7 @@ class DivBasePane(PaneBase):
         div.update(**self._get_properties())
 
 
-class PNGPane(DivBasePane):
+class PNG(DivPaneBase):
     """
     Encodes a PNG as base64 and wraps it in a Bokeh Div model.  This
     base class supports anything with a _repr_png_ method, a local
@@ -372,7 +372,7 @@ class PNGPane(DivBasePane):
         src = "data:image/png;base64,{b64}".format(b64=b64)
         html = "<img src='{src}'></img>".format(src=src)
         
-        p = super(PNGPane,self)._get_properties()
+        p = super(PNG,self)._get_properties()
         width, height = self._pngshape(data)
         if self.width  is None: p["width"]  = width
         if self.height is None: p["height"] = height
@@ -380,9 +380,9 @@ class PNGPane(DivBasePane):
         return p
 
 
-class MatplotlibPane(PNGPane):
+class Matplotlib(PNG):
     """
-    A MatplotlibPane renders a matplotlib figure to png and wraps
+    A Matplotlib panes render a matplotlib figure to png and wraps
     the base64 encoded data in a bokeh Div model.
     """
 
@@ -403,10 +403,9 @@ class MatplotlibPane(PNGPane):
         return b.getvalue()
 
 
-
-class HTMLPane(DivBasePane):
+class HTML(DivPaneBase):
     """
-    HTMLPane renders any object which has a _repr_html_ method and wraps
+    HTML panes render any object which has a _repr_html_ method and wraps
     the HTML in a bokeh Div model. The height and width can optionally
     be specified, to allow room for whatever is being wrapped.
     """
@@ -418,13 +417,13 @@ class HTMLPane(DivBasePane):
         return hasattr(obj, '_repr_html_')
 
     def _get_properties(self):
-        return dict(text=self.object._repr_html_(),
-                    **super(HTMLPane,self)._get_properties())
+        properties = super(HTML, self)._get_properties()
+        return dict(properties, text=self.object._repr_html_())
 
 
-class RGGPlotPane(PNGPane):
+class RGGPlot(PNG):
     """
-    An RGGPlotPane renders an r2py-based ggplot2 figure to png
+    An RGGPlot panes render an r2py-based ggplot2 figure to png
     and wraps the base64-encoded data in a bokeh Div model.
     """
 

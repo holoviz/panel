@@ -6,8 +6,8 @@ import param
 from bokeh.models import (Div, Row as BkRow, WidgetBox as BkWidgetBox,
                           GlyphRenderer, Circle, Line)
 from bokeh.plotting import Figure
-from panel.panes import (Pane, PaneBase, BokehPane, HoloViewsPane,
-                         MatplotlibPane, ParamMethodPane)
+from panel.panes import (Pane, PaneBase, Bokeh, HoloViews, Matplotlib,
+                         ParamMethod)
 
 try:
     import holoviews as hv
@@ -27,7 +27,7 @@ from .fixtures import mpl_figure
 
 def test_get_bokeh_pane_type():
     div = Div()
-    assert PaneBase.get_pane_type(div) is BokehPane
+    assert PaneBase.get_pane_type(div) is Bokeh
 
 
 def test_bokeh_pane(document, comm):
@@ -58,7 +58,7 @@ def test_bokeh_pane(document, comm):
 @hv_available
 def test_get_holoviews_pane_type():
     curve = hv.Curve([1, 2, 3])
-    assert PaneBase.get_pane_type(curve) is HoloViewsPane
+    assert PaneBase.get_pane_type(curve) is HoloViews
 
 
 @pytest.mark.usefixtures("hv_mpl")
@@ -129,7 +129,7 @@ def test_holoviews_pane_bokeh_renderer(document, comm):
 
 @mpl_available
 def test_get_matplotlib_pane_type():
-    assert PaneBase.get_pane_type(mpl_figure()) is MatplotlibPane
+    assert PaneBase.get_pane_type(mpl_figure()) is Matplotlib
 
 
 @mpl_available
@@ -181,14 +181,14 @@ class View(param.Parameterized):
 
 
 def test_get_param_method_pane_type():
-    assert PaneBase.get_pane_type(View().view) is ParamMethodPane
+    assert PaneBase.get_pane_type(View().view) is ParamMethod
 
 
 def test_param_method_pane(document, comm):
     test = View()
     pane = Pane(test.view)
     inner_pane = pane._pane
-    assert isinstance(inner_pane, BokehPane)
+    assert isinstance(inner_pane, Bokeh)
 
     # Create pane
     row = pane._get_root(document, comm=comm)
@@ -217,7 +217,7 @@ def test_param_method_pane_mpl(document, comm):
     test = View()
     pane = Pane(test.mpl_view)
     inner_pane = pane._pane
-    assert isinstance(inner_pane, MatplotlibPane)
+    assert isinstance(inner_pane, Matplotlib)
 
     # Create pane
     row = pane._get_root(document, comm=comm)
@@ -250,7 +250,7 @@ def test_param_method_pane_changing_type(document, comm):
     test = View()
     pane = Pane(test.mixed_view)
     inner_pane = pane._pane
-    assert isinstance(inner_pane, MatplotlibPane)
+    assert isinstance(inner_pane, Matplotlib)
 
     # Create pane
     row = pane._get_root(document, comm=comm)
@@ -269,7 +269,7 @@ def test_param_method_pane_changing_type(document, comm):
     model = row.children[0]
     new_pane = pane._pane
     assert pane._callbacks == {}
-    assert isinstance(new_pane, BokehPane)
+    assert isinstance(new_pane, Bokeh)
     div = row.children[0]
     assert isinstance(div, Div)
     assert div.text != text

@@ -4,7 +4,7 @@ import pytest
 
 from bokeh.models import Div, Row as BkRow, Tabs as BkTabs, Column as BkColumn, Panel as BkPanel
 from panel.layout import Column, Row, Tabs, Spacer
-from panel.panes import BokehPane, Pane
+from panel.panes import Bokeh, Pane
 
 
 @pytest.mark.parametrize('panel', [Column, Row])
@@ -13,7 +13,7 @@ def test_layout_constructor(panel):
     div2 = Div()
     layout = panel(div1, div2)
 
-    assert all(isinstance(p, BokehPane) for p in layout.objects)
+    assert all(isinstance(p, Bokeh) for p in layout.objects)
 
 
 @pytest.mark.parametrize(['panel', 'model_type'], [(Column, BkColumn), (Row, BkRow)])
