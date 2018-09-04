@@ -4,13 +4,14 @@ a dashboard.
 """
 from __future__ import absolute_import
 
+import sys
 import inspect
 import base64
 from io import BytesIO
 
 import param
 
-from bokeh.layouts import Column as _BkColumn
+from bokeh.layouts import Row as _BkRow
 from bokeh.models import LayoutDOM, CustomJS, Div as _BkDiv
 
 from .util import get_method_owner, push, remove_root, Div
@@ -84,7 +85,7 @@ class PaneBase(Reactive):
         super(PaneBase, self).__init__(object=object, **params)
 
     def _get_root(self, doc, comm=None):
-        root = _BkColumn()
+        root = _BkRow()
         model = self._get_model(doc, root, root, comm)
         root.children = [model]
         return root
@@ -124,6 +125,7 @@ class PaneBase(Reactive):
             # Otherwise replace the whole model
             new_model = self._get_model(doc, root, parent, comm)
             def update_models():
+                self._cleanup(old_model)
                 index = parent.children.index(old_model)
                 parent.children[index] = new_model
                 history[0] = new_model
@@ -171,7 +173,10 @@ class HoloViewsPane(PaneBase):
 
     @classmethod
     def applies(cls, obj):
-        return hasattr(obj, 'kdims') and hasattr(obj, 'vdims')
+        if 'holoviews' not in sys.modules:
+            return False
+        from holoviews import Dimensioned
+        return isinstance(obj, Dimensioned)
 
     def _patch_plot(self, plot, plot_id, comm):
         if not hasattr(plot, '_update_callbacks'):
@@ -188,6 +193,7 @@ class HoloViewsPane(PaneBase):
         Traverses HoloViews object to find and clean up any streams
         connected to existing plots.
         """
+        from holoviews.plotting.renderer import Renderer
         from holoviews.core.spaces import DynamicMap, get_nested_streams
         dmaps = self.object.traverse(lambda x: x, [DynamicMap])
         for dmap in dmaps:
@@ -266,6 +272,7 @@ class ParamMethodPane(PaneBase):
                     index = parent.children.index(old_model)
                     parent.children[index] = new_model
                     history[0] = new_model
+
                 if comm:
                     update_models()
                     push(doc, comm)
@@ -366,7 +373,14 @@ class MatplotlibPane(PNGPane):
 
     @classmethod
     def applies(cls, obj):
-        return type(obj).__name__ == 'Figure' and hasattr(obj, '_cachedRenderer')
+        if 'matplotlib' not in sys.modules:
+            return False
+        from matplotlib.figure import Figure
+        is_fig = isinstance(obj, Figure)
+        if is_fig and obj.canvas is None:
+            raise ValueError('Matplotlib figure has no canvas and '
+                             'cannot be rendered.')
+        return is_fig
 
     def _png(self):
         b = BytesIO()
