@@ -149,15 +149,16 @@ class BokehPane(PaneBase):
     def applies(cls, obj):
         return isinstance(obj, LayoutDOM)
 
-    def _get_model(self, doc, root, parent=None, comm=None):
+    def _get_model(self, doc, root=None, parent=None, comm=None):
         """
         Should return the bokeh model to be rendered.
         """
         model = self.object
-        plot_id = root.ref['id']
-        if plot_id:
-            for js in model.select({'type': CustomJS}):
-                js.code = js.code.replace(self.object.ref['id'], plot_id)
+        if root:
+            plot_id = root.ref['id']
+            if plot_id:
+                for js in model.select({'type': CustomJS}):
+                    js.code = js.code.replace(self.object.ref['id'], plot_id)
 
         if model._document and doc is not model._document:
             remove_root(model, doc)
@@ -205,7 +206,7 @@ class HoloViewsPane(PaneBase):
                             owner.cleanup()
         super(HoloViewsPane, self)._cleanup(model, final)
 
-    def _get_model(self, doc, root, parent=None, comm=None):
+    def _get_model(self, doc, root=None, parent=None, comm=None):
         """
         Should return the bokeh model to be rendered.
         """

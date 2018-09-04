@@ -79,9 +79,10 @@ class ParamPane(PaneBase):
         self._widgets = self._get_widgets()
         self._widget_box = WidgetBox(*self._widgets.values(), height=self.height,
                                      width=self.width, name=self.name)
-        panes = [self._widget_box]
         if self.height is not None:
-            panes.append(Spacer(height=self.height))
+            panes = [self._widget_box]
+        else:
+            panes = [Row(self._widget_box, Spacer(height=self.height), name=self.name)]
 
         kwargs = {'name': self.name}
         if self.subpanel_layout is Tabs:
