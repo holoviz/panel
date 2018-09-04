@@ -452,12 +452,14 @@ class HTML(DivPaneBase):
         return dict(properties, text=self.object._repr_html_())
 
 
-class Repr(DivPaneBase):
+class String(DivPaneBase):
     """
-    Repr panes render any object for which `repr()` can be called, wrapping
-    the resulting string in a bokeh Div model.  Set to a low precedence
-    because generally one will want a better representation than just
-    the repr, but allows arbitrary objects to be used as a Pane.
+    A String pane renders any object for which `str()` can be called,
+    wrapping the resulting string in a bokeh Div model.  Set to a low
+    precedence because generally one will want a better
+    representation, but allows arbitrary objects to be used as a Pane.
+    HTML markup will be interpreted, so this type of pane is also 
+    useful for arbitrary HTML code provided as a Python string.
     """
 
     precedence = 10
@@ -467,5 +469,5 @@ class Repr(DivPaneBase):
         return True
 
     def _get_properties(self):
-        properties = super(Repr, self)._get_properties()
-        return dict(properties, text=repr(self.object))
+        properties = super(String, self)._get_properties()
+        return dict(properties, text=str(self.object))
