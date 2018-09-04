@@ -9,12 +9,14 @@ from bokeh.models import LayoutDOM, ColumnDataSource
 
 from .panes import PaneBase
 
-fpath = os.path.dirname(__file__)
-
 
 class PlotlyPlot(LayoutDOM):
+    """
+    A bokeh model that wraps around a plotly plot and renders it inside
+    a bokeh plot.
+    """
 
-    __implementation__ = os.path.join(fpath, 'models', 'plotly.ts')
+    __implementation__ = os.path.join(os.path.dirname(__file__), 'models', 'plotly.ts')
 
     data = Dict(String, Any)
 
@@ -89,4 +91,3 @@ class PlotlyPane(PaneBase):
         model.data = json
         if new_sources:
             model.data_sources += new_sources
-            
