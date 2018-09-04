@@ -1,7 +1,7 @@
 [![Linux Build Status](https://travis-ci.org/pyviz/panel.svg?branch=master)](https://travis-ci.org/pyviz/panel)
 [![codecov](https://codecov.io/gh/pyviz/panel/branch/master/graph/badge.svg)](https://codecov.io/gh/pyviz/panel)
 
-# Panel
+<img src="https://github.com/pyviz/panel/raw/master/doc/_static/logo_stacked.png" data-canonical-src="https://github.com/pyviz/panel/raw/master/doc/_static/logo_stacked.png" width="200"/>
 
 Panel provides tools for easily composing widgets, plots, tables, and other viewable objects and controls into control panels, apps, and dashboards. Panel works with visualizations from [Bokeh](http://bokeh.pydata.org), [Matplotlib](matplotlib.org), [HoloViews](http://holoviews.org), and other Python plotting libraries, making them instantly viewable either individually or when combined with interactive widgets that control them.  Panel works equally well in [Jupyter Notebooks](http://jupyter.org), for creating quick data-exploration tools, or as standalone deployed apps and dashboards, and allows you to easily switch between those contexts as needed.
 
