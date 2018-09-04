@@ -19,8 +19,9 @@ from pyviz_comms import (PYVIZ_PROXY, JupyterCommManager, bokeh_msg_handler,
 
 try:
     unicode = unicode # noqa
+    basestring = basestring # noqa
 except:
-    unicode = str
+    basestring = unicode = str
 
 
 def as_unicode(obj):
@@ -74,7 +75,7 @@ class default_label_formatter(param.ParameterizedFunction):
         if self.replace_underscores:
             pname = pname.replace('_',' ')
         if self.capitalize:
-            pname = pname.capitalize()
+            pname = pname[:1].upper() + pname[1:]
         return pname
 
 

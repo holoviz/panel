@@ -32,7 +32,9 @@ install_requires = [
 ]
 
 _recommended = [
-    'notebook >=5.4'
+    'notebook >=5.4',
+    'holoviews>1.10.5',
+    'matplotlib'
 ]
 
 extras_require = {
