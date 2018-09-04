@@ -10,6 +10,7 @@ hv_available = pytest.mark.skipif(hv is None, reason="requires holoviews")
 
 try:
     import matplotlib as mpl
+    mpl.use('Agg')
 except:
     mpl = None
 mpl_available = pytest.mark.skipif(mpl is None, reason="requires matplotlib")
