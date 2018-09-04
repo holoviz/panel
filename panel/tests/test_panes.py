@@ -18,7 +18,8 @@ mpl_available = pytest.mark.skipif(mpl is None, reason="requires matplotlib")
 from bokeh.models import (Div, Row as BkRow, WidgetBox as BkWidgetBox,
                           GlyphRenderer, Circle, Line)
 from bokeh.plotting import Figure
-from panel.panes import Pane, PaneBase, BokehPane, HoloViewsPane, MatplotlibPane
+from panel.panes import (Pane, PaneBase, BokehPane, HoloViewsPane,
+                         MatplotlibPane, ParamMethodPane)
 
 from .fixtures import mpl_figure
 
@@ -159,3 +160,33 @@ def test_matplotlib_pane(document, comm):
     # Cleanup
     pane._cleanup(model)
     assert pane._callbacks == {}
+
+
+def test_get_param_method_pane_type(param_class):
+    test = param_class()
+    assert PaneBase.get_pane_type(test.view) is ParamMethodPane
+
+
+def test_param_method_pane(param_class, document, comm):
+    test = param_class()
+    pane = Pane(test.view)
+    inner_pane = pane._pane
+    assert isinstance(inner_pane, BokehPane)
+
+    # Create pane
+    row = pane._get_root(document, comm=comm)
+    assert isinstance(row, BkRow)
+    assert len(row.children) == 1
+    div = row.children[0]
+    assert div.ref['id'] in inner_pane._callbacks
+    assert isinstance(div, Div)
+    assert div.text == '0'
+
+    test.a = 5
+    div = row.children[0]
+    assert div.text == '5'
+    assert len(inner_pane._callbacks) == 1
+    assert div.ref['id'] in inner_pane._callbacks
+
+    pane._cleanup(div)
+    assert inner_pane._callbacks == {}

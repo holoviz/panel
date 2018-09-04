@@ -4,6 +4,7 @@ a dashboard.
 """
 from __future__ import absolute_import
 
+import os
 import sys
 import inspect
 import base64
@@ -14,7 +15,7 @@ import param
 from bokeh.layouts import Row as _BkRow
 from bokeh.models import LayoutDOM, CustomJS, Div as _BkDiv
 
-from .util import get_method_owner, push, remove_root, Div
+from .util import basestring, get_method_owner, push, remove_root, Div
 from .viewable import Reactive, Viewable
 
 
@@ -92,7 +93,7 @@ class PaneBase(Reactive):
 
     def _cleanup(self, model, final=False):
         super(PaneBase, self)._cleanup(model, final)
-        if self._temporary or final:
+        if final:
             self.object = None
 
     def _update(self, model):
@@ -188,7 +189,7 @@ class HoloViewsPane(PaneBase):
                 for c in cb.callbacks:
                     c.code = c.code.replace(plot.id, plot_id)
 
-    def _cleanup(self, model):
+    def _cleanup(self, model, final=False):
         """
         Traverses HoloViews object to find and clean up any streams
         connected to existing plots.
@@ -202,7 +203,7 @@ class HoloViewsPane(PaneBase):
                         owner = get_method_owner(sub)
                         if owner.state is model:
                             owner.cleanup()
-        super(HoloViewsPane, self)._cleanup(model)
+        super(HoloViewsPane, self)._cleanup(model, final)
 
     def _get_model(self, doc, root, parent=None, comm=None):
         """
@@ -252,7 +253,7 @@ class ParamMethodPane(PaneBase):
                 old_model = history[0]
                 new_object = self.object()
                 pane_type = self.get_pane_type(new_object)
-                if type(self._pane) is pane_type and pane_type._updates:
+                if type(self._pane) is pane_type:
                     if isinstance(new_object, PaneBase):
                         new_params = {k: v for k, v in new_object.get_param_values()
                                       if k != 'name'}
@@ -281,7 +282,7 @@ class ParamMethodPane(PaneBase):
             parameterized.param.watch(update_pane, p.name, p.what)
         return model
 
-    def _cleanup(self, model):
+    def _cleanup(self, model, final=False):
         """
         Clean up method which is called when a Viewable is destroyed.
         """
@@ -290,7 +291,8 @@ class ParamMethodPane(PaneBase):
         parameterized = get_method_owner(self.object)
         for p, cb in callbacks.items():
             parameterized.param.unwatch(cb, p)
-        super(ParamMethodPane, self)._cleanup(model)
+        self._pane._cleanup(model, final)
+        super(ParamMethodPane, self)._cleanup(model, final)
 
 
 class DivBasePane(PaneBase):
@@ -332,18 +334,31 @@ class DivBasePane(PaneBase):
 
 class PNGPane(DivBasePane):
     """
-    Encodes a PNG as base64 and wraps it in a Bokeh Div model.
-    This base class supports anything with a _repr_png_ method, but
-    subclasses can provide their own way of obtaining or generating a PNG.
+    Encodes a PNG as base64 and wraps it in a Bokeh Div model.  This
+    base class supports anything with a _repr_png_ method, a local
+    file with a png file extension or a HTTP url, but subclasses can
+    provide their own way of obtaining or generating a PNG.
     """
 
     @classmethod
     def applies(cls, obj):
-        return hasattr(obj, '_repr_png_')
+        return (hasattr(obj, '_repr_png_') or
+                (isinstance(obj, basestring) and
+                 ((os.path.isfile(obj) and obj.endswith('.png')) or
+                  ((obj.startswith('http://') or obj.startswith('https://'))
+                   and obj.endswith('.png')))))
 
     def _png(self):
-        return self.object._repr_png_()
-    
+        if not isinstance(self.object, basestring):
+            return self.object._repr_png_()
+        elif os.path.isfile(self.object):
+            with open(self.object, 'rb') as f:
+                return f.read()
+        else:
+            import requests
+            r = requests.request(url=self.object, method='GET')
+            return r.content
+
     def _pngshape(self, data):
         """Calculate and return PNG width,height"""
         import struct

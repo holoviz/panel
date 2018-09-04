@@ -1,7 +1,9 @@
 import pytest
 
+import param
 import numpy as np
 from bokeh.document import Document
+from bokeh.models import Div
 from pyviz_comms import Comm
 
 
@@ -9,9 +11,23 @@ from pyviz_comms import Comm
 def document():
     return Document()
 
+
 @pytest.fixture
 def comm():
     return Comm()
+
+
+@pytest.fixture
+def param_class():
+    class Test(param.Parameterized):
+
+        a = param.Integer(default=0)
+
+        @param.depends('a')
+        def view(self):
+            return Div(text='%d' % self.a)
+    return Test
+
 
 @pytest.yield_fixture
 def hv_bokeh():
@@ -22,6 +38,7 @@ def hv_bokeh():
     yield
     hv.Store.current_backend = prev_backend
 
+
 @pytest.yield_fixture
 def hv_mpl():
     import holoviews as hv
@@ -30,6 +47,7 @@ def hv_mpl():
     hv.Store.current_backend = 'matplotlib'
     yield
     hv.Store.current_backend = prev_backend
+
 
 def mpl_figure():
     import matplotlib.pyplot as plt

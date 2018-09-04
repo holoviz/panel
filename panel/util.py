@@ -19,8 +19,9 @@ from pyviz_comms import (PYVIZ_PROXY, JupyterCommManager, bokeh_msg_handler,
 
 try:
     unicode = unicode # noqa
+    basestring = basestring # noqa
 except:
-    unicode = str
+    basestring = unicode = str
 
 
 def as_unicode(obj):
