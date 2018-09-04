@@ -2,6 +2,13 @@ from __future__ import absolute_import
 
 import pytest
 
+import param
+from bokeh.models import (Div, Row as BkRow, WidgetBox as BkWidgetBox,
+                          GlyphRenderer, Circle, Line)
+from bokeh.plotting import Figure
+from panel.panes import (Pane, PaneBase, BokehPane, HoloViewsPane,
+                         MatplotlibPane, ParamMethodPane)
+
 try:
     import holoviews as hv
 except:
@@ -14,12 +21,6 @@ try:
 except:
     mpl = None
 mpl_available = pytest.mark.skipif(mpl is None, reason="requires matplotlib")
-
-from bokeh.models import (Div, Row as BkRow, WidgetBox as BkWidgetBox,
-                          GlyphRenderer, Circle, Line)
-from bokeh.plotting import Figure
-from panel.panes import (Pane, PaneBase, BokehPane, HoloViewsPane,
-                         MatplotlibPane, ParamMethodPane)
 
 from .fixtures import mpl_figure
 
@@ -162,13 +163,29 @@ def test_matplotlib_pane(document, comm):
     assert pane._callbacks == {}
 
 
-def test_get_param_method_pane_type(param_class):
-    test = param_class()
-    assert PaneBase.get_pane_type(test.view) is ParamMethodPane
+class View(param.Parameterized):
+
+    a = param.Integer(default=0)
+
+    @param.depends('a')
+    def view(self):
+        return Div(text='%d' % self.a)
+
+    @param.depends('a')
+    def mpl_view(self):
+        return mpl_figure()
+
+    @param.depends('a')
+    def mixed_view(self):
+        return self.view() if (self.a % 2) else self.mpl_view()
 
 
-def test_param_method_pane(param_class, document, comm):
-    test = param_class()
+def test_get_param_method_pane_type():
+    assert PaneBase.get_pane_type(View().view) is ParamMethodPane
+
+
+def test_param_method_pane(document, comm):
+    test = View()
     pane = Pane(test.view)
     inner_pane = pane._pane
     assert isinstance(inner_pane, BokehPane)
@@ -182,11 +199,83 @@ def test_param_method_pane(param_class, document, comm):
     assert isinstance(div, Div)
     assert div.text == '0'
 
+    # Update pane
     test.a = 5
     div = row.children[0]
+    assert inner_pane is pane._pane
     assert div.text == '5'
     assert len(inner_pane._callbacks) == 1
     assert div.ref['id'] in inner_pane._callbacks
 
+    # Cleanup pane
     pane._cleanup(div)
     assert inner_pane._callbacks == {}
+
+
+@mpl_available
+def test_param_method_pane_mpl(document, comm):
+    test = View()
+    pane = Pane(test.mpl_view)
+    inner_pane = pane._pane
+    assert isinstance(inner_pane, MatplotlibPane)
+
+    # Create pane
+    row = pane._get_root(document, comm=comm)
+    assert isinstance(row, BkRow)
+    assert len(row.children) == 1
+    model = row.children[0]
+    assert model.ref['id'] in inner_pane._callbacks
+    assert isinstance(model, BkRow)
+    assert isinstance(model.children[0], BkWidgetBox)
+    div = model.children[0].children[0]
+    assert isinstance(div, Div)
+    text = div.text
+
+    # Update pane
+    test.a = 5
+    model = row.children[0]
+    assert inner_pane is pane._pane
+    assert div is row.children[0].children[0].children[0]
+    assert div.text != text
+    assert len(inner_pane._callbacks) == 1
+    assert model.ref['id'] in inner_pane._callbacks
+
+    # Cleanup pane
+    pane._cleanup(model)
+    assert inner_pane._callbacks == {}
+
+
+@mpl_available
+def test_param_method_pane_changing_type(document, comm):
+    test = View()
+    pane = Pane(test.mixed_view)
+    inner_pane = pane._pane
+    assert isinstance(inner_pane, MatplotlibPane)
+
+    # Create pane
+    row = pane._get_root(document, comm=comm)
+    assert isinstance(row, BkRow)
+    assert len(row.children) == 1
+    model = row.children[0]
+    assert model.ref['id'] in inner_pane._callbacks
+    assert isinstance(model, BkRow)
+    assert isinstance(model.children[0], BkWidgetBox)
+    div = model.children[0].children[0]
+    assert isinstance(div, Div)
+    text = div.text
+
+    # Update pane
+    test.a = 5
+    model = row.children[0]
+    new_pane = pane._pane
+    assert pane._callbacks == {}
+    assert isinstance(new_pane, BokehPane)
+    div = row.children[0]
+    assert isinstance(div, Div)
+    assert div.text != text
+    assert len(new_pane._callbacks) == 1
+    assert model.ref['id'] in new_pane._callbacks
+
+    # Cleanup pane
+    new_pane._cleanup(model)
+    assert new_pane._callbacks == {}

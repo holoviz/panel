@@ -1,9 +1,7 @@
 import pytest
 
-import param
 import numpy as np
 from bokeh.document import Document
-from bokeh.models import Div
 from pyviz_comms import Comm
 
 
@@ -15,18 +13,6 @@ def document():
 @pytest.fixture
 def comm():
     return Comm()
-
-
-@pytest.fixture
-def param_class():
-    class Test(param.Parameterized):
-
-        a = param.Integer(default=0)
-
-        @param.depends('a')
-        def view(self):
-            return Div(text='%d' % self.a)
-    return Test
 
 
 @pytest.yield_fixture
