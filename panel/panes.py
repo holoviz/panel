@@ -193,7 +193,6 @@ class HoloViewsPane(PaneBase):
         Traverses HoloViews object to find and clean up any streams
         connected to existing plots.
         """
-        from holoviews.plotting.renderer import Renderer
         from holoviews.core.spaces import DynamicMap, get_nested_streams
         dmaps = self.object.traverse(lambda x: x, [DynamicMap])
         for dmap in dmaps:
