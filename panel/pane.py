@@ -408,24 +408,6 @@ class Matplotlib(PNG):
         return b.getvalue()
 
 
-class HTML(DivPaneBase):
-    """
-    HTML panes render any object which has a _repr_html_ method and wraps
-    the HTML in a bokeh Div model. The height and width can optionally
-    be specified, to allow room for whatever is being wrapped.
-    """
-
-    precedence = 1
-
-    @classmethod
-    def applies(cls, obj):
-        return hasattr(obj, '_repr_html_')
-
-    def _get_properties(self):
-        properties = super(HTML, self)._get_properties()
-        return dict(properties, text=self.object._repr_html_())
-
-
 class RGGPlot(PNG):
     """
     An RGGPlot panes render an r2py-based ggplot2 figure to png
@@ -450,3 +432,40 @@ class RGGPlot(PNG):
                  res=self.dpi, antialias="subpixel") as b:
             robjects.r("print")(self.object)
         return b.getvalue()
+
+
+class HTML(DivPaneBase):
+    """
+    HTML panes render any object that has a _repr_html_ method and wraps
+    the HTML in a bokeh Div model. The height and width can optionally
+    be specified, to allow room for whatever is being wrapped.
+    """
+
+    precedence = 1
+
+    @classmethod
+    def applies(cls, obj):
+        return hasattr(obj, '_repr_html_')
+
+    def _get_properties(self):
+        properties = super(HTML, self)._get_properties()
+        return dict(properties, text=self.object._repr_html_())
+
+
+class Repr(DivPaneBase):
+    """
+    Repr panes render any object for which `repr()` can be called, wrapping
+    the resulting string in a bokeh Div model.  Set to a low precedence
+    because generally one will want a better representation than just
+    the repr, but allows arbitrary objects to be used as a Pane.
+    """
+
+    precedence = 10
+
+    @classmethod
+    def applies(cls, obj):
+        return True
+
+    def _get_properties(self):
+        properties = super(Repr, self)._get_properties()
+        return dict(properties, text=repr(self.object))
