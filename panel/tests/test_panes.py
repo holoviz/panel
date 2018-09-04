@@ -23,6 +23,7 @@ except:
 mpl_available = pytest.mark.skipif(mpl is None, reason="requires matplotlib")
 
 from .fixtures import mpl_figure
+from .test_layout import get_div
 
 
 def test_get_bokeh_pane_type():
@@ -38,20 +39,20 @@ def test_bokeh_pane(document, comm):
     row = pane._get_root(document, comm=comm)
     assert isinstance(row, BkRow)
     assert len(row.children) == 1
-    assert div.ref['id'] in pane._callbacks
     model = row.children[0]
-    assert model is div
+    assert model.ref['id'] in pane._callbacks
+    assert get_div(model) is div
 
     # Replace Pane.object
     div2 = Div()
     pane.object = div2
-    model = row.children[0]
-    assert model is div2
-    assert div2.ref['id'] in pane._callbacks
-    assert div.ref['id'] not in pane._callbacks
+    new_model = row.children[0]
+    assert get_div(new_model) is div2
+    assert new_model.ref['id'] in pane._callbacks
+    assert model.ref['id'] not in pane._callbacks
 
     # Cleanup
-    pane._cleanup(div2)
+    pane._cleanup(new_model)
     assert pane._callbacks == {}
 
 
@@ -194,21 +195,23 @@ def test_param_method_pane(document, comm):
     row = pane._get_root(document, comm=comm)
     assert isinstance(row, BkRow)
     assert len(row.children) == 1
-    div = row.children[0]
-    assert div.ref['id'] in inner_pane._callbacks
+    model = row.children[0]
+    div = get_div(model)
+    assert model.ref['id'] in inner_pane._callbacks
     assert isinstance(div, Div)
     assert div.text == '0'
 
     # Update pane
     test.a = 5
-    div = row.children[0]
+    new_model = row.children[0]
+    div = get_div(new_model)
     assert inner_pane is pane._pane
     assert div.text == '5'
     assert len(inner_pane._callbacks) == 1
-    assert div.ref['id'] in inner_pane._callbacks
+    assert new_model.ref['id'] in inner_pane._callbacks
 
     # Cleanup pane
-    pane._cleanup(div)
+    pane._cleanup(new_model)
     assert inner_pane._callbacks == {}
 
 
@@ -270,7 +273,7 @@ def test_param_method_pane_changing_type(document, comm):
     new_pane = pane._pane
     assert pane._callbacks == {}
     assert isinstance(new_pane, Bokeh)
-    div = row.children[0]
+    div = get_div(model)
     assert isinstance(div, Div)
     assert div.text != text
     assert len(new_pane._callbacks) == 1
