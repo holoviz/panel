@@ -7,7 +7,7 @@ import numpy as np
 from bokeh.core.properties import Dict, String, List, Any, Instance
 from bokeh.models import LayoutDOM, ColumnDataSource
 
-from .panes import PaneBase
+from .pane import PaneBase
 
 
 class PlotlyPlot(LayoutDOM):

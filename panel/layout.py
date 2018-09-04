@@ -10,7 +10,7 @@ from bokeh.layouts import (Column as BkColumn, Row as BkRow,
                            WidgetBox as BkWidgetBox, Spacer as BkSpacer)
 from bokeh.models.widgets import Tabs as BkTabs, Panel as BkPanel
 
-from .panes import Pane, PaneBase
+from .pane import Pane, PaneBase
 from .util import push
 from .viewable import Reactive
 

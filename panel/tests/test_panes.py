@@ -6,8 +6,8 @@ import param
 from bokeh.models import (Div, Row as BkRow, WidgetBox as BkWidgetBox,
                           GlyphRenderer, Circle, Line)
 from bokeh.plotting import Figure
-from panel.panes import (Pane, PaneBase, Bokeh, HoloViews, Matplotlib,
-                         ParamMethod)
+from panel.pane import (Pane, PaneBase, Bokeh, HoloViews, Matplotlib,
+                        ParamMethod)
 
 try:
     import holoviews as hv

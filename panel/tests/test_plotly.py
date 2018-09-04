@@ -11,7 +11,7 @@ plotly_available = pytest.mark.skipif(plotly is None, reason="requires matplotli
 
 import numpy as np
 from bokeh.models import Row as BkRow
-from panel.panes import Pane, PaneBase
+from panel.pane import Pane, PaneBase
 from panel.plotly import Plotly, PlotlyPlot
 
 

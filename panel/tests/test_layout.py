@@ -4,7 +4,7 @@ import pytest
 
 from bokeh.models import Div, Row as BkRow, Tabs as BkTabs, Column as BkColumn, Panel as BkPanel
 from panel.layout import Column, Row, Tabs, Spacer
-from panel.panes import Bokeh, Pane
+from panel.pane import Bokeh, Pane
 
 
 @pytest.mark.parametrize('panel', [Column, Row])

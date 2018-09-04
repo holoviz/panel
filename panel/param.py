@@ -12,7 +12,7 @@ from collections import OrderedDict
 import param
 from param.parameterized import classlist
 
-from .panes import PaneBase
+from .pane import PaneBase
 from .layout import WidgetBox, Row, Layout, Tabs, Spacer
 from .util import default_label_formatter
 from .widgets import (

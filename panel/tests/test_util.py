@@ -1,6 +1,6 @@
 from bokeh.models import Div
 
-from panel.panes import PaneBase
+from panel.pane import PaneBase
 from panel.util import render_mimebundle, default_label_formatter, get_method_owner
 
 
