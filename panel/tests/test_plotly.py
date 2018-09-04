@@ -34,6 +34,7 @@ def test_get_plotly_pane_type_from_trace():
     assert PaneBase.get_pane_type(trace) is PlotlyPane
 
 
+@plotly_available
 def test_plotly_pane_single_trace(document, comm):
     trace = go.Scatter(x=[0, 1], y=[2, 3], uid='Test')
     pane = Pane(trace, layout={'width': 350})
@@ -71,6 +72,7 @@ def test_plotly_pane_single_trace(document, comm):
     assert pane._callbacks == {}
 
 
+@plotly_available
 def test_plotly_pane_numpy_to_cds_traces(document, comm):
     trace = go.Scatter(x=np.array([1, 2]), y=np.array([2, 3]))
     pane = Pane(trace, layout={'width': 350})
