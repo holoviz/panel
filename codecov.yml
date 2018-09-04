@@ -1,6 +1,4 @@
 coverage:
-  ignore:
-    - *.py
   status:
     project:
       default:
