@@ -1,0 +1,12 @@
+coverage:
+  ignore:
+    - *.py
+  status:
+    project:
+      default:
+        target: auto
+        threshold: null
+        base: auto
+
+comment:
+  require_changes: yes
