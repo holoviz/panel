@@ -29,7 +29,7 @@ export class PlotlyPlotView extends LayoutDOMView {
 
   _init(): void {
     this._plot()
-    this.connect(this.model.change, this._plot)
+    this.connect(this.model.properties.data.change, this._plot)
   }
 
   _plot(): void {
