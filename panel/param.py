@@ -57,7 +57,7 @@ class Param(PaneBase):
     label_formatter = param.Callable(default=default_label_formatter, allow_None=True,
         doc="Callable used to format the parameter names into widget labels.")
 
-    precedence = 1
+    precedence = 0.1
 
     _mapping = {
         param.Action:        Button,
