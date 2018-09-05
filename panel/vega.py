@@ -3,9 +3,8 @@ from __future__ import division
 import os
 import sys
 
-import param
 import numpy as np
-from bokeh.core.properties import Dict, String, List, Any, Instance
+from bokeh.core.properties import Dict, String, Any, Instance
 from bokeh.models import LayoutDOM, ColumnDataSource
 
 from .pane import PaneBase
