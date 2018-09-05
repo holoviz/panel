@@ -10,7 +10,7 @@ import param
 import bokeh
 import bokeh.embed.notebook
 from bokeh.io.notebook import load_notebook as bk_load_notebook
-from bokeh.models import Model, LayoutDOM, Div as BkDiv, Spacer, Row, WidgetBox as BkWidgetBox
+from bokeh.models import Model, LayoutDOM, Div as BkDiv, WidgetBox as BkWidgetBox
 from bokeh.protocol import Protocol
 from bokeh.resources import CDN, INLINE
 from bokeh.util.string import encode_utf8
