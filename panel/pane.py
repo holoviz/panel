@@ -332,7 +332,7 @@ class DivPaneBase(PaneBase):
         return model
 
     def _update(self, model):
-        div = model if isinstance(model, _BkDiv) else model.children[0].children[0]
+        div = model if isinstance(model, _BkDiv) else model.children[0]
         div.update(**self._get_properties())
 
 
