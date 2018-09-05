@@ -12,7 +12,7 @@ from .pane import PaneBase
 
 def ds_as_cds(dataset):
     """
-    Converts vega dataset into bokeh ColumnDataSource data
+    Converts Vega dataset into Bokeh ColumnDataSource data
     """
     if len(dataset) == 0:
         return {}
@@ -26,8 +26,8 @@ def ds_as_cds(dataset):
 
 class VegaPlot(LayoutDOM):
     """
-    A bokeh model that wraps around a plotly plot and renders it inside
-    a bokeh plot.
+    A Bokeh model that wraps around a Vega plot and renders it inside
+    a Bokeh plot.
     """
 
     __implementation__ = os.path.join(os.path.dirname(__file__), 'models', 'vega.ts')
@@ -39,7 +39,7 @@ class VegaPlot(LayoutDOM):
 
 class Vega(PaneBase):
     """
-    Vega panes allow rendering plotly Figures and traces.
+    Vega panes allow rendering Vega plots and traces.
 
     For efficiency any array objects found inside a Figure are added
     to a ColumnDataSource which allows using binary transport to sync
@@ -86,7 +86,7 @@ class Vega(PaneBase):
 
     def _get_model(self, doc, root, parent=None, comm=None):
         """
-        Should return the bokeh model to be rendered.
+        Should return the Bokeh model to be rendered.
         """
         json = self._to_json(self.object)
         sources = {}
