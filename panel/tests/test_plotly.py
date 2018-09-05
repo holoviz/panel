@@ -7,7 +7,7 @@ try:
     import plotly.graph_objs as go
 except:
     plotly = None
-plotly_available = pytest.mark.skipif(plotly is None, reason="requires matplotlib")
+plotly_available = pytest.mark.skipif(plotly is None, reason="requires plotly")
 
 import numpy as np
 from bokeh.models import Row as BkRow
