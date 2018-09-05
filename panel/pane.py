@@ -155,7 +155,9 @@ class Bokeh(PaneBase):
         """
         model = self.object
         if isinstance(model, _BkWidget):
-            model = _BkWidgetBox(model, width=model.width)
+            box_kws = {k: getattr(model, k) for k in ['width', 'height', 'sizing_mode']
+                       if k in model.properties()}
+            model = _BkWidgetBox(model, **box_kws)
 
         if root:
             plot_id = root.ref['id']
