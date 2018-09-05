@@ -349,25 +349,34 @@ class DivPaneBase(PaneBase):
         div.update(**self._get_properties())
 
 
-class PNG(DivPaneBase):
+class Image(DivPaneBase):
     """
-    Encodes a PNG as base64 and wraps it in a Bokeh Div model.  This
-    base class supports anything with a _repr_png_ method, a local
-    file with a png file extension or a HTTP url, but subclasses can
+    Encodes an image as base64 and wraps it in a Bokeh Div model.  
+    This is an abstract base class that needs the image type
+    to be specified and specific code for determining the image shape.
+    
+    The imgtype determines the filetype, extension, and MIME type for
+    this image. Each image type (png,jpg,gif) has a base class that
+    supports anything with a `_repr_X_` method (where X is `png`,
+    `gif`, etc.), a local file with the given file extension, or a
+    HTTP(S) url with the given extension.  Subclasses of each type can
     provide their own way of obtaining or generating a PNG.
     """
 
+    imgtype = 'None'
+
     @classmethod
     def applies(cls, obj):
-        return (hasattr(obj, '_repr_png_') or
+        imgtype = cls.imgtype
+        return (hasattr(obj, '_repr_'+imgtype+'_') or
                 (isinstance(obj, basestring) and
-                 ((os.path.isfile(obj) and obj.endswith('.png')) or
+                 ((os.path.isfile(obj) and obj.endswith('.'+imgtype)) or
                   ((obj.startswith('http://') or obj.startswith('https://'))
-                   and obj.endswith('.png')))))
+                   and obj.endswith('.'+imgtype)))))
 
-    def _png(self):
+    def _img(self):
         if not isinstance(self.object, basestring):
-            return self.object._repr_png_()
+            return getattr(self.object, '_repr_'+self.imgtype+'_')()
         elif os.path.isfile(self.object):
             with open(self.object, 'rb') as f:
                 return f.read()
@@ -376,24 +385,64 @@ class PNG(DivPaneBase):
             r = requests.request(url=self.object, method='GET')
             return r.content
 
-    def _pngshape(self, data):
-        """Calculate and return PNG width,height"""
-        import struct
-        w, h = struct.unpack('>LL', data[16:24])
-        return int(w), int(h)
+    def _imgshape(self, data):
+        """Calculate and return image width,height"""
+        raise NotImplementedError
     
     def _get_properties(self):
-        data = self._png()
+        data = self._img()
         b64 = base64.b64encode(data).decode("utf-8")
-        src = "data:image/png;base64,{b64}".format(b64=b64)
+        src = "data:image/"+self.imgtype+";base64,{b64}".format(b64=b64)
         html = "<img src='{src}'></img>".format(src=src)
         
-        p = super(PNG,self)._get_properties()
-        width, height = self._pngshape(data)
+        p = super(Image,self)._get_properties()
+        width, height = self._imgshape(data)
         if self.width  is None: p["width"]  = width
         if self.height is None: p["height"] = height
         p["text"]=html
         return p
+
+
+class PNG(Image):
+
+    imgtype = 'png'
+    
+    def _imgshape(self, data):
+        import struct
+        w, h = struct.unpack('>LL', data[16:24])
+        return int(w), int(h)
+
+
+class GIF(Image):
+
+    imgtype = 'gif'
+    
+    def _imgshape(self, data):
+        import struct
+        w, h = struct.unpack("<HH", data[6:10])
+        return int(w), int(h)
+        
+
+class JPG(Image):
+
+    imgtype = 'jpg'
+    
+    def _imgshape(self, data):
+        import struct
+        b = BytesIO(data)
+        b.read(2)
+        c = b.read(1)
+        while (c and ord(c) != 0xDA):
+            while (ord(c) != 0xFF): c = b.read(1)
+            while (ord(c) == 0xFF): c = b.read(1)
+            if (ord(c) >= 0xC0 and ord(c) <= 0xC3):
+                b.read(3)
+                h, w = struct.unpack(">HH", b.read(4))
+                break
+            else:
+                b.read(int(struct.unpack(">H", b.read(2))[0])-2)
+            c = b.read(1)
+        return int(w), int(h)
 
 
 class Matplotlib(PNG):
