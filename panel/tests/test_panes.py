@@ -7,7 +7,7 @@ from bokeh.models import (Div, Row as BkRow, WidgetBox as BkWidgetBox,
                           GlyphRenderer, Circle, Line)
 from bokeh.plotting import Figure
 from panel.pane import (Pane, PaneBase, Bokeh, HoloViews, Matplotlib,
-                        ParamMethod)
+                        ParamMethod, HTML, Str)
 
 try:
     import holoviews as hv
@@ -276,3 +276,55 @@ def test_param_method_pane_changing_type(document, comm):
     # Cleanup pane
     new_pane._cleanup(model)
     assert new_pane._callbacks == {}
+
+
+def test_get_html_pane_type():
+    assert PaneBase.get_pane_type("<h1>Test</h1>") is HTML
+
+
+def test_html_pane(document, comm):
+    pane = Pane("<h1>Test</h1>")
+
+    # Create pane
+    row = pane._get_root(document, comm=comm)
+    assert isinstance(row, BkRow)
+    assert len(row.children) == 1
+    model = row.children[0]
+    assert model.ref['id'] in pane._callbacks
+    div = get_div(model)
+    assert div.text == "<h1>Test</h1>"
+
+    # Replace Pane.object
+    pane.object = "<h2>Test</h2>"
+    model = row.children[0]
+    assert div is get_div(model)
+    assert model.ref['id'] in pane._callbacks
+    assert div.text == "<h2>Test</h2>"
+
+    # Cleanup
+    pane._cleanup(model)
+    assert pane._callbacks == {}
+
+
+def test_string_pane(document, comm):
+    pane = Str("<h1>Test</h1>")
+
+    # Create pane
+    row = pane._get_root(document, comm=comm)
+    assert isinstance(row, BkRow)
+    assert len(row.children) == 1
+    model = row.children[0]
+    assert model.ref['id'] in pane._callbacks
+    div = get_div(model)
+    assert div.text == "<pre>&lt;h1&gt;Test&lt;/h1&gt;</pre>"
+
+    # Replace Pane.object
+    pane.object = "<h2>Test</h2>"
+    model = row.children[0]
+    assert div is get_div(model)
+    assert model.ref['id'] in pane._callbacks
+    assert div.text == "<pre>&lt;h2&gt;Test&lt;/h2&gt;</pre>"
+
+    # Cleanup
+    pane._cleanup(model)
+    assert pane._callbacks == {}
