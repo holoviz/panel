@@ -462,7 +462,7 @@ class Matplotlib(PNG):
                              'cannot be rendered.')
         return is_fig
 
-    def _png(self):
+    def _img(self):
         b = BytesIO()
         self.object.canvas.print_figure(b)
         return b.getvalue()
@@ -484,7 +484,7 @@ class RGGPlot(PNG):
     def applies(cls, obj):
         return type(obj).__name__ == 'GGPlot' and hasattr(obj, 'r_repr')
 
-    def _png(self):
+    def _img(self):
         from rpy2.robjects.lib import grdevices
         from rpy2 import robjects
         with grdevices.render_to_bytesio(grdevices.png,
