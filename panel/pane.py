@@ -152,6 +152,8 @@ class Bokeh(PaneBase):
     Bokeh panes allow including any Bokeh model in a panel.
     """
 
+    precedence = 0.8
+
     @classmethod
     def applies(cls, obj):
         return isinstance(obj, LayoutDOM)
@@ -184,7 +186,9 @@ class HoloViews(PaneBase):
     HoloViews panes render any HoloViews object to a corresponding
     Bokeh model while respecting the currently selected backend.
     """
-
+    
+    precedence = 0.8
+    
     @classmethod
     def applies(cls, obj):
         if 'holoviews' not in sys.modules:
@@ -483,4 +487,4 @@ class Str(DivPaneBase):
     
     def _get_properties(self):
         properties = super(Str, self)._get_properties()
-        return dict(properties, text=escape(str(self.object)))
+        return dict(properties, text='<pre>'+escape(str(self.object))+'</pre>')
