@@ -447,7 +447,7 @@ class JPG(Image):
 
 class Matplotlib(PNG):
     """
-    A Matplotlib panes render a matplotlib figure to png and wraps
+    A Matplotlib pane renders a matplotlib figure to png and wraps
     the base64 encoded data in a bokeh Div model.
     """
 
