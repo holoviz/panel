@@ -3,6 +3,8 @@ import {LayoutDOM, LayoutDOMView} from "models/layouts/layout_dom"
 
 export class VegaPlotView extends LayoutDOMView {
   model: VegaPlot
+  _width: number
+  _height: number
 
   initialize(options): void {
     super.initialize(options)
@@ -29,11 +31,11 @@ export class VegaPlotView extends LayoutDOMView {
   }
 
   get_width(): number {
-    return this.model.data.config.view.width
+	return undefined;
   }
 
   get_height(): number {
-    return this.model.data.config.view.height + 50
+	return undefined;
   }
 
   _init(): void {
@@ -68,7 +70,7 @@ export class VegaPlotView extends LayoutDOMView {
       }
       this.model.data['datasets'] = datasets
     }
-    vegaEmbed(this.el, this.model.data);
+    vegaEmbed(this.el, this.model.data, {actions: false})
   }
 }
 
