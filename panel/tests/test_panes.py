@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 
+from base64 import b64decode
 import pytest
 
 import param
@@ -7,7 +8,7 @@ from bokeh.models import (Div, Row as BkRow, WidgetBox as BkWidgetBox,
                           GlyphRenderer, Circle, Line)
 from bokeh.plotting import Figure
 from panel.pane import (Pane, PaneBase, Bokeh, HoloViews, Matplotlib,
-                        ParamMethod, HTML, Str)
+                        ParamMethod, HTML, Str, PNG, JPG, GIF)
 
 try:
     import holoviews as hv
@@ -328,3 +329,23 @@ def test_string_pane(document, comm):
     # Cleanup
     pane._cleanup(model)
     assert pane._callbacks == {}
+
+
+twopixel = dict(\
+    gif = b'R0lGODlhAgABAPAAAEQ6Q2NYYCH5BAAAAAAAIf8LSW1hZ2VNYWdpY2sNZ2FtbWE' + \
+          b'9MC40NTQ1NQAsAAAAAAIAAQAAAgIMCgA7',
+    png = b'iVBORw0KGgoAAAANSUhEUgAAAAIAAAABCAYAAAD0In+KAAAAFElEQVQIHQEJAPb' + \
+          b'/AWNYYP/h4uMAFL0EwlEn99gAAAAASUVORK5CYII=',
+    jpg = b'/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQE' + \
+          b'BAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/2wBDAQ' + \
+          b'EBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBA' + \
+          b'QEBAQEBAQEBAQEBAQEBAQH/wAARCAABAAIDAREAAhEBAxEB/8QAFAABAAAAAAAA' + \
+          b'AAAAAAAAAAAACf/EABoQAAEFAQAAAAAAAAAAAAAAAAYABAU2dbX/xAAVAQEBAAA' + \
+          b'AAAAAAAAAAAAAAAAFBv/EABkRAAEFAAAAAAAAAAAAAAAAAAEAAjFxsf/aAAwDAQ' + \
+          b'ACEQMRAD8AA0qs5HvTHQcJdsChioXSbOr/2Q==')
+
+def test_imgshape():
+    for t in [PNG, JPG, GIF]:
+        w,h = t._imgshape(b64decode(twopixel[t.name.lower()]))
+        assert w == 2
+        assert h == 1

@@ -407,7 +407,8 @@ class PNG(Image):
 
     imgtype = 'png'
     
-    def _imgshape(self, data):
+    @classmethod
+    def _imgshape(cls, data):
         import struct
         w, h = struct.unpack('>LL', data[16:24])
         return int(w), int(h)
@@ -416,8 +417,9 @@ class PNG(Image):
 class GIF(Image):
 
     imgtype = 'gif'
-    
-    def _imgshape(self, data):
+
+    @classmethod    
+    def _imgshape(cls, data):
         import struct
         w, h = struct.unpack("<HH", data[6:10])
         return int(w), int(h)
@@ -427,7 +429,8 @@ class JPG(Image):
 
     imgtype = 'jpg'
     
-    def _imgshape(self, data):
+    @classmethod    
+    def _imgshape(cls, data):
         import struct
         b = BytesIO(data)
         b.read(2)
