@@ -66,7 +66,11 @@ class Vega(PaneBase):
 
     @classmethod
     def _to_json(cls, obj):
-        return obj if isinstance(obj, dict) else obj.to_dict()
+        if isinstance(obj, dict):
+            json = dict(obj)
+            json['data'] = dict(json['data'])
+            return json
+        return obj.to_dict()
 
     def _get_sources(self, json, sources):
         for name, data in json.pop('datasets', {}).items():
@@ -83,12 +87,16 @@ class Vega(PaneBase):
                 sources[name] = ColumnDataSource(data=data)
             else:
                 sources[name] = ColumnDataSource(data=ds_as_cds(data))
+        data = json.get('data', {}).pop('values', {})
+        if data:
+            sources['data'] = ColumnDataSource(data=ds_as_cds(data))
 
     def _get_model(self, doc, root, parent=None, comm=None):
         """
         Should return the Bokeh model to be rendered.
         """
         json = self._to_json(self.object)
+        json['data'] = dict(json['data'])
         sources = {}
         self._get_sources(json, sources)
         model = VegaPlot(data=json, data_sources=sources)

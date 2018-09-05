@@ -61,7 +61,12 @@ export class VegaPlotView extends LayoutDOMView {
 
   _plot(): void {
     if (!('datasets' in this.model.data)) {
-      this.model.data['datasets'] = this._fetch_datasets()
+	  const datasets = this._fetch_datasets()
+	  if ('data' in datasets) {
+        this.model.data.data['values'] = datasets['data']
+		delete datasets['data']
+      }
+      this.model.data['datasets'] = datasets
     }
     vegaEmbed(this.el, this.model.data);
   }
