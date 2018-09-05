@@ -10,12 +10,18 @@ import inspect
 import base64
 from io import BytesIO
 
+try:
+    from html import escape
+except:
+    from cgi import escape
+
+
 import param
 
 from bokeh.layouts import Row as _BkRow, WidgetBox as _BkWidgetBox
 from bokeh.models import LayoutDOM, CustomJS, Widget as _BkWidget, Div as _BkDiv
 
-from .util import basestring, get_method_owner, push, remove_root, Div
+from .util import basestring, unicode, get_method_owner, push, remove_root, Div
 from .viewable import Reactive, Viewable
 
 
@@ -32,7 +38,7 @@ class PaneBase(Reactive):
     """
     PaneBase is the abstract baseclass for all atomic displayable units
     in the panel library. Pane defines an extensible interface for
-    wrapping arbitrary objects and transforming them into bokeh models.
+    wrapping arbitrary objects and transforming them into Bokeh models.
 
     Panes are reactive in the sense that when the object they are
     wrapping is changed any dashboard containing the pane will update
@@ -43,12 +49,13 @@ class PaneBase(Reactive):
     """
 
     object = param.Parameter(default=None, doc="""
-        The object being wrapped, which will be converted into a bokeh model.""")
+        The object being wrapped, which will be converted into a Bokeh model.""")
 
-    # When multiple Panes apply to an object the precedence is used
-    precedence = 0
+    # When multiple Panes apply to an object, the one with the highest
+    # numerical precedence is selected. The default is an intermediate value.
+    precedence = 0.5
 
-    # Declares whether Pane supports updates to the bokeh model
+    # Declares whether Pane supports updates to the Bokeh model
     _updates = False
 
     __abstract = True
@@ -66,7 +73,7 @@ class PaneBase(Reactive):
         if isinstance(obj, Viewable):
             return type(obj)
         descendents = [(p.precedence, p) for p in param.concrete_descendents(PaneBase).values()]
-        pane_types = sorted(descendents, key=lambda x: x[0])
+        pane_types = reversed(sorted(descendents, key=lambda x: x[0]))
         for _, pane_type in pane_types:
             if not pane_type.applies(obj): continue
             return pane_type
@@ -98,7 +105,7 @@ class PaneBase(Reactive):
 
     def _update(self, model):
         """
-        If _updates=True this method is used to update an existing bokeh
+        If _updates=True this method is used to update an existing Bokeh
         model instead of replacing the model entirely. The supplied model
         should be updated with the current state.
         """
@@ -106,7 +113,7 @@ class PaneBase(Reactive):
 
     def _link_object(self, model, doc, root, parent, comm=None):
         """
-        Links the object parameter to the rendered bokeh model, triggering
+        Links the object parameter to the rendered Bokeh model, triggering
         an update when the object changes.
         """
         def update_pane(change, history=[model]):
@@ -142,7 +149,7 @@ class PaneBase(Reactive):
 
 class Bokeh(PaneBase):
     """
-    Bokeh panes allow including any bokeh model in a panel.
+    Bokeh panes allow including any Bokeh model in a panel.
     """
 
     @classmethod
@@ -151,7 +158,7 @@ class Bokeh(PaneBase):
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         """
-        Should return the bokeh model to be rendered.
+        Should return the Bokeh model to be rendered.
         """
         model = self.object
         if isinstance(model, _BkWidget):
@@ -175,7 +182,7 @@ class Bokeh(PaneBase):
 class HoloViews(PaneBase):
     """
     HoloViews panes render any HoloViews object to a corresponding
-    bokeh model while respecting the currently selected backend.
+    Bokeh model while respecting the currently selected backend.
     """
 
     @classmethod
@@ -213,7 +220,7 @@ class HoloViews(PaneBase):
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         """
-        Should return the bokeh model to be rendered.
+        Should return the Bokeh model to be rendered.
         """
         from holoviews import Store
         renderer = Store.renderers[Store.current_backend]
@@ -436,38 +443,44 @@ class RGGPlot(PNG):
 
 class HTML(DivPaneBase):
     """
-    HTML panes render any object that has a _repr_html_ method and wraps
-    the HTML in a bokeh Div model. The height and width can optionally
-    be specified, to allow room for whatever is being wrapped.
+    HTML panes wrap HTML text in a bokeh Div model.  The
+    provided object can either be a text string, or an object that
+    has a `_repr_html_` method that can be called to get the HTML
+    text string.  The height and width can optionally be specified, to
+    allow room for whatever is being wrapped.
     """
 
-    precedence = 1
+    precedence = 0.2
 
     @classmethod
     def applies(cls, obj):
-        return hasattr(obj, '_repr_html_')
+        return (hasattr(obj, '_repr_html_') or
+                (isinstance(obj, basestring) or
+                 (isinstance(obj, unicode))))
 
     def _get_properties(self):
         properties = super(HTML, self)._get_properties()
-        return dict(properties, text=self.object._repr_html_())
+        text=self.object
+        if hasattr(text, '_repr_html_'):
+            text=text._repr_html_()
+        return dict(properties, text=text)
 
 
-class String(DivPaneBase):
+class Str(DivPaneBase):
     """
-    A String pane renders any object for which `str()` can be called,
-    wrapping the resulting string in a bokeh Div model.  Set to a low
-    precedence because generally one will want a better
-    representation, but allows arbitrary objects to be used as a Pane.
-    HTML markup will be interpreted, so this type of pane is also 
-    useful for arbitrary HTML code provided as a Python string.
+    A Str pane renders any object for which `str()` can be called,
+    escaping any HTML markup and then wrapping the resulting string in
+    a bokeh Div model.  Set to a low precedence because generally one
+    will want a better representation, but allows arbitrary objects to
+    be used as a Pane (numbers, arrays, objects, etc.).
     """
 
-    precedence = 10
+    precedence = 0
 
     @classmethod
     def applies(cls, obj):
         return True
-
+    
     def _get_properties(self):
-        properties = super(String, self)._get_properties()
-        return dict(properties, text=str(self.object))
+        properties = super(Str, self)._get_properties()
+        return dict(properties, text=escape(str(self.object)))
