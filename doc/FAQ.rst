@@ -44,3 +44,45 @@ Conversely, what Panel adds on top of Bokeh is full bidirectional communication 
 
 **A:** A global set of precedence values is used to ensure that the richest representation of a given object is chosen when you pass it to a Row or Column.  However, you may need to select a specific Pane type explicitly, e.g. if you want to see widgets for the parameters of a type that also has a `_repr_png_`, or if you need a place to supply width, height.  In this case, you can pick a specific Pane type yourself and instantiate it with any parameters you prefer, as in 
 `pp.ROW(pane.HTML(obj, height=300))`.
+
+
+**Q: How does Panel relate to other app/dashboard tools?
+
+**A:** Panel is currently the only tool with full support for showing the same objects in a Jupyter notebook and in a standalone deployable server:
+
+
++-------------------------------------+-----------------+---------------------+-----------------+--------------------+------------------------+
+|                                     | Panel           | ipywidgets          | Bokeh           | Shiny              | Dash (Plotly)          |
++=====================================+=================+=====================+=================+====================+========================+
+|Provides widgets                     | Yes             | Yes                 | Yes             | Yes                | Yes                    |
++-------------------------------------+-----------------+---------------------+-----------------+--------------------+------------------------+
+|Provides layout                      | Yes             | Yes                 | Yes             | Yes                | Yes                    |
++-------------------------------------+-----------------+---------------------+-----------------+--------------------+------------------------+
+|Supports interactive plots           | Yes             | Yes                 | Yes             | Yes                | Yes                    |
++ ----------------------------------------+-------------+---------------------+-----------------+--------------------+------------------------+
+|Reactive updates in Jupyter notebooks| Yes             | Yes                 | No              | No                 | No                     |
++-------------------------------------+-----------------+---------------------+-----------------+--------------------+------------------------+
+|Deployable in a server               | Yes             | No                  | Yes             | Yes                | Yes                    |
++-------------------------------------+-----------------+---------------------+-----------------+--------------------+------------------------+
+|Fully usable in Jupyter              | Yes             | Yes                 | Only as         | No                 | No, only via           |
+|                                     |                 |                     | embedded server |                    | iframe                 |
++-------------------------------------+-----------------+---------------------+-----------------+--------------------+------------------------+
+|Supports Matplotlib plots            | Yes             | Yes                 | No              | No                 | No                     |
++-------------------------------------+-----------------+---------------------+-----------------+--------------------+------------------------+
+|Supports Bokeh plots                 | Yes             | Yes                 | Yes             | No                 | No                     |
++-------------------------------------+-----------------+---------------------+-----------------+--------------------+------------------------+
+|Supports Plotly plots                | Yes             | Yes                 | No              | No                 | Yes                    |
++-------------------------------------+-----------------+---------------------+-----------------+--------------------+------------------------+
+|Supports R ggplot plots              | Yes             | No                  | No              | Yes                | No                     |
++-------------------------------------+-----------------+---------------------+-----------------+--------------------+------------------------+
+|Separates content from presentation  | Yes             | Could eventually    | No              | No                 | No                     |
+|                                     |                 | using traitlets     |                 |                    |                        |
++-------------------------------------+-----------------+---------------------+-----------------+--------------------+------------------------+
+|Servable from public site            | Possible        | As live notebooks   | Possible        | Yes, shinyapps.io  | Yes, Plotly Cloud      |
+|                                     | with mybinder   | via mybinder        | with mybinder   |                    |                        |
++-------------------------------------+-----------------+---------------------+-----------------+--------------------+------------------------+
++Servable in enterprise platform      | Yes, AE5        | Yes, in AE5, using  | Yes, AE5        | Yes, Shiny Server, | Yes, Plotly Enterprise |
+|                                     |                 | read-only cells     |                 | +AE5?              |                        |
++-------------------------------------+-----------------+---------------------+-----------------+--------------------+------------------------+
+
+
