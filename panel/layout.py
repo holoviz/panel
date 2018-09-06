@@ -6,12 +6,13 @@ from __future__ import absolute_import
 
 import param
 
+import numpy as np
 from bokeh.layouts import (Column as BkColumn, Row as BkRow,
                            WidgetBox as BkWidgetBox, Spacer as BkSpacer)
 from bokeh.models.widgets import Tabs as BkTabs, Panel as BkPanel
 
 from .pane import Pane, PaneBase
-from .util import push
+from .util import push, is_rectangle
 from .viewable import Reactive
 
 
@@ -269,3 +270,135 @@ class Spacer(Reactive):
         model = self._bokeh_model(**self._init_properties())
         self._link_params(model, ['width', 'height'], doc, root, comm)
         return model
+
+
+class GridSpec(Reactive):
+
+    nrows = param.Integer()
+
+    ncols = param.Integer()
+
+    width = param.Integer(default=600)
+
+    height = param.Integer(default=600)
+
+    def __init__(self, nrows, ncols, **params):
+        super(GridSpec, self).__init__(nrows=nrows, ncols=ncols, **params)
+        self._objects = []
+        self._grid = {}
+        self._bounds = {}
+        self._shapes = {}
+
+    @property
+    def _cell_width(self):
+        return (self.width/self.ncols)
+
+    @property
+    def _cell_height(self):
+        return (self.height/self.nrows)
+
+    @property
+    def _full(self):
+        """
+        Whether the grid is fully populated.
+        """
+        return (np.sum(list(self._shapes.values()), axis=0) == 0).sum() == 0
+
+    def __setitem__(self, index, obj):
+        xidx, yidx = index
+        x0, x1 = (xidx.start, xidx.stop) if isinstance(xidx, slice) else (xidx, xidx+1)
+        y0, y1 = (yidx.start, yidx.stop) if isinstance(yidx, slice) else (yidx, yidx+1)
+        if obj in self._objects:
+            raise ValueError()
+        elif x1 > self.ncols or y1 > self.nrows:
+            raise IndexError()
+        shape = np.zeros((self.ncols, self.nrows))
+        shape[index[::-1]] = 1
+        index = len(self._objects)
+        self._objects.append(obj)
+        self._bounds[index] = {'rows': (y0, y1), 'cols': (x0, x1)}
+        obj.width = int(self._cell_width * (x1-x0))
+        obj.height = int(self._cell_height * (y1-y0))
+        for x in range(x0, x1):
+            for y in range(y0, y1):
+                if (x, y) in self._grid:
+                    raise IndexError('(%d, %d) already populated' % ((x, y)) )
+                self._grid[(x, y)] = index
+        self._shapes[index] = shape
+
+    def _full_grid(self):
+        new_gs = GridSpec(**dict(self.get_param_values()))
+        for i, bounds in self._bounds.items():
+            x0, x1 = bounds['cols']
+            y0, y1 = bounds['rows']
+            new_gs[x0: x1, y0: y1] = self._objects[i]
+        width, height = self.width/self.ncols, self.height/self.nrows
+        for x in range(self.ncols):
+            for y in range(self.nrows):
+                if (x, y) in new_gs._grid: continue
+                new_gs[(x, y)] = Spacer(width=int(width), height=int(height))
+        return new_gs
+
+    def _find_block(self, start=0):
+        """
+        Iteratively searches for blocks to combine into a row or column.
+        """
+        shapes = list(self._shapes.items())
+        index, shape = shapes.pop(start)
+        combined_shape = shape
+        items = [index]
+        for i, oshape in shapes:
+            candidate = combined_shape + oshape
+            if is_rectangle(candidate):
+                combined_shape = candidate
+                items.append(i)
+                break
+            else:
+                continue
+        if len(items) == 1:
+            return self._find_block(start+1)
+        return items
+
+    def _combine_items(self, objects):
+        """
+        Combine the supplied objects into a row or column
+        """
+        new_gs = GridSpec(**dict(self.get_param_values()))
+        rows = [(i, max(self._bounds[i]['rows'])) for i in objects]
+        cols = [(i, max(self._bounds[i]['cols'])) for i in objects]
+        is_row = len(set([r for _, r in cols])) == len(cols)
+        layout, order = (Row, cols) if is_row else (Column, rows)
+
+        items = [i for i, _ in sorted(order, key=lambda x: x[1])]
+        obj = layout(*[self._objects[i] for i in items])
+
+        x0 = min([min(self._bounds[i]['cols']) for i in objects])
+        x1 = max([max(self._bounds[i]['cols']) for i in objects])
+        y0 = min([min(self._bounds[i]['rows']) for i in objects])
+        y1 = max([max(self._bounds[i]['rows']) for i in objects])
+        new_gs[x0: x1, y0: y1] = obj
+
+        for i, bounds in self._bounds.items():
+            if i in objects: continue
+            x0, x1 = bounds['cols']
+            y0, y1 = bounds['rows']
+            new_gs[x0: x1, y0: y1] = self._objects[i]
+        return new_gs
+
+    def _recursively_combine(self):
+        """
+        Iteratively combine objects into rows or columns until
+        only a single Row/Column is left.
+        """
+        if not self._full:
+            reduced_gs = self._full_grid()
+        else:
+            reduced_gs = self
+        while len(reduced_gs._objects) > 1:
+            items = reduced_gs._find_block()
+            reduced_gs = reduced_gs._combine_items(items)
+        return reduced_gs
+
+    def _get_model(self, doc, root=None, parent=None, comm=None):
+        gs = self._recursively_combine()
+        return gs._objects[0]._get_model(doc, root, parent, comm)

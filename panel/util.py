@@ -9,6 +9,7 @@ from datetime import datetime
 import param
 import bokeh
 import bokeh.embed.notebook
+import numpy as np
 from bokeh.io.notebook import load_notebook as bk_load_notebook
 from bokeh.models import Model, LayoutDOM, Div as BkDiv, WidgetBox as BkWidgetBox
 from bokeh.protocol import Protocol
@@ -77,6 +78,14 @@ class default_label_formatter(param.ParameterizedFunction):
         if self.capitalize:
             pname = pname[:1].upper() + pname[1:]
         return pname
+
+
+def is_rectangle(img):
+    rows = np.any(img, axis=1)
+    cols = np.any(img, axis=0)
+    ymin, ymax = np.where(rows)[0][[0, -1]]
+    xmin, xmax = np.where(cols)[0][[0, -1]]
+    return (img[ymin:ymax+1, xmin:xmax+1] == 0).sum() == 0
 
 
 ################################
