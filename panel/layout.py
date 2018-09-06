@@ -285,7 +285,7 @@ class GridSpec(Reactive):
     def __init__(self, nrows, ncols, **params):
         super(GridSpec, self).__init__(nrows=nrows, ncols=ncols, **params)
         self._objects = []
-        self._grid = {}
+        self._grid = np.zeros((nrows, ncols))
         self._bounds = {}
         self._shapes = {}
 
@@ -302,7 +302,7 @@ class GridSpec(Reactive):
         """
         Whether the grid is fully populated.
         """
-        return (np.sum(list(self._shapes.values()), axis=0) == 0).sum() == 0
+        return np.sum(self._grid) == (self.nrows*self.ncols)
 
     def __setitem__(self, index, obj):
         xidx, yidx = index
@@ -321,9 +321,9 @@ class GridSpec(Reactive):
         obj.height = int(self._cell_height * (y1-y0))
         for x in range(x0, x1):
             for y in range(y0, y1):
-                if (x, y) in self._grid:
+                if self._grid[y, x]:
                     raise IndexError('(%d, %d) already populated' % ((x, y)) )
-                self._grid[(x, y)] = index
+                self._grid[y, x] = True
         self._shapes[index] = shape
 
     def _full_grid(self):
@@ -335,7 +335,7 @@ class GridSpec(Reactive):
         width, height = self.width/self.ncols, self.height/self.nrows
         for x in range(self.ncols):
             for y in range(self.nrows):
-                if (x, y) in new_gs._grid: continue
+                if new_gs._grid[y, x]: continue
                 new_gs[(x, y)] = Spacer(width=int(width), height=int(height))
         return new_gs
 
