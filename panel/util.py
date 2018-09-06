@@ -219,14 +219,6 @@ class default_label_formatter(param.ParameterizedFunction):
 ################################
 
 
-def Div(**kwargs):
-    # Hack to work around issues with Div height in notebooks
-    div = BkDiv(**kwargs)
-    if 'height' in kwargs:
-        return BkRow(div, BkSpacer(height=kwargs['height']))
-    return div
-
-
 def diff(doc, binary=True, events=None):
     """
     Returns a json diff required to update an existing plot with

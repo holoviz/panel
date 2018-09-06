@@ -16,11 +16,10 @@ except:
 
 import param
 
-from bokeh.layouts import WidgetBox as _BkWidgetBox
 from bokeh.models import LayoutDOM, CustomJS, Widget as _BkWidget, Div as _BkDiv
 
 from .layout import Panel, Row
-from .util import Div, basestring, param_reprs, push, remove_root
+from .util import basestring, param_reprs, push, remove_root
 from .viewable import Reactive, Viewable
 
 
@@ -169,8 +168,8 @@ class PaneBase(Reactive):
         def update_pane(change):
             old_model = self._models[ref]
 
-            # Pane supports model updates
             if self._updates:
+                # Pane supports model updates
                 def update_models():
                     self._update(old_model)
             else:
@@ -217,7 +216,7 @@ class Bokeh(PaneBase):
         if isinstance(model, _BkWidget):
             box_kws = {k: getattr(model, k) for k in ['width', 'height', 'sizing_mode']
                        if k in model.properties()}
-            model = _BkWidgetBox(model, **box_kws)
+            model = _BkColumn(model, **box_kws)
 
         ref = root.ref['id']
         for js in model.select({'type': CustomJS}):
@@ -262,9 +261,9 @@ class DivPaneBase(PaneBase):
                 if getattr(self,p) is not None}
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        model = Div(**self._get_properties())
+        model = _BkDiv(**self._get_properties())
         self._models[root.ref['id']] = model
-        self._link_object(doc, root, parent, comm)
+        self._link_object(model, doc, root, parent, comm)
         return model
 
     def _update(self, model):

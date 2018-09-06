@@ -14,7 +14,7 @@ from datetime import datetime
 
 import param
 import numpy as np
-from bokeh.models import WidgetBox as _BkWidgetBox
+from bokeh.layouts import Column as _BkColumn, Row as _BkRow
 from bokeh.models.widgets import (
     TextInput as _BkTextInput, Select as _BkSelect, Slider as _BkSlider,
     CheckboxGroup as _BkCheckboxGroup, DateRangeSlider as _BkDateRangeSlider,
@@ -64,9 +64,9 @@ class Widget(Reactive):
         return self._process_param_change(properties)
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        in_box = isinstance(parent, _BkWidgetBox)
+        in_box = isinstance(parent, (_BkColumn, _BkRow)) and "bk-widgetbox" in parent.css_classes
         if not in_box:
-            parent = _BkWidgetBox()
+            parent = _BkColumn(css_classes=["bk-widgetbox"])
         root = parent if root is None else root
         model = self._widget_type(**self._init_properties())
 
@@ -649,7 +649,7 @@ class DiscreteSlider(Widget):
         return list(self.options.values()) if isinstance(self.options, dict) else self.options
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        model = _BkWidgetBox()
+        model = _BkColumn()
         parent = parent or model
         root = root or parent
         msg = self._init_properties()

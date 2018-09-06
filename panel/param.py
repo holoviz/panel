@@ -16,16 +16,14 @@ import param
 from param.parameterized import classlist
 
 from .pane import Pane, PaneBase
-from .layout import WidgetBox, Row, Panel, Tabs, Column
+from .layout import Row, Panel, Tabs, Column
 from .util import (
     abbreviated_repr, basestring, default_label_formatter, full_groupby,
-    get_method_owner, is_parameterized, param_name
-)
+    get_method_owner, is_parameterized, param_name)
 from .widgets import (
     LiteralInput, Select, Checkbox, FloatSlider, IntSlider, RangeSlider,
     MultiSelect, StaticText, Button, Toggle, TextInput, DiscreteSlider,
-    DatetimeInput
-)
+    DatetimeInput)
 
 
 def ObjectSelector(pobj):
@@ -135,7 +133,7 @@ class Param(PaneBase):
         # Construct widgets
         self._widgets = self._get_widgets()
         widgets = [widget for widgets in self._widgets.values() for widget in widgets]
-        self._widget_box = WidgetBox(*widgets, height=self.height,
+        self._widget_box = Column(*widgets, height=self.height,
                                      width=self.width, name=self.name)
 
         # Construct Layout

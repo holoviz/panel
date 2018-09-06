@@ -6,9 +6,8 @@ from __future__ import absolute_import, division, unicode_literals
 
 import param
 
-from bokeh.layouts import (Column as BkColumn, Row as BkRow,
-                           WidgetBox as BkWidgetBox)
-from bokeh.models import Box as BkBox, Spacer as BkSpacer
+from bokeh.models import (Column as BkColumn, Row as BkRow,
+                          Box as BkBox, Spacer as BkSpacer)
 from bokeh.models.widgets import Tabs as BkTabs, Panel as BkPanel
 
 from .util import param_name, param_reprs, push
@@ -34,6 +33,10 @@ class Panel(Reactive):
     """
     Abstract baseclass for a layout of Viewables.
     """
+
+    height = param.Integer(default=None, bounds=(0, None))
+
+    width = param.Integer(default=None, bounds=(0, None))
 
     objects = param.List(default=[], doc="""
         The list of child objects that make up the layout.""")
@@ -128,7 +131,7 @@ class Panel(Reactive):
         return new_models
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        model = self._bokeh_model()
+        model = self._bokeh_model(width=self.width, height=self.height)
         root = model if root is None else root
         objects = self._get_objects(model, [], doc, root, comm)
 
@@ -217,39 +220,6 @@ class Column(Panel):
     """
 
     _bokeh_model = BkColumn
-
-
-class WidgetBox(Panel):
-    """
-    Box to group widgets.
-    """
-
-    height = param.Integer(default=None, bounds=(0, None))
-
-    width = param.Integer(default=None, bounds=(0, None))
-
-    _bokeh_model = BkWidgetBox
-
-    def _get_objects(self, model, old_objects, doc, root, comm=None):
-        """
-        Returns new child models for the layout while reusing unchanged
-        models and cleaning up any dropped objects.
-        """
-        from .pane import panel
-        new_models = []
-        for i, pane in enumerate(self.objects):
-            pane = panel(pane)
-            self.objects[i] = pane
-            if pane in old_objects:
-                child = pane._models[root.ref['id']]
-            else:
-                child = pane._get_model(doc, root, model, comm)
-
-            if isinstance(child, BkWidgetBox):
-                new_models += child.children
-            else:
-                new_models.append(child)
-        return new_models
 
 
 class Tabs(Panel):
