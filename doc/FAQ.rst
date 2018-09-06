@@ -46,9 +46,11 @@ Conversely, what Panel adds on top of Bokeh is full bidirectional communication 
 `pp.ROW(pane.HTML(obj, height=300))`.
 
 
-**Q: How does Panel relate to other app/dashboard tools?
+**Q: How does Panel relate to other widget/app/dashboard tools?
 
-**A:** Panel is currently the only tool with full support for showing the same objects in a Jupyter notebook and in a standalone deployable server:
+**A:** Panel is currently the only Python tool that fully supports writing live widget and app code in Jupyter Notebooks and then deploying it on standalone web servers.  Panel is thus unique in supporting the entire life cycle of working with data: from initial exploration, to adding custom interactivity to make one-off analyses easier, to building a complex dashboard from multiple components, to deploying your polished Python-backed dashboard in a public-facing or on-premises private server, and then iterating by bringing those same components back to the notebook for further exploration and improvement.  Other tools support *some* of the same capabilities, but by focusing on only one part of this life cycle they require you to start over when you need to use your work in a different way.
+
+For instance, ipywidgets provide many of the same capabilities as Panel, but they are tightly tied to the Jupyter environment, and are not generally able to be used in a secure standalone server.  Dash can develop polished dashboards, but it is not designed for supporting initial exploration in a notebook, and is largely focused on Plotly charts rather than the visualization libraries that you are already using.  Here's a general overview of what each library supports:
 
 
 +-------------------------------------+-----------------+---------------------+-----------------+--------------------+------------------------+
