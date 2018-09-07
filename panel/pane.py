@@ -540,3 +540,38 @@ class Str(DivPaneBase):
     def _get_properties(self):
         properties = super(Str, self)._get_properties()
         return dict(properties, text='<pre>'+escape(str(self.object))+'</pre>')
+
+
+
+class YT(HTML):
+    """
+    YT panes wrap plottable objects from the YT library.  
+    By default, the height and width are calculated by summing all
+    contained plots, but can optionally be specified explicitly to
+    provide additional space.
+    """
+
+    precedence = 0.5
+
+    @classmethod
+    def applies(cls, obj):
+        return ('yt' in repr(obj) and
+                hasattr(obj, "plots") and
+                hasattr(obj, "_repr_html_"))
+
+    def _get_properties(self):
+        p = super(YT, self)._get_properties()
+
+        width = height = 0
+        if self.width  is None or self.height is None:
+            for k,v in self.object.plots.items():
+                if hasattr(v, "_repr_png_"):
+                    img = v._repr_png_()
+                    w,h = PNG._imgshape(img)
+                    height += h
+                    width = max(w, width)
+        
+        if self.width  is None: p["width"]  = width
+        if self.height is None: p["height"] = height
+
+        return p
