@@ -123,26 +123,21 @@ class PaneBase(Reactive):
             if self._updates:
                 def update_models():
                     self._update(old_model)
-                if comm:
-                    update_models()
-                    push(doc, comm)
-                else:
-                    doc.add_next_tick_callback(update_models)
-                return
-
-            # Otherwise replace the whole model
-            new_model = self._get_model(doc, root, parent, comm)
-            def update_models():
+            else:
+                # Otherwise replace the whole model
                 self._cleanup(old_model)
-                index = parent.children.index(old_model)
-                parent.children[index] = new_model
-                history[0] = new_model
+                new_model = self._get_model(doc, root, parent, comm)
+                def update_models():
+                    index = parent.children.index(old_model)
+                    parent.children[index] = new_model
+                    history[0] = new_model
 
             if comm:
                 update_models()
                 push(doc, comm)
             else:
                 doc.add_next_tick_callback(update_models)
+
         self.param.watch(update_pane, 'object')
         self._callbacks[model.ref['id']]['object'] = update_pane
 
