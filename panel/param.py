@@ -17,7 +17,7 @@ from .layout import WidgetBox, Row, Layout, Tabs, Spacer
 from .util import default_label_formatter
 from .widgets import (
     LiteralInput, Select, Checkbox, FloatSlider, IntSlider, RangeSlider,
-    MultiSelect, DatePicker, StaticText, Button, Toggle
+    MultiSelect, DatePicker, StaticText, Button, Toggle, TextInput
 )
 
 
@@ -68,6 +68,7 @@ class Param(PaneBase):
         param.Number:        FloatSlider,
         param.Integer:       IntSlider,
         param.Range:         RangeSlider,
+        param.String:        TextInput,
         param.ListSelector:  MultiSelect,
         param.Date:          DatePicker,
     }
@@ -150,7 +151,7 @@ class Param(PaneBase):
             if None not in bounds:
                 kw['start'], kw['end'] = bounds
             else:
-                widget_class = StaticText
+                widget_class = LiteralInput
 
         kwargs = {k: v for k, v in kw.items() if k in widget_class.params()}
         widget = widget_class(**kwargs)
