@@ -32,6 +32,6 @@ test:
     {% endfor %}
 
 about:
-  home: www.pyviz.org
-  summary: Bidirectional communication for PyViz
-  license: BSD 3-Clause
+  home: {{ sdata['url'] }}
+  summary: {{ sdata['description'] }}
+  license: {{ sdata['license'] }}
