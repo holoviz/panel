@@ -1,6 +1,7 @@
 include README.md
 include LICENSE.txt
 include panel/.version
+include panel/models/*.ts
 global-exclude *.py[co]
 global-exclude *~
 global-exclude *.ipynb_checkpoints/*
