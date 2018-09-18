@@ -134,10 +134,10 @@ class Param(PaneBase):
     def widget_type(cls, pobj):
         ptype = type(pobj)
         match = cls._mapping.get(ptype)
-        if isinstance(match, types.FunctionType):
-            return match(pobj)
         for t in classlist(ptype)[::-1]:
             if t in cls._mapping:
+                if isinstance(cls._mapping[t], types.FunctionType):
+                    return cls._mapping[t](pobj)
                 return cls._mapping[t]
 
     def widget(self, p_name):
