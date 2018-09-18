@@ -1,6 +1,9 @@
 from __future__ import absolute_import
 
-from .layout import Row, Column # noqa
+from . import widgets # noqa
+from . import layout # noqa
+
+from .layout import Row, Column, Tabs, Spacer # noqa
 from .pane import Pane # noqa
 from .param import Param # noqa
 from .util import load_notebook as _load_nb
