@@ -93,9 +93,9 @@ class Viewable(param.Parameterized):
 
     def server_doc(self, doc=None):
         doc = doc or curdoc()
+        model = self._get_root(doc)
         if hasattr(doc, 'on_session_destroyed'):
             doc.on_session_destroyed(self._server_destroy)
-            model = self._get_root(doc)
             self._documents[doc] = model
         add_to_doc(model, doc)
         return doc
