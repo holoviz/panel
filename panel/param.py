@@ -35,7 +35,6 @@ def ObjectSelector(pobj):
         return Select
 
 
-
 class Param(PaneBase):
     """
     Param panes render a Parameterized class to a set of widgets which
@@ -133,7 +132,6 @@ class Param(PaneBase):
 
     def widget_type(cls, pobj):
         ptype = type(pobj)
-        match = cls._mapping.get(ptype)
         for t in classlist(ptype)[::-1]:
             if t in cls._mapping:
                 if isinstance(cls._mapping[t], types.FunctionType):
