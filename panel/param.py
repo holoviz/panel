@@ -14,7 +14,7 @@ import param
 from param.parameterized import classlist
 
 from .pane import PaneBase
-from .layout import WidgetBox, Row, Layout, Tabs, Spacer
+from .layout import WidgetBox, Row, Layout, Tabs
 from .util import default_label_formatter
 from .widgets import (
     LiteralInput, Select, Checkbox, FloatSlider, IntSlider, RangeSlider,
@@ -170,7 +170,7 @@ class Param(PaneBase):
                 widget_class = LiteralInput
 
         kwargs = {k: v for k, v in kw.items() if k in widget_class.params()}
-        widget = widget_class(**kw)
+        widget = widget_class(**kwargs)
         if isinstance(p_obj, param.Action):
             widget.button_type = 'success'
             def action(change):
