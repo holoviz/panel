@@ -34,6 +34,10 @@ class Viewable(param.Parameterized):
 
     _comm_manager = CommManager
 
+    def __init__(self, **params):
+        super(Viewable, self).__init__(**params)
+        self._documents = {}
+
     def _get_model(self, doc, root=None, parent=None, comm=None):
         """
         Converts the objects being wrapped by the viewable into a
@@ -82,9 +86,17 @@ class Viewable(param.Parameterized):
         model = self._get_root(doc, comm)
         return render_mimebundle(model, doc, comm)
 
+    def _server_destroy(self, session_context):
+        doc = session_context._document
+        self._cleanup(self._documents[doc])
+        del self._documents[doc]
+
     def server_doc(self, doc=None):
         doc = doc or curdoc()
-        model = self._get_root(doc)
+        if hasattr(doc, 'on_session_destroyed'):
+            doc.on_session_destroyed(self._server_destroy)
+            model = self._get_root(doc)
+            self._documents[doc] = model
         add_to_doc(model, doc)
         return doc
 
