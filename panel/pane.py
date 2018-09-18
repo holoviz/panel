@@ -291,7 +291,7 @@ class ParamMethod(PaneBase):
                 else:
                     doc.add_next_tick_callback(update_models)
 
-            parameterized.param.watch(update_pane, p.name, p.what)
+            (p.inst or p.cls).param.watch(update_pane, p.name, p.what)
         return model
 
     def _cleanup(self, model, final=False):
