@@ -346,7 +346,7 @@ class MultiSelect(Select):
 
 class DiscreteSlider(Widget):
 
-    options = param.List(default=[])
+    options = param.ClassSelector(default=[], class_=(dict, list))
 
     value = param.Parameter()
 
@@ -354,11 +354,23 @@ class DiscreteSlider(Widget):
 
     def __init__(self, **params):
         super(DiscreteSlider, self).__init__(**params)
-        if self.value not in self.options:
+        if self.value not in self.values:
             raise ValueError('Value %s not a valid option, '
                              'ensure that the supplied value '
                              'is one of the declared options.'
                              % self.value)
+
+    @property
+    def labels(self):
+        title = '<b>%s</b>: ' % (self.name if self.name else '')
+        if isinstance(self.options, dict):
+            return [title + o for o in self.options]
+        else:
+            return [title + (self.formatter % o) for o in self.options]
+
+    @property
+    def values(self):
+        return list(self.options.values()) if isinstance(self.options, dict) else self.options
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         model = _BkWidgetBox()
@@ -403,20 +415,26 @@ class DiscreteSlider(Widget):
         if 'options' in msg:
             msg['start'] = 0
             msg['end'] = len(msg['options']) - 1
-            msg['labels'] = [title + (self.formatter % o) for o in msg['options']]
-            if self.value not in msg['options']:
-                self.value = msg['options'][0]
+            options = msg['options']
+            if isinstance(options, dict):
+                msg['labels'] = list(options)
+                options = list(options.values())
+            else:
+                msg['labels'] = [title + (self.formatter % o) for o in options]
+            if self.value not in options:
+                self.value = options[0]
         if 'value' in msg:
-            label = self.formatter % msg['value']
-            if msg['value'] not in self.options:
-                self.value = self.options[0]
+            value = msg['value']
+            if value not in self.values:
+                self.value = self.values[0]
                 msg.pop('value')
                 return msg
-            msg['value'] = self.options.index(msg['value'])
-            msg['text'] = title + label
+            label = self.labels[self.values.index(value)]
+            msg['value'] = self.values.index(value)
+            msg['text'] = label
         return msg
 
     def _process_property_change(self, msg):
         if 'value' in msg:
-            msg['value'] = self.options[msg['value']]
+            msg['value'] = self.values[msg['value']]
         return msg

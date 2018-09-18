@@ -6,6 +6,7 @@ from __future__ import absolute_import
 
 import os
 import json
+import types
 import itertools
 from collections import OrderedDict
 
@@ -13,12 +14,25 @@ import param
 from param.parameterized import classlist
 
 from .pane import PaneBase
-from .layout import WidgetBox, Row, Layout, Tabs, Spacer
+from .layout import WidgetBox, Row, Layout, Tabs
 from .util import default_label_formatter
 from .widgets import (
     LiteralInput, Select, Checkbox, FloatSlider, IntSlider, RangeSlider,
-    MultiSelect, DatePicker, StaticText, Button, Toggle, TextInput
+    MultiSelect, DatePicker, StaticText, Button, Toggle, TextInput,
+    DiscreteSlider
 )
+
+
+def ObjectSelector(pobj):
+    """
+    Determines param.ObjectSelector widget depending on whether all values
+    are numeric.
+    """
+    options = list(pobj.objects.values()) if isinstance(pobj.objects, dict) else pobj.objects
+    if all(param._is_number(o) for o in options):
+        return DiscreteSlider
+    else:
+        return Select
 
 
 class Param(PaneBase):
@@ -60,17 +74,18 @@ class Param(PaneBase):
     precedence = 0.1
 
     _mapping = {
-        param.Action:        Button,
-        param.Parameter:     LiteralInput,
-        param.Dict:          LiteralInput,
-        param.Selector:      Select,
-        param.Boolean:       Checkbox,
-        param.Number:        FloatSlider,
-        param.Integer:       IntSlider,
-        param.Range:         RangeSlider,
-        param.String:        TextInput,
-        param.ListSelector:  MultiSelect,
-        param.Date:          DatePicker,
+        param.Action:         Button,
+        param.Parameter:      LiteralInput,
+        param.Dict:           LiteralInput,
+        param.Selector:       Select,
+        param.ObjectSelector: ObjectSelector,
+        param.Boolean:        Checkbox,
+        param.Number:         FloatSlider,
+        param.Integer:        IntSlider,
+        param.Range:          RangeSlider,
+        param.String:         TextInput,
+        param.ListSelector:   MultiSelect,
+        param.Date:           DatePicker,
     }
 
     def __init__(self, object, **params):
@@ -80,15 +95,11 @@ class Param(PaneBase):
         self._widgets = self._get_widgets()
         self._widget_box = WidgetBox(*self._widgets.values(), height=self.height,
                                      width=self.width, name=self.name)
-        if self.height is not None:
-            panes = [self._widget_box]
-        else:
-            panes = [Row(self._widget_box, Spacer(height=self.height), name=self.name)]
 
         kwargs = {'name': self.name}
         if self.subpanel_layout is Tabs:
             kwargs['width'] = self.width
-        self._layout = self.subpanel_layout(*panes, **kwargs)
+        self._layout = self.subpanel_layout(self._widget_box, **kwargs)
         self._link_subpanels()
 
     def _link_subpanels(self):
@@ -120,8 +131,11 @@ class Param(PaneBase):
                 (isinstance(obj, type) and issubclass(obj, param.Parameterized)))
 
     def widget_type(cls, pobj):
-        for t in classlist(type(pobj))[::-1]:
+        ptype = type(pobj)
+        for t in classlist(ptype)[::-1]:
             if t in cls._mapping:
+                if isinstance(cls._mapping[t], types.FunctionType):
+                    return cls._mapping[t](pobj)
                 return cls._mapping[t]
 
     def widget(self, p_name):
