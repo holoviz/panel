@@ -330,3 +330,32 @@ def test_discrete_slider(document, comm):
     discrete_slider.value = 100
     assert widget.value == 3
     assert label.text == '<b>DiscreteSlider</b>: 100'
+
+
+
+def test_discrete_slider_options_dict(document, comm):
+    discrete_slider = DiscreteSlider(name='DiscreteSlider', value=1,
+                                     options={'0.1': 0.1, '1': 1, '10': 10, '100': 100})
+
+    box = discrete_slider._get_model(document, comm=comm)
+
+    assert isinstance(box, WidgetBox)
+
+    label = box.children[0]
+    widget = box.children[1]
+    assert isinstance(label, BkDiv)
+    assert isinstance(widget, BkSlider)
+    assert widget.value == 1
+    assert widget.start == 0
+    assert widget.end == 3
+    assert widget.step == 1
+    assert label.text == '<b>DiscreteSlider</b>: 1'
+
+    widget.value = 2
+    discrete_slider._comm_change({'value': 2})
+    assert discrete_slider.value == 10
+    assert label.text == '<b>DiscreteSlider</b>: 10'
+
+    discrete_slider.value = 100
+    assert widget.value == 3
+    assert label.text == '<b>DiscreteSlider</b>: 100'
