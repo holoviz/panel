@@ -109,7 +109,7 @@ class interactive(PaneBase):
 
     panel_layout = param.ClassSelector(default=Column, class_=Layout, is_instance=False)
 
-    manual = param.Boolean(default=False, doc="""
+    manual_update = param.Boolean(default=False, doc="""
         Whether to update manually by clicking on button.""")
 
     manual_name = param.String(default='Run Interact')
@@ -130,7 +130,7 @@ class interactive(PaneBase):
             getcallargs(object, **{n:v for n,v,_ in new_kwargs})
 
         widgets = self.widgets_from_abbreviations(new_kwargs)
-        if self.manual:
+        if self.manual_update:
             widgets.append(('manual', Button(name=self.manual_name)))
         self._widgets = OrderedDict(widgets)
         self._pane = Pane(self.object(**self.kwargs), name=self.name,
@@ -172,7 +172,7 @@ class interactive(PaneBase):
 
     def _link_widgets(self, layout, doc, root, parent, comm):
         history = [layout.children[1]]
-        if self.manual:
+        if self.manual_update:
             widgets = [('manual', self._widgets['manual'])]
         else:
             widgets = self._widgets.items()
@@ -324,7 +324,7 @@ class interactive(PaneBase):
     # Return a factory for interactive functions
     @classmethod
     def factory(cls):
-        options = dict(manual=False, manual_name="Run Interact")
+        options = dict(manual_update=False, manual_name="Run Interact")
         return _InteractFactory(cls, options)
 
 
@@ -463,7 +463,7 @@ class _InteractFactory(object):
 
 
 interact = interactive.factory()
-interact_manual = interact.options(manual=True, manual_name="Run Interact")
+interact_manual = interact.options(manual_update=True, manual_name="Run Interact")
 
 
 class fixed(param.Parameterized):
