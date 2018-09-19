@@ -89,6 +89,8 @@ class Param(PaneBase):
     }
 
     def __init__(self, object, **params):
+        if isinstance(object, param.parameterized.Parameters):
+            object = object.cls if object.self is None else object.self
         if 'name' not in params:
             params['name'] = object.name
         super(Param, self).__init__(object, **params)
@@ -128,6 +130,7 @@ class Param(PaneBase):
     @classmethod
     def applies(cls, obj):
         return (isinstance(obj, param.Parameterized) or
+                isinstance(obj, param.parameterized.Parameters) or
                 (isinstance(obj, type) and issubclass(obj, param.Parameterized)))
 
     def widget_type(cls, pobj):
