@@ -9,6 +9,7 @@ from datetime import datetime
 from collections import OrderedDict
 
 import param
+import numpy as np
 from bokeh.models import WidgetBox as _BkWidgetBox
 from bokeh.models.widgets import (
     TextInput as _BkTextInput, Select as _BkSelect, Slider as _BkSlider,
@@ -303,6 +304,9 @@ class Select(Widget):
         if isinstance(options, list):
             params['options'] = OrderedDict([(as_unicode(o), o) for o in options])
         super(Select, self).__init__(**params)
+        options = list(self.options.values())
+        if self.value is None and None not in options:
+            self.value = options[0]
 
     def _process_param_change(self, msg):
         msg = super(Select, self)._process_param_change(msg)
@@ -354,7 +358,11 @@ class DiscreteSlider(Widget):
 
     def __init__(self, **params):
         super(DiscreteSlider, self).__init__(**params)
-        if self.value not in self.values:
+        if 'formatter' not in params and all(isinstance(v, (int, np.int_)) for v in self.values):
+            self.formatter = '%d'
+        if self.value is None and None not in self.values:
+            self.value = self.values[0]
+        elif self.value not in self.values:
             raise ValueError('Value %s not a valid option, '
                              'ensure that the supplied value '
                              'is one of the declared options.'
