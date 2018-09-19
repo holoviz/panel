@@ -58,6 +58,18 @@ def test_tuple_float_range_interact():
     assert widget.step == 0.1
     assert widget.end == 4
 
+def test_tuple_float_range_interact_with_default():
+    def test(a=3.1):
+        return a
+
+    interactive = interact(test, a=(0, 4, 0.1))
+    widget = interactive._widgets['a']
+    assert isinstance(widget, widgets.FloatSlider)
+    assert widget.value == 3.1
+    assert widget.start == 0
+    assert widget.step == 0.1
+    assert widget.end == 4
+
 def test_numeric_list_interact():
     def test(a):
         return a
