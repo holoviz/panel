@@ -1,8 +1,6 @@
 from bokeh.models import Div as BkDiv, Column as BkColumn, WidgetBox as BkWidgetBox
 
 from panel.interact import interact, interact_manual
-from panel import layout
-from panel import pane
 from panel import widgets
 
 
