@@ -30,7 +30,7 @@ import param
 
 from .layout import WidgetBox, Layout, Column
 from .pane import PaneBase, Pane
-from .util import basestring, as_unicode
+from .util import basestring, as_unicode, push
 from .widgets import (Checkbox, TextInput, Widget, IntSlider, FloatSlider,
                       Select, DiscreteSlider, Button)
 
@@ -70,18 +70,18 @@ def _get_min_max_value(min, max, value=None, step=None):
     return min, max, value
 
 
-def _yield_abbreviations_for_parameter(param, kwargs):
+def _yield_abbreviations_for_parameter(parameter, kwargs):
     """Get an abbreviation for a function parameter."""
-    name = param.name
-    kind = param.kind
-    ann = param.annotation
-    default = param.default
+    name = parameter.name
+    kind = parameter.kind
+    ann = parameter.annotation
+    default = parameter.default
     not_found = (name, empty, empty)
     if kind in (Parameter.POSITIONAL_OR_KEYWORD, Parameter.KEYWORD_ONLY):
         if name in kwargs:
             value = kwargs.pop(name)
         elif ann is not empty:
-            warn("Using function annotations to implicitly specify interactive controls is deprecated. Use an explicit keyword argument for the parameter instead.", DeprecationWarning)
+            param.main.warn("Using function annotations to implicitly specify interactive controls is deprecated. Use an explicit keyword argument for the parameter instead.", DeprecationWarning)
             value = ann
         elif default is not empty:
             value = default
@@ -158,8 +158,8 @@ class interactive(PaneBase):
             # can't inspect, no info from function; only use kwargs
             return [ (key, value, value) for key, value in kwargs.items() ]
 
-        for param in sig.parameters.values():
-            for name, value, default in _yield_abbreviations_for_parameter(param, kwargs):
+        for parameter in sig.parameters.values():
+            for name, value, default in _yield_abbreviations_for_parameter(parameter, kwargs):
                 if value is empty:
                     raise ValueError('cannot find widget or abbreviation for argument: {!r}'.format(name))
                 new_kwargs.append((name, value, default))
@@ -314,7 +314,6 @@ class interactive(PaneBase):
         # iterable to either of those.
         values = list(o.values()) if isinstance(o, Mapping) else list(o)
         widget_type = DiscreteSlider if all(param._is_number(v) for v in values) else Select
-        kws = {'name': name}
         if isinstance(o, (list, dict)):
             return widget_type(options=o, name=name)
         elif isinstance(o, Mapping):
@@ -457,11 +456,7 @@ class _InteractFactory(object):
         """
         opts = dict(self.opts)
         for k in kwds:
-            try:
-                # Ensure that the key exists because we want to change
-                # existing options, not add new ones.
-                _ = opts[k]
-            except KeyError:
+            if k not in opts:
                 raise ValueError("invalid option {!r}".format(k))
             opts[k] = kwds[k]
         return type(self)(self.cls, opts, self.kwargs)
