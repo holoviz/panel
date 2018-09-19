@@ -137,7 +137,7 @@ class interactive(PaneBase):
                           _temporary=True)
         self._widget_box = WidgetBox(*(widget for _, widget in widgets
                                        if isinstance(widget, Widget)))
-        self._layout = self.panel_layout(self._widget_box, self._pane)
+        self.layout = self.panel_layout(self._widget_box, self._pane)
 
     @property
     def kwargs(self):
@@ -166,7 +166,7 @@ class interactive(PaneBase):
         return new_kwargs
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        layout = self._layout._get_model(doc, root, parent, comm)
+        layout = self.layout._get_model(doc, root, parent, comm)
         self._link_widgets(layout, doc, root, parent, comm)
         return layout
 
