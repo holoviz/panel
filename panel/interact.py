@@ -333,10 +333,7 @@ class interactive(PaneBase):
 class _InteractFactory(object):
     """
     Factory for instances of :class:`interactive`.
-    This class is needed to support options like::
-        >>> @interact.options(manual=True)
-        ... def greeting(text="World"):
-        ...     print("Hello {}".format(text))
+
     Parameters
     ----------
     cls : class
