@@ -3,6 +3,7 @@ from __future__ import absolute_import
 from . import widgets # noqa
 from . import layout # noqa
 
+from .interact import interact
 from .layout import Row, Column, Tabs, Spacer # noqa
 from .pane import Pane # noqa
 from .param import Param # noqa
