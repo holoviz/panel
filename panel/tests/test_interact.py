@@ -34,7 +34,7 @@ def test_integer_interact():
     assert widget.step == 1
     assert widget.end == 3
 
-def test_tuple_int_range_interact():
+def test_tuple_int_range_with_step_interact():
     def test(a):
         return a
 
@@ -44,6 +44,18 @@ def test_tuple_int_range_interact():
     assert widget.value == 2
     assert widget.start == 0
     assert widget.step == 2
+    assert widget.end == 4
+
+def test_tuple_int_range_interact():
+    def test(a):
+        return a
+
+    interactive = interact(test, a=(0, 4))
+    widget = interactive._widgets['a']
+    assert isinstance(widget, widgets.IntSlider)
+    assert widget.value == 2
+    assert widget.start == 0
+    assert widget.step == 1
     assert widget.end == 4
 
 def test_tuple_float_range_interact():
@@ -91,7 +103,6 @@ def test_string_list_interact():
     assert widget.value == 'A'
     assert widget.options == dict(zip(options, options))
 
-
 def test_manual_interact():
     def test(a):
         return a
@@ -101,7 +112,6 @@ def test_manual_interact():
     assert isinstance(widget, widgets.Checkbox)
     assert widget.value == False
     assert isinstance(interactive._widgets['manual'], widgets.Button)
-
 
 def test_interact_updates_panel(document, comm):
     def test(a):
@@ -122,7 +132,6 @@ def test_interact_updates_panel(document, comm):
     
     widget.value = True
     assert div.text == '<pre>True</pre>'
-
 
 def test_interact_replaces_panel(document, comm):
     def test(a):
