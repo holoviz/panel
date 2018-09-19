@@ -107,7 +107,7 @@ def _matches(o, pattern):
 
 class interactive(PaneBase):
 
-    layout = param.ClassSelector(default=Column, class_=Layout, is_instance=False)
+    panel_layout = param.ClassSelector(default=Column, class_=Layout, is_instance=False)
 
     manual = param.Boolean(default=False, doc="""
         Whether to update manually by clicking on button.""")
@@ -137,7 +137,7 @@ class interactive(PaneBase):
                           _temporary=True)
         self._widget_box = WidgetBox(*(widget for _, widget in widgets
                                        if isinstance(widget, Widget)))
-        self._layout = self.layout(self._widget_box, self._pane)
+        self._layout = self.panel_layout(self._widget_box, self._pane)
 
     @property
     def kwargs(self):
