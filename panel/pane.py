@@ -222,6 +222,9 @@ class HoloViews(PaneBase):
         Should return the Bokeh model to be rendered.
         """
         from holoviews import Store
+        if not Store.renderers:
+            import holoviews.plotting.bokeh # noqa
+            Store.current_backend == 'bokeh'
         renderer = Store.renderers[Store.current_backend]
         renderer = renderer.instance(mode='server' if comm is None else 'default')
         kwargs = {'doc': doc} if renderer.backend == 'bokeh' else {}
