@@ -385,17 +385,24 @@ class Image(DivPaneBase):
         raise NotImplementedError
     
     def _get_properties(self):
+        p = super(Image,self)._get_properties()
         data = self._img()
+        width, height = self._imgshape(data)
+        if self.width is not None:
+            if self.height is None:
+                height = int((self.width/width)*height)
+            else:
+                height = self.height
+            width = self.width
+        elif self.height is not None:
+            width = int((self.height/height)*width)
+            height = self.height
         b64 = base64.b64encode(data).decode("utf-8")
         src = "data:image/"+self.imgtype+";base64,{b64}".format(b64=b64)
-        html = "<img src='{src}'></img>".format(src=src)
-        
-        p = super(Image,self)._get_properties()
-        width, height = self._imgshape(data)
-        if self.width  is None: p["width"]  = width
-        if self.height is None: p["height"] = height
-        p["text"]=html
-        return p
+        html = "<img src='{src}' width={width} height={height}></img>".format(
+            src=src, width=width, height=height
+        )
+        return dict(p, width=width, height=height, text=html)
 
 
 class PNG(Image):
