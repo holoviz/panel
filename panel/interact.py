@@ -240,7 +240,7 @@ class interactive(PaneBase):
             return abbrev
 
         if isinstance(abbrev, tuple):
-            widget = cls.widget_from_tuple(abbrev, name)
+            widget = cls.widget_from_tuple(abbrev, name, default)
             if default is not empty:
                 try:
                     widget.value = default
@@ -286,11 +286,12 @@ class interactive(PaneBase):
             return None
 
     @staticmethod
-    def widget_from_tuple(o, name):
+    def widget_from_tuple(o, name, default=empty):
         """Make widgets from a tuple abbreviation."""
+        int_default = (default is empty or isinstance(default, int))
         if _matches(o, (Real, Real)):
             min, max, value = _get_min_max_value(o[0], o[1])
-            if all(isinstance(_, Integral) for _ in o):
+            if all(isinstance(_, Integral) for _ in o) and int_default:
                 cls = IntSlider
             else:
                 cls = FloatSlider
@@ -300,7 +301,7 @@ class interactive(PaneBase):
             if step <= 0:
                 raise ValueError("step must be >= 0, not %r" % step)
             min, max, value = _get_min_max_value(o[0], o[1], step=step)
-            if all(isinstance(_, Integral) for _ in o):
+            if all(isinstance(_, Integral) for _ in o) and int_default:
                 cls = IntSlider
             else:
                 cls = FloatSlider
