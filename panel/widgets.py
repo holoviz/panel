@@ -136,12 +136,9 @@ class IntSlider(Widget):
 
     end = param.Integer(default=1)
 
-    _widget_type = _BkSlider
+    step = param.Integer(default=1)
 
-    def _init_properties(self):
-        properties = super(IntSlider, self)._init_properties()
-        properties['step'] = 1
-        return properties
+    _widget_type = _BkSlider
 
 
 class DatePicker(Widget):
