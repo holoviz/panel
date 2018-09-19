@@ -197,7 +197,7 @@ class interactive(PaneBase):
 
                 # Replace pane entirely
                 self._pane._cleanup(old_model)
-                self._pane = Pane(new_object, _temporary=True, **self._kwargs)
+                self._pane = Pane(new_object, _temporary=True)
                 new_model = self._pane._get_model(doc, root, parent, comm)
                 def update_models():
                     if old_model is new_model: return
@@ -320,6 +320,7 @@ class interactive(PaneBase):
             return widget_type(options=list(o.items()), name=name)
         else:
             return widget_type(options=list(o), name=name)
+
     # Return a factory for interactive functions
     @classmethod
     def factory(cls):
