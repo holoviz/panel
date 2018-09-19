@@ -107,8 +107,6 @@ def _matches(o, pattern):
 
 class interactive(PaneBase):
 
-    auto_display = param.Boolean(default=False)
-
     layout = param.ClassSelector(default=Column, class_=Layout, is_instance=False)
 
     manual = param.Boolean(default=False, doc="""
@@ -326,7 +324,7 @@ class interactive(PaneBase):
     # Return a factory for interactive functions
     @classmethod
     def factory(cls):
-        options = dict(manual=False, auto_display=True, manual_name="Run Interact")
+        options = dict(manual=False, manual_name="Run Interact")
         return _InteractFactory(cls, options)
 
 
