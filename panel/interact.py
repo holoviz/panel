@@ -205,9 +205,12 @@ class interact(PaneBase):
         a string or tuple."""
         # Select expects a dict or list, so we convert an arbitrary
         # iterable to either of those.
+        values = list(o.values()) if isinstance(o, Mapping) else list(o)
+        widget_type = DiscreteSlider if all(param._is_number(v) for v in values) else Select
+        kws = {'name': name}
         if isinstance(o, (list, dict)):
-            return Select(options=o, name=name)
+            return widget_type(options=o, name=name)
         elif isinstance(o, Mapping):
-            return Select(options=list(o.items()), name=name)
+            return widget_type(options=list(o.items()), name=name)
         else:
-            return Select(options=list(o), name=name)
+            return widget_type(options=list(o), name=name)
