@@ -335,7 +335,7 @@ def test_discrete_slider(document, comm):
 
 
 def test_discrete_slider_options_dict(document, comm):
-    options = OrderedDict([('0.1', 0.1), ('1': 1), ('10', 10), ('100', 100)])
+    options = OrderedDict([('0.1', 0.1), ('1', 1), ('10', 10), ('100', 100)])
     discrete_slider = DiscreteSlider(name='DiscreteSlider', value=1,
                                      options=options)
 
