@@ -1,21 +1,38 @@
+"""
+Interact with functions using widgets.
+
+The interact Pane implemented in this module mirrors
+ipywidgets.interact in its API and implementation. Large parts of the
+code were copied directly from ipywidgets:
+
+Copyright (c) Jupyter Development Team and PyViz Development Team.
+Distributed under the terms of the Modified BSD License.
+"""
+
 import types
 from numbers import Real, Integral
 from collections import Iterable, Mapping, OrderedDict
+from inspect import getcallargs
 
 try:  # Python >= 3.3
     from inspect import signature, Parameter
 except ImportError:
     from IPython.utils.signatures import signature, Parameter
 
+try:
+    from inspect import getfullargspec as check_argspec
+except ImportError:
+    from inspect import getargspec as check_argspec # py2
+
 empty = Parameter.empty
 
 import param
 
-from .layout import WidgetBox, Layout, Row
+from .layout import WidgetBox, Layout, Column
 from .pane import PaneBase, Pane
 from .util import basestring
 from .widgets import (Checkbox, TextInput, Widget, IntSlider, FloatSlider,
-                      Select, DiscreteSlider)
+                      Select, DiscreteSlider, Button)
 
 
 def _get_min_max_value(min, max, value=None, step=None):
@@ -53,6 +70,31 @@ def _get_min_max_value(min, max, value=None, step=None):
     return min, max, value
 
 
+def _yield_abbreviations_for_parameter(param, kwargs):
+    """Get an abbreviation for a function parameter."""
+    name = param.name
+    kind = param.kind
+    ann = param.annotation
+    default = param.default
+    not_found = (name, empty, empty)
+    if kind in (Parameter.POSITIONAL_OR_KEYWORD, Parameter.KEYWORD_ONLY):
+        if name in kwargs:
+            value = kwargs.pop(name)
+        elif ann is not empty:
+            warn("Using function annotations to implicitly specify interactive controls is deprecated. Use an explicit keyword argument for the parameter instead.", DeprecationWarning)
+            value = ann
+        elif default is not empty:
+            value = default
+        else:
+            yield not_found
+        yield (name, value, default)
+    elif kind == Parameter.VAR_KEYWORD:
+        # In this case name=kwargs and we yield the items in kwargs with their keys.
+        for k, v in kwargs.copy().items():
+            kwargs.pop(k)
+            yield k, v, empty
+
+
 def _matches(o, pattern):
     """Match a pattern of types in a sequence."""
     if not len(o) == len(pattern):
@@ -63,39 +105,84 @@ def _matches(o, pattern):
 
 class interact(PaneBase):
 
-    layout = param.ClassSelector(default=Row, class_=Layout, is_instance=False)
+    layout = param.ClassSelector(default=Column, class_=Layout, is_instance=False)
+
+    manual = param.Boolean(default=False, doc="""
+        Whether to update manually by clicking on button.""")
+
+    manual_name = param.String(default='Run Interact')
 
     def __init__(self, object, **kwargs):
         params = {k: v for k, v in kwargs.items() if k in self.params()}
         kwargs = {k: v for k, v in kwargs.items() if k not in params}
         super(interact, self).__init__(object, **params)
-        widgets = []
-        values = {}
-        for k, v in kwargs.items():
-            widget = self.widget_from_abbrev(v, k)
-            widgets.append((k, widget))
-            values[k] = widget.value
-        self._pane = Pane(self.object(**values), name=self.name, 
-                          _temporary=True)
+
+        new_kwargs = self.find_abbreviations(kwargs)
+        # Before we proceed, let's make sure that the user has passed a set of args+kwargs
+        # that will lead to a valid call of the function. This protects against unspecified
+        # and doubly-specified arguments.
+        try:
+            check_argspec(object)
+        except TypeError:
+            # if we can't inspect, we can't validate
+            pass
+        else:
+            getcallargs(object, **{n:v for n,v,_ in new_kwargs})
+
+        widgets = [(k, self.widget_from_abbrev(v, k)) for k, v, _ in new_kwargs]
+        if self.manual:
+            widgets.append(('manual', Button(name=self.manual_name)))
         self._widgets = OrderedDict(widgets)
+        self._pane = Pane(self.object(**self.kwargs), name=self.name,
+                          _temporary=True)
         self._widget_box = WidgetBox(*(widget for _, widget in widgets))
         self._layout = self.layout(self._widget_box, self._pane)
 
-    @classmethod
-    def applies(cls, object):
-        return isinstance(object, types.FunctionType)        
+    @property
+    def kwargs(self):
+        return {k: widget.value for k, widget in self._widgets.items()
+                if k != 'manual'}
+
+    def signature(self):
+        return signature(self.object)
+
+    def find_abbreviations(self, kwargs):
+        """Find the abbreviations for the given function and kwargs.
+        Return (name, abbrev, default) tuples.
+        """
+        new_kwargs = []
+        try:
+            sig = self.signature()
+        except (ValueError, TypeError):
+            # can't inspect, no info from function; only use kwargs
+            return [ (key, value, value) for key, value in kwargs.items() ]
+
+        for param in sig.parameters.values():
+            for name, value, default in _yield_abbreviations_for_parameter(param, kwargs):
+                if value is empty:
+                    raise ValueError('cannot find widget or abbreviation for argument: {!r}'.format(name))
+                new_kwargs.append((name, value, default))
+        return new_kwargs
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         layout = self._layout._get_model(doc, root, parent, comm)
+        self._link_widgets(layout, doc, root, parent, comm)
+        return layout
+
+    def _link_widgets(self, layout, doc, root, parent, comm):
         history = [layout.children[1]]
-        for name, widget in self._widgets.items():
+        if self.manual:
+            widgets = [('manual', self._widgets['manual'])]
+        else:
+            widgets = self._widgets.items()
+
+        for name, widget in widgets:
             def update_pane(change, history=history):
                 if change.what != 'value': return
 
                 # Try updating existing pane
                 old_model = history[0]
-                values = {k: widget.value for k, widget in self._widgets.items()}
-                new_object = self.object(**values)
+                new_object = self.object(**self.kwargs)
                 pane_type = self.get_pane_type(new_object)
                 if type(self._pane) is pane_type:
                     if isinstance(new_object, PaneBase):
@@ -123,8 +210,11 @@ class interact(PaneBase):
                 else:
                     doc.add_next_tick_callback(update_models)
 
-            widget.param.watch(update_pane, 'value')
-        return layout
+            widget.param.watch(update_pane, 'clicks' if name == 'manual' else 'value')
+
+    @classmethod
+    def applies(cls, object):
+        return isinstance(object, types.FunctionType)
 
     @classmethod    
     def widget_from_abbrev(cls, abbrev, name, default=empty):
