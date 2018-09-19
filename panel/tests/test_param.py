@@ -19,6 +19,15 @@ def test_instantiate_from_class():
     assert isinstance(Pane(Test), Param)
 
 
+def test_instantiate_from_parameters():
+
+    class Test(param.Parameterized):
+
+        a = param.Number()
+
+    assert isinstance(Pane(Test.param), Param)
+
+
 def test_instantiate_from_instance():
 
     class Test(param.Parameterized):
@@ -26,6 +35,15 @@ def test_instantiate_from_instance():
         a = param.Number()
 
     assert isinstance(Pane(Test()), Param)
+
+
+def test_instantiate_from_parameters_on_instance():
+
+    class Test(param.Parameterized):
+
+        a = param.Number()
+
+    assert isinstance(Pane(Test().param), Param)
 
 
 def test_get_model(document, comm):
