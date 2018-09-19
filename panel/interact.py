@@ -85,6 +85,8 @@ def _yield_abbreviations_for_parameter(parameter, kwargs):
             value = ann
         elif default is not empty:
             value = default
+            if isinstance(value, (Iterable, Mapping)):
+                value = fixed(value)
         else:
             yield not_found
         yield (name, value, default)
