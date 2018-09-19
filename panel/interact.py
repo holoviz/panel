@@ -414,9 +414,11 @@ class _InteractFactory(object):
         # If kwargs are given, replace self by a new
         # _InteractFactory with the updated kwargs
         if kwargs:
+            params = interactive.params()
             kw = dict(self.kwargs)
-            kw.update(kwargs)
-            self = type(self)(self.cls, self.opts, kw)
+            kw.update({k: v for k, v in kwargs.items() if k not in params})
+            opts = dict(self.opts, **{k: v for k, v in kwargs.items() if k in params})
+            self = type(self)(self.cls, opts, kw)
 
         f = __interact_f
         if f is None:
