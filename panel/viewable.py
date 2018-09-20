@@ -91,8 +91,10 @@ class Viewable(param.Parameterized):
         self._cleanup(self._documents[doc])
         del self._documents[doc]
 
-    def server_doc(self, doc=None):
+    def server_doc(self, doc=None, title=None):
         doc = doc or curdoc()
+        if title is not None:
+            doc.title = title
         model = self._get_root(doc)
         if hasattr(doc, 'on_session_destroyed'):
             doc.on_session_destroyed(self._server_destroy)
@@ -100,6 +102,15 @@ class Viewable(param.Parameterized):
         add_to_doc(model, doc)
         return doc
 
+    def servable(self):
+        """
+        Serves the object if in a `bokeh serve` context and returns
+        it to allow it to render itself in a notebook.
+        """
+        if curdoc().session_context:
+            self.server_doc()
+        return self
+    
     def _modify_doc(self, doc):
         return self.server_doc(doc)
 
