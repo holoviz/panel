@@ -8,6 +8,7 @@ code were copied directly from ipywidgets:
 Copyright (c) Jupyter Development Team and PyViz Development Team.
 Distributed under the terms of the Modified BSD License.
 """
+from __future__ import absolute_import
 
 import types
 from numbers import Real, Integral
