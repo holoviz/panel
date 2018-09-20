@@ -6,7 +6,7 @@ from __future__ import absolute_import
 
 import ast
 from datetime import datetime
-from collections import OrderedDict
+from collections import OrderedDict, Sequence
 
 import param
 import numpy as np
@@ -288,6 +288,9 @@ class Checkbox(Widget):
         return msg
 
 
+def hashable(x):
+    return tuple(x) if isinstance(x, Sequence) else x
+            
 class Select(Widget):
 
     options = param.Dict(default={})
@@ -307,9 +310,9 @@ class Select(Widget):
 
     def _process_param_change(self, msg):
         msg = super(Select, self)._process_param_change(msg)
-        mapping = {v: k for k, v in self.options.items()}
+        mapping = {hashable(v): k for k, v in self.options.items()}
         if msg.get('value') is not None:
-            msg['value'] = mapping[msg['value']]
+            msg['value'] = mapping[hashable(msg['value'])]
         if 'options' in msg:
             msg['options'] = list(msg['options'])
         return msg
@@ -330,9 +333,9 @@ class MultiSelect(Select):
 
     def _process_param_change(self, msg):
         msg = super(Select, self)._process_param_change(msg)
-        mapping = {v: k for k, v in self.options.items()}
+        mapping = {hashable(v): k for k, v in self.options.items()}
         if 'value' in msg:
-            msg['value'] = [mapping[v] for v in msg['value']]
+            msg['value'] = [hashable(mapping[v]) for v in msg['value']]
         if 'options' in msg:
             msg['options'] = list(msg['options'])
         return msg
