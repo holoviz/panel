@@ -194,7 +194,7 @@ def test_select(document, comm):
 
 
 def test_select_mutables(document, comm):
-    opts={'A':[1,2,3], 'B':[2,4,6], 'C':dict(a=1,b=2)}
+    opts = OrderedDict([('A', [1,2,3]), ('B', [2,4,6]), ('C', dict(a=1,b=2))])
     select = Select(options=opts, value=opts['B'], name='Select')
 
     box = select._get_model(document, comm=comm)
