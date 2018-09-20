@@ -6,7 +6,7 @@ from __future__ import absolute_import
 
 import ast
 from datetime import datetime
-from collections import OrderedDict, Sequence
+from collections import OrderedDict, MutableSequence
 
 import param
 import numpy as np
@@ -289,7 +289,7 @@ class Checkbox(Widget):
 
 
 def hashable(x):
-    return tuple(x) if isinstance(x, Sequence) else x
+    return tuple(x) if isinstance(x, MutableSequence) else x
             
 class Select(Widget):
 
