@@ -160,7 +160,7 @@ class Param(PaneBase):
             kw['button_type'] = 'primary'
             kw['name'] = value.name
 
-        if hasattr(p_obj, 'get_range') and not isinstance(kw['value'], dict):
+        if hasattr(p_obj, 'get_range'):
             kw['options'] = p_obj.get_range()
 
         if hasattr(p_obj, 'get_soft_bounds'):

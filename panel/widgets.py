@@ -6,7 +6,7 @@ from __future__ import absolute_import
 
 import ast
 from datetime import datetime
-from collections import OrderedDict, MutableSequence
+from collections import OrderedDict, MutableSequence, MutableMapping
 
 import param
 import numpy as np
@@ -289,7 +289,12 @@ class Checkbox(Widget):
 
 
 def hashable(x):
-    return tuple(x) if isinstance(x, MutableSequence) else x
+    if isinstance(x, MutableSequence):
+        return tuple(x)
+    elif isinstance(x, MutableMapping):
+        return tuple([(k,v) for k,v in x.items()])
+    else:
+        return x
             
 class Select(Widget):
 
