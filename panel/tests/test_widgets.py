@@ -168,7 +168,8 @@ def test_select_list_constructor():
 
 
 def test_select(document, comm):
-    select = Select(options={'A': 'A', '1': 1}, value=1, name='Select')
+    opts = {'A': 'a', '1': 1}
+    select = Select(options=opts, value=opts['1'], name='Select')
 
     box = select._get_model(document, comm=comm)
 
@@ -182,13 +183,39 @@ def test_select(document, comm):
 
     widget.value = '1'
     select._comm_change({'value': 'A'})
-    assert select.value == 'A'
+    assert select.value == opts['A']
 
     widget.value = '1'
     select._comm_change({'value': '1'})
-    assert select.value == 1
+    assert select.value == opts['1']
 
-    select.value = 'A'
+    select.value = opts['A']
+    assert widget.value == 'A'
+
+
+def test_select_mutables(document, comm):
+    opts={'A':[1,2,3], 'B':[2,4,6], 'C':dict(a=1,b=2)}
+    select = Select(options=opts, value=opts['B'], name='Select')
+
+    box = select._get_model(document, comm=comm)
+
+    assert isinstance(box, WidgetBox)
+
+    widget = box.children[0]
+    assert isinstance(widget, select._widget_type)
+    assert widget.title == 'Select'
+    assert widget.value == 'B'
+    assert widget.options == ['A', 'B', 'C']
+
+    widget.value = 'B'
+    select._comm_change({'value': 'A'})
+    assert select.value == opts['A']
+
+    widget.value = 'B'
+    select._comm_change({'value': 'B'})
+    assert select.value == opts['B']
+
+    select.value = opts['A']
     assert widget.value == 'A'
 
 
