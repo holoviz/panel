@@ -8,12 +8,28 @@ export class VegaPlotView extends LayoutDOMView {
 
   initialize(options): void {
     super.initialize(options)
-    const vega_url = "https://cdn.jsdelivr.net/npm/vega@4.2.0"
-    const vega_lite_url = "https://cdn.jsdelivr.net/npm/vega-lite@3.0.0-rc4"
-    const vega_embed_url = "https://cdn.jsdelivr.net/npm/vega-embed@3.18.2"
+    const vega_url = "https://cdn.jsdelivr.net/npm/vega@4.2.0?noext"
+    const vega_lite_url = "https://cdn.jsdelivr.net/npm/vega-lite@3.0.0-rc4?noext"
+    const vega_embed_url = "https://cdn.jsdelivr.net/npm/vega-embed@3.18.2?noext"
 
     if (window.vega) {
       this._init()
+    } else if ((window.Jupyter !== undefined) && (window.Jupyter.notebook !== undefined)) {
+      window.requirejs.config({
+        paths: {
+          "vega-embed":  vega_embed_url,
+          "vega-lib": "https://cdn.jsdelivr.net/npm/vega-lib?noext",
+          "vega-lite": vega_lite_url,
+          "vega": vega_url
+        }
+      });
+      var that = this
+      window.require(["vega-embed", "vega", "vega-lite"], function(vegaEmbed, vega, vegaLite) {
+        window.vega = vega
+        window.vl = vegaLite
+        window.vegaEmbed = vegaEmbed
+        that._init()
+      })
     } else {
       const init = () => { this._init() }
       const load_vega_embed = () => { this._add_script(vega_embed_url, init) }
@@ -31,11 +47,11 @@ export class VegaPlotView extends LayoutDOMView {
   }
 
   get_width(): number {
-	return undefined;
+    return undefined;
   }
 
   get_height(): number {
-	return undefined;
+    return undefined;
   }
 
   _init(): void {
@@ -63,10 +79,10 @@ export class VegaPlotView extends LayoutDOMView {
 
   _plot(): void {
     if (!('datasets' in this.model.data)) {
-	  const datasets = this._fetch_datasets()
-	  if ('data' in datasets) {
+      const datasets = this._fetch_datasets()
+      if ('data' in datasets) {
         this.model.data.data['values'] = datasets['data']
-		delete datasets['data']
+         delete datasets['data']
       }
       this.model.data['datasets'] = datasets
     }
