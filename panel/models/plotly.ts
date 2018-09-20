@@ -60,7 +60,7 @@ export class PlotlyPlotView extends LayoutDOMView {
         trace[column] = array
       }
     }
-    setTimeout(() => Plotly.react(this.el, this.model.data.data, this.model.data.layout), 100)
+	setTimeout(() => Plotly.react(this.el, this.model.data.data, this.model.data.layout), 50)
   }
 }
 
