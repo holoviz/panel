@@ -164,10 +164,10 @@ class Reactive(Viewable):
             on the supplied object.
         """
         def link(change, _updating=[]):
-            if change.attribute not in _updating:
-                _updating.append(change.attribute)
-                setattr(obj, links[change.attribute], change.new)
-                _updating.pop(_updating.index(change.attribute))
+            if change.name not in _updating:
+                _updating.append(change.name)
+                setattr(obj, links[change.name], change.new)
+                _updating.pop(_updating.index(change.name))
 
         for p, other_param in links.items():
             self.param.watch(link, p)
@@ -218,7 +218,7 @@ class Reactive(Viewable):
 
     def _link_params(self, model, params, doc, root, comm=None):
         def param_change(change):
-            msg = self._process_param_change({change.attribute: change.new})
+            msg = self._process_param_change({change.name: change.new})
             msg = {k: v for k, v in msg.items() if k not in self._active}
             if not msg: return
 

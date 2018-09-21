@@ -182,7 +182,7 @@ class Param(PaneBase):
         else:
             widget.link(self.object, **{'value': p_name})
             def link(change, _updating=[]):
-                key = (change.attribute, change.what)
+                key = (change.name, change.what)
                 if key in _updating:
                     return
 
