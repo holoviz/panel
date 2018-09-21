@@ -403,7 +403,7 @@ class DiscreteSlider(Widget):
 
     def _link_params(self, slider, div, params, doc, root, comm=None):
         def param_change(change):
-            msg = self._process_param_change({change.attribute: change.new})
+            msg = self._process_param_change({change.name: change.new})
             msg = {k: v for k, v in msg.items() if k not in self._active}
             if not msg: return
 
