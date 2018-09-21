@@ -18,8 +18,8 @@ from .layout import WidgetBox, Row, Layout, Tabs
 from .util import default_label_formatter
 from .widgets import (
     LiteralInput, Select, Checkbox, FloatSlider, IntSlider, RangeSlider,
-    MultiSelect, DatePicker, StaticText, Button, Toggle, TextInput,
-    DiscreteSlider
+    MultiSelect, StaticText, Button, Toggle, TextInput, DiscreteSlider,
+    DatetimeInput
 )
 
 
@@ -85,7 +85,7 @@ class Param(PaneBase):
         param.Range:          RangeSlider,
         param.String:         TextInput,
         param.ListSelector:   MultiSelect,
-        param.Date:           DatePicker,
+        param.Date:           DatetimeInput,
     }
 
     def __init__(self, object, **params):
@@ -165,9 +165,11 @@ class Param(PaneBase):
 
         if hasattr(p_obj, 'get_soft_bounds'):
             bounds = p_obj.get_soft_bounds()
-            if None not in bounds:
-                kw['start'], kw['end'] = bounds
-            else:
+            if bounds[0] is not None:
+                kw['start'] = bounds[0]
+            if bounds[1] is not None:
+                kw['end'] = bounds[1]
+            if ('start' not in kw or 'end' not in kw) and not issubclass(widget_class, LiteralInput):
                 widget_class = LiteralInput
 
         kwargs = {k: v for k, v in kw.items() if k in widget_class.params()}
