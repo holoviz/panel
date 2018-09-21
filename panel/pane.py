@@ -386,7 +386,7 @@ class Image(DivPaneBase):
     def _imgshape(self, data):
         """Calculate and return image width,height"""
         raise NotImplementedError
-    
+
     def _get_properties(self):
         p = super(Image,self)._get_properties()
         data = self._img()
@@ -459,6 +459,8 @@ class Matplotlib(PNG):
     the base64 encoded data in a bokeh Div model.
     """
 
+    dpi = param.Integer(default=144)
+
     @classmethod
     def applies(cls, obj):
         if 'matplotlib' not in sys.modules:
@@ -470,7 +472,13 @@ class Matplotlib(PNG):
                              'cannot be rendered.')
         return is_fig
 
+    def _imgshape(self, data):
+        """Calculate and return image width,height"""
+        w, h = self.object.get_size_inches()
+        return int(w*72), int(h*72)
+    
     def _img(self):
+        self.object.set_dpi(self.dpi)
         b = BytesIO()
         self.object.canvas.print_figure(b)
         return b.getvalue()
