@@ -241,28 +241,28 @@ class LiteralInput(Widget):
 
     def _process_property_change(self, msg):
         msg = super(LiteralInput, self)._process_property_change(msg)
+        new_state = ''
         if 'value' in msg:
             value = msg.pop('value')
             try:
                 value = ast.literal_eval(value)
             except:
-                self._state = ' (invalid)'
+                new_state = ' (invalid)'
                 value = self.value
             else:
                 if self.type and not isinstance(value, self.type):
-                    self._state = ' (wrong type)'
+                    new_state = ' (wrong type)'
                     value = self.value
-                else:
-                    self._state = ''
             msg['value'] = value
-        msg['name'] = msg.pop('name', self.name).replace(self._state, '')
+        msg['name'] = msg.get('title', self.name).replace(self._state, '') + new_state
+        self._state = new_state
         return msg
 
     def _process_param_change(self, msg):
         msg.pop('type', None)
         if 'value' in msg:
             msg['value'] = '' if msg['value'] is None else as_unicode(msg['value'])
-        msg['title'] = self.name + self._state
+        msg['title'] = self.name
         return msg
 
 
@@ -295,22 +295,22 @@ class DatetimeInput(LiteralInput):
 
     def _process_property_change(self, msg):
         msg = Widget._process_property_change(self, msg)
+        new_state = ''
         if 'value' in msg:
             value = msg.pop('value')
             try:
                 value = datetime.strptime(value, self.format)
             except:
-                self._state = ' (invalid)'
+                new_state = ' (invalid)'
                 value = self.value
             else:
                 if value is not None and ((self.start is not None and self.start > value) or
                                           (self.end is not None and self.end < value)):
-                    self._state = ' (out of bounds)'
+                    new_state = ' (out of bounds)'
                     value = self.value
-                else:
-                    self._state = ''
             msg['value'] = value
-        msg['name'] = msg.pop('name', self.name).replace(self._state, '')
+        msg['name'] = msg.get('title', self.name).replace(self._state, '') + new_state
+        self._state = new_state
         return msg
 
     def _process_param_change(self, msg):
@@ -322,7 +322,7 @@ class DatetimeInput(LiteralInput):
             else:
                 value = datetime.strftime(msg['value'], self.format)
             msg['value'] = value
-        msg['title'] = self.name + self._state
+        msg['title'] = self.name
         return msg
 
 
