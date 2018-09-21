@@ -6,7 +6,7 @@ from bokeh.models import Div as BkDiv, Slider as BkSlider
 from panel.widgets import (
     TextInput, StaticText, FloatSlider, IntSlider, RangeSlider,
     LiteralInput, Checkbox, Select, MultiSelect, Button, Toggle,
-    DatePicker, DateRangeSlider, DiscreteSlider
+    DatePicker, DateRangeSlider, DiscreteSlider, DatetimeInput
 )
 
 
@@ -139,6 +139,39 @@ def test_literal_input(document, comm):
     literal._comm_change({'value': "invalid"})
     assert literal.value == {'key': (0, 2)}
     assert widget.title == 'Literal (invalid)'
+
+    literal._comm_change({'value': "{'key': (0, 3)}"})
+    assert literal.value == {'key': (0, 3)}
+    assert widget.title == 'Literal'
+
+
+def test_datetime_input(document, comm):
+    dt_input = DatetimeInput(value=datetime(2018, 1, 1), end=datetime(2018, 1, 10), name='Datetime')
+
+    box = dt_input._get_model(document, comm=comm)
+
+    assert isinstance(box, WidgetBox)
+
+    widget = box.children[0]
+    assert isinstance(widget, dt_input._widget_type)
+    assert widget.title == 'Datetime'
+    assert widget.value == '2018-01-01 00:00:00'
+
+    dt_input._comm_change({'value': '2018-01-01 00:00:01'})
+    assert dt_input.value == datetime(2018, 1, 1, 0, 0, 1)
+    assert widget.title == 'Datetime'
+
+    dt_input._comm_change({'value': '2018-01-01 00:00:01a'})
+    assert dt_input.value == datetime(2018, 1, 1, 0, 0, 1)
+    assert widget.title == 'Datetime (invalid)'
+
+    dt_input._comm_change({'value': '2018-01-11 00:00:00'})
+    assert dt_input.value == datetime(2018, 1, 1, 0, 0, 1)
+    assert widget.title == 'Datetime (out of bounds)'
+
+    dt_input._comm_change({'value': '2018-01-02 00:00:01'})
+    assert dt_input.value == datetime(2018, 1, 2, 0, 0, 1)
+    assert widget.title == 'Datetime'
 
 
 def test_checkbox(document, comm):

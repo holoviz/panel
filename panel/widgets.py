@@ -241,8 +241,6 @@ class LiteralInput(Widget):
 
     def _process_property_change(self, msg):
         msg = super(LiteralInput, self)._process_property_change(msg)
-        if 'name' in msg:
-            msg['name'] = msg.pop('name').replace(self._state, '')
         if 'value' in msg:
             value = msg.pop('value')
             try:
@@ -257,12 +255,73 @@ class LiteralInput(Widget):
                 else:
                     self._state = ''
             msg['value'] = value
+        msg['name'] = msg.pop('name', self.name).replace(self._state, '')
         return msg
 
     def _process_param_change(self, msg):
         msg.pop('type', None)
         if 'value' in msg:
             msg['value'] = '' if msg['value'] is None else as_unicode(msg['value'])
+        msg['title'] = self.name + self._state
+        return msg
+
+
+class DatetimeInput(LiteralInput):
+    """
+    DatetimeInput allows declaring Python literals using a text
+    input widget. Optionally a type may be declared.
+    """
+
+    format = param.String(default='%Y-%m-%d %H:%M:%S', doc="""
+        Datetime format used for parsing and formatting the datetime.""")
+
+    value = param.Date(default=None)
+
+    start = param.Date(default=None)
+
+    end = param.Date(default=None)
+
+    type = datetime
+
+    def __init__(self, **params):
+        super(DatetimeInput, self).__init__(**params)
+        if self.value is not None and ((self.start is not None and self.start < self.value) or
+                                       (self.end is not None and self.end < self.value)):
+            value = datetime.strftime(self.value, self.format)
+            start = datetime.strftime(self.start, self.format)
+            end = datetime.strftime(self.end, self.format)
+            raise ValueError('DatetimeInput value must be between {start} and {end}, '
+                             'supplied value is {value}'.format(start=start, end=end, value=value))
+
+    def _process_property_change(self, msg):
+        msg = Widget._process_property_change(self, msg)
+        if 'value' in msg:
+            value = msg.pop('value')
+            try:
+                value = datetime.strptime(value, self.format)
+            except:
+                self._state = ' (invalid)'
+                value = self.value
+            else:
+                if value is not None and ((self.start is not None and self.start > value) or
+                                          (self.end is not None and self.end < value)):
+                    self._state = ' (out of bounds)'
+                    value = self.value
+                else:
+                    self._state = ''
+            msg['value'] = value
+        msg['name'] = msg.pop('name', self.name).replace(self._state, '')
+        return msg
+
+    def _process_param_change(self, msg):
+        msg = {k: v for k, v in msg.items() if k not in ('type', 'format', 'start', 'end')}
+        if 'value' in msg:
+            value = msg['value']
+            if value is None:
+                value = ''
+            else:
+                value = datetime.strftime(msg['value'], self.format)
+            msg['value'] = value
         msg['title'] = self.name + self._state
         return msg
 
