@@ -386,7 +386,7 @@ class Image(DivPaneBase):
     def _imgshape(self, data):
         """Calculate and return image width,height"""
         raise NotImplementedError
-    
+
     def _get_properties(self):
         p = super(Image,self)._get_properties()
         data = self._img()
@@ -455,9 +455,15 @@ class JPG(Image):
 
 class Matplotlib(PNG):
     """
-    A Matplotlib pane renders a matplotlib figure to png and wraps
-    the base64 encoded data in a bokeh Div model.
+    A Matplotlib pane renders a matplotlib figure to png and wraps the
+    base64 encoded data in a bokeh Div model. The size of the image in
+    pixels is determined by scaling the size of the figure in inches
+    by a dpi of 72, increasing the dpi therefore controls the
+    resolution of the image not the displayed size.
     """
+
+    dpi = param.Integer(default=144, bounds=(1, None), doc="""
+        Scales the dpi of the matplotlib figure.""")
 
     @classmethod
     def applies(cls, obj):
@@ -470,7 +476,13 @@ class Matplotlib(PNG):
                              'cannot be rendered.')
         return is_fig
 
+    def _imgshape(self, data):
+        """Calculate and return image width,height"""
+        w, h = self.object.get_size_inches()
+        return int(w*72), int(h*72)
+    
     def _img(self):
+        self.object.set_dpi(self.dpi)
         b = BytesIO()
         self.object.canvas.print_figure(b)
         return b.getvalue()
