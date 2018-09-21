@@ -12,6 +12,7 @@ from bokeh.models.widgets import Tabs as BkTabs, Panel as BkPanel
 
 from .util import param_name, param_reprs, push
 from .viewable import Reactive, Viewable
+from .widgets import Widget
 
 
 def has_height(obj):
@@ -22,7 +23,7 @@ def has_height(obj):
         for child in obj.children:
             if has_height(child):
                 return True
-    elif isinstance(obj, BkWidgetBox):
+    elif isinstance(obj, Column) and 'bk-widgetbox' in obj.css_classes:
         return True
     elif getattr(obj, 'height', None) is not None:
         return True
@@ -33,6 +34,9 @@ class Panel(Reactive):
     """
     Abstract baseclass for a layout of Viewables.
     """
+
+    css_classes = param.List(default=[], doc="""
+        CSS classes to apply to the layout.""")
 
     height = param.Integer(default=None, bounds=(0, None))
 
@@ -52,6 +56,8 @@ class Panel(Reactive):
     def __init__(self, *objects, **params):
         from .pane import panel
         objects = [panel(pane, _internal=True) for pane in objects]
+        if all(o for o in objects if isinstance(o, Widget)):
+            params['css_classes'] = params.get('css_classes', []) + ['bk-widgetbox']
         super(Panel, self).__init__(objects=objects, **params)
 
     def _init_properties(self):
