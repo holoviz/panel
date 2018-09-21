@@ -455,11 +455,15 @@ class JPG(Image):
 
 class Matplotlib(PNG):
     """
-    A Matplotlib pane renders a matplotlib figure to png and wraps
-    the base64 encoded data in a bokeh Div model.
+    A Matplotlib pane renders a matplotlib figure to png and wraps the
+    base64 encoded data in a bokeh Div model. The size of the image in
+    pixels is determined by scaling the size of the figure in inches
+    by a dpi of 72, increasing the dpi therefore controls the
+    resolution of the image not the displayed size.
     """
 
-    dpi = param.Integer(default=144)
+    dpi = param.Integer(default=144, bounds=(1, None), doc="""
+        Scales the dpi of the matplotlib figure.""")
 
     @classmethod
     def applies(cls, obj):
