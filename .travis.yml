@@ -40,7 +40,7 @@ jobs:
         - export PATH="$HOME/miniconda/bin:$PATH" && hash -r
         - conda config --set always_yes True
         # ...and now install doit/pyctdev into miniconda
-        - conda install -c pyviz/label/dev pyctdev && doit ecosystem_setup
+        - conda install -c pyviz pyctdev && doit ecosystem_setup
       install:
         - doit env_create $CHANS_DEV --python=$PYENV_VERSION
         - source activate test-environment
