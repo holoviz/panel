@@ -8,6 +8,7 @@ export class PlotlyPlotView extends LayoutDOMView {
     super.initialize(options)
     const url = "https://cdn.plot.ly/plotly-latest.min.js"
 
+    this._initialized = false;
     if (window.Plotly) {
       this._init()
     } else if ((window.Jupyter !== undefined) && (window.Jupyter.notebook !== undefined)) {
@@ -40,11 +41,13 @@ export class PlotlyPlotView extends LayoutDOMView {
 
   _init(): void {
     this._plot()
+    this._initialized = true
     this.connect(this.model.properties.data.change, this._plot)
   }
 
   render(): void {
-    this._plot()
+    if (this._initialized)
+      this._plot()
   }
 
   _plot(): void {
