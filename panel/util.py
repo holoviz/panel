@@ -5,6 +5,7 @@ import sys
 import inspect
 import numbers
 from datetime import datetime
+from contextlib import contextmanager
 
 import param
 import bokeh
@@ -105,10 +106,29 @@ def diff(doc, binary=True, events=None):
     return msg
 
 
+@contextmanager
+def batch(doc, comm):
+    """
+    Context manager to batch updates on a document. Depending on whether
+    a Comm or bokeh server is used the batching is applied differently.
+    """
+    if comm:
+        doc._batched = True
+    else:
+        doc.hold()
+    yield
+    if comm:
+        doc._batched = False
+    else:
+        doc.unhold()
+
+
 def push(doc, comm, binary=True):
     """
     Pushes events stored on the document across the provided comm.
     """
+    if getattr(doc, '_batched'):
+        return
     msg = diff(doc, binary=binary)
     if msg is None:
         return

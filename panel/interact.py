@@ -31,7 +31,7 @@ import param
 
 from .layout import WidgetBox, Layout, Column
 from .pane import PaneBase, Pane
-from .util import basestring, as_unicode, push
+from .util import basestring, as_unicode, push, batch
 from .widgets import (Checkbox, TextInput, Widget, IntSlider, FloatSlider,
                       Select, DiscreteSlider, Button)
 
@@ -190,10 +190,12 @@ class interactive(PaneBase):
                     if isinstance(new_object, PaneBase):
                         new_params = {k: v for k, v in new_object.get_param_values()
                                       if k != 'name'}
-                        self._pane.set_param(**new_params)
+                        with batch(doc, comm):
+                            self._pane.set_param(**new_params)
                         new_object._cleanup(None, final=True)
                     else:
-                        self._pane.object = new_object
+                        with batch(doc, comm):
+                            self._pane.object = new_object
                     return
 
                 # Replace pane entirely

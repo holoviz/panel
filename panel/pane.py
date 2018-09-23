@@ -21,7 +21,7 @@ import param
 from bokeh.layouts import Row as _BkRow, WidgetBox as _BkWidgetBox
 from bokeh.models import LayoutDOM, CustomJS, Widget as _BkWidget, Div as _BkDiv
 
-from .util import basestring, unicode, get_method_owner, push, remove_root, Div
+from .util import basestring, unicode, get_method_owner, push, batch, remove_root, Div
 from .viewable import Reactive, Viewable
 
 
@@ -125,9 +125,9 @@ class PaneBase(Reactive):
                     self._update(old_model)
             else:
                 # Otherwise replace the whole model
-                self._cleanup(old_model)
-                new_model = self._get_model(doc, root, parent, comm)
                 def update_models():
+                    self._cleanup(old_model)
+                    new_model = self._get_model(doc, root, parent, comm)
                     index = parent.children.index(old_model)
                     parent.children[index] = new_model
                     history[0] = new_model
@@ -272,10 +272,12 @@ class ParamMethod(PaneBase):
                     if isinstance(new_object, PaneBase):
                         new_params = {k: v for k, v in new_object.get_param_values()
                                       if k != 'name'}
-                        self._pane.set_param(**new_params)
+                        with batch(doc, comm):
+                            self._pane.set_param(**new_params)
                         new_object._cleanup(None, final=True)
                     else:
-                        self._pane.object = new_object
+                        with batch(doc, comm):
+                            self._pane.object = new_object
                     return
 
                 # Replace pane entirely
