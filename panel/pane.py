@@ -490,7 +490,7 @@ class Matplotlib(PNG):
 
 class RGGPlot(PNG):
     """
-    An RGGPlot panes render an r2py-based ggplot2 figure to png
+    An RGGPlot pane renders an r2py-based ggplot2 figure to png
     and wraps the base64-encoded data in a bokeh Div model.
     """
 
