@@ -132,6 +132,8 @@ class Param(PaneBase):
                 existing = [p for p in self._layout.objects
                             if isinstance(p, Param)
                             and p.object is change.old]
+
+                toggle.disabled = not is_parameterized(change.new)
                 if not existing:
                     return
                 elif is_parameterized(change.new):
@@ -230,7 +232,9 @@ class Param(PaneBase):
         if isinstance(options, dict):
             options = options.values()
         if is_parameterized(value) or any(is_parameterized(o) for o in options):
-            return [widget, Toggle(name='...', button_type='primary')]
+            toggle = Toggle(name='...', button_type='primary',
+                            disabled=not is_parameterized(value))
+            return [widget, toggle]
         else:
             return [widget]
 
