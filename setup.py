@@ -79,6 +79,7 @@ setup_args = dict(
     license='BSD',
     url='http://pyviz.org',
     packages=find_packages(),
+    package_data={'panel.models': ['*.ts']},
     include_package_data=True,
     classifiers = [
         "License :: OSI Approved :: BSD License",
