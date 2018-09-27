@@ -225,8 +225,11 @@ class Param(PaneBase):
                 watchers.append(self.object.param.watch(link, p_name, 'objects'))
             if hasattr(p_obj, 'get_soft_bounds'):
                 watchers.append(self.object.param.watch(link, p_name, 'bounds'))
-        
-        if is_parameterized(value):
+
+        options = kwargs.get('options', [])
+        if isinstance(options, dict):
+            options = options.values()
+        if is_parameterized(value) or any(is_parameterized(o) for o in options):
             return [widget, Toggle(name='...', button_type='primary')]
         else:
             return [widget]

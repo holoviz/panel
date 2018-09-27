@@ -62,9 +62,8 @@ def is_parameterized(obj):
     """
     Whether an object is a Parameterized class or instance.
     """
-    return (isinstance(change.new, param.Parameterized) or
-            (isinstance(change.new, type) and
-             issubclass(change.new, param.Parameterized)))
+    return (isinstance(obj, param.Parameterized) or
+            (isinstance(obj, type) and issubclass(obj, param.Parameterized)))
 
 
 def value_as_datetime(value):
