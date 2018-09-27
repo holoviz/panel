@@ -20,7 +20,8 @@ from bokeh.models.widgets import (
     CheckboxButtonGroup as _BkCheckboxButtonGroup
 )
 
-from .layout import WidgetBox # noqa
+from .layout import WidgetBox, Row # noqa
+from .pane import PaneBase
 from .viewable import Reactive
 from .util import as_unicode, push, value_as_datetime, hashable
 
@@ -382,7 +383,7 @@ class Select(Widget):
             params['options'] = OrderedDict([(as_unicode(o), o) for o in options])
         super(Select, self).__init__(**params)
         options = list(self.options.values())
-        if self.value is None and None not in options:
+        if self.value is None and None not in options and options:
             self.value = options[0]
 
     def _process_param_change(self, msg):
@@ -559,3 +560,64 @@ class DiscreteSlider(Widget):
         if 'value' in msg:
             msg['value'] = self.values[msg['value']]
         return msg
+
+
+class Player(Widget):
+    """
+    Player adds widgets to cycle through the declared options with
+    a Play and Pause button and a specified timeout.
+    """
+
+    options = param.ClassSelector(default=[], class_=(dict, list), doc="""
+        Options to cycle through.""")
+
+    value = param.Parameter(default=None, doc="""
+        The current value of the Player""")
+
+    name = param.String(default='Player', doc="""
+        The title for the Player widget""")
+
+    timeout = param.Integer(default=500, doc="""
+        Timeout between player updates in milliseconds.""")
+
+    def __init__(self, **params):
+        super(Player, self).__init__(**params)
+        self.slider = DiscreteSlider(name=self.name, options=self.options)
+        self.toggle = Toggle(name='► Play')
+        self.slider.param.watch(self._update_value, 'value')
+        self.param.watch(self._update_slider, 'options')
+        self.param.watch(self._update_slider, 'name')
+        self._layout = Row(WidgetBox(self.toggle, width=120, height=80), WidgetBox(self.slider))
+        self._periodic = None
+
+    def _update_value(self, change):
+        self.value = change.new
+
+    def _update_slider(self, change):
+        self.slider.set_param(**{change.name: change.new})
+
+    def animate_update(self):
+        if not self.toggle.active:
+            return
+        options = self.slider.options
+        options = list(options.values()) if isinstance(options, dict) else options
+        value = options.index(self.slider.value) + 1
+        if value >= len(options):
+            value = 0
+        self.slider.value = options[value]
+
+    def animate(self, change):
+        if change.new:
+            self.toggle.name = '❚❚ Pause'
+        else:
+            self.toggle.name = '► Play'
+
+    def _get_model(self, doc, root=None, parent=None, comm=None):
+        self.toggle.param.watch(self.animate, 'active')
+        if comm is None:
+            doc.add_periodic_callback(self.animate_update, self.timeout)
+        elif not self._periodic:
+            from tornado.ioloop import PeriodicCallback
+            self._periodic = PeriodicCallback(self.animate_update, self.timeout)
+            self._periodic.start()
+        return self._layout._get_model(doc, root, parent, comm)
