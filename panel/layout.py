@@ -56,7 +56,7 @@ class Panel(Reactive):
     def __init__(self, *objects, **params):
         from .pane import panel
         objects = [panel(pane, _internal=True) for pane in objects]
-        if all(o for o in objects if isinstance(o, Widget)):
+        if all(o for o in objects if isinstance(o, Widget)) and 'bk-widgetbox' not in css_classes:
             params['css_classes'] = params.get('css_classes', []) + ['bk-widgetbox']
         super(Panel, self).__init__(objects=objects, **params)
 
@@ -137,7 +137,8 @@ class Panel(Reactive):
         return new_models
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        model = self._bokeh_model(width=self.width, height=self.height)
+        model = self._bokeh_model(width=self.width, height=self.height,
+                                  css_classes=self.css_classes)
         root = model if root is None else root
         objects = self._get_objects(model, [], doc, root, comm)
 
