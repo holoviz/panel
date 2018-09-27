@@ -352,7 +352,8 @@ class ParamMethod(PaneBase):
                 index = parent.children.index(old_model)
                 parent.children[index] = new_model
                 history[0] = new_model
-                self._callbacks[new_ref] = self._callbacks.pop(old_ref, [])
+                old_callbacks = self._callbacks.pop(old_ref, [])
+                self._callbacks[new_ref] = old_callbacks
 
             if comm:
                 update_models()
