@@ -7,15 +7,19 @@ from __future__ import absolute_import
 import os
 import json
 import types
+import inspect
 import itertools
 from collections import OrderedDict
 
 import param
 from param.parameterized import classlist
 
-from .pane import PaneBase
+from .pane import Pane, PaneBase
 from .layout import WidgetBox, Row, Layout, Tabs
-from .util import default_label_formatter, is_parameterized
+from .util import (
+    default_label_formatter, is_parameterized, get_method_owner,
+    full_groupby, push
+)
 from .widgets import (
     LiteralInput, Select, Checkbox, FloatSlider, IntSlider, RangeSlider,
     MultiSelect, StaticText, Button, Toggle, TextInput, DiscreteSlider,
@@ -147,7 +151,7 @@ class Param(PaneBase):
                     self._layout.pop(existing[0])
 
             toggle_watcher = toggle.param.watch(toggle_pane, 'active')
-            selector_watcher = selector.param.watch(update_panes, 'value')
+            selector_watcher = selector.param.watch(update_pane, 'value')
             self._callbacks['instance'] += [toggle_watcher, selector_watcher]
 
     @classmethod
@@ -271,6 +275,104 @@ class Param(PaneBase):
     def _get_root(self, doc, comm=None):
         return self._get_model(doc, comm=comm)
 
+
+
+class ParamMethod(PaneBase):
+    """
+    ParamMethod panes wrap methods annotated with the param.depends
+    decorator and rerenders the plot when any of the methods parameters
+    change. The method may return any object which itself can be rendered
+    as a Pane.
+    """
+
+    def __init__(self, object, **params):
+        self._kwargs =  {p: params.pop(p) for p in list(params)
+                         if p not in self.params()}
+        super(ParamMethod, self).__init__(object, **params)
+        self._pane = Pane(self.object(), name=self.name,
+                          **dict(_temporary=True, **self._kwargs))
+
+    @classmethod
+    def applies(cls, obj):
+        return inspect.ismethod(obj) and isinstance(get_method_owner(obj), param.Parameterized)
+
+    def _get_model(self, doc, root=None, parent=None, comm=None):
+        parameterized = get_method_owner(self.object)
+        params = parameterized.param.params_depended_on(self.object.__name__)
+        model = self._pane._get_model(doc, root, parent, comm)
+        history = [model]
+        deps = params
+        def update_pane(*changes, history=history, deps=deps):
+            old_model = history[0]
+            old_ref = old_model.ref['id']
+
+            # Update nested dependencies if parameterized object changes
+            if any(is_parameterized(change.new) for change in changes):
+                new_deps = parameterized.param.params_depended_on(self.object.__name__)
+                for p in list(deps):
+                    if p in new_deps: continue
+                    watchers = self._callbacks.get(old_ref, [])
+                    for w in list(watchers):
+                        if (w.inst is p.inst and w.cls is p.cls and
+                            p.name in w.parameter_names):
+                            obj = p.cls if p.inst is None else p.inst
+                            obj.param.unwatch(w)
+                            watchers.pop(watchers.index(w))
+                    deps.pop(deps.index(p))
+
+                new_deps = [dep for dep in new_deps if dep not in params]
+                for _, params in full_groupby(new_deps, lambda x: (x.inst or x.cls, x.what)):
+                    p = params[0]
+                    obj = p.cls if p.inst is None else p.inst
+                    ps = [p.name for p in params]
+                    watcher = pobj.param.watch(update_pane, ps, p.what)
+                    self._callbacks[old_ref].append(watcher)
+                    deps += params
+
+            # Try updating existing pane
+            new_object = self.object()
+            pane_type = self.get_pane_type(new_object)
+            if type(self._pane) is pane_type:
+                if isinstance(new_object, PaneBase):
+                    new_params = {k: v for k, v in new_object.get_param_values()
+                                  if k != 'name'}
+                    self._pane.set_param(**new_params)
+                    new_object._cleanup(None, new_object._temporary)
+                else:
+                    self._pane.object = new_object
+                return
+
+            # Replace pane entirely
+            self._pane._cleanup(old_model, self._pane._temporary)
+            self._pane = Pane(new_object, _temporary=True, **self._kwargs)
+            new_model = self._pane._get_model(doc, root, parent, comm)
+            new_ref = new_model.ref['id']
+            def update_models():
+                if old_model is new_model: return
+                index = parent.children.index(old_model)
+                parent.children[index] = new_model
+                history[0] = new_model
+                self._callbacks[new_ref] = self._callbacks.pop(old_ref, [])
+
+            if comm:
+                update_models()
+                push(doc, comm)
+            else:
+                doc.add_next_tick_callback(update_models)
+
+        ref = model.ref['id']
+        for _, params in full_groupby(params, lambda x: (x.inst or x.cls, x.what)):
+            p = params[0]
+            pobj = (p.inst or p.cls)
+            ps = [p.name for p in params]
+            watcher = pobj.param.watch(update_pane, ps, p.what)
+            self._callbacks[ref].append(watcher)
+
+        return model
+
+    def _cleanup(self, model=None, final=False):
+        self._pane._cleanup(model, final)
+        super(ParamMethod, self)._cleanup(model, final)
 
 
 class JSONInit(param.Parameterized):
