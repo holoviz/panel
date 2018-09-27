@@ -15,7 +15,7 @@ from param.parameterized import classlist
 
 from .pane import PaneBase
 from .layout import WidgetBox, Row, Layout, Tabs
-from .util import default_label_formatter
+from .util import default_label_formatter, is_parameterized
 from .widgets import (
     LiteralInput, Select, Checkbox, FloatSlider, IntSlider, RangeSlider,
     MultiSelect, StaticText, Button, Toggle, TextInput, DiscreteSlider,
@@ -95,9 +95,9 @@ class Param(PaneBase):
             params['name'] = object.name
         super(Param, self).__init__(object, **params)
         self._widgets = self._get_widgets()
-        self._widget_box = WidgetBox(*self._widgets.values(), height=self.height,
+        widgets = [widget for widgets in self._widgets.values() for widget in widgets]
+        self._widget_box = WidgetBox(*widgets, height=self.height,
                                      width=self.width, name=self.name)
-
         kwargs = {'name': self.name}
         if self.subpanel_layout is Tabs:
             kwargs['width'] = self.width
@@ -106,9 +106,10 @@ class Param(PaneBase):
 
     def _link_subpanels(self):
         for pname, widget in self._widgets.items():
-            if not isinstance(widget, Toggle): continue
+            if len(widget) < 2: continue
+            selector, toggle = widget
 
-            def update_panes(change, parameter=pname):
+            def toggle_pane(change, parameter=pname):
                 "Adds or removes subpanel from layout"
                 parameterized = getattr(self.object, parameter)
                 existing = [p for p in self._layout.objects
@@ -126,14 +127,30 @@ class Param(PaneBase):
                                  _temporary=True, **kwargs)
                     self._layout.append(pane)
 
-            watcher = widget.param.watch(update_panes, 'active')
-            self._callbacks['instance'].append(watcher)
+            def update_pane(change, parameter=pname):
+                "Adds or removes subpanel from layout"
+                existing = [p for p in self._layout.objects
+                            if isinstance(p, Param)
+                            and p.object is change.old]
+                if not existing:
+                    return
+                elif is_parameterized(change.new):
+                    parameterized = change.new
+                    kwargs = {k: v for k, v in self.get_param_values()
+                              if k not in ['name', 'object']}
+                    pane = Param(parameterized, name=parameterized.name,
+                                 _temporary=True, **kwargs)
+                    self._layout[self._layout.objects.index(existing[0])] = pane
+                else:
+                    self._layout.pop(existing[0])
+
+            toggle_watcher = toggle.param.watch(toggle_pane, 'active')
+            selector_watcher = selector.param.watch(update_panes, 'value')
+            self._callbacks['instance'] += [toggle_watcher, selector_watcher]
 
     @classmethod
     def applies(cls, obj):
-        return (isinstance(obj, param.Parameterized) or
-                isinstance(obj, param.parameterized.Parameters) or
-                (isinstance(obj, type) and issubclass(obj, param.Parameterized)))
+        return (is_parameterized(obj) or isinstance(obj, param.parameterized.Parameters))
 
     def widget_type(cls, pobj):
         ptype = type(pobj)
@@ -156,11 +173,6 @@ class Param(PaneBase):
             kw['name'] = self.label_formatter(p_name)
         else:
             kw['name'] = p_name
-
-        if isinstance(value, param.Parameterized):
-            widget_class = Toggle
-            kw['button_type'] = 'primary'
-            kw['name'] = value.name
 
         if hasattr(p_obj, 'get_range'):
             kw['options'] = p_obj.get_range()
@@ -213,7 +225,11 @@ class Param(PaneBase):
                 watchers.append(self.object.param.watch(link, p_name, 'objects'))
             if hasattr(p_obj, 'get_soft_bounds'):
                 watchers.append(self.object.param.watch(link, p_name, 'bounds'))
-        return widget
+        
+        if is_parameterized(value):
+            return [widget, Toggle(name='...', button_type='primary')]
+        else:
+            return [widget]
 
     def _cleanup(self, model=None, final=False):
         self._layout._cleanup(model, final)
@@ -235,7 +251,7 @@ class Param(PaneBase):
         if self.subpanel_layout is Tabs:
             widgets = []
         else:
-            widgets = [('name', StaticText(value='<b>{0}</b>'.format(self.object.name)))]
+            widgets = [('name', [StaticText(value='<b>{0}</b>'.format(self.object.name))])]
         widgets += [(pname, self.widget(pname)) for pname in ordered_params]
         return OrderedDict(widgets)
 
