@@ -29,7 +29,7 @@ def ObjectSelector(pobj):
     are numeric.
     """
     options = list(pobj.objects.values()) if isinstance(pobj.objects, dict) else pobj.objects
-    if all(param._is_number(o) for o in options):
+    if options and all(param._is_number(o) for o in options):
         return DiscreteSlider
     else:
         return Select
@@ -177,7 +177,10 @@ class Param(PaneBase):
             kw['name'] = p_name
 
         if hasattr(p_obj, 'get_range'):
-            kw['options'] = p_obj.get_range()
+            options = p_obj.get_range()
+            if not options and value is not None:
+                options = [value]
+            kw['options'] = options
 
         if hasattr(p_obj, 'get_soft_bounds'):
             bounds = p_obj.get_soft_bounds()
