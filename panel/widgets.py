@@ -584,40 +584,58 @@ class Player(Widget):
         super(Player, self).__init__(**params)
         self.slider = DiscreteSlider(name=self.name, options=self.options)
         self.toggle = Toggle(name='► Play')
-        self.slider.param.watch(self._update_value, 'value')
-        self.param.watch(self._update_slider, 'options')
-        self.param.watch(self._update_slider, 'name')
+        self.link(self.slider, value='value', options='options', name='name')
+        self.slider.link(self, value='value')
         self._layout = Row(WidgetBox(self.toggle, width=120, height=80), WidgetBox(self.slider))
         self._periodic = None
-
-    def _update_value(self, change):
-        self.value = change.new
-
-    def _update_slider(self, change):
-        self.slider.set_param(**{change.name: change.new})
-
-    def animate_update(self):
-        if not self.toggle.active:
-            return
-        options = self.slider.options
-        options = list(options.values()) if isinstance(options, dict) else options
-        value = options.index(self.slider.value) + 1
-        if value >= len(options):
-            value = 0
-        self.slider.value = options[value]
-
-    def animate(self, change):
-        if change.new:
-            self.toggle.name = '❚❚ Pause'
-        else:
-            self.toggle.name = '► Play'
+        self._blocked = False
+        self._current = 0
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        self.toggle.param.watch(self.animate, 'active')
-        if comm is None:
-            doc.add_periodic_callback(self.animate_update, self.timeout)
-        elif not self._periodic:
-            from tornado.ioloop import PeriodicCallback
-            self._periodic = PeriodicCallback(self.animate_update, self.timeout)
-            self._periodic.start()
+        self.toggle.param.watch(partial(self._animate, doc, comm), 'active')
         return self._layout._get_model(doc, root, parent, comm)
+
+    def _buffer_change(self, doc, comm):
+        """
+        Advances the current value and schedules an event.
+        """
+        if (self._current+1) >= len(self.options):
+            self._current = 0
+        else:
+            self._current += 1
+
+        if self._blocked:
+            return
+        elif comm:
+            self._update()
+        else:
+            self._blocked = True
+            doc.add_timeout_callback(self._update, 50)
+
+    def _update(self):
+        """
+        Triggers an update and unblocks the queue.
+        """
+        self.value = self.slider.values[self._current]
+        self._blocked = False
+
+    def _animate(self, doc, comm, change):
+        if change.new:
+            self.toggle.name = '❚❚ Pause'
+            callback = partial(self._buffer_change, doc, comm)
+            if comm is None:
+                self._periodic = doc.add_periodic_callback(callback, self.timeout)
+            elif not self._periodic:
+                from tornado.ioloop import PeriodicCallback
+                self._periodic = PeriodicCallback(callback, self.timeout)
+                self._periodic.start()
+            elif not self._periodic.is_running():
+                self._periodic.start()
+        else:
+            self.toggle.name = '► Play'
+            if comm is None:
+                doc.remove_periodic_callback(self._periodic)
+                self._periodic = None
+            elif self._periodic.is_running():
+                self._periodic.stop()
+
