@@ -93,9 +93,9 @@ class PaneBase(Reactive):
         root.children = [model]
         return root
 
-    def _cleanup(self, model, final=False):
+    def _cleanup(self, model=None, final=False):
         super(PaneBase, self)._cleanup(model, final)
-        if final:
+        if final or self._temporary:
             self.object = None
 
     def _update(self, model):
@@ -196,7 +196,7 @@ class HoloViews(PaneBase):
                 for c in cb.callbacks:
                     c.code = c.code.replace(plot.id, plot_id)
 
-    def _cleanup(self, model, final=False):
+    def _cleanup(self, model=None, final=False):
         """
         Traverses HoloViews object to find and clean up any streams
         connected to existing plots.

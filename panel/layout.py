@@ -56,10 +56,11 @@ class Layout(Reactive):
                     doc.add_next_tick_callback(update_model)
             self._callbacks[ref].append(self.param.watch(set_value, p))
 
-    def _cleanup(self, model, final=False):
+    def _cleanup(self, model=None, final=False):
         super(Layout, self)._cleanup(model, final)
-        for p, c in zip(self.objects, model.children):
-            p._cleanup(c, final)
+        if model is not None:
+            for p, c in zip(self.objects, model.children):
+                p._cleanup(c, final)
 
     def _get_objects(self, model, old_objects, doc, root, comm=None):
         """
@@ -247,10 +248,11 @@ class Tabs(Layout):
         new_objects.pop(index)
         self.objects = new_objects
 
-    def _cleanup(self, model, final=False):
+    def _cleanup(self, model=None, final=False):
         super(Layout, self)._cleanup(model, final)
-        for p, c in zip(self.objects, model.tabs):
-            p._cleanup(c.child, final)
+        if model is not None:
+            for p, c in zip(self.objects, model.tabs):
+                p._cleanup(c.child, final)
 
 
 class Spacer(Reactive):

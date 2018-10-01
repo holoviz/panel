@@ -214,8 +214,7 @@ class Param(PaneBase):
         return widget
 
     def _cleanup(self, model=None, final=False):
-        if self._temporary or final:
-            self._layout._cleanup(model)
+        self._layout._cleanup(model, final)
         super(Param, self)._cleanup(model, final)
 
     def _get_widgets(self):

@@ -72,7 +72,7 @@ class Viewable(param.Parameterized):
         """
         return self._get_model(doc, comm=comm)
 
-    def _cleanup(self, model, final=False):
+    def _cleanup(self, model=None, final=False):
         """
         Clean up method which is called when a Viewable is destroyed.
 
