@@ -5,7 +5,7 @@ from bokeh.models import (
     Div, Slider, Select, RangeSlider, MultiSelect, Row as BkRow,
     WidgetBox as BkWidgetBox, CheckboxGroup, Toggle, Button,
     TextInput as BkTextInput, Tabs as BkTabs)
-from panel.pane import Pane, PaneBase, Matplotlib, Bokeh
+from panel.pane import Pane
 from panel.layout import Tabs
 from panel.param import Param, JSONInit
 
