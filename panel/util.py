@@ -4,6 +4,8 @@ import json
 import sys
 import inspect
 import numbers
+
+from collections import defaultdict
 from datetime import datetime
 
 import param
@@ -32,6 +34,16 @@ def as_unicode(obj):
     if sys.version_info.major < 3 and isinstance(obj, str):
         obj = obj.decode('utf-8')
     return unicode(obj)
+
+
+def full_groupby(l, key=lambda x: x):
+    """
+    Groupby implementation which does not require a prior sort
+    """
+    d = defaultdict(list)
+    for item in l:
+        d[key(item)].append(item)
+    return d.items()
 
 
 def get_method_owner(meth):

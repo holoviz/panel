@@ -180,8 +180,6 @@ class interactive(PaneBase):
 
         for name, widget in widgets:
             def update_pane(change, history=history):
-                if change.what != 'value': return
-
                 # Try updating existing pane
                 old_model = history[0]
                 new_object = self.object(**self.kwargs)
@@ -212,8 +210,9 @@ class interactive(PaneBase):
                 else:
                     doc.add_next_tick_callback(update_models)
 
-            what = 'clicks' if name == 'manual' else 'value'
-            self._callbacks['instance'].append(widget.param.watch(update_pane, what))
+            pname = 'clicks' if name == 'manual' else 'value'
+            watcher = widget.param.watch(update_pane, pname)
+            self._callbacks['instance'].append(watcher)
 
     def _cleanup(self, model=None, final=False):
         self.layout._cleanup(model, final)

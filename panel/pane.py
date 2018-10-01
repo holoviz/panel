@@ -21,7 +21,8 @@ import param
 from bokeh.layouts import Row as _BkRow, WidgetBox as _BkWidgetBox
 from bokeh.models import LayoutDOM, CustomJS, Widget as _BkWidget, Div as _BkDiv
 
-from .util import basestring, unicode, get_method_owner, push, remove_root, Div
+from .util import (basestring, unicode, get_method_owner, push,
+                   remove_root, full_groupby, Div)
 from .viewable import Reactive, Viewable
 
 
@@ -256,42 +257,42 @@ class ParamMethod(PaneBase):
         model = self._pane._get_model(doc, root, parent, comm)
         ref = model.ref['id']
         history = [model]
-        for p in params:
-            def update_pane(change, history=history):
-                if change.what != 'value': return
-
-                # Try updating existing pane
-                old_model = history[0]
-                new_object = self.object()
-                pane_type = self.get_pane_type(new_object)
-                if type(self._pane) is pane_type:
-                    if isinstance(new_object, PaneBase):
-                        new_params = {k: v for k, v in new_object.get_param_values()
-                                      if k != 'name'}
-                        self._pane.set_param(**new_params)
-                        new_object._cleanup(None, new_object._temporary)
-                    else:
-                        self._pane.object = new_object
-                    return
-
-                # Replace pane entirely
-                self._pane._cleanup(old_model, self._pane._temporary)
-                self._pane = Pane(new_object, _temporary=True, **self._kwargs)
-                new_model = self._pane._get_model(doc, root, parent, comm)
-                def update_models():
-                    if old_model is new_model: return
-                    index = parent.children.index(old_model)
-                    parent.children[index] = new_model
-                    history[0] = new_model
-
-                if comm:
-                    update_models()
-                    push(doc, comm)
+        def update_pane(*change, history=history):
+            # Try updating existing pane
+            old_model = history[0]
+            new_object = self.object()
+            pane_type = self.get_pane_type(new_object)
+            if type(self._pane) is pane_type:
+                if isinstance(new_object, PaneBase):
+                    new_params = {k: v for k, v in new_object.get_param_values()
+                                  if k != 'name'}
+                    self._pane.set_param(**new_params)
+                    new_object._cleanup(None, new_object._temporary)
                 else:
-                    doc.add_next_tick_callback(update_models)
+                    self._pane.object = new_object
+                return
 
+            # Replace pane entirely
+            self._pane._cleanup(old_model, self._pane._temporary)
+            self._pane = Pane(new_object, _temporary=True, **self._kwargs)
+            new_model = self._pane._get_model(doc, root, parent, comm)
+            def update_models():
+                if old_model is new_model: return
+                index = parent.children.index(old_model)
+                parent.children[index] = new_model
+                history[0] = new_model
+
+            if comm:
+                update_models()
+                push(doc, comm)
+            else:
+                doc.add_next_tick_callback(update_models)
+
+        for _, params in full_groupby(params, lambda x: (x.inst or x.cls, x.what)):
+            p = params[0]
             pobj = (p.inst or p.cls)
-            watcher = pobj.param.watch(update_pane, p.name, p.what)
+            ps = [p.name for p in params]
+            watcher = pobj.param.watch(update_pane, ps, p.what)
             self._callbacks[ref].append(watcher)
 
         return model
