@@ -21,6 +21,9 @@ def test_link():
     assert obj.a == 1
     assert obj2.a == 1
 
+    obj._cleanup(None, final=True)
+    assert obj._callbacks == {}
+
 
 def test_param_rename():
     "Test that Reactive renames params and properties"
@@ -59,7 +62,7 @@ def test_link_params_nb(document, comm):
 
     # Assert cleanup deletes callback
     obj._cleanup(div)
-    assert div.ref['id'] not in obj._callbacks
+    assert obj._callbacks == {}
 
 
 def test_link_properties_nb(document, comm):

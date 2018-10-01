@@ -7,14 +7,18 @@ response to changes to parameters and the underlying bokeh models.
 from __future__ import absolute_import
 
 import re
+import signal
 from functools import partial
 from collections import defaultdict
 
 import param
 
+from bokeh.application.handlers import FunctionHandler
+from bokeh.application import Application
 from bokeh.document import Document
 from bokeh.io import curdoc, show
 from bokeh.models import CustomJS
+from bokeh.server.server import Server
 from pyviz_comms import JS_CALLBACK, CommManager, JupyterCommManager
 
 from .util import render_mimebundle, add_to_doc, push
@@ -120,6 +124,40 @@ class Viewable(param.Parameterized):
         """
         show(self._modify_doc, notebook_url=notebook_url)
 
+    def show(self, port=0, websocket_origin=None):
+        """
+        Starts a bokeh server and displays the Viewable in a new tab
+        """
+        def modify_doc(doc):
+            return self.server_doc(doc)
+        handler = FunctionHandler(modify_doc)
+        app = Application(handler)
+
+        from tornado.ioloop import IOLoop
+        loop = IOLoop.current()
+        if websocket_origin and not isinstance(websocket_origin, list):
+            websocket_origin = [websocket_origin]
+        opts = dict(allow_websocket_origin=websocket_origin) if websocket_origin else {}
+        opts['io_loop'] = loop
+        server = Server({'/': app}, port=port, **opts)
+        def show_callback():
+            server.show('/')
+        server.io_loop.add_callback(show_callback)
+        server.start()
+
+        def sig_exit(*args, **kwargs):
+            loop.add_callback_from_signal(do_stop)
+
+        def do_stop(*args, **kwargs):
+            loop.stop()
+
+        signal.signal(signal.SIGINT, sig_exit)
+        try:
+            loop.start()
+        except RuntimeError:
+            pass
+        return server
+
 
 
 class Reactive(Viewable):
@@ -146,11 +184,16 @@ class Reactive(Viewable):
     _rename = {}
 
     def __init__(self, **params):
+        # temporary flag denotes panes created for temporary, internal
+        # use which should be garbage collected once they have been used
+        self._temporary = params.pop('_temporary', False)
+        
         super(Reactive, self).__init__(**params)
         self._active = []
         self._events = {}
         self._expecting = []
-        self._callbacks = defaultdict(dict)
+        self._callbacks = defaultdict(list)
+
 
     def link(self, obj, **links):
         """
@@ -170,18 +213,26 @@ class Reactive(Viewable):
                 _updating.pop(_updating.index(change.name))
 
         for p, other_param in links.items():
-            self.param.watch(link, p)
             if not hasattr(obj, other_param):
                 raise AttributeError('Linked object %s has no attribute %s.'
                                      % (obj, other_param))
-
-    def _cleanup(self, model, final=False):
+            self._callbacks['instance'].append(self.param.watch(link, p))
+            
+    def _cleanup(self, model=None, final=False):
         super(Reactive, self)._cleanup(model, final)
+        if final or self._temporary:
+            watchers = self._callbacks.pop('instance', [])
+            for watcher in watchers:
+                obj = watcher.cls if watcher.inst is None else watcher.inst
+                obj.param.unwatch(watcher)
+
         if model is None:
             return
+
         callbacks = self._callbacks.pop(model.ref['id'], {})
-        for p, cb in callbacks.items():
-            self.param.unwatch(cb, p)
+        for watcher in callbacks:
+            obj = watcher.cls if watcher.inst is None else watcher.inst
+            obj.param.unwatch(watcher)
 
         # Clean up comms
         customjs = model.select({'type': CustomJS})
@@ -194,6 +245,7 @@ class Reactive(Viewable):
             comm = self._comm_manager._comms.pop(comm_id, None)
             if comm:
                 comm.close()
+
 
     def _process_property_change(self, msg):
         """
@@ -231,9 +283,9 @@ class Reactive(Viewable):
             else:
                 doc.add_next_tick_callback(update_model)
 
+        ref = model.ref['id']
         for p in params:
-            self.param.watch(param_change, p)
-            self._callbacks[model.ref['id']][p] = param_change
+            self._callbacks[ref].append(self.param.watch(param_change, p))
 
     def _link_props(self, model, properties, doc, root, comm=None):
         if comm is None:

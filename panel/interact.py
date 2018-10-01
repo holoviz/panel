@@ -212,7 +212,12 @@ class interactive(PaneBase):
                 else:
                     doc.add_next_tick_callback(update_models)
 
-            widget.param.watch(update_pane, 'clicks' if name == 'manual' else 'value')
+            what = 'clicks' if name == 'manual' else 'value'
+            self._callbacks['instance'].append(widget.param.watch(update_pane, what))
+
+    def _cleanup(self, model=None, final=False):
+        self.layout._cleanup(model, final)
+        super(interactive, self)._cleanup(model, final)
 
     def widgets_from_abbreviations(self, seq):
         """Given a sequence of (name, abbrev, default) tuples, return a sequence of Widgets."""

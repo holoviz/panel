@@ -40,6 +40,7 @@ class Layout(Reactive):
         return self._process_param_change(properties)
 
     def _link_params(self, model, params, doc, root, comm=None):
+        ref = model.ref['id']
         for p in params:
             def set_value(change, parameter=p):
                 msg = {parameter: change.new}
@@ -53,7 +54,7 @@ class Layout(Reactive):
                     push(doc, comm)
                 else:
                     doc.add_next_tick_callback(update_model)
-            self.param.watch(set_value, p)
+            self._callbacks[ref].append(self.param.watch(set_value, p))
 
     def _cleanup(self, model, final=False):
         super(Layout, self)._cleanup(model, final)

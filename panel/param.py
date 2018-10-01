@@ -124,8 +124,8 @@ class Param(PaneBase):
                                  _temporary=True, **kwargs)
                     self._layout.append(pane)
 
-            widget.param.watch(update_panes, 'active')
-            self._callbacks[pname]['active'] = (update_panes, ['value'])
+            watcher = widget.param.watch(update_panes, 'active')
+            self._callbacks['instance'].append(watcher)
 
     @classmethod
     def applies(cls, obj):
@@ -174,11 +174,12 @@ class Param(PaneBase):
 
         kwargs = {k: v for k, v in kw.items() if k in widget_class.params()}
         widget = widget_class(**kwargs)
+        watchers = self._callbacks['instance']
         if isinstance(p_obj, param.Action):
             widget.button_type = 'success'
             def action(change):
                 value(self.object)
-            widget.param.watch(action, 'clicks')
+            watchers.append(widget.param.watch(action, 'clicks'))
         elif isinstance(widget, Toggle):
             pass
         else:
@@ -204,33 +205,18 @@ class Param(PaneBase):
                 _updating.pop(_updating.index(key))
 
             # Set up links to parameterized object
-            what = ['value', 'constant']
-            self.object.param.watch(link, p_name, 'constant')
-            self.object.param.watch(link, p_name)
+            watchers.append(self.object.param.watch(link, p_name, 'constant'))
+            watchers.append(self.object.param.watch(link, p_name))
             if hasattr(p_obj, 'get_range'):
-                self.object.param.watch(link, p_name, 'objects')
-                what.append('objects')
+                watchers.append(self.object.param.watch(link, p_name, 'objects'))
             if hasattr(p_obj, 'get_soft_bounds'):
-                self.object.param.watch(link, p_name, 'bounds')
-                what.append('bounds')
-            self._callbacks['object'][p_name] = (link, what)
+                watchers.append(self.object.param.watch(link, p_name, 'bounds'))
         return widget
 
-    def _cleanup(self, model, final=False):
-        if model is None:
-            return
+    def _cleanup(self, model=None, final=False):
         if self._temporary or final:
-            if self.object is not None:
-                for obj, callbacks in self._callbacks.items():
-                    for p, (cb, what) in callbacks.items():
-                        for w in what:
-                            if obj == 'object':
-                                self.object.param.unwatch(cb, p, w)
-                            else:
-                                self._widgets[obj].param.unwatch(cb, p, w)
-                self._callbacks.clear()
             self._layout._cleanup(model)
-            self.object = None
+        super(Param, self)._cleanup(model, final)
 
     def _get_widgets(self):
         """Return name,widget boxes for all parameters (i.e., a property sheet)"""
