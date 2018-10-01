@@ -51,7 +51,7 @@ class Param(PaneBase):
 
     show_labels = param.Boolean(default=True)
 
-    subpanel_layout = param.ClassSelector(default=Row, class_=Layout,
+    subobject_layout = param.ClassSelector(default=Row, class_=Layout,
                                           is_instance=False, doc="""
         Layout of subpanels.""")
 
@@ -103,9 +103,9 @@ class Param(PaneBase):
         self._widget_box = WidgetBox(*widgets, height=self.height,
                                      width=self.width, name=self.name)
         kwargs = {'name': self.name}
-        if self.subpanel_layout is Tabs:
+        if self.subobject_layout is Tabs:
             kwargs['width'] = self.width
-        self._layout = self.subpanel_layout(self._widget_box, **kwargs)
+        self._layout = self.subobject_layout(self._widget_box, **kwargs)
         self._link_subpanels()
 
     def _link_subpanels(self):
@@ -262,7 +262,7 @@ class Param(PaneBase):
 
         # Format name specially
         ordered_params.pop(ordered_params.index('name'))
-        if self.subpanel_layout is Tabs:
+        if self.subobject_layout is Tabs:
             widgets = []
         else:
             widgets = [('name', [StaticText(value='<b>{0}</b>'.format(self.object.name))])]

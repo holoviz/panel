@@ -8,7 +8,7 @@ from bokeh.models import (Div, Row as BkRow, WidgetBox as BkWidgetBox,
                           GlyphRenderer, Circle, Line)
 from bokeh.plotting import Figure
 from panel.pane import (Pane, PaneBase, Bokeh, HoloViews, Matplotlib,
-                        ParamMethod, HTML, Str, PNG, JPG, GIF)
+                        HTML, Str, PNG, JPG, GIF)
 
 try:
     import holoviews as hv
@@ -159,124 +159,6 @@ def test_matplotlib_pane(document, comm):
     # Cleanup
     pane._cleanup(model)
     assert pane._callbacks == {}
-
-
-class View(param.Parameterized):
-
-    a = param.Integer(default=0)
-
-    @param.depends('a')
-    def view(self):
-        return Div(text='%d' % self.a)
-
-    @param.depends('a')
-    def mpl_view(self):
-        return mpl_figure()
-
-    @param.depends('a')
-    def mixed_view(self):
-        return self.view() if (self.a % 2) else self.mpl_view()
-
-
-def test_get_param_method_pane_type():
-    assert PaneBase.get_pane_type(View().view) is ParamMethod
-
-
-def test_param_method_pane(document, comm):
-    test = View()
-    pane = Pane(test.view)
-    inner_pane = pane._pane
-    assert isinstance(inner_pane, Bokeh)
-
-    # Create pane
-    row = pane._get_root(document, comm=comm)
-    assert isinstance(row, BkRow)
-    assert len(row.children) == 1
-    model = row.children[0]
-    div = get_div(model)
-    assert model.ref['id'] in inner_pane._callbacks
-    assert isinstance(div, Div)
-    assert div.text == '0'
-
-    # Update pane
-    test.a = 5
-    new_model = row.children[0]
-    div = get_div(new_model)
-    assert inner_pane is pane._pane
-    assert div.text == '5'
-    assert len(inner_pane._callbacks) == 1
-    assert new_model.ref['id'] in inner_pane._callbacks
-
-    # Cleanup pane
-    pane._cleanup(new_model)
-    assert inner_pane._callbacks == {}
-
-
-@mpl_available
-def test_param_method_pane_mpl(document, comm):
-    test = View()
-    pane = Pane(test.mpl_view)
-    inner_pane = pane._pane
-    assert isinstance(inner_pane, Matplotlib)
-
-    # Create pane
-    row = pane._get_root(document, comm=comm)
-    assert isinstance(row, BkRow)
-    assert len(row.children) == 1
-    model = row.children[0]
-    assert model.ref['id'] in inner_pane._callbacks
-    assert isinstance(model, BkWidgetBox)
-    div = model.children[0]
-    assert isinstance(div, Div)
-    text = div.text
-
-    # Update pane
-    test.a = 5
-    model = row.children[0]
-    assert inner_pane is pane._pane
-    assert div is row.children[0].children[0]
-    assert div.text != text
-    assert len(inner_pane._callbacks) == 1
-    assert model.ref['id'] in inner_pane._callbacks
-
-    # Cleanup pane
-    pane._cleanup(model)
-    assert inner_pane._callbacks == {}
-
-
-@mpl_available
-def test_param_method_pane_changing_type(document, comm):
-    test = View()
-    pane = Pane(test.mixed_view)
-    inner_pane = pane._pane
-    assert isinstance(inner_pane, Matplotlib)
-
-    # Create pane
-    row = pane._get_root(document, comm=comm)
-    assert isinstance(row, BkRow)
-    assert len(row.children) == 1
-    model = row.children[0]
-    assert model.ref['id'] in inner_pane._callbacks
-    assert isinstance(model, BkWidgetBox)
-    div = model.children[0]
-    assert isinstance(div, Div)
-    text = div.text
-
-    # Update pane
-    test.a = 5
-    model = row.children[0]
-    new_pane = pane._pane
-    assert inner_pane._callbacks == {}
-    assert isinstance(new_pane, Bokeh)
-    div = get_div(model)
-    assert isinstance(div, Div)
-    assert div.text != text
-    assert len(new_pane._callbacks) == 1
-    assert model.ref['id'] in new_pane._callbacks
-
-    # Cleanup pane
-    new_pane._cleanup(model)
-    assert new_pane._callbacks == {}
 
 
 def test_get_html_pane_type():

@@ -1,5 +1,7 @@
 import os
+
 import param
+import pytest
 
 from bokeh.models import (
     Div, Slider, Select, RangeSlider, MultiSelect, Row as BkRow,
@@ -7,7 +9,15 @@ from bokeh.models import (
     TextInput as BkTextInput, Tabs as BkTabs)
 from panel.pane import Pane
 from panel.layout import Tabs
-from panel.param import Param, JSONInit
+from panel.param import Param, ParamMethod, JSONInit
+
+try:
+    import matplotlib as mpl
+    mpl.use('Agg')
+except:
+    mpl = None
+mpl_available = pytest.mark.skipif(mpl is None, reason="requires matplotlib")
+
 
 
 
@@ -74,7 +84,7 @@ def test_get_model_tabs(document, comm):
         pass
 
     test = Test()
-    test_pane = Pane(test, subpanel_layout=Tabs, _temporary=True)
+    test_pane = Pane(test, subobject_layout=Tabs, _temporary=True)
     model = test_pane._get_model(document, comm=comm)
 
     assert isinstance(model, BkTabs)
@@ -355,7 +365,7 @@ def test_expand_param_subobject_tabs(document, comm):
         a = param.Parameter()
 
     test = Test(a=Test(name='Nested'))
-    test_pane = Pane(test, subpanel_layout=Tabs, _temporary=True)
+    test_pane = Pane(test, subobject_layout=Tabs, _temporary=True)
     model = test_pane._get_model(document, comm=comm)
 
     toggle = model.tabs[0].child.children[0]
@@ -382,6 +392,124 @@ def test_expand_param_subobject_tabs(document, comm):
     test_pane._widgets['a'].active = False
     assert len(model.tabs) == 1
     assert subpanel._callbacks == {}
+
+
+class View(param.Parameterized):
+
+    a = param.Integer(default=0)
+
+    @param.depends('a')
+    def view(self):
+        return Div(text='%d' % self.a)
+
+    @param.depends('a')
+    def mpl_view(self):
+        return mpl_figure()
+
+    @param.depends('a')
+    def mixed_view(self):
+        return self.view() if (self.a % 2) else self.mpl_view()
+
+
+def test_get_param_method_pane_type():
+    assert PaneBase.get_pane_type(View().view) is ParamMethod
+
+
+def test_param_method_pane(document, comm):
+    test = View()
+    pane = Pane(test.view)
+    inner_pane = pane._pane
+    assert isinstance(inner_pane, Bokeh)
+
+    # Create pane
+    row = pane._get_root(document, comm=comm)
+    assert isinstance(row, BkRow)
+    assert len(row.children) == 1
+    model = row.children[0]
+    div = get_div(model)
+    assert model.ref['id'] in inner_pane._callbacks
+    assert isinstance(div, Div)
+    assert div.text == '0'
+
+    # Update pane
+    test.a = 5
+    new_model = row.children[0]
+    div = get_div(new_model)
+    assert inner_pane is pane._pane
+    assert div.text == '5'
+    assert len(inner_pane._callbacks) == 1
+    assert new_model.ref['id'] in inner_pane._callbacks
+
+    # Cleanup pane
+    pane._cleanup(new_model)
+    assert inner_pane._callbacks == {}
+
+
+@mpl_available
+def test_param_method_pane_mpl(document, comm):
+    test = View()
+    pane = Pane(test.mpl_view)
+    inner_pane = pane._pane
+    assert isinstance(inner_pane, Matplotlib)
+
+    # Create pane
+    row = pane._get_root(document, comm=comm)
+    assert isinstance(row, BkRow)
+    assert len(row.children) == 1
+    model = row.children[0]
+    assert model.ref['id'] in inner_pane._callbacks
+    assert isinstance(model, BkWidgetBox)
+    div = model.children[0]
+    assert isinstance(div, Div)
+    text = div.text
+
+    # Update pane
+    test.a = 5
+    model = row.children[0]
+    assert inner_pane is pane._pane
+    assert div is row.children[0].children[0]
+    assert div.text != text
+    assert len(inner_pane._callbacks) == 1
+    assert model.ref['id'] in inner_pane._callbacks
+
+    # Cleanup pane
+    pane._cleanup(model)
+    assert inner_pane._callbacks == {}
+
+
+@mpl_available
+def test_param_method_pane_changing_type(document, comm):
+    test = View()
+    pane = Pane(test.mixed_view)
+    inner_pane = pane._pane
+    assert isinstance(inner_pane, Matplotlib)
+
+    # Create pane
+    row = pane._get_root(document, comm=comm)
+    assert isinstance(row, BkRow)
+    assert len(row.children) == 1
+    model = row.children[0]
+    assert model.ref['id'] in inner_pane._callbacks
+    assert isinstance(model, BkWidgetBox)
+    div = model.children[0]
+    assert isinstance(div, Div)
+    text = div.text
+
+    # Update pane
+    test.a = 5
+    model = row.children[0]
+    new_pane = pane._pane
+    assert pane._callbacks == {}
+    assert isinstance(new_pane, Bokeh)
+    div = get_div(model)
+    assert isinstance(div, Div)
+    assert div.text != text
+    assert len(new_pane._callbacks) == 1
+    assert model.ref['id'] in new_pane._callbacks
+
+    # Cleanup pane
+    new_pane._cleanup(model)
+    assert new_pane._callbacks == {}
 
 
 def test_jsoninit_class_from_env_var():
