@@ -266,7 +266,7 @@ def test_param_method_pane_changing_type(document, comm):
     test.a = 5
     model = row.children[0]
     new_pane = pane._pane
-    assert pane._callbacks == {}
+    assert inner_pane._callbacks == {}
     assert isinstance(new_pane, Bokeh)
     div = get_div(model)
     assert isinstance(div, Div)

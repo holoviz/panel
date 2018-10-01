@@ -85,11 +85,6 @@ class PaneBase(Reactive):
             raise ValueError('%s object not understood by %s, '
                              'expected %s object.' %
                              (type(object).__name__, name, name[:-5]))
-
-        # temporary flag denotes panes created for temporary, internal
-        # use which should be garbage collected once they have been used
-        self._temporary = params.pop('_temporary', False)
-
         super(PaneBase, self).__init__(object=object, **params)
 
     def _get_root(self, doc, comm=None):
@@ -98,7 +93,7 @@ class PaneBase(Reactive):
         root.children = [model]
         return root
 
-    def _cleanup(self, model, final=False):
+    def _cleanup(self, model=None, final=False):
         super(PaneBase, self)._cleanup(model, final)
         if final:
             self.object = None
@@ -138,8 +133,8 @@ class PaneBase(Reactive):
             else:
                 doc.add_next_tick_callback(update_models)
 
-        self.param.watch(update_pane, 'object')
-        self._callbacks[model.ref['id']]['object'] = update_pane
+        ref = model.ref['id']
+        self._callbacks[ref].append(self.param.watch(update_pane, 'object'))
 
 
 class Bokeh(PaneBase):
@@ -201,7 +196,7 @@ class HoloViews(PaneBase):
                 for c in cb.callbacks:
                     c.code = c.code.replace(plot.id, plot_id)
 
-    def _cleanup(self, model, final=False):
+    def _cleanup(self, model=None, final=False):
         """
         Traverses HoloViews object to find and clean up any streams
         connected to existing plots.
@@ -259,6 +254,7 @@ class ParamMethod(PaneBase):
         parameterized = get_method_owner(self.object)
         params = parameterized.param.params_depended_on(self.object.__name__)
         model = self._pane._get_model(doc, root, parent, comm)
+        ref = model.ref['id']
         history = [model]
         for p in params:
             def update_pane(change, history=history):
@@ -273,13 +269,13 @@ class ParamMethod(PaneBase):
                         new_params = {k: v for k, v in new_object.get_param_values()
                                       if k != 'name'}
                         self._pane.set_param(**new_params)
-                        new_object._cleanup(None, final=True)
+                        new_object._cleanup(None, new_object._temporary)
                     else:
                         self._pane.object = new_object
                     return
 
                 # Replace pane entirely
-                self._pane._cleanup(old_model)
+                self._pane._cleanup(old_model, self._pane._temporary)
                 self._pane = Pane(new_object, _temporary=True, **self._kwargs)
                 new_model = self._pane._get_model(doc, root, parent, comm)
                 def update_models():
@@ -294,18 +290,13 @@ class ParamMethod(PaneBase):
                 else:
                     doc.add_next_tick_callback(update_models)
 
-            (p.inst or p.cls).param.watch(update_pane, p.name, p.what)
+            pobj = (p.inst or p.cls)
+            watcher = pobj.param.watch(update_pane, p.name, p.what)
+            self._callbacks[ref].append(watcher)
+
         return model
 
-    def _cleanup(self, model, final=False):
-        """
-        Clean up method which is called when a Viewable is destroyed.
-        """
-        model_id = model.ref['id']
-        callbacks = self._callbacks[model_id]
-        parameterized = get_method_owner(self.object)
-        for p, cb in callbacks.items():
-            parameterized.param.unwatch(cb, p)
+    def _cleanup(self, model=None, final=False):
         self._pane._cleanup(model, final)
         super(ParamMethod, self)._cleanup(model, final)
 

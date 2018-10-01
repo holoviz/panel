@@ -10,6 +10,7 @@ from panel.layout import Tabs
 from panel.param import Param, JSONInit
 
 
+
 def test_instantiate_from_class():
 
     class Test(param.Parameterized):
@@ -298,7 +299,7 @@ def test_list_selector_param(document, comm):
     test_pane._cleanup(model)
     a_param.constant = False
     a_param.objects = [1, 'c', 'd']
-    test.a = 'd'
+    test.a = ['d']
     assert slider.value == ['c', '1']
     assert slider.options == ['c', 'd', '1']
     assert slider.disabled == True
@@ -333,7 +334,7 @@ def test_expand_param_subobject(document, comm):
     assert len(model.children) == 2
     _, subpanel = test_pane._layout.objects
     row = model.children[1]
-    assert 'object' in subpanel._callbacks
+    assert 'instance' in subpanel._callbacks
     assert isinstance(row, BkRow)
     assert len(row.children) == 1
     box = row.children[0]
@@ -366,7 +367,7 @@ def test_expand_param_subobject_tabs(document, comm):
     _, subpanel = test_pane._layout.objects
     subtabs = model.tabs[1].child
     assert model.tabs[1].title == 'Nested'
-    assert 'object' in subpanel._callbacks
+    assert 'instance' in subpanel._callbacks
     assert isinstance(subtabs, BkTabs)
     assert len(subtabs.tabs) == 1
     assert subtabs.tabs[0].title == 'Nested'

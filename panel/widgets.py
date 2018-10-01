@@ -454,13 +454,13 @@ class DiscreteSlider(Widget):
                            title=None, step=1, show_value=False, tooltips=None)
 
         # Link parameters and bokeh model
-        self._link_params(slider, div, ['value', 'options'], doc, root, comm)
+        self._link_params(model, slider, div, ['value', 'options'], doc, root, comm)
         self._link_props(slider, ['value'], doc, root, comm)
 
         model.children = [div, slider]
         return model
 
-    def _link_params(self, slider, div, params, doc, root, comm=None):
+    def _link_params(self, model, slider, div, params, doc, root, comm=None):
         def param_change(change):
             msg = self._process_param_change({change.name: change.new})
             msg = {k: v for k, v in msg.items() if k not in self._active}
@@ -476,9 +476,9 @@ class DiscreteSlider(Widget):
             else:
                 doc.add_next_tick_callback(update_model)
 
+        ref = model.ref['id']
         for p in params:
-            self.param.watch(param_change, p)
-            self._callbacks[slider.ref['id']][p] = param_change
+            self._callbacks[ref].append(self.param.watch(param_change, p))
 
     def _process_param_change(self, msg):
         title = '<b>%s</b>: ' % (self.name if self.name else '')

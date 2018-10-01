@@ -40,6 +40,7 @@ class Layout(Reactive):
         return self._process_param_change(properties)
 
     def _link_params(self, model, params, doc, root, comm=None):
+        ref = model.ref['id']
         for p in params:
             def set_value(change, parameter=p):
                 msg = {parameter: change.new}
@@ -53,12 +54,13 @@ class Layout(Reactive):
                     push(doc, comm)
                 else:
                     doc.add_next_tick_callback(update_model)
-            self.param.watch(set_value, p)
+            self._callbacks[ref].append(self.param.watch(set_value, p))
 
-    def _cleanup(self, model, final=False):
+    def _cleanup(self, model=None, final=False):
         super(Layout, self)._cleanup(model, final)
-        for p, c in zip(self.objects, model.children):
-            p._cleanup(c, final)
+        if model is not None:
+            for p, c in zip(self.objects, model.children):
+                p._cleanup(c, final)
 
     def _get_objects(self, model, old_objects, doc, root, comm=None):
         """
@@ -162,7 +164,7 @@ class WidgetBox(Layout):
 
         for pane, old_child in zip(old_objects, old_children):
             if old_child not in new_models:
-                pane._cleanup(old_child)
+                pane._cleanup(old_child, pane._temporary)
         return new_models
 
 
@@ -211,7 +213,7 @@ class Tabs(Layout):
 
         for pane, old_child in zip(old_objects, old_children):
             if old_child not in new_models:
-                pane._cleanup(old_child.child)
+                pane._cleanup(old_child.child, pane._temporary)
 
         return new_models
 
@@ -246,10 +248,11 @@ class Tabs(Layout):
         new_objects.pop(index)
         self.objects = new_objects
 
-    def _cleanup(self, model, final=False):
+    def _cleanup(self, model=None, final=False):
         super(Layout, self)._cleanup(model, final)
-        for p, c in zip(self.objects, model.tabs):
-            p._cleanup(c.child, final)
+        if model is not None:
+            for p, c in zip(self.objects, model.tabs):
+                p._cleanup(c.child, final)
 
 
 class Spacer(Reactive):
