@@ -279,10 +279,12 @@ class Param(PaneBase):
 
 class ParamMethod(PaneBase):
     """
-    ParamMethod panes wrap methods annotated with the param.depends
-    decorator and rerenders the plot when any of the methods parameters
-    change. The method may return any object which itself can be rendered
-    as a Pane.
+    ParamMethod panes wrap methods on parameterized classes and
+    rerenders the plot when any of the method's parameters change. By
+    default ParamMethod will watch all parameters on the class owning
+    the method or can be restricted to certain parameters by annotating
+    the method using the param.depends decorator. The method may
+    return any object which itself can be rendered as a Pane.
     """
 
     def __init__(self, object, **params):
