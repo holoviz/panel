@@ -164,7 +164,7 @@ class WidgetBox(Layout):
 
         for pane, old_child in zip(old_objects, old_children):
             if old_child not in new_models:
-                pane._cleanup(old_child)
+                pane._cleanup(old_child, pane._temporary)
         return new_models
 
 
@@ -213,7 +213,7 @@ class Tabs(Layout):
 
         for pane, old_child in zip(old_objects, old_children):
             if old_child not in new_models:
-                pane._cleanup(old_child.child)
+                pane._cleanup(old_child.child, pane._temporary)
 
         return new_models
 

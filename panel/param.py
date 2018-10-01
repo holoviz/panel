@@ -115,8 +115,10 @@ class Param(PaneBase):
                             if isinstance(p, Param)
                             and p.object is parameterized]
                 if existing:
+                    old_panel = existing[0]
                     if not change.new:
-                        self._layout.pop(existing[0])
+                        old_panel._cleanup(final=old_panel._temporary)
+                        self._layout.pop(old_panel)
                 elif change.new:
                     kwargs = {k: v for k, v in self.get_param_values()
                               if k not in ['name', 'object']}

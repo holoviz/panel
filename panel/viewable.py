@@ -92,7 +92,7 @@ class Viewable(param.Parameterized):
 
     def _server_destroy(self, session_context):
         doc = session_context._document
-        self._cleanup(self._documents[doc])
+        self._cleanup(self._documents[doc], final=self._temporary)
         del self._documents[doc]
 
     def server_doc(self, doc=None, title=None):
@@ -220,7 +220,7 @@ class Reactive(Viewable):
             
     def _cleanup(self, model=None, final=False):
         super(Reactive, self)._cleanup(model, final)
-        if final or self._temporary:
+        if final:
             watchers = self._callbacks.pop('instance', [])
             for watcher in watchers:
                 obj = watcher.cls if watcher.inst is None else watcher.inst

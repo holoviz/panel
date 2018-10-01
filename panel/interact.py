@@ -191,13 +191,13 @@ class interactive(PaneBase):
                         new_params = {k: v for k, v in new_object.get_param_values()
                                       if k != 'name'}
                         self._pane.set_param(**new_params)
-                        new_object._cleanup(None, final=True)
+                        new_object._cleanup(None, new_object._temporary)
                     else:
                         self._pane.object = new_object
                     return
 
                 # Replace pane entirely
-                self._pane._cleanup(old_model)
+                self._pane._cleanup(old_model, self._pane._temporary)
                 self._pane = Pane(new_object, _temporary=True)
                 new_model = self._pane._get_model(doc, root, parent, comm)
                 def update_models():

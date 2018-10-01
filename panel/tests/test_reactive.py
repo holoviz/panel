@@ -61,7 +61,7 @@ def test_link_params_nb(document, comm):
     assert div.text == 'B'
 
     # Assert cleanup deletes callback
-    obj._cleanup(div)
+    obj._cleanup(div, True)
     assert obj._callbacks == {}
 
 
