@@ -114,7 +114,7 @@ class Viewable(param.Parameterized):
         if curdoc().session_context:
             self.server_doc()
         return self
-    
+
     def _modify_doc(self, doc):
         return self.server_doc(doc)
 
@@ -187,7 +187,7 @@ class Reactive(Viewable):
         # temporary flag denotes panes created for temporary, internal
         # use which should be garbage collected once they have been used
         self._temporary = params.pop('_temporary', False)
-        
+
         super(Reactive, self).__init__(**params)
         self._active = []
         self._events = {}
@@ -206,18 +206,15 @@ class Reactive(Viewable):
             Maps between parameters on this object to the parameters
             on the supplied object.
         """
-        def link(change, _updating=[]):
-            if change.name not in _updating:
+        def link(*changes, _updating=[]):
+            for change in changes:
+                if change.name in _updating: continue
                 _updating.append(change.name)
                 setattr(obj, links[change.name], change.new)
                 _updating.pop(_updating.index(change.name))
 
-        for p, other_param in links.items():
-            if not hasattr(obj, other_param):
-                raise AttributeError('Linked object %s has no attribute %s.'
-                                     % (obj, other_param))
-            self._callbacks['instance'].append(self.param.watch(link, p))
-            
+        self._callbacks['instance'].append(self.param.watch(link, list(links)))
+
     def _cleanup(self, model=None, final=False):
         super(Reactive, self)._cleanup(model, final)
         if final:
@@ -269,23 +266,30 @@ class Reactive(Viewable):
         return {self._rename.get(k, k): v for k, v in msg.items()}
 
     def _link_params(self, model, params, doc, root, comm=None):
-        def param_change(change):
-            msg = self._process_param_change({change.name: change.new})
-            msg = {k: v for k, v in msg.items() if k not in self._active}
-            if not msg: return
+        def param_change(*changes):
+            msgs = []
+            for change in changes:
+                msg = self._process_param_change({change.name: change.new})
+                msg = {k: v for k, v in msg.items() if k not in self._active}
+                if msg:
+                    msgs.append(msg)
+
+            if not msgs: return
 
             def update_model():
-                model.update(**msg)
+                for msg in msgs:
+                    model.update(**msg)
+
             if comm:
-                self._expecting += list(msg)
+                self._expecting += [m for msg in msgs for m in msg]
                 update_model()
                 push(doc, comm)
             else:
                 doc.add_next_tick_callback(update_model)
 
         ref = model.ref['id']
-        for p in params:
-            self._callbacks[ref].append(self.param.watch(param_change, p))
+        watcher = self.param.watch(param_change, params)
+        self._callbacks[ref].append(watcher)
 
     def _link_props(self, model, properties, doc, root, comm=None):
         if comm is None:

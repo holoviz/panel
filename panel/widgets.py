@@ -461,14 +461,22 @@ class DiscreteSlider(Widget):
         return model
 
     def _link_params(self, model, slider, div, params, doc, root, comm=None):
-        def param_change(change):
-            msg = self._process_param_change({change.name: change.new})
-            msg = {k: v for k, v in msg.items() if k not in self._active}
-            if not msg: return
+        def param_change(*changes):
+            combined_msg = {}
+            for change in changes:
+                msg = self._process_param_change({change.name: change.new})
+                msg = {k: v for k, v in msg.items() if k not in self._active}
+                if msg:
+                    combined_msg.update(msg)
+
+            if not combined_msg:
+                return
 
             def update_model():
-                slider.update(**{k: v for k, v in msg.items() if k in slider.properties()})
-                div.update(**{k: v for k, v in msg.items() if k in div.properties()})
+                slider.update(**{k: v for k, v in combined_msg.items()
+                                 if k in slider.properties()})
+                div.update(**{k: v for k, v in combined_msg.items()
+                              if k in div.properties()})
 
             if comm:
                 update_model()

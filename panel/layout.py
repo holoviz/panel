@@ -40,21 +40,26 @@ class Layout(Reactive):
         return self._process_param_change(properties)
 
     def _link_params(self, model, params, doc, root, comm=None):
+        def set_value(*changes):
+            msg = {change.name: change.new for change in changes}
+            changes = {change.name: change for change in changes}
+            if 'objects' in msg:
+                old = changes['objects'].old
+                msg['objects'] = self._get_objects(model, old, doc, root, comm)
+            msg = self._process_param_change(msg)
+
+            def update_model():
+                model.update(**msg)
+
+            if comm:
+                update_model()
+                push(doc, comm)
+            else:
+                doc.add_next_tick_callback(update_model)
+
         ref = model.ref['id']
-        for p in params:
-            def set_value(change, parameter=p):
-                msg = {parameter: change.new}
-                if parameter == 'objects':
-                    msg['objects'] = self._get_objects(model, change.old, doc, root, comm)
-                msg = self._process_param_change(msg)
-                def update_model(msg=msg):
-                    model.update(**msg)
-                if comm:
-                    update_model()
-                    push(doc, comm)
-                else:
-                    doc.add_next_tick_callback(update_model)
-            self._callbacks[ref].append(self.param.watch(set_value, p))
+        watcher = self.param.watch(set_value, params)
+        self._callbacks[ref].append(watcher)
 
     def _cleanup(self, model=None, final=False):
         super(Layout, self)._cleanup(model, final)
