@@ -9,7 +9,7 @@ import json
 import types
 import inspect
 import itertools
-from collections import OrderedDict
+from collections import OrderedDict, namedtuple
 
 import param
 from param.parameterized import classlist
@@ -45,35 +45,46 @@ class Param(PaneBase):
     are linked to the parameter values on the class.
     """
 
-    height = param.Integer(default=None, bounds=(0, None))
-
-    width = param.Integer(default=None, bounds=(0, None))
-
-    show_labels = param.Boolean(default=True)
-
-    subobject_layout = param.ClassSelector(default=Row, class_=Layout,
-                                          is_instance=False, doc="""
-        Layout of subpanels.""")
-
-    display_threshold = param.Number(default=0,precedence=-10,doc="""
+    display_threshold = param.Number(default=0, precedence=-10, doc="""
         Parameters with precedence below this value are not displayed.""")
 
-    default_precedence = param.Number(default=1e-8,precedence=-10,doc="""
-        Precedence value to use for parameters with no declared precedence.
-        By default, zero predecence is available for forcing some parameters
-        to the top of the list, and other values above the default_precedence
-        values can be used to sort or group parameters arbitrarily.""")
+    default_precedence = param.Number(default=1e-8, precedence=-10, doc="""
+        Precedence value to use for parameters with no declared
+        precedence.  By default, zero predecence is available for
+        forcing some parameters to the top of the list, and other
+        values above the default_precedence values can be used to sort
+        or group parameters arbitrarily.""")
+
+    expandable_subobjects = param.Boolean(default=True, doc="""
+        Whether parameterized subobjects are expandable and
+        collapseable. If False they may be either expanded or
+        collapsed on instantation with the expand_by_default
+        parameter.""")
+
+    expand_by_default = param.Boolean(default=False, doc="""
+        Whether parameterized subobjects are expanded or collapsed on
+        instantiation.""")
 
     initializer = param.Callable(default=None, doc="""
         User-supplied function that will be called on initialization,
         usually to update the default Parameter values of the
         underlying parameterized object.""")
 
+    label_formatter = param.Callable(default=default_label_formatter, allow_None=True,
+        doc="Callable used to format the parameter names into widget labels.")
+
     width = param.Integer(default=300, bounds=(0, None), doc="""
         Width of widgetbox the parameter widgets are displayed in.""")
 
-    label_formatter = param.Callable(default=default_label_formatter, allow_None=True,
-        doc="Callable used to format the parameter names into widget labels.")
+    height = param.Integer(default=None, bounds=(0, None), doc="""
+        Height of widgetbox the parameter widgets are displayed in.""")
+
+    show_labels = param.Boolean(default=True, doc="""
+        Whether to show labels for each .widget""")
+
+    subobject_layout = param.ClassSelector(default=Row, class_=Layout,
+                                          is_instance=False, doc="""
+        Layout of subpanels.""")
 
     precedence = 0.1
 
@@ -106,12 +117,16 @@ class Param(PaneBase):
         if self.subobject_layout is Tabs:
             kwargs['width'] = self.width
         self._layout = self.subobject_layout(self._widget_box, **kwargs)
-        self._link_subpanels()
+        if not (not self.expandable_subobjects and not self.expand_by_default):
+            self._link_subpanels()
 
     def _link_subpanels(self):
-        for pname, widget in self._widgets.items():
-            if len(widget) < 2: continue
-            selector, toggle = widget
+        for pname, widgets in self._widgets.items():
+            if not any(is_parameterized(getattr(w, 'value', None)) or
+                       any(is_parameterized(o) for o in getattr(w, 'options', []))
+                       for w in widgets):
+                continue
+            selector, toggle = widgets if len(widgets) == 2 else (widgets[0], None)
 
             def toggle_pane(change, parameter=pname):
                 "Adds or removes subpanel from layout"
@@ -137,7 +152,8 @@ class Param(PaneBase):
                             if isinstance(p, Param)
                             and p.object is change.old]
 
-                toggle.disabled = not is_parameterized(change.new)
+                if toggle:
+                    toggle.disabled = not is_parameterized(change.new)
                 if not existing:
                     return
                 elif is_parameterized(change.new):
@@ -150,9 +166,16 @@ class Param(PaneBase):
                 else:
                     self._layout.pop(existing[0])
 
-            toggle_watcher = toggle.param.watch(toggle_pane, 'active')
-            selector_watcher = selector.param.watch(update_pane, 'value')
-            self._callbacks['instance'] += [toggle_watcher, selector_watcher]
+            watchers = [selector.param.watch(update_pane, 'value')]
+            if toggle:
+                watchers.append(toggle.param.watch(toggle_pane, 'active'))
+            self._callbacks['instance'] += watchers
+
+            if self.expand_by_default:
+                if self.expandable_subobjects:
+                    toggle.active = True
+                else:
+                    toggle_pane(namedtuple('Change', 'new')(True))
 
     @classmethod
     def applies(cls, obj):
@@ -238,7 +261,8 @@ class Param(PaneBase):
         options = kwargs.get('options', [])
         if isinstance(options, dict):
             options = options.values()
-        if is_parameterized(value) or any(is_parameterized(o) for o in options):
+        if ((is_parameterized(value) or any(is_parameterized(o) for o in options))
+            and self.expandable_subobjects):
             toggle = Toggle(name='...', button_type='primary',
                             disabled=not is_parameterized(value))
             return [widget, toggle]
@@ -322,7 +346,7 @@ class ParamMethod(PaneBase):
                             watchers.pop(watchers.index(w))
                     deps.pop(deps.index(p))
 
-                new_deps = [dep for dep in new_deps if dep not in params]
+                new_deps = [dep for dep in new_deps if dep not in deps]
                 for _, params in full_groupby(new_deps, lambda x: (x.inst or x.cls, x.what)):
                     p = params[0]
                     obj = p.cls if p.inst is None else p.inst
