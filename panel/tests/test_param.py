@@ -7,9 +7,12 @@ from bokeh.models import (
     Div, Slider, Select, RangeSlider, MultiSelect, Row as BkRow,
     WidgetBox as BkWidgetBox, CheckboxGroup, Toggle, Button,
     TextInput as BkTextInput, Tabs as BkTabs)
-from panel.pane import Pane
+from panel.pane import Pane, PaneBase, Matplotlib, Bokeh
 from panel.layout import Tabs
 from panel.param import Param, ParamMethod, JSONInit
+
+from .test_layout import get_div
+from .fixtures import mpl_figure
 
 try:
     import matplotlib as mpl
@@ -17,8 +20,6 @@ try:
 except:
     mpl = None
 mpl_available = pytest.mark.skipif(mpl is None, reason="requires matplotlib")
-
-
 
 
 def test_instantiate_from_class():
@@ -336,11 +337,12 @@ def test_expand_param_subobject(document, comm):
     test_pane = Pane(test, _temporary=True)
     model = test_pane._get_model(document, comm=comm)
 
-    toggle = model.children[0].children[1]
+    toggle = model.children[0].children[2]
+    print(model.children[0].children)
     assert isinstance(toggle, Toggle)
 
     # Expand subpane
-    test_pane._widgets['a'].active = True
+    test_pane._widgets['a'][1].active = True
     assert len(model.children) == 2
     _, subpanel = test_pane._layout.objects
     row = model.children[1]
@@ -355,7 +357,7 @@ def test_expand_param_subobject(document, comm):
     assert isinstance(widget, BkTextInput)
 
     # Collapse subpanel
-    test_pane._widgets['a'].active = False
+    test_pane._widgets['a'][1].active = False
     assert len(model.children) == 1
     assert subpanel._callbacks == {}
 
@@ -368,11 +370,11 @@ def test_expand_param_subobject_tabs(document, comm):
     test_pane = Pane(test, subobject_layout=Tabs, _temporary=True)
     model = test_pane._get_model(document, comm=comm)
 
-    toggle = model.tabs[0].child.children[0]
+    toggle = model.tabs[0].child.children[1]
     assert isinstance(toggle, Toggle)
 
     # Expand subpanel
-    test_pane._widgets['a'].active = True
+    test_pane._widgets['a'][1].active = True
     assert len(model.tabs) == 2
     _, subpanel = test_pane._layout.objects
     subtabs = model.tabs[1].child
@@ -389,7 +391,7 @@ def test_expand_param_subobject_tabs(document, comm):
     assert isinstance(widget, BkTextInput)
 
     # Collapse subpanel
-    test_pane._widgets['a'].active = False
+    test_pane._widgets['a'][1].active = False
     assert len(model.tabs) == 1
     assert subpanel._callbacks == {}
 
@@ -499,7 +501,7 @@ def test_param_method_pane_changing_type(document, comm):
     test.a = 5
     model = row.children[0]
     new_pane = pane._pane
-    assert pane._callbacks == {}
+    assert inner_pane._callbacks == {}
     assert isinstance(new_pane, Bokeh)
     div = get_div(model)
     assert isinstance(div, Div)
