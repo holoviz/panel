@@ -349,7 +349,7 @@ class ParamMethod(PaneBase):
                 new_deps = [dep for dep in new_deps if dep not in deps]
                 for _, params in full_groupby(new_deps, lambda x: (x.inst or x.cls, x.what)):
                     p = params[0]
-                    obj = p.cls if p.inst is None else p.inst
+                    pobj = p.cls if p.inst is None else p.inst
                     ps = [p.name for p in params]
                     watcher = pobj.param.watch(update_pane, ps, p.what)
                     self._callbacks[old_ref].append(watcher)
