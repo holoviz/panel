@@ -21,8 +21,8 @@ import param
 from bokeh.layouts import Row as _BkRow, WidgetBox as _BkWidgetBox
 from bokeh.models import LayoutDOM, CustomJS, Widget as _BkWidget, Div as _BkDiv
 
-from .util import (basestring, unicode, get_method_owner, push,
-                   remove_root, full_groupby, Div)
+from .util import (Div, basestring, unicode, get_method_owner, push,
+                   remove_root)
 from .viewable import Reactive, Viewable
 
 

@@ -3,7 +3,6 @@ from __future__ import absolute_import
 from base64 import b64decode
 import pytest
 
-import param
 from bokeh.models import (Div, Row as BkRow, WidgetBox as BkWidgetBox,
                           GlyphRenderer, Circle, Line)
 from bokeh.plotting import Figure
