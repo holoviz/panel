@@ -55,7 +55,7 @@ class Param(PaneBase):
         values above the default_precedence values can be used to sort
         or group parameters arbitrarily.""")
 
-    expandable_subobjects = param.Boolean(default=True, doc="""
+    toggleable_subobjects = param.Boolean(default=True, doc="""
         Whether parameterized subobjects are expandable and
         collapseable. If False they may be either expanded or
         collapsed on instantation with the expand_by_default
@@ -117,7 +117,7 @@ class Param(PaneBase):
         if self.subobject_layout is Tabs:
             kwargs['width'] = self.width
         self._layout = self.subobject_layout(self._widget_box, **kwargs)
-        if not (not self.expandable_subobjects and not self.expand_by_default):
+        if not (not self.toggleable_subobjects and not self.expand_by_default):
             self._link_subpanels()
 
     def _link_subpanels(self):
@@ -172,7 +172,7 @@ class Param(PaneBase):
             self._callbacks['instance'] += watchers
 
             if self.expand_by_default:
-                if self.expandable_subobjects:
+                if self.toggleable_subobjects:
                     toggle.active = True
                 else:
                     toggle_pane(namedtuple('Change', 'new')(True))
@@ -262,7 +262,7 @@ class Param(PaneBase):
         if isinstance(options, dict):
             options = options.values()
         if ((is_parameterized(value) or any(is_parameterized(o) for o in options))
-            and self.expandable_subobjects):
+            and self.toggleable_subobjects):
             toggle = Toggle(name='...', button_type='primary',
                             disabled=not is_parameterized(value))
             return [widget, toggle]
