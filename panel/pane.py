@@ -19,7 +19,7 @@ except:
 
 import param
 
-from bokeh.layouts import Row as _BkRow, Column as _BkColumn, WidgetBox as _BkWidgetBox
+from bokeh.layouts import Row as _BkRow, WidgetBox as _BkWidgetBox
 from bokeh.models import LayoutDOM, CustomJS, Widget as _BkWidget, Div as _BkDiv
 
 from .util import (Div, basestring, unicode, get_method_owner, push,
@@ -291,12 +291,13 @@ class HoloViews(PaneBase):
         from .widgets import DiscreteSlider, Select, FloatSlider
 
         dims, keys = unique_dimkeys(object)
+        values = dict(zip(dims, zip(*keys)))
         widgets = []
         for dim in dims:
+            values = dim.values or values[dim]
             if dim.name in self.widgets:
                 widget = self.widgets[dim.name]
-            elif dim.values:
-                values = dim.values
+            elif values:
                 if all(isnumeric(v) for v in values):
                     values = sorted(values)
                     labels = [unicode(dim.pprint_value(v)) for v in values]
@@ -312,8 +313,6 @@ class HoloViews(PaneBase):
                 step = 0.1 if dim.step is None else dim.step 
                 widget = FloatSlider(step=step, name=dim.label, start=dim.range[0],
                                      end=dim.range[1], value=default)
-            else:
-                continue
             widgets.append(widget)
         return widgets
 
