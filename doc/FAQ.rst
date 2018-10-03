@@ -83,10 +83,11 @@ For instance, ipywidgets provide many of the same capabilities as Panel, but the
 |Servable from public site             | Possible        | As live notebooks    | Possible        | Yes, shinyapps.io  | Yes, Plotly Cloud      |
 |                                      | with mybinder   | via mybinder         | with mybinder   |                    |                        |
 +--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+
-+Servable in enterprise platform       | Yes, AE5        | Yes, AE5 (with cells | Yes, AE5        | Yes, AE5 or Shiny  | Yes, AE5 or Plotly     |
-|                                      |                 | visible but readonly)|                 | Server             | Enterprise             |
++Servable within private enterprise    | Yes, AE5        | Yes, AE5 (with cells | Yes, AE5        | Yes, AE5 or Shiny  | Yes, AE5 or Plotly     |
+|network                               |                 | visible but readonly)|                 | Server             | Enterprise             |
 +--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+
 
-(Here `AE5 <https://www.anaconda.com/enterprise/>`__ is a commercial product from Anaconda.com
-
-
+Each of these libraries are free, open-source software packages, but they can be used with the commercial products
+`Anaconda Enterprise (AE5) <https://www.anaconda.com/enterprise/>`__,
+`Shiny Server <https://www.rstudio.com/products/shiny-server-pro>`__, or
+`Plotly Enterprise <https://plot.ly/products/on-premise>`__ to provide on-premises authenticated deployment services within a private network.
