@@ -643,6 +643,7 @@ def test_param_method_pane_subobject(document, comm):
     pane._cleanup(new_model)
     assert pane._callbacks == {}
     assert inner_pane._callbacks == {}
+
     
 @mpl_available
 def test_param_method_pane_mpl(document, comm):
