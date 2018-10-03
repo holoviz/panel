@@ -38,6 +38,8 @@ class Viewable(param.Parameterized):
 
     _comm_manager = CommManager
 
+    _views = {}
+
     def __init__(self, **params):
         super(Viewable, self).__init__(**params)
         self._documents = {}
@@ -88,6 +90,7 @@ class Viewable(param.Parameterized):
         doc = Document()
         comm = self._comm_manager.get_server_comm()
         model = self._get_root(doc, comm)
+        Viewable._views[model.ref['id']] = (self, model)
         return render_mimebundle(model, doc, comm)
 
     def _server_destroy(self, session_context):

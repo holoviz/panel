@@ -52,4 +52,5 @@ class extension(param.ParameterizedFunction):
         Processes comm messages to handle global actions such as
         cleaning up plots.
         """
-        pass
+        viewable, model = Viewable._views.pop(msg['id'])
+        viewable._cleanup(model)
