@@ -65,6 +65,9 @@ class Param(PaneBase):
         Whether parameterized subobjects are expanded or collapsed on
         instantiation.""")
 
+    height = param.Integer(default=None, bounds=(0, None), doc="""
+        Height of widgetbox the parameter widgets are displayed in.""")
+
     initializer = param.Callable(default=None, doc="""
         User-supplied function that will be called on initialization,
         usually to update the default Parameter values of the
@@ -73,11 +76,9 @@ class Param(PaneBase):
     label_formatter = param.Callable(default=default_label_formatter, allow_None=True,
         doc="Callable used to format the parameter names into widget labels.")
 
-    width = param.Integer(default=300, bounds=(0, None), doc="""
-        Width of widgetbox the parameter widgets are displayed in.""")
-
-    height = param.Integer(default=None, bounds=(0, None), doc="""
-        Height of widgetbox the parameter widgets are displayed in.""")
+    parameters = param.List(default=None, doc="""
+        If set this serves as a whitelist of parameters to display on the supplied
+        Parameterized object.""")
 
     show_labels = param.Boolean(default=True, doc="""
         Whether to show labels for each .widget""")
@@ -85,6 +86,9 @@ class Param(PaneBase):
     subobject_layout = param.ClassSelector(default=Row, class_=Layout,
                                           is_instance=False, doc="""
         Layout of subpanels.""")
+
+    width = param.Integer(default=300, bounds=(0, None), doc="""
+        Width of widgetbox the parameter widgets are displayed in.""")
 
     precedence = 0.1
 
@@ -108,6 +112,8 @@ class Param(PaneBase):
             object = object.cls if object.self is None else object.self
         if 'name' not in params:
             params['name'] = object.name
+        if 'parameters' not in params:
+            params['parameters'] = [p for p in object.params() if p != 'name']
         super(Param, self).__init__(object, **params)
         self._widgets = self._get_widgets()
         widgets = [widget for widgets in self._widgets.values() for widget in widgets]
@@ -275,7 +281,8 @@ class Param(PaneBase):
 
     def _get_widgets(self):
         """Return name,widget boxes for all parameters (i.e., a property sheet)"""
-        params = self.object.params().items()
+        params = [(p, pobj) for p, pobj in self.object.params().items()
+                  if p in self.parameters or p == 'name']
         key_fn = lambda x: x[1].precedence if x[1].precedence is not None else self.default_precedence
         sorted_precedence = sorted(params, key=key_fn)
         filtered = [(k,p) for (k,p) in sorted_precedence
