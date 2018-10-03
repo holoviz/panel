@@ -1,4 +1,5 @@
-from bokeh.models import Div as BkDiv, Column as BkColumn, WidgetBox as BkWidgetBox
+from bokeh.models import (Div as BkDiv, Column as BkColumn,
+                          WidgetBox as BkWidgetBox, Paragraph as BkParagraph)
 
 from panel.interact import interact, interact_manual
 from panel import widgets
@@ -166,3 +167,36 @@ def test_interact_replaces_panel(document, comm):
     assert pane._callbacks == {}
     div = column.children[1].children[0]
     assert div.text == '<pre>True</pre>'
+
+def test_interact_replaces_model(document, comm):
+    def test(a):
+        return BkParagraph(text='Pre Test') if a else BkDiv(text='Test')
+
+    interactive = interact(test, a=False)
+    pane = interactive._pane
+    widget = interactive._widgets['a']
+    assert isinstance(widget, widgets.Checkbox)
+    assert widget.value == False
+
+    column = interactive._get_model(document, comm=comm)
+    assert isinstance(column, BkColumn)
+    box = column.children[1]
+    assert isinstance(box, BkWidgetBox)
+    div = box.children[0]
+    assert isinstance(div, BkDiv)
+    assert div.text == 'Test'
+    assert column.ref['id'] in interactive._callbacks
+    assert box.ref['id'] in pane._callbacks
+    
+    widget.value = True
+    assert box.ref['id'] not in pane._callbacks
+    new_box = column.children[1]
+    pre = new_box.children[0]
+    assert isinstance(pre, BkParagraph)
+    assert pre.text == 'Pre Test'
+    assert column.ref['id'] in interactive._callbacks
+    assert new_box.ref['id'] in pane._callbacks
+
+    interactive._cleanup(column)
+    assert interactive._callbacks == {}
+    assert pane._callbacks == {}

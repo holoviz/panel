@@ -190,13 +190,11 @@ class Reactive(Viewable):
         # temporary flag denotes panes created for temporary, internal
         # use which should be garbage collected once they have been used
         self._temporary = params.pop('_temporary', False)
-
         super(Reactive, self).__init__(**params)
         self._active = []
         self._events = {}
         self._expecting = []
         self._callbacks = defaultdict(list)
-
 
     def link(self, obj, **links):
         """

@@ -58,6 +58,14 @@ def get_method_owner(meth):
             return meth.__self__
 
 
+def is_parameterized(obj):
+    """
+    Whether an object is a Parameterized class or instance.
+    """
+    return (isinstance(obj, param.Parameterized) or
+            (isinstance(obj, type) and issubclass(obj, param.Parameterized)))
+
+
 def value_as_datetime(value):
     """
     Retrieve the value tuple as a tuple of datetime objects.

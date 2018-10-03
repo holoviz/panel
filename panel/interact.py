@@ -212,10 +212,11 @@ class interactive(PaneBase):
 
             pname = 'clicks' if name == 'manual' else 'value'
             watcher = widget.param.watch(update_pane, pname)
-            self._callbacks['instance'].append(watcher)
+            self._callbacks[layout.ref['id']].append(watcher)
 
     def _cleanup(self, model=None, final=False):
         self.layout._cleanup(model, final)
+        self._pane._cleanup(model.children[1], final)
         super(interactive, self)._cleanup(model, final)
 
     def widgets_from_abbreviations(self, seq):

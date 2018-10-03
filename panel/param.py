@@ -7,15 +7,19 @@ from __future__ import absolute_import
 import os
 import json
 import types
+import inspect
 import itertools
-from collections import OrderedDict
+from collections import OrderedDict, namedtuple
 
 import param
 from param.parameterized import classlist
 
-from .pane import PaneBase
+from .pane import Pane, PaneBase
 from .layout import WidgetBox, Row, Layout, Tabs
-from .util import default_label_formatter
+from .util import (
+    default_label_formatter, is_parameterized, get_method_owner,
+    full_groupby, push
+)
 from .widgets import (
     LiteralInput, Select, Checkbox, FloatSlider, IntSlider, RangeSlider,
     MultiSelect, StaticText, Button, Toggle, TextInput, DiscreteSlider,
@@ -29,7 +33,7 @@ def ObjectSelector(pobj):
     are numeric.
     """
     options = list(pobj.objects.values()) if isinstance(pobj.objects, dict) else pobj.objects
-    if all(param._is_number(o) for o in options):
+    if options and all(param._is_number(o) for o in options):
         return DiscreteSlider
     else:
         return Select
@@ -41,35 +45,49 @@ class Param(PaneBase):
     are linked to the parameter values on the class.
     """
 
-    height = param.Integer(default=None, bounds=(0, None))
-
-    width = param.Integer(default=None, bounds=(0, None))
-
-    show_labels = param.Boolean(default=True)
-
-    subpanel_layout = param.ClassSelector(default=Row, class_=Layout,
-                                          is_instance=False, doc="""
-        Layout of subpanels.""")
-
-    display_threshold = param.Number(default=0,precedence=-10,doc="""
+    display_threshold = param.Number(default=0, precedence=-10, doc="""
         Parameters with precedence below this value are not displayed.""")
 
-    default_precedence = param.Number(default=1e-8,precedence=-10,doc="""
-        Precedence value to use for parameters with no declared precedence.
-        By default, zero predecence is available for forcing some parameters
-        to the top of the list, and other values above the default_precedence
-        values can be used to sort or group parameters arbitrarily.""")
+    default_precedence = param.Number(default=1e-8, precedence=-10, doc="""
+        Precedence value to use for parameters with no declared
+        precedence.  By default, zero predecence is available for
+        forcing some parameters to the top of the list, and other
+        values above the default_precedence values can be used to sort
+        or group parameters arbitrarily.""")
+
+    expand_by_default = param.Boolean(default=False, doc="""
+        Whether parameterized subobjects are expanded or collapsed on
+        instantiation.""")
+
+    height = param.Integer(default=None, bounds=(0, None), doc="""
+        Height of widgetbox the parameter widgets are displayed in.""")
 
     initializer = param.Callable(default=None, doc="""
         User-supplied function that will be called on initialization,
         usually to update the default Parameter values of the
         underlying parameterized object.""")
 
-    width = param.Integer(default=300, bounds=(0, None), doc="""
-        Width of widgetbox the parameter widgets are displayed in.""")
-
     label_formatter = param.Callable(default=default_label_formatter, allow_None=True,
         doc="Callable used to format the parameter names into widget labels.")
+
+    parameters = param.List(default=None, doc="""
+        If set this serves as a whitelist of parameters to display on the supplied
+        Parameterized object.""")
+
+    show_labels = param.Boolean(default=True, doc="""
+        Whether to show labels for each .widget""")
+
+    subobject_layout = param.Parameter(default=Row, doc="""
+        Layout of subpanels.""")
+
+    toggleable_subobjects = param.Boolean(default=True, doc="""
+        Whether parameterized subobjects are expandable and
+        collapseable. If False they may be either expanded or
+        collapsed on instantation with the expand_by_default
+        parameter.""")
+
+    width = param.Integer(default=300, bounds=(0, None), doc="""
+        Width of widgetbox the parameter widgets are displayed in.""")
 
     precedence = 0.1
 
@@ -93,47 +111,96 @@ class Param(PaneBase):
             object = object.cls if object.self is None else object.self
         if 'name' not in params:
             params['name'] = object.name
+        if 'parameters' not in params:
+            params['parameters'] = [p for p in object.params() if p != 'name']
         super(Param, self).__init__(object, **params)
+
+        # Construct widgets
         self._widgets = self._get_widgets()
-        self._widget_box = WidgetBox(*self._widgets.values(), height=self.height,
+        widgets = [widget for widgets in self._widgets.values() for widget in widgets]
+        self._widget_box = WidgetBox(*widgets, height=self.height,
                                      width=self.width, name=self.name)
 
+        # Construct Layout
         kwargs = {'name': self.name}
-        if self.subpanel_layout is Tabs:
+        if self.subobject_layout is Tabs:
             kwargs['width'] = self.width
-        self._layout = self.subpanel_layout(self._widget_box, **kwargs)
-        self._link_subpanels()
 
-    def _link_subpanels(self):
-        for pname, widget in self._widgets.items():
-            if not isinstance(widget, Toggle): continue
+        layout = self.subobject_layout
+        if isinstance(layout, Layout):
+            self._subobject_layout = layout
+            self._layout = self._widget_box
+        elif isinstance(layout, type) and issubclass(layout, Layout):
+            self._layout = layout(self._widget_box, **kwargs)
+            self._subobject_layout = self._layout
+        else:
+            raise ValueError('subobject_layout expected to be a panel.layout.Layout'
+                             'type or instance, found %s type.' %
+                             type(layout).__name__)
 
-            def update_panes(change, parameter=pname):
+        if not (not self.toggleable_subobjects and not self.expand_by_default):
+            self._link_subobjects()
+
+    def _link_subobjects(self):
+        for pname, widgets in self._widgets.items():
+            if not any(is_parameterized(getattr(w, 'value', None)) or
+                       any(is_parameterized(o) for o in getattr(w, 'options', []))
+                       for w in widgets):
+                continue
+            selector, toggle = widgets if len(widgets) == 2 else (widgets[0], None)
+
+            def toggle_pane(change, parameter=pname):
                 "Adds or removes subpanel from layout"
                 parameterized = getattr(self.object, parameter)
-                existing = [p for p in self._layout.objects
+                existing = [p for p in self._subobject_layout.objects
                             if isinstance(p, Param)
                             and p.object is parameterized]
                 if existing:
                     old_panel = existing[0]
                     if not change.new:
                         old_panel._cleanup(final=old_panel._temporary)
-                        self._layout.pop(old_panel)
+                        self._subobject_layout.pop(old_panel)
                 elif change.new:
                     kwargs = {k: v for k, v in self.get_param_values()
-                              if k not in ['name', 'object']}
+                              if k not in ['name', 'object', 'parameters']}
                     pane = Param(parameterized, name=parameterized.name,
                                  _temporary=True, **kwargs)
-                    self._layout.append(pane)
+                    self._subobject_layout.append(pane)
 
-            watcher = widget.param.watch(update_panes, 'active')
-            self._callbacks['instance'].append(watcher)
+            def update_pane(change, parameter=pname):
+                "Adds or removes subpanel from layout"
+                layout = self._subobject_layout
+                existing = [p for p in layout.objects if isinstance(p, Param)
+                            and p.object is change.old]
+
+                if toggle:
+                    toggle.disabled = not is_parameterized(change.new)
+                if not existing:
+                    return
+                elif is_parameterized(change.new):
+                    parameterized = change.new
+                    kwargs = {k: v for k, v in self.get_param_values()
+                              if k not in ['name', 'object', 'parameters']}
+                    pane = Param(parameterized, name=parameterized.name,
+                                 _temporary=True, **kwargs)
+                    layout[layout.objects.index(existing[0])] = pane
+                else:
+                    layout.pop(existing[0])
+
+            watchers = [selector.param.watch(update_pane, 'value')]
+            if toggle:
+                watchers.append(toggle.param.watch(toggle_pane, 'active'))
+            self._callbacks['instance'] += watchers
+
+            if self.expand_by_default:
+                if self.toggleable_subobjects:
+                    toggle.active = True
+                else:
+                    toggle_pane(namedtuple('Change', 'new')(True))
 
     @classmethod
     def applies(cls, obj):
-        return (isinstance(obj, param.Parameterized) or
-                isinstance(obj, param.parameterized.Parameters) or
-                (isinstance(obj, type) and issubclass(obj, param.Parameterized)))
+        return (is_parameterized(obj) or isinstance(obj, param.parameterized.Parameters))
 
     def widget_type(cls, pobj):
         ptype = type(pobj)
@@ -157,13 +224,11 @@ class Param(PaneBase):
         else:
             kw['name'] = p_name
 
-        if isinstance(value, param.Parameterized):
-            widget_class = Toggle
-            kw['button_type'] = 'primary'
-            kw['name'] = value.name
-
         if hasattr(p_obj, 'get_range'):
-            kw['options'] = p_obj.get_range()
+            options = p_obj.get_range()
+            if not options and value is not None:
+                options = [value]
+            kw['options'] = options
 
         if hasattr(p_obj, 'get_soft_bounds'):
             bounds = p_obj.get_soft_bounds()
@@ -213,7 +278,17 @@ class Param(PaneBase):
                 watchers.append(self.object.param.watch(link, p_name, 'objects'))
             if hasattr(p_obj, 'get_soft_bounds'):
                 watchers.append(self.object.param.watch(link, p_name, 'bounds'))
-        return widget
+
+        options = kwargs.get('options', [])
+        if isinstance(options, dict):
+            options = options.values()
+        if ((is_parameterized(value) or any(is_parameterized(o) for o in options))
+            and self.toggleable_subobjects):
+            toggle = Toggle(name='...', button_type='primary',
+                            disabled=not is_parameterized(value))
+            return [widget, toggle]
+        else:
+            return [widget]
 
     def _cleanup(self, model=None, final=False):
         self._layout._cleanup(model, final)
@@ -221,7 +296,8 @@ class Param(PaneBase):
 
     def _get_widgets(self):
         """Return name,widget boxes for all parameters (i.e., a property sheet)"""
-        params = self.object.params().items()
+        params = [(p, pobj) for p, pobj in self.object.params().items()
+                  if p in self.parameters or p == 'name']
         key_fn = lambda x: x[1].precedence if x[1].precedence is not None else self.default_precedence
         sorted_precedence = sorted(params, key=key_fn)
         filtered = [(k,p) for (k,p) in sorted_precedence
@@ -232,10 +308,10 @@ class Param(PaneBase):
 
         # Format name specially
         ordered_params.pop(ordered_params.index('name'))
-        if self.subpanel_layout is Tabs:
+        if self.subobject_layout is Tabs:
             widgets = []
         else:
-            widgets = [('name', StaticText(value='<b>{0}</b>'.format(self.object.name)))]
+            widgets = [('name', [StaticText(value='<b>{0}</b>'.format(self.object.name))])]
         widgets += [(pname, self.widget(pname)) for pname in ordered_params]
         return OrderedDict(widgets)
 
@@ -245,6 +321,118 @@ class Param(PaneBase):
     def _get_root(self, doc, comm=None):
         return self._get_model(doc, comm=comm)
 
+
+
+class ParamMethod(PaneBase):
+    """
+    ParamMethod panes wrap methods on parameterized classes and
+    rerenders the plot when any of the method's parameters change. By
+    default ParamMethod will watch all parameters on the class owning
+    the method or can be restricted to certain parameters by annotating
+    the method using the param.depends decorator. The method may
+    return any object which itself can be rendered as a Pane.
+    """
+
+    def __init__(self, object, **params):
+        self._kwargs =  {p: params.pop(p) for p in list(params)
+                         if p not in self.params()}
+        super(ParamMethod, self).__init__(object, **params)
+        self._pane = Pane(self.object(), name=self.name,
+                          **dict(_temporary=True, **self._kwargs))
+
+    @classmethod
+    def applies(cls, obj):
+        return inspect.ismethod(obj) and isinstance(get_method_owner(obj), param.Parameterized)
+
+    def _get_model(self, doc, root=None, parent=None, comm=None):
+        parameterized = get_method_owner(self.object)
+        params = parameterized.param.params_depended_on(self.object.__name__)
+        model = self._pane._get_model(doc, root, parent, comm)
+        history = [model]
+        deps = params
+        def update_pane(*changes, history=history, deps=deps):
+            old_model = history[0]
+            old_ref = old_model.ref['id']
+
+            # Update nested dependencies if parameterized object changes
+            if any(is_parameterized(change.new) for change in changes):
+                new_deps = parameterized.param.params_depended_on(self.object.__name__)
+                for p in list(deps):
+                    if p in new_deps: continue
+                    watchers = self._callbacks.get(old_ref, [])
+                    for w in list(watchers):
+                        if (w.inst is p.inst and w.cls is p.cls and
+                            p.name in w.parameter_names):
+                            obj = p.cls if p.inst is None else p.inst
+                            obj.param.unwatch(w)
+                            watchers.pop(watchers.index(w))
+                    deps.pop(deps.index(p))
+
+                new_deps = [dep for dep in new_deps if dep not in deps]
+                for _, params in full_groupby(new_deps, lambda x: (x.inst or x.cls, x.what)):
+                    p = params[0]
+                    pobj = p.cls if p.inst is None else p.inst
+                    ps = [p.name for p in params]
+                    watcher = pobj.param.watch(update_pane, ps, p.what)
+                    self._callbacks[old_ref].append(watcher)
+                    deps += params
+
+            # Try updating existing pane
+            new_object = self.object()
+            pane_type = self.get_pane_type(new_object)
+            if type(self._pane) is pane_type:
+                index = parent.children.index(old_model)
+                if isinstance(new_object, PaneBase):
+                    new_params = {k: v for k, v in new_object.get_param_values()
+                                  if k != 'name'}
+                    self._pane.set_param(**new_params)
+                    new_object._cleanup(None, new_object._temporary)
+                else:
+                    self._pane.object = new_object
+
+                # If model has changed update history and remap callbacks
+                if old_model is not parent.children[index]:
+                    new_model = parent.children[index]
+                    history[0] = new_model
+                    new_ref = new_model.ref['id']
+                    old_callbacks = self._callbacks.pop(old_ref, [])
+                    if old_callbacks:
+                        self._callbacks[new_ref] = old_callbacks
+
+                return
+
+            # Replace pane entirely
+            self._pane._cleanup(old_model, self._pane._temporary)
+            self._pane = Pane(new_object, _temporary=True, **self._kwargs)
+            new_model = self._pane._get_model(doc, root, parent, comm)
+            new_ref = new_model.ref['id']
+            def update_models():
+                if old_model is new_model: return
+                index = parent.children.index(old_model)
+                parent.children[index] = new_model
+                history[0] = new_model
+                old_callbacks = self._callbacks.pop(old_ref, [])
+                self._callbacks[new_ref] = old_callbacks
+
+            if comm:
+                update_models()
+                push(doc, comm)
+            else:
+                doc.add_next_tick_callback(update_models)
+
+        ref = model.ref['id']
+        for _, params in full_groupby(params, lambda x: (x.inst or x.cls, x.what)):
+            p = params[0]
+            pobj = (p.inst or p.cls)
+            ps = [p.name for p in params]
+            watcher = pobj.param.watch(update_pane, ps, p.what)
+            self._callbacks[ref].append(watcher)
+
+        return model
+
+    def _cleanup(self, model=None, final=False):
+        self._pane._cleanup(model, final)
+        super(ParamMethod, self)._cleanup(model, final)
 
 
 class JSONInit(param.Parameterized):
