@@ -381,6 +381,7 @@ class ParamMethod(PaneBase):
             new_object = self.object()
             pane_type = self.get_pane_type(new_object)
             if type(self._pane) is pane_type:
+                index = parent.children.index(old_model)
                 if isinstance(new_object, PaneBase):
                     new_params = {k: v for k, v in new_object.get_param_values()
                                   if k != 'name'}
@@ -388,6 +389,16 @@ class ParamMethod(PaneBase):
                     new_object._cleanup(None, new_object._temporary)
                 else:
                     self._pane.object = new_object
+
+                # If model has changed update history and remap callbacks
+                if old_model is not parent.children[index]:
+                    new_model = parent.children[index]
+                    history[0] = new_model
+                    new_ref = new_model.ref['id']
+                    old_callbacks = self._callbacks.pop(old_ref, [])
+                    if old_callbacks:
+                        self._callbacks[new_ref] = old_callbacks
+
                 return
 
             # Replace pane entirely
