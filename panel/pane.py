@@ -232,10 +232,11 @@ class HoloViews(PaneBase):
         super(HoloViews, self)._cleanup(model, final)
 
     def _render(self, doc, comm):
-        from holoviews import Store
+        from holoviews import Store, renderer
         if not Store.renderers:
-            import holoviews.plotting.bokeh # noqa
-            Store.current_backend == 'bokeh'
+            loaded_backend = (self.backend or 'bokeh')
+            renderer(loaded_backend).instance(mode='server' if comm is None else 'default')
+            Store.current_backend = loaded_backend
         renderer = Store.renderers[self.backend or Store.current_backend]
         renderer = renderer.instance(mode='server' if comm is None else 'default')
         kwargs = {'doc': doc} if renderer.backend == 'bokeh' else {}
@@ -253,7 +254,7 @@ class HoloViews(PaneBase):
         layout = model
         if widgets:
             self.widget_box.objects = widgets
-            self._link_widgets(widgets, plot, comm)
+            self._link_widgets(widgets, child_pane, plot, comm)
             if self.show_widgets:
                 layout = _BkRow()
                 wbox = self.widget_box._get_model(doc, root, parent, comm)
@@ -262,11 +263,15 @@ class HoloViews(PaneBase):
         self._link_object(model, doc, root, parent, comm)
         return layout
 
-    def _link_widgets(self, widgets, plot, comm):
+    def _link_widgets(self, widgets, pane, plot, comm):
         def update_plot(change):
+            from holoviews.plotting.bokeh.plot import BokehPlot
             plot.update(tuple(w.value for w in widgets))
-            if comm:
-                plot.push()
+            if isinstance(plot, BokehPlot):
+                if comm:
+                    plot.push()
+            else:
+                pane.object = plot.state
 
         for w in widgets:
             watcher = w.param.watch(update_plot, 'value')
