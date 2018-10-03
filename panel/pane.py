@@ -9,6 +9,7 @@ import sys
 import inspect
 import base64
 from io import BytesIO
+from collections import OrderedDict
 
 try:
     from html import escape
@@ -18,7 +19,7 @@ except:
 
 import param
 
-from bokeh.layouts import Row as _BkRow, WidgetBox as _BkWidgetBox
+from bokeh.layouts import Row as _BkRow, Column as _BkColumn, WidgetBox as _BkWidgetBox
 from bokeh.models import LayoutDOM, CustomJS, Widget as _BkWidget, Div as _BkDiv
 
 from .util import (Div, basestring, unicode, get_method_owner, push,
@@ -177,9 +178,26 @@ class HoloViews(PaneBase):
     HoloViews panes render any HoloViews object to a corresponding
     Bokeh model while respecting the currently selected backend.
     """
-    
+
+    backend= param.String(default=None, doc="""
+        The HoloViews backend used to render the plot (if None defaults
+        to the currently selected renderer).""")
+
+    show_widgets = param.Boolean(default=True, doc="""
+        Whether to display widgets for the object. If disabled the
+        widget_box may be laid out manually.""")
+
+    widgets = param.Dict(default={}, doc="""
+        A mapping from dimension name to a widget instance which will
+        be used to override the default widgets.""")
+
     precedence = 0.8
-    
+
+    def __init__(self, object, **params):
+        super(HoloViews, self).__init__(object, **params)
+        from .layout import WidgetBox
+        self.widget_box = WidgetBox()
+
     @classmethod
     def applies(cls, obj):
         if 'holoviews' not in sys.modules:
@@ -213,23 +231,78 @@ class HoloViews(PaneBase):
                             owner.cleanup()
         super(HoloViews, self)._cleanup(model, final)
 
-    def _get_model(self, doc, root=None, parent=None, comm=None):
-        """
-        Should return the Bokeh model to be rendered.
-        """
+    def _render(self, doc, comm):
         from holoviews import Store
         if not Store.renderers:
             import holoviews.plotting.bokeh # noqa
             Store.current_backend == 'bokeh'
-        renderer = Store.renderers[Store.current_backend]
+        renderer = Store.renderers[self.backend or Store.current_backend]
         renderer = renderer.instance(mode='server' if comm is None else 'default')
         kwargs = {'doc': doc} if renderer.backend == 'bokeh' else {}
-        plot = renderer.get_plot(self.object, **kwargs)
+        return renderer.get_plot(self.object, **kwargs)
+
+    def _get_model(self, doc, root=None, parent=None, comm=None):
+        """
+        Should return the Bokeh model to be rendered.
+        """
+        plot = self._render(doc, comm)
         self._patch_plot(plot, root.ref['id'], comm)
         child_pane = Pane(plot.state, _temporary=True)
         model = child_pane._get_model(doc, root, parent, comm)
+        widgets = self.widgets_from_dimensions(self.object)
+        layout = model
+        if widgets:
+            self.widget_box.objects = widgets
+            self._link_widgets(widgets, plot, comm)
+            if self.show_widgets:
+                layout = _BkRow()
+                wbox = self.widget_box._get_model(doc, root, parent, comm)
+                layout.children = [model, wbox]
+                parent = layout
         self._link_object(model, doc, root, parent, comm)
-        return model
+        return layout
+
+    def _link_widgets(self, widgets, plot, comm):
+        def update_plot(change):
+            plot.update(tuple(w.value for w in widgets))
+            if comm:
+                plot.push()
+
+        for w in widgets:
+            watcher = w.param.watch(update_plot, 'value')
+            self._callbacks['instance'] = watcher
+
+    def widgets_from_dimensions(self, object):
+        from holoviews.core.util import isnumeric, unicode
+        from holoviews.core.traversal import unique_dimkeys
+        from .widgets import DiscreteSlider, Select, FloatSlider
+
+        dims, keys = unique_dimkeys(object)
+        widgets = []
+        for dim in dims:
+            if dim.name in self.widgets:
+                widget = self.widgets[dim.name]
+            elif dim.values:
+                values = dim.values
+                if all(isnumeric(v) for v in values):
+                    values = sorted(values)
+                    labels = [unicode(dim.pprint_value(v)) for v in values]
+                    options = OrderedDict(zip(labels, values))
+                    widget_type = DiscreteSlider
+                else:
+                    options = values
+                    widget_type = Select
+                default = values[0] if dim.default is None else dim.default
+                widget = widget_type(name=dim.label, options=options, value=default)
+            elif dim.range != (None, None):
+                default = dim.range[0] if dim.default is None else dim.default
+                step = 0.1 if dim.step is None else dim.step 
+                widget = FloatSlider(step=step, name=dim.label, start=dim.range[0],
+                                     end=dim.range[1], value=default)
+            else:
+                continue
+            widgets.append(widget)
+        return widgets
 
 
 class DivPaneBase(PaneBase):
