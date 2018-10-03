@@ -83,8 +83,7 @@ class Param(PaneBase):
     show_labels = param.Boolean(default=True, doc="""
         Whether to show labels for each .widget""")
 
-    subobject_layout = param.ClassSelector(default=Row, class_=Layout,
-                                          is_instance=False, doc="""
+    subobject_layout = param.Parameter(default=Row, doc="""
         Layout of subpanels.""")
 
     width = param.Integer(default=300, bounds=(0, None), doc="""
@@ -115,18 +114,34 @@ class Param(PaneBase):
         if 'parameters' not in params:
             params['parameters'] = [p for p in object.params() if p != 'name']
         super(Param, self).__init__(object, **params)
+
+        # Construct widgets
         self._widgets = self._get_widgets()
         widgets = [widget for widgets in self._widgets.values() for widget in widgets]
         self._widget_box = WidgetBox(*widgets, height=self.height,
                                      width=self.width, name=self.name)
+
+        # Construct Layout
         kwargs = {'name': self.name}
         if self.subobject_layout is Tabs:
             kwargs['width'] = self.width
-        self._layout = self.subobject_layout(self._widget_box, **kwargs)
-        if not (not self.toggleable_subobjects and not self.expand_by_default):
-            self._link_subpanels()
 
-    def _link_subpanels(self):
+        layout = self.subobject_layout
+        if isinstance(layout, Layout):
+            self._subobject_layout = layout
+            self._layout = self._widget_box
+        elif isinstance(layout, type) and issubclass(layout, Layout):
+            self._layout = layout(self._widget_box, **kwargs)
+            self._subobject_layout = self._layout
+        else:
+            raise ValueError('subobject_layout expected to be a panel.layout.Layout'
+                             'type or instance, found %s type.' %
+                             type(layout).__name__)
+
+        if not (not self.toggleable_subobjects and not self.expand_by_default):
+            self._link_subobjects()
+
+    def _link_subobjects(self):
         for pname, widgets in self._widgets.items():
             if not any(is_parameterized(getattr(w, 'value', None)) or
                        any(is_parameterized(o) for o in getattr(w, 'options', []))
@@ -137,25 +152,25 @@ class Param(PaneBase):
             def toggle_pane(change, parameter=pname):
                 "Adds or removes subpanel from layout"
                 parameterized = getattr(self.object, parameter)
-                existing = [p for p in self._layout.objects
+                existing = [p for p in self._subobject_layout.objects
                             if isinstance(p, Param)
                             and p.object is parameterized]
                 if existing:
                     old_panel = existing[0]
                     if not change.new:
                         old_panel._cleanup(final=old_panel._temporary)
-                        self._layout.pop(old_panel)
+                        self._subobject_layout.pop(old_panel)
                 elif change.new:
                     kwargs = {k: v for k, v in self.get_param_values()
-                              if k not in ['name', 'object']}
+                              if k not in ['name', 'object', 'parameters']}
                     pane = Param(parameterized, name=parameterized.name,
                                  _temporary=True, **kwargs)
-                    self._layout.append(pane)
+                    self._subobject_layout.append(pane)
 
             def update_pane(change, parameter=pname):
                 "Adds or removes subpanel from layout"
-                existing = [p for p in self._layout.objects
-                            if isinstance(p, Param)
+                layout = self._subobject_layout
+                existing = [p for p in layout.objects if isinstance(p, Param)
                             and p.object is change.old]
 
                 if toggle:
@@ -165,12 +180,12 @@ class Param(PaneBase):
                 elif is_parameterized(change.new):
                     parameterized = change.new
                     kwargs = {k: v for k, v in self.get_param_values()
-                              if k not in ['name', 'object']}
+                              if k not in ['name', 'object', 'parameters']}
                     pane = Param(parameterized, name=parameterized.name,
                                  _temporary=True, **kwargs)
-                    self._layout[self._layout.objects.index(existing[0])] = pane
+                    layout[layout.objects.index(existing[0])] = pane
                 else:
-                    self._layout.pop(existing[0])
+                    layout.pop(existing[0])
 
             watchers = [selector.param.watch(update_pane, 'value')]
             if toggle:
