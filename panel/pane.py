@@ -235,11 +235,13 @@ class HoloViews(PaneBase):
         from holoviews import Store, renderer
         if not Store.renderers:
             loaded_backend = (self.backend or 'bokeh')
-            renderer(loaded_backend).instance(mode='server' if comm is None else 'default')
+            renderer(loaded_backend)
             Store.current_backend = loaded_backend
-        renderer = Store.renderers[self.backend or Store.current_backend]
-        renderer = renderer.instance(mode='server' if comm is None else 'default')
-        kwargs = {'doc': doc} if renderer.backend == 'bokeh' else {}
+        backend = self.backend or Store.current_backend
+        renderer = Store.renderers[backend]
+        if backend == 'bokeh':
+            renderer = renderer.instance(mode='server' if comm is None else 'default')
+        kwargs = {'doc': doc} if backend == 'bokeh' else {}
         return renderer.get_plot(self.object, **kwargs)
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
@@ -254,28 +256,34 @@ class HoloViews(PaneBase):
         layout = model
         if widgets:
             self.widget_box.objects = widgets
-            self._link_widgets(widgets, child_pane, plot, comm)
             if self.show_widgets:
                 layout = _BkRow()
                 wbox = self.widget_box._get_model(doc, root, parent, comm)
                 layout.children = [model, wbox]
                 parent = layout
+            self._link_widgets(widgets, child_pane, layout, plot, comm)
         self._link_object(model, doc, root, parent, comm)
         return layout
 
-    def _link_widgets(self, widgets, pane, plot, comm):
+    def _link_widgets(self, widgets, pane, model, plot, comm):
         def update_plot(change):
             from holoviews.plotting.bokeh.plot import BokehPlot
-            plot.update(tuple(w.value for w in widgets))
+            key = tuple(w.value for w in widgets)
             if isinstance(plot, BokehPlot):
                 if comm:
+                    plot.update(key)
                     plot.push()
+                else:
+                    def update_plot():
+                        plot.update(key)
+                    plot.document.add_next_tick_callback(update_plot)
             else:
+                plot.update(key)
                 pane.object = plot.state
 
         for w in widgets:
             watcher = w.param.watch(update_plot, 'value')
-            self._callbacks['instance'] = watcher
+            self._callbacks[model.ref['id']].append(watcher)
 
     def widgets_from_dimensions(self, object):
         from holoviews.core.util import isnumeric, unicode
