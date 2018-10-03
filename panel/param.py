@@ -55,12 +55,6 @@ class Param(PaneBase):
         values above the default_precedence values can be used to sort
         or group parameters arbitrarily.""")
 
-    toggleable_subobjects = param.Boolean(default=True, doc="""
-        Whether parameterized subobjects are expandable and
-        collapseable. If False they may be either expanded or
-        collapsed on instantation with the expand_by_default
-        parameter.""")
-
     expand_by_default = param.Boolean(default=False, doc="""
         Whether parameterized subobjects are expanded or collapsed on
         instantiation.""")
@@ -85,6 +79,12 @@ class Param(PaneBase):
 
     subobject_layout = param.Parameter(default=Row, doc="""
         Layout of subpanels.""")
+
+    toggleable_subobjects = param.Boolean(default=True, doc="""
+        Whether parameterized subobjects are expandable and
+        collapseable. If False they may be either expanded or
+        collapsed on instantation with the expand_by_default
+        parameter.""")
 
     width = param.Integer(default=300, bounds=(0, None), doc="""
         Width of widgetbox the parameter widgets are displayed in.""")

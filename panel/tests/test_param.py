@@ -6,9 +6,9 @@ import pytest
 from bokeh.models import (
     Div, Slider, Select, RangeSlider, MultiSelect, Row as BkRow,
     WidgetBox as BkWidgetBox, CheckboxGroup, Toggle, Button,
-    TextInput as BkTextInput, Tabs as BkTabs)
+    TextInput as BkTextInput, Tabs as BkTabs, Column as BkColumn)
 from panel.pane import Pane, PaneBase, Matplotlib, Bokeh
-from panel.layout import Tabs
+from panel.layout import Tabs, Column, Row
 from panel.param import Param, ParamMethod, JSONInit
 
 from .test_layout import get_div
@@ -329,6 +329,19 @@ def test_action_param(document, comm):
     assert isinstance(slider, Button)
 
 
+def test_explicit_params(document, comm):
+    class Test(param.Parameterized):
+        a = param.Boolean(default=False)
+        b = param.Integer(default=1)
+
+    test = Test()
+    test_pane = Pane(test, parameters=['a'], _temporary=True)
+    model = test_pane._get_model(document, comm=comm)
+
+    assert len(model.children[0].children) == 2
+    assert isinstance(model.children[0].children[1], CheckboxGroup)
+
+
 def test_expand_param_subobject(document, comm):
     class Test(param.Parameterized):
         a = param.Parameter()
@@ -338,7 +351,6 @@ def test_expand_param_subobject(document, comm):
     model = test_pane._get_model(document, comm=comm)
 
     toggle = model.children[0].children[2]
-    print(model.children[0].children)
     assert isinstance(toggle, Toggle)
 
     # Expand subpane
@@ -361,6 +373,98 @@ def test_expand_param_subobject(document, comm):
     assert len(model.children) == 1
     assert subpanel._callbacks == {}
 
+
+def test_expand_param_subobject_into_column(document, comm):
+    class Test(param.Parameterized):
+        a = param.Parameter()
+
+    test = Test(a=Test(name='Nested'))
+    column = Column()
+    test_pane = Pane(test, subobject_layout=column, _temporary=True)
+    layout = Row(test_pane, column)
+    model = layout._get_model(document, comm=comm)
+
+    toggle = model.children[0].children[2]
+    assert isinstance(toggle, Toggle)
+
+    # Expand subpane
+    test_pane._widgets['a'][1].active = True
+    assert len(model.children) == 2
+    subpanel = column.objects[0]
+    row = model.children[1]
+    assert 'instance' in subpanel._callbacks
+    assert isinstance(row, BkColumn)
+    assert len(row.children) == 1
+    box = row.children[0]
+    assert isinstance(box, BkWidgetBox)
+    assert len(box.children) == 2
+    div, widget = box.children
+    assert div.text == '<b>Nested</b>'
+    assert isinstance(widget, BkTextInput)
+
+    # Collapse subpanel
+    test_pane._widgets['a'][1].active = False
+    assert len(row.children) == 0
+    assert subpanel._callbacks == {}
+
+    
+def test_expand_param_subobject_expand_by_default(document, comm):
+    class Test(param.Parameterized):
+        a = param.Parameter()
+
+    test = Test(a=Test(name='Nested'))
+    test_pane = Pane(test, _temporary=True, expand_by_default=True)
+    model = test_pane._get_model(document, comm=comm)
+
+    toggle = model.children[0].children[2]
+    assert isinstance(toggle, Toggle)
+
+    # Expand subpane
+    assert len(model.children) == 2
+    _, subpanel = test_pane._layout.objects
+    row = model.children[1]
+    assert 'instance' in subpanel._callbacks
+    assert isinstance(row, BkRow)
+    assert len(row.children) == 1
+    box = row.children[0]
+    assert isinstance(box, BkWidgetBox)
+    assert len(box.children) == 2
+    div, widget = box.children
+    assert div.text == '<b>Nested</b>'
+    assert isinstance(widget, BkTextInput)
+
+    # Collapse subpanel
+    test_pane._widgets['a'][1].active = False
+    assert len(model.children) == 1
+    assert subpanel._callbacks == {}
+
+
+def test_param_subobject_expand_by_default_no_toggle(document, comm):
+    class Test(param.Parameterized):
+        a = param.Parameter()
+
+    test = Test(a=Test(name='Nested'))
+    test_pane = Pane(test, _temporary=True, expand_by_default=True,
+                     toggleable_subobjects=False)
+    model = test_pane._get_model(document, comm=comm)
+
+    # Assert no toggle was added
+    assert len(model.children[0].children) == 2
+
+    # Expand subpane
+    assert len(model.children) == 2
+    _, subpanel = test_pane._layout.objects
+    row = model.children[1]
+    assert 'instance' in subpanel._callbacks
+    assert isinstance(row, BkRow)
+    assert len(row.children) == 1
+    box = row.children[0]
+    assert isinstance(box, BkWidgetBox)
+    assert len(box.children) == 2
+    div, widget = box.children
+    assert div.text == '<b>Nested</b>'
+    assert isinstance(widget, BkTextInput)
+    
 
 def test_expand_param_subobject_tabs(document, comm):
     class Test(param.Parameterized):
