@@ -1,3 +1,5 @@
+import pytest
+
 from collections import OrderedDict
 from datetime import datetime
 
@@ -144,9 +146,15 @@ def test_literal_input(document, comm):
     assert literal.value == {'key': (0, 3)}
     assert widget.title == 'Literal'
 
+    with pytest.raises(ValueError):
+        literal.value = []
+
 
 def test_datetime_input(document, comm):
-    dt_input = DatetimeInput(value=datetime(2018, 1, 1), end=datetime(2018, 1, 10), name='Datetime')
+    dt_input = DatetimeInput(value=datetime(2018, 1, 1),
+                             start=datetime(2017, 12, 31),
+                             end=datetime(2018, 1, 10),
+                             name='Datetime')
 
     box = dt_input._get_model(document, comm=comm)
 
@@ -172,6 +180,9 @@ def test_datetime_input(document, comm):
     dt_input._comm_change({'value': '2018-01-02 00:00:01'})
     assert dt_input.value == datetime(2018, 1, 2, 0, 0, 1)
     assert widget.title == 'Datetime'
+
+    with pytest.raises(ValueError):
+        dt_input.value = datetime(2017, 12, 30)
 
 
 def test_checkbox(document, comm):
