@@ -350,7 +350,8 @@ class ParamMethod(PaneBase):
         model = self._pane._get_model(doc, root, parent, comm)
         history = [model]
         deps = params
-        def update_pane(*changes, history=history, deps=deps):
+
+        def update_pane(*changes):
             old_model = history[0]
             old_ref = old_model.ref['id']
 
@@ -375,7 +376,8 @@ class ParamMethod(PaneBase):
                     ps = [p.name for p in params]
                     watcher = pobj.param.watch(update_pane, ps, p.what)
                     self._callbacks[old_ref].append(watcher)
-                    deps += params
+                    for p in params:
+                        deps.append(p)
 
             # Try updating existing pane
             new_object = self.object()

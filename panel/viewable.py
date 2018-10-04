@@ -207,15 +207,14 @@ class Reactive(Viewable):
             Maps between parameters on this object to the parameters
             on the supplied object.
         """
-        def make_link(_updating=[]):
-            def link(*changes):
-                for change in changes:
-                    if change.name in _updating: continue
-                    _updating.append(change.name)
-                    setattr(obj, links[change.name], change.new)
-                    _updating.pop(_updating.index(change.name))
-            return link
-        self._callbacks['instance'].append(self.param.watch(make_link(), list(links)))
+        _updating = []
+        def link(*changes):
+            for change in changes:
+                if change.name in _updating: continue
+                _updating.append(change.name)
+                setattr(obj, links[change.name], change.new)
+                _updating.pop(_updating.index(change.name))
+        self._callbacks['instance'].append(self.param.watch(link, list(links)))
 
     def _cleanup(self, model=None, final=False):
         super(Reactive, self)._cleanup(model, final)
