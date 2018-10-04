@@ -238,6 +238,18 @@ class LiteralInput(Widget):
     def __init__(self, **params):
         super(LiteralInput, self).__init__(**params)
         self._state = ''
+        self._validate(None)
+        self.param.watch(self._validate, 'value')
+
+    def _validate(self, change):
+        if self.type is None: return
+        new = self.value
+        if not isinstance(new, self.type):
+            if change:
+                self.value = change.old
+            raise ValueError('LiteralInput expected %s type but value %s '
+                             'is of type %s.' %
+                             (self.type.__name__, new, type(new).__name__))
 
     def _process_property_change(self, msg):
         msg = super(LiteralInput, self)._process_property_change(msg)
@@ -285,13 +297,21 @@ class DatetimeInput(LiteralInput):
 
     def __init__(self, **params):
         super(DatetimeInput, self).__init__(**params)
-        if self.value is not None and ((self.start is not None and self.start < self.value) or
-                                       (self.end is not None and self.end < self.value)):
-            value = datetime.strftime(self.value, self.format)
+        self.param.watch(self._validate, 'value')
+        self._validate(None)
+
+    def _validate(self, change):
+        new = self.value
+        if new is not None and ((self.start is not None and self.start > new) or
+                                (self.end is not None and self.end < new)):
+            value = datetime.strftime(new, self.format)
             start = datetime.strftime(self.start, self.format)
             end = datetime.strftime(self.end, self.format)
+            if change:
+                self.value = change.old
             raise ValueError('DatetimeInput value must be between {start} and {end}, '
-                             'supplied value is {value}'.format(start=start, end=end, value=value))
+                             'supplied value is {value}'.format(start=start, end=end,
+                                                                value=value))
 
     def _process_property_change(self, msg):
         msg = Widget._process_property_change(self, msg)
