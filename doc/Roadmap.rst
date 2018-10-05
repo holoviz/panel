@@ -65,8 +65,16 @@ funded or scheduled include:
    available Bokeh themes, making your own, or embedding into a Bokeh
    Jinja2 template. We'll add examples of such theming to the Panel
    website as we develop them.
+
+4. **Responsive sizing**: Panel objects (panes and similar viewable
+   items) currently accept a fixed height and width in pixels.  In
+   many cases, it's desirable to have at least some of the objects
+   responsively adjust to the screen size available, so that they can
+   make use of whatever screen or window area is available. Responsive
+   sizing can be implemented once Bokeh's current layout-refactoring
+   project has been completed.
    
-4. **BI tools**: Panel is designed for displaying content that you
+5. **BI tools**: Panel is designed for displaying content that you
    already have developed in a Jupyter notebook, but it could also
    be used as a way for building business-intelligence-style
    dashboards that mix traditional Python plotting output with
@@ -76,7 +84,7 @@ funded or scheduled include:
    BI-type dashboards where the content comes directly from
    Python.
 
-5. **Jupyter notebook extension**: The Jupyter-Dashboards project
+6. **Jupyter notebook extension**: The Jupyter-Dashboards project
    provided a `Jupyter extension <https://jupyter-dashboards-layout.readthedocs.io>`__
    allowing drag and drop layout for Jupyter notebook cells. This
    approach worked well in many cases, but the underlying server used
@@ -92,6 +100,13 @@ funded or scheduled include:
    need to be addressed when a notebook is used in a non-linear
    dashboard in this way.
 
+7. **Support for Traitlets**: Panel currently supports declarative user 
+   interfaces for objects defined using the Param library, and similar
+   support could be added for objects defined using the Traitlets
+   library. Traitlets and Param offer similar functionality, so the
+   benefit of adding Traitlets support would primarily be for users
+   who have large bodies of code already written as traitlets, but
+   for those users it could be very helpful.   
 
 If any of the functionality above is interesting to you (or you have
 ideas of your own!) and can offer help with implementation, please
