@@ -241,12 +241,12 @@ class LiteralInput(Widget):
         self._validate(None)
         self.param.watch(self._validate, 'value')
 
-    def _validate(self, change):
+    def _validate(self, event):
         if self.type is None: return
         new = self.value
         if not isinstance(new, self.type):
-            if change:
-                self.value = change.old
+            if event:
+                self.value = event.old
             raise ValueError('LiteralInput expected %s type but value %s '
                              'is of type %s.' %
                              (self.type.__name__, new, type(new).__name__))
@@ -300,15 +300,15 @@ class DatetimeInput(LiteralInput):
         self.param.watch(self._validate, 'value')
         self._validate(None)
 
-    def _validate(self, change):
+    def _validate(self, event):
         new = self.value
         if new is not None and ((self.start is not None and self.start > new) or
                                 (self.end is not None and self.end < new)):
             value = datetime.strftime(new, self.format)
             start = datetime.strftime(self.start, self.format)
             end = datetime.strftime(self.end, self.format)
-            if change:
-                self.value = change.old
+            if event:
+                self.value = event.old
             raise ValueError('DatetimeInput value must be between {start} and {end}, '
                              'supplied value is {value}'.format(start=start, end=end,
                                                                 value=value))
@@ -481,10 +481,10 @@ class DiscreteSlider(Widget):
         return model
 
     def _link_params(self, model, slider, div, params, doc, root, comm=None):
-        def param_change(*changes):
+        def param_change(*events):
             combined_msg = {}
-            for change in changes:
-                msg = self._process_param_change({change.name: change.new})
+            for event in events:
+                msg = self._process_param_change({event.name: event.new})
                 msg = {k: v for k, v in msg.items() if k not in self._active}
                 if msg:
                     combined_msg.update(msg)

@@ -208,12 +208,12 @@ class Reactive(Viewable):
             on the supplied object.
         """
         _updating = []
-        def link(*changes):
-            for change in changes:
-                if change.name in _updating: continue
-                _updating.append(change.name)
-                setattr(obj, links[change.name], change.new)
-                _updating.pop(_updating.index(change.name))
+        def link(*events):
+            for event in events:
+                if event.name in _updating: continue
+                _updating.append(event.name)
+                setattr(obj, links[event.name], event.new)
+                _updating.pop(_updating.index(event.name))
         self._callbacks['instance'].append(self.param.watch(link, list(links)))
 
     def _cleanup(self, model=None, final=False):
@@ -267,10 +267,10 @@ class Reactive(Viewable):
         return {self._rename.get(k, k): v for k, v in msg.items()}
 
     def _link_params(self, model, params, doc, root, comm=None):
-        def param_change(*changes):
+        def param_change(*events):
             msgs = []
-            for change in changes:
-                msg = self._process_param_change({change.name: change.new})
+            for event in events:
+                msg = self._process_param_change({event.name: event.new})
                 msg = {k: v for k, v in msg.items() if k not in self._active}
                 if msg:
                     msgs.append(msg)
