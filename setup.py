@@ -28,7 +28,8 @@ def get_setup_version(reponame):
 install_requires = [
     'bokeh >=0.12.15',
     'param >=1.8.0a0',    
-    'pyviz_comms >=0.6.0'
+    'pyviz_comms >=0.6.0',
+    'testpath<0.4' # temporary due to pip issue?
 ]
 
 _recommended = [
@@ -45,6 +46,7 @@ extras_require = {
         'flake8',
         'parameterized',
         'pytest',
+        'scipy',
         'nbsmoke >=0.2.0',
         'pytest-cov'
     ],
