@@ -48,7 +48,11 @@ extras_require = {
         'pytest',
         'scipy',
         'nbsmoke >=0.2.0',
-        'pytest-cov'
+        'pytest-cov',
+        # For Panes.ipynb
+        'plotly',
+        'altair',
+        'vega-datasets'
     ],
     'recommended': _recommended,
     'doc': _recommended + [
