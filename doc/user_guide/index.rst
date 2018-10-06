@@ -4,6 +4,9 @@ User Guide
 
 Contents:
 
+* `Panes <Panes.html>`_
+   Adding visual components to your panel with panes.
+
 * `Widgets <Widgets.html>`_
    Declaring and working with widgets
 
@@ -18,6 +21,7 @@ Contents:
     :hidden:
     :maxdepth: 2
 
+    Panes <Panes>
     Widgets <Widgets>
     Layouts <Layouts>
 	Usage with param <Param>
