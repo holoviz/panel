@@ -18,9 +18,9 @@ potential pitfalls we hope to help users avoid:
 
 **Q: How do I add support for a library or datatype not yet supported?**
 
-**A:** It depends. If the object already has one of the usual IPython `_repr_X_` rich display methods (where X is png, jpg, or html), then it is very likely to work already. Try it!  If it doesn't have a rich display method, check to see if you can add one as a PR to that project -- they are very useful for many cases other than Panel, too. Otherwise, adding support is quite easy for anything that can somehow return an image or some HTML. If it can return an image in any way, see the `panel.pane.Matplotlib` implementation as a starting point; you just need to be able to call some method or function that returns an image, and the rest should be simple.
+**A:** It depends. If the object already has one of the usual IPython ``_repr_X_`` rich display methods (where X is png, jpg, or html), then it is very likely to work already. Try it!  If it doesn't have a rich display method, check to see if you can add one as a PR to that project -- they are very useful for many cases other than Panel, too. Otherwise, adding support is quite easy for anything that can somehow return an image or some HTML. If it can return an image in any way, see the ``panel.pane.Matplotlib`` implementation as a starting point; you just need to be able to call some method or function that returns an image, and the rest should be simple.
 
-If you want an even richer JavaScript-based representation, it will be more difficult to add that, but you can see the `pane.Bokeh` and `pane.HoloViews` classes and the `panel.plotly` module for examples.
+If you want an even richer JavaScript-based representation, it will be more difficult to add that, but you can see the ``pane.Bokeh`` and ``pane.HoloViews`` classes and the ``panel.plotly`` module for examples.
 
 
 **Q: How does Panel relate to Bokeh?**
@@ -32,25 +32,24 @@ Conversely, what Panel adds on top of Bokeh is full bidirectional communication 
 
 **Q: Why do I get an error "Javascript error adding output! TypeError: Cannot read property 'comm_manager' of undefined"?**
 
-**A:** This error usually means that you forgot to run panel.extension() in a notebook context to set up the code for communicating between JavaScript and Python.
+**A:** This error usually means that you forgot to run panel.extension() in a notebook context to set up the code for communicating between JavaScript and Python.  It's easy to get confused and think you don't need that line, because notebooks will often work fine as long as *some* notebook somewhere in your Jupyter session has run the command, but the only reliable way to make the communication channels available is to make sure *every* notebook includes this command.
 
 
 **Q: Why is the spacing messed up in my panel?**
 
-**A:** Panels are composed of multiple Panes (or other Viewable objects). There are two main ways the spacing between viewable objects can be incorrect: either the object is not reporting its correct size, or the layout engine is not laying things out reasonably. Some pane types are unable to discover the size of what is in them, such as `pane.HTML`, and for these you will need to provide explicit `height` and `width` settings (as in `pp.Row(pane.HTML(obj, height=300))`. Other spacing problems appear to be caused by issues with the Bokeh layout system, which is currently being improved.
+**A:** Panels are composed of multiple Panes (or other Viewable objects). There are two main ways the spacing between viewable objects can be incorrect: either the object is not reporting its correct size, or the layout engine is not laying things out reasonably. Some pane types are unable to discover the size of what is in them, such as ``pane.HTML``, and for these you will need to provide explicit ``height`` and ``width`` settings (as in ``pp.Row(pane.HTML(obj, height=300))``. Other spacing problems appear to be caused by issues with the Bokeh layout system, which is currently being improved.  In the meantime you should be able to use ``pp.Spacer(height=..., width=...)`` to adjust spacing manually when needed.
 
 
-**Q: Why is my object being shown using the wrong type of pane?
+**Q: Why is my object being shown using the wrong type of pane?**
 
-**A:** A global set of precedence values is used to ensure that the richest representation of a given object is chosen when you pass it to a Row or Column. However, you may need to select a specific Pane type explicitly, e.g. if you need a place to supply width or height options. In this case, you can pick a specific Pane type yourself and instantiate it with any parameters you prefer, as in 
-`pp.Row(pane.HTML(obj, height=300))`.
+**A:** A global set of precedence values is used to ensure that the richest representation of a given object is chosen when you pass it to a Row or Column. However, you are also welcome to instantiate a specific Pane type explicitly, as in ``pp.Row(pane.HTML(obj, height=300))``.  If the default Pane type is fine but you still want to be able to pass specific options like width or height in this way, you can also just call Pane explicitly, as in  ``pp.Row(pane.Pane(obj, height=300))``.
 
 
-**Q: How does Panel relate to other widget/app/dashboard tools?
+**Q: How does Panel relate to other widget/app/dashboard tools?**
 
 **A:** Panel is currently the only Python tool that fully supports writing live widget and app code in Jupyter Notebooks and then deploying it on standalone web servers. Panel is thus unique in supporting the entire life cycle of working with data: from initial exploration, to adding custom interactivity to make one-off analyses easier, to building a complex dashboard from multiple components, to deploying your polished Python-backed dashboard in a public-facing or on-premises private server, and then iterating by bringing those same components back to the notebook for further exploration and improvement. Other tools support *some* of the same capabilities, but by focusing on only one part of this life cycle they require you to start over when you need to use your work in a different way.
 
-For instance, ipywidgets provide many of the same capabilities as Panel, but they are tightly tied to the Jupyter environment, and are not generally able to be used in a secure standalone server. Dash can develop polished dashboards, but it is not designed for supporting initial exploration in a notebook, and is largely focused on Plotly charts rather than the visualization libraries that you are already using. The components of Dash apps or ipywidgets apps are also tightly tied to that particular delivery mechanism, while Panel also supports developing your domain-specific code in a general way independent of notebooks or apps (separating content from presentation). Here's a general overview of what each library supports:
+For instance, ipywidgets provide many of the same capabilities as Panel, but they are tightly tied to the Jupyter environment, and are not generally able to be used in a secure standalone server. Dash can develop polished dashboards, but it is not designed for supporting initial exploration in a notebook, and is largely focused on Plotly charts rather than the visualization libraries that you are already using. The components of Dash apps or ipywidgets apps are also tightly tied to that particular delivery mechanism, while Panel also supports developing your domain-specific code in a general way independent of notebooks or apps, separating your content from the details of its presentation. Here's a general overview of what each library supports:
 
 
 +--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+
