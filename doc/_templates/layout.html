@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+  <!-- Basic Page Needs
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <meta charset="utf-8">
+  {% if title == "&lt;no title&gt;" %}
+  <title>{{ shorttitle|striptags|e }}</title>
+  {% else %}
+  <title>{{ title|striptags|e }} &mdash; {{ shorttitle|striptags|e }}</title>
+  {% endif %}
+  <meta name="description" content="{{ DESCRIPTION }}">
+  <meta name="author" content="{{ AUTHOR }}">
+
+  <!-- Mobile Specific Metas
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- FONT
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <script src="https://ajax.googleapis.com/ajax/libs/webfont/1.6.16/webfont.js"></script>
+  <script>
+    WebFont.load({
+      google: {
+        families: ['Source Sans Pro']
+      }
+    });
+  </script>
+
+  <!-- CSS
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+
+  <link rel="stylesheet" href="{{ pathto('_static/' + theme_css, 1) }}">
+  {% for link in css_includes %}
+    <link rel="stylesheet" href="{{ pathto('_static/' + link, 1) }}">
+  {% endfor %}
+  {% if theme_custom_css %}
+    <link rel="stylesheet" href="{{ pathto('_static/' + theme_custom_css, 1) }}">
+  {% endif %}
+
+  <!-- Scripts
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+  <script type="text/javascript" async
+  src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML">
+  </script>
+  <script src="{{ pathto('_static/' + theme_js, 1) }}"></script>
+  {% for link in js_includes %}
+     <script src="{{ pathto('_static/' + link, 1) }}"></script>
+  {% endfor %}
+
+  <!-- Favicon
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <link rel="icon" type="image/png" href="{{ pathto('_static/' + theme_favicon, 1) }}">
+
+  <!-- Canonical
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <link rel="canonical" href="{{ WEBSITE_URL }}/{{ pagename }}{{ file_suffix }}" />
+
+</head>
+<body class="">
+
+  <header class="navigation">
+    <div class="wrapper">
+      <a href="{{ pathto('index') }}" class="logo">
+        <img src="{{ pathto('_static/' + theme_logo, 1) }}" alt="Logo">
+      </a>
+      <a href="{{ pathto('index') }}" class="navigation-menu logo-text">{{ PROJECT }}</a>
+      <a href="javascript:void(0)" class="navigation-menu-button" id="js-mobile-menu">Menu</a>
+	  <nav>
+        <ul id="js-navigation-menu" class="navigation-menu show">
+          <li class="nav-link">
+            <div style="display:inline-block;vertical-align: middle;">
+              <div class="search-bar">
+                {% include 'includes/searchbox.html' %}
+              </div>
+            </div>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+  <div class="second-nav">
+    <nav>
+      <ul class="navigation-menu show">
+        {%- for name, link in NAV  %}
+          <li class="nav-link doc-head"><a href="{{ pathto(link) }}">{{ name }}</a></li>
+        {%- endfor %}
+      </ul>
+    </nav>
+  </div>
+
+<!-- MAIN BODY OF DOCS –––––––––––––––––– -->
+  <div class="docs section">
+    <div id="hacketyhackhack"> <!-- style="width:20%;margin-right: 100px;"> --> <!--style="display: none;"> style="display:none;"> -->
+    <div class="toc" style="width:15%; margin-right:20px;">
+      {{ toctree(maxdepth=4, collapse=True, includehidden=True) }}
+    </div>
+    </div>
+    <div class="content"> <!-- style="max-width:80%;margin-left:auto;margin-right: auto;">-->
+        {% block body %}{% endblock %}
+    </div>
+  </div>
+
+<!-- END MAIN BODY OF DOCS ––––––––––––– -->
+
+<footer class="footer">
+  <div class="footer-links">
+    <ul>
+      <li><span class="footer-title">Links</span></li>
+      {% for name, link in LINKS %}
+          <li><a href="{{ pathto(link) }}">{{ name }}</a></li>
+      {% endfor %}
+    </ul>
+    <ul>
+      <li><span class="footer-title">Join Us</span></li>
+      {% for name, link in SOCIAL %}
+          <li><a href="{{ link }}">{{ name }}</a></li>
+      {% endfor %}
+    </ul>
+    <ul class="copyright">
+      <li>{{ copyright }}</li>
+    </ul>
+  </div>
+</footer>
+
+<!-- Google Analytics -->
+{% include 'includes/ga.html' %}
+
+<!-- MathJax Config -->
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
+});
+</script>
+
+<!-- End Document
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+</body>
+
+</html>
