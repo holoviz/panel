@@ -11,8 +11,8 @@ sudo: false
 env:
   global:
     - PYENV_VERSION=3.6
-    - CHANS_DEV="-c pyviz/label/dev"
-    - CHANS_REL="-c pyviz"
+    - CHANS_DEV="-c pyviz/label/dev -c jbednar"
+    - CHANS_REL="-c pyviz -c jbednar"
     - LABELS_DEV="--label dev"
     - LABELS_REL="--label dev --label main"
     - PKG_TEST_PYTHON="--test-python=py27 --test-python=py36"
