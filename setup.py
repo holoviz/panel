@@ -52,7 +52,7 @@ extras_require = {
         # For Panes.ipynb
         'plotly',
         'altair',
-        'vega-datasets'
+        'vega_datasets'
     ],
     'recommended': _recommended,
     'doc': _recommended + [
