@@ -259,9 +259,8 @@ class HoloViews(PaneBase):
                 layout = _BkRow()
                 wbox = self.widget_box._get_model(doc, root, parent, comm)
                 layout.children = [model, wbox]
-                parent = layout
             self._link_widgets(widgets, child_pane, layout, plot, comm)
-        self._link_object(model, doc, root, parent, comm)
+        self._link_object(layout, doc, root, parent, comm)
         return layout
 
     def _link_widgets(self, widgets, pane, model, plot, comm):
@@ -331,6 +330,7 @@ class HoloViews(PaneBase):
                                      end=dim.range[1], value=default)
             widgets.append(widget)
         return widgets
+
 
 
 class DivPaneBase(PaneBase):

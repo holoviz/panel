@@ -7,6 +7,7 @@ import pytest
 from bokeh.models import (Div, Row as BkRow, WidgetBox as BkWidgetBox,
                           GlyphRenderer, Circle, Line)
 from bokeh.plotting import Figure
+from panel.layout import Column
 from panel.pane import (Pane, PaneBase, Bokeh, HoloViews, Matplotlib,
                         HTML, Str, PNG, JPG, GIF)
 from panel.widgets import FloatSlider, DiscreteSlider, Select
@@ -181,7 +182,50 @@ def test_holoviews_widgets_from_dynamicmap(document, comm):
 
 
 @hv_available
-def test_holoviews_widgets_from_holomap(document, comm):
+def test_holoviews_with_widgets(document, comm):
+    hmap = hv.HoloMap({(i, chr(65+i)): hv.Curve([i]) for i in range(3)}, kdims=['X', 'Y'])
+
+    hv_pane = HoloViews(hmap)
+    layout = hv_pane._get_root(document, comm)
+    model = layout.children[0]
+    assert len(hv_pane.widget_box.objects) == 2
+    assert hv_pane.widget_box.objects[0].name == 'X'
+    assert hv_pane.widget_box.objects[1].name == 'Y'
+
+    assert model.ref['id'] in hv_pane._callbacks
+
+    hmap = hv.HoloMap({(i, chr(65+i)): hv.Curve([i]) for i in range(3)}, kdims=['A', 'B'])
+    hv_pane.object = hmap
+    assert model.ref['id'] not in hv_pane._callbacks
+    assert len(hv_pane.widget_box.objects) == 2
+    assert hv_pane.widget_box.objects[0].name == 'A'
+    assert hv_pane.widget_box.objects[1].name == 'B'
+
+
+@hv_available
+def test_holoviews_with_widgets_not_shown(document, comm):
+    hmap = hv.HoloMap({(i, chr(65+i)): hv.Curve([i]) for i in range(3)}, kdims=['X', 'Y'])
+
+    hv_pane = HoloViews(hmap, show_widgets=False)
+    layout_obj = Column(hv_pane, hv_pane.widget_box)
+    layout = layout_obj._get_root(document, comm)
+    model = layout.children[0]
+    assert len(hv_pane.widget_box.objects) == 2
+    assert hv_pane.widget_box.objects[0].name == 'X'
+    assert hv_pane.widget_box.objects[1].name == 'Y'
+
+    assert model.ref['id'] in hv_pane._callbacks
+
+    hmap = hv.HoloMap({(i, chr(65+i)): hv.Curve([i]) for i in range(3)}, kdims=['A', 'B'])
+    hv_pane.object = hmap
+    assert model.ref['id'] not in hv_pane._callbacks
+    assert len(hv_pane.widget_box.objects) == 2
+    assert hv_pane.widget_box.objects[0].name == 'A'
+    assert hv_pane.widget_box.objects[1].name == 'B'
+
+    
+@hv_available
+def test_holoviews_widgets_from_holomap():
     hmap = hv.HoloMap({(i, chr(65+i)): hv.Curve([i]) for i in range(3)}, kdims=['X', 'Y'])
 
     widgets = HoloViews.widgets_from_dimensions(hmap)
@@ -198,7 +242,7 @@ def test_holoviews_widgets_from_holomap(document, comm):
 
 
 @hv_available
-def test_holoviews_widgets_explicit_widget_type_override(document, comm):
+def test_holoviews_widgets_explicit_widget_type_override():
     hmap = hv.HoloMap({(i, chr(65+i)): hv.Curve([i]) for i in range(3)}, kdims=['X', 'Y'])
 
     widgets = HoloViews.widgets_from_dimensions(hmap, widget_types={'X': Select})
@@ -210,7 +254,7 @@ def test_holoviews_widgets_explicit_widget_type_override(document, comm):
 
 
 @hv_available
-def test_holoviews_widgets_invalid_widget_type_override(document, comm):
+def test_holoviews_widgets_invalid_widget_type_override():
     hmap = hv.HoloMap({(i, chr(65+i)): hv.Curve([i]) for i in range(3)}, kdims=['X', 'Y'])
 
     with pytest.raises(ValueError):
@@ -218,7 +262,7 @@ def test_holoviews_widgets_invalid_widget_type_override(document, comm):
 
 
 @hv_available
-def test_holoviews_widgets_explicit_widget_type_override(document, comm):
+def test_holoviews_widgets_explicit_widget_instance_override():
     hmap = hv.HoloMap({(i, chr(65+i)): hv.Curve([i]) for i in range(3)}, kdims=['X', 'Y'])
 
     widget = Select(options=[1, 2, 3], value=3)
