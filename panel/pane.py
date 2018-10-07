@@ -16,7 +16,6 @@ try:
 except:
     from cgi import escape
 
-
 import param
 
 from bokeh.layouts import Row as _BkRow, WidgetBox as _BkWidgetBox
@@ -252,7 +251,7 @@ class HoloViews(PaneBase):
         self._patch_plot(plot, root.ref['id'], comm)
         child_pane = Pane(plot.state, _temporary=True)
         model = child_pane._get_model(doc, root, parent, comm)
-        widgets = self.widgets_from_dimensions(self.object)
+        widgets = self.widgets_from_dimensions(self.object, self.widgets)
         layout = model
         if widgets:
             self.widget_box.objects = widgets
@@ -285,33 +284,50 @@ class HoloViews(PaneBase):
             watcher = w.param.watch(update_plot, 'value')
             self._callbacks[model.ref['id']].append(watcher)
 
-    def widgets_from_dimensions(self, object):
+    @classmethod
+    def widgets_from_dimensions(cls, object, widget_types={}):
+        from holoviews.core import Dimension
         from holoviews.core.util import isnumeric, unicode
         from holoviews.core.traversal import unique_dimkeys
-        from .widgets import DiscreteSlider, Select, FloatSlider
+        from .widgets import Widget, DiscreteSlider, Select, FloatSlider
 
         dims, keys = unique_dimkeys(object)
+        if dims == [Dimension('Frame')] and keys == [(0,)]:
+            return []
+
         values = dict(zip(dims, zip(*keys)))
         widgets = []
         for dim in dims:
-            values = dim.values or values[dim]
-            if dim.name in self.widgets:
-                widget = self.widgets[dim.name]
-            elif values:
-                if all(isnumeric(v) for v in values):
-                    values = sorted(values)
-                    labels = [unicode(dim.pprint_value(v)) for v in values]
-                    options = OrderedDict(zip(labels, values))
-                    widget_type = DiscreteSlider
+            widget_type = None
+            vals = dim.values or values.get(dim, None)
+            if dim.name in widget_types:
+                widget = widget_types[dim.name]
+                if isinstance(widget, Widget):
+                    widgets.append(widget)
+                    continue
+                elif isinstance(widget, type) and issubclass(widget, Widget):
+                    widget_type = widget
                 else:
-                    options = values
-                    widget_type = Select
-                default = values[0] if dim.default is None else dim.default
+                    raise ValueError('Explicit widget definitions expected '
+                                     'to be a widget instance or type, %s '
+                                     'dimension widget declared as %s.' %
+                                     (dim, widget))
+            if vals:
+                if all(isnumeric(v) for v in vals):
+                    vals = sorted(vals)
+                    labels = [unicode(dim.pprint_value(v)) for v in vals]
+                    options = OrderedDict(zip(labels, vals))
+                    widget_type = widget_type or DiscreteSlider
+                else:
+                    options = list(vals)
+                    widget_type = widget_type or Select
+                default = vals[0] if dim.default is None else dim.default
                 widget = widget_type(name=dim.label, options=options, value=default)
             elif dim.range != (None, None):
                 default = dim.range[0] if dim.default is None else dim.default
-                step = 0.1 if dim.step is None else dim.step 
-                widget = FloatSlider(step=step, name=dim.label, start=dim.range[0],
+                step = 0.1 if dim.step is None else dim.step
+                widget_type = widget_type or FloatSlider
+                widget = widget_type(step=step, name=dim.label, start=dim.range[0],
                                      end=dim.range[1], value=default)
             widgets.append(widget)
         return widgets

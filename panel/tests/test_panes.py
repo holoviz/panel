@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 from base64 import b64decode
+from collections import OrderedDict
 import pytest
 
 from bokeh.models import (Div, Row as BkRow, WidgetBox as BkWidgetBox,
@@ -8,6 +9,7 @@ from bokeh.models import (Div, Row as BkRow, WidgetBox as BkWidgetBox,
 from bokeh.plotting import Figure
 from panel.pane import (Pane, PaneBase, Bokeh, HoloViews, Matplotlib,
                         HTML, Str, PNG, JPG, GIF)
+from panel.widgets import FloatSlider, DiscreteSlider, Select
 
 try:
     import holoviews as hv
@@ -126,6 +128,105 @@ def test_holoviews_pane_bokeh_renderer(document, comm):
     assert pane._callbacks == {}
 
 
+@hv_available
+def test_holoviews_widgets_from_dynamicmap(document, comm):
+    range_dim = hv.Dimension('A', range=(0, 10.))
+    range_step_dim = hv.Dimension('B', range=(0, 10.), step=0.2)
+    range_default_dim = hv.Dimension('C', range=(0, 10.), default=3)
+    value_dim = hv.Dimension('D', values=['a', 'b', 'c'])
+    value_default_dim = hv.Dimension('E', values=['a', 'b', 'c', 'd'], default='b')
+    value_numeric_dim = hv.Dimension('F', values=[1, 3, 10], default=3)
+    kdims = [range_dim, range_step_dim, range_default_dim,
+             value_dim, value_default_dim, value_numeric_dim]
+    dmap = hv.DynamicMap(lambda A, B, C, D, E, F: hv.Curve([]), kdims=kdims)
+    widgets = HoloViews.widgets_from_dimensions(dmap)
+
+    assert len(widgets) == len(kdims)
+
+    assert isinstance(widgets[0], FloatSlider)
+    assert widgets[0].name == 'A'
+    assert widgets[0].start == range_dim.range[0]
+    assert widgets[0].end == range_dim.range[1]
+    assert widgets[0].value == range_dim.range[0]
+    assert widgets[0].step == 0.1
+
+    assert isinstance(widgets[1], FloatSlider)
+    assert widgets[1].name == 'B'
+    assert widgets[1].start == range_step_dim.range[0]
+    assert widgets[1].end == range_step_dim.range[1]
+    assert widgets[1].value == range_step_dim.range[0]
+    assert widgets[1].step == range_step_dim.step
+
+    assert isinstance(widgets[2], FloatSlider)
+    assert widgets[2].name == 'C'
+    assert widgets[2].start == range_default_dim.range[0]
+    assert widgets[2].end == range_default_dim.range[1]
+    assert widgets[2].value == range_default_dim.default
+    assert widgets[2].step == 0.1
+
+    assert isinstance(widgets[3], Select)
+    assert widgets[3].name == 'D'
+    assert widgets[3].options == OrderedDict(zip(value_dim.values, value_dim.values))
+    assert widgets[3].value == value_dim.values[0]
+
+    assert isinstance(widgets[4], Select)
+    assert widgets[4].name == 'E'
+    assert widgets[4].options == OrderedDict(zip(value_default_dim.values, value_default_dim.values))
+    assert widgets[4].value == value_default_dim.default
+
+    assert isinstance(widgets[5], DiscreteSlider)
+    assert widgets[5].name == 'F'
+    assert widgets[5].options == OrderedDict([(str(v), v) for v in value_numeric_dim.values])
+    assert widgets[5].value == value_numeric_dim.default
+
+
+@hv_available
+def test_holoviews_widgets_from_holomap(document, comm):
+    hmap = hv.HoloMap({(i, chr(65+i)): hv.Curve([i]) for i in range(3)}, kdims=['X', 'Y'])
+
+    widgets = HoloViews.widgets_from_dimensions(hmap)
+
+    assert isinstance(widgets[0], DiscreteSlider)
+    assert widgets[0].name == 'X'
+    assert widgets[0].options == OrderedDict([(str(i), i) for i in range(3)])
+    assert widgets[0].value == 0
+
+    assert isinstance(widgets[1], Select)
+    assert widgets[1].name == 'Y'
+    assert widgets[1].options == OrderedDict([(i, i) for i in ['A', 'B', 'C']])
+    assert widgets[1].value == 'A'
+
+
+@hv_available
+def test_holoviews_widgets_explicit_widget_type_override(document, comm):
+    hmap = hv.HoloMap({(i, chr(65+i)): hv.Curve([i]) for i in range(3)}, kdims=['X', 'Y'])
+
+    widgets = HoloViews.widgets_from_dimensions(hmap, widget_types={'X': Select})
+
+    assert isinstance(widgets[0], Select)
+    assert widgets[0].name == 'X'
+    assert widgets[0].options == OrderedDict([(str(i), i) for i in range(3)])
+    assert widgets[0].value == 0
+
+
+@hv_available
+def test_holoviews_widgets_invalid_widget_type_override(document, comm):
+    hmap = hv.HoloMap({(i, chr(65+i)): hv.Curve([i]) for i in range(3)}, kdims=['X', 'Y'])
+
+    with pytest.raises(ValueError):
+        HoloViews.widgets_from_dimensions(hmap, widget_types={'X': 1})
+
+
+@hv_available
+def test_holoviews_widgets_explicit_widget_type_override(document, comm):
+    hmap = hv.HoloMap({(i, chr(65+i)): hv.Curve([i]) for i in range(3)}, kdims=['X', 'Y'])
+
+    widget = Select(options=[1, 2, 3], value=3)
+    widgets = HoloViews.widgets_from_dimensions(hmap, widget_types={'X': widget})
+
+    assert widgets[0] is widget
+
+    
 @mpl_available
 def test_get_matplotlib_pane_type():
     assert PaneBase.get_pane_type(mpl_figure()) is Matplotlib
