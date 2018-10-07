@@ -1,8 +1,10 @@
-Panel Roadmap, as of 10/2018
-============================
+Roadmap
+=======
+
+(As of 10/2018)
 
 The Panel library is new, but it builds on at least a decade of work
-in previous and related projects. Thus there are many parts of Panel
+in previous and related Python projects. Thus there are many parts of Panel
 that are very solidly implemented, with features that have been tested
 and improved over years of active use by large communities of Bokeh
 and Param users. Other features are new to Panel itself or were added
@@ -17,8 +19,8 @@ include:
    tracker, we will address these as time permits.
 
 2. **GridSpec**: Panels can currently be created using ``interact()``
-   or as nested `pn.Row()` or `pn.Column()` objects, potentially with
-   `pn.Spacer()` objects to adjust spacing.  A complementary approach
+   or as nested ``pn.Row()`` or ``pn.Column()`` objects, potentially with
+   ``pn.Spacer()`` objects to adjust spacing.  A complementary approach
    like Matplotlib's
    `GridSpec <https://matplotlib.org/users/gridspec.html>`__ makes it
    simpler to make an arrangement into a regular grid by defining the
@@ -46,8 +48,9 @@ funded or scheduled include:
    email or posted on any website will require capturing these
    typical communication patterns, as well as providing a set
    of communication channels to ship with exported documents. Examples
-   of the results of this general approach are on holoviews.org, but
-   Panel will need its own separate implementation.
+   of the results of this general approach are on
+   `holoviews.org <http://holoviews.org>`__, but
+   Panel will need its own separate implementation for static export.
 
 2. **Other plotting libraries**: Panel already supports a wide variety
    of libraries, including all the libraries currently in use by the
@@ -55,7 +58,7 @@ funded or scheduled include:
    be supported as well, if anyone can provide an example of a plot
    already supported by Panel converted into this other library.
    As mentioned in 
-   `issue #2<https://github.com/pyviz/panel/issues/2>`__, 
+   `issue 2 <https://github.com/pyviz/panel/issues/2>`__, 
    the ipywidgets-based libraries will be more complicated to support,
    but any library that produces PNG, SVG, HTML, or other basic
    type should be very straightforward to include.
@@ -93,7 +96,7 @@ funded or scheduled include:
    outside of the notebook as well as in it, and so it would be great
    to have a drag-and-drop interface either based on the
    Jupyter-Dashboards project or developed separately to provide similar
-   capabilities. As for Jupyter-Dashboards, the layout information
+   capabilities. As for Jupyter Dashboards, the layout information
    could be stored as cell metadata in the notebook, providing hints
    for Panel to set up the dashboard layout when served separately.
    There are likely to be tricky issues with control flow that would
@@ -105,8 +108,7 @@ funded or scheduled include:
    support could be added for objects defined using the Traitlets
    library. Traitlets and Param offer similar functionality, so the
    benefit of adding Traitlets support would primarily be for users
-   who have large bodies of code already written as traitlets, but
-   for those users it could be very helpful.   
+   who have large bodies of code already written as traitlets.   
 
 If any of the functionality above is interesting to you (or you have
 ideas of your own!) and can offer help with implementation, please
