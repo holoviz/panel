@@ -2,26 +2,28 @@
 User Guide
 **********
 
-Contents:
+* `Interact <Interact.html>`_
+   Quick making a panel using `interact()`.
 
 * `Panes <Panes.html>`_
    Adding visual components to your panel with panes.
 
 * `Widgets <Widgets.html>`_
-   Declaring and working with widgets
+   Declaring and working with Panel widgets
 
 * `Layouts <Layouts.html>`_
-   Declaring and working with layouts
+   Declaring and working with Panel layouts.
 
-* `Usage with param <Layouts.html>`_
-   Using param to express panels in a self-contained class
+* `Parameters <Layouts.html>`_
+   Using Param to express panels in a self-contained class.
 
 .. toctree::
     :titlesonly:
     :hidden:
     :maxdepth: 2
 
+    Interact <Interact>
     Panes <Panes>
     Widgets <Widgets>
     Layouts <Layouts>
-	Usage with param <Param>
+    Parameters <Param>
