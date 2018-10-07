@@ -351,12 +351,12 @@ class ParamMethod(PaneBase):
         history = [model]
         deps = params
 
-        def update_pane(*changes):
+        def update_pane(*events):
             old_model = history[0]
             old_ref = old_model.ref['id']
 
-            # Update nested dependencies if parameterized object changes
-            if any(is_parameterized(change.new) for change in changes):
+            # Update nested dependencies if parameterized object events
+            if any(is_parameterized(event.new) for event in events):
                 new_deps = parameterized.param.params_depended_on(self.object.__name__)
                 for p in list(deps):
                     if p in new_deps: continue

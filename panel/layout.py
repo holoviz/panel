@@ -40,11 +40,11 @@ class Layout(Reactive):
         return self._process_param_change(properties)
 
     def _link_params(self, model, params, doc, root, comm=None):
-        def set_value(*changes):
-            msg = {change.name: change.new for change in changes}
-            changes = {change.name: change for change in changes}
+        def set_value(*events):
+            msg = {event.name: event.new for event in events}
+            events = {event.name: event for event in events}
             if 'objects' in msg:
-                old = changes['objects'].old
+                old = events['objects'].old
                 msg['objects'] = self._get_objects(model, old, doc, root, comm)
             msg = self._process_param_change(msg)
 
