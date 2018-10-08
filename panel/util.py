@@ -5,7 +5,7 @@ import sys
 import inspect
 import numbers
 
-from collections import defaultdict
+from collections import defaultdict, MutableSequence, MutableMapping
 from datetime import datetime
 
 import param
@@ -24,6 +24,15 @@ try:
     basestring = basestring # noqa
 except:
     basestring = unicode = str
+
+
+def hashable(x):
+    if isinstance(x, MutableSequence):
+        return tuple(x)
+    elif isinstance(x, MutableMapping):
+        return tuple([(k,v) for k,v in x.items()])
+    else:
+        return x
 
 
 def as_unicode(obj):

@@ -5,8 +5,8 @@ communication between the rendered dashboard and the Widget parameters.
 from __future__ import absolute_import
 
 import ast
+from collections import OrderedDict
 from datetime import datetime
-from collections import OrderedDict, MutableSequence, MutableMapping
 
 import param
 import numpy as np
@@ -16,12 +16,13 @@ from bokeh.models.widgets import (
     CheckboxGroup as _BkCheckboxGroup, DateRangeSlider as _BkDateRangeSlider,
     RangeSlider as _BkRangeSlider, DatePicker as _BkDatePicker,
     MultiSelect as _BkMultiSelect, Div as _BkDiv,Button as _BkButton,
-    Toggle as _BkToggle, AutocompleteInput as _BkAutocompleteInput
+    Toggle as _BkToggle, AutocompleteInput as _BkAutocompleteInput,
+    CheckboxButtonGroup as _BkCheckboxButtonGroup
 )
 
 from .layout import WidgetBox # noqa
 from .viewable import Reactive
-from .util import as_unicode, push, value_as_datetime
+from .util import as_unicode, push, value_as_datetime, hashable
 
 
 class Widget(Reactive):
@@ -367,14 +368,6 @@ class Checkbox(Widget):
         return msg
 
 
-def hashable(x):
-    if isinstance(x, MutableSequence):
-        return tuple(x)
-    elif isinstance(x, MutableMapping):
-        return tuple([(k,v) for k,v in x.items()])
-    else:
-        return x
-            
 class Select(Widget):
 
     options = param.Dict(default={})
@@ -409,6 +402,34 @@ class Select(Widget):
         return msg
 
 
+class RadioButtons(Select):
+
+    value = param.List(default=[])
+
+    _widget_type = _BkCheckboxGroup
+
+    def _process_param_change(self, msg):
+        msg = super(Select, self)._process_param_change(msg)
+        mapping = OrderedDict([(hashable(v), k) for k, v in self.options.items()])
+        if msg.get('value') is not None:
+            msg['active'] = [list(mapping).index(v) for v in msg.pop('value')]
+        if 'options' in msg:
+            msg['labels'] = list(msg.pop('options'))
+        msg.pop('title', None)
+        return msg
+
+    def _process_property_change(self, msg):
+        msg = super(Select, self)._process_property_change(msg)
+        if msg.get('active', []):
+            msg['value'] = [list(self.options.values())[a] for a in msg.pop('active')]
+        return msg
+
+
+class ToggleButtons(RadioButtons):
+
+    _widget_type = _BkCheckboxButtonGroup
+
+    
 class MultiSelect(Select):
 
     value = param.List(default=[])
