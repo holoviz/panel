@@ -17,12 +17,12 @@ except:
     from cgi import escape
 
 import param
+import markdown
 
 from bokeh.layouts import Row as _BkRow, WidgetBox as _BkWidgetBox
 from bokeh.models import LayoutDOM, CustomJS, Widget as _BkWidget, Div as _BkDiv
 
-from .util import (Div, basestring, unicode, get_method_owner, push,
-                   remove_root)
+from .util import Div, basestring, get_method_owner, push, remove_root
 from .viewable import Reactive, Viewable
 
 
@@ -54,6 +54,8 @@ class PaneBase(Reactive):
 
     # When multiple Panes apply to an object, the one with the highest
     # numerical precedence is selected. The default is an intermediate value.
+    # If set to None, applies method will be called to get a precedence
+    # value for a specific object type.
     precedence = 0.5
 
     # Declares whether Pane supports updates to the Bokeh model
@@ -65,7 +67,9 @@ class PaneBase(Reactive):
     def applies(cls, obj):
         """
         Given the object return a boolean indicating whether the Pane
-        can render the object.
+        can render the object. If the precedence of the pane is set to
+        None, this method may also be used to define a precedence
+        depending on the object being rendered.
         """
         return None
 
@@ -73,15 +77,28 @@ class PaneBase(Reactive):
     def get_pane_type(cls, obj):
         if isinstance(obj, Viewable):
             return type(obj)
-        descendents = [(p.precedence, p) for p in param.concrete_descendents(PaneBase).values()]
+        descendents = []
+        for p in param.concrete_descendents(PaneBase).values():
+            precedence = p.applies(obj) if p.precedence is None else p.precedence
+            if isinstance(precedence, bool) and precedence:
+                raise ValueError('If a Pane declares no precedence '
+                                 'the applies method should return a '
+                                 'precedence value specific to the '
+                                 'object type or False, %s pane '
+                                 'declares no precedence.' % p.__name__)
+            elif precedence is None or precedence is False:
+                continue
+            descendents.append((precedence, p))
         pane_types = reversed(sorted(descendents, key=lambda x: x[0]))
         for _, pane_type in pane_types:
-            if not pane_type.applies(obj): continue
+            applies = pane_type.applies(obj)
+            if isinstance(applies, bool) and not applies: continue
             return pane_type
         raise TypeError('%s type could not be rendered.' % type(obj).__name__)
 
     def __init__(self, object, **params):
-        if not self.applies(object):
+        applies = self.applies(object)
+        if isinstance(applies, bool) and not applies:
             name = type(self).__name__
             raise ValueError('%s object not understood by %s, '
                              'expected %s object.' %
@@ -578,13 +595,17 @@ class HTML(DivPaneBase):
     allow room for whatever is being wrapped.
     """
 
-    precedence = 0.2
+    # Precedence is dependent on the data type
+    precedence = None
 
     @classmethod
     def applies(cls, obj):
-        return (hasattr(obj, '_repr_html_') or
-                (isinstance(obj, basestring) or
-                 (isinstance(obj, unicode))))
+        if hasattr(obj, '_repr_html_'):
+            return 0.2
+        elif isinstance(obj, basestring):
+            return None
+        else:
+            return False
 
     def _get_properties(self):
         properties = super(HTML, self)._get_properties()
@@ -608,11 +629,41 @@ class Str(DivPaneBase):
     @classmethod
     def applies(cls, obj):
         return True
-    
+
     def _get_properties(self):
         properties = super(Str, self)._get_properties()
         return dict(properties, text='<pre>'+escape(str(self.object))+'</pre>')
 
+
+class Markdown(DivPaneBase):
+    """
+    A Markdown pane renders the markdown markup language to HTML and
+    displays it inside a bokeh Div model. It has no explicit
+    precedence since it cannot be easily be distinguished from a
+    standard string, therefore it has to be invoked explicitly.
+    """
+
+    # Precedence depends on the data type
+    precedence = None
+
+    @classmethod
+    def applies(cls, obj):
+        if hasattr(obj, '_repr_markdown_'):
+            return 0.3
+        elif isinstance(obj, basestring):
+            return 0.1
+        else:
+            return False
+
+    def _get_properties(self):
+        data = self.object
+        if not isinstance(data, basestring):
+            data = data._repr_markdown_()
+        properties = super(Markdown, self)._get_properties()
+        extensions = ['extra', 'smarty']
+        html = markdown.markdown(self.object, extensions=extensions,
+                                 output_format='html5')
+        return dict(properties, text=html)
 
 
 class YT(HTML):
