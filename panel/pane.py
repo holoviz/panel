@@ -80,13 +80,13 @@ class PaneBase(Reactive):
         descendents = []
         for p in param.concrete_descendents(PaneBase).values():
             precedence = p.applies(obj) if p.precedence is None else p.precedence
-            if isinstance(precedence, bool):
+            if isinstance(precedence, bool) and precedence:
                 raise ValueError('If a Pane declares no precedence '
                                  'the applies method should return a '
                                  'precedence value specific to the '
-                                 'object type, %s pane declares no '
-                                 'precedence.' % p.__name__)
-            elif precedence is None:
+                                 'object type or False, %s pane '
+                                 'declares no precedence.' % p.__name__)
+            elif precedence is None or precedence is False:
                 continue
             descendents.append((precedence, p))
         pane_types = reversed(sorted(descendents, key=lambda x: x[0]))
@@ -97,7 +97,8 @@ class PaneBase(Reactive):
         raise TypeError('%s type could not be rendered.' % type(obj).__name__)
 
     def __init__(self, object, **params):
-        if not self.applies(object):
+        applies = self.applies(object)
+        if isinstance(applies, bool) and not applies:
             name = type(self).__name__
             raise ValueError('%s object not understood by %s, '
                              'expected %s object.' %
@@ -603,6 +604,8 @@ class HTML(DivPaneBase):
             return 0.2
         elif isinstance(obj, basestring):
             return None
+        else:
+            return False
 
     def _get_properties(self):
         properties = super(HTML, self)._get_properties()
@@ -648,13 +651,13 @@ class Markdown(DivPaneBase):
         try:
             import markdown # noqa
         except:
-            return None
+            return False
         if hasattr(obj, '_repr_markdown_'):
             return 0.3
         elif isinstance(obj, basestring):
             return 0.1
         else:
-            return None
+            return False
 
     def _get_properties(self):
         import markdown
