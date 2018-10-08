@@ -9,7 +9,7 @@ from bokeh.models import (Div, Row as BkRow, WidgetBox as BkWidgetBox,
 from bokeh.plotting import Figure
 from panel.layout import Column
 from panel.pane import (Pane, PaneBase, Bokeh, HoloViews, Matplotlib,
-                        HTML, Str, PNG, JPG, GIF, SVG)
+                        HTML, Str, PNG, JPG, GIF, SVG, Markdown)
 from panel.widgets import FloatSlider, DiscreteSlider, Select
 
 try:
@@ -305,12 +305,36 @@ def test_matplotlib_pane(document, comm):
     assert pane._callbacks == {}
 
 
-def test_get_html_pane_type():
-    assert PaneBase.get_pane_type("<h1>Test</h1>") is HTML
+def test_get_markdown_pane_type():
+    assert PaneBase.get_pane_type("**Markdown**") is Markdown
+
+
+def test_markdown_pane(document, comm):
+    pane = Pane("**Markdown**")
+
+    # Create pane
+    row = pane._get_root(document, comm=comm)
+    assert isinstance(row, BkRow)
+    assert len(row.children) == 1
+    model = row.children[0]
+    assert model.ref['id'] in pane._callbacks
+    div = get_div(model)
+    assert div.text == "<p><strong>Markdown</strong></p>"
+
+    # Replace Pane.object
+    pane.object = "*Markdown*"
+    model = row.children[0]
+    assert div is get_div(model)
+    assert model.ref['id'] in pane._callbacks
+    assert div.text == "<p><em>Markdown</em></p>"
+
+    # Cleanup
+    pane._cleanup(model)
+    assert pane._callbacks == {}
 
 
 def test_html_pane(document, comm):
-    pane = Pane("<h1>Test</h1>")
+    pane = HTML("<h1>Test</h1>")
 
     # Create pane
     row = pane._get_root(document, comm=comm)
