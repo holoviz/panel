@@ -8,7 +8,8 @@ from bokeh.models import Div as BkDiv, Slider as BkSlider
 from panel.widgets import (
     TextInput, StaticText, FloatSlider, IntSlider, RangeSlider,
     LiteralInput, Checkbox, Select, MultiSelect, Button, Toggle,
-    DatePicker, DateRangeSlider, DiscreteSlider, DatetimeInput
+    DatePicker, DateRangeSlider, DiscreteSlider, DatetimeInput,
+    RadioButtons, ToggleButtons
 )
 
 
@@ -264,7 +265,7 @@ def test_select_mutables(document, comm):
 
 
 def test_multi_select(document, comm):
-    select = MultiSelect(options={'A': 'A', '1': 1, 'C': object},
+    select = MultiSelect(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
                          value=[object, 1], name='Select')
 
     box = select._get_model(document, comm=comm)
@@ -288,6 +289,56 @@ def test_multi_select(document, comm):
     select.value = [object, 'A']
     assert widget.value == ['C', 'A']
 
+
+def test_toggle_buttons(document, comm):
+    select = ToggleButtons(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
+                           value=[1, object], name='ToggleButtons')
+
+    box = select._get_model(document, comm=comm)
+
+    assert isinstance(box, WidgetBox)
+
+    widget = box.children[0]
+    assert isinstance(widget, select._widget_type)
+    assert widget.active == [1, 2]
+    assert widget.labels == ['A', '1', 'C']
+
+    widget.active = [2]
+    select._comm_change({'active': [2]})
+    assert select.value == [object]
+
+    widget.active = [0, 2]
+    select._comm_change({'active': [0, 2]})
+    assert select.value == ['A', object]
+
+    select.value = [object, 'A']
+    assert widget.active == [2, 0]
+
+
+def test_radio_buttons(document, comm):
+    select = RadioButtons(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
+                          value=[1, object], name='RadioButtons')
+
+    box = select._get_model(document, comm=comm)
+
+    assert isinstance(box, WidgetBox)
+
+    widget = box.children[0]
+    assert isinstance(widget, select._widget_type)
+    assert widget.active == [1, 2]
+    assert widget.labels == ['A', '1', 'C']
+
+    widget.active = [1]
+    select._comm_change({'active': [1]})
+    assert select.value == [1]
+
+    widget.active = [0, 2]
+    select._comm_change({'active': [0, 2]})
+    assert select.value == ['A', object]
+
+    select.value = [object, 'A']
+    assert widget.active == [2, 0]
+    
 
 def test_button(document, comm):
     button = Button(name='Button')
