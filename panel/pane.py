@@ -488,7 +488,7 @@ class SVG(Image):
     def _img(self):
         if (isinstance(self.object, basestring) and
             self.object.lstrip().startswith('<svg')):
-            return self.object.encode('utf-8')
+            return self.object
         return super(SVG, self)._img()
 
     def _imgshape(self, data):
@@ -498,6 +498,8 @@ class SVG(Image):
         p = super(Image, self)._get_properties()
         data = self._img()
         width, height = self._imgshape(data)
+        if not isinstance(data, bytes):
+            data = data.encode('utf-8')
         b64 = base64.b64encode(data).decode("utf-8")
         src = "data:image/svg+xml;base64,{b64}".format(b64=b64)
         html = "<img src='{src}' width={width} height={height}></img>".format(
