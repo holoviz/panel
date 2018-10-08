@@ -430,6 +430,8 @@ class Image(DivPaneBase):
     def _get_properties(self):
         p = super(Image,self)._get_properties()
         data = self._img()
+        if isinstance(data, str):
+            data = base64.b64decode(data)
         width, height = self._imgshape(data)
         if self.width is not None:
             if self.height is None:
