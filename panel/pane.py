@@ -54,6 +54,8 @@ class PaneBase(Reactive):
 
     # When multiple Panes apply to an object, the one with the highest
     # numerical precedence is selected. The default is an intermediate value.
+    # If set to None, applies method will be called to get a precedence
+    # value for a specific object type.
     precedence = 0.5
 
     # Declares whether Pane supports updates to the Bokeh model
@@ -65,7 +67,9 @@ class PaneBase(Reactive):
     def applies(cls, obj):
         """
         Given the object return a boolean indicating whether the Pane
-        can render the object.
+        can render the object. If the precedence of the pane is set to
+        None, this method may also be used to define a precedence
+        depending on the object being rendered.
         """
         return None
 
@@ -73,12 +77,22 @@ class PaneBase(Reactive):
     def get_pane_type(cls, obj):
         if isinstance(obj, Viewable):
             return type(obj)
-        descendents = param.concrete_descendents(PaneBase).values()
-        descendents = [(p.precedence, p) for p in descendents
-                       if p.precedence is not None]
+        descendents = []
+        for p in param.concrete_descendents(PaneBase).values():
+            precedence = p.applies(obj) if p.precedence is None else p.precedence
+            if isinstance(precedence, bool):
+                raise ValueError('If a Pane declares no precedence '
+                                 'the applies method should return a '
+                                 'precedence value specific to the '
+                                 'object type, %s pane declares no '
+                                 'precedence.' % p.__name__)
+            elif precedence is None:
+                continue
+            descendents.append((precedence, p))
         pane_types = reversed(sorted(descendents, key=lambda x: x[0]))
         for _, pane_type in pane_types:
-            if not pane_type.applies(obj): continue
+            applies = pane_type.applies(obj)
+            if isinstance(applies, bool) and not applies: continue
             return pane_type
         raise TypeError('%s type could not be rendered.' % type(obj).__name__)
 
@@ -580,13 +594,15 @@ class HTML(DivPaneBase):
     allow room for whatever is being wrapped.
     """
 
-    precedence = 0.2
+    # Precedence is dependent on the data type
+    precedence = None
 
     @classmethod
     def applies(cls, obj):
-        return (hasattr(obj, '_repr_html_') or
-                (isinstance(obj, basestring) or
-                 (isinstance(obj, unicode))))
+        if hasattr(obj, '_repr_html_'):
+            return 0.2
+        elif isinstance(obj, basestring):
+            return None
 
     def _get_properties(self):
         properties = super(HTML, self)._get_properties()
@@ -624,13 +640,21 @@ class Markdown(DivPaneBase):
     standard string, therefore it has to be invoked explicitly.
     """
 
-    # Has to be invoked explicitly
+    # Precedence depends on the data type
     precedence = None
 
     @classmethod
     def applies(cls, obj):
-        import markdown # noqa
-        return isinstance(obj, basestring) or hasattr(obj, '_repr_markdown_')
+        try:
+            import markdown # noqa
+        except:
+            return None
+        if hasattr(obj, '_repr_markdown_'):
+            return 0.3
+        elif isinstance(obj, basestring):
+            return 0.1
+        else:
+            return None
 
     def _get_properties(self):
         import markdown
