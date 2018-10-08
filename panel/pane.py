@@ -476,6 +476,38 @@ class JPG(Image):
         return int(w), int(h)
 
 
+class SVG(Image):
+
+    imgtype = 'svg'
+
+    @classmethod
+    def applies(cls, obj):
+        return (super(SVG, cls).applies(obj) or
+                (isinstance(obj, basestring) and obj.lstrip().startswith('<svg')))
+
+    def _img(self):
+        if (isinstance(self.object, basestring) and
+            self.object.lstrip().startswith('<svg')):
+            return self.object
+        return super(SVG, self)._img()
+
+    def _imgshape(self, data):
+        return (self.width, self.height)
+
+    def _get_properties(self):
+        p = super(Image, self)._get_properties()
+        data = self._img()
+        width, height = self._imgshape(data)
+        if not isinstance(data, bytes):
+            data = data.encode('utf-8')
+        b64 = base64.b64encode(data).decode("utf-8")
+        src = "data:image/svg+xml;base64,{b64}".format(b64=b64)
+        html = "<img src='{src}' width={width} height={height}></img>".format(
+            src=src, width=width, height=height
+        )
+        return dict(p, width=width, height=height, text=html)
+
+
 class Matplotlib(PNG):
     """
     A Matplotlib pane renders a matplotlib figure to png and wraps the

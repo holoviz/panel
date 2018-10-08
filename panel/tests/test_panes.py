@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 
-from base64 import b64decode
+from base64 import b64decode, b64encode
 from collections import OrderedDict
 import pytest
 
@@ -9,7 +9,7 @@ from bokeh.models import (Div, Row as BkRow, WidgetBox as BkWidgetBox,
 from bokeh.plotting import Figure
 from panel.layout import Column
 from panel.pane import (Pane, PaneBase, Bokeh, HoloViews, Matplotlib,
-                        HTML, Str, PNG, JPG, GIF)
+                        HTML, Str, PNG, JPG, GIF, SVG)
 from panel.widgets import FloatSlider, DiscreteSlider, Select
 
 try:
@@ -351,6 +351,42 @@ def test_string_pane(document, comm):
     assert div is get_div(model)
     assert model.ref['id'] in pane._callbacks
     assert div.text == "<pre>&lt;h2&gt;Test&lt;/h2&gt;</pre>"
+
+    # Cleanup
+    pane._cleanup(model)
+    assert pane._callbacks == {}
+
+
+def test_svg_pane(document, comm):
+    rect = """
+    <svg xmlns="http://www.w3.org/2000/svg">
+      <rect x="10" y="10" height="100" width="100"/>
+    </svg>
+    """
+    pane = SVG(rect)
+
+    # Create pane
+    row = pane._get_root(document, comm=comm)
+    assert isinstance(row, BkRow)
+    assert len(row.children) == 1
+    model = row.children[0]
+    assert model.ref['id'] in pane._callbacks
+    div = get_div(model)
+    assert div.text.startswith('<img')
+    assert b64encode(rect.encode('utf-8')).decode('utf-8') in div.text
+
+    # Replace Pane.object
+    circle = """
+    <svg xmlns="http://www.w3.org/2000/svg" height="100">
+      <circle cx="50" cy="50" r="40" />
+    </svg>
+    """
+    pane.object = circle
+    model = row.children[0]
+    assert div is get_div(model)
+    assert model.ref['id'] in pane._callbacks
+    assert div.text.startswith('<img')
+    assert b64encode(circle.encode('utf-8')).decode('utf-8') in div.text
 
     # Cleanup
     pane._cleanup(model)
