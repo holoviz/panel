@@ -73,7 +73,9 @@ class PaneBase(Reactive):
     def get_pane_type(cls, obj):
         if isinstance(obj, Viewable):
             return type(obj)
-        descendents = [(p.precedence, p) for p in param.concrete_descendents(PaneBase).values()]
+        descendents = param.concrete_descendents(PaneBase).values()
+        descendents = [(p.precedence, p) for p in descendents
+                       if p.precedence is not None]
         pane_types = reversed(sorted(descendents, key=lambda x: x[0]))
         for _, pane_type in pane_types:
             if not pane_type.applies(obj): continue
@@ -608,11 +610,38 @@ class Str(DivPaneBase):
     @classmethod
     def applies(cls, obj):
         return True
-    
+
     def _get_properties(self):
         properties = super(Str, self)._get_properties()
         return dict(properties, text='<pre>'+escape(str(self.object))+'</pre>')
 
+
+class Markdown(DivPaneBase):
+    """
+    A Markdown pane renders the markdown markup language to HTML and
+    displays it inside a bokeh Div model. It has no explicit
+    precedence since it cannot be easily be distinguished from a
+    standard string, therefore it has to be invoked explicitly.
+    """
+
+    # Has to be invoked explicitly
+    precedence = None
+
+    @classmethod
+    def applies(cls, obj):
+        import markdown # noqa
+        return isinstance(obj, basestring) or hasattr(obj, '_repr_markdown_')
+
+    def _get_properties(self):
+        import markdown
+        data = self.object
+        if not isinstance(data, basestring):
+            data = data._repr_markdown_()
+        properties = super(Markdown, self)._get_properties()
+        extensions = ['extra', 'smarty']
+        html = markdown.markdown(self.object, extensions=extensions,
+                                 output_format='html5')
+        return dict(properties, text=html)
 
 
 class YT(HTML):
