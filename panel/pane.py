@@ -480,6 +480,17 @@ class SVG(Image):
 
     imgtype = 'svg'
 
+    @classmethod
+    def applies(cls, obj):
+        return (super(SVG, cls).applies(obj) or
+                (isinstance(obj, basestring) and obj.lstrip().startswith('<svg')))
+
+    def _img(self):
+        if (isinstance(self.object, basestring) and
+            self.object.lstrip().startswith('<svg')):
+            return self.object.encode('utf-8')
+        return super(SVG, self)._img()
+
     def _imgshape(self, data):
         return (self.width, self.height)
 
