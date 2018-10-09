@@ -620,6 +620,10 @@ class LaTeX(PNG):
     @classmethod
     def applies(cls, obj):
         if hasattr(obj, '_repr_latex_'):
+            try:
+                import matplotlib, PIL
+            except ImportError:
+                return False
             return 0.25
         elif isinstance(obj, basestring):
             return None
