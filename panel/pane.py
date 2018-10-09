@@ -612,16 +612,16 @@ class LaTeX(PNG):
     precedence = None
 
     size = param.Number(default=25, bounds=(1, 100), doc="""
-        Scales the size of the rendered equation.""")
+        Size of the rendered equation.""")
 
-    dpi = param.Number(default=100, bounds=(1, 1900), doc="""
-        Matplotlib dpi parameter.""")
+    dpi = param.Number(default=72, bounds=(1, 1900), doc="""
+        Resolution per inch for the rendered equation.""")
 
     @classmethod
     def applies(cls, obj):
         if hasattr(obj, '_repr_latex_'):
             try:
-                import matplotlib, PIL
+                import matplotlib, PIL # noqa
             except ImportError:
                 return False
             return 0.25
@@ -629,6 +629,12 @@ class LaTeX(PNG):
             return None
         else:
             return False
+
+    def _imgshape(self, data):
+        """Calculate and return image width,height"""
+        w, h = super(LaTeX, self)._imgshape(data)
+        w, h = (w/self.dpi), (h/self.dpi)
+        return int(w*72), int(h*72)
 
     def _img(self):
         obj=self.object if isinstance(self.object, basestring) else \
