@@ -560,7 +560,7 @@ class Matplotlib(PNG):
         return b.getvalue()
 
 
-def latex_to_img(text, size=25):
+def latex_to_img(text, size=25, dpi=100):
     """
     Returns PIL image for LaTeX equation text, using matplotlib's rendering.
     Usage: latex_to_img(r'$\frac(x}{y^2}$')
@@ -571,12 +571,14 @@ def latex_to_img(text, size=25):
     import io
     
     buf = io.BytesIO()
-    plt.rc('text', usetex=True)
-    plt.rc('font', family='serif')
-    plt.axis('off')
-    plt.text(0.05, 0.5, '{text}'.format(text=text), size=size)
-    plt.savefig(buf, format='png')
-    plt.close()
+    with plt.rc_context({'text.usetex': True, 'font.family': 'serif'}):
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        ax.axis('off')
+        ax.text(0.05, 0.5, '{text}'.format(text=text), size=size)
+        fig.set_dpi(dpi)
+        fig.canvas.print_figure(buf)
+        plt.close(fig)
 
     im = Image.open(buf)
     bg = Image.new(im.mode, im.size, (255, 255, 255, 255))
@@ -588,7 +590,6 @@ def latex_to_img(text, size=25):
 
 def make_transparent(img, bg=(255, 255, 255, 255)):
     """Given a PIL image, makes the specified background color transparent."""
-    from PIL import Image
     img = img.convert("RGBA")
     clear = bg[0:3]+(0,)
     pixdata = img.load()
@@ -613,6 +614,9 @@ class LaTeX(PNG):
     size = param.Number(default=25, bounds=(1, 100), doc="""
         Scales the size of the rendered equation.""")
 
+    dpi = param.Number(default=100, bounds=(1, 1900), doc="""
+        Matplotlib dpi parameter.""")
+
     @classmethod
     def applies(cls, obj):
         if hasattr(obj, '_repr_latex_'):
@@ -625,7 +629,7 @@ class LaTeX(PNG):
     def _img(self):
         obj=self.object if isinstance(self.object, basestring) else \
             self.object._repr_latex_()
-        return make_transparent(latex_to_img(obj, self.size))._repr_png_()
+        return make_transparent(latex_to_img(obj, self.size, self.dpi))._repr_png_()
 
 
 class RGGPlot(PNG):
