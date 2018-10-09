@@ -571,7 +571,7 @@ def latex_to_img(text, size=25, dpi=100):
     import io
     
     buf = io.BytesIO()
-    with plt.rc_context({'text.usetex': True, 'font.family': 'serif'}):
+    with plt.rc_context({'text.usetex': False, 'mathtext.fontset': 'stix'}):
         fig = plt.figure()
         ax = fig.add_subplot(111)
         ax.axis('off')
