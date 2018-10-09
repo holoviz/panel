@@ -37,6 +37,7 @@ _recommended = [
     'notebook >=5.4',
     'holoviews>1.10.5',
     'matplotlib',
+    'pillow',
     'plotly'
 ]
 

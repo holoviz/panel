@@ -560,6 +560,74 @@ class Matplotlib(PNG):
         return b.getvalue()
 
 
+def latex_to_img(text, size=25):
+    """
+    Returns PIL image for LaTeX equation text, using matplotlib's rendering.
+    Usage: latex_to_img(r'$\frac(x}{y^2}$')
+    From https://stackoverflow.com/questions/1381741.
+    """
+    import matplotlib.pyplot as plt
+    from PIL import Image, ImageChops
+    import io
+    
+    buf = io.BytesIO()
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif')
+    plt.axis('off')
+    plt.text(0.05, 0.5, '{text}'.format(text=text), size=size)
+    plt.savefig(buf, format='png')
+    plt.close()
+
+    im = Image.open(buf)
+    bg = Image.new(im.mode, im.size, (255, 255, 255, 255))
+    diff = ImageChops.difference(im, bg)
+    diff = ImageChops.add(diff, diff, 2.0, -100)
+    bbox = diff.getbbox()
+    return im.crop(bbox)
+
+
+def make_transparent(img, bg=(255, 255, 255, 255)):
+    """Given a PIL image, makes the specified background color transparent."""
+    from PIL import Image
+    img = img.convert("RGBA")
+    clear = bg[0:3]+(0,)
+    pixdata = img.load()
+    
+    width, height = img.size
+    for y in range(height):
+        for x in range(width):
+            if pixdata[x,y] == bg:
+                pixdata[x,y] = clear
+    return img
+
+
+class LaTeX(PNG):
+    """
+    Matplotlib-based LaTeX-syntax equation.
+    Requires matplotlib and pillow.
+    """
+
+    # Precedence is dependent on the data type
+    precedence = None
+
+    size = param.Number(default=25, bounds=(1, 100), doc="""
+        Scales the size of the rendered equation.""")
+
+    @classmethod
+    def applies(cls, obj):
+        if hasattr(obj, '_repr_latex_'):
+            return 0.25
+        elif isinstance(obj, basestring):
+            return None
+        else:
+            return False
+
+    def _img(self):
+        obj=self.object if isinstance(self.object, basestring) else \
+            self.object._repr_latex_()
+        return make_transparent(latex_to_img(obj, self.size))._repr_png_()
+
+
 class RGGPlot(PNG):
     """
     An RGGPlot pane renders an r2py-based ggplot2 figure to png

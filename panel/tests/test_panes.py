@@ -9,7 +9,7 @@ from bokeh.models import (Div, Row as BkRow, WidgetBox as BkWidgetBox,
 from bokeh.plotting import Figure
 from panel.layout import Column
 from panel.pane import (Pane, PaneBase, Bokeh, HoloViews, Matplotlib,
-                        HTML, Str, PNG, JPG, GIF, SVG, Markdown)
+                        HTML, Str, PNG, JPG, GIF, SVG, Markdown, LaTeX)
 from panel.widgets import FloatSlider, DiscreteSlider, Select
 
 try:
@@ -351,6 +351,25 @@ def test_html_pane(document, comm):
     assert div is get_div(model)
     assert model.ref['id'] in pane._callbacks
     assert div.text == "<h2>Test</h2>"
+
+    # Cleanup
+    pane._cleanup(model)
+    assert pane._callbacks == {}
+
+
+def test_latex_pane(document, comm):
+    pane = LaTeX(r"$\frac{p^3}{q}$")
+
+    # Create pane
+    row = pane._get_root(document, comm=comm)
+    assert isinstance(row, BkRow)
+    assert len(row.children) == 1
+    model = row.children[0]
+    assert model.ref['id'] in pane._callbacks
+    div = get_div(model)
+    # Just checks for a PNG, not a specific rendering, to avoid
+    # false alarms when formatting of the PNG changes
+    assert div.text[0:37] == "<img src='data:image/png;base64,iVBOR"
 
     # Cleanup
     pane._cleanup(model)
