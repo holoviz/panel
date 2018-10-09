@@ -107,6 +107,7 @@ class PaneBase(Reactive):
         root = _BkRow()
         model = self._get_model(doc, root, root, comm)
         root.children = [model]
+        self._preprocess(root)
         return root
 
     def _cleanup(self, model=None, final=False):

@@ -319,8 +319,9 @@ class Param(PaneBase):
         return self._layout._get_model(doc, root, parent, comm)
 
     def _get_root(self, doc, comm=None):
-        return self._get_model(doc, comm=comm)
-
+        root = self._get_model(doc, comm=comm)
+        self._preprocess(root)
+        return root
 
 
 class ParamMethod(PaneBase):
