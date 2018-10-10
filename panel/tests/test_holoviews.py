@@ -4,11 +4,11 @@ from collections import OrderedDict
 import pytest
 
 from bokeh.models import (Div, Row as BkRow, WidgetBox as BkWidgetBox,
-                          GlyphRenderer, Circle, Line)
+                          Column as BkColumn, GlyphRenderer, Circle, Line)
 from bokeh.plotting import Figure
 
 from panel.holoviews import HoloViews
-from panel.layout import Column
+from panel.layout import Column, Row
 from panel.pane import Pane, PaneBase
 from panel.widgets import FloatSlider, DiscreteSlider, Select
 
@@ -231,3 +231,60 @@ def test_holoviews_widgets_explicit_widget_instance_override():
     widgets = HoloViews.widgets_from_dimensions(hmap, widget_types={'X': widget})
 
     assert widgets[0] is widget
+
+
+@hv_available
+def test_holoviews_link_across_panes(document, comm):
+    from bokeh.models.tools import RangeTool
+    from holoviews.plotting.links import RangeToolLink
+
+    c1 = hv.Curve([])
+    c2 = hv.Curve([])
+
+    RangeToolLink(c1, c2)
+
+    layout = Row(c1, c2)
+    row = layout._get_root(document, comm=comm)
+
+    assert len(row.children) == 2
+    p1, p2 = row.children
+
+    assert isinstance(p1, Figure)
+    assert isinstance(p2, Figure)
+
+    range_tool = row.select_one({'type': RangeTool})
+    assert isinstance(range_tool, RangeTool)
+    range_tool.x_range = p2.x_range
+
+
+@hv_available
+def test_holoviews_link_within_pane(document, comm):
+    from bokeh.models.tools import RangeTool
+    from holoviews.plotting.links import RangeToolLink
+
+    c1 = hv.Curve([])
+    c2 = hv.Curve([])
+
+    RangeToolLink(c1, c2)
+
+    pane = Pane(hv.Layout([c1, c2]))
+    column = pane._get_root(document, comm=comm)
+
+    assert len(column.children) == 1
+    subcolumn = column.children[0]
+    assert isinstance(subcolumn, BkColumn)
+    assert len(subcolumn.children) == 2
+    toolbar, subsubcolumn = subcolumn.children
+    assert isinstance(subsubcolumn, BkColumn)
+    assert len(subsubcolumn.children) == 1
+    row = subsubcolumn.children[0]
+    assert isinstance(row, BkRow)
+    assert len(row.children) == 2
+    p1, p2 = row.children
+
+    assert isinstance(p1, Figure)
+    assert isinstance(p2, Figure)
+
+    range_tool = row.select_one({'type': RangeTool})
+    assert isinstance(range_tool, RangeTool)
+    range_tool.x_range = p2.x_range
