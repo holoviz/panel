@@ -84,7 +84,7 @@ class PaneBase(Reactive):
                 raise ValueError('If a Pane declares no precedence '
                                  'the applies method should return a '
                                  'precedence value specific to the '
-                                 'object type or False, %s pane '
+                                 'object type or False, but the %s pane '
                                  'declares no precedence.' % p.__name__)
             elif precedence is None or precedence is False:
                 continue
@@ -99,10 +99,8 @@ class PaneBase(Reactive):
     def __init__(self, object, **params):
         applies = self.applies(object)
         if isinstance(applies, bool) and not applies:
-            name = type(self).__name__
-            raise ValueError('%s object not understood by %s, '
-                             'expected %s object.' %
-                             (type(object).__name__, name, name[:-5]))
+            raise ValueError("%s pane does not support objects of type '%s'" %
+                             (type(self).__name__, type(object).__name__))
         super(PaneBase, self).__init__(object=object, **params)
 
     def _get_root(self, doc, comm=None):
@@ -604,10 +602,20 @@ def make_transparent(img, bg=(255, 255, 255, 255)):
     return img
 
 
+def is_sympy_expr(obj):
+    """Test for sympy.Expr types without usually needing to import sympy"""
+    if 'sympy' in sys.modules and 'sympy' in str(type(obj).__class__):
+        import sympy
+        if isinstance(obj, sympy.Expr):
+            return True
+    return False
+
+
 class LaTeX(PNG):
     """
     Matplotlib-based LaTeX-syntax equation.
     Requires matplotlib and pillow.
+    See https://matplotlib.org/users/mathtext.html for what is supported.
     """
 
     # Precedence is dependent on the data type
@@ -621,7 +629,7 @@ class LaTeX(PNG):
 
     @classmethod
     def applies(cls, obj):
-        if hasattr(obj, '_repr_latex_'):
+        if is_sympy_expr(obj) or hasattr(obj, '_repr_latex_'):
             try:
                 import matplotlib, PIL # noqa
             except ImportError:
@@ -639,8 +647,14 @@ class LaTeX(PNG):
         return int(w*72), int(h*72)
 
     def _img(self):
-        obj=self.object if isinstance(self.object, basestring) else \
-            self.object._repr_latex_()
+        obj=self.object # Default: LaTeX string
+
+        if hasattr(obj, '_repr_latex_'):
+            obj = obj._repr_latex_()
+        elif is_sympy_expr(obj):
+            import sympy
+            obj = r'$'+sympy.latex(obj)+'$'
+            
         return make_transparent(latex_to_img(obj, self.size, self.dpi))._repr_png_()
 
 
