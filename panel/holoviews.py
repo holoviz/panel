@@ -162,6 +162,10 @@ class HoloViews(PaneBase):
 
 
 def is_bokeh_element_plot(plot):
+    """
+    Checks whether plotting instance is a HoloViews ElementPlot rendered
+    with the bokeh backend.
+    """
     from holoviews.plotting.plot import GenericElementPlot, GenericOverlayPlot 
     return (plot.renderer.backend == 'bokeh' and isinstance(plot, GenericElementPlot)
             and not isinstance(plot, GenericOverlayPlot))
@@ -169,8 +173,8 @@ def is_bokeh_element_plot(plot):
 
 def find_links(root_view, root_model):
     """
-    Traverses the supplied plot and searches for any Links on
-    the plotted objects.
+    Traverses the supplied Viewable searching for Links between any
+    HoloViews based panes.
     """
     if not isinstance(root_view, Layout):
         return
@@ -181,18 +185,20 @@ def find_links(root_view, root_model):
     hv_views = root_view.select(HoloViews)
     root_plots = [plot for view in hv_views for plot in view._plots.values()
                   if plot.root is root_model]
-    plots = [plot for root_plot in root_plots
+    plots = [(plot, root_plot) for root_plot in root_plots
              for plot in root_plot.traverse(lambda x: x, [is_bokeh_element_plot])]
-    potentials = [LinkCallback.find_link(plot) for plot in plots]
-    source_links = [p for p in potentials if p is not None]
+    potentials = [(LinkCallback.find_link(plot), root_plot)
+                  for plot, root_plot in plots]
+    source_links = [p for p in potentials if p[0] is not None]
     found = []
-    for plot, links in source_links:
+    for (plot, links), root_plot in source_links:
         for link in links:
             if link.target is None:
                 # If link has no target don't look further
                 found.append((link, plot, None))
                 continue
-            potentials = [LinkCallback.find_link(plot, link) for plot in plots]
+            potentials = [LinkCallback.find_link(plot, link) for plot, inner_root in plots
+                          if inner_root is not root_plot]
             tgt_links = [p for p in potentials if p is not None]
             if tgt_links:
                 found.append((link, plot, tgt_links[0][0]))
