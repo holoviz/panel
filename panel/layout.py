@@ -262,9 +262,9 @@ class Tabs(Layout):
 
 class Spacer(Reactive):
 
-    height = param.Integer(default=None, bounds=(0, None))
+    height = param.Integer(default=None, bounds=(None, None))
 
-    width = param.Integer(default=None, bounds=(0, None))
+    width = param.Integer(default=None, bounds=(None, None))
 
     _bokeh_model = BkSpacer
 
