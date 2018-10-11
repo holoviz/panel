@@ -27,7 +27,7 @@ def get_setup_version(reponame):
 
 install_requires = [
     'bokeh >=0.12.15',
-    'param >=1.8.0a0',    
+    'param >=1.8.0a10',    
     'pyviz_comms >=0.6.0',
     'markdown',
     'testpath<0.4' # temporary due to pip issue?
@@ -35,7 +35,7 @@ install_requires = [
 
 _recommended = [
     'notebook >=5.4',
-    'holoviews>1.10.5',
+    'holoviews>=1.11.0a8',
     'matplotlib',
     'pillow',
     'plotly'
