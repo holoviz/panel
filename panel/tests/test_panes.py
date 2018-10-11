@@ -20,6 +20,12 @@ except:
     mpl = None
 mpl_available = pytest.mark.skipif(mpl is None, reason="requires matplotlib")
 
+try:
+    import PIL
+except:
+    PIL = None
+pil_available = pytest.mark.skipif(PIL is None, reason="requires PIL")
+
 from .fixtures import mpl_figure
 from .test_layout import get_div
 
@@ -140,6 +146,8 @@ def test_html_pane(document, comm):
     assert pane._callbacks == {}
 
 
+@mpl_available
+@pil_available
 def test_latex_pane(document, comm):
     pane = LaTeX(r"$\frac{p^3}{q}$")
 
