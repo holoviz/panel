@@ -40,6 +40,8 @@ class Viewable(param.Parameterized):
 
     _views = {}
 
+    _preprocessing_hooks = []
+
     def __init__(self, **params):
         super(Viewable, self).__init__(**params)
         self._documents = {}
@@ -64,7 +66,7 @@ class Viewable(param.Parameterized):
 
     def _get_root(self, doc, comm=None):
         """
-        Returns the root model
+        Returns the root model and applies pre-processing hooks
 
         doc: bokeh.Document
           Bokeh document the bokeh model will be attached to.
@@ -72,7 +74,9 @@ class Viewable(param.Parameterized):
         comm: pyviz_comms.Comm
           Optional pyviz_comms when working in notebook
         """
-        return self._get_model(doc, comm=comm)
+        root = self._get_model(doc, comm=comm)
+        self._preprocess(root)
+        return root
 
     def _cleanup(self, model=None, final=False):
         """
@@ -84,6 +88,10 @@ class Viewable(param.Parameterized):
         final: boolean
             Whether the Viewable should be destroyed entirely
         """
+
+    def _preprocess(self, root):
+        for hook in self._preprocessing_hooks:
+            root = hook(self, root)
 
     def _repr_mimebundle_(self, include=None, exclude=None):
         Viewable._comm_manager = JupyterCommManager
@@ -97,6 +105,28 @@ class Viewable(param.Parameterized):
         doc = session_context._document
         self._cleanup(self._documents[doc], final=self._temporary)
         del self._documents[doc]
+
+    def select(self, selector=None):
+        """
+        Iterates over the Viewable and any potential children in the
+        applying the Selector.
+
+        Arguments
+        ---------
+        selector: type or callable or None
+            The selector allows selecting a subset of Viewables by
+            declaring a type or callable function to filter by.
+
+        Returns
+        -------
+        viewables: list(Viewable)
+        """
+        if (selector is None or
+            (isinstance(selector, type) and isinstance(self, selector)) or
+            (callable(selector) and not isinstance(selector, type) and selector(self))):
+            return [self]
+        else:
+            return []
 
     def server_doc(self, doc=None, title=None):
         doc = doc or curdoc()
@@ -123,13 +153,37 @@ class Viewable(param.Parameterized):
 
     def app(self, notebook_url="localhost:8888"):
         """
-        Displays a bokeh server app in the notebook.
+        Displays a bokeh server app inline in the notebook.
+
+        Arguments
+        ---------
+
+        notebook_url: str
+            URL to the notebook server
         """
         show(self._modify_doc, notebook_url=notebook_url)
 
     def show(self, port=0, websocket_origin=None):
         """
         Starts a bokeh server and displays the Viewable in a new tab
+
+        Arguments
+        ---------
+
+        port: int (optional)
+            Allows specifying a specific port (default=0 chooses random open port)
+        websocket_origin: str or list(str) (optional)
+            A list of hosts that can connect to the websocket.
+
+            This is typically required when embedding a server app in an external
+            web site.
+
+            If None, "localhost" is used.
+
+        Returns
+        -------
+
+        server: bokeh Server instance
         """
         def modify_doc(doc):
             return self.server_doc(doc)

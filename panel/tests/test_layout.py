@@ -28,6 +28,30 @@ def test_layout_constructor(panel):
     assert all(isinstance(p, Bokeh) for p in layout.objects)
 
 
+@pytest.mark.parametrize('panel', [Column, Row])
+def test_layout_select_by_type(panel):
+    div1 = Div()
+    div2 = Div()
+    layout = panel(div1, div2)
+
+    panes = layout.select(Bokeh)
+    assert len(panes) == 2
+    assert all(isinstance(p, Bokeh) for p in panes)
+    assert panes[0].object is div1
+    assert panes[1].object is div2
+
+
+@pytest.mark.parametrize('panel', [Column, Row])
+def test_layout_select_by_function(panel):
+    div1 = Div()
+    div2 = Div()
+    layout = panel(div1, div2)
+
+    panes = layout.select(lambda x: getattr(x, 'object', None) is div2)
+    assert len(panes) == 1
+    assert panes[0].object is div2
+
+
 @pytest.mark.parametrize(['panel', 'model_type'], [(Column, BkColumn), (Row, BkRow)])
 def test_layout_get_model(panel, model_type, document, comm):
     div1 = Div()

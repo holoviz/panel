@@ -67,6 +67,26 @@ class Layout(Reactive):
             for p, c in zip(self.objects, model.children):
                 p._cleanup(c, final)
 
+    def select(self, selector=None):
+        """
+        Iterates over the Viewable and any potential children in the
+        applying the Selector.
+
+        Arguments
+        ---------
+        selector: type or callable or None
+            The selector allows selecting a subset of Viewables by
+            declaring a type or callable function to filter by.
+
+        Returns
+        -------
+        viewables: list(Viewable)
+        """
+        objects = super(Layout, self).select(selector)
+        for obj in self.objects:
+            objects += obj.select(selector)
+        return objects
+
     def _get_objects(self, model, old_objects, doc, root, comm=None):
         """
         Returns new child models for the layout while reusing unchanged

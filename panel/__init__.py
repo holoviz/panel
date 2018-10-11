@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 
+from . import holoviews # noqa
 from . import widgets # noqa
 from . import layout # noqa
 
