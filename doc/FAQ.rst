@@ -61,12 +61,11 @@ For instance, ipywidgets provide many of the same capabilities as Panel, but the
 +--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+
 |Supports interactive plots            | Yes             | Yes                  | Yes             | Yes                | Yes                    |
 +--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+
-|Reactive updates in Jupyter notebooks | Yes             | Yes                  | Yes* (partial)  | No                 | No                     |
+|Reactive updates in Jupyter notebooks | Yes             | Yes                  | Partial (*)     | No                 | No                     |
 +--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+
 |Deployable in a server                | Yes             | No                   | Yes             | Yes                | Yes                    |
 +--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+
-|Fully usable in Jupyter               | Yes             | Yes                  | Yes* (partial)  | No                 | No, only via iframe    |
-|                                      |                 |                      |                 |                    | iframe                 |
+|Fully usable in Jupyter               | Yes             | Yes                  | Partial (*)     | No                 | No, only via iframe    |
 +--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+
 |Supports Matplotlib plots             | Yes             | Yes                  | No              | No                 | No                     |
 +--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+
@@ -88,7 +87,7 @@ For instance, ipywidgets provide many of the same capabilities as Panel, but the
 |network                               |                 | visible but readonly)|                 | Server             | Enterprise             |
 +--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+
 
-\* - with embedded server or ipwidgets/push_notebook
+\* - Live reactive widgets are possible in Bokeh with an embedded server process or using ipywidgets/push_notebook
 
 Each of these libraries are free, open-source software packages, but they can be used with the commercial products
 `Anaconda Enterprise (AE5) <https://www.anaconda.com/enterprise/>`__,
