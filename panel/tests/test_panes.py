@@ -3,7 +3,7 @@ from __future__ import absolute_import
 from base64 import b64decode, b64encode
 import pytest
 
-from bokeh.models import (Div, Row as BkRow, WidgetBox as BkWidgetBox)
+from bokeh.models import Div, Row as BkRow
 from panel.pane import (Pane, PaneBase, Bokeh, Matplotlib, HTML, Str,
                         PNG, JPG, GIF, SVG, Markdown, LaTeX)
 

@@ -3,8 +3,8 @@ from __future__ import absolute_import
 from collections import OrderedDict
 import pytest
 
-from bokeh.models import (Div, Row as BkRow, WidgetBox as BkWidgetBox,
-                          Column as BkColumn, GlyphRenderer, Circle, Line)
+from bokeh.models import (Row as BkRow, Column as BkColumn, GlyphRenderer,
+                          Circle, Line)
 from bokeh.plotting import Figure
 
 from panel.holoviews import HoloViews
