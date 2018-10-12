@@ -185,6 +185,7 @@ class interactive(PaneBase):
                 new_object = self.object(**self.kwargs)
                 pane_type = self.get_pane_type(new_object)
                 if type(self._pane) is pane_type:
+                    index = layout.children.index(old_model)
                     if isinstance(new_object, PaneBase):
                         new_params = {k: v for k, v in new_object.get_param_values()
                                       if k != 'name'}
@@ -192,6 +193,19 @@ class interactive(PaneBase):
                         new_object._cleanup(None, new_object._temporary)
                     else:
                         self._pane.object = new_object
+
+                    # If model has changed update history and remap callbacks
+                    def update_state():
+                        if old_model is layout.children[index]:
+                            return
+                        new_model = layout.children[index]
+                        history[0] = new_model
+
+                    if comm:
+                        update_state()
+                    else:
+                        doc.add_next_tick_callback(update_state)
+
                     return
 
                 # Replace pane entirely
