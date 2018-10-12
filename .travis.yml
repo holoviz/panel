@@ -74,6 +74,7 @@ jobs:
       script: doit package_upload --token=$ANACONDA_TOKEN $LABELS
 
     - &pip_dev_package
+      <<: *conda_default
       stage: pip_dev_package
       env: PYPI="https://test.pypi.org/legacy/" TRAVIS_NOCACHE=$TRAVIS_JOB_ID
       install:
@@ -89,6 +90,7 @@ jobs:
       env: DESC="" TRAVIS_NOCACHE=$TRAVIS_JOB_ID LABELS=$LABELS_REL CHANS=$CHANS_REL
 
     - &pip_package
+      <<: *conda_default
       stage: pip_package
       env: PYPI="https://upload.pypi.org/legacy/" TRAVIS_NOCACHE=$TRAVIS_JOB_ID
       install:
