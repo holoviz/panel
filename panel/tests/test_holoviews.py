@@ -3,8 +3,8 @@ from __future__ import absolute_import
 from collections import OrderedDict
 import pytest
 
-from bokeh.models import (Div, Row as BkRow, WidgetBox as BkWidgetBox,
-                          Column as BkColumn, GlyphRenderer, Circle, Line)
+from bokeh.models import (Row as BkRow, Column as BkColumn, GlyphRenderer,
+                          Circle, Line)
 from bokeh.plotting import Figure
 
 from panel.holoviews import HoloViews
@@ -18,6 +18,7 @@ except:
     hv = None
 hv_available = pytest.mark.skipif(hv is None, reason="requires holoviews")
 
+from .test_layout import get_div
 from .test_panes import mpl_available
 
 
@@ -40,18 +41,14 @@ def test_holoviews_pane_mpl_renderer(document, comm):
     assert len(row.children) == 1
     assert len(pane._callbacks) == 1
     model = row.children[0]
-    assert isinstance(model, BkWidgetBox)
-    div = model.children[0]
-    assert isinstance(div, Div)
+    div = get_div(model)
     assert '<img' in div.text
 
     # Replace Pane.object
     scatter = hv.Scatter([1, 2, 3])
     pane.object = scatter
     model = row.children[0]
-    assert isinstance(model, BkWidgetBox)
-    div2 = model.children[0]
-    assert isinstance(div2, Div)
+    div2 = get_div(model)
     assert div2.text != div.text
 
     # Cleanup

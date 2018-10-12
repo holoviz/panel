@@ -4,6 +4,8 @@ from bokeh.models import (Div as BkDiv, Column as BkColumn,
 from panel.interact import interact, interact_manual
 from panel import widgets
 
+from .test_layout import get_div
+
 
 def test_boolean_interact():
     def test(a):
@@ -137,9 +139,7 @@ def test_interact_updates_panel(document, comm):
     column = interactive._get_model(document, comm=comm)
     assert isinstance(column, BkColumn)
     box = column.children[1]
-    assert isinstance(box, BkWidgetBox)
-    div = box.children[0]
-    assert isinstance(div, BkDiv)
+    div = get_div(box)
     assert div.text == '<pre>False</pre>'
     
     widget.value = True
@@ -158,14 +158,12 @@ def test_interact_replaces_panel(document, comm):
     column = interactive._get_model(document, comm=comm)
     assert isinstance(column, BkColumn)
     box = column.children[1]
-    assert isinstance(box, BkWidgetBox)
-    div = box.children[0]
-    assert isinstance(div, BkDiv)
+    div = get_div(box)
     assert div.text == 'Test'
     
     widget.value = True
     assert pane._callbacks == {}
-    div = column.children[1].children[0]
+    div = get_div(column.children[1])
     assert div.text == '<pre>True</pre>'
 
 def test_interact_replaces_model(document, comm):

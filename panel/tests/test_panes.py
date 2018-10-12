@@ -3,7 +3,7 @@ from __future__ import absolute_import
 from base64 import b64decode, b64encode
 import pytest
 
-from bokeh.models import (Div, Row as BkRow, WidgetBox as BkWidgetBox)
+from bokeh.models import Div, Row as BkRow
 from panel.pane import (Pane, PaneBase, Bokeh, Matplotlib, HTML, Str,
                         PNG, JPG, GIF, SVG, Markdown, LaTeX)
 
@@ -75,17 +75,14 @@ def test_matplotlib_pane(document, comm):
     assert len(row.children) == 1
     assert len(pane._callbacks) == 1
     model = row.children[0]
-    assert isinstance(model, BkWidgetBox)
-    div = model.children[0]
-    assert isinstance(div, Div)
+    div = get_div(model)
     assert '<img' in div.text
     text = div.text
 
     # Replace Pane.object
     pane.object = mpl_figure()
     model = row.children[0]
-    assert isinstance(model, BkWidgetBox)
-    div2 = model.children[0]
+    div2 = get_div(model)
     assert div is div2
     assert div.text != text
 

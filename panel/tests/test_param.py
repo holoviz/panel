@@ -658,16 +658,14 @@ def test_param_method_pane_mpl(document, comm):
     assert len(row.children) == 1
     model = row.children[0]
     assert model.ref['id'] in inner_pane._callbacks
-    assert isinstance(model, BkWidgetBox)
-    div = model.children[0]
-    assert isinstance(div, Div)
+    div = get_div(model)
     text = div.text
 
     # Update pane
     test.a = 5
     model = row.children[0]
     assert inner_pane is pane._pane
-    assert div is row.children[0].children[0]
+    assert div is get_div(model)
     assert div.text != text
     assert len(inner_pane._callbacks) == 1
     assert model.ref['id'] in inner_pane._callbacks
@@ -690,9 +688,7 @@ def test_param_method_pane_changing_type(document, comm):
     assert len(row.children) == 1
     model = row.children[0]
     assert model.ref['id'] in inner_pane._callbacks
-    assert isinstance(model, BkWidgetBox)
-    div = model.children[0]
-    assert isinstance(div, Div)
+    div = get_div(model)
     text = div.text
 
     # Update pane

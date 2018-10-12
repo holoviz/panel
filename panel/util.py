@@ -12,7 +12,8 @@ import param
 import bokeh
 import bokeh.embed.notebook
 from bokeh.io.notebook import load_notebook as bk_load_notebook
-from bokeh.models import Model, LayoutDOM, Div as BkDiv, WidgetBox as BkWidgetBox
+from bokeh.models import (Model, LayoutDOM, Div as BkDiv, Row as BkRow,
+                          Spacer as BkSpacer)
 from bokeh.protocol import Protocol
 from bokeh.resources import CDN, INLINE
 from bokeh.util.string import encode_utf8
@@ -116,9 +117,9 @@ class default_label_formatter(param.ParameterizedFunction):
 def Div(**kwargs):
     # Hack to work around issues with Div height in notebooks
     div = BkDiv(**kwargs)
-    box_kws = {k: v for k, v in kwargs.items()
-               if k in ['width', 'height', 'sizing_mode']}
-    return BkWidgetBox(div, **box_kws)
+    if 'height' in kwargs:
+        return BkRow(div, BkSpacer(height=kwargs['height']))
+    return div
 
 
 def diff(doc, binary=True, events=None):
