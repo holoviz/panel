@@ -37,7 +37,7 @@ html_context.update({
     'NAV': _NAV,
     'LINKS': _NAV,
     'SOCIAL': (
-        ('Gitter', '//gitter.im/ioam/holoviews'),
+        ('Gitter', '//gitter.im/pyviz/pyviz'),
         ('Github', '//github.com/pyviz/panel'),
     )
 })
