@@ -61,12 +61,12 @@ For instance, ipywidgets provide many of the same capabilities as Panel, but the
 +--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+
 |Supports interactive plots            | Yes             | Yes                  | Yes             | Yes                | Yes                    |
 +--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+
-|Reactive updates in Jupyter notebooks | Yes             | Yes                  | No              | No                 | No                     |
+|Reactive updates in Jupyter notebooks | Yes             | Yes                  | Yes* (partial)  | No                 | No                     |
 +--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+
 |Deployable in a server                | Yes             | No                   | Yes             | Yes                | Yes                    |
 +--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+
-|Fully usable in Jupyter               | Yes             | Yes                  | Only as         | No                 | No, only via           |
-|                                      |                 |                      | embedded server |                    | iframe                 |
+|Fully usable in Jupyter               | Yes             | Yes                  | Yes* (partial)  | No                 | No, only via iframe    |
+|                                      |                 |                      |                 |                    | iframe                 |
 +--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+
 |Supports Matplotlib plots             | Yes             | Yes                  | No              | No                 | No                     |
 +--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+
@@ -75,6 +75,8 @@ For instance, ipywidgets provide many of the same capabilities as Panel, but the
 |Supports Plotly plots                 | Yes             | Yes                  | No              | No                 | Yes                    |
 +--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+
 |Supports R ggplot plots               | Yes             | No                   | No              | Yes                | No                     |
++--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+
+|Supports Altair/Vega plots            | Yes             | Yes                  | No              | Yes                | No                     |
 +--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+
 |Separates content from presentation   | Yes             | Could eventually     | No              | No                 | No                     |
 |                                      |                 | using traitlets      |                 |                    |                        |
@@ -85,6 +87,8 @@ For instance, ipywidgets provide many of the same capabilities as Panel, but the
 +Servable within private enterprise    | Yes, AE5        | Yes, AE5 (with cells | Yes, AE5        | Yes, AE5 or Shiny  | Yes, AE5 or Plotly     |
 |network                               |                 | visible but readonly)|                 | Server             | Enterprise             |
 +--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+
+
+\* - with embedded server or ipwidgets/push_notebook
 
 Each of these libraries are free, open-source software packages, but they can be used with the commercial products
 `Anaconda Enterprise (AE5) <https://www.anaconda.com/enterprise/>`__,
