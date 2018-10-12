@@ -394,7 +394,9 @@ class ParamMethod(PaneBase):
                     self._pane.object = new_object
 
                 # If model has changed update history and remap callbacks
-                if old_model is not parent.children[index]:
+                def update_state():
+                    if old_model is parent.children[index]:
+                        return
                     new_model = parent.children[index]
                     history[0] = new_model
                     new_ref = new_model.ref['id']
@@ -402,6 +404,10 @@ class ParamMethod(PaneBase):
                     if old_callbacks:
                         self._callbacks[new_ref] = old_callbacks
 
+                if comm:
+                    update_state()
+                else:
+                    doc.add_next_tick_callback(update_state)
                 return
 
             # Replace pane entirely
