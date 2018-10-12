@@ -49,8 +49,11 @@ Panel works with `Python 2.7 and Python 3 <https://travis-ci.org/pyviz/panel>`_ 
 
 The recommended way to install Panel is using the `conda <http://conda.pydata.org/docs/>`_ command provided by `Anaconda <http://docs.continuum.io/anaconda/install>`_ or `Miniconda <http://conda.pydata.org/miniconda.html>`_::
 
-  conda install -c pyviz/label/dev panel
+  conda install -c pyviz panel
 
+or simply using PyPI::
+
+  pip install panel
 
 PyViz
 -----
