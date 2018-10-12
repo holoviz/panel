@@ -76,7 +76,7 @@ jobs:
     - &pip_dev_package
       <<: *conda_default
       stage: pip_dev_package
-      env: PYPI="https://test.pypi.org/legacy/" TRAVIS_NOCACHE=$TRAVIS_JOB_ID
+      env: PYPI="https://test.pypi.org/legacy/" TRAVIS_NOCACHE=$TRAVIS_JOB_ID CHANS=$CHANS_DEV
       install:
         - doit develop_install $CHANS_DEV -o tests && pip uninstall -y panel
         - doit pip_on_conda
