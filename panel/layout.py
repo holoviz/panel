@@ -112,6 +112,11 @@ class Layout(Reactive):
         model = self._bokeh_model()
         root = model if root is None else root
         objects = self._get_objects(model, [], doc, root, comm)
+
+        # HACK ALERT: Insert Spacer if last item in Column has no height
+        if isinstance(self, Column) and objects and getattr(objects[-1], 'height', False) is None:
+            objects.append(BkSpacer(height=50))
+
         props = dict(self._init_properties(), objects=objects)
         model.update(**self._process_param_change(props))
         params = [p for p in self.params() if p != 'name']

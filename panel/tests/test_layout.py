@@ -67,7 +67,8 @@ def test_layout_get_model(panel, model_type, document, comm):
     model = layout._get_model(document, comm=comm)
 
     assert isinstance(model, model_type)
-    assert get_divs(model.children) == [div1, div2]
+    children = model.children[:-1] if isinstance(model, BkColumn) else model.children
+    assert get_divs(children) == [div1, div2]
 
 
 @pytest.mark.parametrize('panel', [Column, Row])
