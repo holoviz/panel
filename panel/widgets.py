@@ -596,8 +596,9 @@ class Player(Widget):
         self.toggle.param.watch(partial(self._animate, doc, comm), 'active')
         return self._layout._get_model(doc, root, parent, comm)
 
-    def _cleanup(self, model):
-        pass
+    def _cleanup(self, model, final=False):
+        self._playing = False
+        super(Player, self)._cleanup(model, final)
 
     def _buffer_change(self, doc, comm):
         """
@@ -611,7 +612,8 @@ class Player(Widget):
         update = partial(self._update, doc, comm)
         if comm:
             self._periodic.stop()
-            self._update(doc, comm)
+            ioloop = self._periodic.io_loop
+            ioloop.add_timeout(ioloop.time()+0.05, update)
         else:
             doc.remove_periodic_callback(self._periodic)
             self._periodic = None
