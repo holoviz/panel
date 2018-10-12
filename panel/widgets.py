@@ -7,6 +7,7 @@ from __future__ import absolute_import
 import ast
 from collections import OrderedDict
 from datetime import datetime
+from functools import partial
 
 import param
 import numpy as np
@@ -587,13 +588,16 @@ class Player(Widget):
         self.link(self.slider, value='value', options='options', name='name')
         self.slider.link(self, value='value')
         self._layout = Row(WidgetBox(self.toggle, width=120, height=80), WidgetBox(self.slider))
-        self._periodic = None
-        self._blocked = False
         self._current = 0
+        self._periodic = None
+        self._playing = False
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         self.toggle.param.watch(partial(self._animate, doc, comm), 'active')
         return self._layout._get_model(doc, root, parent, comm)
+
+    def _cleanup(self, model):
+        pass
 
     def _buffer_change(self, doc, comm):
         """
@@ -604,38 +608,46 @@ class Player(Widget):
         else:
             self._current += 1
 
-        if self._blocked:
-            return
-        elif comm:
-            self._update()
+        update = partial(self._update, doc, comm)
+        if comm:
+            self._periodic.stop()
+            self._update(doc, comm)
         else:
-            self._blocked = True
-            doc.add_timeout_callback(self._update, 50)
+            doc.remove_periodic_callback(self._periodic)
+            self._periodic = None
+            doc.add_timeout_callback(update, 50)
 
-    def _update(self):
+    def _update(self, doc, comm):
         """
         Triggers an update and unblocks the queue.
         """
         self.value = self.slider.values[self._current]
-        self._blocked = False
+        if self._playing:
+            if comm:
+                self._periodic.start()
+            else:
+                callback = partial(self._buffer_change, doc, None)
+                self._periodic = doc.add_periodic_callback(callback, self.timeout)
 
     def _animate(self, doc, comm, change):
+        playing = self._playing
+        self._playing = change.new
         if change.new:
             self.toggle.name = '❚❚ Pause'
             callback = partial(self._buffer_change, doc, comm)
             if comm is None:
-                self._periodic = doc.add_periodic_callback(callback, self.timeout)
+                if not playing:
+                    self._periodic = doc.add_periodic_callback(callback, self.timeout)
             elif not self._periodic:
                 from tornado.ioloop import PeriodicCallback
                 self._periodic = PeriodicCallback(callback, self.timeout)
                 self._periodic.start()
-            elif not self._periodic.is_running():
+            elif not playing:
                 self._periodic.start()
         else:
             self.toggle.name = '► Play'
             if comm is None:
                 doc.remove_periodic_callback(self._periodic)
                 self._periodic = None
-            elif self._periodic.is_running():
+            elif playing and self._periodic.is_running():
                 self._periodic.stop()
-
