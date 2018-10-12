@@ -4,14 +4,20 @@ import pytest
 
 from bokeh.models import (Div, Row as BkRow, Tabs as BkTabs,
                           Column as BkColumn, Panel as BkPanel,
-                          WidgetBox as BkWidgetBox)
+                          WidgetBox as BkWidgetBox, Spacer as BkSpacer)
 from panel.layout import Column, Row, Tabs, Spacer
 from panel.pane import Bokeh, Pane
 
 
 def get_div(box):
     # Temporary utilities to unpack widget boxes
+    if isinstance(box, BkRow):
+        assert isinstance(box.children[1], BkSpacer)
+        return get_div(box.children[0])
+    elif isinstance(box, Div):
+        return box
     assert isinstance(box, BkWidgetBox)
+    assert isinstance(box.children[0], Div)
     return box.children[0]
 
 
