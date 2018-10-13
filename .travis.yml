@@ -11,8 +11,8 @@ sudo: false
 env:
   global:
     - PYENV_VERSION=3.6
-    - CHANS_DEV="-c pyviz/label/dev -c jbednar"
-    - CHANS_REL="-c pyviz -c jbednar"
+    - CHANS_DEV="-c pyviz/label/dev -c defaults -c conda-forge"
+    - CHANS_REL="-c pyviz -c defaults -c conda-forge"
     - LABELS_DEV="--label dev"
     - LABELS_REL="--label dev --label main"
     - PKG_TEST_PYTHON="--test-python=py27 --test-python=py36"
@@ -50,7 +50,6 @@ jobs:
         - doit env_create $CHANS_DEV --python=$PYENV_VERSION
         - source activate test-environment
         - doit develop_install -o recommended -o tests $CHANS_DEV
-        - pip install codecov altair
         - doit env_capture
       script: doit test_all_recommended
       after_success: codecov
