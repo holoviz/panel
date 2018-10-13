@@ -26,9 +26,9 @@ stages:
   - name: docs
     if: (branch = master) AND (type != pull_request)
   - name: pip_dev_package
-    if: tag =~ ^v(\d+|\.)*[a-z]\d*$
+    if: tag =~ ^v(\d+|\.)+[a-z]\d+$
   - name: pip_package
-    if: tag =~ ^v(\d+|\.)*[^a-z]\d*$
+    if: tag =~ ^v(\d+|\.)+[^a-z]\d+$
 
 
 jobs:
@@ -73,15 +73,15 @@ jobs:
         - doit package_build $CHANS $PKG_TEST_PYTHON --test-group=unit
       script: doit package_upload --token=$ANACONDA_TOKEN $LABELS
 
-    - &pip_dev_package
-      <<: *conda_default
+
+    - &pip_pkg
+      env: PYPI=testpypi PYPIUSER=$TPPU PYPIPASS=$TPPP
       stage: pip_dev_package
-      env: PYPI="https://test.pypi.org/legacy/" TRAVIS_NOCACHE=$TRAVIS_JOB_ID CHANS=$CHANS_DEV
-      install:
-        - doit develop_install $CHANS_DEV -o tests && pip uninstall -y panel
-        - doit pip_on_conda
-        - doit ecosystem=pip package_build --test-python=py36 --test-group=unit
-      script: doit ecosystem=pip package_upload -u $TPPU -p $TPPP -r ${PYPI}
+      install: pip install pyctdev && doit ecosystem=pip ecosystem_setup
+      before_script:
+        - doit ecosystem=pip package_build $PKG_TEST_PYTHON --test-group=unit --sdist-install-build-deps
+      script: doit ecosystem=pip package_upload -u $PYPIUSER -p $PYPIPASS --pypi ${PYPI}
+
 
     ## release packages
 
@@ -89,15 +89,9 @@ jobs:
       stage: conda_package
       env: DESC="" TRAVIS_NOCACHE=$TRAVIS_JOB_ID LABELS=$LABELS_REL CHANS=$CHANS_REL
 
-    - &pip_package
-      <<: *conda_default
+    - <<: *pip_pkg
+      env: PYPI=pypi PYPIUSER=$PPU PYPIPASS=$PPP
       stage: pip_package
-      env: PYPI="https://upload.pypi.org/legacy/" TRAVIS_NOCACHE=$TRAVIS_JOB_ID
-      install:
-        - doit develop_install $CHANS -o tests && pip uninstall -y panel
-        - doit pip_on_conda
-        - doit ecosystem=pip package_build --test-python=py36 --test-group=unit
-      script: doit ecosystem=pip package_upload -u $PPU -p $PPP -r ${PYPI}
 
     ########## DOCS ##########
 
