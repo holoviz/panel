@@ -473,7 +473,7 @@ class LaTeX(PNG):
                 import matplotlib, PIL # noqa
             except ImportError:
                 return False
-            return 0.25
+            return 0.05
         elif isinstance(obj, basestring):
             return None
         else:
