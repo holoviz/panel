@@ -102,6 +102,10 @@ setup_args = dict(
         "Topic :: Scientific/Engineering",
         "Topic :: Software Development :: Libraries"],
     python_requires=">=2.7",
+    entry_points={
+        'console_scripts': [
+            'panel = panel.cli:main'
+        ]},
     install_requires=install_requires,
     extras_require=extras_require,
     tests_require=extras_require['tests']
