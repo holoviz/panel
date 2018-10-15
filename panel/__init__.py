@@ -55,3 +55,11 @@ class extension(param.ParameterizedFunction):
         """
         viewable, model = Viewable._views.pop(msg['id'])
         viewable._cleanup(model)
+
+
+def serve_panel(arg):
+    return Pane(arg).servable()
+
+def serve_markdown(source, lines, height_per_line=30):
+    height = lines * height_per_line
+    return Pane(source, height=height).servable()
