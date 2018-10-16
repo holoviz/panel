@@ -90,13 +90,19 @@ def build_custom_models():
 class CustomDevelopCommand(develop):
     """Custom installation for development mode."""
     def run(self):
-        build_custom_models()
+        try:
+            build_custom_models()
+        except ImportError:
+            pass
         develop.run(self)
 
 class CustomInstallCommand(install):
     """Custom installation for install mode."""
     def run(self):
-        build_custom_models()
+        try:
+            build_custom_models()
+        except ImportError:
+            pass
         install.run(self)
         
 extras_require['all'] = sorted(set(sum(extras_require.values(), [])))
