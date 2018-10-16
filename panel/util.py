@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 
+import os
 import io
 import json
 import sys
@@ -44,6 +45,8 @@ def load_compiled_models(custom_model, implementation):
         return
     ts_file = model.__implementation__
     json_file = ts_file.replace('.ts', '.json')
+    if not os.path.isfile(json_file):
+        return
     with io.open(ts_file, encoding="utf-8") as f:
         code = f.read()
     with io.open(json_file, encoding="utf-8") as f:
