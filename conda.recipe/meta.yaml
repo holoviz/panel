@@ -9,7 +9,7 @@ source:
 
 build:
   noarch: python
-  script: python setup.py --quiet install --single-version-externally-managed --record record.txt
+  script: python setup.py install --single-version-externally-managed --record record.txt
 
 requirements:
   build:
