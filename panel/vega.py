@@ -8,7 +8,7 @@ from bokeh.core.properties import Dict, String, Any, Instance
 from bokeh.models import LayoutDOM, ColumnDataSource
 
 from .pane import PaneBase
-
+from .util import CUSTOM_MODELS
 
 def ds_as_cds(dataset):
     """
@@ -109,3 +109,6 @@ class Vega(PaneBase):
         json = self._to_json(self.object)
         self._get_sources(json, model.data_sources)
         model.data = json
+
+
+CUSTOM_MODELS['panel.vega.VegaPlot'] = VegaPlot
