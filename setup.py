@@ -1,7 +1,11 @@
 #!/usr/bin/env python
 
 import os
+import json
+import hashlib
 from setuptools import setup, find_packages
+from setuptools.command.develop import develop
+from setuptools.command.install import install
 
 
 def get_setup_version(reponame):
@@ -63,6 +67,38 @@ extras_require = {
     ]
 }
 
+def build_custom_models():
+    """
+    Compiles custom bokeh models and stores the compiled JSON alongside
+    the original code.
+    """
+    from panel.util import CUSTOM_MODELS
+    from bokeh.util.compiler import _get_custom_models, _compile_models
+    custom_models = _get_custom_models(list(CUSTOM_MODELS.values()))
+    compiled_models = _compile_models(custom_models)
+    for name, model in custom_models.items():
+        compiled = compiled_models.get(name)
+        if compiled is None:
+            return
+        impl = model.implementation
+        hashed = hashlib.sha256(impl.code.encode('utf-8')).hexdigest()
+        compiled['hash'] = hashed
+        fp = impl.file.replace('.ts', '.json')
+        with open(fp, 'w') as f:
+            json.dump(compiled, f)
+
+class CustomDevelopCommand(develop):
+    """Custom installation for development mode."""
+    def run(self):
+        build_custom_models()
+        develop.run(self)
+
+class CustomInstallCommand(install):
+    """Custom installation for install mode."""
+    def run(self):
+        build_custom_models()
+        install.run(self)
+        
 extras_require['all'] = sorted(set(sum(extras_require.values(), [])))
 
 # until pyproject.toml/equivalent is widely supported (setup_requires
@@ -70,7 +106,8 @@ extras_require['all'] = sorted(set(sum(extras_require.values(), [])))
 extras_require['build'] = [
     'param >=1.7.0',
     'pyct >=0.4.4',
-    'setuptools >=30.3.0'
+    'setuptools >=30.3.0',
+    'bokeh >=0.12.15',
 ]
 
 setup_args = dict(
@@ -86,8 +123,12 @@ setup_args = dict(
     platforms=['Windows', 'Mac OS X', 'Linux'],
     license='BSD',
     url='http://pyviz.org',
+    cmdclass={
+        'develop': CustomDevelopCommand,
+        'install': CustomInstallCommand,
+    },
     packages=find_packages(),
-    package_data={'panel.models': ['*.ts']},
+    package_data={'panel.models': ['*.ts', '*.json']},
     include_package_data=True,
     classifiers = [
         "License :: OSI Approved :: BSD License",

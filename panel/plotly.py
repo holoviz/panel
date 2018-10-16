@@ -8,6 +8,7 @@ from bokeh.core.properties import Dict, String, List, Any, Instance
 from bokeh.models import LayoutDOM, ColumnDataSource
 
 from .pane import PaneBase
+from .util import CUSTOM_MODELS
 
 
 class PlotlyPlot(LayoutDOM):
@@ -93,3 +94,6 @@ class Plotly(PaneBase):
         model.data = json
         if new_sources:
             model.data_sources += new_sources
+
+
+CUSTOM_MODELS['panel.plotly.PlotlyPlot'] = PlotlyPlot
