@@ -92,8 +92,8 @@ class CustomDevelopCommand(develop):
     def run(self):
         try:
             build_custom_models()
-        except ImportError:
-            pass
+        except ImportError as e:
+            print("Custom model compilation failed with: %s" % e)
         develop.run(self)
 
 class CustomInstallCommand(install):
@@ -101,8 +101,8 @@ class CustomInstallCommand(install):
     def run(self):
         try:
             build_custom_models()
-        except ImportError:
-            pass
+        except ImportError as e:
+            print("Custom model compilation failed with: %s" % e)
         install.run(self)
         
 extras_require['all'] = sorted(set(sum(extras_require.values(), [])))
