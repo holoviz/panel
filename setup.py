@@ -80,6 +80,7 @@ def build_custom_models():
         compiled = compiled_models.get(name)
         if compiled is None:
             return
+        print('\tBuilt %s custom model' % name)
         impl = model.implementation
         hashed = hashlib.sha256(impl.code.encode('utf-8')).hexdigest()
         compiled['hash'] = hashed
@@ -91,6 +92,7 @@ class CustomDevelopCommand(develop):
     """Custom installation for development mode."""
     def run(self):
         try:
+            print("Building custom models:")
             build_custom_models()
         except ImportError as e:
             print("Custom model compilation failed with: %s" % e)
@@ -100,6 +102,7 @@ class CustomInstallCommand(install):
     """Custom installation for install mode."""
     def run(self):
         try:
+            print("Building custom models:")
             build_custom_models()
         except ImportError as e:
             print("Custom model compilation failed with: %s" % e)
