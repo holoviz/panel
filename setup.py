@@ -113,7 +113,7 @@ extras_require['build'] = [
     'param >=1.7.0',
     'pyct >=0.4.4',
     'setuptools >=30.3.0',
-    'bokeh >=0.12.15',
+    'bokeh >=1.0.0rc1'
 ]
 
 setup_args = dict(
