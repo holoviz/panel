@@ -49,6 +49,7 @@ jobs:
       install:
         - doit env_create $CHANS_DEV --python=$PYENV_VERSION
         - source activate test-environment
+        - conda install $CHANS_DEV -conda-forge nodejs=9.11.1
         - doit develop_install -o recommended -o tests $CHANS_DEV
         - pip install codecov altair
         - doit env_capture
