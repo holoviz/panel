@@ -49,7 +49,6 @@ jobs:
       install:
         - doit env_create $CHANS_DEV --python=$PYENV_VERSION
         - source activate test-environment
-        - conda install $CHANS_DEV -c conda-forge nodejs=9.11.1
         - doit develop_install -o recommended -o tests $CHANS_DEV
         - pip install codecov altair
         - doit env_capture
@@ -78,11 +77,12 @@ jobs:
     - &pip_pkg
       env: PYPI=testpypi PYPIUSER=$TPPU PYPIPASS=$TPPP
       stage: pip_dev_package
-      install: pip install pyctdev && doit ecosystem=pip ecosystem_setup
-      before_script:
-        - doit ecosystem=pip package_build $PKG_TEST_PYTHON --test-group=unit --sdist-install-build-deps
-      script: doit ecosystem=pip package_upload -u $PYPIUSER -p $PYPIPASS --pypi ${PYPI}
-
+      install:
+        - doit develop_install $CHANS_DEV -o tests && pip uninstall -y panel
+        - doit pip_on_conda
+        - conda install -c conda-forge nodejs=9.11.1
+        - doit ecosystem=pip package_build $PKG_TEST_PYTHON --test-group=unit
+      script: doit ecosystem=pip package_upload -u $PYPIUSER -p $PYPIPASS -r ${PYPI}
 
     ## release packages
 
