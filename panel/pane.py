@@ -15,7 +15,6 @@ except:
     from cgi import escape
 
 import param
-import markdown
 
 from bokeh.layouts import Row as _BkRow, WidgetBox as _BkWidgetBox
 from bokeh.models import LayoutDOM, CustomJS, Widget as _BkWidget, Div as _BkDiv
@@ -593,6 +592,7 @@ class Markdown(DivPaneBase):
             return False
 
     def _get_properties(self):
+        import markdown
         data = self.object
         if not isinstance(data, basestring):
             data = data._repr_markdown_()
