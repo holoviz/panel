@@ -372,9 +372,13 @@ class Reactive(Viewable):
         self._active = list(self._events)
 
     def _change_event(self):
-        self.set_param(**self._process_property_change(self._events))
-        self._events = {}
-        self._active = []
+        try:
+            self.set_param(**self._process_property_change(self._events))
+        except Exception as e:
+            raise e
+        finally:
+            self._events = {}
+            self._active = []
 
     def _get_customjs(self, change, client_comm, plot_id):
         """

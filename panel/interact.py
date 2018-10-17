@@ -181,6 +181,7 @@ class interactive(PaneBase):
         for name, widget in widgets:
             def update_pane(change, history=history):
                 # Try updating existing pane
+                error = None
                 old_model = history[0]
                 new_object = self.object(**self.kwargs)
                 pane_type = self.get_pane_type(new_object)
@@ -189,17 +190,27 @@ class interactive(PaneBase):
                     if isinstance(new_object, PaneBase):
                         new_params = {k: v for k, v in new_object.get_param_values()
                                       if k != 'name'}
-                        self._pane.set_param(**new_params)
+                        try:
+                            self._pane.set_param(**new_params)
+                        except Exception as e:
+                            error = e
                         new_object._cleanup(None, new_object._temporary)
                     else:
-                        self._pane.object = new_object
+                        try:
+                            self._pane.object = new_object
+                        except Exception as e:
+                            error = e
 
                     # If model has changed update history and remap callbacks
                     def update_state():
                         if old_model is layout.children[index]:
+                            if error is not None:
+                                raise error
                             return
                         new_model = layout.children[index]
                         history[0] = new_model
+                        if error is not None:
+                            raise error
 
                     if comm:
                         update_state()

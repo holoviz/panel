@@ -268,8 +268,12 @@ class Param(PaneBase):
                     updates['end'] = end
                 else:
                     updates['value'] = change.new
-                widget.set_param(**updates)
-                _updating.pop(_updating.index(key))
+                try:
+                    widget.set_param(**updates)
+                except Exception as e:
+                    raise e
+                finally:
+                    _updating.pop(_updating.index(key))
 
             # Set up links to parameterized object
             watchers.append(self.object.param.watch(link, p_name, 'constant'))
@@ -353,6 +357,7 @@ class ParamMethod(PaneBase):
         deps = params
 
         def update_pane(*events):
+            error = None
             old_model = history[0]
             old_ref = old_model.ref['id']
 
@@ -388,14 +393,22 @@ class ParamMethod(PaneBase):
                 if isinstance(new_object, PaneBase):
                     new_params = {k: v for k, v in new_object.get_param_values()
                                   if k != 'name'}
-                    self._pane.set_param(**new_params)
+                    try:
+                        self._pane.set_param(**new_params)
+                    except Exception as e:
+                        error = e
                     new_object._cleanup(None, new_object._temporary)
                 else:
-                    self._pane.object = new_object
+                    try:
+                        self._pane.object = new_object
+                    except Exception as e:
+                        error = e
 
                 # If model has changed update history and remap callbacks
                 def update_state():
                     if old_model is parent.children[index]:
+                        if error is not None:
+                            raise error
                         return
                     new_model = parent.children[index]
                     history[0] = new_model
@@ -403,6 +416,8 @@ class ParamMethod(PaneBase):
                     old_callbacks = self._callbacks.pop(old_ref, [])
                     if old_callbacks:
                         self._callbacks[new_ref] = old_callbacks
+                    if error is not None:
+                        raise error
 
                 if comm:
                     update_state()
