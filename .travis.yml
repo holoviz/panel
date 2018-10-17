@@ -75,14 +75,14 @@ jobs:
 
     - &pip_pkg
       <<: *conda_default
-      env: PYPI=testpypi PYPIUSER=$TPPU PYPIPASS=$TPPP
+      env: PYPI="https://test.pypi.org/legacy/" PYPIUSER=$TPPU PYPIPASS=$TPPP
       stage: pip_dev_package
       install:
-        - doit develop_install $CHANS_DEV -o build -o tests && pip uninstall -y panel
+        - doit develop_install $CHANS_DEV -o build && pip uninstall -y panel
         - doit pip_on_conda
         - conda install $CHANS_DEV nodejs=9.11.1
         - doit ecosystem=pip package_build $PKG_TEST_PYTHON --test-group=unit
-      script: doit ecosystem=pip package_upload -u $PYPIUSER -p $PYPIPASS -pypi ${PYPI}
+      script: doit ecosystem=pip package_upload -u $PYPIUSER -p $PYPIPASS -r ${PYPI}
 
     ## release packages
 
@@ -91,7 +91,7 @@ jobs:
       env: DESC="" TRAVIS_NOCACHE=$TRAVIS_JOB_ID LABELS=$LABELS_REL CHANS=$CHANS_REL
 
     - <<: *pip_pkg
-      env: PYPI=pypi PYPIUSER=$PPU PYPIPASS=$PPP
+      env: PYPI="https://upload.pypi.org/legacy/" PYPIUSER=$PPU PYPIPASS=$PPP
       stage: pip_package
 
     ########## DOCS ##########
