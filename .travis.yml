@@ -74,10 +74,10 @@ jobs:
       script: doit package_upload --token=$ANACONDA_TOKEN $LABELS
 
     - &pip_pkg
+      <<: *conda_default
       env: PYPI=testpypi PYPIUSER=$TPPU PYPIPASS=$TPPP
       stage: pip_dev_package
       install:
-        - pip install pyctdev
         - doit develop_install $CHANS_DEV -o tests && pip uninstall -y panel
         - doit pip_on_conda
         - conda install -c conda-forge nodejs=9.11.1
