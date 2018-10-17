@@ -15,7 +15,7 @@ env:
     - CHANS_REL="-c pyviz -c jbednar"
     - LABELS_DEV="--label dev"
     - LABELS_REL="--label dev --label main"
-    - PKG_TEST_PYTHON="--test-python=py27 --test-python=py36"
+    - PKG_TEST_PYTHON="--test-python=py36"
 
 stages:
   - test
@@ -78,7 +78,7 @@ jobs:
       env: PYPI=testpypi PYPIUSER=$TPPU PYPIPASS=$TPPP
       stage: pip_dev_package
       install:
-        - doit develop_install $CHANS_DEV -o tests && pip uninstall -y panel
+        - doit develop_install $CHANS_DEV -o build -o tests && pip uninstall -y panel
         - doit pip_on_conda
         - conda install $CHANS_DEV nodejs=9.11.1
         - doit ecosystem=pip package_build $PKG_TEST_PYTHON --test-group=unit
