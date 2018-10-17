@@ -138,7 +138,6 @@ setup_args = dict(
         'install': CustomInstallCommand,
     },
     packages=find_packages(),
-    package_data={'panel.models': ['*.ts', '*.json']},
     include_package_data=True,
     classifiers = [
         "License :: OSI Approved :: BSD License",
