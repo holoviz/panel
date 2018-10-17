@@ -268,8 +268,12 @@ class Param(PaneBase):
                     updates['end'] = end
                 else:
                     updates['value'] = change.new
-                widget.set_param(**updates)
-                _updating.pop(_updating.index(key))
+                try:
+                    widget.set_param(**updates)
+                except Exception as e:
+                    raise e
+                finally:
+                    _updating.pop(_updating.index(key))
 
             # Set up links to parameterized object
             watchers.append(self.object.param.watch(link, p_name, 'constant'))
