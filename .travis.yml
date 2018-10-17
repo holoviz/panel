@@ -82,7 +82,7 @@ jobs:
         - doit pip_on_conda
         - conda install -c conda-forge nodejs=9.11.1
         - doit ecosystem=pip package_build $PKG_TEST_PYTHON --test-group=unit
-      script: doit ecosystem=pip package_upload -u $PYPIUSER -p $PYPIPASS -r ${PYPI}
+      script: doit ecosystem=pip package_upload -u $PYPIUSER -p $PYPIPASS -pypi ${PYPI}
 
     ## release packages
 
