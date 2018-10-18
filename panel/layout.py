@@ -29,6 +29,8 @@ class Layout(Reactive):
 
     _rename = {'objects': 'children'}
 
+    _linked_props = []
+
     def __init__(self, *objects, **params):
         objects = [Pane(pane) for pane in objects]
         super(Layout, self).__init__(objects=objects, **params)
@@ -121,6 +123,7 @@ class Layout(Reactive):
         model.update(**self._process_param_change(props))
         params = [p for p in self.params() if p != 'name']
         self._link_params(model, params, doc, root, comm)
+        self._link_props(model, self._linked_props, doc, root, comm)
         return model
 
     def __setitem__(self, index, pane):
@@ -203,6 +206,9 @@ class Tabs(Layout):
     Tabs allows selecting between the supplied panes.
     """
 
+    active = param.Integer(default=0, doc="""
+        Currently active Tab.""")
+
     objects = param.List(default=[], doc="""
         The list of child objects that make up the tabs.""")
 
@@ -213,6 +219,8 @@ class Tabs(Layout):
     _bokeh_model = BkTabs
 
     _rename = {'objects': 'tabs'}
+
+    _linked_props = ['active']
 
     def __init__(self, *items, **params):
         objects = []
