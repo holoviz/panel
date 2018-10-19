@@ -1,7 +1,8 @@
 import os
 
 from bokeh.core.properties import Int, Override, Enum
-from bokeh.models import Widget, WidgetBox
+from bokeh.models import Widget
+
 
 class Player(Widget):
     """
