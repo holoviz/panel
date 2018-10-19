@@ -31,7 +31,7 @@ export class PlayerView extends WidgetView {
     } else {
       this.sliderEl.style = `width:{this.model.width}px`
       this.sliderEl.max = this.model.length - 1;
-	  this.sliderEl.value = this.model.value;
+      this.sliderEl.value = this.model.value;
       return
     }
 
@@ -41,11 +41,11 @@ export class PlayerView extends WidgetView {
     this.sliderEl.style = `width:{this.model.width}px`
     this.sliderEl.value = 0;
     this.sliderEl.max = this.model.length - 1;
-	this.sliderEl.onchange = (ev) => this.set_frame(parseInt(ev.target.value))
+    this.sliderEl.onchange = (ev) => this.set_frame(parseInt(ev.target.value))
 
     // Buttons
     const button_div = div() as any;
-	button_div.style = "margin: 0 auto; display: table; padding: 5px"
+    button_div.style = "margin: 0 auto; display: table; padding: 5px"
     const button_style = "text-align: center; min-width: 40px";
 
     const slower = document.createElement('button')
@@ -104,31 +104,31 @@ export class PlayerView extends WidgetView {
 
     // Loop control
     this.loop_state = document.createElement('form')
-	this.loop_state.style = "margin: 0 auto; display: table"
+    this.loop_state.style = "margin: 0 auto; display: table"
 
     const once = document.createElement('input')
-	once.type = "radio";
+    once.type = "radio";
     once.value = "once";
     once.name = "state";
-	const once_label = document.createElement('label');
-	once_label.innerHTML = "Once"
-	once_label.style = "padding: 0 10px 0 5px; user-select:none;"
+    const once_label = document.createElement('label');
+    once_label.innerHTML = "Once"
+    once_label.style = "padding: 0 10px 0 5px; user-select:none;"
 
     const loop = document.createElement('input')
     loop.setAttribute("type", "radio");
     loop.setAttribute("value", "loop");
     loop.setAttribute("name", "state");
-	const loop_label = document.createElement('label');
-	loop_label.innerHTML = "Loop"
-	loop_label.style = "padding: 0 10px 0 5px; user-select:none;"
+    const loop_label = document.createElement('label');
+    loop_label.innerHTML = "Loop"
+    loop_label.style = "padding: 0 10px 0 5px; user-select:none;"
 
     const reflect = document.createElement('input')
     reflect.setAttribute("type", "radio");
     reflect.setAttribute("value", "reflect");
     reflect.setAttribute("name", "state");
-	const reflect_label = document.createElement('label');
-	reflect_label.innerHTML = "Reflect"
-	reflect_label.style = "padding: 0 10px 0 5px; user-select:none;"
+    const reflect_label = document.createElement('label');
+    reflect_label.innerHTML = "Reflect"
+    reflect_label.style = "padding: 0 10px 0 5px; user-select:none;"
 
     if (this.model.loop_policy == "once")
       once.checked = true
@@ -151,10 +151,10 @@ export class PlayerView extends WidgetView {
   }
 
   set_frame(frame: number): void {
-	if (this.model.value != frame)
+    if (this.model.value != frame)
       this.model.value = frame;
-	if (this.sliderEl.value != frame)
-	  this.sliderEl.value = frame;
+    if (this.sliderEl.value != frame)
+      this.sliderEl.value = frame;
   }
 
   get_loop_state(): void {
@@ -170,8 +170,8 @@ export class PlayerView extends WidgetView {
     var button_group = this.loop_state.state;
     for (var i = 0; i < button_group.length; i++) {
       var button = button_group[i];
-	  if (button.value == state)
-		button.checked = true
+      if (button.value == state)
+        button.checked = true
     }
   }
 
@@ -292,7 +292,7 @@ export abstract class Player extends Widget {
       value:             [ p.Any,         0            ],
     })
 
-	this.override({width: 350})
+    this.override({width: 350})
   }
 }
 
