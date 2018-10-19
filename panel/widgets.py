@@ -21,6 +21,7 @@ from bokeh.models.widgets import (
 )
 
 from .layout import WidgetBox # noqa
+from .models.widgets import Player as _BkPlayer
 from .viewable import Reactive
 from .util import as_unicode, push, value_as_datetime, hashable
 
@@ -575,3 +576,27 @@ class DiscreteSlider(Widget):
         if 'value' in msg:
             msg['value'] = self.values[msg['value']]
         return msg
+
+
+class Player(Widget):
+    """
+    The Player provides controls to play and skip through a number of
+    frames defined by the length. The speed at which the widget plays
+    is defined by the interval.
+    """
+
+    interval = param.Integer(default=500, doc="Interval between updates")
+
+    length = param.Integer(default=10, doc="Number of frames")
+
+    loop_policy = param.ObjectSelector(default='once',
+                                       objects=['once', 'loop', 'reflect'], doc="""
+       Policy used when player hits last frame""")
+
+    value = param.Integer(default=0, doc="Current player value")
+
+    height = param.Integer(default=250, readonly=True)
+
+    _widget_type = _BkPlayer
+
+    _rename = {'name': None}
