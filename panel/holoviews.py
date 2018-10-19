@@ -179,14 +179,22 @@ def find_links(root_view, root_model):
     if not isinstance(root_view, Layout):
         return
 
-    from holoviews.plotting.links import Link
-    from holoviews.plotting.bokeh.callbacks import LinkCallback
-
     hv_views = root_view.select(HoloViews)
     root_plots = [plot for view in hv_views for plot in view._plots.values()
                   if plot.root is root_model]
+
+    if not root_plots:
+        return
+
+    try:
+        from holoviews.plotting.links import Link
+        from holoviews.plotting.bokeh.callbacks import LinkCallback
+    except:
+        return
+
     plots = [(plot, root_plot) for root_plot in root_plots
              for plot in root_plot.traverse(lambda x: x, [is_bokeh_element_plot])]
+
     potentials = [(LinkCallback.find_link(plot), root_plot)
                   for plot, root_plot in plots]
     source_links = [p for p in potentials if p[0] is not None]
