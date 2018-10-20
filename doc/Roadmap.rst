@@ -60,7 +60,7 @@ funded or scheduled include:
    As mentioned in 
    `issue 2 <https://github.com/pyviz/panel/issues/2>`__, 
    the ipywidgets-based libraries will be more complicated to support,
-   but any library that produces PNG, SVG, HTML, or other basic
+   but any library that produces PNG, SVG, HTML, or another basic
    type should be very straightforward to include.
 
 3. **Themes**: By default, Panel apps use Bokeh's default theming,

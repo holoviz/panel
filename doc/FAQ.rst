@@ -20,7 +20,7 @@ potential pitfalls we hope to help users avoid:
 
 **A:** It depends. If the object already has one of the usual IPython ``_repr_X_`` rich display methods (where X is png, jpg, or html), then it is very likely to work already. Try it!  If it doesn't have a rich display method, check to see if you can add one as a PR to that project -- they are very useful for many cases other than Panel, too. Otherwise, adding support is quite easy for anything that can somehow return an image or some HTML. If it can return an image in any way, see the ``panel.pane.Matplotlib`` implementation as a starting point; you just need to be able to call some method or function that returns an image, and the rest should be simple.
 
-If you want an even richer JavaScript-based representation, it will be more difficult to add that, but you can see the ``pane.Bokeh`` and ``pane.HoloViews`` classes and the ``panel.plotly`` module for examples.
+If you want an even richer JavaScript-based representation, it will be more difficult to add that, but you can see the ``pane.Bokeh`` class and the ``panel.holoviews`` and ``panel.plotly`` modules for examples.
 
 
 **Q: How does Panel relate to Bokeh?**
@@ -37,12 +37,12 @@ Conversely, what Panel adds on top of Bokeh is full bidirectional communication 
 
 **Q: Why is the spacing messed up in my panel?**
 
-**A:** Panels are composed of multiple Panes (or other Viewable objects). There are two main ways the spacing between viewable objects can be incorrect: either the object is not reporting its correct size, or the layout engine is not laying things out reasonably. Some pane types are unable to discover the size of what is in them, such as ``pane.HTML``, and for these you will need to provide explicit ``height`` and ``width`` settings (as in ``pp.Row(pane.HTML(obj, height=300))``. Other spacing problems appear to be caused by issues with the Bokeh layout system, which is currently being improved.  In the meantime you should be able to use ``pp.Spacer(height=..., width=...)`` to adjust spacing manually when needed.
+**A:** Panels are composed of multiple Panes (or other Viewable objects). There are two main ways the spacing between viewable objects can be incorrect: either the object is not reporting its correct size, or the layout engine is not laying things out reasonably. Some pane types are unable to discover the size of what is in them, such as ``pane.HTML``, and for these you will need to provide explicit ``height`` and ``width`` settings (as in ``pn.Row(pane.HTML(obj, height=300))``. Other spacing problems appear to be caused by issues with the Bokeh layout system, which is currently being improved.  In the meantime you should be able to use ``pn.Spacer(height=..., width=...)`` to adjust spacing manually when needed.
 
 
 **Q: Why is my object being shown using the wrong type of pane?**
 
-**A:** A global set of precedence values is used to ensure that the richest representation of a given object is chosen when you pass it to a Row or Column. However, you are also welcome to instantiate a specific Pane type explicitly, as in ``pp.Row(pane.HTML(obj, height=300))``.  If the default Pane type is fine but you still want to be able to pass specific options like width or height in this way, you can also just call Pane explicitly, as in  ``pp.Row(pane.Pane(obj, height=300))``.
+**A:** A global set of precedence values is used to ensure that the richest representation of a given object is chosen when you pass it to a Row or Column. However, you are also welcome to instantiate a specific Pane type explicitly, as in ``pn.Row(pane.HTML(obj, height=300))``.  If the default Pane type is fine but you still want to be able to pass specific options like width or height in this way, you can also just call Pane explicitly, as in  ``pn.Row(pane.Pane(obj, height=300))``.
 
 
 **Q: How does Panel relate to other widget/app/dashboard tools?**
@@ -55,9 +55,7 @@ For instance, ipywidgets provide many of the same capabilities as Panel, but the
 +--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+
 |                                      | Panel           | ipywidgets           | Bokeh           | Shiny              | Dash (Plotly)          |
 +======================================+=================+======================+=================+====================+========================+
-|Provides widgets                      | Yes             | Yes                  | Yes             | Yes                | Yes                    |
-+--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+
-|Provides layout                       | Yes             | Yes                  | Yes             | Yes                | Yes                    |
+|Provides widgets and layouts          | Yes             | Yes                  | Yes             | Yes                | Yes                    |
 +--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+
 |Supports interactive plots            | Yes             | Yes                  | Yes             | Yes                | Yes                    |
 +--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+
@@ -83,11 +81,11 @@ For instance, ipywidgets provide many of the same capabilities as Panel, but the
 |Servable from public site             | Possible        | As live notebooks    | Possible        | Yes, shinyapps.io  | Yes, Plotly Cloud      |
 |                                      | with mybinder   | via mybinder         | with mybinder   |                    |                        |
 +--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+
-+Servable within private enterprise    | Yes, AE5        | Yes, AE5 (with cells | Yes, AE5        | Yes, AE5 or Shiny  | Yes, AE5 or Plotly     |
-|network                               |                 | visible but readonly)|                 | Server             | Enterprise             |
++Servable within private enterprise    | Yes, AE5        | Yes, AE5 (with       | Yes, AE5        | Yes, AE5 or Shiny  | Yes, AE5 or Plotly     |
+|network                               |                 | readonly code cells) |                 | Server             | Enterprise             |
 +--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+
 
-\* - Live reactive widgets are possible in Bokeh with an embedded server process or using ipywidgets/push_notebook
+\* - Bokeh can use live reactive widgets in Jupyter notebooks by launching an embedded server process or using ipywidgets/push_notebook
 
 Each of these libraries are free, open-source software packages, but they can be used with the commercial products
 `Anaconda Enterprise (AE5) <https://www.anaconda.com/enterprise/>`__,
