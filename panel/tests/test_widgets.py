@@ -97,7 +97,7 @@ def test_int_slider(document, comm):
 
 def test_range_slider(document, comm):
 
-    slider = RangeSlider(start=0, end=3, value=(0, 3), name='Slider')
+    slider = RangeSlider(start=0., end=3, value=(0, 3), name='Slider')
 
     box = slider._get_model(document, comm=comm)
 
