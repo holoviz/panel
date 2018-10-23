@@ -35,6 +35,16 @@ def test_layout_constructor(panel):
 
 
 @pytest.mark.parametrize('panel', [Column, Row])
+def test_layout_getitem(panel):
+    div1 = Div()
+    div2 = Div()
+    layout = panel(div1, div2)
+
+    assert layout[0].object is div1
+    assert layout[1].object is div2
+
+
+@pytest.mark.parametrize('panel', [Column, Row])
 def test_layout_select_by_type(panel):
     div1 = Div()
     div2 = Div()

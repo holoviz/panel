@@ -126,6 +126,9 @@ class Layout(Reactive):
         self._link_props(model, self._linked_props, doc, root, comm)
         return model
 
+    def __getitem__(self, index):
+        return self.objects[index]
+
     def __setitem__(self, index, pane):
         new_objects = list(self.objects)
         new_objects[index] = Pane(pane)
