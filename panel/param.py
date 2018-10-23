@@ -260,6 +260,16 @@ class Param(PaneBase):
                 updates = {}
                 if change.what == 'constant':
                     updates['disabled'] = change.new
+                elif change.what == 'precedence':
+                    if change.new < 0 and widget in self._widget_box.objects:
+                        self._widget_box.pop(widget)
+                    elif change.new >= 0 and widget not in self._widget_box.objects:
+                        precedence = lambda k: self.object.params(k).precedence
+                        widgets = []
+                        for k, ws in self._widgets.items():
+                            if precedence(k) is None or precedence(k) >= self.display_threshold:
+                                widgets += ws
+                        self._widget_box.objects = widgets
                 elif change.what == 'objects':
                     updates['options'] = p_obj.get_range()
                 elif change.what == 'bounds':
@@ -277,6 +287,7 @@ class Param(PaneBase):
 
             # Set up links to parameterized object
             watchers.append(self.object.param.watch(link, p_name, 'constant'))
+            watchers.append(self.object.param.watch(link, p_name, 'precedence'))
             watchers.append(self.object.param.watch(link, p_name))
             if hasattr(p_obj, 'get_range'):
                 watchers.append(self.object.param.watch(link, p_name, 'objects'))
