@@ -3,8 +3,7 @@ import {LayoutDOM, LayoutDOMView} from "models/layouts/layout_dom"
 
 export class VegaPlotView extends LayoutDOMView {
   model: VegaPlot
-  _width: number
-  _height: number
+  protected _initialized: boolean
 
   initialize(options): void {
     super.initialize(options)
@@ -12,6 +11,7 @@ export class VegaPlotView extends LayoutDOMView {
     const vega_lite_url = "https://cdn.jsdelivr.net/npm/vega-lite@3.0.0-rc4?noext"
     const vega_embed_url = "https://cdn.jsdelivr.net/npm/vega-embed@3.18.2?noext"
 
+    this._initialized = false;
     if (window.vega) {
       this._init()
     } else if ((window.Jupyter !== undefined) && (window.Jupyter.notebook !== undefined)) {
@@ -56,6 +56,7 @@ export class VegaPlotView extends LayoutDOMView {
 
   _init(): void {
     this._plot()
+    this._initialized = true
     this.connect(this.model.properties.data.change, this._plot)
   }
 
@@ -75,6 +76,12 @@ export class VegaPlotView extends LayoutDOMView {
       datasets[ds] = data;
     }
     return datasets
+  }
+
+  render(): void {
+    super.render()
+    if (this._initialized)
+      this._plot()
   }
 
   _plot(): void {
