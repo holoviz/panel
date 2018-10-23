@@ -348,7 +348,6 @@ def test_param_precedence(document, comm):
 
     test = Test()
     test_pane = Pane(test, _temporary=True)
-    model = test_pane._get_model(document, comm=comm)
 
     # Check changing precedence attribute hides and shows widget
     a_param = test.params('a')
