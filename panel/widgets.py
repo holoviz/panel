@@ -173,11 +173,27 @@ class RangeSlider(Widget):
 
     _widget_type = _BkRangeSlider
 
+    def __init__(self, **params):
+        super(RangeSlider, self).__init__(**params)
+        values = [self.value[0], self.value[1], self.start, self.end]
+        if (all(v is None or isinstance(v, int) for v in values) and
+            'step' not in params):
+            self.step = 1
+
     def _process_property_change(self, msg):
         msg = super(RangeSlider, self)._process_property_change(msg)
         if 'value' in msg:
             msg['value'] = tuple(msg['value'])
         return msg
+
+
+class IntRangeSlider(Widget):
+
+    start = param.Integer(default=0)
+
+    end = param.Integer(default=1)
+
+    step = param.Integer(default=1)
 
 
 class DateRangeSlider(Widget):
@@ -429,7 +445,7 @@ class ToggleButtons(RadioButtons):
 
     _widget_type = _BkCheckboxButtonGroup
 
-    
+
 class MultiSelect(Select):
 
     value = param.List(default=[])
