@@ -342,6 +342,22 @@ def test_explicit_params(document, comm):
     assert isinstance(model.children[0].children[1], CheckboxGroup)
 
 
+def test_param_precedence(document, comm):
+    class Test(param.Parameterized):
+        a = param.Number(default=1.2, bounds=(0, 5))
+
+    test = Test()
+    test_pane = Pane(test, _temporary=True)
+
+    # Check changing precedence attribute hides and shows widget
+    a_param = test.params('a')
+    a_param.precedence = -1
+    assert test_pane._widgets['a'][0] not in test_pane._widget_box.objects
+
+    a_param.precedence = 1
+    assert test_pane._widgets['a'][0] in test_pane._widget_box.objects
+
+
 def test_expand_param_subobject(document, comm):
     class Test(param.Parameterized):
         a = param.Parameter()
