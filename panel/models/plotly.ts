@@ -3,6 +3,7 @@ import {LayoutDOM, LayoutDOMView} from "models/layouts/layout_dom"
 
 export class PlotlyPlotView extends LayoutDOMView {
   model: PlotlyPlot
+  protected _initialized: boolean
 
   initialize(options): void {
     super.initialize(options)
@@ -46,6 +47,7 @@ export class PlotlyPlotView extends LayoutDOMView {
   }
 
   render(): void {
+    super.render()
     if (this._initialized)
       this._plot()
   }
