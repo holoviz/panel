@@ -99,7 +99,7 @@ def test_holoviews_widgets_from_dynamicmap(document, comm):
     kdims = [range_dim, range_step_dim, range_default_dim,
              value_dim, value_default_dim, value_numeric_dim]
     dmap = hv.DynamicMap(lambda A, B, C, D, E, F: hv.Curve([]), kdims=kdims)
-    widgets = HoloViews.widgets_from_dimensions(dmap)
+    widgets, _ = HoloViews.widgets_from_dimensions(dmap)
 
     assert len(widgets) == len(kdims)
 
@@ -187,7 +187,7 @@ def test_holoviews_with_widgets_not_shown(document, comm):
 def test_holoviews_widgets_from_holomap():
     hmap = hv.HoloMap({(i, chr(65+i)): hv.Curve([i]) for i in range(3)}, kdims=['X', 'Y'])
 
-    widgets = HoloViews.widgets_from_dimensions(hmap)
+    widgets, _ = HoloViews.widgets_from_dimensions(hmap)
 
     assert isinstance(widgets[0], DiscreteSlider)
     assert widgets[0].name == 'X'
@@ -204,7 +204,7 @@ def test_holoviews_widgets_from_holomap():
 def test_holoviews_widgets_explicit_widget_type_override():
     hmap = hv.HoloMap({(i, chr(65+i)): hv.Curve([i]) for i in range(3)}, kdims=['X', 'Y'])
 
-    widgets = HoloViews.widgets_from_dimensions(hmap, widget_types={'X': Select})
+    widgets, _ = HoloViews.widgets_from_dimensions(hmap, widget_types={'X': Select})
 
     assert isinstance(widgets[0], Select)
     assert widgets[0].name == 'X'
@@ -225,7 +225,7 @@ def test_holoviews_widgets_explicit_widget_instance_override():
     hmap = hv.HoloMap({(i, chr(65+i)): hv.Curve([i]) for i in range(3)}, kdims=['X', 'Y'])
 
     widget = Select(options=[1, 2, 3], value=3)
-    widgets = HoloViews.widgets_from_dimensions(hmap, widget_types={'X': widget})
+    widgets, _ = HoloViews.widgets_from_dimensions(hmap, widget_types={'X': widget})
 
     assert widgets[0] is widget
 

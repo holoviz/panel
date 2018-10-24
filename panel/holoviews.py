@@ -135,7 +135,7 @@ class HoloViews(PaneBase):
 
         dims, keys = unique_dimkeys(object)
         if dims == [Dimension('Frame')] and keys == [(0,)]:
-            return []
+            return [], {}
 
         nframes = 1
         values = dict(zip(dims, zip(*keys)))
