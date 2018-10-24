@@ -41,8 +41,6 @@ class HoloViews(PaneBase):
         super(HoloViews, self).__init__(object, **params)
         self.widget_box = WidgetBox()
         self._update_widgets()
-        if self.widget_box.objects:
-            self.layout.append(self.widget_box)
         self._plots = {}
 
     @param.depends('object', 'widgets', watch=True)
