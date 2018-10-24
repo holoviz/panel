@@ -160,7 +160,7 @@ class Panel(Reactive):
 
 class Row(Panel):
     """
-    Horizontal layout of Panes.
+    Horizontal layout of Viewables.
     """
 
     _bokeh_model = BkRow
@@ -168,7 +168,7 @@ class Row(Panel):
 
 class Column(Panel):
     """
-    Vertical layout of Panes.
+    Vertical layout of Viewables.
     """
 
     _bokeh_model = BkColumn
@@ -212,7 +212,7 @@ class WidgetBox(Panel):
 
 class Tabs(Panel):
     """
-    Tabs allows selecting between the supplied panes.
+    Widget allowing selection between the supplied panes.
     """
 
     active = param.Integer(default=0, doc="""
@@ -304,7 +304,8 @@ class Tabs(Panel):
 
 
 class Spacer(Reactive):
-
+    """Empty object used to control formatting (using positive or negative space)"""
+    
     height = param.Integer(default=None, bounds=(None, None))
 
     width = param.Integer(default=None, bounds=(None, None))
