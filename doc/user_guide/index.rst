@@ -14,7 +14,7 @@ User Guide
 * `Layouts <Layouts.html>`_
    Declaring and working with Panel layouts.
 
-* `Parameters <Layouts.html>`_
+* `Parameters <Param.html>`_
    Using Param to express panels in a self-contained class.
 
 .. toctree::
