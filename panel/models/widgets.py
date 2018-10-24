@@ -3,6 +3,8 @@ import os
 from bokeh.core.properties import Int, Override, Enum
 from bokeh.models import Widget
 
+from ..util import CUSTOM_MODELS
+
 
 class Player(Widget):
     """
@@ -24,3 +26,6 @@ class Player(Widget):
     loop_policy = Enum('once', 'reflect', 'loop', default='once')
 
     height = Override(default=250)
+
+
+CUSTOM_MODELS['panel.models.widgets.Player'] = Player
