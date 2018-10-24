@@ -24,7 +24,7 @@ from .util import Div, basestring, push, remove_root
 from .viewable import Reactive, Viewable
 
 
-def create(obj, **kwargs):
+def panel(obj, **kwargs):
     """
     Creates a panel from any supplied object by wrapping it in a pane
     and returning a corresponding Panel.

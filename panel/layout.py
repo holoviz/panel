@@ -11,7 +11,7 @@ from bokeh.layouts import (Column as BkColumn, Row as BkRow,
 from bokeh.models.widgets import Tabs as BkTabs, Panel as BkPanel
 
 from .util import push
-from .viewable import Reactive
+from .viewable import Reactive, Viewable
 
 
 class Panel(Reactive):
@@ -31,8 +31,8 @@ class Panel(Reactive):
     _linked_props = []
 
     def __init__(self, *objects, **params):
-        from .pane import create
-        objects = [create(pane) for pane in objects]
+        from .pane import panel
+        objects = [panel(pane) for pane in objects]
         super(Panel, self).__init__(objects=objects, **params)
 
     def _init_properties(self):
@@ -94,11 +94,11 @@ class Panel(Reactive):
         Returns new child models for the layout while reusing unchanged
         models and cleaning up any dropped objects.
         """
-        from .pane import create
+        from .pane import panel
         old_children = getattr(model, self._rename.get('objects', 'objects'))
         new_models = []
         for i, pane in enumerate(self.objects):
-            pane = create(pane, _temporary=True)
+            pane = panel(pane, _temporary=True)
             self.objects[i] = pane
             if pane in old_objects:
                 child = old_children[old_objects.index(pane)]
@@ -137,21 +137,21 @@ class Panel(Reactive):
         return obj in self.objects
 
     def __setitem__(self, index, pane):
-        from .pane import create
+        from .pane import panel
         new_objects = list(self.objects)
-        new_objects[index] = create(pane)
+        new_objects[index] = panel(pane)
         self.objects = new_objects
 
     def append(self, pane):
-        from .pane import create
+        from .pane import panel
         new_objects = list(self.objects)
-        new_objects.append(create(pane))
+        new_objects.append(panel(pane))
         self.objects = new_objects
 
     def insert(self, index, pane):
-        from .pane import create
+        from .pane import panel
         new_objects = list(self.objects)
-        new_objects.insert(index, create(pane))
+        new_objects.insert(index, panel(pane))
         self.objects = new_objects
 
     def pop(self, index):
@@ -194,11 +194,11 @@ class WidgetBox(Panel):
         Returns new child models for the layout while reusing unchanged
         models and cleaning up any dropped objects.
         """
-        from .pane import create
+        from .pane import panel
         old_children = getattr(model, self._rename.get('objects', 'objects'))
         new_models = []
         for i, pane in enumerate(self.objects):
-            pane = create(pane)
+            pane = panel(pane)
             self.objects[i] = pane
             if pane in old_objects:
                 child = old_children[old_objects.index(pane)]
@@ -237,7 +237,7 @@ class Tabs(Panel):
     _linked_props = ['active']
 
     def __init__(self, *items, **params):
-        from .pane import create
+        from .pane import panel
         objects = []
         for pane in items:
             if isinstance(pane, tuple):
@@ -246,7 +246,7 @@ class Tabs(Panel):
                 name = pane.name
             else:
                 name = None
-            objects.append(create(pane, name=name))
+            objects.append(panel(pane, name=name))
         super(Tabs, self).__init__(*objects, **params)
 
     def _get_objects(self, model, old_objects, doc, root, comm=None):
@@ -272,30 +272,30 @@ class Tabs(Panel):
         return new_models
 
     def __setitem__(self, index, pane):
-        from .pane import create
+        from .pane import panel
         name = None
         if isinstance(pane, tuple):
             name, pane = pane
         new_objects = list(self.objects)
-        new_objects[index] = create(pane, name=name)
+        new_objects[index] = panel(pane, name=name)
         self.objects = new_objects
 
     def append(self, pane):
-        from .pane import create
+        from .pane import panel
         name = None
         if isinstance(pane, tuple):
             name, pane = pane
         new_objects = list(self.objects)
-        new_objects.append(create(pane, name=name))
+        new_objects.append(panel(pane, name=name))
         self.objects = new_objects
 
     def insert(self, index, pane):
-        from .pane import create
+        from .pane import panel
         name = None
         if isinstance(pane, tuple):
             name, pane = pane
         new_objects = list(self.objects)
-        new_objects.insert(index, create(pane))
+        new_objects.insert(index, panel(pane))
         self.objects = new_objects
 
     def pop(self, index):
