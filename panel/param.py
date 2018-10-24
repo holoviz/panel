@@ -129,10 +129,10 @@ class Param(PaneBase):
         layout = self.subobject_layout
         if isinstance(layout, Layout):
             self._subobject_layout = layout
-            self._layout = self._widget_box
+            self.layout = self._widget_box
         elif isinstance(layout, type) and issubclass(layout, Layout):
-            self._layout = layout(self._widget_box, **kwargs)
-            self._subobject_layout = self._layout
+            self.layout = layout(self._widget_box, **kwargs)
+            self._subobject_layout = self.layout
         else:
             raise ValueError('subobject_layout expected to be a panel.layout.Layout'
                              'type or instance, found %s type.' %
@@ -306,7 +306,7 @@ class Param(PaneBase):
             return [widget]
 
     def _cleanup(self, model=None, final=False):
-        self._layout._cleanup(model, final)
+        self.layout._cleanup(model, final)
         super(Param, self)._cleanup(model, final)
 
     def _get_widgets(self):
@@ -331,7 +331,7 @@ class Param(PaneBase):
         return OrderedDict(widgets)
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        return self._layout._get_model(doc, root, parent, comm)
+        return self.layout._get_model(doc, root, parent, comm)
 
     def _get_root(self, doc, comm=None):
         root = self._get_model(doc, comm=comm)
@@ -355,6 +355,12 @@ class ParamMethod(PaneBase):
         super(ParamMethod, self).__init__(object, **params)
         self._pane = Pane(self.object(), name=self.name,
                           **dict(_temporary=True, **self._kwargs))
+        self._inner_layout = Row(self._pane)
+
+    def _get_root(self, doc, comm=None):
+        root = self._get_model(doc, comm=comm)
+        self._preprocess(root)
+        return root
 
     @classmethod
     def applies(cls, obj):
@@ -363,21 +369,17 @@ class ParamMethod(PaneBase):
     def _get_model(self, doc, root=None, parent=None, comm=None):
         parameterized = get_method_owner(self.object)
         params = parameterized.param.params_depended_on(self.object.__name__)
-        model = self._pane._get_model(doc, root, parent, comm)
-        history = [model]
+        model = self._inner_layout._get_model(doc, root, parent, comm)
         deps = params
+        ref = model.ref['id']
 
         def update_pane(*events):
-            error = None
-            old_model = history[0]
-            old_ref = old_model.ref['id']
-
             # Update nested dependencies if parameterized object events
             if any(is_parameterized(event.new) for event in events):
                 new_deps = parameterized.param.params_depended_on(self.object.__name__)
                 for p in list(deps):
                     if p in new_deps: continue
-                    watchers = self._callbacks.get(old_ref, [])
+                    watchers = self._callbacks.get(ref, [])
                     for w in list(watchers):
                         if (w.inst is p.inst and w.cls is p.cls and
                             p.name in w.parameter_names):
@@ -392,7 +394,7 @@ class ParamMethod(PaneBase):
                     pobj = p.cls if p.inst is None else p.inst
                     ps = [p.name for p in params]
                     watcher = pobj.param.watch(update_pane, ps, p.what)
-                    self._callbacks[old_ref].append(watcher)
+                    self._callbacks[ref].append(watcher)
                     for p in params:
                         deps.append(p)
 
@@ -400,62 +402,23 @@ class ParamMethod(PaneBase):
             new_object = self.object()
             pane_type = self.get_pane_type(new_object)
             if type(self._pane) is pane_type:
-                index = parent.children.index(old_model)
                 if isinstance(new_object, PaneBase):
                     new_params = {k: v for k, v in new_object.get_param_values()
                                   if k != 'name'}
                     try:
                         self._pane.set_param(**new_params)
                     except Exception as e:
-                        error = e
-                    new_object._cleanup(None, new_object._temporary)
+                        raise e
+                    finally:
+                        new_object._cleanup(None, new_object._temporary)
                 else:
-                    try:
-                        self._pane.object = new_object
-                    except Exception as e:
-                        error = e
-
-                # If model has changed update history and remap callbacks
-                def update_state():
-                    if old_model is parent.children[index]:
-                        if error is not None:
-                            raise error
-                        return
-                    new_model = parent.children[index]
-                    history[0] = new_model
-                    new_ref = new_model.ref['id']
-                    old_callbacks = self._callbacks.pop(old_ref, [])
-                    if old_callbacks:
-                        self._callbacks[new_ref] = old_callbacks
-                    if error is not None:
-                        raise error
-
-                if comm:
-                    update_state()
-                else:
-                    doc.add_next_tick_callback(update_state)
+                    self._pane.object = new_object
                 return
 
             # Replace pane entirely
-            self._pane._cleanup(old_model, self._pane._temporary)
-            self._pane = Pane(new_object, _temporary=True, **self._kwargs)
-            new_model = self._pane._get_model(doc, root, parent, comm)
-            new_ref = new_model.ref['id']
-            def update_models():
-                if old_model is new_model: return
-                index = parent.children.index(old_model)
-                parent.children[index] = new_model
-                history[0] = new_model
-                old_callbacks = self._callbacks.pop(old_ref, [])
-                self._callbacks[new_ref] = old_callbacks
+            self._pane = Pane(new_object, _temporary=True)
+            self._inner_layout[0] = self._pane
 
-            if comm:
-                update_models()
-                push(doc, comm)
-            else:
-                doc.add_next_tick_callback(update_models)
-
-        ref = model.ref['id']
         for _, params in full_groupby(params, lambda x: (x.inst or x.cls, x.what)):
             p = params[0]
             pobj = (p.inst or p.cls)
@@ -466,7 +429,7 @@ class ParamMethod(PaneBase):
         return model
 
     def _cleanup(self, model=None, final=False):
-        self._pane._cleanup(model, final)
+        self._inner_layout._cleanup(model, final)
         super(ParamMethod, self)._cleanup(model, final)
 
 

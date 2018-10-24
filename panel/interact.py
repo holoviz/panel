@@ -29,7 +29,7 @@ empty = Parameter.empty
 
 import param
 
-from .layout import WidgetBox, Layout, Column
+from .layout import WidgetBox, Layout, Column, Row
 from .pane import PaneBase, Pane
 from .util import basestring, as_unicode, push
 from .widgets import (Checkbox, TextInput, Widget, IntSlider, FloatSlider,
@@ -115,6 +115,8 @@ class interactive(PaneBase):
 
     manual_name = param.String(default='Run Interact')
 
+    _default_layout = Column
+
     def __init__(self, object, params={}, **kwargs):
         super(interactive, self).__init__(object, **params)
 
@@ -136,9 +138,10 @@ class interactive(PaneBase):
         self._widgets = OrderedDict(widgets)
         self._pane = Pane(self.object(**self.kwargs), name=self.name,
                           _temporary=True)
-        self._widget_box = WidgetBox(*(widget for _, widget in widgets
-                                       if isinstance(widget, Widget)))
-        self.layout = self.panel_layout(self._widget_box, self._pane)
+        self._inner_layout = Row(self._pane)
+        self.widget_box = WidgetBox(*(widget for _, widget in widgets
+                                      if isinstance(widget, Widget)))
+        self.layout.objects = [self.widget_box, self]
 
     @property
     def kwargs(self):
@@ -166,82 +169,50 @@ class interactive(PaneBase):
                 new_kwargs.append((name, value, default))
         return new_kwargs
 
+    def _get_root(self, doc, comm=None):
+        root = self._get_model(doc, comm=comm)
+        self._preprocess(root)
+        return root
+
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        layout = self.layout._get_model(doc, root, parent, comm)
+        layout = self._inner_layout._get_model(doc, root, parent, comm)
         self._link_widgets(layout, doc, root, parent, comm)
         return layout
 
     def _link_widgets(self, layout, doc, root, parent, comm):
-        history = [layout.children[1]]
         if self.manual_update:
             widgets = [('manual', self._widgets['manual'])]
         else:
             widgets = self._widgets.items()
 
         for name, widget in widgets:
-            def update_pane(change, history=history):
+            def update_pane(change):
                 # Try updating existing pane
-                error = None
-                old_model = history[0]
                 new_object = self.object(**self.kwargs)
                 pane_type = self.get_pane_type(new_object)
                 if type(self._pane) is pane_type:
-                    index = layout.children.index(old_model)
                     if isinstance(new_object, PaneBase):
                         new_params = {k: v for k, v in new_object.get_param_values()
                                       if k != 'name'}
                         try:
                             self._pane.set_param(**new_params)
                         except Exception as e:
-                            error = e
-                        new_object._cleanup(None, new_object._temporary)
+                            raise e
+                        finally:
+                            new_object._cleanup(None, new_object._temporary)
                     else:
-                        try:
-                            self._pane.object = new_object
-                        except Exception as e:
-                            error = e
-
-                    # If model has changed update history and remap callbacks
-                    def update_state():
-                        if old_model is layout.children[index]:
-                            if error is not None:
-                                raise error
-                            return
-                        new_model = layout.children[index]
-                        history[0] = new_model
-                        if error is not None:
-                            raise error
-
-                    if comm:
-                        update_state()
-                    else:
-                        doc.add_next_tick_callback(update_state)
-
-                    return
+                        self._pane.object = new_object
 
                 # Replace pane entirely
-                self._pane._cleanup(old_model, self._pane._temporary)
                 self._pane = Pane(new_object, _temporary=True)
-                new_model = self._pane._get_model(doc, root, parent, comm)
-                def update_models():
-                    if old_model is new_model: return
-                    index = layout.children.index(old_model)
-                    layout.children[index] = new_model
-                    history[0] = new_model
-
-                if comm:
-                    update_models()
-                    push(doc, comm)
-                else:
-                    doc.add_next_tick_callback(update_models)
+                self._inner_layout[0] = self._pane
 
             pname = 'clicks' if name == 'manual' else 'value'
             watcher = widget.param.watch(update_pane, pname)
             self._callbacks[layout.ref['id']].append(watcher)
 
     def _cleanup(self, model=None, final=False):
-        self.layout._cleanup(model, final)
-        self._pane._cleanup(model.children[1], final)
+        self._inner_layout._cleanup(model, final)
         super(interactive, self)._cleanup(model, final)
 
     def widgets_from_abbreviations(self, seq):
@@ -476,7 +447,7 @@ class _InteractFactory(object):
             # so wrap in a lambda
             f = lambda *args, **kwargs: __interact_f(*args, **kwargs)
             f.widget = w
-        return w
+        return w.layout
 
     def options(self, **kwds):
         """

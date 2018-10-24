@@ -27,10 +27,6 @@ class HoloViews(PaneBase):
         The HoloViews backend used to render the plot (if None defaults
         to the currently selected renderer).""")
 
-    show_widgets = param.Boolean(default=True, doc="""
-        Whether to display widgets for the object. If disabled the
-        widget_box may be laid out manually.""")
-
     widget_type = param.ObjectSelector(default='individual',
                                        objects=['individual', 'scrubber'], doc=""")
         Whether to generate individual widgets for each dimension or
@@ -45,7 +41,23 @@ class HoloViews(PaneBase):
     def __init__(self, object, **params):
         super(HoloViews, self).__init__(object, **params)
         self.widget_box = WidgetBox()
+        self._update_widgets()
+        if self.widget_box.objects:
+            self.layout.append(self.widget_box)
         self._plots = {}
+
+    @param.depends('object', 'widgets', watch=True)
+    def _update_widgets(self):
+        if self.object is None:
+            widgets, values = []
+        else:
+            widgets, values = self.widgets_from_dimensions(self.object, self.widgets)
+        self._values = values
+        self.widget_box.objects = widgets
+        if widgets and not self.widget_box in self.layout.objects:
+            self.layout.append(self.widget_box)
+        elif not widgets and self.widget_box in self.layout.objects:
+            self.layout.pop(self.widget_box)
 
     @classmethod
     def applies(cls, obj):
@@ -84,22 +96,11 @@ class HoloViews(PaneBase):
         plot = self._render(doc, comm, root)
         child_pane = Pane(plot.state, _temporary=True)
         model = child_pane._get_model(doc, root, parent, comm)
-        widgets, values = self.widgets_from_dimensions(self.object, self.widgets, self.widget_type)
-        self._values = values
-        layout = model
-        if widgets:
-            self.widget_box.objects = widgets
-            if self.show_widgets:
-                wbox = self.widget_box._get_model(doc, root, parent, comm)
-                if self.widget_type == 'individual':
-                    layout = _BkRow()
-                else:
-                    layout = _BkColumn()
-                layout.children = [model, wbox]
-            self._link_widgets(widgets, child_pane, layout, plot, comm)
-        self._link_object(layout, doc, root, parent, comm)
-        self._plots[layout.ref['id']] = plot
-        return layout
+        if self.widget_box.objects:
+            self._link_widgets(self.widget_box.objects, child_pane, model, plot, comm)
+        self._link_object(model, doc, root, parent, comm)
+        self._plots[model.ref['id']] = plot
+        return model
 
     def _link_widgets(self, widgets, pane, model, plot, comm):
         from holoviews.core.util import cross_index
