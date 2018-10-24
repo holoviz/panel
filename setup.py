@@ -30,7 +30,7 @@ def get_setup_version(reponame):
 ########## dependencies ##########
 
 install_requires = [
-    'bokeh >=0.12.15',
+    'bokeh >=1.0.0',
     'param >=1.8.1',
     'pyviz_comms >=0.6.0',
     'markdown',
@@ -116,7 +116,7 @@ extras_require['build'] = [
     'param >=1.7.0',
     'pyct >=0.4.4',
     'setuptools >=30.3.0',
-    'bokeh >=1.0.0rc1',
+    'bokeh >=1.0.0',
     'pyviz_comms >=0.6.0',
 ]
 
