@@ -26,6 +26,12 @@ except:
     PIL = None
 pil_available = pytest.mark.skipif(PIL is None, reason="requires PIL")
 
+try:
+    import markdown
+except:
+    markdown = None
+markdown_available = pytest.mark.skipif(markdown is None, reason="requires markdown")
+
 from .fixtures import mpl_figure
 from .test_layout import get_div
 
@@ -91,10 +97,12 @@ def test_matplotlib_pane(document, comm):
     assert pane._callbacks == {}
 
 
+@markdown_available
 def test_get_markdown_pane_type():
     assert PaneBase.get_pane_type("**Markdown**") is Markdown
 
 
+@markdown_available
 def test_markdown_pane(document, comm):
     pane = Pane("**Markdown**")
 

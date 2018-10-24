@@ -1,8 +1,10 @@
 from __future__ import absolute_import
 
 from . import holoviews # noqa
-from . import widgets # noqa
 from . import layout # noqa
+from . import plotly # noqa
+from . import vega # noqa
+from . import widgets # noqa
 
 from .interact import interact # noqa
 from .layout import Row, Column, Tabs, Spacer # noqa

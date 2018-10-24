@@ -1,9 +1,12 @@
 from __future__ import absolute_import
 
+import os
+import io
 import json
 import sys
 import inspect
 import numbers
+import hashlib
 
 from collections import defaultdict, MutableSequence, MutableMapping
 from datetime import datetime
@@ -25,6 +28,41 @@ try:
     basestring = basestring # noqa
 except:
     basestring = unicode = str
+
+
+CUSTOM_MODELS = {}
+
+def load_compiled_models(custom_model, implementation):
+    """
+    Custom hook to load cached implementation of custom models.
+    """
+    compiled = old_hook(custom_model, implementation)
+    if compiled is not None:
+        return compiled
+
+    model = CUSTOM_MODELS.get(custom_model.full_name)
+    if model is None:
+        return
+    ts_file = model.__implementation__
+    json_file = ts_file.replace('.ts', '.json')
+    if not os.path.isfile(json_file):
+        return
+    with io.open(ts_file, encoding="utf-8") as f:
+        code = f.read()
+    with io.open(json_file, encoding="utf-8") as f:
+        compiled = json.load(f)
+    hashed = hashlib.sha256(code.encode('utf-8')).hexdigest()
+    if compiled['hash'] == hashed:
+        return AttrDict(compiled)
+    return None
+
+
+try:
+    from bokeh.util.compiler import AttrDict, get_cache_hook, set_cache_hook
+    old_hook = get_cache_hook()
+    set_cache_hook(load_compiled_models)
+except:
+    pass
 
 
 def hashable(x):

@@ -11,11 +11,11 @@ sudo: false
 env:
   global:
     - PYENV_VERSION=3.6
-    - CHANS_DEV="-c pyviz/label/dev -c jbednar"
+    - CHANS_DEV="-c pyviz/label/dev -c jbednar -c bokeh/label/dev"
     - CHANS_REL="-c pyviz -c jbednar"
     - LABELS_DEV="--label dev"
     - LABELS_REL="--label dev --label main"
-    - PKG_TEST_PYTHON="--test-python=py27 --test-python=py36"
+    - PKG_TEST_PYTHON="--test-python=py36"
 
 stages:
   - test
@@ -73,15 +73,16 @@ jobs:
         - doit package_build $CHANS $PKG_TEST_PYTHON --test-group=unit
       script: doit package_upload --token=$ANACONDA_TOKEN $LABELS
 
-
     - &pip_pkg
+      <<: *conda_default
       env: PYPI=testpypi PYPIUSER=$TPPU PYPIPASS=$TPPP
       stage: pip_dev_package
-      install: pip install pyctdev && doit ecosystem=pip ecosystem_setup
-      before_script:
-        - doit ecosystem=pip package_build $PKG_TEST_PYTHON --test-group=unit --sdist-install-build-deps
+      install:
+        - doit develop_install $CHANS_DEV -o build && pip uninstall -y panel
+        - doit pip_on_conda
+        - conda install $CHANS_DEV nodejs=9.11.1
+        - doit ecosystem=pip package_build $PKG_TEST_PYTHON --test-group=unit
       script: doit ecosystem=pip package_upload -u $PYPIUSER -p $PYPIPASS --pypi ${PYPI}
-
 
     ## release packages
 

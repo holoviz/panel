@@ -4,7 +4,7 @@ from collections import OrderedDict
 import pytest
 
 from bokeh.models import (Row as BkRow, Column as BkColumn, GlyphRenderer,
-                          Circle, Line)
+                          Scatter, Line)
 from bokeh.plotting import Figure
 
 from panel.holoviews import HoloViews
@@ -80,7 +80,7 @@ def test_holoviews_pane_bokeh_renderer(document, comm):
     assert isinstance(model, Figure)
     renderers = [r for r in model.renderers if isinstance(r, GlyphRenderer)]
     assert len(renderers) == 1
-    assert isinstance(renderers[0].glyph, Circle)
+    assert isinstance(renderers[0].glyph, Scatter)
     assert len(pane._callbacks) == 1
 
     # Cleanup
