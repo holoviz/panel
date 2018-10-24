@@ -32,7 +32,7 @@ class Panel(Reactive):
 
     def __init__(self, *objects, **params):
         from .pane import panel
-        objects = [panel(pane) for pane in objects]
+        objects = [panel(pane, _internal=True) for pane in objects]
         super(Panel, self).__init__(objects=objects, **params)
 
     def _init_properties(self):
@@ -98,7 +98,7 @@ class Panel(Reactive):
         old_children = getattr(model, self._rename.get('objects', 'objects'))
         new_models = []
         for i, pane in enumerate(self.objects):
-            pane = panel(pane, _temporary=True)
+            pane = panel(pane, _internal=True)
             self.objects[i] = pane
             if pane in old_objects:
                 child = old_children[old_objects.index(pane)]
@@ -117,7 +117,8 @@ class Panel(Reactive):
         objects = self._get_objects(model, [], doc, root, comm)
 
         # HACK ALERT: Insert Spacer if last item in Column has no height
-        if isinstance(self, Column) and objects and getattr(objects[-1], 'height', False) is None:
+        if (isinstance(self, Column) and objects and not isinstance(objects[-1], Panel)
+            and getattr(objects[-1], 'height', False) is None):
             objects.append(BkSpacer(height=50))
 
         props = dict(self._init_properties(), objects=objects)
@@ -139,19 +140,19 @@ class Panel(Reactive):
     def __setitem__(self, index, pane):
         from .pane import panel
         new_objects = list(self.objects)
-        new_objects[index] = panel(pane)
+        new_objects[index] = panel(pane, _internal=True)
         self.objects = new_objects
 
     def append(self, pane):
         from .pane import panel
         new_objects = list(self.objects)
-        new_objects.append(panel(pane))
+        new_objects.append(panel(pane, _internal=True))
         self.objects = new_objects
 
     def insert(self, index, pane):
         from .pane import panel
         new_objects = list(self.objects)
-        new_objects.insert(index, panel(pane))
+        new_objects.insert(index, panel(pane, _internal=True))
         self.objects = new_objects
 
     def pop(self, index):
@@ -246,7 +247,7 @@ class Tabs(Panel):
                 name = pane.name
             else:
                 name = None
-            objects.append(panel(pane, name=name))
+            objects.append(panel(pane, name=name, _internal=True))
         super(Tabs, self).__init__(*objects, **params)
 
     def _get_objects(self, model, old_objects, doc, root, comm=None):
@@ -277,7 +278,7 @@ class Tabs(Panel):
         if isinstance(pane, tuple):
             name, pane = pane
         new_objects = list(self.objects)
-        new_objects[index] = panel(pane, name=name)
+        new_objects[index] = panel(pane, name=name, _internal=True)
         self.objects = new_objects
 
     def append(self, pane):
@@ -286,7 +287,7 @@ class Tabs(Panel):
         if isinstance(pane, tuple):
             name, pane = pane
         new_objects = list(self.objects)
-        new_objects.append(panel(pane, name=name))
+        new_objects.append(panel(pane, name=name, _internal=True))
         self.objects = new_objects
 
     def insert(self, index, pane):
@@ -295,7 +296,7 @@ class Tabs(Panel):
         if isinstance(pane, tuple):
             name, pane = pane
         new_objects = list(self.objects)
-        new_objects.insert(index, panel(pane))
+        new_objects.insert(index, panel(pane, _internal=True))
         self.objects = new_objects
 
     def pop(self, index):

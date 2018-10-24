@@ -93,8 +93,7 @@ def test_altair_pane(document, comm):
     expected = dict(vega_example, data={})
 
     assert model.data == expected
-    
-    print(model.data)
+
     cds_data = model.data_sources['data'].data
     assert np.array_equal(cds_data['x'], np.array(['A', 'B', 'C', 'D', 'E'])) 
     assert np.array_equal(cds_data['y'], np.array([5, 3, 6, 7, 2]))
