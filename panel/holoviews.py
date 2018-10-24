@@ -9,11 +9,12 @@ import sys
 from collections import OrderedDict
 
 import param
-from bokeh.layouts import Row as _BkRow
+from bokeh.layouts import Row as _BkRow, Column as _BkColumn
 
 from .layout import Layout, WidgetBox
 from .pane import PaneBase, Pane
 from .viewable import Viewable
+from .widgets import Player
 
 
 class HoloViews(PaneBase):
@@ -29,6 +30,11 @@ class HoloViews(PaneBase):
     show_widgets = param.Boolean(default=True, doc="""
         Whether to display widgets for the object. If disabled the
         widget_box may be laid out manually.""")
+
+    widget_type = param.ObjectSelector(default='individual',
+                                       objects=['individual', 'scrubber'], doc=""")
+        Whether to generate individual widgets for each dimension or
+        on global scrubber.""")
 
     widgets = param.Dict(default={}, doc="""
         A mapping from dimension name to a widget instance which will
@@ -78,13 +84,17 @@ class HoloViews(PaneBase):
         plot = self._render(doc, comm, root)
         child_pane = Pane(plot.state, _temporary=True)
         model = child_pane._get_model(doc, root, parent, comm)
-        widgets = self.widgets_from_dimensions(self.object, self.widgets)
+        widgets, values = self.widgets_from_dimensions(self.object, self.widgets, self.widget_type)
+        self._values = values
         layout = model
         if widgets:
             self.widget_box.objects = widgets
             if self.show_widgets:
-                layout = _BkRow()
                 wbox = self.widget_box._get_model(doc, root, parent, comm)
+                if self.widget_type == 'individual':
+                    layout = _BkRow()
+                else:
+                    layout = _BkColumn()
                 layout.children = [model, wbox]
             self._link_widgets(widgets, child_pane, layout, plot, comm)
         self._link_object(layout, doc, root, parent, comm)
@@ -92,9 +102,14 @@ class HoloViews(PaneBase):
         return layout
 
     def _link_widgets(self, widgets, pane, model, plot, comm):
+        from holoviews.core.util import cross_index
+
         def update_plot(change):
             from holoviews.plotting.bokeh.plot import BokehPlot
-            key = tuple(w.value for w in widgets)
+            if self.widget_type == 'scrubber':
+                key = cross_index([v for v in self._values.values()], widgets[0].value)
+            else:
+                key = tuple(w.value for w in widgets)
             if isinstance(plot, BokehPlot):
                 if comm:
                     plot.update(key)
@@ -112,7 +127,7 @@ class HoloViews(PaneBase):
             self._callbacks[model.ref['id']].append(watcher)
 
     @classmethod
-    def widgets_from_dimensions(cls, object, widget_types={}):
+    def widgets_from_dimensions(cls, object, widget_types={}, widgets_type='individual'):
         from holoviews.core import Dimension
         from holoviews.core.util import isnumeric, unicode
         from holoviews.core.traversal import unique_dimkeys
@@ -120,14 +135,21 @@ class HoloViews(PaneBase):
 
         dims, keys = unique_dimkeys(object)
         if dims == [Dimension('Frame')] and keys == [(0,)]:
-            return []
+            return [], {}
 
+        nframes = 1
         values = dict(zip(dims, zip(*keys)))
+        dim_values = OrderedDict()
         widgets = []
         for dim in dims:
             widget_type = None
             vals = dim.values or values.get(dim, None)
-            if dim.name in widget_types:
+            dim_values[dim.name] = vals
+            if widgets_type == 'scrubber':
+                if not vals:
+                    raise ValueError('Scrubber widget may only be used if all dimensions define values.')
+                nframes *= len(vals)
+            elif dim.name in widget_types:
                 widget = widget_types[dim.name]
                 if isinstance(widget, Widget):
                     widgets.append(widget)
@@ -157,7 +179,9 @@ class HoloViews(PaneBase):
                 widget = widget_type(step=step, name=dim.label, start=dim.range[0],
                                      end=dim.range[1], value=default)
             widgets.append(widget)
-        return widgets
+        if widgets_type == 'scrubber':
+            widgets = [Player(length=nframes)]
+        return widgets, dim_values
 
 
 

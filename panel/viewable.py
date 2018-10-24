@@ -318,7 +318,8 @@ class Reactive(Viewable):
         _rename class level attribute to map between parameter and
         property names.
         """
-        return {self._rename.get(k, k): v for k, v in msg.items()}
+        return {self._rename.get(k, k): v for k, v in msg.items()
+                if self._rename.get(k, False) is not None}
 
     def _link_params(self, model, params, doc, root, comm=None):
         def param_change(*events):
