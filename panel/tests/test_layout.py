@@ -31,7 +31,7 @@ def test_layout_constructor(panel):
     div2 = Div()
     layout = panel(div1, div2)
 
-    assert all(isinstance(p, Bokeh) for p in layout.objects)
+    assert all(isinstance(p, Row) and isinstance(p[0], Bokeh) for p in layout.objects)
 
 
 @pytest.mark.parametrize('panel', [Column, Row])
@@ -40,8 +40,8 @@ def test_layout_getitem(panel):
     div2 = Div()
     layout = panel(div1, div2)
 
-    assert layout[0].object is div1
-    assert layout[1].object is div2
+    assert layout[0][0].object is div1
+    assert layout[1][0].object is div2
 
 
 @pytest.mark.parametrize('panel', [Column, Row])
@@ -78,7 +78,8 @@ def test_layout_get_model(panel, model_type, document, comm):
 
     assert isinstance(model, model_type)
     children = model.children[:-1] if isinstance(model, BkColumn) else model.children
-    assert get_divs(children) == [div1, div2]
+    assert get_divs(children[0].children) == [div1]
+    assert get_divs(children[1].children) == [div2]
 
 
 @pytest.mark.parametrize('panel', [Column, Row])
@@ -91,7 +92,9 @@ def test_layout_append(panel, document, comm):
 
     div3 = Div()
     layout.append(div3)
-    assert get_divs(model.children) == [div1, div2, div3]
+    assert get_divs(model.children[0].children) == [div1]
+    assert get_divs(model.children[1].children) == [div2]
+    assert get_divs(model.children[2].children) == [div3]
 
 
 @pytest.mark.parametrize('panel', [Column, Row])
@@ -104,7 +107,9 @@ def test_layout_insert(panel, document, comm):
 
     div3 = Div()
     layout.insert(1, div3)
-    assert get_divs(model.children) == [div1, div3, div2]
+    assert get_divs(model.children[0].children) == [div1]
+    assert get_divs(model.children[1].children) == [div3]
+    assert get_divs(model.children[2].children) == [div2]
 
 
 @pytest.mark.parametrize('panel', [Column, Row])
@@ -119,7 +124,8 @@ def test_layout_setitem(panel, document, comm):
     assert model.children[0].ref['id'] in p1._callbacks
     div3 = Div()
     layout[0] = div3
-    assert get_divs(model.children) == [div3, div2]
+    assert get_divs(model.children[0].children) == [div3]
+    assert get_divs(model.children[1].children) == [div2]
     assert p1._callbacks == {}
 
 
@@ -134,7 +140,7 @@ def test_layout_pop(panel, document, comm):
 
     assert model.children[0].ref['id'] in p1._callbacks
     layout.pop(0)
-    assert get_divs(model.children) == [div2]
+    assert get_divs(model.children[0].children) == [div2]
     assert p1._callbacks == {}
 
 
@@ -152,9 +158,9 @@ def test_tabs_constructor(document, comm):
     tab1, tab2 = model.tabs
 
     assert tab1.title == 'Div1'
-    assert get_div(tab1.child) is div1
+    assert get_div(tab1.child.children[0]) is div1
     assert tab2.title == 'Div2'
-    assert get_div(tab2.child) is div2
+    assert get_div(tab2.child.children[0]) is div2
 
 
 def test_tabs_implicit_constructor(document, comm):
@@ -171,9 +177,9 @@ def test_tabs_implicit_constructor(document, comm):
     tab1, tab2 = model.tabs
 
     assert tab1.title == 'Div1'
-    assert get_div(tab1.child) is div1
+    assert get_div(tab1.child.children[0]) is div1
     assert tab2.title == 'Div2'
-    assert get_div(tab2.child) is div2
+    assert get_div(tab2.child.children[0]) is div2
 
 
 def test_tabs_set_panes(document, comm):
@@ -194,11 +200,11 @@ def test_tabs_set_panes(document, comm):
     tab1, tab2, tab3 = model.tabs
 
     assert tab1.title == 'Div1'
-    assert get_div(tab1.child) is div1
+    assert get_div(tab1.child.children[0]) is div1
     assert tab2.title == 'Div2'
-    assert get_div(tab2.child) is div2
+    assert get_div(tab2.child.children[0]) is div2
     assert tab3.title == 'Div3'
-    assert get_div(tab3.child) is div3
+    assert get_div(tab3.child.children[0]) is div3
 
 
 def test_tabs_append(document, comm):
@@ -224,9 +230,9 @@ def test_tabs_insert(document, comm):
     div3 = Div()
     tabs.insert(1, div3)
     tab1, tab2, tab3 = model.tabs
-    assert get_div(tab1.child) is div1
-    assert get_div(tab2.child) is div3
-    assert get_div(tab3.child) is div2
+    assert get_div(tab1.child.children[0]) is div1
+    assert get_div(tab2.child.children[0]) is div3
+    assert get_div(tab3.child.children[0]) is div2
 
 
 def test_tabs_setitem(document, comm):
@@ -242,8 +248,8 @@ def test_tabs_setitem(document, comm):
     div3 = Div()
     tabs[0] = div3
     tab1, tab2 = model.tabs
-    assert get_div(tab1.child) is div3
-    assert get_div(tab2.child) is div2
+    assert get_div(tab1.child.children[0]) is div3
+    assert get_div(tab2.child.children[0]) is div2
     assert p1._callbacks == {}
 
 
@@ -260,7 +266,7 @@ def test_tabs_pop(document, comm):
     tabs.pop(0)
     assert len(model.tabs) == 1
     tab1 = model.tabs[0]
-    assert get_div(tab1.child) is div2
+    assert get_div(tab1.child.children[0]) is div2
     assert p1._callbacks == {}
 
 

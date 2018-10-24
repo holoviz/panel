@@ -1,7 +1,7 @@
-from bokeh.models import (Div as BkDiv, Column as BkColumn,
+from bokeh.models import (Div as BkDiv, Column as BkColumn, Row as BkRow,
                           WidgetBox as BkWidgetBox, Paragraph as BkParagraph)
 
-from panel.interact import interact, interact_manual
+from panel.interact import interactive
 from panel import widgets
 
 from .test_layout import get_div
@@ -11,8 +11,8 @@ def test_boolean_interact():
     def test(a):
         return a
 
-    interactive = interact(test, a=False)
-    widget = interactive._widgets['a']
+    interact_pane = interactive(test, a=False)
+    widget = interact_pane._widgets['a']
     assert isinstance(widget, widgets.Checkbox)
     assert widget.value == False
 
@@ -20,8 +20,8 @@ def test_string_interact():
     def test(a):
         return a
 
-    interactive = interact(test, a='')
-    widget = interactive._widgets['a']
+    interact_pane = interactive(test, a='')
+    widget = interact_pane._widgets['a']
     assert isinstance(widget, widgets.TextInput)
     assert widget.value == ''
 
@@ -29,8 +29,8 @@ def test_integer_interact():
     def test(a):
         return a
 
-    interactive = interact(test, a=1)
-    widget = interactive._widgets['a']
+    interact_pane = interactive(test, a=1)
+    widget = interact_pane._widgets['a']
     assert isinstance(widget, widgets.IntSlider)
     assert widget.value == 1
     assert widget.start == -1
@@ -41,8 +41,8 @@ def test_tuple_int_range_with_step_interact():
     def test(a):
         return a
 
-    interactive = interact(test, a=(0, 4, 2))
-    widget = interactive._widgets['a']
+    interact_pane = interactive(test, a=(0, 4, 2))
+    widget = interact_pane._widgets['a']
     assert isinstance(widget, widgets.IntSlider)
     assert widget.value == 2
     assert widget.start == 0
@@ -53,8 +53,8 @@ def test_tuple_int_range_interact():
     def test(a):
         return a
 
-    interactive = interact(test, a=(0, 4))
-    widget = interactive._widgets['a']
+    interact_pane = interactive(test, a=(0, 4))
+    widget = interact_pane._widgets['a']
     assert isinstance(widget, widgets.IntSlider)
     assert widget.value == 2
     assert widget.start == 0
@@ -65,8 +65,8 @@ def test_tuple_float_range_interact():
     def test(a):
         return a
 
-    interactive = interact(test, a=(0, 4, 0.1))
-    widget = interactive._widgets['a']
+    interact_pane = interactive(test, a=(0, 4, 0.1))
+    widget = interact_pane._widgets['a']
     assert isinstance(widget, widgets.FloatSlider)
     assert widget.value == 2
     assert widget.start == 0
@@ -77,8 +77,8 @@ def test_tuple_float_range_interact_with_default():
     def test(a=3.1):
         return a
 
-    interactive = interact(test, a=(0, 4, 0.1))
-    widget = interactive._widgets['a']
+    interact_pane = interactive(test, a=(0, 4, 0.1))
+    widget = interact_pane._widgets['a']
     assert isinstance(widget, widgets.FloatSlider)
     assert widget.value == 3.1
     assert widget.start == 0
@@ -89,8 +89,8 @@ def test_tuple_range_interact_with_default_of_different_type():
     def test(a=3.1):
         return a
 
-    interactive = interact(test, a=(0, 4))
-    widget = interactive._widgets['a']
+    interact_pane = interactive(test, a=(0, 4))
+    widget = interact_pane._widgets['a']
     assert isinstance(widget, widgets.FloatSlider)
     assert widget.value == 3.1
     assert widget.start == 0
@@ -100,8 +100,8 @@ def test_numeric_list_interact():
     def test(a):
         return a
 
-    interactive = interact(test, a=[1, 3, 5])
-    widget = interactive._widgets['a']
+    interact_pane = interactive(test, a=[1, 3, 5])
+    widget = interact_pane._widgets['a']
     assert isinstance(widget, widgets.DiscreteSlider)
     assert widget.value == 1
     assert widget.options == [1, 3, 5]
@@ -111,8 +111,8 @@ def test_string_list_interact():
         return a
 
     options = ['A', 'B', 'C']
-    interactive = interact(test, a=options)
-    widget = interactive._widgets['a']
+    interact_pane = interactive(test, a=options)
+    widget = interact_pane._widgets['a']
     assert isinstance(widget, widgets.Select)
     assert widget.value == 'A'
     assert widget.options == dict(zip(options, options))
@@ -121,25 +121,24 @@ def test_manual_interact():
     def test(a):
         return a
 
-    interactive = interact_manual(test, a=False)
-    widget = interactive._widgets['a']
+    interact_pane = interactive(test, params={'manual_update': True}, a=False)
+    widget = interact_pane._widgets['a']
     assert isinstance(widget, widgets.Checkbox)
     assert widget.value == False
-    assert isinstance(interactive._widgets['manual'], widgets.Button)
+    assert isinstance(interact_pane._widgets['manual'], widgets.Button)
 
 def test_interact_updates_panel(document, comm):
     def test(a):
         return a
 
-    interactive = interact(test, a=False)
-    widget = interactive._widgets['a']
+    interact_pane = interactive(test, a=False)
+    widget = interact_pane._widgets['a']
     assert isinstance(widget, widgets.Checkbox)
     assert widget.value == False
 
-    column = interactive._get_model(document, comm=comm)
+    column = interact_pane.layout._get_model(document, comm=comm)
     assert isinstance(column, BkColumn)
-    box = column.children[1]
-    div = get_div(box)
+    div = column.children[1].children[0]
     assert div.text == '<pre>False</pre>'
     
     widget.value = True
@@ -149,52 +148,53 @@ def test_interact_replaces_panel(document, comm):
     def test(a):
         return a if a else BkDiv(text='Test')
 
-    interactive = interact(test, a=False)
-    pane = interactive._pane
-    widget = interactive._widgets['a']
+    interact_pane = interactive(test, a=False)
+    pane = interact_pane._pane
+    widget = interact_pane._widgets['a']
     assert isinstance(widget, widgets.Checkbox)
     assert widget.value == False
 
-    column = interactive._get_model(document, comm=comm)
+    column = interact_pane.layout._get_model(document, comm=comm)
     assert isinstance(column, BkColumn)
-    box = column.children[1]
-    div = get_div(box)
+    div = get_div(column.children[1].children[0])
     assert div.text == 'Test'
     
     widget.value = True
     assert pane._callbacks == {}
-    div = get_div(column.children[1])
+    div = get_div(column.children[1].children[0])
     assert div.text == '<pre>True</pre>'
 
 def test_interact_replaces_model(document, comm):
     def test(a):
         return BkParagraph(text='Pre Test') if a else BkDiv(text='Test')
 
-    interactive = interact(test, a=False)
-    pane = interactive._pane
-    widget = interactive._widgets['a']
+    interact_pane = interactive(test, a=False)
+    pane = interact_pane._pane
+    widget = interact_pane._widgets['a']
     assert isinstance(widget, widgets.Checkbox)
     assert widget.value == False
 
-    column = interactive._get_model(document, comm=comm)
+    column = interact_pane.layout._get_model(document, comm=comm)
     assert isinstance(column, BkColumn)
-    box = column.children[1]
+    box = column.children[1].children[0]
     assert isinstance(box, BkWidgetBox)
     div = box.children[0]
     assert isinstance(div, BkDiv)
     assert div.text == 'Test'
-    assert column.ref['id'] in interactive._callbacks
+    assert column.children[1].ref['id'] in interact_pane._callbacks
     assert box.ref['id'] in pane._callbacks
     
     widget.value = True
     assert box.ref['id'] not in pane._callbacks
-    new_box = column.children[1]
+    assert pane._callbacks == {}
+    new_pane = interact_pane._pane
+    new_box = column.children[1].children[0]
     pre = new_box.children[0]
     assert isinstance(pre, BkParagraph)
     assert pre.text == 'Pre Test'
-    assert column.ref['id'] in interactive._callbacks
-    assert new_box.ref['id'] in pane._callbacks
+    assert column.children[1].ref['id'] in interact_pane._callbacks
+    assert new_box.ref['id'] in new_pane._callbacks
 
-    interactive._cleanup(column)
-    assert interactive._callbacks == {}
+    interact_pane._cleanup(column.children[1])
+    assert interact_pane._callbacks == {}
     assert pane._callbacks == {}

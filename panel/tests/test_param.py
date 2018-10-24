@@ -372,7 +372,7 @@ def test_expand_param_subobject(document, comm):
     # Expand subpane
     test_pane._widgets['a'][1].active = True
     assert len(model.children) == 2
-    _, subpanel = test_pane._layout.objects
+    _, subpanel = test_pane.layout.objects
     row = model.children[1]
     assert 'instance' in subpanel._callbacks
     assert isinstance(row, BkRow)
@@ -408,7 +408,7 @@ def test_switch_param_subobject(document, comm):
     # Expand subpane
     test_pane._widgets['a'][1].active = True
     assert len(model.children) == 2
-    _, subpanel = test_pane._layout.objects
+    _, subpanel = test_pane.layout.objects
     row = model.children[1]
     assert 'instance' in subpanel._callbacks
     assert isinstance(row, BkRow)
@@ -422,7 +422,7 @@ def test_switch_param_subobject(document, comm):
 
     # Switch subobject
     test_pane._widgets['a'][0].value = o2    
-    _, subpanel = test_pane._layout.objects
+    _, subpanel = test_pane.layout.objects
     row = model.children[1]
     assert 'instance' in subpanel._callbacks
     assert isinstance(row, BkRow)
@@ -488,7 +488,7 @@ def test_expand_param_subobject_expand_by_default(document, comm):
 
     # Expand subpane
     assert len(model.children) == 2
-    _, subpanel = test_pane._layout.objects
+    _, subpanel = test_pane.layout.objects
     row = model.children[1]
     assert 'instance' in subpanel._callbacks
     assert isinstance(row, BkRow)
@@ -520,7 +520,7 @@ def test_param_subobject_expand_by_default_no_toggle(document, comm):
 
     # Expand subpane
     assert len(model.children) == 2
-    _, subpanel = test_pane._layout.objects
+    _, subpanel = test_pane.layout.objects
     row = model.children[1]
     assert 'instance' in subpanel._callbacks
     assert isinstance(row, BkRow)
@@ -547,13 +547,13 @@ def test_expand_param_subobject_tabs(document, comm):
     # Expand subpanel
     test_pane._widgets['a'][1].active = True
     assert len(model.tabs) == 2
-    _, subpanel = test_pane._layout.objects
+    _, subpanel = test_pane.layout.objects
     subtabs = model.tabs[1].child
     assert model.tabs[1].title == 'Nested'
     assert 'instance' in subpanel._callbacks
     assert isinstance(subtabs, BkTabs)
     assert len(subtabs.tabs) == 1
-    assert subtabs.tabs[0].title == 'Nested'
+    assert subtabs.tabs[0].title == 'A'
 
     box = subtabs.tabs[0].child
     assert isinstance(box, BkWidgetBox)
@@ -620,7 +620,7 @@ def test_param_method_pane(document, comm):
     assert new_model.ref['id'] in inner_pane._callbacks
 
     # Cleanup pane
-    pane._cleanup(new_model)
+    pane._cleanup(row)
     assert inner_pane._callbacks == {}
 
 
@@ -639,8 +639,8 @@ def test_param_method_pane_subobject(document, comm):
     div = get_div(model)
 
     # Ensure that subobject is being watched
-    assert model.ref['id'] in pane._callbacks
-    watchers = pane._callbacks[model.ref['id']]
+    assert row.ref['id'] in pane._callbacks
+    watchers = pane._callbacks[row.ref['id']]
     assert any(w.inst is subobject for w in watchers)
     assert model.ref['id'] in inner_pane._callbacks
     assert isinstance(div, Div)
@@ -650,13 +650,13 @@ def test_param_method_pane_subobject(document, comm):
     new_subobject = View(name='Nested', a=42)
     test.b = new_subobject
     new_model = row.children[0]
-    assert new_model.ref['id'] in pane._callbacks
-    watchers = pane._callbacks[new_model.ref['id']]
+    assert row.ref['id'] in pane._callbacks
+    watchers = pane._callbacks[row.ref['id']]
     assert not any(w.inst is subobject for w in watchers)
     assert any(w.inst is new_subobject for w in watchers)
     
     # Cleanup pane
-    pane._cleanup(new_model)
+    pane._cleanup(row)
     assert pane._callbacks == {}
     assert inner_pane._callbacks == {}
 
@@ -687,7 +687,7 @@ def test_param_method_pane_mpl(document, comm):
     assert model.ref['id'] in inner_pane._callbacks
 
     # Cleanup pane
-    pane._cleanup(model)
+    pane._cleanup(row)
     assert inner_pane._callbacks == {}
 
 
@@ -700,6 +700,7 @@ def test_param_method_pane_changing_type(document, comm):
 
     # Create pane
     row = pane._get_root(document, comm=comm)
+    print(row, row.children)
     assert isinstance(row, BkRow)
     assert len(row.children) == 1
     model = row.children[0]
