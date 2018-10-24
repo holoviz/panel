@@ -31,7 +31,7 @@ import param
 
 from .layout import WidgetBox, Panel, Column, Row
 from .pane import PaneBase, Pane
-from .util import basestring, as_unicode, push
+from .util import basestring, as_unicode
 from .widgets import (Checkbox, TextInput, Widget, IntSlider, FloatSlider,
                       Select, DiscreteSlider, Button)
 

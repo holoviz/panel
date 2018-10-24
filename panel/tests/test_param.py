@@ -649,7 +649,6 @@ def test_param_method_pane_subobject(document, comm):
     # Ensure that switching the subobject triggers update in watchers
     new_subobject = View(name='Nested', a=42)
     test.b = new_subobject
-    new_model = row.children[0]
     assert row.ref['id'] in pane._callbacks
     watchers = pane._callbacks[row.ref['id']]
     assert not any(w.inst is subobject for w in watchers)

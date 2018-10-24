@@ -18,7 +18,7 @@ from .pane import Pane, PaneBase
 from .layout import WidgetBox, Row, Panel, Tabs
 from .util import (
     default_label_formatter, is_parameterized, get_method_owner,
-    full_groupby, push
+    full_groupby
 )
 from .widgets import (
     LiteralInput, Select, Checkbox, FloatSlider, IntSlider, RangeSlider,

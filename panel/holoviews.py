@@ -9,7 +9,6 @@ import sys
 from collections import OrderedDict
 
 import param
-from bokeh.layouts import Row as _BkRow, Column as _BkColumn
 
 from .layout import Panel, WidgetBox
 from .pane import PaneBase, Pane

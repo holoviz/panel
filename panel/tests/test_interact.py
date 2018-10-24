@@ -1,4 +1,4 @@
-from bokeh.models import (Div as BkDiv, Column as BkColumn, Row as BkRow,
+from bokeh.models import (Div as BkDiv, Column as BkColumn,
                           WidgetBox as BkWidgetBox, Paragraph as BkParagraph)
 
 from panel.interact import interactive
