@@ -246,12 +246,12 @@ def test_holoviews_link_across_panes(document, comm):
     assert len(row.children) == 2
     p1, p2 = row.children
 
-    assert isinstance(p1.children[0], Figure)
-    assert isinstance(p2.children[0], Figure)
+    assert isinstance(p1, Figure)
+    assert isinstance(p2, Figure)
 
     range_tool = row.select_one({'type': RangeTool})
     assert isinstance(range_tool, RangeTool)
-    range_tool.x_range = p2.children[0].x_range
+    range_tool.x_range = p2.x_range
 
 
 @hv_available

@@ -31,7 +31,7 @@ def test_layout_constructor(panel):
     div2 = Div()
     layout = panel(div1, div2)
 
-    assert all(isinstance(p, Row) and isinstance(p[0], Bokeh) for p in layout.objects)
+    assert all(isinstance(p, Bokeh) for p in layout.objects)
 
 
 @pytest.mark.parametrize('panel', [Column, Row])
@@ -40,8 +40,8 @@ def test_layout_getitem(panel):
     div2 = Div()
     layout = panel(div1, div2)
 
-    assert layout[0][0].object is div1
-    assert layout[1][0].object is div2
+    assert layout[0].object is div1
+    assert layout[1].object is div2
 
 
 @pytest.mark.parametrize('panel', [Column, Row])
