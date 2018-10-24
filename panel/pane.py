@@ -16,7 +16,7 @@ except:
 
 import param
 
-from bokeh.layouts import Row as _BkRow, WidgetBox as _BkWidgetBox
+from bokeh.layouts import WidgetBox as _BkWidgetBox
 from bokeh.models import LayoutDOM, CustomJS, Widget as _BkWidget, Div as _BkDiv
 
 from .layout import Panel, Row
