@@ -19,6 +19,7 @@ import param
 from bokeh.layouts import Row as _BkRow, WidgetBox as _BkWidgetBox
 from bokeh.models import LayoutDOM, CustomJS, Widget as _BkWidget, Div as _BkDiv
 
+from .layout import Panel, Row
 from .util import Div, basestring, push, remove_root
 from .viewable import Reactive, Viewable
 
@@ -69,6 +70,9 @@ class PaneBase(Reactive):
     the applies classmethod and the _get_model private method.
     """
 
+    default_layout = param.ClassSelector(default=Row, class_=(Panel),
+                                         is_instance=False)
+
     object = param.Parameter(default=None, doc="""
         The object being wrapped, which will be converted into a Bokeh model.""")
 
@@ -80,8 +84,6 @@ class PaneBase(Reactive):
 
     # Declares whether Pane supports updates to the Bokeh model
     _updates = False
-
-    _default_layout = None
 
     __abstract = True
 
@@ -125,7 +127,7 @@ class PaneBase(Reactive):
                              (type(self).__name__, type(object).__name__))
 
         super(PaneBase, self).__init__(object=object, **params)
-        self.layout = self._default_layout(self)
+        self.layout = self.default_layout(self)
 
     def _get_root(self, doc, comm=None):
         root = self.layout._get_model(doc, comm=comm)

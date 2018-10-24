@@ -108,14 +108,13 @@ def _matches(o, pattern):
 
 class interactive(PaneBase):
 
-    panel_layout = param.ClassSelector(default=Column, class_=Panel, is_instance=False)
+    default_layout = param.ClassSelector(default=Column, class_=(Panel),
+                                         is_instance=False)
 
     manual_update = param.Boolean(default=False, doc="""
         Whether to update manually by clicking on button.""")
 
     manual_name = param.String(default='Run Interact')
-
-    _default_layout = Column
 
     def __init__(self, object, params={}, **kwargs):
         super(interactive, self).__init__(object, **params)

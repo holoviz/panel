@@ -10,7 +10,6 @@ from bokeh.layouts import (Column as BkColumn, Row as BkRow,
                            WidgetBox as BkWidgetBox, Spacer as BkSpacer)
 from bokeh.models.widgets import Tabs as BkTabs, Panel as BkPanel
 
-from .pane import create, PaneBase
 from .util import push
 from .viewable import Reactive
 
@@ -32,6 +31,7 @@ class Panel(Reactive):
     _linked_props = []
 
     def __init__(self, *objects, **params):
+        from .pane import create
         objects = [create(pane) for pane in objects]
         super(Panel, self).__init__(objects=objects, **params)
 
@@ -94,6 +94,7 @@ class Panel(Reactive):
         Returns new child models for the layout while reusing unchanged
         models and cleaning up any dropped objects.
         """
+        from .pane import create
         old_children = getattr(model, self._rename.get('objects', 'objects'))
         new_models = []
         for i, pane in enumerate(self.objects):
@@ -136,16 +137,19 @@ class Panel(Reactive):
         return obj in self.objects
 
     def __setitem__(self, index, pane):
+        from .pane import create
         new_objects = list(self.objects)
         new_objects[index] = create(pane)
         self.objects = new_objects
 
     def append(self, pane):
+        from .pane import create
         new_objects = list(self.objects)
         new_objects.append(create(pane))
         self.objects = new_objects
 
     def insert(self, index, pane):
+        from .pane import create
         new_objects = list(self.objects)
         new_objects.insert(index, create(pane))
         self.objects = new_objects
@@ -190,6 +194,7 @@ class WidgetBox(Panel):
         Returns new child models for the layout while reusing unchanged
         models and cleaning up any dropped objects.
         """
+        from .pane import create
         old_children = getattr(model, self._rename.get('objects', 'objects'))
         new_models = []
         for i, pane in enumerate(self.objects):
@@ -232,11 +237,12 @@ class Tabs(Panel):
     _linked_props = ['active']
 
     def __init__(self, *items, **params):
+        from .pane import create
         objects = []
         for pane in items:
             if isinstance(pane, tuple):
                 name, pane = pane
-            elif isinstance(pane, PaneBase):
+            elif isinstance(pane, Viewable):
                 name = pane.name
             else:
                 name = None
@@ -266,6 +272,7 @@ class Tabs(Panel):
         return new_models
 
     def __setitem__(self, index, pane):
+        from .pane import create
         name = None
         if isinstance(pane, tuple):
             name, pane = pane
@@ -274,6 +281,7 @@ class Tabs(Panel):
         self.objects = new_objects
 
     def append(self, pane):
+        from .pane import create
         name = None
         if isinstance(pane, tuple):
             name, pane = pane
@@ -282,6 +290,7 @@ class Tabs(Panel):
         self.objects = new_objects
 
     def insert(self, index, pane):
+        from .pane import create
         name = None
         if isinstance(pane, tuple):
             name, pane = pane
@@ -321,6 +330,3 @@ class Spacer(Reactive):
         model = self._bokeh_model(**self._init_properties())
         self._link_params(model, ['width', 'height'], doc, root, comm)
         return model
-
-
-PaneBase._default_layout = Row
