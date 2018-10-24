@@ -10,7 +10,7 @@ from bokeh.layouts import (Column as BkColumn, Row as BkRow,
                            WidgetBox as BkWidgetBox, Spacer as BkSpacer)
 from bokeh.models.widgets import Tabs as BkTabs, Panel as BkPanel
 
-from .pane import create, Pane, PaneBase
+from .pane import create, PaneBase
 from .util import push
 from .viewable import Reactive
 
@@ -97,7 +97,7 @@ class Panel(Reactive):
         old_children = getattr(model, self._rename.get('objects', 'objects'))
         new_models = []
         for i, pane in enumerate(self.objects):
-            pane = Pane(pane, _temporary=True)
+            pane = create(pane, _temporary=True)
             self.objects[i] = pane
             if pane in old_objects:
                 child = old_children[old_objects.index(pane)]

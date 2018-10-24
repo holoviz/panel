@@ -40,9 +40,7 @@ def create(obj, **kwargs):
     layout: Viewable
        A Viewable representation of the input object
     """
-    if isinstance(obj, PaneBase):
-        return obj
-    elif isinstance(obj, Viewable):
+    if isinstance(obj, Viewable):
         return obj
     pane = PaneBase.get_pane_type(obj)(obj, **kwargs)
     return pane.layout
