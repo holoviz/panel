@@ -601,7 +601,7 @@ def test_param_method_pane(document, comm):
     assert isinstance(inner_pane, Bokeh)
 
     # Create pane
-    row = pane._get_root(document, comm=comm)
+    row = pane._get_model(document, comm=comm)
     assert isinstance(row, BkRow)
     assert len(row.children) == 1
     model = row.children[0]
@@ -632,7 +632,7 @@ def test_param_method_pane_subobject(document, comm):
     assert isinstance(inner_pane, Bokeh)
 
     # Create pane
-    row = pane._get_root(document, comm=comm)
+    row = pane._get_model(document, comm=comm)
     assert isinstance(row, BkRow)
     assert len(row.children) == 1
     model = row.children[0]
@@ -668,7 +668,7 @@ def test_param_method_pane_mpl(document, comm):
     assert isinstance(inner_pane, Matplotlib)
 
     # Create pane
-    row = pane._get_root(document, comm=comm)
+    row = pane._get_model(document, comm=comm)
     assert isinstance(row, BkRow)
     assert len(row.children) == 1
     model = row.children[0]
@@ -698,7 +698,7 @@ def test_param_method_pane_changing_type(document, comm):
     assert isinstance(inner_pane, Matplotlib)
 
     # Create pane
-    row = pane._get_root(document, comm=comm)
+    row = pane._get_model(document, comm=comm)
     print(row, row.children)
     assert isinstance(row, BkRow)
     assert len(row.children) == 1

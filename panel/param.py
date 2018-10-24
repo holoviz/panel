@@ -333,10 +333,6 @@ class Param(PaneBase):
     def _get_model(self, doc, root=None, parent=None, comm=None):
         return self.layout._get_model(doc, root, parent, comm)
 
-    def _get_root(self, doc, comm=None):
-        root = self._get_model(doc, comm=comm)
-        self._preprocess(root)
-        return root
 
 
 class ParamMethod(PaneBase):
@@ -356,11 +352,6 @@ class ParamMethod(PaneBase):
         self._pane = Pane(self.object(), name=self.name,
                           **dict(_temporary=True, **self._kwargs))
         self._inner_layout = Row(self._pane)
-
-    def _get_root(self, doc, comm=None):
-        root = self._get_model(doc, comm=comm)
-        self._preprocess(root)
-        return root
 
     @classmethod
     def applies(cls, obj):

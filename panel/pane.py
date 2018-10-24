@@ -130,9 +130,7 @@ class PaneBase(Reactive):
         self.layout = self._default_layout(self)
 
     def _get_root(self, doc, comm=None):
-        root = _BkRow()
-        model = self._get_model(doc, root, root, comm)
-        root.children = [model]
+        root = self.layout._get_model(doc, comm=comm)
         self._preprocess(root)
         return root
 

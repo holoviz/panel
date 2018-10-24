@@ -169,11 +169,6 @@ class interactive(PaneBase):
                 new_kwargs.append((name, value, default))
         return new_kwargs
 
-    def _get_root(self, doc, comm=None):
-        root = self._get_model(doc, comm=comm)
-        self._preprocess(root)
-        return root
-
     def _get_model(self, doc, root=None, parent=None, comm=None):
         layout = self._inner_layout._get_model(doc, root, parent, comm)
         self._link_widgets(layout, doc, root, parent, comm)
