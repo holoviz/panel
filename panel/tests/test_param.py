@@ -699,7 +699,6 @@ def test_param_method_pane_changing_type(document, comm):
 
     # Create pane
     row = pane._get_model(document, comm=comm)
-    print(row, row.children)
     assert isinstance(row, BkRow)
     assert len(row.children) == 1
     model = row.children[0]
