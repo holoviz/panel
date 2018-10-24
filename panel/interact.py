@@ -29,7 +29,7 @@ empty = Parameter.empty
 
 import param
 
-from .layout import WidgetBox, Layout, Column, Row
+from .layout import WidgetBox, Panel, Column, Row
 from .pane import PaneBase, Pane
 from .util import basestring, as_unicode, push
 from .widgets import (Checkbox, TextInput, Widget, IntSlider, FloatSlider,
@@ -108,7 +108,7 @@ def _matches(o, pattern):
 
 class interactive(PaneBase):
 
-    panel_layout = param.ClassSelector(default=Column, class_=Layout, is_instance=False)
+    panel_layout = param.ClassSelector(default=Column, class_=Panel, is_instance=False)
 
     manual_update = param.Boolean(default=False, doc="""
         Whether to update manually by clicking on button.""")

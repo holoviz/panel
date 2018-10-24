@@ -15,9 +15,9 @@ from .util import push
 from .viewable import Reactive
 
 
-class Layout(Reactive):
+class Panel(Reactive):
     """
-    Abstract baseclass for a layout of Panes.
+    Abstract baseclass for a layout of Viewables.
     """
 
     objects = param.List(default=[], doc="""
@@ -33,7 +33,7 @@ class Layout(Reactive):
 
     def __init__(self, *objects, **params):
         objects = [create(pane) for pane in objects]
-        super(Layout, self).__init__(objects=objects, **params)
+        super(Panel, self).__init__(objects=objects, **params)
 
     def _init_properties(self):
         properties = {k: v for k, v in self.param.get_param_values()
@@ -64,7 +64,7 @@ class Layout(Reactive):
         self._callbacks[ref].append(watcher)
 
     def _cleanup(self, model=None, final=False):
-        super(Layout, self)._cleanup(model, final)
+        super(Panel, self)._cleanup(model, final)
         if model is not None:
             for p, c in zip(self.objects, model.children):
                 p._cleanup(c, final)
@@ -84,7 +84,7 @@ class Layout(Reactive):
         -------
         viewables: list(Viewable)
         """
-        objects = super(Layout, self).select(selector)
+        objects = super(Panel, self).select(selector)
         for obj in self.objects:
             objects += obj.select(selector)
         return objects
@@ -158,7 +158,7 @@ class Layout(Reactive):
         self.objects = new_objects
 
 
-class Row(Layout):
+class Row(Panel):
     """
     Horizontal layout of Panes.
     """
@@ -166,7 +166,7 @@ class Row(Layout):
     _bokeh_model = BkRow
 
 
-class Column(Layout):
+class Column(Panel):
     """
     Vertical layout of Panes.
     """
@@ -174,7 +174,7 @@ class Column(Layout):
     _bokeh_model = BkColumn
 
 
-class WidgetBox(Layout):
+class WidgetBox(Panel):
     """
     Box to group widgets.
     """
@@ -210,7 +210,7 @@ class WidgetBox(Layout):
         return new_models
 
 
-class Tabs(Layout):
+class Tabs(Panel):
     """
     Tabs allows selecting between the supplied panes.
     """
@@ -255,7 +255,7 @@ class Tabs(Layout):
                 child = old_children[old_objects.index(pane)]
             else:
                 child = pane._get_model(doc, root, model, comm)
-                name = pane[0].name if isinstance(pane, Layout) and len(pane) == 1 else pane.name
+                name = pane[0].name if isinstance(pane, Panel) and len(pane) == 1 else pane.name
                 child = BkPanel(title=name, child=child)
             new_models.append(child)
 
@@ -297,7 +297,7 @@ class Tabs(Layout):
         self.objects = new_objects
 
     def _cleanup(self, model=None, final=False):
-        super(Layout, self)._cleanup(model, final)
+        super(Panel, self)._cleanup(model, final)
         if model is not None:
             for p, c in zip(self.objects, model.tabs):
                 p._cleanup(c.child, final)

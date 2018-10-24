@@ -11,7 +11,7 @@ from collections import OrderedDict
 import param
 from bokeh.layouts import Row as _BkRow, Column as _BkColumn
 
-from .layout import Layout, WidgetBox
+from .layout import Panel, WidgetBox
 from .pane import PaneBase, Pane
 from .viewable import Viewable
 from .widgets import Player
@@ -201,7 +201,7 @@ def find_links(root_view, root_model):
     Traverses the supplied Viewable searching for Links between any
     HoloViews based panes.
     """
-    if not isinstance(root_view, Layout):
+    if not isinstance(root_view, Panel):
         return
 
     hv_views = root_view.select(HoloViews)

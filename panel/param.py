@@ -15,7 +15,7 @@ import param
 from param.parameterized import classlist
 
 from .pane import Pane, PaneBase
-from .layout import WidgetBox, Row, Layout, Tabs
+from .layout import WidgetBox, Row, Panel, Tabs
 from .util import (
     default_label_formatter, is_parameterized, get_method_owner,
     full_groupby, push
@@ -127,14 +127,14 @@ class Param(PaneBase):
             kwargs['width'] = self.width
 
         layout = self.subobject_layout
-        if isinstance(layout, Layout):
+        if isinstance(layout, Panel):
             self._subobject_layout = layout
             self.layout = self._widget_box
-        elif isinstance(layout, type) and issubclass(layout, Layout):
+        elif isinstance(layout, type) and issubclass(layout, Panel):
             self.layout = layout(self._widget_box, **kwargs)
             self._subobject_layout = self.layout
         else:
-            raise ValueError('subobject_layout expected to be a panel.layout.Layout'
+            raise ValueError('subobject_layout expected to be a panel.layout.Panel'
                              'type or instance, found %s type.' %
                              type(layout).__name__)
 
