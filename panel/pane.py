@@ -16,11 +16,38 @@ except:
 
 import param
 
-from bokeh.layouts import Row as _BkRow, WidgetBox as _BkWidgetBox
+from bokeh.layouts import WidgetBox as _BkWidgetBox
 from bokeh.models import LayoutDOM, CustomJS, Widget as _BkWidget, Div as _BkDiv
 
+from .layout import Panel, Row
 from .util import Div, basestring, push, remove_root
 from .viewable import Reactive, Viewable
+
+
+def panel(obj, **kwargs):
+    """
+    Creates a panel from any supplied object by wrapping it in a pane
+    and returning a corresponding Panel.
+
+    Arguments
+    ---------
+    obj: object
+       Any object to be turned into a Panel
+    **kwargs: dict
+       Any keyword arguments to be passed to the applicable Pane
+
+    Returns
+    -------
+    layout: Viewable
+       A Viewable representation of the input object
+    """
+    if isinstance(obj, Viewable):
+        return obj
+    internal = kwargs.pop('_internal', False)
+    pane = PaneBase.get_pane_type(obj)(obj, **kwargs)
+    if internal and len(pane.layout) == 1:
+        return pane.layout[0]
+    return pane.layout
 
 
 def Pane(obj, **kwargs):
@@ -45,6 +72,9 @@ class PaneBase(Reactive):
     To define a concrete Pane type subclass this class and implement
     the applies classmethod and the _get_model private method.
     """
+
+    default_layout = param.ClassSelector(default=Row, class_=(Panel),
+                                         is_instance=False)
 
     object = param.Parameter(default=None, doc="""
         The object being wrapped, which will be converted into a Bokeh model.""")
@@ -98,12 +128,12 @@ class PaneBase(Reactive):
         if isinstance(applies, bool) and not applies:
             raise ValueError("%s pane does not support objects of type '%s'" %
                              (type(self).__name__, type(object).__name__))
+
         super(PaneBase, self).__init__(object=object, **params)
+        self.layout = self.default_layout(self)
 
     def _get_root(self, doc, comm=None):
-        root = _BkRow()
-        model = self._get_model(doc, root, root, comm)
-        root.children = [model]
+        root = self.layout._get_model(doc, comm=comm)
         self._preprocess(root)
         return root
 
@@ -203,9 +233,9 @@ class DivPaneBase(PaneBase):
     width = param.Integer(default=None, bounds=(0, None))
 
     sizing_mode = param.ObjectSelector(default=None, allow_None=True,
-        objects=["fixed", "scale_width", "scale_height", "scale_both", "stretch_both"], 
+        objects=["fixed", "scale_width", "scale_height", "scale_both", "stretch_both"],
         doc="How the item being displayed should size itself.")
-                                       
+
     style = param.Dict(default=None, doc="""
         Dictionary of CSS property:value pairs to apply to this Div.""")
 
@@ -225,10 +255,10 @@ class DivPaneBase(PaneBase):
 
 class Image(DivPaneBase):
     """
-    Encodes an image as base64 and wraps it in a Bokeh Div model.  
+    Encodes an image as base64 and wraps it in a Bokeh Div model.
     This is an abstract base class that needs the image type
     to be specified and specific code for determining the image shape.
-    
+
     The imgtype determines the filetype, extension, and MIME type for
     this image. Each image type (png,jpg,gif) has a base class that
     supports anything with a `_repr_X_` method (where X is `png`,
@@ -289,7 +319,7 @@ class Image(DivPaneBase):
 class PNG(Image):
 
     imgtype = 'png'
-    
+
     @classmethod
     def _imgshape(cls, data):
         import struct
@@ -301,18 +331,18 @@ class GIF(Image):
 
     imgtype = 'gif'
 
-    @classmethod    
+    @classmethod
     def _imgshape(cls, data):
         import struct
         w, h = struct.unpack("<HH", data[6:10])
         return int(w), int(h)
-        
+
 
 class JPG(Image):
 
     imgtype = 'jpg'
-    
-    @classmethod    
+
+    @classmethod
     def _imgshape(cls, data):
         import struct
         b = BytesIO(data)
@@ -390,7 +420,7 @@ class Matplotlib(PNG):
         """Calculate and return image width,height"""
         w, h = self.object.get_size_inches()
         return int(w*72), int(h*72)
-    
+
     def _img(self):
         self.object.set_dpi(self.dpi)
         b = BytesIO()
@@ -407,7 +437,7 @@ def latex_to_img(text, size=25, dpi=100):
     import matplotlib.pyplot as plt
     from PIL import Image, ImageChops
     import io
-    
+
     buf = io.BytesIO()
     with plt.rc_context({'text.usetex': False, 'mathtext.fontset': 'stix'}):
         fig = plt.figure()
@@ -431,7 +461,7 @@ def make_transparent(img, bg=(255, 255, 255, 255)):
     img = img.convert("RGBA")
     clear = bg[0:3]+(0,)
     pixdata = img.load()
-    
+
     width, height = img.size
     for y in range(height):
         for x in range(width):
@@ -492,7 +522,7 @@ class LaTeX(PNG):
         elif is_sympy_expr(obj):
             import sympy
             obj = r'$'+sympy.latex(obj)+'$'
-            
+
         return make_transparent(latex_to_img(obj, self.size, self.dpi))._repr_png_()
 
 
@@ -605,7 +635,7 @@ class Markdown(DivPaneBase):
 
 class YT(HTML):
     """
-    YT panes wrap plottable objects from the YT library.  
+    YT panes wrap plottable objects from the YT library.
     By default, the height and width are calculated by summing all
     contained plots, but can optionally be specified explicitly to
     provide additional space.
@@ -630,7 +660,7 @@ class YT(HTML):
                     w,h = PNG._imgshape(img)
                     height += h
                     width = max(w, width)
-        
+
         if self.width  is None: p["width"]  = width
         if self.height is None: p["height"] = height
 

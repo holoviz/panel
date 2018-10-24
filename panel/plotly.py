@@ -33,15 +33,15 @@ class Plotly(PaneBase):
     the figure on bokeh server and via Comms.
     """
 
-    layout = param.Dict()
+    plotly_layout = param.Dict()
 
     _updates = True
 
     precedence = 0.8
-    
+
     def __init__(self, object, layout=None, **params):
         super(Plotly, self).__init__(self._to_figure(object, layout),
-                                     layout=layout, **params)
+                                     plotly_layout=layout, **params)
 
     @classmethod
     def applies(cls, obj):
@@ -61,7 +61,7 @@ class Plotly(PaneBase):
         """
         Should return the bokeh model to be rendered.
         """
-        fig = self._to_figure(self.object, self.layout)
+        fig = self._to_figure(self.object, self.plotly_layout)
         json = fig.to_plotly_json()
         traces = json['data']
         sources = []
@@ -76,7 +76,7 @@ class Plotly(PaneBase):
         return model
 
     def _update(self, model):
-        fig = self._to_figure(self.object, self.layout)
+        fig = self._to_figure(self.object, self.plotly_layout)
         json = fig.to_plotly_json()
         traces = json['data']
         new_sources = []

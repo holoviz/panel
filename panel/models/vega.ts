@@ -80,8 +80,6 @@ export class VegaPlotView extends LayoutDOMView {
 
   render(): void {
     super.render()
-    if (this._initialized)
-      this._plot()
   }
 
   _plot(): void {
