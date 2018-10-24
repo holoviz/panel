@@ -402,6 +402,9 @@ class ParamMethod(PaneBase):
                         raise e
                     finally:
                         new_object._cleanup(None, new_object._temporary)
+                elif isinstance(self._pane, Panel):
+                    self._pane.objects = new_object.objects
+                    new_object._cleanup(None, new_object._temporary)
                 else:
                     self._pane.object = new_object
                 return
