@@ -33,7 +33,7 @@
 
   <link rel="stylesheet" href="{{ pathto('_static/' + theme_css, 1) }}">
   {% for link in css_includes %}
-    <link rel="stylesheet" href="{{ pathto('_static/' + link, 1) }}">
+    <link rel="stylesheet" href="{{ pathto('_static/' + link, 1) }}">z
   {% endfor %}
   {% if theme_custom_css %}
     <link rel="stylesheet" href="{{ pathto('_static/' + theme_custom_css, 1) }}">
@@ -46,6 +46,10 @@
   <script type="text/javascript" async
   src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML">
   </script>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega@4.2.0?noext"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-lite@3.0.0-rc4?noext"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-embed@3.18.2?noext"></script>
   <script src="{{ pathto('_static/' + theme_js, 1) }}"></script>
   {% for link in js_includes %}
      <script src="{{ pathto('_static/' + link, 1) }}"></script>
