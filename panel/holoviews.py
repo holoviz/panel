@@ -203,7 +203,7 @@ def find_links(root_view, root_model):
 
     hv_views = root_view.select(HoloViews)
     root_plots = [plot for view in hv_views for plot in view._plots.values()
-                  if plot.root is root_model]
+                  if getattr(plot, 'root', None) is root_model]
 
     if not root_plots:
         return
