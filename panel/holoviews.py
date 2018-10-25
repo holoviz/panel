@@ -48,7 +48,8 @@ class HoloViews(PaneBase):
         if self.object is None:
             widgets, values = []
         else:
-            widgets, values = self.widgets_from_dimensions(self.object, self.widgets)
+            widgets, values = self.widgets_from_dimensions(self.object, self.widgets,
+                                                           self.widget_type)
         self._values = values
         self.widget_box.objects = widgets
         if widgets and not self.widget_box in self.layout.objects:
