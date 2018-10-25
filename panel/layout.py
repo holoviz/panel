@@ -143,6 +143,26 @@ class Panel(Reactive):
         new_objects[index] = panel(pane, _internal=True)
         self.objects = new_objects
 
+    def __repr__(self, depth=0):
+        spacer = '\n' + ('    ' * (depth+1))
+        cls = type(self).__name__
+        params = ['%s=%r' % (p, v) for p, v in self.get_param_values()
+                  if v is not self.params(p).default and v not in ('', None)
+                  and p != 'objects' and not (p == 'name' and v.startswith(cls))]
+        objs = [obj.__repr__(depth+1) for obj in self.objects]
+        if not params and not objs:
+            return super(Panel, self).__repr__(depth+1)
+        elif not params:
+            template = '{cls}({spacer}{objs}{small})'
+        elif not objs:
+            template = '{cls}({params})'
+        else:
+            template = '{cls}({spacer}{objs},{small} {params})'
+        return template.format(
+            cls=cls, params=', '.join(params), small=spacer[:-4],
+            objs=(',%s' % spacer).join(objs), spacer=spacer
+        )
+
     def append(self, pane):
         from .pane import panel
         new_objects = list(self.objects)

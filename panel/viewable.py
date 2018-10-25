@@ -46,6 +46,16 @@ class Viewable(param.Parameterized):
         super(Viewable, self).__init__(**params)
         self._documents = {}
 
+    def __repr__(self, depth=0):
+        cls = type(self).__name__
+        params = ['%s=%r' % (p, v) for p, v in self.get_param_values()
+                  if v is not self.params(p).default and v not in ('', None)
+                  and not (p == 'name' and v.startswith(cls))]
+        return '{cls}({params})'.format(cls=type(self).__name__, params=', '.join(params))
+
+    def __str__(self):
+        return self.__repr__()
+
     def _get_model(self, doc, root=None, parent=None, comm=None):
         """
         Converts the objects being wrapped by the viewable into a
