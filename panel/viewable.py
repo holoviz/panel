@@ -261,13 +261,16 @@ class Reactive(Viewable):
             Maps between parameters on this object to the parameters
             on the supplied object.
         """
-        _updating = []
-        def link(*events):
+        def link(*events, _updating = []):
             for event in events:
                 if event.name in _updating: continue
                 _updating.append(event.name)
-                setattr(obj, links[event.name], event.new)
-                _updating.pop(_updating.index(event.name))
+                try:
+                    setattr(obj, links[event.name], event.new)
+                except:
+                    raise
+                finally:
+                    _updating.pop(_updating.index(event.name))
         self._callbacks['instance'].append(self.param.watch(link, list(links)))
 
     def _cleanup(self, model=None, final=False):
@@ -338,8 +341,13 @@ class Reactive(Viewable):
 
             if comm:
                 self._expecting += [m for msg in msgs for m in msg]
-                update_model()
-                push(doc, comm)
+                try:
+                    update_model()
+                    push(doc, comm)
+                except:
+                    raise
+                finally:
+                    self._expecting = self._expecting[:-len(msg)]
             else:
                 doc.add_next_tick_callback(update_model)
 
@@ -375,8 +383,8 @@ class Reactive(Viewable):
     def _change_event(self):
         try:
             self.set_param(**self._process_property_change(self._events))
-        except Exception as e:
-            raise e
+        except:
+            raise
         finally:
             self._events = {}
             self._active = []

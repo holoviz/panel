@@ -277,8 +277,8 @@ class Param(PaneBase):
                     updates['value'] = change.new
                 try:
                     widget.set_param(**updates)
-                except Exception as e:
-                    raise e
+                except:
+                    raise
                 finally:
                     _updating.pop(_updating.index(key))
 
@@ -395,8 +395,8 @@ class ParamMethod(PaneBase):
                                   if k != 'name'}
                     try:
                         self._pane.set_param(**new_params)
-                    except Exception as e:
-                        raise e
+                    except:
+                        raise
                     finally:
                         new_object._cleanup(None, new_object._temporary)
                 elif isinstance(self._pane, Panel):
