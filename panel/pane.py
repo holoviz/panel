@@ -164,12 +164,16 @@ class PaneBase(Reactive):
                     self._update(old_model)
             else:
                 # Otherwise replace the whole model
-                self._cleanup(old_model)
                 new_model = self._get_model(doc, root, parent, comm)
                 def update_models():
-                    index = parent.children.index(old_model)
-                    parent.children[index] = new_model
-                    history[0] = new_model
+                    try:
+                        index = parent.children.index(old_model)
+                        parent.children[index] = new_model
+                        history[0] = new_model
+                    except:
+                        raise
+                    else:
+                        self._cleanup(old_model)
 
             if comm:
                 update_models()
