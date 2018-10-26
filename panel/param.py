@@ -55,9 +55,15 @@ class Param(PaneBase):
         values above the default_precedence values can be used to sort
         or group parameters arbitrarily.""")
 
-    expand_by_default = param.Boolean(default=False, doc="""
+    expand = param.Boolean(default=False, doc="""
         Whether parameterized subobjects are expanded or collapsed on
         instantiation.""")
+
+    expand_button = param.Boolean(default=None, doc="""
+        Whether to add buttons to expand and collapse sub-objects.""")
+
+    expand_layout = param.Parameter(default=Row, doc="""
+        Layout to expand sub-objects into.""")
 
     height = param.Integer(default=None, bounds=(0, None), doc="""
         Height of widgetbox the parameter widgets are displayed in.""")
@@ -76,15 +82,6 @@ class Param(PaneBase):
 
     show_labels = param.Boolean(default=True, doc="""
         Whether to show labels for each .widget""")
-
-    subobject_layout = param.Parameter(default=Row, doc="""
-        Layout of subpanels.""")
-
-    toggleable_subobjects = param.Boolean(default=True, doc="""
-        Whether parameterized subobjects are expandable and
-        collapseable. If False they may be either expanded or
-        collapsed on instantation with the expand_by_default
-        parameter.""")
 
     width = param.Integer(default=300, bounds=(0, None), doc="""
         Width of widgetbox the parameter widgets are displayed in.""")
@@ -123,22 +120,22 @@ class Param(PaneBase):
 
         # Construct Layout
         kwargs = {'name': self.name}
-        if self.subobject_layout is Tabs:
+        if self.expand_layout is Tabs:
             kwargs['width'] = self.width
 
-        layout = self.subobject_layout
+        layout = self.expand_layout
         if isinstance(layout, Panel):
-            self._subobject_layout = layout
+            self._expand_layout = layout
             self.layout = self._widget_box
         elif isinstance(layout, type) and issubclass(layout, Panel):
             self.layout = layout(self._widget_box, **kwargs)
-            self._subobject_layout = self.layout
+            self._expand_layout = self.layout
         else:
-            raise ValueError('subobject_layout expected to be a panel.layout.Panel'
+            raise ValueError('expand_layout expected to be a panel.layout.Panel'
                              'type or instance, found %s type.' %
                              type(layout).__name__)
 
-        if not (not self.toggleable_subobjects and not self.expand_by_default):
+        if not (self.expand_button == False and not self.expand):
             self._link_subobjects()
 
     def _link_subobjects(self):
@@ -152,24 +149,24 @@ class Param(PaneBase):
             def toggle_pane(change, parameter=pname):
                 "Adds or removes subpanel from layout"
                 parameterized = getattr(self.object, parameter)
-                existing = [p for p in self._subobject_layout.objects
+                existing = [p for p in self._expand_layout.objects
                             if isinstance(p, Param)
                             and p.object is parameterized]
                 if existing:
                     old_panel = existing[0]
                     if not change.new:
                         old_panel._cleanup(final=old_panel._temporary)
-                        self._subobject_layout.pop(old_panel)
+                        self._expand_layout.pop(old_panel)
                 elif change.new:
                     kwargs = {k: v for k, v in self.get_param_values()
                               if k not in ['name', 'object', 'parameters']}
                     pane = Param(parameterized, name=parameterized.name,
                                  _temporary=True, **kwargs)
-                    self._subobject_layout.append(pane)
+                    self._expand_layout.append(pane)
 
             def update_pane(change, parameter=pname):
                 "Adds or removes subpanel from layout"
-                layout = self._subobject_layout
+                layout = self._expand_layout
                 existing = [p for p in layout.objects if isinstance(p, Param)
                             and p.object is change.old]
 
@@ -192,8 +189,8 @@ class Param(PaneBase):
                 watchers.append(toggle.param.watch(toggle_pane, 'active'))
             self._callbacks['instance'] += watchers
 
-            if self.expand_by_default:
-                if self.toggleable_subobjects:
+            if self.expand:
+                if self.expand_button:
                     toggle.active = True
                 else:
                     toggle_pane(namedtuple('Change', 'new')(True))
@@ -298,7 +295,7 @@ class Param(PaneBase):
         if isinstance(options, dict):
             options = options.values()
         if ((is_parameterized(value) or any(is_parameterized(o) for o in options))
-            and self.toggleable_subobjects):
+            and (self.expand_button or (self.expand_button is None and not self.expand))):
             toggle = Toggle(name='...', button_type='primary',
                             disabled=not is_parameterized(value))
             return [widget, toggle]
@@ -323,7 +320,7 @@ class Param(PaneBase):
 
         # Format name specially
         ordered_params.pop(ordered_params.index('name'))
-        if self.subobject_layout is Tabs:
+        if self.expand_layout is Tabs:
             widgets = []
         else:
             widgets = [('name', [StaticText(value='<b>{0}</b>'.format(self.object.name))])]
