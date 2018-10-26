@@ -138,6 +138,17 @@ class Param(PaneBase):
         if not (self.expand_button == False and not self.expand):
             self._link_subobjects()
 
+    def __repr__(self, depth=0):
+        cls = type(self).__name__
+        params = [k for k in self.object.params() if k != 'name']
+        params = ['%s=%s' % (p, v) for p, v in self.get_param_values()
+                  if v is not self.params(p).default and v not in ('', None, {}, [])
+                  and p != 'object' and not (p == 'name' and v.startswith(cls))
+                  and not (p == 'parameters' and v == params)]
+        obj = type(self.object).__name__
+        template = '{cls}({obj}, {params})' if params else '{cls}({obj})'
+        return template.format(cls=cls, params=', '.join(params), obj=obj)
+
     def _link_subobjects(self):
         for pname, widgets in self._widgets.items():
             if not any(is_parameterized(getattr(w, 'value', None)) or

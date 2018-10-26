@@ -116,6 +116,12 @@ class Viewable(param.Parameterized):
         self._cleanup(self._documents[doc], final=self._temporary)
         del self._documents[doc]
 
+    def pprint(self):
+        """
+        Prints a compositional repr of the class.
+        """
+        print(self)
+
     def select(self, selector=None):
         """
         Iterates over the Viewable and any potential children in the
