@@ -15,7 +15,7 @@ import param
 from param.parameterized import classlist
 
 from .pane import Pane, PaneBase
-from .layout import WidgetBox, Row, Panel, Tabs
+from .layout import WidgetBox, Row, Panel, Tabs, Column
 from .util import (
     default_label_formatter, is_parameterized, get_method_owner,
     full_groupby
@@ -62,7 +62,7 @@ class Param(PaneBase):
     expand_button = param.Boolean(default=None, doc="""
         Whether to add buttons to expand and collapse sub-objects.""")
 
-    expand_layout = param.Parameter(default=Row, doc="""
+    expand_layout = param.Parameter(default=Column, doc="""
         Layout to expand sub-objects into.""")
 
     height = param.Integer(default=None, bounds=(0, None), doc="""

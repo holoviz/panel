@@ -8,6 +8,7 @@ import param
 
 from bokeh.layouts import (Column as BkColumn, Row as BkRow,
                            WidgetBox as BkWidgetBox, Spacer as BkSpacer)
+from bokeh.models import Box as BkBox
 from bokeh.models.widgets import Tabs as BkTabs, Panel as BkPanel
 
 from .util import push
@@ -117,7 +118,7 @@ class Panel(Reactive):
         objects = self._get_objects(model, [], doc, root, comm)
 
         # HACK ALERT: Insert Spacer if last item in Column has no height
-        if (isinstance(self, Column) and objects and not isinstance(objects[-1], Panel)
+        if (isinstance(self, Column) and objects and not isinstance(objects[-1], (BkWidgetBox, BkBox))
             and getattr(objects[-1], 'height', False) is None):
             objects.append(BkSpacer(height=50))
 
