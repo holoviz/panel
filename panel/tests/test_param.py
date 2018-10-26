@@ -85,7 +85,7 @@ def test_get_model_tabs(document, comm):
         pass
 
     test = Test()
-    test_pane = Pane(test, subobject_layout=Tabs, _temporary=True)
+    test_pane = Pane(test, expand_layout=Tabs, _temporary=True)
     model = test_pane._get_model(document, comm=comm)
 
     assert isinstance(model, BkTabs)
@@ -447,7 +447,7 @@ def test_expand_param_subobject_into_column(document, comm):
 
     test = Test(a=Test(name='Nested'))
     column = Column()
-    test_pane = Pane(test, subobject_layout=column, _temporary=True)
+    test_pane = Pane(test, expand_layout=column, _temporary=True)
     layout = Row(test_pane, column)
     model = layout._get_model(document, comm=comm)
 
@@ -475,12 +475,12 @@ def test_expand_param_subobject_into_column(document, comm):
     assert subpanel._callbacks == {}
 
     
-def test_expand_param_subobject_expand_by_default(document, comm):
+def test_expand_param_subobject_expand(document, comm):
     class Test(param.Parameterized):
         a = param.Parameter()
 
     test = Test(a=Test(name='Nested'))
-    test_pane = Pane(test, _temporary=True, expand_by_default=True)
+    test_pane = Pane(test, _temporary=True, expand=True, expand_button=True)
     model = test_pane._get_model(document, comm=comm)
 
     toggle = model.children[0].children[2]
@@ -506,13 +506,13 @@ def test_expand_param_subobject_expand_by_default(document, comm):
     assert subpanel._callbacks == {}
 
 
-def test_param_subobject_expand_by_default_no_toggle(document, comm):
+def test_param_subobject_expand_no_toggle(document, comm):
     class Test(param.Parameterized):
         a = param.Parameter()
 
     test = Test(a=Test(name='Nested'))
-    test_pane = Pane(test, _temporary=True, expand_by_default=True,
-                     toggleable_subobjects=False)
+    test_pane = Pane(test, _temporary=True, expand=True,
+                     expand_button=False)
     model = test_pane._get_model(document, comm=comm)
 
     # Assert no toggle was added
@@ -538,7 +538,7 @@ def test_expand_param_subobject_tabs(document, comm):
         a = param.Parameter()
 
     test = Test(a=Test(name='Nested'))
-    test_pane = Pane(test, subobject_layout=Tabs, _temporary=True)
+    test_pane = Pane(test, expand_layout=Tabs, _temporary=True)
     model = test_pane._get_model(document, comm=comm)
 
     toggle = model.tabs[0].child.children[1]
