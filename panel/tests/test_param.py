@@ -8,7 +8,7 @@ from bokeh.models import (
     WidgetBox as BkWidgetBox, CheckboxGroup, Toggle, Button,
     TextInput as BkTextInput, Tabs as BkTabs, Column as BkColumn)
 from panel.pane import Pane, PaneBase, Matplotlib, Bokeh
-from panel.layout import Tabs, Column, Row
+from panel.layout import Tabs, Row
 from panel.param import Param, ParamMethod, JSONInit
 
 from .test_layout import get_div
