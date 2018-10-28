@@ -149,18 +149,18 @@ class Panel(Reactive):
         params = ['%s=%r' % (p, v) for p, v in self.get_param_values()
                   if v is not self.params(p).default and v not in ('', None)
                   and p != 'objects' and not (p == 'name' and v.startswith(cls))]
-        objs = [obj.__repr__(depth+1) for obj in self.objects]
+        objs = ['[%d] %s' % (i, obj.__repr__(depth+1)) for i, obj in enumerate(self.objects)]
         if not params and not objs:
             return super(Panel, self).__repr__(depth+1)
         elif not params:
-            template = '{cls}({spacer}{objs}{small})'
+            template = '{cls}{spacer}{objs}'
         elif not objs:
             template = '{cls}({params})'
         else:
-            template = '{cls}({spacer}{objs},{small} {params})'
+            template = '{cls}({params}){spacer}{objs}'
         return template.format(
-            cls=cls, params=', '.join(params), small=spacer[:-4],
-            objs=(',%s' % spacer).join(objs), spacer=spacer
+            cls=cls, params=', '.join(params),
+            objs=('%s' % spacer).join(objs), spacer=spacer
         )
 
     def append(self, pane):
