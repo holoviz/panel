@@ -18,7 +18,7 @@ from .pane import Pane, PaneBase
 from .layout import WidgetBox, Row, Panel, Tabs
 from .util import (
     default_label_formatter, is_parameterized, get_method_owner,
-    full_groupby
+    full_groupby, abbreviated_repr
 )
 from .widgets import (
     LiteralInput, Select, Checkbox, FloatSlider, IntSlider, RangeSlider,
@@ -141,7 +141,7 @@ class Param(PaneBase):
     def __repr__(self, depth=0):
         cls = type(self).__name__
         params = [k for k in self.object.params() if k != 'name']
-        params = ['%s=%r' % (p, v) for p, v in self.get_param_values()
+        params = ['%s=%s' % (p, abbreviated_repr(v)) for p, v in self.get_param_values()
                   if v is not self.params(p).default and v not in ('', None, {}, [])
                   and p != 'object' and not (p == 'name' and v.startswith(cls))
                   and not (p == 'parameters' and v == params)]

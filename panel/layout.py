@@ -10,7 +10,7 @@ from bokeh.layouts import (Column as BkColumn, Row as BkRow,
                            WidgetBox as BkWidgetBox, Spacer as BkSpacer)
 from bokeh.models.widgets import Tabs as BkTabs, Panel as BkPanel
 
-from .util import push
+from .util import push, abbreviated_repr
 from .viewable import Reactive, Viewable
 
 
@@ -146,7 +146,7 @@ class Panel(Reactive):
     def __repr__(self, depth=0):
         spacer = '\n' + ('    ' * (depth+1))
         cls = type(self).__name__
-        params = ['%s=%r' % (p, v) for p, v in self.get_param_values()
+        params = ['%s=%s' % (p, abbreviated_repr(v)) for p, v in self.get_param_values()
                   if v is not self.params(p).default and v not in ('', None)
                   and p != 'objects' and not (p == 'name' and v.startswith(cls))]
         objs = ['[%d] %s' % (i, obj.__repr__(depth+1)) for i, obj in enumerate(self.objects)]

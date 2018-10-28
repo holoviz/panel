@@ -8,7 +8,7 @@ import inspect
 import numbers
 import hashlib
 
-from collections import defaultdict, MutableSequence, MutableMapping
+from collections import defaultdict, MutableSequence, MutableMapping, OrderedDict
 from datetime import datetime
 
 import param
@@ -82,6 +82,35 @@ def as_unicode(obj):
     if sys.version_info.major < 3 and isinstance(obj, str):
         obj = obj.decode('utf-8')
     return unicode(obj)
+
+
+def abbreviated_repr(value, max_length=25, natural_breaks=(',', ' ')):
+    """
+    Returns an abbreviated repr for the supplied object. Attempts to
+    find a natural break point while adhering to the maximum length.
+    """
+    vrepr = repr(value)
+    if len(vrepr) > max_length:
+
+        # Attempt to find natural cutoff point
+        abbrev = vrepr[max_length//2:]
+        natural_break = None
+        for brk in natural_breaks:
+            if brk in abbrev:
+                natural_break = abbrev.index(brk) + max_length//2
+                break
+        if natural_break and natural_break < max_length:
+            max_length = natural_break + 1
+
+        end_char = ''
+        if isinstance(value, list):
+            end_char = ']'
+        elif isinstance(value, OrderedDict):
+            end_char = '])'
+        elif isinstance(value, (dict, set)):
+            end_char = '}'
+        return vrepr[:max_length+1] + '...' + end_char
+    return vrepr
 
 
 def full_groupby(l, key=lambda x: x):
