@@ -77,7 +77,7 @@ def test_layout_get_model(panel, model_type, document, comm):
     model = layout._get_model(document, comm=comm)
 
     assert isinstance(model, model_type)
-    children = model.children[:-1] if isinstance(model, BkColumn) else model.children
+    children = model.children
     assert get_divs(children[0].children) == [div1]
     assert get_divs(children[1].children) == [div2]
 

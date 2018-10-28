@@ -8,7 +8,7 @@ from bokeh.models import (
     WidgetBox as BkWidgetBox, CheckboxGroup, Toggle, Button,
     TextInput as BkTextInput, Tabs as BkTabs, Column as BkColumn)
 from panel.pane import Pane, PaneBase, Matplotlib, Bokeh
-from panel.layout import Tabs, Column, Row
+from panel.layout import Tabs, Row
 from panel.param import Param, ParamMethod, JSONInit
 
 from .test_layout import get_div
@@ -67,7 +67,7 @@ def test_get_model(document, comm):
     test_pane = Pane(test, _temporary=True)
     model = test_pane._get_model(document, comm=comm)
 
-    assert isinstance(model, BkRow)
+    assert isinstance(model, BkColumn)
     assert len(model.children) == 1
 
     box = model.children[0]
@@ -375,7 +375,7 @@ def test_expand_param_subobject(document, comm):
     _, subpanel = test_pane.layout.objects
     row = model.children[1]
     assert 'instance' in subpanel._callbacks
-    assert isinstance(row, BkRow)
+    assert isinstance(row, BkColumn)
     assert len(row.children) == 1
     box = row.children[0]
     assert isinstance(box, BkWidgetBox)
@@ -411,7 +411,7 @@ def test_switch_param_subobject(document, comm):
     _, subpanel = test_pane.layout.objects
     row = model.children[1]
     assert 'instance' in subpanel._callbacks
-    assert isinstance(row, BkRow)
+    assert isinstance(row, BkColumn)
     assert len(row.children) == 1
     box = row.children[0]
     assert isinstance(box, BkWidgetBox)
@@ -425,7 +425,7 @@ def test_switch_param_subobject(document, comm):
     _, subpanel = test_pane.layout.objects
     row = model.children[1]
     assert 'instance' in subpanel._callbacks
-    assert isinstance(row, BkRow)
+    assert isinstance(row, BkColumn)
     assert len(row.children) == 1
     box = row.children[0]
     assert isinstance(box, BkWidgetBox)
@@ -441,14 +441,14 @@ def test_switch_param_subobject(document, comm):
 
     
 
-def test_expand_param_subobject_into_column(document, comm):
+def test_expand_param_subobject_into_row(document, comm):
     class Test(param.Parameterized):
         a = param.Parameter()
 
     test = Test(a=Test(name='Nested'))
-    column = Column()
-    test_pane = Pane(test, expand_layout=column, _temporary=True)
-    layout = Row(test_pane, column)
+    row = Row()
+    test_pane = Pane(test, expand_layout=row, _temporary=True)
+    layout = Row(test_pane, row)
     model = layout._get_model(document, comm=comm)
 
     toggle = model.children[0].children[2]
@@ -457,10 +457,10 @@ def test_expand_param_subobject_into_column(document, comm):
     # Expand subpane
     test_pane._widgets['a'][1].active = True
     assert len(model.children) == 2
-    subpanel = column.objects[0]
+    subpanel = row.objects[0]
     row = model.children[1]
     assert 'instance' in subpanel._callbacks
-    assert isinstance(row, BkColumn)
+    assert isinstance(row, BkRow)
     assert len(row.children) == 1
     box = row.children[0]
     assert isinstance(box, BkWidgetBox)
@@ -491,7 +491,7 @@ def test_expand_param_subobject_expand(document, comm):
     _, subpanel = test_pane.layout.objects
     row = model.children[1]
     assert 'instance' in subpanel._callbacks
-    assert isinstance(row, BkRow)
+    assert isinstance(row, BkColumn)
     assert len(row.children) == 1
     box = row.children[0]
     assert isinstance(box, BkWidgetBox)
@@ -523,7 +523,7 @@ def test_param_subobject_expand_no_toggle(document, comm):
     _, subpanel = test_pane.layout.objects
     row = model.children[1]
     assert 'instance' in subpanel._callbacks
-    assert isinstance(row, BkRow)
+    assert isinstance(row, BkColumn)
     assert len(row.children) == 1
     box = row.children[0]
     assert isinstance(box, BkWidgetBox)
