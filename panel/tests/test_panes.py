@@ -65,7 +65,12 @@ def test_bokeh_pane(document, comm):
     pane._cleanup(new_model)
     assert pane._callbacks == {}
 
-    
+
+def test_pane_repr(document, comm):
+    pane = Pane('Some text', width=400)
+    assert repr(pane) == 'Markdown(str, width=400)'
+
+
 @mpl_available
 def test_get_matplotlib_pane_type():
     assert PaneBase.get_pane_type(mpl_figure()) is Matplotlib

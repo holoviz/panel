@@ -125,7 +125,7 @@ class PaneBase(Reactive):
 
     def __repr__(self, depth=0):
         cls = type(self).__name__
-        params = ['%s=%s' % (p, abbreviated_repr(v)) for p, v in self.get_param_values()
+        params = ['%s=%s' % (p, abbreviated_repr(v)) for p, v in sorted(self.get_param_values())
                   if v is not self.params(p).default and v not in ('', None, {}, [])
                   and p != 'object' and not (p == 'name' and v.startswith(cls))]
         obj = type(self.object).__name__
