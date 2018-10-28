@@ -21,7 +21,7 @@ from bokeh.models import CustomJS
 from bokeh.server.server import Server
 from pyviz_comms import JS_CALLBACK, CommManager, JupyterCommManager
 
-from .util import render_mimebundle, add_to_doc, push
+from .util import render_mimebundle, add_to_doc, push, abbreviated_repr
 
 
 class Viewable(param.Parameterized):
@@ -45,6 +45,16 @@ class Viewable(param.Parameterized):
     def __init__(self, **params):
         super(Viewable, self).__init__(**params)
         self._documents = {}
+
+    def __repr__(self, depth=0):
+        cls = type(self).__name__
+        params = ['%s=%s' % (p, abbreviated_repr(v)) for p, v in sorted(self.get_param_values())
+                  if v is not self.params(p).default and v not in ('', None)
+                  and not (p == 'name' and v.startswith(cls))]
+        return '{cls}({params})'.format(cls=type(self).__name__, params=', '.join(params))
+
+    def __str__(self):
+        return self.__repr__()
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         """
@@ -105,6 +115,12 @@ class Viewable(param.Parameterized):
         doc = session_context._document
         self._cleanup(self._documents[doc], final=self._temporary)
         del self._documents[doc]
+
+    def pprint(self):
+        """
+        Prints a compositional repr of the class.
+        """
+        print(self)
 
     def select(self, selector=None):
         """

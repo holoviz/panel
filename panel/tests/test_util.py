@@ -1,7 +1,12 @@
+from collections import OrderedDict
+
 from bokeh.models import Div
 
 from panel.pane import PaneBase
-from panel.util import render_mimebundle, default_label_formatter, get_method_owner
+from panel.util import (
+    render_mimebundle, default_label_formatter, get_method_owner,
+    abbreviated_repr
+)
 
 
 def test_get_method_owner_class():
@@ -38,3 +43,16 @@ def test_default_label_formatter_not_replace_underscores():
 
 def test_default_label_formatter_overrides():
     assert default_label_formatter.instance(overrides={'a': 'b'})('a') == 'b'
+
+
+def test_abbreviated_repr_dict():
+    assert abbreviated_repr({'key': 'some really, really long string'}) == "{'key': 'some really, ...}"
+
+
+def test_abbreviated_repr_list():
+    assert abbreviated_repr(['some really, really long string']) == "['some really, ...]"
+
+
+def test_abbreviated_repr_ordereddict():
+    assert (abbreviated_repr(OrderedDict([('key', 'some really, really long string')]))
+            == "OrderedDict([('key', ...])")

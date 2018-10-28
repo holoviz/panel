@@ -11,7 +11,7 @@ from bokeh.layouts import (Column as BkColumn, Row as BkRow,
 from bokeh.models import Box as BkBox
 from bokeh.models.widgets import Tabs as BkTabs, Panel as BkPanel
 
-from .util import push
+from .util import push, abbreviated_repr
 from .viewable import Reactive, Viewable
 
 
@@ -143,6 +143,26 @@ class Panel(Reactive):
         new_objects = list(self.objects)
         new_objects[index] = panel(pane, _internal=True)
         self.objects = new_objects
+
+    def __repr__(self, depth=0):
+        spacer = '\n' + ('    ' * (depth+1))
+        cls = type(self).__name__
+        params = ['%s=%s' % (p, abbreviated_repr(v)) for p, v in sorted(self.get_param_values())
+                  if v is not self.params(p).default and v not in ('', None)
+                  and p != 'objects' and not (p == 'name' and v.startswith(cls))]
+        objs = ['[%d] %s' % (i, obj.__repr__(depth+1)) for i, obj in enumerate(self.objects)]
+        if not params and not objs:
+            return super(Panel, self).__repr__(depth+1)
+        elif not params:
+            template = '{cls}{spacer}{objs}'
+        elif not objs:
+            template = '{cls}({params})'
+        else:
+            template = '{cls}({params}){spacer}{objs}'
+        return template.format(
+            cls=cls, params=', '.join(params),
+            objs=('%s' % spacer).join(objs), spacer=spacer
+        )
 
     def append(self, pane):
         from .pane import panel

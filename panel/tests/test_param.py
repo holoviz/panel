@@ -58,6 +58,23 @@ def test_instantiate_from_parameters_on_instance():
     assert isinstance(Pane(Test().param), Param)
 
 
+def test_param_pane_repr(document, comm):
+
+    class Test(param.Parameterized):
+        pass
+
+    assert repr(Pane(Test())) == 'Param(Test)'
+
+
+def test_param_pane_repr_with_params(document, comm):
+
+    class Test(param.Parameterized):
+        a = param.Number()
+        b = param.Number()
+
+    assert repr(Pane(Test(), parameters=['a'])) == "Param(Test, parameters=['a'])"
+
+
 def test_get_model(document, comm):
 
     class Test(param.Parameterized):

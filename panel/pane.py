@@ -20,7 +20,7 @@ from bokeh.layouts import WidgetBox as _BkWidgetBox
 from bokeh.models import LayoutDOM, CustomJS, Widget as _BkWidget, Div as _BkDiv
 
 from .layout import Panel, Row
-from .util import Div, basestring, push, remove_root
+from .util import Div, basestring, push, remove_root, abbreviated_repr
 from .viewable import Reactive, Viewable
 
 
@@ -122,6 +122,15 @@ class PaneBase(Reactive):
             if isinstance(applies, bool) and not applies: continue
             return pane_type
         raise TypeError('%s type could not be rendered.' % type(obj).__name__)
+
+    def __repr__(self, depth=0):
+        cls = type(self).__name__
+        params = ['%s=%s' % (p, abbreviated_repr(v)) for p, v in sorted(self.get_param_values())
+                  if v is not self.params(p).default and v not in ('', None, {}, [])
+                  and p != 'object' and not (p == 'name' and v.startswith(cls))]
+        obj = type(self.object).__name__
+        template = '{cls}({obj}, {params})' if params else '{cls}({obj})'
+        return template.format(cls=cls, params=', '.join(params), obj=obj)
 
     def __init__(self, object, **params):
         applies = self.applies(object)

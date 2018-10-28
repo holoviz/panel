@@ -45,6 +45,16 @@ def test_layout_getitem(panel):
 
 
 @pytest.mark.parametrize('panel', [Column, Row])
+def test_layout_repr(panel):
+    div1 = Div()
+    div2 = Div()
+    layout = panel(div1, div2)
+
+    name = panel.__name__
+    assert repr(layout) == '%s\n    [0] Bokeh(Div)\n    [1] Bokeh(Div)' % name
+
+
+@pytest.mark.parametrize('panel', [Column, Row])
 def test_layout_select_by_type(panel):
     div1 = Div()
     div2 = Div()

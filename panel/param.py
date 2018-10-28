@@ -18,7 +18,7 @@ from .pane import Pane, PaneBase
 from .layout import WidgetBox, Row, Panel, Tabs, Column
 from .util import (
     default_label_formatter, is_parameterized, get_method_owner,
-    full_groupby
+    full_groupby, abbreviated_repr
 )
 from .widgets import (
     LiteralInput, Select, Checkbox, FloatSlider, IntSlider, RangeSlider,
@@ -137,6 +137,18 @@ class Param(PaneBase):
 
         if not (self.expand_button == False and not self.expand):
             self._link_subobjects()
+
+    def __repr__(self, depth=0):
+        cls = type(self).__name__
+        obj_cls = type(self.object).__name__
+        params = [k for k in self.object.params() if k != 'name']
+        params = ['%s=%s' % (p, abbreviated_repr(v)) for p, v in sorted(self.get_param_values())
+                  if v is not self.params(p).default and v not in ('', None, {}, [])
+                  and p != 'object' and not (p == 'name' and v.startswith(obj_cls))
+                  and not (p == 'parameters' and v == params)]
+        obj = type(self.object).__name__
+        template = '{cls}({obj}, {params})' if params else '{cls}({obj})'
+        return template.format(cls=cls, params=', '.join(params), obj=obj)
 
     def _link_subobjects(self):
         for pname, widgets in self._widgets.items():
