@@ -15,7 +15,7 @@ import param
 
 from bokeh.application.handlers import FunctionHandler
 from bokeh.application import Application
-from bokeh.document import Document
+from bokeh.document.document import Document, _combine_document_events
 from bokeh.document.events import ModelChangedEvent
 from bokeh.io import curdoc, show
 from bokeh.models import CustomJS
@@ -365,7 +365,7 @@ class Reactive(Viewable):
                         old = getattr(model, attr)
                         serializable_new = model.lookup(attr).serializable_value(model)
                         event = ModelChangedEvent(doc, model, attr, old, new, serializable_new)
-                        doc._held_events.append(event)
+                        _combine_document_events(event, doc._held_events)
                 else:
                     model.update(**update)
 
