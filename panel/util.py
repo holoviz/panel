@@ -10,6 +10,7 @@ import hashlib
 
 from collections import defaultdict, MutableSequence, MutableMapping, OrderedDict
 from datetime import datetime
+from contextlib import contextmanager
 
 import param
 import bokeh
@@ -29,8 +30,10 @@ try:
 except:
     basestring = unicode = str
 
-
+# Global variables
 CUSTOM_MODELS = {}
+BLOCKED = False
+
 
 def load_compiled_models(custom_model, implementation):
     """
@@ -195,11 +198,22 @@ def diff(doc, binary=True, events=None):
     the latest plot data.
     """
     events = list(doc._held_events) if events is None else events
-    if not events:
+    if not events or BLOCKED:
         return None
     msg = Protocol("1.0").create("PATCH-DOC", events, use_buffers=binary)
     doc._held_events = [e for e in doc._held_events if e not in events]
     return msg
+
+
+@contextmanager
+def block_comm():
+    """
+    Context manager to temporarily block comm push
+    """
+    global BLOCKED
+    BLOCKED = True
+    yield
+    BLOCKED = False
 
 
 def push(doc, comm, binary=True):

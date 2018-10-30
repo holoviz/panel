@@ -5,6 +5,7 @@ from datetime import datetime
 
 from bokeh.layouts import WidgetBox
 from bokeh.models import Div as BkDiv, Slider as BkSlider
+from panel.util import block_comm
 from panel.widgets import (
     TextInput, StaticText, FloatSlider, IntSlider, RangeSlider,
     LiteralInput, Checkbox, Select, MultiSelect, Button, Toggle,
@@ -32,6 +33,32 @@ def test_text_input(document, comm):
     text.value = 'A'
     assert widget.value == 'A'
     assert repr(text) == "TextInput(name='Text:', value='A')"
+
+
+def test_widget_triggers_events(document, comm):
+    """
+    Ensure widget events don't get swallowed in comm mode
+    """
+    text = TextInput(value='ABC', name='Text:')
+
+    box = text._get_root(document, comm=comm)
+    widget = box.children[0]
+    document.add_root(box)
+    document.hold()
+
+    # Simulate client side change
+    widget.value = '123'
+    document._held_events = document._held_events[:-1]
+
+    # Set new value
+    with block_comm():
+        text.value = '123'
+
+    assert len(document._held_events) == 1
+    event = document._held_events[0]
+    assert event.model is widget
+    assert event.attr == 'value'
+    assert event.new == '123'
 
 
 def test_static_text(document, comm):

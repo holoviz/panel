@@ -15,7 +15,8 @@ import param
 
 from bokeh.application.handlers import FunctionHandler
 from bokeh.application import Application
-from bokeh.document import Document
+from bokeh.document.document import Document, _combine_document_events
+from bokeh.document.events import ModelChangedEvent
 from bokeh.io import curdoc, show
 from bokeh.models import CustomJS
 from bokeh.server.server import Server
@@ -352,8 +353,21 @@ class Reactive(Viewable):
             if not msgs: return
 
             def update_model():
-                for msg in msgs:
-                    model.update(**msg)
+                update = {k: v for msg in msgs for k, v in msg.items()}
+                if comm:
+                    for attr, new in update.items():
+                        setattr(model, attr, new)
+                        event = doc._held_events[-1] if doc._held_events else None
+                        if (event and event.model is model and event.attr == attr and
+                            event.new is new):
+                            continue
+                        # If change did not trigger event trigger it manually
+                        old = getattr(model, attr)
+                        serializable_new = model.lookup(attr).serializable_value(model)
+                        event = ModelChangedEvent(doc, model, attr, old, new, serializable_new)
+                        _combine_document_events(event, doc._held_events)
+                else:
+                    model.update(**update)
 
             if comm:
                 self._expecting += [m for msg in msgs for m in msg]
@@ -362,7 +376,7 @@ class Reactive(Viewable):
                     push(doc, comm)
                 except:
                     raise
-                finally:
+                else:
                     self._expecting = self._expecting[:-len(msg)]
             else:
                 doc.add_next_tick_callback(update_model)
