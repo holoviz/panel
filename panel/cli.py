@@ -8,7 +8,8 @@ from bokeh.__main__ import main as bokeh_entry_point
 
 def transform_cmds(argv):
     """
-    Updates the argv list to remap anaconda-project arguments appropriately.
+    Allows usage with anaconda-project by remapping the argv list provided 
+    into arguments accepted by Bokeh 0.12.7 or later.
     """
     replacements = {'--anaconda-project-host':'--allow-websocket-origin',
                     '--anaconda-project-port': '--port',
