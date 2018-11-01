@@ -316,7 +316,10 @@ class Reactive(Viewable):
             comm_id = comm_ids[0]
             comm = self._comm_manager._comms.pop(comm_id, None)
             if comm:
-                comm.close()
+                try:
+                    comm.close()
+                except:
+                    pass
 
 
     def _process_property_change(self, msg):
