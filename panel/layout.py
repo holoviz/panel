@@ -15,6 +15,26 @@ from .util import push, abbreviated_repr
 from .viewable import Reactive, Viewable
 
 
+def no_height(layout):
+    """
+    Whether the supplied layout has no height
+    """
+    if isinstance(layout, BkBox):
+        for child in layout.children:
+            if isinstance(child, BkBox):
+                if no_height(child):
+                    return False
+
+            height = getattr(child, 'height', None)
+            if height is not None:
+                return False
+    elif isinstance(BkWidgetBox):
+        return False
+    elif getattr(child, 'height', None) is not None:
+        return False
+    return True
+
+
 class Panel(Reactive):
     """
     Abstract baseclass for a layout of Viewables.
@@ -118,8 +138,7 @@ class Panel(Reactive):
         objects = self._get_objects(model, [], doc, root, comm)
 
         # HACK ALERT: Insert Spacer if last item in Column has no height
-        if (isinstance(self, Column) and objects and not isinstance(objects[-1], (BkWidgetBox, BkBox))
-            and getattr(objects[-1], 'height', False) is None):
+        if (isinstance(self, Column) and objects and no_height(objects[-1])):
             objects.append(BkSpacer(height=50))
 
         props = dict(self._init_properties(), objects=objects)
