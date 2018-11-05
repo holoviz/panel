@@ -199,6 +199,8 @@ class interactive(PaneBase):
                         new_object._cleanup(None, new_object._temporary)
                     else:
                         self._pane.object = new_object
+                    return
+
 
                 # Replace pane entirely
                 self._pane = Pane(new_object, _temporary=True)
