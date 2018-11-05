@@ -30,7 +30,7 @@ def no_height(layout):
                 return False
     elif isinstance(BkWidgetBox):
         return False
-    elif getattr(child, 'height', None) is not None:
+    elif getattr(child, 'height', False) is None:
         return False
     return True
 
