@@ -116,6 +116,24 @@ def abbreviated_repr(value, max_length=25, natural_breaks=(',', ' ')):
     return vrepr
 
 
+def param_reprs(parameterized, skip=[]):
+    """
+    Returns a list of reprs for parameters on the parameterized object.
+    Skips default and empty values.
+    """
+    cls = type(parameterized).__name__
+    param_reprs = []
+    for p, v in sorted(parameterized.get_param_values()):
+        if v is parameterized.params(p).default: continue
+        elif v is None: continue
+        elif isinstance(v, basestring) and v == '': continue
+        elif isinstance(v, list) and v == []: continue
+        elif isinstance(v, dict) and v == {}: continue
+        elif p in skip or (p == 'name' and v.startswith(cls)): continue
+        param_reprs.append('%s=%s' % (p, abbreviated_repr(v)))
+    return param_reprs
+
+
 def full_groupby(l, key=lambda x: x):
     """
     Groupby implementation which does not require a prior sort

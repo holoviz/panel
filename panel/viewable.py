@@ -22,7 +22,7 @@ from bokeh.models import CustomJS
 from bokeh.server.server import Server
 from pyviz_comms import JS_CALLBACK, CommManager, JupyterCommManager
 
-from .util import render_mimebundle, add_to_doc, push, abbreviated_repr
+from .util import render_mimebundle, add_to_doc, push, param_reprs
 
 
 class Viewable(param.Parameterized):
@@ -49,9 +49,7 @@ class Viewable(param.Parameterized):
 
     def __repr__(self, depth=0):
         cls = type(self).__name__
-        params = ['%s=%s' % (p, abbreviated_repr(v)) for p, v in sorted(self.get_param_values())
-                  if v is not self.params(p).default and v not in ('', None)
-                  and not (p == 'name' and v.startswith(cls))]
+        params = param_reprs(self)
         return '{cls}({params})'.format(cls=type(self).__name__, params=', '.join(params))
 
     def __str__(self):

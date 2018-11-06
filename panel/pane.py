@@ -20,7 +20,7 @@ from bokeh.layouts import WidgetBox as _BkWidgetBox
 from bokeh.models import LayoutDOM, CustomJS, Widget as _BkWidget, Div as _BkDiv
 
 from .layout import Panel, Row
-from .util import Div, basestring, push, remove_root, abbreviated_repr
+from .util import Div, basestring, param_reprs, push, remove_root
 from .viewable import Reactive, Viewable
 
 
@@ -125,9 +125,7 @@ class PaneBase(Reactive):
 
     def __repr__(self, depth=0):
         cls = type(self).__name__
-        params = ['%s=%s' % (p, abbreviated_repr(v)) for p, v in sorted(self.get_param_values())
-                  if v is not self.params(p).default and v not in ('', None, {}, [])
-                  and p != 'object' and not (p == 'name' and v.startswith(cls))]
+        params = param_reprs(self, ['object'])
         obj = type(self.object).__name__
         template = '{cls}({obj}, {params})' if params else '{cls}({obj})'
         return template.format(cls=cls, params=', '.join(params), obj=obj)
