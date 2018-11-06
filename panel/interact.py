@@ -140,7 +140,8 @@ class interactive(PaneBase):
         self._inner_layout = Row(self._pane)
         self.widget_box = WidgetBox(*(widget for _, widget in widgets
                                       if isinstance(widget, Widget)))
-        self.layout.objects = [self.widget_box, self]
+        self.layout.objects = [self.widget_box, self._inner_layout]
+        self._link_widgets()
 
     @property
     def kwargs(self):
@@ -170,10 +171,9 @@ class interactive(PaneBase):
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         layout = self._inner_layout._get_model(doc, root, parent, comm)
-        self._link_widgets(layout, doc, root, parent, comm)
         return layout
 
-    def _link_widgets(self, layout, doc, root, parent, comm):
+    def _link_widgets(self):
         if self.manual_update:
             widgets = [('manual', self._widgets['manual'])]
         else:
@@ -199,6 +199,8 @@ class interactive(PaneBase):
                         new_object._cleanup(None, new_object._temporary)
                     else:
                         self._pane.object = new_object
+                    return
+
 
                 # Replace pane entirely
                 self._pane = Pane(new_object, _temporary=True)
@@ -206,7 +208,7 @@ class interactive(PaneBase):
 
             pname = 'clicks' if name == 'manual' else 'value'
             watcher = widget.param.watch(update_pane, pname)
-            self._callbacks[layout.ref['id']].append(watcher)
+            self._callbacks['instance'].append(watcher)
 
     def _cleanup(self, model=None, final=False):
         self._inner_layout._cleanup(model, final)

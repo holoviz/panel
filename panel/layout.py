@@ -11,8 +11,23 @@ from bokeh.layouts import (Column as BkColumn, Row as BkRow,
 from bokeh.models import Box as BkBox
 from bokeh.models.widgets import Tabs as BkTabs, Panel as BkPanel
 
-from .util import push, abbreviated_repr
+from .util import param_reprs, push
 from .viewable import Reactive, Viewable
+
+
+def has_height(obj):
+    """
+    Whether the supplied layout has a height
+    """
+    if isinstance(obj, BkBox):
+        for child in obj.children:
+            if has_height(child):
+                return True
+    elif isinstance(obj, BkWidgetBox):
+        return True
+    elif getattr(obj, 'height', None) is not None:
+        return True
+    return False
 
 
 class Panel(Reactive):
@@ -118,8 +133,7 @@ class Panel(Reactive):
         objects = self._get_objects(model, [], doc, root, comm)
 
         # HACK ALERT: Insert Spacer if last item in Column has no height
-        if (isinstance(self, Column) and objects and not isinstance(objects[-1], (BkWidgetBox, BkBox))
-            and getattr(objects[-1], 'height', False) is None):
+        if (isinstance(self, Column) and objects and not has_height(objects[-1])):
             objects.append(BkSpacer(height=50))
 
         props = dict(self._init_properties(), objects=objects)
@@ -147,9 +161,7 @@ class Panel(Reactive):
     def __repr__(self, depth=0):
         spacer = '\n' + ('    ' * (depth+1))
         cls = type(self).__name__
-        params = ['%s=%s' % (p, abbreviated_repr(v)) for p, v in sorted(self.get_param_values())
-                  if v is not self.params(p).default and v not in ('', None)
-                  and p != 'objects' and not (p == 'name' and v.startswith(cls))]
+        params = param_reprs(self, ['objects'])
         objs = ['[%d] %s' % (i, obj.__repr__(depth+1)) for i, obj in enumerate(self.objects)]
         if not params and not objs:
             return super(Panel, self).__repr__(depth+1)
