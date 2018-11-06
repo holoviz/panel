@@ -61,7 +61,7 @@ class HoloViews(PaneBase):
     def applies(cls, obj):
         if 'holoviews' not in sys.modules:
             return False
-        from holoviews import Dimensioned
+        from holoviews.core.dimension import Dimensioned
         return isinstance(obj, Dimensioned)
 
     def _cleanup(self, model=None, final=False):
