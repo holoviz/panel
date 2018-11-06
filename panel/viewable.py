@@ -48,9 +48,8 @@ class Viewable(param.Parameterized):
         self._documents = {}
 
     def __repr__(self, depth=0):
-        cls = type(self).__name__
-        params = param_reprs(self)
-        return '{cls}({params})'.format(cls=type(self).__name__, params=', '.join(params))
+        return '{cls}({params})'.format(cls=type(self).__name__,
+                                        params=', '.join(param_reprs(self)))
 
     def __str__(self):
         return self.__repr__()
