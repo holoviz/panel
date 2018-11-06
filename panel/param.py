@@ -81,7 +81,10 @@ class Param(PaneBase):
         Parameterized object.""")
 
     show_labels = param.Boolean(default=True, doc="""
-        Whether to show labels for each .widget""")
+        Whether to show labels for each widget""")
+
+    show_name = param.Boolean(default=True, doc="""
+        Whether to show the parameterized object's name""")
 
     width = param.Integer(default=300, bounds=(0, None), doc="""
         Width of widgetbox the parameter widgets are displayed in.""")
@@ -338,8 +341,10 @@ class Param(PaneBase):
         ordered_params.pop(ordered_params.index('name'))
         if self.expand_layout is Tabs:
             widgets = []
-        else:
+        elif self.show_name:
             widgets = [('name', [StaticText(value='<b>{0}</b>'.format(self.object.name))])]
+        else:
+            widgets = []
         widgets += [(pname, self.widget(pname)) for pname in ordered_params]
         return OrderedDict(widgets)
 
