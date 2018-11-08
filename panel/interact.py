@@ -185,7 +185,7 @@ class interactive(PaneBase):
                 new_object = self.object(**self.kwargs)
                 pane_type = self.get_pane_type(new_object)
                 if type(self._pane) is pane_type:
-                    if isinstance(new_object, PaneBase):
+                    if isinstance(new_object, (PaneBase, Panel)):
                         new_params = {k: v for k, v in new_object.get_param_values()
                                       if k != 'name'}
                         try:
@@ -194,13 +194,9 @@ class interactive(PaneBase):
                             raise
                         finally:
                             new_object._cleanup(None, new_object._temporary)
-                    elif isinstance(self._pane, Panel):
-                        self._pane.objects = new_object.objects
-                        new_object._cleanup(None, new_object._temporary)
                     else:
                         self._pane.object = new_object
                     return
-
 
                 # Replace pane entirely
                 self._pane = Pane(new_object, _temporary=True)
