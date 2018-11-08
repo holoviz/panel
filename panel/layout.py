@@ -61,13 +61,13 @@ class Panel(Reactive):
         def set_value(*events):
             msg = {event.name: event.new for event in events}
             events = {event.name: event for event in events}
-            if 'objects' in msg:
-                old = events['objects'].old
-                msg['objects'] = self._get_objects(model, old, doc, root, comm)
-            msg = self._process_param_change(msg)
 
             def update_model():
-                model.update(**msg)
+                if 'objects' in msg:
+                    old = events['objects'].old
+                    msg['objects'] = self._get_objects(model, old, doc, root, comm)
+                processed = self._process_param_change(msg)
+                model.update(**processed)
 
             if comm:
                 update_model()
