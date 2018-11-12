@@ -141,7 +141,7 @@ class HoloViews(PaneBase):
         dim_values = OrderedDict()
         widgets = []
         for dim in dims:
-            widget_type = None
+            widget_type, widget = None, None
             vals = dim.values or values.get(dim, None)
             dim_values[dim.name] = vals
             if widgets_type == 'scrubber':
@@ -177,7 +177,8 @@ class HoloViews(PaneBase):
                 widget_type = widget_type or FloatSlider
                 widget = widget_type(step=step, name=dim.label, start=dim.range[0],
                                      end=dim.range[1], value=default)
-            widgets.append(widget)
+            if widget is not None:
+                widgets.append(widget)
         if widgets_type == 'scrubber':
             widgets = [Player(length=nframes)]
         return widgets, dim_values
