@@ -30,4 +30,4 @@ User Guide
     Widgets <Widgets>
     Layouts <Layouts>
     Parameters <Param>
-	Pipelines <Pipelines>
+    Pipelines <Pipelines>
