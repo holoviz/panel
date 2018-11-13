@@ -1,6 +1,7 @@
 include README.md
 include LICENSE.txt
 include panel/.version
+include panel/assets/*.gif
 include panel/models/*.ts
 include panel/models/*.json
 global-exclude *.py[co]
