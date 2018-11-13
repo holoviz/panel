@@ -2,10 +2,8 @@ import pytest
 import param
 
 from panel.layout import Row, Column
-from panel.pane import Markdown
 from panel.param import Param, ParamMethod
 from panel.pipeline import Pipeline
-from panel.widgets import Button
 
 from .test_holoviews import hv_available
 
