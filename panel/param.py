@@ -4,6 +4,7 @@ set of widgets.
 """
 from __future__ import absolute_import
 
+import re
 import os
 import json
 import types
@@ -342,7 +343,10 @@ class Param(PaneBase):
         if self.expand_layout is Tabs:
             widgets = []
         elif self.show_name:
-            widgets = [('name', [StaticText(value='<b>{0}</b>'.format(self.object.name))])]
+            name = self.object.name
+            match = re.match('(.)+(\d){5}', name)
+            name = name[:-5] if match else name
+            widgets = [('name', [StaticText(value='<b>{0}</b>'.format(name))])]
         else:
             widgets = []
         widgets += [(pname, self.widget(pname)) for pname in ordered_params]
