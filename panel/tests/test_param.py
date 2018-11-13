@@ -93,7 +93,7 @@ def test_get_model(document, comm):
 
     div = box.children[0]
     assert isinstance(div, Div)
-    assert div.text == '<b>'+test.name+'</b>'
+    assert div.text == '<b>'+test.name[:-5]+'</b>'
 
 
 def test_get_model_tabs(document, comm):
