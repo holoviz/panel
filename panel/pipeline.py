@@ -2,7 +2,6 @@ import os
 
 import param
 import numpy as np
-import holoviews as hv
 
 from .holoviews import HoloViews
 from .layout import Row, Column, Spacer
@@ -24,6 +23,11 @@ class Pipeline(param.Parameterized):
     previous = param.Action(default=lambda x: x.param.trigger('previous'))
 
     def __init__(self, stages=[], **params):
+        try:
+            import holoviews as hv
+        except:
+            raise ImportError('Pipeline requires holoviews to be installed')
+
         self._stages = list(stages)
         self._stage = 0
         super(Pipeline, self).__init__(**params)
@@ -76,7 +80,6 @@ class Pipeline(param.Parameterized):
 
 
     def _init_stage(self):
-        connector = None
         name, stage = self._stages[self._stage]
         kwargs = {}
         if self._state:
@@ -113,7 +116,6 @@ class Pipeline(param.Parameterized):
             self.layout[2][0] = self._init_stage()
         except Exception as e:
             self._stage -= 1
-            print(e)
             self._error.object = str(e)
             self.layout[2][0] = prev_state
         else:
@@ -133,7 +135,8 @@ class Pipeline(param.Parameterized):
 
     @param.depends('previous', 'next')
     def _make_progress(self):
-        import holoviews.plotting.bokeh
+        import holoviews as hv
+        import holoviews.plotting.bokeh # noqa
         stages = len(self._stages)
         line = hv.Path([[(0, 0), (stages-1, 0)]]).options(
             line_width=10, color='black', backend='bokeh'

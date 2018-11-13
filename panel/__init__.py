@@ -57,7 +57,7 @@ class extension(param.ParameterizedFunction):
             import holoviews as hv
             if hv.extension._loaded:
                 return
-            import holoviews.plotting.bokeh
+            import holoviews.plotting.bokeh # noqa
             if hasattr(hv.Store, 'set_current_backend'):
                 hv.Store.set_current_backend('bokeh')
             else:
