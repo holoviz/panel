@@ -449,6 +449,10 @@ class ToggleButtons(RadioButtons):
 
 class MultiSelect(Select):
 
+    size = param.Integer(default=4, doc="""
+        The number of items displayed at once (i.e. determines the
+        widget height).""")
+
     value = param.List(default=[])
 
     _widget_type = _BkMultiSelect
