@@ -17,6 +17,9 @@ User Guide
 * `Parameters <Param.html>`_
    Using Param to express panels in a self-contained class.
 
+* `Pipelines <Pipelines.html>`_
+   Using Parameterized classes to declare linear workflows containing multiple panels.
+
 .. toctree::
     :titlesonly:
     :hidden:
@@ -27,3 +30,4 @@ User Guide
     Widgets <Widgets>
     Layouts <Layouts>
     Parameters <Param>
+    Pipelines <Pipelines>

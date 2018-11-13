@@ -1,7 +1,10 @@
 from __future__ import absolute_import
 
+import sys
+
 from . import holoviews # noqa
 from . import layout # noqa
+from . import pipeline # noqa
 from . import plotly # noqa
 from . import vega # noqa
 from . import widgets # noqa
@@ -47,7 +50,18 @@ class extension(param.ParameterizedFunction):
                                                "hv-extension-comm")
         _load_nb(p.inline)
         self._loaded = True
+
         Viewable._comm_manager = JupyterCommManager
+
+        if 'holoviews' in sys.modules:
+            import holoviews as hv
+            if hv.extension._loaded:
+                return
+            import holoviews.plotting.bokeh # noqa
+            if hasattr(hv.Store, 'set_current_backend'):
+                hv.Store.set_current_backend('bokeh')
+            else:
+                hv.Store.current_backend = 'bokeh'
 
     @classmethod
     def _process_comm_msg(cls, msg):
