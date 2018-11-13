@@ -69,7 +69,8 @@ class HoloViews(PaneBase):
         Traverses HoloViews object to find and clean up any streams
         connected to existing plots.
         """
-        self._plots.pop(model.ref['id']).cleanup()
+        if model is not None:
+            self._plots.pop(model.ref['id']).cleanup()
         super(HoloViews, self)._cleanup(model, final)
 
     def _render(self, doc, comm, root):
