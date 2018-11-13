@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 from . import holoviews # noqa
 from . import layout # noqa
+from . import pipeline # noqa
 from . import plotly # noqa
 from . import vega # noqa
 from . import widgets # noqa
