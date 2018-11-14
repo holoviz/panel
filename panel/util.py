@@ -103,7 +103,6 @@ def abbreviated_repr(value, max_length=25, natural_breaks=(',', ' ')):
     """
     vrepr = repr(value)
     if len(vrepr) > max_length:
-
         # Attempt to find natural cutoff point
         abbrev = vrepr[max_length//2:]
         natural_break = None

@@ -288,6 +288,20 @@ class Tabs(Panel):
             names.append(name)
         self._names = names
         super(Tabs, self).__init__(*objects, **params)
+        self.param.watch(self._update_names, 'objects')
+
+    def _update_names(self, event):
+        if len(event.new) == len(self._names):
+            return
+        names = []
+        for obj in event.new:
+            if obj in event.old:
+                index = event.old.index(obj)
+                name = self._names[index]
+            else:
+                name = obj.name
+            names.append(name)
+        self._names = names
 
     def _get_objects(self, model, old_objects, doc, root, comm=None):
         """
@@ -330,6 +344,7 @@ class Tabs(Panel):
             name, pane = pane
         new_objects = list(self.objects)
         new_objects.append(panel(pane, name=name, _internal=True))
+        print(new_objects[-1])
         name = param_name(new_objects[-1].name) if name is None else name
         self._names[-1] = name
         self.objects = new_objects

@@ -44,6 +44,8 @@ def panel(obj, **kwargs):
     if isinstance(obj, Viewable):
         return obj
     internal = kwargs.pop('_internal', False)
+    if kwargs.get('name', False) is None:
+        kwargs.pop('name')
     pane = PaneBase.get_pane_type(obj)(obj, **kwargs)
     if internal and len(pane.layout) == 1:
         return pane.layout[0]
