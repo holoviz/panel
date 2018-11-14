@@ -185,7 +185,6 @@ class PaneBase(Reactive):
                                      (type(self).__name__, old_model, new_model))
                     else:
                         parent.children[index] = new_model
-                        self._models[root.ref['id']] = new_model
 
             if comm:
                 update_models()

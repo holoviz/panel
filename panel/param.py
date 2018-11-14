@@ -445,7 +445,7 @@ class ParamMethod(PaneBase):
     def _get_model(self, doc, root=None, parent=None, comm=None):
         ref = root.ref['id']
         if ref in self._callbacks:
-            self._cleanup(ref)
+            self._cleanup(root)
         model = self._inner_layout._get_model(doc, root, parent, comm)
         self._link_object_params(doc, root, parent, comm)
         self._models[ref] = model
