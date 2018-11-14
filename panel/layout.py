@@ -65,7 +65,13 @@ class Panel(Reactive):
             def update_model():
                 if 'objects' in msg:
                     old = events['objects'].old
+                    old_children = getattr(model, self._rename.get('objects', 'objects'))
                     msg['objects'] = self._get_objects(model, old, doc, root, comm)
+                    for pane, old_child in zip(old, old_children):
+                        if old_child not in msg['objects']:
+                            if isinstance(old_child, BkPanel):
+                                old_child = old_child.child
+                            pane._cleanup(old_child)
                 processed = self._process_param_change(msg)
                 model.update(**processed)
 
@@ -79,10 +85,11 @@ class Panel(Reactive):
         watcher = self.param.watch(set_value, params)
         self._callbacks[ref].append(watcher)
 
+
     def _cleanup(self, model=None, final=False):
         super(Panel, self)._cleanup(model, final)
         if model is not None:
-            for p, c in zip(self.objects, model.children):
+            for p, c in zip(self.objects, getattr(model, 'children', [])):
                 p._cleanup(c, final)
 
     def select(self, selector=None):
@@ -121,10 +128,6 @@ class Panel(Reactive):
             else:
                 child = pane._get_model(doc, root, model, comm)
             new_models.append(child)
-
-        for pane, old_child in zip(old_objects, old_children):
-            if old_child not in new_models:
-                pane._cleanup(old_child)
         return new_models
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
@@ -242,10 +245,6 @@ class WidgetBox(Panel):
                 new_models += child.children
             else:
                 new_models.append(child)
-
-        for pane, old_child in zip(old_objects, old_children):
-            if old_child not in new_models:
-                pane._cleanup(old_child, pane._temporary)
         return new_models
 
 
@@ -298,11 +297,6 @@ class Tabs(Panel):
                 name = pane[0].name if isinstance(pane, Panel) and len(pane) == 1 else pane.name
                 child = BkPanel(title=name, child=child)
             new_models.append(child)
-
-        for pane, old_child in zip(old_objects, old_children):
-            if old_child not in new_models:
-                pane._cleanup(old_child.child, pane._temporary)
-
         return new_models
 
     def __setitem__(self, index, pane):
@@ -342,7 +336,7 @@ class Tabs(Panel):
     def _cleanup(self, model=None, final=False):
         super(Panel, self)._cleanup(model, final)
         if model is not None:
-            for p, c in zip(self.objects, model.tabs):
+            for p, c in zip(self.objects, getattr(model, 'tabs', [])):
                 p._cleanup(c.child, final)
 
 
