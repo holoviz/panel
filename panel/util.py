@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 
+import re
 import os
 import io
 import json
@@ -85,6 +86,14 @@ def as_unicode(obj):
     if sys.version_info.major < 3 and isinstance(obj, str):
         obj = obj.decode('utf-8')
     return unicode(obj)
+
+
+def param_name(name):
+    """
+    Removes the integer id from a Parameterized class name.
+    """
+    match = re.match('(.)+(\d){5}', name)
+    return name[:-5] if match else name
 
 
 def abbreviated_repr(value, max_length=25, natural_breaks=(',', ' ')):

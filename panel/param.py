@@ -4,7 +4,6 @@ set of widgets.
 """
 from __future__ import absolute_import
 
-import re
 import os
 import json
 import types
@@ -19,7 +18,7 @@ from .pane import Pane, PaneBase
 from .layout import WidgetBox, Row, Panel, Tabs, Column
 from .util import (
     abbreviated_repr, basestring, default_label_formatter, full_groupby,
-    get_method_owner, is_parameterized
+    get_method_owner, is_parameterized, param_name
 )
 from .widgets import (
     LiteralInput, Select, Checkbox, FloatSlider, IntSlider, RangeSlider,
@@ -363,9 +362,7 @@ class Param(PaneBase):
         if self.expand_layout is Tabs:
             widgets = []
         elif self.show_name:
-            name = self.object.name
-            match = re.match('(.)+(\d){5}', name)
-            name = name[:-5] if match else name
+            name = param_name(self.object.name)
             widgets = [('name', [StaticText(value='<b>{0}</b>'.format(name))])]
         else:
             widgets = []

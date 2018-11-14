@@ -56,7 +56,6 @@ class HoloViews(PaneBase):
         for _, cbs in self._callbacks.items():
             for cb in list(cbs):
                 if cb.inst in self.widget_box.objects:
-                    print(cb)
                     cb.inst.param.unwatch(cb)
                     cbs.remove(cb)
 
