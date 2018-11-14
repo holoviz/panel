@@ -50,7 +50,7 @@ class Pipeline(param.Parameterized):
         self._validate(stage)
         self._stages.append((name, stage))
         if len(self._stages) == 1:
-            self.layout[2].append(self._init_stage())
+            self._layout[2].append(self._init_stage())
 
     def _validate(self, stage):
         if any(stage is s for n, s in self._stages):
@@ -110,14 +110,14 @@ class Pipeline(param.Parameterized):
     @param.depends('next', watch=True)
     def _next(self):
         self._stage += 1
-        prev_state = self.layout[2][0]
-        self.layout[2][0] = self._spinner_layout
+        prev_state = self._layout[2][0]
+        self._layout[2][0] = self._spinner_layout
         try:
-            self.layout[2][0] = self._init_stage()
+            self._layout[2][0] = self._init_stage()
         except Exception as e:
             self._stage -= 1
             self._error.object = str(e)
-            self.layout[2][0] = prev_state
+            self._layout[2][0] = prev_state
         else:
             self._error.object = ''
 
@@ -126,7 +126,7 @@ class Pipeline(param.Parameterized):
         self._stage -= 1
         try:
             self._state = self._states[self._stage]
-            self.layout[2][0] = self._state.panel()
+            self._layout[2][0] = self._state.panel()
         except Exception as e:
             self._stage += 1
             self._error.object = str(e)
