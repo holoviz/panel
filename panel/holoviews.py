@@ -70,7 +70,9 @@ class HoloViews(PaneBase):
         connected to existing plots.
         """
         if model is not None:
-            self._plots.pop(model.ref['id']).cleanup()
+            old_plot = self._plots.pop(model.ref['id'], None)
+            if old_plot:
+                old_plot.cleanup()
         super(HoloViews, self)._cleanup(model, final)
 
     def _render(self, doc, comm, root):
