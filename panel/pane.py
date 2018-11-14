@@ -178,7 +178,11 @@ class PaneBase(Reactive):
                         parent.children[index] = new_model
                         history[0] = new_model
                     except:
-                        raise
+                        self.warning('%s pane model %s could not be replaced '
+                                     'with new model %s, ensure that the '
+                                     'parent is not modified at the same '
+                                     'time the panel is being updated.' %
+                                     (type(self).__name__, old_model, new_model))
                     else:
                         self._cleanup(old_model)
 
