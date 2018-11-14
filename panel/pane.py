@@ -178,7 +178,11 @@ class PaneBase(Reactive):
                         parent.children[index] = new_model
                         history[0] = new_model
                     except:
-                        raise
+                        self.warning('%s pane model %s could not be replaced '
+                                     'with new model %s, ensure that the '
+                                     'parent is not modified at the same '
+                                     'time the panel is being updated.' %
+                                     (type(self).__name__, old_model, new_model))
                     else:
                         self._cleanup(old_model)
 
@@ -638,7 +642,7 @@ class Markdown(DivPaneBase):
         if not isinstance(data, basestring):
             data = data._repr_markdown_()
         properties = super(Markdown, self)._get_properties()
-        extensions = ['extra', 'smarty']
+        extensions = ['markdown.extensions.extra', 'markdown.extensions.smarty']
         html = markdown.markdown(self.object, extensions=extensions,
                                  output_format='html5')
         return dict(properties, text=html)

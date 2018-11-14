@@ -145,7 +145,8 @@ class Param(PaneBase):
     def __repr__(self, depth=0):
         cls = type(self).__name__
         obj_cls = type(self.object).__name__
-        parameters = [k for k in self.object.params() if k != 'name']
+        params = [] if self.object is None else self.object.params()
+        parameters = [k for k in params if k != 'name']
         params = []
         for p, v in sorted(self.get_param_values()):
             if v is self.params(p).default: continue
@@ -415,9 +416,10 @@ class ParamMethod(PaneBase):
             new_object = self.object()
             pane_type = self.get_pane_type(new_object)
             if type(self._pane) is pane_type:
-                if isinstance(new_object, PaneBase):
+                if isinstance(new_object, (Panel, PaneBase)):
+                    pvals = dict(self._pane.get_param_values())
                     new_params = {k: v for k, v in new_object.get_param_values()
-                                  if k != 'name'}
+                                  if k != 'name' and v is not pvals[k]}
                     try:
                         self._pane.set_param(**new_params)
                     except:
