@@ -145,7 +145,8 @@ class Param(PaneBase):
     def __repr__(self, depth=0):
         cls = type(self).__name__
         obj_cls = type(self.object).__name__
-        parameters = [k for k in self.object.params() if k != 'name']
+        params = [] if self.object is None else self.object.params()
+        parameters = [k for k in params if k != 'name']
         params = []
         for p, v in sorted(self.get_param_values()):
             if v is self.params(p).default: continue
