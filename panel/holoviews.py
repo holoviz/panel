@@ -100,20 +100,23 @@ class HoloViews(PaneBase):
         child_pane = Pane(plot.state, _temporary=True)
         model = child_pane._get_model(doc, root, parent, comm)
         if self.widget_box.objects:
-            self._link_widgets(self.widget_box.objects, child_pane, root, plot, comm)
+            self._link_widgets(child_pane, root, comm)
         self._models[root.ref['id']] = model
         self._link_object(doc, root, parent, comm)
         return model
 
-    def _link_widgets(self, widgets, pane, root, plot, comm):
+    def _link_widgets(self, pane, root, comm):
         from holoviews.core.util import cross_index
 
         def update_plot(change):
             from holoviews.plotting.bokeh.plot import BokehPlot
+            widgets = self.widget_box.objects
             if self.widget_type == 'scrubber':
                 key = cross_index([v for v in self._values.values()], widgets[0].value)
             else:
                 key = tuple(w.value for w in widgets)
+
+            plot = self._plots[root.ref['id']]
             if isinstance(plot, BokehPlot):
                 if comm:
                     plot.update(key)
@@ -126,9 +129,11 @@ class HoloViews(PaneBase):
                 plot.update(key)
                 pane.object = plot.state
 
-        for w in widgets:
-            watcher = w.param.watch(update_plot, 'value')
-            self._callbacks[root.ref['id']].append(watcher)
+        ref = root.ref['id']
+        if ref not in self._callbacks:
+            for w in self.widget_box.objects:
+                watcher = w.param.watch(update_plot, 'value')
+                self._callbacks[ref].append(watcher)
 
     @classmethod
     def widgets_from_dimensions(cls, object, widget_types={}, widgets_type='individual'):

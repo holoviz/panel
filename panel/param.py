@@ -380,12 +380,12 @@ class ParamMethod(PaneBase):
     def applies(cls, obj):
         return inspect.ismethod(obj) and isinstance(get_method_owner(obj), param.Parameterized)
 
-    def _get_model(self, doc, root=None, parent=None, comm=None):
+
+    def _link_object_params(self, doc, root, parent, comm):
+        ref = root.ref['id']
         parameterized = get_method_owner(self.object)
         params = parameterized.param.params_depended_on(self.object.__name__)
-        model = self._inner_layout._get_model(doc, root, parent, comm)
         deps = params
-        ref = root.ref['id']
 
         def update_pane(*events):
             # Update nested dependencies if parameterized object events
@@ -440,6 +440,14 @@ class ParamMethod(PaneBase):
             ps = [p.name for p in params]
             watcher = pobj.param.watch(update_pane, ps, p.what)
             self._callbacks[ref].append(watcher)
+
+
+    def _get_model(self, doc, root=None, parent=None, comm=None):
+        ref = root.ref['id']
+        if ref in self._callbacks:
+            self._cleanup(ref)
+        model = self._inner_layout._get_model(doc, root, parent, comm)
+        self._link_object_params(doc, root, parent, comm)
         self._models[ref] = model
         return model
 
