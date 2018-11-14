@@ -102,7 +102,8 @@ class Vega(PaneBase):
         sources = {}
         self._get_sources(json, sources)
         model = VegaPlot(data=json, data_sources=sources)
-        self._link_object(model, doc, root, parent, comm)
+        self._models[root.ref['id']] = model
+        self._link_object(doc, root, parent, comm)
         return model
 
     def _update(self, model):

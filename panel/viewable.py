@@ -46,6 +46,7 @@ class Viewable(param.Parameterized):
     def __init__(self, **params):
         super(Viewable, self).__init__(**params)
         self._documents = {}
+        self._models = {}
 
     def __repr__(self, depth=0):
         return '{cls}({params})'.format(cls=type(self).__name__,
@@ -287,23 +288,27 @@ class Reactive(Viewable):
                     _updating.pop(_updating.index(event.name))
         self._callbacks['instance'].append(self.param.watch(link, list(links)))
 
-    def _cleanup(self, model=None, final=False):
-        super(Reactive, self)._cleanup(model, final)
+    def _cleanup(self, root=None, final=False):
+        super(Reactive, self)._cleanup(root, final)
         if final:
             watchers = self._callbacks.pop('instance', [])
             for watcher in watchers:
                 obj = watcher.cls if watcher.inst is None else watcher.inst
                 obj.param.unwatch(watcher)
 
-        if model is None:
+        if root is None:
             return
 
-        callbacks = self._callbacks.pop(model.ref['id'], {})
+        callbacks = self._callbacks.pop(root.ref['id'], {})
         for watcher in callbacks:
             obj = watcher.cls if watcher.inst is None else watcher.inst
             obj.param.unwatch(watcher)
 
         # Clean up comms
+        model = self._models.pop(root.ref['id'], None)
+        if model is None:
+            return
+
         customjs = model.select({'type': CustomJS})
         pattern = "data\['comm_id'\] = \"(.*)\""
         for js in customjs:
@@ -381,7 +386,7 @@ class Reactive(Viewable):
             else:
                 doc.add_next_tick_callback(update_model)
 
-        ref = model.ref['id']
+        ref = root.ref['id']
         watcher = self.param.watch(param_change, params)
         self._callbacks[ref].append(watcher)
 

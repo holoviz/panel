@@ -131,12 +131,14 @@ def test_layout_setitem(panel, document, comm):
 
     model = layout._get_model(document, comm=comm)
 
-    assert model.children[0].ref['id'] in p1._callbacks
+    assert model.ref['id'] in p1._callbacks
+    assert p1._models[model.ref['id']] is model.children[0]
     div3 = Div()
     layout[0] = div3
     assert get_divs(model.children[0].children) == [div3]
     assert get_divs(model.children[1].children) == [div2]
     assert p1._callbacks == {}
+    assert p1._models == {}
 
 
 @pytest.mark.parametrize('panel', [Column, Row])
@@ -148,10 +150,12 @@ def test_layout_pop(panel, document, comm):
 
     model = layout._get_model(document, comm=comm)
 
-    assert model.children[0].ref['id'] in p1._callbacks
+    assert model.ref['id'] in p1._callbacks
+    assert p1._models[model.ref['id']] is model.children[0]
     layout.pop(0)
     assert get_divs(model.children[0].children) == [div2]
     assert p1._callbacks == {}
+    assert p1._models == {}
 
 
 def test_tabs_constructor(document, comm):
@@ -254,13 +258,15 @@ def test_tabs_setitem(document, comm):
     model = tabs._get_model(document, comm=comm)
 
     tab1, tab2 = model.tabs
-    assert tab1.child.ref['id'] in p1._callbacks
+    assert model.ref['id'] in p1._callbacks
+    assert p1._models[model.ref['id']] is tab1.child
     div3 = Div()
     tabs[0] = div3
     tab1, tab2 = model.tabs
     assert get_div(tab1.child.children[0]) is div3
     assert get_div(tab2.child.children[0]) is div2
     assert p1._callbacks == {}
+    assert p1._models == {}
 
 
 def test_tabs_pop(document, comm):
@@ -272,20 +278,23 @@ def test_tabs_pop(document, comm):
     model = tabs._get_model(document, comm=comm)
 
     tab1 = model.tabs[0]
-    assert tab1.child.ref['id'] in p1._callbacks
+    assert model.ref['id'] in p1._callbacks
+    assert p1._models[model.ref['id']] is tab1.child
     tabs.pop(0)
     assert len(model.tabs) == 1
     tab1 = model.tabs[0]
     assert get_div(tab1.child.children[0]) is div2
     assert p1._callbacks == {}
+    assert p1._models == {}
 
 
 def test_spacer(document, comm):
 
     spacer = Spacer(width=400, height=300)
 
-    model = spacer._get_model(document, comm=comm)
-
+    root = spacer._get_root(document, comm=comm)
+    model = root.children[0]
+    
     assert isinstance(model, spacer._bokeh_model)
     assert model.width == 400
     assert model.height == 300

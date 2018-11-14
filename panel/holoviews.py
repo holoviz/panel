@@ -64,16 +64,16 @@ class HoloViews(PaneBase):
         from holoviews.core.dimension import Dimensioned
         return isinstance(obj, Dimensioned)
 
-    def _cleanup(self, model=None, final=False):
+    def _cleanup(self, root=None, final=False):
         """
         Traverses HoloViews object to find and clean up any streams
         connected to existing plots.
         """
-        if model is not None:
-            old_plot = self._plots.pop(model.ref['id'], None)
+        if root is not None:
+            old_plot = self._plots.pop(root.ref['id'], None)
             if old_plot:
                 old_plot.cleanup()
-        super(HoloViews, self)._cleanup(model, final)
+        super(HoloViews, self)._cleanup(root, final)
 
     def _render(self, doc, comm, root):
         from holoviews import Store, renderer
@@ -88,7 +88,9 @@ class HoloViews(PaneBase):
         kwargs = {'doc': doc, 'root': root} if backend == 'bokeh' else {}
         if comm:
             kwargs['comm'] = comm
-        return renderer.get_plot(self.object, **kwargs)
+        plot = renderer.get_plot(self.object, **kwargs)
+        self._plots[root.ref['id']] = plot
+        return plot
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         """
@@ -98,12 +100,12 @@ class HoloViews(PaneBase):
         child_pane = Pane(plot.state, _temporary=True)
         model = child_pane._get_model(doc, root, parent, comm)
         if self.widget_box.objects:
-            self._link_widgets(self.widget_box.objects, child_pane, model, plot, comm)
-        self._link_object(model, doc, root, parent, comm)
-        self._plots[model.ref['id']] = plot
+            self._link_widgets(self.widget_box.objects, child_pane, root, plot, comm)
+        self._models[root.ref['id']] = model
+        self._link_object(doc, root, parent, comm)
         return model
 
-    def _link_widgets(self, widgets, pane, model, plot, comm):
+    def _link_widgets(self, widgets, pane, root, plot, comm):
         from holoviews.core.util import cross_index
 
         def update_plot(change):
@@ -126,7 +128,7 @@ class HoloViews(PaneBase):
 
         for w in widgets:
             watcher = w.param.watch(update_plot, 'value')
-            self._callbacks[model.ref['id']].append(watcher)
+            self._callbacks[root.ref['id']].append(watcher)
 
     @classmethod
     def widgets_from_dimensions(cls, object, widget_types={}, widgets_type='individual'):

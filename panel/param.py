@@ -323,9 +323,9 @@ class Param(PaneBase):
         else:
             return [widget]
 
-    def _cleanup(self, model=None, final=False):
-        self.layout._cleanup(model, final)
-        super(Param, self)._cleanup(model, final)
+    def _cleanup(self, root=None, final=False):
+        self.layout._cleanup(root, final)
+        super(Param, self)._cleanup(root, final)
 
     def _get_widgets(self):
         """Return name,widget boxes for all parameters (i.e., a property sheet)"""
@@ -385,7 +385,7 @@ class ParamMethod(PaneBase):
         params = parameterized.param.params_depended_on(self.object.__name__)
         model = self._inner_layout._get_model(doc, root, parent, comm)
         deps = params
-        ref = model.ref['id']
+        ref = root.ref['id']
 
         def update_pane(*events):
             # Update nested dependencies if parameterized object events
@@ -425,10 +425,7 @@ class ParamMethod(PaneBase):
                     except:
                         raise
                     finally:
-                        new_object._cleanup(None, new_object._temporary)
-                elif isinstance(self._pane, Panel):
-                    self._pane.objects = new_object.objects
-                    new_object._cleanup(None, new_object._temporary)
+                        new_object._cleanup(final=new_object._temporary)
                 else:
                     self._pane.object = new_object
                 return
@@ -443,12 +440,12 @@ class ParamMethod(PaneBase):
             ps = [p.name for p in params]
             watcher = pobj.param.watch(update_pane, ps, p.what)
             self._callbacks[ref].append(watcher)
-
+        self._models[ref] = model
         return model
 
-    def _cleanup(self, model=None, final=False):
-        self._inner_layout._cleanup(model, final)
-        super(ParamMethod, self)._cleanup(model, final)
+    def _cleanup(self, root=None, final=False):
+        self._inner_layout._cleanup(root, final)
+        super(ParamMethod, self)._cleanup(root, final)
 
 
 class JSONInit(param.Parameterized):

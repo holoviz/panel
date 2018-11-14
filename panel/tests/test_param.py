@@ -618,27 +618,32 @@ def test_param_method_pane(document, comm):
     assert isinstance(inner_pane, Bokeh)
 
     # Create pane
-    row = pane._get_model(document, comm=comm)
+    row = pane._get_root(document, comm=comm)
     assert isinstance(row, BkRow)
     assert len(row.children) == 1
-    model = row.children[0]
+    inner_row = row.children[0]
+    model = inner_row.children[0]
     div = get_div(model)
-    assert model.ref['id'] in inner_pane._callbacks
+    assert row.ref['id'] in inner_pane._callbacks
+    assert pane._models[row.ref['id']] is inner_row
     assert isinstance(div, Div)
     assert div.text == '0'
 
     # Update pane
     test.a = 5
-    new_model = row.children[0]
+    new_model = inner_row.children[0]
     div = get_div(new_model)
     assert inner_pane is pane._pane
     assert div.text == '5'
-    assert len(inner_pane._callbacks) == 1
-    assert new_model.ref['id'] in inner_pane._callbacks
+    assert row.ref['id'] in inner_pane._callbacks
+    assert pane._models[row.ref['id']] is inner_row
 
     # Cleanup pane
     pane._cleanup(row)
+    assert pane._callbacks == {}
+    assert pane._models == {}
     assert inner_pane._callbacks == {}
+    assert inner_pane._models == {}
 
 
 def test_param_method_pane_subobject(document, comm):
@@ -649,17 +654,19 @@ def test_param_method_pane_subobject(document, comm):
     assert isinstance(inner_pane, Bokeh)
 
     # Create pane
-    row = pane._get_model(document, comm=comm)
+    row = pane._get_root(document, comm=comm)
     assert isinstance(row, BkRow)
     assert len(row.children) == 1
-    model = row.children[0]
+    inner_row = row.children[0]
+    model = inner_row.children[0]
     div = get_div(model)
 
     # Ensure that subobject is being watched
     assert row.ref['id'] in pane._callbacks
     watchers = pane._callbacks[row.ref['id']]
     assert any(w.inst is subobject for w in watchers)
-    assert model.ref['id'] in inner_pane._callbacks
+    assert row.ref['id'] in inner_pane._callbacks
+    assert pane._models[row.ref['id']] is inner_row
     assert isinstance(div, Div)
     assert div.text == '42'
 
@@ -667,6 +674,7 @@ def test_param_method_pane_subobject(document, comm):
     new_subobject = View(name='Nested', a=42)
     test.b = new_subobject
     assert row.ref['id'] in pane._callbacks
+    assert pane._models[row.ref['id']] is inner_row
     watchers = pane._callbacks[row.ref['id']]
     assert not any(w.inst is subobject for w in watchers)
     assert any(w.inst is new_subobject for w in watchers)
@@ -674,7 +682,9 @@ def test_param_method_pane_subobject(document, comm):
     # Cleanup pane
     pane._cleanup(row)
     assert pane._callbacks == {}
+    assert pane._models == {}
     assert inner_pane._callbacks == {}
+    assert inner_pane._models == {}
 
     
 @mpl_available
@@ -685,26 +695,32 @@ def test_param_method_pane_mpl(document, comm):
     assert isinstance(inner_pane, Matplotlib)
 
     # Create pane
-    row = pane._get_model(document, comm=comm)
+    row = pane._get_root(document, comm=comm)
     assert isinstance(row, BkRow)
     assert len(row.children) == 1
-    model = row.children[0]
-    assert model.ref['id'] in inner_pane._callbacks
+    inner_row = row.children[0]
+    model = inner_row.children[0]
+    assert row.ref['id'] in inner_pane._callbacks
+    assert pane._models[row.ref['id']] is inner_row
     div = get_div(model)
     text = div.text
 
     # Update pane
     test.a = 5
-    model = row.children[0]
+    model = inner_row.children[0]
     assert inner_pane is pane._pane
     assert div is get_div(model)
     assert div.text != text
     assert len(inner_pane._callbacks) == 1
-    assert model.ref['id'] in inner_pane._callbacks
+    assert row.ref['id'] in inner_pane._callbacks
+    assert pane._models[row.ref['id']] is inner_row
 
     # Cleanup pane
     pane._cleanup(row)
+    assert pane._callbacks == {}
+    assert pane._models == {}
     assert inner_pane._callbacks == {}
+    assert inner_pane._models == {}
 
 
 @mpl_available
@@ -715,17 +731,19 @@ def test_param_method_pane_changing_type(document, comm):
     assert isinstance(inner_pane, Matplotlib)
 
     # Create pane
-    row = pane._get_model(document, comm=comm)
+    row = pane._get_root(document, comm=comm)
     assert isinstance(row, BkRow)
     assert len(row.children) == 1
-    model = row.children[0]
-    assert model.ref['id'] in inner_pane._callbacks
+    inner_row = row.children[0]
+    model = inner_row.children[0]
+    assert row.ref['id'] in inner_pane._callbacks
+    
     div = get_div(model)
     text = div.text
 
     # Update pane
     test.a = 5
-    model = row.children[0]
+    model = inner_row.children[0]
     new_pane = pane._pane
     assert inner_pane._callbacks == {}
     assert isinstance(new_pane, Bokeh)
@@ -733,11 +751,12 @@ def test_param_method_pane_changing_type(document, comm):
     assert isinstance(div, Div)
     assert div.text != text
     assert len(new_pane._callbacks) == 1
-    assert model.ref['id'] in new_pane._callbacks
+    assert row.ref['id'] in new_pane._callbacks
 
     # Cleanup pane
-    new_pane._cleanup(model)
+    new_pane._cleanup(row)
     assert new_pane._callbacks == {}
+    assert new_pane._models == {}
 
 
 def test_jsoninit_class_from_env_var():

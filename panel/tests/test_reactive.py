@@ -2,7 +2,7 @@ from functools import partial
 
 import param
 
-from bokeh.models import Div
+from bokeh.models import Div, Row as BkRow
 from panel.viewable import Reactive
 
 
@@ -49,19 +49,20 @@ def test_link_params_nb(document, comm):
 
         text = param.String(default='A')
 
+    root = BkRow()
     obj = ReactiveLink()
     div = Div()
 
     # Link params and ensure callback is cached
-    obj._link_params(div, ['text'], document, None, comm)
-    assert div.ref['id'] in obj._callbacks
+    obj._link_params(div, ['text'], document, root, comm)
+    assert root.ref['id'] in obj._callbacks
 
     # Set object parameter and assert bokeh property updates
     obj.text = 'B'
     assert div.text == 'B'
 
     # Assert cleanup deletes callback
-    obj._cleanup(div, True)
+    obj._cleanup(root, True)
     assert obj._callbacks == {}
 
 
