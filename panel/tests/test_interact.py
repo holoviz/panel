@@ -181,7 +181,8 @@ def test_interact_replaces_model(document, comm):
     assert isinstance(div, BkDiv)
     assert div.text == 'Test'
     assert len(interact_pane._callbacks['instance']) == 1
-    assert box.ref['id'] in pane._callbacks
+    assert column.ref['id'] in pane._callbacks
+    assert pane._models[column.ref['id']] is box
     
     widget.value = True
     assert box.ref['id'] not in pane._callbacks
@@ -192,8 +193,9 @@ def test_interact_replaces_model(document, comm):
     assert isinstance(new_div, BkDiv)
     assert new_div.text == '<p>ABC</p>'
     assert len(interact_pane._callbacks['instance']) == 1
-    assert new_div.ref['id'] in new_pane._callbacks
+    assert column.ref['id'] in new_pane._callbacks
+    assert new_pane._models[column.ref['id']] is new_div
 
-    interact_pane._cleanup(column.children[1])
+    interact_pane._cleanup(column)
     assert len(interact_pane._callbacks) == 1
     assert pane._callbacks == {}

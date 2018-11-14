@@ -56,7 +56,7 @@ def test_vega_pane(document, comm):
     assert np.array_equal(cds_data['x'], np.array(['C', 'B', 'C', 'D', 'E'])) 
     assert np.array_equal(cds_data['y'], np.array([5, 3, 6, 7, 2]))
 
-    pane._cleanup(model)
+    pane._cleanup(row)
     assert pane._callbacks == {}
 
 
@@ -108,5 +108,5 @@ def test_altair_pane(document, comm):
     assert np.array_equal(cds_data['x'], np.array(['C', 'B', 'C', 'D', 'E'])) 
     assert np.array_equal(cds_data['y'], np.array([5, 3, 6, 7, 2]))
 
-    pane._cleanup(model)
+    pane._cleanup(row)
     assert pane._callbacks == {}

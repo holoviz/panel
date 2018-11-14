@@ -67,12 +67,14 @@ class Widget(Reactive):
         # Link parameters and bokeh model
         params = [p for p in self.params()]
         properties = list(self._process_param_change(dict(self.get_param_values())))
+        self._models[root.ref['id']] = model
         self._link_params(model, params, doc, root, comm)
         self._link_props(model, properties, doc, root, comm)
 
         if not in_box:
             parent.children = [model]
             return parent
+
         return model
 
 
@@ -520,6 +522,8 @@ class DiscreteSlider(Widget):
         self._link_props(slider, ['value'], doc, root, comm)
 
         model.children = [div, slider]
+        self._models[root.ref['id']] = model
+        
         return model
 
     def _link_params(self, model, slider, div, params, doc, root, comm=None):
@@ -546,7 +550,7 @@ class DiscreteSlider(Widget):
             else:
                 doc.add_next_tick_callback(update_model)
 
-        ref = model.ref['id']
+        ref = root.ref['id']
         for p in params:
             self._callbacks[ref].append(self.param.watch(param_change, p))
 

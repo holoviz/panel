@@ -193,7 +193,7 @@ class interactive(PaneBase):
                         except:
                             raise
                         finally:
-                            new_object._cleanup(None, new_object._temporary)
+                            new_object._cleanup(final=new_object._temporary)
                     else:
                         self._pane.object = new_object
                     return
@@ -206,9 +206,9 @@ class interactive(PaneBase):
             watcher = widget.param.watch(update_pane, pname)
             self._callbacks['instance'].append(watcher)
 
-    def _cleanup(self, model=None, final=False):
-        self._inner_layout._cleanup(model, final)
-        super(interactive, self)._cleanup(model, final)
+    def _cleanup(self, root=None, final=False):
+        self._inner_layout._cleanup(root, final)
+        super(interactive, self)._cleanup(root, final)
 
     def widgets_from_abbreviations(self, seq):
         """Given a sequence of (name, abbrev, default) tuples, return a sequence of Widgets."""

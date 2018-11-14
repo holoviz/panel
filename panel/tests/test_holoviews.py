@@ -41,6 +41,7 @@ def test_holoviews_pane_mpl_renderer(document, comm):
     assert len(row.children) == 1
     assert len(pane._callbacks) == 1
     model = row.children[0]
+    assert pane._models[row.ref['id']] is model
     div = get_div(model)
     assert '<img' in div.text
 
@@ -52,8 +53,9 @@ def test_holoviews_pane_mpl_renderer(document, comm):
     assert div2.text != div.text
 
     # Cleanup
-    pane._cleanup(model)
+    pane._cleanup(row)
     assert pane._callbacks == {}
+    assert pane._models == {}
 
 
 @pytest.mark.usefixtures("hv_bokeh")
@@ -69,6 +71,7 @@ def test_holoviews_pane_bokeh_renderer(document, comm):
     assert len(pane._callbacks) == 1
     model = row.children[0]
     assert isinstance(model, Figure)
+    assert pane._models[row.ref['id']] is model
     renderers = [r for r in model.renderers if isinstance(r, GlyphRenderer)]
     assert len(renderers) == 1
     assert isinstance(renderers[0].glyph, Line)
@@ -82,10 +85,12 @@ def test_holoviews_pane_bokeh_renderer(document, comm):
     assert len(renderers) == 1
     assert isinstance(renderers[0].glyph, Scatter)
     assert len(pane._callbacks) == 1
+    assert pane._models[row.ref['id']] is model
 
     # Cleanup
-    pane._cleanup(model)
+    pane._cleanup(row)
     assert pane._callbacks == {}
+    assert pane._models == {}
 
 
 @hv_available
@@ -151,11 +156,11 @@ def test_holoviews_with_widgets(document, comm):
     assert hv_pane.widget_box.objects[0].name == 'X'
     assert hv_pane.widget_box.objects[1].name == 'Y'
 
-    assert model.ref['id'] in hv_pane._callbacks
+    assert layout.ref['id'] in hv_pane._callbacks
+    assert hv_pane._models[layout.ref['id']] is model
 
     hmap = hv.HoloMap({(i, chr(65+i)): hv.Curve([i]) for i in range(3)}, kdims=['A', 'B'])
     hv_pane.object = hmap
-    assert model.ref['id'] not in hv_pane._callbacks
     assert len(hv_pane.widget_box.objects) == 2
     assert hv_pane.widget_box.objects[0].name == 'A'
     assert hv_pane.widget_box.objects[1].name == 'B'
@@ -173,7 +178,8 @@ def test_holoviews_with_widgets_not_shown(document, comm):
     assert hv_pane.widget_box.objects[0].name == 'X'
     assert hv_pane.widget_box.objects[1].name == 'Y'
 
-    assert model.ref['id'] in hv_pane._callbacks
+    assert layout.ref['id'] in hv_pane._callbacks
+    assert hv_pane._models[layout.ref['id']] is model
 
     hmap = hv.HoloMap({(i, chr(65+i)): hv.Curve([i]) for i in range(3)}, kdims=['A', 'B'])
     hv_pane.object = hmap

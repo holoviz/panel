@@ -51,6 +51,15 @@ class HoloViews(PaneBase):
             widgets, values = self.widgets_from_dimensions(self.object, self.widgets,
                                                            self.widget_type)
         self._values = values
+
+        # Clean up anything models listening to the previous widgets
+        for _, cbs in self._callbacks.items():
+            for cb in list(cbs):
+                if cb.inst in self.widget_box.objects:
+                    print(cb)
+                    cb.inst.param.unwatch(cb)
+                    cbs.remove(cb)
+
         self.widget_box.objects = widgets
         if widgets and not self.widget_box in self.layout.objects:
             self.layout.append(self.widget_box)
@@ -64,16 +73,16 @@ class HoloViews(PaneBase):
         from holoviews.core.dimension import Dimensioned
         return isinstance(obj, Dimensioned)
 
-    def _cleanup(self, model=None, final=False):
+    def _cleanup(self, root=None, final=False):
         """
         Traverses HoloViews object to find and clean up any streams
         connected to existing plots.
         """
-        if model is not None:
-            old_plot = self._plots.pop(model.ref['id'], None)
+        if root is not None:
+            old_plot = self._plots.pop(root.ref['id'], None)
             if old_plot:
                 old_plot.cleanup()
-        super(HoloViews, self)._cleanup(model, final)
+        super(HoloViews, self)._cleanup(root, final)
 
     def _render(self, doc, comm, root):
         from holoviews import Store, renderer
@@ -88,30 +97,41 @@ class HoloViews(PaneBase):
         kwargs = {'doc': doc, 'root': root} if backend == 'bokeh' else {}
         if comm:
             kwargs['comm'] = comm
-        return renderer.get_plot(self.object, **kwargs)
+        plot = renderer.get_plot(self.object, **kwargs)
+        ref = root.ref['id']
+        if ref in self._plots:
+            old_plot = self._plots[ref]
+            old_plot.comm = None
+            old_plot.cleanup()
+        self._plots[root.ref['id']] = plot
+        return plot
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         """
         Should return the Bokeh model to be rendered.
         """
+        ref = root.ref['id']
         plot = self._render(doc, comm, root)
         child_pane = Pane(plot.state, _temporary=True)
         model = child_pane._get_model(doc, root, parent, comm)
+        self._models[ref] = model
+        self._link_object(doc, root, parent, comm)
         if self.widget_box.objects:
-            self._link_widgets(self.widget_box.objects, child_pane, model, plot, comm)
-        self._link_object(model, doc, root, parent, comm)
-        self._plots[model.ref['id']] = plot
+            self._link_widgets(child_pane, root, comm)
         return model
 
-    def _link_widgets(self, widgets, pane, model, plot, comm):
-        from holoviews.core.util import cross_index
-
+    def _link_widgets(self, pane, root, comm):
         def update_plot(change):
+            from holoviews.core.util import cross_index
             from holoviews.plotting.bokeh.plot import BokehPlot
+
+            widgets = self.widget_box.objects
             if self.widget_type == 'scrubber':
                 key = cross_index([v for v in self._values.values()], widgets[0].value)
             else:
                 key = tuple(w.value for w in widgets)
+
+            plot = self._plots[root.ref['id']]
             if isinstance(plot, BokehPlot):
                 if comm:
                     plot.update(key)
@@ -124,9 +144,10 @@ class HoloViews(PaneBase):
                 plot.update(key)
                 pane.object = plot.state
 
-        for w in widgets:
+        ref = root.ref['id']
+        for w in self.widget_box.objects:
             watcher = w.param.watch(update_plot, 'value')
-            self._callbacks[model.ref['id']].append(watcher)
+            self._callbacks[ref].append(watcher)
 
     @classmethod
     def widgets_from_dimensions(cls, object, widget_types={}, widgets_type='individual'):
@@ -193,7 +214,7 @@ def is_bokeh_element_plot(plot):
     Checks whether plotting instance is a HoloViews ElementPlot rendered
     with the bokeh backend.
     """
-    from holoviews.plotting.plot import GenericElementPlot, GenericOverlayPlot 
+    from holoviews.plotting.plot import GenericElementPlot, GenericOverlayPlot
     return (plot.renderer.backend == 'bokeh' and isinstance(plot, GenericElementPlot)
             and not isinstance(plot, GenericOverlayPlot))
 

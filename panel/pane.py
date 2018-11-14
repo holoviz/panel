@@ -144,8 +144,8 @@ class PaneBase(Reactive):
         self._preprocess(root)
         return root
 
-    def _cleanup(self, model=None, final=False):
-        super(PaneBase, self)._cleanup(model, final)
+    def _cleanup(self, root=None, final=False):
+        super(PaneBase, self)._cleanup(root, final)
         if final:
             self.object = None
 
@@ -157,13 +157,15 @@ class PaneBase(Reactive):
         """
         raise NotImplementedError
 
-    def _link_object(self, model, doc, root, parent, comm=None):
+    def _link_object(self, doc, root, parent, comm=None):
         """
         Links the object parameter to the rendered Bokeh model, triggering
         an update when the object changes.
         """
-        def update_pane(change, history=[model]):
-            old_model = history[0]
+        ref = root.ref['id']
+
+        def update_pane(change):
+            old_model = self._models[ref]
 
             # Pane supports model updates
             if self._updates:
@@ -175,16 +177,14 @@ class PaneBase(Reactive):
                 def update_models():
                     try:
                         index = parent.children.index(old_model)
-                        parent.children[index] = new_model
-                        history[0] = new_model
-                    except:
+                    except IndexError:
                         self.warning('%s pane model %s could not be replaced '
                                      'with new model %s, ensure that the '
                                      'parent is not modified at the same '
                                      'time the panel is being updated.' %
                                      (type(self).__name__, old_model, new_model))
                     else:
-                        self._cleanup(old_model)
+                        parent.children[index] = new_model
 
             if comm:
                 update_models()
@@ -192,8 +192,8 @@ class PaneBase(Reactive):
             else:
                 doc.add_next_tick_callback(update_models)
 
-        ref = model.ref['id']
-        self._callbacks[ref].append(self.param.watch(update_pane, 'object'))
+        if ref not in self._callbacks:
+            self._callbacks[ref].append(self.param.watch(update_pane, 'object'))
 
 
 class Bokeh(PaneBase):
@@ -217,16 +217,15 @@ class Bokeh(PaneBase):
                        if k in model.properties()}
             model = _BkWidgetBox(model, **box_kws)
 
-        if root:
-            plot_id = root.ref['id']
-            if plot_id:
-                for js in model.select({'type': CustomJS}):
-                    js.code = js.code.replace(self.object.ref['id'], plot_id)
+        ref = root.ref['id']
+        for js in model.select({'type': CustomJS}):
+            js.code = js.code.replace(model.ref['id'], ref)
 
         if model._document and doc is not model._document:
             remove_root(model, doc)
 
-        self._link_object(model, doc, root, parent, comm)
+        self._models[ref] = model
+        self._link_object(doc, root, parent, comm)
         return model
 
 
@@ -260,7 +259,8 @@ class DivPaneBase(PaneBase):
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         model = Div(**self._get_properties())
-        self._link_object(model, doc, root, parent, comm)
+        self._models[root.ref['id']] = model
+        self._link_object(doc, root, parent, comm)
         return model
 
     def _update(self, model):
