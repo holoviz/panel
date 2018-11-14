@@ -415,9 +415,10 @@ class ParamMethod(PaneBase):
             new_object = self.object()
             pane_type = self.get_pane_type(new_object)
             if type(self._pane) is pane_type:
-                if isinstance(new_object, PaneBase):
+                if isinstance(new_object, (Panel, PaneBase)):
+                    pvals = dict(self._pane.get_param_values())
                     new_params = {k: v for k, v in new_object.get_param_values()
-                                  if k != 'name'}
+                                  if k != 'name' and v is not pvals[k]}
                     try:
                         self._pane.set_param(**new_params)
                     except:
