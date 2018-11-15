@@ -17,6 +17,8 @@ class Player(Widget):
 
     value = Int(0, help="Current value of the player app")
 
+    step = Int(1, help="Number of steps to advance the player by.")
+
     interval = Int(500, help="Interval between updates")
 
     direction = Int(0, help="""

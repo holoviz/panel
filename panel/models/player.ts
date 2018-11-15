@@ -175,13 +175,12 @@ export class PlayerView extends WidgetView {
     }
   }
 
-
   next_frame(): void {
-    this.set_frame(Math.min(this.model.length - 1, this.model.value + 1));
+    this.set_frame(Math.min(this.model.length - 1, this.model.value + this.model.step));
   }
 
   previous_frame(): void {
-    this.set_frame(Math.max(0, this.model.value - 1));
+    this.set_frame(Math.max(0, this.model.value - this.model.step));
   }
 
   first_frame(): void {
@@ -288,6 +287,7 @@ export abstract class Player extends Widget {
       direction:         [ p.Number,      0            ],
       interval:          [ p.Number,      500          ],
       length:            [ p.Number,                   ],
+	  step:              [ p.Number,      1            ],
       loop_policy:       [ p.Any,         "once"       ],
       value:             [ p.Any,         0            ],
     })

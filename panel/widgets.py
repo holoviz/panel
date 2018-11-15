@@ -605,6 +605,9 @@ class Player(Widget):
                                        objects=['once', 'loop', 'reflect'], doc="""
        Policy used when player hits last frame""")
 
+    step = param.Integer(default=1, doc="""
+       Number of frames to step forward and back by on each event.""")
+
     value = param.Integer(default=0, doc="Current player value")
 
     height = param.Integer(default=250, readonly=True)
