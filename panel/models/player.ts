@@ -30,7 +30,8 @@ export class PlayerView extends WidgetView {
       super.render()
     } else {
       this.sliderEl.style = `width:{this.model.width}px`
-      this.sliderEl.max = this.model.length - 1;
+      this.sliderEl.min = this.model.start;
+      this.sliderEl.max = this.model.end;
       this.sliderEl.value = this.model.value;
       return
     }
@@ -39,8 +40,9 @@ export class PlayerView extends WidgetView {
     this.sliderEl = document.createElement('input')
     this.sliderEl.setAttribute("type", "range");
     this.sliderEl.style = `width:{this.model.width}px`
-    this.sliderEl.value = 0;
-    this.sliderEl.max = this.model.length - 1;
+    this.sliderEl.value = this.model.value;
+    this.sliderEl.min = this.model.start;
+    this.sliderEl.max = this.model.end;
     this.sliderEl.onchange = (ev) => this.set_frame(parseInt(ev.target.value))
 
     // Buttons
@@ -175,21 +177,20 @@ export class PlayerView extends WidgetView {
     }
   }
 
-
   next_frame(): void {
-    this.set_frame(Math.min(this.model.length - 1, this.model.value + 1));
+    this.set_frame(Math.min(this.model.end, this.model.value + this.model.step));
   }
 
   previous_frame(): void {
-    this.set_frame(Math.max(0, this.model.value - 1));
+    this.set_frame(Math.max(this.model.start, this.model.value - this.model.step));
   }
 
   first_frame(): void {
-    this.set_frame(0);
+    this.set_frame(this.model.start);
   }
 
   last_frame(): void {
-    this.set_frame(this.model.length - 1);
+    this.set_frame(this.model.end);
   }
 
   slower(): void {
@@ -209,7 +210,7 @@ export class PlayerView extends WidgetView {
   }
 
   anim_step_forward(): void {
-    if(this.model.value < this.model.length - 1){
+    if(this.model.value < this.model.end){
       this.next_frame();
     } else {
       var loop_state = this.get_loop_state();
@@ -226,7 +227,7 @@ export class PlayerView extends WidgetView {
   }
 
   anim_step_reverse(): void {
-    if(this.model.value > 0){
+    if(this.model.value > this.model.start){
       this.previous_frame();
     } else {
       var loop_state = this.get_loop_state();
@@ -287,7 +288,9 @@ export abstract class Player extends Widget {
     this.define({
       direction:         [ p.Number,      0            ],
       interval:          [ p.Number,      500          ],
-      length:            [ p.Number,                   ],
+      start:             [ p.Number,                   ],
+      end:               [ p.Number,                   ],
+      step:              [ p.Number,      1            ],
       loop_policy:       [ p.Any,         "once"       ],
       value:             [ p.Any,         0            ],
     })

@@ -593,17 +593,23 @@ class DiscreteSlider(Widget):
 class Player(Widget):
     """
     The Player provides controls to play and skip through a number of
-    frames defined by the length. The speed at which the widget plays
-    is defined by the interval.
+    frames defined by the length or explicit start and end values.
+    The speed at which the widget plays is defined by the interval,
+    but it is also possible to skip frames.
     """
 
     interval = param.Integer(default=500, doc="Interval between updates")
 
-    length = param.Integer(default=10, doc="Number of frames")
+    start = param.Integer(default=0, doc="Lower bound on the slider value")
+
+    end = param.Integer(default=10, doc="Upper bound on the slider value")
 
     loop_policy = param.ObjectSelector(default='once',
                                        objects=['once', 'loop', 'reflect'], doc="""
        Policy used when player hits last frame""")
+
+    step = param.Integer(default=1, doc="""
+       Number of frames to step forward and back by on each event.""")
 
     value = param.Integer(default=0, doc="Current player value")
 
@@ -612,6 +618,16 @@ class Player(Widget):
     _widget_type = _BkPlayer
 
     _rename = {'name': None}
+
+    def __init__(self, **params):
+        if 'length' in params:
+            if 'start' in params or 'end' in params:
+                raise ValueError('Supply either length or start and end to Player not both')
+            params['start'] = 0
+            params['end'] = params.pop('length')-1
+        elif params.get('start', 0) > 0 and not 'value' in params:
+            params['value'] = params['start']
+        super(Player, self).__init__(**params)
 
 
 class CrossSelector(MultiSelect):
