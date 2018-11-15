@@ -13,7 +13,9 @@ class Player(Widget):
 
     __implementation__ = os.path.join(os.path.dirname(__file__), 'player.ts')
 
-    length = Int(help="The number of frames to play through")
+    start = Int(help="Lower bound of the Player slider")
+
+    end = Int(help="Upper bound of the Player slider")
 
     value = Int(0, help="Current value of the player app")
 
