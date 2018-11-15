@@ -34,9 +34,10 @@ on its own.
    <style>table {border-spacing: 15px} td { border: 1px solid black; vertical-align: top} </style>
    <table>
      <tr>
-       <td border=1><b>Interact</b><br><a href="https://anaconda.org/jbednar/datashadercliffordinteract"  ><img src="_static/collage/interact.png"    /></a></td>
-       <td border=1><b>Glaciers</b><br><a href="https://anaconda.org/jbednar/glaciers"                    ><img src="_static/collage/glaciers.png"    /></a></td>
-       <td border=1><b>Gapminders</b><br><a href="https://anaconda.org/jbednar/panel_gapminders"            ><img src="_static/collage/gapminders.png"  /></a></td>
+       <td border=1><b>Interact</b><br><a href="https://anaconda.org/jbednar/datashadercliffordinteract"><img src="_static/collage/interact.png" /></a></td>
+       <td border=1><b>Gapminders</b><br><a href="https://anaconda.org/jbednar/panel_gapminders"><img src="_static/collage/gapminders.png" /></a></td>
+       <td border=1><b>NYC Taxi</b><br><a href="https://anaconda.org/jbednar/nyc_taxi_panel"><img src="_static/collage/nyc_taxi.png" /></a></td>
+       <td border=1><b>Glaciers</b><br><a href="https://anaconda.org/jbednar/glaciers"><img src="_static/collage/glaciers.png" /></a></td>
      <tr>
    </table>
 
