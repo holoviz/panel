@@ -621,6 +621,10 @@ class CrossSelector(MultiSelect):
     name to select them in bulk.
     """
 
+    width = param.Integer(default=600, doc="""
+       The number of options shown at once (note this is the
+       only way to control the height of this widget)""")
+
     height = param.Integer(default=200, doc="""
        The number of options shown at once (note this is the
        only way to control the height of this widget)""")
@@ -638,11 +642,13 @@ class CrossSelector(MultiSelect):
         unselected = [k for k in self.options if k not in selected]
 
         # Define whitelist and blacklist
+        width = int((self.width-100)/2)
         self._lists = {
-            False: MultiSelect(options=unselected, size=self.size, height=self.height-50),
-            True: MultiSelect(options=selected, size=self.size, height=self.height-50)
+            False: MultiSelect(options=unselected, size=self.size,
+                               height=self.height-50, width=width),
+            True: MultiSelect(options=selected, size=self.size,
+                              height=self.height-50, width=width)
         }
-
         self._lists[False].param.watch(self._update_selection, 'value')
         self._lists[True].param.watch(self._update_selection, 'value')
 
@@ -654,14 +660,16 @@ class CrossSelector(MultiSelect):
         self._buttons[True].param.watch(self._apply_selection, 'clicks')
 
         # Define search
-        self._search = {False: TextInput(placeholder='Filter available options'),
-                        True: TextInput(placeholder='Filter selected options')}
+        self._search = {
+            False: TextInput(placeholder='Filter available options'),
+            True: TextInput(placeholder='Filter selected options')
+        }
         self._search[False].param.watch(self._filter_options, 'value')
         self._search[True].param.watch(self._filter_options, 'value')
 
         # Define Layout
-        blacklist = WidgetBox(self._search[False], self._lists[False])
-        whitelist = WidgetBox(self._search[True], self._lists[True])
+        blacklist = WidgetBox(self._search[False], self._lists[False], width=width+10)
+        whitelist = WidgetBox(self._search[True], self._lists[True], width=width+10)
         buttons = WidgetBox(self._buttons[True], self._buttons[False], width=70)
 
         self._layout = Row(blacklist, Column(Spacer(height=110), buttons), whitelist)
