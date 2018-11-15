@@ -287,7 +287,7 @@ export abstract class Player extends Widget {
       direction:         [ p.Number,      0            ],
       interval:          [ p.Number,      500          ],
       length:            [ p.Number,                   ],
-	  step:              [ p.Number,      1            ],
+      step:              [ p.Number,      1            ],
       loop_policy:       [ p.Any,         "once"       ],
       value:             [ p.Any,         0            ],
     })
