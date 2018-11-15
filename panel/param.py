@@ -40,6 +40,17 @@ def ObjectSelector(pobj):
         return Select
 
 
+def FileSelector(pobj):
+    """
+    Determines whether to use a TextInput or Select widget for FileSelector
+    """
+    if pobj.path:
+        return Select
+    else:
+        return TextInput
+
+
+
 class Param(PaneBase):
     """
     Param panes render a Parameterized class to a set of widgets which
@@ -98,6 +109,7 @@ class Param(PaneBase):
         param.Dict:           LiteralInput,
         param.Selector:       Select,
         param.ObjectSelector: ObjectSelector,
+        param.FileSelector:   FileSelector,
         param.Boolean:        Checkbox,
         param.Number:         FloatSlider,
         param.Integer:        IntSlider,

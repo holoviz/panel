@@ -81,7 +81,7 @@ class Widget(Reactive):
 
 class TextInput(Widget):
 
-    value = param.String(default='')
+    value = param.String(default='', allow_None=True)
 
     placeholder = param.String(default='')
 
@@ -405,7 +405,7 @@ class Select(Widget):
             params['options'] = OrderedDict([(as_unicode(o), o) for o in options])
         super(Select, self).__init__(**params)
         options = list(self.options.values())
-        if self.value is None and None not in options:
+        if self.value is None and None not in options and options:
             self.value = options[0]
 
     def _process_param_change(self, msg):
