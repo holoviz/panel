@@ -33,9 +33,9 @@ on its own.
 
    <table border=1>
      <tbody>
-       <td><a href="https://anaconda.org/jbednar/project/attractors"     ><img src="_static/collage/attractors.png"  /></a></td>
-       <td><a href="https://anaconda.org/jbednar/project/glaciers"       ><img src="_static/collage/glaciers.png"    /></a></td>
-       <td><a href="https://anaconda.org/jbednar/project/panel_examples"><img src="_static/collage/gapminders.png"  /></a></td>
+       <td><a href="https://anaconda.org/jbednar/datashadercliffordinteract"  ><img src="_static/collage/interact.png"    /></a></td>
+       <td><a href="https://anaconda.org/jbednar/glaciers"                    ><img src="_static/collage/glaciers.png"    /></a></td>
+       <td><a href="https://anaconda.org/jbednar/panel_gapminders"            ><img src="_static/collage/gapminders.png"  /></a></td>
      </tbody>
    </table>
 
