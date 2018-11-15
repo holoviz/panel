@@ -4,6 +4,7 @@ communication between the rendered dashboard and the Widget parameters.
 """
 from __future__ import absolute_import
 
+import re
 import ast
 from collections import OrderedDict
 from datetime import datetime
@@ -20,7 +21,7 @@ from bokeh.models.widgets import (
     CheckboxButtonGroup as _BkCheckboxButtonGroup
 )
 
-from .layout import WidgetBox # noqa
+from .layout import Column, Row, Spacer, WidgetBox # noqa
 from .models.widgets import Player as _BkPlayer
 from .viewable import Reactive
 from .util import as_unicode, push, value_as_datetime, hashable
@@ -232,6 +233,9 @@ class Button(_ButtonBase):
     clicks = param.Integer(default=0)
 
     _widget_type = _BkButton
+
+    def on_click(self, callback):
+        self.param.watch(callback, 'clicks')
 
 
 class Toggle(_ButtonBase):
@@ -523,7 +527,7 @@ class DiscreteSlider(Widget):
 
         model.children = [div, slider]
         self._models[root.ref['id']] = model
-        
+
         return model
 
     def _link_params(self, model, slider, div, params, doc, root, comm=None):
@@ -608,3 +612,141 @@ class Player(Widget):
     _widget_type = _BkPlayer
 
     _rename = {'name': None}
+
+
+class CrossSelector(MultiSelect):
+    """
+    A composite widget which allows selecting from a list of items
+    by moving them between two lists. Supports filtering values by
+    name to select them in bulk.
+    """
+
+    height = param.Integer(default=200, doc="""
+       The number of options shown at once (note this is the
+       only way to control the height of this widget)""")
+
+    size = param.Integer(default=10, doc="""
+       The number of options shown at once (note this is the
+       only way to control the height of this widget)""")
+
+    def __init__(self, *args, **kwargs):
+        super(CrossSelector, self).__init__(**kwargs)
+        # Compute selected and unselected values
+
+        mapping = {hashable(v): k for k, v in self.options.items()}
+        selected = [mapping[hashable(v)] for v in kwargs.get('value', [])]
+        unselected = [k for k in self.options if k not in selected]
+
+        # Define whitelist and blacklist
+        self._lists = {
+            False: MultiSelect(options=unselected, size=self.size, height=self.height-50),
+            True: MultiSelect(options=selected, size=self.size, height=self.height-50)
+        }
+
+        self._lists[False].param.watch(self._update_selection, 'value')
+        self._lists[True].param.watch(self._update_selection, 'value')
+
+        # Define buttons
+        self._buttons = {False: Button(name='<<', width=50),
+                         True: Button(name='>>', width=50)}
+
+        self._buttons[False].param.watch(self._apply_selection, 'clicks')
+        self._buttons[True].param.watch(self._apply_selection, 'clicks')
+
+        # Define search
+        self._search = {False: TextInput(placeholder='Filter available options'),
+                        True: TextInput(placeholder='Filter selected options')}
+        self._search[False].param.watch(self._filter_options, 'value')
+        self._search[True].param.watch(self._filter_options, 'value')
+
+        # Define Layout
+        blacklist = WidgetBox(self._search[False], self._lists[False])
+        whitelist = WidgetBox(self._search[True], self._lists[True])
+        buttons = WidgetBox(self._buttons[True], self._buttons[False], width=70)
+
+        self._layout = Row(blacklist, Column(Spacer(height=110), buttons), whitelist)
+
+        self.param.watch(self._update_options, 'options')
+        self.param.watch(self._update_value, 'value')
+        self.link(self._lists[False], size='size')
+        self.link(self._lists[True], size='size')
+
+        self._selected = {False: [], True: []}
+        self._query = {False: '', True: ''}
+
+    def _update_value(self, event):
+        mapping = {hashable(v): k for k, v in self.options.items()}
+        selected = OrderedDict([(mapping[k], mapping[k]) for k in event.new])
+        unselected = OrderedDict([(k, k) for k in self.options if k not in selected])
+        self._lists[True].options = selected
+        self._lists[True].value = []
+        self._lists[False].options = unselected
+        self._lists[False].value = []
+
+    def _update_options(self, event):
+        """
+        Updates the options of each of the sublists after the options
+        for the whole widget are updated.
+        """
+        self._selected[False] = []
+        self._selected[True] = []
+        self._lists[True].options = {}
+        self._lists[True].value = []
+        self._lists[False].options = OrderedDict([(k, k) for k in event.new])
+        self._lists[False].value = []
+
+    def _apply_filters(self):
+        self._apply_query(False)
+        self._apply_query(True)
+
+    def _filter_options(self, event):
+        """
+        Filters unselected options based on a text query event.
+        """
+        selected = event.obj is self._search[True]
+        self._query[selected] = event.new
+        self._apply_query(selected)
+
+    def _apply_query(self, selected):
+        query = self._query[selected]
+        other = self._lists[not selected].options
+        options = OrderedDict([(k, k) for k in self.options if k not in other])
+        if not query:
+            self._lists[selected].options = options
+            self._lists[selected].value = []
+        else:
+            try:
+                match = re.compile(query)
+                matches = list(filter(match.search, options))
+            except:
+                matches = list(options)
+            self._lists[selected].options = options if options else {}
+            self._lists[selected].value = [m for m in matches]
+
+    def _update_selection(self, event):
+        """
+        Updates the current selection in each list.
+        """
+        selected = event.obj is self._lists[True]
+        self._selected[selected] = [v for v in event.new if v != '']
+
+    def _apply_selection(self, event):
+        """
+        Applies the current selection depending on which button was
+        pressed.
+        """
+        selected = event.obj is self._buttons[True]
+
+        new = OrderedDict([(k, self.options[k]) for k in self._selected[not selected]])
+        old = self._lists[selected].options
+        other = self._lists[not selected].options
+
+        merged = OrderedDict([(k, k) for k in list(old)+list(new)])
+        leftovers = OrderedDict([(k, k) for k in other if k not in new])
+        self._lists[selected].options = merged if merged else {}
+        self._lists[not selected].options = leftovers if leftovers else {}
+        self.value = [self.options[o] for o in self._lists[True].options if o != '']
+        self._apply_filters()
+
+    def _get_model(self, doc, root=None, parent=None, comm=None):
+        return self._layout._get_model(doc, root, parent, comm)
