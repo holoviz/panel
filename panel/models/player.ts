@@ -227,7 +227,7 @@ export class PlayerView extends WidgetView {
   }
 
   anim_step_reverse(): void {
-    if(this.model.value > this.modelstart){
+    if(this.model.value > this.model.start){
       this.previous_frame();
     } else {
       var loop_state = this.get_loop_state();
