@@ -10,7 +10,7 @@ from panel.widgets import (
     TextInput, StaticText, FloatSlider, IntSlider, RangeSlider,
     LiteralInput, Checkbox, Select, MultiSelect, Button, Toggle,
     DatePicker, DateRangeSlider, DiscreteSlider, DatetimeInput,
-    RadioButtons, ToggleButtons
+    RadioButtons, ToggleButtons, CrossSelector
 )
 
 
@@ -515,3 +515,43 @@ def test_discrete_slider_options_dict(document, comm):
     discrete_slider.value = 100
     assert widget.value == 3
     assert label.text == '<b>DiscreteSlider</b>: 100'
+
+
+
+def test_cross_select_constructor(document, comm):
+    cross_select = CrossSelector(options=['A', 'B', 'C', 1, 2, 3], value=['A', 1])
+
+    assert cross_select._lists[True].options == {'A': 'A', '1': '1'}
+    assert cross_select._lists[False].options == {'B': 'B', 'C': 'C', '2': '2', '3': '3'}
+
+    # Change selection
+    cross_select.value = ['B', 2]
+    assert cross_select._lists[True].options == {'B': 'B', '2': '2'}
+    assert cross_select._lists[False].options == {'A': 'A', 'C': 'C', '1': '1', '3': '3'}
+
+    # Change options
+    cross_select.options = {'D': 'D', '4': 4}
+    assert cross_select._lists[True].options == {}
+    assert cross_select._lists[False].options == {'D': 'D', '4': '4'}
+
+    # Query unselected item
+    cross_select._search[False].value = 'D'
+    assert cross_select._lists[False].value == ['D']
+
+    # Move queried item
+    cross_select._buttons[True].param.trigger('clicks')
+    assert cross_select._lists[False].options == {'4': '4'}
+    assert cross_select._lists[False].value == []
+    assert cross_select._lists[True].options == {'D': 'D'}
+    assert cross_select._lists[False].value == []
+
+    # Query selected item
+    cross_select._search[True].value = 'D'
+    cross_select._buttons[False].param.trigger('clicks')
+    assert cross_select._lists[False].options == {'D': 'D', '4': '4'}
+    assert cross_select._lists[False].value == ['D']
+    assert cross_select._lists[True].options == {}
+
+    # Clear query
+    cross_select._search[False].value = ''
+    assert cross_select._lists[False].value == []
