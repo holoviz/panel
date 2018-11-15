@@ -30,8 +30,8 @@ export class PlayerView extends WidgetView {
       super.render()
     } else {
       this.sliderEl.style = `width:{this.model.width}px`
-	  this.sliderEl.min = this.model.start;
-	  this.sliderEl.max = this.model.end;
+      this.sliderEl.min = this.model.start;
+      this.sliderEl.max = this.model.end;
       this.sliderEl.value = this.model.value;
       return
     }
