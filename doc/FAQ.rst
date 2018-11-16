@@ -45,6 +45,11 @@ Conversely, what Panel adds on top of Bokeh is full bidirectional communication 
 **A:** A global set of precedence values is used to ensure that the richest representation of a given object is chosen when you pass it to a Row or Column. However, you are also welcome to instantiate a specific Pane type explicitly, as in ``pn.Row(pane.HTML(obj, height=300))``.  If the default Pane type is fine but you still want to be able to pass specific options like width or height in this way, you can use the pn.panel function explicitly, as in  ``pn.Row(pn.panel(obj, height=300))``.
 
 
+**Q: Why doesn't my Matplotlib plot update in a notebook?**
+
+**A:** Matplotlib pyplot users often use `%matplotlib inline`, which shows plots as a "side effect" in a Jupyter notebook, rather than using the cell's return value like Python literals and other objects do. Panel callbacks like those accepted for `pn.interact()` work on the return value of the callback, which is then provided as the return value of the cell, and thus directly display without any requirements for side effects.  So, if you create a Matplotlib plot that would magically appear via `%matplotlib inline`, for Panel you need to ensure that the callback actually returns a value, rather than counting on this side effect.  Specifically, if you have a callback with some Matplotlib plotting calls, you can add `return plt.gcf()` to your callback to make the current figure be returned, which will ensure that your plot is displayed properly.
+
+
 **Q: How does Panel relate to other widget/app/dashboard tools?**
 
 **A:** Panel is currently the only Python tool that fully supports writing live widget and app code in Jupyter Notebooks and then deploying it on standalone web servers. Panel is thus unique in supporting the entire life cycle of working with data: from initial exploration, to adding custom interactivity to make one-off analyses easier, to building a complex dashboard from multiple components, to deploying your polished Python-backed dashboard in a public-facing or on-premises private server, and then iterating by bringing those same components back to the notebook for further exploration and improvement. Other tools support *some* of the same capabilities, but by focusing on only one part of this life cycle they require you to start over when you need to use your work in a different way.
