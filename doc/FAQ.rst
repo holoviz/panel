@@ -37,12 +37,17 @@ Conversely, what Panel adds on top of Bokeh is full bidirectional communication 
 
 **Q: Why is the spacing messed up in my panel?**
 
-**A:** Panels are composed of multiple Panes (or other Viewable objects). There are two main ways the spacing between viewable objects can be incorrect: either the object is not reporting its correct size, or the layout engine is not laying things out reasonably. Some pane types are unable to discover the size of what is in them, such as ``pane.HTML``, and for these you will need to provide explicit ``height`` and ``width`` settings (as in ``pn.Row(pane.HTML(obj, height=300))``. Other spacing problems appear to be caused by issues with the Bokeh layout system, which is currently being improved.  In the meantime you should be able to use ``pn.Spacer(height=..., width=...)`` to adjust spacing manually when needed.
+**A:** Panels are composed of multiple Panes (or other Viewable objects). There are two main ways the spacing between viewable objects can be incorrect: either the object is not reporting its correct size, or the layout engine is not laying things out reasonably. Some pane types are unable to discover the size of what is in them, such as ``pane.HTML``, and for these you will need to provide explicit ``height`` and/or ``width`` settings (as in ``pn.Row(pn.panel(obj, height=300))``. Other spacing problems appear to be caused by issues with the Bokeh layout system, which is currently being improved.  In the meantime you should be able to use ``pn.Spacer(height=..., width=...)`` to adjust spacing manually when needed, with either positive or negative heights or widths.
 
 
 **Q: Why is my object being shown using the wrong type of pane?**
 
-**A:** A global set of precedence values is used to ensure that the richest representation of a given object is chosen when you pass it to a Row or Column. However, you are also welcome to instantiate a specific Pane type explicitly, as in ``pn.Row(pane.HTML(obj, height=300))``.  If the default Pane type is fine but you still want to be able to pass specific options like width or height in this way, you can also just call Pane explicitly, as in  ``pn.Row(pane.Pane(obj, height=300))``.
+**A:** A global set of precedence values is used to ensure that the richest representation of a given object is chosen when you pass it to a Row or Column. However, you are also welcome to instantiate a specific Pane type explicitly, as in ``pn.Row(pane.HTML(obj, height=300))``.  If the default Pane type is fine but you still want to be able to pass specific options like width or height in this way, you can use the pn.panel function explicitly, as in  ``pn.Row(pn.panel(obj, height=300))``.
+
+
+**Q: Why doesn't my Matplotlib plot update in a notebook?**
+
+**A:** Matplotlib pyplot users often use `%matplotlib inline`, which shows plots as a "side effect" in a Jupyter notebook, rather than using the cell's return value like Python literals and other objects do. Panel callbacks like those accepted for `pn.interact()` work on the return value of the callback, which is then provided as the return value of the cell, and thus directly display without any requirements for side effects.  So, if you create a Matplotlib plot that would magically appear via `%matplotlib inline`, for Panel you need to ensure that the callback actually returns a value, rather than counting on this side effect.  Specifically, if you have a callback with some Matplotlib plotting calls, you can add `return plt.gcf()` to your callback to make the current figure be returned, which will ensure that your plot is displayed properly.
 
 
 **Q: How does Panel relate to other widget/app/dashboard tools?**
