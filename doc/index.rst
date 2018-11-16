@@ -34,10 +34,10 @@ on its own.
    <style>table {border-spacing: 15px} td { border: 1px solid black; vertical-align: top} </style>
    <table>
      <tr>
-       <td border=1><b>Interact</b><br><a href="https://anaconda.org/jbednar/datashadercliffordinteract"><img src="_static/collage/interact.png" /></a></td>
-       <td border=1><b>Gapminders</b><br><a href="https://anaconda.org/jbednar/panel_gapminders"><img src="_static/collage/gapminders.png" /></a></td>
-       <td border=1><b>NYC Taxi</b><br><a href="https://anaconda.org/jbednar/nyc_taxi_panel"><img src="_static/collage/nyc_taxi.png" /></a></td>
-       <td border=1><b>Glaciers</b><br><a href="https://anaconda.org/jbednar/glaciers"><img src="_static/collage/glaciers.png" /></a></td>
+       <td border=1><a href="https://anaconda.org/jbednar/datashadercliffordinteract"><b>Interact</b></a><br><a href="https://mybinder.org/v2/gh/panel-demos/clifford-interact/master?urlpath=/proxy/5006/app"><img src="_static/collage/interact.png" /></a></td>
+       <td border=1><a href="https://anaconda.org/jbednar/panel_gapminders"><b>Gapminders</b></a><br><a href="https://mybinder.org/v2/gh/panel-demos/gapminder/master?urlpath=/proxy/5006/app"><img src="_static/collage/gapminders.png" /></a></td>
+       <td border=1><a href="https://anaconda.org/jbednar/nyc_taxi_panel"><b>NYC Taxi</b></a><br><a href="https://mybinder.org/v2/gh/panel-demos/nyc_taxi/master?urlpath=/proxy/5006/app"><img src="_static/collage/nyc_taxi.png" /></a></td>
+       <td border=1><a href="https://anaconda.org/jbednar/glaciers"><b>Glaciers</b></a><br><a href="https://mybinder.org/v2/gh/panel-demos/glaciers/master?urlpath=/proxy/5006/app"><img src="_static/collage/glaciers.png" /></a></td>
      <tr>
    </table>
 
