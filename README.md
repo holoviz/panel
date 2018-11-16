@@ -17,6 +17,14 @@ Panel makes it simple to make:
 
 Panel objects are reactive, immediately updating to reflect changes to their state, which makes it simple to compose viewable objects and link them into simple, one-off apps to do a specific exploratory task.  The same objects can then be reused in more complex combinations to build more ambitious apps, while always sharing the same code that works well on its own.
 
+   <table>
+     <tr>
+       <td border=1><a href="https://anaconda.org/jbednar/datashadercliffordinteract"><b>Interact</b></a><br><a href="https://mybinder.org/v2/gh/panel-demos/clifford-interact/master?urlpath=/proxy/5006/app"><img src="https://github.com/pyviz/panel/raw/master/doc/_static/collage/interact.png" /></a></td>
+       <td border=1><a href="https://anaconda.org/jbednar/panel_gapminders"><b>Gapminders</b></a><br><a href="https://mybinder.org/v2/gh/panel-demos/gapminder/master?urlpath=/proxy/5006/app"><img src="https://github.com/pyviz/panel/raw/master/doc/_static/collage/gapminders.png" /></a></td>
+       <td border=1><a href="https://anaconda.org/jbednar/nyc_taxi_panel"><b>NYC Taxi</b></a><br><a href="https://mybinder.org/v2/gh/panel-demos/nyc_taxi/master?urlpath=/proxy/5006/app"><img src="https://github.com/pyviz/panel/raw/master/doc/_static/collage/nyc_taxi.png" /></a></td>
+       <td border=1><a href="https://anaconda.org/jbednar/glaciers"><b>Glaciers</b></a><br><a href="https://mybinder.org/v2/gh/panel-demos/glaciers/master?urlpath=/proxy/5006/app"><img src="https://github.com/pyviz/panel/raw/master/doc/_static/collage/glaciers.png" /></a></td>
+     <tr>
+   </table>
 
 ## Using Panel for declarative, reactive programming
 
