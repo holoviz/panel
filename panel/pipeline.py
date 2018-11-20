@@ -18,6 +18,9 @@ class Pipeline(param.Parameterized):
     outputs using the param.output decorator.
     """
 
+    debug = param.Boolean(default=False, precedence=-1, doc="""
+        Whether to raise errors, useful for debugging while building an application.""")
+
     next = param.Action(default=lambda x: x.param.trigger('next'))
 
     previous = param.Action(default=lambda x: x.param.trigger('previous'))
@@ -118,6 +121,8 @@ class Pipeline(param.Parameterized):
             self._stage -= 1
             self._error.object = str(e)
             self._layout[2][0] = prev_state
+            if self.debug:
+                raise e
         else:
             self._error.object = ''
 
@@ -130,6 +135,8 @@ class Pipeline(param.Parameterized):
         except Exception as e:
             self._stage += 1
             self._error.object = str(e)
+            if self.debug:
+                raise e
         else:
             self._error.object = ''
 
