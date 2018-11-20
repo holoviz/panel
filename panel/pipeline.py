@@ -89,6 +89,8 @@ class Pipeline(param.Parameterized):
             outputs = self._state.param.outputs().items()
             kwargs = {name: method() for name, (_, method) in outputs
                       if name in stage.params()}
+            kwargs.update({k: for k, v in self._state_.param.get_param_values()
+                           if k in stage.params()})
         if isinstance(stage, param.Parameterized):
             stage.set_param(**kwargs)
             self._state = stage
