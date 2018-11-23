@@ -220,7 +220,7 @@ class interactive(PaneBase):
                 widget = self.widget_from_abbrev(abbrev, name, default)
             if not (isinstance(widget, Widget) or isinstance(widget, fixed)):
                 if widget is None:
-                    raise ValueError("{!r} cannot be transformed to a widget".format(abbrev))
+                    continue
                 else:
                     raise TypeError("{!r} is not a ValueWidget".format(widget))
             result.append((name, widget))
