@@ -21,6 +21,9 @@ class Pipeline(param.Parameterized):
     debug = param.Boolean(default=False, precedence=-1, doc="""
         Whether to raise errors, useful for debugging while building an application.""")
 
+    inherit_params = param.Boolean(default=True, precedence=-1, doc="""
+        Whether parameters should be inherited between pipeline stages""")
+
     next = param.Action(default=lambda x: x.param.trigger('next'))
 
     previous = param.Action(default=lambda x: x.param.trigger('previous'))
@@ -89,8 +92,11 @@ class Pipeline(param.Parameterized):
             outputs = self._state.param.outputs().items()
             kwargs = {name: method() for name, (_, method) in outputs
                       if name in stage.params()}
-            kwargs.update({k: v for k, v in self._state.param.get_param_values()
-                           if k in stage.params()})
+            if self.inherit_params:
+                params = [k for k, v in self._state.params().items()
+                          if v.precedence is None or v.precedence >= 0]
+                kwargs.update({k: v for k, v in self._state.param.get_param_values()
+                               if k in stage.params() and k != 'name' and k in params})
         if isinstance(stage, param.Parameterized):
             stage.set_param(**kwargs)
             self._state = stage
@@ -118,8 +124,11 @@ class Pipeline(param.Parameterized):
         prev_state = self._layout[2][0]
         self._layout[2][0] = self._spinner_layout
         try:
-            self._layout[2][0] = self._init_stage()
+            new_stage = self._init_stage()
+            print("NEXT", new_stage)
+            self._layout[2][0] = new_stage
         except Exception as e:
+            print(e)
             self._stage -= 1
             self._error.object = str(e)
             self._layout[2][0] = prev_state
