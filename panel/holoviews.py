@@ -262,6 +262,9 @@ def find_links(root_view, root_model):
     callbacks = []
     for link, src_plot, tgt_plot in found:
         cb = Link._callbacks['bokeh'][type(link)]
+        if src_plot is None and (getattr(link, '_requires_target', False)
+                                 and tgt_plot is None):
+            continue
         callbacks.append(cb(root_model, link, src_plot, tgt_plot))
     return callbacks
 
