@@ -5,12 +5,13 @@ from datetime import datetime
 
 from bokeh.layouts import WidgetBox
 from bokeh.models import Div as BkDiv, Slider as BkSlider
+from panel.models.widgets import Player as BkPlayer
 from panel.util import block_comm
 from panel.widgets import (
     TextInput, StaticText, FloatSlider, IntSlider, RangeSlider,
     LiteralInput, Checkbox, Select, MultiSelect, Button, Toggle,
     DatePicker, DateRangeSlider, DiscreteSlider, DatetimeInput,
-    RadioButtons, ToggleButtons, CrossSelector
+    RadioButtons, ToggleButtons, CrossSelector, DiscretePlayer
 )
 
 
@@ -555,3 +556,26 @@ def test_cross_select_constructor(document, comm):
     # Clear query
     cross_select._search[False].value = ''
     assert cross_select._lists[False].value == []
+
+
+def test_discrete_player(document, comm):
+    discrete_player = DiscretePlayer(name='DiscretePlayer', value=1,
+                                     options=[0.1, 1, 10, 100])
+
+    box = discrete_player._get_model(document, comm=comm)
+
+    assert isinstance(box, WidgetBox)
+
+    widget = box.children[0]
+    assert isinstance(widget, BkPlayer)
+    assert widget.value == 1
+    assert widget.start == 0
+    assert widget.end == 3
+    assert widget.step == 1
+
+    widget.value = 2
+    discrete_player._comm_change({'value': 2})
+    assert discrete_player.value == 10
+
+    discrete_player.value = 100
+    assert widget.value == 3
