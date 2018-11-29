@@ -101,6 +101,10 @@ class Param(PaneBase):
     width = param.Integer(default=300, bounds=(0, None), doc="""
         Width of widgetbox the parameter widgets are displayed in.""")
 
+    widgets = param.Dict(doc="""
+        Dictionary of widget overrides, mapping from parameter name
+        to widget class.""")
+
     precedence = 0.1
 
     _mapping = {
@@ -244,7 +248,10 @@ class Param(PaneBase):
         """Get widget for param_name"""
         p_obj = self.object.params(p_name)
 
-        widget_class = self.widget_type(p_obj)
+        if self.widgets is None or p_name not in self.widgets:
+            widget_class = self.widget_type(p_obj)
+        else:
+            widget_class = self.widgets[p_name]
         value = getattr(self.object, p_name)
 
         kw = dict(value=value, disabled=p_obj.constant)
