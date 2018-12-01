@@ -305,7 +305,7 @@ def render_mimebundle(model, doc, comm):
     target = model.ref['id']
 
     # Publish plot HTML
-    bokeh_script, bokeh_div, _ = bokeh.embed.notebook.notebook_content(model, comm.id)
+    bokeh_script, bokeh_div, _ = bokeh.embed.notebook.notebook_content(model)
     html = encode_utf8(bokeh_div)
 
     # Publish bokeh plot JS
