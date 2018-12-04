@@ -8,7 +8,7 @@ from bokeh.__main__ import main as bokeh_entry_point
 
 def transform_cmds(argv):
     """
-    Allows usage with anaconda-project by remapping the argv list provided 
+    Allows usage with anaconda-project by remapping the argv list provided
     into arguments accepted by Bokeh 0.12.7 or later.
     """
     replacements = {'--anaconda-project-host':'--allow-websocket-origin',
@@ -32,7 +32,17 @@ def transform_cmds(argv):
             transformed.append(arg)
     return transformed
 
+if __name__ == "__main__":
+    main()
 
-def main():
-    sys.argv = transform_cmds(sys.argv)
-    bokeh_entry_point()
+def main(args=None):
+    if len(sys.argv) > 1 and 'serve' == sys.argv[1]:
+        sys.argv = transform_cmds(sys.argv)
+        bokeh_entry_point()
+    else:
+        try:
+            import pyct.cmd
+        except ImportError:
+            print("install pyct to enable this command (e.g. `conda install -c pyviz pyct` or `pip install pyct[cmd]`)")
+            sys.exit(1)
+        pyct.cmd.substitute_main('panel',args=args)
