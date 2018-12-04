@@ -32,8 +32,6 @@ def transform_cmds(argv):
             transformed.append(arg)
     return transformed
 
-if __name__ == "__main__":
-    main()
 
 def main(args=None):
     """Special case: Allow Bokeh to handle the `serve` command; rest is handled by pyct."""
@@ -47,3 +45,6 @@ def main(args=None):
             print("install pyct to enable this command (e.g. `conda install -c pyviz pyct` or `pip install pyct[cmd]`)")
             sys.exit(1)
         pyct.cmd.substitute_main('panel',args=args)
+
+if __name__ == "__main__":
+    main()
