@@ -36,6 +36,7 @@ if __name__ == "__main__":
     main()
 
 def main(args=None):
+    """Special case: Allow Bokeh to handle the `serve` command; rest is handled by pyct."""
     if len(sys.argv) > 1 and 'serve' == sys.argv[1]:
         sys.argv = transform_cmds(sys.argv)
         bokeh_entry_point()
