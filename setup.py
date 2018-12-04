@@ -107,7 +107,7 @@ class CustomInstallCommand(install):
         except ImportError as e:
             print("Custom model compilation failed with: %s" % e)
         install.run(self)
-        
+
 extras_require['all'] = sorted(set(sum(extras_require.values(), [])))
 
 # until pyproject.toml/equivalent is widely supported (setup_requires
