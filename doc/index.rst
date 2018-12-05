@@ -83,7 +83,7 @@ Usage
 
 Once you've installed Panel, you can get a copy of all the examples shown on this website::
 
-  panel --install-examples
+  panel examples
   cd panel-examples
 
 And then you can launch Jupyter Notebook to explore them::
