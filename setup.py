@@ -1,12 +1,14 @@
 #!/usr/bin/env python
 
 import os
+import sys
 import json
 import hashlib
 from setuptools import setup, find_packages
 from setuptools.command.develop import develop
 from setuptools.command.install import install
 
+import pyct.build
 
 def get_setup_version(reponame):
     """
@@ -164,4 +166,10 @@ setup_args = dict(
 
 
 if __name__=="__main__":
+
+    example_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                'panel','examples')
+    if 'develop' not in sys.argv:
+        pyct.build.examples(example_path, __file__, force=True)
+
     setup(**setup_args)
