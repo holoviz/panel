@@ -34,6 +34,7 @@ install_requires = [
     'param >=1.8.1',
     'pyviz_comms >=0.6.0',
     'markdown',
+    'pyct >=0.4.4',
     'testpath<0.4' # temporary due to pip issue?
 ]
 
