@@ -9,7 +9,7 @@ A high-level app and dashboarding solution for Python
 
 Panel is an `open-source <https://github.com/pyviz/panel/blob/master/LICENSE.txt>`_ Python library.  
 
-Panel provides tools for easily composing widgets, plots, tables, and other viewable objects and controls into control panels, apps, and dashboards. Panel works with visualizations from `Bokeh <http://bokeh.pydata.org>`__, `Matplotlib <matplotlib.org>`__, `HoloViews <http://holoviews.org>`__, and other Python plotting libraries, making them instantly viewable either individually or when combined with interactive widgets that control them. Panel works equally well in `Jupyter Notebooks <http://jupyter.org>`__, for creating quick data-exploration tools, or as standalone deployed apps and dashboards, and allows you to easily switch between those contexts as needed. 
+Panel provides tools for easily composing widgets, plots, tables, and other viewable objects and controls into web-based control panels, apps, and dashboards. Panel works with visualizations from `Matplotlib <matplotlib.org>`__, `Bokeh <http://bokeh.pydata.org>`__, `HoloViews <http://holoviews.org>`__, and many other Python plotting libraries, making them instantly viewable either individually or when combined with interactive widgets that control them. 
 
 Panel makes it simple to make:
 
@@ -27,6 +27,10 @@ them into simple, one-off apps to do a specific exploratory task. The
 same objects can then be reused in more complex combinations to build
 more ambitious apps, while always sharing the same code that works well
 on its own.
+
+Compared to other tookits for building interactive web apps, Panel is unique in that lets you move the same code freely between an interactive `Jupyter Notebook <http://jupyter.org>`__ prompt and a fully deployable standalone server.  That way you can easily switch between exploring your data, building visualizations, adding custom interactivity, sharing with non-technical users, and back again at any point, using the same tools and the same code throughout. Panel thus helps support your entire workflow, so that you never have to commit to only one way of using your data and your analyses, and don't have to rewrite your code just to make it usable in a different way.
+
+Some example Panel apps: (click on the title to see the code in each case)
 
 
 .. raw:: html
