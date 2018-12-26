@@ -385,7 +385,7 @@ class Checkbox(Widget):
     def _process_param_change(self, msg):
         msg = super(Checkbox, self)._process_param_change(msg)
         if 'value' in msg:
-             msg['active'] = [0] if msg.pop('value', None) else []
+            msg['active'] = [0] if msg.pop('value', None) else []
         if 'title' in msg:
             msg['labels'] = [msg.pop('title')]
         return msg
@@ -443,7 +443,7 @@ class RadioButtons(Select):
 
     def _process_property_change(self, msg):
         msg = super(Select, self)._process_property_change(msg)
-        if msg.get('active', []):
+        if 'active' in msg:
             msg['value'] = [list(self.options.values())[a] for a in msg.pop('active')]
         return msg
 
