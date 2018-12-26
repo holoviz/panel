@@ -343,14 +343,13 @@ def test_toggle_buttons(document, comm):
     widget.active = [0, 2]
     select._comm_change({'active': [0, 2]})
     assert select.value == ['A', object]
-    
-    widget.active = []
-    select._comm_change({'active': []})
-    assert select.value == []
 
     select.value = [object, 'A']
     assert widget.active == [2, 0]
 
+    widget.active = []
+    select._comm_change({'active': []})
+    assert select.value == []
 
 def test_radio_buttons(document, comm):
     select = RadioButtons(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
