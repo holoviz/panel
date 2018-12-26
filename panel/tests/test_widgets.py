@@ -351,6 +351,32 @@ def test_toggle_buttons(document, comm):
     widget.active = []
     select._comm_change({'active': []})
     assert select.value == []
+    
+def test_toggle_group_error_init(document, comm):
+    
+    with pytest.raises(ValueError):
+        select = ToggleGroup(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
+                           value=1, name='RadioButtonGroup',
+                           widget_type='button', behavior='check')
+        select._get_model(document, comm=comm)
+    
+    with pytest.raises(ValueError):
+        select = ToggleGroup(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
+                               value=[1, object], name='RadioButtonGroup',
+                               widget_type='button', behavior='radio')
+        select._get_model(document, comm=comm)
+        
+    with pytest.raises(ValueError):
+        select = ToggleGroup(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
+                               value=[1, object], name='RadioButtonGroup',
+                               widget_type='buttons')
+        select._get_model(document, comm=comm)
+        
+    with pytest.raises(ValueError):
+        select = ToggleGroup(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
+                               value=[1, object], name='RadioButtonGroup',
+                               behavior='checks')
+        select._get_model(document, comm=comm)
 
 
 def test_toggle_group_check(document, comm):
@@ -358,7 +384,7 @@ def test_toggle_group_check(document, comm):
     for widget_type in ToggleGroup._widgets_type:
         select = ToggleGroup(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
                                value=[1, object], name='CheckButtonGroup',
-                               _widgets_type=widget_type)
+                               widget_type=widget_type, behavior='check')
         
         box = select._get_model(document, comm=comm)
     
@@ -389,8 +415,8 @@ def test_toggle_group_radio(document, comm):
     
     for widget_type in ToggleGroup._widgets_type:
         select = ToggleGroup(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
-                               value=1, name='CheckButtonGroup',
-                               _widgets_type=widget_type)
+                               value=1, name='RadioButtonGroup',
+                               widget_type=widget_type, behavior='radio')
         
         box = select._get_model(document, comm=comm)
     

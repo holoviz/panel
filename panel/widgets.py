@@ -489,14 +489,18 @@ class CheckBoxGroup(_CheckGroupBase):
 class ToggleGroup(Select):
     
     _widgets_type = ['button', 'box']
+    _behaviors = ['check', 'radio']
     __doc__ = """TODO: explain widget type and behavior depends of type of values"""
 
-    def __new__(cls, widget_type='button', **params):
+    def __new__(cls, widget_type='button', behavior='check', **params):
         if widget_type not in ToggleGroup._widgets_type:
             raise ValueError('widget_type {} is not valid. Valid options are {}'
-                             .format(widget_type, ToggleGroup.widget_type))
+                             .format(widget_type, ToggleGroup._widgets_type))
+        if behavior not in ToggleGroup._behaviors:
+            raise ValueError('behavior {} is not valid. Valid options are {}'
+                             .format(widget_type, ToggleGroup._behaviors))
         
-        if type(params.get('value',[])) is list:
+        if behavior is 'check':
             if widget_type == 'button':
                 return CheckButtonGroup(**params)
             else:
