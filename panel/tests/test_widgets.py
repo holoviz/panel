@@ -355,28 +355,25 @@ def test_toggle_buttons(document, comm):
 def test_toggle_group_error_init(document, comm):
     
     with pytest.raises(ValueError):
-        select = ToggleGroup(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
-                           value=1, name='RadioButtonGroup',
-                           widget_type='button', behavior='check')
-        select._get_model(document, comm=comm)
-    
+        ToggleGroup(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
+                    value=1, name='RadioButtonGroup',
+                    widget_type='button', behavior='check')
+
     with pytest.raises(ValueError):
         select = ToggleGroup(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
-                               value=[1, object], name='RadioButtonGroup',
-                               widget_type='button', behavior='radio')
+                             value=[1, object], name='RadioButtonGroup',
+                             widget_type='button', behavior='radio')
         select._get_model(document, comm=comm)
         
     with pytest.raises(ValueError):
         select = ToggleGroup(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
-                               value=[1, object], name='RadioButtonGroup',
-                               widget_type='buttons')
-        select._get_model(document, comm=comm)
+                             value=[1, object], name='RadioButtonGroup',
+                             widget_type='buttons')
         
     with pytest.raises(ValueError):
         select = ToggleGroup(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
-                               value=[1, object], name='RadioButtonGroup',
-                               behavior='checks')
-        select._get_model(document, comm=comm)
+                             value=[1, object], name='RadioButtonGroup',
+                             behavior='checks')
 
 
 def test_toggle_group_check(document, comm):
