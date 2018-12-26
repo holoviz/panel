@@ -11,7 +11,8 @@ from panel.widgets import (
     TextInput, StaticText, FloatSlider, IntSlider, RangeSlider,
     LiteralInput, Checkbox, Select, MultiSelect, Button, Toggle,
     DatePicker, DateRangeSlider, DiscreteSlider, DatetimeInput,
-    RadioButtons, ToggleButtons, CrossSelector, DiscretePlayer
+    RadioButtons, ToggleButtons, CrossSelector, DiscretePlayer,
+    ToggleGroup
 )
 
 
@@ -350,6 +351,63 @@ def test_toggle_buttons(document, comm):
     widget.active = []
     select._comm_change({'active': []})
     assert select.value == []
+
+
+def test_toggle_group_check(document, comm):
+    
+    for widget_type in ToggleGroup._widgets_type:
+        select = ToggleGroup(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
+                               value=[1, object], name='CheckButtonGroup',
+                               _widgets_type=widget_type)
+        
+        box = select._get_model(document, comm=comm)
+    
+        assert isinstance(box, WidgetBox)
+    
+        widget = box.children[0]
+        assert isinstance(widget, select._widget_type)
+        assert widget.active == [1, 2]
+        assert widget.labels == ['A', '1', 'C']
+    
+        widget.active = [2]
+        select._comm_change({'active': [2]})
+        assert select.value == [object]
+    
+        widget.active = [0, 2]
+        select._comm_change({'active': [0, 2]})
+        assert select.value == ['A', object]
+    
+        select.value = [object, 'A']
+        assert widget.active == [2, 0]
+    
+        widget.active = []
+        select._comm_change({'active': []})
+        assert select.value == []
+
+
+def test_toggle_group_radio(document, comm):
+    
+    for widget_type in ToggleGroup._widgets_type:
+        select = ToggleGroup(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
+                               value=1, name='CheckButtonGroup',
+                               _widgets_type=widget_type)
+        
+        box = select._get_model(document, comm=comm)
+    
+        assert isinstance(box, WidgetBox)
+    
+        widget = box.children[0]
+        assert isinstance(widget, select._widget_type)
+        assert widget.active == 1
+        assert widget.labels == ['A', '1', 'C']
+    
+        widget.active = 2
+        select._comm_change({'active': 2})
+        assert select.value == object
+        
+        select.value = 'A'
+        assert widget.active == 0
+
 
 def test_radio_buttons(document, comm):
     select = RadioButtons(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
