@@ -18,7 +18,8 @@ from bokeh.models.widgets import (
     RangeSlider as _BkRangeSlider, DatePicker as _BkDatePicker,
     MultiSelect as _BkMultiSelect, Div as _BkDiv,Button as _BkButton,
     Toggle as _BkToggle, AutocompleteInput as _BkAutocompleteInput,
-    CheckboxButtonGroup as _BkCheckboxButtonGroup
+    CheckboxButtonGroup as _BkCheckboxButtonGroup,
+    RadioButtonGroup as _BkRadioButtonGroup, RadioGroup as _BkRadioBoxGroup
 )
 
 from .layout import Column, Row, Spacer, WidgetBox # noqa
@@ -425,11 +426,38 @@ class Select(Widget):
         return msg
 
 
-class RadioButtons(Select):
+class _RadioGroupBase(Select):
+    
+    def _process_param_change(self, msg):
+        msg = super(Select, self)._process_param_change(msg)
+        mapping = OrderedDict([(hashable(v), k) for k, v in self.options.items()])
+        if msg.get('value') is not None:
+            msg['active'] = list(mapping).index(msg.pop('value'))
+        if 'options' in msg:
+            msg['labels'] = list(msg.pop('options'))
+        msg.pop('title', None)
+        return msg
+
+    def _process_property_change(self, msg):
+        msg = super(Select, self)._process_property_change(msg)
+        if 'active' in msg:
+            msg['value'] = list(self.options.values())[msg.pop('active')]
+        return msg
+
+
+class RadioButtonGroup(_RadioGroupBase):
+    
+    _widget_type = _BkRadioButtonGroup
+
+
+class RadioBoxGroup(_RadioGroupBase):
+    
+    _widget_type = _BkRadioBoxGroup
+
+
+class _CheckGroupBase(Select):
 
     value = param.List(default=[])
-
-    _widget_type = _BkCheckboxGroup
 
     def _process_param_change(self, msg):
         msg = super(Select, self)._process_param_change(msg)
@@ -448,9 +476,58 @@ class RadioButtons(Select):
         return msg
 
 
-class ToggleButtons(RadioButtons):
-
+class CheckButtonGroup(_CheckGroupBase):
+    
     _widget_type = _BkCheckboxButtonGroup
+
+
+class CheckBoxGroup(_CheckGroupBase):
+    
+    _widget_type = _BkCheckboxGroup
+    
+
+class ToggleGroup(Select):
+    
+    _widgets_type = ['button', 'box']
+    __doc__ = """TODO: explain widget type and behavior depends of type of values"""
+
+    def __new__(cls, widget_type='button', **params):
+        if widget_type not in ToggleGroup._widgets_type:
+            raise ValueError('widget_type {} is not valid. Valid options are {}'
+                             .format(widget_type, ToggleGroup.widget_type))
+        
+        if type(params.get('value',[])) is list:
+            if widget_type == 'button':
+                return CheckButtonGroup(**params)
+            else:
+                return CheckBoxGroup(**params)
+        else:
+            if widget_type == 'button':
+                return RadioButtonGroup(**params)
+            else:
+                return RadioBoxGroup(**params)
+
+
+class RadioButtons(CheckBoxGroup):
+    
+    __doc__ = "Deprecated!!! see ToggleGroup"
+
+    def __new__(cls, **params):
+        from warnings import warn
+        warn("Deprecated class, will be removed in future.\nSee ToggleGroup",
+             category=DeprecationWarning)
+        return CheckBoxGroup(**params)
+
+
+class ToggleButtons(CheckButtonGroup):
+    
+    __doc__ = "Deprecated!!! see ToggleGroup"
+
+    def __new__(cls, **params):
+        from warnings import warn
+        warn("Deprecated class, will be removed in future.\nSee ToggleGroup",
+             category=DeprecationWarning)
+        return CheckButtonGroup(**params)
 
 
 class MultiSelect(Select):
