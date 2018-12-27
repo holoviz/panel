@@ -487,10 +487,23 @@ class CheckBoxGroup(_CheckGroupBase):
     
 
 class ToggleGroup(Select):
+    """This class is a factory of ToggleGroup widgets.
+    
+    A ToggleGroup is a group of widgets which can be switched 'on' or 'off'.
+    
+    Two types of widgets are available through the widget_type argument :
+        - 'button' (default)
+        - 'box'
+        
+    Two different behaviors are available through behavior argument:
+        - 'check' (default) : Any number of widgets can be selected. In this case value is a 'list' of objects
+        - 'radio' : One and only one widget is switched on. In this case value is an 'object'
+    
+    """
     
     _widgets_type = ['button', 'box']
     _behaviors = ['check', 'radio']
-    __doc__ = """TODO: explain widget type and behavior depends of type of values"""
+    
 
     def __new__(cls, widget_type='button', behavior='check', **params):
         if widget_type not in ToggleGroup._widgets_type:
@@ -513,8 +526,9 @@ class ToggleGroup(Select):
 
 
 class RadioButtons(CheckBoxGroup):
-    
-    __doc__ = "Deprecated!!! see ToggleGroup"
+    """"
+    Deprecated, use ToggleGroup instead.
+    """
 
     def __new__(cls, **params):
         from warnings import warn
@@ -524,9 +538,10 @@ class RadioButtons(CheckBoxGroup):
 
 
 class ToggleButtons(CheckButtonGroup):
+    """"
+    Deprecated, use ToggleGroup instead.
+    """
     
-    __doc__ = "Deprecated!!! see ToggleGroup"
-
     def __new__(cls, **params):
         from warnings import warn
         warn("Deprecated class, will be removed in future.\nSee ToggleGroup",
