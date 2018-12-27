@@ -7,6 +7,7 @@ from bokeh.models import (Div, Row as BkRow, Tabs as BkTabs,
                           WidgetBox as BkWidgetBox, Spacer as BkSpacer)
 from panel.layout import Column, Row, Tabs, Spacer
 from panel.pane import Bokeh, Pane
+from panel.param import Param
 
 
 def get_div(box):
@@ -301,3 +302,24 @@ def test_spacer(document, comm):
 
     spacer.height = 400
     assert model.height == 400
+    
+    
+def test_layout_with_param_setitem(document, comm):
+    import param
+    class TestClass(param.Parameterized):
+        select = param.ObjectSelector(default=0, objects=[0,1])
+     
+        def __init__(self, **params):
+            super(TestClass, self).__init__(**params)
+            self._layout = Row(Param(self.param, parameters=['select']),
+                               self.select)
+         
+        @param.depends('select', watch=True)
+        def _load(self):
+            self._layout[-1] = self.select
+        
+    test = TestClass()
+    model = test._layout._get_model(document, comm=comm)
+    test.select = 1
+    assert model.children[1].text == '<pre>1</pre>'
+    
