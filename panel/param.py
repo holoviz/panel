@@ -373,7 +373,10 @@ class Param(PaneBase):
         return OrderedDict(widgets)
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        return self.layout._get_model(doc, root, parent, comm)
+        model = self.layout._get_model(doc, root, parent, comm)
+        if root:
+            self._models[root.ref['id']] = model
+        return model
 
 
 
