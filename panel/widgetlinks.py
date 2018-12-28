@@ -1,6 +1,7 @@
 """
 """
 import param
+import weakref
 
 from .layout import Viewable, Panel
 from .widgets import Widget
@@ -8,6 +9,7 @@ from .holoviews import HoloViews
 
 from holoviews.plotting.links import Link
 from bokeh.models import CustomJS
+from panel.holoviews import generate_hvelems_bkplots_map
 
 
 class WidgetLink(Link):
@@ -20,6 +22,7 @@ class WidgetLink(Link):
     bokeh model and property the widget value will be
     linked to.
     """
+    registry = weakref.WeakKeyDictionary()
     
     code = param.String(default=None)
     
@@ -86,20 +89,15 @@ def find_links(root_view, root_model):
     if not widget_views or not hv_views:
         return
     
-    #mapping holoview element -> bokeh plot
-    from collections import defaultdict
-    map_hve_bk = defaultdict(list)
-    for hv_view in hv_views:
-        if root_model.ref['id'] in hv_view._plots: 
-            map_hve_bk[hv_view.object].append(hv_view._plots[root_model.ref['id']]) 
+    map_hve_bk = generate_hvelems_bkplots_map(root_model, hv_views)
                     
-    found = [(link, src_widget, tgt_bk) for src_widget in widget_views if src_widget in Link.registry
-             for link in Link.registry[src_widget]
+    found = [(link, src_widget, tgt_bk) for src_widget in widget_views if src_widget in WidgetLink.registry
+             for link in WidgetLink.registry[src_widget]
              for tgt_bk in map_hve_bk[link.target]]
     
     callbacks = []
     for link, src_widget, tgt_bk in found:
-        cb = Link._callbacks['bokeh'][type(link)]
+        cb = WidgetLink._callbacks['bokeh'][type(link)]
         if src_widget is None or (getattr(link, '_requires_target', False)
                                 and tgt_bk is None):
             continue

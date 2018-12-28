@@ -208,6 +208,36 @@ class HoloViews(PaneBase):
         return widgets, dim_values
 
 
+from holoviews.plotting.links import Link
+import weakref
+
+class HoloViewsLink(Link):
+    """Link between HoloViews elements
+    """
+    registry = weakref.WeakKeyDictionary()
+
+class RangeAxesLink(HoloViewsLink):
+    """
+    The RangeAxesLink sets up a link betweenthe axes of the source
+    plot and the axes on the target plot. By default it will
+    link along the x-axis but using the axes parameter both axes may
+    be linked to the tool.
+    """
+
+    axes = param.ListSelector(default=['x'], objects=['x', 'y'], doc="""
+        Which axes to link the tool to.""")
+
+class RangeAxesLinkCallback(param.Parameterized):
+    """
+    Links source plot axes to the specified axes on the target plot
+    """
+
+    def __init__(self, root_model, link, source_plot, target_plot):
+        if 'x' in link.axes:
+            target_plot.handles['plot'].x_range = source_plot.handles['plot'].x_range
+        if 'y' in link.axes:
+            target_plot.handles['plot'].y_range = source_plot.handles['plot'].y_range
+
 
 def is_bokeh_element_plot(plot):
     """
@@ -217,6 +247,18 @@ def is_bokeh_element_plot(plot):
     from holoviews.plotting.plot import GenericElementPlot, GenericOverlayPlot
     return (plot.renderer.backend == 'bokeh' and isinstance(plot, GenericElementPlot)
             and not isinstance(plot, GenericOverlayPlot))
+
+def generate_hvelems_bkplots_map(root_model, hv_views):
+    #mapping holoview element -> bokeh plot
+    from collections import defaultdict
+    map_hve_bk = defaultdict(list)
+    for hv_view in hv_views:
+        if root_model.ref['id'] in hv_view._plots: 
+            bk_plots = hv_view._plots[root_model.ref['id']].traverse(lambda x: x, [is_bokeh_element_plot])
+            for plot in bk_plots:
+                for hv_elem in plot.link_sources:
+                    map_hve_bk[hv_elem].append(plot) 
+    return map_hve_bk
 
 
 def find_links(root_view, root_model):
@@ -232,31 +274,24 @@ def find_links(root_view, root_model):
     if not hv_views:
         return
     
-    #mapping holoview element -> bokeh plot
-    from collections import defaultdict
-    map_hve_bk = defaultdict(list)
-    for hv_view in hv_views:
-        if root_model.ref['id'] in hv_view._plots: 
-            map_hve_bk[hv_view.object].append(hv_view._plots[root_model.ref['id']]) 
-
-    try:
-        from holoviews.plotting.links import Link
-    except:
-        return
+    map_hve_bk = generate_hvelems_bkplots_map(root_model, hv_views)
     
     from itertools import product
-    found = [(link, src_plot, tgt_plot) for hv_view in hv_views 
-             if hv_view.object in Link.registry
-             for link in Link.registry[hv_view.object]
-             for src_plot, tgt_plot in product(map_hve_bk[hv_view.object],map_hve_bk[link.target])]
+    found = [(link, src_plot, tgt_plot) for hv_elem in map_hve_bk.keys() 
+             if hv_elem in HoloViewsLink.registry
+             for link in HoloViewsLink.registry[hv_elem]
+             for src_plot, tgt_plot in product(map_hve_bk[hv_elem], map_hve_bk[link.target])]
 
     callbacks = []
     for link, src_plot, tgt_plot in found:
-        cb = Link._callbacks['bokeh'][type(link)]
+        cb = HoloViewsLink._callbacks['bokeh'][type(link)]
         if src_plot is None or (getattr(link, '_requires_target', False)
                                 and tgt_plot is None):
             continue
         callbacks.append(cb(root_model, link, src_plot, tgt_plot))
     return callbacks
 
+
+RangeAxesLink.register_callback(backend='bokeh',
+                                callback = RangeAxesLinkCallback)
 Viewable._preprocessing_hooks.append(find_links)
