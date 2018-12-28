@@ -214,20 +214,24 @@ class HoloViews(PaneBase):
 
 
 class PanelLink(HvLink):
-    """Link between HoloViews elements
     """
+    Link between HoloViews elements containing Bokeh plots
+    """
+    
     registry = weakref.WeakKeyDictionary()
+
 
 class RangeAxesLink(PanelLink):
     """
-    The RangeAxesLink sets up a link betweenthe axes of the source
+    The RangeAxesLink sets up a link between the axes of the source
     plot and the axes on the target plot. By default it will
     link along the x-axis but using the axes parameter both axes may
     be linked to the tool.
     """
 
-    axes = param.ListSelector(default=['x'], objects=['x', 'y'], doc="""
+    axes = param.ListSelector(default=['x', 'y'], objects=['x', 'y'], doc="""
         Which axes to link the tool to.""")
+
 
 class RangeAxesLinkCallback(param.Parameterized):
     """
@@ -249,6 +253,7 @@ def is_bokeh_element_plot(plot):
     from holoviews.plotting.plot import GenericElementPlot, GenericOverlayPlot
     return (plot.renderer.backend == 'bokeh' and isinstance(plot, GenericElementPlot)
             and not isinstance(plot, GenericOverlayPlot))
+
 
 def generate_hvelems_bkplots_map(root_model, hv_views):
     #mapping holoview element -> bokeh plot
