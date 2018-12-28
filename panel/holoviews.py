@@ -224,40 +224,31 @@ def find_links(root_view, root_model):
     Traverses the supplied Viewable searching for Links between any
     HoloViews based panes.
     """
-    if not isinstance(root_view, Panel):
+    if not isinstance(root_view, Panel) or not root_model:
         return
 
     hv_views = root_view.select(HoloViews)
-    root_plots = [plot for view in hv_views for plot in view._plots.values()
-                  if getattr(plot, 'root', None) is root_model]
-
-    if not root_plots:
+    
+    if not hv_views:
         return
+    
+    #mapping holoview element -> bokeh plot
+    from collections import defaultdict
+    map_hve_bk = defaultdict(list)
+    for hv_view in hv_views:
+        if root_model.ref['id'] in hv_view._plots: 
+            map_hve_bk[hv_view.object].append(hv_view._plots[root_model.ref['id']]) 
 
     try:
         from holoviews.plotting.links import Link
-        from holoviews.plotting.bokeh.callbacks import LinkCallback
     except:
         return
-
-    plots = [(plot, root_plot) for root_plot in root_plots
-             for plot in root_plot.traverse(lambda x: x, [is_bokeh_element_plot])]
-
-    potentials = [(LinkCallback.find_link(plot), root_plot)
-                  for plot, root_plot in plots]
-    source_links = [p for p in potentials if p[0] is not None]
-    found = []
-    for (plot, links), root_plot in source_links:
-        for link in links:
-            if link.target is None:
-                # If link has no target don't look further
-                found.append((link, plot, None))
-                continue
-            potentials = [LinkCallback.find_link(plot, link) for plot, inner_root in plots
-                          if inner_root is not root_plot]
-            tgt_links = [p for p in potentials if p is not None]
-            if tgt_links:
-                found.append((link, plot, tgt_links[0][0]))
+    
+    from itertools import product
+    found = [(link, src_plot, tgt_plot) for hv_view in hv_views 
+             if hv_view.object in Link.registry
+             for link in Link.registry[hv_view.object]
+             for src_plot, tgt_plot in product(map_hve_bk[hv_view.object],map_hve_bk[link.target])]
 
     callbacks = []
     for link, src_plot, tgt_plot in found:
@@ -267,6 +258,5 @@ def find_links(root_view, root_model):
             continue
         callbacks.append(cb(root_model, link, src_plot, tgt_plot))
     return callbacks
-
 
 Viewable._preprocessing_hooks.append(find_links)

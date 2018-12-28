@@ -78,10 +78,8 @@ class WidgetLinkCallback(param.Parameterized):
         pass
     
 def find_links(root_view, root_model):
-    if not isinstance(root_view, Panel):
+    if not isinstance(root_view, Panel) or not root_model:
         return
-    
-    from collections import defaultdict
     
     widget_views = root_view.select(Widget)
     hv_views = root_view.select(HoloViews)
@@ -89,6 +87,7 @@ def find_links(root_view, root_model):
         return
     
     #mapping holoview element -> bokeh plot
+    from collections import defaultdict
     map_hve_bk = defaultdict(list)
     for hv_view in hv_views:
         if root_model.ref['id'] in hv_view._plots: 
