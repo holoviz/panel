@@ -9,11 +9,16 @@ import sys
 from collections import OrderedDict
 
 import param
+import weakref
 
 from .layout import Panel, WidgetBox
 from .pane import PaneBase, Pane
 from .viewable import Viewable
 from .widgets import Player
+
+from functools import partial
+from holoviews.plotting.links import Link as HvLink
+
 
 
 class HoloViews(PaneBase):
@@ -208,15 +213,12 @@ class HoloViews(PaneBase):
         return widgets, dim_values
 
 
-from holoviews.plotting.links import Link
-import weakref
-
-class HoloViewsLink(Link):
+class PanelLink(HvLink):
     """Link between HoloViews elements
     """
     registry = weakref.WeakKeyDictionary()
 
-class RangeAxesLink(HoloViewsLink):
+class RangeAxesLink(PanelLink):
     """
     The RangeAxesLink sets up a link betweenthe axes of the source
     plot and the axes on the target plot. By default it will
@@ -261,7 +263,7 @@ def generate_hvelems_bkplots_map(root_model, hv_views):
     return map_hve_bk
 
 
-def find_links(root_view, root_model):
+def find_links(root_view, root_model, linker=HvLink):
     """
     Traverses the supplied Viewable searching for Links between any
     HoloViews based panes.
@@ -278,13 +280,13 @@ def find_links(root_view, root_model):
     
     from itertools import product
     found = [(link, src_plot, tgt_plot) for hv_elem in map_hve_bk.keys() 
-             if hv_elem in HoloViewsLink.registry
-             for link in HoloViewsLink.registry[hv_elem]
+             if hv_elem in linker.registry
+             for link in linker.registry[hv_elem]
              for src_plot, tgt_plot in product(map_hve_bk[hv_elem], map_hve_bk[link.target])]
 
     callbacks = []
     for link, src_plot, tgt_plot in found:
-        cb = HoloViewsLink._callbacks['bokeh'][type(link)]
+        cb = linker._callbacks['bokeh'][type(link)]
         if src_plot is None or (getattr(link, '_requires_target', False)
                                 and tgt_plot is None):
             continue
@@ -294,4 +296,6 @@ def find_links(root_view, root_model):
 
 RangeAxesLink.register_callback(backend='bokeh',
                                 callback = RangeAxesLinkCallback)
+
 Viewable._preprocessing_hooks.append(find_links)
+Viewable._preprocessing_hooks.append(partial(find_links, linker=PanelLink))
