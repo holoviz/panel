@@ -5,11 +5,10 @@ import weakref
 
 from .layout import Viewable, Panel
 from .widgets import Widget
-from .holoviews import HoloViews
+from .holoviews import HoloViews, is_bokeh_element_plot
 
 from holoviews.plotting.links import Link
 from bokeh.models import CustomJS
-from panel.holoviews import generate_hvelems_bkplots_map
 
 
 class WidgetLink(Link):
@@ -79,8 +78,47 @@ class WidgetLinkCallback(param.Parameterized):
                 
     def validate(self):
         pass
-    
-def find_links(root_view, root_model):
+
+
+class RangeAxesLink(Link):
+    """
+    The RangeAxesLink sets up a link between the axes of the source
+    plot and the axes on the target plot. By default it will
+    link along the x-axis but using the axes parameter both axes may
+    be linked to the tool.
+    """
+
+    axes = param.ListSelector(default=['x', 'y'], objects=['x', 'y'], doc="""
+        Which axes to link the tool to.""")
+
+
+class RangeAxesLinkCallback(param.Parameterized):
+    """
+    Links source plot axes to the specified axes on the target plot
+    """
+
+    def __init__(self, root_model, link, source_plot, target_plot):
+        if target_plot is None:
+            return
+        if 'x' in link.axes:
+            target_plot.handles['plot'].x_range = source_plot.handles['plot'].x_range
+        if 'y' in link.axes:
+            target_plot.handles['plot'].y_range = source_plot.handles['plot'].y_range
+
+
+def generate_hvelems_bkplots_map(root_model, hv_views):
+    #mapping holoview element -> bokeh plot
+    from collections import defaultdict
+    map_hve_bk = defaultdict(list)
+    for hv_view in hv_views:
+        if root_model.ref['id'] in hv_view._plots: 
+            bk_plots = hv_view._plots[root_model.ref['id']].traverse(lambda x: x, [is_bokeh_element_plot])
+            for plot in bk_plots:
+                for hv_elem in plot.link_sources:
+                    map_hve_bk[hv_elem].append(plot) 
+    return map_hve_bk
+
+def find_widget_hv_links(root_view, root_model):
     if not isinstance(root_view, Panel) or not root_model:
         return
     
@@ -105,8 +143,9 @@ def find_links(root_view, root_model):
     return callbacks
 
 
-             
+RangeAxesLink.register_callback(backend='bokeh',
+                                callback = RangeAxesLinkCallback)
 WidgetLink.register_callback(backend='bokeh',
                              callback = WidgetLinkCallback)
 
-Viewable._preprocessing_hooks.append(find_links)
+Viewable._preprocessing_hooks.append(find_widget_hv_links)

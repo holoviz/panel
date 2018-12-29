@@ -9,16 +9,11 @@ import sys
 from collections import OrderedDict
 
 import param
-import weakref
 
 from .layout import Panel, WidgetBox
 from .pane import PaneBase, Pane
 from .viewable import Viewable
 from .widgets import Player
-
-from functools import partial
-from holoviews.plotting.links import Link as HvLink
-
 
 
 class HoloViews(PaneBase):
@@ -213,38 +208,6 @@ class HoloViews(PaneBase):
         return widgets, dim_values
 
 
-class PanelLink(HvLink):
-    """
-    Link between HoloViews elements containing Bokeh plots
-    """
-    
-    registry = weakref.WeakKeyDictionary()
-
-
-class RangeAxesLink(PanelLink):
-    """
-    The RangeAxesLink sets up a link between the axes of the source
-    plot and the axes on the target plot. By default it will
-    link along the x-axis but using the axes parameter both axes may
-    be linked to the tool.
-    """
-
-    axes = param.ListSelector(default=['x', 'y'], objects=['x', 'y'], doc="""
-        Which axes to link the tool to.""")
-
-
-class RangeAxesLinkCallback(param.Parameterized):
-    """
-    Links source plot axes to the specified axes on the target plot
-    """
-
-    def __init__(self, root_model, link, source_plot, target_plot):
-        if 'x' in link.axes:
-            target_plot.handles['plot'].x_range = source_plot.handles['plot'].x_range
-        if 'y' in link.axes:
-            target_plot.handles['plot'].y_range = source_plot.handles['plot'].y_range
-
-
 def is_bokeh_element_plot(plot):
     """
     Checks whether plotting instance is a HoloViews ElementPlot rendered
@@ -255,43 +218,49 @@ def is_bokeh_element_plot(plot):
             and not isinstance(plot, GenericOverlayPlot))
 
 
-def generate_hvelems_bkplots_map(root_model, hv_views):
-    #mapping holoview element -> bokeh plot
-    from collections import defaultdict
-    map_hve_bk = defaultdict(list)
-    for hv_view in hv_views:
-        if root_model.ref['id'] in hv_view._plots: 
-            bk_plots = hv_view._plots[root_model.ref['id']].traverse(lambda x: x, [is_bokeh_element_plot])
-            for plot in bk_plots:
-                for hv_elem in plot.link_sources:
-                    map_hve_bk[hv_elem].append(plot) 
-    return map_hve_bk
-
-
-def find_links(root_view, root_model, linker=HvLink):
+def find_links(root_view, root_model):
     """
     Traverses the supplied Viewable searching for Links between any
     HoloViews based panes.
     """
-    if not isinstance(root_view, Panel) or not root_model:
+    if not isinstance(root_view, Panel):
         return
 
     hv_views = root_view.select(HoloViews)
-    
-    if not hv_views:
+    root_plots = [plot for view in hv_views for plot in view._plots.values()
+                  if getattr(plot, 'root', None) is root_model]
+
+    if not root_plots:
         return
-    
-    map_hve_bk = generate_hvelems_bkplots_map(root_model, hv_views)
-    
-    from itertools import product
-    found = [(link, src_plot, tgt_plot) for hv_elem in map_hve_bk.keys() 
-             if hv_elem in linker.registry
-             for link in linker.registry[hv_elem]
-             for src_plot, tgt_plot in product(map_hve_bk[hv_elem], map_hve_bk[link.target])]
+
+    try:
+        from holoviews.plotting.links import Link
+        from holoviews.plotting.bokeh.callbacks import LinkCallback
+    except:
+        return
+
+    plots = [(plot, root_plot) for root_plot in root_plots
+             for plot in root_plot.traverse(lambda x: x, [is_bokeh_element_plot])]
+
+    potentials = [(LinkCallback.find_link(plot), root_plot)
+                  for plot, root_plot in plots]
+    source_links = [p for p in potentials if p[0] is not None]
+    found = []
+    for (plot, links), root_plot in source_links:
+        for link in links:
+            if link.target is None:
+                # If link has no target don't look further
+                found.append((link, plot, None))
+                continue
+            potentials = [LinkCallback.find_link(plot, link) for plot, inner_root in plots
+                          if inner_root is not root_plot]
+            tgt_links = [p for p in potentials if p is not None]
+            if tgt_links:
+                found.append((link, plot, tgt_links[0][0]))
 
     callbacks = []
     for link, src_plot, tgt_plot in found:
-        cb = linker._callbacks['bokeh'][type(link)]
+        cb = Link._callbacks['bokeh'][type(link)]
         if src_plot is None or (getattr(link, '_requires_target', False)
                                 and tgt_plot is None):
             continue
@@ -299,8 +268,4 @@ def find_links(root_view, root_model, linker=HvLink):
     return callbacks
 
 
-RangeAxesLink.register_callback(backend='bokeh',
-                                callback = RangeAxesLinkCallback)
-
 Viewable._preprocessing_hooks.append(find_links)
-Viewable._preprocessing_hooks.append(partial(find_links, linker=PanelLink))

@@ -7,7 +7,7 @@ from bokeh.plotting import Figure
 from panel.layout import Column, Row
 from panel.holoviews import HoloViews
 from panel.widgets import FloatSlider
-from panel.widgetlinks import WidgetLink 
+from panel.links import WidgetLink 
 
 try:
     import holoviews as hv
@@ -19,7 +19,7 @@ hv_available = pytest.mark.skipif(hv is None, reason="requires holoviews")
 
 @hv_available
 def test_holoviews_axes_range_link(document, comm):
-    from panel.holoviews import RangeAxesLink
+    from panel.links import RangeAxesLink
     
     c1 = hv.Curve([])
     c2 = hv.Curve([])
