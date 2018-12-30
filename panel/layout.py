@@ -69,6 +69,7 @@ class Panel(Reactive):
                     for pane in old:
                         if pane not in self.objects:
                             pane._cleanup(root)
+                    self._preprocess(root) #preprocess links between new elements
                 processed = self._process_param_change(msg)
                 model.update(**processed)
 
