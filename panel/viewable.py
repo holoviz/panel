@@ -101,7 +101,7 @@ class Viewable(param.Parameterized):
 
     def _preprocess(self, root):
         for hook in self._preprocessing_hooks:
-            root = hook(self, root)
+            hook(self, root)
 
     def _repr_mimebundle_(self, include=None, exclude=None):
         Viewable._comm_manager = JupyterCommManager
