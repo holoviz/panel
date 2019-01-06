@@ -6,7 +6,8 @@ objects and their widgets and support for Links
 from __future__ import absolute_import
 
 import sys
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
+from functools import partial
 
 import param
 
@@ -208,7 +209,6 @@ class HoloViews(PaneBase):
         return widgets, dim_values
 
 
-
 def is_bokeh_element_plot(plot):
     """
     Checks whether plotting instance is a HoloViews ElementPlot rendered
@@ -219,45 +219,38 @@ def is_bokeh_element_plot(plot):
             and not isinstance(plot, GenericOverlayPlot))
 
 
-def find_links(root_view, root_model):
+def generate_hvelems_bkplots_map(root_model, hv_views):
+    #mapping holoview element -> bokeh plot
+    map_hve_bk = defaultdict(list)
+    for hv_view in hv_views:
+        if root_model.ref['id'] in hv_view._plots: 
+            bk_plots = hv_view._plots[root_model.ref['id']].traverse(lambda x: x, [is_bokeh_element_plot])
+            for plot in bk_plots:
+                for hv_elem in plot.link_sources:
+                    map_hve_bk[hv_elem].append(plot) 
+    return map_hve_bk
+
+
+def find_links(root_view, root_model, Link):
     """
     Traverses the supplied Viewable searching for Links between any
     HoloViews based panes.
     """
-    if not isinstance(root_view, Panel):
+    if not isinstance(root_view, Panel) or not root_model:
         return
 
     hv_views = root_view.select(HoloViews)
-    root_plots = [plot for view in hv_views for plot in view._plots.values()
-                  if getattr(plot, 'root', None) is root_model]
-
-    if not root_plots:
+    
+    if not hv_views:
         return
-
-    try:
-        from holoviews.plotting.links import Link
-        from holoviews.plotting.bokeh.callbacks import LinkCallback
-    except:
-        return
-
-    plots = [(plot, root_plot) for root_plot in root_plots
-             for plot in root_plot.traverse(lambda x: x, [is_bokeh_element_plot])]
-
-    potentials = [(LinkCallback.find_link(plot), root_plot)
-                  for plot, root_plot in plots]
-    source_links = [p for p in potentials if p[0] is not None]
-    found = []
-    for (plot, links), root_plot in source_links:
-        for link in links:
-            if link.target is None:
-                # If link has no target don't look further
-                found.append((link, plot, None))
-                continue
-            potentials = [LinkCallback.find_link(plot, link) for plot, inner_root in plots
-                          if inner_root is not root_plot]
-            tgt_links = [p for p in potentials if p is not None]
-            if tgt_links:
-                found.append((link, plot, tgt_links[0][0]))
+    
+    map_hve_bk = generate_hvelems_bkplots_map(root_model, hv_views)
+    
+    from itertools import product
+    found = [(link, src_plot, tgt_plot) for hv_elem in map_hve_bk.keys() 
+             if hv_elem in Link.registry
+             for link in Link.registry[hv_elem]
+             for src_plot, tgt_plot in product(map_hve_bk[hv_elem], map_hve_bk[link.target])]
 
     callbacks = []
     for link, src_plot, tgt_plot in found:
@@ -269,4 +262,8 @@ def find_links(root_view, root_model):
     return callbacks
 
 
-Viewable._preprocessing_hooks.append(find_links)
+try:
+    from holoviews.plotting.links import Link
+    Viewable._preprocessing_hooks.append(partial(find_links, Link=Link))
+except ModuleNotFoundError:
+    pass
