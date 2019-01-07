@@ -6,7 +6,7 @@ objects and their widgets and support for Links
 from __future__ import absolute_import
 
 import sys
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 
 import param
 
@@ -121,6 +121,7 @@ class HoloViews(PaneBase):
         return model
 
     def _link_widgets(self, pane, root, comm):
+
         def update_plot(change):
             from holoviews.core.util import cross_index
             from holoviews.plotting.bokeh.plot import BokehPlot
@@ -137,8 +138,10 @@ class HoloViews(PaneBase):
                     plot.update(key)
                     plot.push()
                 else:
+
                     def update_plot():
                         plot.update(key)
+
                     plot.document.add_next_tick_callback(update_plot)
             else:
                 plot.update(key)
@@ -182,7 +185,7 @@ class HoloViews(PaneBase):
                 else:
                     raise ValueError('Explicit widget definitions expected '
                                      'to be a widget instance or type, %s '
-                                     'dimension widget declared as %s.' %
+                                     'dimension widget declared as %s.' % 
                                      (dim, widget))
             if vals:
                 if all(isnumeric(v) for v in vals):
@@ -208,7 +211,6 @@ class HoloViews(PaneBase):
         return widgets, dim_values
 
 
-
 def is_bokeh_element_plot(plot):
     """
     Checks whether plotting instance is a HoloViews ElementPlot rendered
@@ -217,6 +219,20 @@ def is_bokeh_element_plot(plot):
     from holoviews.plotting.plot import GenericElementPlot, GenericOverlayPlot
     return (plot.renderer.backend == 'bokeh' and isinstance(plot, GenericElementPlot)
             and not isinstance(plot, GenericOverlayPlot))
+
+
+def generate_panel_bokeh_map(root_model, panel_views):
+    """
+    mapping panel elements to its bokeh models
+    """
+    map_hve_bk = defaultdict(list)
+    for pane in panel_views:
+        if root_model.ref['id'] in pane._models: 
+            bk_plots = pane._plots[root_model.ref['id']].traverse(lambda x: x, [is_bokeh_element_plot])
+            for plot in bk_plots:
+                for hv_elem in plot.link_sources:
+                    map_hve_bk[hv_elem].append(plot) 
+    return map_hve_bk
 
 
 def find_links(root_view, root_model):
