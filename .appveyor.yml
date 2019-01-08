@@ -1,0 +1,18 @@
+environment:
+  global:
+    CHANS_DEV: "-c pyviz/label/dev -c jbednar -c bokeh/label/dev"
+  matrix:
+    - PY: "3.6"
+      CONDA: "C:\\Miniconda36-x64"
+
+install:
+  - "SET PATH=%CONDA%;%CONDA%\\Scripts;%PATH%"
+  - "conda install -y -c pyviz pyctdev && doit ecosystem_setup"
+  - "doit develop_install -o recommended -o tests %CHANS_DEV%"
+
+build: off
+  
+test_script: 
+  - "doit test_all_recommended"
+
+
