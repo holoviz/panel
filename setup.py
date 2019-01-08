@@ -34,7 +34,7 @@ def get_setup_version(reponame):
 install_requires = [
     'bokeh >=1.0.0',
     'param >=1.8.1',
-    'pyviz_comms >=0.6.0',
+    'pyviz_comms >=0.7.0',
     'markdown',
     'pyct >=0.4.4',
     'testpath<0.4' # temporary due to pip issue?
