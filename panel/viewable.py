@@ -47,6 +47,7 @@ class Viewable(param.Parameterized):
         super(Viewable, self).__init__(**params)
         self._documents = {}
         self._models = {}
+        self._found_links = set()
 
     def __repr__(self, depth=0):
         return '{cls}({params})'.format(cls=type(self).__name__,

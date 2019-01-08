@@ -257,7 +257,37 @@ def test_holoviews_link_across_panes(document, comm):
 
     range_tool = row.select_one({'type': RangeTool})
     assert isinstance(range_tool, RangeTool)
-    range_tool.x_range = p2.x_range
+    assert range_tool.x_range == p2.x_range
+    
+
+@hv_available
+def test_holoviews_link_after_adding_item(document, comm):
+    from bokeh.models.tools import RangeTool
+    from holoviews.plotting.links import RangeToolLink
+
+    c1 = hv.Curve([])
+    c2 = hv.Curve([])
+    
+    RangeToolLink(c1, c2)
+    
+    layout = Row(c1)
+    row = layout._get_root(document, comm=comm)
+    
+    assert len(row.children) == 1
+    p1, = row.children
+    
+    assert isinstance(p1, Figure)
+    range_tool = row.select_one({'type': RangeTool})
+    assert range_tool is None
+    
+    layout.append(c2)
+    _, p2 = row.children
+    assert isinstance(p2, Figure)
+    range_tool = row.select_one({'type': RangeTool})
+    assert isinstance(range_tool, RangeTool)
+    assert range_tool.x_range == p2.x_range
+    
+    
 
 
 @hv_available
@@ -290,4 +320,4 @@ def test_holoviews_link_within_pane(document, comm):
 
     range_tool = row.select_one({'type': RangeTool})
     assert isinstance(range_tool, RangeTool)
-    range_tool.x_range = p2.x_range
+    assert range_tool.x_range == p2.x_range
