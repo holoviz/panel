@@ -6,6 +6,8 @@ from __future__ import absolute_import
 
 import re
 import ast
+
+from base64 import b64decode
 from collections import OrderedDict
 from datetime import datetime
 
@@ -23,7 +25,7 @@ from bokeh.models.widgets import (
 )
 
 from .layout import Column, Row, Spacer, WidgetBox # noqa
-from .models.widgets import Player as _BkPlayer
+from .models.widgets import Player as _BkPlayer, FileInput as _BkFileInput
 from .viewable import Reactive
 from .util import as_unicode, push, value_as_datetime, hashable
 
@@ -87,6 +89,25 @@ class TextInput(Widget):
     placeholder = param.String(default='')
 
     _widget_type = _BkTextInput
+
+
+class FileInput(Widget):
+
+    filetype = param.String(default='')
+
+    value = param.Parameter(default='')
+
+    _widget_type = _BkFileInput
+
+    _rename = {'name': None, 'filetype': None}
+
+    def _process_property_change(self, msg):
+        msg = super(FileInput, self)._process_property_change(msg)
+        if 'value' in msg:
+            header, content = msg['value'].split(",", 1)
+            msg['filetype'] = header.split(':')[1].split(';')[0]
+            msg['value'] = b64decode(content)
+        return msg
 
 
 class StaticText(Widget):
@@ -429,7 +450,7 @@ class Select(Widget):
 
 
 class _RadioGroupBase(Select):
-    
+
     def _process_param_change(self, msg):
         msg = super(Select, self)._process_param_change(msg)
         mapping = OrderedDict([(hashable(v), k) for k, v in self.options.items()])
@@ -448,12 +469,12 @@ class _RadioGroupBase(Select):
 
 
 class RadioButtonGroup(_RadioGroupBase):
-    
+
     _widget_type = _BkRadioButtonGroup
 
 
 class RadioBoxGroup(_RadioGroupBase):
-    
+
     _widget_type = _BkRadioBoxGroup
 
 
@@ -479,33 +500,33 @@ class _CheckGroupBase(Select):
 
 
 class CheckButtonGroup(_CheckGroupBase):
-    
+
     _widget_type = _BkCheckboxButtonGroup
 
 
 class CheckBoxGroup(_CheckGroupBase):
-    
+
     _widget_type = _BkCheckboxGroup
-    
+
 
 class ToggleGroup(Select):
     """This class is a factory of ToggleGroup widgets.
-    
+
     A ToggleGroup is a group of widgets which can be switched 'on' or 'off'.
-    
+
     Two types of widgets are available through the widget_type argument :
         - 'button' (default)
         - 'box'
-        
+
     Two different behaviors are available through behavior argument:
         - 'check' (default) : Any number of widgets can be selected. In this case value is a 'list' of objects
         - 'radio' : One and only one widget is switched on. In this case value is an 'object'
-    
+
     """
-    
+
     _widgets_type = ['button', 'box']
     _behaviors = ['check', 'radio']
-    
+
 
     def __new__(cls, widget_type='button', behavior='check', **params):
         if widget_type not in ToggleGroup._widgets_type:
@@ -514,7 +535,7 @@ class ToggleGroup(Select):
         if behavior not in ToggleGroup._behaviors:
             raise ValueError('behavior {} is not valid. Valid options are {}'
                              .format(widget_type, ToggleGroup._behaviors))
-        
+
         if behavior is 'check':
             if widget_type == 'button':
                 return CheckButtonGroup(**params)
@@ -543,7 +564,7 @@ class ToggleButtons(CheckButtonGroup):
     """"
     Deprecated, use ToggleGroup instead.
     """
-    
+
     def __new__(cls, **params):
         from warnings import warn
         warn("Deprecated class, will be removed in future.\nSee ToggleGroup",
