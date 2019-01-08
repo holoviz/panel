@@ -17,13 +17,13 @@ from .util import load_notebook as _load_nb
 from .viewable import Viewable
 
 import param
-from pyviz_comms import JupyterCommManager
+from pyviz_comms import JupyterCommManager, extension as _pyviz_extension
 
 __version__ = str(param.version.Version(fpath=__file__, archive_commit="$Format:%h$",
                                         reponame="panel"))
 
 
-class extension(param.ParameterizedFunction):
+class extension(_pyviz_extension):
     """
     Initializes the pyviz notebook extension to allow plotting with
     bokeh and enable comms.
@@ -63,11 +63,14 @@ class extension(param.ParameterizedFunction):
             else:
                 hv.Store.current_backend = 'bokeh'
 
-    @classmethod
-    def _process_comm_msg(cls, msg):
-        """
-        Processes comm messages to handle global actions such as
-        cleaning up plots.
-        """
-        viewable, model = Viewable._views.pop(msg['id'])
-        viewable._cleanup(model)
+
+def _cleanup_panel(msg_id):
+    """
+    A cleanup action which is called when a plot is deleted in the notebook
+    """
+    if msg_id not in Viewable._views:
+        return
+    viewable, model = Viewable._views.pop(msg_id)
+    viewable._cleanup(model)
+
+extension.add_delete_action(_cleanup_panel)
