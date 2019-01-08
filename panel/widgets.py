@@ -293,9 +293,11 @@ class LiteralInput(Widget):
             msg['value'] = value
         msg['name'] = msg.get('title', self.name).replace(self._state, '') + new_state
         self._state = new_state
+        self.param.trigger('name')
         return msg
 
     def _process_param_change(self, msg):
+        msg = super(LiteralInput, self)._process_param_change(msg)
         msg.pop('type', None)
         if 'value' in msg:
             msg['value'] = '' if msg['value'] is None else as_unicode(msg['value'])
