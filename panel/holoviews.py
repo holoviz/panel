@@ -216,7 +216,9 @@ def is_bokeh_element_plot(plot):
     Checks whether plotting instance is a HoloViews ElementPlot rendered
     with the bokeh backend.
     """
-    from holoviews.plotting.plot import GenericElementPlot, GenericOverlayPlot
+    from holoviews.plotting.plot import GenericElementPlot, GenericOverlayPlot, Plot
+    if not isinstance(plot, Plot):
+        return False
     return (plot.renderer.backend == 'bokeh' and isinstance(plot, GenericElementPlot)
             and not isinstance(plot, GenericOverlayPlot))
 
