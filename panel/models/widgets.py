@@ -1,6 +1,6 @@
 import os
 
-from bokeh.core.properties import Int, Override, Enum, String
+from bokeh.core.properties import Int, Override, Enum, Any
 from bokeh.models import Widget
 
 from ..util import CUSTOM_MODELS
@@ -36,7 +36,7 @@ class FileInput(Widget):
 
     __implementation__ = os.path.join(os.path.dirname(__file__), 'fileinput.ts')
 
-    value = String(help="Selected file")
+    value = Any(help="Encoded file data")
 
 
 CUSTOM_MODELS['panel.models.widgets.Player'] = Player

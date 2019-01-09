@@ -7,7 +7,7 @@ from __future__ import absolute_import
 import re
 import ast
 
-from base64 import b64decode
+from base64 import b64decode, b64encode
 from collections import OrderedDict
 from datetime import datetime
 
@@ -93,19 +93,31 @@ class TextInput(Widget):
 
 class FileInput(Widget):
 
-    filetype = param.String(default='')
+    mime_type = param.String(default=None)
 
-    value = param.Parameter(default='')
+    value = param.Parameter(default=None)
 
     _widget_type = _BkFileInput
 
-    _rename = {'name': None, 'filetype': None}
+    _rename = {'name': None, 'mime_type': None}
+
+    def _process_param_change(self, msg):
+        msg = super(FileInput, self)._process_param_change(msg)
+        if 'value' in msg:
+            if self.mime_type:
+                template = 'data:{mime};base64,{data}'
+                data = b64encode(msg['value'])
+                msg['value'] = template.format(data=data.decode('utf-8'),
+                                               mime=self.mime_type)
+            else:
+                msg['value'] = ''
+        return msg
 
     def _process_property_change(self, msg):
         msg = super(FileInput, self)._process_property_change(msg)
         if 'value' in msg:
             header, content = msg['value'].split(",", 1)
-            msg['filetype'] = header.split(':')[1].split(';')[0]
+            msg['mime_type'] = header.split(':')[1].split(';')[0]
             msg['value'] = b64decode(content)
         return msg
 
