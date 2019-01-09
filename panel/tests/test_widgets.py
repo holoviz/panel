@@ -5,14 +5,14 @@ from datetime import datetime
 
 from bokeh.layouts import WidgetBox
 from bokeh.models import Div as BkDiv, Slider as BkSlider
-from panel.models.widgets import Player as BkPlayer
+from panel.models.widgets import Player as BkPlayer, FileInput as BkFileInput
 from panel.util import block_comm
 from panel.widgets import (
     TextInput, StaticText, FloatSlider, IntSlider, RangeSlider,
     LiteralInput, Checkbox, Select, MultiSelect, Button, Toggle,
     DatePicker, DateRangeSlider, DiscreteSlider, DatetimeInput,
     RadioButtons, ToggleButtons, CrossSelector, DiscretePlayer,
-    ToggleGroup
+    ToggleGroup, FileInput
 )
 
 
@@ -663,3 +663,20 @@ def test_discrete_player(document, comm):
 
     discrete_player.value = 100
     assert widget.value == 3
+
+
+def test_file_input(document, comm):
+    file_input = FileInput()
+
+    box = file_input._get_model(document, comm=comm)
+
+    assert isinstance(box, WidgetBox)
+
+    widget = box.children[0]
+    assert isinstance(widget, BkFileInput)
+
+    file_input._comm_change({'value': 'data:text/plain;base64,U29tZSB0ZXh0Cg=='})
+    assert file_input.value == b'Some text\n'
+
+    file_input.param.trigger('value')
+    assert widget.value == 'data:text/plain;base64,U29tZSB0ZXh0Cg=='
