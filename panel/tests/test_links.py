@@ -19,7 +19,7 @@ def test_pnwidget_hvplot_links(document, comm):
     size_widget = FloatSlider(value=5, start=1, end=10)
     points1 = hv.Points([1, 2, 3])
       
-    WidgetLink(size_widget, points1, target_model='glyph', target_property='size')
+    size_widget.jslink(target=points1, model='glyph', property='size')
       
     row = Row(points1, size_widget)
     model = row._get_root(document, comm=comm)
@@ -34,8 +34,8 @@ def test_pnwidget_hvplot_links(document, comm):
     widgetlink_customjs = slider.js_property_callbacks['change:value'][-1]
     assert widgetlink_customjs.args['source'] is slider
     assert widgetlink_customjs.args['target'] is scatter
-    assert widgetlink_customjs.args['target_model'] == 'glyph'
-    assert widgetlink_customjs.args['target_property'] == 'size'
+    assert widgetlink_customjs.args['model'] == 'glyph'
+    assert widgetlink_customjs.args['property'] == 'size'
  
  
 @hv_available 
@@ -57,8 +57,8 @@ def test_bkwidget_hvplot_links(document, comm):
     widgetlink_customjs = slider.js_property_callbacks['change:value'][-1]
     assert widgetlink_customjs.args['source'] is slider
     assert widgetlink_customjs.args['target'] is scatter
-    assert widgetlink_customjs.args['target_model'] == 'glyph'
-    assert widgetlink_customjs.args['target_property'] == 'size'
+    assert widgetlink_customjs.args['model'] == 'glyph'
+    assert widgetlink_customjs.args['property'] == 'size'
 
 
 def test_bkwidget_bkplot_links(document, comm):
@@ -78,4 +78,4 @@ def test_bkwidget_bkplot_links(document, comm):
     widgetlink_customjs = slider.js_property_callbacks['change:value'][-1]
     assert widgetlink_customjs.args['source'] is slider
     assert widgetlink_customjs.args['target'] is scatter.glyph
-    assert widgetlink_customjs.args['target_property'] == 'size'
+    assert widgetlink_customjs.args['property'] == 'size'

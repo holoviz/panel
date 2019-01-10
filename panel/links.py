@@ -5,12 +5,9 @@ import weakref
 import sys
 
 from .layout import Viewable, Panel
-from .widgets import Widget
 from .holoviews import HoloViews, generate_panel_bokeh_map, is_bokeh_element_plot
-from .pane import Bokeh
 
-from collections import defaultdict
-from bokeh.models import (CustomJS, Widget as BkWidget, Model as BkModel)
+from bokeh.models import (CustomJS, Model as BkModel)
 
 
 class Link(param.Parameterized):
@@ -47,7 +44,6 @@ class Link(param.Parameterized):
         self._target = None if target is None else weakref.ref(target)
         super(Link, self).__init__(**params)
         self.link()
-
 
     @classmethod
     def register_callback(cls, callback):
@@ -90,7 +86,6 @@ class Link(param.Parameterized):
         links = self.registry.get(self.source)
         if self in links:
             links.pop(links.index(self))
-
     
     @classmethod
     def _process_links(cls, root_view, root_model):
@@ -124,7 +119,6 @@ class Link(param.Parameterized):
         return callbacks
 
 
-
 class WidgetLink(Link):
     """
     Links a panel Widget's value property to a property on the target
@@ -145,7 +139,6 @@ class WidgetLink(Link):
 
     # Whether the link requires a target
     _requires_target = True
-
 
 
 class LinkCallback(param.Parameterized):
@@ -207,11 +200,11 @@ class LinkCallback(param.Parameterized):
             if is_bokeh_element_plot(source):
                 for k, v in source.handles.items():
                     if isinstance(v, BkModel):
-                        references['source_'+k] = v
+                        references['source_' + k] = v
             if is_bokeh_element_plot(target):
                 for k, v in target.handles.items():
                     if isinstance(v, BkModel):
-                        references['target_'+k] = v
+                        references['target_' + k] = v
 
         self._initialize_models(link, src_model, tgt_model)
         self._process_references(references)
@@ -274,7 +267,7 @@ class WidgetLinkCallback(LinkCallback):
             setattr(tgt_model, link.target_property, src_model.value)
         if tgt_model is None and not link.code:
             raise ValueError('Model could not be resolved on target '
-                             '%s and no custom code was specified.' %
+                             '%s and no custom code was specified.' % 
                              type(self.target).__name__)
 
     def _process_references(self, references):
