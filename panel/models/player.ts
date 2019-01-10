@@ -58,43 +58,43 @@ export class PlayerView extends WidgetView {
 
     const first = document.createElement('button')
     first.style = button_style
-    first.appendChild(document.createTextNode('❚◀◀'))
+    first.appendChild(document.createTextNode('\u275a\u25c0\u25c0'))
     first.onclick = () => this.first_frame()
     button_div.appendChild(first)
 
     const previous = document.createElement('button')
     previous.style = button_style
-    previous.appendChild(document.createTextNode('❚◀'))
+    previous.appendChild(document.createTextNode('\u275a\u25c0'))
     previous.onclick = () => this.previous_frame()
     button_div.appendChild(previous)
 
     const reverse = document.createElement('button')
     reverse.style = button_style
-    reverse.appendChild(document.createTextNode('◀'))
+    reverse.appendChild(document.createTextNode('\u25c0'))
     reverse.onclick = () => this.reverse_animation()
     button_div.appendChild(reverse)
 
     const pause = document.createElement('button')
     pause.style = button_style
-    pause.appendChild(document.createTextNode('❚❚'))
+    pause.appendChild(document.createTextNode('\u275a\u275a'))
     pause.onclick = () => this.pause_animation()
     button_div.appendChild(pause)
 
     const play = document.createElement('button')
     play.style = button_style
-    play.appendChild(document.createTextNode('▶'))
+    play.appendChild(document.createTextNode('\u25b6'))
     play.onclick = () => this.play_animation()
     button_div.appendChild(play)
 
     const next = document.createElement('button')
     next.style = button_style
-    next.appendChild(document.createTextNode('▶❚'))
+    next.appendChild(document.createTextNode('\u25b6\u275a'))
     next.onclick = () => this.next_frame()
     button_div.appendChild(next)
 
     const last = document.createElement('button')
     last.style = button_style
-    last.appendChild(document.createTextNode('▶▶❚'))
+    last.appendChild(document.createTextNode('\u25b6\u25b6\u275a'))
     last.onclick = () => this.last_frame()
     button_div.appendChild(last)
 
