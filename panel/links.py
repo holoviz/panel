@@ -259,7 +259,7 @@ class WidgetLinkCallback(LinkCallback):
     target['{value}'] = source.value
     """
 
-    def _get_target_spec(cls, link):
+    def _get_target_spec(self, link):
         return link.target_model
 
     def _initialize_models(self, link, src_model, tgt_model):
