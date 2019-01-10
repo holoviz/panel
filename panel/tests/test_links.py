@@ -4,7 +4,7 @@ import pytest
 
 from panel.layout import Row
 from panel.holoviews import HoloViews
-from panel.widgets import FloatSlider
+from panel.widgets import FloatSlider, RangeSlider
 from panel.links import WidgetLink
 
 try:
@@ -79,3 +79,32 @@ def test_bkwidget_bkplot_links(document, comm):
     assert widgetlink_customjs.args['source'] is slider
     assert widgetlink_customjs.args['target'] is scatter.glyph
     assert widgetlink_customjs.args['property'] == 'size'
+
+
+def test_widgetlink_with_customcode(document, comm):
+    range_widget = RangeSlider(start=0., end=1.)
+    curve = hv.Curve([])
+    code = """
+        target.start = source.value[0]
+        target.end = source.value[1]
+    """
+    range_widget.jslink(target=curve, model='x_range', code=code)
+    row = Row(curve, range_widget)
+    
+    range_widget.value = (0.5, 0.7)
+    model = row._get_root(document, comm=comm)
+    hv_views = row.select(HoloViews)
+    widg_views = row.select(RangeSlider)
+      
+    assert len(hv_views) == 1
+    assert len(widg_views) == 1
+    range_slider = widg_views[0]._models[model.ref['id']]
+    x_range = hv_views[0]._plots[model.ref['id']].handles['x_range']
+      
+    widgetlink_customjs = range_slider.js_property_callbacks['change:value'][-1]
+    assert widgetlink_customjs.args['source'] is range_slider
+    assert widgetlink_customjs.args['target'] is x_range
+    assert widgetlink_customjs.args['model'] == 'x_range'
+    assert widgetlink_customjs.args['property'] == None
+    assert widgetlink_customjs.code == code
+    
