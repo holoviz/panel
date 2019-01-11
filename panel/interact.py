@@ -264,7 +264,7 @@ class interactive(PaneBase):
             return widget
 
         # No idea...
-        return None
+        return fixed(abbrev)
 
     @staticmethod
     def widget_from_single_value(o, name):
@@ -280,7 +280,7 @@ class interactive(PaneBase):
             min, max, value = _get_min_max_value(None, None, o)
             return FloatSlider(value=o, start=min, end=max, name=name)
         else:
-            return fixed(o)
+            return None
 
     @staticmethod
     def widget_from_tuple(o, name, default=empty):
