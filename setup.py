@@ -59,6 +59,7 @@ extras_require = {
         'nbsmoke >=0.2.0',
         'pytest-cov',
         # For Panes.ipynb
+        'hvplot',
         'plotly',
         'altair',
         'vega_datasets'
