@@ -98,9 +98,9 @@ class Link(param.Parameterized):
         if not linkable:
             return
 
-        found = [(link, src, link.target) for src in linkable if src in cls.registry
-                 for link in cls.registry[src] if link.target in linkable or
-                 not link._requires_target]
+        found = [(link, src, link.target) for src in linkable
+                 for link in cls.registry.get(src, [])
+                 if link.target in linkable or not link._requires_target]
 
         if 'holoviews' in sys.modules:
             hv_views = root_view.select(HoloViews)
