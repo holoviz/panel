@@ -45,9 +45,15 @@ Conversely, what Panel adds on top of Bokeh is full bidirectional communication 
 **A:** A global set of precedence values is used to ensure that the richest representation of a given object is chosen when you pass it to a Row or Column. However, you are also welcome to instantiate a specific Pane type explicitly, as in ``pn.Row(pane.HTML(obj, height=300))``.  If the default Pane type is fine but you still want to be able to pass specific options like width or height in this way, you can use the pn.panel function explicitly, as in  ``pn.Row(pn.panel(obj, height=300))``.
 
 
-**Q: Why doesn't my Matplotlib plot update in a notebook?**
+**Q: For Matplotlib plots in a notebook, why do I get no plot, two plots, or plots that don't update?**
 
-**A:** Matplotlib pyplot users often use `%matplotlib inline`, which shows plots as a "side effect" in a Jupyter notebook, rather than using the cell's return value like Python literals and other objects do. Panel callbacks like those accepted for `pn.interact()` work on the return value of the callback, which is then provided as the return value of the cell, and thus directly display without any requirements for side effects.  So, if you create a Matplotlib plot that would magically appear via `%matplotlib inline`, for Panel you need to ensure that the callback actually returns a value, rather than counting on this side effect.  Specifically, if you have a callback with some Matplotlib plotting calls, you can add `return plt.gcf()` to your callback to make the current figure be returned, which will ensure that your plot is displayed properly.
+**A:** Matplotlib behaves a bit strangely in notebooks. Normal Python objects like Python literals and containers display when they are returned as a cell's value, but Matplotlib figures have a textual representation by default but then (depending on the Matplotlib backend) also display like print statements, i.e. with a plot as a side effect rather than return value. To force predictable Panel-compatible behavior,
+   1. Ensure that your callback returns a figure object, not relying on side effects.
+   2. Either avoid calling `%matplotlib inline`, or else ensure that each figure you create is closed before you return it in a callback (so that Matplotlib inline won't try to display it itself). E.g.:
+       - fig = df.plot().get_figure()
+       - plt.close(fig)
+       - return fig
+   3. You may need to force Matplotlib to choose off-screen rendering as images by starting your code with ``import matplotlib as mpl ; mpl.use('Agg')`
 
 
 **Q: How does Panel relate to other widget/app/dashboard tools?**

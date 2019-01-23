@@ -44,7 +44,7 @@ _recommended = [
     'notebook >=5.4',
     'holoviews>=1.11.0',
     'matplotlib',
-    'pillow',
+    'pillow<5.4.0',
     'plotly'
 ]
 
@@ -59,6 +59,7 @@ extras_require = {
         'nbsmoke >=0.2.0',
         'pytest-cov',
         # For Panes.ipynb
+        'hvplot',
         'plotly',
         'altair',
         'vega_datasets'

@@ -264,7 +264,7 @@ class interactive(PaneBase):
             return widget
 
         # No idea...
-        return None
+        return fixed(abbrev)
 
     @staticmethod
     def widget_from_single_value(o, name):
