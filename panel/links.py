@@ -119,23 +119,21 @@ class Link(param.Parameterized):
         return callbacks
 
 
-class WidgetLink(Link):
+class GenericLink(Link):
     """
-    Links a panel Widget's value property to a property on the target
-    model.
-
-    The `target_model` and `target_property` define the bokeh model
-    and property the widget value will be linked to.
+    Links two panel object using generic source and target
+    specifications, which either map from a source model property
+    to a target model property or from a source model property to
+    a JS code snippet to be executed.
     """
 
-    code = param.String(default=None, doc="""
-        Custom code to define a between the source and target model.""")
+    code = param.Dict(default=None, doc="""
+        A dictionary mapping from a source specication to a JS code
+        snippet to be executed if the source property changes.""")
 
-    target_model = param.String(default=None, doc="""
-        The model spec defining the object to Link to.""")
-
-    target_property = param.String(default=None, doc="""
-        The property on the target_model to link to.""")
+    properties = param.Dict(default={}, doc="""
+        A dictionary mapping between source specification to target
+        specification.""")
 
     # Whether the link requires a target
     _requires_target = True
@@ -165,9 +163,17 @@ class LinkCallback(param.Parameterized):
             The resolved bokeh model
         """
         model = None
-        if ('holoviews' in sys.modules and is_bokeh_element_plot(obj) and
-            model_spec is not None):
-            return obj.handles[model_spec]
+        if 'holoviews' in sys.modules and is_bokeh_element_plot(obj):
+            if model_spec is None:
+                return obj.state
+            else:
+                model_specs = model_spec.split('.')
+                handle_spec = model_specs[0]
+                if len(model_specs) > 1:
+                    model_spec = '.'.join(model_specs[1:])
+                else:
+                    model_spec = None
+                model = obj.handles[handle_spec]
         elif isinstance(obj, Viewable):
             model = obj._models[root_model.ref['id']]
         elif isinstance(obj, BkModel):
@@ -183,16 +189,18 @@ class LinkCallback(param.Parameterized):
         self.source = source
         self.target = target
         self.validate()
+        specs = self._get_specs(link, source, target)
+        for src_spec, tgt_spec, code in specs:
+            self._init_callback(root_model, link, source, src_spec, target, tgt_spec, code)
 
+    def _init_callback(self, root_model, link, source, src_spec, target, tgt_spec, code):
         references = {k: v for k, v in link.get_param_values()
                       if k not in ('source', 'target', 'name', 'code')}
 
-        src_model = self._resolve_model(
-            root_model, source, self._get_source_spec(link))
+        src_model = self._resolve_model(root_model, source, src_spec[0])
         references['source'] = src_model
 
-        tgt_model = self._resolve_model(
-            root_model, target, self._get_target_spec(link))
+        tgt_model = self._resolve_model(root_model, target, tgt_spec[0])
         if tgt_model is not None:
             references['target'] = tgt_model
 
@@ -206,37 +214,33 @@ class LinkCallback(param.Parameterized):
                     if isinstance(v, BkModel):
                         references['target_' + k] = v
 
-        self._initialize_models(link, src_model, tgt_model)
+        self._initialize_models(link, source, src_model, src_spec[1], target, tgt_model, tgt_spec[1])
         self._process_references(references)
 
-        code = self._get_code(link)
+        if code is None:
+            code = self._get_code(link, source, src_spec[1], target, tgt_spec[1])
 
         src_cb = CustomJS(args=references, code=code)
-        changes, events = self._get_triggers(link)
+        changes, events = self._get_triggers(link, src_spec)
         for ch in changes:
             src_model.js_on_change(ch, src_cb)
         for ev in events:
             src_model.js_on_event(ev, src_cb)
 
-    def _get_source_spec(self, link):
+    def _get_specs(self, link):
         """
-        Returns the source model specification.
+        Return a list of spec tuples that define source and target
+        models.
         """
-        return None
+        return []
 
-    def _get_target_spec(self, link):
-        """
-        Returns the target model specification.
-        """
-        return None
-
-    def _get_code(self, link):
+    def _get_code(self, link, source, target):
         """
         Returns the code to be executed.
         """
         return ''
 
-    def _get_triggers(self, link):
+    def _get_triggers(self, link, src_spec):
         """
         Returns the changes and events that trigger the callback.
         """
@@ -253,18 +257,36 @@ class LinkCallback(param.Parameterized):
         pass
 
 
-class WidgetLinkCallback(LinkCallback):
+class GenericLinkCallback(LinkCallback):
 
-    source_code = """
-    target['{value}'] = source.value
-    """
+    def _get_specs(self, link, source, target):
+        if link.code:
+            for src_spec, code in link.code.items():
+                src_specs = src_spec.split('.')
+                if len(src_specs) > 1:
+                    src_spec = ('.'.join(src_specs[:-1]), src_specs[-1])
+                else:
+                    src_spec = (None, src_specs[0])
+            return [(src_spec, (None, None), code)]
 
-    def _get_target_spec(self, link):
-        return link.target_model
+        specs = []
+        for src_spec, tgt_spec in link.properties.items():
+            src_specs = src_spec.split('.')
+            if len(src_specs) > 1:
+                src_spec = ('.'.join(src_specs[:-1]), src_specs[-1])
+            else:
+                src_spec = (None, src_specs[0])
+            tgt_specs = tgt_spec.split('.')
+            if len(tgt_specs) > 1:
+                tgt_spec = ('.'.join(tgt_specs[:-1]), tgt_specs[-1])
+            else:
+                tgt_spec = (None, tgt_specs[0])
+            specs.append((src_spec, tgt_spec, None))
+        return specs
 
-    def _initialize_models(self, link, src_model, tgt_model):
-        if link.target_property and tgt_model:
-            setattr(tgt_model, link.target_property, src_model.value)
+    def _initialize_models(self, link, source, src_model, src_spec, target, tgt_model, tgt_spec):
+        if tgt_model and src_spec and tgt_spec:
+            setattr(tgt_model, tgt_spec, getattr(src_model, src_spec))
         if tgt_model is None and not link.code:
             raise ValueError('Model could not be resolved on target '
                              '%s and no custom code was specified.' % 
@@ -279,17 +301,13 @@ class WidgetLinkCallback(LinkCallback):
                 continue
             references[k[7:]] = references.pop(k)
 
-    def _get_code(self, link):
-        if link.code:
-            code = link.code
-        else:
-            code = self.source_code.format(value=link.target_property)
-        return code
+    def _get_code(self, link, source, src_spec, target, tgt_spec):
+        return 'target[%r] = source[%r]' % (tgt_spec, src_spec)
 
-    def _get_triggers(self, link):
-        return ['value'], []
+    def _get_triggers(self, link, src_spec):
+        return [src_spec[1]], []
 
 
-WidgetLink.register_callback(callback=WidgetLinkCallback)
+GenericLink.register_callback(callback=GenericLinkCallback)
 
 Viewable._preprocessing_hooks.append(Link._process_links)

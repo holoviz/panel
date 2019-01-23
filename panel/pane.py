@@ -253,6 +253,8 @@ class DivPaneBase(PaneBase):
     style = param.Dict(default=None, doc="""
         Dictionary of CSS property:value pairs to apply to this Div.""")
 
+    _rename = {'object': 'text'}
+
     def _get_properties(self):
         return {p : getattr(self,p) for p in ["width", "height", "sizing_mode", "style"]
                 if getattr(self,p) is not None}

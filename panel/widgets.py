@@ -61,36 +61,6 @@ class Widget(Reactive):
                       if v is not None}
         return self._process_param_change(properties)
 
-    def jslink(self, target, model=None, property=None, code=None):
-        """
-        Links the value of the widget to a property on the target.
-        Need to supply either code or a target property.
-
-        Parameters
-        ----------
-        target: HoloViews object or bokeh Model or panel Viewable
-            The target to link the value to
-        model: string
-            A string specification to select a subobject on the target
-            e.g. given a GlyphRenderer 'data_source.selected' would
-            select the Selection model on the ColumnDataSource. Also
-            supports lookup of handles on a HoloViews plot.
-        property: string
-            The property on the target model to link to.
-        code: string
-            Custom code which will be executed when the widget value
-            changes.
-
-        Returns
-        -------
-        link: WidgetLink
-            The WidgetLink which can be used unlink the widget and the
-            target model.
-        """
-        from .links import WidgetLink
-        return WidgetLink(self, target, target_model=model,
-                          target_property=property, code=code)
-
     def _get_model(self, doc, root=None, parent=None, comm=None):
         in_box = isinstance(parent, _BkWidgetBox)
         if not in_box:
