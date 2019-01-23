@@ -17,6 +17,9 @@ User Guide
 * `Parameters <Param.html>`_
    Using Param to express panels in a self-contained class.
 
+* `Linking <Links.html>`_
+   Defining links between Panel objects in Python and Javascript.
+
 * `Pipelines <Pipelines.html>`_
    Using Parameterized classes to declare linear workflows containing multiple panels.
 
@@ -30,4 +33,5 @@ User Guide
     Widgets <Widgets>
     Layouts <Layouts>
     Parameters <Param>
+    Linking <Links>
     Pipelines <Pipelines>
