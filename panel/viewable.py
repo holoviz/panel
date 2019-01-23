@@ -78,9 +78,10 @@ class Viewable(param.Parameterized):
         """
         Returns the root model and applies pre-processing hooks
 
+        Parameters
+        ----------
         doc: bokeh.Document
           Bokeh document the bokeh model will be attached to.
-
         comm: pyviz_comms.Comm
           Optional pyviz_comms when working in notebook
         """
@@ -92,11 +93,12 @@ class Viewable(param.Parameterized):
         """
         Clean up method which is called when a Viewable is destroyed.
 
+        Parameters
+        ----------
         model: bokeh.model.Model
-            Bokeh model for the view being cleaned up
-
+          Bokeh model for the view being cleaned up
         final: boolean
-            Whether the Viewable should be destroyed entirely
+          Whether the Viewable should be destroyed entirely
         """
 
     def _preprocess(self, root):
@@ -171,9 +173,8 @@ class Viewable(param.Parameterized):
         """
         Displays a bokeh server app inline in the notebook.
 
-        Arguments
+        Parameters
         ---------
-
         notebook_url: str
             URL to the notebook server
         """
@@ -183,22 +184,20 @@ class Viewable(param.Parameterized):
         """
         Starts a bokeh server and displays the Viewable in a new tab
 
-        Arguments
+        Parameters
         ---------
-
         port: int (optional)
             Allows specifying a specific port (default=0 chooses random open port)
         websocket_origin: str or list(str) (optional)
             A list of hosts that can connect to the websocket.
 
-            This is typically required when embedding a server app in an external
-            web site.
+            This is typically required when embedding a server app in
+            an external web site.
 
             If None, "localhost" is used.
 
         Returns
         -------
-
         server: bokeh Server instance
         """
         def modify_doc(doc):
