@@ -1,6 +1,6 @@
 import os
 
-from bokeh.core.properties import Int, Override, Enum, Any
+from bokeh.core.properties import Int, Float, Override, Enum, Any, Bool
 from bokeh.models import Widget
 
 from ..util import CUSTOM_MODELS
@@ -39,6 +39,21 @@ class FileInput(Widget):
     value = Any(help="Encoded file data")
 
 
+class Audio(Widget):
+
+    __implementation__ = os.path.join(os.path.dirname(__file__), 'audio.ts')
+
+    loop = Bool(False, help="""Whether the audio should loop""")
+
+    paused = Bool(False, help="""Whether the audio is paused""")
+
+    time = Float(0, help="""The current time stamp of the audio playback""")
+
+    value = Any(help="Encoded file data")
+
+    volume = Int(0, help="""The volume of the audio player.""")
+
+
 CUSTOM_MODELS['panel.models.widgets.Player'] = Player
 CUSTOM_MODELS['panel.models.widgets.FileInput'] = FileInput
-
+CUSTOM_MODELS['panel.models.widgets.Audio'] = Audio

@@ -5,6 +5,7 @@ communication between the rendered dashboard and the Widget parameters.
 from __future__ import absolute_import
 
 import re
+import os
 import ast
 
 from base64 import b64decode, b64encode
@@ -25,7 +26,8 @@ from bokeh.models.widgets import (
 )
 
 from .layout import Column, Row, Spacer, WidgetBox # noqa
-from .models.widgets import Player as _BkPlayer, FileInput as _BkFileInput
+from .models.widgets import (
+    Player as _BkPlayer, FileInput as _BkFileInput, Audio as _BkAudio)
 from .viewable import Reactive
 from .util import as_unicode, push, value_as_datetime, hashable
 
@@ -806,6 +808,41 @@ class DiscretePlayer(PlayerBase):
         if 'value' in msg:
             msg['value'] = values[msg['value']]
         return msg
+
+
+class Audio(Widget):
+
+    loop = param.Boolean(default=False, doc="""
+        Whether the audio should loop""")
+
+    time = param.Number(default=0, doc="""
+        The current timestamp""")
+
+    paused = param.Boolean(default=True, doc="""
+        Whether the audio is currently paused""")
+
+    value = param.String(default='', doc="""
+        The audio file either local or remote.""")
+
+    volume = param.Number(default=None, bounds=(0, 100), doc="""
+        The volume of the audio player.""")
+
+    _widget_type = _BkAudio
+
+    _rename = {'name': None}
+
+    def _process_param_change(self, msg):
+        msg = super(Audio, self)._process_param_change(msg)
+        if 'value' in msg and os.path.isfile(msg['value']):
+            fmt = msg['value'].split('.')[-1]
+            with open(msg['value'], 'rb') as f:
+                data = f.read()
+            template = 'data:audio/{mime};base64,{data}'
+            data = b64encode(data)
+            msg['value'] = template.format(data=data.decode('utf-8'),
+                                           mime=fmt)
+        return msg
+
 
 
 class CrossSelector(MultiSelect):
