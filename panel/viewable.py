@@ -341,7 +341,7 @@ class Reactive(Viewable):
             raise ValueError('Either supply a set of properties to '
                              'link as keywords or a set of JS code '
                              'callbacks, not both.')
-        elif not links and not callbacks:
+        elif not links and not code:
             raise ValueError('Declare parameters to link or a set of '
                              'callbacks, neither was defined.')
 
