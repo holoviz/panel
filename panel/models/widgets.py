@@ -47,7 +47,11 @@ class Audio(Widget):
 
     paused = Bool(False, help="""Whether the audio is paused""")
 
-    time = Float(0, help="""The current time stamp of the audio playback""")
+    time = Float(0, help="""
+        The current time stamp of the audio playback""")
+
+    throttle = Int(250, help="""
+        The frequency at which the time value is updated in milliseconds.""")
 
     value = Any(help="Encoded file data")
 

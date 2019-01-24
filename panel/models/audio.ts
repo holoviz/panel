@@ -9,16 +9,18 @@ export class AudioView extends WidgetView {
 
   initialize(options: any): void {
     super.initialize(options)
+    this._blocked = false
+    this._time = Date.now()
     this.render()
   }
 
   connect_signals(): void {
-    super.connect_signals()	
+    super.connect_signals()
     this.connect(this.model.change, () => this.render())
     this.connect(this.model.properties.loop.change, () => this.set_loop())
     this.connect(this.model.properties.paused.change, () => this.set_paused())
     this.connect(this.model.properties.time.change, () => this.set_time())
-    this.connect(this.model.properties.value.change, () => this.render())
+    this.connect(this.model.properties.value.change, () => this.set_value())
     this.connect(this.model.properties.volume.change, () => this.set_volume())
   }
 
@@ -35,13 +37,27 @@ export class AudioView extends WidgetView {
       this.audioEl.volume = this.model.volume/100
     else
       this.model.volume = this.audioEl.volume*100
-    this.audioEl.ontimeupdate = () => this.model.time = this.audioEl.currentTime
-	this.audioEl.onpause = () => this.model.paused = true
+    this.audioEl.onpause = () => this.model.paused = true
     this.audioEl.onplay = () => this.model.play = true
-    this.audioEl.onvolumechange = () => this.model.volume = this.audioEl.volume*100
+    this.audioEl.ontimeupdate = () => this.update_time(this)
+    this.audioEl.onvolumechange = () => this.update_volume(this)
     this.el.appendChild(this.audioEl)
-	if (!this.model.paused)
-	  this.audioEl.play()
+    if (!this.model.paused)
+      this.audioEl.play()
+  }
+
+  update_time(view): void {
+	if ((Date.now() - view._time) < view.model.throttle) {
+      return
+	}
+    view._blocked = true
+    view.model.time = view.audioEl.currentTime
+	view._time = Date.now()
+  }
+
+  update_volume(view): void {
+    view._blocked = true
+    view.model.volume = view.audioEl.volume*100
   }
 
   set_loop(): void {
@@ -56,11 +72,21 @@ export class AudioView extends WidgetView {
   }
 
   set_volume(): void {
+    if (this._blocked)
+      this._blocked = false
+      return
     this.audioEl.volume = this.model.volume/100
   }
-  
+
   set_time(): void {
+    if (this._blocked)
+      this._blocked = false
+      return
     this.audioEl.currentTime = this.model.time
+  }
+
+  set_value(): void {
+    this.audioEl.src = this.model.value
   }
 }
 
@@ -84,11 +110,12 @@ export abstract class Audio extends Widget {
     this.prototype.default_view = AudioView
 
     this.define({
-      loop:   [ p.Bool, false  ],
-      paused: [ p.Bool, true   ],
-      time:   [ p.Number, 0    ],
-      value:  [ p.Any,    ''   ],
-      volume: [ p.Number, null ],
+      loop:     [ p.Bool,   false ],
+      paused:   [ p.Bool,   true  ],
+      time:     [ p.Number, 0     ],
+	  throttle: [ p.Number, 250   ],
+      value:    [ p.Any,    ''    ],
+      volume:   [ p.Number, null  ],
     })
   }
 }
