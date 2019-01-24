@@ -78,9 +78,10 @@ class Viewable(param.Parameterized):
         """
         Returns the root model and applies pre-processing hooks
 
+        Parameters
+        ----------
         doc: bokeh.Document
           Bokeh document the bokeh model will be attached to.
-
         comm: pyviz_comms.Comm
           Optional pyviz_comms when working in notebook
         """
@@ -92,16 +93,17 @@ class Viewable(param.Parameterized):
         """
         Clean up method which is called when a Viewable is destroyed.
 
+        Parameters
+        ----------
         model: bokeh.model.Model
-            Bokeh model for the view being cleaned up
-
+          Bokeh model for the view being cleaned up
         final: boolean
-            Whether the Viewable should be destroyed entirely
+          Whether the Viewable should be destroyed entirely
         """
 
     def _preprocess(self, root):
         for hook in self._preprocessing_hooks:
-            root = hook(self, root)
+            hook(self, root)
 
     def _repr_mimebundle_(self, include=None, exclude=None):
         Viewable._comm_manager = JupyterCommManager
@@ -171,9 +173,8 @@ class Viewable(param.Parameterized):
         """
         Displays a bokeh server app inline in the notebook.
 
-        Arguments
+        Parameters
         ---------
-
         notebook_url: str
             URL to the notebook server
         """
@@ -183,22 +184,20 @@ class Viewable(param.Parameterized):
         """
         Starts a bokeh server and displays the Viewable in a new tab
 
-        Arguments
+        Parameters
         ---------
-
         port: int (optional)
             Allows specifying a specific port (default=0 chooses random open port)
         websocket_origin: str or list(str) (optional)
             A list of hosts that can connect to the websocket.
 
-            This is typically required when embedding a server app in an external
-            web site.
+            This is typically required when embedding a server app in
+            an external web site.
 
             If None, "localhost" is used.
 
         Returns
         -------
-
         server: bokeh Server instance
         """
         def modify_doc(doc):
@@ -266,28 +265,91 @@ class Reactive(Viewable):
         self._expecting = []
         self._callbacks = defaultdict(list)
 
-    def link(self, obj, **links):
+    def link(self, target, callbacks=None, **links):
         """
-        Links the parameters on this object to parameters on another
-        object.
+        Links the parameters on this object to attributes on another
+        object in Python. Supports two modes, either specify a mapping
+        between the source and target object parameters as keywords or
+        provide a dictionary of callbacks which maps from the source
+        parameter to a callback which is triggered when the parameter
+        changes.
 
-        obj: object
-
-        links: dict
+        Parameters
+        ----------
+        target: object
+            The target object of the link.
+        callbacks: dict
+            Maps from a parameter in the source object to a callback.
+        **links: dict
             Maps between parameters on this object to the parameters
             on the supplied object.
         """
+        if links and callbacks:
+            raise ValueError('Either supply a set of parameters to '
+                             'link as keywords or a set of callbacks, '
+                             'not both.')
+        elif not links and not callbacks:
+            raise ValueError('Declare parameters to link or a set of '
+                             'callbacks, neither was defined.')
+
         def link(*events, _updating = []):
             for event in events:
                 if event.name in _updating: continue
                 _updating.append(event.name)
                 try:
-                    setattr(obj, links[event.name], event.new)
+                    if callbacks:
+                        callbacks[event.name](target, event)
+                    else:
+                        setattr(target, links[event.name], event.new)
                 except:
                     raise
                 finally:
                     _updating.pop(_updating.index(event.name))
-        self._callbacks['instance'].append(self.param.watch(link, list(links)))
+        params = list(callbacks) if callbacks else list(links)
+        cb = self.param.watch(link, params)
+        self._callbacks['instance'].append(cb)
+        return cb
+
+    def jslink(self, target, code=None, **links):
+        """
+        Links properties on the source object to those on the target
+        object in JS code. Supports two modes, either specify a
+        mapping between the source and target model properties as
+        keywords or provide a dictionary of JS code snippets which
+        maps from the source parameter to a JS code snippet which is
+        executed when the property changes.
+
+        Parameters
+        ----------
+        target: HoloViews object or bokeh Model or panel Viewable
+            The target to link the value to.
+        code: dict
+            Custom code which will be executed when the widget value
+            changes.
+        **links: dict
+            A mapping between properties on the source model and the
+            target model property to link it to.
+
+        Returns
+        -------
+        link: GenericLink
+            The GenericLink which can be used unlink the widget and
+            the target model.
+        """
+        if links and code:
+            raise ValueError('Either supply a set of properties to '
+                             'link as keywords or a set of JS code '
+                             'callbacks, not both.')
+        elif not links and not code:
+            raise ValueError('Declare parameters to link or a set of '
+                             'callbacks, neither was defined.')
+
+        from .links import GenericLink
+        if isinstance(target, Reactive):
+            mapping = code or links
+            for k, v in list(mapping.items()):
+                mapping[k] = target._rename.get(v, v)
+        return GenericLink(self, target, properties=links, code=code)
 
     def _cleanup(self, root=None, final=False):
         super(Reactive, self)._cleanup(root, final)
