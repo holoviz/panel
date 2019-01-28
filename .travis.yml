@@ -53,12 +53,13 @@ jobs:
         - pip install codecov altair
         - doit env_capture
       script: doit test_all_recommended
+      after_failure:
+        - sleep 10
       after_success: codecov
 
     - <<: *conda_default
-      env: DESC="py2 flakes" PYENV_VERSION=2.7
+      env: DESC="py2 tests" PYENV_VERSION=2.7
       script:
-        - doit test_lint
         - doit test_all_recommended
 
     ########## END-USER PACKAGES ##########
