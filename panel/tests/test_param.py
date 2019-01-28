@@ -554,7 +554,7 @@ def test_expand_param_subobject_tabs(document, comm):
     class Test(param.Parameterized):
         a = param.Parameter()
 
-    test = Test(a=Test(name='Nested'))
+    test = Test(a=Test(name='Nested'), name='A')
     test_pane = Pane(test, expand_layout=Tabs, _temporary=True)
     model = test_pane._get_model(document, comm=comm)
 
@@ -570,7 +570,7 @@ def test_expand_param_subobject_tabs(document, comm):
     assert 'instance' in subpanel._callbacks
     assert isinstance(subtabs, BkTabs)
     assert len(subtabs.tabs) == 1
-    assert subtabs.tabs[0].title == 'A'
+    assert subtabs.tabs[0].title == 'Nested'
 
     box = subtabs.tabs[0].child
     assert isinstance(box, BkWidgetBox)

@@ -198,6 +198,9 @@ class Param(PaneBase):
                               if k not in ['name', 'object', 'parameters']}
                     pane = Param(parameterized, name=parameterized.name,
                                  _temporary=True, **kwargs)
+                    if isinstance(self._expand_layout, Tabs):
+                        title = pname if self.label_formatter is None else self.label_formatter(pname)
+                        pane = (title, pane)
                     self._expand_layout.append(pane)
 
             def update_pane(change, parameter=pname):
