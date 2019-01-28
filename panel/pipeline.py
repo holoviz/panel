@@ -89,14 +89,22 @@ class Pipeline(param.Parameterized):
         name, stage = self._stages[self._stage]
         kwargs = {}
         if self._state:
-            outputs = self._state.param.outputs().items()
-            kwargs = {name: method() for name, (_, method) in outputs
-                      if name in stage.params()}
+            results = {}
+            for name, (_, method, index) in self._state.param.outputs().items():
+                if name not in stage.params():
+                    continue
+                if method not in results:
+                    results[method] = method()
+                result = results[method]
+                if index is not None:
+                    result = result[index]
+                kwargs[name] = result
             if self.inherit_params:
                 params = [k for k, v in self._state.params().items()
                           if v.precedence is None or v.precedence >= 0]
                 kwargs.update({k: v for k, v in self._state.param.get_param_values()
                                if k in stage.params() and k != 'name' and k in params})
+
         if isinstance(stage, param.Parameterized):
             stage.set_param(**kwargs)
             self._state = stage
@@ -125,12 +133,11 @@ class Pipeline(param.Parameterized):
         self._layout[2][0] = self._spinner_layout
         try:
             new_stage = self._init_stage()
-            print("NEXT", new_stage)
             self._layout[2][0] = new_stage
         except Exception as e:
-            print(e)
             self._stage -= 1
-            self._error.object = str(e)
+            self._error.object = ('Next stage raised following error:\n\n\t%s: %s'
+                                  % (type(e).__name__, str(e)))
             self._layout[2][0] = prev_state
             if self.debug:
                 raise e
@@ -145,7 +152,8 @@ class Pipeline(param.Parameterized):
             self._layout[2][0] = self._state.panel()
         except Exception as e:
             self._stage += 1
-            self._error.object = str(e)
+            self._error.object = ('Previous stage raised following error:\n\n\t%s: %s'
+                                  % (type(e).__name__, str(e)))
             if self.debug:
                 raise e
         else:
