@@ -44,6 +44,7 @@ class Pipeline(param.Parameterized):
         self._progress_sel.add_subscriber(self._set_stage)
         prev_button =  Param(self.param, parameters=['previous'], show_name=False)
         next_button =  Param(self.param, parameters=['next'], show_name=False)
+        prev_button.layout[0][0].disabled = True
         self._progress_bar = Row(self._make_progress, prev_button, next_button)
         spinner = Pane(os.path.join(os.path.dirname(__file__), 'assets', 'spinner.gif'))
         self._spinner_layout = Row(Spacer(width=300), Column(Spacer(height=200), spinner))
@@ -121,10 +122,27 @@ class Pipeline(param.Parameterized):
         steps = idx-self._stage
         if steps < 0:
             for i in range(abs(steps)):
-                self._previous()
+                e = self._previous()
+                if e:
+                    break
         else:
             for i in range(steps):
-                self._next()
+                e = self._next()
+                if e:
+                    break
+
+    def _update_button(self):
+        # Disable previous button
+        if self._stage == 0:
+            self._progress_bar[1].layout[0][0].disabled = True
+        else:
+            self._progress_bar[1].layout[0][0].disabled = False
+
+        # Disable next button
+        if self._stage == len(self._stages)-1:
+            self._progress_bar[2].layout[0][0].disabled = True
+        else:
+            self._progress_bar[2].layout[0][0].disabled = False
 
     @param.depends('next', watch=True)
     def _next(self):
@@ -134,6 +152,7 @@ class Pipeline(param.Parameterized):
         try:
             new_stage = self._init_stage()
             self._layout[2][0] = new_stage
+            self._update_button()
         except Exception as e:
             self._stage -= 1
             self._error.object = ('Next stage raised following error:\n\n\t%s: %s'
@@ -141,6 +160,7 @@ class Pipeline(param.Parameterized):
             self._layout[2][0] = prev_state
             if self.debug:
                 raise e
+            return e
         else:
             self._error.object = ''
 
@@ -150,6 +170,7 @@ class Pipeline(param.Parameterized):
         try:
             self._state = self._states[self._stage]
             self._layout[2][0] = self._state.panel()
+            self._update_button()
         except Exception as e:
             self._stage += 1
             self._error.object = ('Previous stage raised following error:\n\n\t%s: %s'
