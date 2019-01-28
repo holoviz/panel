@@ -7,8 +7,8 @@ from __future__ import absolute_import
 import param
 
 from bokeh.layouts import (Column as BkColumn, Row as BkRow,
-                           WidgetBox as BkWidgetBox, Spacer as BkSpacer)
-from bokeh.models import Box as BkBox
+                           WidgetBox as BkWidgetBox)
+from bokeh.models import Box as BkBox, Spacer as BkSpacer
 from bokeh.models.widgets import Tabs as BkTabs, Panel as BkPanel
 
 from .util import param_reprs, push
