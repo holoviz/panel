@@ -17,7 +17,7 @@ class PlotlyPlot(LayoutDOM):
     a bokeh plot.
     """
 
-    __implementation__ = os.path.join(os.path.dirname(__file__), 'models', 'plotly.ts')
+    __implementation__ = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'models', 'plotly.ts')
 
     data = Dict(String, Any)
 

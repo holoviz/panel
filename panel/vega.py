@@ -30,7 +30,7 @@ class VegaPlot(LayoutDOM):
     a Bokeh plot.
     """
 
-    __implementation__ = os.path.join(os.path.dirname(__file__), 'models', 'vega.ts')
+    __implementation__ = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'models', 'vega.ts')
 
     data = Dict(String, Any)
 
