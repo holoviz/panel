@@ -2,7 +2,7 @@
 Provides a set of reactive widgets which provide bi-directional
 communication between the rendered dashboard and the Widget parameters.
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, division, unicode_literals
 
 import re
 import os

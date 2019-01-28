@@ -3,8 +3,7 @@ Defines the Viewable and Reactive baseclasses allow all panel objects
 to display themselves, communicate with a Python process and react in
 response to changes to parameters and the underlying bokeh models.
 """
-
-from __future__ import absolute_import
+from __future__ import absolute_import, division, unicode_literals
 
 import re
 import signal

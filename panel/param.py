@@ -2,7 +2,7 @@
 Defines the Param pane which converts Parameterized classes into a
 set of widgets.
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, division, unicode_literals
 
 import os
 import json

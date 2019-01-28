@@ -2,7 +2,7 @@
 Panes allow wrapping external objects and rendering them as part of
 a dashboard.
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, division, unicode_literals
 
 import os
 import sys
