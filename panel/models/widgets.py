@@ -11,7 +11,7 @@ class Player(Widget):
     The Player widget provides controls to play through a number of frames.
     """
 
-    __implementation__ = os.path.join(os.path.dirname(__file__), 'player.ts')
+    __implementation__ = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'player.ts')
 
     start = Int(help="Lower bound of the Player slider")
 
@@ -34,14 +34,14 @@ class Player(Widget):
 
 class FileInput(Widget):
 
-    __implementation__ = os.path.join(os.path.dirname(__file__), 'fileinput.ts')
+    __implementation__ = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'fileinput.ts')
 
     value = Any(help="Encoded file data")
 
 
 class Audio(Widget):
 
-    __implementation__ = os.path.join(os.path.dirname(__file__), 'audio.ts')
+    __implementation__ = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'audio.ts')
 
     loop = Bool(False, help="""Whether the audio should loop""")
 
