@@ -818,6 +818,9 @@ class Audio(Widget):
     time = param.Number(default=0, doc="""
         The current timestamp""")
 
+    throttle = param.Integer(default=250, doc="""
+        The current timestamp""")
+
     paused = param.Boolean(default=True, doc="""
         Whether the audio is currently paused""")
 
