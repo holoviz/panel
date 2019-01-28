@@ -428,7 +428,7 @@ class ParamMethod(PaneBase):
                 for _, params in full_groupby(new_deps, lambda x: (x.inst or x.cls, x.what)):
                     p = params[0]
                     pobj = p.cls if p.inst is None else p.inst
-                    ps = [p.name for p in params]
+                    ps = [_p.name for _p in params]
                     watcher = pobj.param.watch(update_pane, ps, p.what)
                     self._callbacks[ref].append(watcher)
                     for p in params:
@@ -459,7 +459,7 @@ class ParamMethod(PaneBase):
         for _, params in full_groupby(params, lambda x: (x.inst or x.cls, x.what)):
             p = params[0]
             pobj = (p.inst or p.cls)
-            ps = [p.name for p in params]
+            ps = [_p.name for _p in params]
             watcher = pobj.param.watch(update_pane, ps, p.what)
             self._callbacks[ref].append(watcher)
 

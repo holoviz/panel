@@ -438,7 +438,7 @@ class Reactive(Viewable):
                     model.update(**update)
 
             if comm:
-                self._expecting += [m for msg in msgs for m in msg]
+                self._expecting += [m for _msg in msgs for m in _msg]
                 try:
                     update_model()
                     push(doc, comm)
