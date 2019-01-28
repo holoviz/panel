@@ -292,7 +292,8 @@ class Reactive(Viewable):
             raise ValueError('Declare parameters to link or a set of '
                              'callbacks, neither was defined.')
 
-        def link(*events, _updating = []):
+        _updating = []
+        def link(*events):
             for event in events:
                 if event.name in _updating: continue
                 _updating.append(event.name)
