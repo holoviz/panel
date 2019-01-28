@@ -2,7 +2,7 @@
 Provides a set of reactive widgets which provide bi-directional
 communication between the rendered dashboard and the Widget parameters.
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, division, unicode_literals
 
 import re
 import os
@@ -541,8 +541,8 @@ class ToggleGroup(Select):
     _widgets_type = ['button', 'box']
     _behaviors = ['check', 'radio']
 
-
     def __new__(cls, widget_type='button', behavior='check', **params):
+
         if widget_type not in ToggleGroup._widgets_type:
             raise ValueError('widget_type {} is not valid. Valid options are {}'
                              .format(widget_type, ToggleGroup._widgets_type))
@@ -550,12 +550,15 @@ class ToggleGroup(Select):
             raise ValueError('behavior {} is not valid. Valid options are {}'
                              .format(widget_type, ToggleGroup._behaviors))
 
-        if behavior is 'check':
+        if behavior == 'check':
             if widget_type == 'button':
                 return CheckButtonGroup(**params)
             else:
                 return CheckBoxGroup(**params)
         else:
+            if isinstance(params.get('value'), list):
+                raise ValueError('Radio buttons require a single value, '
+                                 'found: %s' % params['value'])
             if widget_type == 'button':
                 return RadioButtonGroup(**params)
             else:

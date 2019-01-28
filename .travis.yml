@@ -53,13 +53,14 @@ jobs:
         - pip install codecov altair
         - doit env_capture
       script: doit test_all_recommended
+      after_failure:
+        - sleep 10
       after_success: codecov
 
-    # python 2 flake checking typically catches python 2 syntax
-    # errors where python 3's been assumed...
-    #- <<: *conda_default
-    #  env: DESC="py2 flakes" PYENV_VERSION=2.7
-    #  script: doit test_lint
+    - <<: *conda_default
+      env: DESC="py2 tests" PYENV_VERSION=2.7
+      script:
+        - doit test_all_recommended
 
     ########## END-USER PACKAGES ##########
 

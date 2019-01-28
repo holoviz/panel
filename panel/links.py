@@ -1,11 +1,15 @@
 """
+Defines Links which allow declaring links between bokeh properties.
 """
+from __future__ import absolute_import, division, unicode_literals
+
 import param
 import weakref
 import sys
 
 from .layout import Viewable, Panel
 from .holoviews import HoloViews, generate_panel_bokeh_map, is_bokeh_element_plot
+from .util import unicode_repr
 
 from bokeh.models import (CustomJS, Model as BkModel)
 
@@ -307,7 +311,8 @@ class GenericLinkCallback(LinkCallback):
                 "if (property !== undefined) {{ property.validate(value); }} }}"
                 "catch(err) {{ console.log('WARNING: Could not set {tgt} on target, raised error: ' + err); return; }}"
                 "target[{tgt_repr}] = value".format(
-                    tgt=tgt_spec, tgt_repr=repr(tgt_spec), src=src_spec, src_repr=repr(src_spec)))
+                    tgt=tgt_spec, tgt_repr=unicode_repr(tgt_spec),
+                    src=src_spec, src_repr=unicode_repr(src_spec)))
 
     def _get_triggers(self, link, src_spec):
         return [src_spec[1]], []

@@ -3,8 +3,7 @@ Defines the Viewable and Reactive baseclasses allow all panel objects
 to display themselves, communicate with a Python process and react in
 response to changes to parameters and the underlying bokeh models.
 """
-
-from __future__ import absolute_import
+from __future__ import absolute_import, division, unicode_literals
 
 import re
 import signal
@@ -292,7 +291,8 @@ class Reactive(Viewable):
             raise ValueError('Declare parameters to link or a set of '
                              'callbacks, neither was defined.')
 
-        def link(*events, _updating = []):
+        _updating = []
+        def link(*events):
             for event in events:
                 if event.name in _updating: continue
                 _updating.append(event.name)
@@ -438,7 +438,7 @@ class Reactive(Viewable):
                     model.update(**update)
 
             if comm:
-                self._expecting += [m for msg in msgs for m in msg]
+                self._expecting += [m for _msg in msgs for m in _msg]
                 try:
                     update_model()
                     push(doc, comm)

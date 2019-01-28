@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, division, unicode_literals
 
 import re
 import os
@@ -94,6 +94,15 @@ def param_name(name):
     """
     match = re.match('(.)+(\d){5}', name)
     return name[:-5] if match else name
+
+
+def unicode_repr(obj):
+    """
+    Returns a repr without the unicode prefix.
+    """
+    if sys.version_info.major == 2 and isinstance(obj, unicode):
+        return repr(obj)[1:]
+    return repr(obj)
 
 
 def abbreviated_repr(value, max_length=25, natural_breaks=(',', ' ')):

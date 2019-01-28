@@ -1,6 +1,7 @@
 """
 Commandline interface to Panel
 """
+from __future__ import absolute_import, division, unicode_literals
 
 import sys
 from bokeh.__main__ import main as bokeh_entry_point

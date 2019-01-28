@@ -1,4 +1,4 @@
-from __future__ import division, absolute_import
+from __future__ import absolute_import, division, unicode_literals
 
 import os
 import sys
@@ -30,7 +30,7 @@ class VegaPlot(LayoutDOM):
     a Bokeh plot.
     """
 
-    __implementation__ = os.path.join(os.path.dirname(__file__), 'models', 'vega.ts')
+    __implementation__ = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'models', 'vega.ts')
 
     data = Dict(String, Any)
 
