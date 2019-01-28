@@ -96,6 +96,15 @@ def param_name(name):
     return name[:-5] if match else name
 
 
+def unicode_repr(obj):
+    """
+    Returns a repr without the unicode prefix.
+    """
+    if sys.version_info.major == 2 and isinstance(obj, unicode):
+        return repr(obj)[1:]
+    return repr(obj)
+
+
 def abbreviated_repr(value, max_length=25, natural_breaks=(',', ' ')):
     """
     Returns an abbreviated repr for the supplied object. Attempts to

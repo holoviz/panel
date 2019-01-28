@@ -71,7 +71,6 @@ def test_bkwidget_hvplot_links(document, comm):
             "target['size'] = value")
     assert link_customjs.code == code
 
-
 def test_bkwidget_bkplot_links(document, comm):
     from bokeh.models import Slider
     from bokeh.plotting import figure
@@ -96,7 +95,7 @@ def test_bkwidget_bkplot_links(document, comm):
             "target['size'] = value")
     assert link_customjs.code == code
 
-
+@hv_available
 def test_link_with_customcode(document, comm):
     range_widget = RangeSlider(start=0., end=1.)
     curve = hv.Curve([])

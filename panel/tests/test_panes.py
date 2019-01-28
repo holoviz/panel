@@ -183,7 +183,7 @@ def test_latex_pane(document, comm):
     div = get_div(model)
     # Just checks for a PNG, not a specific rendering, to avoid
     # false alarms when formatting of the PNG changes
-    assert div.text[0:37] == "<img src='data:image/png;base64,iVBOR"
+    assert div.text[0:32] == "<img src='data:image/png;base64,"
 
     # Cleanup
     pane._cleanup(row)
