@@ -34,7 +34,14 @@ def test_pnwidget_hvplot_links(document, comm):
     link_customjs = slider.js_property_callbacks['change:value'][-1]
     assert link_customjs.args['source'] is slider
     assert link_customjs.args['target'] is scatter
-    assert link_customjs.code == "target['size'] = source['value']"
+
+    
+    code = ("value = source['value'];"
+            "try { property = target.properties['size'];"
+            "if (property !== undefined) { property.validate(value); } }"
+            "catch(err) { console.log('WARNING: Could not set size on target, raised error: ' + err); return; }"
+            "target['size'] = value")
+    assert link_customjs.code == code
 
 
 @hv_available
@@ -56,7 +63,13 @@ def test_bkwidget_hvplot_links(document, comm):
     link_customjs = slider.js_property_callbacks['change:value'][-1]
     assert link_customjs.args['source'] is slider
     assert link_customjs.args['target'] is scatter
-    assert link_customjs.code == "target['size'] = source['value']"
+
+    code = ("value = source['value'];"
+            "try { property = target.properties['size'];"
+            "if (property !== undefined) { property.validate(value); } }"
+            "catch(err) { console.log('WARNING: Could not set size on target, raised error: ' + err); return; }"
+            "target['size'] = value")
+    assert link_customjs.code == code
 
 
 def test_bkwidget_bkplot_links(document, comm):
@@ -76,7 +89,12 @@ def test_bkwidget_bkplot_links(document, comm):
     link_customjs = slider.js_property_callbacks['change:value'][-1]
     assert link_customjs.args['source'] is slider
     assert link_customjs.args['target'] is scatter.glyph
-    assert link_customjs.code == "target['size'] = source['value']"
+    code = ("value = source['value'];"
+            "try { property = target.properties['size'];"
+            "if (property !== undefined) { property.validate(value); } }"
+            "catch(err) { console.log('WARNING: Could not set size on target, raised error: ' + err); return; }"
+            "target['size'] = value")
+    assert link_customjs.code == code
 
 
 def test_link_with_customcode(document, comm):

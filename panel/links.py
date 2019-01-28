@@ -289,7 +289,7 @@ class GenericLinkCallback(LinkCallback):
             setattr(tgt_model, tgt_spec, getattr(src_model, src_spec))
         if tgt_model is None and not link.code:
             raise ValueError('Model could not be resolved on target '
-                             '%s and no custom code was specified.' % 
+                             '%s and no custom code was specified.' %
                              type(self.target).__name__)
 
     def _process_references(self, references):
@@ -302,7 +302,12 @@ class GenericLinkCallback(LinkCallback):
             references[k[7:]] = references.pop(k)
 
     def _get_code(self, link, source, src_spec, target, tgt_spec):
-        return 'target[%r] = source[%r]' % (tgt_spec, src_spec)
+        return ("value = source[{src_repr}];"
+                "try {{ property = target.properties[{tgt_repr}];"
+                "if (property !== undefined) {{ property.validate(value); }} }}"
+                "catch(err) {{ console.log('WARNING: Could not set {tgt} on target, raised error: ' + err); return; }}"
+                "target[{tgt_repr}] = value".format(
+                    tgt=tgt_spec, tgt_repr=repr(tgt_spec), src=src_spec, src_repr=repr(src_spec)))
 
     def _get_triggers(self, link, src_spec):
         return [src_spec[1]], []
