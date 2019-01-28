@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 
+import re
 import os
 import io
 import json
@@ -87,6 +88,14 @@ def as_unicode(obj):
     return unicode(obj)
 
 
+def param_name(name):
+    """
+    Removes the integer id from a Parameterized class name.
+    """
+    match = re.match('(.)+(\d){5}', name)
+    return name[:-5] if match else name
+
+
 def abbreviated_repr(value, max_length=25, natural_breaks=(',', ' ')):
     """
     Returns an abbreviated repr for the supplied object. Attempts to
@@ -94,7 +103,6 @@ def abbreviated_repr(value, max_length=25, natural_breaks=(',', ' ')):
     """
     vrepr = repr(value)
     if len(vrepr) > max_length:
-
         # Attempt to find natural cutoff point
         abbrev = vrepr[max_length//2:]
         natural_break = None

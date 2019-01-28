@@ -159,6 +159,23 @@ def test_layout_pop(panel, document, comm):
     assert p1._models == {}
 
 
+@pytest.mark.parametrize('panel', [Column, Row])
+def test_layout_remove(panel, document, comm):
+    div1 = Div()
+    div2 = Div()
+    layout = panel(div1, div2)
+    p1, p2 = layout.objects
+
+    model = layout._get_model(document, comm=comm)
+
+    assert model.ref['id'] in p1._callbacks
+    assert p1._models[model.ref['id']] is model.children[0]
+    layout.remove(p1)
+    assert get_divs(model.children[0].children) == [div2]
+    assert p1._callbacks == {}
+    assert p1._models == {}
+
+
 def test_tabs_constructor(document, comm):
     div1 = Div()
     div2 = Div()
@@ -282,6 +299,25 @@ def test_tabs_pop(document, comm):
     assert model.ref['id'] in p1._callbacks
     assert p1._models[model.ref['id']] is tab1.child
     tabs.pop(0)
+    assert len(model.tabs) == 1
+    tab1 = model.tabs[0]
+    assert get_div(tab1.child.children[0]) is div2
+    assert p1._callbacks == {}
+    assert p1._models == {}
+
+
+def test_tabs_remove(document, comm):
+    div1 = Div()
+    div2 = Div()
+    tabs = Tabs(div1, div2)
+    p1, p2 = tabs.objects
+
+    model = tabs._get_model(document, comm=comm)
+
+    tab1 = model.tabs[0]
+    assert model.ref['id'] in p1._callbacks
+    assert p1._models[model.ref['id']] is tab1.child
+    tabs.remove(p1)
     assert len(model.tabs) == 1
     tab1 = model.tabs[0]
     assert get_div(tab1.child.children[0]) is div2
