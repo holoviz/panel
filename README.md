@@ -8,9 +8,10 @@
 | --- | --- |
 | Build Status | [![Linux/MacOS Build Status](https://travis-ci.org/pyviz/panel.svg?branch=master)](https://travis-ci.org/pyviz/panel) [![Windows Build status](https://img.shields.io/appveyor/ci/pyviz/panel/master.svg)](https://ci.appveyor.com/project/pyviz/panel/branch/master) |
 | Coverage | [![codecov](https://codecov.io/gh/pyviz/panel/branch/master/graph/badge.svg)](https://codecov.io/gh/pyviz/panel) |
-| Latest dev release | [![Github tag](https://img.shields.io/github/tag/pyviz/panel.svg?colorB=bbcc00)](https://github.com/pyviz/panel/tags) |
-| Latest release | [![Github release](https://img.shields.io/github/release/pyviz/panel.svg?colorB=bbcc00)](https://github.com/pyviz/panel/releases) [![PyPI version](https://img.shields.io/pypi/v/panel.svg?colorB=44aaff)](https://pypi.python.pyviz/pypi/panel) [![panel version](https://img.shields.io/conda/v/pyviz/panel.svg?colorB=00ccbb&style=flat)](https://anaconda.pyviz/pyviz/panel) [![conda-forge version](https://img.shields.io/conda/v/conda-forge/panel.svg?label=conda%7Cconda-forge&colorB=aa77dd)](https://anaconda.pyviz/conda-forge/panel) [![defaults version](https://img.shields.io/conda/v/anaconda/panel.svg?label=conda%7Cdefaults&style=flat)](https://anaconda.pyviz/anaconda/panel) |
+| Latest dev release | [![Github tag](https://img.shields.io/github/tag/pyviz/panel.svg?label=tag&colorB=11ccbb)](https://github.com/pyviz/panel/tags) |
+| Latest release | [![Github release](https://img.shields.io/github/release/pyviz/panel.svg?label=tag&colorB=11ccbb)](https://github.com/pyviz/panel/releases) [![PyPI version](https://img.shields.io/pypi/v/panel.svg?colorB=cc77dd)](https://pypi.python.org/pypi/panel) [![panel version](https://img.shields.io/conda/v/pyviz/panel.svg?colorB=4488ff&style=flat)](https://anaconda.org/pyviz/panel) [![conda-forge version](https://img.shields.io/conda/v/conda-forge/panel.svg?label=conda%7Cconda-forge&colorB=4488ff)](https://anaconda.org/conda-forge/panel) [![defaults version](https://img.shields.io/conda/v/anaconda/panel.svg?label=conda%7Cdefaults&style=flat&colorB=4488ff)](https://anaconda.org/anaconda/panel) |
 | Docs | [![gh-pages](https://img.shields.io/github/last-commit/pyviz/panel/gh-pages.svg)](https://github.com/pyviz/panel/tree/gh-pages) [![site](https://img.shields.io/website-up-down-green-red/http/panel.pyviz.org.svg)](http://panel.pyviz.org) |
+
 
 ## What is it?
 
