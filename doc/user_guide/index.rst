@@ -2,6 +2,9 @@
 User Guide
 **********
 
+* `Interact <Introduction.html>`_
+   An overview of the capabilities of Panel.
+
 * `Interact <Interact.html>`_
    Quickly making a panel using `interact()`.
 
@@ -28,6 +31,7 @@ User Guide
     :hidden:
     :maxdepth: 2
 
+    Introduction <Introduction>
     Interact <Interact>
     Panes <Panes>
     Widgets <Widgets>
