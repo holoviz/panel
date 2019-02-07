@@ -2,7 +2,7 @@
 User Guide
 **********
 
-* `Interact <Introduction.html>`_
+* `Introduction <Introduction.html>`_
    An overview of the capabilities of Panel.
 
 * `Interact <Interact.html>`_
