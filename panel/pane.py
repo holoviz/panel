@@ -82,10 +82,10 @@ class PaneBase(Reactive):
         The object being wrapped, which will be converted into a Bokeh model.""")
 
     # When multiple Panes apply to an object, the one with the highest
-    # numerical precedence is selected. The default is an intermediate value.
-    # If set to None, applies method will be called to get a precedence
+    # numerical priority is selected. The default is an intermediate value.
+    # If set to None, applies method will be called to get a priority
     # value for a specific object type.
-    precedence = 0.5
+    priority = 0.5
 
     # Declares whether Pane supports updates to the Bokeh model
     _updates = False
@@ -96,8 +96,8 @@ class PaneBase(Reactive):
     def applies(cls, obj):
         """
         Given the object return a boolean indicating whether the Pane
-        can render the object. If the precedence of the pane is set to
-        None, this method may also be used to define a precedence
+        can render the object. If the priority of the pane is set to
+        None, this method may also be used to define a priority
         depending on the object being rendered.
         """
         return None
@@ -108,16 +108,16 @@ class PaneBase(Reactive):
             return type(obj)
         descendents = []
         for p in param.concrete_descendents(PaneBase).values():
-            precedence = p.applies(obj) if p.precedence is None else p.precedence
-            if isinstance(precedence, bool) and precedence:
-                raise ValueError('If a Pane declares no precedence '
+            priority = p.applies(obj) if p.priority is None else p.priority
+            if isinstance(priority, bool) and priority:
+                raise ValueError('If a Pane declares no priority '
                                  'the applies method should return a '
-                                 'precedence value specific to the '
+                                 'priority value specific to the '
                                  'object type or False, but the %s pane '
-                                 'declares no precedence.' % p.__name__)
-            elif precedence is None or precedence is False:
+                                 'declares no priority.' % p.__name__)
+            elif priority is None or priority is False:
                 continue
-            descendents.append((precedence, p))
+            descendents.append((priority, p))
         pane_types = reversed(sorted(descendents, key=lambda x: x[0]))
         for _, pane_type in pane_types:
             applies = pane_type.applies(obj)
@@ -203,7 +203,7 @@ class Bokeh(PaneBase):
     Bokeh panes allow including any Bokeh model in a panel.
     """
 
-    precedence = 0.8
+    priority = 0.8
 
     @classmethod
     def applies(cls, obj):
@@ -505,8 +505,8 @@ class LaTeX(PNG):
     See https://matplotlib.org/users/mathtext.html for what is supported.
     """
 
-    # Precedence is dependent on the data type
-    precedence = None
+    # Priority is dependent on the data type
+    priority = None
 
     size = param.Number(default=25, bounds=(1, 100), doc="""
         Size of the rendered equation.""")
@@ -580,8 +580,8 @@ class HTML(DivPaneBase):
     allow room for whatever is being wrapped.
     """
 
-    # Precedence is dependent on the data type
-    precedence = None
+    # Priority is dependent on the data type
+    priority = None
 
     @classmethod
     def applies(cls, obj):
@@ -604,12 +604,12 @@ class Str(DivPaneBase):
     """
     A Str pane renders any object for which `str()` can be called,
     escaping any HTML markup and then wrapping the resulting string in
-    a bokeh Div model.  Set to a low precedence because generally one
+    a bokeh Div model.  Set to a low priority because generally one
     will want a better representation, but allows arbitrary objects to
     be used as a Pane (numbers, arrays, objects, etc.).
     """
 
-    precedence = 0
+    priority = 0
 
     @classmethod
     def applies(cls, obj):
@@ -624,12 +624,12 @@ class Markdown(DivPaneBase):
     """
     A Markdown pane renders the markdown markup language to HTML and
     displays it inside a bokeh Div model. It has no explicit
-    precedence since it cannot be easily be distinguished from a
+    priority since it cannot be easily be distinguished from a
     standard string, therefore it has to be invoked explicitly.
     """
 
-    # Precedence depends on the data type
-    precedence = None
+    # Priority depends on the data type
+    priority = None
 
     @classmethod
     def applies(cls, obj):
@@ -660,7 +660,7 @@ class YT(HTML):
     provide additional space.
     """
 
-    precedence = 0.5
+    priority = 0.5
 
     @classmethod
     def applies(cls, obj):
