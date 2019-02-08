@@ -1,7 +1,19 @@
-[![Linux Build Status](https://travis-ci.org/pyviz/panel.svg?branch=master)](https://travis-ci.org/pyviz/panel)
-[![codecov](https://codecov.io/gh/pyviz/panel/branch/master/graph/badge.svg)](https://codecov.io/gh/pyviz/panel)
+<img src="https://github.com/pyviz/panel/raw/master/doc/_static/logo_stacked.png" data-canonical-src="https://github.com/pyviz/panel/raw/master/doc/_static/logo_stacked.png" width="200"/><br>
 
-<img src="https://github.com/pyviz/panel/raw/master/doc/_static/logo_stacked.png" data-canonical-src="https://github.com/pyviz/panel/raw/master/doc/_static/logo_stacked.png" width="200"/>
+-----------------
+
+# A high-level app and dashboarding solution for Python
+
+|    |    |
+| --- | --- |
+| Build Status | [![Linux/MacOS Build Status](https://travis-ci.org/pyviz/panel.svg?branch=master)](https://travis-ci.org/pyviz/panel) [![Windows Build status](https://img.shields.io/appveyor/ci/pyviz/panel/master.svg)](https://ci.appveyor.com/project/pyviz/panel/branch/master) |
+| Coverage | [![codecov](https://codecov.io/gh/pyviz/panel/branch/master/graph/badge.svg)](https://codecov.io/gh/pyviz/panel) |
+| Latest dev release | [![Github tag](https://img.shields.io/github/tag/pyviz/panel.svg?label=tag&colorB=11ccbb)](https://github.com/pyviz/panel/tags) |
+| Latest release | [![Github release](https://img.shields.io/github/release/pyviz/panel.svg?label=tag&colorB=11ccbb)](https://github.com/pyviz/panel/releases) [![PyPI version](https://img.shields.io/pypi/v/panel.svg?colorB=cc77dd)](https://pypi.python.org/pypi/panel) [![panel version](https://img.shields.io/conda/v/pyviz/panel.svg?colorB=4488ff&style=flat)](https://anaconda.org/pyviz/panel) [![conda-forge version](https://img.shields.io/conda/v/conda-forge/panel.svg?label=conda%7Cconda-forge&colorB=4488ff)](https://anaconda.org/conda-forge/panel) [![defaults version](https://img.shields.io/conda/v/anaconda/panel.svg?label=conda%7Cdefaults&style=flat&colorB=4488ff)](https://anaconda.org/anaconda/panel) |
+| Docs | [![gh-pages](https://img.shields.io/github/last-commit/pyviz/panel/gh-pages.svg)](https://github.com/pyviz/panel/tree/gh-pages) [![site](https://img.shields.io/website-up-down-green-red/http/panel.pyviz.org.svg)](http://panel.pyviz.org) |
+
+
+## What is it?
 
 Panel provides tools for easily composing widgets, plots, tables, and other viewable objects and controls into control panels, apps, and dashboards. Panel works with visualizations from [Bokeh](http://bokeh.pydata.org), [Matplotlib](matplotlib.org), [HoloViews](http://holoviews.org), and other Python plotting libraries, making them instantly viewable either individually or when combined with interactive widgets that control them.  Panel works equally well in [Jupyter Notebooks](http://jupyter.org), for creating quick data-exploration tools, or as standalone deployed apps and dashboards, and allows you to easily switch between those contexts as needed.
 
