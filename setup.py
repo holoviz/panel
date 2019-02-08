@@ -28,6 +28,46 @@ def get_setup_version(reponame):
         print("WARNING: param>=1.6.0 unavailable. If you are installing a package, this warning can safely be ignored. If you are creating a package or otherwise operating in a git repository, you should install param>=1.6.0.")
         return json.load(open(version_file_path, 'r'))['version_string']
 
+def build_custom_models():
+    """
+    Compiles custom bokeh models and stores the compiled JSON alongside
+    the original code.
+    """
+    from panel.util import CUSTOM_MODELS
+    from bokeh.util.compiler import _get_custom_models, _compile_models
+    custom_models = _get_custom_models(list(CUSTOM_MODELS.values()))
+    compiled_models = _compile_models(custom_models)
+    for name, model in custom_models.items():
+        compiled = compiled_models.get(name)
+        if compiled is None:
+            return
+        print('\tBuilt %s custom model' % name)
+        impl = model.implementation
+        hashed = hashlib.sha256(impl.code.encode('utf-8')).hexdigest()
+        compiled['hash'] = hashed
+        fp = impl.file.replace('.ts', '.json')
+        with open(fp, 'w') as f:
+            json.dump(compiled, f)
+
+class CustomDevelopCommand(develop):
+    """Custom installation for development mode."""
+    def run(self):
+        try:
+            print("Building custom models:")
+            build_custom_models()
+        except ImportError as e:
+            print("Custom model compilation failed with: %s" % e)
+        develop.run(self)
+
+class CustomInstallCommand(install):
+    """Custom installation for install mode."""
+    def run(self):
+        try:
+            print("Building custom models:")
+            build_custom_models()
+        except ImportError as e:
+            print("Custom model compilation failed with: %s" % e)
+        install.run(self)
 
 ########## dependencies ##########
 
@@ -71,47 +111,6 @@ extras_require = {
     ]
 }
 
-def build_custom_models():
-    """
-    Compiles custom bokeh models and stores the compiled JSON alongside
-    the original code.
-    """
-    from panel.util import CUSTOM_MODELS
-    from bokeh.util.compiler import _get_custom_models, _compile_models
-    custom_models = _get_custom_models(list(CUSTOM_MODELS.values()))
-    compiled_models = _compile_models(custom_models)
-    for name, model in custom_models.items():
-        compiled = compiled_models.get(name)
-        if compiled is None:
-            return
-        print('\tBuilt %s custom model' % name)
-        impl = model.implementation
-        hashed = hashlib.sha256(impl.code.encode('utf-8')).hexdigest()
-        compiled['hash'] = hashed
-        fp = impl.file.replace('.ts', '.json')
-        with open(fp, 'w') as f:
-            json.dump(compiled, f)
-
-class CustomDevelopCommand(develop):
-    """Custom installation for development mode."""
-    def run(self):
-        try:
-            print("Building custom models:")
-            build_custom_models()
-        except ImportError as e:
-            print("Custom model compilation failed with: %s" % e)
-        develop.run(self)
-
-class CustomInstallCommand(install):
-    """Custom installation for install mode."""
-    def run(self):
-        try:
-            print("Building custom models:")
-            build_custom_models()
-        except ImportError as e:
-            print("Custom model compilation failed with: %s" % e)
-        install.run(self)
-
 extras_require['all'] = sorted(set(sum(extras_require.values(), [])))
 
 # until pyproject.toml/equivalent is widely supported (setup_requires
@@ -122,6 +121,7 @@ extras_require['build'] = [
     'setuptools >=30.3.0',
     'bokeh >=1.0.0',
     'pyviz_comms >=0.6.0',
+    'nodejs >=9.11.1',
 ]
 
 setup_args = dict(
