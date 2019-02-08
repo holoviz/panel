@@ -104,7 +104,7 @@ class Param(PaneBase):
         Dictionary of widget overrides, mapping from parameter name
         to widget class.""")
 
-    precedence = 0.1
+    priority = 0.1
 
     _mapping = {
         param.Action:         Button,

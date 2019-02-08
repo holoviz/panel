@@ -46,8 +46,8 @@ class Vega(PaneBase):
     the figure on bokeh server and via Comms.
     """
 
-    precedence = 0.8
-    
+    priority = 0.8
+
     _updates = True
 
     def __init__(self, object, **params):

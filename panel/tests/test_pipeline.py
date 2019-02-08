@@ -13,15 +13,15 @@ if LooseVersion(param.__version__) < '1.8.2':
     pytest.skip("skipping if param version < 1.8.2", allow_module_level=True)
 
 class Stage1(param.Parameterized):
-    
+
     a = param.Number(default=5, bounds=(0, 10))
 
     b = param.Number(default=5, bounds=(0, 10))
-    
+
     @param.output(c=param.Number)
     def output(self):
         return self.a * self.b
-    
+
     @param.depends('a', 'b')
     def view(self):
         return '%s * %s = %s' % (self.a, self.b, self.output())
@@ -31,11 +31,11 @@ class Stage1(param.Parameterized):
 
 
 class Stage2(param.Parameterized):
-    
+
     c = param.Number(default=5, precedence=-1, bounds=(0, None))
 
     exp = param.Number(default=0.1, bounds=(0, 3))
-    
+
     @param.depends('c', 'exp')
     def view(self):
         return '%s^%s=%.3f' % (self.c, self.exp, self.c**self.exp)
@@ -46,7 +46,7 @@ class Stage2(param.Parameterized):
 @hv_available
 def test_pipeline_from_classes():
     import holoviews as hv
-    
+
     pipeline = Pipeline([('Stage 1', Stage1), ('Stage 2', Stage2)])
 
     layout = pipeline.layout
@@ -197,6 +197,6 @@ def test_pipeline_getitem():
 def test_pipeline_repr():
     pipeline = Pipeline()
     pipeline.add_stage('Stage 1', Stage1)
-    
+
     pipeline.add_stage('Stage 2', Stage2)
     assert repr(pipeline) == 'Pipeline:\n    [0] Stage 1: Stage1()\n    [1] Stage 2: Stage2()'

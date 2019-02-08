@@ -34,7 +34,7 @@ class HoloViews(PaneBase):
         A mapping from dimension name to a widget instance which will
         be used to override the default widgets.""")
 
-    precedence = 0.8
+    priority = 0.8
 
     def __init__(self, object, **params):
         super(HoloViews, self).__init__(object, **params)

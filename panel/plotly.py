@@ -37,7 +37,7 @@ class Plotly(PaneBase):
 
     _updates = True
 
-    precedence = 0.8
+    priority = 0.8
 
     def __init__(self, object, layout=None, **params):
         super(Plotly, self).__init__(self._to_figure(object, layout),
