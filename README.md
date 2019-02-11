@@ -41,3 +41,9 @@ Panel objects are reactive, immediately updating to reflect changes to their sta
 ## Using Panel for declarative, reactive programming
 
 Panel can also be used with the separate [Param](http://param.pyviz.org) project to create interactively configurable objects with or without associated visualizations, in a fully declarative way. With this approach, you declare your configurable object using the pure-Python, zero-dependency `param` library, annotating your code with parameter ranges, documentation, and dependencies between parameters and your code.  Using this information, you can make all of your domain-specific code be optionally configurable in a GUI, with optional visual displays and debugging information if you like, all with just a few lines of declarations. With this approach, you don't ever have to commit to whether your code will be used in a notebook, in a GUI app, or completely behind the scenes in batch processing or reports -- the same code can support all of these cases equally well, once you declare the associated parameters and constraints. This approach lets you completely separate your domain-specific code from anything to do with web browsers, GUI toolkits, or other volatile technologies that would otherwise make your hard work become obsolete as they change over time.
+
+## About PyViz
+
+Panel is part of the PyViz initiative for making Python-based visualization tools work well together.
+See [pyviz.org](http://pyviz.org) for related packages that you can use with Panel and
+[status.pyviz.org](http://status.pyviz.org) for the current status of each PyViz project.
