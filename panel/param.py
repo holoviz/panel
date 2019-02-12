@@ -5,6 +5,7 @@ set of widgets.
 from __future__ import absolute_import, division, unicode_literals
 
 import os
+import sys
 import json
 import types
 import inspect
@@ -357,7 +358,9 @@ class Param(PaneBase):
         filtered = [(k,p) for (k,p) in sorted_precedence
                     if ((p.precedence is None) or (p.precedence >= self.display_threshold))]
         groups = itertools.groupby(filtered, key=key_fn)
-        sorted_groups = [sorted(grp) for (k,grp) in groups]
+        # Params preserve definition order in Python 3.6+
+        ordered_params = sys.version_info.major == 3 and sys.version_info.minor >= 6
+        sorted_groups = [list(grp) if ordered_params else sorted(grp) for (k,grp) in groups]
         ordered_params = [el[0] for group in sorted_groups for el in group]
 
         # Format name specially
