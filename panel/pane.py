@@ -16,7 +16,8 @@ except:
 
 import param
 
-from bokeh.models import LayoutDOM, CustomJS, Widget as _BkWidget, Div as _BkDiv
+from bokeh.models import (LayoutDOM, CustomJS, Widget as _BkWidget,
+                          Div as _BkDiv, Column as _BkColumn)
 
 from .layout import Panel, Row
 from .util import basestring, param_reprs, push, remove_root
@@ -263,7 +264,7 @@ class DivPaneBase(PaneBase):
     def _get_model(self, doc, root=None, parent=None, comm=None):
         model = _BkDiv(**self._get_properties())
         self._models[root.ref['id']] = model
-        self._link_object(model, doc, root, parent, comm)
+        self._link_object(doc, root, parent, comm)
         return model
 
     def _update(self, model):

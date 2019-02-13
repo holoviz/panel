@@ -134,7 +134,7 @@ class Param(PaneBase):
         self._widgets = self._get_widgets()
         widgets = [widget for widgets in self._widgets.values() for widget in widgets]
         self._widget_box = Column(*widgets, height=self.height,
-                                     width=self.width, name=self.name)
+                                  width=self.width, name=self.name)
 
         # Construct Layout
         kwargs = {'name': self.name}
@@ -145,6 +145,9 @@ class Param(PaneBase):
         if isinstance(layout, Panel):
             self._expand_layout = layout
             self.layout = self._widget_box
+        elif isinstance(self._widget_box, layout):
+            self.layout = self._widget_box
+            self._expand_layout = self.layout
         elif isinstance(layout, type) and issubclass(layout, Panel):
             self.layout = layout(self._widget_box, **kwargs)
             self._expand_layout = self.layout

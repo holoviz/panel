@@ -12,22 +12,7 @@ from bokeh.models.widgets import Tabs as BkTabs, Panel as BkPanel
 
 from .util import param_name, param_reprs, push
 from .viewable import Reactive, Viewable
-from .widgets import Widget
 
-
-def has_height(obj):
-    """
-    Whether the supplied layout has a height
-    """
-    if isinstance(obj, BkBox):
-        for child in obj.children:
-            if has_height(child):
-                return True
-    elif isinstance(obj, Column) and 'bk-widgetbox' in obj.css_classes:
-        return True
-    elif getattr(obj, 'height', None) is not None:
-        return True
-    return False
 
 
 class Panel(Reactive):
@@ -55,9 +40,8 @@ class Panel(Reactive):
 
     def __init__(self, *objects, **params):
         from .pane import panel
+        from .widgets import Widget
         objects = [panel(pane, _internal=True) for pane in objects]
-        if all(o for o in objects if isinstance(o, Widget)) and 'bk-widgetbox' not in css_classes:
-            params['css_classes'] = params.get('css_classes', []) + ['bk-widgetbox']
         super(Panel, self).__init__(objects=objects, **params)
 
     def _init_properties(self):
@@ -141,11 +125,6 @@ class Panel(Reactive):
                                   css_classes=self.css_classes)
         root = model if root is None else root
         objects = self._get_objects(model, [], doc, root, comm)
-
-        # HACK ALERT: Insert Spacer if last item in Column has no height
-        if (isinstance(self, Column) and objects and not has_height(objects[-1])):
-            objects.append(BkSpacer(height=50))
-
         props = dict(self._init_properties(), objects=objects)
         model.update(**self._process_param_change(props))
         params = [p for p in self.params() if p != 'name']
