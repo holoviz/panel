@@ -19,9 +19,9 @@ import param
 from bokeh.models import (LayoutDOM, CustomJS, Widget as _BkWidget,
                           Div as _BkDiv, Column as _BkColumn)
 
-from .layout import Panel, Row
+from .layout import Panel, Row, Layoutable
 from .util import basestring, param_reprs, push, remove_root
-from .viewable import Reactive, Viewable
+from .viewable import Viewable
 
 
 def panel(obj, **kwargs):
@@ -61,7 +61,7 @@ def Pane(obj, **kwargs):
     return PaneBase.get_pane_type(obj)(obj, **kwargs)
 
 
-class PaneBase(Reactive):
+class PaneBase(Layoutable):
     """
     PaneBase is the abstract baseclass for all atomic displayable units
     in the panel library. Pane defines an extensible interface for
@@ -244,21 +244,13 @@ class DivPaneBase(PaneBase):
 
     __abstract = True
 
-    height = param.Integer(default=None, bounds=(0, None))
-
-    width = param.Integer(default=None, bounds=(0, None))
-
-    sizing_mode = param.ObjectSelector(default=None, allow_None=True,
-        objects=["fixed", "scale_width", "scale_height", "scale_both", "stretch_both"],
-        doc="How the item being displayed should size itself.")
-
     style = param.Dict(default=None, doc="""
         Dictionary of CSS property:value pairs to apply to this Div.""")
 
     _rename = {'object': 'text'}
 
     def _get_properties(self):
-        return {p : getattr(self,p) for p in ["width", "height", "sizing_mode", "style"]
+        return {p : getattr(self,p) for p in Layoutable.params()
                 if getattr(self,p) is not None}
 
     def _get_model(self, doc, root=None, parent=None, comm=None):

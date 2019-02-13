@@ -399,8 +399,9 @@ class ParamMethod(PaneBase):
         self._kwargs =  {p: params.pop(p) for p in list(params)
                          if p not in self.params()}
         super(ParamMethod, self).__init__(object, **params)
-        self._pane = Pane(self.object(), name=self.name,
-                          **dict(_temporary=True, **self._kwargs))
+        kwargs = dict(self.get_param_values(), _temporary=True, **self._kwargs)
+        del kwargs['object']
+        self._pane = Pane(self.object(), **kwargs)
         self._inner_layout = Row(self._pane)
 
     @classmethod
@@ -458,7 +459,9 @@ class ParamMethod(PaneBase):
                 return
 
             # Replace pane entirely
-            self._pane = Pane(new_object, _temporary=True)
+            kwargs = dict(self.get_param_values(), _temporary=True, **self._kwargs)
+            del kwargs['object']
+            self._pane = Pane(new_object, **kwargs)
             self._inner_layout[0] = self._pane
 
         for _, params in full_groupby(params, lambda x: (x.inst or x.cls, x.what)):
