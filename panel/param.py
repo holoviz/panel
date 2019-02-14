@@ -359,7 +359,8 @@ class Param(PaneBase):
                     if ((p.precedence is None) or (p.precedence >= self.display_threshold))]
         groups = itertools.groupby(filtered, key=key_fn)
         # Params preserve definition order in Python 3.6+
-        dict_ordered = sys.version_info.major == 3 and sys.version_info.minor >= 6
+        dict_ordered_py3 = (sys.version_info.major == 3 and sys.version_info.minor >= 6)
+        dict_ordered = dict_ordered_py3 or (sys.version_info.major > 3)
         ordered_groups = [list(grp) if dict_ordered else sorted(grp) for (k,grp) in groups]
         ordered_params = [el[0] for group in ordered_groups for el in group]
 
