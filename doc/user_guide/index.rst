@@ -26,6 +26,14 @@ User Guide
 * `Pipelines <Pipelines.html>`_
    Using Parameterized classes to declare linear workflows containing multiple panels.
 
+
+Supplementary guides
+--------------------
+
+* `Django Apps <Django_Apps.html>`_
+   How to embed a panel/bokeh app inside a Django deployment
+
+
 .. toctree::
     :titlesonly:
     :hidden:
@@ -39,3 +47,4 @@ User Guide
     Parameters <Param>
     Linking <Links>
     Pipelines <Pipelines>
+    Django Apps <Django_Apps>
