@@ -402,12 +402,11 @@ class ParamMethod(PaneBase):
         kwargs = dict(self.get_param_values(), _temporary=True, **self._kwargs)
         del kwargs['object']
         self._pane = Pane(self.object(), **kwargs)
-        self._inner_layout = Row(self._pane)
+        self._inner_layout = Row(self._pane, **params)
 
     @classmethod
     def applies(cls, obj):
         return inspect.ismethod(obj) and isinstance(get_method_owner(obj), param.Parameterized)
-
 
     def _link_object_params(self, doc, root, parent, comm):
         ref = root.ref['id']

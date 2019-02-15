@@ -47,7 +47,7 @@ def panel(obj, **kwargs):
     if kwargs.get('name', False) is None:
         kwargs.pop('name')
     pane = PaneBase.get_pane_type(obj)(obj, **kwargs)
-    if internal and len(pane.layout) == 1:
+    if len(pane.layout) == 1:
         return pane.layout[0]
     return pane.layout
 
@@ -139,7 +139,8 @@ class PaneBase(Layoutable):
                              (type(self).__name__, type(object).__name__))
 
         super(PaneBase, self).__init__(object=object, **params)
-        self.layout = self.default_layout(self)
+        kwargs = {k: v for k, v in params.items() if k in Layoutable.params()}
+        self.layout = self.default_layout(self, **kwargs)
 
     def _get_root(self, doc, comm=None):
         root = self.layout._get_model(doc, comm=comm)
@@ -260,8 +261,7 @@ class DivPaneBase(PaneBase):
         return model
 
     def _update(self, model):
-        div = model if isinstance(model, _BkDiv) else model.children[0].children[0]
-        div.update(**self._get_properties())
+        model.update(**self._get_properties())
 
 
 class Image(DivPaneBase):
@@ -319,11 +319,11 @@ class Image(DivPaneBase):
         elif self.height is not None:
             width = int((self.height/height)*width)
             height = self.height
+
         b64 = base64.b64encode(data).decode("utf-8")
         src = "data:image/"+self.imgtype+";base64,{b64}".format(b64=b64)
-        html = "<img src='{src}' width={width} height={height}></img>".format(
-            src=src, width=width, height=height
-        )
+        html = "<img src='{src}' width='100%' height='100%'></img>".format(
+            src=src, width=width, height=height)
         return dict(p, width=width, height=height, text=html)
 
 
