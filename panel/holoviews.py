@@ -186,7 +186,7 @@ class HoloViews(PaneBase):
                                      'dimension widget declared as %s.' % 
                                      (dim, widget))
             if vals:
-                if all(isnumeric(v) for v in vals):
+                if all(isnumeric(v) for v in vals) and len(vals) > 1:
                     vals = sorted(vals)
                     labels = [unicode(dim.pprint_value(v)) for v in vals]
                     options = OrderedDict(zip(labels, vals))
@@ -197,6 +197,8 @@ class HoloViews(PaneBase):
                 default = vals[0] if dim.default is None else dim.default
                 widget = widget_type(name=dim.label, options=options, value=default)
             elif dim.range != (None, None):
+                if dim.range[0] == dim.range[1]:
+                    continue
                 default = dim.range[0] if dim.default is None else dim.default
                 step = 0.1 if dim.step is None else dim.step
                 widget_type = widget_type or FloatSlider
@@ -206,6 +208,7 @@ class HoloViews(PaneBase):
                 widgets.append(widget)
         if widgets_type == 'scrubber':
             widgets = [Player(length=nframes)]
+        print(widgets)
         return widgets, dim_values
 
 
