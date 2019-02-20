@@ -399,10 +399,10 @@ class ParamMethod(PaneBase):
         self._kwargs =  {p: params.pop(p) for p in list(params)
                          if p not in self.params()}
         super(ParamMethod, self).__init__(object, **params)
-        kwargs = dict(self.get_param_values(), _temporary=True, **self._kwargs)
+        kwargs = dict(self.get_param_values(), **dict(self._kwargs, _temporary=True))
         del kwargs['object']
         self._pane = Pane(self.object(), **kwargs)
-        self._inner_layout = Row(self._pane, **params)
+        self._inner_layout = Row(self._pane, **{k: v for k, v in params.items() if k in Row.params()})
 
     @classmethod
     def applies(cls, obj):
