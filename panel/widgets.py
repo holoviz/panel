@@ -63,6 +63,13 @@ class Widget(Reactive):
                       if v is not None}
         return self._process_param_change(properties)
 
+    def _get_root(self, doc, comm=None):
+        root = _BkColumn()
+        model = self._get_model(doc, root, root, comm=comm)
+        root.children.append(model)
+        self._preprocess(root)
+        return root
+
     def _get_model(self, doc, root=None, parent=None, comm=None):
         root = parent if root is None else root
         model = self._widget_type(**self._init_properties())
