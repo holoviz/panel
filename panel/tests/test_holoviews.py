@@ -216,10 +216,10 @@ def test_holoviews_date_slider_widgets_from_holomap():
 
     assert isinstance(widgets[0], DiscreteSlider)
     assert widgets[0].name == 'X'
-    assert widgets[0].options == OrderedDict({
-        '2016-01-01 00:00:00': dt.datetime(2016, 1, 1),
-        '2016-01-02 00:00:00': dt.datetime(2016, 1, 2),
-        '2016-01-03 00:00:00': dt.datetime(2016, 1, 3)})
+    assert widgets[0].options == OrderedDict([
+        ('2016-01-01 00:00:00', dt.datetime(2016, 1, 1)),
+        ('2016-01-02 00:00:00', dt.datetime(2016, 1, 2)),
+        ('2016-01-03 00:00:00', dt.datetime(2016, 1, 3))])
     assert widgets[0].value == dt.datetime(2016, 1, 1)
 
 
