@@ -638,7 +638,7 @@ class DiscreteSlider(Widget):
 
     @property
     def labels(self):
-        title = ('<b>%s</b> ' % self.name if self.name else '')
+        title = ('<b>%s:</b> ' % self.name if self.name else '')
         if isinstance(self.options, dict):
             return [title + o for o in self.options]
         else:

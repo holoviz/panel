@@ -558,16 +558,46 @@ def test_discrete_slider(document, comm):
     assert widget.start == 0
     assert widget.end == 3
     assert widget.step == 1
-    assert label.text == '<b>DiscreteSlider</b>: 1'
+    assert label.text == '<b>DiscreteSlider:</b> 1'
 
     widget.value = 2
     discrete_slider._comm_change({'value': 2})
     assert discrete_slider.value == 10
-    assert label.text == '<b>DiscreteSlider</b>: 10'
+    assert label.text == '<b>DiscreteSlider:</b> 10'
 
     discrete_slider.value = 100
     assert widget.value == 3
-    assert label.text == '<b>DiscreteSlider</b>: 100'
+    assert label.text == '<b>DiscreteSlider:</b> 100'
+
+
+
+def test_discrete_date_slider(document, comm):
+    dates = {'2016-01-0%d' % i: datetime(2016, 1, i) for i in range(1, 4)}
+    discrete_slider = DiscreteSlider(name='DiscreteSlider', value=dates['2016-01-02'],
+                                     options=dates)
+
+    box = discrete_slider._get_model(document, comm=comm)
+
+    assert isinstance(box, WidgetBox)
+
+    label = box.children[0]
+    widget = box.children[1]
+    assert isinstance(label, BkDiv)
+    assert isinstance(widget, BkSlider)
+    assert widget.value == 1
+    assert widget.start == 0
+    assert widget.end == 2
+    assert widget.step == 1
+    assert label.text == '<b>DiscreteSlider:</b> 2016-01-02'
+
+    widget.value = 2
+    discrete_slider._comm_change({'value': 2})
+    assert discrete_slider.value == dates['2016-01-03']
+    assert label.text == '<b>DiscreteSlider:</b> 2016-01-03'
+
+    discrete_slider.value = dates['2016-01-01']
+    assert widget.value == 0
+    assert label.text == '<b>DiscreteSlider:</b> 2016-01-01'
 
 
 
@@ -588,16 +618,16 @@ def test_discrete_slider_options_dict(document, comm):
     assert widget.start == 0
     assert widget.end == 3
     assert widget.step == 1
-    assert label.text == '<b>DiscreteSlider</b>: 1'
+    assert label.text == '<b>DiscreteSlider:</b> 1'
 
     widget.value = 2
     discrete_slider._comm_change({'value': 2})
     assert discrete_slider.value == 10
-    assert label.text == '<b>DiscreteSlider</b>: 10'
+    assert label.text == '<b>DiscreteSlider:</b> 10'
 
     discrete_slider.value = 100
     assert widget.value == 3
-    assert label.text == '<b>DiscreteSlider</b>: 100'
+    assert label.text == '<b>DiscreteSlider:</b> 100'
 
 
 
