@@ -155,7 +155,7 @@ class HoloViews(PaneBase):
         from holoviews.core import Dimension
         from holoviews.core.util import isnumeric, unicode, datetime_types
         from holoviews.core.traversal import unique_dimkeys
-        from .widgets import Widget, DiscreteSlider, Select, FloatSlider, DatePicker
+        from .widgets import Widget, DiscreteSlider, Select, FloatSlider, DatetimeInput
 
         dims, keys = unique_dimkeys(object)
         if dims == [Dimension('Frame')] and keys == [(0,)]:

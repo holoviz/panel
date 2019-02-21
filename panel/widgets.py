@@ -695,27 +695,23 @@ class DiscreteSlider(Widget):
             self._callbacks[ref].append(self.param.watch(param_change, p))
 
     def _process_param_change(self, msg):
+        labels, values = self.labels, self.values
         if 'name' in msg:
-            msg['text'] = self.labels[self.values.index(self.value)]
+            msg['text'] = labels[values.index(self.value)]
         if 'options' in msg:
             msg['start'] = 0
             msg['end'] = len(msg['options']) - 1
-            options = msg['options']
-            if isinstance(options, dict):
-                msg['labels'] = self.labels
-                options = self.values
-            else:
-                msg['labels'] = [title + (self.formatter % o) for o in options]
-            if self.value not in options:
-                self.value = options[0]
+            msg['labels'] = labels
+            if self.value not in values:
+                self.value = values[0]
         if 'value' in msg:
             value = msg['value']
-            if value not in self.values:
-                self.value = self.values[0]
+            if value not in values:
+                self.value = values[0]
                 msg.pop('value')
                 return msg
-            label = self.labels[self.values.index(value)]
-            msg['value'] = self.values.index(value)
+            label = labels[values.index(value)]
+            msg['value'] = values.index(value)
             msg['text'] = label
         return msg
 
