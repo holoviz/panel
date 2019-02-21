@@ -638,7 +638,7 @@ class DiscreteSlider(Widget):
 
     @property
     def labels(self):
-        title = '<b>%s</b>: ' % (self.name if self.name else '')
+        title = ('<b>%s</b> ' % self.name if self.name else '')
         if isinstance(self.options, dict):
             return [title + o for o in self.options]
         else:
@@ -695,16 +695,15 @@ class DiscreteSlider(Widget):
             self._callbacks[ref].append(self.param.watch(param_change, p))
 
     def _process_param_change(self, msg):
-        title = '<b>%s</b>: ' % (self.name if self.name else '')
         if 'name' in msg:
-            msg['text'] = title + self.formatter % self.value
+            msg['text'] = self.labels[self.values.index(self.value)]
         if 'options' in msg:
             msg['start'] = 0
             msg['end'] = len(msg['options']) - 1
             options = msg['options']
             if isinstance(options, dict):
-                msg['labels'] = list(options)
-                options = list(options.values())
+                msg['labels'] = self.labels
+                options = self.values
             else:
                 msg['labels'] = [title + (self.formatter % o) for o in options]
             if self.value not in options:
