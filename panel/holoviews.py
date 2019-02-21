@@ -153,9 +153,9 @@ class HoloViews(PaneBase):
     @classmethod
     def widgets_from_dimensions(cls, object, widget_types={}, widgets_type='individual'):
         from holoviews.core import Dimension
-        from holoviews.core.util import isnumeric, unicode
+        from holoviews.core.util import isnumeric, unicode, datetime_types
         from holoviews.core.traversal import unique_dimkeys
-        from .widgets import Widget, DiscreteSlider, Select, FloatSlider
+        from .widgets import Widget, DiscreteSlider, Select, FloatSlider, DatetimeInput
 
         dims, keys = unique_dimkeys(object)
         if dims == [Dimension('Frame')] and keys == [(0,)]:
@@ -186,7 +186,7 @@ class HoloViews(PaneBase):
                                      'dimension widget declared as %s.' % 
                                      (dim, widget))
             if vals:
-                if all(isnumeric(v) for v in vals) and len(vals) > 1:
+                if all(isnumeric(v) or isinstance(v, datetime_types) for v in vals) and len(vals) > 1:
                     vals = sorted(vals)
                     labels = [unicode(dim.pprint_value(v)) for v in vals]
                     options = OrderedDict(zip(labels, vals))
@@ -202,6 +202,8 @@ class HoloViews(PaneBase):
                 default = dim.range[0] if dim.default is None else dim.default
                 step = 0.1 if dim.step is None else dim.step
                 widget_type = widget_type or FloatSlider
+                if isinstance(default, datetime_types):
+                    widget_type = DatetimeInput
                 widget = widget_type(step=step, name=dim.label, start=dim.range[0],
                                      end=dim.range[1], value=default)
             if widget is not None:

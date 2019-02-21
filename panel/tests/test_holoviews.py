@@ -1,6 +1,8 @@
 from __future__ import absolute_import
 
+import datetime as dt
 from collections import OrderedDict
+
 import pytest
 
 from bokeh.models import (Row as BkRow, Column as BkColumn, GlyphRenderer,
@@ -204,6 +206,21 @@ def test_holoviews_widgets_from_holomap():
     assert widgets[1].name == 'Y'
     assert widgets[1].options == OrderedDict([(i, i) for i in ['A', 'B', 'C']])
     assert widgets[1].value == 'A'
+
+
+@hv_available
+def test_holoviews_date_slider_widgets_from_holomap():
+    hmap = hv.HoloMap({dt.datetime(2016, 1, i+1): hv.Curve([i]) for i in range(3)}, kdims=['X'])
+
+    widgets, _ = HoloViews.widgets_from_dimensions(hmap)
+
+    assert isinstance(widgets[0], DiscreteSlider)
+    assert widgets[0].name == 'X'
+    assert widgets[0].options == OrderedDict([
+        ('2016-01-01 00:00:00', dt.datetime(2016, 1, 1)),
+        ('2016-01-02 00:00:00', dt.datetime(2016, 1, 2)),
+        ('2016-01-03 00:00:00', dt.datetime(2016, 1, 3))])
+    assert widgets[0].value == dt.datetime(2016, 1, 1)
 
 
 @hv_available
