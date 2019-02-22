@@ -30,15 +30,15 @@ export class State extends Model {
   }
 
   get_state(widget: any): void {
-	let values: any[] = copy(this.values)
-	const index: any = this.widgets[widget.id]
-	values[index] = widget.value
-	let state: any = this.state
+    let values: any[] = copy(this.values)
+    const index: any = this.widgets[widget.id]
+    values[index] = widget.value
+    let state: any = this.state
     for (const i of values) {
       state = state[i]
-	}
-	this.values = values
-	return state
+    }
+    this.values = values
+    return state
   }
   
   static initClass(): void {
@@ -47,8 +47,8 @@ export class State extends Model {
 
     this.define<State.Props>({
       state:   [ p.Any, {}        ],
-	  widgets: [ p.Any, {}        ],
-	  values:  [ p.Any, []        ],
+      widgets: [ p.Any, {}        ],
+      values:  [ p.Any, []        ],
     })
   }
 }

@@ -491,9 +491,9 @@ def render_model(model, comm=None):
     if comm:
         comm_js = comm.js_template.format(plot_id=target, comm_id=comm.id, msg_handler=msg_handler)
         bokeh_js = '\n'.join([comm_js, bokeh_script])
-        bokeh_js = embed_js.format(widget_id=target, plot_id=target, html=html) + bokeh_js
     else:
         bokeh_js = bokeh_script
+    bokeh_js = embed_js.format(widget_id=target, plot_id=target, html=bokeh_div) + bokeh_js
 
     data = {EXEC_MIME: '', 'text/html': html, 'application/javascript': bokeh_js}
     metadata = {EXEC_MIME: {'id': target}}
