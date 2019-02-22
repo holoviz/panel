@@ -292,10 +292,9 @@ def add_to_doc(obj, doc, hold=False):
 
 
 def record_events(doc):
-    events = list(doc._held_events)
-    if not events:
-        return None
-    msg = Protocol("1.0").create("PATCH-DOC", events, use_buffers=False)
+    msg = diff(doc, False)
+    if msg is None:
+        return {}
     return {'header': msg.header_json, 'metadata': msg.metadata_json,
             'content': msg.content_json}
 
@@ -350,7 +349,6 @@ def embed_state(panel, model, doc, max_states=1000):
             values.append((w, w_model, list(w.options.values())))
     doc._held_events = []
 
-    state_dict = defaultdict(dict)
     restore = [w.value for w, _, _ in values]
     init_vals = [m.value for _, m, _ in values]
     cross_product = list(product(*[vals[::-1] for _, _, vals in values]))
@@ -362,12 +360,18 @@ def embed_state(panel, model, doc, max_states=1000):
                            'the max_states specified on static export.' %
                            len(cross_product))
 
+    nested_dict = lambda: defaultdict(nested_dict)
+    state_dict = nested_dict()
     for key in cross_product:
         sub_dict = state_dict
         for i, k in enumerate(key):
             w, m = values[i][:2]
             w.value = k
-            sub_dict[m.value] = record_events(doc)
+            sub_dict = sub_dict[m.value]
+        events = record_events(doc)
+        if events:
+            sub_dict.update(events)
+
     for (w, _, _), v in zip(values, restore):
         w.set_param(value=v)
 
