@@ -328,7 +328,6 @@ def embed_state(panel, model, doc, max_states=1000):
 
     add_to_doc(model, doc, True)
 
-    keys = []
     values = []
     for w in widgets:
         w_model = w._models[target].select_one({'type': w._widget_type})
