@@ -14,18 +14,24 @@ import textwrap
 from collections import defaultdict, MutableSequence, MutableMapping, OrderedDict
 from contextlib import contextmanager
 from datetime import datetime
+from itertools import product
 from six import string_types
 
 import param
 import bokeh
 import bokeh.embed.notebook
 
+from bokeh.core.templates import DOC_NB_JS
+from bokeh.core.json_encoder import serialize_json
 from bokeh.document import Document
+from bokeh.embed.elements import div_for_render_item
+from bokeh.embed.util import standalone_docs_json_and_render_items
 from bokeh.io.notebook import load_notebook as bk_load_notebook
 from bokeh.models import Model, LayoutDOM, Box
 from bokeh.protocol import Protocol
 from bokeh.resources import CDN, INLINE
 from bokeh.util.string import encode_utf8
+
 from pyviz_comms import (PYVIZ_PROXY, JupyterCommManager, bokeh_msg_handler,
                          nb_mime_js, embed_js)
 
@@ -285,6 +291,91 @@ def add_to_doc(obj, doc, hold=False):
         doc.hold()
 
 
+def record_events(doc):
+    events = list(doc._held_events)
+    if not events:
+        return None
+    msg = Protocol("1.0").create("PATCH-DOC", events, use_buffers=False)
+    return {'header': msg.header_json, 'metadata': msg.metadata_json,
+            'content': msg.content_json}
+
+
+def embed_state(panel, model, doc, max_states=1000):
+    """
+    Embeds the state of the application on a State model which allows
+    exporting a static version of an app. This works by finding all
+    widgets with a predefined set of options and evaluating the cross
+    product of the widget values and recording the resulting events to
+    be replayed when exported. The state is recorded on a State model
+    which is attached as an additional root on the Document.
+
+    Parameters
+    ----------
+    panel: panel.viewable.Reactive
+      The Reactive component being exported
+    model: bokeh.model.Model
+      The bokeh model being exported
+    doc: bokeh.document.Document
+      The bokeh Document being exported
+    max_states: int
+      The maximum number of states to export
+    """
+    from .models.state import State
+    from .widgets import Widget
+
+    target = model.ref['id']
+    model.tags.append('embedded')
+    widgets = [w for w in panel.select(Widget) if 'options' in w.params()]
+
+    add_to_doc(model, doc, True)
+
+    keys = []
+    values = []
+    for w in widgets:
+        w_model = w._models[target].select_one({'type': w._widget_type})
+        js_callback = CustomJS(code="""
+          var receiver = new Bokeh.protocol.Receiver()
+          state = cb_obj.document.roots()[1]
+          msg = state.get_state(cb_obj)
+          receiver.consume(msg.header)
+          receiver.consume(msg.metadata)
+          receiver.consume(msg.content)
+          if (receiver.message)
+            cb_obj.document.apply_json_patch(receiver.message.content)
+        """)
+        w_model.js_on_change('value', js_callback)
+        if isinstance(w.options, list):
+            values.append((w, w_model, w.options))
+        else:
+            values.append((w, w_model, list(w.options.values())))
+    doc._held_events = []
+
+    state_dict = defaultdict(dict)
+    restore = [w.value for w, _, _ in values]
+    init_vals = [m.value for _, m, _ in values]
+    cross_product = list(product(*[vals[::-1] for _, _, vals in values]))
+
+    if len(cross_product) > max_states:
+        raise RuntimeError('The cross product of different application '
+                           'states is too large to explore (N=%d), either reduce '
+                           'the number of options on the widgets or increase '
+                           'the max_states specified on static export.' %
+                           len(cross_product))
+
+    for key in cross_product:
+        sub_dict = state_dict
+        for i, k in enumerate(key):
+            w, m = values[i][:2]
+            w.value = k
+            sub_dict[m.value] = record_events(doc)
+    for (w, _, _), v in zip(values, restore):
+        w.set_param(value=v)
+
+    state = State(state=state_dict, values=init_vals,
+                  widgets={m.ref['id']: i for i, (_, m, _) in enumerate(values)})
+    doc.add_root(state)
+
+
 LOAD_MIME = 'application/vnd.holoviews_load.v0+json'
 EXEC_MIME = 'application/vnd.holoviews_exec.v0+json'
 HTML_MIME = 'text/html'
@@ -368,22 +459,37 @@ def render_mimebundle(model, doc, comm):
     Displays bokeh output inside a notebook using the PyViz display
     and comms machinery.
     """
-    if not isinstance(model, LayoutDOM): 
+    if not isinstance(model, LayoutDOM):
         raise ValueError('Can only render bokeh LayoutDOM models')
-
     add_to_doc(model, doc, True)
+    return render_model(model, comm)
+
+
+def render_model(model, comm=None):
+    if not isinstance(model, Model):
+        raise ValueError("notebook_content expects a single Model instance")
 
     target = model.ref['id']
 
-    # Publish plot HTML
-    bokeh_script, bokeh_div, _ = bokeh.embed.notebook.notebook_content(model)
-    html = "<div id='{id}'>{html}</div>".format(id=target, html=encode_utf8(bokeh_div))
+    (docs_json, [render_item]) = standalone_docs_json_and_render_items([model])
+    div = div_for_render_item(render_item)
+    render_item = render_item.to_json()
+    script = DOC_NB_JS.render(
+        docs_json=serialize_json(docs_json),
+        render_items=serialize_json([render_item]),
+    )
+    bokeh_script, bokeh_div = encode_utf8(script), encode_utf8(div)
+    html = "<div id='{id}'>{html}</div>".format(id=target, html=bokeh_div)
 
     # Publish bokeh plot JS
     msg_handler = bokeh_msg_handler.format(plot_id=target)
-    comm_js = comm.js_template.format(plot_id=target, comm_id=comm.id, msg_handler=msg_handler)
-    bokeh_js = '\n'.join([comm_js, bokeh_script])
-    bokeh_js = embed_js.format(widget_id=target, plot_id=target, html=html) + bokeh_js
+
+    if comm:
+        comm_js = comm.js_template.format(plot_id=target, comm_id=comm.id, msg_handler=msg_handler)
+        bokeh_js = '\n'.join([comm_js, bokeh_script])
+        bokeh_js = embed_js.format(widget_id=target, plot_id=target, html=html) + bokeh_js
+    else:
+        bokeh_js = bokeh_script
 
     data = {EXEC_MIME: '', 'text/html': html, 'application/javascript': bokeh_js}
     metadata = {EXEC_MIME: {'id': target}}

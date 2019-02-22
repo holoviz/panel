@@ -8,6 +8,7 @@ from __future__ import absolute_import, division, unicode_literals
 import re
 import signal
 import uuid
+
 from functools import partial
 
 import param
@@ -21,8 +22,10 @@ from bokeh.server.server import Server
 from pyviz_comms import JS_CALLBACK, JupyterCommManager
 
 from .io import state
+from .models.state import State
 from .util import (render_mimebundle, add_to_doc, push, param_reprs,
-                   _origin_url, show_server, ABORT_JS)
+                   embed_state, render_model, _origin_url, show_server,
+                   ABORT_JS)
 
 
 class Layoutable(param.Parameterized):
@@ -177,7 +180,6 @@ class Layoutable(param.Parameterized):
         super(Layoutable, self).__init__(**params)
 
 
-
 class Viewable(Layoutable):
     """
     Viewable is the baseclass all objects in the panel library are
@@ -263,6 +265,25 @@ class Viewable(Layoutable):
         comm = state._comm_manager.get_server_comm()
         model = self._get_root(doc, comm)
         return render_mimebundle(model, doc, comm)
+
+    def embed(self, max_states=1000):
+        """
+        Renders a static version of a panel in a notebook by evaluating
+        the set of states defined by the widgets in the model. Note
+        this will only work well for simple apps with a relatively
+        small state space.
+
+        Parameters
+        ----------
+        max_states: int
+          The maximum number of states to embed
+        """
+        from IPython.display import publish_display_data
+        doc = Document()
+        comm = Comm()
+        model = self._get_root(doc, comm)
+        embed_state(self, model, doc, max_states)
+        publish_display_data(*render_model(model))
 
     def _server_destroy(self, session_context):
         """
