@@ -210,7 +210,6 @@ class HoloViews(PaneBase):
                 widgets.append(widget)
         if widgets_type == 'scrubber':
             widgets = [Player(length=nframes)]
-        print(widgets)
         return widgets, dim_values
 
 
