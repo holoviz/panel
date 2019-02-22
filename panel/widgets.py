@@ -29,7 +29,7 @@ from .layout import Column, Row, Spacer, WidgetBox # noqa
 from .models.widgets import (
     Player as _BkPlayer, FileInput as _BkFileInput, Audio as _BkAudio)
 from .viewable import Reactive
-from .util import as_unicode, push, value_as_datetime, hashable
+from .util import as_unicode, push, value_as_datetime, hashable, basestring
 
 
 class Widget(Reactive):
@@ -642,8 +642,8 @@ class DiscreteSlider(Widget):
         if isinstance(self.options, dict):
             return [title + o for o in self.options]
         else:
-            return [title + (self.formatter % o) for o in self.options]
-
+            return [title + (o if isinstance(o, basestring) else (self.formatter % o))
+                    for o in self.options]
     @property
     def values(self):
         return list(self.options.values()) if isinstance(self.options, dict) else self.options
