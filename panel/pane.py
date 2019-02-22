@@ -19,9 +19,9 @@ import param
 from bokeh.models import (LayoutDOM, CustomJS, Widget as _BkWidget,
                           Div as _BkDiv, Column as _BkColumn)
 
-from .layout import Panel, Row, Layoutable
+from .layout import Panel, Row
 from .util import basestring, param_reprs, push, remove_root
-from .viewable import Viewable
+from .viewable import Viewable, Reactive, Layoutable
 
 
 def panel(obj, **kwargs):
@@ -61,7 +61,7 @@ def Pane(obj, **kwargs):
     return PaneBase.get_pane_type(obj)(obj, **kwargs)
 
 
-class PaneBase(Layoutable):
+class PaneBase(Reactive):
     """
     PaneBase is the abstract baseclass for all atomic displayable units
     in the panel library. Pane defines an extensible interface for
