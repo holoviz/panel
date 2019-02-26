@@ -44,9 +44,9 @@ Some example Panel apps: (Click on the title to see the code, or the image to de
 Using Panel for declarative, reactive programming
 -------------------------------------------------
 
-Panel can also be used with the separate `Param <http://param.pyviz.org>`__ project to create interactively configurable objects with or without associated visualizations, in a fully declarative way. With this approach, you declare your configurable object using the pure-Python, zero-dependency ``param`` library, annotating your code with parameter ranges, documentation, and dependencies between parameters and your code. Using this information, you can make all of your domain-specific code be optionally configurable in a GUI, with optional visual displays and debugging information if you like, all with just a few lines of declarations. With this approach, you don't ever have to commit to whether your code will be used in a notebook, in a GUI app, or completely behind the scenes in batch processing or reports -- the same code can support all of these cases equally well, once you declare the associated parameters and constraints. This approach lets you completely separate your domain-specific code from anything to do with web browsers, GUI toolkits, or other volatile technologies that would otherwise make your hard work become obsolete as they change over time. 
+Panel can also be used with the separate `Param <http://param.pyviz.org>`__ project to create interactively configurable objects with or without associated visualizations, in a fully declarative way. With this approach, you declare your configurable object using the pure-Python, zero-dependency ``param`` library, annotating your code with parameter ranges, documentation, and dependencies between parameters and your code. Using this information, you can make all of your domain-specific code be optionally configurable in a GUI, with optional visual displays and debugging information if you like, all with just a few lines of declarations. With this approach, you don't ever have to commit to whether your code will be used in a notebook, in a GUI app, or completely behind the scenes in batch processing or reports -- the same code can support all of these cases equally well, once you declare the associated parameters and constraints. This approach lets you completely separate your domain-specific code from anything to do with web browsers, GUI toolkits, or other volatile technologies that would otherwise make your hard work become obsolete as they change over time.
 
-The `User Guide <user_guide>`_ explains how to use Panel.  Panel is currently in prerelease status, which means that it is available for public use but has an API that is expected to change with each new release without detailed notice. 
+The `User Guide <user_guide>`_ explains how to use Panel.  Panel is currently in prerelease status, which means that it is available for public use but has an API that is expected to change with each new release without detailed notice.
 
 If you have any `issues <https://github.com/pyviz/panel/issues>`_ or wish to `contribute code <https://help.github.com/articles/about-pull-requests>`_, you can visit our `GitHub site <https://github.com/pyviz/panel>`_ or chat with the developers on `gitter <https://gitter.im/ioam/holoviews>`_.
 
@@ -54,7 +54,7 @@ If you have any `issues <https://github.com/pyviz/panel/issues>`_ or wish to `co
 Installation
 ------------
 
-|CondaPkg|_ |PyPI|_ |License|_
+|CondaPyViz|_ |CondaDefaults|_ |PyPI|_ |License|_
 
 
 Panel works with `Python 2.7 and Python 3 <https://travis-ci.org/pyviz/panel>`_ on Linux, Windows, or Mac.  The recommended way to install Panel is using the `conda <http://conda.pydata.org/docs/>`_ command provided by `Anaconda <http://docs.continuum.io/anaconda/install>`_ or `Miniconda <http://conda.pydata.org/miniconda.html>`_::
@@ -70,7 +70,7 @@ Support for classic Jupyter Notebook is included with Panel. If you want to work
   conda install -c conda-forge jupyterlab
   jupyter labextension install @pyviz/jupyterlab_pyviz
 
-  
+
 Getting Started
 ---------------
 
@@ -92,12 +92,14 @@ Panel is part of the PyViz family of tools.  The `PyViz website <http://pyviz.or
 shows how to use Panel together with other libraries to solve complex problems,
 with detailed tutorials and examples.
 
+.. |CondaPyViz| image:: https://img.shields.io/conda/v/pyviz/panel.svg
+.. _CondaPyViz: https://anaconda.org/pyviz/panel
+
+.. |CondaDefaults| image:: https://img.shields.io/conda/v/anaconda/panel.svg?label=conda%7Cdefaults
+.. _CondaDefaults: https://anaconda.org/anaconda/panel
 
 .. |PyPI| image:: https://img.shields.io/pypi/v/panel.svg
 .. _PyPI: https://pypi.python.org/pypi/panel
-
-.. |CondaPkg| image:: https://anaconda.org/pyviz/panel/badges/installer/conda.svg
-.. _CondaPkg: https://anaconda.org/pyviz/panel
 
 .. |License| image:: https://img.shields.io/pypi/l/panel.svg
 .. _License: https://github.com/pyviz/panel/blob/master/LICENSE.txt
@@ -115,4 +117,4 @@ with detailed tutorials and examples.
    FAQ
    Github source <http://github.com/pyviz/panel>
    About <about>
-   
+
