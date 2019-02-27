@@ -11,7 +11,8 @@ from panel.param import Param
 
 def get_div(box):
     # Temporary utilities to unpack widget boxes
-    assert isinstance(box, BkColumn)
+    if isinstance(box, Div):
+        return box
     return box.children[0]
 
 

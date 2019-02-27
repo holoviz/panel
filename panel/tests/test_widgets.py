@@ -193,7 +193,7 @@ def test_datetime_input(document, comm):
 
     box = dt_input._get_model(document, comm=comm)
 
-    assert isinstance(box, WidgetBox)
+    assert isinstance(box, Column)
 
     widget = box.children[0]
     assert isinstance(widget, dt_input._widget_type)
@@ -278,7 +278,7 @@ def test_select_mutables(document, comm):
 
     box = select._get_model(document, comm=comm)
 
-    assert isinstance(box, WidgetBox)
+    assert isinstance(box, Column)
 
     widget = box.children[0]
     assert isinstance(widget, select._widget_type)
@@ -330,7 +330,7 @@ def test_toggle_buttons(document, comm):
 
     box = select._get_model(document, comm=comm)
 
-    assert isinstance(box, WidgetBox)
+    assert isinstance(box, Column)
 
     widget = box.children[0]
     assert isinstance(widget, select._widget_type)
@@ -383,7 +383,7 @@ def test_toggle_group_check(document, comm):
         
         box = select._get_model(document, comm=comm)
     
-        assert isinstance(box, WidgetBox)
+        assert isinstance(box, Column)
     
         widget = box.children[0]
         assert isinstance(widget, select._widget_type)
@@ -415,7 +415,7 @@ def test_toggle_group_radio(document, comm):
         
         box = select._get_model(document, comm=comm)
     
-        assert isinstance(box, WidgetBox)
+        assert isinstance(box, Column)
     
         widget = box.children[0]
         assert isinstance(widget, select._widget_type)
@@ -436,7 +436,7 @@ def test_radio_buttons(document, comm):
 
     box = select._get_model(document, comm=comm)
 
-    assert isinstance(box, WidgetBox)
+    assert isinstance(box, Column)
 
     widget = box.children[0]
     assert isinstance(widget, select._widget_type)
@@ -578,7 +578,7 @@ def test_discrete_date_slider(document, comm):
 
     box = discrete_slider._get_model(document, comm=comm)
 
-    assert isinstance(box, WidgetBox)
+    assert isinstance(box, Column)
 
     label = box.children[0]
     widget = box.children[1]
@@ -608,7 +608,7 @@ def test_discrete_slider_options_dict(document, comm):
 
     box = discrete_slider._get_model(document, comm=comm)
 
-    assert isinstance(box, WidgetBox)
+    assert isinstance(box, Column)
 
     label = box.children[0]
     widget = box.children[1]
@@ -676,7 +676,7 @@ def test_discrete_player(document, comm):
 
     box = discrete_player._get_model(document, comm=comm)
 
-    assert isinstance(box, WidgetBox)
+    assert isinstance(box, Column)
 
     widget = box.children[0]
     assert isinstance(widget, BkPlayer)
@@ -698,7 +698,7 @@ def test_file_input(document, comm):
 
     box = file_input._get_model(document, comm=comm)
 
-    assert isinstance(box, WidgetBox)
+    assert isinstance(box, Column)
 
     widget = box.children[0]
     assert isinstance(widget, BkFileInput)

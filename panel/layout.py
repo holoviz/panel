@@ -7,7 +7,7 @@ from __future__ import absolute_import, division, unicode_literals
 import param
 
 from bokeh.models import (Column as BkColumn, Row as BkRow,
-                          Box as BkBox, Spacer as BkSpacer)
+                          Spacer as BkSpacer)
 from bokeh.models.widgets import Tabs as BkTabs, Panel as BkPanel
 
 from .util import param_name, param_reprs, push
@@ -32,7 +32,6 @@ class Panel(Reactive):
 
     def __init__(self, *objects, **params):
         from .pane import panel
-        from .widgets import Widget
         objects = [panel(pane, _internal=True) for pane in objects]
         super(Panel, self).__init__(objects=objects, **params)
 

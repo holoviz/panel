@@ -3,7 +3,7 @@ from __future__ import absolute_import
 from base64 import b64decode, b64encode
 import pytest
 
-from bokeh.models import Div, Row as BkRow, Column as BkColumn
+from bokeh.models import Div, Row as BkRow
 from panel.pane import (Pane, PaneBase, Bokeh, Matplotlib, HTML, Str,
                         PNG, JPG, GIF, SVG, Markdown, LaTeX)
 
@@ -88,9 +88,7 @@ def test_matplotlib_pane(document, comm):
     assert len(row.children) == 1
     assert row.ref['id'] in pane._callbacks
     model = row.children[0]
-    assert isinstance(model, BkColumn)
-    div = model.children[0]
-    assert isinstance(div, Div)
+    div = get_div(model)
     assert '<img' in div.text
     text = div.text
     assert pane._models[row.ref['id']] is model
@@ -98,8 +96,7 @@ def test_matplotlib_pane(document, comm):
     # Replace Pane.object
     pane.object = mpl_figure()
     model = row.children[0]
-    assert isinstance(model, BkColumn)
-    div2 = model.children[0]
+    div2 = get_div(model)
     assert div is div2
     assert div.text != text
     assert row.ref['id'] in pane._callbacks
@@ -152,11 +149,10 @@ def test_html_pane(document, comm):
     assert isinstance(row, BkRow)
     assert len(row.children) == 1
     model = row.children[0]
-    assert model.ref['id'] in inner_pane._callbacks
-    assert isinstance(model, BkColumn)
-    div = model.children[0]
-    assert isinstance(div, Div)
-    text = div.text
+    assert row.ref['id'] in pane._callbacks
+    assert pane._models[row.ref['id']] is model
+    div = get_div(model)
+    assert div.text == "<h1>Test</h1>"
 
     # Replace Pane.object
     pane.object = "<h2>Test</h2>"
@@ -182,18 +178,8 @@ def test_latex_pane(document, comm):
     assert isinstance(row, BkRow)
     assert len(row.children) == 1
     model = row.children[0]
-    assert model.ref['id'] in inner_pane._callbacks
-    assert isinstance(model, BkColumn)
-    div = model.children[0]
-    assert isinstance(div, Div)
-    text = div.text
-
-    # Update pane
-    test.a = 5
-    model = row.children[0]
-    new_pane = pane._pane
-    assert pane._callbacks == {}
-    assert isinstance(new_pane, Bokeh)
+    assert row.ref['id'] in pane._callbacks
+    assert pane._models[row.ref['id']] is model
     div = get_div(model)
     # Just checks for a PNG, not a specific rendering, to avoid
     # false alarms when formatting of the PNG changes

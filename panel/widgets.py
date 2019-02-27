@@ -14,7 +14,7 @@ from datetime import datetime
 
 import param
 import numpy as np
-from bokeh.models import Column as _BkColumn, Row as _BkRow
+from bokeh.models import Column as _BkColumn
 from bokeh.models.widgets import (
     TextInput as _BkTextInput, Select as _BkSelect, Slider as _BkSlider,
     CheckboxGroup as _BkCheckboxGroup, DateRangeSlider as _BkDateRangeSlider,
@@ -72,6 +72,8 @@ class Widget(Reactive):
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         root = parent if root is None else root
+        if root is None:
+            root = _BkColumn()
         model = self._widget_type(**self._init_properties())
 
         # Link parameters and bokeh model
@@ -80,6 +82,9 @@ class Widget(Reactive):
         self._models[root.ref['id']] = model
         self._link_params(model, params, doc, root, comm)
         self._link_props(model, properties, doc, root, comm)
+        if parent is None:
+            root.children.append(model)
+            return root
 
         return model
 

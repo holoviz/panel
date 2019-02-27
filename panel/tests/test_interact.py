@@ -176,7 +176,7 @@ def test_interact_replaces_model(document, comm):
     column = interact_pane.layout._get_model(document, comm=comm)
     assert isinstance(column, BkColumn)
     box = column.children[1].children[0]
-    assert isinstance(box, BkWidgetBox)
+    assert isinstance(box, BkColumn)
     div = box.children[0]
     assert isinstance(div, BkDiv)
     assert div.text == 'Test'

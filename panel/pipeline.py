@@ -46,7 +46,7 @@ class Pipeline(param.Parameterized):
         self._progress_sel.add_subscriber(self._set_stage)
         prev_button =  Param(self.param, parameters=['previous'], show_name=False)
         next_button =  Param(self.param, parameters=['next'], show_name=False)
-        prev_button.layout[0][0].disabled = True
+        prev_button.layout[0].disabled = True
         self._progress_bar = Row(self._make_progress, prev_button, next_button)
         spinner = Pane(os.path.join(os.path.dirname(__file__), 'assets', 'spinner.gif'))
         self._spinner_layout = Row(Spacer(width=300), Column(Spacer(height=200), spinner))
@@ -136,15 +136,15 @@ class Pipeline(param.Parameterized):
     def _update_button(self):
         # Disable previous button
         if self._stage == 0:
-            self._progress_bar[1].layout[0][0].disabled = True
+            self._progress_bar[1].layout[0].disabled = True
         else:
-            self._progress_bar[1].layout[0][0].disabled = False
+            self._progress_bar[1].layout[0].disabled = False
 
         # Disable next button
         if self._stage == len(self._stages)-1:
-            self._progress_bar[2].layout[0][0].disabled = True
+            self._progress_bar[2].layout[0].disabled = True
         else:
-            self._progress_bar[2].layout[0][0].disabled = False
+            self._progress_bar[2].layout[0].disabled = False
 
     @param.depends('next', watch=True)
     def _next(self):
