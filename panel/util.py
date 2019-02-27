@@ -314,7 +314,7 @@ def render_mimebundle(model, doc, comm):
 
     # Publish plot HTML
     bokeh_script, bokeh_div, _ = bokeh.embed.notebook.notebook_content(model)
-    html = encode_utf8(bokeh_div)
+    html = "<div id='{id}'>{html}</div>".format(id=target, html=encode_utf8(bokeh_div))
 
     # Publish bokeh plot JS
     msg_handler = bokeh_msg_handler.format(plot_id=target)
