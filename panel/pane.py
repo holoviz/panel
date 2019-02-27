@@ -142,6 +142,12 @@ class PaneBase(Reactive):
         kwargs = {k: v for k, v in params.items() if k in Layoutable.params()}
         self.layout = self.default_layout(self, **kwargs)
 
+    def __getitem__(self, index):
+        """
+        Allows pane objects to behave like the underlying layout
+        """
+        return self.layout[index]
+
     def _get_root(self, doc, comm=None):
         root = self.layout._get_model(doc, comm=comm)
         self._preprocess(root)
