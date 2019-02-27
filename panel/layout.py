@@ -32,7 +32,7 @@ class Panel(Reactive):
 
     def __init__(self, *objects, **params):
         from .pane import panel
-        objects = [panel(pane, _internal=True) for pane in objects]
+        objects = [panel(pane) for pane in objects]
         super(Panel, self).__init__(objects=objects, **params)
 
     def _init_properties(self):
@@ -102,7 +102,7 @@ class Panel(Reactive):
         from .pane import panel
         new_models = []
         for i, pane in enumerate(self.objects):
-            pane = panel(pane, _internal=True)
+            pane = panel(pane)
             self.objects[i] = pane
             if pane in old_objects:
                 child = pane._models[root.ref['id']]
@@ -135,7 +135,7 @@ class Panel(Reactive):
     def __setitem__(self, index, pane):
         from .pane import panel
         new_objects = list(self.objects)
-        new_objects[index] = panel(pane, _internal=True)
+        new_objects[index] = panel(pane)
         self.objects = new_objects
 
     def __repr__(self, depth=0, max_depth=10):
@@ -161,13 +161,13 @@ class Panel(Reactive):
     def append(self, pane):
         from .pane import panel
         new_objects = list(self.objects)
-        new_objects.append(panel(pane, _internal=True))
+        new_objects.append(panel(pane))
         self.objects = new_objects
 
     def insert(self, index, pane):
         from .pane import panel
         new_objects = list(self.objects)
-        new_objects.insert(index, panel(pane, _internal=True))
+        new_objects.insert(index, panel(pane))
         self.objects = new_objects
 
     def pop(self, index):
@@ -231,7 +231,7 @@ class Tabs(Panel):
                 name = pane.name
             else:
                 name = None
-            objects.append(panel(pane, name=name, _internal=True))
+            objects.append(panel(pane, name=name))
             name = param_name(objects[-1].name) if name is None else name
             names.append(name)
         self._names = names
@@ -264,7 +264,7 @@ class Tabs(Panel):
                              'directly. Found %d names, expected %d.' %
                              (len(self._names), len(self.objects)))
         for i, (name, pane) in enumerate(zip(self._names, self.objects)):
-            pane = panel(pane, _internal=True)
+            pane = panel(pane)
             self.objects[i] = pane
             if pane in old_objects:
                 child = pane._models[root.ref['id']]
@@ -280,7 +280,7 @@ class Tabs(Panel):
         if isinstance(pane, tuple):
             name, pane = pane
         new_objects = list(self.objects)
-        new_objects[index] = panel(pane, name=name, _internal=True)
+        new_objects[index] = panel(pane, name=name)
         name = param_name(new_objects[index].name) if name is None else name
         self._names[index] = name
         self.objects = new_objects
@@ -291,7 +291,7 @@ class Tabs(Panel):
         if isinstance(pane, tuple):
             name, pane = pane
         new_objects = list(self.objects)
-        new_objects.append(panel(pane, name=name, _internal=True))
+        new_objects.append(panel(pane, name=name))
         print(new_objects[-1])
         name = param_name(new_objects[-1].name) if name is None else name
         self._names[-1] = name
@@ -303,7 +303,7 @@ class Tabs(Panel):
         if isinstance(pane, tuple):
             name, pane = pane
         new_objects = list(self.objects)
-        new_objects.insert(index, panel(pane, _internal=True))
+        new_objects.insert(index, panel(pane))
         name = param_name(new_objects[index].name) if name is None else name
         self._names[index] = name
         self.objects = new_objects
