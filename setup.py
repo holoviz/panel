@@ -72,7 +72,7 @@ class CustomInstallCommand(install):
 ########## dependencies ##########
 
 install_requires = [
-    'bokeh >=1.0.0',
+    'bokeh >=1.1.0dev7',
     'param >=1.8.2',
     'pyviz_comms >=0.7.0',
     'markdown',

@@ -11,7 +11,7 @@ sudo: false
 env:
   global:
     - PYENV_VERSION=3.6
-    - CHANS_DEV="-c pyviz/label/dev -c jbednar"
+    - CHANS_DEV="-c pyviz/label/dev -c bokeh/label/dev -c jbednar"
     - CHANS_REL="-c pyviz -c jbednar"
     - LABELS_DEV="--label dev"
     - LABELS_REL="--label dev --label main"
@@ -81,7 +81,7 @@ jobs:
       install:
         - doit develop_install $CHANS_DEV -o build && pip uninstall -y panel
         - doit pip_on_conda
-        - conda install $CHANS_DEV nodejs=9.11.1
+        - conda install $CHANS_DEV nodejs
         - doit ecosystem=pip package_build $PKG_TEST_PYTHON --test-group=unit
       script: doit ecosystem=pip package_upload -u $PYPIUSER -p $PYPIPASS --pypi ${PYPI}
 
