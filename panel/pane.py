@@ -643,6 +643,7 @@ class Markdown(DivPaneBase):
         if not isinstance(data, basestring):
             data = data._repr_markdown_()
         properties = super(Markdown, self)._get_properties()
+        properties['style'] = dict(properties.get('style', {}), **{"white-space": "nowrap"})
         extensions = ['markdown.extensions.extra', 'markdown.extensions.smarty']
         html = markdown.markdown(self.object, extensions=extensions,
                                  output_format='html5')
