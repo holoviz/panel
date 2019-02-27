@@ -82,7 +82,7 @@ install_requires = [
 
 _recommended = [
     'notebook >=5.4',
-    'holoviews>=1.11.0',
+    'holoviews >=1.12.0a1',
     'matplotlib',
     'pillow',
     'plotly'
