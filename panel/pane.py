@@ -322,7 +322,7 @@ class Image(DivPaneBase):
 
         b64 = base64.b64encode(data).decode("utf-8")
         src = "data:image/"+self.imgtype+";base64,{b64}".format(b64=b64)
-        html = "<img src='{src}' width='100%' height='100%'></img>".format(
+        html = "<img src='{src}' width='{width}px' height='{height}px'></img>".format(
             src=src, width=width, height=height)
         return dict(p, width=width, height=height, text=html)
 
