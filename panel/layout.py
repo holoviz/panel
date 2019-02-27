@@ -139,7 +139,9 @@ class Panel(Reactive):
         new_objects[index] = panel(pane, _internal=True)
         self.objects = new_objects
 
-    def __repr__(self, depth=0):
+    def __repr__(self, depth=0, max_depth=10):
+        if depth > max_depth:
+            return '...'
         spacer = '\n' + ('    ' * (depth+1))
         cls = type(self).__name__
         params = param_reprs(self, ['objects'])
