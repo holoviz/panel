@@ -346,3 +346,20 @@ class Spacer(Reactive):
         self._models[root.ref['id']] = model
         self._link_params(model, ['width', 'height'], doc, root, comm)
         return model
+
+
+class VSpacer(Reactive):
+    """
+    Spacer which automatically fills all available vertical space.
+    """
+
+    sizing_mode = param.Parameter(default='stretch_height', readonly=True)
+
+
+class HSpacer(Reactive):
+    """
+    Spacer which automatically fills all available horizontal space.
+    """
+
+    sizing_mode = param.Parameter(default='stretch_width', readonly=True)
+
