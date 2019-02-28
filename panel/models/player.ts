@@ -5,8 +5,8 @@ import {Widget, WidgetView} from "models/widgets/widget"
 export class PlayerView extends WidgetView {
   model: Player
 
-  protected sliderEl: HTMLElement
-  protected loop_state: HTMLElement
+  protected sliderEl: HTMLInputElement
+  protected loop_state: HTMLFormElement
   protected timer: any
 
   initialize(options: any): void {
@@ -29,84 +29,84 @@ export class PlayerView extends WidgetView {
     if (this.sliderEl == null) {
       super.render()
     } else {
-      this.sliderEl.style = `width:{this.model.width}px`
-      this.sliderEl.min = this.model.start;
-      this.sliderEl.max = this.model.end;
-      this.sliderEl.value = this.model.value;
+      this.sliderEl.style.width = `{this.model.width}px`
+      this.sliderEl.min = String(this.model.start);
+      this.sliderEl.max = String(this.model.end);
+      this.sliderEl.value = String(this.model.value);
       return
     }
 
     // Slider
     this.sliderEl = document.createElement('input')
     this.sliderEl.setAttribute("type", "range");
-    this.sliderEl.style = `width:{this.model.width}px`
-    this.sliderEl.value = this.model.value;
-    this.sliderEl.min = this.model.start;
-    this.sliderEl.max = this.model.end;
-    this.sliderEl.onchange = (ev) => this.set_frame(parseInt(ev.target.value))
+    this.sliderEl.style.width = `{this.model.width}px`
+    this.sliderEl.value = String(this.model.value);
+    this.sliderEl.min = String(this.model.start);
+    this.sliderEl.max = String(this.model.end);
+    this.sliderEl.onchange = (ev) => this.set_frame(parseInt((ev.target as HTMLInputElement).value))
 
     // Buttons
     const button_div = div() as any;
-    button_div.style = "margin: 0 auto; display: table; padding: 5px"
+    button_div.style.cssText = "margin: 0 auto; display: table; padding: 5px"
     const button_style = "text-align: center; min-width: 40px";
 
     const slower = document.createElement('button')
-    slower.style = "text-align: center; min-width: 20px"
+    slower.style.cssText = "text-align: center; min-width: 20px"
     slower.appendChild(document.createTextNode('–'))
     slower.onclick = () => this.slower()
     button_div.appendChild(slower)
 
     const first = document.createElement('button')
-    first.style = button_style
+    first.style.cssText = button_style
     first.appendChild(document.createTextNode('\u275a\u25c0\u25c0'))
     first.onclick = () => this.first_frame()
     button_div.appendChild(first)
 
     const previous = document.createElement('button')
-    previous.style = button_style
+    previous.style.cssText = button_style
     previous.appendChild(document.createTextNode('\u275a\u25c0'))
     previous.onclick = () => this.previous_frame()
     button_div.appendChild(previous)
 
     const reverse = document.createElement('button')
-    reverse.style = button_style
+    reverse.style.cssText = button_style
     reverse.appendChild(document.createTextNode('\u25c0'))
     reverse.onclick = () => this.reverse_animation()
     button_div.appendChild(reverse)
 
     const pause = document.createElement('button')
-    pause.style = button_style
+    pause.style.cssText = button_style
     pause.appendChild(document.createTextNode('\u275a\u275a'))
     pause.onclick = () => this.pause_animation()
     button_div.appendChild(pause)
 
     const play = document.createElement('button')
-    play.style = button_style
+    play.style.cssText = button_style
     play.appendChild(document.createTextNode('\u25b6'))
     play.onclick = () => this.play_animation()
     button_div.appendChild(play)
 
     const next = document.createElement('button')
-    next.style = button_style
+    next.style.cssText = button_style
     next.appendChild(document.createTextNode('\u25b6\u275a'))
     next.onclick = () => this.next_frame()
     button_div.appendChild(next)
 
     const last = document.createElement('button')
-    last.style = button_style
+    last.style.cssText = button_style
     last.appendChild(document.createTextNode('\u25b6\u25b6\u275a'))
     last.onclick = () => this.last_frame()
     button_div.appendChild(last)
 
     const faster = document.createElement('button')
-    faster.style = "text-align: center; min-width: 20px"
+    faster.style.cssText = "text-align: center; min-width: 20px"
     faster.appendChild(document.createTextNode('+'))
     faster.onclick = () => this.faster()
     button_div.appendChild(faster)
 
     // Loop control
     this.loop_state = document.createElement('form')
-    this.loop_state.style = "margin: 0 auto; display: table"
+    this.loop_state.style.cssText = "margin: 0 auto; display: table"
 
     const once = document.createElement('input')
     once.type = "radio";
@@ -114,7 +114,7 @@ export class PlayerView extends WidgetView {
     once.name = "state";
     const once_label = document.createElement('label');
     once_label.innerHTML = "Once"
-    once_label.style = "padding: 0 10px 0 5px; user-select:none;"
+    once_label.style.cssText = "padding: 0 10px 0 5px; user-select:none;"
 
     const loop = document.createElement('input')
     loop.setAttribute("type", "radio");
@@ -122,7 +122,7 @@ export class PlayerView extends WidgetView {
     loop.setAttribute("name", "state");
     const loop_label = document.createElement('label');
     loop_label.innerHTML = "Loop"
-    loop_label.style = "padding: 0 10px 0 5px; user-select:none;"
+    loop_label.style.cssText = "padding: 0 10px 0 5px; user-select:none;"
 
     const reflect = document.createElement('input')
     reflect.setAttribute("type", "radio");
@@ -130,7 +130,7 @@ export class PlayerView extends WidgetView {
     reflect.setAttribute("name", "state");
     const reflect_label = document.createElement('label');
     reflect_label.innerHTML = "Reflect"
-    reflect_label.style = "padding: 0 10px 0 5px; user-select:none;"
+    reflect_label.style.cssText = "padding: 0 10px 0 5px; user-select:none;"
 
     if (this.model.loop_policy == "once")
       once.checked = true
@@ -155,17 +155,18 @@ export class PlayerView extends WidgetView {
   set_frame(frame: number): void {
     if (this.model.value != frame)
       this.model.value = frame;
-    if (this.sliderEl.value != frame)
-      this.sliderEl.value = frame;
+    if (this.sliderEl.value != String(frame))
+      this.sliderEl.value = String(frame);
   }
 
-  get_loop_state(): void {
+  get_loop_state(): string {
     var button_group = this.loop_state.state;
     for (var i = 0; i < button_group.length; i++) {
       var button = button_group[i];
       if (button.checked)
         return button.value;
     }
+	return "once"
   }
 
   set_loop_state(state: string): void {
@@ -197,7 +198,7 @@ export class PlayerView extends WidgetView {
     this.model.interval = Math.round(this.model.interval/0.7);
     if (this.model.direction > 0)
       this.play_animation()
-    else if (this.direction < 0)
+    else if (this.model.direction < 0)
       this.reverse_animation()
   }
 
@@ -244,7 +245,7 @@ export class PlayerView extends WidgetView {
   }
 
   pause_animation(): void {
-    this.direction = 0;
+    this.model.direction = 0;
     if (this.timer) {
       clearInterval(this.timer);
       this.timer = null;
@@ -267,8 +268,16 @@ export class PlayerView extends WidgetView {
 }
 
 export namespace Player {
-  export interface Attrs extends Widget.Attrs {}
-  export interface Props extends Widget.Props {}
+  export type Attrs = p.AttrsOf<Props>
+  export type Props = Widget.Props & {
+    direction: p.Property<number>
+    interval: p.Property<number>
+    start: p.Property<number>
+    end: p.Property<number>
+    step: p.Property<number>
+    loop_policy: p.Property<any>
+    value: p.Property<any>
+  }
 }
 
 export interface Player extends Player.Attrs {}
@@ -285,7 +294,7 @@ export abstract class Player extends Widget {
     this.prototype.type = "Player"
     this.prototype.default_view = PlayerView
 
-    this.define({
+    this.define<Player.Props>({
       direction:         [ p.Number,      0            ],
       interval:          [ p.Number,      500          ],
       start:             [ p.Number,                   ],

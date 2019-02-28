@@ -49,10 +49,7 @@ class extension(_pyviz_extension):
             #       to allow multiple cleanup comms to be registered
             JupyterCommManager.get_client_comm(self._process_comm_msg,
                                                "hv-extension-comm")
-        try:
-            _load_nb(p.inline)
-        except:
-            pass
+        _load_nb(p.inline)
         self._loaded = True
 
         Viewable._comm_manager = JupyterCommManager
