@@ -292,7 +292,6 @@ class Tabs(Panel):
             name, pane = pane
         new_objects = list(self.objects)
         new_objects.append(panel(pane, name=name))
-        print(new_objects[-1])
         name = param_name(new_objects[-1].name) if name is None else name
         self._names[-1] = name
         self.objects = new_objects

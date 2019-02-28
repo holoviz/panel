@@ -493,7 +493,6 @@ def test_expand_param_subobject_expand(document, comm):
 
     # Expand subpane
     assert len(model.children) == 4
-    print(test_pane.layout.objects)
     _, _, _, subpanel = test_pane.layout.objects
     col = model.children[3]
     assert 'instance' in subpanel._callbacks
