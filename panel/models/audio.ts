@@ -1,11 +1,12 @@
 import * as p from "core/properties"
-import {div} from "core/dom"
 import {Widget, WidgetView} from "models/widgets/widget"
 
 export class AudioView extends WidgetView {
   model: Audio
-
+  protected audioEl: HTMLAudioElement
   protected dialogEl: HTMLElement
+  private _blocked: boolean
+  private _time: any
 
   initialize(options: any): void {
     super.initialize(options)
@@ -38,7 +39,7 @@ export class AudioView extends WidgetView {
     else
       this.model.volume = this.audioEl.volume*100
     this.audioEl.onpause = () => this.model.paused = true
-    this.audioEl.onplay = () => this.model.play = true
+    this.audioEl.onplay = () => this.model.paused = false
     this.audioEl.ontimeupdate = () => this.update_time(this)
     this.audioEl.onvolumechange = () => this.update_volume(this)
     this.el.appendChild(this.audioEl)
@@ -46,7 +47,7 @@ export class AudioView extends WidgetView {
       this.audioEl.play()
   }
 
-  update_time(view): void {
+  update_time(view: AudioView): void {
 	if ((Date.now() - view._time) < view.model.throttle) {
       return
 	}
@@ -55,7 +56,7 @@ export class AudioView extends WidgetView {
 	view._time = Date.now()
   }
 
-  update_volume(view): void {
+  update_volume(view: AudioView): void {
     view._blocked = true
     view.model.volume = view.audioEl.volume*100
   }
@@ -75,7 +76,8 @@ export class AudioView extends WidgetView {
     if (this._blocked)
       this._blocked = false
       return
-    this.audioEl.volume = this.model.volume/100
+    if (this.model.volume != null)
+	  this.audioEl.volume = (this.model.volume as number)/100
   }
 
   set_time(): void {
@@ -91,14 +93,20 @@ export class AudioView extends WidgetView {
 }
 
 export namespace Audio {
-  export interface Attrs extends Widget.Attrs {}
-  export interface Props extends Widget.Props {}
+  export type Attrs = p.AttrsOf<Props>
+  export type Props = Widget.Props & {
+    loop: p.Property<boolean>
+    paused: p.Property<boolean>
+    time: p.Property<number>
+    throttle: p.Property<number>
+    value: p.Property<any>  
+    volume: p.Property<number | null>
+  }
 }
 
 export interface Audio extends Audio.Attrs {}
 
 export abstract class Audio extends Widget {
-
   properties: Audio.Props
 
   constructor(attrs?: Partial<Audio.Attrs>) {
@@ -109,9 +117,9 @@ export abstract class Audio extends Widget {
     this.prototype.type = "Audio"
     this.prototype.default_view = AudioView
 
-    this.define({
-      loop:     [ p.Bool,   false ],
-      paused:   [ p.Bool,   true  ],
+    this.define<Audio.Props>({
+      loop:     [ p.Boolean,   false ],
+      paused:   [ p.Boolean,   true  ],
       time:     [ p.Number, 0     ],
 	  throttle: [ p.Number, 250   ],
       value:    [ p.Any,    ''    ],

@@ -1,6 +1,6 @@
 environment:
   global:
-    CHANS_DEV: "-c pyviz/label/dev -c jbednar"
+    CHANS_DEV: "-c pyviz/label/dev -c bokeh/label/dev -c jbednar"
   matrix:
     - PY: "3.6"
       CONDA: "C:\\Miniconda36-x64"

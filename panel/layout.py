@@ -6,28 +6,12 @@ from __future__ import absolute_import, division, unicode_literals
 
 import param
 
-from bokeh.layouts import (Column as BkColumn, Row as BkRow,
-                           WidgetBox as BkWidgetBox)
-from bokeh.models import Box as BkBox, Spacer as BkSpacer
+from bokeh.models import (Column as BkColumn, Row as BkRow,
+                          Spacer as BkSpacer)
 from bokeh.models.widgets import Tabs as BkTabs, Panel as BkPanel
 
 from .util import param_name, param_reprs, push
 from .viewable import Reactive, Viewable
-
-
-def has_height(obj):
-    """
-    Whether the supplied layout has a height
-    """
-    if isinstance(obj, BkBox):
-        for child in obj.children:
-            if has_height(child):
-                return True
-    elif isinstance(obj, BkWidgetBox):
-        return True
-    elif getattr(obj, 'height', None) is not None:
-        return True
-    return False
 
 
 class Panel(Reactive):
@@ -48,7 +32,7 @@ class Panel(Reactive):
 
     def __init__(self, *objects, **params):
         from .pane import panel
-        objects = [panel(pane, _internal=True) for pane in objects]
+        objects = [panel(pane) for pane in objects]
         super(Panel, self).__init__(objects=objects, **params)
 
     def _init_properties(self):
@@ -118,7 +102,7 @@ class Panel(Reactive):
         from .pane import panel
         new_models = []
         for i, pane in enumerate(self.objects):
-            pane = panel(pane, _internal=True)
+            pane = panel(pane)
             self.objects[i] = pane
             if pane in old_objects:
                 child = pane._models[root.ref['id']]
@@ -131,11 +115,6 @@ class Panel(Reactive):
         model = self._bokeh_model()
         root = model if root is None else root
         objects = self._get_objects(model, [], doc, root, comm)
-
-        # HACK ALERT: Insert Spacer if last item in Column has no height
-        if (isinstance(self, Column) and objects and not has_height(objects[-1])):
-            objects.append(BkSpacer(height=50))
-
         props = dict(self._init_properties(), objects=objects)
         model.update(**self._process_param_change(props))
         params = [p for p in self.params() if p != 'name']
@@ -156,10 +135,12 @@ class Panel(Reactive):
     def __setitem__(self, index, pane):
         from .pane import panel
         new_objects = list(self.objects)
-        new_objects[index] = panel(pane, _internal=True)
+        new_objects[index] = panel(pane)
         self.objects = new_objects
 
-    def __repr__(self, depth=0):
+    def __repr__(self, depth=0, max_depth=10):
+        if depth > max_depth:
+            return '...'
         spacer = '\n' + ('    ' * (depth+1))
         cls = type(self).__name__
         params = param_reprs(self, ['objects'])
@@ -180,13 +161,13 @@ class Panel(Reactive):
     def append(self, pane):
         from .pane import panel
         new_objects = list(self.objects)
-        new_objects.append(panel(pane, _internal=True))
+        new_objects.append(panel(pane))
         self.objects = new_objects
 
     def insert(self, index, pane):
         from .pane import panel
         new_objects = list(self.objects)
-        new_objects.insert(index, panel(pane, _internal=True))
+        new_objects.insert(index, panel(pane))
         self.objects = new_objects
 
     def pop(self, index):
@@ -217,39 +198,6 @@ class Column(Panel):
     """
 
     _bokeh_model = BkColumn
-
-
-class WidgetBox(Panel):
-    """
-    Box to group widgets.
-    """
-
-    height = param.Integer(default=None, bounds=(0, None))
-
-    width = param.Integer(default=None, bounds=(0, None))
-
-    _bokeh_model = BkWidgetBox
-
-    def _get_objects(self, model, old_objects, doc, root, comm=None):
-        """
-        Returns new child models for the layout while reusing unchanged
-        models and cleaning up any dropped objects.
-        """
-        from .pane import panel
-        new_models = []
-        for i, pane in enumerate(self.objects):
-            pane = panel(pane)
-            self.objects[i] = pane
-            if pane in old_objects:
-                child = pane._models[root.ref['id']]
-            else:
-                child = pane._get_model(doc, root, model, comm)
-
-            if isinstance(child, BkWidgetBox):
-                new_models += child.children
-            else:
-                new_models.append(child)
-        return new_models
 
 
 class Tabs(Panel):
@@ -283,7 +231,7 @@ class Tabs(Panel):
                 name = pane.name
             else:
                 name = None
-            objects.append(panel(pane, name=name, _internal=True))
+            objects.append(panel(pane, name=name))
             name = param_name(objects[-1].name) if name is None else name
             names.append(name)
         self._names = names
@@ -316,7 +264,7 @@ class Tabs(Panel):
                              'directly. Found %d names, expected %d.' %
                              (len(self._names), len(self.objects)))
         for i, (name, pane) in enumerate(zip(self._names, self.objects)):
-            pane = panel(pane, _internal=True)
+            pane = panel(pane)
             self.objects[i] = pane
             if pane in old_objects:
                 child = pane._models[root.ref['id']]
@@ -332,7 +280,7 @@ class Tabs(Panel):
         if isinstance(pane, tuple):
             name, pane = pane
         new_objects = list(self.objects)
-        new_objects[index] = panel(pane, name=name, _internal=True)
+        new_objects[index] = panel(pane, name=name)
         name = param_name(new_objects[index].name) if name is None else name
         self._names[index] = name
         self.objects = new_objects
@@ -343,8 +291,7 @@ class Tabs(Panel):
         if isinstance(pane, tuple):
             name, pane = pane
         new_objects = list(self.objects)
-        new_objects.append(panel(pane, name=name, _internal=True))
-        print(new_objects[-1])
+        new_objects.append(panel(pane, name=name))
         name = param_name(new_objects[-1].name) if name is None else name
         self._names[-1] = name
         self.objects = new_objects
@@ -355,7 +302,7 @@ class Tabs(Panel):
         if isinstance(pane, tuple):
             name, pane = pane
         new_objects = list(self.objects)
-        new_objects.insert(index, panel(pane, _internal=True))
+        new_objects.insert(index, panel(pane))
         name = param_name(new_objects[index].name) if name is None else name
         self._names[index] = name
         self.objects = new_objects
@@ -379,10 +326,6 @@ class Tabs(Panel):
 
 class Spacer(Reactive):
     """Empty object used to control formatting (using positive or negative space)"""
-    
-    height = param.Integer(default=None, bounds=(None, None))
-
-    width = param.Integer(default=None, bounds=(None, None))
 
     _bokeh_model = BkSpacer
 
@@ -403,3 +346,20 @@ class Spacer(Reactive):
         self._models[root.ref['id']] = model
         self._link_params(model, ['width', 'height'], doc, root, comm)
         return model
+
+
+class VSpacer(Reactive):
+    """
+    Spacer which automatically fills all available vertical space.
+    """
+
+    sizing_mode = param.Parameter(default='stretch_height', readonly=True)
+
+
+class HSpacer(Reactive):
+    """
+    Spacer which automatically fills all available horizontal space.
+    """
+
+    sizing_mode = param.Parameter(default='stretch_width', readonly=True)
+

@@ -17,8 +17,7 @@ import param
 import bokeh
 import bokeh.embed.notebook
 from bokeh.io.notebook import load_notebook as bk_load_notebook
-from bokeh.models import (Model, LayoutDOM, Div as BkDiv, Row as BkRow,
-                          Spacer as BkSpacer)
+from bokeh.models import Model, LayoutDOM
 from bokeh.protocol import Protocol
 from bokeh.resources import CDN, INLINE
 from bokeh.util.string import encode_utf8
@@ -219,14 +218,6 @@ class default_label_formatter(param.ParameterizedFunction):
 ################################
 
 
-def Div(**kwargs):
-    # Hack to work around issues with Div height in notebooks
-    div = BkDiv(**kwargs)
-    if 'height' in kwargs:
-        return BkRow(div, BkSpacer(height=kwargs['height']))
-    return div
-
-
 def diff(doc, binary=True, events=None):
     """
     Returns a json diff required to update an existing plot with
@@ -323,7 +314,7 @@ def render_mimebundle(model, doc, comm):
 
     # Publish plot HTML
     bokeh_script, bokeh_div, _ = bokeh.embed.notebook.notebook_content(model)
-    html = encode_utf8(bokeh_div)
+    html = "<div id='{id}'>{html}</div>".format(id=target, html=encode_utf8(bokeh_div))
 
     # Publish bokeh plot JS
     msg_handler = bokeh_msg_handler.format(plot_id=target)

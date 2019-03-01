@@ -6,7 +6,7 @@ from collections import OrderedDict
 import pytest
 
 from bokeh.models import (Row as BkRow, Column as BkColumn, GlyphRenderer,
-                          Scatter, Line)
+                          Scatter, Line, GridBox)
 from bokeh.plotting import Figure
 
 from panel.holoviews import HoloViews
@@ -325,16 +325,13 @@ def test_holoviews_link_within_pane(document, comm):
     assert isinstance(subcolumn, BkColumn)
     assert len(subcolumn.children) == 2
     toolbar, subsubcolumn = subcolumn.children
-    assert isinstance(subsubcolumn, BkColumn)
-    assert len(subsubcolumn.children) == 1
-    row = subsubcolumn.children[0]
-    assert isinstance(row, BkRow)
-    assert len(row.children) == 2
-    p1, p2 = row.children
+    assert isinstance(subsubcolumn, GridBox)
+    assert len(subsubcolumn.children) == 2
+    (p1, _, _), (p2, _, _) = subsubcolumn.children
 
     assert isinstance(p1, Figure)
     assert isinstance(p2, Figure)
 
-    range_tool = row.select_one({'type': RangeTool})
+    range_tool = subsubcolumn.select_one({'type': RangeTool})
     assert isinstance(range_tool, RangeTool)
     assert range_tool.x_range == p2.x_range

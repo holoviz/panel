@@ -1,11 +1,10 @@
 import * as p from "core/properties"
-import {div} from "core/dom"
 import {Widget, WidgetView} from "models/widgets/widget"
 
 export class FileInputView extends WidgetView {
   model: FileInput
 
-  protected dialogEl: HTMLElement
+  protected dialogEl: HTMLInputElement
 
   initialize(options: any): void {
     super.initialize(options)
@@ -26,7 +25,7 @@ export class FileInputView extends WidgetView {
     this.dialogEl = document.createElement('input')
     this.dialogEl.type = "file";
     this.dialogEl.multiple = false;
-    this.dialogEl.style = `width:{this.model.width}px`;
+    this.dialogEl.style.width = `{this.model.width}px`;
     this.dialogEl.onchange = (e) => this.load_file(e);
     this.el.appendChild(this.dialogEl)
   }
@@ -43,8 +42,10 @@ export class FileInputView extends WidgetView {
 }
 
 export namespace FileInput {
-  export interface Attrs extends Widget.Attrs {}
-  export interface Props extends Widget.Props {}
+  export type Attrs = p.AttrsOf<Props>
+  export type Props = Widget.Props & {
+    value: p.Property<any>
+  }
 }
 
 export interface FileInput extends FileInput.Attrs {}
@@ -61,8 +62,8 @@ export abstract class FileInput extends Widget {
     this.prototype.type = "FileInput"
     this.prototype.default_view = FileInputView
 
-    this.define({
-      value:             [ p.Any,         ''            ],
+    this.define<FileInput.Props>({
+      value: [ p.Any,         ''            ],
     })
   }
 }

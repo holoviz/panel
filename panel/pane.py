@@ -16,12 +16,12 @@ except:
 
 import param
 
-from bokeh.layouts import WidgetBox as _BkWidgetBox
-from bokeh.models import LayoutDOM, CustomJS, Widget as _BkWidget, Div as _BkDiv
+from bokeh.models import (LayoutDOM, CustomJS, Widget as _BkWidget,
+                          Div as _BkDiv, Column as _BkColumn)
 
 from .layout import Panel, Row
-from .util import Div, basestring, param_reprs, push, remove_root
-from .viewable import Reactive, Viewable
+from .util import basestring, param_reprs, push, remove_root
+from .viewable import Viewable, Reactive, Layoutable
 
 
 def panel(obj, **kwargs):
@@ -43,11 +43,10 @@ def panel(obj, **kwargs):
     """
     if isinstance(obj, Viewable):
         return obj
-    internal = kwargs.pop('_internal', False)
     if kwargs.get('name', False) is None:
         kwargs.pop('name')
     pane = PaneBase.get_pane_type(obj)(obj, **kwargs)
-    if internal and len(pane.layout) == 1:
+    if len(pane.layout) == 1:
         return pane.layout[0]
     return pane.layout
 
@@ -139,7 +138,14 @@ class PaneBase(Reactive):
                              (type(self).__name__, type(object).__name__))
 
         super(PaneBase, self).__init__(object=object, **params)
-        self.layout = self.default_layout(self)
+        kwargs = {k: v for k, v in params.items() if k in Layoutable.params()}
+        self.layout = self.default_layout(self, **kwargs)
+
+    def __getitem__(self, index):
+        """
+        Allows pane objects to behave like the underlying layout
+        """
+        return self.layout[index]
 
     def _get_root(self, doc, comm=None):
         root = self.layout._get_model(doc, comm=comm)
@@ -169,8 +175,8 @@ class PaneBase(Reactive):
         def update_pane(change):
             old_model = self._models[ref]
 
-            # Pane supports model updates
             if self._updates:
+                # Pane supports model updates
                 def update_models():
                     self._update(old_model)
             else:
@@ -217,7 +223,7 @@ class Bokeh(PaneBase):
         if isinstance(model, _BkWidget):
             box_kws = {k: getattr(model, k) for k in ['width', 'height', 'sizing_mode']
                        if k in model.properties()}
-            model = _BkWidgetBox(model, **box_kws)
+            model = _BkColumn(model, **box_kws)
 
         ref = root.ref['id']
         for js in model.select({'type': CustomJS}):
@@ -244,32 +250,23 @@ class DivPaneBase(PaneBase):
 
     __abstract = True
 
-    height = param.Integer(default=None, bounds=(0, None))
-
-    width = param.Integer(default=None, bounds=(0, None))
-
-    sizing_mode = param.ObjectSelector(default=None, allow_None=True,
-        objects=["fixed", "scale_width", "scale_height", "scale_both", "stretch_both"],
-        doc="How the item being displayed should size itself.")
-
     style = param.Dict(default=None, doc="""
         Dictionary of CSS property:value pairs to apply to this Div.""")
 
     _rename = {'object': 'text'}
 
     def _get_properties(self):
-        return {p : getattr(self,p) for p in ["width", "height", "sizing_mode", "style"]
-                if getattr(self,p) is not None}
+        return {p : getattr(self,p) for p in list(Layoutable.params()) + ['style']
+                if getattr(self, p) is not None}
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        model = Div(**self._get_properties())
+        model = _BkDiv(**self._get_properties())
         self._models[root.ref['id']] = model
         self._link_object(doc, root, parent, comm)
         return model
 
     def _update(self, model):
-        div = model if isinstance(model, _BkDiv) else model.children[0].children[0]
-        div.update(**self._get_properties())
+        model.update(**self._get_properties())
 
 
 class Image(DivPaneBase):
@@ -327,11 +324,11 @@ class Image(DivPaneBase):
         elif self.height is not None:
             width = int((self.height/height)*width)
             height = self.height
+
         b64 = base64.b64encode(data).decode("utf-8")
         src = "data:image/"+self.imgtype+";base64,{b64}".format(b64=b64)
-        html = "<img src='{src}' width={width} height={height}></img>".format(
-            src=src, width=width, height=height
-        )
+        html = "<img src='{src}' width='{width}px' height='{height}px'></img>".format(
+            src=src, width=width, height=height)
         return dict(p, width=width, height=height, text=html)
 
 
@@ -646,6 +643,7 @@ class Markdown(DivPaneBase):
         if not isinstance(data, basestring):
             data = data._repr_markdown_()
         properties = super(Markdown, self)._get_properties()
+        properties['style'] = dict(properties.get('style', {}), **{"white-space": "nowrap"})
         extensions = ['markdown.extensions.extra', 'markdown.extensions.smarty']
         html = markdown.markdown(self.object, extensions=extensions,
                                  output_format='html5')

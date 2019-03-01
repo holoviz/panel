@@ -9,7 +9,7 @@ from collections import OrderedDict, defaultdict
 
 import param
 
-from .layout import Panel, WidgetBox
+from .layout import Panel, Column
 from .pane import PaneBase, Pane
 from .viewable import Viewable
 from .widgets import Player
@@ -38,7 +38,7 @@ class HoloViews(PaneBase):
 
     def __init__(self, object, **params):
         super(HoloViews, self).__init__(object, **params)
-        self.widget_box = WidgetBox()
+        self.widget_box = Column()
         self._update_widgets()
         self._plots = {}
 

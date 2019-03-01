@@ -14,7 +14,7 @@ from datetime import datetime
 
 import param
 import numpy as np
-from bokeh.models import WidgetBox as _BkWidgetBox
+from bokeh.models import Column as _BkColumn
 from bokeh.models.widgets import (
     TextInput as _BkTextInput, Select as _BkSelect, Slider as _BkSlider,
     CheckboxGroup as _BkCheckboxGroup, DateRangeSlider as _BkDateRangeSlider,
@@ -25,7 +25,7 @@ from bokeh.models.widgets import (
     RadioButtonGroup as _BkRadioButtonGroup, RadioGroup as _BkRadioBoxGroup
 )
 
-from .layout import Column, Row, Spacer, WidgetBox # noqa
+from .layout import Column, Row, Spacer # noqa
 from .models.widgets import (
     Player as _BkPlayer, FileInput as _BkFileInput, Audio as _BkAudio)
 from .viewable import Reactive
@@ -63,11 +63,17 @@ class Widget(Reactive):
                       if v is not None}
         return self._process_param_change(properties)
 
+    def _get_root(self, doc, comm=None):
+        root = _BkColumn()
+        model = self._get_model(doc, root, root, comm=comm)
+        root.children.append(model)
+        self._preprocess(root)
+        return root
+
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        in_box = isinstance(parent, _BkWidgetBox)
-        if not in_box:
-            parent = _BkWidgetBox()
         root = parent if root is None else root
+        if root is None:
+            root = _BkColumn()
         model = self._widget_type(**self._init_properties())
 
         # Link parameters and bokeh model
@@ -76,10 +82,9 @@ class Widget(Reactive):
         self._models[root.ref['id']] = model
         self._link_params(model, params, doc, root, comm)
         self._link_props(model, properties, doc, root, comm)
-
-        if not in_box:
-            parent.children = [model]
-            return parent
+        if parent is None:
+            root.children.append(model)
+            return root
 
         return model
 
@@ -649,7 +654,7 @@ class DiscreteSlider(Widget):
         return list(self.options.values()) if isinstance(self.options, dict) else self.options
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        model = _BkWidgetBox()
+        model = _BkColumn()
         parent = parent or model
         root = root or parent
         msg = self._init_properties()
@@ -900,9 +905,9 @@ class CrossSelector(MultiSelect):
         self._search[True].param.watch(self._filter_options, 'value')
 
         # Define Layout
-        blacklist = WidgetBox(self._search[False], self._lists[False], width=width+10)
-        whitelist = WidgetBox(self._search[True], self._lists[True], width=width+10)
-        buttons = WidgetBox(self._buttons[True], self._buttons[False], width=70)
+        blacklist = Column(self._search[False], self._lists[False], width=width+10)
+        whitelist = Column(self._search[True], self._lists[True], width=width+10)
+        buttons = Column(self._buttons[True], self._buttons[False], width=70)
 
         self._layout = Row(blacklist, Column(Spacer(height=110), buttons), whitelist)
 

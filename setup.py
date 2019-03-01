@@ -72,7 +72,7 @@ class CustomInstallCommand(install):
 ########## dependencies ##########
 
 install_requires = [
-    'bokeh >=1.0.0',
+    'bokeh >=1.1.0dev8',
     'param >=1.8.2',
     'pyviz_comms >=0.7.0',
     'markdown',
@@ -82,7 +82,7 @@ install_requires = [
 
 _recommended = [
     'notebook >=5.4',
-    'holoviews>=1.11.0',
+    'holoviews >=1.12.0a1',
     'matplotlib',
     'pillow',
     'plotly'

@@ -16,16 +16,14 @@ import param
 from param.parameterized import classlist
 
 from .pane import Pane, PaneBase
-from .layout import WidgetBox, Row, Panel, Tabs, Column
+from .layout import Row, Panel, Tabs, Column
 from .util import (
     abbreviated_repr, basestring, default_label_formatter, full_groupby,
-    get_method_owner, is_parameterized, param_name
-)
+    get_method_owner, is_parameterized, param_name)
 from .widgets import (
     LiteralInput, Select, Checkbox, FloatSlider, IntSlider, RangeSlider,
     MultiSelect, StaticText, Button, Toggle, TextInput, DiscreteSlider,
-    DatetimeInput
-)
+    DatetimeInput)
 
 
 def ObjectSelector(pobj):
@@ -135,8 +133,8 @@ class Param(PaneBase):
         # Construct widgets
         self._widgets = self._get_widgets()
         widgets = [widget for widgets in self._widgets.values() for widget in widgets]
-        self._widget_box = WidgetBox(*widgets, height=self.height,
-                                     width=self.width, name=self.name)
+        self._widget_box = Column(*widgets, height=self.height,
+                                  width=self.width, name=self.name)
 
         # Construct Layout
         kwargs = {'name': self.name}
@@ -147,6 +145,9 @@ class Param(PaneBase):
         if isinstance(layout, Panel):
             self._expand_layout = layout
             self.layout = self._widget_box
+        elif isinstance(self._widget_box, layout):
+            self.layout = self._widget_box
+            self._expand_layout = self.layout
         elif isinstance(layout, type) and issubclass(layout, Panel):
             self.layout = layout(self._widget_box, **kwargs)
             self._expand_layout = self.layout
@@ -398,14 +399,14 @@ class ParamMethod(PaneBase):
         self._kwargs =  {p: params.pop(p) for p in list(params)
                          if p not in self.params()}
         super(ParamMethod, self).__init__(object, **params)
-        self._pane = Pane(self.object(), name=self.name,
-                          **dict(_temporary=True, **self._kwargs))
-        self._inner_layout = Row(self._pane)
+        kwargs = dict(self.get_param_values(), **dict(self._kwargs, _temporary=True))
+        del kwargs['object']
+        self._pane = Pane(self.object(), **kwargs)
+        self._inner_layout = Row(self._pane, **{k: v for k, v in params.items() if k in Row.params()})
 
     @classmethod
     def applies(cls, obj):
         return inspect.ismethod(obj) and isinstance(get_method_owner(obj), param.Parameterized)
-
 
     def _link_object_params(self, doc, root, parent, comm):
         ref = root.ref['id']
@@ -457,7 +458,9 @@ class ParamMethod(PaneBase):
                 return
 
             # Replace pane entirely
-            self._pane = Pane(new_object, _temporary=True)
+            kwargs = dict(self.get_param_values(), _temporary=True, **self._kwargs)
+            del kwargs['object']
+            self._pane = Pane(new_object, **kwargs)
             self._inner_layout[0] = self._pane
 
         for _, params in full_groupby(params, lambda x: (x.inst or x.cls, x.what)):

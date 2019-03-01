@@ -1,21 +1,21 @@
 import * as p from "core/properties"
-import {LayoutDOM, LayoutDOMView} from "models/layouts/layout_dom"
+import {HTMLBox, HTMLBoxView} from "models/layouts/html_box"
 
-export class VegaPlotView extends LayoutDOMView {
+export class VegaPlotView extends HTMLBoxView {
   model: VegaPlot
   protected _initialized: boolean
 
-  initialize(options): void {
+  initialize(options: any): void {
     super.initialize(options)
     const vega_url = "https://cdn.jsdelivr.net/npm/vega@4.2.0?noext"
     const vega_lite_url = "https://cdn.jsdelivr.net/npm/vega-lite@3.0.0-rc4?noext"
     const vega_embed_url = "https://cdn.jsdelivr.net/npm/vega-embed@3.18.2?noext"
 
     this._initialized = false;
-    if (window.vega) {
+    if ((window as any).vega) {
       this._init()
-    } else if ((window.Jupyter !== undefined) && (window.Jupyter.notebook !== undefined)) {
-      window.requirejs.config({
+    } else if (((window as any).Jupyter !== undefined) && ((window as any).Jupyter.notebook !== undefined)) {
+      (window as any).requirejs.config({
         paths: {
           "vega-embed":  vega_embed_url,
           "vega-lib": "https://cdn.jsdelivr.net/npm/vega-lib?noext",
@@ -23,12 +23,11 @@ export class VegaPlotView extends LayoutDOMView {
           "vega": vega_url
         }
       });
-      var that = this
-      window.require(["vega-embed", "vega", "vega-lite"], function(vegaEmbed, vega, vegaLite) {
-        window.vega = vega
-        window.vl = vegaLite
-        window.vegaEmbed = vegaEmbed
-        that._init()
+      (window as any).require(["vega-embed", "vega", "vega-lite"], (vegaEmbed: any, vega: any, vegaLite: any) => {
+        (window as any).vega = vega
+        (window as any).vl = vegaLite
+        (window as any).vegaEmbed = vegaEmbed
+        this._init()
       })
     } else {
       const init = () => { this._init() }
@@ -38,20 +37,12 @@ export class VegaPlotView extends LayoutDOMView {
     }
   }
 
-  _add_script(url: string, callback): void {
-    const script = document.createElement('script')
+  _add_script(url: string, callback: any): void {
+    const script: any = document.createElement('script')
     script.src = url
     script.async = false
-    script.onreadystatechange = script.onload = callback
-    document.querySelector("head").appendChild(script)
-  }
-
-  get_width(): number {
-    return undefined;
-  }
-
-  get_height(): number {
-    return undefined;
+    script.onreadystatechange = script.onload = callback;
+    (document.querySelector("head") as any).appendChild(script)
   }
 
   _init(): void {
@@ -61,13 +52,13 @@ export class VegaPlotView extends LayoutDOMView {
   }
 
   _fetch_datasets() {
-    const datasets = {}
+    const datasets: any = {}
     for (const ds in this.model.data_sources) {
       const cds = this.model.data_sources[ds];
-      const data = []
+      const data: any = []
       const columns = cds.columns()
-      for (const i = 0; i < cds.data[columns[0]].length; i++) {
-        const item = {}
+      for (let i = 0; i < cds.data[columns[0]].length; i++) {
+        const item: any = {}
         for (const column of columns) {
           item[column] = cds.data[column][i]
         }
@@ -80,6 +71,8 @@ export class VegaPlotView extends LayoutDOMView {
 
   render(): void {
     super.render()
+	if (this._initialized)
+      this._plot()
   }
 
   _plot(): void {
@@ -87,23 +80,25 @@ export class VegaPlotView extends LayoutDOMView {
       const datasets = this._fetch_datasets()
       if ('data' in datasets) {
         this.model.data.data['values'] = datasets['data']
-         delete datasets['data']
+        delete datasets['data']
       }
       this.model.data['datasets'] = datasets
     }
-    vegaEmbed(this.el, this.model.data, {actions: false})
+    (window as any).vegaEmbed(this.el, this.model.data, {actions: false})
   }
 }
 
-
 export namespace VegaPlot {
-  export interface Attrs extends LayoutDOM.Attrs {}
-  export interface Props extends LayoutDOM.Props {}
+  export type Attrs = p.AttrsOf<Props>
+  export type Props = HTMLBox.Props & {
+    data: p.Property<any>
+    data_sources: p.Property<any> 
+  }
 }
 
 export interface VegaPlot extends VegaPlot.Attrs {}
 
-export class VegaPlot extends LayoutDOM {
+export class VegaPlot extends HTMLBox {
   properties: VegaPlot.Props
 
   constructor(attrs?: Partial<VegaPlot.Attrs>) {
@@ -114,7 +109,7 @@ export class VegaPlot extends LayoutDOM {
     this.prototype.type = "VegaPlot"
     this.prototype.default_view = VegaPlotView
 
-    this.define({
+    this.define<VegaPlot.Props>({
       data: [ p.Any         ],
       data_sources: [ p.Any  ],
     })
