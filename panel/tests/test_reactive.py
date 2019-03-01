@@ -40,7 +40,7 @@ def test_param_rename():
     assert params == {'a': 1}
 
     properties = obj._process_param_change({'a': 1})
-    assert properties == {'b': 1}
+    assert properties == {'b': 1, 'min_width': None, 'min_height': None}
 
 
 def test_link_params_nb(document, comm):
