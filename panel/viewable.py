@@ -168,6 +168,13 @@ class Layoutable(param.Parameterized):
           aspect ratio.
     """)
 
+    def __init__(self, **params):
+        if (params.get('width', None) is not None and
+            params.get('height', None) is not None and
+            'sizing_mode' not in params):
+            params['sizing_mode'] = 'fixed'
+        super(Layoutable, self).__init__(**params)
+
 
 
 class Viewable(Layoutable):
@@ -532,6 +539,9 @@ class Reactive(Viewable):
                 except:
                     pass
 
+    def _init_properties(self):
+        return {k: v for k, v in self.param.get_param_values()
+                if v is not None}
 
     def _process_property_change(self, msg):
         """
@@ -552,8 +562,17 @@ class Reactive(Viewable):
         _rename class level attribute to map between parameter and
         property names.
         """
-        return {self._rename.get(k, k): v for k, v in msg.items()
-                if self._rename.get(k, False) is not None}
+        properties = {self._rename.get(k, k): v for k, v in msg.items()
+                      if self._rename.get(k, False) is not None}
+        if 'width' in properties and self.sizing_mode is None:
+            properties['min_width'] = properties['width']
+        elif self.min_width is None:
+            properties['min_width'] = None
+        if 'height' in properties and self.sizing_mode is None:
+            properties['min_height'] = properties['height']
+        elif self.min_height is None:
+            properties['min_height'] = None
+        return properties
 
     def _link_params(self, model, params, doc, root, comm=None):
         def param_change(*events):

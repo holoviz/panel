@@ -35,12 +35,6 @@ class Panel(Reactive):
         objects = [panel(pane) for pane in objects]
         super(Panel, self).__init__(objects=objects, **params)
 
-    def _init_properties(self):
-        properties = {k: v for k, v in self.param.get_param_values()
-                      if v is not None}
-        del properties['objects']
-        return self._process_param_change(properties)
-
     def _link_params(self, model, params, doc, root, comm=None):
         def set_value(*events):
             msg = {event.name: event.new for event in events}
@@ -329,11 +323,6 @@ class Spacer(Reactive):
 
     _bokeh_model = BkSpacer
 
-    def _init_properties(self):
-        properties = {k: v for k, v in self.param.get_param_values()
-                      if v not in [None, 'name']}
-        return self._process_param_change(properties)
-
     def _get_root(self, doc, comm=None):
         root = BkRow()
         model = self._get_model(doc, root, root, comm=comm)
@@ -342,7 +331,7 @@ class Spacer(Reactive):
         return root
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        model = self._bokeh_model(**self._init_properties())
+        model = self._bokeh_model(**self._process_param_change(self._init_properties()))
         self._models[root.ref['id']] = model
         self._link_params(model, ['width', 'height'], doc, root, comm)
         return model
