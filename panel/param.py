@@ -146,11 +146,11 @@ class Param(PaneBase):
             self._expand_layout = layout
             self.layout = self._widget_box
         elif isinstance(self._widget_box, layout):
-            self.layout = self._widget_box
-            self._expand_layout = self.layout
+            self.layout = Column(self._widget_box)
+            self._expand_layout = self._widget_box
         elif isinstance(layout, type) and issubclass(layout, Panel):
-            self.layout = layout(self._widget_box, **kwargs)
-            self._expand_layout = self.layout
+            self._expand_layout = layout(self._widget_box, **kwargs)
+            self.layout = Column(self._expand_layout)
         else:
             raise ValueError('expand_layout expected to be a panel.layout.Panel'
                              'type or instance, found %s type.' %
