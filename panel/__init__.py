@@ -28,10 +28,14 @@ __version__ = str(_param.version.Version(
 
 
 class state(_param.Parameterized):
+    """
+    Holds global state associated with running apps, allowing running
+    apps to indicate their state to a user.
+    """
 
-    curdoc = _param.ClassSelector(class_=_Document)
-
-    comm = _param.ClassSelector(class_=_Comm)
+    curdoc = _param.ClassSelector(class_=_Document, doc="""
+        The bokeh Document for which a server event is currently being
+        processed.""")
 
 
 class extension(_pyviz_extension):
