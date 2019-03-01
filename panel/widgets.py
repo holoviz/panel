@@ -667,6 +667,8 @@ class DiscreteSlider(Widget):
         return model
 
     def _link_params(self, model, slider, div, params, doc, root, comm=None):
+        from . import state
+
         def param_change(*events):
             combined_msg = {}
             for event in events:
@@ -687,6 +689,8 @@ class DiscreteSlider(Widget):
             if comm:
                 update_model()
                 push(doc, comm)
+            elif state.curdoc:
+                update_model()
             else:
                 doc.add_next_tick_callback(update_model)
 

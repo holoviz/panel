@@ -2,8 +2,12 @@ from __future__ import absolute_import, division, unicode_literals
 
 import sys
 
+import param as _param
+from bokeh.document import Document as _Document
+
 from . import holoviews # noqa
 from . import layout # noqa
+from . import param # noqa
 from . import pipeline # noqa
 from . import plotly # noqa
 from . import vega # noqa
@@ -17,11 +21,17 @@ from .param import Param # noqa
 from .util import load_notebook as _load_nb
 from .viewable import Viewable
 
-import param
-from pyviz_comms import JupyterCommManager, extension as _pyviz_extension
+from pyviz_comms import JupyterCommManager as _JupyterCommManager, Comm as _Comm, extension as _pyviz_extension
 
-__version__ = str(param.version.Version(fpath=__file__, archive_commit="$Format:%h$",
-                                        reponame="panel"))
+__version__ = str(_param.version.Version(
+    fpath=__file__, archive_commit="$Format:%h$", reponame="panel"))
+
+
+class state(_param.Parameterized):
+
+    curdoc = _param.ClassSelector(class_=_Document)
+
+    comm = _param.ClassSelector(class_=_Comm)
 
 
 class extension(_pyviz_extension):
@@ -30,7 +40,7 @@ class extension(_pyviz_extension):
     bokeh and enable comms.
     """
 
-    inline = param.Boolean(default=True, doc="""
+    inline = _param.Boolean(default=True, doc="""
         Whether to inline JS and CSS resources.
         If disabled, resources are loaded from CDN if one is available.""")
 
@@ -43,16 +53,16 @@ class extension(_pyviz_extension):
         except:
             return
 
-        p = param.ParamOverrides(self, params)
+        p = _param.ParamOverrides(self, params)
         if hasattr(ip, 'kernel') and not self._loaded:
             # TODO: JLab extension and pyviz_comms should be changed
             #       to allow multiple cleanup comms to be registered
-            JupyterCommManager.get_client_comm(self._process_comm_msg,
-                                               "hv-extension-comm")
+            _JupyterCommManager.get_client_comm(self._process_comm_msg,
+                                                "hv-extension-comm")
         _load_nb(p.inline)
         self._loaded = True
 
-        Viewable._comm_manager = JupyterCommManager
+        Viewable._comm_manager = _JupyterCommManager
 
         if 'holoviews' in sys.modules:
             import holoviews as hv

@@ -593,6 +593,7 @@ class Reactive(Viewable):
         return properties
 
     def _link_params(self, model, params, doc, root, comm=None):
+        from . import state
         def param_change(*events):
             msgs = []
             for event in events:
@@ -629,6 +630,8 @@ class Reactive(Viewable):
                     raise
                 else:
                     self._expecting = self._expecting[:-len(msg)]
+            elif state.curdoc:
+                update_model()
             else:
                 doc.add_next_tick_callback(update_model)
 
@@ -658,17 +661,19 @@ class Reactive(Viewable):
     def _server_change(self, doc, attr, old, new):
         self._events.update({attr: new})
         if not self._active:
-            doc.add_timeout_callback(self._change_event, self._debounce)
-        self._active = list(self._events)
+            doc.add_timeout_callback(partial(self._change_event, doc), self._debounce)
 
-    def _change_event(self):
+    def _change_event(self, doc=None):
+        from . import state
         try:
+            state.curdoc = doc
             self.set_param(**self._process_property_change(self._events))
         except:
             raise
         finally:
             self._events = {}
             self._active = []
+            state.curdoc = None
 
     def _get_customjs(self, change, client_comm, plot_id):
         """

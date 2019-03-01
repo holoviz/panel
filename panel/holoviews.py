@@ -119,6 +119,7 @@ class HoloViews(PaneBase):
         return model
 
     def _link_widgets(self, pane, root, comm):
+        from . import state
 
         def update_plot(change):
             from holoviews.core.util import cross_index
@@ -135,11 +136,11 @@ class HoloViews(PaneBase):
                 if comm:
                     plot.update(key)
                     plot.push()
+                elif state.curdoc:
+                    plot.update(key)
                 else:
-
                     def update_plot():
                         plot.update(key)
-
                     plot.document.add_next_tick_callback(update_plot)
             else:
                 plot.update(key)
