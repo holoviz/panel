@@ -12,20 +12,26 @@ from __future__ import absolute_import, division, unicode_literals
 
 import types
 from numbers import Real, Integral
-from collections import Iterable, Mapping, OrderedDict
+from collections import OrderedDict
+
 from inspect import getcallargs
 
 try:  # Python >= 3.3
     from inspect import signature, Parameter
+    from collections.abc import Iterable, Mapping
+    empty = Parameter.empty
 except ImportError:
-    from IPython.utils.signatures import signature, Parameter
+    from collections import Iterable, Mapping
+    try:
+        from IPython.utils.signatures import signature, Parameter
+        empty = Parameter.empty
+    except:
+        signature, Parameter, empty = None, None, None
 
 try:
     from inspect import getfullargspec as check_argspec
 except ImportError:
     from inspect import getargspec as check_argspec # py2
-
-empty = Parameter.empty
 
 import param
 
@@ -117,6 +123,10 @@ class interactive(PaneBase):
     manual_name = param.String(default='Run Interact')
 
     def __init__(self, object, params={}, **kwargs):
+        if signature is None:
+            raise ImportError('interact requires either recent Python version '
+                              '(>=3.3 or IPython to inspect function signatures.')
+
         super(interactive, self).__init__(object, **params)
 
         new_kwargs = self.find_abbreviations(kwargs)
