@@ -114,7 +114,7 @@ class Panel(Reactive):
         objects = self._get_objects(model, [], doc, root, comm)
         props = dict(self._init_properties(), objects=objects)
         model.update(**self._process_param_change(props))
-        params = [p for p in self.params() if p != 'name']
+        params = [p for p in self.param if p != 'name']
         self._models[root.ref['id']] = model
         self._link_params(model, params, doc, root, comm)
         self._link_props(model, self._linked_props, doc, root, comm)

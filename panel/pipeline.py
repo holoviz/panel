@@ -94,7 +94,7 @@ class Pipeline(param.Parameterized):
         if self._state:
             results = {}
             for name, (_, method, index) in self._state.param.outputs().items():
-                if name not in stage.params():
+                if name not in stage.param:
                     continue
                 if method not in results:
                     results[method] = method()
@@ -103,10 +103,10 @@ class Pipeline(param.Parameterized):
                     result = result[index]
                 kwargs[name] = result
             if self.inherit_params:
-                params = [k for k, v in self._state.params().items()
+                params = [k for k, v in self._state.param.objects('existing').items()
                           if v.precedence is None or v.precedence >= 0]
                 kwargs.update({k: v for k, v in self._state.param.get_param_values()
-                               if k in stage.params() and k != 'name' and k in params})
+                               if k in stage.param and k != 'name' and k in params})
 
         if isinstance(stage, param.Parameterized):
             stage.set_param(**kwargs)

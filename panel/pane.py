@@ -138,7 +138,7 @@ class PaneBase(Reactive):
                              (type(self).__name__, type(object).__name__))
 
         super(PaneBase, self).__init__(object=object, **params)
-        kwargs = {k: v for k, v in params.items() if k in Layoutable.params()}
+        kwargs = {k: v for k, v in params.items() if k in Layoutable.param}
         self.layout = self.default_layout(self, **kwargs)
 
     def __getitem__(self, index):
@@ -259,7 +259,7 @@ class DivPaneBase(PaneBase):
     _rename = {'object': 'text'}
 
     def _get_properties(self):
-        return {p : getattr(self,p) for p in list(Layoutable.params()) + ['style']
+        return {p : getattr(self,p) for p in list(Layoutable.param) + ['style']
                 if getattr(self, p) is not None}
 
     def _get_model(self, doc, root=None, parent=None, comm=None):

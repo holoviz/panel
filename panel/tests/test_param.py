@@ -130,7 +130,7 @@ def test_number_param(document, comm):
     assert slider.value == 3.3
 
     # Check changing param attribute updates widget
-    a_param = test.params('a')
+    a_param = test.param['a']
     a_param.bounds = (0.1, 5.5)
     assert slider.start == 0.1
     assert slider.end == 5.5
@@ -168,7 +168,7 @@ def test_boolean_param(document, comm):
     assert checkbox.active == [0]
 
     # Check changing param attribute updates widget
-    a_param = test.params('a')
+    a_param = test.param['a']
     a_param.constant = True
     assert checkbox.disabled == True
 
@@ -199,7 +199,7 @@ def test_range_param(document, comm):
     assert widget.value == (0.2, 0.4)
 
     # Check changing param attribute updates widget
-    a_param = test.params('a')
+    a_param = test.param['a']
     a_param.bounds = (0.1, 0.6)
     assert widget.start == 0.1
     assert widget.end == 0.6
@@ -238,7 +238,7 @@ def test_integer_param(document, comm):
     assert slider.value == 3
 
     # Check changing param attribute updates widget
-    a_param = test.params('a')
+    a_param = test.param['a']
     a_param.bounds = (1, 6)
     assert slider.start == 1
     assert slider.end == 6
@@ -276,7 +276,7 @@ def test_object_selector_param(document, comm):
     assert slider.value == '1'
 
     # Check changing param attribute updates widget
-    a_param = test.params('a')
+    a_param = test.param['a']
     a_param.objects = ['c', 'd', '1']
     assert slider.options == ['c', 'd', '1']
 
@@ -312,7 +312,7 @@ def test_list_selector_param(document, comm):
     assert slider.value == ['c', '1']
 
     # Check changing param attribute updates widget
-    a_param = test.params('a')
+    a_param = test.param['a']
     a_param.objects = ['c', 'd', '1']
     assert slider.options == ['c', 'd', '1']
 
@@ -363,7 +363,7 @@ def test_param_precedence(document, comm):
     test_pane = Pane(test, _temporary=True)
 
     # Check changing precedence attribute hides and shows widget
-    a_param = test.params('a')
+    a_param = test.param['a']
     a_param.precedence = -1
     assert test_pane._widgets['a'][0] not in test_pane._widget_box.objects
 
@@ -408,7 +408,7 @@ def test_switch_param_subobject(document, comm):
 
     o1 = Test(name='Subobject 1')
     o2 = Test(name='Subobject 2')
-    Test.params('a').objects = [o1, o2, 3]
+    Test.param['a'].objects = [o1, o2, 3]
     test = Test(a=o1, name='Nested')
     test_pane = Pane(test, _temporary=True)
     model = test_pane._get_model(document, comm=comm)

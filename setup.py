@@ -73,7 +73,7 @@ class CustomInstallCommand(install):
 
 install_requires = [
     'bokeh >=1.1.0dev8',
-    'param >=1.8.2',
+    'param >=1.9.0a1',
     'pyviz_comms >=0.7.0',
     'markdown',
     'pyct >=0.4.4',
