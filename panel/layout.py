@@ -36,6 +36,7 @@ class Panel(Reactive):
         super(Panel, self).__init__(objects=objects, **params)
 
     def _link_params(self, model, params, doc, root, comm=None):
+        from . import state
         def set_value(*events):
             msg = {event.name: event.new for event in events}
             events = {event.name: event for event in events}
@@ -54,6 +55,8 @@ class Panel(Reactive):
             if comm:
                 update_model()
                 push(doc, comm)
+            elif state.curdoc:
+                update_model()
             else:
                 doc.add_next_tick_callback(update_model)
 

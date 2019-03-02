@@ -8,6 +8,7 @@ import sys
 import inspect
 import numbers
 import hashlib
+import threading
 
 from collections import defaultdict, MutableSequence, MutableMapping, OrderedDict
 from datetime import datetime
@@ -211,6 +212,30 @@ class default_label_formatter(param.ParameterizedFunction):
         if self.capitalize:
             pname = pname[:1].upper() + pname[1:]
         return pname
+
+
+class StoppableThread(threading.Thread):
+    """Thread class with a stop() method."""
+
+    def __init__(self, io_loop=None, timeout=1000, **kwargs):
+        from tornado import ioloop
+        super(StoppableThread, self).__init__(**kwargs)
+        self._stop_event = threading.Event()
+        self.io_loop = io_loop
+        self._cb = ioloop.PeriodicCallback(self._check_stopped, timeout)
+        self._cb.start()
+
+    def _check_stopped(self):
+        if self.stopped:
+            self._cb.stop()
+            self.io_loop.stop()
+
+    def stop(self):
+        self._stop_event.set()
+
+    @property
+    def stopped(self):
+        return self._stop_event.is_set()
 
 
 ################################

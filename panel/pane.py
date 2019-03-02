@@ -170,6 +170,7 @@ class PaneBase(Reactive):
         Links the object parameter to the rendered Bokeh model, triggering
         an update when the object changes.
         """
+        from . import state
         ref = root.ref['id']
 
         def update_pane(change):
@@ -197,6 +198,8 @@ class PaneBase(Reactive):
             if comm:
                 update_models()
                 push(doc, comm)
+            elif state.curdoc:
+                update_models()
             else:
                 doc.add_next_tick_callback(update_models)
 

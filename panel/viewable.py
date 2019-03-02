@@ -332,7 +332,24 @@ class Viewable(Layoutable):
         """
         show(self._modify_doc, notebook_url=notebook_url)
 
-    def show(self, port=0, websocket_origin=None):
+    def _start_server(self, app, loop, port, websocket_origin):
+        if websocket_origin and not isinstance(websocket_origin, list):
+            websocket_origin = [websocket_origin]
+        opts = dict(allow_websocket_origin=websocket_origin) if websocket_origin else {}
+        loop.make_current()
+        opts['io_loop'] = loop
+        server = Server({'/': app}, port=port, **opts)
+        def show_callback():
+            server.show('/')
+        server.io_loop.add_callback(show_callback)
+        server.start()
+        try:
+            loop.start()
+        except RuntimeError:
+            pass
+        return server
+
+    def show(self, port=0, websocket_origin=None, threaded=False):
         """
         Starts a bokeh server and displays the Viewable in a new tab
 
@@ -347,10 +364,15 @@ class Viewable(Layoutable):
             an external web site.
 
             If None, "localhost" is used.
+        threaded: boolean (optiona)
+            Whether to launch the Server on a separate thread, allowing
+            interactive use.
 
         Returns
         -------
-        server: bokeh Server instance
+        server: bokeh.server.Server or threading.Thread
+            Returns the bokeh server instance or the thread the server
+            was launched on (if threaded=True)
         """
         def modify_doc(doc):
             return self.server_doc(doc)
@@ -358,28 +380,24 @@ class Viewable(Layoutable):
         app = Application(handler)
 
         from tornado.ioloop import IOLoop
-        loop = IOLoop.current()
-        if websocket_origin and not isinstance(websocket_origin, list):
-            websocket_origin = [websocket_origin]
-        opts = dict(allow_websocket_origin=websocket_origin) if websocket_origin else {}
-        opts['io_loop'] = loop
-        server = Server({'/': app}, port=port, **opts)
-        def show_callback():
-            server.show('/')
-        server.io_loop.add_callback(show_callback)
-        server.start()
+        if threaded:
+            from .util import StoppableThread
+            loop = IOLoop()
+            server = StoppableThread(target=self._start_server, io_loop=loop,
+                                     args=(app, loop, port, websocket_origin))
+            server.start()
+        else:
+            loop = IOLoop.current()
+            server = self._start_server(app, loop, port, websocket_origin)
 
-        def sig_exit(*args, **kwargs):
-            loop.add_callback_from_signal(do_stop)
+            def sig_exit(*args, **kwargs):
+                loop.add_callback_from_signal(do_stop)
 
-        def do_stop(*args, **kwargs):
-            loop.stop()
+            def do_stop(*args, **kwargs):
+                loop.stop()
 
-        signal.signal(signal.SIGINT, sig_exit)
-        try:
-            loop.start()
-        except RuntimeError:
-            pass
+            signal.signal(signal.SIGINT, sig_exit)
+
         return server
 
 
@@ -575,6 +593,7 @@ class Reactive(Viewable):
         return properties
 
     def _link_params(self, model, params, doc, root, comm=None):
+        from . import state
         def param_change(*events):
             msgs = []
             for event in events:
@@ -611,6 +630,8 @@ class Reactive(Viewable):
                     raise
                 else:
                     self._expecting = self._expecting[:-len(msg)]
+            elif state.curdoc:
+                update_model()
             else:
                 doc.add_next_tick_callback(update_model)
 
@@ -640,17 +661,19 @@ class Reactive(Viewable):
     def _server_change(self, doc, attr, old, new):
         self._events.update({attr: new})
         if not self._active:
-            doc.add_timeout_callback(self._change_event, self._debounce)
-        self._active = list(self._events)
+            doc.add_timeout_callback(partial(self._change_event, doc), self._debounce)
 
-    def _change_event(self):
+    def _change_event(self, doc=None):
+        from . import state
         try:
+            state.curdoc = doc
             self.set_param(**self._process_property_change(self._events))
         except:
             raise
         finally:
             self._events = {}
             self._active = []
+            state.curdoc = None
 
     def _get_customjs(self, change, client_comm, plot_id):
         """
