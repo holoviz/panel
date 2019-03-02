@@ -412,7 +412,7 @@ class _InteractFactory(object):
         # If kwargs are given, replace self by a new
         # _InteractFactory with the updated kwargs
         if kwargs:
-            params = interactive.params()
+            params = list(interactive.param)
             kw = dict(self.kwargs)
             kw.update({k: v for k, v in kwargs.items() if k not in params})
             opts = dict(self.opts, **{k: v for k, v in kwargs.items() if k in params})

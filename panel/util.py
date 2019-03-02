@@ -9,6 +9,7 @@ import inspect
 import numbers
 import hashlib
 import threading
+import textwrap
 
 from collections import defaultdict, MutableSequence, MutableMapping, OrderedDict
 from datetime import datetime
@@ -141,7 +142,7 @@ def param_reprs(parameterized, skip=[]):
     cls = type(parameterized).__name__
     param_reprs = []
     for p, v in sorted(parameterized.get_param_values()):
-        if v is parameterized.params(p).default: continue
+        if v is parameterized.param[p].default: continue
         elif v is None: continue
         elif isinstance(v, basestring) and v == '': continue
         elif isinstance(v, list) and v == []: continue
@@ -350,3 +351,33 @@ def render_mimebundle(model, doc, comm):
     data = {EXEC_MIME: '', 'text/html': html, 'application/javascript': bokeh_js}
     metadata = {EXEC_MIME: {'id': target}}
     return data, metadata
+
+
+def bokeh_repr(obj, depth=0, ignored=['children', 'text', 'name', 'toolbar', 'renderers', 'below', 'center', 'left', 'right']):
+    from .viewable import Viewable
+    if isinstance(obj, Viewable):
+        obj = obj._get_root(Document())
+
+    r = ""
+    cls = type(obj).__name__
+    properties = sorted(obj.properties_with_values(False).items())
+    props = []
+    for k, v in properties:
+        if k in ignored:
+            continue
+        if isinstance(v, Model):
+            v = '%s()' % type(v).__name__
+        else:
+            v = repr(v)
+        if len(v) > 30:
+            v = v[:30] + '...'
+        props.append('%s=%s' % (k, v))
+    props = ', '.join(props)
+    if isinstance(obj, Box):
+        r += '{cls}(children=[\n'.format(cls=cls)
+        for obj in obj.children:
+            r += textwrap.indent(bokeh_repr(obj, depth=depth+1) + ',\n', '  ')
+        r += '], %s)' % props
+    else:
+        r += '{cls}({props})'.format(cls=cls,  props=props)
+    return r

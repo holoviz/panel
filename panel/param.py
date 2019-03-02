@@ -127,7 +127,7 @@ class Param(PaneBase):
         if 'name' not in params:
             params['name'] = object.name
         if 'parameters' not in params:
-            params['parameters'] = [p for p in object.params() if p != 'name']
+            params['parameters'] = [p for p in object.param if p != 'name']
         super(Param, self).__init__(object, **params)
 
         # Construct widgets
@@ -162,11 +162,11 @@ class Param(PaneBase):
     def __repr__(self, depth=0):
         cls = type(self).__name__
         obj_cls = type(self.object).__name__
-        params = [] if self.object is None else self.object.params()
+        params = [] if self.object is None else list(self.object.param)
         parameters = [k for k in params if k != 'name']
         params = []
         for p, v in sorted(self.get_param_values()):
-            if v is self.params(p).default: continue
+            if v is self.param[p].default: continue
             elif v is None: continue
             elif isinstance(v, basestring) and v == '': continue
             elif p == 'object' or (p == 'name' and v.startswith(obj_cls)): continue
@@ -250,7 +250,7 @@ class Param(PaneBase):
 
     def widget(self, p_name):
         """Get widget for param_name"""
-        p_obj = self.object.params(p_name)
+        p_obj = self.object.param[p_name]
 
         if self.widgets is None or p_name not in self.widgets:
             widget_class = self.widget_type(p_obj)
@@ -280,7 +280,7 @@ class Param(PaneBase):
             if ('start' not in kw or 'end' not in kw) and not issubclass(widget_class, LiteralInput):
                 widget_class = LiteralInput
 
-        kwargs = {k: v for k, v in kw.items() if k in widget_class.params()}
+        kwargs = {k: v for k, v in kw.items() if k in widget_class.param}
         widget = widget_class(**kwargs)
         watchers = self._callbacks['instance']
         if isinstance(p_obj, param.Action):
@@ -305,7 +305,7 @@ class Param(PaneBase):
                     if change.new < 0 and widget in self._widget_box.objects:
                         self._widget_box.pop(widget)
                     elif change.new >= 0 and widget not in self._widget_box.objects:
-                        precedence = lambda k: self.object.params(k).precedence
+                        precedence = lambda k: self.object.param[k].precedence
                         widgets = []
                         for k, ws in self._widgets.items():
                             if precedence(k) is None or precedence(k) >= self.display_threshold:
@@ -352,7 +352,7 @@ class Param(PaneBase):
 
     def _get_widgets(self):
         """Return name,widget boxes for all parameters (i.e., a property sheet)"""
-        params = [(p, pobj) for p, pobj in self.object.params().items()
+        params = [(p, pobj) for p, pobj in self.object.param.objects('existing').items()
                   if p in self.parameters or p == 'name']
         key_fn = lambda x: x[1].precedence if x[1].precedence is not None else self.default_precedence
         sorted_precedence = sorted(params, key=key_fn)
@@ -397,12 +397,12 @@ class ParamMethod(PaneBase):
 
     def __init__(self, object, **params):
         self._kwargs =  {p: params.pop(p) for p in list(params)
-                         if p not in self.params()}
+                         if p not in self.param}
         super(ParamMethod, self).__init__(object, **params)
         kwargs = dict(self.get_param_values(), **dict(self._kwargs, _temporary=True))
         del kwargs['object']
         self._pane = Pane(self.object(), **kwargs)
-        self._inner_layout = Row(self._pane, **{k: v for k, v in params.items() if k in Row.params()})
+        self._inner_layout = Row(self._pane, **{k: v for k, v in params.items() if k in Row.param})
 
     @classmethod
     def applies(cls, obj):

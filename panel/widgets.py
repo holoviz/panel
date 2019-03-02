@@ -72,7 +72,7 @@ class Widget(Reactive):
         model = self._widget_type(**self._process_param_change(self._init_properties()))
 
         # Link parameters and bokeh model
-        params = [p for p in self.params()]
+        params = [p for p in self.param]
         properties = list(self._process_param_change(dict(self.get_param_values())))
         self._models[root.ref['id']] = model
         self._link_params(model, params, doc, root, comm)
