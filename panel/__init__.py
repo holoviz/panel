@@ -21,7 +21,7 @@ from .param import Param # noqa
 from .util import load_notebook as _load_nb
 from .viewable import Viewable
 
-from pyviz_comms import JupyterCommManager as _JupyterCommManager, Comm as _Comm, extension as _pyviz_extension
+from pyviz_comms import JupyterCommManager as _JupyterCommManager, extension as _pyviz_extension
 
 __version__ = str(_param.version.Version(
     fpath=__file__, archive_commit="$Format:%h$", reponame="panel"))
