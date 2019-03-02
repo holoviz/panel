@@ -103,7 +103,7 @@ class Pipeline(param.Parameterized):
                     result = result[index]
                 kwargs[name] = result
             if self.inherit_params:
-                params = [k for k, v in self._state.param.objects('existing')
+                params = [k for k, v in self._state.param.objects('existing').items()
                           if v.precedence is None or v.precedence >= 0]
                 kwargs.update({k: v for k, v in self._state.param.get_param_values()
                                if k in stage.param and k != 'name' and k in params})
