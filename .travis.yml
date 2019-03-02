@@ -11,7 +11,7 @@ sudo: false
 env:
   global:
     - PYENV_VERSION=3.6
-    - CHANS_DEV="-c pyviz/label/dev -c bokeh/label/dev -c jbednar"
+    - CHANS_DEV="-c pyviz/label/dev -c bokeh/label/dev -c conda-forge"
     - CHANS_REL="-c pyviz -c jbednar"
     - LABELS_DEV="--label dev"
     - LABELS_REL="--label dev --label main"
@@ -50,7 +50,6 @@ jobs:
         - doit env_create $CHANS_DEV --python=$PYENV_VERSION
         - source activate test-environment
         - doit develop_install -o recommended -o tests -o build $CHANS_DEV
-        - pip install codecov altair
         - doit env_capture
       script: doit test_all_recommended
       after_failure:
@@ -101,7 +100,7 @@ jobs:
       stage: docs
       env: DESC="docs"
       script:
-        - doit develop_install $CHANS_DEV -o doc -o examples -c conda-forge # phantomjs still not on defaults
+        - doit develop_install $CHANS_DEV -o doc -o examples
         # note: will vastly simplified in a future version of nbsite
         - cd doc
         - nbsite_nbpagebuild.py pyviz panel ../examples .

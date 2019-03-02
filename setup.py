@@ -98,6 +98,7 @@ extras_require = {
         'scipy',
         'nbsmoke >=0.2.0',
         'pytest-cov',
+        'codecov',
         # For Panes.ipynb
         'hvplot',
         'plotly',
