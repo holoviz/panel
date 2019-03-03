@@ -130,6 +130,99 @@ def test_layout_setitem(panel, document, comm):
 
 
 @pytest.mark.parametrize('panel', [Column, Row])
+def test_layout_setitem_out_of_bounds(panel, document, comm):
+    div1 = Div()
+    div2 = Div()
+    layout = panel(div1, div2)
+
+    model = layout._get_root(document, comm=comm)
+    div3 = Div()
+    with pytest.raises(IndexError):
+        layout[2] = div3
+
+
+@pytest.mark.parametrize('panel', [Column, Row])
+def test_layout_setitem_replace_all(panel, document, comm):
+    div1 = Div()
+    div2 = Div()
+    layout = panel(div1, div2)
+    p1, p2 = layout.objects
+
+    model = layout._get_root(document, comm=comm)
+
+    assert model.ref['id'] in p1._callbacks
+    assert p1._models[model.ref['id']] is model.children[0]
+    div3 = Div()
+    div4 = Div()
+    layout[:] = [div3, div4]
+    assert model.children == [div3, div4]
+    assert p1._callbacks == {}
+    assert p1._models == {}
+    assert p2._callbacks == {}
+    assert p2._models == {}
+
+
+@pytest.mark.parametrize('panel', [Column, Row])
+def test_layout_setitem_replace_all_error(panel, document, comm):
+    div1 = Div()
+    div2 = Div()
+    layout = panel(div1, div2)
+    model = layout._get_root(document, comm=comm)
+
+    div3 = Div()
+    with pytest.raises(IndexError):
+        layout[:] = div3
+
+
+@pytest.mark.parametrize('panel', [Column, Row])
+def test_layout_setitem_replace_slice(panel, document, comm):
+    div1 = Div()
+    div2 = Div()
+    div3 = Div()
+    layout = panel(div1, div2, div3)
+    p1, p2, p3 = layout.objects
+
+    model = layout._get_root(document, comm=comm)
+
+    assert model.ref['id'] in p1._callbacks
+    assert p1._models[model.ref['id']] is model.children[0]
+    div3 = Div()
+    div4 = Div()
+    layout[1:] = [div3, div4]
+    assert model.children == [div1, div3, div4]
+    assert p2._callbacks == {}
+    assert p2._models == {}
+    assert p3._callbacks == {}
+    assert p3._models == {}
+
+
+@pytest.mark.parametrize('panel', [Column, Row])
+def test_layout_setitem_replace_slice_error(panel, document, comm):
+    div1 = Div()
+    div2 = Div()
+    div3 = Div()
+    layout = panel(div1, div2, div3)
+    model = layout._get_root(document, comm=comm)
+
+    div3 = Div()
+    with pytest.raises(IndexError):
+        layout[1:] = [div3]
+
+
+@pytest.mark.parametrize('panel', [Column, Row])
+def test_layout_setitem_replace_slice_out_of_bounds(panel, document, comm):
+    div1 = Div()
+    div2 = Div()
+    div3 = Div()
+    layout = panel(div1, div2, div3)
+    model = layout._get_root(document, comm=comm)
+
+    div3 = Div()
+    with pytest.raises(IndexError):
+        layout[3:4] = [div3]
+
+
+@pytest.mark.parametrize('panel', [Column, Row])
 def test_layout_pop(panel, document, comm):
     div1 = Div()
     div2 = Div()
@@ -266,14 +359,112 @@ def test_tabs_setitem(document, comm):
     assert model.ref['id'] in p1._callbacks
     assert p1._models[model.ref['id']] is tab1.child
     div3 = Div()
-    tabs[0] = div3
+    tabs[0] = ('C', div3)
     tab1, tab2 = model.tabs
     assert tab1.child is div3
+    assert tab1.title == 'C'
     assert tab2.child is div2
     assert p1._callbacks == {}
     assert p1._models == {}
 
 
+def test_tabs_setitem_out_of_bounds(document, comm):
+    div1 = Div()
+    div2 = Div()
+    layout = Tabs(div1, div2)
+
+    model = layout._get_root(document, comm=comm)
+    div3 = Div()
+    with pytest.raises(IndexError):
+        layout[2] = div3
+
+
+def test_tabs_setitem_replace_all(document, comm):
+    div1 = Div()
+    div2 = Div()
+    layout = Tabs(div1, div2)
+    p1, p2 = layout.objects
+
+    model = layout._get_root(document, comm=comm)
+
+    assert model.ref['id'] in p1._callbacks
+    assert p1._models[model.ref['id']] is model.tabs[0].child
+    div3 = Div()
+    div4 = Div()
+    layout[:] = [('B', div3), ('C', div4)]
+    tab1, tab2 = model.tabs
+    assert tab1.child is div3
+    assert tab1.title == 'B'
+    assert tab2.child is div4
+    assert tab2.title == 'C'
+    assert p1._callbacks == {}
+    assert p1._models == {}
+    assert p2._callbacks == {}
+    assert p2._models == {}
+
+
+def test_tabs_setitem_replace_all_error(document, comm):
+    div1 = Div()
+    div2 = Div()
+    layout = Tabs(div1, div2)
+    model = layout._get_root(document, comm=comm)
+
+    div3 = Div()
+    with pytest.raises(IndexError):
+        layout[:] = div3
+
+
+def test_tabs_setitem_replace_slice(document, comm):
+    div1 = Div()
+    div2 = Div()
+    div3 = Div()
+    layout = Tabs(('A', div1), ('B', div2), ('C', div3))
+    p1, p2, p3 = layout.objects
+
+    model = layout._get_root(document, comm=comm)
+
+    assert model.ref['id'] in p1._callbacks
+    assert p1._models[model.ref['id']] is model.tabs[0].child
+    div3 = Div()
+    div4 = Div()
+    layout[1:] = [('D', div3), ('E', div4)]
+    tab1, tab2, tab3 = model.tabs
+    assert tab1.child is div1
+    assert tab1.title == 'A'
+    assert tab2.child is div3
+    assert tab2.title == 'D'
+    assert tab3.child is div4
+    assert tab3.title == 'E'
+    assert p2._callbacks == {}
+    assert p2._models == {}
+    assert p3._callbacks == {}
+    assert p3._models == {}
+
+
+def test_tabs_setitem_replace_slice_error(document, comm):
+    div1 = Div()
+    div2 = Div()
+    div3 = Div()
+    layout = Tabs(div1, div2, div3)
+    model = layout._get_root(document, comm=comm)
+
+    div3 = Div()
+    with pytest.raises(IndexError):
+        layout[1:] = [div3]
+
+
+def test_tabs_setitem_replace_slice_out_of_bounds(document, comm):
+    div1 = Div()
+    div2 = Div()
+    div3 = Div()
+    layout = Tabs(div1, div2, div3)
+    model = layout._get_root(document, comm=comm)
+
+    div3 = Div()
+    with pytest.raises(IndexError):
+        layout[3:4] = [div3]
+        
+    
 def test_tabs_pop(document, comm):
     div1 = Div()
     div2 = Div()
