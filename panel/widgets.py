@@ -866,7 +866,7 @@ class CrossSelector(MultiSelect):
         unselected = [k for k in self.options if k not in selected]
 
         # Define whitelist and blacklist
-        width = int((self.width-100)/2)
+        width = int((self.width-50)/2)
         self._lists = {
             False: MultiSelect(options=unselected, size=self.size,
                                height=self.height-50, width=width),
@@ -894,7 +894,7 @@ class CrossSelector(MultiSelect):
         # Define Layout
         blacklist = Column(self._search[False], self._lists[False])
         whitelist = Column(self._search[True], self._lists[True])
-        buttons = Column(self._buttons[True], self._buttons[False], width=70)
+        buttons = Column(self._buttons[True], self._buttons[False], width=50)
 
         self._layout = Row(blacklist, Column(VSpacer(), buttons, VSpacer()), whitelist)
 
