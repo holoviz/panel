@@ -135,7 +135,7 @@ def test_layout_setitem_out_of_bounds(panel, document, comm):
     div2 = Div()
     layout = panel(div1, div2)
 
-    model = layout._get_root(document, comm=comm)
+    layout._get_root(document, comm=comm)
     div3 = Div()
     with pytest.raises(IndexError):
         layout[2] = div3
@@ -167,7 +167,7 @@ def test_layout_setitem_replace_all_error(panel, document, comm):
     div1 = Div()
     div2 = Div()
     layout = panel(div1, div2)
-    model = layout._get_root(document, comm=comm)
+    layout._get_root(document, comm=comm)
 
     div3 = Div()
     with pytest.raises(IndexError):
@@ -202,7 +202,7 @@ def test_layout_setitem_replace_slice_error(panel, document, comm):
     div2 = Div()
     div3 = Div()
     layout = panel(div1, div2, div3)
-    model = layout._get_root(document, comm=comm)
+    layout._get_root(document, comm=comm)
 
     div3 = Div()
     with pytest.raises(IndexError):
@@ -215,7 +215,7 @@ def test_layout_setitem_replace_slice_out_of_bounds(panel, document, comm):
     div2 = Div()
     div3 = Div()
     layout = panel(div1, div2, div3)
-    model = layout._get_root(document, comm=comm)
+    layout._get_root(document, comm=comm)
 
     div3 = Div()
     with pytest.raises(IndexError):
@@ -373,7 +373,7 @@ def test_tabs_setitem_out_of_bounds(document, comm):
     div2 = Div()
     layout = Tabs(div1, div2)
 
-    model = layout._get_root(document, comm=comm)
+    layout._get_root(document, comm=comm)
     div3 = Div()
     with pytest.raises(IndexError):
         layout[2] = div3
@@ -407,7 +407,7 @@ def test_tabs_setitem_replace_all_error(document, comm):
     div1 = Div()
     div2 = Div()
     layout = Tabs(div1, div2)
-    model = layout._get_root(document, comm=comm)
+    layout._get_root(document, comm=comm)
 
     div3 = Div()
     with pytest.raises(IndexError):
@@ -446,7 +446,7 @@ def test_tabs_setitem_replace_slice_error(document, comm):
     div2 = Div()
     div3 = Div()
     layout = Tabs(div1, div2, div3)
-    model = layout._get_root(document, comm=comm)
+    layout._get_root(document, comm=comm)
 
     div3 = Div()
     with pytest.raises(IndexError):
@@ -458,7 +458,7 @@ def test_tabs_setitem_replace_slice_out_of_bounds(document, comm):
     div2 = Div()
     div3 = Div()
     layout = Tabs(div1, div2, div3)
-    model = layout._get_root(document, comm=comm)
+    layout._get_root(document, comm=comm)
 
     div3 = Div()
     with pytest.raises(IndexError):
