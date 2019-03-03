@@ -150,7 +150,10 @@ class PaneBase(Reactive):
         return self.layout[index]
 
     def _get_root(self, doc, comm=None):
-        root = self.layout._get_model(doc, comm=comm)
+        if self._updates:
+            root = self._get_model(doc, comm=comm)
+        else:
+            root = self.layout._get_model(doc, comm=comm)
         self._preprocess(root)
         return root
 
@@ -220,10 +223,10 @@ class Bokeh(PaneBase):
     def applies(cls, obj):
         return isinstance(obj, LayoutDOM)
 
-    def _get_model(self, doc, root, parent, comm=None):
-        """
-        Should return the Bokeh model to be rendered.
-        """
+    def _get_model(self, doc, root=None, parent=None, comm=None):
+        if root is None:
+            return self._get_root(doc, comm)
+
         model = self.object
         ref = root.ref['id']
         for js in model.select({'type': CustomJS}):
@@ -259,8 +262,10 @@ class DivPaneBase(PaneBase):
         return {p : getattr(self,p) for p in list(Layoutable.param) + ['style']
                 if getattr(self, p) is not None}
 
-    def _get_model(self, doc, root, parent, comm=None):
+    def _get_model(self, doc, root=None, parent=None, comm=None):
         model = _BkDiv(**self._get_properties())
+        if root is None:
+            root = model
         self._models[root.ref['id']] = model
         self._link_object(doc, root, parent, comm)
         return model

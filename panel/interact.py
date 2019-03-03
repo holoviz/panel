@@ -179,9 +179,8 @@ class interactive(PaneBase):
                 new_kwargs.append((name, value, default))
         return new_kwargs
 
-    def _get_model(self, doc, root, parent, comm=None):
-        layout = self._inner_layout._get_model(doc, root, parent, comm)
-        return layout
+    def _get_model(self, doc, root=None, parent=None, comm=None):
+        return self._inner_layout._get_model(doc, root, parent, comm)
 
     def _link_widgets(self):
         if self.manual_update:

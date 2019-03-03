@@ -104,10 +104,9 @@ class HoloViews(PaneBase):
         self._plots[root.ref['id']] = plot
         return plot
 
-    def _get_model(self, doc, root, parent, comm=None):
-        """
-        Should return the Bokeh model to be rendered.
-        """
+    def _get_model(self, doc, root=None, parent=None, comm=None):
+        if root is None:
+            return self._get_root(doc, comm)
         ref = root.ref['id']
         plot = self._render(doc, comm, root)
         child_pane = Pane(plot.state, _temporary=True)

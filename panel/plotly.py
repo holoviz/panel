@@ -57,7 +57,7 @@ class Plotly(PaneBase):
             fig = go.Figure(data=data, layout=layout)
         return fig
 
-    def _get_model(self, doc, root, parent, comm=None):
+    def _get_model(self, doc, root=None, parent=None, comm=None):
         """
         Should return the bokeh model to be rendered.
         """
@@ -72,6 +72,8 @@ class Plotly(PaneBase):
                     data[key] = trace.pop(key)
             sources.append(ColumnDataSource(data))
         model = PlotlyPlot(data=json, data_sources=sources)
+        if root is None:
+            root = model
         self._models[root.ref['id']] = model
         self._link_object(doc, root, parent, comm)
         return model

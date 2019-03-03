@@ -384,7 +384,7 @@ class Param(PaneBase):
         self._models[root.ref['id']] = root
         return root
 
-    def _get_model(self, doc, root, parent, comm=None):
+    def _get_model(self, doc, root=None, parent=None, comm=None):
         model = self.layout._get_model(doc, root, parent, comm)
         self._models[root.ref['id']] = model
         return model
@@ -448,7 +448,11 @@ class ParamMethod(PaneBase):
             # Try updating existing pane
             new_object = self.object()
             pane_type = self.get_pane_type(new_object)
-            if type(self._pane) is pane_type and not Link.registry.get(new_object):
+            try:
+                links = Link.registry.get(new_object)
+            except TypeError:
+                links = []
+            if type(self._pane) is pane_type and not links:
                 if isinstance(new_object, Reactive):
                     pvals = dict(self._pane.get_param_values())
                     new_params = {k: v for k, v in new_object.get_param_values()
@@ -476,7 +480,10 @@ class ParamMethod(PaneBase):
             watcher = pobj.param.watch(update_pane, ps, p.what)
             self._callbacks[ref].append(watcher)
 
-    def _get_model(self, doc, root, parent, comm=None):
+    def _get_model(self, doc, root=None, parent=None, comm=None):
+        if root is None:
+            return self._get_root(doc, comm)
+
         ref = root.ref['id']
         if ref in self._callbacks:
             self._cleanup(root)

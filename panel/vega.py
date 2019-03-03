@@ -93,15 +93,14 @@ class Vega(PaneBase):
         if data:
             sources['data'] = ColumnDataSource(data=ds_as_cds(data))
 
-    def _get_model(self, doc, root, parent, comm=None):
-        """
-        Should return the Bokeh model to be rendered.
-        """
+    def _get_model(self, doc, root=None, parent=None, comm=None):
         json = self._to_json(self.object)
         json['data'] = dict(json['data'])
         sources = {}
         self._get_sources(json, sources)
         model = VegaPlot(data=json, data_sources=sources)
+        if root is None:
+            root = model
         self._models[root.ref['id']] = model
         self._link_object(doc, root, parent, comm)
         return model
