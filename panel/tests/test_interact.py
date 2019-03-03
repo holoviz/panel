@@ -1,10 +1,20 @@
 from bokeh.models import Div as BkDiv, Column as BkColumn
 
 from panel.interact import interactive
+from panel.pane import HTML
 from panel import widgets
 
 from .test_layout import get_div
 
+
+def test_interact_title():
+    def test(a):
+        return a
+
+    interact_pane = interactive(test, a=False, params={'name': 'Test'})
+    html = interact_pane.widget_box[0]
+    assert isinstance(html, HTML)
+    assert html.object == '<h2>Test</h2>'
 
 def test_boolean_interact():
     def test(a):
