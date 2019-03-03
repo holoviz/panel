@@ -177,7 +177,10 @@ class Param(PaneBase):
             elif isinstance(v, basestring) and v == '': continue
             elif p == 'object' or (p == 'name' and v.startswith(obj_cls)): continue
             elif p == 'parameters' and v == parameters: continue
-            params.append('%s=%s' % (p, abbreviated_repr(v)))
+            try:
+                params.append('%s=%s' % (p, abbreviated_repr(v)))
+            except RuntimeError:
+                params.append('%s=%s' % (p, '...'))
         obj = type(self.object).__name__
         template = '{cls}({obj}, {params})' if params else '{cls}({obj})'
         return template.format(cls=cls, params=', '.join(params), obj=obj)
