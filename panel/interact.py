@@ -36,7 +36,7 @@ except ImportError:
 import param
 
 from .layout import Panel, Column, Row
-from .pane import PaneBase, Pane
+from .pane import PaneBase, Pane, HTML
 from .util import basestring, as_unicode
 from .widgets import (Checkbox, TextInput, Widget, IntSlider, FloatSlider,
                       Select, DiscreteSlider, Button)
@@ -148,8 +148,10 @@ class interactive(PaneBase):
         self._pane = Pane(self.object(**self.kwargs), name=self.name,
                           _temporary=True)
         self._inner_layout = Row(self._pane)
-        self.widget_box = Column(*(widget for _, widget in widgets
-                                      if isinstance(widget, Widget)))
+        widgets = [widget for _, widget in widgets if isinstance(widget, Widget)]
+        if 'name' in params:
+            widgets.insert(0, HTML('<h2>%s</h2>' % self.name))
+        self.widget_box = Column(*widgets)
         self.layout.objects = [self.widget_box, self._inner_layout]
         self._link_widgets()
 
