@@ -93,7 +93,7 @@ class Vega(PaneBase):
         if data:
             sources['data'] = ColumnDataSource(data=ds_as_cds(data))
 
-    def _get_model(self, doc, root, parent=None, comm=None):
+    def _get_model(self, doc, root, parent, comm=None):
         """
         Should return the Bokeh model to be rendered.
         """

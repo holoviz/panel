@@ -17,9 +17,11 @@ from param.parameterized import classlist
 
 from .pane import Pane, PaneBase
 from .layout import Row, Panel, Tabs, Column
+from .links import Link
 from .util import (
     abbreviated_repr, basestring, default_label_formatter, full_groupby,
     get_method_owner, is_parameterized, param_name)
+from .viewable import Layoutable, Reactive
 from .widgets import (
     LiteralInput, Select, Checkbox, FloatSlider, IntSlider, RangeSlider,
     MultiSelect, StaticText, Button, Toggle, TextInput, DiscreteSlider,
@@ -57,6 +59,9 @@ class Param(PaneBase):
 
     display_threshold = param.Number(default=0, precedence=-10, doc="""
         Parameters with precedence below this value are not displayed.""")
+
+    default_layout = param.ClassSelector(default=Column, class_=Panel,
+                                         is_instance=False)
 
     default_precedence = param.Number(default=1e-8, precedence=-10, doc="""
         Precedence value to use for parameters with no declared
@@ -105,6 +110,8 @@ class Param(PaneBase):
 
     priority = 0.1
 
+    _unpack = True
+
     _mapping = {
         param.Action:         Button,
         param.Parameter:      LiteralInput,
@@ -121,6 +128,10 @@ class Param(PaneBase):
         param.Date:           DatetimeInput,
     }
 
+    @classmethod
+    def applies(cls, obj):
+        return (is_parameterized(obj) or isinstance(obj, param.parameterized.Parameters))
+
     def __init__(self, object, **params):
         if isinstance(object, param.parameterized.Parameters):
             object = object.cls if object.self is None else object.self
@@ -133,24 +144,19 @@ class Param(PaneBase):
         # Construct widgets
         self._widgets = self._get_widgets()
         widgets = [widget for widgets in self._widgets.values() for widget in widgets]
-        self._widget_box = Column(*widgets, height=self.height,
-                                  width=self.width, name=self.name)
 
         # Construct Layout
-        kwargs = {'name': self.name}
-        if self.expand_layout is Tabs:
-            kwargs['width'] = self.width
+        kwargs = {p: v for p, v in self.get_param_values() if p in Layoutable.param}
+        self._widget_box = self.default_layout(*widgets, **kwargs)
 
         layout = self.expand_layout
         if isinstance(layout, Panel):
             self._expand_layout = layout
             self.layout = self._widget_box
         elif isinstance(self._widget_box, layout):
-            self.layout = Column(self._widget_box)
-            self._expand_layout = self._widget_box
+            self.layout = self._expand_layout = self._widget_box
         elif isinstance(layout, type) and issubclass(layout, Panel):
-            self._expand_layout = layout(self._widget_box, **kwargs)
-            self.layout = Column(self._expand_layout)
+            self.layout = self._expand_layout = layout(self._widget_box, **kwargs)
         else:
             raise ValueError('expand_layout expected to be a panel.layout.Panel'
                              'type or instance, found %s type.' %
@@ -235,10 +241,6 @@ class Param(PaneBase):
                     toggle.active = True
                 else:
                     toggle_pane(namedtuple('Change', 'new')(True))
-
-    @classmethod
-    def applies(cls, obj):
-        return (is_parameterized(obj) or isinstance(obj, param.parameterized.Parameters))
 
     def widget_type(cls, pobj):
         ptype = type(pobj)
@@ -377,10 +379,14 @@ class Param(PaneBase):
         widgets += [(pname, self.widget(pname)) for pname in ordered_params]
         return OrderedDict(widgets)
 
-    def _get_model(self, doc, root=None, parent=None, comm=None):
+    def _get_root(self, doc, comm=None):
+        root = self.layout._get_root(doc, comm)
+        self._models[root.ref['id']] = root
+        return root
+
+    def _get_model(self, doc, root, parent, comm=None):
         model = self.layout._get_model(doc, root, parent, comm)
-        if root:
-            self._models[root.ref['id']] = model
+        self._models[root.ref['id']] = model
         return model
 
 
@@ -442,8 +448,8 @@ class ParamMethod(PaneBase):
             # Try updating existing pane
             new_object = self.object()
             pane_type = self.get_pane_type(new_object)
-            if type(self._pane) is pane_type:
-                if isinstance(new_object, (Panel, PaneBase)):
+            if type(self._pane) is pane_type and not Link.registry.get(new_object):
+                if isinstance(new_object, Reactive):
                     pvals = dict(self._pane.get_param_values())
                     new_params = {k: v for k, v in new_object.get_param_values()
                                   if k != 'name' and v is not pvals[k]}
@@ -470,8 +476,7 @@ class ParamMethod(PaneBase):
             watcher = pobj.param.watch(update_pane, ps, p.what)
             self._callbacks[ref].append(watcher)
 
-
-    def _get_model(self, doc, root=None, parent=None, comm=None):
+    def _get_model(self, doc, root, parent, comm=None):
         ref = root.ref['id']
         if ref in self._callbacks:
             self._cleanup(root)

@@ -110,7 +110,8 @@ class Panel(Reactive):
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         model = self._bokeh_model()
-        root = model if root is None else root
+        if root is None:
+            root = model
         objects = self._get_objects(model, [], doc, root, comm)
         props = dict(self._init_properties(), objects=objects)
         model.update(**self._process_param_change(props))
@@ -326,14 +327,7 @@ class Spacer(Reactive):
 
     _bokeh_model = BkSpacer
 
-    def _get_root(self, doc, comm=None):
-        root = BkRow()
-        model = self._get_model(doc, root, root, comm=comm)
-        root.children.append(model)
-        self._preprocess(root)
-        return root
-
-    def _get_model(self, doc, root=None, parent=None, comm=None):
+    def _get_model(self, doc, root, parent, comm=None):
         model = self._bokeh_model(**self._process_param_change(self._init_properties()))
         self._models[root.ref['id']] = model
         self._link_params(model, ['width', 'height'], doc, root, comm)

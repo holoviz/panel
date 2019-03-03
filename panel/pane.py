@@ -46,7 +46,7 @@ def panel(obj, **kwargs):
     if kwargs.get('name', False) is None:
         kwargs.pop('name')
     pane = PaneBase.get_pane_type(obj)(obj, **kwargs)
-    if len(pane.layout) == 1:
+    if len(pane.layout) == 1 and pane._unpack:
         return pane.layout[0]
     return pane.layout
 
@@ -89,6 +89,9 @@ class PaneBase(Reactive):
     # Declares whether Pane supports updates to the Bokeh model
     _updates = False
 
+    # Whether the Pane layout can be safely unpacked
+    _unpack = True
+
     __abstract = True
 
     @classmethod
@@ -124,13 +127,6 @@ class PaneBase(Reactive):
             return pane_type
         raise TypeError('%s type could not be rendered.' % type(obj).__name__)
 
-    def __repr__(self, depth=0):
-        cls = type(self).__name__
-        params = param_reprs(self, ['object'])
-        obj = type(self.object).__name__
-        template = '{cls}({obj}, {params})' if params else '{cls}({obj})'
-        return template.format(cls=cls, params=', '.join(params), obj=obj)
-
     def __init__(self, object, **params):
         applies = self.applies(object)
         if isinstance(applies, bool) and not applies:
@@ -140,6 +136,13 @@ class PaneBase(Reactive):
         super(PaneBase, self).__init__(object=object, **params)
         kwargs = {k: v for k, v in params.items() if k in Layoutable.param}
         self.layout = self.default_layout(self, **kwargs)
+
+    def __repr__(self, depth=0):
+        cls = type(self).__name__
+        params = param_reprs(self, ['object'])
+        obj = type(self.object).__name__
+        template = '{cls}({obj}, {params})' if params else '{cls}({obj})'
+        return template.format(cls=cls, params=', '.join(params), obj=obj)
 
     def __getitem__(self, index):
         """
@@ -218,16 +221,11 @@ class Bokeh(PaneBase):
     def applies(cls, obj):
         return isinstance(obj, LayoutDOM)
 
-    def _get_model(self, doc, root=None, parent=None, comm=None):
+    def _get_model(self, doc, root, parent, comm=None):
         """
         Should return the Bokeh model to be rendered.
         """
         model = self.object
-        if isinstance(model, _BkWidget):
-            box_kws = {k: getattr(model, k) for k in ['width', 'height', 'sizing_mode']
-                       if k in model.properties()}
-            model = _BkColumn(model, **box_kws)
-
         ref = root.ref['id']
         for js in model.select({'type': CustomJS}):
             js.code = js.code.replace(model.ref['id'], ref)
@@ -262,7 +260,7 @@ class DivPaneBase(PaneBase):
         return {p : getattr(self,p) for p in list(Layoutable.param) + ['style']
                 if getattr(self, p) is not None}
 
-    def _get_model(self, doc, root=None, parent=None, comm=None):
+    def _get_model(self, doc, root, parent, comm=None):
         model = _BkDiv(**self._get_properties())
         self._models[root.ref['id']] = model
         self._link_object(doc, root, parent, comm)

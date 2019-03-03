@@ -20,7 +20,7 @@ def test_text_input(document, comm):
 
     text = TextInput(value='ABC', name='Text:')
 
-    box = text._get_model(document, comm=comm)
+    box = text._get_root(document, comm=comm)
 
     assert isinstance(box, Column)
 
@@ -70,7 +70,7 @@ def test_static_text(document, comm):
 
     text = StaticText(value='ABC', name='Text:')
 
-    box = text._get_model(document, comm=comm)
+    box = text._get_root(document, comm=comm)
 
     assert isinstance(box, Column)
 
@@ -87,7 +87,7 @@ def test_float_slider(document, comm):
 
     slider = FloatSlider(start=0.1, end=0.5, value=0.4, name='Slider')
 
-    box = slider._get_model(document, comm=comm)
+    box = slider._get_root(document, comm=comm)
 
     assert isinstance(box, Column)
 
@@ -111,7 +111,7 @@ def test_int_slider(document, comm):
 
     slider = IntSlider(start=0, end=3, value=1, name='Slider')
 
-    box = slider._get_model(document, comm=comm)
+    box = slider._get_root(document, comm=comm)
 
     assert isinstance(box, Column)
 
@@ -135,7 +135,7 @@ def test_range_slider(document, comm):
 
     slider = RangeSlider(start=0., end=3, value=(0, 3), name='Slider')
 
-    box = slider._get_model(document, comm=comm)
+    box = slider._get_root(document, comm=comm)
 
     assert isinstance(box, Column)
 
@@ -159,7 +159,7 @@ def test_literal_input(document, comm):
 
     literal = LiteralInput(value={}, type=dict, name='Literal')
 
-    box = literal._get_model(document, comm=comm)
+    box = literal._get_root(document, comm=comm)
 
     assert isinstance(box, Column)
 
@@ -194,7 +194,7 @@ def test_datetime_input(document, comm):
                              end=datetime(2018, 1, 10),
                              name='Datetime')
 
-    box = dt_input._get_model(document, comm=comm)
+    box = dt_input._get_root(document, comm=comm)
 
     assert isinstance(box, Column)
 
@@ -227,7 +227,7 @@ def test_checkbox(document, comm):
 
     checkbox = Checkbox(value=True, name='Checkbox')
 
-    box = checkbox._get_model(document, comm=comm)
+    box = checkbox._get_root(document, comm=comm)
 
     assert isinstance(box, Column)
 
@@ -253,7 +253,7 @@ def test_select(document, comm):
     opts = {'A': 'a', '1': 1}
     select = Select(options=opts, value=opts['1'], name='Select')
 
-    box = select._get_model(document, comm=comm)
+    box = select._get_root(document, comm=comm)
 
     assert isinstance(box, Column)
 
@@ -279,7 +279,7 @@ def test_select_mutables(document, comm):
     opts = OrderedDict([('A', [1,2,3]), ('B', [2,4,6]), ('C', dict(a=1,b=2))])
     select = Select(options=opts, value=opts['B'], name='Select')
 
-    box = select._get_model(document, comm=comm)
+    box = select._get_root(document, comm=comm)
 
     assert isinstance(box, Column)
 
@@ -305,7 +305,7 @@ def test_multi_select(document, comm):
     select = MultiSelect(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
                          value=[object, 1], name='Select')
 
-    box = select._get_model(document, comm=comm)
+    box = select._get_root(document, comm=comm)
 
     assert isinstance(box, Column)
 
@@ -331,7 +331,7 @@ def test_toggle_buttons(document, comm):
     select = ToggleButtons(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
                            value=[1, object], name='ToggleButtons')
 
-    box = select._get_model(document, comm=comm)
+    box = select._get_root(document, comm=comm)
 
     assert isinstance(box, Column)
 
@@ -384,7 +384,7 @@ def test_toggle_group_check(document, comm):
                                value=[1, object], name='CheckButtonGroup',
                                widget_type=widget_type, behavior='check')
         
-        box = select._get_model(document, comm=comm)
+        box = select._get_root(document, comm=comm)
     
         assert isinstance(box, Column)
     
@@ -416,7 +416,7 @@ def test_toggle_group_radio(document, comm):
                                value=1, name='RadioButtonGroup',
                                widget_type=widget_type, behavior='radio')
         
-        box = select._get_model(document, comm=comm)
+        box = select._get_root(document, comm=comm)
     
         assert isinstance(box, Column)
     
@@ -437,7 +437,7 @@ def test_radio_buttons(document, comm):
     select = RadioButtons(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
                           value=[1, object], name='RadioButtons')
 
-    box = select._get_model(document, comm=comm)
+    box = select._get_root(document, comm=comm)
 
     assert isinstance(box, Column)
 
@@ -461,7 +461,7 @@ def test_radio_buttons(document, comm):
 def test_button(document, comm):
     button = Button(name='Button')
 
-    box = button._get_model(document, comm=comm)
+    box = button._get_root(document, comm=comm)
 
     assert isinstance(box, Column)
 
@@ -478,7 +478,7 @@ def test_button(document, comm):
 def test_toggle(document, comm):
     toggle = Toggle(name='Toggle', active=True)
 
-    box = toggle._get_model(document, comm=comm)
+    box = toggle._get_root(document, comm=comm)
 
     assert isinstance(box, Column)
 
@@ -499,7 +499,7 @@ def test_date_picker(document, comm):
     date_picker = DatePicker(name='DatePicker', value=datetime(2018, 9, 2),
                              start=datetime(2018, 9, 1), end=datetime(2018, 9, 10))
 
-    box = date_picker._get_model(document, comm=comm)
+    box = date_picker._get_root(document, comm=comm)
 
     assert isinstance(box, Column)
 
@@ -523,7 +523,7 @@ def test_date_range_slider(document, comm):
                                   value=(datetime(2018, 9, 2), datetime(2018, 9, 4)),
                                   start=datetime(2018, 9, 1), end=datetime(2018, 9, 10))
 
-    box = date_slider._get_model(document, comm=comm)
+    box = date_slider._get_root(document, comm=comm)
 
     assert isinstance(box, Column)
 
@@ -549,12 +549,13 @@ def test_discrete_slider(document, comm):
     discrete_slider = DiscreteSlider(name='DiscreteSlider', value=1,
                                      options=[0.1, 1, 10, 100])
 
-    box = discrete_slider._get_model(document, comm=comm)
+    box = discrete_slider._get_root(document, comm=comm)
 
     assert isinstance(box, Column)
+    subbox = box.children[0]
 
-    label = box.children[0]
-    widget = box.children[1]
+    label = subbox.children[0]
+    widget = subbox.children[1]
     assert isinstance(label, BkDiv)
     assert isinstance(widget, BkSlider)
     assert widget.value == 1
@@ -579,12 +580,13 @@ def test_discrete_date_slider(document, comm):
     discrete_slider = DiscreteSlider(name='DiscreteSlider', value=dates['2016-01-02'],
                                      options=dates)
 
-    box = discrete_slider._get_model(document, comm=comm)
+    box = discrete_slider._get_root(document, comm=comm)
 
     assert isinstance(box, Column)
+    subbox = box.children[0]
 
-    label = box.children[0]
-    widget = box.children[1]
+    label = subbox.children[0]
+    widget = subbox.children[1]
     assert isinstance(label, BkDiv)
     assert isinstance(widget, BkSlider)
     assert widget.value == 1
@@ -609,12 +611,13 @@ def test_discrete_slider_options_dict(document, comm):
     discrete_slider = DiscreteSlider(name='DiscreteSlider', value=1,
                                      options=options)
 
-    box = discrete_slider._get_model(document, comm=comm)
+    box = discrete_slider._get_root(document, comm=comm)
 
     assert isinstance(box, Column)
+    subbox = box.children[0]
 
-    label = box.children[0]
-    widget = box.children[1]
+    label = subbox.children[0]
+    widget = subbox.children[1]
     assert isinstance(label, BkDiv)
     assert isinstance(widget, BkSlider)
     assert widget.value == 1
@@ -677,7 +680,7 @@ def test_discrete_player(document, comm):
     discrete_player = DiscretePlayer(name='DiscretePlayer', value=1,
                                      options=[0.1, 1, 10, 100])
 
-    box = discrete_player._get_model(document, comm=comm)
+    box = discrete_player._get_root(document, comm=comm)
 
     assert isinstance(box, Column)
 
@@ -699,7 +702,7 @@ def test_discrete_player(document, comm):
 def test_file_input(document, comm):
     file_input = FileInput()
 
-    box = file_input._get_model(document, comm=comm)
+    box = file_input._get_root(document, comm=comm)
 
     assert isinstance(box, Column)
 

@@ -59,28 +59,17 @@ class Widget(Reactive):
         super(Widget, self).__init__(**params)
 
     def _get_root(self, doc, comm=None):
-        root = _BkColumn()
-        model = self._get_model(doc, root, root, comm=comm)
-        root.children.append(model)
-        self._preprocess(root)
-        return root
+        return Column(self)._get_root(doc, comm)
 
-    def _get_model(self, doc, root=None, parent=None, comm=None):
-        root = parent if root is None else root
-        if root is None:
-            root = _BkColumn()
+    def _get_model(self, doc, root, parent, comm=None):
         model = self._widget_type(**self._process_param_change(self._init_properties()))
-
         # Link parameters and bokeh model
-        params = [p for p in self.param]
-        properties = list(self._process_param_change(dict(self.get_param_values())))
+        params = list(self.param)
+        values = dict(self.get_param_values())
+        properties = list(self._process_param_change(values))
         self._models[root.ref['id']] = model
         self._link_params(model, params, doc, root, comm)
         self._link_props(model, properties, doc, root, comm)
-        if parent is None:
-            root.children.append(model)
-            return root
-
         return model
 
 
@@ -648,10 +637,8 @@ class DiscreteSlider(Widget):
     def values(self):
         return list(self.options.values()) if isinstance(self.options, dict) else self.options
 
-    def _get_model(self, doc, root=None, parent=None, comm=None):
+    def _get_model(self, doc, root, parent, comm=None):
         model = _BkColumn()
-        parent = parent or model
-        root = root or parent
         msg = self._process_param_change(self._init_properties())
         div = _BkDiv(text=msg['text'])
         slider = _BkSlider(start=msg['start'], end=msg['end'], value=msg['value'],
@@ -992,5 +979,5 @@ class CrossSelector(MultiSelect):
         self.value = [self.options[o] for o in self._lists[True].options if o != '']
         self._apply_filters()
 
-    def _get_model(self, doc, root=None, parent=None, comm=None):
+    def _get_model(self, doc, root, parent, comm=None):
         return self._layout._get_model(doc, root, parent, comm)
