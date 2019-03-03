@@ -127,13 +127,47 @@ class Panel(Reactive):
     def __len__(self):
         return len(self.objects)
 
+    def __iter__(self):
+        for obj in self.objects:
+            yield obj
+
     def __contains__(self, obj):
         return obj in self.objects
 
-    def __setitem__(self, index, pane):
+    def __setitem__(self, index, panes):
         from .pane import panel
-        new_objects = list(self.objects)
-        new_objects[index] = panel(pane)
+        new_objects = list(self)
+        if not isinstance(index, slice):
+            start, end = index, index+1
+            if start > len(self.objects):
+                raise IndexError('Index %d out of bounds on %s '
+                                 'containing %d objects.' %
+                                 (end, type(self).__name__, len(self.objects)))
+            panes = [panes]
+        else:
+            start = index.start or 0
+            end = len(self) if index.stop is None else index.stop
+            if index.start is None and index.stop is None:
+                if not isinstance(panes, list):
+                    raise IndexError('Expected a list of objects to '
+                                     'replace the objects in the %s, '
+                                     'got a %s type.' %
+                                     (type(self).__name__, type(panes).__name__))
+                expected = len(panes)
+                new_objects = [None]*expected
+                end = expected
+            elif end > len(self.objects):
+                raise IndexError('Index %d out of bounds on %s '
+                                 'containing %d objects.' %
+                                 (end, type(self).__name__, len(self.objects)))
+            else:
+                expected = end-start
+            if not isinstance(panes, list) or len(panes) != expected:
+                raise IndexError('Expected a list of %d objects to set '
+                                 'on the %s to match the supplied slice.' %
+                                 (expected, type(self).__name__))
+        for i, pane in zip(range(start, end), panes):
+            new_objects[i] = panel(pane)
         self.objects = new_objects
 
     def __repr__(self, depth=0, max_depth=10):
@@ -142,7 +176,7 @@ class Panel(Reactive):
         spacer = '\n' + ('    ' * (depth+1))
         cls = type(self).__name__
         params = param_reprs(self, ['objects'])
-        objs = ['[%d] %s' % (i, obj.__repr__(depth+1)) for i, obj in enumerate(self.objects)]
+        objs = ['[%d] %s' % (i, obj.__repr__(depth+1)) for i, obj in enumerate(self)]
         if not params and not objs:
             return super(Panel, self).__repr__(depth+1)
         elif not params:
@@ -158,25 +192,25 @@ class Panel(Reactive):
 
     def append(self, pane):
         from .pane import panel
-        new_objects = list(self.objects)
+        new_objects = list(self)
         new_objects.append(panel(pane))
         self.objects = new_objects
 
     def insert(self, index, pane):
         from .pane import panel
-        new_objects = list(self.objects)
+        new_objects = list(self)
         new_objects.insert(index, panel(pane))
         self.objects = new_objects
 
     def pop(self, index):
-        new_objects = list(self.objects)
+        new_objects = list(self)
         if index in new_objects:
             index = new_objects.index(index)
         new_objects.pop(index)
         self.objects = new_objects
 
     def remove(self, pane):
-        new_objects = list(self.objects)
+        new_objects = list(self)
         new_objects.remove(pane)
         self.objects = new_objects
 
@@ -256,12 +290,12 @@ class Tabs(Panel):
         """
         from .pane import panel
         new_models = []
-        if len(self._names) != len(self.objects):
+        if len(self._names) != len(self):
             raise ValueError('Tab names do not match objects, ensure '
                              'that the Tabs.objects are not modified '
                              'directly. Found %d names, expected %d.' %
-                             (len(self._names), len(self.objects)))
-        for i, (name, pane) in enumerate(zip(self._names, self.objects)):
+                             (len(self._names), len(self)))
+        for i, (name, pane) in enumerate(zip(self._names, self)):
             pane = panel(pane)
             self.objects[i] = pane
             if pane in old_objects:
@@ -272,15 +306,46 @@ class Tabs(Panel):
             new_models.append(child)
         return new_models
 
-    def __setitem__(self, index, pane):
+    def __setitem__(self, index, panes):
         from .pane import panel
-        name = None
-        if isinstance(pane, tuple):
-            name, pane = pane
-        new_objects = list(self.objects)
-        new_objects[index] = panel(pane, name=name)
-        name = param_name(new_objects[index].name) if name is None else name
-        self._names[index] = name
+        new_objects = list(self)
+        if not isinstance(index, slice):
+            if index > len(self.objects):
+                raise IndexError('Index %d out of bounds on %s '
+                                 'containing %d objects.' %
+                                 (index, type(self).__name__, len(self.objects)))
+            start, end = index, index+1
+            panes = [panes]
+        else:
+            start = index.start or 0
+            end = len(self.objects) if index.stop is None else index.stop
+            if index.start is None and index.stop is None:
+                if not isinstance(panes, list):
+                    raise IndexError('Expected a list of objects to '
+                                     'replace the objects in the %s, '
+                                     'got a %s type.' %
+                                     (type(self).__name__, type(panes).__name__))
+                expected = len(panes)
+                new_objects = [None]*expected
+                self._names = [None]*len(panes)
+                end = expected
+            else:
+                expected = end-start
+                if end > len(self.objects):
+                    raise IndexError('Index %d out of bounds on %s '
+                                     'containing %d objects.' %
+                                     (end, type(self).__name__, len(self.objects)))
+            if not isinstance(panes, list) or len(panes) != expected:
+                raise IndexError('Expected a list of %d objects to set '
+                                 'on the %s to match the supplied slice.' %
+                                 (expected, type(self).__name__))
+        for i, pane in zip(range(start, end), panes):
+            name = None
+            if isinstance(pane, tuple):
+                name, pane = pane
+            new_objects[i] = panel(pane, name=name)
+            name = param_name(new_objects[i].name) if name is None else name
+            self._names[i] = name
         self.objects = new_objects
 
     def append(self, pane):
@@ -288,7 +353,7 @@ class Tabs(Panel):
         name = None
         if isinstance(pane, tuple):
             name, pane = pane
-        new_objects = list(self.objects)
+        new_objects = list(self)
         new_objects.append(panel(pane, name=name))
         name = param_name(new_objects[-1].name) if name is None else name
         self._names[-1] = name
@@ -306,7 +371,7 @@ class Tabs(Panel):
         self.objects = new_objects
 
     def pop(self, index):
-        new_objects = list(self.objects)
+        new_objects = list(self)
         if index in new_objects:
             index = new_objects.index(index)
         new_objects.pop(index)
@@ -314,7 +379,7 @@ class Tabs(Panel):
         self.objects = new_objects
 
     def remove(self, pane):
-        new_objects = list(self.objects)
+        new_objects = list(self)
         if pane in new_objects:
             index = new_objects.index(pane)
         new_objects.remove(pane)
