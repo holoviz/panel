@@ -25,7 +25,7 @@ from bokeh.models.widgets import (
     RadioButtonGroup as _BkRadioButtonGroup, RadioGroup as _BkRadioBoxGroup
 )
 
-from .layout import Column, Row, Spacer # noqa
+from .layout import Column, Row, VSpacer
 from .models.widgets import (
     Player as _BkPlayer, FileInput as _BkFileInput, Audio as _BkAudio)
 from .viewable import Reactive
@@ -58,29 +58,17 @@ class Widget(Reactive):
             params['name'] = ''
         super(Widget, self).__init__(**params)
 
-    def _get_root(self, doc, comm=None):
-        root = _BkColumn()
-        model = self._get_model(doc, root, root, comm=comm)
-        root.children.append(model)
-        self._preprocess(root)
-        return root
-
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        root = parent if root is None else root
-        if root is None:
-            root = _BkColumn()
         model = self._widget_type(**self._process_param_change(self._init_properties()))
-
+        if root is None:
+            root = model
         # Link parameters and bokeh model
-        params = [p for p in self.param]
-        properties = list(self._process_param_change(dict(self.get_param_values())))
+        params = list(self.param)
+        values = dict(self.get_param_values())
+        properties = list(self._process_param_change(values))
         self._models[root.ref['id']] = model
         self._link_params(model, params, doc, root, comm)
         self._link_props(model, properties, doc, root, comm)
-        if parent is None:
-            root.children.append(model)
-            return root
-
         return model
 
 
@@ -650,8 +638,8 @@ class DiscreteSlider(Widget):
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         model = _BkColumn()
-        parent = parent or model
-        root = root or parent
+        if root is None:
+            root = model
         msg = self._process_param_change(self._init_properties())
         div = _BkDiv(text=msg['text'])
         slider = _BkSlider(start=msg['start'], end=msg['end'], value=msg['value'],
@@ -878,7 +866,7 @@ class CrossSelector(MultiSelect):
         unselected = [k for k in self.options if k not in selected]
 
         # Define whitelist and blacklist
-        width = int((self.width-100)/2)
+        width = int((self.width-50)/2)
         self._lists = {
             False: MultiSelect(options=unselected, size=self.size,
                                height=self.height-50, width=width),
@@ -897,18 +885,18 @@ class CrossSelector(MultiSelect):
 
         # Define search
         self._search = {
-            False: TextInput(placeholder='Filter available options'),
-            True: TextInput(placeholder='Filter selected options')
+            False: TextInput(placeholder='Filter available options', width=width),
+            True: TextInput(placeholder='Filter selected options', width=width)
         }
         self._search[False].param.watch(self._filter_options, 'value')
         self._search[True].param.watch(self._filter_options, 'value')
 
         # Define Layout
-        blacklist = Column(self._search[False], self._lists[False], width=width+10)
-        whitelist = Column(self._search[True], self._lists[True], width=width+10)
-        buttons = Column(self._buttons[True], self._buttons[False], width=70)
+        blacklist = Column(self._search[False], self._lists[False])
+        whitelist = Column(self._search[True], self._lists[True])
+        buttons = Column(self._buttons[True], self._buttons[False], width=50)
 
-        self._layout = Row(blacklist, Column(Spacer(height=110), buttons), whitelist)
+        self._layout = Row(blacklist, Column(VSpacer(), buttons, VSpacer()), whitelist)
 
         self.param.watch(self._update_options, 'options')
         self.param.watch(self._update_value, 'value')

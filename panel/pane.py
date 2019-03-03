@@ -16,8 +16,7 @@ except:
 
 import param
 
-from bokeh.models import (LayoutDOM, CustomJS, Widget as _BkWidget,
-                          Div as _BkDiv, Column as _BkColumn)
+from bokeh.models import LayoutDOM, CustomJS, Div as _BkDiv
 
 from .layout import Panel, Row
 from .util import basestring, param_reprs, push, remove_root
@@ -46,7 +45,7 @@ def panel(obj, **kwargs):
     if kwargs.get('name', False) is None:
         kwargs.pop('name')
     pane = PaneBase.get_pane_type(obj)(obj, **kwargs)
-    if len(pane.layout) == 1:
+    if len(pane.layout) == 1 and pane._unpack:
         return pane.layout[0]
     return pane.layout
 
@@ -89,6 +88,9 @@ class PaneBase(Reactive):
     # Declares whether Pane supports updates to the Bokeh model
     _updates = False
 
+    # Whether the Pane layout can be safely unpacked
+    _unpack = True
+
     __abstract = True
 
     @classmethod
@@ -124,13 +126,6 @@ class PaneBase(Reactive):
             return pane_type
         raise TypeError('%s type could not be rendered.' % type(obj).__name__)
 
-    def __repr__(self, depth=0):
-        cls = type(self).__name__
-        params = param_reprs(self, ['object'])
-        obj = type(self.object).__name__
-        template = '{cls}({obj}, {params})' if params else '{cls}({obj})'
-        return template.format(cls=cls, params=', '.join(params), obj=obj)
-
     def __init__(self, object, **params):
         applies = self.applies(object)
         if isinstance(applies, bool) and not applies:
@@ -141,6 +136,13 @@ class PaneBase(Reactive):
         kwargs = {k: v for k, v in params.items() if k in Layoutable.param}
         self.layout = self.default_layout(self, **kwargs)
 
+    def __repr__(self, depth=0):
+        cls = type(self).__name__
+        params = param_reprs(self, ['object'])
+        obj = type(self.object).__name__
+        template = '{cls}({obj}, {params})' if params else '{cls}({obj})'
+        return template.format(cls=cls, params=', '.join(params), obj=obj)
+
     def __getitem__(self, index):
         """
         Allows pane objects to behave like the underlying layout
@@ -148,7 +150,10 @@ class PaneBase(Reactive):
         return self.layout[index]
 
     def _get_root(self, doc, comm=None):
-        root = self.layout._get_model(doc, comm=comm)
+        if self._updates:
+            root = self._get_model(doc, comm=comm)
+        else:
+            root = self.layout._get_model(doc, comm=comm)
         self._preprocess(root)
         return root
 
@@ -219,15 +224,10 @@ class Bokeh(PaneBase):
         return isinstance(obj, LayoutDOM)
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        """
-        Should return the Bokeh model to be rendered.
-        """
-        model = self.object
-        if isinstance(model, _BkWidget):
-            box_kws = {k: getattr(model, k) for k in ['width', 'height', 'sizing_mode']
-                       if k in model.properties()}
-            model = _BkColumn(model, **box_kws)
+        if root is None:
+            return self._get_root(doc, comm)
 
+        model = self.object
         ref = root.ref['id']
         for js in model.select({'type': CustomJS}):
             js.code = js.code.replace(model.ref['id'], ref)
@@ -264,6 +264,8 @@ class DivPaneBase(PaneBase):
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         model = _BkDiv(**self._get_properties())
+        if root is None:
+            root = model
         self._models[root.ref['id']] = model
         self._link_object(doc, root, parent, comm)
         return model

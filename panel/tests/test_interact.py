@@ -175,17 +175,15 @@ def test_interact_replaces_model(document, comm):
 
     column = interact_pane.layout._get_model(document, comm=comm)
     assert isinstance(column, BkColumn)
-    box = column.children[1].children[0]
-    assert isinstance(box, BkColumn)
-    div = box.children[0]
+    div = column.children[1].children[0]
     assert isinstance(div, BkDiv)
     assert div.text == 'Test'
     assert len(interact_pane._callbacks['instance']) == 1
     assert column.ref['id'] in pane._callbacks
-    assert pane._models[column.ref['id']] is box
+    assert pane._models[column.ref['id']] is div
     
     widget.value = True
-    assert box.ref['id'] not in pane._callbacks
+    assert column.ref['id'] not in pane._callbacks
     assert pane._callbacks == {}
     new_pane = interact_pane._pane
     assert new_pane is not pane

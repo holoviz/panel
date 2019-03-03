@@ -9,7 +9,6 @@ except:
 altair_available = pytest.mark.skipif(alt is None, reason="requires altair")
 
 import numpy as np
-from bokeh.models import Row as BkRow
 from panel.pane import Pane, PaneBase
 from panel.vega import Vega, VegaPlot
 
@@ -34,10 +33,7 @@ def test_vega_pane(document, comm):
     pane = Pane(vega_example)
 
     # Create pane
-    row = pane._get_root(document, comm=comm)
-    assert isinstance(row, BkRow)
-    assert len(row.children) == 1
-    model = row.children[0]
+    model = pane._get_root(document, comm=comm)
     assert isinstance(model, VegaPlot)
 
     expected = dict(vega_example, data={})
@@ -56,7 +52,7 @@ def test_vega_pane(document, comm):
     assert np.array_equal(cds_data['x'], np.array(['C', 'B', 'C', 'D', 'E'])) 
     assert np.array_equal(cds_data['y'], np.array([5, 3, 6, 7, 2]))
 
-    pane._cleanup(row)
+    pane._cleanup(model)
     assert pane._callbacks == {}
 
 
@@ -84,10 +80,7 @@ def test_altair_pane(document, comm):
     pane = Pane(altair_example())
 
     # Create pane
-    row = pane._get_root(document, comm=comm)
-    assert isinstance(row, BkRow)
-    assert len(row.children) == 1
-    model = row.children[0]
+    model = pane._get_root(document, comm=comm)
     assert isinstance(model, VegaPlot)
 
     expected = dict(vega_example, data={})
@@ -108,5 +101,5 @@ def test_altair_pane(document, comm):
     assert np.array_equal(cds_data['x'], np.array(['C', 'B', 'C', 'D', 'E'])) 
     assert np.array_equal(cds_data['y'], np.array([5, 3, 6, 7, 2]))
 
-    pane._cleanup(row)
+    pane._cleanup(model)
     assert pane._callbacks == {}
