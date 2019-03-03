@@ -22,7 +22,8 @@ from bokeh.models.widgets import (
     MultiSelect as _BkMultiSelect, Div as _BkDiv,Button as _BkButton,
     Toggle as _BkToggle, AutocompleteInput as _BkAutocompleteInput,
     CheckboxButtonGroup as _BkCheckboxButtonGroup,
-    RadioButtonGroup as _BkRadioButtonGroup, RadioGroup as _BkRadioBoxGroup
+    RadioButtonGroup as _BkRadioButtonGroup, RadioGroup as _BkRadioBoxGroup,
+    ColorPicker as _BkColorPicker
 )
 
 from .layout import Column, Row, VSpacer
@@ -242,6 +243,16 @@ class DateRangeSlider(Widget):
             v1, v2 = msg['value']
             msg['value'] = (value_as_datetime(v1), value_as_datetime(v2))
         return msg
+
+
+class ColorPicker(Widget):
+
+    value = param.Color(default=None, doc="""
+        The selected color""")
+
+    _widget_type = _BkColorPicker
+
+    _rename = {'value': 'color', 'name': 'title'}
 
 
 class _ButtonBase(Widget):

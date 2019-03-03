@@ -25,7 +25,7 @@ from .viewable import Layoutable, Reactive
 from .widgets import (
     LiteralInput, Select, Checkbox, FloatSlider, IntSlider, RangeSlider,
     MultiSelect, StaticText, Button, Toggle, TextInput, DiscreteSlider,
-    DatetimeInput)
+    DatetimeInput, DateRangeSlider, ColorPicker)
 
 
 def ObjectSelector(pobj):
@@ -115,6 +115,7 @@ class Param(PaneBase):
     _mapping = {
         param.Action:         Button,
         param.Parameter:      LiteralInput,
+        param.Color:          ColorPicker,
         param.Dict:           LiteralInput,
         param.Selector:       Select,
         param.ObjectSelector: ObjectSelector,
@@ -126,6 +127,7 @@ class Param(PaneBase):
         param.String:         TextInput,
         param.ListSelector:   MultiSelect,
         param.Date:           DatetimeInput,
+        param.DateRange:      DateRangeSlider
     }
 
     @classmethod
