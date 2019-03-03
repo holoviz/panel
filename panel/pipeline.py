@@ -6,7 +6,7 @@ import param
 import numpy as np
 
 from .holoviews import HoloViews
-from .layout import Row, Column, Spacer
+from .layout import Row, Column, HSpacer, VSpacer
 from .pane import Markdown, Pane
 from .param import Param
 from .util import param_reprs
@@ -49,7 +49,7 @@ class Pipeline(param.Parameterized):
         prev_button.layout[0].disabled = True
         self._progress_bar = Row(self._make_progress, prev_button, next_button)
         spinner = Pane(os.path.join(os.path.dirname(__file__), 'assets', 'spinner.gif'))
-        self._spinner_layout = Row(Spacer(width=300), Column(Spacer(height=200), spinner))
+        self._spinner_layout = Row(HSpacer(), Column(VSpacer(), spinner, VSpacer()), HSpacer())
         stage_layout = Row()
         if len(stages):
             stage_layout.append(self._init_stage())
