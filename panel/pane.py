@@ -16,8 +16,7 @@ except:
 
 import param
 
-from bokeh.models import (LayoutDOM, CustomJS, Widget as _BkWidget,
-                          Div as _BkDiv, Column as _BkColumn)
+from bokeh.models import LayoutDOM, CustomJS, Div as _BkDiv
 
 from .layout import Panel, Row
 from .util import basestring, param_reprs, push, remove_root
