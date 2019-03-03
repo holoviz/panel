@@ -20,11 +20,8 @@ def test_text_input(document, comm):
 
     text = TextInput(value='ABC', name='Text:')
 
-    box = text._get_root(document, comm=comm)
+    widget = text._get_root(document, comm=comm)
 
-    assert isinstance(box, Column)
-
-    widget = box.children[0]
     assert isinstance(widget, text._widget_type)
     assert widget.value == 'ABC'
     assert widget.title == 'Text:'
@@ -43,9 +40,8 @@ def test_widget_triggers_events(document, comm):
     """
     text = TextInput(value='ABC', name='Text:')
 
-    box = text._get_root(document, comm=comm)
-    widget = box.children[0]
-    document.add_root(box)
+    widget = text._get_root(document, comm=comm)
+    document.add_root(widget)
     document.hold()
 
     # Simulate client side change
@@ -70,11 +66,8 @@ def test_static_text(document, comm):
 
     text = StaticText(value='ABC', name='Text:')
 
-    box = text._get_root(document, comm=comm)
+    widget = text._get_root(document, comm=comm)
 
-    assert isinstance(box, Column)
-
-    widget = box.children[0]
     assert isinstance(widget, text._widget_type)
     assert widget.text == '<b>Text:</b>: ABC'
 
@@ -87,11 +80,8 @@ def test_float_slider(document, comm):
 
     slider = FloatSlider(start=0.1, end=0.5, value=0.4, name='Slider')
 
-    box = slider._get_root(document, comm=comm)
+    widget = slider._get_root(document, comm=comm)
 
-    assert isinstance(box, Column)
-
-    widget = box.children[0]
     assert isinstance(widget, slider._widget_type)
     assert widget.title == 'Slider'
     assert widget.step == 0.1
@@ -111,11 +101,8 @@ def test_int_slider(document, comm):
 
     slider = IntSlider(start=0, end=3, value=1, name='Slider')
 
-    box = slider._get_root(document, comm=comm)
+    widget = slider._get_root(document, comm=comm)
 
-    assert isinstance(box, Column)
-
-    widget = box.children[0]
     assert isinstance(widget, slider._widget_type)
     assert widget.title == 'Slider'
     assert widget.step == 1
@@ -135,11 +122,8 @@ def test_range_slider(document, comm):
 
     slider = RangeSlider(start=0., end=3, value=(0, 3), name='Slider')
 
-    box = slider._get_root(document, comm=comm)
+    widget = slider._get_root(document, comm=comm)
 
-    assert isinstance(box, Column)
-
-    widget = box.children[0]
     assert isinstance(widget, slider._widget_type)
     assert widget.title == 'Slider'
     assert widget.step == 0.1
@@ -159,11 +143,8 @@ def test_literal_input(document, comm):
 
     literal = LiteralInput(value={}, type=dict, name='Literal')
 
-    box = literal._get_root(document, comm=comm)
+    widget = literal._get_root(document, comm=comm)
 
-    assert isinstance(box, Column)
-
-    widget = box.children[0]
     assert isinstance(widget, literal._widget_type)
     assert widget.title == 'Literal'
     assert widget.value == '{}'
@@ -194,11 +175,8 @@ def test_datetime_input(document, comm):
                              end=datetime(2018, 1, 10),
                              name='Datetime')
 
-    box = dt_input._get_root(document, comm=comm)
+    widget = dt_input._get_root(document, comm=comm)
 
-    assert isinstance(box, Column)
-
-    widget = box.children[0]
     assert isinstance(widget, dt_input._widget_type)
     assert widget.title == 'Datetime'
     assert widget.value == '2018-01-01 00:00:00'
@@ -227,11 +205,8 @@ def test_checkbox(document, comm):
 
     checkbox = Checkbox(value=True, name='Checkbox')
 
-    box = checkbox._get_root(document, comm=comm)
+    widget = checkbox._get_root(document, comm=comm)
 
-    assert isinstance(box, Column)
-
-    widget = box.children[0]
     assert isinstance(widget, checkbox._widget_type)
     assert widget.labels == ['Checkbox']
     assert widget.active == [0]
@@ -253,11 +228,8 @@ def test_select(document, comm):
     opts = {'A': 'a', '1': 1}
     select = Select(options=opts, value=opts['1'], name='Select')
 
-    box = select._get_root(document, comm=comm)
+    widget = select._get_root(document, comm=comm)
 
-    assert isinstance(box, Column)
-
-    widget = box.children[0]
     assert isinstance(widget, select._widget_type)
     assert widget.title == 'Select'
     assert widget.value == '1'
@@ -279,11 +251,8 @@ def test_select_mutables(document, comm):
     opts = OrderedDict([('A', [1,2,3]), ('B', [2,4,6]), ('C', dict(a=1,b=2))])
     select = Select(options=opts, value=opts['B'], name='Select')
 
-    box = select._get_root(document, comm=comm)
+    widget = select._get_root(document, comm=comm)
 
-    assert isinstance(box, Column)
-
-    widget = box.children[0]
     assert isinstance(widget, select._widget_type)
     assert widget.title == 'Select'
     assert widget.value == 'B'
@@ -305,11 +274,8 @@ def test_multi_select(document, comm):
     select = MultiSelect(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
                          value=[object, 1], name='Select')
 
-    box = select._get_root(document, comm=comm)
+    widget = select._get_root(document, comm=comm)
 
-    assert isinstance(box, Column)
-
-    widget = box.children[0]
     assert isinstance(widget, select._widget_type)
     assert widget.title == 'Select'
     assert widget.value == ['C', '1']
@@ -331,11 +297,8 @@ def test_toggle_buttons(document, comm):
     select = ToggleButtons(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
                            value=[1, object], name='ToggleButtons')
 
-    box = select._get_root(document, comm=comm)
+    widget = select._get_root(document, comm=comm)
 
-    assert isinstance(box, Column)
-
-    widget = box.children[0]
     assert isinstance(widget, select._widget_type)
     assert widget.active == [1, 2]
     assert widget.labels == ['A', '1', 'C']
@@ -384,11 +347,8 @@ def test_toggle_group_check(document, comm):
                                value=[1, object], name='CheckButtonGroup',
                                widget_type=widget_type, behavior='check')
         
-        box = select._get_root(document, comm=comm)
+        widget = select._get_root(document, comm=comm)
     
-        assert isinstance(box, Column)
-    
-        widget = box.children[0]
         assert isinstance(widget, select._widget_type)
         assert widget.active == [1, 2]
         assert widget.labels == ['A', '1', 'C']
@@ -416,11 +376,8 @@ def test_toggle_group_radio(document, comm):
                                value=1, name='RadioButtonGroup',
                                widget_type=widget_type, behavior='radio')
         
-        box = select._get_root(document, comm=comm)
-    
-        assert isinstance(box, Column)
-    
-        widget = box.children[0]
+        widget = select._get_root(document, comm=comm)
+
         assert isinstance(widget, select._widget_type)
         assert widget.active == 1
         assert widget.labels == ['A', '1', 'C']
@@ -437,11 +394,8 @@ def test_radio_buttons(document, comm):
     select = RadioButtons(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
                           value=[1, object], name='RadioButtons')
 
-    box = select._get_root(document, comm=comm)
+    widget = select._get_root(document, comm=comm)
 
-    assert isinstance(box, Column)
-
-    widget = box.children[0]
     assert isinstance(widget, select._widget_type)
     assert widget.active == [1, 2]
     assert widget.labels == ['A', '1', 'C']
@@ -461,11 +415,8 @@ def test_radio_buttons(document, comm):
 def test_button(document, comm):
     button = Button(name='Button')
 
-    box = button._get_root(document, comm=comm)
+    widget = button._get_root(document, comm=comm)
 
-    assert isinstance(box, Column)
-
-    widget = box.children[0]
     assert isinstance(widget, button._widget_type)
     assert widget.clicks == 0
     assert widget.label == 'Button'
@@ -478,11 +429,8 @@ def test_button(document, comm):
 def test_toggle(document, comm):
     toggle = Toggle(name='Toggle', active=True)
 
-    box = toggle._get_root(document, comm=comm)
+    widget = toggle._get_root(document, comm=comm)
 
-    assert isinstance(box, Column)
-
-    widget = box.children[0]
     assert isinstance(widget, toggle._widget_type)
     assert widget.active == True
     assert widget.label == 'Toggle'
@@ -499,11 +447,8 @@ def test_date_picker(document, comm):
     date_picker = DatePicker(name='DatePicker', value=datetime(2018, 9, 2),
                              start=datetime(2018, 9, 1), end=datetime(2018, 9, 10))
 
-    box = date_picker._get_root(document, comm=comm)
+    widget = date_picker._get_root(document, comm=comm)
 
-    assert isinstance(box, Column)
-
-    widget = box.children[0]
     assert isinstance(widget, date_picker._widget_type)
     assert widget.title == 'DatePicker'
     assert widget.value == datetime(2018, 9, 2)
@@ -523,11 +468,8 @@ def test_date_range_slider(document, comm):
                                   value=(datetime(2018, 9, 2), datetime(2018, 9, 4)),
                                   start=datetime(2018, 9, 1), end=datetime(2018, 9, 10))
 
-    box = date_slider._get_root(document, comm=comm)
+    widget = date_slider._get_root(document, comm=comm)
 
-    assert isinstance(box, Column)
-
-    widget = box.children[0]
     assert isinstance(widget, date_slider._widget_type)
     assert widget.title == 'DateRangeSlider'
     assert widget.value == (datetime(2018, 9, 2), datetime(2018, 9, 4))
@@ -551,11 +493,8 @@ def test_discrete_slider(document, comm):
 
     box = discrete_slider._get_root(document, comm=comm)
 
-    assert isinstance(box, Column)
-    subbox = box.children[0]
-
-    label = subbox.children[0]
-    widget = subbox.children[1]
+    label = box.children[0]
+    widget = box.children[1]
     assert isinstance(label, BkDiv)
     assert isinstance(widget, BkSlider)
     assert widget.value == 1
@@ -583,10 +522,9 @@ def test_discrete_date_slider(document, comm):
     box = discrete_slider._get_root(document, comm=comm)
 
     assert isinstance(box, Column)
-    subbox = box.children[0]
 
-    label = subbox.children[0]
-    widget = subbox.children[1]
+    label = box.children[0]
+    widget = box.children[1]
     assert isinstance(label, BkDiv)
     assert isinstance(widget, BkSlider)
     assert widget.value == 1
@@ -613,11 +551,8 @@ def test_discrete_slider_options_dict(document, comm):
 
     box = discrete_slider._get_root(document, comm=comm)
 
-    assert isinstance(box, Column)
-    subbox = box.children[0]
-
-    label = subbox.children[0]
-    widget = subbox.children[1]
+    label = box.children[0]
+    widget = box.children[1]
     assert isinstance(label, BkDiv)
     assert isinstance(widget, BkSlider)
     assert widget.value == 1
@@ -680,11 +615,8 @@ def test_discrete_player(document, comm):
     discrete_player = DiscretePlayer(name='DiscretePlayer', value=1,
                                      options=[0.1, 1, 10, 100])
 
-    box = discrete_player._get_root(document, comm=comm)
+    widget = discrete_player._get_root(document, comm=comm)
 
-    assert isinstance(box, Column)
-
-    widget = box.children[0]
     assert isinstance(widget, BkPlayer)
     assert widget.value == 1
     assert widget.start == 0
@@ -702,11 +634,8 @@ def test_discrete_player(document, comm):
 def test_file_input(document, comm):
     file_input = FileInput()
 
-    box = file_input._get_root(document, comm=comm)
+    widget = file_input._get_root(document, comm=comm)
 
-    assert isinstance(box, Column)
-
-    widget = box.children[0]
     assert isinstance(widget, BkFileInput)
 
     file_input._comm_change({'value': 'data:text/plain;base64,U29tZSB0ZXh0Cg=='})

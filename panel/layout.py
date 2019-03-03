@@ -327,8 +327,10 @@ class Spacer(Reactive):
 
     _bokeh_model = BkSpacer
 
-    def _get_model(self, doc, root, parent, comm=None):
+    def _get_model(self, doc, root=None, parent=None, comm=None):
         model = self._bokeh_model(**self._process_param_change(self._init_properties()))
+        if root is None:
+            root = model
         self._models[root.ref['id']] = model
         self._link_params(model, ['width', 'height'], doc, root, comm)
         return model

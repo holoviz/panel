@@ -58,11 +58,10 @@ class Widget(Reactive):
             params['name'] = ''
         super(Widget, self).__init__(**params)
 
-    def _get_root(self, doc, comm=None):
-        return Column(self)._get_root(doc, comm)
-
-    def _get_model(self, doc, root, parent, comm=None):
+    def _get_model(self, doc, root=None, parent=None, comm=None):
         model = self._widget_type(**self._process_param_change(self._init_properties()))
+        if root is None:
+            root = model
         # Link parameters and bokeh model
         params = list(self.param)
         values = dict(self.get_param_values())
@@ -637,8 +636,10 @@ class DiscreteSlider(Widget):
     def values(self):
         return list(self.options.values()) if isinstance(self.options, dict) else self.options
 
-    def _get_model(self, doc, root, parent, comm=None):
+    def _get_model(self, doc, root=None, parent=None, comm=None):
         model = _BkColumn()
+        if root is None:
+            root = model
         msg = self._process_param_change(self._init_properties())
         div = _BkDiv(text=msg['text'])
         slider = _BkSlider(start=msg['start'], end=msg['end'], value=msg['value'],
