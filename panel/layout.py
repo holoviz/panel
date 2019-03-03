@@ -336,7 +336,7 @@ class Spacer(Reactive):
         return model
 
 
-class VSpacer(Reactive):
+class VSpacer(Spacer):
     """
     Spacer which automatically fills all available vertical space.
     """
@@ -344,7 +344,7 @@ class VSpacer(Reactive):
     sizing_mode = param.Parameter(default='stretch_height', readonly=True)
 
 
-class HSpacer(Reactive):
+class HSpacer(Spacer):
     """
     Spacer which automatically fills all available horizontal space.
     """
