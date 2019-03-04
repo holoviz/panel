@@ -30,7 +30,7 @@ stages:
   - name: docs
     if: tag =~ ^v(\d+|\.)+[^a-z]\d+$
   - name: docs_daily
-    if: (type = cron OR commit_message =~ /\[doc-build\]/)
+    if: ((type = cron OR commit_message =~ /\[doc-build\]/) and branch = master)
 
 jobs:
   include:
@@ -51,7 +51,6 @@ jobs:
         - doit env_create $CHANS_DEV --python=$PYENV_VERSION
         - source activate test-environment
         - doit develop_install -o recommended -o tests -o build $CHANS_DEV
-        - rm -r panel/examples
         - doit env_capture
       script: doit test_all_recommended
       after_failure:
@@ -126,4 +125,4 @@ jobs:
           local_dir: ./builtdocs
           repo: pyviz-dev/panel
           on:
-            all_branches: true
+            branch: master
