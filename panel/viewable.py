@@ -14,9 +14,10 @@ import param
 
 from bokeh.application.handlers import FunctionHandler
 from bokeh.application import Application
-from bokeh.document.document import Document, _combine_document_events
+from bokeh.document.document import Document as _Document, _combine_document_events
 from bokeh.document.events import ModelChangedEvent
-from bokeh.io import curdoc, show
+from bokeh.io import curdoc as _curdoc, export_png as _export_png, show as _show, save as _save
+from bokeh.resources import CDN as _CDN
 from bokeh.models import CustomJS
 from bokeh.server.server import Server
 from pyviz_comms import JS_CALLBACK, CommManager, JupyterCommManager
@@ -259,7 +260,7 @@ class Viewable(Layoutable):
 
     def _repr_mimebundle_(self, include=None, exclude=None):
         Viewable._comm_manager = JupyterCommManager
-        doc = Document()
+        doc = _Document()
         comm = self._comm_manager.get_server_comm()
         model = self._get_root(doc, comm)
         Viewable._views[model.ref['id']] = (self, model)
@@ -269,68 +270,6 @@ class Viewable(Layoutable):
         doc = session_context._document
         self._cleanup(self._documents[doc], final=self._temporary)
         del self._documents[doc]
-
-    def pprint(self):
-        """
-        Prints a compositional repr of the class.
-        """
-        print(self)
-
-    def select(self, selector=None):
-        """
-        Iterates over the Viewable and any potential children in the
-        applying the Selector.
-
-        Arguments
-        ---------
-        selector: type or callable or None
-            The selector allows selecting a subset of Viewables by
-            declaring a type or callable function to filter by.
-
-        Returns
-        -------
-        viewables: list(Viewable)
-        """
-        if (selector is None or
-            (isinstance(selector, type) and isinstance(self, selector)) or
-            (callable(selector) and not isinstance(selector, type) and selector(self))):
-            return [self]
-        else:
-            return []
-
-    def server_doc(self, doc=None, title=None):
-        doc = doc or curdoc()
-        if title is not None:
-            doc.title = title
-        model = self._get_root(doc)
-        if hasattr(doc, 'on_session_destroyed'):
-            doc.on_session_destroyed(self._server_destroy)
-            self._documents[doc] = model
-        add_to_doc(model, doc)
-        return doc
-
-    def servable(self):
-        """
-        Serves the object if in a `bokeh serve` context and returns
-        it to allow it to render itself in a notebook.
-        """
-        if curdoc().session_context:
-            self.server_doc()
-        return self
-
-    def _modify_doc(self, doc):
-        return self.server_doc(doc)
-
-    def app(self, notebook_url="localhost:8888"):
-        """
-        Displays a bokeh server app inline in the notebook.
-
-        Parameters
-        ---------
-        notebook_url: str
-            URL to the notebook server
-        """
-        show(self._modify_doc, notebook_url=notebook_url)
 
     def _start_server(self, app, loop, port, websocket_origin):
         if websocket_origin and not isinstance(websocket_origin, list):
@@ -349,6 +288,120 @@ class Viewable(Layoutable):
             pass
         return server
 
+    def _modify_doc(self, doc):
+        return self.server_doc(doc)
+
+    #----------------------------------------------------------------
+    # Public API
+    #----------------------------------------------------------------
+
+    def pprint(self):
+        """
+        Prints a compositional repr of the class.
+        """
+        print(self)
+
+    def select(self, selector=None):
+        """
+        Iterates over the Viewable and any potential children in the
+        applying the Selector.
+
+        Parameters
+        ----------
+        selector: type or callable or None
+            The selector allows selecting a subset of Viewables by
+            declaring a type or callable function to filter by.
+
+        Returns
+        -------
+        viewables: list(Viewable)
+        """
+        if (selector is None or
+            (isinstance(selector, type) and isinstance(self, selector)) or
+            (callable(selector) and not isinstance(selector, type) and selector(self))):
+            return [self]
+        else:
+            return []
+
+    def app(self, notebook_url="localhost:8888"):
+        """
+        Displays a bokeh server app inline in the notebook.
+
+        Parameters
+        ---------
+        notebook_url: str
+            URL to the notebook server
+        """
+        _show(self._modify_doc, notebook_url=notebook_url)
+
+    def save(self, filename, title=None, resources=None):
+        """
+        Saves Panel objects to file.
+
+        Parameters
+        ----------
+        filename : string
+           Filename to save the plot to
+        title : string
+           Optional title for the plot
+        resources: bokeh resources
+           One of the valid bokeh.resources (e.g. CDN or INLINE)
+        """
+        plot = self._get_root(_Document())
+        if filename.endswith('png'):
+            _export_png(plot, filename=filename)
+            return
+        if not filename.endswith('.html'):
+            filename = filename + '.html'
+
+        if title is None:
+            title = 'Panel'
+        if resources is None:
+            resources = _CDN
+
+        _save(plot, filename, title=title, resources=resources)
+
+    def server_doc(self, doc=None, title=None):
+        """
+        Returns a serveable bokeh Document with the panel attached
+
+        Parameters
+        ----------
+        doc : bokeh.Document (optional)
+           The bokeh Document to attach the panel to as a root,
+           defaults to bokeh.io.curdoc()
+        title : str
+           A string title to give the Document
+
+        Returns
+        -------
+        doc : bokeh.Document
+           The bokeh document the panel was attached to
+        """
+        doc = doc or _curdoc()
+        if title is not None:
+            doc.title = title
+        model = self._get_root(doc)
+        if hasattr(doc, 'on_session_destroyed'):
+            doc.on_session_destroyed(self._server_destroy)
+            self._documents[doc] = model
+        add_to_doc(model, doc)
+        return doc
+
+    def servable(self):
+        """
+        Serves the object if in a `panel serve` context and returns
+        the panel object to allow it to display itself in a notebook
+        context.
+
+        Returns
+        -------
+        The Panel object itself
+        """
+        if _curdoc().session_context:
+            self.server_doc()
+        return self
+
     def show(self, port=0, websocket_origin=None, threaded=False):
         """
         Starts a bokeh server and displays the Viewable in a new tab
@@ -356,23 +409,23 @@ class Viewable(Layoutable):
         Parameters
         ---------
         port: int (optional)
-            Allows specifying a specific port (default=0 chooses random open port)
+           Allows specifying a specific port (default=0 chooses random open port)
         websocket_origin: str or list(str) (optional)
-            A list of hosts that can connect to the websocket.
+           A list of hosts that can connect to the websocket.
 
-            This is typically required when embedding a server app in
-            an external web site.
+           This is typically required when embedding a server app in
+           an external web site.
 
-            If None, "localhost" is used.
-        threaded: boolean (optiona)
-            Whether to launch the Server on a separate thread, allowing
-            interactive use.
+           If None, "localhost" is used.
+        threaded: boolean (optional)
+           Whether to launch the Server on a separate thread, allowing
+           interactive use.
 
         Returns
         -------
         server: bokeh.server.Server or threading.Thread
-            Returns the bokeh server instance or the thread the server
-            was launched on (if threaded=True)
+           Returns the bokeh server instance or the thread the server
+           was launched on (if threaded=True)
         """
         def modify_doc(doc):
             return self.server_doc(doc)

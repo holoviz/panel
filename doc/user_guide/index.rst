@@ -5,6 +5,9 @@ User Guide
 * `Introduction <Introduction.html>`_
    An overview of the capabilities of Panel.
 
+* `Deploy & Export <Deploy_and_Export.html>`_
+   Introduction to displaying, exporting and deploying panel apps
+
 * `Interact <Interact.html>`_
    Quickly making a panel using `interact()`.
 
@@ -40,6 +43,7 @@ Supplementary guides
     :maxdepth: 2
 
     Introduction <Introduction>
+    Deploy & Export <Deploy_and_Export>
     Interact <Interact>
     Panes <Panes>
     Widgets <Widgets>

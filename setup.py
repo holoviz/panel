@@ -85,7 +85,8 @@ _recommended = [
     'holoviews >=1.12.0a1',
     'matplotlib',
     'pillow',
-    'plotly'
+    'plotly',
+    'tornado <6'
 ]
 
 extras_require = {
