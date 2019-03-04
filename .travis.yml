@@ -107,7 +107,7 @@ jobs:
         # note: will vastly simplified in a future version of nbsite
         - nbsite generate-rst --org pyviz --project-name panel
         - nbsite build --what=html --output=builtdocs
-        - touch ./_build/html/.nojekyll
+        - touch ./builtdocs/.nojekyll
       deploy:
         - provider: pages
           skip_cleanup: true
