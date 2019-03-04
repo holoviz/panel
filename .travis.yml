@@ -126,4 +126,4 @@ jobs:
           local_dir: ./builtdocs
           repo: pyviz-dev/panel
           on:
-            branch: master
+            all_branches: true
