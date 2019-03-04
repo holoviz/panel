@@ -23,13 +23,14 @@ stages:
     if: tag =~ ^v(\d+|\.)+[a-z]\d+$
   - name: conda_package
     if: tag =~ ^v(\d+|\.)+[^a-z]\d+$ 
-  - name: docs
-    if: (branch = master) AND (type != pull_request)
   - name: pip_dev_package
     if: tag =~ ^v(\d+|\.)+[a-z]\d+$
   - name: pip_package
     if: tag =~ ^v(\d+|\.)+[^a-z]\d+$
-
+  - name: docs
+    if: tag =~ ^v(\d+|\.)+[^a-z]\d+$
+  - name: docs_daily
+    if: (type = cron OR commit_message =~ /\[doc-build\]/)
 
 jobs:
   include:
@@ -97,23 +98,32 @@ jobs:
 
     ########## DOCS ##########
 
-    - <<: *conda_default
+    - &doc_build
+      <<: *conda_default
       stage: docs
-      env: DESC="docs"
+      env: DESC="docs" HV_DOC_HTML='true'
       script:
         - doit develop_install $CHANS_DEV -o doc -o examples
         # note: will vastly simplified in a future version of nbsite
-        - cd doc
-        - nbsite_nbpagebuild.py pyviz panel ../examples .
-        - HV_DOC_HTML='true' sphinx-build -b html . ./_build/html
-        - nbsite_fix_links.py _build/html
-        - nbsite_cleandisthtml.py ./_build/html take_a_chance
+        - nbsite generate-rst --org pyviz --project-name panel
+        - nbsite build --what=html --output=builtdocs
         - touch ./_build/html/.nojekyll
       deploy:
         - provider: pages
           skip_cleanup: true
           github_token: $GITHUB_TOKEN
-          local_dir: ./doc/_build/html
+          local_dir: ./builtdocs
           fqdn: panel.pyviz.org
           on:
             branch: master
+
+    - <<: *doc_build
+      stage: docs_daily
+      deploy:
+        - provider: pages
+          skip_cleanup: true
+          github_token: $GITHUB_TOKEN
+          local_dir: ./builtdocs
+          repo: pyviz-dev/panel
+          on:
+            all_branches: true
