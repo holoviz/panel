@@ -11,6 +11,7 @@ import ast
 from base64 import b64decode, b64encode
 from collections import OrderedDict
 from datetime import datetime
+from io import BytesIO
 
 import param
 import numpy as np
@@ -23,7 +24,7 @@ from bokeh.models.widgets import (
     Toggle as _BkToggle, AutocompleteInput as _BkAutocompleteInput,
     CheckboxButtonGroup as _BkCheckboxButtonGroup,
     RadioButtonGroup as _BkRadioButtonGroup, RadioGroup as _BkRadioBoxGroup,
-    ColorPicker as _BkColorPicker
+    ColorPicker as _BkColorPicker, DateSlider as _BkDateSlider
 )
 
 from .layout import Column, Row, VSpacer
@@ -112,6 +113,20 @@ class FileInput(Widget):
             msg['value'] = b64decode(content)
         return msg
 
+    def save(self, filename):
+        """
+        Saves the uploaded FileInput data to a file or BytesIO object.
+
+        Parameters
+        ----------
+        filename (str): File path or file-like object
+        """
+        if isinstance(filename, basestring):
+            with open(filename, 'wb') as f:
+                f.write(self.value)
+        else:
+            filename.write(self.value)
+
 
 class StaticText(Widget):
 
@@ -171,6 +186,17 @@ class IntSlider(Widget):
     _widget_type = _BkSlider
 
 
+class DateSlider(Widget):
+
+    value = param.Date(default=None)
+
+    start = param.Date(default=None)
+
+    end = param.Date(default=None)
+
+    _widget_type = _BkDateSlider
+
+
 class DatePicker(Widget):
 
     value = param.Date(default=None)
@@ -216,13 +242,14 @@ class RangeSlider(Widget):
         return msg
 
 
-class IntRangeSlider(Widget):
+class IntRangeSlider(RangeSlider):
 
     start = param.Integer(default=0)
 
     end = param.Integer(default=1)
 
     step = param.Integer(default=1)
+
 
 
 class DateRangeSlider(Widget):
@@ -275,8 +302,10 @@ class Button(_ButtonBase):
 
 class Toggle(_ButtonBase):
 
-    active = param.Boolean(default=False, doc="""
+    value = param.Boolean(default=False, doc="""
         Whether the button is currently toggled.""")
+
+    _rename = {'value': 'active'}
 
     _widget_type = _BkToggle
 
@@ -564,30 +593,6 @@ class ToggleGroup(Select):
                 return RadioBoxGroup(**params)
 
 
-class RadioButtons(CheckBoxGroup):
-    """"
-    Deprecated, use ToggleGroup instead.
-    """
-
-    def __new__(cls, **params):
-        from warnings import warn
-        warn("Deprecated class, will be removed in future.\nSee ToggleGroup",
-             category=DeprecationWarning)
-        return CheckBoxGroup(**params)
-
-
-class ToggleButtons(CheckButtonGroup):
-    """"
-    Deprecated, use ToggleGroup instead.
-    """
-
-    def __new__(cls, **params):
-        from warnings import warn
-        warn("Deprecated class, will be removed in future.\nSee ToggleGroup",
-             category=DeprecationWarning)
-        return CheckButtonGroup(**params)
-
-
 class MultiSelect(Select):
 
     size = param.Integer(default=4, doc="""
@@ -820,7 +825,7 @@ class Audio(Widget):
         The current timestamp""")
 
     throttle = param.Integer(default=250, doc="""
-        The current timestamp""")
+        How frequently to sample the current playback time in milliseconds""")
 
     paused = param.Boolean(default=True, doc="""
         Whether the audio is currently paused""")
