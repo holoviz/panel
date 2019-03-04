@@ -11,8 +11,7 @@ from panel.widgets import (
     TextInput, StaticText, FloatSlider, IntSlider, RangeSlider,
     LiteralInput, Checkbox, Select, MultiSelect, Button, Toggle,
     DatePicker, DateRangeSlider, DiscreteSlider, DatetimeInput,
-    RadioButtons, ToggleButtons, CrossSelector, DiscretePlayer,
-    ToggleGroup, FileInput
+    CrossSelector, DiscretePlayer, ToggleGroup, FileInput
 )
 
 
@@ -293,31 +292,6 @@ def test_multi_select(document, comm):
     assert widget.value == ['C', 'A']
 
 
-def test_toggle_buttons(document, comm):
-    select = ToggleButtons(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
-                           value=[1, object], name='ToggleButtons')
-
-    widget = select._get_root(document, comm=comm)
-
-    assert isinstance(widget, select._widget_type)
-    assert widget.active == [1, 2]
-    assert widget.labels == ['A', '1', 'C']
-
-    widget.active = [2]
-    select._comm_change({'active': [2]})
-    assert select.value == [object]
-
-    widget.active = [0, 2]
-    select._comm_change({'active': [0, 2]})
-    assert select.value == ['A', object]
-
-    select.value = [object, 'A']
-    assert widget.active == [2, 0]
-
-    widget.active = []
-    select._comm_change({'active': []})
-    assert select.value == []
-    
 def test_toggle_group_error_init(document, comm):
     with pytest.raises(ValueError):
         ToggleGroup(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
@@ -389,28 +363,6 @@ def test_toggle_group_radio(document, comm):
         select.value = 'A'
         assert widget.active == 0
 
-
-def test_radio_buttons(document, comm):
-    select = RadioButtons(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
-                          value=[1, object], name='RadioButtons')
-
-    widget = select._get_root(document, comm=comm)
-
-    assert isinstance(widget, select._widget_type)
-    assert widget.active == [1, 2]
-    assert widget.labels == ['A', '1', 'C']
-
-    widget.active = [1]
-    select._comm_change({'active': [1]})
-    assert select.value == [1]
-
-    widget.active = [0, 2]
-    select._comm_change({'active': [0, 2]})
-    assert select.value == ['A', object]
-
-    select.value = [object, 'A']
-    assert widget.active == [2, 0]
-    
 
 def test_button(document, comm):
     button = Button(name='Button')
