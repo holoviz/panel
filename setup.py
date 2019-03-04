@@ -120,7 +120,9 @@ extras_require = {
     'recommended': _recommended,
     'doc': _recommended + [
         'nbsite',
-        'sphinx_ioam_theme'
+        'sphinx_ioam_theme',
+        'selenium',
+        'phantomjs'
     ]
 }
 
