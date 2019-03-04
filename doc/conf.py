@@ -21,7 +21,6 @@ html_theme_options = {
 extensions += ['nbsite.gallery']
 
 nbsite_gallery_conf = {
-    'backends': ['bokeh'],
     'github_org': 'pyviz',
     'github_project': 'panel',
     'galleries': {
@@ -36,6 +35,7 @@ nbsite_gallery_conf = {
 
 _NAV =  (
     ('User Guide', 'user_guide/index'),
+    ('Gallery', 'gallery/index'),
     ('About', 'about')
 )
 
