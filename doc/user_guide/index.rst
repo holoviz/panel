@@ -43,7 +43,7 @@ Supplementary guides
     :maxdepth: 2
 
     Introduction <Introduction>
-	Deploy & Export <Deploy_and_Export>
+    Deploy & Export <Deploy_and_Export>
     Interact <Interact>
     Panes <Panes>
     Widgets <Widgets>
