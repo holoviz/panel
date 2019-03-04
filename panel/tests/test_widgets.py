@@ -379,7 +379,7 @@ def test_button(document, comm):
 
 
 def test_toggle(document, comm):
-    toggle = Toggle(name='Toggle', active=True)
+    toggle = Toggle(name='Toggle', value=True)
 
     widget = toggle._get_root(document, comm=comm)
 
@@ -389,9 +389,9 @@ def test_toggle(document, comm):
 
     widget.active = False
     toggle._comm_change({'active': widget.active})
-    assert toggle.active == False
+    assert toggle.value == False
 
-    toggle.active = True
+    toggle.value = True
     assert widget.active == True
 
 

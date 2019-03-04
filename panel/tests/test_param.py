@@ -383,7 +383,7 @@ def test_expand_param_subobject(document, comm):
     assert isinstance(toggle, Toggle)
 
     # Expand subpane
-    test_pane._widgets['a'][1].active = True
+    test_pane._widgets['a'][1].value = True
     assert len(model.children) == 4
     _, _, _, subpanel = test_pane.layout.objects
     col = model.children[3]
@@ -396,7 +396,7 @@ def test_expand_param_subobject(document, comm):
     assert isinstance(widget, BkTextInput)
 
     # Collapse subpanel
-    test_pane._widgets['a'][1].active = False
+    test_pane._widgets['a'][1].value = False
     assert len(model.children) == 3
     assert subpanel._callbacks == {}
 
@@ -417,7 +417,7 @@ def test_switch_param_subobject(document, comm):
     assert isinstance(toggle, Toggle)
 
     # Expand subpane
-    test_pane._widgets['a'][1].active = True
+    test_pane._widgets['a'][1].value = True
     assert len(model.children) == 4
     _, _, _, subpanel = test_pane.layout.objects
     col = model.children[3]
@@ -440,7 +440,7 @@ def test_switch_param_subobject(document, comm):
     assert isinstance(select, Select)
 
     # Collapse subpanel
-    test_pane._widgets['a'][1].active = False
+    test_pane._widgets['a'][1].value = False
     assert len(model.children) == 3
     assert subpanel._callbacks == {}
 
@@ -460,7 +460,7 @@ def test_expand_param_subobject_into_row(document, comm):
     assert isinstance(toggle, Toggle)
 
     # Expand subpane
-    test_pane._widgets['a'][1].active = True
+    test_pane._widgets['a'][1].value = True
     assert len(model.children) == 2
     subpanel = row.objects[0]
     row = model.children[1]
@@ -475,7 +475,7 @@ def test_expand_param_subobject_into_row(document, comm):
     assert isinstance(widget, BkTextInput)
 
     # Collapse subpanel
-    test_pane._widgets['a'][1].active = False
+    test_pane._widgets['a'][1].value = False
     assert len(row.children) == 0
     assert subpanel._callbacks == {}
 
@@ -503,7 +503,7 @@ def test_expand_param_subobject_expand(document, comm):
     assert isinstance(widget, BkTextInput)
 
     # Collapse subpanel
-    test_pane._widgets['a'][1].active = False
+    test_pane._widgets['a'][1].value = False
     assert len(model.children) == 3
     assert subpanel._callbacks == {}
 
@@ -540,7 +540,7 @@ def test_expand_param_subobject_tabs(document, comm):
     assert isinstance(toggle, Toggle)
 
     # Expand subpanel
-    test_pane._widgets['a'][1].active = True
+    test_pane._widgets['a'][1].value = True
     assert len(model.tabs) == 2
     _, subpanel = test_pane.layout.objects
     subtabs = model.tabs[1].child
@@ -557,7 +557,7 @@ def test_expand_param_subobject_tabs(document, comm):
     assert isinstance(widget, BkTextInput)
 
     # Collapse subpanel
-    test_pane._widgets['a'][1].active = False
+    test_pane._widgets['a'][1].value = False
     assert len(model.tabs) == 1
     assert subpanel._callbacks == {}
 
