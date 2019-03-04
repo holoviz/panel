@@ -11,7 +11,6 @@ import ast
 from base64 import b64decode, b64encode
 from collections import OrderedDict
 from datetime import datetime
-from io import BytesIO
 
 import param
 import numpy as np
