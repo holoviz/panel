@@ -7,6 +7,7 @@ from __future__ import absolute_import, division, unicode_literals
 
 import re
 import signal
+import uuid
 from functools import partial
 from collections import defaultdict
 
@@ -22,7 +23,8 @@ from bokeh.models import CustomJS
 from bokeh.server.server import Server
 from pyviz_comms import JS_CALLBACK, CommManager, JupyterCommManager
 
-from .util import render_mimebundle, add_to_doc, push, param_reprs
+from .util import (render_mimebundle, add_to_doc, push, param_reprs,
+                   _origin_url, show_server)
 
 
 class Layoutable(param.Parameterized):
@@ -267,26 +269,12 @@ class Viewable(Layoutable):
         return render_mimebundle(model, doc, comm)
 
     def _server_destroy(self, session_context):
+        """
+        Server lifecycle hook triggered when session is destroyed.
+        """
         doc = session_context._document
         self._cleanup(self._documents[doc], final=self._temporary)
         del self._documents[doc]
-
-    def _start_server(self, app, loop, port, websocket_origin):
-        if websocket_origin and not isinstance(websocket_origin, list):
-            websocket_origin = [websocket_origin]
-        opts = dict(allow_websocket_origin=websocket_origin) if websocket_origin else {}
-        loop.make_current()
-        opts['io_loop'] = loop
-        server = Server({'/': app}, port=port, **opts)
-        def show_callback():
-            server.show('/')
-        server.io_loop.add_callback(show_callback)
-        server.start()
-        try:
-            loop.start()
-        except RuntimeError:
-            pass
-        return server
 
     def _modify_doc(self, doc):
         return self.server_doc(doc)
@@ -323,16 +311,83 @@ class Viewable(Layoutable):
         else:
             return []
 
-    def app(self, notebook_url="localhost:8888"):
+    def app(self, notebook_url="localhost:8888", port=0):
         """
         Displays a bokeh server app inline in the notebook.
 
         Parameters
-        ---------
+        ----------
         notebook_url: str
             URL to the notebook server
+        port: int (optional, default=0)
+           Allows specifying a specific port
         """
-        _show(self._modify_doc, notebook_url=notebook_url)
+        if callable(notebook_url):
+            origin = notebook_url(None)
+        else:
+            origin = _origin_url(notebook_url)
+        server_id = uuid.uuid4().hex
+        server = self.get_server(port, origin, start=True, show=False)
+        show_server(server, notebook_url, server_id)
+
+    def get_server(self, port=0, websocket_origin=None, loop=None,
+                   show=False, start=False, **kwargs):
+        """
+        Returns a Server instance with this panel attached as the root
+        app.
+
+        Parameters
+        ----------
+        port: int (optional, default=0)
+           Allows specifying a specific port
+        websocket_origin: str or list(str) (optional)
+           A list of hosts that can connect to the websocket.
+
+           This is typically required when embedding a server app in
+           an external web site.
+
+           If None, "localhost" is used.
+        loop : tornado.ioloop.IOLoop (optional, default=IOLoop.current())
+           The tornado IOLoop to run the Server on
+        show : boolean (optional, default=False)
+           Whether to open the server in a new browser tab on start
+        start : boolean(optional, default=False)
+           Whether to start the Server
+        kwargs: dict
+           Additional keyword arguments to pass to Server instance
+
+        Returns
+        -------
+        server : bokeh.server.server.Server
+           Bokeh Server instance running this panel
+        """
+        from tornado.ioloop import IOLoop
+        opts = dict(kwargs)
+        if loop:
+            loop.make_current()
+            opts['io_loop'] = loop
+        else:
+            opts['io_loop'] = IOLoop.current()
+
+        if websocket_origin:
+            if not isinstance(websocket_origin, list):
+                websocket_origin = [websocket_origin]
+            opts['allow_websocket_origin'] = websocket_origin
+
+        server = Server({'/': self._modify_doc}, port=port, **opts)
+
+        if show:
+            def show_callback():
+                server.show('/')
+            server.io_loop.add_callback(show_callback)
+
+        if start:
+            server.start()
+            try:
+                server.io_loop.start()
+            except RuntimeError:
+                pass
+        return server
 
     def save(self, filename, title=None, resources=None):
         """
@@ -407,9 +462,9 @@ class Viewable(Layoutable):
         Starts a bokeh server and displays the Viewable in a new tab
 
         Parameters
-        ---------
-        port: int (optional)
-           Allows specifying a specific port (default=0 chooses random open port)
+        ----------
+        port: int (optional, default=0)
+           Allows specifying a specific port
         websocket_origin: str or list(str) (optional)
            A list of hosts that can connect to the websocket.
 
@@ -417,7 +472,7 @@ class Viewable(Layoutable):
            an external web site.
 
            If None, "localhost" is used.
-        threaded: boolean (optional)
+        threaded: boolean (optional, default=False)
            Whether to launch the Server on a separate thread, allowing
            interactive use.
 
@@ -427,28 +482,21 @@ class Viewable(Layoutable):
            Returns the bokeh server instance or the thread the server
            was launched on (if threaded=True)
         """
-        def modify_doc(doc):
-            return self.server_doc(doc)
-        handler = FunctionHandler(modify_doc)
-        app = Application(handler)
-
-        from tornado.ioloop import IOLoop
         if threaded:
+            from tornado.ioloop import IOLoop
             from .util import StoppableThread
             loop = IOLoop()
-            server = StoppableThread(target=self._start_server, io_loop=loop,
-                                     args=(app, loop, port, websocket_origin))
+            server = StoppableThread(
+                target=self.get_server, io_loop=loop,
+                args=(port, websocket_origin, loop, True, True))
             server.start()
         else:
-            loop = IOLoop.current()
-            server = self._start_server(app, loop, port, websocket_origin)
-
+            server = self.get_server(port, websocket_origin, show=True, start=True)
             def sig_exit(*args, **kwargs):
-                loop.add_callback_from_signal(do_stop)
+                server.io_loop.add_callback_from_signal(do_stop)
 
             def do_stop(*args, **kwargs):
-                loop.stop()
-
+                server.io_loop.stop()
             signal.signal(signal.SIGINT, sig_exit)
 
         return server
