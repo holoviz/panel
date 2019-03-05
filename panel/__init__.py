@@ -39,8 +39,10 @@ class state(_param.Parameterized):
 
     _comm_manager = _CommManager
 
+    # An index of all currently active views
     _views = {}
 
+    # An index of all curently active servers
     _servers = {}
 
 
@@ -94,15 +96,20 @@ def _cleanup_panel(msg_id):
     viewable, model = state._views.pop(msg_id)
     viewable._cleanup(model)
 
+
 def _cleanup_server(server_id):
     """
     A cleanup action which is called when a server is deleted in the notebook
     """
-    if server_id not in state.servers:
+    if server_id not in state._servers:
         return
-    server, viewable, model = state._servers.pop(server_id)
+    server, viewable, docs = state._servers.pop(server_id)
     server.stop()
-    viewable._cleanup(model)
+    for doc in docs:
+        for root in doc.roots:
+            if root.ref['id'] in viewable._models:
+                viewable._cleanup(root)
 
 extension.add_delete_action(_cleanup_panel)
-extension.add_server_delete_action(_cleanup_server)
+if hasattr(extension, 'add_server_delete_action'):
+    extension.add_server_delete_action(_cleanup_server)

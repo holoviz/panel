@@ -274,7 +274,13 @@ class Viewable(Layoutable):
         self._cleanup(self._documents[doc], final=self._temporary)
         del self._documents[doc]
 
-    def _modify_doc(self, doc):
+    def _modify_doc(self, server_id, doc):
+        """
+        Callback to handle FunctionHandler document creation.
+        """
+        if server_id:
+            from . import state
+            state._servers[server_id][2].append(doc)
         return self.server_doc(doc)
 
     #----------------------------------------------------------------
@@ -325,8 +331,10 @@ class Viewable(Layoutable):
         else:
             origin = _origin_url(notebook_url)
         server_id = uuid.uuid4().hex
-        server = self.get_server(port, origin, start=True, show=False)
+        server = self.get_server(port, origin, start=True, show=False,
+                                 server_id=server_id)
         show_server(server, notebook_url, server_id)
+        return server
 
     def get_server(self, port=0, websocket_origin=None, loop=None,
                    show=False, start=False, **kwargs):
@@ -359,6 +367,7 @@ class Viewable(Layoutable):
         server : bokeh.server.server.Server
            Bokeh Server instance running this panel
         """
+        from . import state
         from tornado.ioloop import IOLoop
         opts = dict(kwargs)
         if loop:
@@ -372,7 +381,10 @@ class Viewable(Layoutable):
                 websocket_origin = [websocket_origin]
             opts['allow_websocket_origin'] = websocket_origin
 
-        server = Server({'/': self._modify_doc}, port=port, **opts)
+        server_id = kwargs.pop('server_id', None)
+        server = Server({'/': partial(self._modify_doc, server_id)}, port=port, **opts)
+        if server_id:
+            state._servers[server_id] = (server, self, [])
 
         if show:
             def show_callback():
