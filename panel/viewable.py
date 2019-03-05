@@ -13,15 +13,13 @@ from collections import defaultdict
 
 import param
 
-from bokeh.application.handlers import FunctionHandler
-from bokeh.application import Application
 from bokeh.document.document import Document as _Document, _combine_document_events
 from bokeh.document.events import ModelChangedEvent
-from bokeh.io import curdoc as _curdoc, export_png as _export_png, show as _show, save as _save
+from bokeh.io import curdoc as _curdoc, export_png as _export_png, save as _save
 from bokeh.resources import CDN as _CDN
 from bokeh.models import CustomJS
 from bokeh.server.server import Server
-from pyviz_comms import JS_CALLBACK, CommManager, JupyterCommManager
+from pyviz_comms import JS_CALLBACK, JupyterCommManager
 
 from .util import (render_mimebundle, add_to_doc, push, param_reprs,
                    _origin_url, show_server)
