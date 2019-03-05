@@ -7,6 +7,7 @@ import hashlib
 from setuptools import setup, find_packages
 from setuptools.command.develop import develop
 from setuptools.command.install import install
+from setuptools.command.egg_info import egg_info
 
 import pyct.build
 
@@ -69,6 +70,16 @@ class CustomInstallCommand(install):
             print("Custom model compilation failed with: %s" % e)
         install.run(self)
 
+class CustomEggInfoCommand(egg_info):
+    """Custom installation for egg_info mode."""
+    def run(self):
+        try:
+            print("Building custom models:")
+            build_custom_models()
+        except ImportError as e:
+            print("Custom model compilation failed with: %s" % e)
+        egg_info.run(self)
+
 ########## dependencies ##########
 
 install_requires = [
@@ -109,7 +120,9 @@ extras_require = {
     'recommended': _recommended,
     'doc': _recommended + [
         'nbsite',
-        'sphinx_ioam_theme'
+        'sphinx_ioam_theme',
+        'selenium',
+        'phantomjs'
     ]
 }
 
@@ -142,6 +155,7 @@ setup_args = dict(
     cmdclass={
         'develop': CustomDevelopCommand,
         'install': CustomInstallCommand,
+        'egg_info': CustomEggInfoCommand
     },
     packages=find_packages(),
     include_package_data=True,
@@ -172,7 +186,8 @@ if __name__=="__main__":
 
     example_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 'panel','examples')
-    if 'develop' not in sys.argv:
+
+    if 'develop' not in sys.argv and 'egg_info' not in sys.argv:
         pyct.build.examples(example_path, __file__, force=True)
 
     setup(**setup_args)

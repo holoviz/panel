@@ -238,12 +238,12 @@ class Param(PaneBase):
 
             watchers = [selector.param.watch(update_pane, 'value')]
             if toggle:
-                watchers.append(toggle.param.watch(toggle_pane, 'active'))
+                watchers.append(toggle.param.watch(toggle_pane, 'value'))
             self._callbacks['instance'] += watchers
 
             if self.expand:
                 if self.expand_button:
-                    toggle.active = True
+                    toggle.value = True
                 else:
                     toggle_pane(namedtuple('Change', 'new')(True))
 

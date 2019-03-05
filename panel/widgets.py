@@ -23,7 +23,7 @@ from bokeh.models.widgets import (
     Toggle as _BkToggle, AutocompleteInput as _BkAutocompleteInput,
     CheckboxButtonGroup as _BkCheckboxButtonGroup,
     RadioButtonGroup as _BkRadioButtonGroup, RadioGroup as _BkRadioBoxGroup,
-    ColorPicker as _BkColorPicker
+    ColorPicker as _BkColorPicker, DateSlider as _BkDateSlider
 )
 
 from .layout import Column, Row, VSpacer
@@ -112,6 +112,20 @@ class FileInput(Widget):
             msg['value'] = b64decode(content)
         return msg
 
+    def save(self, filename):
+        """
+        Saves the uploaded FileInput data to a file or BytesIO object.
+
+        Parameters
+        ----------
+        filename (str): File path or file-like object
+        """
+        if isinstance(filename, basestring):
+            with open(filename, 'wb') as f:
+                f.write(self.value)
+        else:
+            filename.write(self.value)
+
 
 class StaticText(Widget):
 
@@ -145,7 +159,36 @@ class AutocompleteInput(Widget):
     _rename = {'name': 'title', 'options': 'completions'}
 
 
-class FloatSlider(Widget):
+class _SliderBase(Widget):
+
+    bar_color = param.Color(default="#e6e6e6", doc="""
+        Color of the slider bar as a hexidecimal RGB value.""")
+
+    callback_policy = param.ObjectSelector(
+        default='continuous', objects=['continuous', 'throttle', 'mouseup'], doc="""
+        Policy to determine when slider events are triggered:
+
+        * "continuous": the callback will be executed immediately for each movement of the slider
+        * "throttle": the callback will be executed at most every ``callback_throttle`` milliseconds.
+        * "mouseup": the callback will be executed only once when the slider is released.
+        """)
+
+    callback_throttle = param.Integer(default=200, doc="""
+        Number of milliseconds to pause between callback calls as the slider is moved.""")
+
+    direction = param.ObjectSelector(default='ltr', objects=['ltr', 'rtl'],
+                                     doc="""
+        Whether the slider should go from left-to-right ('ltr') or right-to-left ('rtl')""")
+
+    orientation = param.ObjectSelector(default='horizontal',
+                                       objects=['horizontal', 'vertical'], doc="""
+        Whether the slider should be oriented horizontally or vertically.""")
+
+    tooltips = param.Boolean(default=True, doc="""
+        Whether the slider handle should display tooltips""")
+
+
+class FloatSlider(_SliderBase):
 
     start = param.Number(default=0.0)
 
@@ -158,7 +201,7 @@ class FloatSlider(Widget):
     _widget_type = _BkSlider
 
 
-class IntSlider(Widget):
+class IntSlider(_SliderBase):
 
     value = param.Integer(default=0)
 
@@ -169,6 +212,17 @@ class IntSlider(Widget):
     step = param.Integer(default=1)
 
     _widget_type = _BkSlider
+
+
+class DateSlider(_SliderBase):
+
+    value = param.Date(default=None)
+
+    start = param.Date(default=None)
+
+    end = param.Date(default=None)
+
+    _widget_type = _BkDateSlider
 
 
 class DatePicker(Widget):
@@ -190,7 +244,7 @@ class DatePicker(Widget):
         return msg
 
 
-class RangeSlider(Widget):
+class RangeSlider(_SliderBase):
 
     value = param.NumericTuple(default=(0, 1), length=2)
 
@@ -216,7 +270,7 @@ class RangeSlider(Widget):
         return msg
 
 
-class IntRangeSlider(Widget):
+class IntRangeSlider(RangeSlider):
 
     start = param.Integer(default=0)
 
@@ -225,7 +279,7 @@ class IntRangeSlider(Widget):
     step = param.Integer(default=1)
 
 
-class DateRangeSlider(Widget):
+class DateRangeSlider(_SliderBase):
 
     value = param.Tuple(default=None, length=2)
 
@@ -275,8 +329,10 @@ class Button(_ButtonBase):
 
 class Toggle(_ButtonBase):
 
-    active = param.Boolean(default=False, doc="""
+    value = param.Boolean(default=False, doc="""
         Whether the button is currently toggled.""")
+
+    _rename = {'value': 'active'}
 
     _widget_type = _BkToggle
 
@@ -481,12 +537,18 @@ class _RadioGroupBase(Select):
         return msg
 
 
-class RadioButtonGroup(_RadioGroupBase):
+class RadioButtonGroup(_RadioGroupBase, _ButtonBase):
 
     _widget_type = _BkRadioButtonGroup
 
+    _rename = {'name': 'title'}
+
 
 class RadioBoxGroup(_RadioGroupBase):
+
+    inline = param.Boolean(default=False, doc="""
+        Whether the items be arrange vertically (``False``) or
+        horizontally in-line (``True``).""")
 
     _widget_type = _BkRadioBoxGroup
 
@@ -512,12 +574,18 @@ class _CheckGroupBase(Select):
         return msg
 
 
-class CheckButtonGroup(_CheckGroupBase):
+class CheckButtonGroup(_CheckGroupBase, _ButtonBase):
 
     _widget_type = _BkCheckboxButtonGroup
 
+    _rename = {'name': 'title'}
+
 
 class CheckBoxGroup(_CheckGroupBase):
+
+    inline = param.Boolean(default=False, doc="""
+        Whether the items be arrange vertically (``False``) or
+        horizontally in-line (``True``).""")
 
     _widget_type = _BkCheckboxGroup
 
@@ -564,30 +632,6 @@ class ToggleGroup(Select):
                 return RadioBoxGroup(**params)
 
 
-class RadioButtons(CheckBoxGroup):
-    """"
-    Deprecated, use ToggleGroup instead.
-    """
-
-    def __new__(cls, **params):
-        from warnings import warn
-        warn("Deprecated class, will be removed in future.\nSee ToggleGroup",
-             category=DeprecationWarning)
-        return CheckBoxGroup(**params)
-
-
-class ToggleButtons(CheckButtonGroup):
-    """"
-    Deprecated, use ToggleGroup instead.
-    """
-
-    def __new__(cls, **params):
-        from warnings import warn
-        warn("Deprecated class, will be removed in future.\nSee ToggleGroup",
-             category=DeprecationWarning)
-        return CheckButtonGroup(**params)
-
-
 class MultiSelect(Select):
 
     size = param.Integer(default=4, doc="""
@@ -615,7 +659,7 @@ class MultiSelect(Select):
         return msg
 
 
-class DiscreteSlider(Widget):
+class DiscreteSlider(_SliderBase):
 
     options = param.ClassSelector(default=[], class_=(dict, list))
 
@@ -820,7 +864,7 @@ class Audio(Widget):
         The current timestamp""")
 
     throttle = param.Integer(default=250, doc="""
-        The current timestamp""")
+        How frequently to sample the current playback time in milliseconds""")
 
     paused = param.Boolean(default=True, doc="""
         Whether the audio is currently paused""")
@@ -916,6 +960,11 @@ class CrossSelector(MultiSelect):
 
         self._selected = {False: [], True: []}
         self._query = {False: '', True: ''}
+
+    @param.depends('disabled', watch=True)
+    def _update_disabled(self):
+        self._buttons[False].disabled = self.disabled
+        self._buttons[True].disabled = self.disabled
 
     def _update_value(self, event):
         mapping = {hashable(v): k for k, v in self.options.items()}
