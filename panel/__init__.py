@@ -4,6 +4,9 @@ import sys
 
 import param as _param
 from bokeh.document import Document as _Document
+from pyviz_comms import (
+    CommManager as _CommManager, JupyterCommManager as _JupyterCommManager,
+    extension as _pyviz_extension)
 
 from . import layout # noqa
 from . import links # noqa
@@ -19,7 +22,6 @@ from .param import Param # noqa
 from .util import load_notebook as _load_nb
 from .viewable import Viewable
 
-from pyviz_comms import JupyterCommManager as _JupyterCommManager, extension as _pyviz_extension
 
 __version__ = str(_param.version.Version(
     fpath=__file__, archive_commit="$Format:%h$", reponame="panel"))
@@ -34,6 +36,12 @@ class state(_param.Parameterized):
     curdoc = _param.ClassSelector(class_=_Document, doc="""
         The bokeh Document for which a server event is currently being
         processed.""")
+
+    _comm_manager = _CommManager
+
+    _views = {}
+
+    _servers = {}
 
 
 class extension(_pyviz_extension):
@@ -81,9 +89,20 @@ def _cleanup_panel(msg_id):
     """
     A cleanup action which is called when a plot is deleted in the notebook
     """
-    if msg_id not in Viewable._views:
+    if msg_id not in state._views:
         return
-    viewable, model = Viewable._views.pop(msg_id)
+    viewable, model = state._views.pop(msg_id)
+    viewable._cleanup(model)
+
+def _cleanup_server(server_id):
+    """
+    A cleanup action which is called when a server is deleted in the notebook
+    """
+    if server_id not in state.servers:
+        return
+    server, viewable, model = state._servers.pop(server_id)
+    server.stop()
     viewable._cleanup(model)
 
 extension.add_delete_action(_cleanup_panel)
+extension.add_server_delete_action(_cleanup_server)

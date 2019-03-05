@@ -192,10 +192,6 @@ class Viewable(Layoutable):
 
     __abstract = True
 
-    _comm_manager = CommManager
-
-    _views = {}
-
     _preprocessing_hooks = []
 
     def __init__(self, **params):
@@ -261,11 +257,13 @@ class Viewable(Layoutable):
             hook(self, root)
 
     def _repr_mimebundle_(self, include=None, exclude=None):
-        Viewable._comm_manager = JupyterCommManager
+        from . import state
+
+        state._comm_manager = JupyterCommManager
         doc = _Document()
-        comm = self._comm_manager.get_server_comm()
+        comm = state._comm_manager.get_server_comm()
         model = self._get_root(doc, comm)
-        Viewable._views[model.ref['id']] = (self, model)
+        state._views[model.ref['id']] = (self, model)
         return render_mimebundle(model, doc, comm)
 
     def _server_destroy(self, session_context):
@@ -624,6 +622,8 @@ class Reactive(Viewable):
         return GenericLink(self, target, properties=links, code=code)
 
     def _cleanup(self, root=None, final=False):
+        from . import state
+
         super(Reactive, self)._cleanup(root, final)
         if final:
             watchers = self._callbacks.pop('instance', [])
@@ -651,7 +651,7 @@ class Reactive(Viewable):
             if not comm_ids:
                 continue
             comm_id = comm_ids[0]
-            comm = self._comm_manager._comms.pop(comm_id, None)
+            comm = state._comm_manager._comms.pop(comm_id, None)
             if comm:
                 try:
                     comm.close()
@@ -741,11 +741,13 @@ class Reactive(Viewable):
         self._callbacks[ref].append(watcher)
 
     def _link_props(self, model, properties, doc, root, comm=None):
+        from . import state
+
         if comm is None:
             for p in properties:
                 model.on_change(p, partial(self._server_change, doc))
         else:
-            client_comm = self._comm_manager.get_client_comm(on_msg=self._comm_change)
+            client_comm = state._comm_manager.get_client_comm(on_msg=self._comm_change)
             for p in properties:
                 customjs = self._get_customjs(p, client_comm, root.ref['id'])
                 model.js_on_change(p, customjs)
