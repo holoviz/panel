@@ -86,6 +86,18 @@ def test_layout_get_root(panel, model_type, document, comm):
 
 
 @pytest.mark.parametrize('panel', [Column, Row])
+def test_layout_reverse(panel, document, comm):
+    div1 = Div()
+    div2 = Div()
+    layout = panel(div1, div2)
+
+    model = layout._get_root(document, comm=comm)
+
+    layout.reverse()
+    assert model.children == [div2, div1]
+
+
+@pytest.mark.parametrize('panel', [Column, Row])
 def test_layout_append(panel, document, comm):
     div1 = Div()
     div2 = Div()
@@ -96,6 +108,20 @@ def test_layout_append(panel, document, comm):
     div3 = Div()
     layout.append(div3)
     assert model.children == [div1, div2, div3]
+
+
+@pytest.mark.parametrize('panel', [Column, Row])
+def test_layout_extend(panel, document, comm):
+    div1 = Div()
+    div2 = Div()
+    layout = panel(div1, div2)
+
+    model = layout._get_root(document, comm=comm)
+
+    div3 = Div()
+    div4 = Div()
+    layout.extend([div4, div3])
+    assert model.children == [div1, div2, div4, div3]
 
 
 @pytest.mark.parametrize('panel', [Column, Row])
@@ -256,6 +282,23 @@ def test_layout_remove(panel, document, comm):
     assert p1._models == {}
 
 
+@pytest.mark.parametrize('panel', [Column, Row])
+def test_layout_clear(panel, document, comm):
+    div1 = Div()
+    div2 = Div()
+    layout = panel(div1, div2)
+    p1, p2 = layout.objects
+
+    model = layout._get_root(document, comm=comm)
+
+    assert model.ref['id'] in p1._callbacks
+    assert p1._models[model.ref['id']] is model.children[0]
+    layout.clear()
+    assert model.children == []
+    assert p1._callbacks == p2._callbacks == {}
+    assert p1._models == p2._models == {}
+
+
 def test_tabs_constructor(document, comm):
     div1 = Div()
     div2 = Div()
@@ -319,6 +362,20 @@ def test_tabs_set_panes(document, comm):
     assert tab3.child is div3
 
 
+def test_tabs_reverse(document, comm):
+    div1, div2 = Div(), Div()
+    p1 = Pane(div1, name='Div1')
+    p2 = Pane(div2, name='Div2')
+    tabs = Tabs(p1, p2)
+
+    model = tabs._get_root(document, comm=comm)
+
+    tabs.reverse()
+    tab1, tab2 = model.tabs
+    assert tab1.child is div2
+    assert tab2.child is div1
+
+
 def test_tabs_append(document, comm):
     div1, div2 = Div(), Div()
     p1 = Pane(div1, name='Div1')
@@ -330,6 +387,27 @@ def test_tabs_append(document, comm):
     div3 = Div()
     tabs.append(div3)
     tab1, tab2, tab3 = model.tabs
+    assert tab1.child is div1
+    assert tab2.child is div2
+    assert tab3.child is div3
+
+
+def test_tabs_extend(document, comm):
+    div1, div2 = Div(), Div()
+    p1 = Pane(div1, name='Div1')
+    p2 = Pane(div2, name='Div2')
+    tabs = Tabs(p1, p2)
+
+    model = tabs._get_root(document, comm=comm)
+
+    div3 = Div()
+    div4 = Div()
+    tabs.extend([div4, div3])
+    tab1, tab2, tab3, tab4 = model.tabs
+    assert tab1.child is div1
+    assert tab2.child is div2
+    assert tab3.child is div4
+    assert tab4.child is div3
 
 
 def test_empty_tabs_append(document, comm):
@@ -474,8 +552,8 @@ def test_tabs_setitem_replace_slice_out_of_bounds(document, comm):
     div3 = Div()
     with pytest.raises(IndexError):
         layout[3:4] = [div3]
-        
-    
+
+
 def test_tabs_pop(document, comm):
     div1 = Div()
     div2 = Div()
@@ -514,6 +592,20 @@ def test_tabs_remove(document, comm):
     assert p1._models == {}
 
 
+def test_tabs_clear(document, comm):
+    div1 = Div()
+    div2 = Div()
+    tabs = Tabs(div1, div2)
+    p1, p2 = tabs.objects
+
+    model = tabs._get_root(document, comm=comm)
+
+    tabs.clear()
+    assert len(model.tabs) == 0
+    assert p1._callbacks == p2._callbacks == {}
+    assert p1._models == p2._models == {}
+
+
 def test_spacer(document, comm):
     spacer = Spacer(width=400, height=300)
 
@@ -525,22 +617,22 @@ def test_spacer(document, comm):
 
     spacer.height = 400
     assert model.height == 400
-    
-    
+
+
 def test_layout_with_param_setitem(document, comm):
     import param
     class TestClass(param.Parameterized):
         select = param.ObjectSelector(default=0, objects=[0,1])
-     
+
         def __init__(self, **params):
             super(TestClass, self).__init__(**params)
             self._layout = Row(Param(self.param, parameters=['select']),
                                self.select)
-         
+
         @param.depends('select', watch=True)
         def _load(self):
             self._layout[-1] = self.select
-        
+
     test = TestClass()
     model = test._layout._get_root(document, comm=comm)
     test.select = 1

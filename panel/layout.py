@@ -196,6 +196,15 @@ class Panel(Reactive):
         new_objects.append(panel(pane))
         self.objects = new_objects
 
+    def clear(self):
+        self.objects = []
+
+    def extend(self, panes):
+        from .pane import panel
+        new_objects = list(self)
+        new_objects.extend(list(map(panel, panes)))
+        self.objects = new_objects
+
     def insert(self, index, pane):
         from .pane import panel
         new_objects = list(self)
@@ -214,6 +223,10 @@ class Panel(Reactive):
         new_objects.remove(pane)
         self.objects = new_objects
 
+    def reverse(self):
+        new_objects = list(self)
+        new_objects.reverse()
+        self.objects = new_objects
 
 
 class Row(Panel):
