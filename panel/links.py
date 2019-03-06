@@ -7,7 +7,8 @@ import param
 import weakref
 import sys
 
-from .layout import Viewable, Panel
+from .viewable import Viewable
+from .layout import Panel
 from .pane.holoviews import HoloViews, generate_panel_bokeh_map, is_bokeh_element_plot
 from .util import unicode_repr
 
@@ -90,7 +91,7 @@ class Link(param.Parameterized):
         links = self.registry.get(self.source)
         if self in links:
             links.pop(links.index(self))
-    
+
     @classmethod
     def _process_links(cls, root_view, root_model):
         if not isinstance(root_view, Panel) or not root_model:
