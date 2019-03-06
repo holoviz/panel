@@ -12,7 +12,7 @@ from bokeh.models.widgets import Tabs as BkTabs, Panel as BkPanel
 
 from .io import state
 from .util import param_name, param_reprs, push
-from .viewable import Reactive, Viewable
+from .viewable import Reactive
 
 
 class Panel(Reactive):
@@ -196,6 +196,15 @@ class Panel(Reactive):
         new_objects.append(panel(pane))
         self.objects = new_objects
 
+    def clear(self):
+        self.objects = []
+
+    def extend(self, panes):
+        from .pane import panel
+        new_objects = list(self)
+        new_objects.extend(list(map(panel, panes)))
+        self.objects = new_objects
+
     def insert(self, index, pane):
         from .pane import panel
         new_objects = list(self)
@@ -214,6 +223,10 @@ class Panel(Reactive):
         new_objects.remove(pane)
         self.objects = new_objects
 
+    def reverse(self):
+        new_objects = list(self)
+        new_objects.reverse()
+        self.objects = new_objects
 
 
 class Row(Panel):
@@ -254,21 +267,27 @@ class Tabs(Panel):
     _linked_props = ['active']
 
     def __init__(self, *items, **params):
-        from .pane import panel
-        objects, names = [], []
-        for pane in items:
-            if isinstance(pane, tuple):
-                name, pane = pane
-            elif isinstance(pane, Viewable):
-                name = pane.name
-            else:
-                name = None
-            objects.append(panel(pane, name=name))
-            name = param_name(objects[-1].name) if name is None else name
-            names.append(name)
-        self._names = names
+        objects, self._names = self._to_objects_and_names(items)
         super(Tabs, self).__init__(*objects, **params)
         self.param.watch(self._update_names, 'objects')
+
+    def _to_object_and_name(self, item):
+        from .pane import panel
+        if isinstance(item, tuple):
+            name, item = item
+        else:
+            name = getattr(item, 'name', None)
+        pane = panel(item, name=name)
+        name = param_name(pane.name) if name is None else name
+        return pane, name
+
+    def _to_objects_and_names(self, items):
+        objects, names = [], []
+        for item in items:
+            pane, name = self._to_object_and_name(item)
+            objects.append(pane)
+            names.append(name)
+        return objects, names
 
     def _update_names(self, event):
         if len(event.new) == len(self._names):
@@ -296,18 +315,17 @@ class Tabs(Panel):
                              'directly. Found %d names, expected %d.' %
                              (len(self._names), len(self)))
         for i, (name, pane) in enumerate(zip(self._names, self)):
-            pane = panel(pane)
+            pane = panel(pane, name=name)
             self.objects[i] = pane
             if pane in old_objects:
                 child = pane._models[root.ref['id']]
             else:
                 child = pane._get_model(doc, root, model, comm)
-            child = BkPanel(title=name, child=child)
+            child = BkPanel(title=name, name=pane.name, child=child)
             new_models.append(child)
         return new_models
 
     def __setitem__(self, index, panes):
-        from .pane import panel
         new_objects = list(self)
         if not isinstance(index, slice):
             if index > len(self.objects):
@@ -340,34 +358,32 @@ class Tabs(Panel):
                                  'on the %s to match the supplied slice.' %
                                  (expected, type(self).__name__))
         for i, pane in zip(range(start, end), panes):
-            name = None
-            if isinstance(pane, tuple):
-                name, pane = pane
-            new_objects[i] = panel(pane, name=name)
-            name = param_name(new_objects[i].name) if name is None else name
-            self._names[i] = name
+            new_objects[i], self._names[i] = self._to_object_and_name(pane)
         self.objects = new_objects
 
     def append(self, pane):
-        from .pane import panel
-        name = None
-        if isinstance(pane, tuple):
-            name, pane = pane
+        new_object, new_name = self._to_object_and_name(pane)
         new_objects = list(self)
-        new_objects.append(panel(pane, name=name))
-        name = param_name(new_objects[-1].name) if name is None else name
-        self._names.append(name)
+        new_objects.append(new_object)
+        self._names.append(new_name)
         self.objects = new_objects
 
+    def clear(self):
+        self._names = []
+        self.objects = []
+
+    def extend(self, panes):
+        new_objects, new_names = self._to_objects_and_names(panes)
+        objects = list(self)
+        objects.extend(new_objects)
+        self._names.extend(new_names)
+        self.objects = objects
+
     def insert(self, index, pane):
-        from .pane import panel
-        name = None
-        if isinstance(pane, tuple):
-            name, pane = pane
+        new_object, new_name = self._to_object_and_name(pane)
         new_objects = list(self.objects)
-        new_objects.insert(index, panel(pane))
-        name = param_name(new_objects[index].name) if name is None else name
-        self._names[index] = name
+        new_objects.insert(index, new_object)
+        self._names.insert(index, new_name)
         self.objects = new_objects
 
     def pop(self, index):
@@ -384,6 +400,12 @@ class Tabs(Panel):
             index = new_objects.index(pane)
         new_objects.remove(pane)
         self._names.pop(index)
+        self.objects = new_objects
+
+    def reverse(self):
+        new_objects = list(self)
+        new_objects.reverse()
+        self._names.reverse()
         self.objects = new_objects
 
 
