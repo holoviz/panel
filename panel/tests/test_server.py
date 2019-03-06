@@ -1,5 +1,3 @@
-import param
-
 from bokeh.client import pull_session
 from bokeh.models import Div
 from panel.io import state
