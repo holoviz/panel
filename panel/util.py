@@ -309,6 +309,7 @@ def add_to_doc(obj, doc, hold=False):
 
 LOAD_MIME = 'application/vnd.holoviews_load.v0+json'
 EXEC_MIME = 'application/vnd.holoviews_exec.v0+json'
+HTML_MIME = 'text/html'
 
 
 def load_notebook(inline=True):
@@ -324,6 +325,49 @@ def load_notebook(inline=True):
     # Publish comm manager
     JS = '\n'.join([PYVIZ_PROXY, JupyterCommManager.js_manager, nb_mime_js])
     publish_display_data(data={LOAD_MIME: JS, 'application/javascript': JS})
+
+
+def _origin_url(url):
+    if url.startswith("http"):
+        url = url.split("//")[1]
+    return url
+
+def _server_url(url, port):
+    if url.startswith("http"):
+        return '%s:%d%s' % (url.rsplit(':', 1)[0], port, "/")
+    else:
+        return 'http://%s:%d%s' % (url.split(':')[0], port, "/")
+
+
+def show_server(server, notebook_url, server_id):
+    """
+    Displays a bokeh server inline in the notebook.
+
+    Parameters
+    ----------
+    server: bokeh.server.server.Server
+        Bokeh server instance which is already running
+    notebook_url: str
+        The URL of the running Jupyter notebook server
+    server_id: str
+        Unique ID to identify the server with
+    """
+    from bokeh.embed import server_document
+    from IPython.display import publish_display_data
+
+    if callable(notebook_url):
+        url = notebook_url(server.port)
+    else:
+        url = _server_url(notebook_url, server.port)
+
+    script = server_document(url, resources=None)
+
+    publish_display_data({
+        HTML_MIME: script,
+        EXEC_MIME: ""
+    }, metadata={
+        EXEC_MIME: {"server_id": server_id}
+    })
 
 
 def render_mimebundle(model, doc, comm):

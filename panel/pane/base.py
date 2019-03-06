@@ -6,6 +6,7 @@ from __future__ import absolute_import, division, unicode_literals
 
 import param
 
+from ..io import state
 from ..layout import Panel, Row
 from ..viewable import Viewable, Reactive, Layoutable
 from ..util import param_reprs, push
@@ -138,7 +139,6 @@ class PaneBase(Reactive):
         Links the object parameter to the rendered Bokeh model, triggering
         an update when the object changes.
         """
-        from .. import state
         ref = root.ref['id']
 
         def update_pane(change):

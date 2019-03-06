@@ -35,5 +35,5 @@ class VegaPlot(LayoutDOM):
     data_sources = Dict(String, Instance(ColumnDataSource))
 
 
-CUSTOM_MODELS['panel.plotly.PlotlyPlot'] = PlotlyPlot
-CUSTOM_MODELS['panel.vega.VegaPlot'] = VegaPlot
+CUSTOM_MODELS['panel.models.plots.PlotlyPlot'] = PlotlyPlot
+CUSTOM_MODELS['panel.models.plots.VegaPlot'] = VegaPlot
