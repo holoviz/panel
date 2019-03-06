@@ -10,6 +10,7 @@ from bokeh.models import (Column as BkColumn, Row as BkRow,
                           Spacer as BkSpacer)
 from bokeh.models.widgets import Tabs as BkTabs, Panel as BkPanel
 
+from .io import state
 from .util import param_name, param_reprs, push
 from .viewable import Reactive, Viewable
 
@@ -36,7 +37,6 @@ class Panel(Reactive):
         super(Panel, self).__init__(objects=objects, **params)
 
     def _link_params(self, model, params, doc, root, comm=None):
-        from . import state
         def set_value(*events):
             msg = {event.name: event.new for event in events}
             events = {event.name: event for event in events}

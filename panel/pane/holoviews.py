@@ -9,6 +9,7 @@ from collections import OrderedDict, defaultdict
 
 import param
 
+from ..io import state
 from ..layout import Panel, Column
 from ..viewable import Viewable
 from ..widgets import Player
@@ -118,8 +119,6 @@ class HoloViews(PaneBase):
         return model
 
     def _link_widgets(self, pane, root, comm):
-        from .. import state
-
         def update_plot(change):
             from holoviews.core.util import cross_index
             from holoviews.plotting.bokeh.plot import BokehPlot

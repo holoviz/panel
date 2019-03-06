@@ -21,6 +21,7 @@ from bokeh.models import CustomJS
 from bokeh.server.server import Server
 from pyviz_comms import JS_CALLBACK, JupyterCommManager
 
+from .io import state
 from .util import (render_mimebundle, add_to_doc, push, param_reprs,
                    _origin_url, show_server)
 
@@ -255,8 +256,6 @@ class Viewable(Layoutable):
             hook(self, root)
 
     def _repr_mimebundle_(self, include=None, exclude=None):
-        from . import state
-
         state._comm_manager = JupyterCommManager
         doc = _Document()
         comm = state._comm_manager.get_server_comm()
@@ -277,7 +276,6 @@ class Viewable(Layoutable):
         Callback to handle FunctionHandler document creation.
         """
         if server_id:
-            from . import state
             state._servers[server_id][2].append(doc)
         return self.server_doc(doc)
 
@@ -365,7 +363,6 @@ class Viewable(Layoutable):
         server : bokeh.server.server.Server
            Bokeh Server instance running this panel
         """
-        from . import state
         from tornado.ioloop import IOLoop
         opts = dict(kwargs)
         if loop:
@@ -632,8 +629,6 @@ class Reactive(Viewable):
         return GenericLink(self, target, properties=links, code=code)
 
     def _cleanup(self, root=None, final=False):
-        from . import state
-
         super(Reactive, self)._cleanup(root, final)
         if final:
             watchers = self._callbacks.pop('instance', [])
@@ -704,7 +699,6 @@ class Reactive(Viewable):
         return properties
 
     def _link_params(self, model, params, doc, root, comm=None):
-        from . import state
         def param_change(*events):
             msgs = []
             for event in events:
@@ -751,8 +745,6 @@ class Reactive(Viewable):
         self._callbacks[ref].append(watcher)
 
     def _link_props(self, model, properties, doc, root, comm=None):
-        from . import state
-
         if comm is None:
             for p in properties:
                 model.on_change(p, partial(self._server_change, doc))
@@ -777,7 +769,6 @@ class Reactive(Viewable):
             doc.add_timeout_callback(partial(self._change_event, doc), self._debounce)
 
     def _change_event(self, doc=None):
-        from . import state
         try:
             state.curdoc = doc
             self.set_param(**self._process_property_change(self._events))
