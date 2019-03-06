@@ -88,6 +88,7 @@ install_requires = [
     'pyviz_comms >=0.7.0',
     'markdown',
     'pyct >=0.4.4',
+    'tornado <6',
     'testpath<0.4' # temporary due to pip issue?
 ]
 
@@ -96,8 +97,7 @@ _recommended = [
     'holoviews >=1.12.0a1',
     'matplotlib',
     'pillow',
-    'plotly',
-    'tornado <6'
+    'plotly'
 ]
 
 extras_require = {
