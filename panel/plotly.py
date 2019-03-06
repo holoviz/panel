@@ -45,7 +45,7 @@ class Plotly(PaneBase):
 
     @classmethod
     def applies(cls, obj):
-        return ((isinstance(obj, list) and all(cls.applies(o) for o in obj)) or
+        return ((isinstance(obj, list) and obj and all(cls.applies(o) for o in obj)) or
                 hasattr(obj, 'to_plotly_json'))
 
     def _to_figure(self, obj, layout={}):

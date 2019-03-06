@@ -332,6 +332,17 @@ def test_tabs_append(document, comm):
     tab1, tab2, tab3 = model.tabs
 
 
+def test_empty_tabs_append(document, comm):
+    tabs = Tabs()
+
+    model = tabs._get_root(document, comm=comm)
+
+    div1 = Div()
+    tabs.append(('test title', div1))
+    assert len(model.tabs) == 1
+    assert model.tabs[0].title == 'test title'
+
+
 def test_tabs_insert(document, comm):
     div1 = Div()
     div2 = Div()
