@@ -18,8 +18,8 @@ def tabs(document, comm):
 def assert_tab_is_similar(tab1, tab2):
     """Helper function to check tab match"""
     assert tab1.child is tab2.child
-    assert tab1.name is tab2.name
-    assert tab1.title is tab2.title
+    assert tab1.name == tab2.name
+    assert tab1.title == tab2.title
 
 def get_div(box):
     # Temporary utilities to unpack widget boxes
@@ -477,7 +477,7 @@ def test_tabs_append_with_tuple_and_unnamed_contents(document, comm, tabs):
     assert_tab_is_similar(tab2_before, tab2)
 
     assert tab3.child is div3
-    assert tab3.title is 'Div3'
+    assert tab3.title == 'Div3'
 
 
 def test_tabs_append_with_tuple_and_named_contents(document, comm, tabs):
@@ -493,7 +493,7 @@ def test_tabs_append_with_tuple_and_named_contents(document, comm, tabs):
     assert_tab_is_similar(tab2_before, tab2)
 
     assert tab3.child is div3
-    assert tab3.title is 'Tab3'
+    assert tab3.title == 'Tab3'
     assert tab3.name == p3.name == 'Div3'
 
 
@@ -542,9 +542,9 @@ def test_tabs_extend_with_tuple_and_unnamed_contents(document, comm, tabs):
     assert_tab_is_similar(tab2_before, tab2)
 
     assert tab3.child is div4
-    assert tab3.title is 'Div4'
+    assert tab3.title == 'Div4'
     assert tab4.child is div3
-    assert tab4.title is 'Div3'
+    assert tab4.title == 'Div3'
 
 
 def test_tabs_extend_with_tuple_and_named_contents(document, comm, tabs):
@@ -560,10 +560,10 @@ def test_tabs_extend_with_tuple_and_named_contents(document, comm, tabs):
     assert_tab_is_similar(tab2_before, tab2)
 
     assert tab3.child is div4
-    assert tab3.title is 'Tab4'
+    assert tab3.title == 'Tab4'
     assert tab3.name == p4.name == 'Div4'
     assert tab4.child is div3
-    assert tab4.title is 'Tab3'
+    assert tab4.title == 'Tab3'
     assert tab4.name == p3.name == 'Div3'
 
 
@@ -607,7 +607,7 @@ def test_tabs_insert_with_tuple_and_unnamed_contents(document, comm, tabs):
 
     assert_tab_is_similar(tab1_before, tab1)
     assert tab2.child is div3
-    assert tab2.title is 'Div3'
+    assert tab2.title == 'Div3'
     assert_tab_is_similar(tab2_before, tab3)
 
 
@@ -622,7 +622,7 @@ def test_tabs_insert_with_tuple_and_named_contents(document, comm, tabs):
 
     assert_tab_is_similar(tab1_before, tab1)
     assert tab2.child is div3
-    assert tab2.title is 'Tab3'
+    assert tab2.title == 'Tab3'
     assert tab2.name  == p3.name == 'Div3'
     assert_tab_is_similar(tab2_before, tab3)
 

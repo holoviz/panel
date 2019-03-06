@@ -12,7 +12,7 @@ from bokeh.models.widgets import Tabs as BkTabs, Panel as BkPanel
 
 from .io import state
 from .util import param_name, param_reprs, push
-from .viewable import Reactive, Viewable
+from .viewable import Reactive
 
 
 class Panel(Reactive):
@@ -326,7 +326,6 @@ class Tabs(Panel):
         return new_models
 
     def __setitem__(self, index, panes):
-        from .pane import panel
         new_objects = list(self)
         if not isinstance(index, slice):
             if index > len(self.objects):
