@@ -10,8 +10,9 @@ except:
 plotly_available = pytest.mark.skipif(plotly is None, reason="requires plotly")
 
 import numpy as np
-from panel.pane import Pane, PaneBase
-from panel.plotly import Plotly, PlotlyPlot
+
+from panel.models import PlotlyPlot
+from panel.pane import Pane, PaneBase, Plotly
 
 
 @plotly_available

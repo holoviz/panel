@@ -1,27 +1,16 @@
+"""
+Defines a PlotlyPane which renders a plotly plot using PlotlyPlot
+bokeh model.
+"""
 from __future__ import absolute_import, division, unicode_literals
-
-import os
 
 import param
 import numpy as np
-from bokeh.core.properties import Dict, String, List, Any, Instance
-from bokeh.models import LayoutDOM, ColumnDataSource
 
-from .pane import PaneBase
-from .util import CUSTOM_MODELS
+from bokeh.models import ColumnDataSource
 
-
-class PlotlyPlot(LayoutDOM):
-    """
-    A bokeh model that wraps around a plotly plot and renders it inside
-    a bokeh plot.
-    """
-
-    __implementation__ = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'models', 'plotly.ts')
-
-    data = Dict(String, Any)
-
-    data_sources = List(Instance(ColumnDataSource))
+from ..models import PlotlyPlot
+from .base import PaneBase
 
 
 class Plotly(PaneBase):
@@ -97,6 +86,3 @@ class Plotly(PaneBase):
         model.data = json
         if new_sources:
             model.data_sources += new_sources
-
-
-CUSTOM_MODELS['panel.plotly.PlotlyPlot'] = PlotlyPlot

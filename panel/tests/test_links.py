@@ -3,9 +3,9 @@ from __future__ import absolute_import
 import pytest
 
 from panel.layout import Row
-from panel.holoviews import HoloViews
-from panel.widgets import FloatSlider, RangeSlider
 from panel.links import GenericLink
+from panel.pane import HoloViews
+from panel.widgets import FloatSlider, RangeSlider
 
 try:
     import holoviews as hv

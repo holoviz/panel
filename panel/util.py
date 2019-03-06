@@ -12,12 +12,14 @@ import threading
 import textwrap
 
 from collections import defaultdict, MutableSequence, MutableMapping, OrderedDict
-from datetime import datetime
 from contextlib import contextmanager
+from datetime import datetime
+from six import string_types
 
 import param
 import bokeh
 import bokeh.embed.notebook
+
 from bokeh.document import Document
 from bokeh.io.notebook import load_notebook as bk_load_notebook
 from bokeh.models import Model, LayoutDOM, Box
@@ -27,15 +29,12 @@ from bokeh.util.string import encode_utf8
 from pyviz_comms import (PYVIZ_PROXY, JupyterCommManager, bokeh_msg_handler,
                          nb_mime_js, embed_js)
 
-try:
-    unicode = unicode # noqa
-    basestring = basestring # noqa
-except:
-    basestring = unicode = str
-
 # Global variables
 CUSTOM_MODELS = {}
 BLOCKED = False
+
+if sys.version_info.major > 2:
+    unicode = str
 
 
 def load_compiled_models(custom_model, implementation):
@@ -145,7 +144,7 @@ def param_reprs(parameterized, skip=[]):
     for p, v in sorted(parameterized.get_param_values()):
         if v is parameterized.param[p].default: continue
         elif v is None: continue
-        elif isinstance(v, basestring) and v == '': continue
+        elif isinstance(v, string_types) and v == '': continue
         elif isinstance(v, list) and v == []: continue
         elif isinstance(v, dict) and v == {}: continue
         elif p in skip or (p == 'name' and v.startswith(cls)): continue

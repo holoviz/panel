@@ -5,9 +5,8 @@ import os
 import param
 import numpy as np
 
-from .holoviews import HoloViews
 from .layout import Row, Column, HSpacer, VSpacer
-from .pane import Markdown, Pane
+from .pane import HoloViews, Markdown, Pane
 from .param import Param
 from .util import param_reprs
 

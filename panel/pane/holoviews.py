@@ -9,10 +9,10 @@ from collections import OrderedDict, defaultdict
 
 import param
 
-from .layout import Panel, Column
-from .pane import PaneBase, Pane
-from .viewable import Viewable
-from .widgets import Player
+from ..layout import Panel, Column
+from ..viewable import Viewable
+from ..widgets import Player
+from .base import PaneBase, Pane
 
 
 class HoloViews(PaneBase):
@@ -118,7 +118,7 @@ class HoloViews(PaneBase):
         return model
 
     def _link_widgets(self, pane, root, comm):
-        from . import state
+        from .. import state
 
         def update_plot(change):
             from holoviews.core.util import cross_index
@@ -155,7 +155,7 @@ class HoloViews(PaneBase):
         from holoviews.core import Dimension
         from holoviews.core.util import isnumeric, unicode, datetime_types
         from holoviews.core.traversal import unique_dimkeys
-        from .widgets import Widget, DiscreteSlider, Select, FloatSlider, DatetimeInput
+        from ..widgets import Widget, DiscreteSlider, Select, FloatSlider, DatetimeInput
 
         dims, keys = unique_dimkeys(object)
         if dims == [Dimension('Frame')] and keys == [(0,)]:
