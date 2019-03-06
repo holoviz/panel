@@ -8,7 +8,7 @@ import weakref
 import sys
 
 from .layout import Viewable, Panel
-from .holoviews import HoloViews, generate_panel_bokeh_map, is_bokeh_element_plot
+from .pane.holoviews import HoloViews, generate_panel_bokeh_map, is_bokeh_element_plot
 from .util import unicode_repr
 
 from bokeh.models import (CustomJS, Model as BkModel)

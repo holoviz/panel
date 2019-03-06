@@ -9,9 +9,8 @@ from bokeh.models import (Row as BkRow, Column as BkColumn, GlyphRenderer,
                           Scatter, Line, GridBox)
 from bokeh.plotting import Figure
 
-from panel.holoviews import HoloViews
 from panel.layout import Column, Row
-from panel.pane import Pane, PaneBase
+from panel.pane import Pane, PaneBase, HoloViews
 from panel.widgets import FloatSlider, DiscreteSlider, Select
 
 try:

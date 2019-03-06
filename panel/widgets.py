@@ -11,6 +11,7 @@ import ast
 from base64 import b64decode, b64encode
 from collections import OrderedDict
 from datetime import datetime
+from six import string_types
 
 import param
 import numpy as np
@@ -30,7 +31,7 @@ from .layout import Column, Row, VSpacer
 from .models.widgets import (
     Player as _BkPlayer, FileInput as _BkFileInput, Audio as _BkAudio)
 from .viewable import Reactive
-from .util import as_unicode, push, value_as_datetime, hashable, basestring
+from .util import as_unicode, push, value_as_datetime, hashable
 
 
 class Widget(Reactive):
@@ -120,7 +121,7 @@ class FileInput(Widget):
         ----------
         filename (str): File path or file-like object
         """
-        if isinstance(filename, basestring):
+        if isinstance(filename, string_types):
             with open(filename, 'wb') as f:
                 f.write(self.value)
         else:
@@ -312,7 +313,7 @@ class ColorPicker(Widget):
 class _ButtonBase(Widget):
 
     button_type = param.ObjectSelector(default='default', objects=[
-        'default', 'primary', 'success', 'info', 'danger'])
+        'default', 'primary', 'success', 'warning', 'danger'])
 
     _rename = {'name': 'label'}
 
@@ -685,7 +686,7 @@ class DiscreteSlider(_SliderBase):
         if isinstance(self.options, dict):
             return [title + o for o in self.options]
         else:
-            return [title + (o if isinstance(o, basestring) else (self.formatter % o))
+            return [title + (o if isinstance(o, string_types) else (self.formatter % o))
                     for o in self.options]
     @property
     def values(self):

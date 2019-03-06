@@ -11,10 +11,11 @@ Distributed under the terms of the Modified BSD License.
 from __future__ import absolute_import, division, unicode_literals
 
 import types
-from numbers import Real, Integral
-from collections import OrderedDict
 
+from collections import OrderedDict
 from inspect import getcallargs
+from numbers import Real, Integral
+from six import string_types
 
 try:  # Python >= 3.3
     from inspect import signature, Parameter
@@ -37,7 +38,7 @@ import param
 
 from .layout import Panel, Column, Row
 from .pane import PaneBase, Pane, HTML
-from .util import basestring, as_unicode
+from .util import as_unicode
 from .widgets import (Checkbox, TextInput, Widget, IntSlider, FloatSlider,
                       Select, DiscreteSlider, Button)
 
@@ -280,7 +281,7 @@ class interactive(PaneBase):
     @staticmethod
     def widget_from_single_value(o, name):
         """Make widgets from single values, which can be used as parameter defaults."""
-        if isinstance(o, basestring):
+        if isinstance(o, string_types):
             return TextInput(value=as_unicode(o), name=name)
         elif isinstance(o, bool):
             return Checkbox(value=o, name=name)

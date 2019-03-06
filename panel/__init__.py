@@ -5,14 +5,12 @@ import sys
 import param as _param
 from bokeh.document import Document as _Document
 
-from . import holoviews # noqa
 from . import layout # noqa
+from . import links # noqa
+from . import pane # noqa
 from . import param # noqa
 from . import pipeline # noqa
-from . import plotly # noqa
-from . import vega # noqa
 from . import widgets # noqa
-from . import links # noqa
 
 from .interact import interact # noqa
 from .layout import Row, Column, Tabs, Spacer # noqa

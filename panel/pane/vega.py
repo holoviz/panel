@@ -1,14 +1,14 @@
 from __future__ import absolute_import, division, unicode_literals
 
-import os
 import sys
 
 import numpy as np
-from bokeh.core.properties import Dict, String, Any, Instance
-from bokeh.models import LayoutDOM, ColumnDataSource
 
-from .pane import PaneBase
-from .util import CUSTOM_MODELS
+from bokeh.models import ColumnDataSource
+
+from ..models import VegaPlot
+from .base import PaneBase
+
 
 def ds_as_cds(dataset):
     """
@@ -22,19 +22,6 @@ def ds_as_cds(dataset):
             data[k].append(v)
     data = {k: np.asarray(v) for k, v in data.items()}
     return data
-
-
-class VegaPlot(LayoutDOM):
-    """
-    A Bokeh model that wraps around a Vega plot and renders it inside
-    a Bokeh plot.
-    """
-
-    __implementation__ = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'models', 'vega.ts')
-
-    data = Dict(String, Any)
-
-    data_sources = Dict(String, Instance(ColumnDataSource))
 
 
 class Vega(PaneBase):
@@ -110,5 +97,3 @@ class Vega(PaneBase):
         self._get_sources(json, model.data_sources)
         model.data = json
 
-
-CUSTOM_MODELS['panel.vega.VegaPlot'] = VegaPlot

@@ -10,16 +10,19 @@ import json
 import types
 import inspect
 import itertools
+
 from collections import OrderedDict, namedtuple
+from six import string_types
 
 import param
+
 from param.parameterized import classlist
 
-from .pane import Pane, PaneBase
 from .layout import Row, Panel, Tabs, Column
 from .links import Link
+from .pane.base import Pane, PaneBase
 from .util import (
-    abbreviated_repr, basestring, default_label_formatter, full_groupby,
+    abbreviated_repr, default_label_formatter, full_groupby,
     get_method_owner, is_parameterized, param_name)
 from .viewable import Layoutable, Reactive
 from .widgets import (
@@ -176,7 +179,7 @@ class Param(PaneBase):
         for p, v in sorted(self.get_param_values()):
             if v is self.param[p].default: continue
             elif v is None: continue
-            elif isinstance(v, basestring) and v == '': continue
+            elif isinstance(v, string_types) and v == '': continue
             elif p == 'object' or (p == 'name' and v.startswith(obj_cls)): continue
             elif p == 'parameters' and v == parameters: continue
             try:
