@@ -530,9 +530,9 @@ def test_param_subobject_expand_no_toggle(document, comm):
 
 def test_expand_param_subobject_tabs(document, comm):
     class Test(param.Parameterized):
-        a = param.Parameter()
+        abc = param.Parameter()
 
-    test = Test(a=Test(name='Nested'), name='A')
+    test = Test(abc=Test(name='Nested'), name='A')
     test_pane = Pane(test, expand_layout=Tabs, _temporary=True)
     model = test_pane._get_root(document, comm=comm)
 
@@ -540,11 +540,11 @@ def test_expand_param_subobject_tabs(document, comm):
     assert isinstance(toggle, Toggle)
 
     # Expand subpanel
-    test_pane._widgets['a'][1].value = True
+    test_pane._widgets['abc'][1].value = True
     assert len(model.tabs) == 2
     _, subpanel = test_pane.layout.objects
     subtabs = model.tabs[1].child
-    assert model.tabs[1].title == 'Nested'
+    assert model.tabs[1].title == 'Abc'
     assert 'instance' in subpanel._callbacks
     assert isinstance(subtabs, BkTabs)
     assert len(subtabs.tabs) == 1
@@ -557,7 +557,7 @@ def test_expand_param_subobject_tabs(document, comm):
     assert isinstance(widget, BkTextInput)
 
     # Collapse subpanel
-    test_pane._widgets['a'][1].value = False
+    test_pane._widgets['abc'][1].value = False
     assert len(model.tabs) == 1
     assert subpanel._callbacks == {}
 
