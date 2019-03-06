@@ -112,8 +112,8 @@ with detailed tutorials and examples.
 
    Home <self>
    User Guide <user_guide/index>
-   Topics <topics/index>
-   Roadmap <Roadmap>
+   Gallery <gallery/index>
+   Developer Guide <developer_guide/index>
    FAQ
    Github source <http://github.com/pyviz/panel>
    About <about>

@@ -36,6 +36,7 @@ nbsite_gallery_conf = {
 _NAV =  (
     ('User Guide', 'user_guide/index'),
     ('Gallery', 'gallery/index'),
+    ('Developer Guide', 'developer_guide/index'),
     ('About', 'about')
 )
 
