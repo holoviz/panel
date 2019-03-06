@@ -276,7 +276,7 @@ class Tabs(Panel):
         if isinstance(item, tuple):
             name, item = item
         else:
-            name = getattr(item, 'name')
+            name = getattr(item, 'name', None)
         pane = panel(item, name=name)
         name = param_name(pane.name) if name is None else name
         return pane, name

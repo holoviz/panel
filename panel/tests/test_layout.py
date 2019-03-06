@@ -311,6 +311,19 @@ def test_layout_clear(panel, document, comm):
     assert p1._models == p2._models == {}
 
 
+def test_tabs_basic_constructor(document, comm):
+    tabs = Tabs('plain', 'text')
+
+    model = tabs._get_root(document, comm=comm)
+
+    assert isinstance(model, BkTabs)
+    assert len(model.tabs) == 2
+    assert all(isinstance(c, BkPanel) for c in model.tabs)
+    tab1, tab2 = model.tabs
+
+    assert 'plain' in tab1.child.text
+    assert 'text' in tab2.child.text
+
 def test_tabs_constructor(document, comm):
     div1 = Div()
     div2 = Div()
