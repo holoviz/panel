@@ -44,7 +44,7 @@ class Select(Widget):
     def _process_param_change(self, msg):
         msg = super(Select, self)._process_param_change(msg)
         mapping = {hashable(v): k for k, v in self.options.items()}
-        if msg.get('value') is not None:
+        if msg.get('value') is not None and hashable(msg['value']) in mapping:
             msg['value'] = mapping[hashable(msg['value'])]
         if 'options' in msg:
             msg['options'] = list(msg['options'])
@@ -72,7 +72,8 @@ class MultiSelect(Select):
         msg = super(Select, self)._process_param_change(msg)
         mapping = {hashable(v): k for k, v in self.options.items()}
         if 'value' in msg:
-            msg['value'] = [hashable(mapping[v]) for v in msg['value']]
+            msg['value'] = [hashable(mapping[v]) for v in msg['value']
+                            if v in mapping]
         if 'options' in msg:
             msg['options'] = list(msg['options'])
         return msg
