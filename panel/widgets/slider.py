@@ -141,7 +141,6 @@ class DiscreteSlider(_SliderBase):
             combined_msg = {}
             for event in events:
                 msg = self._process_param_change({event.name: event.new})
-                msg = {k: v for k, v in msg.items() if k not in self._active}
                 if msg:
                     combined_msg.update(msg)
 

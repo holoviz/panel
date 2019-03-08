@@ -536,7 +536,7 @@ class Reactive(Viewable):
         # use which should be garbage collected once they have been used
         self._temporary = params.pop('_temporary', False)
         super(Reactive, self).__init__(**params)
-        self._active = []
+        self._processing = False
         self._events = {}
         self._callbacks = defaultdict(list)
 
@@ -702,7 +702,6 @@ class Reactive(Viewable):
             msgs = []
             for event in events:
                 msg = self._process_param_change({event.name: event.new})
-                msg = {k: v for k, v in msg.items() if k not in self._active}
                 if msg:
                     msgs.append(msg)
 
@@ -751,23 +750,22 @@ class Reactive(Viewable):
         if not msg:
             return
         self._events.update(msg)
-        self._active = list(self._events)
         self._change_event()
 
     def _server_change(self, doc, attr, old, new):
         self._events.update({attr: new})
-        if not self._active:
+        if not self._processing:
+            self._processing = True
             doc.add_timeout_callback(partial(self._change_event, doc), self._debounce)
 
     def _change_event(self, doc=None):
         try:
             state.curdoc = doc
-            self.set_param(**self._process_property_change(self._events))
-        except:
-            raise
-        finally:
+            events = self._events
             self._events = {}
-            self._active = []
+            self.set_param(**self._process_property_change(events))
+        finally:
+            self._processing = False
             state.curdoc = None
 
     def _get_customjs(self, change, client_comm, plot_id):
