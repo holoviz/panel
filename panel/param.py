@@ -145,6 +145,7 @@ class Param(PaneBase):
         if 'parameters' not in params:
             params['parameters'] = [p for p in object.param if p != 'name']
         super(Param, self).__init__(object, **params)
+        self._updating = False
 
         # Construct widgets
         self._widgets = self._get_widgets()
@@ -301,13 +302,17 @@ class Param(PaneBase):
         elif isinstance(widget, Toggle):
             pass
         else:
-            widget.link(self.object, **{'value': p_name})
-            def link(change, _updating=[]):
-                key = (change.name, change.what)
-                if key in _updating:
+            def link_widget(change):
+                if self._updating:
                     return
+                try:
+                    self._updating = True
+                    self.object.set_param(**{p_name: change.new})
+                finally:
+                    self._updating = False
 
-                _updating.append(key)
+            widget.param.watch(link_widget, 'value')
+            def link(change):
                 updates = {}
                 if change.what == 'constant':
                     updates['disabled'] = change.new
@@ -321,20 +326,23 @@ class Param(PaneBase):
                             if precedence(k) is None or precedence(k) >= self.display_threshold:
                                 widgets += ws
                         self._widget_box.objects = widgets
+                    return
                 elif change.what == 'objects':
                     updates['options'] = p_obj.get_range()
                 elif change.what == 'bounds':
                     start, end = p_obj.get_soft_bounds()
                     updates['start'] = start
                     updates['end'] = end
+                elif self._updating:
+                    return
                 else:
                     updates['value'] = change.new
+
                 try:
+                    self._updating = True
                     widget.set_param(**updates)
-                except:
-                    raise
                 finally:
-                    _updating.pop(_updating.index(key))
+                    self._updating = False
 
             # Set up links to parameterized object
             watchers.append(self.object.param.watch(link, p_name, 'constant'))
