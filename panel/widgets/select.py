@@ -44,8 +44,12 @@ class Select(Widget):
     def _process_param_change(self, msg):
         msg = super(Select, self)._process_param_change(msg)
         mapping = {hashable(v): k for k, v in self.options.items()}
-        if msg.get('value') is not None and hashable(msg['value']) in mapping:
-            msg['value'] = mapping[hashable(msg['value'])]
+        if msg.get('value') is not None:
+            hash_val = hashable(msg['value'])
+            if hash_val in mapping:
+                msg['value'] = mapping[hash_val]
+            else:
+                msg['value'] = list(self.options)[0]
         if 'options' in msg:
             msg['options'] = list(msg['options'])
         return msg
@@ -53,7 +57,10 @@ class Select(Widget):
     def _process_property_change(self, msg):
         msg = super(Select, self)._process_property_change(msg)
         if 'value' in msg:
-            msg['value'] = self.options[msg['value']]
+            if msg['value'] is None:
+                msg['value'] = None
+            else:
+                msg['value'] = self.options[msg['value']]
         msg.pop('options', None)
         return msg
 
