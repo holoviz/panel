@@ -266,8 +266,7 @@ class Param(PaneBase):
             widget_class = self.widgets[p_name]
         value = getattr(self.object, p_name)
 
-        kw = dict(value=value, disabled=p_obj.constant)
-        kw['name'] = p_obj.label
+        kw = dict(value=value, disabled=p_obj.constant, name=p_obj.label)
 
         if hasattr(p_obj, 'get_range'):
             options = p_obj.get_range()
