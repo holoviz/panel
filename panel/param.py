@@ -22,7 +22,7 @@ from .layout import Row, Panel, Tabs, Column
 from .links import Link
 from .pane.base import Pane, PaneBase
 from .util import (
-    abbreviated_repr, default_label_formatter, full_groupby,
+    abbreviated_repr, full_groupby,
     get_method_owner, is_parameterized, param_name)
 from .viewable import Layoutable, Reactive
 from .widgets import (
@@ -90,9 +90,6 @@ class Param(PaneBase):
         User-supplied function that will be called on initialization,
         usually to update the default Parameter values of the
         underlying parameterized object.""")
-
-    label_formatter = param.Callable(default=default_label_formatter, allow_None=True,
-        doc="Callable used to format the parameter names into widget labels.")
 
     parameters = param.List(default=None, doc="""
         If set this serves as a whitelist of parameters to display on the supplied
@@ -216,7 +213,7 @@ class Param(PaneBase):
                     pane = Param(parameterized, name=parameterized.name,
                                  _temporary=True, **kwargs)
                     if isinstance(self._expand_layout, Tabs):
-                        title = pname if self.label_formatter is None else self.label_formatter(pname)
+                        title = self.object.param[pname].label
                         pane = (title, pane)
                     self._expand_layout.append(pane)
 
@@ -269,12 +266,7 @@ class Param(PaneBase):
             widget_class = self.widgets[p_name]
         value = getattr(self.object, p_name)
 
-        kw = dict(value=value, disabled=p_obj.constant)
-
-        if self.label_formatter is not None:
-            kw['name'] = self.label_formatter(p_name)
-        else:
-            kw['name'] = p_name
+        kw = dict(value=value, disabled=p_obj.constant, name=p_obj.label)
 
         if hasattr(p_obj, 'get_range'):
             options = p_obj.get_range()

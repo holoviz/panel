@@ -191,28 +191,6 @@ def value_as_datetime(value):
     return value
 
 
-class default_label_formatter(param.ParameterizedFunction):
-    "Default formatter to turn parameter names into appropriate widget labels."
-
-    capitalize = param.Boolean(default=True, doc="""
-        Whether or not the label should be capitalized.""")
-
-    replace_underscores = param.Boolean(default=True, doc="""
-        Whether or not underscores should be replaced with spaces.""")
-
-    overrides = param.Dict(default={}, doc="""
-        Allows custom labels to be specified for specific parameter
-        names using a dictionary where key is the parameter name and the
-        value is the desired label.""")
-
-    def __call__(self, pname):
-        if pname in self.overrides:
-            return self.overrides[pname]
-        if self.replace_underscores:
-            pname = pname.replace('_',' ')
-        if self.capitalize:
-            pname = pname[:1].upper() + pname[1:]
-        return pname
 
 
 class StoppableThread(threading.Thread):
