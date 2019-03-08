@@ -213,7 +213,7 @@ class Param(PaneBase):
                     pane = Param(parameterized, name=parameterized.name,
                                  _temporary=True, **kwargs)
                     if isinstance(self._expand_layout, Tabs):
-                        title = self.params(pname).label
+                        title = self.object.param[pname].label
                         pane = (title, pane)
                     self._expand_layout.append(pane)
 
