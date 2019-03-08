@@ -304,14 +304,12 @@ class Param(PaneBase):
         else:
             def link_widget(change):
                 if self._updating:
-                    self._updating = False
                     return
-                self._updating = True
                 try:
+                    self._updating = True
                     self.object.set_param(**{p_name: change.new})
-                except:
+                finally:
                     self._updating = False
-                    raise
 
             widget.param.watch(link_widget, 'value')
             def link(change):
@@ -328,6 +326,7 @@ class Param(PaneBase):
                             if precedence(k) is None or precedence(k) >= self.display_threshold:
                                 widgets += ws
                         self._widget_box.objects = widgets
+                    return
                 elif change.what == 'objects':
                     updates['options'] = p_obj.get_range()
                 elif change.what == 'bounds':
@@ -335,17 +334,15 @@ class Param(PaneBase):
                     updates['start'] = start
                     updates['end'] = end
                 elif self._updating:
-                    self._updating = False
                     return
                 else:
-                    self._updating = True
                     updates['value'] = change.new
 
                 try:
+                    self._updating = True
                     widget.set_param(**updates)
-                except:
+                finally:
                     self._updating = False
-                    raise
 
             # Set up links to parameterized object
             watchers.append(self.object.param.watch(link, p_name, 'constant'))
