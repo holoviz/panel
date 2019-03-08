@@ -345,6 +345,7 @@ class Param(PaneBase):
                     widget.set_param(**updates)
                 except:
                     self._updating = False
+                    raise
 
             # Set up links to parameterized object
             watchers.append(self.object.param.watch(link, p_name, 'constant'))
