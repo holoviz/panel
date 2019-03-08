@@ -538,7 +538,6 @@ class Reactive(Viewable):
         super(Reactive, self).__init__(**params)
         self._active = []
         self._events = {}
-        self._expecting = []
         self._callbacks = defaultdict(list)
 
     def link(self, target, callbacks=None, **links):
@@ -727,14 +726,8 @@ class Reactive(Viewable):
                     model.update(**update)
 
             if comm:
-                self._expecting += [m for _msg in msgs for m in _msg]
-                try:
-                    update_model()
-                    push(doc, comm)
-                except:
-                    raise
-                else:
-                    self._expecting = self._expecting[:-len(msg)]
+                update_model()
+                push(doc, comm)
             elif state.curdoc:
                 update_model()
             else:
@@ -755,11 +748,9 @@ class Reactive(Viewable):
                 model.js_on_change(p, customjs)
 
     def _comm_change(self, msg):
-        filtered = {k: v for k, v in msg.items() if k not in self._expecting}
-        self._expecting = [m for m in self._expecting if m not in msg]
-        if not filtered:
+        if not msg:
             return
-        self._events.update(filtered)
+        self._events.update(msg)
         self._active = list(self._events)
         self._change_event()
 
