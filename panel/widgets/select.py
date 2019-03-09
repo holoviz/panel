@@ -98,13 +98,17 @@ class MultiSelect(Select):
 
     def _process_param_change(self, msg):
         msg = super(Select, self)._process_param_change(msg)
-        mapping = {hashable(v): k for k, v in self.options.items()}
+        mapping = {hashable(v): k for k, v in self.items.items()}
         if 'value' in msg:
             msg['value'] = [hashable(mapping[v]) for v in msg['value']
                             if v in mapping]
 
         if 'options' in msg:
             msg['options'] = self.labels
+            hash_val = hashable(self.value)
+            if any(hashable(v) not in mapping for v in self.value):
+                self.value = [v for v in self.value if hashable(v) in mapping]
+
         return msg
 
     def _process_property_change(self, msg):
@@ -267,7 +271,7 @@ class CrossSelector(MultiSelect):
 
         mapping = {hashable(v): k for k, v in self.items.items()}
         selected = [mapping[hashable(v)] for v in kwargs.get('value', [])]
-        unselected = [k for k in self.options if k not in selected]
+        unselected = [k for k in self.labels if k not in selected]
 
         # Define whitelist and blacklist
         width = int((self.width-50)/2)
@@ -302,38 +306,40 @@ class CrossSelector(MultiSelect):
 
         self._composite = Row(blacklist, Column(VSpacer(), buttons, VSpacer()), whitelist)
 
-        self.param.watch(self._update_options, 'options')
-        self.param.watch(self._update_value, 'value')
-        self.link(self._lists[False], size='size')
-        self.link(self._lists[True], size='size')
-
         self._selected = {False: [], True: []}
         self._query = {False: '', True: ''}
+
+    @param.depends('size', watch=True)
+    def _update_size(self):
+        self._lists[False].size = self.size
+        self._lists[True].size = self.size
 
     @param.depends('disabled', watch=True)
     def _update_disabled(self):
         self._buttons[False].disabled = self.disabled
         self._buttons[True].disabled = self.disabled
 
-    def _update_value(self, event):
-        mapping = {hashable(v): k for k, v in self.options.items()}
-        selected = OrderedDict([(mapping[k], mapping[k]) for k in event.new])
-        unselected = OrderedDict([(k, k) for k in self.options if k not in selected])
+    @param.depends('value', watch=True)
+    def _update_value(self):
+        mapping = {hashable(v): k for k, v in self.items.items()}
+        selected = [mapping[hashable(v)] for v in self.value]
+        unselected = [k for k in self.labels if k not in selected]
         self._lists[True].options = selected
         self._lists[True].value = []
         self._lists[False].options = unselected
         self._lists[False].value = []
 
-    def _update_options(self, event):
+    @param.depends('options', watch=True)
+    def _update_options(self):
         """
         Updates the options of each of the sublists after the options
         for the whole widget are updated.
         """
         self._selected[False] = []
         self._selected[True] = []
-        self._lists[True].options = {}
+        self._lists[True].options = []
         self._lists[True].value = []
-        self._lists[False].options = OrderedDict([(k, k) for k in event.new])
+        self._lists[False].options = self.labels
         self._lists[False].value = []
 
     def _apply_filters(self):
@@ -350,8 +356,8 @@ class CrossSelector(MultiSelect):
 
     def _apply_query(self, selected):
         query = self._query[selected]
-        other = self._lists[not selected].options
-        options = OrderedDict([(k, k) for k in self.options if k not in other])
+        other = self._lists[not selected].labels
+        options = [k for k in self.labels if k not in other]
         if not query:
             self._lists[selected].options = options
             self._lists[selected].value = []
@@ -361,7 +367,7 @@ class CrossSelector(MultiSelect):
                 matches = list(filter(match.search, options))
             except:
                 matches = list(options)
-            self._lists[selected].options = options if options else {}
+            self._lists[selected].options = options if options else []
             self._lists[selected].value = [m for m in matches]
 
     def _update_selection(self, event):

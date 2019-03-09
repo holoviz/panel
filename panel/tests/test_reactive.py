@@ -53,17 +53,12 @@ def test_link_params_nb(document, comm):
     obj = ReactiveLink()
     div = Div()
 
-    # Link params and ensure callback is cached
-    obj._link_params(div, ['text'], document, root, comm)
-    assert root.ref['id'] in obj._callbacks
-
     # Set object parameter and assert bokeh property updates
     obj.text = 'B'
     assert div.text == 'B'
 
     # Assert cleanup deletes callback
     obj._cleanup(root, True)
-    assert obj._callbacks == {}
 
 
 def test_link_properties_nb(document, comm):

@@ -93,6 +93,9 @@ class DiscreteSlider(_SliderBase):
     formatter = param.String(default='%.3g')
 
     def __init__(self, **params):
+        self._processing = False
+        self._text = StaticText()
+        self._slider = IntSlider()
         super(DiscreteSlider, self).__init__(**params)
         if 'formatter' not in params and all(isinstance(v, (int, np.int_)) for v in self.values):
             self.formatter = '%d'
@@ -104,9 +107,6 @@ class DiscreteSlider(_SliderBase):
                              'is one of the declared options.'
                              % self.value)
 
-        self._processing = False
-        self._text = StaticText()
-        self._slider = IntSlider()
         self._composite = Column(self._text, self._slider)
         self._update_value()
         self._update_options()

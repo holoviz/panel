@@ -623,7 +623,7 @@ def test_tabs_setitem(document, comm):
     model = tabs._get_root(document, comm=comm)
 
     tab1, tab2 = model.tabs
-    assert p1._models[model.ref['id']] is tab1.child
+    assert p1._models[model.ref['id']][0] is tab1.child
     div3 = Div()
     tabs[0] = ('C', div3)
     tab1, tab2 = model.tabs

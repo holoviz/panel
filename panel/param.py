@@ -500,7 +500,7 @@ class ParamMethod(PaneBase):
             self._cleanup(root)
         model = self._inner_layout._get_model(doc, root, parent, comm)
         self._link_object_params(doc, root, parent, comm)
-        self._models[ref] = model
+        self._models[ref] = (model, parent)
         return model
 
     def _cleanup(self, root=None, final=False):

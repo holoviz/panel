@@ -616,7 +616,7 @@ class Reactive(Viewable):
             properties['min_height'] = None
         return properties
 
-    def _update_model(self, events, msg, root, model, doc, comm):
+    def _update_model(self, events, msg, root, model, doc, comm=None):
         if comm:
             for attr, new in msg.items():
                 setattr(model, attr, new)
@@ -661,8 +661,10 @@ class Reactive(Viewable):
                     cb = partial(self._update_model, events, msg, root, model, doc, comm)
                     doc.add_next_tick_callback(cb)
 
-        watcher = self.param.watch(param_change, self._synced_params())
-        self._callbacks['instance'].append(watcher)
+        params = self._synced_params()
+        if params:
+            watcher = self.param.watch(param_change, params)
+            self._callbacks['instance'].append(watcher)
 
     def _link_props(self, model, properties, doc, root, comm=None):
         if comm is None:

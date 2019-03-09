@@ -398,8 +398,6 @@ def test_expand_param_subobject(document, comm):
     # Collapse subpanel
     test_pane._widgets['a'][1].value = False
     assert len(model.children) == 3
-    assert subpanel._callbacks == {}
-
 
 
 def test_switch_param_subobject(document, comm):
@@ -613,14 +611,11 @@ def test_param_method_pane(document, comm):
     div = get_div(new_model)
     assert inner_pane is pane._pane
     assert div.text == '5'
-    assert row.ref['id'] in inner_pane._callbacks
     assert pane._models[row.ref['id']] is inner_row
 
     # Cleanup pane
     pane._cleanup(row)
-    assert pane._callbacks == {}
     assert pane._models == {}
-    assert inner_pane._callbacks == {}
     assert inner_pane._models == {}
 
 
@@ -643,7 +638,6 @@ def test_param_method_pane_subobject(document, comm):
     assert row.ref['id'] in pane._callbacks
     watchers = pane._callbacks[row.ref['id']]
     assert any(w.inst is subobject for w in watchers)
-    assert row.ref['id'] in inner_pane._callbacks
     assert pane._models[row.ref['id']] is inner_row
     assert isinstance(div, Div)
     assert div.text == '42'
@@ -651,7 +645,6 @@ def test_param_method_pane_subobject(document, comm):
     # Ensure that switching the subobject triggers update in watchers
     new_subobject = View(name='Nested', a=42)
     test.b = new_subobject
-    assert row.ref['id'] in pane._callbacks
     assert pane._models[row.ref['id']] is inner_row
     watchers = pane._callbacks[row.ref['id']]
     assert not any(w.inst is subobject for w in watchers)
@@ -678,7 +671,6 @@ def test_param_method_pane_mpl(document, comm):
     assert len(row.children) == 1
     inner_row = row.children[0]
     model = inner_row.children[0]
-    assert row.ref['id'] in inner_pane._callbacks
     assert pane._models[row.ref['id']] is inner_row
     div = get_div(model)
     text = div.text
@@ -695,9 +687,7 @@ def test_param_method_pane_mpl(document, comm):
 
     # Cleanup pane
     pane._cleanup(row)
-    assert pane._callbacks == {}
     assert pane._models == {}
-    assert inner_pane._callbacks == {}
     assert inner_pane._models == {}
 
 
@@ -714,7 +704,6 @@ def test_param_method_pane_changing_type(document, comm):
     assert len(row.children) == 1
     inner_row = row.children[0]
     model = inner_row.children[0]
-    assert row.ref['id'] in inner_pane._callbacks
     
     div = get_div(model)
     text = div.text
@@ -729,11 +718,9 @@ def test_param_method_pane_changing_type(document, comm):
     assert isinstance(div, Div)
     assert div.text != text
     assert len(new_pane._callbacks) == 1
-    assert row.ref['id'] in new_pane._callbacks
 
     # Cleanup pane
     new_pane._cleanup(row)
-    assert new_pane._callbacks == {}
     assert new_pane._models == {}
 
 

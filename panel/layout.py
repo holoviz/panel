@@ -35,7 +35,7 @@ class Panel(Reactive):
         objects = [panel(pane) for pane in objects]
         super(Panel, self).__init__(objects=objects, **params)
 
-    def _update_model(self, events, msg, root, model, doc, comm):
+    def _update_model(self, events, msg, root, model, doc, comm=None):
         if self._rename['objects'] in msg:
             old = events['objects'].old
             msg[self._rename['objects']] = self._get_objects(model, old, doc, root, comm)

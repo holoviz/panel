@@ -128,7 +128,7 @@ class PaneBase(Reactive):
                 if comm:
                     push(doc, comm)
             else:
-                cb = partial(self._update_model, model, doc, root, parent, comm)
+                cb = partial(self._update_object, model, doc, root, parent, comm)
                 doc.add_next_tick_callback(cb)
 
     #----------------------------------------------------------------

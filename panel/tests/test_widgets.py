@@ -554,20 +554,25 @@ def test_discrete_slider_options_dict(document, comm):
 
 
 def test_cross_select_constructor(document, comm):
-    cross_select = CrossSelector(options=['A', 'B', 'C', 1, 2, 3], value=['A', 1])
+    cross_select = CrossSelector(options=['A', 'B', 'C', 1, 2, 3], value=['A', 1], size=5)
 
-    assert cross_select._lists[True].options == ['A', 1]
-    assert cross_select._lists[False].options == ['B', 'C', 2, 3]
+    assert cross_select._lists[True].options == ['A', '1']
+    assert cross_select._lists[False].options == ['B', 'C', '2', '3']
 
     # Change selection
     cross_select.value = ['B', 2]
-    assert cross_select._lists[True].options == {'B': 'B', '2': '2'}
-    assert cross_select._lists[False].options == {'A': 'A', 'C': 'C', '1': '1', '3': '3'}
+    assert cross_select._lists[True].options == ['B', '2']
+    assert cross_select._lists[False].options == ['A', 'C', '1', '3']
 
     # Change options
     cross_select.options = {'D': 'D', '4': 4}
-    assert cross_select._lists[True].options == {}
-    assert cross_select._lists[False].options == {'D': 'D', '4': '4'}
+    assert cross_select._lists[True].options == []
+    assert cross_select._lists[False].options == ['D', '4']
+
+    # Change size
+    cross_select.size = 5 
+    assert cross_select._lists[True].size == 5
+    assert cross_select._lists[False].size == 5
 
     # Query unselected item
     cross_select._search[False].value = 'D'
@@ -575,17 +580,17 @@ def test_cross_select_constructor(document, comm):
 
     # Move queried item
     cross_select._buttons[True].param.trigger('clicks')
-    assert cross_select._lists[False].options == {'4': '4'}
+    assert cross_select._lists[False].options == ['4']
     assert cross_select._lists[False].value == []
-    assert cross_select._lists[True].options == {'D': 'D'}
+    assert cross_select._lists[True].options == ['D']
     assert cross_select._lists[False].value == []
 
     # Query selected item
     cross_select._search[True].value = 'D'
     cross_select._buttons[False].param.trigger('clicks')
-    assert cross_select._lists[False].options == {'D': 'D', '4': '4'}
+    assert cross_select._lists[False].options == ['D', '4']
     assert cross_select._lists[False].value == ['D']
-    assert cross_select._lists[True].options == {}
+    assert cross_select._lists[True].options == []
 
     # Clear query
     cross_select._search[False].value = ''
