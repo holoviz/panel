@@ -5,7 +5,9 @@ objects and their widgets and support for Links
 from __future__ import absolute_import, division, unicode_literals
 
 import sys
+
 from collections import OrderedDict, defaultdict
+from functools import partial
 
 import param
 
@@ -42,22 +44,27 @@ class HoloViews(PaneBase):
         self.widget_box = Column()
         self._update_widgets()
         self._plots = {}
+        self._panes = {}
 
     @param.depends('object', 'widgets', watch=True)
     def _update_widgets(self):
         if self.object is None:
-            widgets, values = []
+            widgets, values = [], []
         else:
             widgets, values = self.widgets_from_dimensions(self.object, self.widgets,
                                                            self.widget_type)
         self._values = values
 
         # Clean up anything models listening to the previous widgets
-        for _, cbs in self._callbacks.items():
-            for cb in list(cbs):
-                if cb.inst in self.widget_box.objects:
-                    cb.inst.param.unwatch(cb)
-                    cbs.remove(cb)
+        for cb in self._callbacks['instance']:
+            if cb.inst in self.widget_box.objects:
+                cb.inst.param.unwatch(cb)
+                self._callbacks['instance'].remove(cb)
+
+        # Add new widget callbacks
+        for widget in widgets:
+            watcher = widget.param.watch(self._widget_callback, 'value')
+            self._callbacks['instance'].append(watcher)
 
         self.widget_box.objects = widgets
         if widgets and not self.widget_box in self.layout.objects:
@@ -65,12 +72,9 @@ class HoloViews(PaneBase):
         elif not widgets and self.widget_box in self.layout.objects:
             self.layout.pop(self.widget_box)
 
-    @classmethod
-    def applies(cls, obj):
-        if 'holoviews' not in sys.modules:
-            return False
-        from holoviews.core.dimension import Dimensioned
-        return isinstance(obj, Dimensioned)
+    def _widget_callback(self):
+        for ref, (plot, pane) in self._plots.items():
+            self._update_plot(plot, pane)
 
     def _cleanup(self, root=None, final=False):
         """
@@ -78,9 +82,11 @@ class HoloViews(PaneBase):
         connected to existing plots.
         """
         if root is not None:
-            old_plot = self._plots.pop(root.ref['id'], None)
+            old_plot, old_pane = self._plots.pop(root.ref['id'], None)
             if old_plot:
                 old_plot.cleanup()
+            if old_pane:
+                old_pane._cleanup(root)
         super(HoloViews, self)._cleanup(root, final)
 
     def _render(self, doc, comm, root):
@@ -96,14 +102,28 @@ class HoloViews(PaneBase):
         kwargs = {'doc': doc, 'root': root} if backend == 'bokeh' else {}
         if comm:
             kwargs['comm'] = comm
-        plot = renderer.get_plot(self.object, **kwargs)
-        ref = root.ref['id']
-        if ref in self._plots:
-            old_plot = self._plots[ref]
-            old_plot.comm = None
-            old_plot.cleanup()
-        self._plots[root.ref['id']] = plot
-        return plot
+        return renderer.get_plot(self.object, **kwargs)
+
+    def _update_plot(self, plot, pane, comm=None):
+        from holoviews.core.util import cross_index
+        from holoviews.plotting.bokeh.plot import BokehPlot
+
+        widgets = self.widget_box.objects
+        if self.widget_type == 'scrubber':
+            key = cross_index([v for v in self._values.values()], widgets[0].value)
+        else:
+            key = tuple(w.value for w in widgets)
+
+        if isinstance(plot, BokehPlot):
+            if comm or state.curdoc:
+                plot.update(key)
+                if plot.comm:
+                    plot.push()
+            else:
+                plot.document.add_next_tick_callback(partial(plot.update, key))
+        else:
+            plot.update(key)
+            pane.object = plot.state
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         if root is None:
@@ -112,42 +132,23 @@ class HoloViews(PaneBase):
         plot = self._render(doc, comm, root)
         child_pane = Pane(plot.state, _temporary=True)
         model = child_pane._get_model(doc, root, parent, comm)
-        self._models[ref] = model
-        self._link_object(doc, root, parent, comm)
-        if self.widget_box.objects:
-            self._link_widgets(child_pane, root, comm)
+        if ref in self._plots:
+            old_plot, old_pane = self._plots[ref]
+            old_plot.cleanup()
+        self._plots[ref] = (plot, child_pane)
+        self._models[ref] = (model, parent)
         return model
 
-    def _link_widgets(self, pane, root, comm):
-        def update_plot(change):
-            from holoviews.core.util import cross_index
-            from holoviews.plotting.bokeh.plot import BokehPlot
+    #----------------------------------------------------------------
+    # Public API
+    #----------------------------------------------------------------
 
-            widgets = self.widget_box.objects
-            if self.widget_type == 'scrubber':
-                key = cross_index([v for v in self._values.values()], widgets[0].value)
-            else:
-                key = tuple(w.value for w in widgets)
-
-            plot = self._plots[root.ref['id']]
-            if isinstance(plot, BokehPlot):
-                if comm:
-                    plot.update(key)
-                    plot.push()
-                elif state.curdoc:
-                    plot.update(key)
-                else:
-                    def update_plot():
-                        plot.update(key)
-                    plot.document.add_next_tick_callback(update_plot)
-            else:
-                plot.update(key)
-                pane.object = plot.state
-
-        ref = root.ref['id']
-        for w in self.widget_box.objects:
-            watcher = w.param.watch(update_plot, 'value')
-            self._callbacks[ref].append(watcher)
+    @classmethod
+    def applies(cls, obj):
+        if 'holoviews' not in sys.modules:
+            return False
+        from holoviews.core.dimension import Dimensioned
+        return isinstance(obj, Dimensioned)
 
     @classmethod
     def widgets_from_dimensions(cls, object, widget_types={}, widgets_type='individual'):
@@ -224,14 +225,14 @@ def is_bokeh_element_plot(plot):
             and not isinstance(plot, GenericOverlayPlot))
 
 
-def generate_panel_bokeh_map(root_model, panel_views):
+def generate_panel_bokeh_map(root_model, panel_views): # ALERT REVIEW THIS BEFORE MERGE
     """
     mapping panel elements to its bokeh models
     """
     map_hve_bk = defaultdict(list)
     for pane in panel_views:
         if root_model.ref['id'] in pane._models: 
-            bk_plots = pane._plots[root_model.ref['id']].traverse(lambda x: x, [is_bokeh_element_plot])
+            bk_plots = pane._plots[root_model.ref['id']][0].traverse(lambda x: x, [is_bokeh_element_plot])
             for plot in bk_plots:
                 for hv_elem in plot.link_sources:
                     map_hve_bk[hv_elem].append(plot) 

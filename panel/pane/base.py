@@ -4,6 +4,8 @@ objects to a visual representation expressed as a bokeh model.
 """
 from __future__ import absolute_import, division, unicode_literals
 
+from functools import partial
+
 import param
 
 from ..io import state
@@ -57,39 +59,6 @@ class PaneBase(Reactive):
 
     __abstract = True
 
-    @classmethod
-    def applies(cls, obj):
-        """
-        Given the object return a boolean indicating whether the Pane
-        can render the object. If the priority of the pane is set to
-        None, this method may also be used to define a priority
-        depending on the object being rendered.
-        """
-        return None
-
-    @classmethod
-    def get_pane_type(cls, obj):
-        if isinstance(obj, Viewable):
-            return type(obj)
-        descendents = []
-        for p in param.concrete_descendents(PaneBase).values():
-            priority = p.applies(obj) if p.priority is None else p.priority
-            if isinstance(priority, bool) and priority:
-                raise ValueError('If a Pane declares no priority '
-                                 'the applies method should return a '
-                                 'priority value specific to the '
-                                 'object type or False, but the %s pane '
-                                 'declares no priority.' % p.__name__)
-            elif priority is None or priority is False:
-                continue
-            descendents.append((priority, p))
-        pane_types = reversed(sorted(descendents, key=lambda x: x[0]))
-        for _, pane_type in pane_types:
-            applies = pane_type.applies(obj)
-            if isinstance(applies, bool) and not applies: continue
-            return pane_type
-        raise TypeError('%s type could not be rendered.' % type(obj).__name__)
-
     def __init__(self, object, **params):
         applies = self.applies(object)
         if isinstance(applies, bool) and not applies:
@@ -99,6 +68,7 @@ class PaneBase(Reactive):
         super(PaneBase, self).__init__(object=object, **params)
         kwargs = {k: v for k, v in params.items() if k in Layoutable.param}
         self.layout = self.default_layout(self, **kwargs)
+        self.param.watch(self._update_pane, 'object')
 
     def __repr__(self, depth=0):
         cls = type(self).__name__
@@ -119,57 +89,94 @@ class PaneBase(Reactive):
         else:
             root = self.layout._get_model(doc, comm=comm)
         self._preprocess(root)
+        ref = root.ref['id']
+        state._views[ref] = (self, root, doc, comm)
         return root
-
-    def _cleanup(self, root=None, final=False):
-        super(PaneBase, self)._cleanup(root, final)
-        if final:
-            self.object = None
 
     def _update(self, model):
         """
-        If _updates=True this method is used to update an existing Bokeh
-        model instead of replacing the model entirely. The supplied model
-        should be updated with the current state.
+        If _updates=True this method is used to update an existing
+        Bokeh model instead of replacing the model entirely. The
+        supplied model should be updated with the current state.
         """
         raise NotImplementedError
 
-    def _link_object(self, doc, root, parent, comm=None):
-        """
-        Links the object parameter to the rendered Bokeh model, triggering
-        an update when the object changes.
-        """
-        ref = root.ref['id']
+    def _synced_params(self):
+        return [p for p in self.param if p not in ['object', 'name']]
 
-        def update_pane(change):
-            old_model = self._models[ref]
-
-            if self._updates:
-                # Pane supports model updates
-                def update_models():
-                    self._update(old_model)
+    def _update_object(self, old_model, doc, root, parent, comm):
+        if self._updates:
+            self._update(old_model)
+        else:
+            new_model = self._get_model(doc, root, parent, comm)
+            try:
+                index = parent.children.index(old_model)
+            except IndexError:
+                self.warning('%s pane model %s could not be replaced '
+                             'with new model %s, ensure that the '
+                             'parent is not modified at the same '
+                             'time the panel is being updated.' %
+                             (type(self).__name__, old_model, new_model))
             else:
-                # Otherwise replace the whole model
-                new_model = self._get_model(doc, root, parent, comm)
-                def update_models():
-                    try:
-                        index = parent.children.index(old_model)
-                    except IndexError:
-                        self.warning('%s pane model %s could not be replaced '
-                                     'with new model %s, ensure that the '
-                                     'parent is not modified at the same '
-                                     'time the panel is being updated.' %
-                                     (type(self).__name__, old_model, new_model))
-                    else:
-                        parent.children[index] = new_model
+                parent.children[index] = new_model
 
-            if comm:
-                update_models()
-                push(doc, comm)
-            elif state.curdoc:
-                update_models()
+    def _update_pane(self, event):
+        for ref, (model, parent) in self._models.items():
+            viewable, root, doc, comm = state._views[ref]
+            if comm or state.curdoc:
+                self._update_object(model, doc, root, parent, comm)
+                if comm:
+                    push(doc, comm)
             else:
-                doc.add_next_tick_callback(update_models)
+                cb = partial(self._update_model, model, doc, root, parent, comm)
+                doc.add_next_tick_callback(cb)
 
-        if ref not in self._callbacks:
-            self._callbacks[ref].append(self.param.watch(update_pane, 'object'))
+    #----------------------------------------------------------------
+    # Public API
+    #----------------------------------------------------------------
+
+    @classmethod
+    def applies(cls, obj):
+        """
+        Given the object return a boolean indicating whether the Pane
+        can render the object. If the priority of the pane is set to
+        None, this method may also be used to define a priority
+        depending on the object being rendered.
+        """
+        return None
+
+    @classmethod
+    def get_pane_type(cls, obj):
+        """
+        Returns the applicable Pane type given an object by resolving
+        the precedence of all types whose applies method declares that
+        the object is supported.
+
+        Parameters
+        ----------
+        obj (object): The object type to return a Pane for
+
+        Returns
+        -------
+        The applicable Pane type with the highest precedence.
+        """
+        if isinstance(obj, Viewable):
+            return type(obj)
+        descendents = []
+        for p in param.concrete_descendents(PaneBase).values():
+            priority = p.applies(obj) if p.priority is None else p.priority
+            if isinstance(priority, bool) and priority:
+                raise ValueError('If a Pane declares no priority '
+                                 'the applies method should return a '
+                                 'priority value specific to the '
+                                 'object type or False, but the %s pane '
+                                 'declares no priority.' % p.__name__)
+            elif priority is None or priority is False:
+                continue
+            descendents.append((priority, p))
+        pane_types = reversed(sorted(descendents, key=lambda x: x[0]))
+        for _, pane_type in pane_types:
+            applies = pane_type.applies(obj)
+            if isinstance(applies, bool) and not applies: continue
+            return pane_type
+        raise TypeError('%s type could not be rendered.' % type(obj).__name__)

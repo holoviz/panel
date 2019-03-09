@@ -82,7 +82,7 @@ def _cleanup_panel(msg_id):
     """
     if msg_id not in state._views:
         return
-    viewable, model = state._views.pop(msg_id)
+    viewable, model, _, _ = state._views.pop(msg_id)
     viewable._cleanup(model)
 
 

@@ -18,6 +18,7 @@ import param
 
 from param.parameterized import classlist
 
+from .io import state
 from .layout import Row, Panel, Tabs, Column
 from .links import Link
 from .pane.base import Pane, PaneBase
@@ -389,12 +390,14 @@ class Param(PaneBase):
 
     def _get_root(self, doc, comm=None):
         root = self.layout._get_root(doc, comm)
-        self._models[root.ref['id']] = root
+        ref = root.ref['id']
+        self._models[ref] = (root, None)
+        state._views[ref] = (self, root, doc, comm)
         return root
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         model = self.layout._get_model(doc, root, parent, comm)
-        self._models[root.ref['id']] = model
+        self._models[root.ref['id']] = (model, parent)
         return model
 
 

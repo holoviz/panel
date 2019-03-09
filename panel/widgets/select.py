@@ -23,44 +23,65 @@ from .button import _ButtonBase, Button
 from .input import TextInput
 
 
+class SelectBase(Widget):
 
-class Select(Widget):
+    options = param.ClassSelector(default=[], class_=(dict, list))
 
-    options = param.Dict(default={})
+    __abstract = True
+
+    @property
+    def labels(self):
+        return [as_unicode(o) for o in self.options]
+
+    @property
+    def values(self):
+        if isinstance(self.options, dict):
+            return list(self.options.values())
+        else:
+            return self.options
+
+    @property
+    def items(self):
+        return dict(zip(self.labels, self.values))
+
+
+class Select(SelectBase):
 
     value = param.Parameter(default=None)
 
     _widget_type = _BkSelect
 
     def __init__(self, **params):
-        options = params.get('options', None)
-        if isinstance(options, list):
-            params['options'] = OrderedDict([(as_unicode(o), o) for o in options])
         super(Select, self).__init__(**params)
-        options = list(self.options.values())
-        if self.value is None and None not in options and options:
-            self.value = options[0]
+        values = self.values
+        if self.value is None and None not in values and values:
+            self.value = values[0]
 
     def _process_param_change(self, msg):
         msg = super(Select, self)._process_param_change(msg)
-        mapping = {hashable(v): k for k, v in self.options.items()}
-        if msg.get('value') is not None:
+        mapping = {hashable(v): k for k, v in self.items.items()}
+        if 'value' in msg:
             hash_val = hashable(msg['value'])
             if hash_val in mapping:
                 msg['value'] = mapping[hash_val]
             else:
-                msg['value'] = list(self.options)[0]
+                self.value = self.values[0]
+
         if 'options' in msg:
-            msg['options'] = list(msg['options'])
+            msg['options'] = self.labels
+            hash_val = hashable(self.value)
+            if hash_val not in mapping:
+                self.value = self.values[0]
+
         return msg
 
     def _process_property_change(self, msg):
         msg = super(Select, self)._process_property_change(msg)
         if 'value' in msg:
             if msg['value'] is None:
-                msg['value'] = None
+                msg['value'] = self.values[0]
             else:
-                msg['value'] = self.options[msg['value']]
+                msg['value'] = self.items[msg['value']]
         msg.pop('options', None)
         return msg
 
@@ -81,14 +102,15 @@ class MultiSelect(Select):
         if 'value' in msg:
             msg['value'] = [hashable(mapping[v]) for v in msg['value']
                             if v in mapping]
+
         if 'options' in msg:
-            msg['options'] = list(msg['options'])
+            msg['options'] = self.labels
         return msg
 
     def _process_property_change(self, msg):
         msg = super(Select, self)._process_property_change(msg)
         if 'value' in msg:
-            msg['value'] = [self.options[v] for v in msg['value']]
+            msg['value'] = [self.items[v] for v in msg['value']]
         msg.pop('options', None)
         return msg
 
@@ -243,7 +265,7 @@ class CrossSelector(MultiSelect):
         super(CrossSelector, self).__init__(**kwargs)
         # Compute selected and unselected values
 
-        mapping = {hashable(v): k for k, v in self.options.items()}
+        mapping = {hashable(v): k for k, v in self.items.items()}
         selected = [mapping[hashable(v)] for v in kwargs.get('value', [])]
         unselected = [k for k in self.options if k not in selected]
 
@@ -278,7 +300,7 @@ class CrossSelector(MultiSelect):
         whitelist = Column(self._search[True], self._lists[True])
         buttons = Column(self._buttons[True], self._buttons[False], width=50)
 
-        self._layout = Row(blacklist, Column(VSpacer(), buttons, VSpacer()), whitelist)
+        self._composite = Row(blacklist, Column(VSpacer(), buttons, VSpacer()), whitelist)
 
         self.param.watch(self._update_options, 'options')
         self.param.watch(self._update_value, 'value')
@@ -368,4 +390,4 @@ class CrossSelector(MultiSelect):
         self._apply_filters()
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        return self._layout._get_model(doc, root, parent, comm)
+        return self._composite._get_model(doc, root, parent, comm)

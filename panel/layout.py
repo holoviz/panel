@@ -10,8 +10,7 @@ from bokeh.models import (Column as BkColumn, Row as BkRow,
                           Spacer as BkSpacer)
 from bokeh.models.widgets import Tabs as BkTabs, Panel as BkPanel
 
-from .io import state
-from .util import param_name, param_reprs, push
+from .util import param_name, param_reprs
 from .viewable import Reactive
 
 
@@ -36,60 +35,21 @@ class Panel(Reactive):
         objects = [panel(pane) for pane in objects]
         super(Panel, self).__init__(objects=objects, **params)
 
-    def _link_params(self, model, params, doc, root, comm=None):
-        def set_value(*events):
-            msg = {event.name: event.new for event in events}
-            events = {event.name: event for event in events}
-
-            def update_model():
-                if 'objects' in msg:
-                    old = events['objects'].old
-                    msg['objects'] = self._get_objects(model, old, doc, root, comm)
-                    for pane in old:
-                        if pane not in self.objects:
-                            pane._cleanup(root)
-                    self._preprocess(root) #preprocess links between new elements
-                processed = self._process_param_change(msg)
-                model.update(**processed)
-
-            if comm:
-                update_model()
-                push(doc, comm)
-            elif state.curdoc:
-                update_model()
-            else:
-                doc.add_next_tick_callback(update_model)
-
-        ref = root.ref['id']
-        if ref not in self._callbacks:
-            watcher = self.param.watch(set_value, params)
-            self._callbacks[ref].append(watcher)
+    def _update_model(self, events, msg, root, model, doc, comm):
+        if self._rename['objects'] in msg:
+            old = events['objects'].old
+            msg[self._rename['objects']] = self._get_objects(model, old, doc, root, comm)
+            for pane in old:
+                if pane not in self.objects:
+                    pane._cleanup(root)
+        model.update(**msg)
+        self._preprocess(root) #preprocess links between new elements
 
     def _cleanup(self, root=None, final=False):
         super(Panel, self)._cleanup(root, final)
         if root is not None:
             for p in self.objects:
                 p._cleanup(root, final)
-
-    def select(self, selector=None):
-        """
-        Iterates over the Viewable and any potential children in the
-        applying the Selector.
-
-        Arguments
-        ---------
-        selector: type or callable or None
-            The selector allows selecting a subset of Viewables by
-            declaring a type or callable function to filter by.
-
-        Returns
-        -------
-        viewables: list(Viewable)
-        """
-        objects = super(Panel, self).select(selector)
-        for obj in self.objects:
-            objects += obj.select(selector)
-        return objects
 
     def _get_objects(self, model, old_objects, doc, root, comm=None):
         """
@@ -102,7 +62,7 @@ class Panel(Reactive):
             pane = panel(pane)
             self.objects[i] = pane
             if pane in old_objects:
-                child = pane._models[root.ref['id']]
+                child, _ = pane._models[root.ref['id']]
             else:
                 child = pane._get_model(doc, root, model, comm)
             new_models.append(child)
@@ -115,9 +75,7 @@ class Panel(Reactive):
         objects = self._get_objects(model, [], doc, root, comm)
         props = dict(self._init_properties(), objects=objects)
         model.update(**self._process_param_change(props))
-        params = [p for p in self.param if p != 'name']
-        self._models[root.ref['id']] = model
-        self._link_params(model, params, doc, root, comm)
+        self._models[root.ref['id']] = (model, parent)
         self._link_props(model, self._linked_props, doc, root, comm)
         return model
 
@@ -189,6 +147,30 @@ class Panel(Reactive):
             cls=cls, params=', '.join(params),
             objs=('%s' % spacer).join(objs), spacer=spacer
         )
+
+    #----------------------------------------------------------------
+    # Public API
+    #----------------------------------------------------------------
+
+    def select(self, selector=None):
+        """
+        Iterates over the Viewable and any potential children in the
+        applying the Selector.
+
+        Arguments
+        ---------
+        selector: type or callable or None
+            The selector allows selecting a subset of Viewables by
+            declaring a type or callable function to filter by.
+
+        Returns
+        -------
+        viewables: list(Viewable)
+        """
+        objects = super(Panel, self).select(selector)
+        for obj in self.objects:
+            objects += obj.select(selector)
+        return objects
 
     def append(self, pane):
         from .pane import panel
@@ -318,7 +300,7 @@ class Tabs(Panel):
             pane = panel(pane, name=name)
             self.objects[i] = pane
             if pane in old_objects:
-                child = pane._models[root.ref['id']]
+                child, _ = pane._models[root.ref['id']]
             else:
                 child = pane._get_model(doc, root, model, comm)
             child = BkPanel(title=name, name=pane.name, child=child)
@@ -360,6 +342,10 @@ class Tabs(Panel):
         for i, pane in zip(range(start, end), panes):
             new_objects[i], self._names[i] = self._to_object_and_name(pane)
         self.objects = new_objects
+
+    #----------------------------------------------------------------
+    # Public API
+    #----------------------------------------------------------------
 
     def append(self, pane):
         new_object, new_name = self._to_object_and_name(pane)
@@ -415,11 +401,11 @@ class Spacer(Reactive):
     _bokeh_model = BkSpacer
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        model = self._bokeh_model(**self._process_param_change(self._init_properties()))
+        properties = self._process_param_change(self._init_properties())
+        model = self._bokeh_model(**properties)
         if root is None:
             root = model
-        self._models[root.ref['id']] = model
-        self._link_params(model, ['width', 'height'], doc, root, comm)
+        self._models[root.ref['id']] = (model, parent)
         return model
 
 

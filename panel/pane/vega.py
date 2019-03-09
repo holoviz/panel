@@ -88,8 +88,7 @@ class Vega(PaneBase):
         model = VegaPlot(data=json, data_sources=sources)
         if root is None:
             root = model
-        self._models[root.ref['id']] = model
-        self._link_object(doc, root, parent, comm)
+        self._models[root.ref['id']] = (model, parent)
         return model
 
     def _update(self, model):

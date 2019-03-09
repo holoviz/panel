@@ -10,14 +10,14 @@ from six import string_types
 import param
 import numpy as np
 
-from bokeh.models import Column as _BkColumn, Div as _BkDiv
 from bokeh.models.widgets import (
     DateSlider as _BkDateSlider, DateRangeSlider as _BkDateRangeSlider,
     RangeSlider as _BkRangeSlider, Slider as _BkSlider)
 
-from ..util import push, value_as_datetime
+from ..util import value_as_datetime
 from .base import Widget
-
+from ..layout import Column
+from .input import StaticText
 
 
 class _SliderBase(Widget):
@@ -104,6 +104,48 @@ class DiscreteSlider(_SliderBase):
                              'is one of the declared options.'
                              % self.value)
 
+        self._processing = False
+        self._text = StaticText()
+        self._slider = IntSlider()
+        self._composite = Column(self._text, self._slider)
+        self._update_value()
+        self._update_options()
+        self._slider.param.watch(self._sync_value, 'value')
+
+    @param.depends('value', watch=True)
+    def _update_value(self):
+        labels, values = self.labels, self.values
+        if self.value not in values:
+            self.value = values[0]
+            return
+        index = self.values.index(self.value)
+        self._text.value = labels[index]
+        if self._processing:
+            return
+        try:
+            self._processing = True
+            self._slider.value = index
+        finally:
+            self._processing = False
+
+    @param.depends('options', watch=True)
+    def _update_options(self):
+        slider_msg = {'start': 0, 'end': len(self.options) - 1}
+        self._slider.set_param(**slider_msg)
+        values = self.values
+        if self.value not in values:
+            self.value = values[0]
+
+    def _sync_value(self, event):
+        print(event)
+        if self._processing:
+            return
+        try:
+            self._processing = True
+            self.value = self.values[event.new]
+        finally:
+            self._processing = False
+
     @property
     def labels(self):
         title = ('<b>%s:</b> ' % self.name if self.name else '')
@@ -117,79 +159,7 @@ class DiscreteSlider(_SliderBase):
         return list(self.options.values()) if isinstance(self.options, dict) else self.options
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        model = _BkColumn()
-        if root is None:
-            root = model
-        msg = self._process_param_change(self._init_properties())
-        div = _BkDiv(text=msg['text'])
-        slider = _BkSlider(start=msg['start'], end=msg['end'], value=msg['value'],
-                           title=None, step=1, show_value=False, tooltips=None)
-
-        # Link parameters and bokeh model
-        self._link_params(model, slider, div, ['value', 'options'], doc, root, comm)
-        self._link_props(slider, ['value'], doc, root, comm)
-
-        model.children = [div, slider]
-        self._models[root.ref['id']] = model
-
-        return model
-
-    def _link_params(self, model, slider, div, params, doc, root, comm=None):
-        from .. import state
-
-        def param_change(*events):
-            combined_msg = {}
-            for event in events:
-                msg = self._process_param_change({event.name: event.new})
-                if msg:
-                    combined_msg.update(msg)
-
-            if not combined_msg:
-                return
-
-            def update_model():
-                slider.update(**{k: v for k, v in combined_msg.items()
-                                 if k in slider.properties()})
-                div.update(**{k: v for k, v in combined_msg.items()
-                              if k in div.properties()})
-
-            if comm:
-                update_model()
-                push(doc, comm)
-            elif state.curdoc:
-                update_model()
-            else:
-                doc.add_next_tick_callback(update_model)
-
-        ref = root.ref['id']
-        for p in params:
-            self._callbacks[ref].append(self.param.watch(param_change, p))
-
-    def _process_param_change(self, msg):
-        labels, values = self.labels, self.values
-        if 'name' in msg:
-            msg['text'] = labels[values.index(self.value)]
-        if 'options' in msg:
-            msg['start'] = 0
-            msg['end'] = len(msg['options']) - 1
-            msg['labels'] = labels
-            if self.value not in values:
-                self.value = values[0]
-        if 'value' in msg:
-            value = msg['value']
-            if value not in values:
-                self.value = values[0]
-                msg.pop('value')
-                return msg
-            label = labels[values.index(value)]
-            msg['value'] = values.index(value)
-            msg['text'] = label
-        return msg
-
-    def _process_property_change(self, msg):
-        if 'value' in msg:
-            msg['value'] = self.values[msg['value']]
-        return msg
+        return self._composite._get_model(doc, root, parent, comm)
 
 
 class RangeSlider(_SliderBase):

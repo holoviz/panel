@@ -43,7 +43,7 @@ def test_plotly_pane_single_trace(document, comm):
     model = pane._get_root(document, comm=comm)
     assert isinstance(model, PlotlyPlot)
     assert model.ref['id'] in pane._callbacks
-    assert pane._models[model.ref['id']] is model
+    assert pane._models[model.ref['id']][0] is model
     assert len(model.data['data']) == 1
     assert model.data['data'][0]['type'] == 'scatter'
     assert model.data['data'][0]['x'] == [0, 1]
@@ -63,7 +63,7 @@ def test_plotly_pane_single_trace(document, comm):
     assert len(model.data_sources) == 1
     assert model.data_sources[0].data == {}
     assert model.ref['id'] in pane._callbacks
-    assert pane._models[model.ref['id']] is model
+    assert pane._models[model.ref['id']][0] is model
 
     # Cleanup
     pane._cleanup(model)

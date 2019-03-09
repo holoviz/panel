@@ -190,7 +190,7 @@ def test_interact_replaces_model(document, comm):
     assert div.text == 'Test'
     assert len(interact_pane._callbacks['instance']) == 1
     assert column.ref['id'] in pane._callbacks
-    assert pane._models[column.ref['id']] is div
+    assert pane._models[column.ref['id']][0] is div
     
     widget.value = True
     assert column.ref['id'] not in pane._callbacks
@@ -202,7 +202,7 @@ def test_interact_replaces_model(document, comm):
     assert new_div.text == '<p>ABC</p>'
     assert len(interact_pane._callbacks['instance']) == 1
     assert column.ref['id'] in new_pane._callbacks
-    assert new_pane._models[column.ref['id']] is new_div
+    assert new_pane._models[column.ref['id']][0] is new_div
 
     interact_pane._cleanup(column)
     assert len(interact_pane._callbacks) == 1

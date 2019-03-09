@@ -220,7 +220,7 @@ def test_checkbox(document, comm):
 
 def test_select_list_constructor():
     select = Select(options=['A', 1], value=1)
-    assert select.options == {'A': 'A', '1': 1}
+    assert select.options == ['A', 1]
 
 
 def test_select(document, comm):
@@ -488,14 +488,13 @@ def test_discrete_slider(document, comm):
     assert label.text == '<b>DiscreteSlider:</b> 1'
 
     widget.value = 2
-    discrete_slider._comm_change({'value': 2})
+    discrete_slider._slider._comm_change({'value': 2})
     assert discrete_slider.value == 10
     assert label.text == '<b>DiscreteSlider:</b> 10'
 
     discrete_slider.value = 100
     assert widget.value == 3
     assert label.text == '<b>DiscreteSlider:</b> 100'
-
 
 
 def test_discrete_date_slider(document, comm):
@@ -518,14 +517,13 @@ def test_discrete_date_slider(document, comm):
     assert label.text == '<b>DiscreteSlider:</b> 2016-01-02'
 
     widget.value = 2
-    discrete_slider._comm_change({'value': 2})
+    discrete_slider._slider._comm_change({'value': 2})
     assert discrete_slider.value == dates['2016-01-03']
     assert label.text == '<b>DiscreteSlider:</b> 2016-01-03'
 
     discrete_slider.value = dates['2016-01-01']
     assert widget.value == 0
     assert label.text == '<b>DiscreteSlider:</b> 2016-01-01'
-
 
 
 def test_discrete_slider_options_dict(document, comm):
@@ -546,7 +544,7 @@ def test_discrete_slider_options_dict(document, comm):
     assert label.text == '<b>DiscreteSlider:</b> 1'
 
     widget.value = 2
-    discrete_slider._comm_change({'value': 2})
+    discrete_slider._slider._comm_change({'value': 2})
     assert discrete_slider.value == 10
     assert label.text == '<b>DiscreteSlider:</b> 10'
 
@@ -555,12 +553,11 @@ def test_discrete_slider_options_dict(document, comm):
     assert label.text == '<b>DiscreteSlider:</b> 100'
 
 
-
 def test_cross_select_constructor(document, comm):
     cross_select = CrossSelector(options=['A', 'B', 'C', 1, 2, 3], value=['A', 1])
 
-    assert cross_select._lists[True].options == {'A': 'A', '1': '1'}
-    assert cross_select._lists[False].options == {'B': 'B', 'C': 'C', '2': '2', '3': '3'}
+    assert cross_select._lists[True].options == ['A', 1]
+    assert cross_select._lists[False].options == ['B', 'C', 2, 3]
 
     # Change selection
     cross_select.value = ['B', 2]

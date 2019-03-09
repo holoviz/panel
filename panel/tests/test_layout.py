@@ -158,12 +158,10 @@ def test_layout_setitem(panel, document, comm):
 
     model = layout._get_root(document, comm=comm)
 
-    assert model.ref['id'] in p1._callbacks
-    assert p1._models[model.ref['id']] is model.children[0]
+    assert p1._models[model.ref['id']][0] is model.children[0]
     div3 = Div()
     layout[0] = div3
     assert model.children == [div3, div2]
-    assert p1._callbacks == {}
     assert p1._models == {}
 
 
@@ -188,15 +186,12 @@ def test_layout_setitem_replace_all(panel, document, comm):
 
     model = layout._get_root(document, comm=comm)
 
-    assert model.ref['id'] in p1._callbacks
-    assert p1._models[model.ref['id']] is model.children[0]
+    assert p1._models[model.ref['id']][0] is model.children[0]
     div3 = Div()
     div4 = Div()
     layout[:] = [div3, div4]
     assert model.children == [div3, div4]
-    assert p1._callbacks == {}
     assert p1._models == {}
-    assert p2._callbacks == {}
     assert p2._models == {}
 
 
@@ -222,15 +217,12 @@ def test_layout_setitem_replace_slice(panel, document, comm):
 
     model = layout._get_root(document, comm=comm)
 
-    assert model.ref['id'] in p1._callbacks
-    assert p1._models[model.ref['id']] is model.children[0]
+    assert p1._models[model.ref['id']][0] is model.children[0]
     div3 = Div()
     div4 = Div()
     layout[1:] = [div3, div4]
     assert model.children == [div1, div3, div4]
-    assert p2._callbacks == {}
     assert p2._models == {}
-    assert p3._callbacks == {}
     assert p3._models == {}
 
 
@@ -269,11 +261,9 @@ def test_layout_pop(panel, document, comm):
 
     model = layout._get_root(document, comm=comm)
 
-    assert model.ref['id'] in p1._callbacks
-    assert p1._models[model.ref['id']] is model.children[0]
+    assert p1._models[model.ref['id']][0] is model.children[0]
     layout.pop(0)
     assert model.children == [div2]
-    assert p1._callbacks == {}
     assert p1._models == {}
 
 
@@ -286,11 +276,9 @@ def test_layout_remove(panel, document, comm):
 
     model = layout._get_root(document, comm=comm)
 
-    assert model.ref['id'] in p1._callbacks
-    assert p1._models[model.ref['id']] is model.children[0]
+    assert p1._models[model.ref['id']][0] is model.children[0]
     layout.remove(p1)
     assert model.children == [div2]
-    assert p1._callbacks == {}
     assert p1._models == {}
 
 
@@ -303,11 +291,9 @@ def test_layout_clear(panel, document, comm):
 
     model = layout._get_root(document, comm=comm)
 
-    assert model.ref['id'] in p1._callbacks
-    assert p1._models[model.ref['id']] is model.children[0]
+    assert p1._models[model.ref['id']][0] is model.children[0]
     layout.clear()
     assert model.children == []
-    assert p1._callbacks == p2._callbacks == {}
     assert p1._models == p2._models == {}
 
 
@@ -323,6 +309,7 @@ def test_tabs_basic_constructor(document, comm):
 
     assert 'plain' in tab1.child.text
     assert 'text' in tab2.child.text
+
 
 def test_tabs_constructor(document, comm):
     div1 = Div()
@@ -636,7 +623,6 @@ def test_tabs_setitem(document, comm):
     model = tabs._get_root(document, comm=comm)
 
     tab1, tab2 = model.tabs
-    assert model.ref['id'] in p1._callbacks
     assert p1._models[model.ref['id']] is tab1.child
     div3 = Div()
     tabs[0] = ('C', div3)
@@ -644,7 +630,6 @@ def test_tabs_setitem(document, comm):
     assert tab1.child is div3
     assert tab1.title == 'C'
     assert tab2.child is div2
-    assert p1._callbacks == {}
     assert p1._models == {}
 
 
@@ -667,8 +652,7 @@ def test_tabs_setitem_replace_all(document, comm):
 
     model = layout._get_root(document, comm=comm)
 
-    assert model.ref['id'] in p1._callbacks
-    assert p1._models[model.ref['id']] is model.tabs[0].child
+    assert p1._models[model.ref['id']][0] is model.tabs[0].child
     div3 = Div()
     div4 = Div()
     layout[:] = [('B', div3), ('C', div4)]
@@ -677,9 +661,7 @@ def test_tabs_setitem_replace_all(document, comm):
     assert tab1.title == 'B'
     assert tab2.child is div4
     assert tab2.title == 'C'
-    assert p1._callbacks == {}
     assert p1._models == {}
-    assert p2._callbacks == {}
     assert p2._models == {}
 
 
@@ -703,8 +685,7 @@ def test_tabs_setitem_replace_slice(document, comm):
 
     model = layout._get_root(document, comm=comm)
 
-    assert model.ref['id'] in p1._callbacks
-    assert p1._models[model.ref['id']] is model.tabs[0].child
+    assert p1._models[model.ref['id']][0] is model.tabs[0].child
     div3 = Div()
     div4 = Div()
     layout[1:] = [('D', div3), ('E', div4)]
@@ -715,9 +696,7 @@ def test_tabs_setitem_replace_slice(document, comm):
     assert tab2.title == 'D'
     assert tab3.child is div4
     assert tab3.title == 'E'
-    assert p2._callbacks == {}
     assert p2._models == {}
-    assert p3._callbacks == {}
     assert p3._models == {}
 
 
@@ -754,13 +733,11 @@ def test_tabs_pop(document, comm):
     model = tabs._get_root(document, comm=comm)
 
     tab1 = model.tabs[0]
-    assert model.ref['id'] in p1._callbacks
-    assert p1._models[model.ref['id']] is tab1.child
+    assert p1._models[model.ref['id']][0] is tab1.child
     tabs.pop(0)
     assert len(model.tabs) == 1
     tab1 = model.tabs[0]
     assert tab1.child is div2
-    assert p1._callbacks == {}
     assert p1._models == {}
 
 
@@ -773,13 +750,11 @@ def test_tabs_remove(document, comm):
     model = tabs._get_root(document, comm=comm)
 
     tab1 = model.tabs[0]
-    assert model.ref['id'] in p1._callbacks
-    assert p1._models[model.ref['id']] is tab1.child
+    assert p1._models[model.ref['id']][0] is tab1.child
     tabs.remove(p1)
     assert len(model.tabs) == 1
     tab1 = model.tabs[0]
     assert tab1.child is div2
-    assert p1._callbacks == {}
     assert p1._models == {}
 
 
@@ -794,7 +769,6 @@ def test_tabs_clear(document, comm):
     tabs.clear()
     assert tabs._names == []
     assert len(model.tabs) == 0
-    assert p1._callbacks == p2._callbacks == {}
     assert p1._models == p2._models == {}
 
 
