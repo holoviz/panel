@@ -40,7 +40,6 @@ def test_holoviews_pane_mpl_renderer(document, comm):
     row = pane._get_root(document, comm=comm)
     assert isinstance(row, BkRow)
     assert len(row.children) == 1
-    assert len(pane._callbacks) == 1
     model = row.children[0]
     assert pane._models[row.ref['id']][0] is model
     div = get_div(model)
@@ -68,7 +67,6 @@ def test_holoviews_pane_bokeh_renderer(document, comm):
     row = pane._get_root(document, comm=comm)
     assert isinstance(row, BkRow)
     assert len(row.children) == 1
-    assert len(pane._callbacks) == 1
     model = row.children[0]
     assert isinstance(model, Figure)
     assert pane._models[row.ref['id']][0] is model
@@ -84,7 +82,6 @@ def test_holoviews_pane_bokeh_renderer(document, comm):
     renderers = [r for r in model.renderers if isinstance(r, GlyphRenderer)]
     assert len(renderers) == 1
     assert isinstance(renderers[0].glyph, Scatter)
-    assert len(pane._callbacks) == 1
     assert pane._models[row.ref['id']][0] is model
 
     # Cleanup

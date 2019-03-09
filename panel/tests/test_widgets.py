@@ -51,14 +51,11 @@ def test_widget_triggers_events(document, comm):
     with block_comm():
         text.value = '123'
 
-    assert len(document._held_events) == 3
-    event_found = False
-    for event in document._held_events:
-        if event.attr == 'value':
-            assert event.model is widget
-            assert event.new == '123'
-            event_found = True
-    assert event_found
+    assert len(document._held_events) == 1
+    event = document._held_events[0]
+    assert event.attr == 'value'
+    assert event.model is widget
+    assert event.new == '123'
 
 
 def test_static_text(document, comm):

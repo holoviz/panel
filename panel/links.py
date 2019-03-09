@@ -180,7 +180,7 @@ class LinkCallback(param.Parameterized):
                     model_spec = None
                 model = obj.handles[handle_spec]
         elif isinstance(obj, Viewable):
-            model = obj._models[root_model.ref['id']]
+            model, _ = obj._models[root_model.ref['id']]
         elif isinstance(obj, BkModel):
             model = obj
         if model_spec is not None:

@@ -36,6 +36,7 @@ class Panel(Reactive):
         super(Panel, self).__init__(objects=objects, **params)
 
     def _update_model(self, events, msg, root, model, doc, comm=None):
+        print("MODEL", events)
         if self._rename['objects'] in msg:
             old = events['objects'].old
             msg[self._rename['objects']] = self._get_objects(model, old, doc, root, comm)
@@ -252,6 +253,9 @@ class Tabs(Panel):
         objects, self._names = self._to_objects_and_names(items)
         super(Tabs, self).__init__(*objects, **params)
         self.param.watch(self._update_names, 'objects')
+        # ALERT: Ensure that name update happens first, should be
+        #        replaced by watch precedence support in param
+        self._param_watchers['objects']['value'].reverse()
 
     def _to_object_and_name(self, item):
         from .pane import panel

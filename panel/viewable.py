@@ -581,41 +581,6 @@ class Reactive(Viewable):
                 except:
                     pass
 
-    def _init_properties(self):
-        return {k: v for k, v in self.param.get_param_values()
-                if v is not None}
-
-    def _process_property_change(self, msg):
-        """
-        Transform bokeh model property changes into parameter updates.
-        Should be overridden to provide appropriate mapping between
-        parameter value and bokeh model change. By default uses the
-        _rename class level attribute to map between parameter and
-        property names.
-        """
-        inverted = {v: k for k, v in self._rename.items()}
-        return {inverted.get(k, k): v for k, v in msg.items()}
-
-    def _process_param_change(self, msg):
-        """
-        Transform parameter changes into bokeh model property updates.
-        Should be overridden to provide appropriate mapping between
-        parameter value and bokeh model change. By default uses the
-        _rename class level attribute to map between parameter and
-        property names.
-        """
-        properties = {self._rename.get(k, k): v for k, v in msg.items()
-                      if self._rename.get(k, False) is not None}
-        if 'width' in properties and self.sizing_mode is None:
-            properties['min_width'] = properties['width']
-        elif self.min_width is None:
-            properties['min_width'] = None
-        if 'height' in properties and self.sizing_mode is None:
-            properties['min_height'] = properties['height']
-        elif self.min_height is None:
-            properties['min_height'] = None
-        return properties
-
     def _update_model(self, events, msg, root, model, doc, comm=None):
         if comm:
             for attr, new in msg.items():
@@ -636,7 +601,6 @@ class Reactive(Viewable):
         return list(self.param)
 
     def _link_params(self):
-
         def param_change(*events):
             msgs = []
             for event in events:
@@ -720,6 +684,41 @@ class Reactive(Viewable):
         js_callback = CustomJS(code='\n'.join([fetch_data,
                                                self_callback]))
         return js_callback
+
+    #----------------------------------------------------------------
+    # Developer API
+    #----------------------------------------------------------------
+
+    def _init_properties(self):
+        return {k: v for k, v in self.param.get_param_values()
+                if v is not None}
+
+    def _process_property_change(self, msg):
+        """
+        Transform bokeh model property changes into parameter updates.
+        Should be overridden to provide appropriate mapping between
+        parameter value and bokeh model change. By default uses the
+        _rename class level attribute to map between parameter and
+        property names.
+        """
+        inverted = {v: k for k, v in self._rename.items()}
+        return {inverted.get(k, k): v for k, v in msg.items()}
+
+    def _process_param_change(self, msg):
+        """
+        Transform parameter changes into bokeh model property updates.
+        Should be overridden to provide appropriate mapping between
+        parameter value and bokeh model change. By default uses the
+        _rename class level attribute to map between parameter and
+        property names.
+        """
+        properties = {self._rename.get(k, k): v for k, v in msg.items()
+                      if self._rename.get(k, False) is not None}
+        if 'width' in properties and self.sizing_mode is None:
+            properties['min_width'] = properties['width']
+        if 'height' in properties and self.sizing_mode is None:
+            properties['min_height'] = properties['height']
+        return properties
 
     #----------------------------------------------------------------
     # Public API

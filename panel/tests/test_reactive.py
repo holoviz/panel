@@ -2,7 +2,7 @@ from functools import partial
 
 import param
 
-from bokeh.models import Div, Row as BkRow
+from bokeh.models import Div
 from panel.viewable import Reactive
 
 
@@ -40,25 +40,7 @@ def test_param_rename():
     assert params == {'a': 1}
 
     properties = obj._process_param_change({'a': 1})
-    assert properties == {'b': 1, 'min_width': None, 'min_height': None}
-
-
-def test_link_params_nb(document, comm):
-
-    class ReactiveLink(Reactive):
-
-        text = param.String(default='A')
-
-    root = BkRow()
-    obj = ReactiveLink()
-    div = Div()
-
-    # Set object parameter and assert bokeh property updates
-    obj.text = 'B'
-    assert div.text == 'B'
-
-    # Assert cleanup deletes callback
-    obj._cleanup(root, True)
+    assert properties == {'b': 1}
 
 
 def test_link_properties_nb(document, comm):
