@@ -269,6 +269,22 @@ def test_select_mutables(document, comm):
     assert widget.value == 'A'
 
 
+def test_select_change_options(document, comm):
+    select = Select(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
+                         value='A', name='Select')
+
+    def set_options(event):
+        if event.new == 1:
+            select.options = OrderedDict([('D', 2), ('E', 'a')])
+    select.param.watch(set_options, 'value')
+
+    model = select._get_root(document, comm=comm)
+
+    select.value = 1
+    assert model.value == 'D'
+    assert model.options == ['D', 'E']
+
+
 def test_multi_select(document, comm):
     select = MultiSelect(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
                          value=[object, 1], name='Select')
@@ -290,6 +306,22 @@ def test_multi_select(document, comm):
 
     select.value = [object, 'A']
     assert widget.value == ['C', 'A']
+
+
+def test_multi_select_change_options(document, comm):
+    select = MultiSelect(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
+                         value=[object, 1], name='Select')
+
+    def set_options(event):
+        if event.new == [1]:
+            select.options = OrderedDict([('D', 2), ('E', 'a')])
+    select.param.watch(set_options, 'value')
+
+    model = select._get_root(document, comm=comm)
+
+    select.value = [1]
+    assert model.value == []
+    assert model.options == ['D', 'E']
 
 
 def test_toggle_group_error_init(document, comm):
