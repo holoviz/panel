@@ -4,8 +4,6 @@ from panel.interact import interactive
 from panel.pane import HTML
 from panel import widgets
 
-from .test_layout import get_div
-
 
 def test_interact_title():
     def test(a):
@@ -158,7 +156,6 @@ def test_interact_replaces_panel(document, comm):
         return a if a else BkDiv(text='Test')
 
     interact_pane = interactive(test, a=False)
-    pane = interact_pane._pane
     widget = interact_pane._widgets['a']
     assert isinstance(widget, widgets.Checkbox)
     assert widget.value == False

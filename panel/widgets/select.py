@@ -105,7 +105,6 @@ class MultiSelect(Select):
 
         if 'options' in msg:
             msg['options'] = self.labels
-            hash_val = hashable(self.value)
             if any(hashable(v) not in mapping for v in self.value):
                 self.value = [v for v in self.value if hashable(v) in mapping]
 
