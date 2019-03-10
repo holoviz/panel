@@ -107,5 +107,5 @@ def test_plotly_pane_numpy_to_cds_traces(document, comm):
     assert np.array_equal(cds2.data['y'], np.array([4, 5]))
 
     # Cleanup
-    pane._cleanup(model, True)
+    pane._cleanup(model)
     assert pane._models == {}

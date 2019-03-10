@@ -241,7 +241,7 @@ class Viewable(Layoutable):
         state._views[ref] = (self, root, doc, comm)
         return root
 
-    def _cleanup(self, model=None, final=False):
+    def _cleanup(self, model):
         """
         Clean up method which is called when a Viewable is destroyed.
 
@@ -249,8 +249,6 @@ class Viewable(Layoutable):
         ----------
         model: bokeh.model.Model
           Bokeh model for the view being cleaned up
-        final: boolean
-          Whether the Viewable should be destroyed entirely
         """
 
     def _preprocess(self, root):
@@ -272,7 +270,7 @@ class Viewable(Layoutable):
         Server lifecycle hook triggered when session is destroyed.
         """
         doc = session_context._document
-        self._cleanup(self._documents[doc], final=self._temporary)
+        self._cleanup(self._documents[doc])
         del self._documents[doc]
 
     def _modify_doc(self, server_id, doc):
@@ -546,16 +544,8 @@ class Reactive(Viewable):
         self._callbacks = defaultdict(list)
         self._link_params()
 
-    def _cleanup(self, root=None, final=False):
-        super(Reactive, self)._cleanup(root, final)
-        if final:
-            watchers = self._callbacks.pop('instance', [])
-            for watcher in watchers:
-                obj = watcher.cls if watcher.inst is None else watcher.inst
-                obj.param.unwatch(watcher)
-
-        if root is None:
-            return
+    def _cleanup(self, root):
+        super(Reactive, self)._cleanup(root)
 
         callbacks = self._callbacks.pop(root.ref['id'], {})
         for watcher in callbacks:

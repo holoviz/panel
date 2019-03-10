@@ -76,18 +76,17 @@ class HoloViews(PaneBase):
         for ref, (plot, pane) in self._plots.items():
             self._update_plot(plot, pane)
 
-    def _cleanup(self, root=None, final=False):
+    def _cleanup(self, root):
         """
         Traverses HoloViews object to find and clean up any streams
         connected to existing plots.
         """
-        if root is not None:
-            old_plot, old_pane = self._plots.pop(root.ref['id'], None)
-            if old_plot:
-                old_plot.cleanup()
-            if old_pane:
-                old_pane._cleanup(root)
-        super(HoloViews, self)._cleanup(root, final)
+        old_plot, old_pane = self._plots.pop(root.ref['id'], None)
+        if old_plot:
+            old_plot.cleanup()
+        if old_pane:
+            old_pane._cleanup(root)
+        super(HoloViews, self)._cleanup(root)
 
     def _render(self, doc, comm, root):
         from holoviews import Store, renderer

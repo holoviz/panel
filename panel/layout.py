@@ -36,7 +36,6 @@ class Panel(Reactive):
         super(Panel, self).__init__(objects=objects, **params)
 
     def _update_model(self, events, msg, root, model, doc, comm=None):
-        print("MODEL", events)
         if self._rename['objects'] in msg:
             old = events['objects'].old
             msg[self._rename['objects']] = self._get_objects(model, old, doc, root, comm)
@@ -46,11 +45,10 @@ class Panel(Reactive):
         model.update(**msg)
         self._preprocess(root) #preprocess links between new elements
 
-    def _cleanup(self, root=None, final=False):
-        super(Panel, self)._cleanup(root, final)
-        if root is not None:
-            for p in self.objects:
-                p._cleanup(root, final)
+    def _cleanup(self, root):
+        super(Panel, self)._cleanup(root)
+        for p in self.objects:
+            p._cleanup(root)
 
     def _get_objects(self, model, old_objects, doc, root, comm=None):
         """

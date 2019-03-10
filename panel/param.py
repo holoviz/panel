@@ -206,8 +206,7 @@ class Param(PaneBase):
                 if existing:
                     old_panel = existing[0]
                     if not change.new:
-                        old_panel._cleanup(final=old_panel._temporary)
-                        self._expand_layout.pop(old_panel)
+                        self._expand_layout.remove(old_panel)
                 elif change.new:
                     kwargs = {k: v for k, v in self.get_param_values()
                               if k not in ['name', 'object', 'parameters']}
@@ -357,9 +356,9 @@ class Param(PaneBase):
         else:
             return [widget]
 
-    def _cleanup(self, root=None, final=False):
-        self.layout._cleanup(root, final)
-        super(Param, self)._cleanup(root, final)
+    def _cleanup(self, root):
+        self.layout._cleanup(root)
+        super(Param, self)._cleanup(root)
 
     def _get_widgets(self):
         """Return name,widget boxes for all parameters (i.e., a property sheet)"""
@@ -468,12 +467,7 @@ class ParamMethod(PaneBase):
                     pvals = dict(self._pane.get_param_values())
                     new_params = {k: v for k, v in new_object.get_param_values()
                                   if k != 'name' and v is not pvals[k]}
-                    try:
-                        self._pane.set_param(**new_params)
-                    except:
-                        raise
-                    finally:
-                        new_object._cleanup(final=new_object._temporary)
+                    self._pane.set_param(**new_params)
                 else:
                     self._pane.object = new_object
                 return
@@ -496,16 +490,16 @@ class ParamMethod(PaneBase):
             return self._get_root(doc, comm)
 
         ref = root.ref['id']
-        if ref in self._callbacks:
+        if ref in self._models:
             self._cleanup(root)
         model = self._inner_layout._get_model(doc, root, parent, comm)
         self._link_object_params(doc, root, parent, comm)
         self._models[ref] = (model, parent)
         return model
 
-    def _cleanup(self, root=None, final=False):
-        self._inner_layout._cleanup(root, final)
-        super(ParamMethod, self)._cleanup(root, final)
+    def _cleanup(self, root=None):
+        self._inner_layout._cleanup(root)
+        super(ParamMethod, self)._cleanup(root)
 
 
 class JSONInit(param.Parameterized):

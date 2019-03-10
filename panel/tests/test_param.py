@@ -552,7 +552,6 @@ def test_expand_param_subobject_tabs(document, comm):
     # Collapse subpanel
     test_pane._widgets['abc'][1].value = False
     assert len(model.tabs) == 1
-    assert subpanel._callbacks == {}
 
 
 class View(param.Parameterized):

@@ -203,12 +203,7 @@ class interactive(PaneBase):
                     if isinstance(new_object, (PaneBase, Panel)):
                         new_params = {k: v for k, v in new_object.get_param_values()
                                       if k != 'name'}
-                        try:
-                            self._pane.set_param(**new_params)
-                        except:
-                            raise
-                        finally:
-                            new_object._cleanup(final=new_object._temporary)
+                        self._pane.set_param(**new_params)
                     else:
                         self._pane.object = new_object
                     return
@@ -221,9 +216,9 @@ class interactive(PaneBase):
             watcher = widget.param.watch(update_pane, pname)
             self._callbacks['instance'].append(watcher)
 
-    def _cleanup(self, root=None, final=False):
-        self._inner_layout._cleanup(root, final)
-        super(interactive, self)._cleanup(root, final)
+    def _cleanup(self, root):
+        self._inner_layout._cleanup(root)
+        super(interactive, self)._cleanup(root)
 
     def widgets_from_abbreviations(self, seq):
         """Given a sequence of (name, abbrev, default) tuples, return a sequence of Widgets."""
