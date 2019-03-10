@@ -100,14 +100,13 @@ class MultiSelect(Select):
         msg = super(Select, self)._process_param_change(msg)
         mapping = {hashable(v): k for k, v in self.items.items()}
         if 'value' in msg:
-            msg['value'] = [hashable(mapping[v]) for v in msg['value']
-                            if v in mapping]
+            msg['value'] = [mapping[hashable(v)] for v in msg['value']
+                            if hashable(v) in mapping]
 
         if 'options' in msg:
             msg['options'] = self.labels
             if any(hashable(v) not in mapping for v in self.value):
                 self.value = [v for v in self.value if hashable(v) in mapping]
-
         return msg
 
     def _process_property_change(self, msg):
@@ -135,18 +134,30 @@ class _RadioGroupBase(Select):
 
     def _process_param_change(self, msg):
         msg = super(Select, self)._process_param_change(msg)
-        mapping = OrderedDict([(hashable(v), k) for k, v in self.options.items()])
-        if msg.get('value') is not None:
-            msg['active'] = list(mapping).index(msg.pop('value'))
+        values = [hashable(v) for v in self.items.values()]
+        if 'value' in msg:
+            value = hashable(msg.pop('value'))
+            if value in values:
+                msg['active'] = values.index(value)
+            else:
+                msg['active'] = None
+
         if 'options' in msg:
             msg['labels'] = list(msg.pop('options'))
+            value = hashable(self.value)
+            if value not in values:
+                self.value = None
         msg.pop('title', None)
         return msg
 
     def _process_property_change(self, msg):
         msg = super(Select, self)._process_property_change(msg)
         if 'active' in msg:
-            msg['value'] = list(self.options.values())[msg.pop('active')]
+            index = msg.pop('active')
+            if index is None:
+                msg['value'] = None
+            else:
+                msg['value'] = list(self.values)[index]
         return msg
 
 
@@ -172,18 +183,22 @@ class _CheckGroupBase(Select):
 
     def _process_param_change(self, msg):
         msg = super(Select, self)._process_param_change(msg)
-        mapping = OrderedDict([(hashable(v), k) for k, v in self.options.items()])
-        if msg.get('value') is not None:
-            msg['active'] = [list(mapping).index(v) for v in msg.pop('value')]
+        values = [hashable(v) for v in self.items.values()]
+        if 'value' in msg:
+            msg['active'] = [values.index(hashable(v)) for v in msg.pop('value')
+                             if hashable(v) in values]
         if 'options' in msg:
             msg['labels'] = list(msg.pop('options'))
+            if any(hashable(v) not in values for v in self.value):
+                self.value = [v for v in self.value if hashable(v) in values]
         msg.pop('title', None)
         return msg
 
     def _process_property_change(self, msg):
         msg = super(Select, self)._process_property_change(msg)
         if 'active' in msg:
-            msg['value'] = [list(self.options.values())[a] for a in msg.pop('active')]
+            values = self.values
+            msg['value'] = [values[a] for a in msg.pop('active')]
         return msg
 
 
