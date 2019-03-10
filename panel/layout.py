@@ -65,6 +65,9 @@ class Panel(Reactive):
             else:
                 child = pane._get_model(doc, root, model, comm)
             new_models.append(child)
+        for obj in old_objects:
+            if obj not in self.objects:
+                obj._cleanup(root)
         return new_models
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
@@ -307,6 +310,9 @@ class Tabs(Panel):
                 child = pane._get_model(doc, root, model, comm)
             child = BkPanel(title=name, name=pane.name, child=child)
             new_models.append(child)
+        for obj in old_objects:
+            if obj not in self.objects:
+                obj._cleanup(root)
         return new_models
 
     def __setitem__(self, index, panes):
