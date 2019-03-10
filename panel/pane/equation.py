@@ -80,6 +80,8 @@ class LaTeX(PNG):
     dpi = param.Number(default=72, bounds=(1, 1900), doc="""
         Resolution per inch for the rendered equation.""")
 
+    _rerender_params = ['object', 'size', 'dpi']
+
     @classmethod
     def applies(cls, obj):
         if is_sympy_expr(obj) or hasattr(obj, '_repr_latex_'):

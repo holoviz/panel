@@ -32,6 +32,63 @@ def get_divs(children):
     return [get_div(c) for c in children]
 
 
+@pytest.mark.parametrize('layout', [Column, Row, Tabs, Spacer])
+def test_layout_properties(layout, document, comm):
+
+    l = layout()
+
+    model = l._get_root(document, comm)
+
+    l.background = '#ffffff'
+    assert model.background == '#ffffff'
+
+    l.css_classes = ['custom_class']
+    assert model.css_classes == ['custom_class']
+
+    l.width = 500
+    assert model.width == 500
+
+    l.height = 450
+    assert model.height == 450
+
+    l.min_height = 300
+    assert model.min_height == 300
+
+    l.min_width = 250
+    assert model.min_width == 250
+
+    l.max_height = 600
+    assert model.max_height == 600
+
+    l.max_width = 550
+    assert model.max_width == 550
+
+    l.margin = 10
+    assert model.margin == (10, 10, 10, 10)
+
+    l.sizing_mode = 'stretch_width'
+    assert model.sizing_mode == 'stretch_width'
+
+    l.width_policy = 'max'
+    assert model.width_policy == 'max'
+
+    l.height_policy = 'min'
+    assert model.height_policy == 'min'
+
+
+@pytest.mark.parametrize('layout', [Column, Row, Tabs, Spacer])
+def test_layout_model_cache_cleanup(layout, document, comm):
+    l = layout()
+
+    model = l._get_root(document, comm)
+
+    assert model.ref['id'] in l._models
+    assert l._models[model.ref['id']] == (model, None)
+
+    l._cleanup(model)
+    assert l._models == {}
+
+
 @pytest.mark.parametrize('panel', [Column, Row])
 def test_layout_constructor(panel):
     div1 = Div()

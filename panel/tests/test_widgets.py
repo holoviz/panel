@@ -67,7 +67,6 @@ def test_widget_layout_properties(widget, document, comm):
 
 @pytest.mark.parametrize('widget', all_widgets)
 def test_widget_disabled_properties(widget, document, comm):
-
     w = widget(disabled=True)
 
     model = w._get_root(document, comm)
@@ -79,7 +78,7 @@ def test_widget_disabled_properties(widget, document, comm):
 
 @pytest.mark.parametrize('widget', all_widgets)
 def test_widget_model_cache_cleanup(widget, document, comm):
-    w = widget(disabled=True)
+    w = widget()
 
     model = w._get_root(document, comm)
 

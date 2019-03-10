@@ -26,6 +26,8 @@ class Plotly(PaneBase):
 
     _updates = True
 
+    _rerender_params = ['object', 'plotly_layout']
+
     priority = 0.8
 
     def __init__(self, object, layout=None, **params):

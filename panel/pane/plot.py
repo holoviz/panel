@@ -56,6 +56,8 @@ class Matplotlib(PNG):
     dpi = param.Integer(default=144, bounds=(1, None), doc="""
         Scales the dpi of the matplotlib figure.""")
 
+    _rerender_params = ['object', 'dpi']
+
     @classmethod
     def applies(cls, obj):
         if 'matplotlib' not in sys.modules:
@@ -90,6 +92,8 @@ class RGGPlot(PNG):
     width = param.Integer(default=400)
 
     dpi = param.Integer(default=144, bounds=(1, None))
+
+    _rerender_params = ['object', 'dpi']
 
     @classmethod
     def applies(cls, obj):

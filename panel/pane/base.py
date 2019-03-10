@@ -57,6 +57,9 @@ class PaneBase(Reactive):
     # Whether the Pane layout can be safely unpacked
     _unpack = True
 
+    # Object rerender properties
+    _rerender_params = ['object']
+
     __abstract = True
 
     def __init__(self, object, **params):
@@ -102,7 +105,8 @@ class PaneBase(Reactive):
         raise NotImplementedError
 
     def _synced_params(self):
-        return [p for p in self.param if p not in ['object', 'name']]
+        ignored_params = ['name', 'default_layout']+self._rerender_params
+        return [p for p in self.param if p not in ignored_params]
 
     def _update_object(self, old_model, doc, root, parent, comm):
         if self._updates:

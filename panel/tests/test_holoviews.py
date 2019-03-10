@@ -6,7 +6,8 @@ from collections import OrderedDict
 import pytest
 
 from bokeh.models import (Row as BkRow, Column as BkColumn, GlyphRenderer,
-                          Scatter, Line, GridBox)
+                          Scatter, Line, GridBox, Select as BkSelect,
+                          Slider as BkSlider)
 from bokeh.plotting import Figure
 
 from panel.layout import Column, Row
@@ -162,6 +163,23 @@ def test_holoviews_with_widgets(document, comm):
 
 
 @hv_available
+def test_holoviews_updates_widgets(document, comm):
+    hmap = hv.HoloMap({(i, chr(65+i)): hv.Curve([i]) for i in range(3)}, kdims=['X', 'Y'])
+
+    hv_pane = HoloViews(hmap)
+    layout = hv_pane._get_root(document, comm)
+
+    hv_pane.widgets = {'X': Select}
+    assert isinstance(hv_pane.widget_box[0], Select)
+    assert isinstance(layout.children[1].children[0], BkSelect)
+
+    hv_pane.widgets = {'X': DiscreteSlider}
+    assert isinstance(hv_pane.widget_box[0], DiscreteSlider)
+    assert isinstance(layout.children[1].children[0], BkColumn)
+    assert isinstance(layout.children[1].children[0].children[1], BkSlider)
+
+
+@hv_available
 def test_holoviews_with_widgets_not_shown(document, comm):
     hmap = hv.HoloMap({(i, chr(65+i)): hv.Curve([i]) for i in range(3)}, kdims=['X', 'Y'])
 
@@ -181,7 +199,7 @@ def test_holoviews_with_widgets_not_shown(document, comm):
     assert hv_pane.widget_box.objects[0].name == 'A'
     assert hv_pane.widget_box.objects[1].name == 'B'
 
-    
+
 @hv_available
 def test_holoviews_widgets_from_holomap():
     hmap = hv.HoloMap({(i, chr(65+i)): hv.Curve([i]) for i in range(3)}, kdims=['X', 'Y'])

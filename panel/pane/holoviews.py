@@ -39,6 +39,8 @@ class HoloViews(PaneBase):
 
     priority = 0.8
 
+    _rerender_params = ['object', 'widgets', 'backend', 'widget_type']
+
     def __init__(self, object, **params):
         super(HoloViews, self).__init__(object, **params)
         self.widget_box = Column()
@@ -72,7 +74,7 @@ class HoloViews(PaneBase):
         elif not widgets and self.widget_box in self.layout.objects:
             self.layout.pop(self.widget_box)
 
-    def _widget_callback(self):
+    def _widget_callback(self, event):
         for ref, (plot, pane) in self._plots.items():
             self._update_plot(plot, pane)
 
@@ -224,7 +226,7 @@ def is_bokeh_element_plot(plot):
             and not isinstance(plot, GenericOverlayPlot))
 
 
-def generate_panel_bokeh_map(root_model, panel_views): # ALERT REVIEW THIS BEFORE MERGE
+def generate_panel_bokeh_map(root_model, panel_views):
     """
     mapping panel elements to its bokeh models
     """

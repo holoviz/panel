@@ -36,7 +36,7 @@ class DivPaneBase(PaneBase):
     _rename = {'object': 'text'}
 
     def _get_properties(self):
-        return {p : getattr(self,p) for p in list(Layoutable.param) + ['style']
+        return {p : getattr(self, p) for p in list(Layoutable.param) + ['style']
                 if getattr(self, p) is not None}
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
