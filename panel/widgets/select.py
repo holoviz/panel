@@ -18,7 +18,8 @@ from bokeh.models.widgets import (
 
 from ..layout import Column, Row, VSpacer
 from ..util import as_unicode, hashable
-from .base import Widget
+from ..viewable import Layoutable
+from .base import Widget, CompositeWidget
 from .button import _ButtonBase, Button
 from .input import TextInput
 
@@ -64,13 +65,13 @@ class Select(SelectBase):
             hash_val = hashable(msg['value'])
             if hash_val in mapping:
                 msg['value'] = mapping[hash_val]
-            else:
+            elif mapping:
                 self.value = self.values[0]
 
         if 'options' in msg:
             msg['options'] = self.labels
             hash_val = hashable(self.value)
-            if hash_val not in mapping:
+            if mapping and hash_val not in mapping:
                 self.value = self.values[0]
 
         return msg
@@ -78,7 +79,9 @@ class Select(SelectBase):
     def _process_property_change(self, msg):
         msg = super(Select, self)._process_property_change(msg)
         if 'value' in msg:
-            if msg['value'] is None:
+            if not self.values:
+                pass
+            elif msg['value'] is None:
                 msg['value'] = self.values[0]
             else:
                 msg['value'] = self.items[msg['value']]
@@ -132,6 +135,8 @@ class AutocompleteInput(Widget):
 
 class _RadioGroupBase(Select):
 
+    __abstract = True
+
     def _process_param_change(self, msg):
         msg = super(Select, self)._process_param_change(msg)
         values = [hashable(v) for v in self.items.values()]
@@ -180,6 +185,8 @@ class RadioBoxGroup(_RadioGroupBase):
 class _CheckGroupBase(Select):
 
     value = param.List(default=[])
+
+    __abstract = True
 
     def _process_param_change(self, msg):
         msg = super(Select, self)._process_param_change(msg)
@@ -260,7 +267,7 @@ class ToggleGroup(Select):
                 return RadioBoxGroup(**params)
 
 
-class CrossSelector(MultiSelect):
+class CrossSelector(CompositeWidget, MultiSelect):
     """
     A composite widget which allows selecting from a list of items
     by moving them between two lists. Supports filtering values by
@@ -288,12 +295,14 @@ class CrossSelector(MultiSelect):
         unselected = [k for k in self.labels if k not in selected]
 
         # Define whitelist and blacklist
+        layout = dict(sizing_mode=self.sizing_mode, width_policy=self.width_policy,
+                      height_policy=self.height_policy, background=self.background)
         width = int((self.width-50)/2)
         self._lists = {
             False: MultiSelect(options=unselected, size=self.size,
-                               height=self.height-50, width=width),
+                               height=self.height-50, width=width, **layout),
             True: MultiSelect(options=selected, size=self.size,
-                              height=self.height-50, width=width)
+                              height=self.height-50, width=width, **layout)
         }
         self._lists[False].param.watch(self._update_selection, 'value')
         self._lists[True].param.watch(self._update_selection, 'value')
@@ -318,11 +327,32 @@ class CrossSelector(MultiSelect):
         whitelist = Column(self._search[True], self._lists[True])
         buttons = Column(self._buttons[True], self._buttons[False], width=50)
 
-        self._composite = Row(blacklist, Column(VSpacer(), buttons, VSpacer()), whitelist)
+        self._composite = Row(blacklist, Column(VSpacer(), buttons, VSpacer()), whitelist,
+                              css_classes=self.css_classes, margin=self.margin, **layout)
 
         self._selected = {False: [], True: []}
         self._query = {False: '', True: ''}
+        self.param.watch(self._update_layout_params, list(Layoutable.param))
 
+
+    def _update_layout_params(self, *events):
+        for event in events:
+            if event.name in ['css_classes']:
+                setattr(self._composite, event.name, event.new)
+            elif event.name in ['sizing_mode', 'width_policy', 'height_policy',
+                                'background', 'margin']:
+                setattr(self._composite, event.name, event.new)
+                setattr(self._lists[True], event.name, event.new)
+                setattr(self._lists[False], event.name, event.new)
+            elif event.name == 'height':
+                setattr(self._lists[True], event.name, event.new-50)
+                setattr(self._lists[False], event.name, event.new-50)
+            elif event.name == 'width':
+                width = int((event.new-50)/2)
+                setattr(self._lists[True], event.name, width)
+                setattr(self._lists[False], event.name, width)
+
+        
     @param.depends('size', watch=True)
     def _update_size(self):
         self._lists[False].size = self.size

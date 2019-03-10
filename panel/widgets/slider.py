@@ -15,7 +15,7 @@ from bokeh.models.widgets import (
     RangeSlider as _BkRangeSlider, Slider as _BkSlider)
 
 from ..util import value_as_datetime
-from .base import Widget
+from .base import Widget, CompositeWidget
 from ..layout import Column
 from .input import StaticText
 
@@ -49,6 +49,8 @@ class _SliderBase(Widget):
         Whether the slider handle should display tooltips""")
 
     _widget_type = _BkSlider
+
+    __abstract = True
 
 
 class FloatSlider(_SliderBase):
@@ -84,13 +86,15 @@ class DateSlider(_SliderBase):
     _widget_type = _BkDateSlider
 
 
-class DiscreteSlider(_SliderBase):
+class DiscreteSlider(CompositeWidget, _SliderBase):
 
     options = param.ClassSelector(default=[], class_=(dict, list))
 
     value = param.Parameter()
 
     formatter = param.String(default='%.3g')
+
+    _rename = {'formatter': None}
 
     def __init__(self, **params):
         self._processing = False
@@ -99,7 +103,7 @@ class DiscreteSlider(_SliderBase):
         super(DiscreteSlider, self).__init__(**params)
         if 'formatter' not in params and all(isinstance(v, (int, np.int_)) for v in self.values):
             self.formatter = '%d'
-        if self.value is None and None not in self.values:
+        if self.value is None and None not in self.values and self.options:
             self.value = self.values[0]
         elif self.value not in self.values:
             raise ValueError('Value %s not a valid option, '
@@ -137,7 +141,6 @@ class DiscreteSlider(_SliderBase):
             self.value = values[0]
 
     def _sync_value(self, event):
-        print(event)
         if self._processing:
             return
         try:
@@ -145,6 +148,9 @@ class DiscreteSlider(_SliderBase):
             self.value = self.values[event.new]
         finally:
             self._processing = False
+
+    def _get_model(self, doc, root=None, parent=None, comm=None):
+        return self._composite._get_model(doc, root, parent, comm)
 
     @property
     def labels(self):
@@ -158,8 +164,6 @@ class DiscreteSlider(_SliderBase):
     def values(self):
         return list(self.options.values()) if isinstance(self.options, dict) else self.options
 
-    def _get_model(self, doc, root=None, parent=None, comm=None):
-        return self._composite._get_model(doc, root, parent, comm)
 
 
 class RangeSlider(_SliderBase):

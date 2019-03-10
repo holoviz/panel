@@ -3,6 +3,8 @@ import pytest
 from collections import OrderedDict
 from datetime import datetime
 
+import param
+
 from bokeh.layouts import Column
 from bokeh.models import Div as BkDiv, Slider as BkSlider
 from panel.models.widgets import Player as BkPlayer, FileInput as BkFileInput
@@ -11,8 +13,81 @@ from panel.widgets import (
     TextInput, StaticText, FloatSlider, IntSlider, RangeSlider,
     LiteralInput, Checkbox, Select, MultiSelect, Button, Toggle,
     DatePicker, DateRangeSlider, DiscreteSlider, DatetimeInput,
-    CrossSelector, DiscretePlayer, ToggleGroup, FileInput
+    CrossSelector, DiscretePlayer, ToggleGroup, FileInput, Widget,
+    CompositeWidget
 )
+
+all_widgets = [w for w in param.concrete_descendents(Widget).values()
+               if not w.__name__.startswith('_') and not issubclass(w, CompositeWidget)]
+
+
+@pytest.mark.parametrize('widget', all_widgets)
+def test_widget_layout_properties(widget, document, comm):
+
+    w = widget()
+
+    model = w._get_root(document, comm)
+
+    w.background = '#ffffff'
+    assert model.background == '#ffffff'
+
+    w.css_classes = ['custom_class']
+    assert model.css_classes == ['custom_class']
+
+    w.width = 500
+    assert model.width == 500
+
+    w.height = 450
+    assert model.height == 450
+
+    w.min_height = 300
+    assert model.min_height == 300
+
+    w.min_width = 250
+    assert model.min_width == 250
+
+    w.max_height = 600
+    assert model.max_height == 600
+
+    w.max_width = 550
+    assert model.max_width == 550
+
+    w.margin = 10
+    assert model.margin == (10, 10, 10, 10)
+
+    w.sizing_mode = 'stretch_width'
+    assert model.sizing_mode == 'stretch_width'
+
+    w.width_policy = 'max'
+    assert model.width_policy == 'max'
+
+    w.height_policy = 'min'
+    assert model.height_policy == 'min'
+
+
+@pytest.mark.parametrize('widget', all_widgets)
+def test_widget_disabled_properties(widget, document, comm):
+
+    w = widget(disabled=True)
+
+    model = w._get_root(document, comm)
+
+    assert model.disabled == True
+    model.disabled = False
+    assert model.disabled == False
+
+
+@pytest.mark.parametrize('widget', all_widgets)
+def test_widget_model_cache_cleanup(widget, document, comm):
+    w = widget(disabled=True)
+
+    model = w._get_root(document, comm)
+
+    assert model.ref['id'] in w._models
+    assert w._models[model.ref['id']] == (model, None)
+
+    w._cleanup(model)
+    assert w._models == {}
 
 
 def test_text_input(document, comm):
@@ -336,7 +411,7 @@ def test_toggle_group_error_init(document, comm):
         ToggleGroup(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
                     value=[1, object], name='RadioButtonGroup',
                     widget_type='buttons')
-        
+
     with pytest.raises(ValueError):
         ToggleGroup(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
                     value=[1, object], name='RadioButtonGroup',
@@ -344,51 +419,51 @@ def test_toggle_group_error_init(document, comm):
 
 
 def test_toggle_group_check(document, comm):
-    
+
     for widget_type in ToggleGroup._widgets_type:
         select = ToggleGroup(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
                                value=[1, object], name='CheckButtonGroup',
                                widget_type=widget_type, behavior='check')
-        
+
         widget = select._get_root(document, comm=comm)
-    
+
         assert isinstance(widget, select._widget_type)
         assert widget.active == [1, 2]
         assert widget.labels == ['A', '1', 'C']
-    
+
         widget.active = [2]
         select._comm_change({'active': [2]})
         assert select.value == [object]
-    
+
         widget.active = [0, 2]
         select._comm_change({'active': [0, 2]})
         assert select.value == ['A', object]
-    
+
         select.value = [object, 'A']
         assert widget.active == [2, 0]
-    
+
         widget.active = []
         select._comm_change({'active': []})
         assert select.value == []
 
 
 def test_toggle_group_radio(document, comm):
-    
+
     for widget_type in ToggleGroup._widgets_type:
         select = ToggleGroup(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
                                value=1, name='RadioButtonGroup',
                                widget_type=widget_type, behavior='radio')
-        
+
         widget = select._get_root(document, comm=comm)
 
         assert isinstance(widget, select._widget_type)
         assert widget.active == 1
         assert widget.labels == ['A', '1', 'C']
-    
+
         widget.active = 2
         select._comm_change({'active': 2})
         assert select.value == object
-        
+
         select.value = 'A'
         assert widget.active == 0
 
@@ -567,7 +642,7 @@ def test_cross_select_constructor(document, comm):
     assert cross_select._lists[False].options == ['D', '4']
 
     # Change size
-    cross_select.size = 5 
+    cross_select.size = 5
     assert cross_select._lists[True].size == 5
     assert cross_select._lists[False].size == 5
 

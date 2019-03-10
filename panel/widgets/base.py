@@ -46,3 +46,12 @@ class Widget(Reactive):
         self._models[root.ref['id']] = (model, parent)
         self._link_props(model, properties, doc, root, comm)
         return model
+
+
+class CompositeWidget(Widget):
+    """
+    A baseclass for widgets which are made up of two or more other
+    widgets
+    """
+
+    __abstract = True
