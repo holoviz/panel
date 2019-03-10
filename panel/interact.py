@@ -214,7 +214,7 @@ class interactive(PaneBase):
 
             pname = 'clicks' if name == 'manual' else 'value'
             watcher = widget.param.watch(update_pane, pname)
-            self._callbacks['instance'].append(watcher)
+            self._callbacks.append(watcher)
 
     def _cleanup(self, root):
         self._inner_layout._cleanup(root)

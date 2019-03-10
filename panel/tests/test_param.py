@@ -516,7 +516,6 @@ def test_param_subobject_expand_no_toggle(document, comm):
     # Expand subpane
     _, _, subpanel = test_pane.layout.objects
     div, widget = model.children[2].children
-    assert 'instance' in subpanel._callbacks
     assert div.text == '<b>Nested</b>'
     assert isinstance(widget, BkTextInput)
     
@@ -538,7 +537,6 @@ def test_expand_param_subobject_tabs(document, comm):
     _, subpanel = test_pane.layout.objects
     subtabs = model.tabs[1].child
     assert model.tabs[1].title == 'Abc'
-    assert 'instance' in subpanel._callbacks
     assert isinstance(subtabs, BkTabs)
     assert len(subtabs.tabs) == 1
     assert subtabs.tabs[0].title == 'Nested'
@@ -628,8 +626,7 @@ def test_param_method_pane_subobject(document, comm):
     div = get_div(model)
 
     # Ensure that subobject is being watched
-    assert row.ref['id'] in pane._callbacks
-    watchers = pane._callbacks[row.ref['id']]
+    watchers = pane._callbacks
     assert any(w.inst is subobject for w in watchers)
     assert pane._models[row.ref['id']][0] is inner_row
     assert isinstance(div, Div)
@@ -639,7 +636,7 @@ def test_param_method_pane_subobject(document, comm):
     new_subobject = View(name='Nested', a=42)
     test.b = new_subobject
     assert pane._models[row.ref['id']][0] is inner_row
-    watchers = pane._callbacks[row.ref['id']]
+    watchers = pane._callbacks
     assert not any(w.inst is subobject for w in watchers)
     assert any(w.inst is new_subobject for w in watchers)
     

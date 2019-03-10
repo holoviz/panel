@@ -240,7 +240,7 @@ class Param(PaneBase):
             watchers = [selector.param.watch(update_pane, 'value')]
             if toggle:
                 watchers.append(toggle.param.watch(toggle_pane, 'value'))
-            self._callbacks['instance'] += watchers
+            self._callbacks += watchers
 
             if self.expand:
                 if self.expand_button:
@@ -285,7 +285,7 @@ class Param(PaneBase):
 
         kwargs = {k: v for k, v in kw.items() if k in widget_class.param}
         widget = widget_class(**kwargs)
-        watchers = self._callbacks['instance']
+        watchers = self._callbacks
         if isinstance(p_obj, param.Action):
             widget.button_type = 'success'
             def action(change):
@@ -419,13 +419,13 @@ class ParamMethod(PaneBase):
         del kwargs['object']
         self._pane = Pane(self.object(), **kwargs)
         self._inner_layout = Row(self._pane, **{k: v for k, v in params.items() if k in Row.param})
+        self._link_object_params()
 
     @classmethod
     def applies(cls, obj):
         return inspect.ismethod(obj) and isinstance(get_method_owner(obj), param.Parameterized)
 
-    def _link_object_params(self, doc, root, parent, comm):
-        ref = root.ref['id']
+    def _link_object_params(self):
         parameterized = get_method_owner(self.object)
         params = parameterized.param.params_depended_on(self.object.__name__)
         deps = params
@@ -436,7 +436,7 @@ class ParamMethod(PaneBase):
                 new_deps = parameterized.param.params_depended_on(self.object.__name__)
                 for p in list(deps):
                     if p in new_deps: continue
-                    watchers = self._callbacks.get(ref, [])
+                    watchers = self._callbacks
                     for w in list(watchers):
                         if (w.inst is p.inst and w.cls is p.cls and
                             p.name in w.parameter_names):
@@ -451,7 +451,7 @@ class ParamMethod(PaneBase):
                     pobj = p.cls if p.inst is None else p.inst
                     ps = [_p.name for _p in params]
                     watcher = pobj.param.watch(update_pane, ps, p.what)
-                    self._callbacks[ref].append(watcher)
+                    self._callbacks.append(watcher)
                     for p in params:
                         deps.append(p)
 
@@ -483,7 +483,7 @@ class ParamMethod(PaneBase):
             pobj = (p.inst or p.cls)
             ps = [_p.name for _p in params]
             watcher = pobj.param.watch(update_pane, ps, p.what)
-            self._callbacks[ref].append(watcher)
+            self._callbacks.append(watcher)
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         if root is None:
@@ -493,7 +493,6 @@ class ParamMethod(PaneBase):
         if ref in self._models:
             self._cleanup(root)
         model = self._inner_layout._get_model(doc, root, parent, comm)
-        self._link_object_params(doc, root, parent, comm)
         self._models[ref] = (model, parent)
         return model
 

@@ -56,15 +56,15 @@ class HoloViews(PaneBase):
         self._values = values
 
         # Clean up anything models listening to the previous widgets
-        for cb in self._callbacks['instance']:
+        for cb in list(self._callbacks):
             if cb.inst in self.widget_box.objects:
                 cb.inst.param.unwatch(cb)
-                self._callbacks['instance'].remove(cb)
+                self._callbacks.remove(cb)
 
         # Add new widget callbacks
         for widget in widgets:
             watcher = widget.param.watch(self._widget_callback, 'value')
-            self._callbacks['instance'].append(watcher)
+            self._callbacks.append(watcher)
 
         self.widget_box.objects = widgets
         if widgets and not self.widget_box in self.layout.objects:

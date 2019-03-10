@@ -9,7 +9,6 @@ import re
 import signal
 import uuid
 from functools import partial
-from collections import defaultdict
 
 import param
 
@@ -541,16 +540,11 @@ class Reactive(Viewable):
         super(Reactive, self).__init__(**params)
         self._processing = False
         self._events = {}
-        self._callbacks = defaultdict(list)
+        self._callbacks = []
         self._link_params()
 
     def _cleanup(self, root):
         super(Reactive, self)._cleanup(root)
-
-        callbacks = self._callbacks.pop(root.ref['id'], {})
-        for watcher in callbacks:
-            obj = watcher.cls if watcher.inst is None else watcher.inst
-            obj.param.unwatch(watcher)
 
         # Clean up comms
         model, _ = self._models.pop(root.ref['id'], (None, None))
@@ -618,7 +612,7 @@ class Reactive(Viewable):
         params = self._synced_params()
         if params:
             watcher = self.param.watch(param_change, params)
-            self._callbacks['instance'].append(watcher)
+            self._callbacks.append(watcher)
 
     def _link_props(self, model, properties, doc, root, comm=None):
         if comm is None:
@@ -757,7 +751,7 @@ class Reactive(Viewable):
                     _updating.pop(_updating.index(event.name))
         params = list(callbacks) if callbacks else list(links)
         cb = self.param.watch(link, params)
-        self._callbacks['instance'].append(cb)
+        self._callbacks.append(cb)
         return cb
 
     def jslink(self, target, code=None, **links):
