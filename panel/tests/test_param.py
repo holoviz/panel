@@ -11,7 +11,6 @@ from panel.pane import Pane, PaneBase, Matplotlib, Bokeh
 from panel.layout import Tabs, Row
 from panel.param import Param, ParamMethod, JSONInit
 
-from .test_layout import get_div
 from .fixtures import mpl_figure
 
 try:
@@ -591,17 +590,15 @@ def test_param_method_pane(document, comm):
     assert len(row.children) == 1
     inner_row = row.children[0]
     model = inner_row.children[0]
-    div = get_div(model)
     assert pane._models[row.ref['id']][0] is inner_row
-    assert isinstance(div, Div)
-    assert div.text == '0'
+    assert isinstance(model, Div)
+    assert model.text == '0'
 
     # Update pane
     test.a = 5
     new_model = inner_row.children[0]
-    div = get_div(new_model)
     assert inner_pane is pane._pane
-    assert div.text == '5'
+    assert new_model.text == '5'
     assert pane._models[row.ref['id']][0] is inner_row
 
     # Cleanup pane
@@ -623,14 +620,13 @@ def test_param_method_pane_subobject(document, comm):
     assert len(row.children) == 1
     inner_row = row.children[0]
     model = inner_row.children[0]
-    div = get_div(model)
+    assert isinstance(model, Div)
+    assert model.text == '42'
 
     # Ensure that subobject is being watched
     watchers = pane._callbacks
     assert any(w.inst is subobject for w in watchers)
     assert pane._models[row.ref['id']][0] is inner_row
-    assert isinstance(div, Div)
-    assert div.text == '42'
 
     # Ensure that switching the subobject triggers update in watchers
     new_subobject = View(name='Nested', a=42)
@@ -660,15 +656,14 @@ def test_param_method_pane_mpl(document, comm):
     inner_row = row.children[0]
     model = inner_row.children[0]
     assert pane._models[row.ref['id']][0] is inner_row
-    div = get_div(model)
-    text = div.text
+    text = model.text
 
     # Update pane
     test.a = 5
-    model = inner_row.children[0]
+    new_model = inner_row.children[0]
     assert inner_pane is pane._pane
-    assert div is get_div(model)
-    assert div.text != text
+    assert new_model is model
+    assert new_model.text != text
     assert pane._models[row.ref['id']][0] is inner_row
 
     # Cleanup pane
@@ -690,18 +685,16 @@ def test_param_method_pane_changing_type(document, comm):
     assert len(row.children) == 1
     inner_row = row.children[0]
     model = inner_row.children[0]
-    
-    div = get_div(model)
-    text = div.text
+    text = model.text
+    assert text.startswith('<img src')
 
     # Update pane
     test.a = 5
-    model = inner_row.children[0]
+    new_model = inner_row.children[0]
     new_pane = pane._pane
     assert isinstance(new_pane, Bokeh)
-    div = get_div(model)
-    assert isinstance(div, Div)
-    assert div.text != text
+    assert isinstance(new_model, Div)
+    assert new_model.text != text
 
     # Cleanup pane
     new_pane._cleanup(row)

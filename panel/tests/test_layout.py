@@ -21,16 +21,6 @@ def assert_tab_is_similar(tab1, tab2):
     assert tab1.name == tab2.name
     assert tab1.title == tab2.title
 
-def get_div(box):
-    # Temporary utilities to unpack widget boxes
-    if isinstance(box, Div):
-        return box
-    return box.children[0]
-
-
-def get_divs(children):
-    return [get_div(c) for c in children]
-
 
 @pytest.mark.parametrize('layout', [Column, Row, Tabs, Spacer])
 def test_layout_properties(layout, document, comm):

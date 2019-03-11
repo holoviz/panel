@@ -35,6 +35,7 @@ markdown_available = pytest.mark.skipif(markdown is None, reason="requires markd
 from .fixtures import mpl_figure
 
 
+
 def test_get_bokeh_pane_type():
     div = Div()
     assert PaneBase.get_pane_type(div) is Bokeh

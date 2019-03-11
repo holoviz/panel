@@ -20,7 +20,6 @@ except:
     hv = None
 hv_available = pytest.mark.skipif(hv is None, reason="requires holoviews")
 
-from .test_layout import get_div
 from .test_panes import mpl_available
 
 
@@ -43,15 +42,39 @@ def test_holoviews_pane_mpl_renderer(document, comm):
     assert len(row.children) == 1
     model = row.children[0]
     assert pane._models[row.ref['id']][0] is model
-    div = get_div(model)
-    assert '<img' in div.text
+    assert '<img' in model.text
 
     # Replace Pane.object
     scatter = hv.Scatter([1, 2, 3])
     pane.object = scatter
+    new_model = row.children[0]
+    assert model.text != new_model.text
+
+    # Cleanup
+    pane._cleanup(row)
+    assert pane._models == {}
+
+
+@pytest.mark.usefixtures("hv_mpl")
+@pytest.mark.usefixtures("hv_bokeh")
+@mpl_available
+@hv_available
+def test_holoviews_pane_switch_backend(document, comm):
+    curve = hv.Curve([1, 2, 3])
+    pane = Pane(curve)
+
+    # Create pane
+    row = pane._get_root(document, comm=comm)
+    assert isinstance(row, BkRow)
+    assert len(row.children) == 1
     model = row.children[0]
-    div2 = get_div(model)
-    assert div2.text != div.text
+    assert pane._models[row.ref['id']][0] is model
+    assert '<img' in model.text
+
+    # Replace Pane.object
+    pane.backend = 'bokeh'
+    model = row.children[0]
+    assert isinstance(model, Figure)
 
     # Cleanup
     pane._cleanup(row)
