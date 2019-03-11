@@ -93,7 +93,7 @@ class RGGPlot(PNG):
 
     dpi = param.Integer(default=144, bounds=(1, None))
 
-    _rerender_params = ['object', 'dpi']
+    _rerender_params = ['object', 'dpi', 'width', 'height']
 
     @classmethod
     def applies(cls, obj):

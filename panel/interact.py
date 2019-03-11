@@ -146,8 +146,7 @@ class interactive(PaneBase):
         if self.manual_update:
             widgets.append(('manual', Button(name=self.manual_name)))
         self._widgets = OrderedDict(widgets)
-        self._pane = Pane(self.object(**self.kwargs), name=self.name,
-                          _temporary=True)
+        self._pane = Pane(self.object(**self.kwargs), name=self.name)
         self._inner_layout = Row(self._pane)
         widgets = [widget for _, widget in widgets if isinstance(widget, Widget)]
         if 'name' in params:
@@ -155,6 +154,56 @@ class interactive(PaneBase):
         self.widget_box = Column(*widgets)
         self.layout.objects = [self.widget_box, self._inner_layout]
         self._link_widgets()
+
+    #----------------------------------------------------------------
+    # Model API
+    #----------------------------------------------------------------
+
+    def _get_model(self, doc, root=None, parent=None, comm=None):
+        return self._inner_layout._get_model(doc, root, parent, comm)
+
+    #----------------------------------------------------------------
+    # Callback API
+    #----------------------------------------------------------------
+
+    def _synced_params(self):
+        return []
+
+    def _link_widgets(self):
+        if self.manual_update:
+            widgets = [('manual', self._widgets['manual'])]
+        else:
+            widgets = self._widgets.items()
+
+        for name, widget in widgets:
+            def update_pane(change):
+                # Try updating existing pane
+                new_object = self.object(**self.kwargs)
+                pane_type = self.get_pane_type(new_object)
+                if type(self._pane) is pane_type:
+                    if isinstance(new_object, (PaneBase, Panel)):
+                        new_params = {k: v for k, v in new_object.get_param_values()
+                                      if k != 'name'}
+                        self._pane.set_param(**new_params)
+                    else:
+                        self._pane.object = new_object
+                    return
+
+                # Replace pane entirely
+                self._pane = Pane(new_object)
+                self._inner_layout[0] = self._pane
+
+            pname = 'clicks' if name == 'manual' else 'value'
+            watcher = widget.param.watch(update_pane, pname)
+            self._callbacks.append(watcher)
+
+    def _cleanup(self, root):
+        self._inner_layout._cleanup(root)
+        super(interactive, self)._cleanup(root)
+
+    #----------------------------------------------------------------
+    # Public API
+    #----------------------------------------------------------------
 
     @property
     def kwargs(self):
@@ -181,44 +230,6 @@ class interactive(PaneBase):
                     raise ValueError('cannot find widget or abbreviation for argument: {!r}'.format(name))
                 new_kwargs.append((name, value, default))
         return new_kwargs
-
-    def _synced_params(self):
-        return []
-
-    def _get_model(self, doc, root=None, parent=None, comm=None):
-        return self._inner_layout._get_model(doc, root, parent, comm)
-
-    def _link_widgets(self):
-        if self.manual_update:
-            widgets = [('manual', self._widgets['manual'])]
-        else:
-            widgets = self._widgets.items()
-
-        for name, widget in widgets:
-            def update_pane(change):
-                # Try updating existing pane
-                new_object = self.object(**self.kwargs)
-                pane_type = self.get_pane_type(new_object)
-                if type(self._pane) is pane_type:
-                    if isinstance(new_object, (PaneBase, Panel)):
-                        new_params = {k: v for k, v in new_object.get_param_values()
-                                      if k != 'name'}
-                        self._pane.set_param(**new_params)
-                    else:
-                        self._pane.object = new_object
-                    return
-
-                # Replace pane entirely
-                self._pane = Pane(new_object, _temporary=True)
-                self._inner_layout[0] = self._pane
-
-            pname = 'clicks' if name == 'manual' else 'value'
-            watcher = widget.param.watch(update_pane, pname)
-            self._callbacks.append(watcher)
-
-    def _cleanup(self, root):
-        self._inner_layout._cleanup(root)
-        super(interactive, self)._cleanup(root)
 
     def widgets_from_abbreviations(self, seq):
         """Given a sequence of (name, abbrev, default) tuples, return a sequence of Widgets."""

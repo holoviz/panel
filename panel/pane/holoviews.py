@@ -16,6 +16,8 @@ from ..layout import Panel, Column
 from ..viewable import Viewable
 from ..widgets import Player
 from .base import PaneBase, Pane
+from .plot import Bokeh, Matplotlib
+from .plotly import Plotly
 
 
 class HoloViews(PaneBase):
@@ -41,15 +43,20 @@ class HoloViews(PaneBase):
 
     _rerender_params = ['object', 'widgets', 'backend', 'widget_type']
 
+    _panes = {'bokeh': Bokeh, 'matplotlib': Matplotlib, 'plotly': Plotly}
+
     def __init__(self, object, **params):
         super(HoloViews, self).__init__(object, **params)
         self.widget_box = Column()
         self._update_widgets()
         self._plots = {}
-        self._panes = {}
+        self.param.watch(self._update_widgets, self._rerender_params)
 
-    @param.depends('object', 'widgets', watch=True)
-    def _update_widgets(self):
+    #----------------------------------------------------------------
+    # Callback API
+    #----------------------------------------------------------------
+
+    def _update_widgets(self, *events):
         if self.object is None:
             widgets, values = [], []
         else:
@@ -74,21 +81,49 @@ class HoloViews(PaneBase):
         elif not widgets and self.widget_box in self.layout.objects:
             self.layout.pop(self.widget_box)
 
+    def _update_plot(self, plot, pane, event):
+        from holoviews.core.util import cross_index
+        from holoviews.plotting.bokeh.plot import BokehPlot
+
+        widgets = self.widget_box.objects
+        if self.widget_type == 'scrubber':
+            key = cross_index([v for v in self._values.values()], widgets[0].value)
+        else:
+            key = tuple(w.value for w in widgets)
+
+        if isinstance(plot, BokehPlot):
+            if plot.comm or state.curdoc:
+                plot.update(key)
+                if plot.comm:
+                    plot.push()
+            else:
+                plot.document.add_next_tick_callback(partial(plot.update, key))
+        else:
+            plot.update(key)
+            pane.object = plot.state
+
     def _widget_callback(self, event):
         for ref, (plot, pane) in self._plots.items():
-            self._update_plot(plot, pane)
+            self._update_plot(plot, pane, event)
 
-    def _cleanup(self, root):
-        """
-        Traverses HoloViews object to find and clean up any streams
-        connected to existing plots.
-        """
-        old_plot, old_pane = self._plots.pop(root.ref['id'], None)
-        if old_plot:
+    #----------------------------------------------------------------
+    # Model API
+    #----------------------------------------------------------------
+
+    def _get_model(self, doc, root=None, parent=None, comm=None):
+        if root is None:
+            return self._get_root(doc, comm)
+        ref = root.ref['id']
+        plot = self._render(doc, comm, root)
+        child_pane = self._panes.get(self.backend, Pane)(plot.state)
+        model = child_pane._get_model(doc, root, parent, comm)
+        if ref in self._plots:
+            old_plot, old_pane = self._plots[ref]
+            old_plot.comm = None # Ensure comm does not cleaned up
             old_plot.cleanup()
-        if old_pane:
-            old_pane._cleanup(root)
-        super(HoloViews, self)._cleanup(root)
+        self._plots[ref] = (plot, child_pane)
+        self._models[ref] = (model, parent)
+        return model
 
     def _render(self, doc, comm, root):
         from holoviews import Store, renderer
@@ -105,40 +140,17 @@ class HoloViews(PaneBase):
             kwargs['comm'] = comm
         return renderer.get_plot(self.object, **kwargs)
 
-    def _update_plot(self, plot, pane, comm=None):
-        from holoviews.core.util import cross_index
-        from holoviews.plotting.bokeh.plot import BokehPlot
-
-        widgets = self.widget_box.objects
-        if self.widget_type == 'scrubber':
-            key = cross_index([v for v in self._values.values()], widgets[0].value)
-        else:
-            key = tuple(w.value for w in widgets)
-
-        if isinstance(plot, BokehPlot):
-            if comm or state.curdoc:
-                plot.update(key)
-                if plot.comm:
-                    plot.push()
-            else:
-                plot.document.add_next_tick_callback(partial(plot.update, key))
-        else:
-            plot.update(key)
-            pane.object = plot.state
-
-    def _get_model(self, doc, root=None, parent=None, comm=None):
-        if root is None:
-            return self._get_root(doc, comm)
-        ref = root.ref['id']
-        plot = self._render(doc, comm, root)
-        child_pane = Pane(plot.state, _temporary=True)
-        model = child_pane._get_model(doc, root, parent, comm)
-        if ref in self._plots:
-            old_plot, old_pane = self._plots[ref]
+    def _cleanup(self, root):
+        """
+        Traverses HoloViews object to find and clean up any streams
+        connected to existing plots.
+        """
+        old_plot, old_pane = self._plots.pop(root.ref['id'], None)
+        if old_plot:
             old_plot.cleanup()
-        self._plots[ref] = (plot, child_pane)
-        self._models[ref] = (model, parent)
-        return model
+        if old_pane:
+            old_pane._cleanup(root)
+        super(HoloViews, self)._cleanup(root)
 
     #----------------------------------------------------------------
     # Public API
@@ -184,7 +196,7 @@ class HoloViews(PaneBase):
                 else:
                     raise ValueError('Explicit widget definitions expected '
                                      'to be a widget instance or type, %s '
-                                     'dimension widget declared as %s.' % 
+                                     'dimension widget declared as %s.' %
                                      (dim, widget))
             if vals:
                 if all(isnumeric(v) or isinstance(v, datetime_types) for v in vals) and len(vals) > 1:
@@ -232,11 +244,11 @@ def generate_panel_bokeh_map(root_model, panel_views):
     """
     map_hve_bk = defaultdict(list)
     for pane in panel_views:
-        if root_model.ref['id'] in pane._models: 
+        if root_model.ref['id'] in pane._models:
             bk_plots = pane._plots[root_model.ref['id']][0].traverse(lambda x: x, [is_bokeh_element_plot])
             for plot in bk_plots:
                 for hv_elem in plot.link_sources:
-                    map_hve_bk[hv_elem].append(plot) 
+                    map_hve_bk[hv_elem].append(plot)
     return map_hve_bk
 
 

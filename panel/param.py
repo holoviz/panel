@@ -131,10 +131,6 @@ class Param(PaneBase):
         param.DateRange:      DateRangeSlider
     }
 
-    @classmethod
-    def applies(cls, obj):
-        return (is_parameterized(obj) or isinstance(obj, param.parameterized.Parameters))
-
     def __init__(self, object, **params):
         if isinstance(object, param.parameterized.Parameters):
             object = object.cls if object.self is None else object.self
@@ -189,6 +185,10 @@ class Param(PaneBase):
         template = '{cls}({obj}, {params})' if params else '{cls}({obj})'
         return template.format(cls=cls, params=', '.join(params), obj=obj)
 
+    #----------------------------------------------------------------
+    # Callback API
+    #----------------------------------------------------------------
+
     def _link_subobjects(self):
         for pname, widgets in self._widgets.items():
             if not any(is_parameterized(getattr(w, 'value', None)) or
@@ -211,7 +211,7 @@ class Param(PaneBase):
                     kwargs = {k: v for k, v in self.get_param_values()
                               if k not in ['name', 'object', 'parameters']}
                     pane = Param(parameterized, name=parameterized.name,
-                                 _temporary=True, **kwargs)
+                                 **kwargs)
                     if isinstance(self._expand_layout, Tabs):
                         title = self.object.param[pname].label
                         pane = (title, pane)
@@ -232,7 +232,7 @@ class Param(PaneBase):
                     kwargs = {k: v for k, v in self.get_param_values()
                               if k not in ['name', 'object', 'parameters']}
                     pane = Param(parameterized, name=parameterized.name,
-                                 _temporary=True, **kwargs)
+                                 **kwargs)
                     layout[layout.objects.index(existing[0])] = pane
                 else:
                     layout.pop(existing[0])
@@ -247,14 +247,6 @@ class Param(PaneBase):
                     toggle.value = True
                 else:
                     toggle_pane(namedtuple('Change', 'new')(True))
-
-    def widget_type(cls, pobj):
-        ptype = type(pobj)
-        for t in classlist(ptype)[::-1]:
-            if t in cls._mapping:
-                if isinstance(cls._mapping[t], types.FunctionType):
-                    return cls._mapping[t](pobj)
-                return cls._mapping[t]
 
     def widget(self, p_name):
         """Get widget for param_name"""
@@ -356,9 +348,9 @@ class Param(PaneBase):
         else:
             return [widget]
 
-    def _cleanup(self, root):
-        self.layout._cleanup(root)
-        super(Param, self)._cleanup(root)
+    #----------------------------------------------------------------
+    # Model API
+    #----------------------------------------------------------------
 
     def _get_widgets(self):
         """Return name,widget boxes for all parameters (i.e., a property sheet)"""
@@ -399,6 +391,26 @@ class Param(PaneBase):
         self._models[root.ref['id']] = (model, parent)
         return model
 
+    def _cleanup(self, root):
+        self.layout._cleanup(root)
+        super(Param, self)._cleanup(root)
+
+    #----------------------------------------------------------------
+    # Public API
+    #----------------------------------------------------------------
+
+    @classmethod
+    def applies(cls, obj):
+        return (is_parameterized(obj) or isinstance(obj, param.parameterized.Parameters))
+
+    @classmethod
+    def widget_type(cls, pobj):
+        ptype = type(pobj)
+        for t in classlist(ptype)[::-1]:
+            if t in cls._mapping:
+                if isinstance(cls._mapping[t], types.FunctionType):
+                    return cls._mapping[t](pobj)
+                return cls._mapping[t]
 
 
 class ParamMethod(PaneBase):
@@ -421,9 +433,9 @@ class ParamMethod(PaneBase):
         self._inner_layout = Row(self._pane, **{k: v for k, v in params.items() if k in Row.param})
         self._link_object_params()
 
-    @classmethod
-    def applies(cls, obj):
-        return inspect.ismethod(obj) and isinstance(get_method_owner(obj), param.Parameterized)
+    #----------------------------------------------------------------
+    # Callback API
+    #----------------------------------------------------------------
 
     def _link_object_params(self):
         parameterized = get_method_owner(self.object)
@@ -473,7 +485,7 @@ class ParamMethod(PaneBase):
                 return
 
             # Replace pane entirely
-            kwargs = dict(self.get_param_values(), _temporary=True, **self._kwargs)
+            kwargs = dict(self.get_param_values(), **self._kwargs)
             del kwargs['object']
             self._pane = Pane(new_object, **kwargs)
             self._inner_layout[0] = self._pane
@@ -484,6 +496,10 @@ class ParamMethod(PaneBase):
             ps = [_p.name for _p in params]
             watcher = pobj.param.watch(update_pane, ps, p.what)
             self._callbacks.append(watcher)
+
+    #----------------------------------------------------------------
+    # Model API
+    #----------------------------------------------------------------
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         if root is None:
@@ -499,6 +515,14 @@ class ParamMethod(PaneBase):
     def _cleanup(self, root=None):
         self._inner_layout._cleanup(root)
         super(ParamMethod, self)._cleanup(root)
+
+    #----------------------------------------------------------------
+    # Public API
+    #----------------------------------------------------------------
+
+    @classmethod
+    def applies(cls, obj):
+        return inspect.ismethod(obj) and isinstance(get_method_owner(obj), param.Parameterized)
 
 
 class JSONInit(param.Parameterized):

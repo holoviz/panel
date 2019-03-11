@@ -84,6 +84,8 @@ class StaticText(Widget):
 
     _format = '<b>{title}</b>: {value}'
 
+    _rename = {'name': 'title', 'value': 'text'}
+
     def _process_param_change(self, msg):
         msg = super(StaticText, self)._process_property_change(msg)
         msg.pop('title', None)

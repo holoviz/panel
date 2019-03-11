@@ -22,37 +22,35 @@ class Plotly(PaneBase):
     the figure on bokeh server and via Comms.
     """
 
-    plotly_layout = param.Dict()
-
     _updates = True
 
-    _rerender_params = ['object', 'plotly_layout']
-
     priority = 0.8
-
-    def __init__(self, object, layout=None, **params):
-        super(Plotly, self).__init__(self._to_figure(object, layout),
-                                     plotly_layout=layout, **params)
 
     @classmethod
     def applies(cls, obj):
         return ((isinstance(obj, list) and obj and all(cls.applies(o) for o in obj)) or
-                hasattr(obj, 'to_plotly_json'))
+                hasattr(obj, 'to_plotly_json') or (isinstance(obj, dict)
+                                                   and 'data' in obj and 'layout' in obj))
 
-    def _to_figure(self, obj, layout={}):
+    def _to_figure(self, obj):
         import plotly.graph_objs as go
         if isinstance(obj, go.Figure):
             fig = obj
+        elif isinstance(obj, dict):
+            fig = go.Figure(data=obj['data'], layout=obj['layout'])
+        elif isinstance(obj, tuple):
+            data, layout = obj
+            fig = go.Figure(data=data, layout=layout)
         else:
             data = obj if isinstance(obj, list) else [obj]
-            fig = go.Figure(data=data, layout=layout)
+            fig = go.Figure(data=data)
         return fig
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         """
         Should return the bokeh model to be rendered.
         """
-        fig = self._to_figure(self.object, self.plotly_layout)
+        fig = self._to_figure(self.object)
         json = fig.to_plotly_json()
         traces = json['data']
         sources = []

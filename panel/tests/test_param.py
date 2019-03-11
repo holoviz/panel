@@ -81,7 +81,7 @@ def test_get_root(document, comm):
         pass
 
     test = Test()
-    test_pane = Pane(test, _temporary=True)
+    test_pane = Pane(test)
     model = test_pane._get_root(document, comm=comm)
 
     assert isinstance(model, BkColumn)
@@ -98,7 +98,7 @@ def test_get_root_tabs(document, comm):
         pass
 
     test = Test()
-    test_pane = Pane(test, expand_layout=Tabs, _temporary=True)
+    test_pane = Pane(test, expand_layout=Tabs)
     model = test_pane._get_root(document, comm=comm)
 
     assert isinstance(model, BkTabs)
@@ -114,7 +114,7 @@ def test_number_param(document, comm):
         a = param.Number(default=1.2, bounds=(0, 5))
 
     test = Test()
-    test_pane = Pane(test, _temporary=True)
+    test_pane = Pane(test)
     model = test_pane._get_root(document, comm=comm)
 
     slider = model.children[1]
@@ -154,7 +154,7 @@ def test_boolean_param(document, comm):
         a = param.Boolean(default=False)
 
     test = Test()
-    test_pane = Pane(test, _temporary=True)
+    test_pane = Pane(test)
     model = test_pane._get_root(document, comm=comm)
 
     checkbox = model.children[1]
@@ -185,7 +185,7 @@ def test_range_param(document, comm):
         a = param.Range(default=(0.1, 0.5), bounds=(0, 1.1))
 
     test = Test()
-    test_pane = Pane(test, _temporary=True)
+    test_pane = Pane(test)
     model = test_pane._get_root(document, comm=comm)
 
     widget = model.children[1]
@@ -222,7 +222,7 @@ def test_integer_param(document, comm):
         a = param.Integer(default=2, bounds=(0, 5))
 
     test = Test()
-    test_pane = Pane(test, _temporary=True)
+    test_pane = Pane(test)
     model = test_pane._get_root(document, comm=comm)
 
     slider = model.children[1]
@@ -262,7 +262,7 @@ def test_object_selector_param(document, comm):
         a = param.ObjectSelector(default='b', objects=[1, 'b', 'c'])
 
     test = Test()
-    test_pane = Pane(test, _temporary=True)
+    test_pane = Pane(test)
     model = test_pane._get_root(document, comm=comm)
 
     slider = model.children[1]
@@ -298,7 +298,7 @@ def test_list_selector_param(document, comm):
         a = param.ListSelector(default=['b', 1], objects=[1, 'b', 'c'])
 
     test = Test()
-    test_pane = Pane(test, _temporary=True)
+    test_pane = Pane(test)
     model = test_pane._get_root(document, comm=comm)
 
     slider = model.children[1]
@@ -335,7 +335,7 @@ def test_action_param(document, comm):
         b = param.List(default=[])
 
     test = Test()
-    test_pane = Pane(test, _temporary=True)
+    test_pane = Pane(test)
     model = test_pane._get_root(document, comm=comm)
 
     slider = model.children[1]
@@ -348,7 +348,7 @@ def test_explicit_params(document, comm):
         b = param.Integer(default=1)
 
     test = Test()
-    test_pane = Pane(test, parameters=['a'], _temporary=True)
+    test_pane = Pane(test, parameters=['a'])
     model = test_pane._get_root(document, comm=comm)
 
     assert len(model.children) == 2
@@ -360,7 +360,7 @@ def test_param_precedence(document, comm):
         a = param.Number(default=1.2, bounds=(0, 5))
 
     test = Test()
-    test_pane = Pane(test, _temporary=True)
+    test_pane = Pane(test)
 
     # Check changing precedence attribute hides and shows widget
     a_param = test.param['a']
@@ -376,7 +376,7 @@ def test_expand_param_subobject(document, comm):
         a = param.Parameter()
 
     test = Test(a=Test(name='Nested'))
-    test_pane = Pane(test, _temporary=True)
+    test_pane = Pane(test)
     model = test_pane._get_root(document, comm=comm)
 
     toggle = model.children[2]
@@ -407,7 +407,7 @@ def test_switch_param_subobject(document, comm):
     o2 = Test(name='Subobject 2')
     Test.param['a'].objects = [o1, o2, 3]
     test = Test(a=o1, name='Nested')
-    test_pane = Pane(test, _temporary=True)
+    test_pane = Pane(test)
     model = test_pane._get_root(document, comm=comm)
 
     toggle = model.children[2]
@@ -447,7 +447,7 @@ def test_expand_param_subobject_into_row(document, comm):
 
     test = Test(a=Test(name='Nested'))
     row = Row()
-    test_pane = Pane(test, expand_layout=row, _temporary=True)
+    test_pane = Pane(test, expand_layout=row)
     layout = Row(test_pane, row)
     model = layout._get_root(document, comm=comm)
 
@@ -479,7 +479,7 @@ def test_expand_param_subobject_expand(document, comm):
         a = param.Parameter()
 
     test = Test(a=Test(name='Nested'))
-    test_pane = Pane(test, _temporary=True, expand=True, expand_button=True)
+    test_pane = Pane(test, expand=True, expand_button=True)
     model = test_pane._get_root(document, comm=comm)
 
     toggle = model.children[2]
@@ -506,7 +506,7 @@ def test_param_subobject_expand_no_toggle(document, comm):
         a = param.Parameter()
 
     test = Test(a=Test(name='Nested'))
-    test_pane = Pane(test, _temporary=True, expand=True,
+    test_pane = Pane(test, expand=True,
                      expand_button=False)
     model = test_pane._get_root(document, comm=comm)
 
@@ -525,7 +525,7 @@ def test_expand_param_subobject_tabs(document, comm):
         abc = param.Parameter()
 
     test = Test(abc=Test(name='Nested'), name='A')
-    test_pane = Pane(test, expand_layout=Tabs, _temporary=True)
+    test_pane = Pane(test, expand_layout=Tabs)
     model = test_pane._get_root(document, comm=comm)
 
     toggle = model.tabs[0].child.children[1]

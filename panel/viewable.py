@@ -536,34 +536,15 @@ class Reactive(Viewable):
     def __init__(self, **params):
         # temporary flag denotes panes created for temporary, internal
         # use which should be garbage collected once they have been used
-        self._temporary = params.pop('_temporary', False)
         super(Reactive, self).__init__(**params)
         self._processing = False
         self._events = {}
         self._callbacks = []
         self._link_params()
 
-    def _cleanup(self, root):
-        super(Reactive, self)._cleanup(root)
-
-        # Clean up comms
-        model, _ = self._models.pop(root.ref['id'], (None, None))
-        if model is None:
-            return
-
-        customjs = model.select({'type': CustomJS})
-        pattern = "data\['comm_id'\] = \"(.*)\""
-        for js in customjs:
-            comm_ids = list(re.findall(pattern, js.code))
-            if not comm_ids:
-                continue
-            comm_id = comm_ids[0]
-            comm = state._comm_manager._comms.pop(comm_id, None)
-            if comm:
-                try:
-                    comm.close()
-                except:
-                    pass
+    #----------------------------------------------------------------
+    # Callback API
+    #----------------------------------------------------------------
 
     def _update_model(self, events, msg, root, model, doc, comm=None):
         if comm:
@@ -580,9 +561,6 @@ class Reactive(Viewable):
                 _combine_document_events(event, doc._held_events)
         else:
             model.update(**msg)
-
-    def _synced_params(self):
-        return list(self.param)
 
     def _link_params(self):
         def param_change(*events):
@@ -670,12 +648,15 @@ class Reactive(Viewable):
         return js_callback
 
     #----------------------------------------------------------------
-    # Developer API
+    # Model API
     #----------------------------------------------------------------
 
     def _init_properties(self):
         return {k: v for k, v in self.param.get_param_values()
                 if v is not None}
+
+    def _synced_params(self):
+        return list(self.param)
 
     def _process_property_change(self, msg):
         """
@@ -703,6 +684,28 @@ class Reactive(Viewable):
         if 'height' in properties and self.sizing_mode is None:
             properties['min_height'] = properties['height']
         return properties
+
+    def _cleanup(self, root):
+        super(Reactive, self)._cleanup(root)
+
+        # Clean up comms
+        model, _ = self._models.pop(root.ref['id'], (None, None))
+        if model is None:
+            return
+
+        customjs = model.select({'type': CustomJS})
+        pattern = "data\['comm_id'\] = \"(.*)\""
+        for js in customjs:
+            comm_ids = list(re.findall(pattern, js.code))
+            if not comm_ids:
+                continue
+            comm_id = comm_ids[0]
+            comm = state._comm_manager._comms.pop(comm_id, None)
+            if comm:
+                try:
+                    comm.close()
+                except:
+                    pass
 
     #----------------------------------------------------------------
     # Public API

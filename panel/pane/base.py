@@ -57,7 +57,7 @@ class PaneBase(Reactive):
     # Whether the Pane layout can be safely unpacked
     _unpack = True
 
-    # Object rerender properties
+    # List of parameters that trigger a rerender of the Bokeh model
     _rerender_params = ['object']
 
     __abstract = True
@@ -71,7 +71,7 @@ class PaneBase(Reactive):
         super(PaneBase, self).__init__(object=object, **params)
         kwargs = {k: v for k, v in params.items() if k in Layoutable.param}
         self.layout = self.default_layout(self, **kwargs)
-        self.param.watch(self._update_pane, 'object')
+        self.param.watch(self._update_pane, self._rerender_params)
 
     def __repr__(self, depth=0):
         cls = type(self).__name__
@@ -86,23 +86,9 @@ class PaneBase(Reactive):
         """
         return self.layout[index]
 
-    def _get_root(self, doc, comm=None):
-        if self._updates:
-            root = self._get_model(doc, comm=comm)
-        else:
-            root = self.layout._get_model(doc, comm=comm)
-        self._preprocess(root)
-        ref = root.ref['id']
-        state._views[ref] = (self, root, doc, comm)
-        return root
-
-    def _update(self, model):
-        """
-        If _updates=True this method is used to update an existing
-        Bokeh model instead of replacing the model entirely. The
-        supplied model should be updated with the current state.
-        """
-        raise NotImplementedError
+    #----------------------------------------------------------------
+    # Callback API
+    #----------------------------------------------------------------
 
     def _synced_params(self):
         ignored_params = ['name', 'default_layout']+self._rerender_params
@@ -134,6 +120,28 @@ class PaneBase(Reactive):
             else:
                 cb = partial(self._update_object, model, doc, root, parent, comm)
                 doc.add_next_tick_callback(cb)
+
+    def _update(self, model):
+        """
+        If _updates=True this method is used to update an existing
+        Bokeh model instead of replacing the model entirely. The
+        supplied model should be updated with the current state.
+        """
+        raise NotImplementedError
+
+    #----------------------------------------------------------------
+    # Model API
+    #----------------------------------------------------------------
+
+    def _get_root(self, doc, comm=None):
+        if self._updates:
+            root = self._get_model(doc, comm=comm)
+        else:
+            root = self.layout._get_model(doc, comm=comm)
+        self._preprocess(root)
+        ref = root.ref['id']
+        state._views[ref] = (self, root, doc, comm)
+        return root
 
     #----------------------------------------------------------------
     # Public API

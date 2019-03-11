@@ -35,6 +35,29 @@ class Panel(Reactive):
         objects = [panel(pane) for pane in objects]
         super(Panel, self).__init__(objects=objects, **params)
 
+    def __repr__(self, depth=0, max_depth=10):
+        if depth > max_depth:
+            return '...'
+        spacer = '\n' + ('    ' * (depth+1))
+        cls = type(self).__name__
+        params = param_reprs(self, ['objects'])
+        objs = ['[%d] %s' % (i, obj.__repr__(depth+1)) for i, obj in enumerate(self)]
+        if not params and not objs:
+            return super(Panel, self).__repr__(depth+1)
+        elif not params:
+            template = '{cls}{spacer}{objs}'
+        elif not objs:
+            template = '{cls}({params})'
+        else:
+            template = '{cls}({params}){spacer}{objs}'
+        return template.format(
+            cls=cls, params=', '.join(params),
+            objs=('%s' % spacer).join(objs), spacer=spacer)
+
+    #----------------------------------------------------------------
+    # Callback API
+    #----------------------------------------------------------------
+
     def _update_model(self, events, msg, root, model, doc, comm=None):
         if self._rename['objects'] in msg:
             old = events['objects'].old
@@ -45,10 +68,9 @@ class Panel(Reactive):
         model.update(**msg)
         self._preprocess(root) #preprocess links between new elements
 
-    def _cleanup(self, root):
-        super(Panel, self)._cleanup(root)
-        for p in self.objects:
-            p._cleanup(root)
+    #----------------------------------------------------------------
+    # Model API
+    #----------------------------------------------------------------
 
     def _get_objects(self, model, old_objects, doc, root, comm=None):
         """
@@ -80,6 +102,15 @@ class Panel(Reactive):
         self._models[root.ref['id']] = (model, parent)
         self._link_props(model, self._linked_props, doc, root, comm)
         return model
+
+    def _cleanup(self, root):
+        super(Panel, self)._cleanup(root)
+        for p in self.objects:
+            p._cleanup(root)
+
+    #----------------------------------------------------------------
+    # Public API
+    #----------------------------------------------------------------
 
     def __getitem__(self, index):
         return self.objects[index]
@@ -129,30 +160,6 @@ class Panel(Reactive):
         for i, pane in zip(range(start, end), panes):
             new_objects[i] = panel(pane)
         self.objects = new_objects
-
-    def __repr__(self, depth=0, max_depth=10):
-        if depth > max_depth:
-            return '...'
-        spacer = '\n' + ('    ' * (depth+1))
-        cls = type(self).__name__
-        params = param_reprs(self, ['objects'])
-        objs = ['[%d] %s' % (i, obj.__repr__(depth+1)) for i, obj in enumerate(self)]
-        if not params and not objs:
-            return super(Panel, self).__repr__(depth+1)
-        elif not params:
-            template = '{cls}{spacer}{objs}'
-        elif not objs:
-            template = '{cls}({params})'
-        else:
-            template = '{cls}({params}){spacer}{objs}'
-        return template.format(
-            cls=cls, params=', '.join(params),
-            objs=('%s' % spacer).join(objs), spacer=spacer
-        )
-
-    #----------------------------------------------------------------
-    # Public API
-    #----------------------------------------------------------------
 
     def select(self, selector=None):
         """
@@ -276,6 +283,10 @@ class Tabs(Panel):
             names.append(name)
         return objects, names
 
+    #----------------------------------------------------------------
+    # Callback API
+    #----------------------------------------------------------------
+
     def _update_names(self, event):
         if len(event.new) == len(self._names):
             return
@@ -288,6 +299,10 @@ class Tabs(Panel):
                 name = obj.name
             names.append(name)
         self._names = names
+
+    #----------------------------------------------------------------
+    # Model API
+    #----------------------------------------------------------------
 
     def _get_objects(self, model, old_objects, doc, root, comm=None):
         """
@@ -314,6 +329,10 @@ class Tabs(Panel):
             if obj not in self.objects:
                 obj._cleanup(root)
         return new_models
+
+    #----------------------------------------------------------------
+    # Public API
+    #----------------------------------------------------------------
 
     def __setitem__(self, index, panes):
         new_objects = list(self)
@@ -350,10 +369,6 @@ class Tabs(Panel):
         for i, pane in zip(range(start, end), panes):
             new_objects[i], self._names[i] = self._to_object_and_name(pane)
         self.objects = new_objects
-
-    #----------------------------------------------------------------
-    # Public API
-    #----------------------------------------------------------------
 
     def append(self, pane):
         new_object, new_name = self._to_object_and_name(pane)
