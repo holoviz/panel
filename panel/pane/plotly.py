@@ -34,16 +34,15 @@ class Plotly(PaneBase):
     def _to_figure(self, obj):
         import plotly.graph_objs as go
         if isinstance(obj, go.Figure):
-            fig = obj
+            return obj
         elif isinstance(obj, dict):
-            fig = go.Figure(data=obj['data'], layout=obj['layout'])
+            data, layout = obj['data'], obj['layout']
         elif isinstance(obj, tuple):
             data, layout = obj
-            fig = go.Figure(data=data, layout=layout)
         else:
-            data = obj if isinstance(obj, list) else [obj]
-            fig = go.Figure(data=data)
-        return fig
+            data, layout = obj, {}
+        data = data if isinstance(data, list) else [data]
+        return go.Figure(data=data, layout=layout)
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         """
@@ -66,7 +65,7 @@ class Plotly(PaneBase):
         return model
 
     def _update(self, model):
-        fig = self._to_figure(self.object, self.plotly_layout)
+        fig = self._to_figure(self.object)
         json = fig.to_plotly_json()
         traces = json['data']
         new_sources = []
