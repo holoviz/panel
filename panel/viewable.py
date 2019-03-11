@@ -637,13 +637,26 @@ class Reactive(Viewable):
         Returns a CustomJS callback that can be attached to send the
         model state across the notebook comms.
         """
+        # Abort callback if value matches last received event
+        abort = """
+        const receiver = window.PyViz.receivers['{plot_id}'];
+        const events = receiver ? receiver._partial.content.events : [];
+        for (let event of events) {{
+          if ((event.kind == 'ModelChanged') && (event.attr == '{change}') &&
+              (cb_obj.id == event.model.id) &&
+              (cb_obj['{change}'] == event.new)) {{
+            return;
+          }}
+        }}
+        """.format(plot_id=plot_id, change=change)
         data_template = "data = {{{change}: cb_obj['{change}']}};"
         fetch_data = data_template.format(change=change)
         self_callback = JS_CALLBACK.format(comm_id=client_comm.id,
                                            timeout=self._timeout,
                                            debounce=self._debounce,
                                            plot_id=plot_id)
-        js_callback = CustomJS(code='\n'.join([fetch_data,
+        js_callback = CustomJS(code='\n'.join([abort,
+                                               fetch_data,
                                                self_callback]))
         return js_callback
 
