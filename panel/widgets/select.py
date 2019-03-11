@@ -115,7 +115,8 @@ class MultiSelect(Select):
     def _process_property_change(self, msg):
         msg = super(Select, self)._process_property_change(msg)
         if 'value' in msg:
-            msg['value'] = [self.items[v] for v in msg['value']]
+            msg['value'] = [self.items[v] for v in msg['value']
+                            if v in self.labels]
         msg.pop('options', None)
         return msg
 
