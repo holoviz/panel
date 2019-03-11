@@ -22,7 +22,7 @@ from pyviz_comms import JS_CALLBACK, JupyterCommManager
 
 from .io import state
 from .util import (render_mimebundle, add_to_doc, push, param_reprs,
-                   _origin_url, show_server)
+                   _origin_url, show_server, ABORT_JS)
 
 
 class Layoutable(param.Parameterized):
@@ -539,6 +539,7 @@ class Reactive(Viewable):
         super(Reactive, self).__init__(**params)
         self._processing = False
         self._events = {}
+        self._changing = {}
         self._callbacks = []
         self._link_params()
 
@@ -548,7 +549,17 @@ class Reactive(Viewable):
 
     def _update_model(self, events, msg, root, model, doc, comm=None):
         if comm:
-            for attr, new in msg.items():
+            filtered = {}
+            for k, v in msg.items():
+                try:
+                    change = (k not in self._changing or
+                              self._changing[k] != v or
+                              self._changing['id'] != model.ref['id'])
+                except:
+                    change = True
+                if change:
+                    filtered[k] = v
+            for attr, new in filtered.items():
                 setattr(model, attr, new)
                 event = doc._held_events[-1] if doc._held_events else None
                 if (event and event.model is model and event.attr == attr and
@@ -605,8 +616,13 @@ class Reactive(Viewable):
     def _comm_change(self, msg):
         if not msg:
             return
+        self._changing.update(msg)
+        msg.pop('id', None)
         self._events.update(msg)
-        self._change_event()
+        try:
+            self._change_event()
+        finally:
+            self._changing = {}
 
     def _server_change(self, doc, attr, old, new):
         self._events.update({attr: new})
@@ -638,18 +654,8 @@ class Reactive(Viewable):
         model state across the notebook comms.
         """
         # Abort callback if value matches last received event
-        abort = """
-        const receiver = window.PyViz.receivers['{plot_id}'];
-        const events = receiver ? receiver._partial.content.events : [];
-        for (let event of events) {{
-          if ((event.kind == 'ModelChanged') && (event.attr == '{change}') &&
-              (cb_obj.id == event.model.id) &&
-              (cb_obj['{change}'] == event.new)) {{
-            return;
-          }}
-        }}
-        """.format(plot_id=plot_id, change=change)
-        data_template = "data = {{{change}: cb_obj['{change}']}};"
+        abort = ABORT_JS.format(plot_id=plot_id, change=change)
+        data_template = "data = {{{change}: cb_obj['{change}'], 'id': cb_obj.id}};"
         fetch_data = data_template.format(change=change)
         self_callback = JS_CALLBACK.format(comm_id=client_comm.id,
                                            timeout=self._timeout,
