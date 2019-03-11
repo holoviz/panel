@@ -33,7 +33,6 @@ except:
 markdown_available = pytest.mark.skipif(markdown is None, reason="requires markdown")
 
 from .fixtures import mpl_figure
-from .test_layout import get_div
 
 
 def test_get_bokeh_pane_type():
@@ -50,21 +49,18 @@ def test_bokeh_pane(document, comm):
     assert isinstance(row, BkRow)
     assert len(row.children) == 1
     model = row.children[0]
-    assert row.ref['id'] in pane._callbacks
-    assert get_div(model) is div
-    assert pane._models[row.ref['id']] is model
+    assert model is div
+    assert pane._models[row.ref['id']][0] is model
 
     # Replace Pane.object
     div2 = Div()
     pane.object = div2
     new_model = row.children[0]
-    assert get_div(new_model) is div2
-    assert row.ref['id'] in pane._callbacks
-    assert pane._models[row.ref['id']] is new_model
+    assert new_model is div2
+    assert pane._models[row.ref['id']][0] is new_model
 
     # Cleanup
     pane._cleanup(row)
-    assert pane._callbacks == {}
     assert pane._models == {}
 
 
@@ -84,20 +80,17 @@ def test_matplotlib_pane(document, comm):
 
     # Create pane
     model = pane._get_root(document, comm=comm)
-    assert model.ref['id'] in pane._callbacks
     assert '<img' in model.text
     text = model.text
-    assert pane._models[model.ref['id']] is model
+    assert pane._models[model.ref['id']][0] is model
 
     # Replace Pane.object
     pane.object = mpl_figure()
     assert model.text != text
-    assert model.ref['id'] in pane._callbacks
-    assert pane._models[model.ref['id']] is model
+    assert pane._models[model.ref['id']][0] is model
 
     # Cleanup
     pane._cleanup(model)
-    assert pane._callbacks == {}
     assert pane._models == {}
 
 
@@ -112,19 +105,16 @@ def test_markdown_pane(document, comm):
 
     # Create pane
     model = pane._get_root(document, comm=comm)
-    assert model.ref['id'] in pane._callbacks
-    assert pane._models[model.ref['id']] is model
+    assert pane._models[model.ref['id']][0] is model
     assert model.text == "<p><strong>Markdown</strong></p>"
 
     # Replace Pane.object
     pane.object = "*Markdown*"
-    assert model.ref['id'] in pane._callbacks
-    assert pane._models[model.ref['id']] is model
+    assert pane._models[model.ref['id']][0] is model
     assert model.text == "<p><em>Markdown</em></p>"
 
     # Cleanup
     pane._cleanup(model)
-    assert pane._callbacks == {}
     assert pane._models == {}
 
 
@@ -133,19 +123,16 @@ def test_html_pane(document, comm):
 
     # Create pane
     model = pane._get_root(document, comm=comm)
-    assert model.ref['id'] in pane._callbacks
-    assert pane._models[model.ref['id']] is model
+    assert pane._models[model.ref['id']][0] is model
     assert model.text == "<h1>Test</h1>"
 
     # Replace Pane.object
     pane.object = "<h2>Test</h2>"
-    assert model.ref['id'] in pane._callbacks
-    assert pane._models[model.ref['id']] is model
+    assert pane._models[model.ref['id']][0] is model
     assert model.text == "<h2>Test</h2>"
 
     # Cleanup
     pane._cleanup(model)
-    assert pane._callbacks == {}
     assert pane._models == {}
 
 
@@ -156,15 +143,14 @@ def test_latex_pane(document, comm):
 
     # Create pane
     model = pane._get_root(document, comm=comm)
-    assert model.ref['id'] in pane._callbacks
-    assert pane._models[model.ref['id']] is model
+    assert pane._models[model.ref['id']][0] is model
     # Just checks for a PNG, not a specific rendering, to avoid
     # false alarms when formatting of the PNG changes
     assert model.text[0:32] == "<img src='data:image/png;base64,"
 
     # Cleanup
     pane._cleanup(model)
-    assert pane._callbacks == {}
+    assert pane._models == {}
 
 
 def test_string_pane(document, comm):
@@ -172,19 +158,16 @@ def test_string_pane(document, comm):
 
     # Create pane
     model = pane._get_root(document, comm=comm)
-    assert model.ref['id'] in pane._callbacks
-    assert pane._models[model.ref['id']] is model
+    assert pane._models[model.ref['id']][0] is model
     assert model.text == "<pre>&lt;h1&gt;Test&lt;/h1&gt;</pre>"
 
     # Replace Pane.object
     pane.object = "<h2>Test</h2>"
-    assert model.ref['id'] in pane._callbacks
-    assert pane._models[model.ref['id']] is model
+    assert pane._models[model.ref['id']][0] is model
     assert model.text == "<pre>&lt;h2&gt;Test&lt;/h2&gt;</pre>"
 
     # Cleanup
     pane._cleanup(model)
-    assert pane._callbacks == {}
     assert pane._models == {}
 
 
@@ -198,8 +181,7 @@ def test_svg_pane(document, comm):
 
     # Create pane
     model = pane._get_root(document, comm=comm)
-    assert model.ref['id'] in pane._callbacks
-    assert pane._models[model.ref['id']] is model
+    assert pane._models[model.ref['id']][0] is model
     assert model.text.startswith('<img')
     assert b64encode(rect.encode('utf-8')).decode('utf-8') in model.text
 
@@ -210,14 +192,12 @@ def test_svg_pane(document, comm):
     </svg>
     """
     pane.object = circle
-    assert model.ref['id'] in pane._callbacks
-    assert pane._models[model.ref['id']] is model
+    assert pane._models[model.ref['id']][0] is model
     assert model.text.startswith('<img')
     assert b64encode(circle.encode('utf-8')).decode('utf-8') in model.text
 
     # Cleanup
     pane._cleanup(model)
-    assert pane._callbacks == {}
     assert pane._models == {}
 
 

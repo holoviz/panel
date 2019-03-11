@@ -54,7 +54,7 @@ def test_vega_pane(document, comm):
     assert np.array_equal(cds_data['y'], np.array([5, 3, 6, 7, 2]))
 
     pane._cleanup(model)
-    assert pane._callbacks == {}
+    assert pane._models == {}
 
 
 def altair_example():
@@ -103,4 +103,4 @@ def test_altair_pane(document, comm):
     assert np.array_equal(cds_data['y'], np.array([5, 3, 6, 7, 2]))
 
     pane._cleanup(model)
-    assert pane._callbacks == {}
+    assert pane._models == {}

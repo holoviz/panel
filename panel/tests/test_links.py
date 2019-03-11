@@ -28,13 +28,12 @@ def test_pnwidget_hvplot_links(document, comm):
 
     assert len(hv_views) == 1
     assert len(widg_views) == 1
-    slider = widg_views[0]._models[model.ref['id']]
-    scatter = hv_views[0]._plots[model.ref['id']].handles['glyph']
+    slider = widg_views[0]._models[model.ref['id']][0]
+    scatter = hv_views[0]._plots[model.ref['id']][0].handles['glyph']
 
     link_customjs = slider.js_property_callbacks['change:value'][-1]
     assert link_customjs.args['source'] is slider
     assert link_customjs.args['target'] is scatter
-
     
     code = ("value = source['value'];"
             "try { property = target.properties['size'];"
@@ -58,7 +57,7 @@ def test_bkwidget_hvplot_links(document, comm):
 
     assert len(hv_views) == 1
     slider = bokeh_widget
-    scatter = hv_views[0]._plots[model.ref['id']].handles['glyph']
+    scatter = hv_views[0]._plots[model.ref['id']][0].handles['glyph']
 
     link_customjs = slider.js_property_callbacks['change:value'][-1]
     assert link_customjs.args['source'] is slider
@@ -113,8 +112,8 @@ def test_link_with_customcode(document, comm):
 
     assert len(hv_views) == 1
     assert len(widg_views) == 1
-    range_slider = widg_views[0]._models[model.ref['id']]
-    x_range = hv_views[0]._plots[model.ref['id']].handles['x_range']
+    range_slider = widg_views[0]._models[model.ref['id']][0]
+    x_range = hv_views[0]._plots[model.ref['id']][0].handles['x_range']
 
     link_customjs = range_slider.js_property_callbacks['change:value'][-1]
     assert link_customjs.args['source'] is range_slider

@@ -18,6 +18,7 @@ import param
 
 from param.parameterized import classlist
 
+from .io import state
 from .layout import Row, Panel, Tabs, Column
 from .links import Link
 from .pane.base import Pane, PaneBase
@@ -28,7 +29,7 @@ from .viewable import Layoutable, Reactive
 from .widgets import (
     LiteralInput, Select, Checkbox, FloatSlider, IntSlider, RangeSlider,
     MultiSelect, StaticText, Button, Toggle, TextInput, DiscreteSlider,
-    DatetimeInput, DateRangeSlider, ColorPicker)
+    DatetimeInput, DateRangeSlider, ColorPicker, Widget)
 
 
 def ObjectSelector(pobj):
@@ -91,7 +92,7 @@ class Param(PaneBase):
         usually to update the default Parameter values of the
         underlying parameterized object.""")
 
-    parameters = param.List(default=None, doc="""
+    parameters = param.List(default=[], doc="""
         If set this serves as a whitelist of parameters to display on the supplied
         Parameterized object.""")
 
@@ -130,27 +131,19 @@ class Param(PaneBase):
         param.DateRange:      DateRangeSlider
     }
 
-    @classmethod
-    def applies(cls, obj):
-        return (is_parameterized(obj) or isinstance(obj, param.parameterized.Parameters))
+    _rerender_params = []
 
-    def __init__(self, object, **params):
+    def __init__(self, object=None, **params):
         if isinstance(object, param.parameterized.Parameters):
             object = object.cls if object.self is None else object.self
-        if 'name' not in params:
-            params['name'] = object.name
-        if 'parameters' not in params:
+        if 'parameters' not in params and object is not None:
             params['parameters'] = [p for p in object.param if p != 'name']
         super(Param, self).__init__(object, **params)
         self._updating = False
 
-        # Construct widgets
-        self._widgets = self._get_widgets()
-        widgets = [widget for widgets in self._widgets.values() for widget in widgets]
-
         # Construct Layout
         kwargs = {p: v for p, v in self.get_param_values() if p in Layoutable.param}
-        self._widget_box = self.default_layout(*widgets, **kwargs)
+        self._widget_box = self.default_layout(**kwargs)
 
         layout = self.expand_layout
         if isinstance(layout, Panel):
@@ -164,9 +157,10 @@ class Param(PaneBase):
             raise ValueError('expand_layout expected to be a panel.layout.Panel'
                              'type or instance, found %s type.' %
                              type(layout).__name__)
-
-        if not (self.expand_button == False and not self.expand):
-            self._link_subobjects()
+        self.param.watch(self._update_widgets, [
+            'object', 'parameters', 'display_threshold', 'expand_button',
+            'expand', 'expand_layout', 'widgets', 'show_labels', 'show_name'])
+        self._update_widgets()
 
     def __repr__(self, depth=0):
         cls = type(self).__name__
@@ -178,7 +172,7 @@ class Param(PaneBase):
             if v is self.param[p].default: continue
             elif v is None: continue
             elif isinstance(v, string_types) and v == '': continue
-            elif p == 'object' or (p == 'name' and v.startswith(obj_cls)): continue
+            elif p == 'object' or (p == 'name' and (v.startswith(obj_cls) or v.startswith(cls))): continue
             elif p == 'parameters' and v == parameters: continue
             try:
                 params.append('%s=%s' % (p, abbreviated_repr(v)))
@@ -187,6 +181,47 @@ class Param(PaneBase):
         obj = type(self.object).__name__
         template = '{cls}({obj}, {params})' if params else '{cls}({obj})'
         return template.format(cls=cls, params=', '.join(params), obj=obj)
+
+    #----------------------------------------------------------------
+    # Callback API
+    #----------------------------------------------------------------
+
+    def _synced_params(self):
+        ignored_params = ['name', 'default_layout']
+        return [p for p in Layoutable.param if p not in ignored_params]
+
+    def _update_widgets(self, *events):
+        parameters = []
+        for event in sorted(events, key=lambda x: x.name):
+            if event.name == 'object':
+                if isinstance(event.new, param.parameterized.Parameters):
+                    self.object = object.cls if object.self is None else object.self
+                    return
+                if event.new is None:
+                    parameters = None
+                else:
+                    parameters = [p for p in event.new.param if p != 'name']
+            if event.name == 'parameters':
+                parameters = None if event.new == [] else event.new
+
+        if parameters != [] and parameters != self.parameters:
+            self.parameters = parameters
+            return
+
+        for cb in list(self._callbacks):
+            if cb.inst in self._widget_box.objects:
+                cb.inst.param.unwatch(cb)
+                self._callbacks.remove(cb)
+
+        # Construct widgets
+        if self.object is None:
+            self._widgets = {}
+        else:
+            self._widgets = self._get_widgets()
+        widgets = [widget for widgets in self._widgets.values() for widget in widgets]
+        self._widget_box.objects = widgets
+        if not (self.expand_button == False and not self.expand):
+            self._link_subobjects()
 
     def _link_subobjects(self):
         for pname, widgets in self._widgets.items():
@@ -205,13 +240,12 @@ class Param(PaneBase):
                 if existing:
                     old_panel = existing[0]
                     if not change.new:
-                        old_panel._cleanup(final=old_panel._temporary)
-                        self._expand_layout.pop(old_panel)
+                        self._expand_layout.remove(old_panel)
                 elif change.new:
                     kwargs = {k: v for k, v in self.get_param_values()
                               if k not in ['name', 'object', 'parameters']}
                     pane = Param(parameterized, name=parameterized.name,
-                                 _temporary=True, **kwargs)
+                                 **kwargs)
                     if isinstance(self._expand_layout, Tabs):
                         title = self.object.param[pname].label
                         pane = (title, pane)
@@ -232,7 +266,7 @@ class Param(PaneBase):
                     kwargs = {k: v for k, v in self.get_param_values()
                               if k not in ['name', 'object', 'parameters']}
                     pane = Param(parameterized, name=parameterized.name,
-                                 _temporary=True, **kwargs)
+                                 **kwargs)
                     layout[layout.objects.index(existing[0])] = pane
                 else:
                     layout.pop(existing[0])
@@ -240,21 +274,13 @@ class Param(PaneBase):
             watchers = [selector.param.watch(update_pane, 'value')]
             if toggle:
                 watchers.append(toggle.param.watch(toggle_pane, 'value'))
-            self._callbacks['instance'] += watchers
+            self._callbacks += watchers
 
             if self.expand:
                 if self.expand_button:
                     toggle.value = True
                 else:
                     toggle_pane(namedtuple('Change', 'new')(True))
-
-    def widget_type(cls, pobj):
-        ptype = type(pobj)
-        for t in classlist(ptype)[::-1]:
-            if t in cls._mapping:
-                if isinstance(cls._mapping[t], types.FunctionType):
-                    return cls._mapping[t](pobj)
-                return cls._mapping[t]
 
     def widget(self, p_name):
         """Get widget for param_name"""
@@ -266,7 +292,8 @@ class Param(PaneBase):
             widget_class = self.widgets[p_name]
         value = getattr(self.object, p_name)
 
-        kw = dict(value=value, disabled=p_obj.constant, name=p_obj.label)
+        label = p_obj.label if self.show_labels else ''
+        kw = dict(value=value, disabled=p_obj.constant, name=label)
 
         if hasattr(p_obj, 'get_range'):
             options = p_obj.get_range()
@@ -284,8 +311,13 @@ class Param(PaneBase):
                 widget_class = LiteralInput
 
         kwargs = {k: v for k, v in kw.items() if k in widget_class.param}
-        widget = widget_class(**kwargs)
-        watchers = self._callbacks['instance']
+        
+        if isinstance(widget_class, Widget):
+            widget = widget_class
+        else:
+            widget = widget_class(**kwargs)
+
+        watchers = self._callbacks
         if isinstance(p_obj, param.Action):
             widget.button_type = 'success'
             def action(change):
@@ -356,9 +388,9 @@ class Param(PaneBase):
         else:
             return [widget]
 
-    def _cleanup(self, root=None, final=False):
-        self.layout._cleanup(root, final)
-        super(Param, self)._cleanup(root, final)
+    #----------------------------------------------------------------
+    # Model API
+    #----------------------------------------------------------------
 
     def _get_widgets(self):
         """Return name,widget boxes for all parameters (i.e., a property sheet)"""
@@ -389,14 +421,36 @@ class Param(PaneBase):
 
     def _get_root(self, doc, comm=None):
         root = self.layout._get_root(doc, comm)
-        self._models[root.ref['id']] = root
+        ref = root.ref['id']
+        self._models[ref] = (root, None)
+        state._views[ref] = (self, root, doc, comm)
         return root
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         model = self.layout._get_model(doc, root, parent, comm)
-        self._models[root.ref['id']] = model
+        self._models[root.ref['id']] = (model, parent)
         return model
 
+    def _cleanup(self, root):
+        self.layout._cleanup(root)
+        super(Param, self)._cleanup(root)
+
+    #----------------------------------------------------------------
+    # Public API
+    #----------------------------------------------------------------
+
+    @classmethod
+    def applies(cls, obj):
+        return (is_parameterized(obj) or isinstance(obj, param.parameterized.Parameters))
+
+    @classmethod
+    def widget_type(cls, pobj):
+        ptype = type(pobj)
+        for t in classlist(ptype)[::-1]:
+            if t in cls._mapping:
+                if isinstance(cls._mapping[t], types.FunctionType):
+                    return cls._mapping[t](pobj)
+                return cls._mapping[t]
 
 
 class ParamMethod(PaneBase):
@@ -413,17 +467,17 @@ class ParamMethod(PaneBase):
         self._kwargs =  {p: params.pop(p) for p in list(params)
                          if p not in self.param}
         super(ParamMethod, self).__init__(object, **params)
-        kwargs = dict(self.get_param_values(), **dict(self._kwargs, _temporary=True))
+        kwargs = dict(self.get_param_values(), **self._kwargs)
         del kwargs['object']
         self._pane = Pane(self.object(), **kwargs)
         self._inner_layout = Row(self._pane, **{k: v for k, v in params.items() if k in Row.param})
+        self._link_object_params()
 
-    @classmethod
-    def applies(cls, obj):
-        return inspect.ismethod(obj) and isinstance(get_method_owner(obj), param.Parameterized)
+    #----------------------------------------------------------------
+    # Callback API
+    #----------------------------------------------------------------
 
-    def _link_object_params(self, doc, root, parent, comm):
-        ref = root.ref['id']
+    def _link_object_params(self):
         parameterized = get_method_owner(self.object)
         params = parameterized.param.params_depended_on(self.object.__name__)
         deps = params
@@ -434,7 +488,7 @@ class ParamMethod(PaneBase):
                 new_deps = parameterized.param.params_depended_on(self.object.__name__)
                 for p in list(deps):
                     if p in new_deps: continue
-                    watchers = self._callbacks.get(ref, [])
+                    watchers = self._callbacks
                     for w in list(watchers):
                         if (w.inst is p.inst and w.cls is p.cls and
                             p.name in w.parameter_names):
@@ -449,7 +503,7 @@ class ParamMethod(PaneBase):
                     pobj = p.cls if p.inst is None else p.inst
                     ps = [_p.name for _p in params]
                     watcher = pobj.param.watch(update_pane, ps, p.what)
-                    self._callbacks[ref].append(watcher)
+                    self._callbacks.append(watcher)
                     for p in params:
                         deps.append(p)
 
@@ -465,18 +519,13 @@ class ParamMethod(PaneBase):
                     pvals = dict(self._pane.get_param_values())
                     new_params = {k: v for k, v in new_object.get_param_values()
                                   if k != 'name' and v is not pvals[k]}
-                    try:
-                        self._pane.set_param(**new_params)
-                    except:
-                        raise
-                    finally:
-                        new_object._cleanup(final=new_object._temporary)
+                    self._pane.set_param(**new_params)
                 else:
                     self._pane.object = new_object
                 return
 
             # Replace pane entirely
-            kwargs = dict(self.get_param_values(), _temporary=True, **self._kwargs)
+            kwargs = dict(self.get_param_values(), **self._kwargs)
             del kwargs['object']
             self._pane = Pane(new_object, **kwargs)
             self._inner_layout[0] = self._pane
@@ -486,23 +535,34 @@ class ParamMethod(PaneBase):
             pobj = (p.inst or p.cls)
             ps = [_p.name for _p in params]
             watcher = pobj.param.watch(update_pane, ps, p.what)
-            self._callbacks[ref].append(watcher)
+            self._callbacks.append(watcher)
+
+    #----------------------------------------------------------------
+    # Model API
+    #----------------------------------------------------------------
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         if root is None:
             return self._get_root(doc, comm)
 
         ref = root.ref['id']
-        if ref in self._callbacks:
+        if ref in self._models:
             self._cleanup(root)
         model = self._inner_layout._get_model(doc, root, parent, comm)
-        self._link_object_params(doc, root, parent, comm)
-        self._models[ref] = model
+        self._models[ref] = (model, parent)
         return model
 
-    def _cleanup(self, root=None, final=False):
-        self._inner_layout._cleanup(root, final)
-        super(ParamMethod, self)._cleanup(root, final)
+    def _cleanup(self, root=None):
+        self._inner_layout._cleanup(root)
+        super(ParamMethod, self)._cleanup(root)
+
+    #----------------------------------------------------------------
+    # Public API
+    #----------------------------------------------------------------
+
+    @classmethod
+    def applies(cls, obj):
+        return inspect.ismethod(obj) and isinstance(get_method_owner(obj), param.Parameterized)
 
 
 class JSONInit(param.Parameterized):

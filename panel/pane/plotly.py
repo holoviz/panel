@@ -4,7 +4,6 @@ bokeh model.
 """
 from __future__ import absolute_import, division, unicode_literals
 
-import param
 import numpy as np
 
 from bokeh.models import ColumnDataSource
@@ -22,53 +21,61 @@ class Plotly(PaneBase):
     the figure on bokeh server and via Comms.
     """
 
-    plotly_layout = param.Dict()
-
     _updates = True
 
     priority = 0.8
 
-    def __init__(self, object, layout=None, **params):
-        super(Plotly, self).__init__(self._to_figure(object, layout),
-                                     plotly_layout=layout, **params)
-
     @classmethod
     def applies(cls, obj):
         return ((isinstance(obj, list) and obj and all(cls.applies(o) for o in obj)) or
-                hasattr(obj, 'to_plotly_json'))
+                hasattr(obj, 'to_plotly_json') or (isinstance(obj, dict)
+                                                   and 'data' in obj and 'layout' in obj))
 
-    def _to_figure(self, obj, layout={}):
+    def _to_figure(self, obj):
         import plotly.graph_objs as go
         if isinstance(obj, go.Figure):
-            fig = obj
+            return obj
+        elif isinstance(obj, dict):
+            data, layout = obj['data'], obj['layout']
+        elif isinstance(obj, tuple):
+            data, layout = obj
         else:
-            data = obj if isinstance(obj, list) else [obj]
-            fig = go.Figure(data=data, layout=layout)
-        return fig
+            data, layout = obj, {}
+        data = data if isinstance(data, list) else [data]
+        return go.Figure(data=data, layout=layout)
 
-    def _get_model(self, doc, root=None, parent=None, comm=None):
-        """
-        Should return the bokeh model to be rendered.
-        """
-        fig = self._to_figure(self.object, self.plotly_layout)
-        json = fig.to_plotly_json()
-        traces = json['data']
+    def _get_sources(self, json):
         sources = []
+        traces = json['data']
         for trace in traces:
             data = {}
             for key, value in list(trace.items()):
                 if isinstance(value, np.ndarray):
                     data[key] = trace.pop(key)
             sources.append(ColumnDataSource(data))
+        return sources
+
+    def _get_model(self, doc, root=None, parent=None, comm=None):
+        """
+        Should return the bokeh model to be rendered.
+        """
+        if self.object is None:
+            json, sources = None, []
+        else:
+            fig = self._to_figure(self.object)
+            json = fig.to_plotly_json()
+            sources = self._get_sources(json)
         model = PlotlyPlot(data=json, data_sources=sources)
         if root is None:
             root = model
-        self._models[root.ref['id']] = model
-        self._link_object(doc, root, parent, comm)
+        self._models[root.ref['id']] = (model, parent)
         return model
 
     def _update(self, model):
-        fig = self._to_figure(self.object, self.plotly_layout)
+        if self.object is None:
+            model.data = None
+            return
+        fig = self._to_figure(self.object)
         json = fig.to_plotly_json()
         traces = json['data']
         new_sources = []

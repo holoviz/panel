@@ -58,6 +58,8 @@ class ImageBase(DivPaneBase):
 
     def _get_properties(self):
         p = super(ImageBase, self)._get_properties()
+        if self.object is None:
+            return dict(p, text='<img></img>')
         data = self._img()
         if isinstance(data, str):
             data = base64.b64decode(data)
@@ -144,6 +146,8 @@ class SVG(ImageBase):
 
     def _get_properties(self):
         p = super(ImageBase, self)._get_properties()
+        if self.object is None:
+            return dict(p, text='<img></img>')
         data = self._img()
         width, height = self._imgshape(data)
         if not isinstance(data, bytes):

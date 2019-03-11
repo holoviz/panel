@@ -4,6 +4,8 @@ objects to a visual representation expressed as a bokeh model.
 """
 from __future__ import absolute_import, division, unicode_literals
 
+from functools import partial
+
 import param
 
 from ..io import state
@@ -55,7 +57,95 @@ class PaneBase(Reactive):
     # Whether the Pane layout can be safely unpacked
     _unpack = True
 
+    # List of parameters that trigger a rerender of the Bokeh model
+    _rerender_params = ['object']
+
     __abstract = True
+
+    def __init__(self, object=None, **params):
+        applies = self.applies(object)
+        if (isinstance(applies, bool) and not applies) and object is not None :
+            raise ValueError("%s pane does not support objects of type '%s'" %
+                             (type(self).__name__, type(object).__name__))
+
+        super(PaneBase, self).__init__(object=object, **params)
+        kwargs = {k: v for k, v in params.items() if k in Layoutable.param}
+        self.layout = self.default_layout(self, **kwargs)
+        self.param.watch(self._update_pane, self._rerender_params)
+
+    def __repr__(self, depth=0):
+        cls = type(self).__name__
+        params = param_reprs(self, ['object'])
+        obj = 'Empty' if self.object is None else type(self.object).__name__ 
+        template = '{cls}({obj}, {params})' if params else '{cls}({obj})'
+        return template.format(cls=cls, params=', '.join(params), obj=obj)
+
+    def __getitem__(self, index):
+        """
+        Allows pane objects to behave like the underlying layout
+        """
+        return self.layout[index]
+
+    #----------------------------------------------------------------
+    # Callback API
+    #----------------------------------------------------------------
+
+    def _synced_params(self):
+        ignored_params = ['name', 'default_layout']+self._rerender_params
+        return [p for p in self.param if p not in ignored_params]
+
+    def _update_object(self, old_model, doc, root, parent, comm):
+        if self._updates:
+            self._update(old_model)
+        else:
+            new_model = self._get_model(doc, root, parent, comm)
+            try:
+                index = parent.children.index(old_model)
+            except IndexError:
+                self.warning('%s pane model %s could not be replaced '
+                             'with new model %s, ensure that the '
+                             'parent is not modified at the same '
+                             'time the panel is being updated.' %
+                             (type(self).__name__, old_model, new_model))
+            else:
+                parent.children[index] = new_model
+
+    def _update_pane(self, event):
+        for ref, (model, parent) in self._models.items():
+            viewable, root, doc, comm = state._views[ref]
+            if comm or state.curdoc:
+                self._update_object(model, doc, root, parent, comm)
+                if comm:
+                    push(doc, comm)
+            else:
+                cb = partial(self._update_object, model, doc, root, parent, comm)
+                doc.add_next_tick_callback(cb)
+
+    def _update(self, model):
+        """
+        If _updates=True this method is used to update an existing
+        Bokeh model instead of replacing the model entirely. The
+        supplied model should be updated with the current state.
+        """
+        raise NotImplementedError
+
+    #----------------------------------------------------------------
+    # Model API
+    #----------------------------------------------------------------
+
+    def _get_root(self, doc, comm=None):
+        if self._updates:
+            root = self._get_model(doc, comm=comm)
+        else:
+            root = self.layout._get_model(doc, comm=comm)
+        self._preprocess(root)
+        ref = root.ref['id']
+        state._views[ref] = (self, root, doc, comm)
+        return root
+
+    #----------------------------------------------------------------
+    # Public API
+    #----------------------------------------------------------------
 
     @classmethod
     def applies(cls, obj):
@@ -69,6 +159,19 @@ class PaneBase(Reactive):
 
     @classmethod
     def get_pane_type(cls, obj):
+        """
+        Returns the applicable Pane type given an object by resolving
+        the precedence of all types whose applies method declares that
+        the object is supported.
+
+        Parameters
+        ----------
+        obj (object): The object type to return a Pane for
+
+        Returns
+        -------
+        The applicable Pane type with the highest precedence.
+        """
         if isinstance(obj, Viewable):
             return type(obj)
         descendents = []
@@ -89,87 +192,3 @@ class PaneBase(Reactive):
             if isinstance(applies, bool) and not applies: continue
             return pane_type
         raise TypeError('%s type could not be rendered.' % type(obj).__name__)
-
-    def __init__(self, object, **params):
-        applies = self.applies(object)
-        if isinstance(applies, bool) and not applies:
-            raise ValueError("%s pane does not support objects of type '%s'" %
-                             (type(self).__name__, type(object).__name__))
-
-        super(PaneBase, self).__init__(object=object, **params)
-        kwargs = {k: v for k, v in params.items() if k in Layoutable.param}
-        self.layout = self.default_layout(self, **kwargs)
-
-    def __repr__(self, depth=0):
-        cls = type(self).__name__
-        params = param_reprs(self, ['object'])
-        obj = type(self.object).__name__
-        template = '{cls}({obj}, {params})' if params else '{cls}({obj})'
-        return template.format(cls=cls, params=', '.join(params), obj=obj)
-
-    def __getitem__(self, index):
-        """
-        Allows pane objects to behave like the underlying layout
-        """
-        return self.layout[index]
-
-    def _get_root(self, doc, comm=None):
-        if self._updates:
-            root = self._get_model(doc, comm=comm)
-        else:
-            root = self.layout._get_model(doc, comm=comm)
-        self._preprocess(root)
-        return root
-
-    def _cleanup(self, root=None, final=False):
-        super(PaneBase, self)._cleanup(root, final)
-        if final:
-            self.object = None
-
-    def _update(self, model):
-        """
-        If _updates=True this method is used to update an existing Bokeh
-        model instead of replacing the model entirely. The supplied model
-        should be updated with the current state.
-        """
-        raise NotImplementedError
-
-    def _link_object(self, doc, root, parent, comm=None):
-        """
-        Links the object parameter to the rendered Bokeh model, triggering
-        an update when the object changes.
-        """
-        ref = root.ref['id']
-
-        def update_pane(change):
-            old_model = self._models[ref]
-
-            if self._updates:
-                # Pane supports model updates
-                def update_models():
-                    self._update(old_model)
-            else:
-                # Otherwise replace the whole model
-                new_model = self._get_model(doc, root, parent, comm)
-                def update_models():
-                    try:
-                        index = parent.children.index(old_model)
-                    except IndexError:
-                        self.warning('%s pane model %s could not be replaced '
-                                     'with new model %s, ensure that the '
-                                     'parent is not modified at the same '
-                                     'time the panel is being updated.' %
-                                     (type(self).__name__, old_model, new_model))
-                    else:
-                        parent.children[index] = new_model
-
-            if comm:
-                update_models()
-                push(doc, comm)
-            elif state.curdoc:
-                update_models()
-            else:
-                doc.add_next_tick_callback(update_models)
-
-        if ref not in self._callbacks:
-            self._callbacks[ref].append(self.param.watch(update_pane, 'object'))

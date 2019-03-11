@@ -18,6 +18,8 @@ class _ButtonBase(Widget):
 
     _rename = {'name': 'label'}
 
+    __abstract = True
+
 
 class Button(_ButtonBase):
 

@@ -9,7 +9,6 @@ import re
 import signal
 import uuid
 from functools import partial
-from collections import defaultdict
 
 import param
 
@@ -237,9 +236,11 @@ class Viewable(Layoutable):
         """
         root = self._get_model(doc, comm=comm)
         self._preprocess(root)
+        ref = root.ref['id']
+        state._views[ref] = (self, root, doc, comm)
         return root
 
-    def _cleanup(self, model=None, final=False):
+    def _cleanup(self, model):
         """
         Clean up method which is called when a Viewable is destroyed.
 
@@ -247,11 +248,12 @@ class Viewable(Layoutable):
         ----------
         model: bokeh.model.Model
           Bokeh model for the view being cleaned up
-        final: boolean
-          Whether the Viewable should be destroyed entirely
         """
 
     def _preprocess(self, root):
+        """
+        Applies preprocessing hooks to the model.
+        """
         for hook in self._preprocessing_hooks:
             hook(self, root)
 
@@ -260,7 +262,6 @@ class Viewable(Layoutable):
         doc = _Document()
         comm = state._comm_manager.get_server_comm()
         model = self._get_root(doc, comm)
-        state._views[model.ref['id']] = (self, model)
         return render_mimebundle(model, doc, comm)
 
     def _server_destroy(self, session_context):
@@ -268,7 +269,7 @@ class Viewable(Layoutable):
         Server lifecycle hook triggered when session is destroyed.
         """
         doc = session_context._document
-        self._cleanup(self._documents[doc], final=self._temporary)
+        self._cleanup(self._documents[doc])
         del self._documents[doc]
 
     def _modify_doc(self, server_id, doc):
@@ -514,9 +515,10 @@ class Reactive(Viewable):
     the objects parameters and the underlying bokeh model either via
     the defined pyviz_comms.Comm type or when using bokeh server.
 
-    In order to link parameters with bokeh model instances the
-    _link_params and _link_props methods may be called in the
-    _get_model method. Since there may not be a 1-to-1 mapping between
+    In order to bi-directionally link parameters with bokeh model
+    instances the _link_params and _link_props methods define
+    callbacks triggered when either the parameter or bokeh property
+    values change. Since there may not be a 1-to-1 mapping between
     parameter and the model property the _process_property_change and
     _process_param_change may be overridden to apply any necessary
     transformations.
@@ -534,11 +536,193 @@ class Reactive(Viewable):
     def __init__(self, **params):
         # temporary flag denotes panes created for temporary, internal
         # use which should be garbage collected once they have been used
-        self._temporary = params.pop('_temporary', False)
         super(Reactive, self).__init__(**params)
         self._processing = False
         self._events = {}
-        self._callbacks = defaultdict(list)
+        self._callbacks = []
+        self._link_params()
+
+    #----------------------------------------------------------------
+    # Callback API
+    #----------------------------------------------------------------
+
+    def _update_model(self, events, msg, root, model, doc, comm=None):
+        if comm:
+            for attr, new in msg.items():
+                setattr(model, attr, new)
+                event = doc._held_events[-1] if doc._held_events else None
+                if (event and event.model is model and event.attr == attr and
+                    event.new is new):
+                    continue
+                # If change did not trigger event trigger it manually
+                old = getattr(model, attr)
+                serializable_new = model.lookup(attr).serializable_value(model)
+                event = ModelChangedEvent(doc, model, attr, old, new, serializable_new)
+                _combine_document_events(event, doc._held_events)
+        else:
+            model.update(**msg)
+
+    def _link_params(self):
+        def param_change(*events):
+            msgs = []
+            for event in events:
+                msg = self._process_param_change({event.name: event.new})
+                if msg:
+                    msgs.append(msg)
+
+            events = {event.name: event for event in events}
+            msg = {k: v for msg in msgs for k, v in msg.items()}
+            if not msg:
+                return
+
+            for ref, (model, parent) in self._models.items():
+                if ref not in state._views:
+                    continue
+                viewable, root, doc, comm = state._views[ref]
+                if comm or state.curdoc:
+                    self._update_model(events, msg, root, model, doc, comm)
+                    if comm:
+                        push(doc, comm)
+                else:
+                    cb = partial(self._update_model, events, msg, root, model, doc, comm)
+                    doc.add_next_tick_callback(cb)
+
+        params = self._synced_params()
+        if params:
+            watcher = self.param.watch(param_change, params)
+            self._callbacks.append(watcher)
+
+    def _link_props(self, model, properties, doc, root, comm=None):
+        if comm is None:
+            for p in properties:
+                model.on_change(p, partial(self._server_change, doc))
+        else:
+            client_comm = state._comm_manager.get_client_comm(on_msg=self._comm_change)
+            for p in properties:
+                customjs = self._get_customjs(p, client_comm, root.ref['id'])
+                model.js_on_change(p, customjs)
+
+    def _comm_change(self, msg):
+        if not msg:
+            return
+        self._events.update(msg)
+        self._change_event()
+
+    def _server_change(self, doc, attr, old, new):
+        self._events.update({attr: new})
+        if not self._processing:
+            self._processing = True
+            doc.add_timeout_callback(partial(self._change_event, doc), self._debounce)
+
+    def _change_event(self, doc=None):
+        try:
+            state.curdoc = doc
+            events = self._events
+            self._events = {}
+            self.set_param(**self._process_property_change(events))
+        except:
+            raise
+        else:
+            if self._events:
+                if doc:
+                    doc.add_timeout_callback(partial(self._change_event, doc), self._debounce)
+                else:
+                    self._change_event()
+        finally:
+            self._processing = False
+            state.curdoc = None
+
+    def _get_customjs(self, change, client_comm, plot_id):
+        """
+        Returns a CustomJS callback that can be attached to send the
+        model state across the notebook comms.
+        """
+        # Abort callback if value matches last received event
+        abort = """
+        const receiver = window.PyViz.receivers['{plot_id}'];
+        const events = receiver ? receiver._partial.content.events : [];
+        for (let event of events) {{
+          if ((event.kind == 'ModelChanged') && (event.attr == '{change}') &&
+              (cb_obj.id == event.model.id) &&
+              (cb_obj['{change}'] == event.new)) {{
+            return;
+          }}
+        }}
+        """.format(plot_id=plot_id, change=change)
+        data_template = "data = {{{change}: cb_obj['{change}']}};"
+        fetch_data = data_template.format(change=change)
+        self_callback = JS_CALLBACK.format(comm_id=client_comm.id,
+                                           timeout=self._timeout,
+                                           debounce=self._debounce,
+                                           plot_id=plot_id)
+        js_callback = CustomJS(code='\n'.join([abort,
+                                               fetch_data,
+                                               self_callback]))
+        return js_callback
+
+    #----------------------------------------------------------------
+    # Model API
+    #----------------------------------------------------------------
+
+    def _init_properties(self):
+        return {k: v for k, v in self.param.get_param_values()
+                if v is not None}
+
+    def _synced_params(self):
+        return list(self.param)
+
+    def _process_property_change(self, msg):
+        """
+        Transform bokeh model property changes into parameter updates.
+        Should be overridden to provide appropriate mapping between
+        parameter value and bokeh model change. By default uses the
+        _rename class level attribute to map between parameter and
+        property names.
+        """
+        inverted = {v: k for k, v in self._rename.items()}
+        return {inverted.get(k, k): v for k, v in msg.items()}
+
+    def _process_param_change(self, msg):
+        """
+        Transform parameter changes into bokeh model property updates.
+        Should be overridden to provide appropriate mapping between
+        parameter value and bokeh model change. By default uses the
+        _rename class level attribute to map between parameter and
+        property names.
+        """
+        properties = {self._rename.get(k, k): v for k, v in msg.items()
+                      if self._rename.get(k, False) is not None}
+        if 'width' in properties and self.sizing_mode is None:
+            properties['min_width'] = properties['width']
+        if 'height' in properties and self.sizing_mode is None:
+            properties['min_height'] = properties['height']
+        return properties
+
+    def _cleanup(self, root):
+        super(Reactive, self)._cleanup(root)
+
+        # Clean up comms
+        model, _ = self._models.pop(root.ref['id'], (None, None))
+        if model is None:
+            return
+
+        customjs = model.select({'type': CustomJS})
+        pattern = "data\['comm_id'\] = \"(.*)\""
+        for js in customjs:
+            comm_ids = list(re.findall(pattern, js.code))
+            if not comm_ids:
+                continue
+            comm_id = comm_ids[0]
+            comm = state._comm_manager._comms.pop(comm_id, None)
+            if comm:
+                try:
+                    comm.close()
+                except:
+                    pass
+
+    #----------------------------------------------------------------
+    # Public API
+    #----------------------------------------------------------------
 
     def link(self, target, callbacks=None, **links):
         """
@@ -583,7 +767,7 @@ class Reactive(Viewable):
                     _updating.pop(_updating.index(event.name))
         params = list(callbacks) if callbacks else list(links)
         cb = self.param.watch(link, params)
-        self._callbacks['instance'].append(cb)
+        self._callbacks.append(cb)
         return cb
 
     def jslink(self, target, code=None, **links):
@@ -626,159 +810,3 @@ class Reactive(Viewable):
             for k, v in list(mapping.items()):
                 mapping[k] = target._rename.get(v, v)
         return GenericLink(self, target, properties=links, code=code)
-
-    def _cleanup(self, root=None, final=False):
-        super(Reactive, self)._cleanup(root, final)
-        if final:
-            watchers = self._callbacks.pop('instance', [])
-            for watcher in watchers:
-                obj = watcher.cls if watcher.inst is None else watcher.inst
-                obj.param.unwatch(watcher)
-
-        if root is None:
-            return
-
-        callbacks = self._callbacks.pop(root.ref['id'], {})
-        for watcher in callbacks:
-            obj = watcher.cls if watcher.inst is None else watcher.inst
-            obj.param.unwatch(watcher)
-
-        # Clean up comms
-        model = self._models.pop(root.ref['id'], None)
-        if model is None:
-            return
-
-        customjs = model.select({'type': CustomJS})
-        pattern = "data\['comm_id'\] = \"(.*)\""
-        for js in customjs:
-            comm_ids = list(re.findall(pattern, js.code))
-            if not comm_ids:
-                continue
-            comm_id = comm_ids[0]
-            comm = state._comm_manager._comms.pop(comm_id, None)
-            if comm:
-                try:
-                    comm.close()
-                except:
-                    pass
-
-    def _init_properties(self):
-        return {k: v for k, v in self.param.get_param_values()
-                if v is not None}
-
-    def _process_property_change(self, msg):
-        """
-        Transform bokeh model property changes into parameter updates.
-        Should be overridden to provide appropriate mapping between
-        parameter value and bokeh model change. By default uses the
-        _rename class level attribute to map between parameter and
-        property names.
-        """
-        inverted = {v: k for k, v in self._rename.items()}
-        return {inverted.get(k, k): v for k, v in msg.items()}
-
-    def _process_param_change(self, msg):
-        """
-        Transform parameter changes into bokeh model property updates.
-        Should be overridden to provide appropriate mapping between
-        parameter value and bokeh model change. By default uses the
-        _rename class level attribute to map between parameter and
-        property names.
-        """
-        properties = {self._rename.get(k, k): v for k, v in msg.items()
-                      if self._rename.get(k, False) is not None}
-        if 'width' in properties and self.sizing_mode is None:
-            properties['min_width'] = properties['width']
-        elif self.min_width is None:
-            properties['min_width'] = None
-        if 'height' in properties and self.sizing_mode is None:
-            properties['min_height'] = properties['height']
-        elif self.min_height is None:
-            properties['min_height'] = None
-        return properties
-
-    def _link_params(self, model, params, doc, root, comm=None):
-        def param_change(*events):
-            msgs = []
-            for event in events:
-                msg = self._process_param_change({event.name: event.new})
-                if msg:
-                    msgs.append(msg)
-
-            if not msgs: return
-
-            def update_model():
-                update = {k: v for msg in msgs for k, v in msg.items()}
-                if comm:
-                    for attr, new in update.items():
-                        setattr(model, attr, new)
-                        event = doc._held_events[-1] if doc._held_events else None
-                        if (event and event.model is model and event.attr == attr and
-                            event.new is new):
-                            continue
-                        # If change did not trigger event trigger it manually
-                        old = getattr(model, attr)
-                        serializable_new = model.lookup(attr).serializable_value(model)
-                        event = ModelChangedEvent(doc, model, attr, old, new, serializable_new)
-                        _combine_document_events(event, doc._held_events)
-                else:
-                    model.update(**update)
-
-            if comm:
-                update_model()
-                push(doc, comm)
-            elif state.curdoc:
-                update_model()
-            else:
-                doc.add_next_tick_callback(update_model)
-
-        ref = root.ref['id']
-        watcher = self.param.watch(param_change, params)
-        self._callbacks[ref].append(watcher)
-
-    def _link_props(self, model, properties, doc, root, comm=None):
-        if comm is None:
-            for p in properties:
-                model.on_change(p, partial(self._server_change, doc))
-        else:
-            client_comm = state._comm_manager.get_client_comm(on_msg=self._comm_change)
-            for p in properties:
-                customjs = self._get_customjs(p, client_comm, root.ref['id'])
-                model.js_on_change(p, customjs)
-
-    def _comm_change(self, msg):
-        if not msg:
-            return
-        self._events.update(msg)
-        self._change_event()
-
-    def _server_change(self, doc, attr, old, new):
-        self._events.update({attr: new})
-        if not self._processing:
-            self._processing = True
-            doc.add_timeout_callback(partial(self._change_event, doc), self._debounce)
-
-    def _change_event(self, doc=None):
-        try:
-            state.curdoc = doc
-            events = self._events
-            self._events = {}
-            self.set_param(**self._process_property_change(events))
-        finally:
-            self._processing = False
-            state.curdoc = None
-
-    def _get_customjs(self, change, client_comm, plot_id):
-        """
-        Returns a CustomJS callback that can be attached to send the
-        model state across the notebook comms.
-        """
-        data_template = "data = {{{change}: cb_obj['{change}']}};"
-        fetch_data = data_template.format(change=change)
-        self_callback = JS_CALLBACK.format(comm_id=client_comm.id,
-                                           timeout=self._timeout,
-                                           debounce=self._debounce,
-                                           plot_id=plot_id)
-        js_callback = CustomJS(code='\n'.join([fetch_data,
-                                               self_callback]))
-        return js_callback

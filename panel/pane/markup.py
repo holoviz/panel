@@ -36,15 +36,14 @@ class DivPaneBase(PaneBase):
     _rename = {'object': 'text'}
 
     def _get_properties(self):
-        return {p : getattr(self,p) for p in list(Layoutable.param) + ['style']
+        return {p : getattr(self, p) for p in list(Layoutable.param) + ['style']
                 if getattr(self, p) is not None}
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         model = _BkDiv(**self._get_properties())
         if root is None:
             root = model
-        self._models[root.ref['id']] = model
-        self._link_object(doc, root, parent, comm)
+        self._models[root.ref['id']] = (model, parent)
         return model
 
     def _update(self, model):
@@ -74,9 +73,9 @@ class HTML(DivPaneBase):
 
     def _get_properties(self):
         properties = super(HTML, self)._get_properties()
-        text=self.object
+        text = '' if self.object is None else self.object
         if hasattr(text, '_repr_html_'):
-            text=text._repr_html_()
+            text = text._repr_html_()
         return dict(properties, text=text)
 
 
@@ -97,7 +96,11 @@ class Str(DivPaneBase):
 
     def _get_properties(self):
         properties = super(Str, self)._get_properties()
-        return dict(properties, text='<pre>'+escape(str(self.object))+'</pre>')
+        if self.object is None:
+            text = ''
+        else:
+            text = '<pre>'+escape(str(self.object))+'</pre>'
+        return dict(properties, text=text)
 
 
 class Markdown(DivPaneBase):
@@ -123,11 +126,12 @@ class Markdown(DivPaneBase):
     def _get_properties(self):
         import markdown
         data = self.object
-        if not isinstance(data, string_types):
+        if data is None:
+            data = ''
+        elif not isinstance(data, string_types):
             data = data._repr_markdown_()
         properties = super(Markdown, self)._get_properties()
         properties['style'] = properties.get('style', {})
         extensions = ['markdown.extensions.extra', 'markdown.extensions.smarty']
-        html = markdown.markdown(self.object, extensions=extensions,
-                                 output_format='html5')
+        html = markdown.markdown(data, extensions=extensions, output_format='html5')
         return dict(properties, text=html)

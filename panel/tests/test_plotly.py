@@ -37,13 +37,12 @@ def test_get_plotly_pane_type_from_trace():
 @plotly_available
 def test_plotly_pane_single_trace(document, comm):
     trace = go.Scatter(x=[0, 1], y=[2, 3], uid='Test')
-    pane = Pane(trace, layout={'width': 350})
+    pane = Pane({'data': [trace], 'layout': {'width': 350}})
 
     # Create pane
     model = pane._get_root(document, comm=comm)
     assert isinstance(model, PlotlyPlot)
-    assert model.ref['id'] in pane._callbacks
-    assert pane._models[model.ref['id']] is model
+    assert pane._models[model.ref['id']][0] is model
     assert len(model.data['data']) == 1
     assert model.data['data'][0]['type'] == 'scatter'
     assert model.data['data'][0]['x'] == [0, 1]
@@ -54,7 +53,7 @@ def test_plotly_pane_single_trace(document, comm):
 
     # Replace Pane.object
     new_trace = go.Bar(x=[2, 3], y=[4, 5])
-    pane.object = new_trace
+    pane.object = {'data': new_trace, 'layout': {'width': 350}}
     assert len(model.data['data']) == 1
     assert model.data['data'][0]['type'] == 'bar'
     assert model.data['data'][0]['x'] == [2, 3]
@@ -62,23 +61,21 @@ def test_plotly_pane_single_trace(document, comm):
     assert model.data['layout'] == {'width': 350}
     assert len(model.data_sources) == 1
     assert model.data_sources[0].data == {}
-    assert model.ref['id'] in pane._callbacks
-    assert pane._models[model.ref['id']] is model
+    assert pane._models[model.ref['id']][0] is model
 
     # Cleanup
     pane._cleanup(model)
-    assert pane._callbacks == {}
+    assert pane._models == {}
 
 
 @plotly_available
 def test_plotly_pane_numpy_to_cds_traces(document, comm):
     trace = go.Scatter(x=np.array([1, 2]), y=np.array([2, 3]))
-    pane = Pane(trace, layout={'width': 350})
+    pane = Pane({'data': [trace], 'layout': {'width': 350}})
 
     # Create pane
     model = pane._get_root(document, comm=comm)
     assert isinstance(model, PlotlyPlot)
-    assert model.ref['id'] in pane._callbacks
     assert len(model.data['data']) == 1
     assert model.data['data'][0]['type'] == 'scatter'
     assert 'x' not in model.data['data'][0]
@@ -92,7 +89,7 @@ def test_plotly_pane_numpy_to_cds_traces(document, comm):
     # Replace Pane.object
     new_trace = [go.Scatter(x=np.array([5, 6]), y=np.array([6, 7])),
                  go.Bar(x=np.array([2, 3]), y=np.array([4, 5]))]
-    pane.object = new_trace
+    pane.object = {'data': new_trace, 'layout': {'width': 350}}
     assert len(model.data['data']) == 2
     assert model.data['data'][0]['type'] == 'scatter'
     assert 'x' not in model.data['data'][0]
@@ -108,8 +105,7 @@ def test_plotly_pane_numpy_to_cds_traces(document, comm):
     cds2 = model.data_sources[1]
     assert np.array_equal(cds2.data['x'], np.array([2, 3]))
     assert np.array_equal(cds2.data['y'], np.array([4, 5]))
-    assert model.ref['id'] in pane._callbacks
 
     # Cleanup
-    pane._cleanup(model, True)
-    assert pane._callbacks == {}
+    pane._cleanup(model)
+    assert pane._models == {}

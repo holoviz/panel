@@ -6,7 +6,9 @@ from __future__ import absolute_import, division, unicode_literals
 import param
 
 from ..models.widgets import Player as _BkPlayer
+from ..util import hashable
 from .base import Widget
+from .select import SelectBase
 
 
 class PlayerBase(Widget):
@@ -20,7 +22,7 @@ class PlayerBase(Widget):
     step = param.Integer(default=1, doc="""
        Number of frames to step forward and back by on each event.""")
 
-    height = param.Integer(default=250, readonly=True)
+    height = param.Integer(default=80)
 
     _widget_type = _BkPlayer
 
@@ -54,7 +56,7 @@ class Player(PlayerBase):
         super(Player, self).__init__(**params)
 
 
-class DiscretePlayer(PlayerBase):
+class DiscretePlayer(PlayerBase, SelectBase):
     """
     The DiscretePlayer provides controls to iterate through a list of
     discrete options.  The speed at which the widget plays is defined
@@ -63,34 +65,28 @@ class DiscretePlayer(PlayerBase):
 
     interval = param.Integer(default=500, doc="Interval between updates")
 
-    options = param.ClassSelector(default=[], class_=(dict, list))
-
     value = param.Parameter()
 
     _rename = {'name': None, 'options': None}
 
     def _process_param_change(self, msg):
-        options = msg.get('options', self.options)
-        if isinstance(options, list):
-            values = options
-        else:
-            values = list(options.values())
+        values = [hashable(v) for v in self.values]
         if 'options' in msg:
             msg['start'] = 0
-            msg['end'] = len(options) - 1
-            if self.value not in values:
+            msg['end'] = len(values) - 1
+            if values and self.value not in values:
                 self.value = values[0]
         if 'value' in msg:
-            value = msg['value']
-            msg['value'] = values.index(value)
+            value = hashable(msg['value'])
+            if hashable(value) in values:
+                msg['value'] = values.index(value)
+            elif values:
+                self.value = values[0]
         return super(DiscretePlayer, self)._process_param_change(msg)
 
     def _process_property_change(self, msg):
-        options = self.options
-        if isinstance(options, list):
-            values = options
-        else:
-            values = list(options.values())
         if 'value' in msg:
-            msg['value'] = values[msg['value']]
+            value = msg.pop('value')
+            if value < len(self.options):
+                msg['value'] = self.values[value]
         return msg

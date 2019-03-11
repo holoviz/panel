@@ -4,8 +4,6 @@ from panel.interact import interactive
 from panel.pane import HTML
 from panel import widgets
 
-from .test_layout import get_div
-
 
 def test_interact_title():
     def test(a):
@@ -124,7 +122,7 @@ def test_string_list_interact():
     widget = interact_pane._widgets['a']
     assert isinstance(widget, widgets.Select)
     assert widget.value == 'A'
-    assert widget.options == dict(zip(options, options))
+    assert widget.options == options
 
 def test_manual_interact():
     def test(a):
@@ -145,11 +143,11 @@ def test_interact_updates_panel(document, comm):
     assert isinstance(widget, widgets.Checkbox)
     assert widget.value == False
 
-    column = interact_pane.layout._get_model(document, comm=comm)
+    column = interact_pane.layout._get_root(document, comm=comm)
     assert isinstance(column, BkColumn)
     div = column.children[1].children[0]
     assert div.text == '<pre>False</pre>'
-    
+
     widget.value = True
     assert div.text == '<pre>True</pre>'
 
@@ -158,19 +156,17 @@ def test_interact_replaces_panel(document, comm):
         return a if a else BkDiv(text='Test')
 
     interact_pane = interactive(test, a=False)
-    pane = interact_pane._pane
     widget = interact_pane._widgets['a']
     assert isinstance(widget, widgets.Checkbox)
     assert widget.value == False
 
-    column = interact_pane.layout._get_model(document, comm=comm)
+    column = interact_pane.layout._get_root(document, comm=comm)
     assert isinstance(column, BkColumn)
-    div = get_div(column.children[1].children[0])
+    div = column.children[1].children[0]
     assert div.text == 'Test'
-    
+
     widget.value = True
-    assert pane._callbacks == {}
-    div = get_div(column.children[1].children[0])
+    div = column.children[1].children[0]
     assert div.text == '<pre>True</pre>'
 
 def test_interact_replaces_model(document, comm):
@@ -183,27 +179,20 @@ def test_interact_replaces_model(document, comm):
     assert isinstance(widget, widgets.Checkbox)
     assert widget.value == False
 
-    column = interact_pane.layout._get_model(document, comm=comm)
+    column = interact_pane.layout._get_root(document, comm=comm)
     assert isinstance(column, BkColumn)
     div = column.children[1].children[0]
     assert isinstance(div, BkDiv)
     assert div.text == 'Test'
-    assert len(interact_pane._callbacks['instance']) == 1
-    assert column.ref['id'] in pane._callbacks
-    assert pane._models[column.ref['id']] is div
-    
+    assert pane._models[column.ref['id']][0] is div
+
     widget.value = True
-    assert column.ref['id'] not in pane._callbacks
-    assert pane._callbacks == {}
     new_pane = interact_pane._pane
     assert new_pane is not pane
     new_div = column.children[1].children[0]
     assert isinstance(new_div, BkDiv)
     assert new_div.text == '<p>ABC</p>'
-    assert len(interact_pane._callbacks['instance']) == 1
-    assert column.ref['id'] in new_pane._callbacks
-    assert new_pane._models[column.ref['id']] is new_div
+    assert new_pane._models[column.ref['id']][0] is new_div
 
     interact_pane._cleanup(column)
     assert len(interact_pane._callbacks) == 1
-    assert pane._callbacks == {}

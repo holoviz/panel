@@ -6,7 +6,8 @@ from collections import OrderedDict
 import pytest
 
 from bokeh.models import (Row as BkRow, Column as BkColumn, GlyphRenderer,
-                          Scatter, Line, GridBox)
+                          Scatter, Line, GridBox, Select as BkSelect,
+                          Slider as BkSlider)
 from bokeh.plotting import Figure
 
 from panel.layout import Column, Row
@@ -19,7 +20,6 @@ except:
     hv = None
 hv_available = pytest.mark.skipif(hv is None, reason="requires holoviews")
 
-from .test_layout import get_div
 from .test_panes import mpl_available
 
 
@@ -40,22 +40,44 @@ def test_holoviews_pane_mpl_renderer(document, comm):
     row = pane._get_root(document, comm=comm)
     assert isinstance(row, BkRow)
     assert len(row.children) == 1
-    assert len(pane._callbacks) == 1
     model = row.children[0]
-    assert pane._models[row.ref['id']] is model
-    div = get_div(model)
-    assert '<img' in div.text
+    assert pane._models[row.ref['id']][0] is model
+    assert '<img' in model.text
 
     # Replace Pane.object
     scatter = hv.Scatter([1, 2, 3])
     pane.object = scatter
-    model = row.children[0]
-    div2 = get_div(model)
-    assert div2.text != div.text
+    new_model = row.children[0]
+    assert model.text != new_model.text
 
     # Cleanup
     pane._cleanup(row)
-    assert pane._callbacks == {}
+    assert pane._models == {}
+
+
+@pytest.mark.usefixtures("hv_mpl")
+@pytest.mark.usefixtures("hv_bokeh")
+@mpl_available
+@hv_available
+def test_holoviews_pane_switch_backend(document, comm):
+    curve = hv.Curve([1, 2, 3])
+    pane = Pane(curve)
+
+    # Create pane
+    row = pane._get_root(document, comm=comm)
+    assert isinstance(row, BkRow)
+    assert len(row.children) == 1
+    model = row.children[0]
+    assert pane._models[row.ref['id']][0] is model
+    assert '<img' in model.text
+
+    # Replace Pane.object
+    pane.backend = 'bokeh'
+    model = row.children[0]
+    assert isinstance(model, Figure)
+
+    # Cleanup
+    pane._cleanup(row)
     assert pane._models == {}
 
 
@@ -69,10 +91,9 @@ def test_holoviews_pane_bokeh_renderer(document, comm):
     row = pane._get_root(document, comm=comm)
     assert isinstance(row, BkRow)
     assert len(row.children) == 1
-    assert len(pane._callbacks) == 1
     model = row.children[0]
     assert isinstance(model, Figure)
-    assert pane._models[row.ref['id']] is model
+    assert pane._models[row.ref['id']][0] is model
     renderers = [r for r in model.renderers if isinstance(r, GlyphRenderer)]
     assert len(renderers) == 1
     assert isinstance(renderers[0].glyph, Line)
@@ -85,12 +106,10 @@ def test_holoviews_pane_bokeh_renderer(document, comm):
     renderers = [r for r in model.renderers if isinstance(r, GlyphRenderer)]
     assert len(renderers) == 1
     assert isinstance(renderers[0].glyph, Scatter)
-    assert len(pane._callbacks) == 1
-    assert pane._models[row.ref['id']] is model
+    assert pane._models[row.ref['id']][0] is model
 
     # Cleanup
     pane._cleanup(row)
-    assert pane._callbacks == {}
     assert pane._models == {}
 
 
@@ -132,12 +151,12 @@ def test_holoviews_widgets_from_dynamicmap(document, comm):
 
     assert isinstance(widgets[3], Select)
     assert widgets[3].name == 'D'
-    assert widgets[3].options == OrderedDict(zip(value_dim.values, value_dim.values))
+    assert widgets[3].options == value_dim.values
     assert widgets[3].value == value_dim.values[0]
 
     assert isinstance(widgets[4], Select)
     assert widgets[4].name == 'E'
-    assert widgets[4].options == OrderedDict(zip(value_default_dim.values, value_default_dim.values))
+    assert widgets[4].options == value_default_dim.values
     assert widgets[4].value == value_default_dim.default
 
     assert isinstance(widgets[5], DiscreteSlider)
@@ -157,14 +176,30 @@ def test_holoviews_with_widgets(document, comm):
     assert hv_pane.widget_box.objects[0].name == 'X'
     assert hv_pane.widget_box.objects[1].name == 'Y'
 
-    assert layout.ref['id'] in hv_pane._callbacks
-    assert hv_pane._models[layout.ref['id']] is model
+    assert hv_pane._models[layout.ref['id']][0] is model
 
     hmap = hv.HoloMap({(i, chr(65+i)): hv.Curve([i]) for i in range(3)}, kdims=['A', 'B'])
     hv_pane.object = hmap
     assert len(hv_pane.widget_box.objects) == 2
     assert hv_pane.widget_box.objects[0].name == 'A'
     assert hv_pane.widget_box.objects[1].name == 'B'
+
+
+@hv_available
+def test_holoviews_updates_widgets(document, comm):
+    hmap = hv.HoloMap({(i, chr(65+i)): hv.Curve([i]) for i in range(3)}, kdims=['X', 'Y'])
+
+    hv_pane = HoloViews(hmap)
+    layout = hv_pane._get_root(document, comm)
+
+    hv_pane.widgets = {'X': Select}
+    assert isinstance(hv_pane.widget_box[0], Select)
+    assert isinstance(layout.children[1].children[0], BkSelect)
+
+    hv_pane.widgets = {'X': DiscreteSlider}
+    assert isinstance(hv_pane.widget_box[0], DiscreteSlider)
+    assert isinstance(layout.children[1].children[0], BkColumn)
+    assert isinstance(layout.children[1].children[0].children[1], BkSlider)
 
 
 @hv_available
@@ -179,17 +214,15 @@ def test_holoviews_with_widgets_not_shown(document, comm):
     assert hv_pane.widget_box.objects[0].name == 'X'
     assert hv_pane.widget_box.objects[1].name == 'Y'
 
-    assert layout.ref['id'] in hv_pane._callbacks
-    assert hv_pane._models[layout.ref['id']] is model
+    assert hv_pane._models[layout.ref['id']][0] is model
 
     hmap = hv.HoloMap({(i, chr(65+i)): hv.Curve([i]) for i in range(3)}, kdims=['A', 'B'])
     hv_pane.object = hmap
-    assert model.ref['id'] not in hv_pane._callbacks
     assert len(hv_pane.widget_box.objects) == 2
     assert hv_pane.widget_box.objects[0].name == 'A'
     assert hv_pane.widget_box.objects[1].name == 'B'
 
-    
+
 @hv_available
 def test_holoviews_widgets_from_holomap():
     hmap = hv.HoloMap({(i, chr(65+i)): hv.Curve([i]) for i in range(3)}, kdims=['X', 'Y'])
@@ -203,7 +236,7 @@ def test_holoviews_widgets_from_holomap():
 
     assert isinstance(widgets[1], Select)
     assert widgets[1].name == 'Y'
-    assert widgets[1].options == OrderedDict([(i, i) for i in ['A', 'B', 'C']])
+    assert widgets[1].options == ['A', 'B', 'C']
     assert widgets[1].value == 'A'
 
 

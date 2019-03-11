@@ -37,9 +37,6 @@ class Vega(PaneBase):
 
     _updates = True
 
-    def __init__(self, object, **params):
-        super(Vega, self).__init__(object, **params)
-
     @classmethod
     def is_altair(cls, obj):
         if 'altair' in sys.modules:
@@ -81,19 +78,24 @@ class Vega(PaneBase):
             sources['data'] = ColumnDataSource(data=ds_as_cds(data))
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        json = self._to_json(self.object)
-        json['data'] = dict(json['data'])
         sources = {}
-        self._get_sources(json, sources)
+        if self.object is None:
+            json = None
+        else:
+            json = self._to_json(self.object)
+            json['data'] = dict(json['data'])
+            self._get_sources(json, sources)
         model = VegaPlot(data=json, data_sources=sources)
         if root is None:
             root = model
-        self._models[root.ref['id']] = model
-        self._link_object(doc, root, parent, comm)
+        self._models[root.ref['id']] = (model, parent)
         return model
 
     def _update(self, model):
-        json = self._to_json(self.object)
-        self._get_sources(json, model.data_sources)
+        if self.object is None:
+            json = None
+        else:
+            json = self._to_json(self.object)
+            self._get_sources(json, model.data_sources)
         model.data = json
 

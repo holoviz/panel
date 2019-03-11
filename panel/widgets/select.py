@@ -18,49 +18,73 @@ from bokeh.models.widgets import (
 
 from ..layout import Column, Row, VSpacer
 from ..util import as_unicode, hashable
-from .base import Widget
+from ..viewable import Layoutable
+from .base import Widget, CompositeWidget
 from .button import _ButtonBase, Button
 from .input import TextInput
 
 
+class SelectBase(Widget):
 
-class Select(Widget):
+    options = param.ClassSelector(default=[], class_=(dict, list))
 
-    options = param.Dict(default={})
+    __abstract = True
+
+    @property
+    def labels(self):
+        return [as_unicode(o) for o in self.options]
+
+    @property
+    def values(self):
+        if isinstance(self.options, dict):
+            return list(self.options.values())
+        else:
+            return self.options
+
+    @property
+    def _items(self):
+        return dict(zip(self.labels, self.values))
+
+
+class Select(SelectBase):
 
     value = param.Parameter(default=None)
 
     _widget_type = _BkSelect
 
     def __init__(self, **params):
-        options = params.get('options', None)
-        if isinstance(options, list):
-            params['options'] = OrderedDict([(as_unicode(o), o) for o in options])
         super(Select, self).__init__(**params)
-        options = list(self.options.values())
-        if self.value is None and None not in options and options:
-            self.value = options[0]
+        values = self.values
+        if self.value is None and None not in values and values:
+            self.value = values[0]
 
     def _process_param_change(self, msg):
         msg = super(Select, self)._process_param_change(msg)
-        mapping = {hashable(v): k for k, v in self.options.items()}
-        if msg.get('value') is not None:
+        mapping = {hashable(v): k for k, v in self._items.items()}
+        if 'value' in msg:
             hash_val = hashable(msg['value'])
             if hash_val in mapping:
                 msg['value'] = mapping[hash_val]
-            else:
-                msg['value'] = list(self.options)[0]
+            elif mapping:
+                self.value = self.values[0]
+
         if 'options' in msg:
-            msg['options'] = list(msg['options'])
+            msg['options'] = self.labels
+            hash_val = hashable(self.value)
+            if mapping and hash_val not in mapping:
+                self.value = self.values[0]
+
         return msg
 
     def _process_property_change(self, msg):
         msg = super(Select, self)._process_property_change(msg)
         if 'value' in msg:
-            if msg['value'] is None:
-                msg['value'] = None
+            if not self.values:
+                pass
+            elif msg['value'] is None:
+                msg['value'] = self.values[0]
             else:
-                msg['value'] = self.options[msg['value']]
+                msg['value'] = self._items[msg['value']]
         msg.pop('options', None)
         return msg
 
@@ -77,18 +101,22 @@ class MultiSelect(Select):
 
     def _process_param_change(self, msg):
         msg = super(Select, self)._process_param_change(msg)
-        mapping = {hashable(v): k for k, v in self.options.items()}
+        mapping = {hashable(v): k for k, v in self._items.items()}
         if 'value' in msg:
-            msg['value'] = [hashable(mapping[v]) for v in msg['value']
-                            if v in mapping]
+            msg['value'] = [mapping[hashable(v)] for v in msg['value']
+                            if hashable(v) in mapping]
+
         if 'options' in msg:
-            msg['options'] = list(msg['options'])
+            msg['options'] = self.labels
+            if any(hashable(v) not in mapping for v in self.value):
+                self.value = [v for v in self.value if hashable(v) in mapping]
         return msg
 
     def _process_property_change(self, msg):
         msg = super(Select, self)._process_property_change(msg)
         if 'value' in msg:
-            msg['value'] = [self.options[v] for v in msg['value']]
+            msg['value'] = [self._items[v] for v in msg['value']
+                            if v in self.labels]
         msg.pop('options', None)
         return msg
 
@@ -108,20 +136,34 @@ class AutocompleteInput(Widget):
 
 class _RadioGroupBase(Select):
 
+    __abstract = True
+
     def _process_param_change(self, msg):
         msg = super(Select, self)._process_param_change(msg)
-        mapping = OrderedDict([(hashable(v), k) for k, v in self.options.items()])
-        if msg.get('value') is not None:
-            msg['active'] = list(mapping).index(msg.pop('value'))
+        values = [hashable(v) for v in self._items.values()]
+        if 'value' in msg:
+            value = hashable(msg.pop('value'))
+            if value in values:
+                msg['active'] = values.index(value)
+            else:
+                msg['active'] = None
+
         if 'options' in msg:
             msg['labels'] = list(msg.pop('options'))
+            value = hashable(self.value)
+            if value not in values:
+                self.value = None
         msg.pop('title', None)
         return msg
 
     def _process_property_change(self, msg):
         msg = super(Select, self)._process_property_change(msg)
         if 'active' in msg:
-            msg['value'] = list(self.options.values())[msg.pop('active')]
+            index = msg.pop('active')
+            if index is None:
+                msg['value'] = None
+            else:
+                msg['value'] = list(self.values)[index]
         return msg
 
 
@@ -145,20 +187,26 @@ class _CheckGroupBase(Select):
 
     value = param.List(default=[])
 
+    __abstract = True
+
     def _process_param_change(self, msg):
         msg = super(Select, self)._process_param_change(msg)
-        mapping = OrderedDict([(hashable(v), k) for k, v in self.options.items()])
-        if msg.get('value') is not None:
-            msg['active'] = [list(mapping).index(v) for v in msg.pop('value')]
+        values = [hashable(v) for v in self._items.values()]
+        if 'value' in msg:
+            msg['active'] = [values.index(hashable(v)) for v in msg.pop('value')
+                             if hashable(v) in values]
         if 'options' in msg:
             msg['labels'] = list(msg.pop('options'))
+            if any(hashable(v) not in values for v in self.value):
+                self.value = [v for v in self.value if hashable(v) in values]
         msg.pop('title', None)
         return msg
 
     def _process_property_change(self, msg):
         msg = super(Select, self)._process_property_change(msg)
         if 'active' in msg:
-            msg['value'] = [list(self.options.values())[a] for a in msg.pop('active')]
+            values = self.values
+            msg['value'] = [values[a] for a in msg.pop('active')]
         return msg
 
 
@@ -220,7 +268,7 @@ class ToggleGroup(Select):
                 return RadioBoxGroup(**params)
 
 
-class CrossSelector(MultiSelect):
+class CrossSelector(CompositeWidget, MultiSelect):
     """
     A composite widget which allows selecting from a list of items
     by moving them between two lists. Supports filtering values by
@@ -243,17 +291,19 @@ class CrossSelector(MultiSelect):
         super(CrossSelector, self).__init__(**kwargs)
         # Compute selected and unselected values
 
-        mapping = {hashable(v): k for k, v in self.options.items()}
+        mapping = {hashable(v): k for k, v in self._items.items()}
         selected = [mapping[hashable(v)] for v in kwargs.get('value', [])]
-        unselected = [k for k in self.options if k not in selected]
+        unselected = [k for k in self.labels if k not in selected]
 
         # Define whitelist and blacklist
+        layout = dict(sizing_mode=self.sizing_mode, width_policy=self.width_policy,
+                      height_policy=self.height_policy, background=self.background)
         width = int((self.width-50)/2)
         self._lists = {
             False: MultiSelect(options=unselected, size=self.size,
-                               height=self.height-50, width=width),
+                               height=self.height-50, width=width, **layout),
             True: MultiSelect(options=selected, size=self.size,
-                              height=self.height-50, width=width)
+                              height=self.height-50, width=width, **layout)
         }
         self._lists[False].param.watch(self._update_selection, 'value')
         self._lists[True].param.watch(self._update_selection, 'value')
@@ -278,40 +328,63 @@ class CrossSelector(MultiSelect):
         whitelist = Column(self._search[True], self._lists[True])
         buttons = Column(self._buttons[True], self._buttons[False], width=50)
 
-        self._layout = Row(blacklist, Column(VSpacer(), buttons, VSpacer()), whitelist)
-
-        self.param.watch(self._update_options, 'options')
-        self.param.watch(self._update_value, 'value')
-        self.link(self._lists[False], size='size')
-        self.link(self._lists[True], size='size')
+        self._composite = Row(blacklist, Column(VSpacer(), buttons, VSpacer()), whitelist,
+                              css_classes=self.css_classes, margin=self.margin, **layout)
 
         self._selected = {False: [], True: []}
         self._query = {False: '', True: ''}
+        self.param.watch(self._update_layout_params, list(Layoutable.param))
+
+
+    def _update_layout_params(self, *events):
+        for event in events:
+            if event.name in ['css_classes']:
+                setattr(self._composite, event.name, event.new)
+            elif event.name in ['sizing_mode', 'width_policy', 'height_policy',
+                                'background', 'margin']:
+                setattr(self._composite, event.name, event.new)
+                setattr(self._lists[True], event.name, event.new)
+                setattr(self._lists[False], event.name, event.new)
+            elif event.name == 'height':
+                setattr(self._lists[True], event.name, event.new-50)
+                setattr(self._lists[False], event.name, event.new-50)
+            elif event.name == 'width':
+                width = int((event.new-50)/2)
+                setattr(self._lists[True], event.name, width)
+                setattr(self._lists[False], event.name, width)
+
+        
+    @param.depends('size', watch=True)
+    def _update_size(self):
+        self._lists[False].size = self.size
+        self._lists[True].size = self.size
 
     @param.depends('disabled', watch=True)
     def _update_disabled(self):
         self._buttons[False].disabled = self.disabled
         self._buttons[True].disabled = self.disabled
 
-    def _update_value(self, event):
-        mapping = {hashable(v): k for k, v in self.options.items()}
-        selected = OrderedDict([(mapping[k], mapping[k]) for k in event.new])
-        unselected = OrderedDict([(k, k) for k in self.options if k not in selected])
+    @param.depends('value', watch=True)
+    def _update_value(self):
+        mapping = {hashable(v): k for k, v in self._items.items()}
+        selected = [mapping[hashable(v)] for v in self.value]
+        unselected = [k for k in self.labels if k not in selected]
         self._lists[True].options = selected
         self._lists[True].value = []
         self._lists[False].options = unselected
         self._lists[False].value = []
 
-    def _update_options(self, event):
+    @param.depends('options', watch=True)
+    def _update_options(self):
         """
         Updates the options of each of the sublists after the options
         for the whole widget are updated.
         """
         self._selected[False] = []
         self._selected[True] = []
-        self._lists[True].options = {}
+        self._lists[True].options = []
         self._lists[True].value = []
-        self._lists[False].options = OrderedDict([(k, k) for k in event.new])
+        self._lists[False].options = self.labels
         self._lists[False].value = []
 
     def _apply_filters(self):
@@ -328,8 +401,8 @@ class CrossSelector(MultiSelect):
 
     def _apply_query(self, selected):
         query = self._query[selected]
-        other = self._lists[not selected].options
-        options = OrderedDict([(k, k) for k in self.options if k not in other])
+        other = self._lists[not selected].labels
+        options = [k for k in self.labels if k not in other]
         if not query:
             self._lists[selected].options = options
             self._lists[selected].value = []
@@ -339,7 +412,7 @@ class CrossSelector(MultiSelect):
                 matches = list(filter(match.search, options))
             except:
                 matches = list(options)
-            self._lists[selected].options = options if options else {}
+            self._lists[selected].options = options if options else []
             self._lists[selected].value = [m for m in matches]
 
     def _update_selection(self, event):
@@ -368,4 +441,4 @@ class CrossSelector(MultiSelect):
         self._apply_filters()
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        return self._layout._get_model(doc, root, parent, comm)
+        return self._composite._get_model(doc, root, parent, comm)

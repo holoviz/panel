@@ -3,6 +3,8 @@ import pytest
 from collections import OrderedDict
 from datetime import datetime
 
+import param
+
 from bokeh.layouts import Column
 from bokeh.models import Div as BkDiv, Slider as BkSlider
 from panel.models.widgets import Player as BkPlayer, FileInput as BkFileInput
@@ -11,8 +13,36 @@ from panel.widgets import (
     TextInput, StaticText, FloatSlider, IntSlider, RangeSlider,
     LiteralInput, Checkbox, Select, MultiSelect, Button, Toggle,
     DatePicker, DateRangeSlider, DiscreteSlider, DatetimeInput,
-    CrossSelector, DiscretePlayer, ToggleGroup, FileInput
+    CrossSelector, DiscretePlayer, ToggleGroup, FileInput, Widget,
+    CompositeWidget
 )
+
+all_widgets = [w for w in param.concrete_descendents(Widget).values()
+               if not w.__name__.startswith('_') and not issubclass(w, CompositeWidget)]
+
+
+@pytest.mark.parametrize('widget', all_widgets)
+def test_widget_disabled_properties(widget, document, comm):
+    w = widget(disabled=True)
+
+    model = w._get_root(document, comm)
+
+    assert model.disabled == True
+    model.disabled = False
+    assert model.disabled == False
+
+
+@pytest.mark.parametrize('widget', all_widgets)
+def test_widget_model_cache_cleanup(widget, document, comm):
+    w = widget()
+
+    model = w._get_root(document, comm)
+
+    assert model.ref['id'] in w._models
+    assert w._models[model.ref['id']] == (model, None)
+
+    w._cleanup(model)
+    assert w._models == {}
 
 
 def test_text_input(document, comm):
@@ -51,14 +81,11 @@ def test_widget_triggers_events(document, comm):
     with block_comm():
         text.value = '123'
 
-    assert len(document._held_events) == 3
-    event_found = False
-    for event in document._held_events:
-        if event.attr == 'value':
-            assert event.model is widget
-            assert event.new == '123'
-            event_found = True
-    assert event_found
+    assert len(document._held_events) == 1
+    event = document._held_events[0]
+    assert event.attr == 'value'
+    assert event.model is widget
+    assert event.new == '123'
 
 
 def test_static_text(document, comm):
@@ -220,7 +247,7 @@ def test_checkbox(document, comm):
 
 def test_select_list_constructor():
     select = Select(options=['A', 1], value=1)
-    assert select.options == {'A': 'A', '1': 1}
+    assert select.options == ['A', 1]
 
 
 def test_select(document, comm):
@@ -339,7 +366,7 @@ def test_toggle_group_error_init(document, comm):
         ToggleGroup(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
                     value=[1, object], name='RadioButtonGroup',
                     widget_type='buttons')
-        
+
     with pytest.raises(ValueError):
         ToggleGroup(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
                     value=[1, object], name='RadioButtonGroup',
@@ -347,51 +374,51 @@ def test_toggle_group_error_init(document, comm):
 
 
 def test_toggle_group_check(document, comm):
-    
+
     for widget_type in ToggleGroup._widgets_type:
         select = ToggleGroup(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
                                value=[1, object], name='CheckButtonGroup',
                                widget_type=widget_type, behavior='check')
-        
+
         widget = select._get_root(document, comm=comm)
-    
+
         assert isinstance(widget, select._widget_type)
         assert widget.active == [1, 2]
         assert widget.labels == ['A', '1', 'C']
-    
+
         widget.active = [2]
         select._comm_change({'active': [2]})
         assert select.value == [object]
-    
+
         widget.active = [0, 2]
         select._comm_change({'active': [0, 2]})
         assert select.value == ['A', object]
-    
+
         select.value = [object, 'A']
         assert widget.active == [2, 0]
-    
+
         widget.active = []
         select._comm_change({'active': []})
         assert select.value == []
 
 
 def test_toggle_group_radio(document, comm):
-    
+
     for widget_type in ToggleGroup._widgets_type:
         select = ToggleGroup(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
                                value=1, name='RadioButtonGroup',
                                widget_type=widget_type, behavior='radio')
-        
+
         widget = select._get_root(document, comm=comm)
 
         assert isinstance(widget, select._widget_type)
         assert widget.active == 1
         assert widget.labels == ['A', '1', 'C']
-    
+
         widget.active = 2
         select._comm_change({'active': 2})
         assert select.value == object
-        
+
         select.value = 'A'
         assert widget.active == 0
 
@@ -488,14 +515,13 @@ def test_discrete_slider(document, comm):
     assert label.text == '<b>DiscreteSlider:</b> 1'
 
     widget.value = 2
-    discrete_slider._comm_change({'value': 2})
+    discrete_slider._slider._comm_change({'value': 2})
     assert discrete_slider.value == 10
     assert label.text == '<b>DiscreteSlider:</b> 10'
 
     discrete_slider.value = 100
     assert widget.value == 3
     assert label.text == '<b>DiscreteSlider:</b> 100'
-
 
 
 def test_discrete_date_slider(document, comm):
@@ -518,14 +544,13 @@ def test_discrete_date_slider(document, comm):
     assert label.text == '<b>DiscreteSlider:</b> 2016-01-02'
 
     widget.value = 2
-    discrete_slider._comm_change({'value': 2})
+    discrete_slider._slider._comm_change({'value': 2})
     assert discrete_slider.value == dates['2016-01-03']
     assert label.text == '<b>DiscreteSlider:</b> 2016-01-03'
 
     discrete_slider.value = dates['2016-01-01']
     assert widget.value == 0
     assert label.text == '<b>DiscreteSlider:</b> 2016-01-01'
-
 
 
 def test_discrete_slider_options_dict(document, comm):
@@ -546,7 +571,7 @@ def test_discrete_slider_options_dict(document, comm):
     assert label.text == '<b>DiscreteSlider:</b> 1'
 
     widget.value = 2
-    discrete_slider._comm_change({'value': 2})
+    discrete_slider._slider._comm_change({'value': 2})
     assert discrete_slider.value == 10
     assert label.text == '<b>DiscreteSlider:</b> 10'
 
@@ -555,22 +580,26 @@ def test_discrete_slider_options_dict(document, comm):
     assert label.text == '<b>DiscreteSlider:</b> 100'
 
 
-
 def test_cross_select_constructor(document, comm):
-    cross_select = CrossSelector(options=['A', 'B', 'C', 1, 2, 3], value=['A', 1])
+    cross_select = CrossSelector(options=['A', 'B', 'C', 1, 2, 3], value=['A', 1], size=5)
 
-    assert cross_select._lists[True].options == {'A': 'A', '1': '1'}
-    assert cross_select._lists[False].options == {'B': 'B', 'C': 'C', '2': '2', '3': '3'}
+    assert cross_select._lists[True].options == ['A', '1']
+    assert cross_select._lists[False].options == ['B', 'C', '2', '3']
 
     # Change selection
     cross_select.value = ['B', 2]
-    assert cross_select._lists[True].options == {'B': 'B', '2': '2'}
-    assert cross_select._lists[False].options == {'A': 'A', 'C': 'C', '1': '1', '3': '3'}
+    assert cross_select._lists[True].options == ['B', '2']
+    assert cross_select._lists[False].options == ['A', 'C', '1', '3']
 
     # Change options
     cross_select.options = {'D': 'D', '4': 4}
-    assert cross_select._lists[True].options == {}
-    assert cross_select._lists[False].options == {'D': 'D', '4': '4'}
+    assert cross_select._lists[True].options == []
+    assert cross_select._lists[False].options == ['D', '4']
+
+    # Change size
+    cross_select.size = 5
+    assert cross_select._lists[True].size == 5
+    assert cross_select._lists[False].size == 5
 
     # Query unselected item
     cross_select._search[False].value = 'D'
@@ -578,17 +607,17 @@ def test_cross_select_constructor(document, comm):
 
     # Move queried item
     cross_select._buttons[True].param.trigger('clicks')
-    assert cross_select._lists[False].options == {'4': '4'}
+    assert cross_select._lists[False].options == ['4']
     assert cross_select._lists[False].value == []
-    assert cross_select._lists[True].options == {'D': 'D'}
+    assert cross_select._lists[True].options == ['D']
     assert cross_select._lists[False].value == []
 
     # Query selected item
     cross_select._search[True].value = 'D'
     cross_select._buttons[False].param.trigger('clicks')
-    assert cross_select._lists[False].options == {'D': 'D', '4': '4'}
+    assert cross_select._lists[False].options == ['D', '4']
     assert cross_select._lists[False].value == ['D']
-    assert cross_select._lists[True].options == {}
+    assert cross_select._lists[True].options == []
 
     # Clear query
     cross_select._search[False].value = ''
