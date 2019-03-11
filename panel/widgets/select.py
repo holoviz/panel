@@ -42,7 +42,7 @@ class SelectBase(Widget):
             return self.options
 
     @property
-    def items(self):
+    def _items(self):
         return dict(zip(self.labels, self.values))
 
 
@@ -60,7 +60,7 @@ class Select(SelectBase):
 
     def _process_param_change(self, msg):
         msg = super(Select, self)._process_param_change(msg)
-        mapping = {hashable(v): k for k, v in self.items.items()}
+        mapping = {hashable(v): k for k, v in self._items.items()}
         if 'value' in msg:
             hash_val = hashable(msg['value'])
             if hash_val in mapping:
@@ -84,7 +84,7 @@ class Select(SelectBase):
             elif msg['value'] is None:
                 msg['value'] = self.values[0]
             else:
-                msg['value'] = self.items[msg['value']]
+                msg['value'] = self._items[msg['value']]
         msg.pop('options', None)
         return msg
 
@@ -101,7 +101,7 @@ class MultiSelect(Select):
 
     def _process_param_change(self, msg):
         msg = super(Select, self)._process_param_change(msg)
-        mapping = {hashable(v): k for k, v in self.items.items()}
+        mapping = {hashable(v): k for k, v in self._items.items()}
         if 'value' in msg:
             msg['value'] = [mapping[hashable(v)] for v in msg['value']
                             if hashable(v) in mapping]
@@ -115,7 +115,7 @@ class MultiSelect(Select):
     def _process_property_change(self, msg):
         msg = super(Select, self)._process_property_change(msg)
         if 'value' in msg:
-            msg['value'] = [self.items[v] for v in msg['value']
+            msg['value'] = [self._items[v] for v in msg['value']
                             if v in self.labels]
         msg.pop('options', None)
         return msg
@@ -140,7 +140,7 @@ class _RadioGroupBase(Select):
 
     def _process_param_change(self, msg):
         msg = super(Select, self)._process_param_change(msg)
-        values = [hashable(v) for v in self.items.values()]
+        values = [hashable(v) for v in self._items.values()]
         if 'value' in msg:
             value = hashable(msg.pop('value'))
             if value in values:
@@ -191,7 +191,7 @@ class _CheckGroupBase(Select):
 
     def _process_param_change(self, msg):
         msg = super(Select, self)._process_param_change(msg)
-        values = [hashable(v) for v in self.items.values()]
+        values = [hashable(v) for v in self._items.values()]
         if 'value' in msg:
             msg['active'] = [values.index(hashable(v)) for v in msg.pop('value')
                              if hashable(v) in values]
@@ -291,7 +291,7 @@ class CrossSelector(CompositeWidget, MultiSelect):
         super(CrossSelector, self).__init__(**kwargs)
         # Compute selected and unselected values
 
-        mapping = {hashable(v): k for k, v in self.items.items()}
+        mapping = {hashable(v): k for k, v in self._items.items()}
         selected = [mapping[hashable(v)] for v in kwargs.get('value', [])]
         unselected = [k for k in self.labels if k not in selected]
 
@@ -366,7 +366,7 @@ class CrossSelector(CompositeWidget, MultiSelect):
 
     @param.depends('value', watch=True)
     def _update_value(self):
-        mapping = {hashable(v): k for k, v in self.items.items()}
+        mapping = {hashable(v): k for k, v in self._items.items()}
         selected = [mapping[hashable(v)] for v in self.value]
         unselected = [k for k in self.labels if k not in selected]
         self._lists[True].options = selected
