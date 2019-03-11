@@ -22,50 +22,6 @@ all_widgets = [w for w in param.concrete_descendents(Widget).values()
 
 
 @pytest.mark.parametrize('widget', all_widgets)
-def test_widget_layout_properties(widget, document, comm):
-
-    w = widget()
-
-    model = w._get_root(document, comm)
-
-    w.background = '#ffffff'
-    assert model.background == '#ffffff'
-
-    w.css_classes = ['custom_class']
-    assert model.css_classes == ['custom_class']
-
-    w.width = 500
-    assert model.width == 500
-
-    w.height = 450
-    assert model.height == 450
-
-    w.min_height = 300
-    assert model.min_height == 300
-
-    w.min_width = 250
-    assert model.min_width == 250
-
-    w.max_height = 600
-    assert model.max_height == 600
-
-    w.max_width = 550
-    assert model.max_width == 550
-
-    w.margin = 10
-    assert model.margin == (10, 10, 10, 10)
-
-    w.sizing_mode = 'stretch_width'
-    assert model.sizing_mode == 'stretch_width'
-
-    w.width_policy = 'max'
-    assert model.width_policy == 'max'
-
-    w.height_policy = 'min'
-    assert model.height_policy == 'min'
-
-
-@pytest.mark.parametrize('widget', all_widgets)
 def test_widget_disabled_properties(widget, document, comm):
     w = widget(disabled=True)
 

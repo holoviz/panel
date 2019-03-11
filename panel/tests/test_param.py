@@ -6,10 +6,11 @@ import pytest
 from bokeh.models import (
     Div, Slider, Select, RangeSlider, MultiSelect, Row as BkRow,
     CheckboxGroup, Toggle, Button, TextInput as BkTextInput,
-    Tabs as BkTabs, Column as BkColumn)
+    Tabs as BkTabs, Column as BkColumn, TextInput)
 from panel.pane import Pane, PaneBase, Matplotlib, Bokeh
 from panel.layout import Tabs, Row
 from panel.param import Param, ParamMethod, JSONInit
+from panel.widgets import LiteralInput
 
 from .fixtures import mpl_figure
 
@@ -370,6 +371,139 @@ def test_param_precedence(document, comm):
     assert test_pane._widgets['a'][0] in test_pane._widget_box.objects
 
 
+def test_replace_param_object(document, comm):
+    class Test(param.Parameterized):
+        a = param.Number(bounds=(0, 10))
+
+    pane = Param()
+
+    model = pane._get_root(document, comm=comm)
+
+    assert model.children == []
+
+    pane.object = Test()
+
+    assert len(model.children) == 2
+    title, widget = model.children
+
+    assert isinstance(title, Div)
+    assert title.text == '<b>Test</b>'
+
+    assert isinstance(widget, Slider)
+    assert widget.start == 0
+    assert widget.end == 10
+
+
+def test_set_parameters(document, comm):
+    class Test(param.Parameterized):
+        a = param.Number(bounds=(0, 10))
+        b = param.String(default='A')
+
+    pane = Param(Test())
+
+    model = pane._get_root(document, comm=comm)
+
+    assert len(model.children) == 3
+    title, slider, text = model.children
+    assert isinstance(title, Div)
+    assert isinstance(slider, Slider)
+    assert isinstance(text, TextInput)
+
+    pane.parameters = ['b']
+
+    assert len(model.children) == 2
+    title, text = model.children
+    assert isinstance(title, Div)
+    assert isinstance(text, TextInput)
+
+
+def test_set_display_threshold(document, comm):
+    class Test(param.Parameterized):
+        a = param.Number(bounds=(0, 10), precedence=1)
+        b = param.String(default='A', precedence=2)
+
+    pane = Param(Test())
+
+    model = pane._get_root(document, comm=comm)
+
+    assert len(model.children) == 3
+    title, slider, text = model.children
+    assert isinstance(title, Div)
+    assert isinstance(slider, Slider)
+    assert isinstance(text, TextInput)
+
+    pane.display_threshold = 1.5
+
+    assert len(model.children) == 2
+    title, text = model.children
+    assert isinstance(title, Div)
+    assert isinstance(text, TextInput)
+
+
+def test_set_widgets(document, comm):
+    class Test(param.Parameterized):
+        a = param.Number(default=1, bounds=(0, 10), precedence=1)
+        b = param.String(default='A', precedence=2)
+
+    pane = Param(Test())
+
+    model = pane._get_root(document, comm=comm)
+
+    assert len(model.children) == 3
+    title, slider, text = model.children
+    assert isinstance(title, Div)
+    assert isinstance(slider, Slider)
+    assert isinstance(text, TextInput)
+
+    pane.widgets = {'a': LiteralInput(value=1, type=(float, int))}
+
+    assert len(model.children) == 3
+    title, number, text = model.children
+    assert isinstance(title, Div)
+    assert isinstance(number, TextInput)
+    assert isinstance(text, TextInput)
+
+
+def test_set_show_name(document, comm):
+    class Test(param.Parameterized):
+        a = param.Number(bounds=(0, 10))
+
+    pane = Param(Test())
+
+    model = pane._get_root(document, comm=comm)
+
+    assert len(model.children) == 2
+    title, widget = model.children
+    assert isinstance(title, Div)
+    assert isinstance(widget, Slider)
+
+    pane.show_name = False
+
+    assert len(model.children) == 1
+    assert isinstance(model.children[0], Slider)
+
+
+def test_set_show_labels(document, comm):
+    class Test(param.Parameterized):
+        a = param.Number(bounds=(0, 10))
+
+    pane = Param(Test())
+
+    model = pane._get_root(document, comm=comm)
+
+    assert len(model.children) == 2
+    title, widget = model.children
+    assert isinstance(title, Div)
+    assert isinstance(widget, Slider)
+    assert widget.title == 'A'
+
+    pane.show_labels = False
+
+    assert len(model.children) == 2
+    assert isinstance(model.children[1], Slider)
+    assert model.children[1].title == ''
+
+
 def test_expand_param_subobject(document, comm):
     class Test(param.Parameterized):
         a = param.Parameter()
@@ -424,7 +558,7 @@ def test_switch_param_subobject(document, comm):
     assert isinstance(select, Select)
 
     # Switch subobject
-    test_pane._widgets['a'][0].value = o2    
+    test_pane._widgets['a'][0].value = o2
     _, _, _, subpanel = test_pane.layout.objects
     col = model.children[3]
     assert isinstance(col, BkColumn)
@@ -438,7 +572,7 @@ def test_switch_param_subobject(document, comm):
     assert len(model.children) == 3
     assert subpanel._models == {}
 
-    
+
 
 def test_expand_param_subobject_into_row(document, comm):
     class Test(param.Parameterized):
@@ -472,7 +606,7 @@ def test_expand_param_subobject_into_row(document, comm):
     assert len(row.children) == 0
     assert subpanel._models == {}
 
-    
+
 def test_expand_param_subobject_expand(document, comm):
     class Test(param.Parameterized):
         a = param.Parameter()
@@ -517,7 +651,7 @@ def test_param_subobject_expand_no_toggle(document, comm):
     div, widget = model.children[2].children
     assert div.text == '<b>Nested</b>'
     assert isinstance(widget, BkTextInput)
-    
+
 
 def test_expand_param_subobject_tabs(document, comm):
     class Test(param.Parameterized):
@@ -635,13 +769,13 @@ def test_param_method_pane_subobject(document, comm):
     watchers = pane._callbacks
     assert not any(w.inst is subobject for w in watchers)
     assert any(w.inst is new_subobject for w in watchers)
-    
+
     # Cleanup pane
     pane._cleanup(row)
     assert pane._models == {}
     assert inner_pane._models == {}
 
-    
+
 @mpl_available
 def test_param_method_pane_mpl(document, comm):
     test = View()

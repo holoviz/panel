@@ -62,9 +62,9 @@ class PaneBase(Reactive):
 
     __abstract = True
 
-    def __init__(self, object, **params):
+    def __init__(self, object=None, **params):
         applies = self.applies(object)
-        if isinstance(applies, bool) and not applies:
+        if (isinstance(applies, bool) and not applies) and object is not None :
             raise ValueError("%s pane does not support objects of type '%s'" %
                              (type(self).__name__, type(object).__name__))
 
@@ -76,7 +76,7 @@ class PaneBase(Reactive):
     def __repr__(self, depth=0):
         cls = type(self).__name__
         params = param_reprs(self, ['object'])
-        obj = type(self.object).__name__
+        obj = 'Empty' if self.object is None else type(self.object).__name__ 
         template = '{cls}({obj}, {params})' if params else '{cls}({obj})'
         return template.format(cls=cls, params=', '.join(params), obj=obj)
 

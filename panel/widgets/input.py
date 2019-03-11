@@ -97,7 +97,6 @@ class StaticText(Widget):
         return msg
 
 
-
 class DatePicker(Widget):
 
     value = param.Date(default=None)
@@ -127,14 +126,13 @@ class ColorPicker(Widget):
     _rename = {'value': 'color', 'name': 'title'}
 
 
-
 class LiteralInput(Widget):
     """
     LiteralInput allows declaring Python literals using a text
     input widget. Optionally a type may be declared.
     """
 
-    type = param.ClassSelector(default=None, class_=type,
+    type = param.ClassSelector(default=None, class_=(type, tuple),
                                is_instance=True)
 
     value = param.Parameter(default=None)
@@ -153,9 +151,10 @@ class LiteralInput(Widget):
         if not isinstance(new, self.type):
             if event:
                 self.value = event.old
+            types = repr(self.type) if isinstance(self.type, tuple) else self.type.__name__
             raise ValueError('LiteralInput expected %s type but value %s '
                              'is of type %s.' %
-                             (self.type.__name__, new, type(new).__name__))
+                             (types, new, type(new).__name__))
 
     def _process_property_change(self, msg):
         msg = super(LiteralInput, self)._process_property_change(msg)

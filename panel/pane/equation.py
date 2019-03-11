@@ -102,7 +102,7 @@ class LaTeX(PNG):
         return int(w*72), int(h*72)
 
     def _img(self):
-        obj=self.object # Default: LaTeX string
+        obj = self.object # Default: LaTeX string
 
         if hasattr(obj, '_repr_latex_'):
             obj = obj._repr_latex_()

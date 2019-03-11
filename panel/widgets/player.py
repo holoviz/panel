@@ -22,7 +22,7 @@ class PlayerBase(Widget):
     step = param.Integer(default=1, doc="""
        Number of frames to step forward and back by on each event.""")
 
-    height = param.Integer(default=250)
+    height = param.Integer(default=80)
 
     _widget_type = _BkPlayer
 
@@ -56,7 +56,7 @@ class Player(PlayerBase):
         super(Player, self).__init__(**params)
 
 
-class DiscretePlayer(SelectBase, PlayerBase):
+class DiscretePlayer(PlayerBase, SelectBase):
     """
     The DiscretePlayer provides controls to iterate through a list of
     discrete options.  The speed at which the widget plays is defined

@@ -44,6 +44,8 @@ export class PlotlyPlotView extends HTMLBoxView {
   }
 
   _plot(): void {
+    if (this.model.data == null)
+      return
     for (let i = 0; i < this.model.data.data.length; i++) {
       const trace = this.model.data.data[i]
       const cds = this.model.data_sources[i]

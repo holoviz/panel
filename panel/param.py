@@ -29,7 +29,7 @@ from .viewable import Layoutable, Reactive
 from .widgets import (
     LiteralInput, Select, Checkbox, FloatSlider, IntSlider, RangeSlider,
     MultiSelect, StaticText, Button, Toggle, TextInput, DiscreteSlider,
-    DatetimeInput, DateRangeSlider, ColorPicker)
+    DatetimeInput, DateRangeSlider, ColorPicker, Widget)
 
 
 def ObjectSelector(pobj):
@@ -92,7 +92,7 @@ class Param(PaneBase):
         usually to update the default Parameter values of the
         underlying parameterized object.""")
 
-    parameters = param.List(default=None, doc="""
+    parameters = param.List(default=[], doc="""
         If set this serves as a whitelist of parameters to display on the supplied
         Parameterized object.""")
 
@@ -131,23 +131,19 @@ class Param(PaneBase):
         param.DateRange:      DateRangeSlider
     }
 
-    def __init__(self, object, **params):
+    _rerender_params = []
+
+    def __init__(self, object=None, **params):
         if isinstance(object, param.parameterized.Parameters):
             object = object.cls if object.self is None else object.self
-        if 'name' not in params:
-            params['name'] = object.name
-        if 'parameters' not in params:
+        if 'parameters' not in params and object is not None:
             params['parameters'] = [p for p in object.param if p != 'name']
         super(Param, self).__init__(object, **params)
         self._updating = False
 
-        # Construct widgets
-        self._widgets = self._get_widgets()
-        widgets = [widget for widgets in self._widgets.values() for widget in widgets]
-
         # Construct Layout
         kwargs = {p: v for p, v in self.get_param_values() if p in Layoutable.param}
-        self._widget_box = self.default_layout(*widgets, **kwargs)
+        self._widget_box = self.default_layout(**kwargs)
 
         layout = self.expand_layout
         if isinstance(layout, Panel):
@@ -161,9 +157,10 @@ class Param(PaneBase):
             raise ValueError('expand_layout expected to be a panel.layout.Panel'
                              'type or instance, found %s type.' %
                              type(layout).__name__)
-
-        if not (self.expand_button == False and not self.expand):
-            self._link_subobjects()
+        self.param.watch(self._update_widgets, [
+            'object', 'parameters', 'display_threshold', 'expand_button',
+            'expand', 'expand_layout', 'widgets', 'show_labels', 'show_name'])
+        self._update_widgets()
 
     def __repr__(self, depth=0):
         cls = type(self).__name__
@@ -175,7 +172,7 @@ class Param(PaneBase):
             if v is self.param[p].default: continue
             elif v is None: continue
             elif isinstance(v, string_types) and v == '': continue
-            elif p == 'object' or (p == 'name' and v.startswith(obj_cls)): continue
+            elif p == 'object' or (p == 'name' and (v.startswith(obj_cls) or v.startswith(cls))): continue
             elif p == 'parameters' and v == parameters: continue
             try:
                 params.append('%s=%s' % (p, abbreviated_repr(v)))
@@ -188,6 +185,43 @@ class Param(PaneBase):
     #----------------------------------------------------------------
     # Callback API
     #----------------------------------------------------------------
+
+    def _synced_params(self):
+        ignored_params = ['name', 'default_layout']
+        return [p for p in Layoutable.param if p not in ignored_params]
+
+    def _update_widgets(self, *events):
+        parameters = []
+        for event in sorted(events, key=lambda x: x.name):
+            if event.name == 'object':
+                if isinstance(event.new, param.parameterized.Parameters):
+                    self.object = object.cls if object.self is None else object.self
+                    return
+                if event.new is None:
+                    parameters = None
+                else:
+                    parameters = [p for p in event.new.param if p != 'name']
+            if event.name == 'parameters':
+                parameters = None if event.new == [] else event.new
+
+        if parameters != [] and parameters != self.parameters:
+            self.parameters = parameters
+            return
+
+        for cb in list(self._callbacks):
+            if cb.inst in self._widget_box.objects:
+                cb.inst.param.unwatch(cb)
+                self._callbacks.remove(cb)
+
+        # Construct widgets
+        if self.object is None:
+            self._widgets = {}
+        else:
+            self._widgets = self._get_widgets()
+        widgets = [widget for widgets in self._widgets.values() for widget in widgets]
+        self._widget_box.objects = widgets
+        if not (self.expand_button == False and not self.expand):
+            self._link_subobjects()
 
     def _link_subobjects(self):
         for pname, widgets in self._widgets.items():
@@ -258,7 +292,8 @@ class Param(PaneBase):
             widget_class = self.widgets[p_name]
         value = getattr(self.object, p_name)
 
-        kw = dict(value=value, disabled=p_obj.constant, name=p_obj.label)
+        label = p_obj.label if self.show_labels else ''
+        kw = dict(value=value, disabled=p_obj.constant, name=label)
 
         if hasattr(p_obj, 'get_range'):
             options = p_obj.get_range()
@@ -276,7 +311,12 @@ class Param(PaneBase):
                 widget_class = LiteralInput
 
         kwargs = {k: v for k, v in kw.items() if k in widget_class.param}
-        widget = widget_class(**kwargs)
+        
+        if isinstance(widget_class, Widget):
+            widget = widget_class
+        else:
+            widget = widget_class(**kwargs)
+
         watchers = self._callbacks
         if isinstance(p_obj, param.Action):
             widget.button_type = 'success'
@@ -427,7 +467,7 @@ class ParamMethod(PaneBase):
         self._kwargs =  {p: params.pop(p) for p in list(params)
                          if p not in self.param}
         super(ParamMethod, self).__init__(object, **params)
-        kwargs = dict(self.get_param_values(), **dict(self._kwargs, _temporary=True))
+        kwargs = dict(self.get_param_values(), **self._kwargs)
         del kwargs['object']
         self._pane = Pane(self.object(), **kwargs)
         self._inner_layout = Row(self._pane, **{k: v for k, v in params.items() if k in Row.param})

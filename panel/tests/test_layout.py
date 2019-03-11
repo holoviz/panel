@@ -8,6 +8,7 @@ from panel.layout import Column, Row, Tabs, Spacer
 from panel.pane import Bokeh, Pane
 from panel.param import Param
 
+
 @pytest.fixture
 def tabs(document, comm):
     """Set up a tabs instance"""
@@ -20,50 +21,6 @@ def assert_tab_is_similar(tab1, tab2):
     assert tab1.child is tab2.child
     assert tab1.name == tab2.name
     assert tab1.title == tab2.title
-
-
-@pytest.mark.parametrize('layout', [Column, Row, Tabs, Spacer])
-def test_layout_properties(layout, document, comm):
-
-    l = layout()
-
-    model = l._get_root(document, comm)
-
-    l.background = '#ffffff'
-    assert model.background == '#ffffff'
-
-    l.css_classes = ['custom_class']
-    assert model.css_classes == ['custom_class']
-
-    l.width = 500
-    assert model.width == 500
-
-    l.height = 450
-    assert model.height == 450
-
-    l.min_height = 300
-    assert model.min_height == 300
-
-    l.min_width = 250
-    assert model.min_width == 250
-
-    l.max_height = 600
-    assert model.max_height == 600
-
-    l.max_width = 550
-    assert model.max_width == 550
-
-    l.margin = 10
-    assert model.margin == (10, 10, 10, 10)
-
-    l.sizing_mode = 'stretch_width'
-    assert model.sizing_mode == 'stretch_width'
-
-    l.width_policy = 'max'
-    assert model.width_policy == 'max'
-
-    l.height_policy = 'min'
-    assert model.height_policy == 'min'
 
 
 @pytest.mark.parametrize('layout', [Column, Row, Tabs, Spacer])

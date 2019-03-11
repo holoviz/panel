@@ -9,7 +9,7 @@ from io import BytesIO
 
 import param
 
-from bokeh.models import LayoutDOM, CustomJS
+from bokeh.models import LayoutDOM, CustomJS, Spacer as BkSpacer
 
 from ..util import remove_root
 from .base import PaneBase
@@ -32,7 +32,10 @@ class Bokeh(PaneBase):
         if root is None:
             return self._get_root(doc, comm)
 
-        model = self.object
+        if self.object is None:
+            model = BkSpacer()
+        else:
+            model = self.object
         ref = root.ref['id']
         for js in model.select({'type': CustomJS}):
             js.code = js.code.replace(model.ref['id'], ref)
@@ -127,6 +130,8 @@ class YT(HTML):
 
     def _get_properties(self):
         p = super(YT, self)._get_properties()
+        if self.object is None:
+            return p
 
         width = height = 0
         if self.width  is None or self.height is None:

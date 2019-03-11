@@ -168,14 +168,16 @@ class HoloViews(PaneBase):
         from holoviews.core import Dimension
         from holoviews.core.util import isnumeric, unicode, datetime_types
         from holoviews.core.traversal import unique_dimkeys
+        from holoviews.plotting.util import get_dynamic_mode
         from ..widgets import Widget, DiscreteSlider, Select, FloatSlider, DatetimeInput
 
+        dynamic, bounded = get_dynamic_mode(object)
         dims, keys = unique_dimkeys(object)
         if dims == [Dimension('Frame')] and keys == [(0,)]:
             return [], {}
 
         nframes = 1
-        values = dict(zip(dims, zip(*keys)))
+        values = dict() if dynamic else dict(zip(dims, zip(*keys)))
         dim_values = OrderedDict()
         widgets = []
         for dim in dims:

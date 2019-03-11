@@ -76,6 +76,8 @@ export class VegaPlotView extends HTMLBoxView {
   }
 
   _plot(): void {
+    if (this.model.data == null)
+      return
     if (!('datasets' in this.model.data)) {
       const datasets = this._fetch_datasets()
       if ('data' in datasets) {
