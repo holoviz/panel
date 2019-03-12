@@ -17,11 +17,6 @@ from bokeh.core.validation import silence
 from bokeh.core.validation.warnings import EMPTY_LAYOUT
 
 
-# Silence the bokeh warning for empty layouts since empty layouts
-# are a valid use case for panel
-silence(EMPTY_LAYOUT)
-
-
 class Panel(Reactive):
     """
     Abstract baseclass for a layout of Viewables.
@@ -40,6 +35,7 @@ class Panel(Reactive):
 
     def __init__(self, *objects, **params):
         from .pane import panel
+        silence(EMPTY_LAYOUT)
         objects = [panel(pane) for pane in objects]
         super(Panel, self).__init__(objects=objects, **params)
 
@@ -115,6 +111,7 @@ class Panel(Reactive):
         super(Panel, self)._cleanup(root)
         for p in self.objects:
             p._cleanup(root)
+        silence(EMPTY_LAYOUT, False)
 
     #----------------------------------------------------------------
     # Public API
