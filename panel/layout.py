@@ -35,7 +35,12 @@ class Panel(Reactive):
 
     def __init__(self, *objects, **params):
         from .pane import panel
+
+        # Silence the bokeh warning for empty layouts since empty layouts
+        # are a valid use case for panel. This will affect all bokeh
+        # models once it has been called.
         silence(EMPTY_LAYOUT)
+
         objects = [panel(pane) for pane in objects]
         super(Panel, self).__init__(objects=objects, **params)
 
@@ -111,7 +116,6 @@ class Panel(Reactive):
         super(Panel, self)._cleanup(root)
         for p in self.objects:
             p._cleanup(root)
-        silence(EMPTY_LAYOUT, False)
 
     #----------------------------------------------------------------
     # Public API
