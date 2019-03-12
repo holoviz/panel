@@ -97,7 +97,7 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
     _rename = {'formatter': None}
 
     def __init__(self, **params):
-        self._processing = False
+        self._syncing = False
         self._text = StaticText()
         self._slider = IntSlider()
         super(DiscreteSlider, self).__init__(**params)
@@ -124,13 +124,13 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
             return
         index = self.values.index(self.value)
         self._text.value = labels[index]
-        if self._processing:
+        if self._syncing:
             return
         try:
-            self._processing = True
+            self._syncing = True
             self._slider.value = index
         finally:
-            self._processing = False
+            self._syncing = False
 
     @param.depends('options', watch=True)
     def _update_options(self):
@@ -141,13 +141,13 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
             self.value = values[0]
 
     def _sync_value(self, event):
-        if self._processing:
+        if self._syncing:
             return
         try:
             self._processing = True
             self.value = self.values[event.new]
         finally:
-            self._processing = False
+            self._syncing = False
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         return self._composite._get_model(doc, root, parent, comm)
