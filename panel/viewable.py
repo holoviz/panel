@@ -354,13 +354,9 @@ class Viewable(Layoutable):
         from IPython.display import publish_display_data
         doc = _Document()
         comm = _Comm()
-        try:
-            embed = config.embed
-            config.embed = True
+        with config.set(embed=True)
             model = self._get_root(doc, comm)
-        finally:
-            config.embed = embed
-        embed_state(self, model, doc, max_states)
+            embed_state(self, model, doc, max_states)
         publish_display_data(*render_model(model))
 
     def get_server(self, port=0, websocket_origin=None, loop=None,

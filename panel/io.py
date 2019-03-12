@@ -332,12 +332,8 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3):
             w._models.pop(target)
             w = dw
             index = parent_model.children.index(w_model)
-            try:
-                embed = config.embed
-                config.embed = True
+            with config.set(embed=True):
                 w_model = w._get_model(doc, model, parent_model, comm)
-            finally:
-                config.embed = embed
             link = CustomJS(code=dw._jslink.code['value'], args={
                 'source': w_model.children[1], 'target': w_model.children[0]})
             parent_model.children[index] = w_model
