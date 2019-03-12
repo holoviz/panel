@@ -60,6 +60,16 @@ class _config(param.Parameterized):
 
     _truthy = ['True', 'true', '1', True, 1]
 
+    @contextmanager
+    def set(self, **kwargs):
+        values = [(k, v) for k, v in self.param.get_param_values() if k != 'name']
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+        try:
+            yield
+        finally:
+            self.set_param(**dict(values))
+
     @property
     def embed(self):
         if self._embed is not None:
