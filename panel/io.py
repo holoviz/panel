@@ -15,6 +15,7 @@ from itertools import product
 import param
 import bokeh
 import bokeh.embed.notebook
+import numpy as np
 
 from bokeh.document import Document
 from bokeh.core.templates import DOC_NB_JS
@@ -260,7 +261,7 @@ def record_events(doc):
             'content': msg.content_json}
 
 
-def embed_state(panel, model, doc, max_states=1000):
+def embed_state(panel, model, doc, max_states=1000, max_opts=3):
     """
     Embeds the state of the application on a State model which allows
     exporting a static version of an app. This works by finding all
@@ -279,29 +280,68 @@ def embed_state(panel, model, doc, max_states=1000):
       The bokeh Document being exported
     max_states: int
       The maximum number of states to export
+    max_opts: int
+      The maximum number of options for a single widget
     """
+    from .layout import Panel
     from .models.state import State
     from .widgets import Widget, DiscreteSlider
+    from .widgets.slider import _SliderBase
 
     target = model.ref['id']
-    model.tags.append('embedded')
-    discrete_widgets = [w for w in panel.select(Widget) if 'options' in w.param]
+    _, _, _, comm = state._views[target]
 
-    add_to_doc(model, doc, True)
-    state = State()
+    model.tags.append('embedded')
+    widgets = [w for w in panel.select(Widget) if 'options' in w.param
+               or isinstance(w, _SliderBase)]
+
+    state_model = State()
 
     values = []
-    for w in discrete_widgets:
+    for w in widgets:
         if isinstance(w, DiscreteSlider):
             w_model = w._composite[1]._models[target][0].select_one({'type': w._widget_type})
         else:
             w_model = w._models[target][0].select_one({'type': w._widget_type})
-        js_callback = CustomJS(code=STATE_JS.format(id=state.ref['id']))
-        w_model.js_on_change('value', js_callback)
-        if isinstance(w.options, list):
-            values.append((w, w_model, w.options))
+
+        if not hasattr(w, 'options'): # Discretize slider
+            parent = panel.select(lambda x: isinstance(x, Panel) and w in x)[0]
+            parent_model = parent._models[target][0]
+
+            # Compute sampling
+            start, end, step = w_model.start, w_model.end, w_model.step
+            span = end-start
+            dtype = int if isinstance(step, int) else float
+            if (span/step) > (max_opts-1):
+                step = dtype(span/(max_opts-1))
+            vals = [dtype(v) for v in np.arange(start, end+step, step)]
+
+            # Replace model
+            dw = DiscreteSlider(options=vals, name=w.name)
+            dw.link(w, value='value')
+            w._models.pop(target)
+            w = dw
+            index = parent_model.children.index(w_model)
+            try:
+                embed = config.embed
+                config.embed = True
+                w_model = w._get_model(doc, model, parent_model, comm)
+            finally:
+                config.embed = embed
+            link = CustomJS(code=dw._jslink.code['value'], args={
+                'source': w_model.children[1], 'target': w_model.children[0]})
+            parent_model.children[index] = w_model
+            w_model = w_model.children[1]
+            w_model.js_on_change('value', link)
+        elif isinstance(w.options, list):
+            vals = w.options
         else:
-            values.append((w, w_model, list(w.options.values())))
+            vals = list(w.options.values())
+        js_callback = CustomJS(code=STATE_JS.format(id=state_model.ref['id']))
+        w_model.js_on_change('value', js_callback)
+        values.append((w, w_model, vals))
+
+    add_to_doc(model, doc, True)
     doc._held_events = []
 
     restore = [w.value for w, _, _ in values]
@@ -321,18 +361,24 @@ def embed_state(panel, model, doc, max_states=1000):
         sub_dict = state_dict
         for i, k in enumerate(key):
             w, m = values[i][:2]
-            w.value = k
+            try:
+                w.value = k
+            except:
+                continue
             sub_dict = sub_dict[m.value]
         events = record_events(doc)
         if events:
             sub_dict.update(events)
 
     for (w, _, _), v in zip(values, restore):
-        w.set_param(value=v)
+        try:
+            w.set_param(value=v)
+        except:
+            pass
 
-    state.update(state=state_dict, values=init_vals,
-                 widgets={m.ref['id']: i for i, (_, m, _) in enumerate(values)})
-    doc.add_root(state)
+    state_model.update(state=state_dict, values=init_vals,
+                       widgets={m.ref['id']: i for i, (_, m, _) in enumerate(values)})
+    doc.add_root(state_model)
 
 
 def load_notebook(inline=True):

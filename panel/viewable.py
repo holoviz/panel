@@ -337,7 +337,7 @@ class Viewable(Layoutable):
         show_server(server, notebook_url, server_id)
         return server
 
-    def embed(self, max_states=1000):
+    def embed(self, max_states=1000, max_opts=3):
         """
         Renders a static version of a panel in a notebook by evaluating
         the set of states defined by the widgets in the model. Note
@@ -348,6 +348,8 @@ class Viewable(Layoutable):
         ----------
         max_states: int
           The maximum number of states to embed
+        max_opts: int
+          The maximum number of states for a single widget
         """
         from IPython.display import publish_display_data
         doc = _Document()
