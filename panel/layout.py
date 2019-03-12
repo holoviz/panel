@@ -13,6 +13,14 @@ from bokeh.models.widgets import Tabs as BkTabs, Panel as BkPanel
 from .util import param_name, param_reprs
 from .viewable import Reactive
 
+from bokeh.core.validation import silence
+from bokeh.core.validation.warnings import EMPTY_LAYOUT
+
+
+# Silence the bokeh warning for empty layouts since empty layouts
+# are a valid use case for panel
+silence(EMPTY_LAYOUT)
+
 
 class Panel(Reactive):
     """
