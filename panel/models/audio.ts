@@ -8,8 +8,8 @@ export class AudioView extends WidgetView {
   private _blocked: boolean
   private _time: any
 
-  initialize(options: any): void {
-    super.initialize(options)
+  initialize(): void {
+    super.initialize()
     this._blocked = false
     this._time = Date.now()
     this.render()
@@ -99,7 +99,7 @@ export namespace Audio {
     paused: p.Property<boolean>
     time: p.Property<number>
     throttle: p.Property<number>
-    value: p.Property<any>  
+    value: p.Property<any>
     volume: p.Property<number | null>
   }
 }

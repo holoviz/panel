@@ -4,8 +4,8 @@ import {HTMLBox, HTMLBoxView} from "models/layouts/html_box"
 export class PlotlyPlotView extends HTMLBoxView {
   model: PlotlyPlot
 
-  initialize(options: any): void {
-    super.initialize(options)
+  initialize(): void {
+    super.initialize()
     this._plot()
     this.connect(this.model.properties.data.change, this._plot)
   }
@@ -43,7 +43,7 @@ export namespace PlotlyPlot {
   export type Attrs = p.AttrsOf<Props>
   export type Props = HTMLBox.Props & {
     data: p.Property<any>
-    data_sources: p.Property<any[]> 
+    data_sources: p.Property<any[]>
   }
 }
 

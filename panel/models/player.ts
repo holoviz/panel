@@ -9,8 +9,8 @@ export class PlayerView extends WidgetView {
   protected loop_state: HTMLFormElement
   protected timer: any
 
-  initialize(options: any): void {
-    super.initialize(options)
+  initialize(): void {
+    super.initialize()
     this.render()
   }
 
