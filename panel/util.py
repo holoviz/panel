@@ -289,6 +289,21 @@ LOAD_MIME = 'application/vnd.holoviews_load.v0+json'
 EXEC_MIME = 'application/vnd.holoviews_exec.v0+json'
 HTML_MIME = 'text/html'
 
+ABORT_JS = """
+if (!window.PyViz) {{
+  return;
+}}
+var receiver = window.PyViz.receivers['{plot_id}'];
+var events = receiver ? receiver._partial.content.events : [];
+for (var event of events) {{
+  if ((event.kind == 'ModelChanged') && (event.attr == '{change}') &&
+      (cb_obj.id == event.model.id) &&
+      (cb_obj['{change}'] == event.new)) {{
+    events.pop(events.indexOf(event))
+    return;
+  }}
+}}
+"""
 
 def load_notebook(inline=True):
     from IPython.display import publish_display_data
