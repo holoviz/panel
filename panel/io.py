@@ -216,17 +216,20 @@ def embed_state(panel, model, doc, max_states=1000):
       The maximum number of states to export
     """
     from .models.state import State
-    from .widgets import Widget
+    from .widgets import Widget, DiscreteSlider
 
     target = model.ref['id']
     model.tags.append('embedded')
-    discrete_widgets = [w for w in panel.select(Widget) if 'options' in w.params()]
+    discrete_widgets = [w for w in panel.select(Widget) if 'options' in w.param]
 
     add_to_doc(model, doc, True)
 
     values = []
-    for w in widgets:
-        w_model = w._models[target][0].select_one({'type': w._widget_type})
+    for w in discrete_widgets:
+        if isinstance(w, DiscreteSlider):
+            w_model = w._composite[1]._models[target][0].select_one({'type': w._widget_type})
+        else:
+            w_model = w._models[target][0].select_one({'type': w._widget_type})
         js_callback = CustomJS(code="""
           var receiver = new Bokeh.protocol.Receiver()
           state = cb_obj.document.roots()[1]
