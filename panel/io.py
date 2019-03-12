@@ -50,10 +50,10 @@ class _config(param.Parameterized):
         os.environ['PANEL_EMBED'] = 'True'
     """
 
-    _embed = param.Boolean(default=False, doc="""
+    _embed = param.Boolean(default=False, allow_None=True, doc="""
         Whether plot data will be embedded.""")
 
-    _inline = param.Boolean(default=True, doc="""
+    _inline = param.Boolean(default=True, allow_None=True, doc="""
         Whether to inline JS and CSS resources.
         If disabled, resources are loaded from CDN if one is available.""")
 
