@@ -169,9 +169,9 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
     def labels(self):
         title = (self.name + ': ' if self.name else '')
         if isinstance(self.options, dict):
-            return [title + ('<b>%s</b> ' % o) for o in self.options]
+            return [title + ('<b>%s</b>' % o) for o in self.options]
         else:
-            return [title + ('<b>%s</b> ' % (o if isinstance(o, string_types) else (self.formatter % o)))
+            return [title + ('<b>%s</b>' % (o if isinstance(o, string_types) else (self.formatter % o)))
                     for o in self.options]
     @property
     def values(self):
