@@ -78,7 +78,7 @@ class _config(param.Parameterized):
         else:
             return os.environ.get('PANEL_INLINE', _config._inline) in self._truthy
 
-    @embed.setter
+    @inline.setter
     def inline(self, value):
         self._inline = value
 
