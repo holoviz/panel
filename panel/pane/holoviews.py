@@ -94,7 +94,7 @@ class HoloViews(PaneBase):
         if isinstance(plot, BokehPlot):
             if plot.comm or plot.document is state.curdoc:
                 plot.update(key)
-                if plot.comm:
+                if plot.comm and 'embedded' not in plot.root.tags:
                     plot.push()
             else:
                 plot.document.add_next_tick_callback(partial(plot.update, key))

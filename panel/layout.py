@@ -72,6 +72,12 @@ class Panel(Reactive):
     # Model API
     #----------------------------------------------------------------
 
+    def _init_properties(self):
+        properties = {k: v for k, v in self.param.get_param_values()
+                      if v is not None}
+        del properties['objects']
+        return self._process_param_change(properties)
+
     def _get_objects(self, model, old_objects, doc, root, comm=None):
         """
         Returns new child models for the layout while reusing unchanged

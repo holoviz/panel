@@ -2,10 +2,9 @@ from collections import OrderedDict
 
 from bokeh.models import Div
 
+from panel.io import render_mimebundle
 from panel.pane import PaneBase
-from panel.util import (
-    render_mimebundle, get_method_owner,abbreviated_repr
-)
+from panel.util import get_method_owner, abbreviated_repr
 
 
 def test_get_method_owner_class():

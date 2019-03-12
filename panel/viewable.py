@@ -8,6 +8,7 @@ from __future__ import absolute_import, division, unicode_literals
 import re
 import signal
 import uuid
+
 from functools import partial
 
 import param
@@ -18,11 +19,12 @@ from bokeh.io import curdoc as _curdoc, export_png as _export_png, save as _save
 from bokeh.resources import CDN as _CDN
 from bokeh.models import CustomJS
 from bokeh.server.server import Server
-from pyviz_comms import JS_CALLBACK, JupyterCommManager
+from pyviz_comms import JS_CALLBACK, JupyterCommManager, Comm as _Comm
 
-from .io import state
-from .util import (render_mimebundle, add_to_doc, push, param_reprs,
-                   _origin_url, show_server, ABORT_JS)
+from .io import (
+    ABORT_JS, add_to_doc, push, render_mimebundle, state, embed_state,
+    render_model, _origin_url, show_server, config)
+from .util import param_reprs
 
 
 class Layoutable(param.Parameterized):
@@ -177,7 +179,6 @@ class Layoutable(param.Parameterized):
         super(Layoutable, self).__init__(**params)
 
 
-
 class Viewable(Layoutable):
     """
     Viewable is the baseclass all objects in the panel library are
@@ -262,6 +263,9 @@ class Viewable(Layoutable):
         doc = _Document()
         comm = state._comm_manager.get_server_comm()
         model = self._get_root(doc, comm)
+        if config.embed:
+            embed_state(self, model, doc)
+            return render_model(model)
         return render_mimebundle(model, doc, comm)
 
     def _server_destroy(self, session_context):
@@ -333,6 +337,28 @@ class Viewable(Layoutable):
         show_server(server, notebook_url, server_id)
         return server
 
+    def embed(self, max_states=1000, max_opts=3):
+        """
+        Renders a static version of a panel in a notebook by evaluating
+        the set of states defined by the widgets in the model. Note
+        this will only work well for simple apps with a relatively
+        small state space.
+
+        Parameters
+        ----------
+        max_states: int
+          The maximum number of states to embed
+        max_opts: int
+          The maximum number of states for a single widget
+        """
+        from IPython.display import publish_display_data
+        doc = _Document()
+        comm = _Comm()
+        with config.set(embed=True):
+            model = self._get_root(doc, comm)
+            embed_state(self, model, doc, max_states)
+        publish_display_data(*render_model(model))
+
     def get_server(self, port=0, websocket_origin=None, loop=None,
                    show=False, start=False, **kwargs):
         """
@@ -386,6 +412,13 @@ class Viewable(Layoutable):
             def show_callback():
                 server.show('/')
             server.io_loop.add_callback(show_callback)
+
+        def sig_exit(*args, **kwargs):
+            server.io_loop.add_callback_from_signal(do_stop)
+
+        def do_stop(*args, **kwargs):
+            server.io_loop.stop()
+        signal.signal(signal.SIGINT, sig_exit)
 
         if start:
             server.start()
@@ -498,12 +531,6 @@ class Viewable(Layoutable):
             server.start()
         else:
             server = self.get_server(port, websocket_origin, show=True, start=True)
-            def sig_exit(*args, **kwargs):
-                server.io_loop.add_callback_from_signal(do_stop)
-
-            def do_stop(*args, **kwargs):
-                server.io_loop.stop()
-            signal.signal(signal.SIGINT, sig_exit)
 
         return server
 
@@ -592,7 +619,7 @@ class Reactive(Viewable):
                 viewable, root, doc, comm = state._views[ref]
                 if comm or doc is state.curdoc:
                     self._update_model(events, msg, root, model, doc, comm)
-                    if comm:
+                    if comm and 'embedded' not in root.tags:
                         push(doc, comm)
                 else:
                     cb = partial(self._update_model, events, msg, root, model, doc, comm)
@@ -607,6 +634,8 @@ class Reactive(Viewable):
         if comm is None:
             for p in properties:
                 model.on_change(p, partial(self._server_change, doc))
+        elif config.embed:
+            pass
         else:
             client_comm = state._comm_manager.get_client_comm(on_msg=self._comm_change)
             for p in properties:

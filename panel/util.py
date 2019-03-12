@@ -12,26 +12,16 @@ import threading
 import textwrap
 
 from collections import defaultdict, MutableSequence, MutableMapping, OrderedDict
-from contextlib import contextmanager
 from datetime import datetime
 from six import string_types
 
 import param
-import bokeh
-import bokeh.embed.notebook
 
 from bokeh.document import Document
-from bokeh.io.notebook import load_notebook as bk_load_notebook
-from bokeh.models import Model, LayoutDOM, Box
-from bokeh.protocol import Protocol
-from bokeh.resources import CDN, INLINE
-from bokeh.util.string import encode_utf8
-from pyviz_comms import (PYVIZ_PROXY, JupyterCommManager, bokeh_msg_handler,
-                         nb_mime_js, embed_js)
+from bokeh.models import Model, Box
 
 # Global variables
 CUSTOM_MODELS = {}
-BLOCKED = False
 
 if sys.version_info.major > 2:
     unicode = str
@@ -220,174 +210,6 @@ class StoppableThread(threading.Thread):
 ################################
 # Display and update utilities #
 ################################
-
-
-def diff(doc, binary=True, events=None):
-    """
-    Returns a json diff required to update an existing plot with
-    the latest plot data.
-    """
-    events = list(doc._held_events) if events is None else events
-    if not events or BLOCKED:
-        return None
-    msg = Protocol("1.0").create("PATCH-DOC", events, use_buffers=binary)
-    doc._held_events = [e for e in doc._held_events if e not in events]
-    return msg
-
-
-@contextmanager
-def block_comm():
-    """
-    Context manager to temporarily block comm push
-    """
-    global BLOCKED
-    BLOCKED = True
-    yield
-    BLOCKED = False
-
-
-def push(doc, comm, binary=True):
-    """
-    Pushes events stored on the document across the provided comm.
-    """
-    msg = diff(doc, binary=binary)
-    if msg is None:
-        return
-    comm.send(msg.header_json)
-    comm.send(msg.metadata_json)
-    comm.send(msg.content_json)
-    for header, payload in msg.buffers:
-        comm.send(json.dumps(header))
-        comm.send(buffers=[payload])
-
-
-def remove_root(obj, replace=None):
-    """
-    Removes the document from any previously displayed bokeh object
-    """
-    for model in obj.select({'type': Model}):
-        prev_doc = model.document
-        model._document = None
-        if prev_doc:
-            prev_doc.remove_root(model)
-        if replace:
-            model._document = replace
-
-
-def add_to_doc(obj, doc, hold=False):
-    """
-    Adds a model to the supplied Document removing it from any existing Documents.
-    """
-    # Add new root
-    remove_root(obj)
-    doc.add_root(obj)
-    if doc._hold is None and hold:
-        doc.hold()
-
-
-LOAD_MIME = 'application/vnd.holoviews_load.v0+json'
-EXEC_MIME = 'application/vnd.holoviews_exec.v0+json'
-HTML_MIME = 'text/html'
-
-ABORT_JS = """
-if (!window.PyViz) {{
-  return;
-}}
-var receiver = window.PyViz.receivers['{plot_id}'];
-var events = receiver ? receiver._partial.content.events : [];
-for (var event of events) {{
-  if ((event.kind == 'ModelChanged') && (event.attr == '{change}') &&
-      (cb_obj.id == event.model.id) &&
-      (cb_obj['{change}'] == event.new)) {{
-    events.pop(events.indexOf(event))
-    return;
-  }}
-}}
-"""
-
-def load_notebook(inline=True):
-    from IPython.display import publish_display_data
-
-    # Create a message for the logo (if shown)
-    LOAD_MIME_TYPE = bokeh.io.notebook.LOAD_MIME_TYPE
-    bokeh.io.notebook.LOAD_MIME_TYPE = LOAD_MIME
-    bk_load_notebook(hide_banner=True, resources=INLINE if inline else CDN)
-    bokeh.io.notebook.LOAD_MIME_TYPE = LOAD_MIME_TYPE
-    bokeh.io.notebook.curstate().output_notebook()
-
-    # Publish comm manager
-    JS = '\n'.join([PYVIZ_PROXY, JupyterCommManager.js_manager, nb_mime_js])
-    publish_display_data(data={LOAD_MIME: JS, 'application/javascript': JS})
-
-
-def _origin_url(url):
-    if url.startswith("http"):
-        url = url.split("//")[1]
-    return url
-
-def _server_url(url, port):
-    if url.startswith("http"):
-        return '%s:%d%s' % (url.rsplit(':', 1)[0], port, "/")
-    else:
-        return 'http://%s:%d%s' % (url.split(':')[0], port, "/")
-
-
-def show_server(server, notebook_url, server_id):
-    """
-    Displays a bokeh server inline in the notebook.
-
-    Parameters
-    ----------
-    server: bokeh.server.server.Server
-        Bokeh server instance which is already running
-    notebook_url: str
-        The URL of the running Jupyter notebook server
-    server_id: str
-        Unique ID to identify the server with
-    """
-    from bokeh.embed import server_document
-    from IPython.display import publish_display_data
-
-    if callable(notebook_url):
-        url = notebook_url(server.port)
-    else:
-        url = _server_url(notebook_url, server.port)
-
-    script = server_document(url, resources=None)
-
-    publish_display_data({
-        HTML_MIME: script,
-        EXEC_MIME: ""
-    }, metadata={
-        EXEC_MIME: {"server_id": server_id}
-    })
-
-
-def render_mimebundle(model, doc, comm):
-    """
-    Displays bokeh output inside a notebook using the PyViz display
-    and comms machinery.
-    """
-    if not isinstance(model, LayoutDOM): 
-        raise ValueError('Can only render bokeh LayoutDOM models')
-
-    add_to_doc(model, doc, True)
-
-    target = model.ref['id']
-
-    # Publish plot HTML
-    bokeh_script, bokeh_div, _ = bokeh.embed.notebook.notebook_content(model)
-    html = "<div id='{id}'>{html}</div>".format(id=target, html=encode_utf8(bokeh_div))
-
-    # Publish bokeh plot JS
-    msg_handler = bokeh_msg_handler.format(plot_id=target)
-    comm_js = comm.js_template.format(plot_id=target, comm_id=comm.id, msg_handler=msg_handler)
-    bokeh_js = '\n'.join([comm_js, bokeh_script])
-    bokeh_js = embed_js.format(widget_id=target, plot_id=target, html=html) + bokeh_js
-
-    data = {EXEC_MIME: '', 'text/html': html, 'application/javascript': bokeh_js}
-    metadata = {EXEC_MIME: {'id': target}}
-    return data, metadata
 
 
 def bokeh_repr(obj, depth=0, ignored=['children', 'text', 'name', 'toolbar', 'renderers', 'below', 'center', 'left', 'right']):

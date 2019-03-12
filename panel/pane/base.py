@@ -8,10 +8,10 @@ from functools import partial
 
 import param
 
-from ..io import state
+from ..io import push, state
 from ..layout import Panel, Row
 from ..viewable import Viewable, Reactive, Layoutable
-from ..util import param_reprs, push
+from ..util import param_reprs
 
 
 def Pane(obj, **kwargs):
@@ -115,7 +115,7 @@ class PaneBase(Reactive):
             viewable, root, doc, comm = state._views[ref]
             if comm or doc is state.curdoc:
                 self._update_object(model, doc, root, parent, comm)
-                if comm:
+                if comm and 'embedded' not in root.tags:
                     push(doc, comm)
             else:
                 cb = partial(self._update_object, model, doc, root, parent, comm)

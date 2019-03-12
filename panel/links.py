@@ -11,6 +11,7 @@ from .viewable import Viewable
 from .layout import Panel
 from .pane.holoviews import HoloViews, generate_panel_bokeh_map, is_bokeh_element_plot
 from .util import unicode_repr
+from .widgets import CompositeWidget
 
 from bokeh.models import (CustomJS, Model as BkModel)
 
@@ -94,7 +95,7 @@ class Link(param.Parameterized):
 
     @classmethod
     def _process_links(cls, root_view, root_model):
-        if not isinstance(root_view, Panel) or not root_model:
+        if not isinstance(root_view, (Panel, CompositeWidget)) or not root_model:
             return
 
         linkable = root_view.select(Viewable)

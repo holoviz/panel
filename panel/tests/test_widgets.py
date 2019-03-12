@@ -7,8 +7,8 @@ import param
 
 from bokeh.layouts import Column
 from bokeh.models import Div as BkDiv, Slider as BkSlider
+from panel.io import block_comm
 from panel.models.widgets import Player as BkPlayer, FileInput as BkFileInput
-from panel.util import block_comm
 from panel.widgets import (
     TextInput, StaticText, FloatSlider, IntSlider, RangeSlider,
     LiteralInput, Checkbox, Select, MultiSelect, Button, Toggle,
@@ -512,16 +512,14 @@ def test_discrete_slider(document, comm):
     assert widget.start == 0
     assert widget.end == 3
     assert widget.step == 1
-    assert label.text == '<b>DiscreteSlider:</b> 1'
+    assert label.text == 'DiscreteSlider: <b>1</b>'
 
     widget.value = 2
     discrete_slider._slider._comm_change({'value': 2})
     assert discrete_slider.value == 10
-    assert label.text == '<b>DiscreteSlider:</b> 10'
 
     discrete_slider.value = 100
     assert widget.value == 3
-    assert label.text == '<b>DiscreteSlider:</b> 100'
 
 
 def test_discrete_date_slider(document, comm):
@@ -541,16 +539,14 @@ def test_discrete_date_slider(document, comm):
     assert widget.start == 0
     assert widget.end == 2
     assert widget.step == 1
-    assert label.text == '<b>DiscreteSlider:</b> 2016-01-02'
+    assert label.text == 'DiscreteSlider: <b>2016-01-02</b>'
 
     widget.value = 2
     discrete_slider._slider._comm_change({'value': 2})
     assert discrete_slider.value == dates['2016-01-03']
-    assert label.text == '<b>DiscreteSlider:</b> 2016-01-03'
 
     discrete_slider.value = dates['2016-01-01']
     assert widget.value == 0
-    assert label.text == '<b>DiscreteSlider:</b> 2016-01-01'
 
 
 def test_discrete_slider_options_dict(document, comm):
@@ -568,16 +564,14 @@ def test_discrete_slider_options_dict(document, comm):
     assert widget.start == 0
     assert widget.end == 3
     assert widget.step == 1
-    assert label.text == '<b>DiscreteSlider:</b> 1'
+    assert label.text == 'DiscreteSlider: <b>1</b>'
 
     widget.value = 2
     discrete_slider._slider._comm_change({'value': 2})
     assert discrete_slider.value == 10
-    assert label.text == '<b>DiscreteSlider:</b> 10'
 
     discrete_slider.value = 100
     assert widget.value == 3
-    assert label.text == '<b>DiscreteSlider:</b> 100'
 
 
 def test_cross_select_constructor(document, comm):
