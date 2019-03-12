@@ -32,13 +32,7 @@ class Vtk(PaneBase):
         """
         Should return the bokeh model to be rendered.
         """
-        if self.object is None:
-            json, sources = None, []
-        else:
-            fig = self._to_figure(self.object)
-            json = fig.to_plotly_json()
-            sources = self._get_sources(json)
-        model = VtkPlot(data=json, data_sources=sources)
+        model = VtkPlot()
         if root is None:
             root = model
         self._models[root.ref['id']] = (model, parent)

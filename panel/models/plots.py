@@ -17,9 +17,7 @@ class VtkPlot(LayoutDOM):
 
     __implementation__ = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'vtk.ts')
 
-    data = Dict(String, Any)
-
-    data_sources = List(Instance(ColumnDataSource))
+    poly_data = String
 
 
 CUSTOM_MODELS['panel.models.plots.VtkPlot'] = VtkPlot

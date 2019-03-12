@@ -1,9 +1,22 @@
 import * as p from "core/properties"
 import {HTMLBox, HTMLBoxView} from "models/layouts/html_box";
 
+
+// interface vtkPolyDataReader {
+//   getOutputPort(): unknown;
+//   parseAsText(data: String): void;
+// }
+
 export class VtkPlotView extends HTMLBoxView {
   model: VtkPlot
   protected _initialized: boolean
+  protected _reader: any
+  protected _actor: any //TODO : typed
+  protected _mapper: any //TODO : typed
+  protected _rendererEl: any
+  protected _renderer: any
+  protected _renderWindow: any
+  protected _vtk: any
 
   initialize(): void {
     super.initialize()
@@ -32,37 +45,39 @@ export class VtkPlotView extends HTMLBoxView {
   }
 
   _init(): void {
-    this._plot()
+    this.el.style.setProperty('width', '500px')
+    this.el.style.setProperty('height', '500px')
+    this._vtk = (window as any).vtk
+    this._reader = this._vtk.IO.Legacy.vtkPolyDataReader.newInstance()
+    this._mapper = this._vtk.Rendering.Core.vtkMapper.newInstance()
+    this._actor = this._vtk.Rendering.Core.vtkActor.newInstance()
+    this._actor.setMapper(this._mapper)
+    this._mapper.setInputConnection(this._reader.getOutputPort())
+
+
+    this.connect(this.model.properties.poly_data.change, this._update)
     this._initialized = true
-    this.connect(this.model.properties.data.change, this._plot)
+    this._update()
   }
 
   render(): void {
     super.render()
-    if (this._initialized)
-      this._plot()
+    if (this._initialized) {
+      this._rendererEl = this._vtk.Rendering.Misc.vtkFullScreenRenderWindow.newInstance({
+        container: this.el
+      });
+      this._renderer = this._rendererEl.getRenderer();
+      this._renderWindow = this._renderer.getRenderWindow();
+      this._renderer.addActor(this._actor);
+      this._renderer.resetCamera();
+      this._renderWindow.render();
+    }
+
   }
 
-  _plot(): void {
-    this.el.style.setProperty('width', '500px')
-    this.el.style.setProperty('height', '500px')
-    const vtk = (window as any).vtk
-    var rendererEl = vtk.Rendering.Misc.vtkFullScreenRenderWindow.newInstance({
-      container: this.el
-    });
-    var actor = vtk.Rendering.Core.vtkActor.newInstance();
-    var mapper = vtk.Rendering.Core.vtkMapper.newInstance();
-    var cone = vtk.Filters.Sources.vtkConeSource.newInstance();
-
-    actor.setMapper(mapper);
-    mapper.setInputConnection(cone.getOutputPort());
-
-    var renderer = rendererEl.getRenderer();
-    renderer.addActor(actor);
-    renderer.resetCamera();
-
-    var renderWindow = renderer.getRenderWindow();
-    renderWindow.render();
+  _update(): void{
+    this._reader.parseAsText(this.model.poly_data)
+    this.render()
   }
 }
 
@@ -70,8 +85,7 @@ export class VtkPlotView extends HTMLBoxView {
 export namespace VtkPlot {
   export type Attrs = p.AttrsOf<Props>
   export type Props = HTMLBox.Props & {
-    data: p.Property<any>
-    data_sources: p.Property<any[]>
+    poly_data: p.Property<string>
   }
 }
 
@@ -89,8 +103,7 @@ export class VtkPlot extends HTMLBox {
     this.prototype.default_view = VtkPlotView
 
     this.define<VtkPlot.Props>({
-      data: [ p.Any ],
-      data_sources: [ p.Array ],
+      poly_data: [ p.String ],
     })
   }
 }
