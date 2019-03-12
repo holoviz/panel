@@ -7,8 +7,8 @@ import param
 
 from bokeh.layouts import Column
 from bokeh.models import Div as BkDiv, Slider as BkSlider
+from panel.io import block_comm
 from panel.models.widgets import Player as BkPlayer, FileInput as BkFileInput
-from panel.util import block_comm
 from panel.widgets import (
     TextInput, StaticText, FloatSlider, IntSlider, RangeSlider,
     LiteralInput, Checkbox, Select, MultiSelect, Button, Toggle,

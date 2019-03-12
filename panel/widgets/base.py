@@ -55,3 +55,23 @@ class CompositeWidget(Widget):
     """
 
     __abstract = True
+
+    def select(self, selector=None):
+        """
+        Iterates over the Viewable and any potential children in the
+        applying the Selector.
+
+        Arguments
+        ---------
+        selector: type or callable or None
+            The selector allows selecting a subset of Viewables by
+            declaring a type or callable function to filter by.
+
+        Returns
+        -------
+        viewables: list(Viewable)
+        """
+        objects = super(CompositeWidget, self).select(selector)
+        for obj in self._composite.objects:
+            objects += obj.select(selector)
+        return objects

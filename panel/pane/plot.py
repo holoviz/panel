@@ -11,7 +11,7 @@ import param
 
 from bokeh.models import LayoutDOM, CustomJS, Spacer as BkSpacer
 
-from ..util import remove_root
+from ..io import remove_root
 from .base import PaneBase
 from .markup import HTML
 from .image import PNG

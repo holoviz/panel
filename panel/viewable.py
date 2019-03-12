@@ -19,13 +19,12 @@ from bokeh.io import curdoc as _curdoc, export_png as _export_png, save as _save
 from bokeh.resources import CDN as _CDN
 from bokeh.models import CustomJS
 from bokeh.server.server import Server
-from pyviz_comms import JS_CALLBACK, JupyterCommManager
+from pyviz_comms import JS_CALLBACK, JupyterCommManager, Comm as _Comm
 
-from .io import state
-from .models.state import State
-from .util import (render_mimebundle, add_to_doc, push, param_reprs,
-                   embed_state, render_model, _origin_url, show_server,
-                   ABORT_JS)
+from .io import (
+    add_to_doc, push, render_mimebundle, state, embed_state,
+    render_model, _origin_url, show_server, ABORT_JS)
+from .util import param_reprs
 
 
 class Layoutable(param.Parameterized):
@@ -264,6 +263,9 @@ class Viewable(Layoutable):
         doc = _Document()
         comm = state._comm_manager.get_server_comm()
         model = self._get_root(doc, comm)
+        if state.embed:
+            embed_state(self, model, doc)
+            return render_model(model)
         return render_mimebundle(model, doc, comm)
 
     def _server_destroy(self, session_context):
@@ -348,9 +350,14 @@ class Viewable(Layoutable):
           The maximum number of states to embed
         """
         from IPython.display import publish_display_data
-        doc = Document()
-        comm = Comm()
-        model = self._get_root(doc, comm)
+        doc = _Document()
+        comm = _Comm()
+        try:
+            embed = state.embed
+            state.embed = True
+            model = self._get_root(doc, comm)
+        finally:
+            state.embed = embed
         embed_state(self, model, doc, max_states)
         publish_display_data(*render_model(model))
 
@@ -407,6 +414,13 @@ class Viewable(Layoutable):
             def show_callback():
                 server.show('/')
             server.io_loop.add_callback(show_callback)
+
+        def sig_exit(*args, **kwargs):
+            server.io_loop.add_callback_from_signal(do_stop)
+
+        def do_stop(*args, **kwargs):
+            server.io_loop.stop()
+        signal.signal(signal.SIGINT, sig_exit)
 
         if start:
             server.start()
@@ -519,12 +533,6 @@ class Viewable(Layoutable):
             server.start()
         else:
             server = self.get_server(port, websocket_origin, show=True, start=True)
-            def sig_exit(*args, **kwargs):
-                server.io_loop.add_callback_from_signal(do_stop)
-
-            def do_stop(*args, **kwargs):
-                server.io_loop.stop()
-            signal.signal(signal.SIGINT, sig_exit)
 
         return server
 
@@ -628,7 +636,7 @@ class Reactive(Viewable):
         if comm is None:
             for p in properties:
                 model.on_change(p, partial(self._server_change, doc))
-        elif type(comm) is Comm:
+        elif state.embed:
             pass
         else:
             client_comm = state._comm_manager.get_client_comm(on_msg=self._comm_change)

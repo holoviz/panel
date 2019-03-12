@@ -45,6 +45,9 @@ class _SliderBase(Widget):
                                        objects=['horizontal', 'vertical'], doc="""
         Whether the slider should be oriented horizontally or vertically.""")
 
+    show_value = param.Boolean(default=True, doc="""
+        Whether to show the widget value""")
+
     tooltips = param.Boolean(default=True, doc="""
         Whether the slider handle should display tooltips""")
 
@@ -96,10 +99,13 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
 
     _rename = {'formatter': None}
 
+    _text_link = """
+    var labels = {labels}
+    target.text = labels[source.value]
+    """
+
     def __init__(self, **params):
         self._syncing = False
-        self._text = StaticText()
-        self._slider = IntSlider()
         super(DiscreteSlider, self).__init__(**params)
         if 'formatter' not in params and all(isinstance(v, (int, np.int_)) for v in self.values):
             self.formatter = '%d'
@@ -111,19 +117,34 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
                              'is one of the declared options.'
                              % self.value)
 
+        self._text = StaticText(margin=(5, 0, 0, 0))
+        self._slider = IntSlider()
         self._composite = Column(self._text, self._slider)
-        self._update_value()
         self._update_options()
-        self._slider.param.watch(self._sync_value, 'value')
+        self.param.watch(self._update_options, ['options', 'formatter'])
+        self.param.watch(self._update_value, ['value'])
 
-    @param.depends('value', watch=True)
-    def _update_value(self):
-        labels, values = self.labels, self.values
+    def _update_options(self, *events):
+        values, labels = self.values, self.labels
+        if self.value not in values:
+            value = 0
+            self.value = values[0]
+        else:
+            value = values.index(self.value)
+        self._slider = IntSlider(start=0, end=len(self.options)-1, value=value,
+                                 show_value=False, margin=(0, 5, 5, 5))
+        js_code = self._text_link.format(labels=repr(self.labels))
+        self._jslink = self._slider.jslink(self._text, code={'value': js_code})
+        self._slider.param.watch(self._sync_value, 'value')
+        self._text.value = labels[value]
+        self._composite[1] = self._slider
+
+    def _update_value(self, event):
+        values = self.values
         if self.value not in values:
             self.value = values[0]
             return
         index = self.values.index(self.value)
-        self._text.value = labels[index]
         if self._syncing:
             return
         try:
@@ -131,14 +152,6 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
             self._slider.value = index
         finally:
             self._syncing = False
-
-    @param.depends('options', watch=True)
-    def _update_options(self):
-        slider_msg = {'start': 0, 'end': len(self.options) - 1}
-        self._slider.set_param(**slider_msg)
-        values = self.values
-        if self.value not in values:
-            self.value = values[0]
 
     def _sync_value(self, event):
         if self._syncing:
@@ -154,11 +167,11 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
 
     @property
     def labels(self):
-        title = ('<b>%s:</b> ' % self.name if self.name else '')
+        title = (self.name + ': ' if self.name else '')
         if isinstance(self.options, dict):
-            return [title + o for o in self.options]
+            return [title + ('<b>%s</b> ' % o) for o in self.options]
         else:
-            return [title + (o if isinstance(o, string_types) else (self.formatter % o))
+            return [title + ('<b>%s</b> ' % (o if isinstance(o, string_types) else (self.formatter % o)))
                     for o in self.options]
     @property
     def values(self):

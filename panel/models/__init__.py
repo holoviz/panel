@@ -6,4 +6,5 @@ files.
 """
 
 from .plots import PlotlyPlot, VegaPlot # noqa
+from .state import State # noqa
 from .widgets import Audio, FileInput, Player # noqa
