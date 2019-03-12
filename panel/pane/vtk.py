@@ -1,6 +1,6 @@
 # coding: utf-8
 """
-Defines a PlotlyPane which renders a plotly plot using PlotlyPlot
+Defines a VtkPane which renders a vtk plot using VtkPlot
 bokeh model.
 """
 from __future__ import absolute_import, division, unicode_literals
@@ -12,21 +12,11 @@ from .base import PaneBase
 class Vtk(PaneBase):
     """
     Vtk panes allow rendering Vtk objects.
-
-    For efficiency any array objects found inside a Figure are added
-    to a ColumnDataSource which allows using binary transport to sync
-    the figure on bokeh server and via Comms.
     """
 
     _updates = True
 
     priority = 0.8
-
-    @classmethod
-    def applies(cls, obj):
-        return ((isinstance(obj, list) and obj and all(cls.applies(o) for o in obj)) or
-                hasattr(obj, 'to_plotly_json') or (isinstance(obj, dict)
-                                                   and 'data' in obj and 'layout' in obj))
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         """
