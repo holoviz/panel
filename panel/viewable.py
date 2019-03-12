@@ -22,8 +22,8 @@ from bokeh.server.server import Server
 from pyviz_comms import JS_CALLBACK, JupyterCommManager, Comm as _Comm
 
 from .io import (
-    add_to_doc, push, render_mimebundle, state, embed_state,
-    render_model, _origin_url, show_server, ABORT_JS)
+    ABORT_JS, add_to_doc, push, render_mimebundle, state, embed_state,
+    render_model, _origin_url, show_server, config)
 from .util import param_reprs
 
 
@@ -263,7 +263,7 @@ class Viewable(Layoutable):
         doc = _Document()
         comm = state._comm_manager.get_server_comm()
         model = self._get_root(doc, comm)
-        if state.embed:
+        if config.embed:
             embed_state(self, model, doc)
             return render_model(model)
         return render_mimebundle(model, doc, comm)
@@ -353,11 +353,11 @@ class Viewable(Layoutable):
         doc = _Document()
         comm = _Comm()
         try:
-            embed = state.embed
-            state.embed = True
+            embed = config.embed
+            config.embed = True
             model = self._get_root(doc, comm)
         finally:
-            state.embed = embed
+            config.embed = embed
         embed_state(self, model, doc, max_states)
         publish_display_data(*render_model(model))
 
@@ -636,7 +636,7 @@ class Reactive(Viewable):
         if comm is None:
             for p in properties:
                 model.on_change(p, partial(self._server_change, doc))
-        elif state.embed:
+        elif config.embed:
             pass
         else:
             client_comm = state._comm_manager.get_client_comm(on_msg=self._comm_change)

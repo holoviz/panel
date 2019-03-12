@@ -5,6 +5,7 @@ and holding global state.
 from __future__ import absolute_import, division, unicode_literals
 
 import json
+import os
 import sys
 
 from collections import defaultdict
@@ -35,6 +36,55 @@ from pyviz_comms import (
 # Public API
 #---------------------------------------------------------------------
 
+class _config(param.Parameterized):
+    """
+    Holds global configuration options for Panel. The options can be
+    set directly on the global config instance, via keyword arguments
+    in the extension or via environment variables. For example to set
+    the embed option the following approaches can be used:
+
+        pn.config.embed = True
+
+        pn.extension(embed=True)
+
+        os.environ['PANEL_EMBED'] = 'True'
+    """
+
+    _embed = param.Boolean(default=False, doc="""
+        Whether plot data will be embedded.""")
+
+    _inline = param.Boolean(default=True, doc="""
+        Whether to inline JS and CSS resources.
+        If disabled, resources are loaded from CDN if one is available.""")
+
+    _truthy = ['True', 'true', '1', True, 1]
+
+    @property
+    def embed(self):
+        if self._embed is not None:
+            return self._embed
+        else:
+            return os.environ.get('PANEL_EMBED', _config._embed) in self._truthy
+
+    @embed.setter
+    def embed(self, value):
+        self._embed = value
+
+    @property
+    def inline(self):
+        if self._inline is not None:
+            return self._inline
+        else:
+            return os.environ.get('PANEL_INLINE', _config._inline) in self._truthy
+
+    @embed.setter
+    def inline(self, value):
+        self._inline = value
+
+
+config = _config(**{k: None for k in _config.param if k != 'name'})
+
+
 class state(param.Parameterized):
     """
     Holds global state associated with running apps, allowing running
@@ -44,9 +94,6 @@ class state(param.Parameterized):
     curdoc = param.ClassSelector(class_=Document, doc="""
         The bokeh Document for which a server event is currently being
         processed.""")
-
-    embed = param.Boolean(default=False, doc="""
-        Whether plot data will be embedded.""")
 
     # Whether to hold comm events
     _hold = False
@@ -66,10 +113,6 @@ class panel_extension(_pyviz_extension):
     bokeh and enable comms.
     """
 
-    inline = param.Boolean(default=True, doc="""
-        Whether to inline JS and CSS resources.
-        If disabled, resources are loaded from CDN if one is available.""")
-
     _loaded = False
 
     def __call__(self, *args, **params):
@@ -79,13 +122,15 @@ class panel_extension(_pyviz_extension):
         except:
             return
 
-        p = param.ParamOverrides(self, params)
+        for k, v in params.items():
+            setattr(config, k, v)
+
         if hasattr(ip, 'kernel') and not self._loaded:
             # TODO: JLab extension and pyviz_comms should be changed
             #       to allow multiple cleanup comms to be registered
             _JupyterCommManager.get_client_comm(self._process_comm_msg,
                                                 "hv-extension-comm")
-        load_notebook(p.inline)
+        load_notebook(config.inline)
         self._loaded = True
 
         state._comm_manager = _JupyterCommManager
@@ -124,6 +169,26 @@ for (var event of events) {{
   }}
 }}
 """
+
+STATE_JS = """
+var receiver = new Bokeh.protocol.Receiver()
+var state = null
+for (var root of cb_obj.document.roots()) {{
+  if (root.id == '{id}') {{
+    state = root;
+    break;
+  }}
+}}
+if (!state) {{ return; }}
+msg = state.get_state(cb_obj)
+receiver.consume(msg.header)
+receiver.consume(msg.metadata)
+receiver.consume(msg.content)
+if (receiver.message) {{
+  cb_obj.document.apply_json_patch(receiver.message.content)
+}}
+"""
+
 
 def diff(doc, binary=True, events=None):
     """
@@ -223,6 +288,7 @@ def embed_state(panel, model, doc, max_states=1000):
     discrete_widgets = [w for w in panel.select(Widget) if 'options' in w.param]
 
     add_to_doc(model, doc, True)
+    state = State()
 
     values = []
     for w in discrete_widgets:
@@ -230,16 +296,7 @@ def embed_state(panel, model, doc, max_states=1000):
             w_model = w._composite[1]._models[target][0].select_one({'type': w._widget_type})
         else:
             w_model = w._models[target][0].select_one({'type': w._widget_type})
-        js_callback = CustomJS(code="""
-          var receiver = new Bokeh.protocol.Receiver()
-          state = cb_obj.document.roots()[1]
-          msg = state.get_state(cb_obj)
-          receiver.consume(msg.header)
-          receiver.consume(msg.metadata)
-          receiver.consume(msg.content)
-          if (receiver.message)
-            cb_obj.document.apply_json_patch(receiver.message.content)
-        """)
+        js_callback = CustomJS(code=STATE_JS.format(id=state.ref['id']))
         w_model.js_on_change('value', js_callback)
         if isinstance(w.options, list):
             values.append((w, w_model, w.options))
@@ -273,8 +330,8 @@ def embed_state(panel, model, doc, max_states=1000):
     for (w, _, _), v in zip(values, restore):
         w.set_param(value=v)
 
-    state = State(state=state_dict, values=init_vals,
-                  widgets={m.ref['id']: i for i, (_, m, _) in enumerate(values)})
+    state.update(state=state_dict, values=init_vals,
+                 widgets={m.ref['id']: i for i, (_, m, _) in enumerate(values)})
     doc.add_root(state)
 
 
@@ -345,6 +402,21 @@ def render_mimebundle(model, doc, comm):
         raise ValueError('Can only render bokeh LayoutDOM models')
     add_to_doc(model, doc, True)
     return render_model(model, comm)
+
+
+def mimebundle_to_html(bundle):
+    """
+    Converts a MIME bundle into HTML.
+    """
+    if isinstance(bundle, tuple):
+        data, metadata = bundle
+    else:
+        data = bundle
+    html = data.get('text/html', '')
+    if 'application/javascript' in data:
+        js = data['application/javascript']
+        html += '\n<script type="application/javascript">{js}</script>'.format(js=js)
+    return html
 
 
 def render_model(model, comm=None):
