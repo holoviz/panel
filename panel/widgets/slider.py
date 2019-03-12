@@ -144,7 +144,7 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
         if self._syncing:
             return
         try:
-            self._processing = True
+            self._syncing = True
             self.value = self.values[event.new]
         finally:
             self._syncing = False
