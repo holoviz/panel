@@ -6,4 +6,5 @@ files.
 """
 
 from .state import State # noqa
+from .plots import VtkPlot # noqa
 from .widgets import Audio, FileInput, Player # noqa
