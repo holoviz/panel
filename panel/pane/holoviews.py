@@ -145,7 +145,7 @@ class HoloViews(PaneBase):
         Traverses HoloViews object to find and clean up any streams
         connected to existing plots.
         """
-        old_plot, old_pane = self._plots.pop(root.ref['id'], None)
+        old_plot, old_pane = self._plots.pop(root.ref['id'], (None, None))
         if old_plot:
             old_plot.cleanup()
         if old_pane:
