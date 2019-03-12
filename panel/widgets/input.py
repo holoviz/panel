@@ -78,6 +78,9 @@ class FileInput(Widget):
 
 class StaticText(Widget):
 
+    style = param.Dict(default=None, doc="""
+        Dictionary of CSS property:value pairs to apply to this Div.""")
+
     value = param.Parameter(default=None)
 
     _widget_type = _BkDiv
