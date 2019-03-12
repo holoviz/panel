@@ -266,25 +266,6 @@ class Viewable(Layoutable):
         model = self._get_root(doc, comm)
         return render_mimebundle(model, doc, comm)
 
-    def embed(self, max_states=1000):
-        """
-        Renders a static version of a panel in a notebook by evaluating
-        the set of states defined by the widgets in the model. Note
-        this will only work well for simple apps with a relatively
-        small state space.
-
-        Parameters
-        ----------
-        max_states: int
-          The maximum number of states to embed
-        """
-        from IPython.display import publish_display_data
-        doc = Document()
-        comm = Comm()
-        model = self._get_root(doc, comm)
-        embed_state(self, model, doc, max_states)
-        publish_display_data(*render_model(model))
-
     def _server_destroy(self, session_context):
         """
         Server lifecycle hook triggered when session is destroyed.
@@ -353,6 +334,25 @@ class Viewable(Layoutable):
                                  server_id=server_id)
         show_server(server, notebook_url, server_id)
         return server
+
+    def embed(self, max_states=1000):
+        """
+        Renders a static version of a panel in a notebook by evaluating
+        the set of states defined by the widgets in the model. Note
+        this will only work well for simple apps with a relatively
+        small state space.
+
+        Parameters
+        ----------
+        max_states: int
+          The maximum number of states to embed
+        """
+        from IPython.display import publish_display_data
+        doc = Document()
+        comm = Comm()
+        model = self._get_root(doc, comm)
+        embed_state(self, model, doc, max_states)
+        publish_display_data(*render_model(model))
 
     def get_server(self, port=0, websocket_origin=None, loop=None,
                    show=False, start=False, **kwargs):
@@ -613,7 +613,7 @@ class Reactive(Viewable):
                 viewable, root, doc, comm = state._views[ref]
                 if comm or doc is state.curdoc:
                     self._update_model(events, msg, root, model, doc, comm)
-                    if comm:
+                    if comm and 'embedded' not in root.tags:
                         push(doc, comm)
                 else:
                     cb = partial(self._update_model, events, msg, root, model, doc, comm)
@@ -628,6 +628,8 @@ class Reactive(Viewable):
         if comm is None:
             for p in properties:
                 model.on_change(p, partial(self._server_change, doc))
+        elif type(comm) is Comm:
+            pass
         else:
             client_comm = state._comm_manager.get_client_comm(on_msg=self._comm_change)
             for p in properties:

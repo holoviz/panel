@@ -68,34 +68,6 @@ class Panel(Reactive):
         model.update(**msg)
         self._preprocess(root) #preprocess links between new elements
 
-    def _link_params(self, model, params, doc, root, comm=None):
-        def set_value(*events):
-            msg = {event.name: event.new for event in events}
-            events = {event.name: event for event in events}
-
-            def update_model():
-                if 'objects' in msg:
-                    old = events['objects'].old
-                    msg['objects'] = self._get_objects(model, old, doc, root, comm)
-                    for pane in old:
-                        if pane not in self.objects:
-                            pane._cleanup(root)
-                    self._preprocess(root) #preprocess links between new elements
-                processed = self._process_param_change(msg)
-                model.update(**processed)
-
-            if comm:
-                update_model()
-                if 'embedded' not in root.tags:
-                    push(doc, comm)
-            else:
-                doc.add_next_tick_callback(update_model)
-
-        ref = root.ref['id']
-        if ref not in self._callbacks:
-            watcher = self.param.watch(set_value, params)
-            self._callbacks[ref].append(watcher)
-
     #----------------------------------------------------------------
     # Model API
     #----------------------------------------------------------------
