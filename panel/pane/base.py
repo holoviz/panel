@@ -113,7 +113,7 @@ class PaneBase(Reactive):
     def _update_pane(self, event):
         for ref, (model, parent) in self._models.items():
             viewable, root, doc, comm = state._views[ref]
-            if comm or state.curdoc:
+            if comm or doc is state.curdoc:
                 self._update_object(model, doc, root, parent, comm)
                 if comm:
                     push(doc, comm)

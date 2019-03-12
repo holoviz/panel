@@ -537,7 +537,7 @@ class Reactive(Viewable):
         # temporary flag denotes panes created for temporary, internal
         # use which should be garbage collected once they have been used
         super(Reactive, self).__init__(**params)
-        self._processing = False
+        self._processing = True
         self._events = {}
         self._changing = {}
         self._callbacks = []
@@ -590,7 +590,7 @@ class Reactive(Viewable):
                 if ref not in state._views:
                     continue
                 viewable, root, doc, comm = state._views[ref]
-                if comm or state.curdoc:
+                if comm or doc is state.curdoc:
                     self._update_model(events, msg, root, model, doc, comm)
                     if comm:
                         push(doc, comm)
@@ -638,12 +638,6 @@ class Reactive(Viewable):
             self.set_param(**self._process_property_change(events))
         except:
             raise
-        else:
-            if self._events:
-                if doc:
-                    doc.add_timeout_callback(partial(self._change_event, doc), self._debounce)
-                else:
-                    self._change_event()
         finally:
             self._processing = False
             state.curdoc = None
