@@ -7,7 +7,7 @@ environment:
 
 install:
   - "SET PATH=%CONDA%;%CONDA%\\Scripts;%PATH%"
-  - "conda install -y -c pyviz pyctdev && doit ecosystem_setup && conda install %CHANS_DEV% param --yes"
+  - "conda install -y -c pyviz pyctdev && doit ecosystem_setup"
   - "doit develop_install -o recommended -o tests %CHANS_DEV%"
 
 build: off

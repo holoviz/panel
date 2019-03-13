@@ -134,9 +134,9 @@ class _config(param.Parameterized):
     def inline(self, value):
         self._inline = value
 
-
+_params = _config.param.objects() if hasattr(_config.param, 'objects') else _config.params()
 config = _config(**{k: None if p.allow_None else getattr(_config, k)
-                    for k, p in _config.param.objects().items() if k != 'name'})
+                    for k, p in _params.items() if k != 'name'})
 
 
 class state(param.Parameterized):
