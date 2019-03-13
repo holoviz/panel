@@ -302,7 +302,7 @@ def add_to_doc(obj, doc, hold=False):
 def record_events(doc):
     msg = diff(doc, False)
     if msg is None:
-        return {}
+        return {'header': '{}', 'metadata': '{}', 'content': '{}'}
     return {'header': msg.header_json, 'metadata': msg.metadata_json,
             'content': msg.content_json}
 
