@@ -16,7 +16,6 @@ from itertools import product
 import param
 import bokeh
 import bokeh.embed.notebook
-import numpy as np
 
 from bokeh.document import Document
 from bokeh.core.templates import DOC_NB_JS
@@ -98,7 +97,7 @@ class _config(param.Parameterized):
         else:
             return os.environ.get('PANEL_EMBED_JSON', _config._embed_json) in self._truthy
 
-    @embed.setter
+    @embed_json.setter
     def embed_json(self, value):
         self._embed_json = value
 
@@ -109,7 +108,7 @@ class _config(param.Parameterized):
         else:
             return os.environ.get('PANEL_EMBED_SAVE_PATH', _config._embed_save_path) in self._truthy
 
-    @embed.setter
+    @embed_save_path.setter
     def embed_save_path(self, value):
         self._embed_save_path = value
 
@@ -120,7 +119,7 @@ class _config(param.Parameterized):
         else:
             return os.environ.get('PANEL_EMBED_LOAD_PATH', _config._embed_load_path) in self._truthy
 
-    @embed.setter
+    @embed_load_path.setter
     def embed_load_path(self, value):
         self._embed_load_path = value
 
@@ -337,10 +336,8 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
     load_path: str (default=None)
       The path or URL the json files will be loaded from.
     """
-    from .layout import Panel
     from .models.state import State
     from .widgets import Widget, DiscreteSlider
-    from .widgets.slider import _SliderBase
 
     target = model.ref['id']
     _, _, _, comm = state._views[target]

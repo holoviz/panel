@@ -25,7 +25,7 @@ from pyviz_comms import JS_CALLBACK, JupyterCommManager, Comm as _Comm
 
 from .io import (
     ABORT_JS, add_to_doc, push, render_mimebundle, state, embed_state,
-    render_model, _origin_url, show_server, config, add_to_doc)
+    render_model, _origin_url, show_server, config)
 from .util import param_reprs
 
 
@@ -468,10 +468,6 @@ class Viewable(Layoutable):
         load_path: str (default=None)
            The path or URL the json files will be loaded from.
         """
-        if filename.endswith('png'):
-            _export_png(plot, filename=filename)
-            return
-
         doc = _Document()
         comm = _Comm()
         with config.set(embed=embed):
@@ -481,6 +477,10 @@ class Viewable(Layoutable):
                             embed_json, save_path, load_path)
             else:
                 add_to_doc(model, doc, True)
+
+        if filename.endswith('png'):
+            _export_png(model, filename=filename)
+            return
 
         if not filename.endswith('.html'):
             filename = filename + '.html'
