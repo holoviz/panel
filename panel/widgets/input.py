@@ -278,5 +278,6 @@ class Checkbox(Widget):
             msg['labels'] = [msg.pop('title')]
         return msg
 
-    def _get_embed_state(self, root, parent, max_opts=3):
-        return self, self._models[root.ref['id']][0], [False, True]
+    def _get_embed_state(self, root, max_opts=3):
+        return (self, self._models[root.ref['id']][0], [False, True],
+                lambda x: 0 in x.active, 'active', 'cb_obj.active.indexOf(0) >= 0')

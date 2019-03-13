@@ -90,8 +90,9 @@ class Select(SelectBase):
         msg.pop('options', None)
         return msg
 
-    def _get_embed_state(self, root, parent, max_opts=3):
-        return self, self._models[root.ref['id']][0], self.values
+    def _get_embed_state(self, root, max_opts=3):
+        return (self, self._models[root.ref['id']][0], self.values,
+                lambda x: x.value, 'value', 'cb_obj.value')
 
 
 class MultiSelect(Select):

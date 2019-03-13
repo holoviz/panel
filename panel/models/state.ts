@@ -62,10 +62,10 @@ export class State extends Model {
     this.apply_state(state)
   }
 
-  set_state(widget: any): void {
+  set_state(widget: any, value: any): void {
     let values: any[] = copy(this.values)
     const index: any = this.widgets[widget.id]
-    values[index] = widget.value
+    values[index] = value
     let state: any = this.state
     for (const i of values) {
       state = state[i]

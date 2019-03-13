@@ -42,5 +42,6 @@ class Toggle(_ButtonBase):
 
     _widget_type = _BkToggle
 
-    def _get_embed_state(self, root, parent, max_opts=3):
-        return self, self._models[root.ref['id']][0], [False, True]
+    def _get_embed_state(self, root, max_opts=3):
+        return (self, self._models[root.ref['id']][0], [False, True],
+                lambda x: x.active, 'active', 'cb_obj.active')

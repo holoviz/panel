@@ -64,9 +64,9 @@ class ContinuousSlider(_SliderBase):
 
     __abstract = True
 
-    def _get_embed_state(self, root, parent, max_opts=3):
+    def _get_embed_state(self, root, max_opts=3):
         ref = root.ref['id']
-        w_model = self._models[ref][0]
+        w_model, parent = self._models[ref]
         _, _, doc, comm = state._views[ref]
 
         # Compute sampling
@@ -90,7 +90,7 @@ class ContinuousSlider(_SliderBase):
         w_model = w_model.children[1]
         w_model.js_on_change('value', link)
 
-        return dw, w_model, vals
+        return (dw, w_model, vals, lambda x: x.value, 'value', 'cb_obj.value')
 
 
 class FloatSlider(ContinuousSlider):
@@ -171,7 +171,8 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
         else:
             value = values.index(self.value)
         self._slider = IntSlider(start=0, end=len(self.options)-1, value=value,
-                                 show_value=False, margin=(0, 5, 5, 5))
+                                 tooltips=False, show_value=False, margin=(0, 5, 5, 5),
+                                 _supports_embed=False)
         js_code = self._text_link.format(labels=repr(self.labels))
         self._jslink = self._slider.jslink(self._text, code={'value': js_code})
         self._slider.param.watch(self._sync_value, 'value')
@@ -201,12 +202,9 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
         finally:
             self._syncing = False
 
-    def _get_model(self, doc, root=None, parent=None, comm=None):
-        return self._composite._get_model(doc, root, parent, comm)
-
-    def _get_embed_state(self, root, parent, max_opts=3):
+    def _get_embed_state(self, root, max_opts=3):
         model = self._composite[1]._models[root.ref['id']][0]
-        return self, model, self.values
+        return self, model, self.values, lambda x: x.value, 'value', 'cb_obj.value'
 
     @property
     def labels(self):

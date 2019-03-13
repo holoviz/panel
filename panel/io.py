@@ -234,7 +234,7 @@ for (var root of cb_obj.document.roots()) {{
   }}
 }}
 if (!state) {{ return; }}
-state.set_state(cb_obj)
+state.set_state(cb_obj, {js_getter})
 """
 
 
@@ -347,28 +347,26 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
 
     model.tags.append('embedded')
     widgets = [w for w in panel.select(Widget) if w._supports_embed]
-
     state_model = State()
 
     values = []
     for w in widgets:
-        parent = panel.select(lambda x: isinstance(x, Panel) and w in x)[0]
-        parent_model = parent._models[target][0]
-        w, w_model, vals = w._get_embed_state(model, parent_model, max_opts)
+        w, w_model, vals, getter, on_change, js_getter = w._get_embed_state(model, max_opts)
         if isinstance(w, DiscreteSlider):
             w_model = w._composite[1]._models[target][0].select_one({'type': w._widget_type})
         else:
             w_model = w._models[target][0].select_one({'type': w._widget_type})
-        js_callback = CustomJS(code=STATE_JS.format(id=state_model.ref['id']))
-        w_model.js_on_change('value', js_callback)
-        values.append((w, w_model, vals))
+        js_callback = CustomJS(code=STATE_JS.format(
+            id=state_model.ref['id'], js_getter=js_getter))
+        w_model.js_on_change(on_change, js_callback)
+        values.append((w, w_model, vals, getter))
 
     add_to_doc(model, doc, True)
     doc._held_events = []
 
-    restore = [w.value for w, _, _ in values]
-    init_vals = [m.value for _, m, _ in values]
-    cross_product = list(product(*[vals[::-1] for _, _, vals in values]))
+    restore = [w.value for w, _, _, _ in values]
+    init_vals = [g(m) for _, m, _, g in values]
+    cross_product = list(product(*[vals[::-1] for _, _, vals, _ in values]))
 
     if len(cross_product) > max_states:
         raise RuntimeError('The cross product of different application '
@@ -381,13 +379,17 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
     state_dict = nested_dict()
     for key in cross_product:
         sub_dict = state_dict
+        skip = False
         for i, k in enumerate(key):
-            w, m = values[i][:2]
+            w, m, _, g = values[i]
             try:
                 w.value = k
             except:
-                continue
-            sub_dict = sub_dict[getattr(m, w._rename.get('value', 'value'))]
+                skip = True
+                break
+            sub_dict = sub_dict[g(m)]
+        if skip:
+            doc._held_events = []
 
         # Drop events originating from widgets being varied
         models = [v[1] for v in values]
@@ -396,13 +398,13 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
         if events:
             sub_dict.update(events)
 
-    for (w, _, _), v in zip(values, restore):
+    for (w, _, _, _), v in zip(values, restore):
         try:
             w.set_param(value=v)
         except:
             pass
 
-    if json is not None:
+    if json:
         random_dir = uuid.uuid4().hex
         save_path = os.path.join(save_path, random_dir)
         if load_path is not None:
@@ -411,7 +413,7 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
                                save_path=save_path, load_path=load_path)
 
     state_model.update(json=json, state=state_dict, values=init_vals,
-                       widgets={m.ref['id']: i for i, (_, m, _) in enumerate(values)})
+                       widgets={m.ref['id']: i for i, (_, m, _, _) in enumerate(values)})
     doc.add_root(state_model)
 
 

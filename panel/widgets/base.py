@@ -36,6 +36,8 @@ class Widget(Reactive):
     def __init__(self, **params):
         if 'name' not in params:
             params['name'] = ''
+        if '_supports_embed' in params:
+            self._supports_embed = params.pop('_supports_embed')
         super(Widget, self).__init__(**params)
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
@@ -49,7 +51,7 @@ class Widget(Reactive):
         self._link_props(model, properties, doc, root, comm)
         return model
 
-    def _get_embed_state(self, root, parent, max_opts=3):
+    def _get_embed_state(self, root, max_opts=3):
         """
         Returns the bokeh model and a discrete set of value states
         for the widget.
@@ -58,8 +60,6 @@ class Widget(Reactive):
         ---------
         root: bokeh.model.Model
           The root model of the widget
-        parent: bokeh.model.Model
-          The parent model of the widget
         max_opts: int
           The maximum number of states the widget should return
 
@@ -71,6 +71,12 @@ class Widget(Reactive):
           The bokeh model to record the current value state on
         values: list
           A list of value states to explore.
+        getter: callable
+          A function that returns the state value given the model
+        on_change: string
+          The name of the widget property to attach a callback on
+        js_getter: string
+          JS snippet that returns the state value given the model
         """
 
 
@@ -101,3 +107,9 @@ class CompositeWidget(Widget):
         for obj in self._composite.objects:
             objects += obj.select(selector)
         return objects
+
+    def _get_model(self, doc, root=None, parent=None, comm=None):
+        return self._composite._get_model(doc, root, parent, comm)
+
+    def __contains__(self, object):
+        return object in self._composite.objects
