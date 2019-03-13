@@ -264,7 +264,10 @@ class Viewable(Layoutable):
         comm = state._comm_manager.get_server_comm()
         model = self._get_root(doc, comm)
         if config.embed:
-            embed_state(self, model, doc)
+            embed_state(self, model, doc,
+                        json=config.json,
+                        save_path=config.embed_save_path,
+                        load_path=config.embed_load_path)
             return render_model(model)
         return render_mimebundle(model, doc, comm)
 
@@ -337,7 +340,8 @@ class Viewable(Layoutable):
         show_server(server, notebook_url, server_id)
         return server
 
-    def embed(self, max_states=1000, max_opts=3):
+    def embed(self, max_states=1000, max_opts=3, json=False,
+              save_path='./', load_path=None):
         """
         Renders a static version of a panel in a notebook by evaluating
         the set of states defined by the widgets in the model. Note
@@ -350,13 +354,20 @@ class Viewable(Layoutable):
           The maximum number of states to embed
         max_opts: int
           The maximum number of states for a single widget
+        json: boolean (default=True)
+          Whether to export the data to json files
+        save_path: str (default='./')
+          The path to save json files to
+        load_path: str (default=None)
+          The path or URL the json files will be loaded from.
         """
         from IPython.display import publish_display_data
         doc = _Document()
         comm = _Comm()
         with config.set(embed=True):
             model = self._get_root(doc, comm)
-            embed_state(self, model, doc, max_states)
+            embed_state(self, model, doc, max_states, max_opts,
+                        json, save_path, load_path)
         publish_display_data(*render_model(model))
 
     def get_server(self, port=0, websocket_origin=None, loop=None,

@@ -7,6 +7,7 @@ from __future__ import absolute_import, division, unicode_literals
 import json
 import os
 import sys
+import uuid
 
 from collections import defaultdict
 from contextlib import contextmanager
@@ -54,6 +55,15 @@ class _config(param.Parameterized):
     _embed = param.Boolean(default=False, allow_None=True, doc="""
         Whether plot data will be embedded.""")
 
+    _embed_json = param.Boolean(default=False, doc="""
+        Whether to save embedded state to json files.""")
+
+    _embed_save_path = param.String(default='./', doc="""
+        Where to save json files for embedded state.""")
+
+    _embed_load_path = param.String(default=None, doc="""
+        Where to load json files for embedded state.""")
+
     _inline = param.Boolean(default=True, allow_None=True, doc="""
         Whether to inline JS and CSS resources.
         If disabled, resources are loaded from CDN if one is available.""")
@@ -82,6 +92,39 @@ class _config(param.Parameterized):
         self._embed = value
 
     @property
+    def embed_json(self):
+        if self._embed_json is not None:
+            return self._embed_json
+        else:
+            return os.environ.get('PANEL_EMBED_JSON', _config._embed_json) in self._truthy
+
+    @embed.setter
+    def embed_json(self, value):
+        self._embed_json = value
+
+    @property
+    def embed_save_path(self):
+        if self._embed_save_path is not None:
+            return self._embed_save_path
+        else:
+            return os.environ.get('PANEL_EMBED_SAVE_PATH', _config._embed_save_path) in self._truthy
+
+    @embed.setter
+    def embed_save_path(self, value):
+        self._embed_save_path = value
+
+    @property
+    def embed_load_path(self):
+        if self._embed_load_path is not None:
+            return self._embed_load_path
+        else:
+            return os.environ.get('PANEL_EMBED_LOAD_PATH', _config._embed_load_path) in self._truthy
+
+    @embed.setter
+    def embed_load_path(self, value):
+        self._embed_load_path = value
+
+    @property
     def inline(self):
         if self._inline is not None:
             return self._inline
@@ -93,7 +136,8 @@ class _config(param.Parameterized):
         self._inline = value
 
 
-config = _config(**{k: None for k in _config.param if k != 'name'})
+config = _config(**{k: None if p.allow_None else getattr(_config, k)
+                    for k, p in _config.param.objects().items() if k != 'name'})
 
 
 class state(param.Parameterized):
@@ -182,7 +226,6 @@ for (var event of events) {{
 """
 
 STATE_JS = """
-var receiver = new Bokeh.protocol.Receiver()
 var state = null
 for (var root of cb_obj.document.roots()) {{
   if (root.id == '{id}') {{
@@ -191,13 +234,7 @@ for (var root of cb_obj.document.roots()) {{
   }}
 }}
 if (!state) {{ return; }}
-msg = state.get_state(cb_obj)
-receiver.consume(msg.header)
-receiver.consume(msg.metadata)
-receiver.consume(msg.content)
-if (receiver.message) {{
-  cb_obj.document.apply_json_patch(receiver.message.content)
-}}
+state.set_state(cb_obj)
 """
 
 
@@ -271,7 +308,8 @@ def record_events(doc):
             'content': msg.content_json}
 
 
-def embed_state(panel, model, doc, max_states=1000, max_opts=3):
+def embed_state(panel, model, doc, max_states=1000, max_opts=3,
+                json=False, save_path='./', load_path=None):
     """
     Embeds the state of the application on a State model which allows
     exporting a static version of an app. This works by finding all
@@ -288,10 +326,16 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3):
       The bokeh model being exported
     doc: bokeh.document.Document
       The bokeh Document being exported
-    max_states: int
+    max_states: int (default=1000)
       The maximum number of states to export
-    max_opts: int
+    max_opts: int (default=3)
       The maximum number of options for a single widget
+    json: boolean (default=True)
+      Whether to export the data to json files
+    save_path: str (default='./')
+      The path to save json files to
+    load_path: str (default=None)
+      The path or URL the json files will be loaded from.
     """
     from .layout import Panel
     from .models.state import State
@@ -372,6 +416,10 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3):
             except:
                 continue
             sub_dict = sub_dict[m.value]
+
+        # Drop events originating from widgets being varied
+        models = [v[1] for v in values]
+        doc._held_events = [e for e in doc._held_events if e.model not in models]
         events = record_events(doc)
         if events:
             sub_dict.update(events)
@@ -382,9 +430,39 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3):
         except:
             pass
 
-    state_model.update(state=state_dict, values=init_vals,
+    if json is not None:
+        random_dir = uuid.uuid4().hex
+        save_path = os.path.join(save_path, random_dir)
+        if load_path is not None:
+            load_path = os.path.join(load_path, random_dir)
+        state_dict = save_dict(state_dict, max_depth=len(widgets)-1,
+                               save_path=save_path, load_path=load_path)
+
+    state_model.update(json=json, state=state_dict, values=init_vals,
                        widgets={m.ref['id']: i for i, (_, m, _) in enumerate(values)})
     doc.add_root(state_model)
+
+
+def save_dict(state, key=(), depth=0, max_depth=None, save_path='', load_path=None):
+    filename_dict = {}
+    for k, v in state.items():
+        curkey = key+(k,)
+        if depth < max_depth:
+            filename_dict[k] = save_dict(v, curkey, depth+1, max_depth,
+                                         save_path, load_path)
+        else:
+            filename = '_'.join([str(i) for i in curkey]) +'.json'
+            filepath = os.path.join(save_path, filename)
+            directory = os.path.dirname(filepath)
+            if not os.path.exists(directory):
+                os.makedirs(directory)
+            with open(filepath, 'w') as f:
+                json.dump(v, f)
+            refpath = filepath
+            if load_path:
+                refpath = os.path.join(load_path, filename)
+            filename_dict[k] = refpath
+    return filename_dict
 
 
 def load_notebook(inline=True):
