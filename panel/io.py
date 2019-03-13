@@ -346,47 +346,19 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
     _, _, _, comm = state._views[target]
 
     model.tags.append('embedded')
-    widgets = [w for w in panel.select(Widget) if 'options' in w.param
-               or isinstance(w, _SliderBase)]
+    widgets = [w for w in panel.select(Widget) if w._supports_embed]
 
     state_model = State()
 
     values = []
     for w in widgets:
+        parent = panel.select(lambda x: isinstance(x, Panel) and w in x)[0]
+        parent_model = parent._models[target][0]
+        w, w_model, vals = w._get_embed_state(model, parent_model, max_opts)
         if isinstance(w, DiscreteSlider):
             w_model = w._composite[1]._models[target][0].select_one({'type': w._widget_type})
         else:
             w_model = w._models[target][0].select_one({'type': w._widget_type})
-
-        if not hasattr(w, 'options'): # Discretize slider
-            parent = panel.select(lambda x: isinstance(x, Panel) and w in x)[0]
-            parent_model = parent._models[target][0]
-
-            # Compute sampling
-            start, end, step = w_model.start, w_model.end, w_model.step
-            span = end-start
-            dtype = int if isinstance(step, int) else float
-            if (span/step) > (max_opts-1):
-                step = dtype(span/(max_opts-1))
-            vals = [dtype(v) for v in np.arange(start, end+step, step)]
-
-            # Replace model
-            dw = DiscreteSlider(options=vals, name=w.name)
-            dw.link(w, value='value')
-            w._models.pop(target)
-            w = dw
-            index = parent_model.children.index(w_model)
-            with config.set(embed=True):
-                w_model = w._get_model(doc, model, parent_model, comm)
-            link = CustomJS(code=dw._jslink.code['value'], args={
-                'source': w_model.children[1], 'target': w_model.children[0]})
-            parent_model.children[index] = w_model
-            w_model = w_model.children[1]
-            w_model.js_on_change('value', link)
-        elif isinstance(w.options, list):
-            vals = w.options
-        else:
-            vals = list(w.options.values())
         js_callback = CustomJS(code=STATE_JS.format(id=state_model.ref['id']))
         w_model.js_on_change('value', js_callback)
         values.append((w, w_model, vals))
@@ -415,7 +387,7 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
                 w.value = k
             except:
                 continue
-            sub_dict = sub_dict[m.value]
+            sub_dict = sub_dict[getattr(m, w._rename.get('value', 'value'))]
 
         # Drop events originating from widgets being varied
         models = [v[1] for v in values]

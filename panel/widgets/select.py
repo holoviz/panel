@@ -52,6 +52,8 @@ class Select(SelectBase):
 
     _widget_type = _BkSelect
 
+    _supports_embed = True
+
     def __init__(self, **params):
         super(Select, self).__init__(**params)
         values = self.values
@@ -87,6 +89,9 @@ class Select(SelectBase):
                 msg['value'] = self._items[msg['value']]
         msg.pop('options', None)
         return msg
+
+    def _get_embed_state(self, root, parent, max_opts=3):
+        return self, self._models[root.ref['id']][0], self.values
 
 
 class MultiSelect(Select):

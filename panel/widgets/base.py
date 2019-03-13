@@ -29,6 +29,8 @@ class Widget(Reactive):
 
     _widget_type = None
 
+    _supports_embed = False
+
     _rename = {'name': 'title'}
 
     def __init__(self, **params):
@@ -46,6 +48,30 @@ class Widget(Reactive):
         self._models[root.ref['id']] = (model, parent)
         self._link_props(model, properties, doc, root, comm)
         return model
+
+    def _get_embed_state(self, root, parent, max_opts=3):
+        """
+        Returns the bokeh model and a discrete set of value states
+        for the widget.
+
+        Arguments
+        ---------
+        root: bokeh.model.Model
+          The root model of the widget
+        parent: bokeh.model.Model
+          The parent model of the widget
+        max_opts: int
+          The maximum number of states the widget should return
+
+        Returns
+        -------
+        widget: panel.widget.Widget
+          The Panel widget instance to modify to effect state changes
+        model: bokeh.model.Model
+          The bokeh model to record the current value state on
+        values: list
+          A list of value states to explore.
+        """
 
 
 class CompositeWidget(Widget):

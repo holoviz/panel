@@ -10,10 +10,12 @@ from six import string_types
 import param
 import numpy as np
 
+from bokeh.models import CustomJS
 from bokeh.models.widgets import (
     DateSlider as _BkDateSlider, DateRangeSlider as _BkDateRangeSlider,
     RangeSlider as _BkRangeSlider, Slider as _BkSlider)
 
+from ..io import config, state
 from ..util import value_as_datetime
 from .base import Widget, CompositeWidget
 from ..layout import Column
@@ -56,7 +58,42 @@ class _SliderBase(Widget):
     __abstract = True
 
 
-class FloatSlider(_SliderBase):
+class ContinuousSlider(_SliderBase):
+
+    _supports_embed = True
+
+    __abstract = True
+
+    def _get_embed_state(self, root, parent, max_opts=3):
+        ref = root.ref['id']
+        w_model = self._models[ref][0]
+        _, _, doc, comm = state._views[ref]
+
+        # Compute sampling
+        start, end, step = w_model.start, w_model.end, w_model.step
+        span = end-start
+        dtype = int if isinstance(step, int) else float
+        if (span/step) > (max_opts-1):
+            step = dtype(span/(max_opts-1))
+        vals = [dtype(v) for v in np.arange(start, end+step, step)]
+
+        # Replace model
+        dw = DiscreteSlider(options=vals, name=self.name)
+        dw.link(self, value='value')
+        self._models.pop(ref)
+        index = parent.children.index(w_model)
+        with config.set(embed=True):
+            w_model = dw._get_model(doc, root, parent, comm)
+        link = CustomJS(code=dw._jslink.code['value'], args={
+            'source': w_model.children[1], 'target': w_model.children[0]})
+        parent.children[index] = w_model
+        w_model = w_model.children[1]
+        w_model.js_on_change('value', link)
+
+        return dw, w_model, vals
+
+
+class FloatSlider(ContinuousSlider):
 
     start = param.Number(default=0.0)
 
@@ -67,7 +104,7 @@ class FloatSlider(_SliderBase):
     step = param.Number(default=0.1)
 
 
-class IntSlider(_SliderBase):
+class IntSlider(ContinuousSlider):
 
     value = param.Integer(default=0)
 
@@ -98,6 +135,8 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
     formatter = param.String(default='%.3g')
 
     _rename = {'formatter': None}
+
+    _supports_embed = True
 
     _text_link = """
     var labels = {labels}
@@ -165,6 +204,10 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
     def _get_model(self, doc, root=None, parent=None, comm=None):
         return self._composite._get_model(doc, root, parent, comm)
 
+    def _get_embed_state(self, root, parent, max_opts=3):
+        model = self._composite[1]._models[root.ref['id']][0]
+        return self, model, self.values
+
     @property
     def labels(self):
         title = (self.name + ': ' if self.name else '')
@@ -176,7 +219,6 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
     @property
     def values(self):
         return list(self.options.values()) if isinstance(self.options, dict) else self.options
-
 
 
 class RangeSlider(_SliderBase):

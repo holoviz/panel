@@ -38,4 +38,9 @@ class Toggle(_ButtonBase):
 
     _rename = {'value': 'active'}
 
+    _supports_embed = True
+
     _widget_type = _BkToggle
+
+    def _get_embed_state(self, root, parent, max_opts=3):
+        return self, self._models[root.ref['id']][0], [False, True]
