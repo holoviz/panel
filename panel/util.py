@@ -69,7 +69,7 @@ def hashable(x):
         return x
 
 
-def is_in(obj, objs):
+def isIn(obj, objs):
     """
     Checks if the object is in the list of objects, unlike the ``in``
     Python operator this will check only for identity not equality.
