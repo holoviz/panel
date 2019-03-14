@@ -6,6 +6,7 @@ from __future__ import absolute_import, division, unicode_literals
 import param
 
 from ..models.widgets import Player as _BkPlayer
+from ..util import isIn, indexOf
 from .base import Widget
 from .select import SelectBase
 
@@ -73,12 +74,12 @@ class DiscretePlayer(PlayerBase, SelectBase):
         if 'options' in msg:
             msg['start'] = 0
             msg['end'] = len(values) - 1
-            if values and self.value not in values:
+            if values and not isIn(self.value, values):
                 self.value = values[0]
         if 'value' in msg:
             value = msg['value']
-            if value in values:
-                msg['value'] = values.index(value)
+            if isIn(value, values):
+                msg['value'] = indexOf(value, values)
             elif values:
                 self.value = values[0]
         return super(DiscretePlayer, self)._process_param_change(msg)

@@ -69,6 +69,26 @@ def hashable(x):
         return x
 
 
+def is_in(obj, objs):
+    """
+    Checks if the object is in the list of objects, unlike the ``in``
+    Python operator this will check only for identity not equality.
+    """
+    return any(o is obj for o in objs)
+
+
+def indexOf(obj, objs):
+    """
+    Returns the index of an object in a list of objects. Unlike the
+    list.index method this function only checks for identity not
+    equality.
+    """
+    indexes = [i for i, o in enumerate(objs) if o is obj]
+    if indexes:
+        return indexes[0]
+    raise ValueError('%s not in list' % obj)
+
+
 def as_unicode(obj):
     """
     Safely casts any object to unicode including regular string

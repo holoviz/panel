@@ -17,7 +17,7 @@ from bokeh.models.widgets import (
     Select as _BkSelect)
 
 from ..layout import Column, Row, VSpacer
-from ..util import as_unicode
+from ..util import as_unicode, isIn, indexOf
 from ..viewable import Layoutable
 from .base import Widget, CompositeWidget
 from .button import _ButtonBase, Button
@@ -65,8 +65,8 @@ class Select(SelectBase):
         labels, values = self.labels, self.values
         if 'value' in msg:
             val = msg['value']
-            if val in values:
-                msg['value'] = labels[values.index(val)]
+            if isIn(val, values):
+                msg['value'] = labels[indexOf(val, values)]
             elif values:
                 self.value = self.values[0]
             elif self.value is not None:
@@ -76,7 +76,7 @@ class Select(SelectBase):
             msg['options'] = self.labels
             val = self.value
             if values:
-                if val not in values:
+                if not isIn(val, values):
                     self.value = values[0]
             elif self.value is not None:
                 self.value = None
@@ -113,13 +113,13 @@ class MultiSelect(Select):
         msg = super(Select, self)._process_param_change(msg)
         labels, values = self.labels, self.values
         if 'value' in msg:
-            msg['value'] = [labels[values.index(v)] for v in msg['value']
-                            if v in values]
+            msg['value'] = [labels[indexOf(v, values)] for v in msg['value']
+                            if isIn(v, values)]
 
         if 'options' in msg:
             msg['options'] = labels
-            if any(v not in values for v in self.value):
-                self.value = [v for v in self.value if v in values]
+            if any(not isIn(v, values) for v in self.value):
+                self.value = [v for v in self.value if isIn(v, values)]
         return msg
 
     def _process_property_change(self, msg):
@@ -155,7 +155,7 @@ class _RadioGroupBase(Select):
         if 'value' in msg:
             value = msg.pop('value')
             if value in values:
-                msg['active'] = values.index(value)
+                msg['active'] = indexOf(value, values)
             else:
                 if self.value is not None:
                     self.value = None
@@ -164,7 +164,7 @@ class _RadioGroupBase(Select):
         if 'options' in msg:
             msg['labels'] = list(msg.pop('options'))
             value = self.value
-            if value not in values:
+            if not isIn(value, values):
                 self.value = None
         msg.pop('title', None)
         return msg
@@ -206,12 +206,12 @@ class _CheckGroupBase(Select):
         msg = super(Select, self)._process_param_change(msg)
         values = self.values
         if 'value' in msg:
-            msg['active'] = [values.index(v) for v in msg.pop('value')
-                             if v in values]
+            msg['active'] = [indexOf(v, values) for v in msg.pop('value')
+                             if isIn(v, values)]
         if 'options' in msg:
             msg['labels'] = list(msg.pop('options'))
-            if any(v not in values for v in self.value):
-                self.value = [v for v in self.value if v in values]
+            if any(not isIn(v, values) for v in self.value):
+                self.value = [v for v in self.value if isIn(v, values)]
         msg.pop('title', None)
         return msg
 
@@ -305,8 +305,8 @@ class CrossSelector(CompositeWidget, MultiSelect):
         # Compute selected and unselected values
 
         labels, values = self.labels, self.values
-        selected = [labels[values.index(v)] for v in kwargs.get('value', [])
-                    if v in self.values]
+        selected = [labels[indexOf(v, values)] for v in kwargs.get('value', [])
+                    if isIn(v, values)]
         unselected = [k for k in labels if k not in selected]
 
         # Define whitelist and blacklist
@@ -381,7 +381,8 @@ class CrossSelector(CompositeWidget, MultiSelect):
     @param.depends('value', watch=True)
     def _update_value(self):
         labels, values = self.labels, self.values 
-        selected = [labels[values.index(v)] for v in self.value if v in values]
+        selected = [labels[indexOf(v, values)] for v in self.value
+                    if isIn(v, values)]
         unselected = [k for k in labels if k not in selected]
         self._lists[True].options = selected
         self._lists[True].value = []
