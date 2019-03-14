@@ -301,7 +301,7 @@ def test_select_non_hashable_options(document, comm):
     opts.pop('A')
     select.options = opts
     assert select.value is opts['1']
-    assert widget.value is '1'
+    assert widget.value == '1'
 
 
 def test_select_mutables(document, comm):
