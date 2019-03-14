@@ -56,5 +56,5 @@ def tmpdir(request, tmpdir_factory):
         name = name[:MAXVAL]
     tmp_dir = tmpdir_factory.mktemp(name, numbered=True)
     yield tmp_dir
-    shutil.rmtree(tmp_dir)
+    shutil.rmtree(str(tmp_dir))
 
