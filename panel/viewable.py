@@ -5,6 +5,7 @@ response to changes to parameters and the underlying bokeh models.
 """
 from __future__ import absolute_import, division, unicode_literals
 
+import io
 import re
 import signal
 import uuid
@@ -498,7 +499,7 @@ class Viewable(Layoutable):
         if hasattr(filename, 'write'):
             filename.write(decode_utf8(html))
             return
-        with open(filename, mode="w", encoding="utf-8") as f:
+        with io.open(filename, mode="w", encoding="utf-8") as f:
             f.write(decode_utf8(html))
 
     def server_doc(self, doc=None, title=None):
@@ -610,7 +611,7 @@ class Reactive(Viewable):
         # temporary flag denotes panes created for temporary, internal
         # use which should be garbage collected once they have been used
         super(Reactive, self).__init__(**params)
-        self._processing = True
+        self._processing = False
         self._events = {}
         self._changing = {}
         self._callbacks = []
@@ -711,8 +712,6 @@ class Reactive(Viewable):
             events = self._events
             self._events = {}
             self.set_param(**self._process_property_change(events))
-        except:
-            raise
         finally:
             self._processing = False
             state.curdoc = None
