@@ -69,15 +69,17 @@ class Select(SelectBase):
                 msg['value'] = labels[values.index(val)]
             elif values:
                 self.value = self.values[0]
-            else:
+            elif self.value is not None:
                 self.value = None
 
         if 'options' in msg:
             msg['options'] = self.labels
             val = self.value
-            if values and val not in values:
-                self.value = values[0]
-
+            if values:
+                if val not in values:
+                    self.value = values[0]
+            elif self.value is not None:
+                self.value = None
         return msg
 
     def _process_property_change(self, msg):
@@ -155,6 +157,8 @@ class _RadioGroupBase(Select):
             if value in values:
                 msg['active'] = values.index(value)
             else:
+                if self.value is not None:
+                    self.value = None
                 msg['active'] = None
 
         if 'options' in msg:
