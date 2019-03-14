@@ -70,7 +70,7 @@ class DiscretePlayer(PlayerBase, SelectBase):
     _rename = {'name': None, 'options': None}
 
     def _process_param_change(self, msg):
-        values = [v for v in self.values]
+        values = self.values
         if 'options' in msg:
             msg['start'] = 0
             msg['end'] = len(values) - 1
