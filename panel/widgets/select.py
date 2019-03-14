@@ -73,12 +73,12 @@ class Select(SelectBase):
                 self.value = None
 
         if 'options' in msg:
-            msg['options'] = self.labels
+            msg['options'] = labels
             val = self.value
             if values:
                 if not isIn(val, values):
                     self.value = values[0]
-            elif self.value is not None:
+            elif val is not None:
                 self.value = None
         return msg
 
