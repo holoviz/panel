@@ -62,19 +62,21 @@ class Select(SelectBase):
 
     def _process_param_change(self, msg):
         msg = super(Select, self)._process_param_change(msg)
-        mapping = {hashable(v): k for k, v in self._items.items()}
+        labels, values = self.labels, self.values
         if 'value' in msg:
-            hash_val = hashable(msg['value'])
-            if hash_val in mapping:
-                msg['value'] = mapping[hash_val]
-            elif mapping:
+            val = msg['value']
+            if val in values:
+                msg['value'] = labels[values.index(val)]
+            elif values:
                 self.value = self.values[0]
+            else:
+                self.value = None
 
         if 'options' in msg:
             msg['options'] = self.labels
-            hash_val = hashable(self.value)
-            if mapping and hash_val not in mapping:
-                self.value = self.values[0]
+            val = self.value
+            if values and val not in values:
+                self.value = values[0]
 
         return msg
 
@@ -107,22 +109,23 @@ class MultiSelect(Select):
 
     def _process_param_change(self, msg):
         msg = super(Select, self)._process_param_change(msg)
-        mapping = {hashable(v): k for k, v in self._items.items()}
+        labels, values = self.labels, self.values
         if 'value' in msg:
-            msg['value'] = [mapping[hashable(v)] for v in msg['value']
-                            if hashable(v) in mapping]
+            msg['value'] = [labels[values.index(v)] for v in msg['value']
+                            if v in values]
 
         if 'options' in msg:
-            msg['options'] = self.labels
-            if any(hashable(v) not in mapping for v in self.value):
-                self.value = [v for v in self.value if hashable(v) in mapping]
+            msg['options'] = labels
+            if any(v not in values for v in self.value):
+                self.value = [v for v in self.value if v in values]
         return msg
 
     def _process_property_change(self, msg):
         msg = super(Select, self)._process_property_change(msg)
         if 'value' in msg:
+            labels = self.labels
             msg['value'] = [self._items[v] for v in msg['value']
-                            if v in self.labels]
+                            if v in labels]
         msg.pop('options', None)
         return msg
 
@@ -146,9 +149,9 @@ class _RadioGroupBase(Select):
 
     def _process_param_change(self, msg):
         msg = super(Select, self)._process_param_change(msg)
-        values = [hashable(v) for v in self._items.values()]
+        values = self.values
         if 'value' in msg:
-            value = hashable(msg.pop('value'))
+            value = msg.pop('value')
             if value in values:
                 msg['active'] = values.index(value)
             else:
@@ -156,7 +159,7 @@ class _RadioGroupBase(Select):
 
         if 'options' in msg:
             msg['labels'] = list(msg.pop('options'))
-            value = hashable(self.value)
+            value = self.value
             if value not in values:
                 self.value = None
         msg.pop('title', None)
@@ -197,14 +200,14 @@ class _CheckGroupBase(Select):
 
     def _process_param_change(self, msg):
         msg = super(Select, self)._process_param_change(msg)
-        values = [hashable(v) for v in self._items.values()]
+        values = self.values
         if 'value' in msg:
-            msg['active'] = [values.index(hashable(v)) for v in msg.pop('value')
-                             if hashable(v) in values]
+            msg['active'] = [values.index(v) for v in msg.pop('value')
+                             if v in values]
         if 'options' in msg:
             msg['labels'] = list(msg.pop('options'))
-            if any(hashable(v) not in values for v in self.value):
-                self.value = [v for v in self.value if hashable(v) in values]
+            if any(v not in values for v in self.value):
+                self.value = [v for v in self.value if v in values]
         msg.pop('title', None)
         return msg
 
@@ -297,9 +300,10 @@ class CrossSelector(CompositeWidget, MultiSelect):
         super(CrossSelector, self).__init__(**kwargs)
         # Compute selected and unselected values
 
-        mapping = {hashable(v): k for k, v in self._items.items()}
-        selected = [mapping[hashable(v)] for v in kwargs.get('value', [])]
-        unselected = [k for k in self.labels if k not in selected]
+        labels, values = self.labels, self.values
+        selected = [labels[values.index(v)] for v in kwargs.get('value', [])
+                    if v in self.values]
+        unselected = [k for k in labels if k not in selected]
 
         # Define whitelist and blacklist
         layout = dict(sizing_mode=self.sizing_mode, width_policy=self.width_policy,
@@ -372,9 +376,9 @@ class CrossSelector(CompositeWidget, MultiSelect):
 
     @param.depends('value', watch=True)
     def _update_value(self):
-        mapping = {hashable(v): k for k, v in self._items.items()}
-        selected = [mapping[hashable(v)] for v in self.value]
-        unselected = [k for k in self.labels if k not in selected]
+        labels, values = self.labels, self.values 
+        selected = [labels[values.index(v)] for v in self.value if v in values]
+        unselected = [k for k in labels if k not in selected]
         self._lists[True].options = selected
         self._lists[True].value = []
         self._lists[False].options = unselected
@@ -408,7 +412,8 @@ class CrossSelector(CompositeWidget, MultiSelect):
     def _apply_query(self, selected):
         query = self._query[selected]
         other = self._lists[not selected].labels
-        options = [k for k in self.labels if k not in other]
+        labels = self.labels
+        options = [k for k in labels if k not in other]
         if not query:
             self._lists[selected].options = options
             self._lists[selected].value = []

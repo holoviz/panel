@@ -70,15 +70,15 @@ class DiscretePlayer(PlayerBase, SelectBase):
     _rename = {'name': None, 'options': None}
 
     def _process_param_change(self, msg):
-        values = [hashable(v) for v in self.values]
+        values = [v for v in self.values]
         if 'options' in msg:
             msg['start'] = 0
             msg['end'] = len(values) - 1
             if values and self.value not in values:
                 self.value = values[0]
         if 'value' in msg:
-            value = hashable(msg['value'])
-            if hashable(value) in values:
+            value = msg['value']
+            if value in values:
                 msg['value'] = values.index(value)
             elif values:
                 self.value = values[0]
