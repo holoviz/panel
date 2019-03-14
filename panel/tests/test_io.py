@@ -77,7 +77,7 @@ def test_embed_checkbox(document, comm):
         assert event['new'] == '<pre>%s</pre>' % k
 
 
-def test_save_embed_bytesio(tmpdir):
+def test_save_embed_bytesio():
     checkbox = Checkbox()
     string = Str()
     checkbox.link(string, value='object')
@@ -95,7 +95,7 @@ def test_save_embed(tmpdir):
     string = Str()
     checkbox.link(string, value='object')
     panel = Row(checkbox, string)
-    filename = os.path.join(tmpdir, 'test.html')
+    filename = os.path.join(str(tmpdir), 'test.html')
     panel.save(filename, embed=True)
     assert os.path.isfile(filename)
 
@@ -105,11 +105,11 @@ def test_save_embed_json(tmpdir):
     string = Str()
     checkbox.link(string, value='object')
     panel = Row(checkbox, string)
-    filename = os.path.join(tmpdir, 'test.html')
+    filename = os.path.join(str(tmpdir), 'test.html')
     panel.save(filename, embed=True, embed_json=True,
-               save_path=tmpdir)
+               save_path=str(tmpdir))
     assert os.path.isfile(filename)
-    paths = glob.glob(os.path.join(tmpdir, '*'))
+    paths = glob.glob(os.path.join(str(tmpdir), '*'))
     paths.remove(filename)
     assert len(paths) == 1
     json_files = sorted(glob.glob(os.path.join(paths[0], '*.json')))
