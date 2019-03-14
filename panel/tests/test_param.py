@@ -31,6 +31,15 @@ def test_instantiate_from_class():
     assert isinstance(Pane(Test), Param)
 
 
+def test_instantiate_from_parameter():
+
+    class Test(param.Parameterized):
+
+        a = param.Number()
+
+    assert isinstance(Pane(Test.param.a), Param)
+
+
 def test_instantiate_from_parameters():
 
     class Test(param.Parameterized):
@@ -47,6 +56,15 @@ def test_instantiate_from_instance():
         a = param.Number()
 
     assert isinstance(Pane(Test()), Param)
+
+
+def test_instantiate_from_parameter_on_instance():
+
+    class Test(param.Parameterized):
+
+        a = param.Number()
+
+    assert isinstance(Pane(Test().param.a), Param)
 
 
 def test_instantiate_from_parameters_on_instance():
@@ -90,6 +108,23 @@ def test_get_root(document, comm):
     div = model.children[0]
     assert isinstance(div, Div)
     assert div.text == '<b>'+test.name[:-5]+'</b>'
+
+
+def test_single_param(document, comm):
+
+    class Test(param.Parameterized):
+        a = param.Parameter(default=0)
+
+    test = Test()
+    test_pane = Pane(test.param.a)
+    model = test_pane._get_root(document, comm=comm)
+
+    assert isinstance(model, BkColumn)
+    assert len(model.children) == 1
+
+    widget = model.children[0]
+    assert isinstance(widget, TextInput)
+    assert widget.value == '0'
 
 
 def test_get_root_tabs(document, comm):

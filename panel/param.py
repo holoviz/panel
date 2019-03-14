@@ -134,6 +134,11 @@ class Param(PaneBase):
     _rerender_params = []
 
     def __init__(self, object=None, **params):
+        if isinstance(object, param.Parameter):
+            if not 'show_name' in params:
+                params['show_name'] = False
+            params['parameters'] = [object.name]
+            object = object.owner
         if isinstance(object, param.parameterized.Parameters):
             object = object.cls if object.self is None else object.self
         if 'parameters' not in params and object is not None:
@@ -371,11 +376,11 @@ class Param(PaneBase):
             # Set up links to parameterized object
             watchers.append(self.object.param.watch(link, p_name, 'constant'))
             watchers.append(self.object.param.watch(link, p_name, 'precedence'))
-            watchers.append(self.object.param.watch(link, p_name))
             if hasattr(p_obj, 'get_range'):
                 watchers.append(self.object.param.watch(link, p_name, 'objects'))
             if hasattr(p_obj, 'get_soft_bounds'):
                 watchers.append(self.object.param.watch(link, p_name, 'bounds'))
+            watchers.append(self.object.param.watch(link, p_name))
 
         options = kwargs.get('options', [])
         if isinstance(options, dict):
@@ -441,7 +446,9 @@ class Param(PaneBase):
 
     @classmethod
     def applies(cls, obj):
-        return (is_parameterized(obj) or isinstance(obj, param.parameterized.Parameters))
+        return (is_parameterized(obj) or
+                isinstance(obj, param.parameterized.Parameters) or
+                (isinstance(obj, param.Parameter) and obj.owner is not None))
 
     @classmethod
     def widget_type(cls, pobj):
