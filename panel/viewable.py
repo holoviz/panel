@@ -10,6 +10,7 @@ import signal
 import uuid
 
 from functools import partial
+from six import string_types
 
 import param
 
@@ -449,7 +450,7 @@ class Viewable(Layoutable):
 
         Arguments
         ---------
-        filename: string
+        filename: string or file-like object
            Filename to save the plot to
         title: string
            Optional title for the plot
@@ -478,12 +479,12 @@ class Viewable(Layoutable):
             else:
                 add_to_doc(model, doc, True)
 
-        if filename.endswith('png'):
-            _export_png(model, filename=filename)
-            return
-
-        if not filename.endswith('.html'):
-            filename = filename + '.html'
+        if isinstance(filename, string_types):
+            if filename.endswith('png'):
+                _export_png(model, filename=filename)
+                return
+            if not filename.endswith('.html'):
+                filename = filename + '.html'
 
         kwargs = {}
         if title is None:
@@ -494,6 +495,9 @@ class Viewable(Layoutable):
             kwargs['template'] = template
 
         html = _file_html(doc, resources, title, **kwargs)
+        if hasattr(filename, 'write'):
+            filename.write(decode_utf8(html))
+            return
         with open(filename, mode="w", encoding="utf-8") as f:
             f.write(decode_utf8(html))
 

@@ -1,4 +1,6 @@
+import os
 import json
+import glob
 
 from panel import Row
 from panel.io import config, embed_state
@@ -52,7 +54,7 @@ def test_embed_continuous(document, comm):
 
 
 def test_embed_checkbox(document, comm):
-    checkbox = Checkbox(start=0, end=10)
+    checkbox = Checkbox()
     string = Str()
     checkbox.link(string, value='object')
     panel = Row(checkbox, string)
@@ -71,3 +73,41 @@ def test_embed_checkbox(document, comm):
         assert event['attr'] == 'text'
         assert event['model'] == model.children[1].ref
         assert event['new'] == '<pre>%s</pre>' % k
+
+
+def test_save_embed(tmpdir):
+    checkbox = Checkbox()
+    string = Str()
+    checkbox.link(string, value='object')
+    panel = Row(checkbox, string)
+    filename = os.path.join(tmpdir, 'test.html')
+    panel.save(filename, embed=True)
+    assert os.path.isfile(filename)
+
+
+def test_save_embed_json(tmpdir):
+    checkbox = Checkbox()
+    string = Str()
+    checkbox.link(string, value='object')
+    panel = Row(checkbox, string)
+    filename = os.path.join(tmpdir, 'test.html')
+    panel.save(filename, embed=True, embed_json=True,
+               save_path=tmpdir)
+    assert os.path.isfile(filename)
+    paths = glob.glob(os.path.join(tmpdir, '*'))
+    paths.remove(filename)
+    assert len(paths) == 1
+    json_files = sorted(glob.glob(os.path.join(paths[0], '*.json')))
+    assert len(json_files) == 2
+
+    for jf, v in zip(json_files, ('False', 'True')):
+        with open(jf) as f:
+            state = json.load(f)
+        assert 'content' in state
+        assert 'events' in state['content']
+        events = json.loads(state['content'])['events']
+        assert len(events) == 1
+        event = events[0]
+        assert event['kind'] == 'ModelChanged'
+        assert event['attr'] == 'text'
+        assert event['new'] == '<pre>%s</pre>' % v

@@ -1,3 +1,6 @@
+import re
+import shutil
+    
 import pytest
 
 import numpy as np
@@ -42,3 +45,16 @@ def mpl_figure():
     ax.plot(np.random.rand(10, 2))
     plt.close(fig)
     return fig
+
+
+@pytest.yield_fixture
+def tmpdir(request, tmpdir_factory):
+    name = request.node.name
+    name = re.sub("[\W]", "_", name)
+    MAXVAL = 30
+    if len(name) > MAXVAL:
+        name = name[:MAXVAL]
+    tmp_dir = tmpdir_factory.mktemp(name, numbered=True)
+    yield tmp_dir
+    shutil.rmtree(tmp_dir)
+
