@@ -249,9 +249,13 @@ def generate_panel_bokeh_map(root_model, panel_views):
     mapping panel elements to its bokeh models
     """
     map_hve_bk = defaultdict(list)
+    ref = root_model.ref['id']
     for pane in panel_views:
         if root_model.ref['id'] in pane._models:
-            bk_plots = pane._plots[root_model.ref['id']][0].traverse(lambda x: x, [is_bokeh_element_plot])
+            plot, subpane = pane._plots.get(ref, (None, None))
+            if plot is None:
+                continue
+            bk_plots = plot.traverse(lambda x: x, [is_bokeh_element_plot])
             for plot in bk_plots:
                 for hv_elem in plot.link_sources:
                     map_hve_bk[hv_elem].append(plot)
