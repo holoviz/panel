@@ -5,20 +5,24 @@ response to changes to parameters and the underlying bokeh models.
 """
 from __future__ import absolute_import, division, unicode_literals
 
+import io
 import re
 import signal
 import uuid
 
 from functools import partial
+from six import string_types
 
 import param
 
 from bokeh.document.document import Document as _Document, _combine_document_events
 from bokeh.document.events import ModelChangedEvent
-from bokeh.io import curdoc as _curdoc, export_png as _export_png, save as _save
+from bokeh.io import curdoc as _curdoc, export_png as _export_png
+from bokeh.embed import file_html as _file_html
 from bokeh.resources import CDN as _CDN
 from bokeh.models import CustomJS
 from bokeh.server.server import Server
+from bokeh.util.string import decode_utf8
 from pyviz_comms import JS_CALLBACK, JupyterCommManager, Comm as _Comm
 
 from .io import (
@@ -264,7 +268,10 @@ class Viewable(Layoutable):
         comm = state._comm_manager.get_server_comm()
         model = self._get_root(doc, comm)
         if config.embed:
-            embed_state(self, model, doc)
+            embed_state(self, model, doc,
+                        json=config.json,
+                        save_path=config.embed_save_path,
+                        load_path=config.embed_load_path)
             return render_model(model)
         return render_mimebundle(model, doc, comm)
 
@@ -337,7 +344,8 @@ class Viewable(Layoutable):
         show_server(server, notebook_url, server_id)
         return server
 
-    def embed(self, max_states=1000, max_opts=3):
+    def embed(self, max_states=1000, max_opts=3, json=False,
+              save_path='./', load_path=None):
         """
         Renders a static version of a panel in a notebook by evaluating
         the set of states defined by the widgets in the model. Note
@@ -347,16 +355,23 @@ class Viewable(Layoutable):
         Parameters
         ----------
         max_states: int
-          The maximum number of states to embed
+           The maximum number of states to embed
         max_opts: int
-          The maximum number of states for a single widget
+           The maximum number of states for a single widget
+        json: boolean (default=True)
+           Whether to export the data to json files
+        save_path: str (default='./')
+           The path to save json files to
+        load_path: str (default=None)
+           The path or URL the json files will be loaded from.
         """
         from IPython.display import publish_display_data
         doc = _Document()
         comm = _Comm()
         with config.set(embed=True):
             model = self._get_root(doc, comm)
-            embed_state(self, model, doc, max_states)
+            embed_state(self, model, doc, max_states, max_opts,
+                        json, save_path, load_path)
         publish_display_data(*render_model(model))
 
     def get_server(self, port=0, websocket_origin=None, loop=None,
@@ -365,8 +380,8 @@ class Viewable(Layoutable):
         Returns a Server instance with this panel attached as the root
         app.
 
-        Parameters
-        ----------
+        Arguments
+        ---------
         port: int (optional, default=0)
            Allows specifying a specific port
         websocket_origin: str or list(str) (optional)
@@ -428,32 +443,64 @@ class Viewable(Layoutable):
                 pass
         return server
 
-    def save(self, filename, title=None, resources=None):
+    def save(self, filename, title=None, resources=None, template=None,
+             template_variables={}, embed=False, max_states=1000,
+             max_opts=3, embed_json=False, save_path='./', load_path=None):
         """
         Saves Panel objects to file.
 
-        Parameters
-        ----------
-        filename : string
+        Arguments
+        ---------
+        filename: string or file-like object
            Filename to save the plot to
-        title : string
+        title: string
            Optional title for the plot
         resources: bokeh resources
            One of the valid bokeh.resources (e.g. CDN or INLINE)
+        embed: bool
+           Whether the state space should be embedded in the saved file.
+        max_states: int
+           The maximum number of states to embed
+        max_opts: int
+           The maximum number of states for a single widget
+        embed_json: boolean (default=True)
+           Whether to export the data to json files
+        save_path: str (default='./')
+           The path to save json files to
+        load_path: str (default=None)
+           The path or URL the json files will be loaded from.
         """
-        plot = self._get_root(_Document())
-        if filename.endswith('png'):
-            _export_png(plot, filename=filename)
-            return
-        if not filename.endswith('.html'):
-            filename = filename + '.html'
+        doc = _Document()
+        comm = _Comm()
+        with config.set(embed=embed):
+            model = self._get_root(doc, comm)
+            if embed:
+                embed_state(self, model, doc, max_states, max_opts,
+                            embed_json, save_path, load_path)
+            else:
+                add_to_doc(model, doc, True)
 
+        if isinstance(filename, string_types):
+            if filename.endswith('png'):
+                _export_png(model, filename=filename)
+                return
+            if not filename.endswith('.html'):
+                filename = filename + '.html'
+
+        kwargs = {}
         if title is None:
             title = 'Panel'
         if resources is None:
             resources = _CDN
+        if template:
+            kwargs['template'] = template
 
-        _save(plot, filename, title=title, resources=resources)
+        html = _file_html(doc, resources, title, **kwargs)
+        if hasattr(filename, 'write'):
+            filename.write(decode_utf8(html))
+            return
+        with io.open(filename, mode="w", encoding="utf-8") as f:
+            f.write(decode_utf8(html))
 
     def server_doc(self, doc=None, title=None):
         """
@@ -564,7 +611,7 @@ class Reactive(Viewable):
         # temporary flag denotes panes created for temporary, internal
         # use which should be garbage collected once they have been used
         super(Reactive, self).__init__(**params)
-        self._processing = True
+        self._processing = False
         self._events = {}
         self._changing = {}
         self._callbacks = []
@@ -665,8 +712,6 @@ class Reactive(Viewable):
             events = self._events
             self._events = {}
             self.set_param(**self._process_property_change(events))
-        except:
-            raise
         finally:
             self._processing = False
             state.curdoc = None

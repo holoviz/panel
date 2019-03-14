@@ -83,8 +83,8 @@ class CustomEggInfoCommand(egg_info):
 ########## dependencies ##########
 
 install_requires = [
-    'bokeh >=1.1.0dev8',
-    'param >=1.9.0a3',
+    'bokeh >=1.1.0dev9',
+    'param >=1.9.0a4',
     'pyviz_comms >=0.7.0',
     'markdown',
     'pyct >=0.4.4',
@@ -131,7 +131,7 @@ extras_require['all'] = sorted(set(sum(extras_require.values(), [])))
 # until pyproject.toml/equivalent is widely supported (setup_requires
 # doesn't work well with pip)
 extras_require['build'] = [
-    'param >=1.7.0',
+    'param >=1.9.0a4',
     'pyct >=0.4.4',
     'setuptools >=30.3.0',
     'bokeh >=1.0.0',

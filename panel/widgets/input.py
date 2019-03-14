@@ -260,6 +260,8 @@ class Checkbox(Widget):
 
     value = param.Boolean(default=False)
 
+    _supports_embed = True
+
     _widget_type = _BkCheckboxGroup
 
     def _process_property_change(self, msg):
@@ -275,3 +277,7 @@ class Checkbox(Widget):
         if 'title' in msg:
             msg['labels'] = [msg.pop('title')]
         return msg
+
+    def _get_embed_state(self, root, max_opts=3):
+        return (self, self._models[root.ref['id']][0], [False, True],
+                lambda x: 0 in x.active, 'active', 'cb_obj.active.indexOf(0) >= 0')
