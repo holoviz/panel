@@ -2,6 +2,8 @@ import os
 import json
 import glob
 
+from io import StringIO
+
 from panel import Row
 from panel.io import config, embed_state
 from panel.pane import Str
@@ -73,6 +75,19 @@ def test_embed_checkbox(document, comm):
         assert event['attr'] == 'text'
         assert event['model'] == model.children[1].ref
         assert event['new'] == '<pre>%s</pre>' % k
+
+
+def test_save_embed_bytesio(tmpdir):
+    checkbox = Checkbox()
+    string = Str()
+    checkbox.link(string, value='object')
+    panel = Row(checkbox, string)
+    stringio = StringIO()
+    panel.save(stringio, embed=True)
+    stringio.seek(0)
+    utf = stringio.read()
+    assert "&lt;pre&gt;False&lt;" in utf
+    assert "&lt;pre&gt;True&lt;" in utf
 
 
 def test_save_embed(tmpdir):
