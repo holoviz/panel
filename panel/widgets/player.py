@@ -6,7 +6,6 @@ from __future__ import absolute_import, division, unicode_literals
 import param
 
 from ..models.widgets import Player as _BkPlayer
-from ..util import hashable
 from .base import Widget
 from .select import SelectBase
 

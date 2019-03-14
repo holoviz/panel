@@ -11,13 +11,13 @@ from collections import OrderedDict
 import param
 
 from bokeh.models.widgets import (
-    AutocompleteInput as _BkAutocompleteInput, CheckboxGroup as _BkCheckboxGroup, 
+    AutocompleteInput as _BkAutocompleteInput, CheckboxGroup as _BkCheckboxGroup,
     CheckboxButtonGroup as _BkCheckboxButtonGroup, MultiSelect as _BkMultiSelect,
     RadioButtonGroup as _BkRadioButtonGroup, RadioGroup as _BkRadioBoxGroup,
     Select as _BkSelect)
 
 from ..layout import Column, Row, VSpacer
-from ..util import as_unicode, hashable
+from ..util import as_unicode
 from ..viewable import Layoutable
 from .base import Widget, CompositeWidget
 from .button import _ButtonBase, Button
