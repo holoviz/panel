@@ -6,7 +6,7 @@ from __future__ import absolute_import, division, unicode_literals
 import param
 
 from ..models.widgets import Player as _BkPlayer
-from ..util import hashable
+from ..util import isIn, indexOf
 from .base import Widget
 from .select import SelectBase
 
@@ -70,16 +70,16 @@ class DiscretePlayer(PlayerBase, SelectBase):
     _rename = {'name': None, 'options': None}
 
     def _process_param_change(self, msg):
-        values = [hashable(v) for v in self.values]
+        values = self.values
         if 'options' in msg:
             msg['start'] = 0
             msg['end'] = len(values) - 1
-            if values and self.value not in values:
+            if values and not isIn(self.value, values):
                 self.value = values[0]
         if 'value' in msg:
-            value = hashable(msg['value'])
-            if hashable(value) in values:
-                msg['value'] = values.index(value)
+            value = msg['value']
+            if isIn(value, values):
+                msg['value'] = indexOf(value, values)
             elif values:
                 self.value = values[0]
         return super(DiscretePlayer, self)._process_param_change(msg)

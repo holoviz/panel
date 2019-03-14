@@ -4,6 +4,7 @@ from collections import OrderedDict
 from datetime import datetime
 
 import param
+import numpy as np
 
 from bokeh.layouts import Column
 from bokeh.models import Div as BkDiv, Slider as BkSlider
@@ -261,7 +262,6 @@ def test_select(document, comm):
     assert widget.value == '1'
     assert widget.options == ['A', '1']
 
-    widget.value = '1'
     select._comm_change({'value': 'A'})
     assert select.value == opts['A']
 
@@ -271,6 +271,37 @@ def test_select(document, comm):
 
     select.value = opts['A']
     assert widget.value == 'A'
+
+
+def test_select_change_options(document, comm):
+    opts = {'A': 'a', '1': 1}
+    select = Select(options=opts, value=opts['1'], name='Select')
+
+    widget = select._get_root(document, comm=comm)
+
+    select.options = {'A': 'a'}
+    assert select.value == opts['A']
+    assert widget.value == 'A'
+
+    select.options = {}
+    assert select.value == None
+    assert widget.value == None
+
+
+def test_select_non_hashable_options(document, comm):
+    opts = {'A': np.array([1, 2, 3]), '1': np.array([3, 4, 5])}
+    select = Select(options=opts, value=opts['1'], name='Select')
+
+    widget = select._get_root(document, comm=comm)
+
+    select.value = opts['A']
+    assert select.value is opts['A']
+    assert widget.value == 'A'
+
+    opts.pop('A')
+    select.options = opts
+    assert select.value is opts['1']
+    assert widget.value == '1'
 
 
 def test_select_mutables(document, comm):
@@ -296,7 +327,7 @@ def test_select_mutables(document, comm):
     assert widget.value == 'A'
 
 
-def test_select_change_options(document, comm):
+def test_select_change_options_on_watch(document, comm):
     select = Select(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
                          value='A', name='Select')
 
