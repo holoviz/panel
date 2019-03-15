@@ -70,16 +70,6 @@ class CustomInstallCommand(install):
             print("Custom model compilation failed with: %s" % e)
         install.run(self)
 
-class CustomEggInfoCommand(egg_info):
-    """Custom installation for egg_info mode."""
-    def run(self):
-        try:
-            print("Building custom models:")
-            build_custom_models()
-        except ImportError as e:
-            print("Custom model compilation failed with: %s" % e)
-        egg_info.run(self)
-
 ########## dependencies ##########
 
 install_requires = [
@@ -155,7 +145,6 @@ setup_args = dict(
     cmdclass={
         'develop': CustomDevelopCommand,
         'install': CustomInstallCommand,
-        'egg_info': CustomEggInfoCommand
     },
     packages=find_packages(),
     include_package_data=True,
