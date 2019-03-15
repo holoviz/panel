@@ -8,7 +8,6 @@ import numpy as np
 
 from bokeh.models import ColumnDataSource
 
-from ..models import PlotlyPlot
 from .base import PaneBase
 
 
@@ -30,7 +29,7 @@ class Plotly(PaneBase):
         return ((isinstance(obj, list) and obj and all(cls.applies(o) for o in obj)) or
                 hasattr(obj, 'to_plotly_json') or (isinstance(obj, dict)
                                                    and 'data' in obj and 'layout' in obj))
-
+    
     def _to_figure(self, obj):
         import plotly.graph_objs as go
         if isinstance(obj, go.Figure):
@@ -59,6 +58,13 @@ class Plotly(PaneBase):
         """
         Should return the bokeh model to be rendered.
         """
+        if 'panel.models.plotly' not in sys.modules and isinstance(comm, JupyterComm):
+            self.param.warning('PlotlyPlot was not imported on instantiation '
+                               'and may not render in a notebook. Restart '
+                               'the notebook kernel and ensure you load '
+                               'it as part of the extension using:'
+                               '\n\npn.extension(\'plotly\')\n')
+        from ..models.plotly import PlotlyPlot
         if self.object is None:
             json, sources = None, []
         else:
