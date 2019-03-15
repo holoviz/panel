@@ -52,6 +52,10 @@ export class VtkPlotView extends HTMLBoxView {
 
   _update(): void{
     if (!this.model.append) {this._delete_all_actors()}
+    if (this.model.vtkjs == null) {
+      this._rendererEl.getRenderWindow().render()
+      return
+    }
 
     const dataAccessHelper = this._vtk.IO.Core.DataAccessHelper.get('zip', {
       zipContent: atob(this.model.vtkjs),
