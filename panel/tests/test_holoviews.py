@@ -7,7 +7,7 @@ import pytest
 
 from bokeh.models import (Row as BkRow, Column as BkColumn, GlyphRenderer,
                           Scatter, Line, GridBox, Select as BkSelect,
-                          Slider as BkSlider)
+                          Slider as BkSlider, Spacer as BkSpacer)
 from bokeh.plotting import Figure
 
 from panel.layout import Column, Row
@@ -112,6 +112,24 @@ def test_holoviews_pane_bokeh_renderer(document, comm):
     pane._cleanup(row)
     assert pane._models == {}
 
+
+@pytest.mark.usefixtures("hv_bokeh")
+@hv_available
+def test_holoviews_pane_initialize_empty(document, comm):
+    pane = HoloViews()
+
+    # Create pane
+    row = pane._get_root(document, comm=comm)
+
+    assert isinstance(row, BkRow)
+    assert len(row.children) == 1
+    model = row.children[0]
+    assert isinstance(model, BkSpacer)
+
+    pane.object = hv.Curve([1, 2, 3])
+    model = row.children[0]
+    assert isinstance(model, Figure)
+    
 
 @hv_available
 def test_holoviews_widgets_from_dynamicmap(document, comm):

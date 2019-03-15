@@ -10,6 +10,7 @@ from collections import OrderedDict, defaultdict
 from functools import partial
 
 import param
+from bokeh.models import Spacer as _BkSpacer
 
 from ..io import state
 from ..layout import Panel, Column
@@ -45,7 +46,7 @@ class HoloViews(PaneBase):
 
     _panes = {'bokeh': Bokeh, 'matplotlib': Matplotlib, 'plotly': Plotly}
 
-    def __init__(self, object, **params):
+    def __init__(self, object=None, **params):
         super(HoloViews, self).__init__(object, **params)
         self.widget_box = Column()
         self._update_widgets()
@@ -114,14 +115,17 @@ class HoloViews(PaneBase):
         if root is None:
             return self._get_root(doc, comm)
         ref = root.ref['id']
-        plot = self._render(doc, comm, root)
-        child_pane = self._panes.get(self.backend, Pane)(plot.state)
-        model = child_pane._get_model(doc, root, parent, comm)
-        if ref in self._plots:
-            old_plot, old_pane = self._plots[ref]
-            old_plot.comm = None # Ensure comm does not cleaned up
-            old_plot.cleanup()
-        self._plots[ref] = (plot, child_pane)
+        if self.object is None:
+            model = _BkSpacer()
+        else:
+            plot = self._render(doc, comm, root)
+            child_pane = self._panes.get(self.backend, Pane)(plot.state)
+            model = child_pane._get_model(doc, root, parent, comm)
+            if ref in self._plots:
+                old_plot, old_pane = self._plots[ref]
+                old_plot.comm = None # Ensure comm does not cleaned up
+                old_plot.cleanup()
+            self._plots[ref] = (plot, child_pane)
         self._models[ref] = (model, parent)
         return model
 
@@ -245,9 +249,13 @@ def generate_panel_bokeh_map(root_model, panel_views):
     mapping panel elements to its bokeh models
     """
     map_hve_bk = defaultdict(list)
+    ref = root_model.ref['id']
     for pane in panel_views:
         if root_model.ref['id'] in pane._models:
-            bk_plots = pane._plots[root_model.ref['id']][0].traverse(lambda x: x, [is_bokeh_element_plot])
+            plot, subpane = pane._plots.get(ref, (None, None))
+            if plot is None:
+                continue
+            bk_plots = plot.traverse(lambda x: x, [is_bokeh_element_plot])
             for plot in bk_plots:
                 for hv_elem in plot.link_sources:
                     map_hve_bk[hv_elem].append(plot)
