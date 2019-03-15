@@ -78,13 +78,16 @@ class Vega(PaneBase):
             sources['data'] = ColumnDataSource(data=ds_as_cds(data))
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        if 'panel.models.vega' not in sys.modules and isinstance(comm, JupyterComm):
-            self.param.warning('VegaPlot was not imported on instantiation '
-                               'and may not render in a notebook. Restart '
-                               'the notebook kernel and ensure you load '
-                               'it as part of the extension using:'
-                               '\n\npn.extension(\'vega\')\n')
-        from ..models.plots import VegaPlot
+        if 'panel.models.vega' not in sys.modules:
+            if isinstance(comm, JupyterComm):
+                self.param.warning('VegaPlot was not imported on instantiation '
+                                   'and may not render in a notebook. Restart '
+                                   'the notebook kernel and ensure you load '
+                                   'it as part of the extension using:'
+                                   '\n\npn.extension(\'vega\')\n')
+            from ..models.plots import VegaPlot
+        else:
+            VegaPlot = getattr(sys.modules['panel.models.vega'], 'VegaPlot')
 
         sources = {}
         if self.object is None:

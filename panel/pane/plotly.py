@@ -61,13 +61,17 @@ class Plotly(PaneBase):
         """
         Should return the bokeh model to be rendered.
         """
-        if 'panel.models.plotly' not in sys.modules and isinstance(comm, JupyterComm):
-            self.param.warning('PlotlyPlot was not imported on instantiation '
-                               'and may not render in a notebook. Restart '
-                               'the notebook kernel and ensure you load '
-                               'it as part of the extension using:'
-                               '\n\npn.extension(\'plotly\')\n')
-        from ..models.plotly import PlotlyPlot
+        if 'panel.models.plotly' not in sys.modules:
+            if isinstance(comm, JupyterComm):
+                self.param.warning('PlotlyPlot was not imported on instantiation '
+                                   'and may not render in a notebook. Restart '
+                                   'the notebook kernel and ensure you load '
+                                   'it as part of the extension using:'
+                                   '\n\npn.extension(\'plotly\')\n')
+            from ..models.plotly import PlotlyPlot
+        else:
+            PlotlyPlot = getattr(sys.modules['panel.models.plotly'], 'PlotlyPlot')
+
         if self.object is None:
             json, sources = None, []
         else:
