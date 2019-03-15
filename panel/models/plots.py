@@ -3,7 +3,7 @@ Defines custom bokeh models to render external Javascript based plots.
 """
 import os
 
-from bokeh.core.properties import Dict, String, List, Any, Instance
+from bokeh.core.properties import Dict, String, List, Any, Instance, Bool
 from bokeh.models import LayoutDOM, ColumnDataSource
 
 from ..util import CUSTOM_MODELS
@@ -17,7 +17,8 @@ class VtkPlot(LayoutDOM):
 
     __implementation__ = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'vtk.ts')
 
-    poly_data = String
+    vtkjs = String
+    append = Bool(default=False)
 
 
 CUSTOM_MODELS['panel.models.plots.VtkPlot'] = VtkPlot

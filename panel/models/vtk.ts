@@ -1,22 +1,11 @@
 import * as p from "core/properties"
 import {HTMLBox, HTMLBoxView} from "models/layouts/html_box";
 
-
-// interface vtkPolyDataReader {
-//   getOutputPort(): unknown;
-//   parseAsText(data: String): void;
-// }
-
 export class VtkPlotView extends HTMLBoxView {
   model: VtkPlot
   protected _initialized: boolean
-  protected _reader: any
-  protected _actor: any //TODO : typed
-  protected _mapper: any //TODO : typed
-  protected _rendererEl: any
-  protected _renderer: any
-  protected _renderWindow: any
   protected _vtk: any
+  protected _rendererEl: any
 
   initialize(): void {
     super.initialize()
@@ -48,44 +37,50 @@ export class VtkPlotView extends HTMLBoxView {
     this.el.style.setProperty('width', '500px')
     this.el.style.setProperty('height', '500px')
     this._vtk = (window as any).vtk
-    this._reader = this._vtk.IO.Legacy.vtkPolyDataReader.newInstance()
-    this._mapper = this._vtk.Rendering.Core.vtkMapper.newInstance()
-    this._actor = this._vtk.Rendering.Core.vtkActor.newInstance()
-    this._actor.setMapper(this._mapper)
-    this._mapper.setInputConnection(this._reader.getOutputPort())
-
-
-    this.connect(this.model.properties.poly_data.change, this._update)
     this._initialized = true
+    super.render()
+    this.connect(this.model.properties.vtkjs.change, this._update)
+  }
+
+  render() {
+    super.render()
+    this._rendererEl = this._vtk.Rendering.Misc.vtkFullScreenRenderWindow.newInstance({
+      container: this.el,
+    });
     this._update()
   }
 
-  render(): void {
-    super.render()
-    if (this._initialized) {
-      this._rendererEl = this._vtk.Rendering.Misc.vtkFullScreenRenderWindow.newInstance({
-        container: this.el
-      });
-      this._renderer = this._rendererEl.getRenderer();
-      this._renderWindow = this._renderer.getRenderWindow();
-      this._renderer.addActor(this._actor);
-      this._renderer.resetCamera();
-      this._renderWindow.render();
-    }
-
-  }
-
   _update(): void{
-    this._reader.parseAsText(this.model.poly_data)
-    this.render()
+    if (!this.model.append) {this._delete_all_actors()}
+
+    const dataAccessHelper = this._vtk.IO.Core.DataAccessHelper.get('zip', {
+      zipContent: atob(this.model.vtkjs),
+      callback: (_zip: any) => {
+        const sceneImporter = this._vtk.IO.Core.vtkHttpSceneLoader.newInstance({
+          renderer: this._rendererEl.getRenderer(),
+          dataAccessHelper,
+        })
+        sceneImporter.setUrl('index.json');
+        sceneImporter.onReady(() => {
+          this._rendererEl.getRenderWindow().render()
+        })
+      }
+    })
   }
+
+  _delete_all_actors(): void{
+    const renderer = this._rendererEl.getRenderer()
+    renderer.getActors().map((actor: unknown) => renderer.removeActor(actor))
+  }
+
 }
 
 
 export namespace VtkPlot {
   export type Attrs = p.AttrsOf<Props>
   export type Props = HTMLBox.Props & {
-    poly_data: p.Property<string>
+    vtkjs: p.Property<string>
+    append: p.Property<boolean>
   }
 }
 
@@ -103,7 +98,8 @@ export class VtkPlot extends HTMLBox {
     this.prototype.default_view = VtkPlotView
 
     this.define<VtkPlot.Props>({
-      poly_data: [ p.String ],
+      vtkjs:  [p.String        ],
+      append: [p.Boolean, false],
     })
   }
 }
