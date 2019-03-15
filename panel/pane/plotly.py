@@ -4,9 +4,12 @@ bokeh model.
 """
 from __future__ import absolute_import, division, unicode_literals
 
+import sys
+
 import numpy as np
 
 from bokeh.models import ColumnDataSource
+from pyviz_comms import JupyterComm
 
 from .base import PaneBase
 
@@ -29,7 +32,7 @@ class Plotly(PaneBase):
         return ((isinstance(obj, list) and obj and all(cls.applies(o) for o in obj)) or
                 hasattr(obj, 'to_plotly_json') or (isinstance(obj, dict)
                                                    and 'data' in obj and 'layout' in obj))
-    
+
     def _to_figure(self, obj):
         import plotly.graph_objs as go
         if isinstance(obj, go.Figure):
