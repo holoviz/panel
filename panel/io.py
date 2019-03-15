@@ -169,8 +169,18 @@ class panel_extension(_pyviz_extension):
 
     _loaded = False
 
+    _imports = {'plotly': 'panel.models.plotly',
+                'vega': 'panel.models.vega'}
+
     def __call__(self, *args, **params):
         # Abort if IPython not found
+        for arg in args:
+            if arg not in self._imports:
+                self.param.warning('%s extension not recognized and '
+                                   'will be skipped.' % arg)
+            else:
+                __import__(self._imports[arg])
+
         try:
             ip = params.pop('ip', None) or get_ipython() # noqa (get_ipython)
         except:
