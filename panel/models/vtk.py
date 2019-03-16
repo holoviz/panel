@@ -1,6 +1,6 @@
 # coding: utf-8
 """
-Defines custom VtkPlot bokeh model to render Vtk objects.
+Defines custom VTKPlot bokeh model to render VTK objects.
 """
 import os
 
@@ -10,7 +10,7 @@ from bokeh.models import HTMLBox
 from ..util import CUSTOM_MODELS
 
 
-class VtkPlot(HTMLBox):
+class VTKPlot(HTMLBox):
     """
     A Bokeh model that wraps around a vtk-js library and renders it inside
     a Bokeh plot.
@@ -25,4 +25,4 @@ class VtkPlot(HTMLBox):
     height = Override(default=500)
 
 
-CUSTOM_MODELS['panel.models.plots.VtkPlot'] = VtkPlot
+CUSTOM_MODELS['panel.models.plots.VTKPlot'] = VTKPlot

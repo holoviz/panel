@@ -1,7 +1,11 @@
 # coding: utf-8
 """
-Defines a VtkPane which renders a vtk plot using VtkPlot
+Defines a VTKPane which renders a vtk plot using VTKPlot
 bokeh model.
+Adpation from :
+https://kitware.github.io/vtk-js/examples/SceneExplorer.html
+Licence :
+https://github.com/Kitware/vtk-js/blob/master/LICENSE
 """
 from __future__ import absolute_import, division, unicode_literals
 
@@ -19,11 +23,11 @@ from pyviz_comms import JupyterComm
 
 from bokeh.util.dependencies import import_optional
 
-from .plot import Bokeh
+from .base import PaneBase
 
 vtk = import_optional('vtk')
 
-arrayTypesMapping = '  bBhHiIlLfdL'  # last one is idtype
+arrayTypesMapping = '  bBhHiIlLfdL' # last one is idtype
 
 _js_mapping = {
         'b': 'Int8Array',
@@ -324,36 +328,46 @@ def _write_data_set(scDirs, dataset, colorArrayInfo, newDSName, compress=True):
     scDirs.append([os.path.join(newDSName, 'index.json'), json.dumps(root, indent=2)])
 
 
-class Vtk(Bokeh):
+class VTK(PaneBase):
     """
-    Vtk panes allow rendering Vtk objects.
+    VTK panes allow rendering VTK objects.
     """
 
     @classmethod
-    def _import_bk_model(cls):
-        if 'panel.models.vtk' not in sys.modules:
-            if isinstance(comm, JupyterComm):
-                cls.param.warning('VtkPlot was not imported on instantiation '
-                                   'and may not render in a notebook. Restart '
-                                   'the notebook kernel and ensure you load '
-                                   'it as part of the extension using:'
-                                   '\n\npn.extension(\'vtk\')\n')
-            from ..models.vtk import VtkPlot
-        else:
-            VtkPlot = getattr(sys.modules['panel.models.vtk'], 'VtkPlot')
-        return VtkPlot
+    def applies(cls, obj):
+        return (isinstance(obj, getattr(vtk, 'vtkRenderWindow', type(None))) or
+                hasattr(obj, 'read'))
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         """
         Should return the bokeh model to be rendered.
         """
-        self._import_bk_model()
-        return super()._get_model(doc, root, parent, comm)
+        if 'panel.models.vtk' not in sys.modules:
+            if isinstance(comm, JupyterComm):
+                self.param.warning('VTKPlot was not imported on instantiation '
+                                   'and may not render in a notebook. Restart '
+                                   'the notebook kernel and ensure you load '
+                                   'it as part of the extension using:'
+                                   '\n\npn.extension(\'vtk\')\n')
+            from ..models.vtk import VTKPlot
+        else:
+            VTKPlot = getattr(sys.modules['panel.models.vtk'], 'VTKPlot')
 
-    @staticmethod
-    def model_from_render_window(render_window, **kwargs):
-        VtkPlot = Vtk._import_bk_model()
-        render_window.SetOffScreenRendering(1)  # to not pop a vtk windows
+        if self.object is None:
+            vtkjs = None
+        elif hasattr(self.object, 'read'):
+            vtkjs = base64.b64encode(self.object.read()).decode('utf-8')
+        else:
+            vtkjs = self._vtksjs_from_render_window(self.object)
+        model = VTKPlot(vtkjs=vtkjs)
+        if root is None:
+            root = model
+        self._models[root.ref['id']] = (model, parent)
+        return model
+
+    def _vtksjs_from_render_window(self, render_window):
+
+        render_window.SetOffScreenRendering(1) # to not pop a vtk windows
         render_window.Render()
         renderers = render_window.GetRenderers()
 
@@ -403,10 +417,10 @@ class Vtk(Bokeh):
                         arrayLocation = ''
 
                         if scalarVisibility:
-                            if scalarMode == 3 or scalarMode == 1:  # VTK_SCALAR_MODE_USE_POINT_FIELD_DATA or VTK_SCALAR_MODE_USE_POINT_DATA
+                            if scalarMode == 3 or scalarMode == 1: # VTK_SCALAR_MODE_USE_POINT_FIELD_DATA or VTK_SCALAR_MODE_USE_POINT_DATA
                                 dsAttrs = dataset.GetPointData()
                                 arrayLocation = 'pointData'
-                            elif scalarMode == 4 or scalarMode == 2:  # VTK_SCALAR_MODE_USE_CELL_FIELD_DATA or VTK_SCALAR_MODE_USE_CELL_DATA
+                            elif scalarMode == 4 or scalarMode == 2: # VTK_SCALAR_MODE_USE_CELL_FIELD_DATA or VTK_SCALAR_MODE_USE_CELL_DATA
                                 dsAttrs = dataset.GetCellData()
                                 arrayLocation = 'cellData'
 
@@ -516,4 +530,4 @@ class Vtk(Bokeh):
                 zf.close()
 
         in_memory.seek(0)
-        return VtkPlot(vtkjs=base64.b64encode(in_memory.read()).decode('utf-8'), **kwargs)
+        return base64.b64encode(in_memory.read()).decode('utf-8')

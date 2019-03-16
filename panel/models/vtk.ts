@@ -1,8 +1,8 @@
 import * as p from "core/properties"
 import {HTMLBox, HTMLBoxView} from "models/layouts/html_box";
 
-export class VtkPlotView extends HTMLBoxView {
-  model: VtkPlot
+export class VTKPlotView extends HTMLBoxView {
+  model: VTKPlot
   protected _vtk: any
   protected _rendererEl: any
 
@@ -50,7 +50,7 @@ export class VtkPlotView extends HTMLBoxView {
 }
 
 
-export namespace VtkPlot {
+export namespace VTKPlot {
   export type Attrs = p.AttrsOf<Props>
   export type Props = HTMLBox.Props & {
     vtkjs: p.Property<string>
@@ -58,20 +58,20 @@ export namespace VtkPlot {
   }
 }
 
-export interface VtkPlot extends VtkPlot.Attrs {}
+export interface VTKPlot extends VTKPlot.Attrs {}
 
-export class VtkPlot extends HTMLBox {
-  properties: VtkPlot.Props
+export class VTKPlot extends HTMLBox {
+  properties: VTKPlot.Props
 
-  constructor(attrs?: Partial<VtkPlot.Attrs>) {
+  constructor(attrs?: Partial<VTKPlot.Attrs>) {
     super(attrs)
   }
 
   static initClass(): void {
     this.prototype.type = "VtkPlot"
-    this.prototype.default_view = VtkPlotView
+    this.prototype.default_view = VTKPlotView
 
-    this.define<VtkPlot.Props>({
+    this.define<VTKPlot.Props>({
       vtkjs:         [p.String        ],
       append:        [p.Boolean, false],
     })
@@ -84,4 +84,4 @@ export class VtkPlot extends HTMLBox {
 
   }
 }
-VtkPlot.initClass()
+VTKPlot.initClass()

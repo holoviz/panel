@@ -8,15 +8,15 @@ images, equations etc.
 from __future__ import absolute_import, division, unicode_literals
 
 from ..viewable import Viewable
-from .base import PaneBase, Pane  # noqa
-from .equation import LaTeX  # noqa
-from .holoviews import HoloViews  # noqa
-from .image import GIF, JPG, PNG, SVG  # noqa
-from .markup import HTML, Markdown, Str  # noqa
-from .plotly import Plotly  # noqa
-from .plot import Bokeh, Matplotlib, RGGPlot, YT  # noqa
-from .vega import Vega  # noqa
-from .vtk import Vtk  # noqa
+from .base import PaneBase, Pane # noqa
+from .equation import LaTeX # noqa
+from .holoviews import HoloViews # noqa
+from .image import GIF, JPG, PNG, SVG # noqa
+from .markup import HTML, Markdown, Str # noqa
+from .plotly import Plotly # noqa
+from .plot import Bokeh, Matplotlib, RGGPlot, YT # noqa
+from .vega import Vega # noqa
+from .vtk import VTK # noqa
 
 
 def panel(obj, **kwargs):
