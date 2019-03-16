@@ -1,18 +1,12 @@
 import * as p from "core/properties"
-import {HTMLBox, HTMLBoxView} from "models/layouts/html_box"
+import {Markup, MarkupView} from "models/widgets/markup"
 
-export class KaTeXView extends HTMLBoxView {
+export class KaTeXView extends MarkupView {
   model: KaTeX
-
-  initialize(): void {
-    super.initialize()
-    this.render()
-    this.connect(this.model.properties.text.change, this.render)
-  }
 
   render(): void {
     super.render();
-	this.el.innerHTML = this.model.text;
+	this.markup_el.innerHTML = this.model.text;
 	(window as any).renderMathInElement(this.el, {
       delimiters: [
         {left: "$$", right: "$$", display: true},
@@ -24,17 +18,16 @@ export class KaTeXView extends HTMLBoxView {
   }
 }
 
-
 export namespace KaTeX {
   export type Attrs = p.AttrsOf<Props>
-  export type Props = HTMLBox.Props & {
+  export type Props = Markup.Props & {
     text: p.Property<string>
   }
 }
 
 export interface KaTeX extends KaTeX.Attrs {}
 
-export class KaTeX extends HTMLBox {
+export class KaTeX extends Markup {
   properties: KaTeX.Props
 
   constructor(attrs?: Partial<KaTeX.Attrs>) {
@@ -44,10 +37,6 @@ export class KaTeX extends HTMLBox {
   static initClass(): void {
     this.prototype.type = "KaTeX"
     this.prototype.default_view = KaTeXView
-
-    this.define<KaTeX.Props>({
-      text: [ p.String ]
-    })
   }
 }
 KaTeX.initClass()
