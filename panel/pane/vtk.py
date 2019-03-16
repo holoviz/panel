@@ -20,12 +20,13 @@ from pyviz_comms import JupyterComm
 from bokeh.util.dependencies import import_optional
 
 from .base import PaneBase
+from panel.models.vtk import VtkPlot
 
 vtk = import_optional('vtk')
 
 arrayTypesMapping = '  bBhHiIlLfdL'  # last one is idtype
 
-jsMapping = {
+_js_mapping = {
         'b': 'Int8Array',
         'B': 'Uint8Array',
         'h': 'Int16Array',
@@ -38,14 +39,14 @@ jsMapping = {
         'd': 'Float64Array'
 }
 
-writerMapping = {}
+_writer_mapping = {}
 
 
-def random_name():
+def _random_name():
     return ''.join([random.choice(string.ascii_lowercase) for _ in range(16)])
 
 
-def get_range_info(array, component):
+def _get_range_info(array, component):
     r = array.GetRange(component)
     compRange = {}
     compRange['min'] = r[0]
@@ -54,7 +55,7 @@ def get_range_info(array, component):
     return compRange
 
 
-def get_ref(destDirectory, md5):
+def _get_ref(destDirectory, md5):
     ref = {}
     ref['id'] = md5
     ref['encode'] = 'BigEndian' if sys.byteorder == 'big' else 'LittleEndian'
@@ -62,7 +63,7 @@ def get_ref(destDirectory, md5):
     return ref
 
 
-def get_object_id(obj, objIds):
+def _get_object_id(obj, objIds):
     try:
         idx = objIds.index(obj)
         return idx + 1
@@ -71,7 +72,7 @@ def get_object_id(obj, objIds):
         return len(objIds)
 
 
-def dump_data_array(scDirs, datasetDir, dataDir, array, root={}, compress=True):
+def _dump_data_array(scDirs, datasetDir, dataDir, array, root={}, compress=True):
     if not array:
         return None
 
@@ -94,24 +95,24 @@ def dump_data_array(scDirs, datasetDir, dataDir, array, root={}, compress=True):
     if compress:
         raise NotImplementedError('TODO')
 
-    root['ref'] = get_ref(os.path.relpath(dataDir, datasetDir), pMd5)
+    root['ref'] = _get_ref(os.path.relpath(dataDir, datasetDir), pMd5)
     root['vtkClass'] = 'vtkDataArray'
     root['name'] = array.GetName()
-    root['dataType'] = jsMapping[arrayTypesMapping[array.GetDataType()]]
+    root['dataType'] = _js_mapping[arrayTypesMapping[array.GetDataType()]]
     root['numberOfComponents'] = array.GetNumberOfComponents()
     root['size'] = array.GetNumberOfComponents() * array.GetNumberOfTuples()
     root['ranges'] = []
     if root['numberOfComponents'] > 1:
         for i in range(root['numberOfComponents']):
-            root['ranges'].append(get_range_info(array, i))
-        root['ranges'].append(get_range_info(array, -1))
+            root['ranges'].append(_get_range_info(array, i))
+        root['ranges'].append(_get_range_info(array, -1))
     else:
-        root['ranges'].append(get_range_info(array, 0))
+        root['ranges'].append(_get_range_info(array, 0))
 
     return root
 
 
-def dump_color_array(scDirs, datasetDir, dataDir, colorArrayInfo, root={}, compress=True):
+def _dump_color_array(scDirs, datasetDir, dataDir, colorArrayInfo, root={}, compress=True):
     root['pointData'] = {
         'vtkClass': 'vtkDataSetAttributes',
         "activeGlobalIds":-1,
@@ -149,7 +150,7 @@ def dump_color_array(scDirs, datasetDir, dataDir, colorArrayInfo, root={}, compr
     colorArray = colorArrayInfo['colorArray']
     location = colorArrayInfo['location']
 
-    dumpedArray = dump_data_array(scDirs, datasetDir, dataDir, colorArray, {}, compress)
+    dumpedArray = _dump_data_array(scDirs, datasetDir, dataDir, colorArray, {}, compress)
 
     if dumpedArray:
         root[location]['activeScalars'] = 0
@@ -158,23 +159,23 @@ def dump_color_array(scDirs, datasetDir, dataDir, colorArrayInfo, root={}, compr
     return root
 
 
-def dump_tcoords(scDirs, datasetDir, dataDir, dataset, root={}, compress=True):
+def _dump_tcoords(scDirs, datasetDir, dataDir, dataset, root={}, compress=True):
     tcoords = dataset.GetPointData().GetTCoords()
     if tcoords:
-        dumpedArray = dump_data_array(scDirs, datasetDir, dataDir, tcoords, {}, compress)
+        dumpedArray = _dump_data_array(scDirs, datasetDir, dataDir, tcoords, {}, compress)
         root['pointData']['activeTCoords'] = len(root['pointData']['arrays'])
         root['pointData']['arrays'].append({ 'data': dumpedArray })
 
 
-def dump_normals(scDirs, datasetDir, dataDir, dataset, root={}, compress=True):
+def _dump_normals(scDirs, datasetDir, dataDir, dataset, root={}, compress=True):
     normals = dataset.GetPointData().GetNormals()
     if normals:
-        dumpedArray = dump_data_array(scDirs, datasetDir, dataDir, normals, {}, compress)
+        dumpedArray = _dump_data_array(scDirs, datasetDir, dataDir, normals, {}, compress)
         root['pointData']['activeNormals'] = len(root['pointData']['arrays'])
         root['pointData']['arrays'].append({ 'data': dumpedArray })
 
 
-def dump_all_arrays(scDirs, datasetDir, dataDir, dataset, root={}, compress=True):
+def _dump_all_arrays(scDirs, datasetDir, dataDir, dataset, root={}, compress=True):
     root['pointData'] = {
         'vtkClass': 'vtkDataSetAttributes',
         "activeGlobalIds":-1,
@@ -215,7 +216,7 @@ def dump_all_arrays(scDirs, datasetDir, dataDir, dataset, root={}, compress=True
     for i in range(pd_size):
         array = pd.GetArray(i)
         if array:
-            dumpedArray = dump_data_array(scDirs, datasetDir, dataDir, array, {}, compress)
+            dumpedArray = _dump_data_array(scDirs, datasetDir, dataDir, array, {}, compress)
             root['pointData']['activeScalars'] = 0
             root['pointData']['arrays'].append({ 'data': dumpedArray })
 
@@ -225,19 +226,19 @@ def dump_all_arrays(scDirs, datasetDir, dataDir, dataset, root={}, compress=True
     for i in range(cd_size):
         array = cd.GetArray(i)
         if array:
-            dumpedArray = dump_data_array(scDirs, datasetDir, dataDir, array, {}, compress)
+            dumpedArray = _dump_data_array(scDirs, datasetDir, dataDir, array, {}, compress)
             root['cellData']['activeScalars'] = 0
             root['cellData']['arrays'].append({ 'data': dumpedArray })
 
     return root
 
 
-def dump_poly_data(scDirs, datasetDir, dataDir, dataset, colorArrayInfo, root={}, compress=True):
+def _dump_poly_data(scDirs, datasetDir, dataDir, dataset, colorArrayInfo, root={}, compress=True):
     root['vtkClass'] = 'vtkPolyData'
     container = root
 
     # Points
-    points = dump_data_array(scDirs, datasetDir, dataDir, dataset.GetPoints().GetData(), {}, compress)
+    points = _dump_data_array(scDirs, datasetDir, dataDir, dataset.GetPoints().GetData(), {}, compress)
     points['vtkClass'] = 'vtkPoints'
     container['points'] = points
 
@@ -246,52 +247,52 @@ def dump_poly_data(scDirs, datasetDir, dataDir, dataset, colorArrayInfo, root={}
 
     # # Verts
     if dataset.GetVerts() and dataset.GetVerts().GetData().GetNumberOfTuples() > 0:
-        _verts = dump_data_array(scDirs, datasetDir, dataDir, dataset.GetVerts().GetData(), {}, compress)
+        _verts = _dump_data_array(scDirs, datasetDir, dataDir, dataset.GetVerts().GetData(), {}, compress)
         _cells['verts'] = _verts
         _cells['verts']['vtkClass'] = 'vtkCellArray'
 
     # # Lines
     if dataset.GetLines() and dataset.GetLines().GetData().GetNumberOfTuples() > 0:
-        _lines = dump_data_array(scDirs, datasetDir, dataDir, dataset.GetLines().GetData(), {}, compress)
+        _lines = _dump_data_array(scDirs, datasetDir, dataDir, dataset.GetLines().GetData(), {}, compress)
         _cells['lines'] = _lines
         _cells['lines']['vtkClass'] = 'vtkCellArray'
 
     # # Polys
     if dataset.GetPolys() and dataset.GetPolys().GetData().GetNumberOfTuples() > 0:
-        _polys = dump_data_array(scDirs, datasetDir, dataDir, dataset.GetPolys().GetData(), {}, compress)
+        _polys = _dump_data_array(scDirs, datasetDir, dataDir, dataset.GetPolys().GetData(), {}, compress)
         _cells['polys'] = _polys
         _cells['polys']['vtkClass'] = 'vtkCellArray'
 
     # # Strips
     if dataset.GetStrips() and dataset.GetStrips().GetData().GetNumberOfTuples() > 0:
-        _strips = dump_data_array(scDirs, datasetDir, dataDir, dataset.GetStrips().GetData(), {}, compress)
+        _strips = _dump_data_array(scDirs, datasetDir, dataDir, dataset.GetStrips().GetData(), {}, compress)
         _cells['strips'] = _strips
         _cells['strips']['vtkClass'] = 'vtkCellArray'
 
-    dump_color_array(scDirs, datasetDir, dataDir, colorArrayInfo, container, compress)
+    _dump_color_array(scDirs, datasetDir, dataDir, colorArrayInfo, container, compress)
 
     # # PointData TCoords
-    dump_tcoords(scDirs, datasetDir, dataDir, dataset, container, compress)
+    _dump_tcoords(scDirs, datasetDir, dataDir, dataset, container, compress)
 
     return root
 
 
-writerMapping['vtkPolyData'] = dump_poly_data
+_writer_mapping['vtkPolyData'] = _dump_poly_data
 
 
-def dump_unstructured_grid(scDirs, datasetDir, dataDir, dataset, colorArrayInfo, root={}, compress=True):
+def _dump_unstructured_grid(scDirs, datasetDir, dataDir, dataset, colorArrayInfo, root={}, compress=True):
     geofilter = vtk.vtkGeometryFilter()
     geofilter.SetInputData(dataset)
     geofilter.Update()
     polydata = geofilter.GetOutput()
     del geofilter
-    return dump_poly_data(scDirs, datasetDir, dataDir, polydata, colorArrayInfo, root={}, compress=True)
+    return _dump_poly_data(scDirs, datasetDir, dataDir, polydata, colorArrayInfo, root={}, compress=True)
 
 
-writerMapping['vtkUnstructuredGrid'] = dump_unstructured_grid
+_writer_mapping['vtkUnstructuredGrid'] = _dump_unstructured_grid
 
 
-def dump_image_data(scDirs, datasetDir, dataDir, dataset, colorArrayInfo, root={}, compress=True):
+def _dump_image_data(scDirs, datasetDir, dataDir, dataset, colorArrayInfo, root={}, compress=True):
     root['vtkClass'] = 'vtkImageData'
     container = root
 
@@ -299,15 +300,15 @@ def dump_image_data(scDirs, datasetDir, dataDir, dataset, colorArrayInfo, root={
     container['origin'] = dataset.GetOrigin()
     container['extent'] = dataset.GetExtent()
 
-    dump_all_arrays(scDirs, datasetDir, dataDir, dataset, container, compress)
+    _dump_all_arrays(scDirs, datasetDir, dataDir, dataset, container, compress)
 
     return root
 
 
-writerMapping['vtkImageData'] = dump_image_data
+_writer_mapping['vtkImageData'] = _dump_image_data
 
 
-def write_data_set(scDirs, dataset, colorArrayInfo, newDSName, compress=True):
+def _write_data_set(scDirs, dataset, colorArrayInfo, newDSName, compress=True):
 
     dataDir = os.path.join(newDSName, 'data')
 
@@ -315,7 +316,7 @@ def write_data_set(scDirs, dataset, colorArrayInfo, newDSName, compress=True):
     root['metadata'] = {}
     root['metadata']['name'] = newDSName
 
-    writer = writerMapping[dataset.GetClassName()]
+    writer = _writer_mapping[dataset.GetClassName()]
     if writer:
         writer(scDirs, newDSName, dataDir, dataset, colorArrayInfo, root, compress)
     else:
@@ -371,7 +372,11 @@ class Vtk(PaneBase):
         model.vtkjs = vtkjs
 
     @staticmethod
-    def from_renderers(renderers):
+    def model_from_render_window(render_window):
+
+        render_window.SetOffScreenRendering(1)  # to not pop a vtk windows
+        render_window.Render()
+        renderers = render_window.GetRenderers()
 
         doCompressArrays = False
 
@@ -446,13 +451,13 @@ class Vtk(PaneBase):
                             'location': arrayLocation
                         }
 
-                        write_data_set(scDirs, dataset, colorArrayInfo, newDSName=componentName, compress=doCompressArrays)
+                        _write_data_set(scDirs, dataset, colorArrayInfo, newDSName=componentName, compress=doCompressArrays)
 
                         # Handle texture if any
                         textureName = None
                         if renProp.GetTexture() and renProp.GetTexture().GetInput():
                             textureData = renProp.GetTexture().GetInput()
-                            textureName = 'texture_%d' % get_object_id(textureData, objIds);
+                            textureName = 'texture_%d' % _get_object_id(textureData, objIds);
                             textureToSave[textureName] = textureData
 
                         representation = renProp.GetProperty().GetRepresentation() if hasattr(renProp, 'GetProperty') else 2
@@ -503,7 +508,7 @@ class Vtk(PaneBase):
 
         # Save texture data if any
         for key, val in textureToSave.items():
-            write_data_set(val, None, newDSName=key, compress=doCompressArrays)
+            _write_data_set(val, None, newDSName=key, compress=doCompressArrays)
 
         activeCamera = renderer.GetActiveCamera()
         background = renderer.GetBackground()
@@ -532,4 +537,4 @@ class Vtk(PaneBase):
                 zf.close()
 
         in_memory.seek(0)
-        return base64.b64encode(in_memory.read()).decode('utf-8')
+        return VtkPlot(vtkjs=base64.b64encode(in_memory.read()).decode('utf-8'))
