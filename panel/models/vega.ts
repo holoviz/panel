@@ -3,10 +3,22 @@ import {HTMLBox, HTMLBoxView} from "models/layouts/html_box"
 
 export class VegaPlotView extends HTMLBoxView {
   model: VegaPlot
+  _connected: string[]
 
   connect_signals(): void {
     super.connect_signals()
     this.connect(this.model.properties.data.change, this._plot)
+    this._connected = []
+    this._connect_sources()
+  }
+
+  _connect_sources(): void {
+    for (let i = 0; i < this.model.data.data.length; i++) {
+      const cds = this.model.data_sources[i]
+      if (this._connected.indexOf(cds.id) < 0) {
+        this.connect(cds.properties.data.change, this._plot)
+      }
+    }
   }
 
   _fetch_datasets() {
