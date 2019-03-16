@@ -3,44 +3,16 @@ import {HTMLBox, HTMLBoxView} from "models/layouts/html_box"
 
 export class PlotlyPlotView extends HTMLBoxView {
   model: PlotlyPlot
-  protected _initialized: boolean
 
   initialize(options: any): void {
     super.initialize(options)
-    const url = "https://cdn.plot.ly/plotly-latest.min.js"
-
-    this._initialized = false;
-    if ((window as any).Plotly) {
-      this._init()
-    } else if (((window as any).Jupyter !== undefined) && ((window as any).Jupyter.notebook !== undefined)) {
-      (window as any).require.config({
-        paths: {
-          Plotly: url.slice(0, -3)
-        }
-      });
-      (window as any).require(["Plotly"], (Plotly: any) => {
-        (window as any).Plotly = Plotly
-        this._init()
-      })
-    } else {
-      const script: any = document.createElement('script')
-      script.src = url
-      script.async = false
-      script.onreadystatechange = script.onload = () => { this._init() }
-      (document.querySelector("head") as any).appendChild(script)
-    }
-  }
-
-  _init(): void {
     this._plot()
-    this._initialized = true
     this.connect(this.model.properties.data.change, this._plot)
   }
 
   render(): void {
     super.render()
-    if (this._initialized)
-      this._plot()
+    this._plot()
   }
 
   _plot(): void {

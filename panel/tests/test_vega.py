@@ -10,7 +10,7 @@ altair_available = pytest.mark.skipif(alt is None, reason="requires altair")
 
 import numpy as np
 
-from panel.models import VegaPlot
+from panel.models.vega import VegaPlot
 from panel.pane import Pane, PaneBase, Vega
 
 vega_example = {

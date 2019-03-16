@@ -94,6 +94,10 @@ class PaneBase(Reactive):
         ignored_params = ['name', 'default_layout']+self._rerender_params
         return [p for p in self.param if p not in ignored_params]
 
+    def _init_properties(self):
+        return {k: v for k, v in self.param.get_param_values()
+                if v is not None and k not in ['default_layout', 'object']}
+
     def _update_object(self, old_model, doc, root, parent, comm):
         if self._updates:
             self._update(old_model)
