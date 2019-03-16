@@ -19,7 +19,7 @@ from pyviz_comms import JupyterComm
 
 from bokeh.util.dependencies import import_optional
 
-from .base import PaneBase
+from .plot import Bokeh
 
 vtk = import_optional('vtk')
 
@@ -324,27 +324,16 @@ def _write_data_set(scDirs, dataset, colorArrayInfo, newDSName, compress=True):
     scDirs.append([os.path.join(newDSName, 'index.json'), json.dumps(root, indent=2)])
 
 
-class Vtk(PaneBase):
+class Vtk(Bokeh):
     """
     Vtk panes allow rendering Vtk objects.
     """
 
-    _updates = True
-
-    priority = 0.8
-
     @classmethod
-    def applies(cls, obj):
-        return hasattr(obj, 'vtkjs') or (isinstance(obj, dict)
-                                         and 'vtkjs' in obj)
-
-    def _get_model(self, doc, root=None, parent=None, comm=None):
-        """
-        Should return the bokeh model to be rendered.
-        """
+    def _import_bk_model(cls):
         if 'panel.models.vtk' not in sys.modules:
             if isinstance(comm, JupyterComm):
-                self.param.warning('VtkPlot was not imported on instantiation '
+                cls.param.warning('VtkPlot was not imported on instantiation '
                                    'and may not render in a notebook. Restart '
                                    'the notebook kernel and ensure you load '
                                    'it as part of the extension using:'
@@ -352,27 +341,18 @@ class Vtk(PaneBase):
             from ..models.vtk import VtkPlot
         else:
             VtkPlot = getattr(sys.modules['panel.models.vtk'], 'VtkPlot')
+        return VtkPlot
 
-        if self.object is None:
-            vtkjs = None
-        else:
-            vtkjs = self.object.vtkjs
-        model = VtkPlot(vtkjs=vtkjs)
-        if root is None:
-            root = model
-        self._models[root.ref['id']] = (model, parent)
-        return model
-
-    def _update(self, model):
-        if self.object is None:
-            vtkjs = None
-        else:
-            vtkjs = self.object.vtkjs
-        model.vtkjs = vtkjs
+    def _get_model(self, doc, root=None, parent=None, comm=None):
+        """
+        Should return the bokeh model to be rendered.
+        """
+        self._import_bk_model()
+        return super()._get_model(doc, root, parent, comm)
 
     @staticmethod
     def model_from_render_window(render_window, **kwargs):
-
+        VtkPlot = Vtk._import_bk_model()
         render_window.SetOffScreenRendering(1)  # to not pop a vtk windows
         render_window.Render()
         renderers = render_window.GetRenderers()
