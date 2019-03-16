@@ -359,7 +359,7 @@ class VTK(PaneBase):
             vtkjs = base64.b64encode(self.object.read()).decode('utf-8')
         else:
             vtkjs = self._vtksjs_from_render_window(self.object)
-        model = VTKPlot(vtkjs=vtkjs)
+        model = VTKPlot(vtkjs=vtkjs, width=self.width, height=self.height)
         if root is None:
             root = model
         self._models[root.ref['id']] = (model, parent)
