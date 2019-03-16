@@ -6,11 +6,6 @@ export class FileInputView extends WidgetView {
 
   protected dialogEl: HTMLInputElement
 
-  initialize(options: any): void {
-    super.initialize(options)
-    this.render()
-  }
-
   connect_signals(): void {
     super.connect_signals()
     this.connect(this.model.change, () => this.render())
