@@ -19,7 +19,9 @@ class PlotlyPlot(LayoutDOM):
 
     __implementation__ = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'plotly.ts')
 
-    data = Dict(String, Any)
+    data = List(Any)
+
+    layout = Dict(String, Any)
 
     data_sources = List(Instance(ColumnDataSource))
 

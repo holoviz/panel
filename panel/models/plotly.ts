@@ -1,47 +1,78 @@
 import * as p from "core/properties"
+import {clone} from "core/util/object"
 import {HTMLBox, HTMLBoxView} from "models/layouts/html_box"
 
 export class PlotlyPlotView extends HTMLBoxView {
   model: PlotlyPlot
+  _connected: string[]
 
   connect_signals(): void {
     super.connect_signals()
-    this.connect(this.model.properties.data.change, this._plot)
+    this.connect(this.model.properties.data.change, this.render)
+    this.connect(this.model.properties.layout.change, this._relayout)
+    this.connect(this.model.properties.data_sources.change, () => this._connect_sources())
+    this._connected = []
+    this._connect_sources()
+  }
+
+  _connect_sources(): void {
+    for (let i = 0; i < this.model.data.length; i++) {
+      const cds = this.model.data_sources[i]
+      if (this._connected.indexOf(cds.id) < 0) {
+        this.connect(cds.properties.data.change, () => this._restyle(i))
+      }
+    }
   }
 
   render(): void {
     super.render()
-    this._plot()
+    if (!this.model.data.length && !Object.keys(this.model.layout).length) {
+      (window as any).Plotly.purge(this.el);
+    }
+    const data = [];
+    for (let i = 0; i < this.model.data.length; i++) {
+      data.push(this._get_trace(i, false));
+    }
+    (window as any).Plotly.react(this.el, data, this.model.layout);
   }
 
-  _plot(): void {
-    if (this.model.data == null)
-      return
-    for (let i = 0; i < this.model.data.data.length; i++) {
-      const trace = this.model.data.data[i]
-      const cds = this.model.data_sources[i]
-      for (const column of cds.columns()) {
-        const shape: any = cds._shapes[column]
-        let array = cds.get_array(column)
-        if (shape.length > 1) {
-          const arrays = []
-          for (let s = 0; s < shape[0]; s++) {
-            arrays.push(array.slice(s*shape[1], (s+1)*shape[1]))
-          }
-          array = arrays
+  _get_trace(index: number, update: boolean): any {
+    const trace = clone(this.model.data[index]);
+    const cds = this.model.data_sources[index];
+    for (const column of cds.columns()) {
+      const shape: number[] = cds._shapes[column];
+      let array = cds.get_array(column)
+      if (shape.length > 1) {
+        const arrays = [];
+        for (let s = 0; s < shape[0]; s++) {
+          arrays.push(array.slice(s*shape[1], (s+1)*shape[1]));
         }
-        trace[column] = array
+        array = arrays;
+      }
+      if (update) {
+        trace[column] = [array];
+      } else {
+        trace[column] = array;
       }
     }
-    (window as any).Plotly.react(this.el, this.model.data.data, this.model.data.layout)
+    return trace;
+  }
+
+  _restyle(index: number): void {
+    const trace = this._get_trace(index, true);
+    (window as any).Plotly.restyle(this.el, trace, index)
+  }
+
+  _relayout(): void {
+    (window as any).Plotly.relayout(this.el, this.model.layout)
   }
 }
-
 
 export namespace PlotlyPlot {
   export type Attrs = p.AttrsOf<Props>
   export type Props = HTMLBox.Props & {
-    data: p.Property<any>
+    data: p.Property<any[]>
+    layout: p.Property<any>
     data_sources: p.Property<any[]>
   }
 }
@@ -60,8 +91,9 @@ export class PlotlyPlot extends HTMLBox {
     this.prototype.default_view = PlotlyPlotView
 
     this.define<PlotlyPlot.Props>({
-      data: [ p.Any ],
-      data_sources: [ p.Array ],
+      data: [ p.Array, [] ],
+      layout: [ p.Any, {} ],
+      data_sources: [ p.Array, [] ],
     })
   }
 }
