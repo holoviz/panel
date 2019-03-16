@@ -20,6 +20,7 @@ export class PlotlyPlotView extends HTMLBoxView {
       const cds = this.model.data_sources[i]
       if (this._connected.indexOf(cds.id) < 0) {
         this.connect(cds.properties.data.change, () => this._restyle(i))
+        this._connected.push(cds.id)
       }
     }
   }

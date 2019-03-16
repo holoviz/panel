@@ -8,15 +8,17 @@ export class VegaPlotView extends HTMLBoxView {
   connect_signals(): void {
     super.connect_signals()
     this.connect(this.model.properties.data.change, this._plot)
+    this.connect(this.model.properties.data_sources.change, () => this._connect_sources())
     this._connected = []
     this._connect_sources()
   }
 
   _connect_sources(): void {
-    for (let i = 0; i < this.model.data.data.length; i++) {
-      const cds = this.model.data_sources[i]
-      if (this._connected.indexOf(cds.id) < 0) {
+    for (const ds in this.model.data_sources) {
+	  const cds = this.model.data_sources[ds]
+      if (this._connected.indexOf(ds) < 0) {
         this.connect(cds.properties.data.change, this._plot)
+        this._connected.push(ds)
       }
     }
   }

@@ -47,7 +47,7 @@ class Vega(PaneBase):
     def is_altair(cls, obj):
         if 'altair' in sys.modules:
             import altair as alt
-            return isinstance(obj, alt.vegalite.v2.api.Chart)
+            return isinstance(obj, alt.api.TopLevelMixin)
         return False
 
     @classmethod
@@ -60,7 +60,8 @@ class Vega(PaneBase):
     def _to_json(cls, obj):
         if isinstance(obj, dict):
             json = dict(obj)
-            json['data'] = dict(json['data'])
+            if 'data' in json:
+                json['data'] = dict(json['data'])
             return json
         return obj.to_dict()
 
@@ -100,7 +101,6 @@ class Vega(PaneBase):
             json = None
         else:
             json = self._to_json(self.object)
-            json['data'] = dict(json['data'])
             self._get_sources(json, sources)
         props = self._process_param_change(self._init_properties())
         model = VegaPlot(data=json, data_sources=sources, **props)
