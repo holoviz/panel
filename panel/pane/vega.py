@@ -2,6 +2,7 @@ from __future__ import absolute_import, division, unicode_literals
 
 import sys
 
+import param
 import numpy as np
 
 from bokeh.models import ColumnDataSource
@@ -32,6 +33,11 @@ class Vega(PaneBase):
     to a ColumnDataSource which allows using binary transport to sync
     the figure on bokeh server and via Comms.
     """
+
+    margin = param.Parameter(default=(5, 5, 30, 5), doc="""
+        Allows to create additional space around the component. May
+        be specified as a two-tuple of the form (vertical, horizontal)
+        or a four-tuple (top, right, bottom, left).""")
 
     priority = 0.8
 
@@ -96,7 +102,8 @@ class Vega(PaneBase):
             json = self._to_json(self.object)
             json['data'] = dict(json['data'])
             self._get_sources(json, sources)
-        model = VegaPlot(data=json, data_sources=sources)
+        props = self._process_param_change(self._init_properties())
+        model = VegaPlot(data=json, data_sources=sources, **props)
         if root is None:
             root = model
         self._models[root.ref['id']] = (model, parent)
