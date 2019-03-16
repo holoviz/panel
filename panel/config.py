@@ -141,7 +141,8 @@ class panel_extension(_pyviz_extension):
     _imports = {'katex': 'panel.models.katex',
                 'mathjax': 'panel.models.mathjax',
                 'plotly': 'panel.models.plotly',
-                'vega': 'panel.models.vega'}
+                'vega': 'panel.models.vega',
+                'vtk': 'panel.models.vtk'}
 
     def __call__(self, *args, **params):
         # Abort if IPython not found

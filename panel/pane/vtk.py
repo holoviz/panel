@@ -15,11 +15,11 @@ import hashlib
 import zipfile
 
 from io import BytesIO
-
-from ..models import VtkPlot
-from .base import PaneBase
+from pyviz_comms import JupyterComm
 
 from bokeh.util.dependencies import import_optional
+
+from .base import PaneBase
 
 vtk = import_optional('vtk')
 
@@ -342,6 +342,17 @@ class Vtk(PaneBase):
         """
         Should return the bokeh model to be rendered.
         """
+        if 'panel.models.vtk' not in sys.modules:
+            if isinstance(comm, JupyterComm):
+                self.param.warning('VtkPlot was not imported on instantiation '
+                                   'and may not render in a notebook. Restart '
+                                   'the notebook kernel and ensure you load '
+                                   'it as part of the extension using:'
+                                   '\n\npn.extension(\'vtk\')\n')
+            from ..models.vtk import VtkPlot
+        else:
+            VtkPlot = getattr(sys.modules['panel.models.vtk'], 'VtkPlot')
+
         if self.object is None:
             vtkjs = None
         else:

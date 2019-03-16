@@ -3,41 +3,14 @@ import {HTMLBox, HTMLBoxView} from "models/layouts/html_box";
 
 export class VtkPlotView extends HTMLBoxView {
   model: VtkPlot
-  protected _initialized: boolean
   protected _vtk: any
   protected _rendererEl: any
 
   initialize(): void {
     super.initialize()
-    const url = "https://unpkg.com/vtk.js@8.3.15/dist/vtk.js"
-
-    this._initialized = false;
-    if ((window as any).vtk) {
-      this._init()
-    } else if (((window as any).Jupyter !== undefined) && ((window as any).Jupyter.notebook !== undefined)) {
-      (window as any).require.config({
-        paths: {
-          vtk: url.slice(0, -3)
-        }
-      });
-      (window as any).require(["vtk"], (vtk: any) => {
-        (window as any).vtk = vtk
-        this._init()
-      })
-    } else {
-      const script: any = document.createElement('script')
-      script.src = url
-      script.async = false
-      script.onreadystatechange = script.onload = () => {this._init()}
-      (document.querySelector("head") as any).appendChild(script)
-    }
-  }
-
-  _init(): void {
     this.el.style.setProperty('width', '500px')
     this.el.style.setProperty('height', '500px')
     this._vtk = (window as any).vtk
-    this._initialized = true
     super.render()
     this.connect(this.model.properties.vtkjs.change, this._update)
   }
