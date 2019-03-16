@@ -34,8 +34,14 @@ def build_custom_models():
     Compiles custom bokeh models and stores the compiled JSON alongside
     the original code.
     """
+    from panel.io import panel_extension
     from panel.util import CUSTOM_MODELS
     from bokeh.util.compiler import _get_custom_models, _compile_models
+
+    # Ensure that all optional models are loaded
+    for imp in panel_extension._imports.values():
+        __import__(imp)
+
     custom_models = _get_custom_models(list(CUSTOM_MODELS.values()))
     compiled_models = _compile_models(custom_models)
     for name, model in custom_models.items():
