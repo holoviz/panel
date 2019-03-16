@@ -35,12 +35,14 @@ class DivPaneBase(PaneBase):
 
     _rename = {'object': 'text'}
 
+    _bokeh_model = _BkDiv
+
     def _get_properties(self):
         return {p : getattr(self, p) for p in list(Layoutable.param) + ['style']
                 if getattr(self, p) is not None}
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        model = _BkDiv(**self._get_properties())
+        model = self._bokeh_model(**self._get_properties())
         if root is None:
             root = model
         self._models[root.ref['id']] = (model, parent)
