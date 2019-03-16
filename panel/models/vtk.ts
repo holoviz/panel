@@ -68,7 +68,7 @@ export class VTKPlot extends HTMLBox {
   }
 
   static initClass(): void {
-    this.prototype.type = "VtkPlot"
+    this.prototype.type = "VTKPlot"
     this.prototype.default_view = VTKPlotView
 
     this.define<VTKPlot.Props>({
@@ -80,8 +80,6 @@ export class VTKPlot extends HTMLBox {
       width: 500,
       height: 500,
     })
-
-
   }
 }
 VTKPlot.initClass()
