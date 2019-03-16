@@ -18,6 +18,7 @@ import string
 import hashlib
 import zipfile
 
+from urllib.request import urlopen
 from io import BytesIO
 from pyviz_comms import JupyterComm
 
@@ -336,7 +337,7 @@ class VTK(PaneBase):
     @classmethod
     def applies(cls, obj):
         return (isinstance(obj, getattr(vtk, 'vtkRenderWindow', type(None))) or
-                hasattr(obj, 'read'))
+                hasattr(obj, 'read') or (isinstance(obj, str) and obj.endswith('.vtkjs')))
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         """
@@ -355,6 +356,13 @@ class VTK(PaneBase):
 
         if self.object is None:
             vtkjs = None
+        elif isinstance(self.object, str) and self.object.endswith('.vtkjs'):
+            if os.path.isfile(self.object):
+                with open(self.object, 'rb') as f:
+                    vtkjs = base64.b64encode(f.read()).decode('utf-8')
+            else:
+                with urlopen(self.object) as data_url:
+                    vtkjs = base64.b64encode(data_url.read()).decode('utf-8')
         elif hasattr(self.object, 'read'):
             vtkjs = base64.b64encode(self.object.read()).decode('utf-8')
         else:

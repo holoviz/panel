@@ -78,11 +78,6 @@ export class VTKPlot extends HTMLBox {
       vtkjs:         [p.String        ],
       append:        [p.Boolean, false],
     })
-
-    this.override({
-      width: 500,
-      height: 500,
-    })
   }
 }
 VTKPlot.initClass()
