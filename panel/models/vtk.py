@@ -4,13 +4,13 @@ Defines custom VtkPlot bokeh model to render Vtk objects.
 """
 import os
 
-from bokeh.core.properties import String, Bool
-from bokeh.models import LayoutDOM
+from bokeh.core.properties import String, Bool, Override
+from bokeh.models import HTMLBox
 
 from ..util import CUSTOM_MODELS
 
 
-class VtkPlot(LayoutDOM):
+class VtkPlot(HTMLBox):
     """
     A Bokeh model that wraps around a vtk-js library and renders it inside
     a Bokeh plot.
@@ -21,6 +21,8 @@ class VtkPlot(LayoutDOM):
 
     vtkjs = String
     append = Bool(default=False)
+    width = Override(default=500)
+    height = Override(default=500)
 
 
 CUSTOM_MODELS['panel.models.plots.VtkPlot'] = VtkPlot

@@ -8,10 +8,7 @@ export class VtkPlotView extends HTMLBoxView {
 
   initialize(): void {
     super.initialize()
-    this.el.style.setProperty('width', '500px')
-    this.el.style.setProperty('height', '500px')
     this._vtk = (window as any).vtk
-    super.render()
     this.connect(this.model.properties.vtkjs.change, this._update)
   }
 
@@ -75,9 +72,16 @@ export class VtkPlot extends HTMLBox {
     this.prototype.default_view = VtkPlotView
 
     this.define<VtkPlot.Props>({
-      vtkjs:  [p.String        ],
-      append: [p.Boolean, false],
+      vtkjs:         [p.String        ],
+      append:        [p.Boolean, false],
     })
+
+    this.override({
+      width: 500,
+      height: 500,
+    })
+
+
   }
 }
 VtkPlot.initClass()

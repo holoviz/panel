@@ -20,7 +20,6 @@ from pyviz_comms import JupyterComm
 from bokeh.util.dependencies import import_optional
 
 from .base import PaneBase
-from panel.models.vtk import VtkPlot
 
 vtk = import_optional('vtk')
 
@@ -372,7 +371,7 @@ class Vtk(PaneBase):
         model.vtkjs = vtkjs
 
     @staticmethod
-    def model_from_render_window(render_window):
+    def model_from_render_window(render_window, **kwargs):
 
         render_window.SetOffScreenRendering(1)  # to not pop a vtk windows
         render_window.Render()
@@ -537,4 +536,4 @@ class Vtk(PaneBase):
                 zf.close()
 
         in_memory.seek(0)
-        return VtkPlot(vtkjs=base64.b64encode(in_memory.read()).decode('utf-8'))
+        return VtkPlot(vtkjs=base64.b64encode(in_memory.read()).decode('utf-8'), **kwargs)
