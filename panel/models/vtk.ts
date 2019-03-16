@@ -9,6 +9,9 @@ export class VTKPlotView extends HTMLBoxView {
   initialize(): void {
     super.initialize()
     this._vtk = (window as any).vtk
+  }
+
+  connect_signals(): void{
     this.connect(this.model.properties.vtkjs.change, this._update)
   }
 
