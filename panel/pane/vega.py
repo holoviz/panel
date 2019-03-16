@@ -91,7 +91,7 @@ class Vega(PaneBase):
                                    'the notebook kernel and ensure you load '
                                    'it as part of the extension using:'
                                    '\n\npn.extension(\'vega\')\n')
-            from ..models.plots import VegaPlot
+            from ..models.vega import VegaPlot
         else:
             VegaPlot = getattr(sys.modules['panel.models.vega'], 'VegaPlot')
 
