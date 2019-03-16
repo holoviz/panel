@@ -12,7 +12,6 @@ export class AudioView extends WidgetView {
     super.initialize()
     this._blocked = false
     this._time = Date.now()
-    this.render()
   }
 
   connect_signals(): void {

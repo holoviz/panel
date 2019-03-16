@@ -4,9 +4,8 @@ import {HTMLBox, HTMLBoxView} from "models/layouts/html_box"
 export class VegaPlotView extends HTMLBoxView {
   model: VegaPlot
 
-  initialize(): void {
-    super.initialize()
-    this._plot()
+  connect_signals(): void {
+    super.connect_signals()
     this.connect(this.model.properties.data.change, this._plot)
   }
 
