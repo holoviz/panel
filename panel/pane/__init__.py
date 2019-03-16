@@ -9,7 +9,7 @@ from __future__ import absolute_import, division, unicode_literals
 
 from ..viewable import Viewable
 from .base import PaneBase, Pane # noqa
-from .equation import LaTeX, KaTeX # noqa
+from .equation import LaTeX # noqa
 from .holoviews import HoloViews # noqa
 from .image import GIF, JPG, PNG, SVG # noqa
 from .markup import HTML, Markdown, Str # noqa
