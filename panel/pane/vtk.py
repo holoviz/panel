@@ -24,6 +24,7 @@ except ImportError: # python 2
     from urllib import urlopen
 
 from io import BytesIO
+from six import string_types
 from pyviz_comms import JupyterComm
 
 from bokeh.util.dependencies import import_optional
@@ -31,11 +32,6 @@ from bokeh.util.dependencies import import_optional
 from .base import PaneBase
 
 vtk = import_optional('vtk')
-
-try:
-    string_type = str
-except NameError:
-    string_type = basestring
 
 arrayTypesMapping = '  bBhHiIlLfdL' # last one is idtype
 
@@ -346,7 +342,7 @@ class VTK(PaneBase):
     @classmethod
     def applies(cls, obj):
         return (isinstance(obj, getattr(vtk, 'vtkRenderWindow', type(None))) or
-                hasattr(obj, 'read') or (isinstance(obj, string_type) and obj.endswith('.vtkjs')))
+                hasattr(obj, 'read') or (isinstance(obj, string_types) and obj.endswith('.vtkjs')))
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         """
@@ -365,7 +361,7 @@ class VTK(PaneBase):
 
         if self.object is None:
             vtkjs = None
-        elif isinstance(self.object, string_type) and self.object.endswith('.vtkjs'):
+        elif isinstance(self.object, string_types) and self.object.endswith('.vtkjs'):
             if os.path.isfile(self.object):
                 with open(self.object, 'rb') as f:
                     vtkjs = base64.b64encode(f.read()).decode('utf-8')
