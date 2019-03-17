@@ -425,6 +425,16 @@ class VTK(PaneBase):
                         arrayLocation = ''
 
                         if scalarVisibility:
+                            if scalarMode == 0:
+                                # By default (ScalarModeToDefault), the filter will use point data,
+                                # and if no point data is available, then cell data is used
+                                # https://vtk.org/doc/nightly/html/classvtkMapper.html#af330900726eb1a5e18e5f7f557306e52
+                                if dataset.GetPointData().GetNumberOfArrays() >= 1:
+                                    dsAttrs = dataset.GetPointData()
+                                    arrayLocation = 'pointData'
+                                else:
+                                    dsAttrs = dataset.GetCellData()
+                                    arrayLocation = 'cellData'
                             if scalarMode == 3 or scalarMode == 1: # VTK_SCALAR_MODE_USE_POINT_FIELD_DATA or VTK_SCALAR_MODE_USE_POINT_DATA
                                 dsAttrs = dataset.GetPointData()
                                 arrayLocation = 'pointData'
@@ -465,9 +475,10 @@ class VTK(PaneBase):
                             textureToSave[textureName] = textureData
 
                         representation = renProp.GetProperty().GetRepresentation() if hasattr(renProp, 'GetProperty') else 2
-                        colorToUse = renProp.GetProperty().GetDiffuseColor() if hasattr(renProp, 'GetProperty') else [1, 1, 1]
                         if representation == 1:
                             colorToUse = renProp.GetProperty().GetColor() if hasattr(renProp, 'GetProperty') else [1, 1, 1]
+                        else:
+                            colorToUse = renProp.GetProperty().GetDiffuseColor() if hasattr(renProp, 'GetProperty') else [1, 1, 1]
                         pointSize = renProp.GetProperty().GetPointSize() if hasattr(renProp, 'GetProperty') else 1.0
                         opacity = renProp.GetProperty().GetOpacity() if hasattr(renProp, 'GetProperty') else 1.0
                         edgeVisibility = renProp.GetProperty().GetEdgeVisibility() if hasattr(renProp, 'GetProperty') else False
