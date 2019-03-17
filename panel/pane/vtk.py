@@ -339,6 +339,8 @@ class VTK(PaneBase):
     VTK panes allow rendering VTK objects.
     """
 
+    _updates = True
+
     @classmethod
     def applies(cls, obj):
         return (isinstance(obj, getattr(vtk, 'vtkRenderWindow', type(None))) or
