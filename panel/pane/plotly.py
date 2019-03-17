@@ -90,8 +90,10 @@ class Plotly(PaneBase):
             model.update(data=[], layout={})
             return
 
+
         fig = self._to_figure(self.object)
         json = fig.to_plotly_json()
+
         traces = json['data']
         new_sources = []
         for i, trace in enumerate(traces):
@@ -125,12 +127,12 @@ class Plotly(PaneBase):
             update_data = False
             for new, old in zip(traces, model.data):
                 try:
-                    update_model = (
+                    update_data = (
                         {k: v for k, v in new.items() if k != 'uid'} !=
                         {k: v for k, v in old.items() if k != 'uid'})
                 except:
-                    update_model = True
-                if update_model:
+                    update_data = True
+                if update_data:
                     break
 
         if new_sources:
