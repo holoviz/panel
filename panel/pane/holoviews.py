@@ -84,7 +84,6 @@ class HoloViews(PaneBase):
 
     def _update_plot(self, plot, pane):
         from holoviews.core.util import cross_index
-        from holoviews.plotting.bokeh.plot import BokehPlot
 
         widgets = self.widget_box.objects
         if not widgets:
@@ -94,7 +93,7 @@ class HoloViews(PaneBase):
         else:
             key = tuple(w.value for w in widgets)
 
-        if isinstance(plot, BokehPlot):
+        if plot.backend == 'bokeh':
             if plot.comm or plot.document is state.curdoc:
                 plot.update(key)
                 if plot.comm and 'embedded' not in plot.root.tags:
