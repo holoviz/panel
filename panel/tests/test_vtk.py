@@ -71,7 +71,7 @@ def test_vtk_data_array_dump():
     scDir = []
     root = {}
     _dump_data_array(scDir, '', 'test', data, root=root, compress=False)
-    assert root_keys == list(root.keys())
+    assert len(set(root_keys) - set(root.keys())) == 0
     assert len(scDir) == 1
     assert isinstance(scDir[0][0], string_types)
     assert isinstance(scDir[0][1], bytes)
