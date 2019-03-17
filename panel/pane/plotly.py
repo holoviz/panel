@@ -53,7 +53,7 @@ class Plotly(PaneBase):
             data = {}
             for key, value in list(trace.items()):
                 if isinstance(value, np.ndarray):
-                    data[key] = trace.pop(key)
+                    data[key] = [trace.pop(key)]
             sources.append(ColumnDataSource(data))
         return sources
 
@@ -105,7 +105,7 @@ class Plotly(PaneBase):
             for key, new in list(trace.items()):
                 if isinstance(new, np.ndarray):
                     try:
-                        old = cds.data.get(key)
+                        old = cds.data.get(key)[0]
                         update_array = (
                             (type(old) != type(new)) or
                             (new.shape != old.shape) or
@@ -113,7 +113,7 @@ class Plotly(PaneBase):
                     except:
                         update_array = True
                     if update_array:
-                        cds.data[key] = trace.pop(key)
+                        cds.data[key] = [trace.pop(key)]
 
         try:
             update_layout = model.layout != json.get('layout')

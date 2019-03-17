@@ -41,8 +41,8 @@ export class PlotlyPlotView extends HTMLBoxView {
     const trace = clone(this.model.data[index]);
     const cds = this.model.data_sources[index];
     for (const column of cds.columns()) {
-      const shape: number[] = cds._shapes[column];
-      let array = cds.get_array(column)
+      const shape: number[] = cds._shapes[column][0];
+      let array = cds.get_array(column)[0];
       if (shape.length > 1) {
         const arrays = [];
         for (let s = 0; s < shape[0]; s++) {

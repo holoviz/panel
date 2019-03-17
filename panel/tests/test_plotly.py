@@ -83,8 +83,8 @@ def test_plotly_pane_numpy_to_cds_traces(document, comm):
     assert model.layout == {'width': 350}
     assert len(model.data_sources) == 1
     cds = model.data_sources[0]
-    assert np.array_equal(cds.data['x'], np.array([1, 2]))
-    assert np.array_equal(cds.data['y'], np.array([2, 3]))
+    assert np.array_equal(cds.data['x'][0], np.array([1, 2]))
+    assert np.array_equal(cds.data['y'][0], np.array([2, 3]))
 
     # Replace Pane.object
     new_trace = [go.Scatter(x=np.array([5, 6]), y=np.array([6, 7])),
@@ -100,11 +100,11 @@ def test_plotly_pane_numpy_to_cds_traces(document, comm):
     assert model.layout == {'width': 350}
     assert len(model.data_sources) == 2
     cds = model.data_sources[0]
-    assert np.array_equal(cds.data['x'], np.array([5, 6]))
-    assert np.array_equal(cds.data['y'], np.array([6, 7]))
+    assert np.array_equal(cds.data['x'][0], np.array([5, 6]))
+    assert np.array_equal(cds.data['y'][0], np.array([6, 7]))
     cds2 = model.data_sources[1]
-    assert np.array_equal(cds2.data['x'], np.array([2, 3]))
-    assert np.array_equal(cds2.data['y'], np.array([4, 5]))
+    assert np.array_equal(cds2.data['x'][0], np.array([2, 3]))
+    assert np.array_equal(cds2.data['y'][0], np.array([4, 5]))
 
     # Cleanup
     pane._cleanup(model)
