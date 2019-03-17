@@ -136,17 +136,28 @@ def test_html_pane(document, comm):
     assert pane._models == {}
 
 
-@mpl_available
-@pil_available
 def test_latex_pane(document, comm):
     pane = LaTeX(r"$\frac{p^3}{q}$")
 
     # Create pane
     model = pane._get_root(document, comm=comm)
     assert pane._models[model.ref['id']][0] is model
-    # Just checks for a PNG, not a specific rendering, to avoid
-    # false alarms when formatting of the PNG changes
-    assert model.text[0:32] == "<img src='data:image/png;base64,"
+    assert type(model).__name__ == 'KaTeX'
+    assert model.text == r"$\frac{p^3}{q}$"
+
+    # Cleanup
+    pane._cleanup(model)
+    assert pane._models == {}
+
+
+def test_latex_mathjax_pane(document, comm):
+    pane = LaTeX(r"$\frac{p^3}{q}$", renderer='mathjax')
+
+    # Create pane
+    model = pane._get_root(document, comm=comm)
+    assert pane._models[model.ref['id']][0] is model
+    assert type(model).__name__ == 'MathJax'
+    assert model.text == r"$\frac{p^3}{q}$"
 
     # Cleanup
     pane._cleanup(model)
