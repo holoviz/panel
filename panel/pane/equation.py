@@ -29,11 +29,12 @@ class LaTeX(DivPaneBase):
     renderer = param.ObjectSelector(default=None, objects=['katex', 'mathjax'], doc="""
         The JS renderer used to render the LaTeX expression.""")
 
+    # Priority is dependent on the data type
+    priority = None
+
     @classmethod
     def applies(cls, obj):
-        if is_sympy_expr(obj):
-            return 1
-        elif hasattr(obj, '_repr_latex_'):
+        if is_sympy_expr(obj) or hasattr(obj, '_repr_latex_'):
             return 0.05
         elif isinstance(obj, string_types):
             return None
