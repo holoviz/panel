@@ -370,7 +370,7 @@ class VTK(PaneBase):
 
     def _vtksjs_from_render_window(self, render_window):
 
-        render_window.SetOffScreenRendering(1) # to not pop a vtk windows
+        render_window.OffScreenRenderingOn() # to not pop a vtk windows
         render_window.Render()
         renderers = render_window.GetRenderers()
 
