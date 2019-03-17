@@ -169,7 +169,9 @@ class panel_extension(_pyviz_extension):
 
     _loaded = False
 
-    _imports = {'plotly': 'panel.models.plotly',
+    _imports = {'katex': 'panel.models.katex',
+                'mathjax': 'panel.models.mathjax',
+                'plotly': 'panel.models.plotly',
                 'vega': 'panel.models.vega'}
 
     def __call__(self, *args, **params):
