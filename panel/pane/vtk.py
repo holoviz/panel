@@ -289,18 +289,6 @@ def _dump_poly_data(scDirs, datasetDir, dataDir, dataset, colorArrayInfo, root={
 _writer_mapping['vtkPolyData'] = _dump_poly_data
 
 
-def _dump_unstructured_grid(scDirs, datasetDir, dataDir, dataset, colorArrayInfo, root={}, compress=True):
-    geofilter = vtk.vtkGeometryFilter()
-    geofilter.SetInputData(dataset)
-    geofilter.Update()
-    polydata = geofilter.GetOutput()
-    del geofilter
-    return _dump_poly_data(scDirs, datasetDir, dataDir, polydata, colorArrayInfo, root={}, compress=True)
-
-
-_writer_mapping['vtkUnstructuredGrid'] = _dump_unstructured_grid
-
-
 def _dump_image_data(scDirs, datasetDir, dataDir, dataset, colorArrayInfo, root={}, compress=True):
     root['vtkClass'] = 'vtkImageData'
     container = root
@@ -416,6 +404,11 @@ class VTK(PaneBase):
                             gf.SetInputData(dataObject)
                             gf.Update()
                             dataset = gf.GetOutput()
+                    elif dataObject.IsA('vtkUnstructuredGrid'):
+                        gf = vtk.vtkGeometryFilter()
+                        gf.SetInputData(dataObject)
+                        gf.Update()
+                        dataset = gf.GetOutput()
                     else:
                         dataset = mapper.GetInput()
 
@@ -443,7 +436,10 @@ class VTK(PaneBase):
                         dataArray = None
 
                         if dsAttrs:
-                            dataArray = dsAttrs.GetArray(colorArrayName)
+                            if colorArrayName >= 0:
+                                dataArray = dsAttrs.GetArray(colorArrayName)
+                            elif dsAttrs.GetNumberOfArrays() == 1:
+                                dataArray = dsAttrs.GetArray(0)
 
                         if dataArray:
                             # component = -1 => let specific instance get scalar from vector before mapping
