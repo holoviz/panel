@@ -356,8 +356,8 @@ class VTK(PaneBase):
                 with open(self.object, 'rb') as f:
                     vtkjs = base64.b64encode(f.read()).decode('utf-8')
             else:
-                with urlopen(self.object) as data_url:
-                    vtkjs = base64.b64encode(data_url.read()).decode('utf-8')
+                data_url = urlopen(self.object)
+                vtkjs = base64.b64encode(data_url.read()).decode('utf-8')
         elif hasattr(self.object, 'read'):
             vtkjs = base64.b64encode(self.object.read()).decode('utf-8')
         else:
