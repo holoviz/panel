@@ -7,6 +7,7 @@ export class VTKPlotView extends HTMLBoxView {
   protected _vtk: any
   protected _rendererEl: any
   protected _container: HTMLDivElement
+  protected _vtk_initialized: boolean
 
   initialize(): void {
     super.initialize()
@@ -19,23 +20,26 @@ export class VTKPlotView extends HTMLBoxView {
         height
       }
     })
+    this._vtk_initialized = false
   }
 
 
   after_layout() {
     super.after_layout()
-    this._rendererEl = this._vtk.Rendering.Misc.vtkFullScreenRenderWindow.newInstance({
-      rootContainer: this.el,
-      container: this._container
-    });
-    this._plot()
+    if (!this._vtk_initialized) {
+        this._rendererEl = this._vtk.Rendering.Misc.vtkFullScreenRenderWindow.newInstance({
+          rootContainer: this.el,
+          container: this._container
+        });
+        this._plot()
+        this._vtk_initialized = true
+    }
   }
 
   render() {
     super.render()
     this.el.appendChild(this._container)
   }
-
 
   connect_signals(): void{
     this.connect(this.model.properties.vtkjs.change, this._plot)
