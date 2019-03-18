@@ -15,6 +15,8 @@ import bokeh.embed.notebook
 
 from bokeh.core.templates import DOC_NB_JS
 from bokeh.core.json_encoder import serialize_json
+from bokeh.document import Document
+from bokeh.embed import server_document
 from bokeh.embed.elements import div_for_render_item
 from bokeh.embed.util import standalone_docs_json_and_render_items
 from bokeh.models import CustomJS, LayoutDOM, Model
@@ -23,10 +25,11 @@ from bokeh.util.compiler import bundle_all_models
 from bokeh.util.string import encode_utf8
 from jinja2 import Environment, Markup, FileSystemLoader
 from pyviz_comms import (
-    JS_CALLBACK, PYVIZ_PROXY, JupyterCommManager as _JupyterCommManager,
+    JS_CALLBACK, PYVIZ_PROXY, Comm, JupyterCommManager as _JupyterCommManager,
     bokeh_msg_handler, embed_js, nb_mime_js)
 
 from ..compiler import require_components
+from .embed import embed_state
 from .model import add_to_doc, diff
 from .server import _server_url, _origin_url, get_server
 from .state import state
@@ -218,7 +221,6 @@ def show_server(panel, notebook_url, port):
     server_id: str
         Unique ID to identify the server with
     """
-    from bokeh.embed import server_document
     from IPython.display import publish_display_data
 
     if callable(notebook_url):
@@ -244,3 +246,35 @@ def show_server(panel, notebook_url, port):
     })
     return server
 
+
+def show_embed(panel, max_states=1000, max_opts=3, json=False,
+              save_path='./', load_path=None):
+    """
+    Renders a static version of a panel in a notebook by evaluating
+    the set of states defined by the widgets in the model. Note
+    this will only work well for simple apps with a relatively
+    small state space.
+
+    Parameters
+    ----------
+    max_states: int
+      The maximum number of states to embed
+    max_opts: int
+      The maximum number of states for a single widget
+    json: boolean (default=True)
+      Whether to export the data to json files
+    save_path: str (default='./')
+      The path to save json files to
+    load_path: str (default=None)
+      The path or URL the json files will be loaded from.
+    """
+    from IPython.display import publish_display_data
+    from ..config import config
+
+    doc = Document()
+    comm = Comm()
+    with config.set(embed=True):
+        model = panel._get_root(doc, comm)
+        embed_state(panel, model, doc, max_states, max_opts,
+                    json, save_path, load_path)
+    publish_display_data(*render_model(model))

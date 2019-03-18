@@ -5,27 +5,26 @@ response to changes to parameters and the underlying bokeh models.
 """
 from __future__ import absolute_import, division, unicode_literals
 
-import io
 import re
 
 from functools import partial
-from six import string_types
 
 import param
 
 from bokeh.document.document import Document as _Document, _combine_document_events
 from bokeh.document.events import ModelChangedEvent
-from bokeh.io import curdoc as _curdoc, export_png as _export_png
-from bokeh.embed import file_html as _file_html
-from bokeh.resources import CDN as _CDN
+from bokeh.io import curdoc as _curdoc
 from bokeh.models import CustomJS
-from bokeh.util.string import decode_utf8
-from pyviz_comms import JupyterCommManager, Comm as _Comm
+from pyviz_comms import JupyterCommManager
 
 from .config import config
+from .io.embed import embed_state
+from .io.model import add_to_doc
 from .io.notebook import (get_comm_customjs, push, render_mimebundle,
-                          render_model, show_server)
-from .io import add_to_doc, embed_state, get_server, state
+                          render_model, show_embed, show_server)
+from .io.save import save
+from .io.state import state
+from .io.server import StoppableThread, get_server
 from .util import param_reprs
 
 
@@ -355,14 +354,7 @@ class Viewable(Layoutable):
         load_path: str (default=None)
            The path or URL the json files will be loaded from.
         """
-        from IPython.display import publish_display_data
-        doc = _Document()
-        comm = _Comm()
-        with config.set(embed=True):
-            model = self._get_root(doc, comm)
-            embed_state(self, model, doc, max_states, max_opts,
-                        json, save_path, load_path)
-        publish_display_data(*render_model(model))
+        show_embed(self, max_states, max_opts, json, save_path, load_path)
 
     def _get_server(self, port=0, websocket_origin=None, loop=None,
                    show=False, start=False, **kwargs):
@@ -396,37 +388,9 @@ class Viewable(Layoutable):
         load_path: str (default=None)
            The path or URL the json files will be loaded from.
         """
-        doc = _Document()
-        comm = _Comm()
-        with config.set(embed=embed):
-            model = self._get_root(doc, comm)
-            if embed:
-                embed_state(self, model, doc, max_states, max_opts,
-                            embed_json, save_path, load_path)
-            else:
-                add_to_doc(model, doc, True)
-
-        if isinstance(filename, string_types):
-            if filename.endswith('png'):
-                _export_png(model, filename=filename)
-                return
-            if not filename.endswith('.html'):
-                filename = filename + '.html'
-
-        kwargs = {}
-        if title is None:
-            title = 'Panel'
-        if resources is None:
-            resources = _CDN
-        if template:
-            kwargs['template'] = template
-
-        html = _file_html(doc, resources, title, **kwargs)
-        if hasattr(filename, 'write'):
-            filename.write(decode_utf8(html))
-            return
-        with io.open(filename, mode="w", encoding="utf-8") as f:
-            f.write(decode_utf8(html))
+        return save(self, filename, title, resources, template,
+                    template_variables, embed, max_states, max_opts,
+                    embed_json, save_path, load_path)
 
     def server_doc(self, doc=None, title=None):
         """
@@ -496,7 +460,6 @@ class Viewable(Layoutable):
         """
         if threaded:
             from tornado.ioloop import IOLoop
-            from .util import StoppableThread
             loop = IOLoop()
             server = StoppableThread(
                 target=self._get_server, io_loop=loop,
