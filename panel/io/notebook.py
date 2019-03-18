@@ -210,16 +210,20 @@ def show_server(panel, notebook_url, port):
     """
     Displays a bokeh server inline in the notebook.
 
-    Parameters
-    ----------
+    Arguments
+    ---------
     panel: Viewable
       Panel Viewable object to launch a server for
     notebook_url: str
-        The URL of the running Jupyter notebook server
+      The URL of the running Jupyter notebook server
     port: int (optional, default=0)
       Allows specifying a specific port
     server_id: str
-        Unique ID to identify the server with
+      Unique ID to identify the server with
+
+    Returns
+    -------
+    server: bokeh.server.Server
     """
     from IPython.display import publish_display_data
 
@@ -255,8 +259,8 @@ def show_embed(panel, max_states=1000, max_opts=3, json=False,
     this will only work well for simple apps with a relatively
     small state space.
 
-    Parameters
-    ----------
+    Arguments
+    ---------
     max_states: int
       The maximum number of states to embed
     max_opts: int

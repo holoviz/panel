@@ -42,27 +42,27 @@ def get_server(panel, port=0, websocket_origin=None, loop=None,
     Arguments
     ---------
     port: int (optional, default=0)
-       Allows specifying a specific port
+      Allows specifying a specific port
     websocket_origin: str or list(str) (optional)
-       A list of hosts that can connect to the websocket.
+      A list of hosts that can connect to the websocket.
 
-       This is typically required when embedding a server app in
-       an external web site.
+      This is typically required when embedding a server app in
+      an external web site.
 
-       If None, "localhost" is used.
+      If None, "localhost" is used.
     loop : tornado.ioloop.IOLoop (optional, default=IOLoop.current())
-       The tornado IOLoop to run the Server on
+      The tornado IOLoop to run the Server on
     show : boolean (optional, default=False)
-       Whether to open the server in a new browser tab on start
+      Whether to open the server in a new browser tab on start
     start : boolean(optional, default=False)
-       Whether to start the Server
+      Whether to start the Server
     kwargs: dict
-       Additional keyword arguments to pass to Server instance
+      Additional keyword arguments to pass to Server instance
 
     Returns
     -------
     server : bokeh.server.server.Server
-       Bokeh Server instance running this panel
+      Bokeh Server instance running this panel
     """
     from tornado.ioloop import IOLoop
     opts = dict(kwargs)

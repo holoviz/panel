@@ -212,25 +212,29 @@ class Viewable(Layoutable):
         Converts the objects being wrapped by the viewable into a
         bokeh model that can be composed in a bokeh layout.
 
+        Arguments
+        ----------
         doc: bokeh.Document
           Bokeh document the bokeh model will be attached to.
-
         root: bokeh.Model
           The root layout the viewable will become part of.
-
         parent: bokeh.Model
           The parent layout the viewable will become part of.
-
         comm: pyviz_comms.Comm
           Optional pyviz_comms when working in notebook
+
+        Returns
+        -------
+        model: bokeh.Model
         """
+        raise NotImplementedError
 
     def _get_root(self, doc, comm=None):
         """
         Returns the root model and applies pre-processing hooks
 
-        Parameters
-        ----------
+        Arguments
+        ---------
         doc: bokeh.Document
           Bokeh document the bokeh model will be attached to.
         comm: pyviz_comms.Comm
@@ -246,8 +250,8 @@ class Viewable(Layoutable):
         """
         Clean up method which is called when a Viewable is destroyed.
 
-        Parameters
-        ----------
+        Arguments
+        ---------
         model: bokeh.model.Model
           Bokeh model for the view being cleaned up
         """
@@ -303,11 +307,11 @@ class Viewable(Layoutable):
         Iterates over the Viewable and any potential children in the
         applying the Selector.
 
-        Parameters
-        ----------
+        Arguments
+        ---------
         selector: type or callable or None
-            The selector allows selecting a subset of Viewables by
-            declaring a type or callable function to filter by.
+          The selector allows selecting a subset of Viewables by
+          declaring a type or callable function to filter by.
 
         Returns
         -------
@@ -324,12 +328,12 @@ class Viewable(Layoutable):
         """
         Displays a bokeh server app inline in the notebook.
 
-        Parameters
-        ----------
+        Arguments
+        ---------
         notebook_url: str
-            URL to the notebook server
+          URL to the notebook server
         port: int (optional, default=0)
-           Allows specifying a specific port
+          Allows specifying a specific port
         """
         return show_server(self, notebook_url, port)
 
@@ -341,18 +345,18 @@ class Viewable(Layoutable):
         this will only work well for simple apps with a relatively
         small state space.
 
-        Parameters
-        ----------
+        Arguments
+        ---------
         max_states: int
-           The maximum number of states to embed
+          The maximum number of states to embed
         max_opts: int
-           The maximum number of states for a single widget
+          The maximum number of states for a single widget
         json: boolean (default=True)
-           Whether to export the data to json files
+          Whether to export the data to json files
         save_path: str (default='./')
-           The path to save json files to
+          The path to save json files to
         load_path: str (default=None)
-           The path or URL the json files will be loaded from.
+          The path or URL the json files will be loaded from.
         """
         show_embed(self, max_states, max_opts, json, save_path, load_path)
 
@@ -396,18 +400,18 @@ class Viewable(Layoutable):
         """
         Returns a serveable bokeh Document with the panel attached
 
-        Parameters
-        ----------
+        Arguments
+        ---------
         doc : bokeh.Document (optional)
-           The bokeh Document to attach the panel to as a root,
-           defaults to bokeh.io.curdoc()
+          The bokeh Document to attach the panel to as a root,
+          defaults to bokeh.io.curdoc()
         title : str
-           A string title to give the Document
+          A string title to give the Document
 
         Returns
         -------
         doc : bokeh.Document
-           The bokeh document the panel was attached to
+          The bokeh document the panel was attached to
         """
         doc = doc or _curdoc()
         if title is not None:
@@ -437,26 +441,26 @@ class Viewable(Layoutable):
         """
         Starts a bokeh server and displays the Viewable in a new tab
 
-        Parameters
-        ----------
+        Arguments
+        ---------
         port: int (optional, default=0)
-           Allows specifying a specific port
+          Allows specifying a specific port
         websocket_origin: str or list(str) (optional)
-           A list of hosts that can connect to the websocket.
+          A list of hosts that can connect to the websocket.
 
-           This is typically required when embedding a server app in
-           an external web site.
+          This is typically required when embedding a server app in
+          an external web site.
 
-           If None, "localhost" is used.
+          If None, "localhost" is used.
         threaded: boolean (optional, default=False)
-           Whether to launch the Server on a separate thread, allowing
-           interactive use.
+          Whether to launch the Server on a separate thread, allowing
+          interactive use.
 
         Returns
         -------
         server: bokeh.server.Server or threading.Thread
-           Returns the bokeh server instance or the thread the server
-           was launched on (if threaded=True)
+          Returns the bokeh server instance or the thread the server
+          was launched on (if threaded=True)
         """
         if threaded:
             from tornado.ioloop import IOLoop
@@ -686,15 +690,15 @@ class Reactive(Viewable):
         parameter to a callback which is triggered when the parameter
         changes.
 
-        Parameters
-        ----------
+        Arguments
+        ---------
         target: object
-            The target object of the link.
+          The target object of the link.
         callbacks: dict
-            Maps from a parameter in the source object to a callback.
+          Maps from a parameter in the source object to a callback.
         **links: dict
-            Maps between parameters on this object to the parameters
-            on the supplied object.
+          Maps between parameters on this object to the parameters
+          on the supplied object.
         """
         if links and callbacks:
             raise ValueError('Either supply a set of parameters to '
@@ -732,22 +736,22 @@ class Reactive(Viewable):
         maps from the source parameter to a JS code snippet which is
         executed when the property changes.
 
-        Parameters
+        Arguments
         ----------
         target: HoloViews object or bokeh Model or panel Viewable
-            The target to link the value to.
+          The target to link the value to.
         code: dict
-            Custom code which will be executed when the widget value
-            changes.
+          Custom code which will be executed when the widget value
+          changes.
         **links: dict
-            A mapping between properties on the source model and the
-            target model property to link it to.
+          A mapping between properties on the source model and the
+          target model property to link it to.
 
         Returns
         -------
         link: GenericLink
-            The GenericLink which can be used unlink the widget and
-            the target model.
+          The GenericLink which can be used unlink the widget and
+          the target model.
         """
         if links and code:
             raise ValueError('Either supply a set of properties to '

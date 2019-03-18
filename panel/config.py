@@ -18,6 +18,7 @@ from pyviz_comms import (JupyterCommManager as _JupyterCommManager,
 from .io.notebook import load_notebook
 from .io.state import state
 
+
 #---------------------------------------------------------------------
 # Public API
 #---------------------------------------------------------------------

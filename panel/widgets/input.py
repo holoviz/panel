@@ -65,8 +65,8 @@ class FileInput(Widget):
         """
         Saves the uploaded FileInput data to a file or BytesIO object.
 
-        Parameters
-        ----------
+        Arguments
+        ---------
         filename (str): File path or file-like object
         """
         if isinstance(filename, string_types):

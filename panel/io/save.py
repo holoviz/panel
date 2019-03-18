@@ -32,25 +32,25 @@ def save(panel, filename, title=None, resources=None, template=None,
     Arguments
     ---------
     panel: Viewable
-       The Panel Viewable to save to file
+      The Panel Viewable to save to file
     filename: string or file-like object
-       Filename to save the plot to
+      Filename to save the plot to
     title: string
-       Optional title for the plot
+      Optional title for the plot
     resources: bokeh resources
-       One of the valid bokeh.resources (e.g. CDN or INLINE)
+      One of the valid bokeh.resources (e.g. CDN or INLINE)
     embed: bool
-       Whether the state space should be embedded in the saved file.
+      Whether the state space should be embedded in the saved file.
     max_states: int
-       The maximum number of states to embed
+      The maximum number of states to embed
     max_opts: int
-       The maximum number of states for a single widget
+      The maximum number of states for a single widget
     embed_json: boolean (default=True)
-       Whether to export the data to json files
+      Whether to export the data to json files
     save_path: str (default='./')
-       The path to save json files to
+      The path to save json files to
     load_path: str (default=None)
-       The path or URL the json files will be loaded from.
+      The path or URL the json files will be loaded from.
     """
     doc = Document()
     comm = Comm()

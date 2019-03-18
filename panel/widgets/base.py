@@ -96,8 +96,8 @@ class CompositeWidget(Widget):
         Arguments
         ---------
         selector: type or callable or None
-            The selector allows selecting a subset of Viewables by
-            declaring a type or callable function to filter by.
+          The selector allows selecting a subset of Viewables by
+          declaring a type or callable function to filter by.
 
         Returns
         -------
