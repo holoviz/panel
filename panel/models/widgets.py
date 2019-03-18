@@ -3,7 +3,7 @@ import os
 from bokeh.core.properties import Int, Float, Override, Enum, Any, Bool
 from bokeh.models import Widget
 
-from ..util import CUSTOM_MODELS
+from ..compiler import CUSTOM_MODELS
 
 
 class Player(Widget):

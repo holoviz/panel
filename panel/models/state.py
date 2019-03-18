@@ -3,7 +3,8 @@ import os
 from bokeh.models import Model
 from bokeh.core.properties import Bool, Dict, Any, List
 
-from ..util import CUSTOM_MODELS
+from ..compiler import CUSTOM_MODELS
+
 
 class State(Model):
 

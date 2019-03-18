@@ -1,15 +1,12 @@
+"""
+Various general utilities used in the panel codebase.
+"""
 from __future__ import absolute_import, division, unicode_literals
 
 import re
-import os
-import io
-import json
 import sys
 import inspect
 import numbers
-import hashlib
-import threading
-import textwrap
 
 from collections import defaultdict, MutableSequence, MutableMapping, OrderedDict
 from datetime import datetime
@@ -17,47 +14,9 @@ from six import string_types
 
 import param
 
-from bokeh.document import Document
-from bokeh.models import Model, Box
-
-# Global variables
-CUSTOM_MODELS = {}
 
 if sys.version_info.major > 2:
     unicode = str
-
-
-def load_compiled_models(custom_model, implementation):
-    """
-    Custom hook to load cached implementation of custom models.
-    """
-    compiled = old_hook(custom_model, implementation)
-    if compiled is not None:
-        return compiled
-
-    model = CUSTOM_MODELS.get(custom_model.full_name)
-    if model is None:
-        return
-    ts_file = model.__implementation__
-    json_file = ts_file.replace('.ts', '.json')
-    if not os.path.isfile(json_file):
-        return
-    with io.open(ts_file, encoding="utf-8") as f:
-        code = f.read()
-    with io.open(json_file, encoding="utf-8") as f:
-        compiled = json.load(f)
-    hashed = hashlib.sha256(code.encode('utf-8')).hexdigest()
-    if compiled['hash'] == hashed:
-        return AttrDict(compiled)
-    return None
-
-
-try:
-    from bokeh.util.compiler import AttrDict, get_cache_hook, set_cache_hook
-    old_hook = get_cache_hook()
-    set_cache_hook(load_compiled_models)
-except:
-    pass
 
 
 def hashable(x):
@@ -199,64 +158,3 @@ def value_as_datetime(value):
     if isinstance(value, numbers.Number):
         value = datetime.utcfromtimestamp(value / 1000)
     return value
-
-
-
-
-class StoppableThread(threading.Thread):
-    """Thread class with a stop() method."""
-
-    def __init__(self, io_loop=None, timeout=1000, **kwargs):
-        from tornado import ioloop
-        super(StoppableThread, self).__init__(**kwargs)
-        self._stop_event = threading.Event()
-        self.io_loop = io_loop
-        self._cb = ioloop.PeriodicCallback(self._check_stopped, timeout)
-        self._cb.start()
-
-    def _check_stopped(self):
-        if self.stopped:
-            self._cb.stop()
-            self.io_loop.stop()
-
-    def stop(self):
-        self._stop_event.set()
-
-    @property
-    def stopped(self):
-        return self._stop_event.is_set()
-
-
-################################
-# Display and update utilities #
-################################
-
-
-def bokeh_repr(obj, depth=0, ignored=['children', 'text', 'name', 'toolbar', 'renderers', 'below', 'center', 'left', 'right']):
-    from .viewable import Viewable
-    if isinstance(obj, Viewable):
-        obj = obj._get_root(Document())
-
-    r = ""
-    cls = type(obj).__name__
-    properties = sorted(obj.properties_with_values(False).items())
-    props = []
-    for k, v in properties:
-        if k in ignored:
-            continue
-        if isinstance(v, Model):
-            v = '%s()' % type(v).__name__
-        else:
-            v = repr(v)
-        if len(v) > 30:
-            v = v[:30] + '...'
-        props.append('%s=%s' % (k, v))
-    props = ', '.join(props)
-    if isinstance(obj, Box):
-        r += '{cls}(children=[\n'.format(cls=cls)
-        for obj in obj.children:
-            r += textwrap.indent(bokeh_repr(obj, depth=depth+1) + ',\n', '  ')
-        r += '], %s)' % props
-    else:
-        r += '{cls}({props})'.format(cls=cls,  props=props)
-    return r

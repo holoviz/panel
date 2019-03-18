@@ -3,19 +3,19 @@
 import os
 import sys
 import json
-import hashlib
+
 from setuptools import setup, find_packages
 from setuptools.command.develop import develop
 from setuptools.command.install import install
 
 import pyct.build
 
+
 def get_setup_version(reponame):
     """
     Helper to get the current version from either git describe or the
     .version file (if available).
     """
-    import json
     basepath = os.path.split(__file__)[0]
     version_file_path = os.path.join(basepath, reponame, '.version')
     try:
@@ -28,36 +28,11 @@ def get_setup_version(reponame):
         print("WARNING: param>=1.6.0 unavailable. If you are installing a package, this warning can safely be ignored. If you are creating a package or otherwise operating in a git repository, you should install param>=1.6.0.")
         return json.load(open(version_file_path, 'r'))['version_string']
 
-def build_custom_models():
-    """
-    Compiles custom bokeh models and stores the compiled JSON alongside
-    the original code.
-    """
-    from panel.io import panel_extension
-    from panel.util import CUSTOM_MODELS
-    from bokeh.util.compiler import _get_custom_models, _compile_models
-
-    # Ensure that all optional models are loaded
-    for imp in panel_extension._imports.values():
-        __import__(imp)
-
-    custom_models = _get_custom_models(list(CUSTOM_MODELS.values()))
-    compiled_models = _compile_models(custom_models)
-    for name, model in custom_models.items():
-        compiled = compiled_models.get(name)
-        if compiled is None:
-            return
-        print('\tBuilt %s custom model' % name)
-        impl = model.implementation
-        hashed = hashlib.sha256(impl.code.encode('utf-8')).hexdigest()
-        compiled['hash'] = hashed
-        fp = impl.file.replace('.ts', '.json')
-        with open(fp, 'w') as f:
-            json.dump(compiled, f)
 
 class CustomDevelopCommand(develop):
     """Custom installation for development mode."""
     def run(self):
+        from panel.compiler import build_custom_models
         try:
             print("Building custom models:")
             build_custom_models()
@@ -68,6 +43,7 @@ class CustomDevelopCommand(develop):
 class CustomInstallCommand(install):
     """Custom installation for install mode."""
     def run(self):
+        from panel.compiler import build_custom_models
         try:
             print("Building custom models:")
             build_custom_models()

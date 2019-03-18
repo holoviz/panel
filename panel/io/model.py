@@ -3,7 +3,10 @@ Utilities for manipulating bokeh models.
 """
 from __future__ import absolute_import, division, unicode_literals
 
-from bokeh.models import Model
+import textwrap
+
+from bokeh.document import Document
+from bokeh.models import Model, Box
 from bokeh.protocol import Protocol
 
 from .state import state
@@ -48,3 +51,37 @@ def add_to_doc(obj, doc, hold=False):
     doc.add_root(obj)
     if doc._hold is None and hold:
         doc.hold()
+
+
+def bokeh_repr(obj, depth=0, ignored=['children', 'text', 'name', 'toolbar', 'renderers', 'below', 'center', 'left', 'right']):
+    """
+    Returns a string repr for a bokeh model, useful for recreating
+    panel objects using pure bokeh.
+    """
+    from .viewable import Viewable
+    if isinstance(obj, Viewable):
+        obj = obj._get_root(Document())
+
+    r = ""
+    cls = type(obj).__name__
+    properties = sorted(obj.properties_with_values(False).items())
+    props = []
+    for k, v in properties:
+        if k in ignored:
+            continue
+        if isinstance(v, Model):
+            v = '%s()' % type(v).__name__
+        else:
+            v = repr(v)
+        if len(v) > 30:
+            v = v[:30] + '...'
+        props.append('%s=%s' % (k, v))
+    props = ', '.join(props)
+    if isinstance(obj, Box):
+        r += '{cls}(children=[\n'.format(cls=cls)
+        for obj in obj.children:
+            r += textwrap.indent(bokeh_repr(obj, depth=depth+1) + ',\n', '  ')
+        r += '], %s)' % props
+    else:
+        r += '{cls}({props})'.format(cls=cls,  props=props)
+    return r

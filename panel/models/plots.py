@@ -6,7 +6,7 @@ import os
 from bokeh.core.properties import Dict, String, List, Any, Instance
 from bokeh.models import LayoutDOM, ColumnDataSource
 
-from ..util import CUSTOM_MODELS
+from ..compiler import CUSTOM_MODELS
 
 
 class PlotlyPlot(LayoutDOM):

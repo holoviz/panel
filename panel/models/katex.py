@@ -5,7 +5,7 @@ import os
 
 from bokeh.models import Markup
 
-from ..util import CUSTOM_MODELS
+from ..compiler import CUSTOM_MODELS
 
 
 class KaTeX(Markup):

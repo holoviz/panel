@@ -26,7 +26,7 @@ from pyviz_comms import (
     JS_CALLBACK, PYVIZ_PROXY, JupyterCommManager as _JupyterCommManager,
     bokeh_msg_handler, embed_js, nb_mime_js)
 
-from ..util import CUSTOM_MODELS
+from ..compiler import require_components
 from .model import add_to_doc, diff
 from .server import _server_url, _origin_url, get_server
 from .state import state
@@ -112,31 +112,6 @@ def _autoload_js(resources, custom_models_js, configs, requirements, exports, lo
     )
 
 
-def _require_components():
-    """
-    Returns JS snippet to load the required dependencies in the classic
-    notebook using REQUIRE JS.
-    """
-    configs, requirements, exports = [], [], []
-    for model in CUSTOM_MODELS.values():
-        if not hasattr(model, '__js_require__'):
-            continue
-        model_require = model.__js_require__
-        model_exports = model_require.pop('exports', {})
-        configs.append(model_require)
-        for req in model_require.get('paths', []):
-            requirements.append(req)
-            if req not in model_exports:
-                continue
-            export = model_exports[req]
-            exports.append(export)
-        for e, value in model_exports.items():
-            if e not in requirements:
-                requirements.append(e)
-                exports.append(value)
-    return configs, requirements, exports
-
-
 def render_model(model, comm=None):
     if not isinstance(model, Model):
         raise ValueError("notebook_content expects a single Model instance")
@@ -214,7 +189,7 @@ def load_notebook(inline=True, load_timeout=5000):
     resources = INLINE if inline else CDN
     custom_models_js = bundle_all_models() or ""
 
-    configs, requirements, exports = _require_components()
+    configs, requirements, exports = require_components()
     bokeh_js = _autoload_js(resources, custom_models_js, configs,
                             requirements, exports, load_timeout)
     publish_display_data({
