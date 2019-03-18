@@ -5,7 +5,8 @@ import glob
 from io import StringIO
 
 from panel import Row
-from panel.io import config, embed_state
+from panel.config import config
+from panel.io.embed import embed_state
 from panel.pane import Str
 from panel.widgets import Select, FloatSlider, Checkbox
 

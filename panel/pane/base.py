@@ -168,8 +168,8 @@ class PaneBase(Reactive):
         the precedence of all types whose applies method declares that
         the object is supported.
 
-        Parameters
-        ----------
+        Arguments
+        ---------
         obj (object): The object type to return a Pane for
 
         Returns

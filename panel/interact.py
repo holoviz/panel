@@ -351,16 +351,16 @@ class _InteractFactory(object):
     """
     Factory for instances of :class:`interactive`.
 
-    Parameters
-    ----------
-    cls : class
-        The subclass of :class:`interactive` to construct.
-    options : dict
-        A dict of options used to construct the interactive
-        function. By default, this is returned by
-        ``cls.default_options()``.
-    kwargs : dict
-        A dict of **kwargs to use for widgets.
+    Arguments
+    ---------
+    cls: class
+      The subclass of :class:`interactive` to construct.
+    options: dict
+      A dict of options used to construct the interactive
+      function. By default, this is returned by
+      ``cls.default_options()``.
+    kwargs: dict
+      A dict of **kwargs to use for widgets.
     """
     def __init__(self, cls, options, kwargs={}):
         self.cls = cls

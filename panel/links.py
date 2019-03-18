@@ -152,21 +152,21 @@ class LinkCallback(param.Parameterized):
         """
         Resolves a model given the supplied object and a model_spec.
 
-        Parameters
+        Arguments
         ----------
         root_model: bokeh.model.Model
-            The root bokeh model often used to index models
+          The root bokeh model often used to index models
         obj: holoviews.plotting.ElementPlot or bokeh.model.Model or panel.Viewable
-            The object to look the model up on
+          The object to look the model up on
         model_spec: string
-            A string defining how to look up the model, can be a single
-            string defining the handle in a HoloViews plot or a path
-            split by periods (.) to indicate a multi-level lookup.
+          A string defining how to look up the model, can be a single
+          string defining the handle in a HoloViews plot or a path
+          split by periods (.) to indicate a multi-level lookup.
 
         Returns
         -------
         model: bokeh.model.Model
-            The resolved bokeh model
+          The resolved bokeh model
         """
         model = None
         if 'holoviews' in sys.modules and is_bokeh_element_plot(obj):

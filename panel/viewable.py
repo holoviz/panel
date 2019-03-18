@@ -5,29 +5,26 @@ response to changes to parameters and the underlying bokeh models.
 """
 from __future__ import absolute_import, division, unicode_literals
 
-import io
 import re
-import signal
-import uuid
 
 from functools import partial
-from six import string_types
 
 import param
 
 from bokeh.document.document import Document as _Document, _combine_document_events
 from bokeh.document.events import ModelChangedEvent
-from bokeh.io import curdoc as _curdoc, export_png as _export_png
-from bokeh.embed import file_html as _file_html
-from bokeh.resources import CDN as _CDN
+from bokeh.io import curdoc as _curdoc
 from bokeh.models import CustomJS
-from bokeh.server.server import Server
-from bokeh.util.string import decode_utf8
-from pyviz_comms import JS_CALLBACK, JupyterCommManager, Comm as _Comm
+from pyviz_comms import JupyterCommManager
 
-from .io import (
-    ABORT_JS, add_to_doc, push, render_mimebundle, state, embed_state,
-    render_model, _origin_url, show_server, config)
+from .config import config
+from .io.embed import embed_state
+from .io.model import add_to_doc
+from .io.notebook import (get_comm_customjs, push, render_mimebundle,
+                          render_model, show_embed, show_server)
+from .io.save import save
+from .io.state import state
+from .io.server import StoppableThread, get_server
 from .util import param_reprs
 
 
@@ -215,25 +212,29 @@ class Viewable(Layoutable):
         Converts the objects being wrapped by the viewable into a
         bokeh model that can be composed in a bokeh layout.
 
+        Arguments
+        ----------
         doc: bokeh.Document
           Bokeh document the bokeh model will be attached to.
-
         root: bokeh.Model
           The root layout the viewable will become part of.
-
         parent: bokeh.Model
           The parent layout the viewable will become part of.
-
         comm: pyviz_comms.Comm
           Optional pyviz_comms when working in notebook
+
+        Returns
+        -------
+        model: bokeh.Model
         """
+        raise NotImplementedError
 
     def _get_root(self, doc, comm=None):
         """
         Returns the root model and applies pre-processing hooks
 
-        Parameters
-        ----------
+        Arguments
+        ---------
         doc: bokeh.Document
           Bokeh document the bokeh model will be attached to.
         comm: pyviz_comms.Comm
@@ -249,8 +250,8 @@ class Viewable(Layoutable):
         """
         Clean up method which is called when a Viewable is destroyed.
 
-        Parameters
-        ----------
+        Arguments
+        ---------
         model: bokeh.model.Model
           Bokeh model for the view being cleaned up
         """
@@ -306,11 +307,11 @@ class Viewable(Layoutable):
         Iterates over the Viewable and any potential children in the
         applying the Selector.
 
-        Parameters
-        ----------
+        Arguments
+        ---------
         selector: type or callable or None
-            The selector allows selecting a subset of Viewables by
-            declaring a type or callable function to filter by.
+          The selector allows selecting a subset of Viewables by
+          declaring a type or callable function to filter by.
 
         Returns
         -------
@@ -327,22 +328,14 @@ class Viewable(Layoutable):
         """
         Displays a bokeh server app inline in the notebook.
 
-        Parameters
-        ----------
+        Arguments
+        ---------
         notebook_url: str
-            URL to the notebook server
+          URL to the notebook server
         port: int (optional, default=0)
-           Allows specifying a specific port
+          Allows specifying a specific port
         """
-        if callable(notebook_url):
-            origin = notebook_url(None)
-        else:
-            origin = _origin_url(notebook_url)
-        server_id = uuid.uuid4().hex
-        server = self.get_server(port, origin, start=True, show=False,
-                                 server_id=server_id)
-        show_server(server, notebook_url, server_id)
-        return server
+        return show_server(self, notebook_url, port)
 
     def embed(self, max_states=1000, max_opts=3, json=False,
               save_path='./', load_path=None):
@@ -352,96 +345,25 @@ class Viewable(Layoutable):
         this will only work well for simple apps with a relatively
         small state space.
 
-        Parameters
-        ----------
-        max_states: int
-           The maximum number of states to embed
-        max_opts: int
-           The maximum number of states for a single widget
-        json: boolean (default=True)
-           Whether to export the data to json files
-        save_path: str (default='./')
-           The path to save json files to
-        load_path: str (default=None)
-           The path or URL the json files will be loaded from.
-        """
-        from IPython.display import publish_display_data
-        doc = _Document()
-        comm = _Comm()
-        with config.set(embed=True):
-            model = self._get_root(doc, comm)
-            embed_state(self, model, doc, max_states, max_opts,
-                        json, save_path, load_path)
-        publish_display_data(*render_model(model))
-
-    def get_server(self, port=0, websocket_origin=None, loop=None,
-                   show=False, start=False, **kwargs):
-        """
-        Returns a Server instance with this panel attached as the root
-        app.
-
         Arguments
         ---------
-        port: int (optional, default=0)
-           Allows specifying a specific port
-        websocket_origin: str or list(str) (optional)
-           A list of hosts that can connect to the websocket.
-
-           This is typically required when embedding a server app in
-           an external web site.
-
-           If None, "localhost" is used.
-        loop : tornado.ioloop.IOLoop (optional, default=IOLoop.current())
-           The tornado IOLoop to run the Server on
-        show : boolean (optional, default=False)
-           Whether to open the server in a new browser tab on start
-        start : boolean(optional, default=False)
-           Whether to start the Server
-        kwargs: dict
-           Additional keyword arguments to pass to Server instance
-
-        Returns
-        -------
-        server : bokeh.server.server.Server
-           Bokeh Server instance running this panel
+        max_states: int
+          The maximum number of states to embed
+        max_opts: int
+          The maximum number of states for a single widget
+        json: boolean (default=True)
+          Whether to export the data to json files
+        save_path: str (default='./')
+          The path to save json files to
+        load_path: str (default=None)
+          The path or URL the json files will be loaded from.
         """
-        from tornado.ioloop import IOLoop
-        opts = dict(kwargs)
-        if loop:
-            loop.make_current()
-            opts['io_loop'] = loop
-        else:
-            opts['io_loop'] = IOLoop.current()
+        show_embed(self, max_states, max_opts, json, save_path, load_path)
 
-        if websocket_origin:
-            if not isinstance(websocket_origin, list):
-                websocket_origin = [websocket_origin]
-            opts['allow_websocket_origin'] = websocket_origin
-
-        server_id = kwargs.pop('server_id', None)
-        server = Server({'/': partial(self._modify_doc, server_id)}, port=port, **opts)
-        if server_id:
-            state._servers[server_id] = (server, self, [])
-
-        if show:
-            def show_callback():
-                server.show('/')
-            server.io_loop.add_callback(show_callback)
-
-        def sig_exit(*args, **kwargs):
-            server.io_loop.add_callback_from_signal(do_stop)
-
-        def do_stop(*args, **kwargs):
-            server.io_loop.stop()
-        signal.signal(signal.SIGINT, sig_exit)
-
-        if start:
-            server.start()
-            try:
-                server.io_loop.start()
-            except RuntimeError:
-                pass
-        return server
+    def _get_server(self, port=0, websocket_origin=None, loop=None,
+                   show=False, start=False, **kwargs):
+        return get_server(self, port, websocket_origin, loop, show,
+                          start, **kwargs)
 
     def save(self, filename, title=None, resources=None, template=None,
              template_variables={}, embed=False, max_states=1000,
@@ -470,54 +392,26 @@ class Viewable(Layoutable):
         load_path: str (default=None)
            The path or URL the json files will be loaded from.
         """
-        doc = _Document()
-        comm = _Comm()
-        with config.set(embed=embed):
-            model = self._get_root(doc, comm)
-            if embed:
-                embed_state(self, model, doc, max_states, max_opts,
-                            embed_json, save_path, load_path)
-            else:
-                add_to_doc(model, doc, True)
-
-        if isinstance(filename, string_types):
-            if filename.endswith('png'):
-                _export_png(model, filename=filename)
-                return
-            if not filename.endswith('.html'):
-                filename = filename + '.html'
-
-        kwargs = {}
-        if title is None:
-            title = 'Panel'
-        if resources is None:
-            resources = _CDN
-        if template:
-            kwargs['template'] = template
-
-        html = _file_html(doc, resources, title, **kwargs)
-        if hasattr(filename, 'write'):
-            filename.write(decode_utf8(html))
-            return
-        with io.open(filename, mode="w", encoding="utf-8") as f:
-            f.write(decode_utf8(html))
+        return save(self, filename, title, resources, template,
+                    template_variables, embed, max_states, max_opts,
+                    embed_json, save_path, load_path)
 
     def server_doc(self, doc=None, title=None):
         """
         Returns a serveable bokeh Document with the panel attached
 
-        Parameters
-        ----------
+        Arguments
+        ---------
         doc : bokeh.Document (optional)
-           The bokeh Document to attach the panel to as a root,
-           defaults to bokeh.io.curdoc()
+          The bokeh Document to attach the panel to as a root,
+          defaults to bokeh.io.curdoc()
         title : str
-           A string title to give the Document
+          A string title to give the Document
 
         Returns
         -------
         doc : bokeh.Document
-           The bokeh document the panel was attached to
+          The bokeh document the panel was attached to
         """
         doc = doc or _curdoc()
         if title is not None:
@@ -547,37 +441,36 @@ class Viewable(Layoutable):
         """
         Starts a bokeh server and displays the Viewable in a new tab
 
-        Parameters
-        ----------
+        Arguments
+        ---------
         port: int (optional, default=0)
-           Allows specifying a specific port
+          Allows specifying a specific port
         websocket_origin: str or list(str) (optional)
-           A list of hosts that can connect to the websocket.
+          A list of hosts that can connect to the websocket.
 
-           This is typically required when embedding a server app in
-           an external web site.
+          This is typically required when embedding a server app in
+          an external web site.
 
-           If None, "localhost" is used.
+          If None, "localhost" is used.
         threaded: boolean (optional, default=False)
-           Whether to launch the Server on a separate thread, allowing
-           interactive use.
+          Whether to launch the Server on a separate thread, allowing
+          interactive use.
 
         Returns
         -------
         server: bokeh.server.Server or threading.Thread
-           Returns the bokeh server instance or the thread the server
-           was launched on (if threaded=True)
+          Returns the bokeh server instance or the thread the server
+          was launched on (if threaded=True)
         """
         if threaded:
             from tornado.ioloop import IOLoop
-            from .util import StoppableThread
             loop = IOLoop()
             server = StoppableThread(
-                target=self.get_server, io_loop=loop,
+                target=self._get_server, io_loop=loop,
                 args=(port, websocket_origin, loop, True, True))
             server.start()
         else:
-            server = self.get_server(port, websocket_origin, show=True, start=True)
+            server = self._get_server(port, websocket_origin, show=True, start=True)
 
         return server
 
@@ -721,19 +614,9 @@ class Reactive(Viewable):
         Returns a CustomJS callback that can be attached to send the
         model state across the notebook comms.
         """
-        # Abort callback if value matches last received event
-        abort = ABORT_JS.format(plot_id=plot_id, change=change)
-        data_template = "data = {{{change}: cb_obj['{change}'], 'id': cb_obj.id}};"
-        fetch_data = data_template.format(change=change)
-        self_callback = JS_CALLBACK.format(comm_id=client_comm.id,
-                                           timeout=self._timeout,
-                                           debounce=self._debounce,
-                                           plot_id=plot_id)
-        js_callback = CustomJS(code='\n'.join([abort,
-                                               fetch_data,
-                                               self_callback]))
-        return js_callback
-
+        return get_comm_customjs(change, client_comm, plot_id,
+                                 self._timeout, self._debounce)
+        
     #----------------------------------------------------------------
     # Model API
     #----------------------------------------------------------------
@@ -807,15 +690,15 @@ class Reactive(Viewable):
         parameter to a callback which is triggered when the parameter
         changes.
 
-        Parameters
-        ----------
+        Arguments
+        ---------
         target: object
-            The target object of the link.
+          The target object of the link.
         callbacks: dict
-            Maps from a parameter in the source object to a callback.
+          Maps from a parameter in the source object to a callback.
         **links: dict
-            Maps between parameters on this object to the parameters
-            on the supplied object.
+          Maps between parameters on this object to the parameters
+          on the supplied object.
         """
         if links and callbacks:
             raise ValueError('Either supply a set of parameters to '
@@ -853,22 +736,22 @@ class Reactive(Viewable):
         maps from the source parameter to a JS code snippet which is
         executed when the property changes.
 
-        Parameters
+        Arguments
         ----------
         target: HoloViews object or bokeh Model or panel Viewable
-            The target to link the value to.
+          The target to link the value to.
         code: dict
-            Custom code which will be executed when the widget value
-            changes.
+          Custom code which will be executed when the widget value
+          changes.
         **links: dict
-            A mapping between properties on the source model and the
-            target model property to link it to.
+          A mapping between properties on the source model and the
+          target model property to link it to.
 
         Returns
         -------
         link: GenericLink
-            The GenericLink which can be used unlink the widget and
-            the target model.
+          The GenericLink which can be used unlink the widget and
+          the target model.
         """
         if links and code:
             raise ValueError('Either supply a set of properties to '
