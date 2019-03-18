@@ -22,7 +22,6 @@ from bokeh.core.templates import DOC_NB_JS
 from bokeh.core.json_encoder import serialize_json
 from bokeh.embed.elements import div_for_render_item
 from bokeh.embed.util import standalone_docs_json_and_render_items
-from bokeh.io.notebook import load_notebook as bk_load_notebook
 from bokeh.models import CustomJS, LayoutDOM, Model
 from bokeh.protocol import Protocol
 from bokeh.resources import CDN, INLINE
@@ -477,7 +476,7 @@ def _require_components():
     Returns JS snippet to load the required dependencies in the classic
     notebook using REQUIRE JS.
     """
-    configs, requirements, exports, windows = [], [], [], []
+    configs, requirements, exports = [], [], []
     for model in CUSTOM_MODELS.values():
         if not hasattr(model, '__js_require__'):
             continue
