@@ -15,6 +15,13 @@ class MathJax(Markup):
 
     __javascript__ = ["https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-MML-AM_CHTML"]
 
+    __js_require__ = {
+        'paths': {
+            'mathjax': "//cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS_HTML"
+        },
+        'shim': {'mathjax': {'exports': "MathJax"}}
+    }
+
     __implementation__ = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'mathjax.ts')
 
 

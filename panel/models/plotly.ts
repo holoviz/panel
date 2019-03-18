@@ -27,6 +27,7 @@ export class PlotlyPlotView extends HTMLBoxView {
 
   render(): void {
     super.render()
+    if (!(window as any).Plotly) { return }
     if (!this.model.data.length && !Object.keys(this.model.layout).length) {
       (window as any).Plotly.purge(this.el);
     }
@@ -60,11 +61,13 @@ export class PlotlyPlotView extends HTMLBoxView {
   }
 
   _restyle(index: number): void {
+    if (!(window as any).Plotly) { return }
     const trace = this._get_trace(index, true);
     (window as any).Plotly.restyle(this.el, trace, index)
   }
 
   _relayout(): void {
+    if (!(window as any).Plotly) { return }
     (window as any).Plotly.relayout(this.el, this.model.layout)
   }
 }

@@ -17,6 +17,9 @@ class PlotlyPlot(LayoutDOM):
 
     __javascript__ = ['https://cdn.plot.ly/plotly-latest.min.js']
 
+    __js_require__ = {'paths': {'plotly': 'https://cdn.plot.ly/plotly-latest.min'},
+                      'shim': {'plotly': {'exports': "Plotly"}}}
+
     __implementation__ = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'plotly.ts')
 
     data = List(Any)

@@ -15,7 +15,7 @@ export class VegaPlotView extends HTMLBoxView {
 
   _connect_sources(): void {
     for (const ds in this.model.data_sources) {
-	  const cds = this.model.data_sources[ds]
+      const cds = this.model.data_sources[ds]
       if (this._connected.indexOf(ds) < 0) {
         this.connect(cds.properties.data.change, this._plot)
         this._connected.push(ds)
@@ -47,7 +47,7 @@ export class VegaPlotView extends HTMLBoxView {
   }
 
   _plot(): void {
-    if (this.model.data == null)
+    if (!this.model.data || !(window as any).vegaEmbed)
       return
     if (!('datasets' in this.model.data)) {
       const datasets = this._fetch_datasets()
