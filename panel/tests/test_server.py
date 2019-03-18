@@ -7,7 +7,7 @@ from panel.pane import HTML
 def test_get_server():
     html = HTML('<h1>Title</h1>')
 
-    server = html.get_server(port=5006)
+    server = html._get_server(port=5006)
     assert server.port == 5006
 
     url = "http://localhost:" + str(server.port) + "/"
@@ -21,7 +21,7 @@ def test_get_server():
 def test_server_update():
     html = HTML('<h1>Title</h1>')
 
-    server = html.get_server(port=5006)
+    server = html._get_server(port=5006)
     url = "http://localhost:" + str(server.port) + "/"
     session = pull_session(session_id='Test', url=url, io_loop=server.io_loop)
 
@@ -37,7 +37,7 @@ def test_server_update():
 def test_server_change_io_state():
     html = HTML('<h1>Title</h1>')
 
-    server = html.get_server(port=5006)
+    server = html._get_server(port=5006)
     url = "http://localhost:" + str(server.port) + "/"
     session = pull_session(session_id='Test', url=url, io_loop=server.io_loop)
 

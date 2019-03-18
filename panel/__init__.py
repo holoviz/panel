@@ -9,8 +9,9 @@ from . import param # noqa
 from . import pipeline # noqa
 from . import widgets # noqa
 
+from .config import config, panel_extension as extension # noqa
 from .interact import interact # noqa
-from .io import config, panel_extension as extension, state # noqa
+from .io import state # noqa
 from .layout import Row, Column, Tabs, Spacer # noqa
 from .pane import panel, Pane # noqa
 from .param import Param # noqa

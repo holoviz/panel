@@ -15,7 +15,8 @@ from bokeh.models.widgets import (
     DateSlider as _BkDateSlider, DateRangeSlider as _BkDateRangeSlider,
     RangeSlider as _BkRangeSlider, Slider as _BkSlider)
 
-from ..io import config, state
+from ..config import config
+from ..io import state
 from ..util import value_as_datetime
 from .base import Widget, CompositeWidget
 from ..layout import Column
