@@ -32,8 +32,8 @@ def get_setup_version(reponame):
 class CustomDevelopCommand(develop):
     """Custom installation for development mode."""
     def run(self):
-        from panel.compiler import build_custom_models
         try:
+            from panel.compiler import build_custom_models
             print("Building custom models:")
             build_custom_models()
         except ImportError as e:
@@ -43,8 +43,8 @@ class CustomDevelopCommand(develop):
 class CustomInstallCommand(install):
     """Custom installation for install mode."""
     def run(self):
-        from panel.compiler import build_custom_models
         try:
+            from panel.compiler import build_custom_models
             print("Building custom models:")
             build_custom_models()
         except ImportError as e:
