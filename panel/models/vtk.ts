@@ -1,32 +1,41 @@
 import * as p from "core/properties"
 import {HTMLBox, HTMLBoxView} from "models/layouts/html_box";
+import {div} from "core/dom";
 
 export class VTKPlotView extends HTMLBoxView {
   model: VTKPlot
   protected _vtk: any
   protected _rendererEl: any
+  protected _container: HTMLDivElement
 
   initialize(): void {
     super.initialize()
+    const width = this.model.width ? "100%" : "300px"
+    const height = this.model.height ? "100%" : "300px"
     this._vtk = (window as any).vtk
-
-  }
-
-  after_layout() {
-    super.after_layout()
-    debugger
-    const width = this.model.width ? this.model.width : "300px"
-    const height = this.model.height ? this.model.width : "300px"
-
-    this._rendererEl = this._vtk.Rendering.Misc.vtkFullScreenRenderWindow.newInstance({
-      rootContainer: this.el,
-      containerStyle : {
+    this._container = div({
+      style: {
         width,
         height
       }
+    })
+  }
+
+
+  after_layout() {
+    super.after_layout()
+    this._rendererEl = this._vtk.Rendering.Misc.vtkFullScreenRenderWindow.newInstance({
+      rootContainer: this.el,
+      container: this._container
     });
     this._plot()
   }
+
+  render() {
+    super.render()
+    this.el.appendChild(this._container)
+  }
+
 
   connect_signals(): void{
     this.connect(this.model.properties.vtkjs.change, this._plot)
