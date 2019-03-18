@@ -6,8 +6,11 @@ export class KaTeXView extends MarkupView {
 
   render(): void {
     super.render();
-	this.markup_el.innerHTML = this.model.text;
-	(window as any).renderMathInElement(this.el, {
+    this.markup_el.innerHTML = this.model.text;
+    if (!(window as any).renderMathInElement) {
+      return
+    }
+    (window as any).renderMathInElement(this.el, {
       delimiters: [
         {left: "$$", right: "$$", display: true},
         {left: "\\[", right: "\\]", display: true},

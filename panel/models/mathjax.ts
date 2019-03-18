@@ -7,16 +7,17 @@ export class MathJaxView extends MarkupView {
 
   initialize(): void {
     super.initialize()
-	this._hub = (window as any).MathJax.Hub;
+    this._hub = (window as any).MathJax.Hub;
     this._hub.Config({
-	  tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
-	});
+      tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
+    });
   }
   
   render(): void {
     super.render();
-	this.markup_el.innerHTML = this.model.text;
-	this._hub.Queue(["Typeset", this._hub, this.markup_el]);
+    if (!this._hub) { return }
+    this.markup_el.innerHTML = this.model.text;
+    this._hub.Queue(["Typeset", this._hub, this.markup_el]);
   }
 }
 

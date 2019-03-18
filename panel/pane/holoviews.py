@@ -82,17 +82,18 @@ class HoloViews(PaneBase):
         elif not widgets and self.widget_box in self.layout.objects:
             self.layout.pop(self.widget_box)
 
-    def _update_plot(self, plot, pane, event):
+    def _update_plot(self, plot, pane):
         from holoviews.core.util import cross_index
-        from holoviews.plotting.bokeh.plot import BokehPlot
 
         widgets = self.widget_box.objects
-        if self.widget_type == 'scrubber':
+        if not widgets:
+            return
+        elif self.widget_type == 'scrubber':
             key = cross_index([v for v in self._values.values()], widgets[0].value)
         else:
             key = tuple(w.value for w in widgets)
 
-        if isinstance(plot, BokehPlot):
+        if plot.backend == 'bokeh':
             if plot.comm or plot.document is state.curdoc:
                 plot.update(key)
                 if plot.comm and 'embedded' not in plot.root.tags:
@@ -104,8 +105,8 @@ class HoloViews(PaneBase):
             pane.object = plot.state
 
     def _widget_callback(self, event):
-        for ref, (plot, pane) in self._plots.items():
-            self._update_plot(plot, pane, event)
+        for _, (plot, pane) in self._plots.items():
+            self._update_plot(plot, pane)
 
     #----------------------------------------------------------------
     # Model API
@@ -120,6 +121,7 @@ class HoloViews(PaneBase):
         else:
             plot = self._render(doc, comm, root)
             child_pane = self._panes.get(self.backend, Pane)(plot.state)
+            self._update_plot(plot, child_pane)
             model = child_pane._get_model(doc, root, parent, comm)
             if ref in self._plots:
                 old_plot, old_pane = self._plots[ref]
@@ -185,7 +187,7 @@ class HoloViews(PaneBase):
         dim_values = OrderedDict()
         widgets = []
         for dim in dims:
-            widget_type, widget = None, None
+            widget_type, widget, widget_kwargs = None, None, {}
             vals = dim.values or values.get(dim, None)
             dim_values[dim.name] = vals
             if widgets_type == 'scrubber':
@@ -197,6 +199,9 @@ class HoloViews(PaneBase):
                 if isinstance(widget, Widget):
                     widgets.append(widget)
                     continue
+                elif isinstance(widget, dict):
+                    widget_type = widget.get('type', widget_type)
+                    widget_kwargs = widget
                 elif isinstance(widget, type) and issubclass(widget, Widget):
                     widget_type = widget
                 else:
@@ -214,7 +219,8 @@ class HoloViews(PaneBase):
                     options = list(vals)
                     widget_type = widget_type or Select
                 default = vals[0] if dim.default is None else dim.default
-                widget = widget_type(name=dim.label, options=options, value=default)
+                widget_kwargs = dict(dict(name=dim.label, options=options, value=default), **widget_kwargs)
+                widget = widget_type(**widget_kwargs)
             elif dim.range != (None, None):
                 if dim.range[0] == dim.range[1]:
                     continue
@@ -223,8 +229,10 @@ class HoloViews(PaneBase):
                 widget_type = widget_type or FloatSlider
                 if isinstance(default, datetime_types):
                     widget_type = DatetimeInput
-                widget = widget_type(step=step, name=dim.label, start=dim.range[0],
-                                     end=dim.range[1], value=default)
+                widget_kwargs = dict(dict(step=step, name=dim.label, start=dim.range[0],
+                                          end=dim.range[1], value=default),
+                                     **widget_kwargs)
+                widget = widget_type(**widget_kwargs)
             if widget is not None:
                 widgets.append(widget)
         if widgets_type == 'scrubber':

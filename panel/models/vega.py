@@ -18,6 +18,16 @@ class VegaPlot(LayoutDOM):
                       'https://cdnjs.cloudflare.com/ajax/libs/vega-lite/2.6.0/vega-lite.min.js',
                       'https://cdnjs.cloudflare.com/ajax/libs/vega-embed/3.30.0/vega-embed.min.js']
 
+    __js_require__ = {
+        'baseUrl': 'https://cdnjs.cloudflare.com/ajax/libs/',
+        'paths': {
+            "vega-embed":  "vega-embed/3.30.0/vega-embed.min",
+            "vega-lite": "vega-lite/2.6.0/vega-lite.min",
+            "vega-lib": "vega/5.2.0/vega.min"
+        },
+        'exports': {'vega-embed': 'vegaEmbed', 'vega-lib': 'vega', 'vega-lite': 'vl'}
+    }
+
     __implementation__ = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'vega.ts')
 
     data = Dict(String, Any)

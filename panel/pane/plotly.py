@@ -53,7 +53,7 @@ class Plotly(PaneBase):
             data = {}
             for key, value in list(trace.items()):
                 if isinstance(value, np.ndarray):
-                    data[key] = trace.pop(key)
+                    data[key] = [trace.pop(key)]
             sources.append(ColumnDataSource(data))
         return sources
 
@@ -73,12 +73,13 @@ class Plotly(PaneBase):
             PlotlyPlot = getattr(sys.modules['panel.models.plotly'], 'PlotlyPlot')
 
         if self.object is None:
-            json, sources = None, []
+            json, sources = {}, []
         else:
             fig = self._to_figure(self.object)
             json = fig.to_plotly_json()
             sources = self._get_sources(json)
-        model = PlotlyPlot(data=json, data_sources=sources)
+        model = PlotlyPlot(data=json.get('data', []), layout=json.get('layout', {}),
+                           data_sources=sources)
         if root is None:
             root = model
         self._models[root.ref['id']] = (model, parent)
@@ -86,10 +87,13 @@ class Plotly(PaneBase):
 
     def _update(self, model):
         if self.object is None:
-            model.data = None
+            model.update(data=[], layout={})
             return
+
+
         fig = self._to_figure(self.object)
         json = fig.to_plotly_json()
+
         traces = json['data']
         new_sources = []
         for i, trace in enumerate(traces):
@@ -98,11 +102,44 @@ class Plotly(PaneBase):
             else:
                 cds = ColumnDataSource()
                 new_sources.append(cds)
-            data = {}
-            for key, value in list(trace.items()):
-                if isinstance(value, np.ndarray):
-                    data[key] = trace.pop(key)
-            cds.data = data
-        model.data = json
+            for key, new in list(trace.items()):
+                if isinstance(new, np.ndarray):
+                    try:
+                        old = cds.data.get(key)[0]
+                        update_array = (
+                            (type(old) != type(new)) or
+                            (new.shape != old.shape) or
+                            (new != old).all())
+                    except:
+                        update_array = True
+                    if update_array:
+                        cds.data[key] = [trace.pop(key)]
+
+        try:
+            update_layout = model.layout != json.get('layout')
+        except:
+            update_layout = True
+
+        # Determine if model needs updates
+        if (len(model.data) != len(traces)):
+            update_data = True
+        else:
+            update_data = False
+            for new, old in zip(traces, model.data):
+                try:
+                    update_data = (
+                        {k: v for k, v in new.items() if k != 'uid'} !=
+                        {k: v for k, v in old.items() if k != 'uid'})
+                except:
+                    update_data = True
+                if update_data:
+                    break
+
         if new_sources:
             model.data_sources += new_sources
+
+        if update_data:
+            model.data = json.get('data')
+
+        if update_layout:
+            model.layout = json.get('layout')

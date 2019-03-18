@@ -4,10 +4,12 @@ import datetime as dt
 from collections import OrderedDict
 
 import pytest
+import numpy as np
 
 from bokeh.models import (Row as BkRow, Column as BkColumn, GlyphRenderer,
                           Scatter, Line, GridBox, Select as BkSelect,
-                          Slider as BkSlider, Spacer as BkSpacer)
+                          Slider as BkSlider, Spacer as BkSpacer,
+                          ColumnDataSource)
 from bokeh.plotting import Figure
 
 from panel.layout import Column, Row
@@ -219,6 +221,19 @@ def test_holoviews_updates_widgets(document, comm):
     assert isinstance(layout.children[1].children[0], BkColumn)
     assert isinstance(layout.children[1].children[0].children[1], BkSlider)
 
+@hv_available
+def test_holoviews_widgets_update_plot(document, comm):
+    hmap = hv.HoloMap({(i, chr(65+i)): hv.Curve([i]) for i in range(3)}, kdims=['X', 'Y'])
+
+    hv_pane = HoloViews(hmap)
+    layout = hv_pane._get_root(document, comm)
+
+    cds = layout.children[0].select_one(ColumnDataSource)
+    assert cds.data['y'] == np.array([0])
+    hv_pane.widget_box[0].value = 1
+    hv_pane.widget_box[1].value = chr(65+1)
+    assert cds.data['y'] == np.array([1])
+
 
 @hv_available
 def test_holoviews_with_widgets_not_shown(document, comm):
@@ -354,8 +369,6 @@ def test_holoviews_link_after_adding_item(document, comm):
     assert isinstance(range_tool, RangeTool)
     assert range_tool.x_range == p2.x_range
     
-    
-
 
 @hv_available
 def test_holoviews_link_within_pane(document, comm):
@@ -368,6 +381,7 @@ def test_holoviews_link_within_pane(document, comm):
     RangeToolLink(c1, c2)
 
     pane = Pane(hv.Layout([c1, c2]))
+    print(pane)
     column = pane._get_root(document, comm=comm)
 
     assert len(column.children) == 1

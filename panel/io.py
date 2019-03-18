@@ -22,16 +22,19 @@ from bokeh.core.templates import DOC_NB_JS
 from bokeh.core.json_encoder import serialize_json
 from bokeh.embed.elements import div_for_render_item
 from bokeh.embed.util import standalone_docs_json_and_render_items
-from bokeh.io.notebook import load_notebook as bk_load_notebook
 from bokeh.models import CustomJS, LayoutDOM, Model
 from bokeh.protocol import Protocol
 from bokeh.resources import CDN, INLINE
+from bokeh.util.compiler import bundle_all_models
 from bokeh.util.string import encode_utf8
+from jinja2 import Environment, Markup, FileSystemLoader
 from pyviz_comms import (
     CommManager as _CommManager, JupyterCommManager as _JupyterCommManager,
     extension as _pyviz_extension, PYVIZ_PROXY, bokeh_msg_handler,
     nb_mime_js, embed_js)
 
+
+from .util import CUSTOM_MODELS
 
 #---------------------------------------------------------------------
 # Public API
@@ -448,14 +451,19 @@ def save_dict(state, key=(), depth=0, max_depth=None, save_path='', load_path=No
     return filename_dict
 
 
-def load_notebook(inline=True):
+def load_notebook(inline=True, load_timeout=5000):
     from IPython.display import publish_display_data
 
-    # Create a message for the logo (if shown)
-    LOAD_MIME_TYPE = bokeh.io.notebook.LOAD_MIME_TYPE
-    bokeh.io.notebook.LOAD_MIME_TYPE = LOAD_MIME
-    bk_load_notebook(hide_banner=True, resources=INLINE if inline else CDN)
-    bokeh.io.notebook.LOAD_MIME_TYPE = LOAD_MIME_TYPE
+    resources = INLINE if inline else CDN
+    custom_models_js = bundle_all_models() or ""
+
+    configs, requirements, exports = _require_components()
+    bokeh_js = _autoload_js(resources, custom_models_js, configs,
+                            requirements, exports, load_timeout)
+    publish_display_data({
+        'application/javascript': bokeh_js,
+        LOAD_MIME : bokeh_js
+    })
     bokeh.io.notebook.curstate().output_notebook()
 
     # Publish comm manager
@@ -463,10 +471,62 @@ def load_notebook(inline=True):
     publish_display_data(data={LOAD_MIME: JS, 'application/javascript': JS})
 
 
+def _require_components():
+    """
+    Returns JS snippet to load the required dependencies in the classic
+    notebook using REQUIRE JS.
+    """
+    configs, requirements, exports = [], [], []
+    for model in CUSTOM_MODELS.values():
+        if not hasattr(model, '__js_require__'):
+            continue
+        model_require = model.__js_require__
+        model_exports = model_require.pop('exports', {})
+        configs.append(model_require)
+        for req in model_require.get('paths', []):
+            requirements.append(req)
+            if req not in model_exports:
+                continue
+            export = model_exports[req]
+            exports.append(export)
+        for e, value in model_exports.items():
+            if e not in requirements:
+                requirements.append(e)
+                exports.append(value)
+    return configs, requirements, exports
+
+
+def get_env():
+    ''' Get the correct Jinja2 Environment, also for frozen scripts.
+    '''
+    local_path = os.path.join(os.path.dirname(__file__), '_templates')
+    return Environment(loader=FileSystemLoader(local_path))
+
+
+_env = get_env()
+_env.filters['json'] = lambda obj: Markup(json.dumps(obj))
+AUTOLOAD_NB_JS = _env.get_template("autoload_panel_js.js")
+
+
+def _autoload_js(resources, custom_models_js, configs, requirements, exports, load_timeout=5000):
+    return AUTOLOAD_NB_JS.render(
+        js_urls   = resources.js_files,
+        css_urls  = resources.css_files,
+        js_raw    = resources.js_raw + [custom_models_js],
+        css_raw   = resources.css_raw_str,
+        force     = True,
+        timeout   = load_timeout,
+        configs   = configs,
+        requirements = requirements,
+        exports   = exports
+    )
+
+
 def _origin_url(url):
     if url.startswith("http"):
         url = url.split("//")[1]
     return url
+
 
 def _server_url(url, port):
     if url.startswith("http"):
