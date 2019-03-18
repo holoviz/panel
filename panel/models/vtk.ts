@@ -9,27 +9,37 @@ export class VTKPlotView extends HTMLBoxView {
   initialize(): void {
     super.initialize()
     this._vtk = (window as any).vtk
+
+  }
+
+  after_layout() {
+    super.after_layout()
+    debugger
+    const width = this.model.width ? this.model.width : "300px"
+    const height = this.model.height ? this.model.width : "300px"
+
+    this._rendererEl = this._vtk.Rendering.Misc.vtkFullScreenRenderWindow.newInstance({
+      rootContainer: this.el,
+      containerStyle : {
+        width,
+        height
+      }
+    });
+    this._plot()
   }
 
   connect_signals(): void{
-    this.connect(this.model.properties.vtkjs.change, this._update)
+    this.connect(this.model.properties.vtkjs.change, this._plot)
   }
 
-  render() {
-    super.render()
-    this._rendererEl = this._vtk.Rendering.Misc.vtkFullScreenRenderWindow.newInstance({
-      container: this.el,
-    });
-    this._update()
-  }
-
-  _update(): void{
-    if (!this.model.append) {this._delete_all_actors()}
+  _plot(): void{
+    if (!this.model.append) {
+      this._delete_all_actors()
+    }
     if (this.model.vtkjs == null) {
       this._rendererEl.getRenderWindow().render()
       return
     }
-
     const dataAccessHelper = this._vtk.IO.Core.DataAccessHelper.get('zip', {
       zipContent: atob(this.model.vtkjs),
       callback: (_zip: any) => {

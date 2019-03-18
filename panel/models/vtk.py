@@ -9,6 +9,8 @@ from bokeh.models import HTMLBox
 
 from ..util import CUSTOM_MODELS
 
+vtk_cdn = "https://unpkg.com/vtk.js@8.3.15/dist/vtk.js"
+
 
 class VTKPlot(HTMLBox):
     """
@@ -16,7 +18,10 @@ class VTKPlot(HTMLBox):
     a Bokeh plot.
     """
 
-    __javascript__ = ["https://unpkg.com/vtk.js@8.3.15/dist/vtk.js"]
+    __javascript__ = [vtk_cdn]
+
+    __js_require__ = {"paths": {"vtk": vtk_cdn},
+                      "shim": {"vtk": {"exports": "vtk"}}}
 
     __implementation__ = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'vtk.ts')
 
