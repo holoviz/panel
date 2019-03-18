@@ -20,6 +20,9 @@ class state(param.Parameterized):
         The bokeh Document for which a server event is currently being
         processed.""")
 
+    webdriver = param.Parameter(default=None, doc="""
+        Selenium webdriver used to export bokeh models to pngs.""")
+
     # Whether to hold comm events
     _hold = False
 

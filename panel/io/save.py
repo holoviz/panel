@@ -9,7 +9,7 @@ from six import string_types
 
 from bokeh.document.document import Document
 from bokeh.embed import file_html
-from bokeh.io import export_png as export_png
+from bokeh.io.export import export_png, create_webdriver
 from bokeh.resources import CDN
 from bokeh.util.string import decode_utf8
 from pyviz_comms import Comm
@@ -17,7 +17,29 @@ from pyviz_comms import Comm
 from ..config import config
 from .embed import embed_state
 from .model import add_to_doc
+from .state import state
 
+
+#---------------------------------------------------------------------
+# Public API
+#---------------------------------------------------------------------
+
+def save_png(model, filename):
+    """
+    Saves a bokeh model to png
+
+    Arguments
+    ---------
+    model: bokeh.model.Model
+      Model to save to png
+    filename: str
+      Filename to save to
+    """
+    if not state.webdriver:
+        state.webdriver = create_webdriver()
+
+    webdriver = state.webdriver
+    export_png(model, filename, webdriver=webdriver)
 
 #---------------------------------------------------------------------
 # Public API
@@ -64,7 +86,7 @@ def save(panel, filename, title=None, resources=None, template=None,
 
     if isinstance(filename, string_types):
         if filename.endswith('png'):
-            export_png(model, filename=filename)
+            save_png(model, filename=filename)
             return
         if not filename.endswith('.html'):
             filename = filename + '.html'
