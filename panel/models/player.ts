@@ -34,7 +34,7 @@ export class PlayerView extends WidgetView {
     // Slider
     this.sliderEl = document.createElement('input')
     this.sliderEl.setAttribute("type", "range");
-    this.sliderEl.style.width = `{this.model.width}px`
+    this.sliderEl.style.width = this.model.width+'px'
     this.sliderEl.value = String(this.model.value);
     this.sliderEl.min = String(this.model.start);
     this.sliderEl.max = String(this.model.end);
@@ -43,7 +43,7 @@ export class PlayerView extends WidgetView {
     // Buttons
     const button_div = div() as any;
     button_div.style.cssText = "margin: 0 auto; display: table; padding: 5px"
-    const button_style = "text-align: center; min-width: 40px";
+    const button_style = "text-align: center; min-width: 40px; margin: 2px";
 
     const slower = document.createElement('button')
     slower.style.cssText = "text-align: center; min-width: 20px"

@@ -36,7 +36,7 @@ class Toggle(_ButtonBase):
     value = param.Boolean(default=False, doc="""
         Whether the button is currently toggled.""")
 
-    _rename = {'value': 'active'}
+    _rename = {'value': 'active', 'name': 'label'}
 
     _supports_embed = True
 
