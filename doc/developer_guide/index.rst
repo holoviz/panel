@@ -124,9 +124,6 @@ The ``setup.py`` script has two main modes of operation:
     you make to the python source code will be available immediately without
     any additional steps.
 
-Testing
--------
-
 
 Next Steps
 ----------
@@ -142,3 +139,12 @@ If you have any problems with the steps here, please `contact the developers`_.
 .. _GitHub: https://github.com
 .. _Installing Git: https://git-scm.com/book/en/v2/Getting-Started-Installing-Git
 .. _Pro Git Book: https://git-scm.com/book/en/v2
+
+
+.. toctree::
+    :titlesonly:
+    :hidden:
+    :maxdepth: 2
+
+    Getting Set up <index>
+    Testing <testing>
