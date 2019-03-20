@@ -1,7 +1,6 @@
 import os
 
 import param
-import pytest
 
 from bokeh.models import (
     Div, Slider, Select, RangeSlider, MultiSelect, Row as BkRow,
