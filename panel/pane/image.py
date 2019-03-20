@@ -70,7 +70,7 @@ class ImageBase(DivPaneBase):
         if self.object is None:
             return dict(p, text='<img></img>')
         data = self._img()
-        if isinstance(data, str):
+        if not isinstance(data, bytes):
             data = base64.b64decode(data)
         width, height = self._imgshape(data)
         if self.width is not None:
