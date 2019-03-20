@@ -70,6 +70,9 @@
       <a href="javascript:void(0)" class="navigation-menu-button" id="js-mobile-menu">Menu</a>
 	  <nav>
         <ul id="js-navigation-menu" class="navigation-menu show">
+        {%- for name, link in SOCIAL  %}
+          <li class="nav-link doc-head"><a href="{{ link }}">{{ name }}</a></li>
+        {%- endfor %}
           <li class="nav-link">
             <div style="display:inline-block;vertical-align: middle;">
               <div class="search-bar">
