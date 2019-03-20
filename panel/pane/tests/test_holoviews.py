@@ -5,6 +5,7 @@ from collections import OrderedDict
 
 import pytest
 import numpy as np
+import holoviews as hv
 
 from bokeh.models import (Row as BkRow, Column as BkColumn, GlyphRenderer,
                           Scatter, Line, GridBox, Select as BkSelect,
@@ -15,14 +16,7 @@ from bokeh.plotting import Figure
 from panel.layout import Column, Row
 from panel.pane import Pane, PaneBase, HoloViews
 from panel.widgets import FloatSlider, DiscreteSlider, Select
-
-try:
-    import holoviews as hv
-except:
-    hv = None
-hv_available = pytest.mark.skipif(hv is None, reason="requires holoviews")
-
-from .test_panes import mpl_available
+from panel._testing.util import hv_available, mpl_available
 
 
 @hv_available

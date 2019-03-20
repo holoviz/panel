@@ -1,9 +1,13 @@
+"""
+A module containing testing utilities and fixtures.
+"""
+from __future__ import absolute_import, division, unicode_literals
+
 import re
 import shutil
     
 import pytest
 
-import numpy as np
 from bokeh.document import Document
 from pyviz_comms import Comm
 
@@ -38,15 +42,6 @@ def hv_mpl():
     hv.Store.current_backend = prev_backend
 
 
-def mpl_figure():
-    import matplotlib.pyplot as plt
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    ax.plot(np.random.rand(10, 2))
-    plt.close(fig)
-    return fig
-
-
 @pytest.yield_fixture
 def tmpdir(request, tmpdir_factory):
     name = request.node.name
@@ -57,4 +52,3 @@ def tmpdir(request, tmpdir_factory):
     tmp_dir = tmpdir_factory.mktemp(name, numbered=True)
     yield tmp_dir
     shutil.rmtree(str(tmp_dir))
-

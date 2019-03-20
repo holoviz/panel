@@ -11,15 +11,7 @@ from panel.pane import Pane, PaneBase, Matplotlib, Bokeh
 from panel.layout import Tabs, Row
 from panel.param import Param, ParamMethod, JSONInit
 from panel.widgets import LiteralInput
-
-from .fixtures import mpl_figure
-
-try:
-    import matplotlib as mpl
-    mpl.use('Agg')
-except:
-    mpl = None
-mpl_available = pytest.mark.skipif(mpl is None, reason="requires matplotlib")
+from panel._testing.util import mpl_available, mpl_figure
 
 
 def test_instantiate_from_class():

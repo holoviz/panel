@@ -7,6 +7,7 @@ from bokeh.models import (Div, Row as BkRow, Tabs as BkTabs,
 from panel.layout import Column, Row, Tabs, Spacer
 from panel.pane import Bokeh, Pane
 from panel.param import Param
+from panel._testing.util import check_layoutable_properties
 
 
 @pytest.fixture
@@ -16,11 +17,19 @@ def tabs(document, comm):
 
     return Tabs(('Tab1', div1), ('Tab2', div2))
 
+
 def assert_tab_is_similar(tab1, tab2):
     """Helper function to check tab match"""
     assert tab1.child is tab2.child
     assert tab1.name == tab2.name
     assert tab1.title == tab2.title
+
+
+@pytest.mark.parametrize('layout', [Column, Row, Tabs, Spacer])
+def test_layout_properties(layout, document, comm):
+    l = layout()
+    model = l._get_root(document, comm)
+    check_layoutable_properties(l, model)
 
 
 @pytest.mark.parametrize('layout', [Column, Row, Tabs, Spacer])
