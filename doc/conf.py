@@ -2,7 +2,7 @@
 
 from nbsite.shared_conf import *
 
-project = u' '
+project = u'Panel'
 authors = u'Panel contributors'
 copyright = u'2018 ' + authors
 description = 'High-level dashboarding for python visualization libraries'
@@ -24,18 +24,20 @@ nbsite_gallery_conf = {
     'github_org': 'pyviz',
     'github_project': 'panel',
     'galleries': {
-        'gallery': {
-            'title': 'Gallery',
+        'reference': {
+            'title': 'Reference Gallery',
             'sections': [
+                'panes',
                 'widgets'
             ]
         }
-    }
+    },
+    'thumbnail_url': 'https://assets.holoviews.org/panel/thumbnails'
 }
 
 _NAV =  (
     ('User Guide', 'user_guide/index'),
-    ('Gallery', 'gallery/index'),
+    ('Reference Gallery', 'reference/index'),
     ('Developer Guide', 'developer_guide/index'),
     ('About', 'about')
 )

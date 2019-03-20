@@ -29,6 +29,8 @@ class Player(Widget):
 
     loop_policy = Enum('once', 'reflect', 'loop', default='once')
 
+    width = Override(default=400)
+
     height = Override(default=250)
 
 

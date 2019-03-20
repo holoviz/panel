@@ -8,8 +8,9 @@ import base64
 import os
 
 from io import BytesIO
-
 from six import string_types
+
+import param
 
 from .markup import DivPaneBase
 
@@ -28,6 +29,9 @@ class ImageBase(DivPaneBase):
     provide their own way of obtaining or generating a PNG.
     """
 
+    embed = param.Boolean(default=False, doc="""
+        Whether to embed the image as base64 if provided a URL.""")
+
     imgtype = 'None'
 
     __abstract = True
@@ -38,8 +42,13 @@ class ImageBase(DivPaneBase):
         return (hasattr(obj, '_repr_'+imgtype+'_') or
                 (isinstance(obj, string_types) and
                  ((os.path.isfile(obj) and obj.endswith('.'+imgtype)) or
-                  ((obj.startswith('http://') or obj.startswith('https://'))
-                   and obj.endswith('.'+imgtype)))))
+                  cls._is_url(obj))))
+
+    @classmethod
+    def _is_url(cls, obj):
+        return (isinstance(obj, string_types) and
+                (obj.startswith('http://') or obj.startswith('https://'))
+                and obj.endswith('.'+cls.imgtype))
 
     def _img(self):
         if not isinstance(self.object, string_types):
@@ -61,7 +70,7 @@ class ImageBase(DivPaneBase):
         if self.object is None:
             return dict(p, text='<img></img>')
         data = self._img()
-        if isinstance(data, str):
+        if not isinstance(data, bytes):
             data = base64.b64decode(data)
         width, height = self._imgshape(data)
         if self.width is not None:
@@ -73,9 +82,11 @@ class ImageBase(DivPaneBase):
         elif self.height is not None:
             width = int((self.height/height)*width)
             height = self.height
-
-        b64 = base64.b64encode(data).decode("utf-8")
-        src = "data:image/"+self.imgtype+";base64,{b64}".format(b64=b64)
+        if self._is_url(self.object) and not self.embed:
+            src = self.object
+        else:
+            b64 = base64.b64encode(data).decode("utf-8")
+            src = "data:image/"+self.imgtype+";base64,{b64}".format(b64=b64)
         html = "<img src='{src}' width='{width}px' height='{height}px'></img>".format(
             src=src, width=width, height=height)
         return dict(p, width=width, height=height, text=html)
