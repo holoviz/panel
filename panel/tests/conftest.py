@@ -1,1 +1,3 @@
-from .fixtures import * # noqa
+pytest_plugins = (
+    "panel._testing.fixtures",
+)
