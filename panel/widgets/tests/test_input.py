@@ -101,7 +101,6 @@ def test_static_text(document, comm):
 
     text.value = 'CBA'
     assert widget.text == '<b>Text:</b>: CBA'
-    assert repr(text) == "StaticText(name='Text:', value='CBA')"
 
 
 def test_text_input(document, comm):
@@ -119,8 +118,6 @@ def test_text_input(document, comm):
 
     text.value = 'A'
     assert widget.value == 'A'
-    assert repr(text) == "TextInput(name='Text:', value='A')"
-
 
 def test_datetime_input(document, comm):
     dt_input = DatetimeInput(value=datetime(2018, 1, 1),

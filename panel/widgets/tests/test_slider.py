@@ -27,8 +27,6 @@ def test_float_slider(document, comm):
 
     slider.value = 0.3
     assert widget.value == 0.3
-    assert repr(slider) == "FloatSlider(end=0.5, name='Slider', start=0.1, value=0.3)"
-
 
 def test_int_slider(document, comm):
 
@@ -48,7 +46,6 @@ def test_int_slider(document, comm):
 
     slider.value = 0
     assert widget.value == 0
-    assert repr(slider) == "IntSlider(end=3, name='Slider')"
 
 
 def test_range_slider(document, comm):
@@ -69,9 +66,6 @@ def test_range_slider(document, comm):
 
     slider.value = (0, 1)
     assert widget.value == (0, 1)
-    assert repr(slider) == "RangeSlider(end=3, name='Slider', start=0.0, value=(0, 1))"
-
-
 
 
 def test_date_range_slider(document, comm):
