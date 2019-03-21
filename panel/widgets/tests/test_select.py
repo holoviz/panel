@@ -216,7 +216,7 @@ def test_toggle_group_radio(document, comm):
         assert widget.active == 0
 
 
-def test_cross_select_constructor(document, comm):
+def test_cross_select_constructor():
     cross_select = CrossSelector(options=['A', 'B', 'C', 1, 2, 3], value=['A', 1], size=5)
 
     assert cross_select._lists[True].options == ['A', '1']
@@ -258,3 +258,23 @@ def test_cross_select_constructor(document, comm):
     # Clear query
     cross_select._search[False].value = ''
     assert cross_select._lists[False].value == []
+
+
+def test_cross_select_move_selected_to_unselected():
+    cross_select = CrossSelector(options=['A', 'B', 'C', 1, 2, 3], value=['A', 1], size=5)
+
+    cross_select._lists[True].value = ['A', '1']
+    cross_select._buttons[False].clicks = 1
+
+    assert cross_select.value == []
+    assert cross_select._lists[True].options == []
+
+
+def test_cross_select_move_unselected_to_selected():
+    cross_select = CrossSelector(options=['A', 'B', 'C', 1, 2, 3], value=['A', 1], size=5)
+
+    cross_select._lists[False].value = ['B', '3']
+    cross_select._buttons[True].clicks = 1
+
+    assert cross_select.value == ['A', 1, 'B', 3]
+    assert cross_select._lists[True].options == ['A', 'B', '1', '3']

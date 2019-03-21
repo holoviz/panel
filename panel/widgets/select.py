@@ -445,7 +445,7 @@ class CrossSelector(CompositeWidget, MultiSelect):
         """
         selected = event.obj is self._buttons[True]
 
-        new = OrderedDict([(k, self.options[k]) for k in self._selected[not selected]])
+        new = OrderedDict([(k, self._items[k]) for k in self._selected[not selected]])
         old = self._lists[selected].options
         other = self._lists[not selected].options
 
@@ -453,7 +453,7 @@ class CrossSelector(CompositeWidget, MultiSelect):
         leftovers = OrderedDict([(k, k) for k in other if k not in new])
         self._lists[selected].options = merged if merged else {}
         self._lists[not selected].options = leftovers if leftovers else {}
-        self.value = [self.options[o] for o in self._lists[True].options if o != '']
+        self.value = [self._items[o] for o in self._lists[True].options if o != '']
         self._apply_filters()
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
