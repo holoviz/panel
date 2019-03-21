@@ -7,7 +7,7 @@ import param
 import weakref
 import sys
 
-from .viewable import Viewable
+from .viewable import Viewable, Reactive
 from .layout import Panel
 from .pane.holoviews import HoloViews, generate_panel_bokeh_map, is_bokeh_element_plot
 from .util import unicode_repr
@@ -272,7 +272,10 @@ class GenericLinkCallback(LinkCallback):
                 if len(src_specs) > 1:
                     src_spec = ('.'.join(src_specs[:-1]), src_specs[-1])
                 else:
-                    src_spec = (None, src_specs[0])
+                    src_prop = src_specs[0]
+                    if isinstance(source, Reactive):
+                        src_prop = source._rename.get(src_prop, src_prop)
+                    src_spec = (None, src_prop)
             return [(src_spec, (None, None), code)]
 
         specs = []
@@ -281,12 +284,18 @@ class GenericLinkCallback(LinkCallback):
             if len(src_specs) > 1:
                 src_spec = ('.'.join(src_specs[:-1]), src_specs[-1])
             else:
-                src_spec = (None, src_specs[0])
+                src_prop = src_specs[0]
+                if isinstance(source, Reactive):
+                    src_prop = source._rename.get(src_prop, src_prop)
+                src_spec = (None, src_prop)
             tgt_specs = tgt_spec.split('.')
             if len(tgt_specs) > 1:
                 tgt_spec = ('.'.join(tgt_specs[:-1]), tgt_specs[-1])
             else:
-                tgt_spec = (None, tgt_specs[0])
+                tgt_prop = tgt_specs[0]
+                if isinstance(target, Reactive):
+                    tgt_prop = target._rename.get(tgt_prop, tgt_prop)
+                tgt_spec = (None, tgt_prop)
             specs.append((src_spec, tgt_spec, None))
         return specs
 

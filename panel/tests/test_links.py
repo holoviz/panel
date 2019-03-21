@@ -1,17 +1,13 @@
 from __future__ import absolute_import
 
-import pytest
+import holoviews as hv
 
+from bokeh.plotting import figure
 from panel.layout import Row
 from panel.links import GenericLink
 from panel.pane import HoloViews
-from panel.widgets import FloatSlider, RangeSlider
-
-try:
-    import holoviews as hv
-except:
-    hv = None
-hv_available = pytest.mark.skipif(hv is None, reason="requires holoviews")
+from panel.widgets import FloatSlider, RangeSlider, ColorPicker
+from panel._testing.util import hv_available
 
 
 @hv_available
@@ -70,9 +66,9 @@ def test_bkwidget_hvplot_links(document, comm):
             "target['size'] = value")
     assert link_customjs.code == code
 
+
 def test_bkwidget_bkplot_links(document, comm):
     from bokeh.models import Slider
-    from bokeh.plotting import figure
     bokeh_widget = Slider(value=5, start=1, end=10, step=1e-1)
     bokeh_fig = figure()
     scatter = bokeh_fig.scatter([1, 2, 3], [1, 2, 3])
@@ -93,6 +89,29 @@ def test_bkwidget_bkplot_links(document, comm):
             "catch(err) { console.log('WARNING: Could not set size on target, raised error: ' + err); return; }"
             "target['size'] = value")
     assert link_customjs.code == code
+
+
+def test_widget_bkplot_link(document, comm):
+    widget = ColorPicker(value='#ff00ff')
+    bokeh_fig = figure()
+    scatter = bokeh_fig.scatter([1, 2, 3], [1, 2, 3])
+
+    widget.jslink(scatter.glyph, value='fill_color')
+
+    row = Row(bokeh_fig, widget)
+    model = row._get_root(document, comm=comm)
+
+    link_customjs = model.children[1].js_property_callbacks['change:color'][-1]
+    assert link_customjs.args['source'] is model.children[1]
+    assert link_customjs.args['target'] is scatter.glyph
+    assert scatter.glyph.fill_color == '#ff00ff'
+    code = ("value = source['color'];"
+            "try { property = target.properties['fill_color'];"
+            "if (property !== undefined) { property.validate(value); } }"
+            "catch(err) { console.log('WARNING: Could not set fill_color on target, raised error: ' + err); return; }"
+            "target['fill_color'] = value")
+    assert link_customjs.code == code
+
 
 @hv_available
 def test_link_with_customcode(document, comm):
