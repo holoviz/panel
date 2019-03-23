@@ -21,7 +21,6 @@ def test_render_mimebundle(document, comm):
     data, metadata = render_mimebundle(div, document, comm)
 
     assert metadata == {'application/vnd.holoviews_exec.v0+json': {'id': div.ref['id']}}
-    assert 'application/javascript' in data
     assert 'application/vnd.holoviews_exec.v0+json' in data
     assert 'text/html' in data
     assert data['application/vnd.holoviews_exec.v0+json'] == ''
