@@ -12,7 +12,10 @@ export class HTMLView extends MarkupView {
   render(): void {
     super.render()
     const html = htmlDecode(this.model.text);
-    if (!html) { return }
+    if (!html) {
+      this.markup_el.innerHTML = '';
+      return;
+    }
     this.markup_el.innerHTML = html
     Array.from(this.markup_el.querySelectorAll("script")).forEach( oldScript => {
       const newScript = document.createElement("script");
