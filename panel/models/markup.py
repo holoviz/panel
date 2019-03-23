@@ -5,7 +5,6 @@ from __future__ import absolute_import, division, unicode_literals
 
 import os
 
-from bokeh.core.properties import Int, Float, Override, Enum, Any, Bool
 from bokeh.models.widgets import Markup
 
 from ..compiler import CUSTOM_MODELS
