@@ -15,6 +15,7 @@ import param
 from bokeh.models import Div as _BkDiv
 
 from ..viewable import Layoutable
+from ..models import HTML as _BkHTML
 from .base import PaneBase
 
 
@@ -64,6 +65,8 @@ class HTML(DivPaneBase):
     # Priority is dependent on the data type
     priority = None
 
+    _bokeh_model = _BkHTML
+
     @classmethod
     def applies(cls, obj):
         if hasattr(obj, '_repr_html_'):
@@ -78,7 +81,7 @@ class HTML(DivPaneBase):
         text = '' if self.object is None else self.object
         if hasattr(text, '_repr_html_'):
             text = text._repr_html_()
-        return dict(properties, text=text)
+        return dict(properties, text=escape(text))
 
 
 class Str(DivPaneBase):

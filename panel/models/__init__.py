@@ -5,5 +5,6 @@ defined as pairs of Python classes and TypeScript models defined in .ts
 files.
 """
 
+from .markup import HTML # noqa
 from .state import State # noqa
 from .widgets import Audio, FileInput, Player # noqa
