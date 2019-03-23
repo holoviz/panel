@@ -26,7 +26,7 @@ from bokeh.util.string import encode_utf8
 from jinja2 import Environment, Markup, FileSystemLoader
 from pyviz_comms import (
     JS_CALLBACK, PYVIZ_PROXY, Comm, JupyterCommManager as _JupyterCommManager,
-    bokeh_msg_handler, embed_js, nb_mime_js)
+    bokeh_msg_handler, nb_mime_js)
 
 from ..compiler import require_components
 from .embed import embed_state
@@ -139,11 +139,10 @@ def render_model(model, comm=None):
         bokeh_js = '\n'.join([comm_js, bokeh_script])
     else:
         bokeh_js = bokeh_script
-    bokeh_js = embed_js.format(widget_id=target, plot_id=target, html=bokeh_div) + bokeh_js
 
-    data = {EXEC_MIME: '', 'text/html': html, 'application/javascript': bokeh_js}
-    metadata = {EXEC_MIME: {'id': target}}
-    return data, metadata
+    data = {'text/html': html, 'application/javascript': bokeh_js}
+    return ({'text/html': mimebundle_to_html(data), EXEC_MIME: ''},
+            {EXEC_MIME: {'id': target}})
 
 
 def render_mimebundle(model, doc, comm):
