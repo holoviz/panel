@@ -31,12 +31,12 @@ def test_html_pane(document, comm):
     # Create pane
     model = pane._get_root(document, comm=comm)
     assert pane._models[model.ref['id']][0] is model
-    assert model.text == "<h1>Test</h1>"
+    assert model.text == "&lt;h1&gt;Test&lt;/h1&gt;"
 
     # Replace Pane.object
     pane.object = "<h2>Test</h2>"
     assert pane._models[model.ref['id']][0] is model
-    assert model.text == "<h2>Test</h2>"
+    assert model.text == "&lt;h2&gt;Test&lt;/h2&gt;"
 
     # Cleanup
     pane._cleanup(model)

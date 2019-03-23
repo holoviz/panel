@@ -1,5 +1,5 @@
 from bokeh.client import pull_session
-from bokeh.models import Div
+from panel.models import HTML as BkHTML
 from panel.io import state
 from panel.pane import HTML
 
@@ -13,8 +13,8 @@ def test_get_server():
     url = "http://localhost:" + str(server.port) + "/"
     session = pull_session(session_id='Test', url=url, io_loop=server.io_loop)
     root = session.document.roots[0]
-    assert isinstance(root, Div)
-    assert root.text == '<h1>Title</h1>'
+    assert isinstance(root, BkHTML)
+    assert root.text == '&lt;h1&gt;Title&lt;/h1&gt;'
     server.stop()
 
 
@@ -29,8 +29,8 @@ def test_server_update():
 
     session.pull()
     root = session.document.roots[0]
-    assert isinstance(root, Div)
-    assert root.text == '<h1>New Title</h1>'
+    assert isinstance(root, BkHTML)
+    assert root.text == '&lt;h1&gt;New Title&lt;/h1&gt;'
     server.stop()
 
 
