@@ -17,3 +17,6 @@ class HTML(Markup):
     """
 
     __implementation__ = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'html.ts')
+
+
+CUSTOM_MODELS['panel.models.markup.HTML'] = HTML
