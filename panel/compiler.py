@@ -74,11 +74,23 @@ def require_components():
     Returns JS snippet to load the required dependencies in the classic
     notebook using REQUIRE JS.
     """
+    from .config import config
+
     configs, requirements, exports = [], [], []
-    for model in CUSTOM_MODELS.values():
-        if not hasattr(model, '__js_require__'):
+    js_requires = list(CUSTOM_MODELS.values())
+
+    for export, js in config.js_files.items():
+        name = js.split('/')[-1].replace('.min', '').split('.')[-2]
+        conf = {'paths': {name: js[:-3]}, 'exports': {name: export}}
+        js_requires.append(conf)
+
+    for model in js_requires:
+        if not (hasattr(model, '__js_require__') or isinstance(model, dict)):
             continue
-        model_require = model.__js_require__
+        if isinstance(model, dict):
+            model_require = model
+        else:
+            model_require = model.__js_require__
         model_exports = model_require.pop('exports', {})
         configs.append(model_require)
         for req in model_require.get('paths', []):

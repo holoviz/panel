@@ -37,6 +37,16 @@ class _config(param.Parameterized):
         os.environ['PANEL_EMBED'] = 'True'
     """
 
+    css_files = param.List(default=[], doc="""
+        External CSS files to load as part of the template.""")
+
+    js_files = param.Dict(default={}, doc="""
+        External JS files to load as part of the template. Dictionary
+        should map from exported name to the URL of the JS file.""")
+
+    raw_css = param.List(default=[], doc="""
+        List of raw CSS strings to add to the template.""")
+
     _embed = param.Boolean(default=False, allow_None=True, doc="""
         Whether plot data will be embedded.""")
 
