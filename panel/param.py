@@ -19,7 +19,7 @@ import param
 from param.parameterized import classlist
 
 from .io import state
-from .layout import Row, Panel, Tabs, Column, VSpacer
+from .layout import Row, Panel, Tabs, Column
 from .links import Link
 from .pane.base import Pane, PaneBase
 from .util import (
@@ -29,7 +29,7 @@ from .viewable import Layoutable, Reactive
 from .widgets import (
     LiteralInput, Select, Checkbox, FloatSlider, IntSlider, RangeSlider,
     MultiSelect, StaticText, Button, Toggle, TextInput, DiscreteSlider,
-    DatetimeInput, DateRangeSlider, ColorPicker, Widget, DateRangeSlider)
+    DatetimeInput, DateRangeSlider, ColorPicker, Widget)
 
 
 def ObjectSelector(pobj):
@@ -117,7 +117,6 @@ class Param(PaneBase):
         param.Action:         Button,
         param.Parameter:      LiteralInput,
         param.Color:          ColorPicker,
-        param.DateRange:      DateRangeSlider,
         param.Dict:           LiteralInput,
         param.Selector:       Select,
         param.ObjectSelector: ObjectSelector,
