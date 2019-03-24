@@ -168,7 +168,12 @@ class panel_extension(_pyviz_extension):
             return
 
         for k, v in params.items():
-            setattr(config, k, v)
+            if k in ['raw_css', 'css_files']:
+                getattr(config, k).extend(v)
+            elif k == 'js_files':
+                getattr(config, k).update(v)
+            else:
+                setattr(config, k, v)
 
         if hasattr(ip, 'kernel') and not self._loaded:
             # TODO: JLab extension and pyviz_comms should be changed
