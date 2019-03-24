@@ -19,7 +19,7 @@ import param
 from param.parameterized import classlist
 
 from .io import state
-from .layout import Row, Panel, Tabs, Column
+from .layout import Row, Panel, Tabs, Column, VSpacer
 from .links import Link
 from .pane.base import Pane, PaneBase
 from .util import (
@@ -29,7 +29,7 @@ from .viewable import Layoutable, Reactive
 from .widgets import (
     LiteralInput, Select, Checkbox, FloatSlider, IntSlider, RangeSlider,
     MultiSelect, StaticText, Button, Toggle, TextInput, DiscreteSlider,
-    DatetimeInput, DateRangeSlider, ColorPicker, Widget)
+    DatetimeInput, DateRangeSlider, ColorPicker, Widget, DateRangeSlider)
 
 
 def ObjectSelector(pobj):
@@ -117,6 +117,7 @@ class Param(PaneBase):
         param.Action:         Button,
         param.Parameter:      LiteralInput,
         param.Color:          ColorPicker,
+        param.DateRange:      DateRangeSlider,
         param.Dict:           LiteralInput,
         param.Selector:       Select,
         param.ObjectSelector: ObjectSelector,
@@ -223,18 +224,22 @@ class Param(PaneBase):
             self._widgets = {}
         else:
             self._widgets = self._get_widgets()
-        widgets = [widget for widgets in self._widgets.values() for widget in widgets]
+        widgets = [widget for widget in self._widgets.values()]
         self._widget_box.objects = widgets
         if not (self.expand_button == False and not self.expand):
             self._link_subobjects()
 
     def _link_subobjects(self):
-        for pname, widgets in self._widgets.items():
+        for pname, widget in self._widgets.items():
+            widgets = [widget] if isinstance(widget, Widget) else widget
             if not any(is_parameterized(getattr(w, 'value', None)) or
                        any(is_parameterized(o) for o in getattr(w, 'options', []))
                        for w in widgets):
                 continue
-            selector, toggle = widgets if len(widgets) == 2 else (widgets[0], None)
+            if (isinstance(widgets, Row) and isinstance(widgets[1], Toggle)):
+                selector, toggle = (widgets[0], widgets[1])
+            else:
+                selector, toggle = (widget, None)
 
             def toggle_pane(change, parameter=pname):
                 "Adds or removes subpanel from layout"
@@ -353,7 +358,7 @@ class Param(PaneBase):
                         widgets = []
                         for k, ws in self._widgets.items():
                             if precedence(k) is None or precedence(k) >= self.display_threshold:
-                                widgets += ws
+                                widgets.append(ws)
                         self._widget_box.objects = widgets
                     return
                 elif change.what == 'objects':
@@ -387,11 +392,12 @@ class Param(PaneBase):
             options = options.values()
         if ((is_parameterized(value) or any(is_parameterized(o) for o in options))
             and (self.expand_button or (self.expand_button is None and not self.expand))):
-            toggle = Toggle(name='...', button_type='primary',
-                            disabled=not is_parameterized(value))
-            return [widget, toggle]
+            toggle = Toggle(name='\u00B7\u00B7\u00B7', button_type='primary',
+                            disabled=not is_parameterized(value),
+                            max_width=40, height_policy='fit')
+            return Row(widget, toggle)
         else:
-            return [widget]
+            return widget
 
     #----------------------------------------------------------------
     # Model API
@@ -418,7 +424,7 @@ class Param(PaneBase):
             widgets = []
         elif self.show_name:
             name = param_name(self.object.name)
-            widgets = [('name', [StaticText(value='<b>{0}</b>'.format(name))])]
+            widgets = [('name', StaticText(value='<b>{0}</b>'.format(name)))]
         else:
             widgets = []
         widgets += [(pname, self.widget(pname)) for pname in ordered_params]

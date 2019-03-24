@@ -391,10 +391,10 @@ def test_param_precedence(document, comm):
     # Check changing precedence attribute hides and shows widget
     a_param = test.param['a']
     a_param.precedence = -1
-    assert test_pane._widgets['a'][0] not in test_pane._widget_box.objects
+    assert test_pane._widgets['a'] not in test_pane._widget_box.objects
 
     a_param.precedence = 1
-    assert test_pane._widgets['a'][0] in test_pane._widget_box.objects
+    assert test_pane._widgets['a'] in test_pane._widget_box.objects
 
 
 def test_replace_param_object(document, comm):
@@ -538,14 +538,14 @@ def test_expand_param_subobject(document, comm):
     test_pane = Pane(test)
     model = test_pane._get_root(document, comm=comm)
 
-    toggle = model.children[2]
+    toggle = model.children[1].children[1]
     assert isinstance(toggle, Toggle)
 
     # Expand subpane
     test_pane._widgets['a'][1].value = True
-    assert len(model.children) == 4
-    _, _, _, subpanel = test_pane.layout.objects
-    col = model.children[3]
+    assert len(model.children) == 3
+    _, _, subpanel = test_pane.layout.objects
+    col = model.children[2]
     assert isinstance(col, BkColumn)
     assert isinstance(col, BkColumn)
     assert len(col.children) == 2
@@ -555,7 +555,7 @@ def test_expand_param_subobject(document, comm):
 
     # Collapse subpanel
     test_pane._widgets['a'][1].value = False
-    assert len(model.children) == 3
+    assert len(model.children) == 2
 
 
 def test_switch_param_subobject(document, comm):
@@ -569,33 +569,33 @@ def test_switch_param_subobject(document, comm):
     test_pane = Pane(test)
     model = test_pane._get_root(document, comm=comm)
 
-    toggle = model.children[2]
+    toggle = model.children[1].children[1]
     assert isinstance(toggle, Toggle)
 
     # Expand subpane
     test_pane._widgets['a'][1].value = True
-    assert len(model.children) == 4
-    _, _, _, subpanel = test_pane.layout.objects
-    col = model.children[3]
+    assert len(model.children) == 3
+    _, _, subpanel = test_pane.layout.objects
+    col = model.children[2]
     assert isinstance(col, BkColumn)
-    assert len(col.children) == 3
-    div, select, widget = col.children
+    assert len(col.children) == 2
+    div, row = col.children
     assert div.text == '<b>Subobject 1</b>'
-    assert isinstance(select, Select)
+    assert isinstance(row.children[0], Select)
 
     # Switch subobject
     test_pane._widgets['a'][0].value = o2
-    _, _, _, subpanel = test_pane.layout.objects
-    col = model.children[3]
+    _, _, subpanel = test_pane.layout.objects
+    col = model.children[2]
     assert isinstance(col, BkColumn)
-    assert len(col.children) == 3
-    div, select, widget = col.children
+    assert len(col.children) == 2
+    div, row = col.children
     assert div.text == '<b>Subobject 2</b>'
-    assert isinstance(select, Select)
+    assert isinstance(row.children[0], Select)
 
     # Collapse subpanel
     test_pane._widgets['a'][1].value = False
-    assert len(model.children) == 3
+    assert len(model.children) == 2
     assert subpanel._models == {}
 
 
@@ -610,7 +610,7 @@ def test_expand_param_subobject_into_row(document, comm):
     layout = Row(test_pane, row)
     model = layout._get_root(document, comm=comm)
 
-    toggle = model.children[0].children[2]
+    toggle = model.children[0].children[1].children[1]
     assert isinstance(toggle, Toggle)
 
     # Expand subpane
@@ -641,13 +641,13 @@ def test_expand_param_subobject_expand(document, comm):
     test_pane = Pane(test, expand=True, expand_button=True)
     model = test_pane._get_root(document, comm=comm)
 
-    toggle = model.children[2]
+    toggle = model.children[1].children[1]
     assert isinstance(toggle, Toggle)
 
     # Expand subpane
-    assert len(model.children) == 4
-    _, _, _, subpanel = test_pane.layout.objects
-    col = model.children[3]
+    assert len(model.children) == 3
+    _, _, subpanel = test_pane.layout.objects
+    col = model.children[2]
     assert isinstance(col, BkColumn)
     assert len(col.children) == 2
     div, widget = col.children
@@ -656,7 +656,7 @@ def test_expand_param_subobject_expand(document, comm):
 
     # Collapse subpanel
     test_pane._widgets['a'][1].value = False
-    assert len(model.children) == 3
+    assert len(model.children) == 2
     assert subpanel._models == {}
 
 
@@ -687,7 +687,7 @@ def test_expand_param_subobject_tabs(document, comm):
     test_pane = Pane(test, expand_layout=Tabs)
     model = test_pane._get_root(document, comm=comm)
 
-    toggle = model.tabs[0].child.children[1]
+    toggle = model.tabs[0].child.children[0].children[1]
     assert isinstance(toggle, Toggle)
 
     # Expand subpanel
