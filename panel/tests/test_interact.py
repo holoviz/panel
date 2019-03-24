@@ -191,7 +191,7 @@ def test_interact_replaces_model(document, comm):
     assert new_pane is not pane
     new_div = column.children[1].children[0]
     assert isinstance(new_div, BkDiv)
-    assert new_div.text == '<p>ABC</p>'
+    assert new_div.text.endswith('<p>ABC</p>')
     assert new_pane._models[column.ref['id']][0] is new_div
 
     interact_pane._cleanup(column)

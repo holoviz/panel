@@ -119,6 +119,29 @@ class Markdown(DivPaneBase):
     # Priority depends on the data type
     priority = None
 
+    _css_style = {
+        'ul': 'padding-left: 1.5em',
+        'table': 'border-collapse: collapse;',
+        'thead': 'border-bottom: 1px black solid;',
+        'tbody': 'display: table-row-group;',
+        'td': 'padding: 4px;',
+        'h1': 'margin-block-start: 0.66em; margin-block-end: 0.66em;',
+        'h2': 'margin-block-start: 0.83em; margin-block-end: 0.83em;',
+        'h3': 'margin-block-start: 1em; margin-block-end: 1em;',
+        'h4': 'margin-block-start: 1.33em; margin-block-end: 1.33em;',
+        'h5': 'margin-block-start: 1.66em; margin-block-end: 1.66em;',
+        'h6': 'margin-block-start: 2.33em; margin-block-end: 2.33em;',
+    }
+
+    _css = """
+    tbody tr:nth-child(odd) {
+      background: #f5f5f5;
+    }
+    tr:hover {
+      background: #e0e0e0;
+    }
+    """
+
     @classmethod
     def applies(cls, obj):
         if hasattr(obj, '_repr_markdown_'):
@@ -139,4 +162,10 @@ class Markdown(DivPaneBase):
         properties['style'] = properties.get('style', {})
         extensions = ['markdown.extensions.extra', 'markdown.extensions.smarty']
         html = markdown.markdown(data, extensions=extensions, output_format='html5')
-        return dict(properties, text=html)
+        for tag in self._css_style:
+            html = html.replace('<%s>' % tag, '<%s class="panel-md">' % tag)
+        css = self._css
+        for tag, tag_css in self._css_style.items():
+            css += '%s.panel-md { %s }' % (tag, tag_css)
+        css = "<style>%s</style>\n" % css
+        return dict(properties, text=css+html)

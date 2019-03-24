@@ -66,7 +66,7 @@ class Layoutable(param.Parameterized):
     max_height = param.Integer(default=None, bounds=(0, None), doc="""
         Minimal height of the component (in pixels) if height is adjustable.""")
 
-    margin = param.Parameter(default=None, doc="""
+    margin = param.Parameter(default=5, doc="""
         Allows to create additional space around the component. May
         be specified as a two-tuple of the form (vertical, horizontal)
         or a four-tuple (top, right, bottom, left).""")
