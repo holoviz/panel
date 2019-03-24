@@ -13,12 +13,12 @@ def test_markdown_pane(document, comm):
     # Create pane
     model = pane._get_root(document, comm=comm)
     assert pane._models[model.ref['id']][0] is model
-    assert model.text == "<p><strong>Markdown</strong></p>"
+    assert model.text.endswith("<p><strong>Markdown</strong></p>")
 
     # Replace Pane.object
     pane.object = "*Markdown*"
     assert pane._models[model.ref['id']][0] is model
-    assert model.text == "<p><em>Markdown</em></p>"
+    assert model.text.endswith("<p><em>Markdown</em></p>")
 
     # Cleanup
     pane._cleanup(model)
