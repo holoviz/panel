@@ -103,6 +103,41 @@ def test_tuple_range_interact_with_default_of_different_type():
     assert widget.start == 0
     assert widget.end == 4
 
+def test_tuple_range_interact_with_step_and_value():
+    def test(a):
+        return a
+
+    interact_pane = interactive(test, a=(0, 4, 1, 0))
+    widget = interact_pane._widgets['a']
+    assert isinstance(widget, widgets.IntSlider)
+    assert widget.value == 0
+    assert widget.start == 0
+    assert widget.step == 1
+    assert widget.end == 4
+
+def test_tuple_float_range_interact_with_step_and_value():
+    def test(a):
+        return a
+
+    interact_pane = interactive(test, a=(0, 4, .1, 0))
+    widget = interact_pane._widgets['a']
+    assert isinstance(widget, widgets.FloatSlider)
+    assert widget.value == 0
+    assert widget.start == 0
+    assert widget.step == .1
+    assert widget.end == 4
+
+def test_tuple_range_interact_with_no_step_and_value():
+    def test(a):
+        return a
+
+    interact_pane = interactive(test, a=(0, 4, None, 0))
+    widget = interact_pane._widgets['a']
+    assert isinstance(widget, widgets.IntSlider)
+    assert widget.value == 0
+    assert widget.start == 0
+    assert widget.end == 4
+
 def test_numeric_list_interact():
     def test(a):
         return a
