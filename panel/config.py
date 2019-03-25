@@ -162,11 +162,6 @@ class panel_extension(_pyviz_extension):
             else:
                 __import__(self._imports[arg])
 
-        try:
-            ip = params.pop('ip', None) or get_ipython() # noqa (get_ipython)
-        except:
-            return
-
         for k, v in params.items():
             if k in ['raw_css', 'css_files']:
                 getattr(config, k).extend(v)
@@ -174,6 +169,11 @@ class panel_extension(_pyviz_extension):
                 getattr(config, k).update(v)
             else:
                 setattr(config, k, v)
+
+        try:
+            ip = params.pop('ip', None) or get_ipython() # noqa (get_ipython)
+        except:
+            return
 
         if hasattr(ip, 'kernel') and not self._loaded:
             # TODO: JLab extension and pyviz_comms should be changed
