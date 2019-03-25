@@ -24,6 +24,13 @@ nbsite_gallery_conf = {
     'github_org': 'pyviz',
     'github_project': 'panel',
     'galleries': {
+        'gallery': {
+            'title': 'Gallery',
+            'sections': [
+                'links',
+                'external'
+            ]
+        },
         'reference': {
             'title': 'Reference Gallery',
             'sections': [
@@ -37,8 +44,10 @@ nbsite_gallery_conf = {
 
 _NAV =  (
     ('User Guide', 'user_guide/index'),
+    ('Gallery', 'gallery/index'),
     ('Reference Gallery', 'reference/index'),
     ('Developer Guide', 'developer_guide/index'),
+    ('FAQ', 'FAQ'),
     ('About', 'about')
 )
 
