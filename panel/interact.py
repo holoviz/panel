@@ -251,7 +251,7 @@ class interactive(PaneBase):
     def applies(cls, object):
         return isinstance(object, types.FunctionType)
 
-    @classmethod    
+    @classmethod
     def widget_from_abbrev(cls, abbrev, name, default=empty):
         """Build a ValueWidget instance given an abbreviation or Widget."""
         if isinstance(abbrev, Widget):
@@ -324,6 +324,23 @@ class interactive(PaneBase):
             else:
                 cls = FloatSlider
             return cls(value=value, start=min, end=max, step=step, name=name)
+        elif _matches(o, (Real, Real, Real, Real)):
+            step = o[2]
+            if step <= 0:
+                raise ValueError("step must be >= 0, not %r" % step)
+            min, max, value = _get_min_max_value(o[0], o[1], value=o[3], step=step)
+            if all(isinstance(_, Integral) for _ in o):
+                cls = IntSlider
+            else:
+                cls = FloatSlider
+            return cls(value=value, start=min, end=max, step=step, name=name)
+        elif len(o) == 4:
+            min, max, value = _get_min_max_value(o[0], o[1], value=o[3])
+            if all(isinstance(_, Integral) for _ in [o[0], o[1], o[3]]):
+                cls = IntSlider
+            else:
+                cls = FloatSlider
+            return cls(value=value, start=min, end=max, name=name)
 
     @staticmethod
     def widget_from_iterable(o, name):
