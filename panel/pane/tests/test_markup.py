@@ -11,7 +11,7 @@ def test_markdown_pane(document, comm):
     pane = Pane("**Markdown**")
 
     # Create pane
-    model = pane._get_root(document, comm=comm)
+    model = pane.get_root(document, comm=comm)
     assert pane._models[model.ref['id']][0] is model
     assert model.text.endswith("<p><strong>Markdown</strong></p>")
 
@@ -29,7 +29,7 @@ def test_html_pane(document, comm):
     pane = HTML("<h1>Test</h1>")
 
     # Create pane
-    model = pane._get_root(document, comm=comm)
+    model = pane.get_root(document, comm=comm)
     assert pane._models[model.ref['id']][0] is model
     assert model.text == "&lt;h1&gt;Test&lt;/h1&gt;"
 
@@ -47,7 +47,7 @@ def test_string_pane(document, comm):
     pane = Str("<h1>Test</h1>")
 
     # Create pane
-    model = pane._get_root(document, comm=comm)
+    model = pane.get_root(document, comm=comm)
     assert pane._models[model.ref['id']][0] is model
     assert model.text == "<pre>&lt;h1&gt;Test&lt;/h1&gt;</pre>"
 

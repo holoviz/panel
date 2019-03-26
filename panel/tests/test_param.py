@@ -91,7 +91,7 @@ def test_get_root(document, comm):
 
     test = Test()
     test_pane = Pane(test)
-    model = test_pane._get_root(document, comm=comm)
+    model = test_pane.get_root(document, comm=comm)
 
     assert isinstance(model, BkColumn)
     assert len(model.children) == 1
@@ -108,7 +108,7 @@ def test_single_param(document, comm):
 
     test = Test()
     test_pane = Pane(test.param.a)
-    model = test_pane._get_root(document, comm=comm)
+    model = test_pane.get_root(document, comm=comm)
 
     assert isinstance(model, BkColumn)
     assert len(model.children) == 1
@@ -125,7 +125,7 @@ def test_get_root_tabs(document, comm):
 
     test = Test()
     test_pane = Pane(test, expand_layout=Tabs)
-    model = test_pane._get_root(document, comm=comm)
+    model = test_pane.get_root(document, comm=comm)
 
     assert isinstance(model, BkTabs)
     assert len(model.tabs) == 1
@@ -141,7 +141,7 @@ def test_number_param(document, comm):
 
     test = Test()
     test_pane = Pane(test)
-    model = test_pane._get_root(document, comm=comm)
+    model = test_pane.get_root(document, comm=comm)
 
     slider = model.children[1]
     assert isinstance(slider, Slider)
@@ -181,7 +181,7 @@ def test_boolean_param(document, comm):
 
     test = Test()
     test_pane = Pane(test)
-    model = test_pane._get_root(document, comm=comm)
+    model = test_pane.get_root(document, comm=comm)
 
     checkbox = model.children[1]
     assert isinstance(checkbox, CheckboxGroup)
@@ -212,7 +212,7 @@ def test_range_param(document, comm):
 
     test = Test()
     test_pane = Pane(test)
-    model = test_pane._get_root(document, comm=comm)
+    model = test_pane.get_root(document, comm=comm)
 
     widget = model.children[1]
     assert isinstance(widget, RangeSlider)
@@ -249,7 +249,7 @@ def test_integer_param(document, comm):
 
     test = Test()
     test_pane = Pane(test)
-    model = test_pane._get_root(document, comm=comm)
+    model = test_pane.get_root(document, comm=comm)
 
     slider = model.children[1]
     assert isinstance(slider, Slider)
@@ -289,7 +289,7 @@ def test_object_selector_param(document, comm):
 
     test = Test()
     test_pane = Pane(test)
-    model = test_pane._get_root(document, comm=comm)
+    model = test_pane.get_root(document, comm=comm)
 
     slider = model.children[1]
     assert isinstance(slider, Select)
@@ -325,7 +325,7 @@ def test_list_selector_param(document, comm):
 
     test = Test()
     test_pane = Pane(test)
-    model = test_pane._get_root(document, comm=comm)
+    model = test_pane.get_root(document, comm=comm)
 
     slider = model.children[1]
     assert isinstance(slider, MultiSelect)
@@ -362,7 +362,7 @@ def test_action_param(document, comm):
 
     test = Test()
     test_pane = Pane(test)
-    model = test_pane._get_root(document, comm=comm)
+    model = test_pane.get_root(document, comm=comm)
 
     slider = model.children[1]
     assert isinstance(slider, Button)
@@ -375,7 +375,7 @@ def test_explicit_params(document, comm):
 
     test = Test()
     test_pane = Pane(test, parameters=['a'])
-    model = test_pane._get_root(document, comm=comm)
+    model = test_pane.get_root(document, comm=comm)
 
     assert len(model.children) == 2
     assert isinstance(model.children[1], CheckboxGroup)
@@ -403,7 +403,7 @@ def test_replace_param_object(document, comm):
 
     pane = Param()
 
-    model = pane._get_root(document, comm=comm)
+    model = pane.get_root(document, comm=comm)
 
     assert model.children == []
 
@@ -427,7 +427,7 @@ def test_set_parameters(document, comm):
 
     pane = Param(Test())
 
-    model = pane._get_root(document, comm=comm)
+    model = pane.get_root(document, comm=comm)
 
     assert len(model.children) == 3
     title, slider, text = model.children
@@ -450,7 +450,7 @@ def test_set_display_threshold(document, comm):
 
     pane = Param(Test())
 
-    model = pane._get_root(document, comm=comm)
+    model = pane.get_root(document, comm=comm)
 
     assert len(model.children) == 3
     title, slider, text = model.children
@@ -473,7 +473,7 @@ def test_set_widgets(document, comm):
 
     pane = Param(Test())
 
-    model = pane._get_root(document, comm=comm)
+    model = pane.get_root(document, comm=comm)
 
     assert len(model.children) == 3
     title, slider, text = model.children
@@ -496,7 +496,7 @@ def test_set_show_name(document, comm):
 
     pane = Param(Test())
 
-    model = pane._get_root(document, comm=comm)
+    model = pane.get_root(document, comm=comm)
 
     assert len(model.children) == 2
     title, widget = model.children
@@ -515,7 +515,7 @@ def test_set_show_labels(document, comm):
 
     pane = Param(Test())
 
-    model = pane._get_root(document, comm=comm)
+    model = pane.get_root(document, comm=comm)
 
     assert len(model.children) == 2
     title, widget = model.children
@@ -536,7 +536,7 @@ def test_expand_param_subobject(document, comm):
 
     test = Test(a=Test(name='Nested'))
     test_pane = Pane(test)
-    model = test_pane._get_root(document, comm=comm)
+    model = test_pane.get_root(document, comm=comm)
 
     toggle = model.children[1].children[1]
     assert isinstance(toggle, Toggle)
@@ -567,7 +567,7 @@ def test_switch_param_subobject(document, comm):
     Test.param['a'].objects = [o1, o2, 3]
     test = Test(a=o1, name='Nested')
     test_pane = Pane(test)
-    model = test_pane._get_root(document, comm=comm)
+    model = test_pane.get_root(document, comm=comm)
 
     toggle = model.children[1].children[1]
     assert isinstance(toggle, Toggle)
@@ -608,7 +608,7 @@ def test_expand_param_subobject_into_row(document, comm):
     row = Row()
     test_pane = Pane(test, expand_layout=row)
     layout = Row(test_pane, row)
-    model = layout._get_root(document, comm=comm)
+    model = layout.get_root(document, comm=comm)
 
     toggle = model.children[0].children[1].children[1]
     assert isinstance(toggle, Toggle)
@@ -639,7 +639,7 @@ def test_expand_param_subobject_expand(document, comm):
 
     test = Test(a=Test(name='Nested'))
     test_pane = Pane(test, expand=True, expand_button=True)
-    model = test_pane._get_root(document, comm=comm)
+    model = test_pane.get_root(document, comm=comm)
 
     toggle = model.children[1].children[1]
     assert isinstance(toggle, Toggle)
@@ -667,7 +667,7 @@ def test_param_subobject_expand_no_toggle(document, comm):
     test = Test(a=Test(name='Nested'))
     test_pane = Pane(test, expand=True,
                      expand_button=False)
-    model = test_pane._get_root(document, comm=comm)
+    model = test_pane.get_root(document, comm=comm)
 
     # Assert no toggle was added
     assert len(model.children) == 3
@@ -685,7 +685,7 @@ def test_expand_param_subobject_tabs(document, comm):
 
     test = Test(abc=Test(name='Nested'), name='A')
     test_pane = Pane(test, expand_layout=Tabs)
-    model = test_pane._get_root(document, comm=comm)
+    model = test_pane.get_root(document, comm=comm)
 
     toggle = model.tabs[0].child.children[0].children[1]
     assert isinstance(toggle, Toggle)
@@ -745,7 +745,7 @@ def test_param_method_pane(document, comm):
     assert isinstance(inner_pane, Bokeh)
 
     # Create pane
-    row = pane._get_root(document, comm=comm)
+    row = pane.get_root(document, comm=comm)
     assert isinstance(row, BkRow)
     assert len(row.children) == 1
     inner_row = row.children[0]
@@ -775,7 +775,7 @@ def test_param_method_pane_subobject(document, comm):
     assert isinstance(inner_pane, Bokeh)
 
     # Create pane
-    row = pane._get_root(document, comm=comm)
+    row = pane.get_root(document, comm=comm)
     assert isinstance(row, BkRow)
     assert len(row.children) == 1
     inner_row = row.children[0]
@@ -810,7 +810,7 @@ def test_param_method_pane_mpl(document, comm):
     assert isinstance(inner_pane, Matplotlib)
 
     # Create pane
-    row = pane._get_root(document, comm=comm)
+    row = pane.get_root(document, comm=comm)
     assert isinstance(row, BkRow)
     assert len(row.children) == 1
     inner_row = row.children[0]
@@ -840,7 +840,7 @@ def test_param_method_pane_changing_type(document, comm):
     assert isinstance(inner_pane, Matplotlib)
 
     # Create pane
-    row = pane._get_root(document, comm=comm)
+    row = pane.get_root(document, comm=comm)
     assert isinstance(row, BkRow)
     assert len(row.children) == 1
     inner_row = row.children[0]

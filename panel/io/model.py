@@ -60,7 +60,7 @@ def bokeh_repr(obj, depth=0, ignored=['children', 'text', 'name', 'toolbar', 're
     """
     from .viewable import Viewable
     if isinstance(obj, Viewable):
-        obj = obj._get_root(Document())
+        obj = obj.get_root(Document())
 
     r = ""
     cls = type(obj).__name__

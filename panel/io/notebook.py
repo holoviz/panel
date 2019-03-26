@@ -277,7 +277,7 @@ def show_embed(panel, max_states=1000, max_opts=3, json=False,
     doc = Document()
     comm = Comm()
     with config.set(embed=True):
-        model = panel._get_root(doc, comm)
+        model = panel.get_root(doc, comm)
         embed_state(panel, model, doc, max_states, max_opts,
                     json, save_path, load_path)
     publish_display_data(*render_model(model))

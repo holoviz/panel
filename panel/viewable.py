@@ -229,23 +229,6 @@ class Viewable(Layoutable):
         """
         raise NotImplementedError
 
-    def _get_root(self, doc, comm=None):
-        """
-        Returns the root model and applies pre-processing hooks
-
-        Arguments
-        ---------
-        doc: bokeh.Document
-          Bokeh document the bokeh model will be attached to.
-        comm: pyviz_comms.Comm
-          Optional pyviz_comms when working in notebook
-        """
-        root = self._get_model(doc, comm=comm)
-        self._preprocess(root)
-        ref = root.ref['id']
-        state._views[ref] = (self, root, doc, comm)
-        return root
-
     def _cleanup(self, model):
         """
         Clean up method which is called when a Viewable is destroyed.
@@ -267,7 +250,7 @@ class Viewable(Layoutable):
         state._comm_manager = JupyterCommManager
         doc = _Document()
         comm = state._comm_manager.get_server_comm()
-        model = self._get_root(doc, comm)
+        model = self.get_root(doc, comm)
         if config.embed:
             embed_state(self, model, doc,
                         json=config.json,
@@ -291,6 +274,11 @@ class Viewable(Layoutable):
         if server_id:
             state._servers[server_id][2].append(doc)
         return self.server_doc(doc)
+
+    def _get_server(self, port=0, websocket_origin=None, loop=None,
+                   show=False, start=False, **kwargs):
+        return get_server(self, port, websocket_origin, loop, show,
+                          start, **kwargs)
 
     #----------------------------------------------------------------
     # Public API
@@ -360,10 +348,27 @@ class Viewable(Layoutable):
         """
         show_embed(self, max_states, max_opts, json, save_path, load_path)
 
-    def _get_server(self, port=0, websocket_origin=None, loop=None,
-                   show=False, start=False, **kwargs):
-        return get_server(self, port, websocket_origin, loop, show,
-                          start, **kwargs)
+    def get_root(self, doc=None, comm=None):
+        """
+        Returns the root model and applies pre-processing hooks
+
+        Arguments
+        ---------
+        doc: bokeh.Document
+          Bokeh document the bokeh model will be attached to.
+        comm: pyviz_comms.Comm
+          Optional pyviz_comms when working in notebook
+
+        Returns
+        -------
+        Returns the bokeh model corresponding to this panel object
+        """
+        doc = doc or _curdoc()
+        root = self._get_model(doc, comm=comm)
+        self._preprocess(root)
+        ref = root.ref['id']
+        state._views[ref] = (self, root, doc, comm)
+        return root
 
     def save(self, filename, title=None, resources=None, template=None,
              template_variables={}, embed=False, max_states=1000,
@@ -416,7 +421,7 @@ class Viewable(Layoutable):
         doc = doc or _curdoc()
         if title is not None:
             doc.title = title
-        model = self._get_root(doc)
+        model = self.get_root(doc)
         if hasattr(doc, 'on_session_destroyed'):
             doc.on_session_destroyed(self._server_destroy)
             self._documents[doc] = model

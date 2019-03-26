@@ -178,7 +178,7 @@ def test_interact_updates_panel(document, comm):
     assert isinstance(widget, widgets.Checkbox)
     assert widget.value == False
 
-    column = interact_pane.layout._get_root(document, comm=comm)
+    column = interact_pane.layout.get_root(document, comm=comm)
     assert isinstance(column, BkColumn)
     div = column.children[1].children[0]
     assert div.text == '<pre>False</pre>'
@@ -195,7 +195,7 @@ def test_interact_replaces_panel(document, comm):
     assert isinstance(widget, widgets.Checkbox)
     assert widget.value == False
 
-    column = interact_pane.layout._get_root(document, comm=comm)
+    column = interact_pane.layout.get_root(document, comm=comm)
     assert isinstance(column, BkColumn)
     div = column.children[1].children[0]
     assert div.text == 'Test'
@@ -214,7 +214,7 @@ def test_interact_replaces_model(document, comm):
     assert isinstance(widget, widgets.Checkbox)
     assert widget.value == False
 
-    column = interact_pane.layout._get_root(document, comm=comm)
+    column = interact_pane.layout.get_root(document, comm=comm)
     assert isinstance(column, BkColumn)
     div = column.children[1].children[0]
     assert isinstance(div, BkDiv)

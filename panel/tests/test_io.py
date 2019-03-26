@@ -17,7 +17,7 @@ def test_embed_discrete(document, comm):
     select.link(string, value='object')
     panel = Row(select, string)
     with config.set(embed=True):
-        model = panel._get_root(document, comm)
+        model = panel.get_root(document, comm)
     embed_state(panel, model, document)
     _, state = document.roots
     assert set(state.state) == {'A', 'B', 'C'}
@@ -39,7 +39,7 @@ def test_embed_continuous(document, comm):
     select.link(string, value='object')
     panel = Row(select, string)
     with config.set(embed=True):
-        model = panel._get_root(document, comm)
+        model = panel.get_root(document, comm)
     embed_state(panel, model, document)
     _, state = document.roots
     assert set(state.state) == {0, 1, 2}
@@ -62,7 +62,7 @@ def test_embed_checkbox(document, comm):
     checkbox.link(string, value='object')
     panel = Row(checkbox, string)
     with config.set(embed=True):
-        model = panel._get_root(document, comm)
+        model = panel.get_root(document, comm)
     embed_state(panel, model, document)
     _, state = document.roots
     assert set(state.state) == {True, False}

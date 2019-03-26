@@ -27,7 +27,8 @@ class HoloViews(PaneBase):
     Bokeh model while respecting the currently selected backend.
     """
 
-    backend = param.String(default=None, doc="""
+    backend = param.ObjectSelector(
+        default=None, objects=['bokeh', 'plotly', 'matplotlib'], doc="""
         The HoloViews backend used to render the plot (if None defaults
         to the currently selected renderer).""")
 
@@ -114,7 +115,7 @@ class HoloViews(PaneBase):
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         if root is None:
-            return self._get_root(doc, comm)
+            return self.get_root(doc, comm)
         ref = root.ref['id']
         if self.object is None:
             model = _BkSpacer()

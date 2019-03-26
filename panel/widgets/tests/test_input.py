@@ -12,7 +12,7 @@ def test_checkbox(document, comm):
 
     checkbox = Checkbox(value=True, name='Checkbox')
 
-    widget = checkbox._get_root(document, comm=comm)
+    widget = checkbox.get_root(document, comm=comm)
 
     assert isinstance(widget, checkbox._widget_type)
     assert widget.labels == ['Checkbox']
@@ -30,7 +30,7 @@ def test_date_picker(document, comm):
     date_picker = DatePicker(name='DatePicker', value=datetime(2018, 9, 2),
                              start=datetime(2018, 9, 1), end=datetime(2018, 9, 10))
 
-    widget = date_picker._get_root(document, comm=comm)
+    widget = date_picker.get_root(document, comm=comm)
 
     assert isinstance(widget, date_picker._widget_type)
     assert widget.title == 'DatePicker'
@@ -49,7 +49,7 @@ def test_date_picker(document, comm):
 def test_file_input(document, comm):
     file_input = FileInput()
 
-    widget = file_input._get_root(document, comm=comm)
+    widget = file_input.get_root(document, comm=comm)
 
     assert isinstance(widget, BkFileInput)
 
@@ -64,7 +64,7 @@ def test_literal_input(document, comm):
 
     literal = LiteralInput(value={}, type=dict, name='Literal')
 
-    widget = literal._get_root(document, comm=comm)
+    widget = literal.get_root(document, comm=comm)
 
     assert isinstance(widget, literal._widget_type)
     assert widget.title == 'Literal'
@@ -94,7 +94,7 @@ def test_static_text(document, comm):
 
     text = StaticText(value='ABC', name='Text:')
 
-    widget = text._get_root(document, comm=comm)
+    widget = text.get_root(document, comm=comm)
 
     assert isinstance(widget, text._widget_type)
     assert widget.text == '<b>Text:</b>: ABC'
@@ -107,7 +107,7 @@ def test_text_input(document, comm):
 
     text = TextInput(value='ABC', name='Text:')
 
-    widget = text._get_root(document, comm=comm)
+    widget = text.get_root(document, comm=comm)
 
     assert isinstance(widget, text._widget_type)
     assert widget.value == 'ABC'
@@ -125,7 +125,7 @@ def test_datetime_input(document, comm):
                              end=datetime(2018, 1, 10),
                              name='Datetime')
 
-    widget = dt_input._get_root(document, comm=comm)
+    widget = dt_input.get_root(document, comm=comm)
 
     assert isinstance(widget, dt_input._widget_type)
     assert widget.title == 'Datetime'

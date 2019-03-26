@@ -13,7 +13,7 @@ def test_float_slider(document, comm):
 
     slider = FloatSlider(start=0.1, end=0.5, value=0.4, name='Slider')
 
-    widget = slider._get_root(document, comm=comm)
+    widget = slider.get_root(document, comm=comm)
 
     assert isinstance(widget, slider._widget_type)
     assert widget.title == 'Slider'
@@ -32,7 +32,7 @@ def test_int_slider(document, comm):
 
     slider = IntSlider(start=0, end=3, value=1, name='Slider')
 
-    widget = slider._get_root(document, comm=comm)
+    widget = slider.get_root(document, comm=comm)
 
     assert isinstance(widget, slider._widget_type)
     assert widget.title == 'Slider'
@@ -52,7 +52,7 @@ def test_range_slider(document, comm):
 
     slider = RangeSlider(start=0., end=3, value=(0, 3), name='Slider')
 
-    widget = slider._get_root(document, comm=comm)
+    widget = slider.get_root(document, comm=comm)
 
     assert isinstance(widget, slider._widget_type)
     assert widget.title == 'Slider'
@@ -73,7 +73,7 @@ def test_date_range_slider(document, comm):
                                   value=(datetime(2018, 9, 2), datetime(2018, 9, 4)),
                                   start=datetime(2018, 9, 1), end=datetime(2018, 9, 10))
 
-    widget = date_slider._get_root(document, comm=comm)
+    widget = date_slider.get_root(document, comm=comm)
 
     assert isinstance(widget, date_slider._widget_type)
     assert widget.title == 'DateRangeSlider'
@@ -96,7 +96,7 @@ def test_discrete_slider(document, comm):
     discrete_slider = DiscreteSlider(name='DiscreteSlider', value=1,
                                      options=[0.1, 1, 10, 100])
 
-    box = discrete_slider._get_root(document, comm=comm)
+    box = discrete_slider.get_root(document, comm=comm)
 
     label = box.children[0]
     widget = box.children[1]
@@ -121,7 +121,7 @@ def test_discrete_date_slider(document, comm):
     discrete_slider = DiscreteSlider(name='DiscreteSlider', value=dates['2016-01-02'],
                                      options=dates)
 
-    box = discrete_slider._get_root(document, comm=comm)
+    box = discrete_slider.get_root(document, comm=comm)
 
     assert isinstance(box, BkColumn)
 
@@ -148,7 +148,7 @@ def test_discrete_slider_options_dict(document, comm):
     discrete_slider = DiscreteSlider(name='DiscreteSlider', value=1,
                                      options=options)
 
-    box = discrete_slider._get_root(document, comm=comm)
+    box = discrete_slider.get_root(document, comm=comm)
 
     label = box.children[0]
     widget = box.children[1]

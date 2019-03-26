@@ -77,7 +77,7 @@ def save(panel, filename, title=None, resources=None, template=None,
     doc = Document()
     comm = Comm()
     with config.set(embed=embed):
-        model = panel._get_root(doc, comm)
+        model = panel.get_root(doc, comm)
         if embed:
             embed_state(panel, model, doc, max_states, max_opts,
                         embed_json, save_path, load_path)
