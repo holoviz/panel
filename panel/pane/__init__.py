@@ -16,6 +16,7 @@ from .markup import HTML, Markdown, Str # noqa
 from .plotly import Plotly # noqa
 from .plot import Bokeh, Matplotlib, RGGPlot, YT # noqa
 from .vega import Vega # noqa
+from .vtk import VTK # noqa
 
 
 def panel(obj, **kwargs):

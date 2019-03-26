@@ -31,6 +31,7 @@ def get_setup_version(reponame):
 
 class CustomDevelopCommand(develop):
     """Custom installation for development mode."""
+
     def run(self):
         try:
             from panel.compiler import build_custom_models
@@ -42,6 +43,7 @@ class CustomDevelopCommand(develop):
 
 class CustomInstallCommand(install):
     """Custom installation for install mode."""
+
     def run(self):
         try:
             from panel.compiler import build_custom_models
@@ -86,7 +88,8 @@ extras_require = {
         'hvplot',
         'plotly',
         'altair',
-        'vega_datasets'
+        'vega_datasets',
+        'vtk ==8.1.1'
     ],
     'recommended': _recommended,
     'doc': _recommended + [
@@ -116,10 +119,10 @@ setup_args = dict(
     description='A high level dashboarding library for python visualization libraries.',
     long_description=open('README.md').read() if os.path.isfile('README.md') else 'Consult README.md',
     long_description_content_type="text/markdown",
-    author= "PyViz developers",
-    author_email= "developers@pyviz.org",
-    maintainer= "PyViz",
-    maintainer_email= "developers@pyviz.org",
+    author="PyViz developers",
+    author_email="developers@pyviz.org",
+    maintainer="PyViz",
+    maintainer_email="developers@pyviz.org",
     platforms=['Windows', 'Mac OS X', 'Linux'],
     license='BSD',
     url='http://pyviz.org',
@@ -129,7 +132,7 @@ setup_args = dict(
     },
     packages=find_packages(),
     include_package_data=True,
-    classifiers = [
+    classifiers=[
         "License :: OSI Approved :: BSD License",
         "Development Status :: 5 - Production/Stable",
         "Programming Language :: Python :: 2.7",
@@ -151,11 +154,10 @@ setup_args = dict(
     tests_require=extras_require['tests']
 )
 
-
-if __name__=="__main__":
+if __name__ == "__main__":
 
     example_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                'panel','examples')
+                                'panel', 'examples')
 
     if 'develop' not in sys.argv and 'egg_info' not in sys.argv:
         pyct.build.examples(example_path, __file__, force=True)
