@@ -16,6 +16,7 @@ from six import string_types
 
 import param
 
+from bokeh.io import curdoc as _curdoc
 from param.parameterized import classlist
 
 from .io import state
@@ -457,7 +458,8 @@ class Param(PaneBase):
                     return cls._mapping[t](pobj)
                 return cls._mapping[t]
 
-    def get_root(self, doc=None, comm=None):"""
+    def get_root(self, doc=None, comm=None):
+        """
         Returns the root model and applies pre-processing hooks
 
         Arguments

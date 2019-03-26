@@ -8,6 +8,8 @@ from functools import partial
 
 import param
 
+from bokeh.io import curdoc as _curdoc
+
 from ..io import push, state
 from ..layout import Panel, Row
 from ..viewable import Viewable, Reactive, Layoutable
