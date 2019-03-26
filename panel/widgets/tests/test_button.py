@@ -6,7 +6,7 @@ from panel.widgets import Button, Toggle
 def test_button(document, comm):
     button = Button(name='Button')
 
-    widget = button._get_root(document, comm=comm)
+    widget = button.get_root(document, comm=comm)
 
     assert isinstance(widget, button._widget_type)
     assert widget.clicks == 0
@@ -20,7 +20,7 @@ def test_button(document, comm):
 def test_toggle(document, comm):
     toggle = Toggle(name='Toggle', value=True)
 
-    widget = toggle._get_root(document, comm=comm)
+    widget = toggle.get_root(document, comm=comm)
 
     assert isinstance(widget, toggle._widget_type)
     assert widget.active == True

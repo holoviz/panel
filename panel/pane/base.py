@@ -8,6 +8,8 @@ from functools import partial
 
 import param
 
+from bokeh.io import curdoc as _curdoc
+
 from ..io import push, state
 from ..layout import Panel, Row
 from ..viewable import Viewable, Reactive, Layoutable
@@ -134,20 +136,6 @@ class PaneBase(Reactive):
         raise NotImplementedError
 
     #----------------------------------------------------------------
-    # Model API
-    #----------------------------------------------------------------
-
-    def _get_root(self, doc, comm=None):
-        if self._updates:
-            root = self._get_model(doc, comm=comm)
-        else:
-            root = self.layout._get_model(doc, comm=comm)
-        self._preprocess(root)
-        ref = root.ref['id']
-        state._views[ref] = (self, root, doc, comm)
-        return root
-
-    #----------------------------------------------------------------
     # Public API
     #----------------------------------------------------------------
 
@@ -160,6 +148,31 @@ class PaneBase(Reactive):
         depending on the object being rendered.
         """
         return None
+
+    def get_root(self, doc=None, comm=None):
+        """
+        Returns the root model and applies pre-processing hooks
+
+        Arguments
+        ---------
+        doc: bokeh.Document
+          Bokeh document the bokeh model will be attached to.
+        comm: pyviz_comms.Comm
+          Optional pyviz_comms when working in notebook
+
+        Returns
+        -------
+        Returns the bokeh model corresponding to this panel object
+        """
+        doc = doc or _curdoc()
+        if self._updates:
+            root = self._get_model(doc, comm=comm)
+        else:
+            root = self.layout._get_model(doc, comm=comm)
+        self._preprocess(root)
+        ref = root.ref['id']
+        state._views[ref] = (self, root, doc, comm)
+        return root
 
     @classmethod
     def get_pane_type(cls, obj):

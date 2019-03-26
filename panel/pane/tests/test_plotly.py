@@ -40,7 +40,7 @@ def test_plotly_pane_single_trace(document, comm):
     pane = Pane({'data': [trace], 'layout': {'width': 350}})
 
     # Create pane
-    model = pane._get_root(document, comm=comm)
+    model = pane.get_root(document, comm=comm)
     assert isinstance(model, PlotlyPlot)
     assert pane._models[model.ref['id']][0] is model
     assert len(model.data) == 1
@@ -74,7 +74,7 @@ def test_plotly_pane_numpy_to_cds_traces(document, comm):
     pane = Pane({'data': [trace], 'layout': {'width': 350}})
 
     # Create pane
-    model = pane._get_root(document, comm=comm)
+    model = pane.get_root(document, comm=comm)
     assert isinstance(model, PlotlyPlot)
     assert len(model.data) == 1
     assert model.data[0]['type'] == 'scatter'

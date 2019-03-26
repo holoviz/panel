@@ -17,5 +17,5 @@ def test_pane_repr(document, comm):
                                   Plotly, Vega])
 def test_pane_layout_properties(pane, document, comm):
     p = pane()
-    model = p._get_root(document, comm)
+    model = p.get_root(document, comm)
     check_layoutable_properties(p, model)

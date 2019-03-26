@@ -17,7 +17,7 @@ def test_bokeh_pane(document, comm):
     pane = Pane(div)
 
     # Create pane
-    row = pane._get_root(document, comm=comm)
+    row = pane.get_root(document, comm=comm)
     assert isinstance(row, BkRow)
     assert len(row.children) == 1
     model = row.children[0]
@@ -46,7 +46,7 @@ def test_matplotlib_pane(document, comm):
     pane = Pane(mpl_figure())
 
     # Create pane
-    model = pane._get_root(document, comm=comm)
+    model = pane.get_root(document, comm=comm)
     assert '<img' in model.text
     text = model.text
     assert pane._models[model.ref['id']][0] is model

@@ -14,7 +14,7 @@ def test_svg_pane(document, comm):
     pane = SVG(rect)
 
     # Create pane
-    model = pane._get_root(document, comm=comm)
+    model = pane.get_root(document, comm=comm)
     assert pane._models[model.ref['id']][0] is model
     assert model.text.startswith('<img')
     assert b64encode(rect.encode('utf-8')).decode('utf-8') in model.text

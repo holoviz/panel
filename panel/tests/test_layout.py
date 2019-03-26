@@ -28,7 +28,7 @@ def assert_tab_is_similar(tab1, tab2):
 @pytest.mark.parametrize('layout', [Column, Row, Tabs, Spacer])
 def test_layout_properties(layout, document, comm):
     l = layout()
-    model = l._get_root(document, comm)
+    model = l.get_root(document, comm)
     check_layoutable_properties(l, model)
 
 
@@ -36,7 +36,7 @@ def test_layout_properties(layout, document, comm):
 def test_layout_model_cache_cleanup(layout, document, comm):
     l = layout()
 
-    model = l._get_root(document, comm)
+    model = l.get_root(document, comm)
 
     assert model.ref['id'] in l._models
     assert l._models[model.ref['id']] == (model, None)
@@ -99,12 +99,12 @@ def test_layout_select_by_function(panel):
 
 
 @pytest.mark.parametrize(['panel', 'model_type'], [(Column, BkColumn), (Row, BkRow)])
-def test_layout_get_root(panel, model_type, document, comm):
+def test_layoutget_root(panel, model_type, document, comm):
     div1 = Div()
     div2 = Div()
     layout = panel(div1, div2)
 
-    model = layout._get_root(document, comm=comm)
+    model = layout.get_root(document, comm=comm)
 
     assert isinstance(model, model_type)
     assert model.children == [div1, div2]
@@ -116,7 +116,7 @@ def test_layout_reverse(panel, document, comm):
     div2 = Div()
     layout = panel(div1, div2)
 
-    model = layout._get_root(document, comm=comm)
+    model = layout.get_root(document, comm=comm)
 
     layout.reverse()
     assert model.children == [div2, div1]
@@ -128,7 +128,7 @@ def test_layout_append(panel, document, comm):
     div2 = Div()
     layout = panel(div1, div2)
 
-    model = layout._get_root(document, comm=comm)
+    model = layout.get_root(document, comm=comm)
 
     div3 = Div()
     layout.append(div3)
@@ -141,7 +141,7 @@ def test_layout_extend(panel, document, comm):
     div2 = Div()
     layout = panel(div1, div2)
 
-    model = layout._get_root(document, comm=comm)
+    model = layout.get_root(document, comm=comm)
 
     div3 = Div()
     div4 = Div()
@@ -155,7 +155,7 @@ def test_layout_insert(panel, document, comm):
     div2 = Div()
     layout = panel(div1, div2)
 
-    model = layout._get_root(document, comm=comm)
+    model = layout.get_root(document, comm=comm)
 
     div3 = Div()
     layout.insert(1, div3)
@@ -169,7 +169,7 @@ def test_layout_setitem(panel, document, comm):
     layout = panel(div1, div2)
     p1, p2 = layout.objects
 
-    model = layout._get_root(document, comm=comm)
+    model = layout.get_root(document, comm=comm)
 
     assert p1._models[model.ref['id']][0] is model.children[0]
     div3 = Div()
@@ -184,7 +184,7 @@ def test_layout_setitem_out_of_bounds(panel, document, comm):
     div2 = Div()
     layout = panel(div1, div2)
 
-    layout._get_root(document, comm=comm)
+    layout.get_root(document, comm=comm)
     div3 = Div()
     with pytest.raises(IndexError):
         layout[2] = div3
@@ -197,7 +197,7 @@ def test_layout_setitem_replace_all(panel, document, comm):
     layout = panel(div1, div2)
     p1, p2 = layout.objects
 
-    model = layout._get_root(document, comm=comm)
+    model = layout.get_root(document, comm=comm)
 
     assert p1._models[model.ref['id']][0] is model.children[0]
     div3 = Div()
@@ -213,7 +213,7 @@ def test_layout_setitem_replace_all_error(panel, document, comm):
     div1 = Div()
     div2 = Div()
     layout = panel(div1, div2)
-    layout._get_root(document, comm=comm)
+    layout.get_root(document, comm=comm)
 
     div3 = Div()
     with pytest.raises(IndexError):
@@ -228,7 +228,7 @@ def test_layout_setitem_replace_slice(panel, document, comm):
     layout = panel(div1, div2, div3)
     p1, p2, p3 = layout.objects
 
-    model = layout._get_root(document, comm=comm)
+    model = layout.get_root(document, comm=comm)
 
     assert p1._models[model.ref['id']][0] is model.children[0]
     div3 = Div()
@@ -245,7 +245,7 @@ def test_layout_setitem_replace_slice_error(panel, document, comm):
     div2 = Div()
     div3 = Div()
     layout = panel(div1, div2, div3)
-    layout._get_root(document, comm=comm)
+    layout.get_root(document, comm=comm)
 
     div3 = Div()
     with pytest.raises(IndexError):
@@ -258,7 +258,7 @@ def test_layout_setitem_replace_slice_out_of_bounds(panel, document, comm):
     div2 = Div()
     div3 = Div()
     layout = panel(div1, div2, div3)
-    layout._get_root(document, comm=comm)
+    layout.get_root(document, comm=comm)
 
     div3 = Div()
     with pytest.raises(IndexError):
@@ -272,7 +272,7 @@ def test_layout_pop(panel, document, comm):
     layout = panel(div1, div2)
     p1, p2 = layout.objects
 
-    model = layout._get_root(document, comm=comm)
+    model = layout.get_root(document, comm=comm)
 
     assert p1._models[model.ref['id']][0] is model.children[0]
     layout.pop(0)
@@ -287,7 +287,7 @@ def test_layout_remove(panel, document, comm):
     layout = panel(div1, div2)
     p1, p2 = layout.objects
 
-    model = layout._get_root(document, comm=comm)
+    model = layout.get_root(document, comm=comm)
 
     assert p1._models[model.ref['id']][0] is model.children[0]
     layout.remove(p1)
@@ -302,7 +302,7 @@ def test_layout_clear(panel, document, comm):
     layout = panel(div1, div2)
     p1, p2 = layout.objects
 
-    model = layout._get_root(document, comm=comm)
+    model = layout.get_root(document, comm=comm)
 
     assert p1._models[model.ref['id']][0] is model.children[0]
     layout.clear()
@@ -313,7 +313,7 @@ def test_layout_clear(panel, document, comm):
 def test_tabs_basic_constructor(document, comm):
     tabs = Tabs('plain', 'text')
 
-    model = tabs._get_root(document, comm=comm)
+    model = tabs.get_root(document, comm=comm)
 
     assert isinstance(model, BkTabs)
     assert len(model.tabs) == 2
@@ -330,7 +330,7 @@ def test_tabs_constructor(document, comm):
     tabs = Tabs(('Div1', div1), ('Div2', div2))
     p1, p2 = tabs.objects
 
-    model = tabs._get_root(document, comm=comm)
+    model = tabs.get_root(document, comm=comm)
 
     assert isinstance(model, BkTabs)
     assert len(model.tabs) == 2
@@ -349,7 +349,7 @@ def test_tabs_implicit_constructor(document, comm):
     p2 = Pane(div2, name='Div2')
     tabs = Tabs(p1, p2)
 
-    model = tabs._get_root(document, comm=comm)
+    model = tabs.get_root(document, comm=comm)
 
     assert isinstance(model, BkTabs)
     assert len(model.tabs) == 2
@@ -368,7 +368,7 @@ def test_tabs_constructor_with_named_objects(document, comm):
     p2 = Pane(div2, name='Div2')
     tabs = Tabs(('Tab1', p1), ('Tab2', p2))
 
-    model = tabs._get_root(document, comm=comm)
+    model = tabs.get_root(document, comm=comm)
 
     assert isinstance(model, BkTabs)
     assert len(model.tabs) == 2
@@ -389,7 +389,7 @@ def test_tabs_set_panes(document, comm):
     p2 = Pane(div2, name='Div2')
     tabs = Tabs(p1, p2)
 
-    model = tabs._get_root(document, comm=comm)
+    model = tabs.get_root(document, comm=comm)
 
     div3 = Div()
     p3 = Pane(div3, name='Div3')
@@ -414,7 +414,7 @@ def test_tabs_reverse(document, comm):
     p2 = Pane(div2, name='Div2')
     tabs = Tabs(p1, p2)
 
-    model = tabs._get_root(document, comm=comm)
+    model = tabs.get_root(document, comm=comm)
 
     tabs.reverse()
     tab1, tab2 = model.tabs
@@ -425,7 +425,7 @@ def test_tabs_reverse(document, comm):
 
 
 def test_tabs_append(document, comm, tabs):
-    model = tabs._get_root(document, comm=comm)
+    model = tabs.get_root(document, comm=comm)
     tab1_before, tab2_before = model.tabs
 
     div3 = Div()
@@ -441,7 +441,7 @@ def test_tabs_append(document, comm, tabs):
 def test_empty_tabs_append(document, comm):
     tabs = Tabs()
 
-    model = tabs._get_root(document, comm=comm)
+    model = tabs.get_root(document, comm=comm)
 
     div1 = Div()
     tabs.append(('test title', div1))
@@ -450,7 +450,7 @@ def test_empty_tabs_append(document, comm):
 
 
 def test_tabs_append_uses_object_name(document, comm, tabs):
-    model = tabs._get_root(document, comm=comm)
+    model = tabs.get_root(document, comm=comm)
     tab1_before, tab2_before = model.tabs
 
     div3 = Div()
@@ -466,7 +466,7 @@ def test_tabs_append_uses_object_name(document, comm, tabs):
 
 
 def test_tabs_append_with_tuple_and_unnamed_contents(document, comm, tabs):
-    model = tabs._get_root(document, comm=comm)
+    model = tabs.get_root(document, comm=comm)
     tab1_before, tab2_before = model.tabs
 
     div3 = Div()
@@ -481,7 +481,7 @@ def test_tabs_append_with_tuple_and_unnamed_contents(document, comm, tabs):
 
 
 def test_tabs_append_with_tuple_and_named_contents(document, comm, tabs):
-    model = tabs._get_root(document, comm=comm)
+    model = tabs.get_root(document, comm=comm)
     tab1_before, tab2_before = model.tabs
 
     div3 = Div()
@@ -498,7 +498,7 @@ def test_tabs_append_with_tuple_and_named_contents(document, comm, tabs):
 
 
 def test_tabs_extend(document, comm, tabs):
-    model = tabs._get_root(document, comm=comm)
+    model = tabs.get_root(document, comm=comm)
     tab1_before, tab2_before = model.tabs
 
     div3, div4 = Div(), Div()
@@ -513,7 +513,7 @@ def test_tabs_extend(document, comm, tabs):
 
 
 def test_tabs_extend_uses_object_name(document, comm, tabs):
-    model = tabs._get_root(document, comm=comm)
+    model = tabs.get_root(document, comm=comm)
     tab1_before, tab2_before = model.tabs
 
     div3, div4 = Div(), Div()
@@ -531,7 +531,7 @@ def test_tabs_extend_uses_object_name(document, comm, tabs):
 
 
 def test_tabs_extend_with_tuple_and_unnamed_contents(document, comm, tabs):
-    model = tabs._get_root(document, comm=comm)
+    model = tabs.get_root(document, comm=comm)
     tab1_before, tab2_before = model.tabs
 
     div3, div4 = Div(), Div()
@@ -548,7 +548,7 @@ def test_tabs_extend_with_tuple_and_unnamed_contents(document, comm, tabs):
 
 
 def test_tabs_extend_with_tuple_and_named_contents(document, comm, tabs):
-    model = tabs._get_root(document, comm=comm)
+    model = tabs.get_root(document, comm=comm)
     tab1_before, tab2_before = model.tabs
 
     div3, div4 = Div(), Div()
@@ -568,7 +568,7 @@ def test_tabs_extend_with_tuple_and_named_contents(document, comm, tabs):
 
 
 def test_tabs_insert(document, comm, tabs):
-    model = tabs._get_root(document, comm=comm)
+    model = tabs.get_root(document, comm=comm)
     tab1_before, tab2_before = model.tabs
 
     div3 = Div()
@@ -582,7 +582,7 @@ def test_tabs_insert(document, comm, tabs):
 
 
 def test_tabs_insert_uses_object_name(document, comm, tabs):
-    model = tabs._get_root(document, comm=comm)
+    model = tabs.get_root(document, comm=comm)
     tab1_before, tab2_before = model.tabs
 
     div3 = Div()
@@ -598,7 +598,7 @@ def test_tabs_insert_uses_object_name(document, comm, tabs):
 
 
 def test_tabs_insert_with_tuple_and_unnamed_contents(document, comm, tabs):
-    model = tabs._get_root(document, comm=comm)
+    model = tabs.get_root(document, comm=comm)
     tab1_before, tab2_before = model.tabs
 
     div3 = Div()
@@ -612,7 +612,7 @@ def test_tabs_insert_with_tuple_and_unnamed_contents(document, comm, tabs):
 
 
 def test_tabs_insert_with_tuple_and_named_contents(document, comm, tabs):
-    model = tabs._get_root(document, comm=comm)
+    model = tabs.get_root(document, comm=comm)
     tab1_before, tab2_before = model.tabs
 
     div3 = Div()
@@ -633,7 +633,7 @@ def test_tabs_setitem(document, comm):
     tabs = Tabs(div1, div2)
     p1, p2 = tabs.objects
 
-    model = tabs._get_root(document, comm=comm)
+    model = tabs.get_root(document, comm=comm)
 
     tab1, tab2 = model.tabs
     assert p1._models[model.ref['id']][0] is tab1.child
@@ -651,7 +651,7 @@ def test_tabs_setitem_out_of_bounds(document, comm):
     div2 = Div()
     layout = Tabs(div1, div2)
 
-    layout._get_root(document, comm=comm)
+    layout.get_root(document, comm=comm)
     div3 = Div()
     with pytest.raises(IndexError):
         layout[2] = div3
@@ -663,7 +663,7 @@ def test_tabs_setitem_replace_all(document, comm):
     layout = Tabs(div1, div2)
     p1, p2 = layout.objects
 
-    model = layout._get_root(document, comm=comm)
+    model = layout.get_root(document, comm=comm)
 
     assert p1._models[model.ref['id']][0] is model.tabs[0].child
     div3 = Div()
@@ -682,7 +682,7 @@ def test_tabs_setitem_replace_all_error(document, comm):
     div1 = Div()
     div2 = Div()
     layout = Tabs(div1, div2)
-    layout._get_root(document, comm=comm)
+    layout.get_root(document, comm=comm)
 
     div3 = Div()
     with pytest.raises(IndexError):
@@ -696,7 +696,7 @@ def test_tabs_setitem_replace_slice(document, comm):
     layout = Tabs(('A', div1), ('B', div2), ('C', div3))
     p1, p2, p3 = layout.objects
 
-    model = layout._get_root(document, comm=comm)
+    model = layout.get_root(document, comm=comm)
 
     assert p1._models[model.ref['id']][0] is model.tabs[0].child
     div3 = Div()
@@ -718,7 +718,7 @@ def test_tabs_setitem_replace_slice_error(document, comm):
     div2 = Div()
     div3 = Div()
     layout = Tabs(div1, div2, div3)
-    layout._get_root(document, comm=comm)
+    layout.get_root(document, comm=comm)
 
     div3 = Div()
     with pytest.raises(IndexError):
@@ -730,7 +730,7 @@ def test_tabs_setitem_replace_slice_out_of_bounds(document, comm):
     div2 = Div()
     div3 = Div()
     layout = Tabs(div1, div2, div3)
-    layout._get_root(document, comm=comm)
+    layout.get_root(document, comm=comm)
 
     div3 = Div()
     with pytest.raises(IndexError):
@@ -743,7 +743,7 @@ def test_tabs_pop(document, comm):
     tabs = Tabs(div1, div2)
     p1, p2 = tabs.objects
 
-    model = tabs._get_root(document, comm=comm)
+    model = tabs.get_root(document, comm=comm)
 
     tab1 = model.tabs[0]
     assert p1._models[model.ref['id']][0] is tab1.child
@@ -760,7 +760,7 @@ def test_tabs_remove(document, comm):
     tabs = Tabs(div1, div2)
     p1, p2 = tabs.objects
 
-    model = tabs._get_root(document, comm=comm)
+    model = tabs.get_root(document, comm=comm)
 
     tab1 = model.tabs[0]
     assert p1._models[model.ref['id']][0] is tab1.child
@@ -777,7 +777,7 @@ def test_tabs_clear(document, comm):
     tabs = Tabs(div1, div2)
     p1, p2 = tabs.objects
 
-    model = tabs._get_root(document, comm=comm)
+    model = tabs.get_root(document, comm=comm)
 
     tabs.clear()
     assert tabs._names == []
@@ -788,7 +788,7 @@ def test_tabs_clear(document, comm):
 def test_spacer(document, comm):
     spacer = Spacer(width=400, height=300)
 
-    model = spacer._get_root(document, comm=comm)
+    model = spacer.get_root(document, comm=comm)
 
     assert isinstance(model, spacer._bokeh_model)
     assert model.width == 400
@@ -813,7 +813,7 @@ def test_layout_with_param_setitem(document, comm):
             self._layout[-1] = self.select
 
     test = TestClass()
-    model = test._layout._get_root(document, comm=comm)
+    model = test._layout.get_root(document, comm=comm)
     test.select = 1
     assert model.children[1].text == '<pre>1</pre>'
 

@@ -16,6 +16,7 @@ from six import string_types
 
 import param
 
+from bokeh.io import curdoc as _curdoc
 from param.parameterized import classlist
 
 from .io import state
@@ -429,13 +430,6 @@ class Param(PaneBase):
         widgets += [(pname, self.widget(pname)) for pname in ordered_params]
         return OrderedDict(widgets)
 
-    def _get_root(self, doc, comm=None):
-        root = self.layout._get_root(doc, comm)
-        ref = root.ref['id']
-        self._models[ref] = (root, None)
-        state._views[ref] = (self, root, doc, comm)
-        return root
-
     def _get_model(self, doc, root=None, parent=None, comm=None):
         model = self.layout._get_model(doc, root, parent, comm)
         self._models[root.ref['id']] = (model, parent)
@@ -463,6 +457,28 @@ class Param(PaneBase):
                 if isinstance(cls._mapping[t], types.FunctionType):
                     return cls._mapping[t](pobj)
                 return cls._mapping[t]
+
+    def get_root(self, doc=None, comm=None):
+        """
+        Returns the root model and applies pre-processing hooks
+
+        Arguments
+        ---------
+        doc: bokeh.Document
+          Bokeh document the bokeh model will be attached to.
+        comm: pyviz_comms.Comm
+          Optional pyviz_comms when working in notebook
+
+        Returns
+        -------
+        Returns the bokeh model corresponding to this panel object
+        """
+        doc = doc or _curdoc()
+        root = self.layout.get_root(doc, comm)
+        ref = root.ref['id']
+        self._models[ref] = (root, None)
+        state._views[ref] = (self, root, doc, comm)
+        return root
 
 
 class ParamMethod(PaneBase):
@@ -555,7 +571,7 @@ class ParamMethod(PaneBase):
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         if root is None:
-            return self._get_root(doc, comm)
+            return self.get_root(doc, comm)
 
         ref = root.ref['id']
         if ref in self._models:

@@ -18,7 +18,7 @@ def test_pnwidget_hvplot_links(document, comm):
     size_widget.jslink(points1, value='glyph.size')
 
     row = Row(points1, size_widget)
-    model = row._get_root(document, comm=comm)
+    model = row.get_root(document, comm=comm)
     hv_views = row.select(HoloViews)
     widg_views = row.select(FloatSlider)
 
@@ -48,7 +48,7 @@ def test_bkwidget_hvplot_links(document, comm):
     GenericLink(bokeh_widget, points1, properties={'value': 'glyph.size'})
 
     row = Row(points1, bokeh_widget)
-    model = row._get_root(document, comm=comm)
+    model = row.get_root(document, comm=comm)
     hv_views = row.select(HoloViews)
 
     assert len(hv_views) == 1
@@ -76,7 +76,7 @@ def test_bkwidget_bkplot_links(document, comm):
     GenericLink(bokeh_widget, scatter, properties={'value': 'glyph.size'})
 
     row = Row(bokeh_fig, bokeh_widget)
-    row._get_root(document, comm=comm)
+    row.get_root(document, comm=comm)
 
     slider = bokeh_widget
 
@@ -99,7 +99,7 @@ def test_widget_bkplot_link(document, comm):
     widget.jslink(scatter.glyph, value='fill_color')
 
     row = Row(bokeh_fig, widget)
-    model = row._get_root(document, comm=comm)
+    model = row.get_root(document, comm=comm)
 
     link_customjs = model.children[1].js_property_callbacks['change:color'][-1]
     assert link_customjs.args['source'] is model.children[1]
@@ -125,7 +125,7 @@ def test_link_with_customcode(document, comm):
     row = Row(curve, range_widget)
 
     range_widget.value = (0.5, 0.7)
-    model = row._get_root(document, comm=comm)
+    model = row.get_root(document, comm=comm)
     hv_views = row.select(HoloViews)
     widg_views = row.select(RangeSlider)
 

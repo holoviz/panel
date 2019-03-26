@@ -34,7 +34,7 @@ def test_vega_pane(document, comm):
     pane = Pane(vega_example)
 
     # Create pane
-    model = pane._get_root(document, comm=comm)
+    model = pane.get_root(document, comm=comm)
     assert isinstance(model, VegaPlot)
 
     expected = dict(vega_example, data={})
@@ -81,7 +81,7 @@ def test_altair_pane(document, comm):
     pane = Pane(altair_example())
 
     # Create pane
-    model = pane._get_root(document, comm=comm)
+    model = pane.get_root(document, comm=comm)
     assert isinstance(model, VegaPlot)
 
     expected = dict(vega_example, data={})

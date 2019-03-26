@@ -33,7 +33,7 @@ def test_holoviews_pane_mpl_renderer(document, comm):
     pane = Pane(curve)
 
     # Create pane
-    row = pane._get_root(document, comm=comm)
+    row = pane.get_root(document, comm=comm)
     assert isinstance(row, BkRow)
     assert len(row.children) == 1
     model = row.children[0]
@@ -60,7 +60,7 @@ def test_holoviews_pane_switch_backend(document, comm):
     pane = Pane(curve)
 
     # Create pane
-    row = pane._get_root(document, comm=comm)
+    row = pane.get_root(document, comm=comm)
     assert isinstance(row, BkRow)
     assert len(row.children) == 1
     model = row.children[0]
@@ -84,7 +84,7 @@ def test_holoviews_pane_bokeh_renderer(document, comm):
     pane = Pane(curve)
 
     # Create pane
-    row = pane._get_root(document, comm=comm)
+    row = pane.get_root(document, comm=comm)
     assert isinstance(row, BkRow)
     assert len(row.children) == 1
     model = row.children[0]
@@ -115,7 +115,7 @@ def test_holoviews_pane_initialize_empty(document, comm):
     pane = HoloViews()
 
     # Create pane
-    row = pane._get_root(document, comm=comm)
+    row = pane.get_root(document, comm=comm)
 
     assert isinstance(row, BkRow)
     assert len(row.children) == 1
@@ -184,7 +184,7 @@ def test_holoviews_with_widgets(document, comm):
     hmap = hv.HoloMap({(i, chr(65+i)): hv.Curve([i]) for i in range(3)}, kdims=['X', 'Y'])
 
     hv_pane = HoloViews(hmap)
-    layout = hv_pane._get_root(document, comm)
+    layout = hv_pane.get_root(document, comm)
     model = layout.children[0]
     assert len(hv_pane.widget_box.objects) == 2
     assert hv_pane.widget_box.objects[0].name == 'X'
@@ -204,7 +204,7 @@ def test_holoviews_updates_widgets(document, comm):
     hmap = hv.HoloMap({(i, chr(65+i)): hv.Curve([i]) for i in range(3)}, kdims=['X', 'Y'])
 
     hv_pane = HoloViews(hmap)
-    layout = hv_pane._get_root(document, comm)
+    layout = hv_pane.get_root(document, comm)
 
     hv_pane.widgets = {'X': Select}
     assert isinstance(hv_pane.widget_box[0], Select)
@@ -220,7 +220,7 @@ def test_holoviews_widgets_update_plot(document, comm):
     hmap = hv.HoloMap({(i, chr(65+i)): hv.Curve([i]) for i in range(3)}, kdims=['X', 'Y'])
 
     hv_pane = HoloViews(hmap)
-    layout = hv_pane._get_root(document, comm)
+    layout = hv_pane.get_root(document, comm)
 
     cds = layout.children[0].select_one(ColumnDataSource)
     assert cds.data['y'] == np.array([0])
@@ -235,7 +235,7 @@ def test_holoviews_with_widgets_not_shown(document, comm):
 
     hv_pane = HoloViews(hmap, show_widgets=False)
     layout_obj = Column(hv_pane, hv_pane.widget_box)
-    layout = layout_obj._get_root(document, comm)
+    layout = layout_obj.get_root(document, comm)
     model = layout.children[0]
     assert len(hv_pane.widget_box.objects) == 2
     assert hv_pane.widget_box.objects[0].name == 'X'
@@ -323,7 +323,7 @@ def test_holoviews_link_across_panes(document, comm):
     RangeToolLink(c1, c2)
 
     layout = Row(c1, c2)
-    row = layout._get_root(document, comm=comm)
+    row = layout.get_root(document, comm=comm)
 
     assert len(row.children) == 2
     p1, p2 = row.children
@@ -347,7 +347,7 @@ def test_holoviews_link_after_adding_item(document, comm):
     RangeToolLink(c1, c2)
     
     layout = Row(c1)
-    row = layout._get_root(document, comm=comm)
+    row = layout.get_root(document, comm=comm)
     
     assert len(row.children) == 1
     p1, = row.children
@@ -376,7 +376,7 @@ def test_holoviews_link_within_pane(document, comm):
 
     pane = Pane(hv.Layout([c1, c2]))
     print(pane)
-    column = pane._get_root(document, comm=comm)
+    column = pane.get_root(document, comm=comm)
 
     assert len(column.children) == 1
     subcolumn = column.children[0]

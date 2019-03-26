@@ -17,7 +17,7 @@ def test_select(document, comm):
     opts = {'A': 'a', '1': 1}
     select = Select(options=opts, value=opts['1'], name='Select')
 
-    widget = select._get_root(document, comm=comm)
+    widget = select.get_root(document, comm=comm)
 
     assert isinstance(widget, select._widget_type)
     assert widget.title == 'Select'
@@ -39,7 +39,7 @@ def test_select_change_options(document, comm):
     opts = {'A': 'a', '1': 1}
     select = Select(options=opts, value=opts['1'], name='Select')
 
-    widget = select._get_root(document, comm=comm)
+    widget = select.get_root(document, comm=comm)
 
     select.options = {'A': 'a'}
     assert select.value == opts['A']
@@ -54,7 +54,7 @@ def test_select_non_hashable_options(document, comm):
     opts = {'A': np.array([1, 2, 3]), '1': np.array([3, 4, 5])}
     select = Select(options=opts, value=opts['1'], name='Select')
 
-    widget = select._get_root(document, comm=comm)
+    widget = select.get_root(document, comm=comm)
 
     select.value = opts['A']
     assert select.value is opts['A']
@@ -70,7 +70,7 @@ def test_select_mutables(document, comm):
     opts = OrderedDict([('A', [1,2,3]), ('B', [2,4,6]), ('C', dict(a=1,b=2))])
     select = Select(options=opts, value=opts['B'], name='Select')
 
-    widget = select._get_root(document, comm=comm)
+    widget = select.get_root(document, comm=comm)
 
     assert isinstance(widget, select._widget_type)
     assert widget.title == 'Select'
@@ -98,7 +98,7 @@ def test_select_change_options_on_watch(document, comm):
             select.options = OrderedDict([('D', 2), ('E', 'a')])
     select.param.watch(set_options, 'value')
 
-    model = select._get_root(document, comm=comm)
+    model = select.get_root(document, comm=comm)
 
     select.value = 1
     assert model.value == 'D'
@@ -109,7 +109,7 @@ def test_multi_select(document, comm):
     select = MultiSelect(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
                          value=[object, 1], name='Select')
 
-    widget = select._get_root(document, comm=comm)
+    widget = select.get_root(document, comm=comm)
 
     assert isinstance(widget, select._widget_type)
     assert widget.title == 'Select'
@@ -137,7 +137,7 @@ def test_multi_select_change_options(document, comm):
             select.options = OrderedDict([('D', 2), ('E', 'a')])
     select.param.watch(set_options, 'value')
 
-    model = select._get_root(document, comm=comm)
+    model = select.get_root(document, comm=comm)
 
     select.value = [1]
     assert model.value == []
@@ -173,7 +173,7 @@ def test_toggle_group_check(document, comm):
                                value=[1, object], name='CheckButtonGroup',
                                widget_type=widget_type, behavior='check')
 
-        widget = select._get_root(document, comm=comm)
+        widget = select.get_root(document, comm=comm)
 
         assert isinstance(widget, select._widget_type)
         assert widget.active == [1, 2]
@@ -202,7 +202,7 @@ def test_toggle_group_radio(document, comm):
                                value=1, name='RadioButtonGroup',
                                widget_type=widget_type, behavior='radio')
 
-        widget = select._get_root(document, comm=comm)
+        widget = select.get_root(document, comm=comm)
 
         assert isinstance(widget, select._widget_type)
         assert widget.active == 1

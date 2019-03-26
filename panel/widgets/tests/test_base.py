@@ -14,7 +14,7 @@ all_widgets = [w for w in param.concrete_descendents(Widget).values()
 @pytest.mark.parametrize('widget', all_widgets)
 def test_widget_layout_properties(widget, document, comm):
     w = widget()
-    model = w._get_root(document, comm)
+    model = w.get_root(document, comm)
     check_layoutable_properties(w, model)
 
 
@@ -22,7 +22,7 @@ def test_widget_layout_properties(widget, document, comm):
 def test_widget_disabled_properties(widget, document, comm):
     w = widget(disabled=True)
 
-    model = w._get_root(document, comm)
+    model = w.get_root(document, comm)
 
     assert model.disabled == True
     model.disabled = False
@@ -33,7 +33,7 @@ def test_widget_disabled_properties(widget, document, comm):
 def test_widget_model_cache_cleanup(widget, document, comm):
     w = widget()
 
-    model = w._get_root(document, comm)
+    model = w.get_root(document, comm)
 
     assert model.ref['id'] in w._models
     assert w._models[model.ref['id']] == (model, None)
@@ -48,7 +48,7 @@ def test_widget_triggers_events(document, comm):
     """
     text = TextInput(value='ABC', name='Text:')
 
-    widget = text._get_root(document, comm=comm)
+    widget = text.get_root(document, comm=comm)
     document.add_root(widget)
     document.hold()
 

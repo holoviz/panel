@@ -8,7 +8,7 @@ def test_discrete_player(document, comm):
     discrete_player = DiscretePlayer(name='DiscretePlayer', value=1,
                                      options=[0.1, 1, 10, 100])
 
-    widget = discrete_player._get_root(document, comm=comm)
+    widget = discrete_player.get_root(document, comm=comm)
 
     assert isinstance(widget, BkPlayer)
     assert widget.value == 1
