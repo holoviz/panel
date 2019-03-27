@@ -1,39 +1,46 @@
 import * as p from "core/properties"
+import {clone} from "core/util/object";
 import {HTMLBox, HTMLBoxView} from "models/layouts/html_box";
 import {div} from "core/dom";
 
 export class VTKPlotView extends HTMLBoxView {
   model: VTKPlot
   protected _vtk: any
-  protected _rendererEl: any
   protected _container: HTMLDivElement
-  protected _vtk_initialized: boolean
+  protected _rendererEl: any
+  protected _renderer: any
+  protected _camera: any
+  protected _setting: boolean = false
 
   initialize(): void {
     super.initialize()
-    const width = this.model.width ? "100%" : "300px"
-    const height = this.model.height ? "100%" : "300px"
     this._vtk = (window as any).vtk
     this._container = div({
       style: {
-        width,
-        height
+        width: "100%",
+        height: "100%"
       }
-    })
-    this._vtk_initialized = false
+    });
   }
 
-
-  after_layout() {
+  after_layout(): void {
     super.after_layout()
-    if (!this._vtk_initialized) {
-        this._rendererEl = this._vtk.Rendering.Misc.vtkFullScreenRenderWindow.newInstance({
-          rootContainer: this.el,
-          container: this._container
-        });
-        this._plot()
-        this._vtk_initialized = true
+    if (!this._rendererEl) {
+      this._rendererEl = this._vtk.Rendering.Misc.vtkFullScreenRenderWindow.newInstance({
+        rootContainer: this.el,
+        container: this._container
+      });
+      this._renderer = this._rendererEl.getRenderer()
+      this._camera = this._renderer.getActiveCamera()
+      this._plot()
+      this._camera.onModified(() => this._get_camera_state())
     }
+  }
+
+  connect_signals(): void {
+    super.connect_signals()
+    this.connect(this.model.properties.data.change, () => this._plot())
+    this.connect(this.model.properties.camera.change, () => this._set_camera_state())
   }
 
   render() {
@@ -41,20 +48,42 @@ export class VTKPlotView extends HTMLBoxView {
     this.el.appendChild(this._container)
   }
 
-  connect_signals(): void{
-    this.connect(this.model.properties.vtkjs.change, this._plot)
+  _get_camera_state(): void {
+    if (!this._setting) {
+      this._setting = true;
+      const state = clone(this._camera.get());
+      delete state.classHierarchy;
+      delete state.vtkObject;
+      delete state.vtkCamera;
+      delete state.viewPlaneNormal;
+      this.model.camera = state;
+      this.model.properties.camera.change.emit();
+      this._setting = false;
+    }
+  }
+
+  _set_camera_state(): void {
+    if (!this._setting) {
+      this._setting = true;
+      try {
+        this._camera.set(this.model.camera);
+      } finally {
+        this._setting = false;
+      }
+      this._rendererEl.getRenderWindow().render();
+    }
   }
 
   _plot(): void{
     if (!this.model.append) {
       this._delete_all_actors()
     }
-    if (this.model.vtkjs == null) {
+    if (!this.model.data) {
       this._rendererEl.getRenderWindow().render()
       return
     }
     const dataAccessHelper = this._vtk.IO.Core.DataAccessHelper.get('zip', {
-      zipContent: atob(this.model.vtkjs),
+      zipContent: atob(this.model.data),
       callback: (_zip: any) => {
         const sceneImporter = this._vtk.IO.Core.vtkHttpSceneLoader.newInstance({
           renderer: this._rendererEl.getRenderer(),
@@ -69,18 +98,17 @@ export class VTKPlotView extends HTMLBoxView {
   }
 
   _delete_all_actors(): void{
-    const renderer = this._rendererEl.getRenderer()
-    renderer.getActors().map((actor: unknown) => renderer.removeActor(actor))
+    this._renderer.getActors().map((actor: unknown) => this._renderer.removeActor(actor))
   }
-
 }
 
 
 export namespace VTKPlot {
   export type Attrs = p.AttrsOf<Props>
   export type Props = HTMLBox.Props & {
-    vtkjs: p.Property<string>
+    data: p.Property<string>
     append: p.Property<boolean>
+    camera: p.Property<any>
   }
 }
 
@@ -98,9 +126,15 @@ export class VTKPlot extends HTMLBox {
     this.prototype.default_view = VTKPlotView
 
     this.define<VTKPlot.Props>({
-      vtkjs:         [p.String        ],
-      append:        [p.Boolean, false],
+      data:   [ p.String         ],
+      append: [ p.Boolean, false ],
+      camera: [ p.Any            ]
     })
+
+    this.override({
+      height: 300,
+      width: 300
+    });
   }
 }
 VTKPlot.initClass()
