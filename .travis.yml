@@ -19,6 +19,7 @@ env:
     - LABELS_DEV="--label dev"
     - LABELS_REL="--label dev --label main"
     - PKG_TEST_PYTHON="--test-python=py36"
+    - DISPLAY=":99.0"
 
 stages:
   - test
