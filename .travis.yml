@@ -64,8 +64,6 @@ jobs:
 
     - <<: *conda_default
       env: DESC="py2 tests" PYENV_VERSION=2.7
-      script:
-        - doit test_all_recommended
 
     ########## END-USER PACKAGES ##########
 
