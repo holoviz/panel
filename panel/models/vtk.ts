@@ -45,7 +45,8 @@ export class VTKPlotView extends HTMLBoxView {
 
   render() {
     super.render()
-    this.el.appendChild(this._container)
+    if (!(this._container === this.el.childNodes[0]))
+      this.el.appendChild(this._container)
   }
 
   _get_camera_state(): void {
