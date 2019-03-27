@@ -57,7 +57,10 @@ jobs:
         - doit develop_install -o recommended -o tests -o build $CHANS_DEV
         - python setup.py develop --no-deps
         - doit env_capture
-      script: xvfb-run doit test_all_recommended
+      before_script:
+        - "/sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -ac -screen 0 1280x1024x24"
+        - sleep 3
+      script: doit test_all_recommended
       after_failure:
         - sleep 10
       after_success: codecov
