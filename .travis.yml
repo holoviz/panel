@@ -9,6 +9,8 @@ os:
 services:
   - xvfb
 
+sudo: false
+
 env:
   global:
     - PYENV_VERSION=3.6
@@ -42,7 +44,6 @@ jobs:
       stage: test
       env: DESC="dev test_all"
       before_install:
-        - sudo apt-get install -y mesa-utils libgl1-mesa-glx
         # install doit/pyctdev and use to install miniconda...
         - pip install pyctdev && doit miniconda_install && pip uninstall -y doit pyctdev
         - export PATH="$HOME/miniconda/bin:$PATH" && hash -r
@@ -52,7 +53,6 @@ jobs:
       install:
         - doit env_create $CHANS_DEV --python=$PYENV_VERSION
         - source activate test-environment
-        - conda install -c conda-forge mesalib
         - doit develop_install -o recommended -o tests -o build $CHANS_DEV
         - python setup.py develop --no-deps
         - doit env_capture
