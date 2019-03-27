@@ -5,9 +5,11 @@ in flexible ways to build complex dashboards.
 from __future__ import absolute_import, division, unicode_literals
 
 import param
+import numpy as np
 
 from bokeh.models import (Column as BkColumn, Row as BkRow,
-                          Spacer as BkSpacer)
+                          Spacer as BkSpacer, GridBox as BkGridBox,
+                          Box as BkBox)
 from bokeh.models.widgets import Tabs as BkTabs, Panel as BkPanel
 
 from .util import param_name, param_reprs
@@ -19,7 +21,7 @@ class Panel(Reactive):
     Abstract baseclass for a layout of Viewables.
     """
 
-    objects = param.List(default=[], doc="""
+    objects = param.Parameter(default=[], doc="""
         The list of child objects that make up the layout.""")
 
     _bokeh_model = None
@@ -29,11 +31,6 @@ class Panel(Reactive):
     _rename = {'objects': 'children'}
 
     _linked_props = []
-
-    def __init__(self, *objects, **params):
-        from .pane import panel
-        objects = [panel(pane) for pane in objects]
-        super(Panel, self).__init__(objects=objects, **params)
 
     def __repr__(self, depth=0, max_depth=10):
         if depth > max_depth:
@@ -62,9 +59,6 @@ class Panel(Reactive):
         if self._rename['objects'] in msg:
             old = events['objects'].old
             msg[self._rename['objects']] = self._get_objects(model, old, doc, root, comm)
-            for pane in old:
-                if pane not in self.objects:
-                    pane._cleanup(root)
         model.update(**msg)
         self._preprocess(root) #preprocess links between new elements
 
@@ -113,6 +107,47 @@ class Panel(Reactive):
         super(Panel, self)._cleanup(root)
         for p in self.objects:
             p._cleanup(root)
+
+    #----------------------------------------------------------------
+    # Public API
+    #----------------------------------------------------------------
+
+    def select(self, selector=None):
+        """
+        Iterates over the Viewable and any potential children in the
+        applying the Selector.
+
+        Arguments
+        ---------
+        selector: type or callable or None
+          The selector allows selecting a subset of Viewables by
+          declaring a type or callable function to filter by.
+
+        Returns
+        -------
+        viewables: list(Viewable)
+        """
+        objects = super(Panel, self).select(selector)
+        for obj in self:
+            objects += obj.select(selector)
+        return objects
+
+
+
+class ListPanel(Panel):
+    """
+    An abstract baseclass for Panel objects with list-like children.
+    """
+
+    objects = param.List(default=[], doc="""
+        The list of child objects that make up the layout.""")
+
+    __abstract = True
+
+    def __init__(self, *objects, **params):
+        from .pane import panel
+        objects = [panel(pane) for pane in objects]
+        super(Panel, self).__init__(objects=objects, **params)
 
     #----------------------------------------------------------------
     # Public API
@@ -167,26 +202,6 @@ class Panel(Reactive):
             new_objects[i] = panel(pane)
         self.objects = new_objects
 
-    def select(self, selector=None):
-        """
-        Iterates over the Viewable and any potential children in the
-        applying the Selector.
-
-        Arguments
-        ---------
-        selector: type or callable or None
-          The selector allows selecting a subset of Viewables by
-          declaring a type or callable function to filter by.
-
-        Returns
-        -------
-        viewables: list(Viewable)
-        """
-        objects = super(Panel, self).select(selector)
-        for obj in self.objects:
-            objects += obj.select(selector)
-        return objects
-
     def append(self, pane):
         from .pane import panel
         new_objects = list(self)
@@ -226,7 +241,7 @@ class Panel(Reactive):
         self.objects = new_objects
 
 
-class Row(Panel):
+class Row(ListPanel):
     """
     Horizontal layout of Viewables.
     """
@@ -234,7 +249,7 @@ class Row(Panel):
     _bokeh_model = BkRow
 
 
-class Column(Panel):
+class Column(ListPanel):
     """
     Vertical layout of Viewables.
     """
@@ -242,7 +257,7 @@ class Column(Panel):
     _bokeh_model = BkColumn
 
 
-class Tabs(Panel):
+class Tabs(ListPanel):
     """
     Panel of Viewables to be displayed in separate tabs.
     """
@@ -424,6 +439,71 @@ class Tabs(Panel):
         self.objects = new_objects
 
 
+class GridSpec(Panel):
+
+    objects = param.Dict(default={}, doc="""
+        The dictionary of child objects that make up the grid.""")
+
+    width = param.Integer(default=600)
+
+    height = param.Integer(default=600)
+
+    _bokeh_model = BkGridBox
+    
+    @property
+    def _grid(self):
+        grid = np.zeros((self.nrows, self.ncols))
+        for (r, c, h, w) in self.objects:
+            grid[r:r+h, c:c+w] = 1
+        return grid
+
+    def _get_objects(self, model, old_objects, doc, root, comm=None):
+        children = []
+        for key, obj in self.objects.items():
+            model = obj._get_model(doc, root, model, comm)
+            if isinstance(model, BkBox) and len(model.children) == 1:
+                model.children[0].sizing_mode = 'stretch_both'
+            else:
+                model.sizing_mode = 'stretch_both'
+            children.append((model, *key))
+
+        new_objects = list(self.objects.values())
+        if isinstance(old_objects, dict):
+            old_objects = list(old_objects.values())
+        for o in old_objects:
+            if old not in new_objects:
+                old._cleanup(root)
+        return children
+
+    #----------------------------------------------------------------
+    # Public API
+    #----------------------------------------------------------------
+
+    @property
+    def nrows(self):
+        return max([(r+h-1) for (r, _, h, _) in self.objects]) if self.objects else 0
+
+    @property
+    def ncols(self):
+        return max([(c+w-1) for (_, c, _, w) in self.objects]) if self.objects else 0
+
+    def __iter__(self):
+        for obj in self.objects.values():
+            yield obj
+    
+    def __setitem__(self, index, obj):
+        from .pane.base import Pane
+        xidx, yidx = index
+        x0, x1 = (xidx.start, xidx.stop) if isinstance(xidx, slice) else (xidx, xidx+1)
+        y0, y1 = (yidx.start, yidx.stop) if isinstance(yidx, slice) else (yidx, yidx+1)
+        grid = self._grid
+        grid[y0:y1, x0:x1] += 1
+        if (grid>1).any():
+            raise IndexError('Specified region overlaps with region that was already occupied.')
+        self.objects[(y0, x0, y1-y0, x1-x0)] = Pane(obj)
+
+
+        
 class Spacer(Reactive):
     """Empty object used to control formatting (using positive or negative space)"""
 
@@ -452,4 +532,3 @@ class HSpacer(Spacer):
     """
 
     sizing_mode = param.Parameter(default='stretch_width', readonly=True)
-
