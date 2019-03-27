@@ -6,6 +6,9 @@ language: generic
 os:
   - linux
 
+services:
+  - xvfb
+
 sudo: false
 
 env:
