@@ -4,7 +4,7 @@ Defines custom VTKPlot bokeh model to render VTK objects.
 """
 import os
 
-from bokeh.core.properties import String, Bool, Dict, List, Float, Any, Override
+from bokeh.core.properties import String, Bool, Dict, Any, Override
 from bokeh.models import HTMLBox
 
 from ..compiler import CUSTOM_MODELS
@@ -34,7 +34,7 @@ class VTKPlot(HTMLBox):
     height = Override(default=300)
 
     width = Override(default=300)
-    
+
 
 
 CUSTOM_MODELS['panel.models.plots.VTKPlot'] = VTKPlot
