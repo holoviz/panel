@@ -57,7 +57,7 @@ jobs:
         - doit develop_install -o recommended -o tests -o build $CHANS_DEV
         - python setup.py develop --no-deps
         - doit env_capture
-      script: doit test_all_recommended
+      script: xvfb-run doit test_all_recommended
       after_failure:
         - sleep 10
       after_success: codecov
@@ -110,7 +110,7 @@ jobs:
         - doit develop_install $CHANS_DEV -o doc -o examples
         # note: will vastly simplified in a future version of nbsite
         - nbsite generate-rst --org pyviz --project-name panel
-        - nbsite build --what=html --output=builtdocs
+        - xvfb-run nbsite build --what=html --output=builtdocs
         - touch ./builtdocs/.nojekyll
       deploy:
         - provider: pages
