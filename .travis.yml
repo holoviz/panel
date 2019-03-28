@@ -111,7 +111,7 @@ jobs:
         - doit develop_install $CHANS_DEV -o doc -o examples
         # note: will vastly simplified in a future version of nbsite
         - nbsite generate-rst --org pyviz --project-name panel
-        - xvfb-run nbsite build --what=html --output=builtdocs
+        - nbsite build --what=html --output=builtdocs
         - touch ./builtdocs/.nojekyll
       deploy:
         - provider: pages
