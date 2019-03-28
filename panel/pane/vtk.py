@@ -25,9 +25,11 @@ except ImportError: # python 2
 
 from io import BytesIO
 from six import string_types
-from pyviz_comms import JupyterComm
+
+import param
 
 from bokeh.util.dependencies import import_optional
+from pyviz_comms import JupyterComm
 
 from .base import PaneBase
 
@@ -327,6 +329,8 @@ class VTK(PaneBase):
     VTK panes allow rendering VTK objects.
     """
 
+    camera = param.Dict(doc="""State of the rendered VTK camera.""")
+
     _updates = True
 
     @classmethod
@@ -349,6 +353,16 @@ class VTK(PaneBase):
         else:
             VTKPlot = getattr(sys.modules['panel.models.vtk'], 'VTKPlot')
 
+        data = self._get_vtkjs()
+        props = self._process_param_change(self._init_properties())
+        model = VTKPlot(data=data, **props)
+        if root is None:
+            root = model
+        self._link_props(model, ['data', 'camera'], doc, root, comm)
+        self._models[root.ref['id']] = (model, parent)
+        return model
+
+    def _get_vtkjs(self):
         if self.object is None:
             vtkjs = None
         elif isinstance(self.object, string_types) and self.object.endswith('.vtkjs'):
@@ -362,14 +376,12 @@ class VTK(PaneBase):
             vtkjs = base64.b64encode(self.object.read()).decode('utf-8')
         else:
             vtkjs = self._vtksjs_from_render_window(self.object)
-        model = VTKPlot(vtkjs=vtkjs, width=self.width, height=self.height)
-        if root is None:
-            root = model
-        self._models[root.ref['id']] = (model, parent)
-        return model
+        return vtkjs
+
+    def _update(self, model):
+        model.data = self._get_vtkjs()
 
     def _vtksjs_from_render_window(self, render_window):
-
         render_window.OffScreenRenderingOn() # to not pop a vtk windows
         render_window.Render()
         renderers = render_window.GetRenderers()
@@ -399,7 +411,6 @@ class VTK(PaneBase):
                         if dataObject.GetNumberOfBlocks() == 1:
                             dataset = dataObject.GetBlock(0)
                         else:
-                            print('Apply geometry filter')
                             gf = vtk.vtkCompositeDataGeometryFilter()
                             gf.SetInputData(dataObject)
                             gf.Update()
