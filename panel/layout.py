@@ -4,6 +4,8 @@ in flexible ways to build complex dashboards.
 """
 from __future__ import absolute_import, division, unicode_literals
 
+from collections import OrderedDict
+
 import param
 import numpy as np
 
@@ -450,6 +452,11 @@ class GridSpec(Panel):
 
     _bokeh_model = BkGridBox
 
+    def __init__(self, **params):
+        if 'objects' not in params:
+            params['objects'] = OrderedDict()
+        super(GridSpec, self).__init__(**params)
+
     def _init_properties(self):
         properties = super(GridSpec, self)._init_properties()
         if self.sizing_mode not in ['fixed', None]:
@@ -502,6 +509,16 @@ class GridSpec(Panel):
                 old._cleanup(root)
         return children
 
+    @property
+    def _xoffset(self):
+        min_xidx = [x0 for (_, x0, _, _) in self.objects if x0 is not None]
+        return min(min_xidx) if min_xidx and len(min_xidx) == len(self.objects) else 0
+
+    @property
+    def _yoffset(self):
+        min_yidx = [y0 for (y0, x0, _, _) in self.objects if y0 is not None]
+        return min(min_yidx) if min_yidx and len(min_yidx) == len(self.objects) else 0
+
     #----------------------------------------------------------------
     # Public API
     #----------------------------------------------------------------
@@ -519,6 +536,7 @@ class GridSpec(Panel):
     @property
     def grid(self):
         grid = np.zeros((self.nrows, self.ncols), dtype='uint8')
+        xoff, yoff = self._xoffset, self._yoffset
         for (y0, x0, y1, x1) in self.objects:
             x0 = 0 if x0 is None else x0
             x1 = self.ncols if x1 is None else x1
@@ -532,19 +550,55 @@ class GridSpec(Panel):
             yield obj
 
     def __getitem__(self, index):
-        yidx, xidx = index
+        if isinstance(index, tuple):
+            yidx, xidx = index
+        else:
+            yidx, xidx = index, slice(None)
+
         grid = np.full((self.nrows, self.ncols), None)
         items = self.objects.items()
         for i, ((y0, x0, y1, x1), obj) in enumerate(items):
-            x0 = 0 if x0 is None else x0
-            x1 = self.nrows if x1 is None else x1
-            y0 = 0 if y0 is None else y0
-            y1 = self.ncols if y1 is None else y1
-            grid[y0:y1, x0:x1] = obj
-        return grid[yidx, xidx]
+            l = 0 if x0 is None else x0
+            r = self.nrows if x1 is None else x1
+            t = 0 if y0 is None else y0
+            b = self.ncols if y1 is None else y1
+            for y in range(t, b):
+                for x in range(l, r):
+                    grid[y, x] = {((y0, x0, y1, x1), obj)}
+        subgrid = grid[yidx, xidx]
+        if isinstance(subgrid, np.ndarray):
+            params = dict(self.get_param_values())
+            params['objects'] = OrderedDict([list(o)[0] for o in subgrid.flatten()])
+            gspec = GridSpec(**params)
+            xoff, yoff = gspec._xoffset, gspec._yoffset
+            adjusted = []
+            for (y0, x0, y1, x1), obj in gspec.objects.items():
+                if y0 is not None: y0 -= yoff
+                if y1 is not None: y1 -= yoff
+                if x0 is not None: x0 -= xoff
+                if x1 is not None: x1 -= xoff
+                if ((y0, x0, y1, x1), obj) not in adjusted:
+                    adjusted.append(((y0, x0, y1, x1), obj))
+            gspec.objects = OrderedDict(adjusted)
+            width_scale = gspec.ncols/float(self.ncols)
+            height_scale = gspec.nrows/float(self.nrows)
+            if gspec.width:
+                gspec.width = int(gspec.width * width_scale)
+            if gspec.height:
+                gspec.height = int(gspec.height * height_scale)
+            if gspec.max_width:
+                gspec.max_width = int(gspec.max_width * width_scale)
+            if gspec.max_height:
+                gspec.max_height = int(gspec.max_height * height_scale)
+            return gspec
+        else:
+            return list(subgrid)[0][1]
 
     def __setitem__(self, index, obj):
         from .pane.base import Pane
+        if not isinstance(index, tuple):
+            raise IndexError('Must supply a 2D index for GridSpec assignment.')
+
         yidx, xidx = index
         if isinstance(xidx, slice):
             x0, x1 = (xidx.start, xidx.stop)
