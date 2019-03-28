@@ -89,7 +89,8 @@ extras_require = {
         'plotly',
         'altair',
         'vega_datasets',
-        'vtk ==8.1.1'
+        'vtk ==8.1.1',
+        'mesalib'
     ],
     'recommended': _recommended,
     'doc': _recommended + [
