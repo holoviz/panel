@@ -536,7 +536,6 @@ class GridSpec(Panel):
     @property
     def grid(self):
         grid = np.zeros((self.nrows, self.ncols), dtype='uint8')
-        xoff, yoff = self._xoffset, self._yoffset
         for (y0, x0, y1, x1) in self.objects:
             x0 = 0 if x0 is None else x0
             x1 = self.ncols if x1 is None else x1
