@@ -39,8 +39,13 @@ class DivPaneBase(PaneBase):
     _bokeh_model = _BkDiv
 
     def _get_properties(self):
-        return {p : getattr(self, p) for p in list(Layoutable.param) + ['style']
-                if getattr(self, p) is not None}
+        props = {p : getattr(self, p) for p in list(Layoutable.param) + ['style']
+                 if getattr(self, p) is not None}
+        if self.sizing_mode not in ['fixed', None]:
+            if 'style' not in props:
+                props['style'] = {}
+            props['style'].update(width='100%', height='100%')
+        return props
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         model = self._bokeh_model(**self._get_properties())

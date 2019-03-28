@@ -4,10 +4,14 @@ in flexible ways to build complex dashboards.
 """
 from __future__ import absolute_import, division, unicode_literals
 
+from collections import OrderedDict
+
 import param
+import numpy as np
 
 from bokeh.models import (Column as BkColumn, Row as BkRow,
-                          Spacer as BkSpacer)
+                          Spacer as BkSpacer, GridBox as BkGridBox,
+                          Box as BkBox, Markup as BkMarkup)
 from bokeh.models.widgets import Tabs as BkTabs, Panel as BkPanel
 
 from .util import param_name, param_reprs
@@ -19,7 +23,7 @@ class Panel(Reactive):
     Abstract baseclass for a layout of Viewables.
     """
 
-    objects = param.List(default=[], doc="""
+    objects = param.Parameter(default=[], doc="""
         The list of child objects that make up the layout.""")
 
     _bokeh_model = None
@@ -29,11 +33,6 @@ class Panel(Reactive):
     _rename = {'objects': 'children'}
 
     _linked_props = []
-
-    def __init__(self, *objects, **params):
-        from .pane import panel
-        objects = [panel(pane) for pane in objects]
-        super(Panel, self).__init__(objects=objects, **params)
 
     def __repr__(self, depth=0, max_depth=10):
         if depth > max_depth:
@@ -62,9 +61,6 @@ class Panel(Reactive):
         if self._rename['objects'] in msg:
             old = events['objects'].old
             msg[self._rename['objects']] = self._get_objects(model, old, doc, root, comm)
-            for pane in old:
-                if pane not in self.objects:
-                    pane._cleanup(root)
         model.update(**msg)
         self._preprocess(root) #preprocess links between new elements
 
@@ -113,6 +109,47 @@ class Panel(Reactive):
         super(Panel, self)._cleanup(root)
         for p in self.objects:
             p._cleanup(root)
+
+    #----------------------------------------------------------------
+    # Public API
+    #----------------------------------------------------------------
+
+    def select(self, selector=None):
+        """
+        Iterates over the Viewable and any potential children in the
+        applying the Selector.
+
+        Arguments
+        ---------
+        selector: type or callable or None
+          The selector allows selecting a subset of Viewables by
+          declaring a type or callable function to filter by.
+
+        Returns
+        -------
+        viewables: list(Viewable)
+        """
+        objects = super(Panel, self).select(selector)
+        for obj in self:
+            objects += obj.select(selector)
+        return objects
+
+
+
+class ListPanel(Panel):
+    """
+    An abstract baseclass for Panel objects with list-like children.
+    """
+
+    objects = param.List(default=[], doc="""
+        The list of child objects that make up the layout.""")
+
+    __abstract = True
+
+    def __init__(self, *objects, **params):
+        from .pane import panel
+        objects = [panel(pane) for pane in objects]
+        super(Panel, self).__init__(objects=objects, **params)
 
     #----------------------------------------------------------------
     # Public API
@@ -167,26 +204,6 @@ class Panel(Reactive):
             new_objects[i] = panel(pane)
         self.objects = new_objects
 
-    def select(self, selector=None):
-        """
-        Iterates over the Viewable and any potential children in the
-        applying the Selector.
-
-        Arguments
-        ---------
-        selector: type or callable or None
-          The selector allows selecting a subset of Viewables by
-          declaring a type or callable function to filter by.
-
-        Returns
-        -------
-        viewables: list(Viewable)
-        """
-        objects = super(Panel, self).select(selector)
-        for obj in self.objects:
-            objects += obj.select(selector)
-        return objects
-
     def append(self, pane):
         from .pane import panel
         new_objects = list(self)
@@ -226,7 +243,7 @@ class Panel(Reactive):
         self.objects = new_objects
 
 
-class Row(Panel):
+class Row(ListPanel):
     """
     Horizontal layout of Viewables.
     """
@@ -234,7 +251,7 @@ class Row(Panel):
     _bokeh_model = BkRow
 
 
-class Column(Panel):
+class Column(ListPanel):
     """
     Vertical layout of Viewables.
     """
@@ -242,7 +259,7 @@ class Column(Panel):
     _bokeh_model = BkColumn
 
 
-class Tabs(Panel):
+class Tabs(ListPanel):
     """
     Panel of Viewables to be displayed in separate tabs.
     """
@@ -424,6 +441,208 @@ class Tabs(Panel):
         self.objects = new_objects
 
 
+class GridSpec(Panel):
+
+    objects = param.Dict(default={}, doc="""
+        The dictionary of child objects that make up the grid.""")
+
+    width = param.Integer(default=600)
+
+    height = param.Integer(default=600)
+
+    _bokeh_model = BkGridBox
+
+    def __init__(self, **params):
+        if 'objects' not in params:
+            params['objects'] = OrderedDict()
+        super(GridSpec, self).__init__(**params)
+
+    def _init_properties(self):
+        properties = super(GridSpec, self)._init_properties()
+        if self.sizing_mode not in ['fixed', None]:
+            if 'min_width' not in properties and 'width' in properties:
+                properties['min_width'] = properties['width']
+            if 'min_height' not in properties and 'height' in properties:
+                properties['min_height'] = properties['height']
+        return properties
+
+    def _get_objects(self, model, old_objects, doc, root, comm=None):
+        children = []
+        width = int(float(self.width)/self.ncols)
+        height = int(float(self.height)/self.nrows)
+        for (y0, x0, y1, x1), obj in self.objects.items():
+            x0 = 0 if x0 is None else x0
+            x1 = (self.ncols) if x1 is None else x1
+            y0 = 0 if y0 is None else y0
+            y1 = (self.nrows) if y1 is None else y1
+            r, c, h, w = (y0, x0, y1-y0, x1-x0)
+
+            if self.sizing_mode in ['fixed', None]:
+                properties = {'width': w*width, 'height': h*height}
+            else:
+                properties = {'sizing_mode': self.sizing_mode}
+            obj.set_param(**properties)
+            model = obj._get_model(doc, root, model, comm)
+
+            if isinstance(model, BkMarkup) and self.sizing_mode not in ['fixed', None]:
+                if model.style is None:
+                    model.style = {}
+                style = {}
+                if 'width' not in model.style:
+                    style['width'] = '100%'
+                if 'height' not in model.style:
+                    style['height'] = '100%'
+                if style:
+                    model.style.update(style)
+
+            if isinstance(model, BkBox) and len(model.children) == 1:
+                model.children[0].update(**properties)
+            else:
+                model.update(**properties)
+            children.append((model, r, c, h, w))
+
+        new_objects = list(self.objects.values())
+        if isinstance(old_objects, dict):
+            old_objects = list(old_objects.values())
+        for old in old_objects:
+            if old not in new_objects:
+                old._cleanup(root)
+        return children
+
+    @property
+    def _xoffset(self):
+        min_xidx = [x0 for (_, x0, _, _) in self.objects if x0 is not None]
+        return min(min_xidx) if min_xidx and len(min_xidx) == len(self.objects) else 0
+
+    @property
+    def _yoffset(self):
+        min_yidx = [y0 for (y0, x0, _, _) in self.objects if y0 is not None]
+        return min(min_yidx) if min_yidx and len(min_yidx) == len(self.objects) else 0
+
+    #----------------------------------------------------------------
+    # Public API
+    #----------------------------------------------------------------
+
+    @property
+    def nrows(self):
+        max_yidx = [y1 for (_, _, y1, _) in self.objects if y1 is not None]
+        return max(max_yidx) if max_yidx else 0
+
+    @property
+    def ncols(self):
+        max_xidx = [x1 for (_, _, _, x1) in self.objects if x1 is not None]
+        return max(max_xidx) if max_xidx else 0
+
+    @property
+    def grid(self):
+        grid = np.zeros((self.nrows, self.ncols), dtype='uint8')
+        for (y0, x0, y1, x1) in self.objects:
+            x0 = 0 if x0 is None else x0
+            x1 = self.ncols if x1 is None else x1
+            y0 = 0 if y0 is None else y0
+            y1 = self.nrows if y1 is None else y1
+            grid[y0:y1, x0:x1] += 1
+        return grid
+
+    def __iter__(self):
+        for obj in self.objects.values():
+            yield obj
+
+    def __getitem__(self, index):
+        if isinstance(index, tuple):
+            yidx, xidx = index
+        else:
+            yidx, xidx = index, slice(None)
+
+        grid = np.full((self.nrows, self.ncols), None)
+        items = self.objects.items()
+        for i, ((y0, x0, y1, x1), obj) in enumerate(items):
+            l = 0 if x0 is None else x0
+            r = self.nrows if x1 is None else x1
+            t = 0 if y0 is None else y0
+            b = self.ncols if y1 is None else y1
+            for y in range(t, b):
+                for x in range(l, r):
+                    grid[y, x] = {((y0, x0, y1, x1), obj)}
+        subgrid = grid[yidx, xidx]
+        if isinstance(subgrid, np.ndarray):
+            params = dict(self.get_param_values())
+            params['objects'] = OrderedDict([list(o)[0] for o in subgrid.flatten()])
+            gspec = GridSpec(**params)
+            xoff, yoff = gspec._xoffset, gspec._yoffset
+            adjusted = []
+            for (y0, x0, y1, x1), obj in gspec.objects.items():
+                if y0 is not None: y0 -= yoff
+                if y1 is not None: y1 -= yoff
+                if x0 is not None: x0 -= xoff
+                if x1 is not None: x1 -= xoff
+                if ((y0, x0, y1, x1), obj) not in adjusted:
+                    adjusted.append(((y0, x0, y1, x1), obj))
+            gspec.objects = OrderedDict(adjusted)
+            width_scale = gspec.ncols/float(self.ncols)
+            height_scale = gspec.nrows/float(self.nrows)
+            if gspec.width:
+                gspec.width = int(gspec.width * width_scale)
+            if gspec.height:
+                gspec.height = int(gspec.height * height_scale)
+            if gspec.max_width:
+                gspec.max_width = int(gspec.max_width * width_scale)
+            if gspec.max_height:
+                gspec.max_height = int(gspec.max_height * height_scale)
+            return gspec
+        else:
+            return list(subgrid)[0][1]
+
+    def __setitem__(self, index, obj):
+        from .pane.base import Pane
+        if not isinstance(index, tuple):
+            raise IndexError('Must supply a 2D index for GridSpec assignment.')
+
+        yidx, xidx = index
+        if isinstance(xidx, slice):
+            x0, x1 = (xidx.start, xidx.stop)
+        else:
+            x0, x1 = (xidx, xidx+1)
+
+        if isinstance(yidx, slice):
+            y0, y1 = (yidx.start, yidx.stop)
+        else:
+            y0, y1 = (yidx, yidx+1)
+
+        l = 0 if x0 is None else x0
+        r = self.nrows if x1 is None else x1
+        t = 0 if y0 is None else y0
+        b = self.ncols if y1 is None else y1
+
+        key = (y0, x0, y1, x1)
+
+        overlap = key in self.objects
+        if not overlap:
+            self.objects[key] = Pane(obj)
+            grid = self.grid
+        else:
+            grid = self.grid
+            grid[t:b, l:r] += 1
+        overlap_grid = grid>1
+
+        if (overlap_grid).any():
+            if not overlap:
+                self.objects.pop((y0, x0, y1, x1))
+            overlapping = ''
+            objects = []
+            for (yidx, xidx) in zip(*np.where(overlap_grid)):
+                obj = self[yidx, xidx]
+                if obj not in objects:
+                    objects.append(obj)
+                    overlapping += '    (%d, %d): %s\n\n' % (yidx, xidx, obj)
+            raise IndexError('Specified region overlaps with the following '
+                             'existing object(s) in the grid:\n\n'+overlapping+
+                             'The following shows a view of the grid '
+                             '(empty: 0, occupied: 1, overlapping: 2):\n\n'+
+                             str(grid.astype('uint8')))
+
+
+        
 class Spacer(Reactive):
     """Empty object used to control formatting (using positive or negative space)"""
 
@@ -452,4 +671,3 @@ class HSpacer(Spacer):
     """
 
     sizing_mode = param.Parameter(default='stretch_width', readonly=True)
-

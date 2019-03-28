@@ -87,8 +87,24 @@ class ImageBase(DivPaneBase):
         else:
             b64 = base64.b64encode(data).decode("utf-8")
             src = "data:image/"+self.imgtype+";base64,{b64}".format(b64=b64)
-        html = "<img src='{src}' width='{width}px' height='{height}px'></img>".format(
-            src=src, width=width, height=height)
+
+        smode = self.sizing_mode
+        if smode in ['fixed', None]:
+            w, h = '%spx' % width, '%spx' % height
+        elif smode == 'stretch_both':
+            w, h = '100%', '100%'
+        elif smode == 'stretch_height':
+            w, h = '%spx' % width, '100%'
+        elif smode == 'stretch_height':
+            w, h = '100%', '%spx' % height
+        elif smode == 'scale_height':
+            w, h = 'auto', '100%'
+        else:
+            w, h = '100%', 'auto'
+
+        html = "<img src='{src}' width='{width}' height='{height}'></img>".format(
+            src=src, width=w, height=h)
+
         return dict(p, width=width, height=height, text=html)
 
 
@@ -169,4 +185,3 @@ class SVG(ImageBase):
             src=src, width=width, height=height
         )
         return dict(p, width=width, height=height, text=html)
-
