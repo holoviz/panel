@@ -56,7 +56,7 @@ class CustomInstallCommand(install):
 ########## dependencies ##########
 
 install_requires = [
-    'bokeh >=1.1.0dev10',
+    'bokeh >=1.1.0dev11',
     'param >=1.9.0a4',
     'pyviz_comms >=0.7.2',
     'markdown',
@@ -95,6 +95,7 @@ extras_require = {
     'doc': _recommended + [
         'nbsite',
         'sphinx_ioam_theme',
+        'sphinx <2',
         'selenium',
         'phantomjs'
     ]
