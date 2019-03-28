@@ -9,7 +9,7 @@ import numpy as np
 
 from bokeh.models import (Column as BkColumn, Row as BkRow,
                           Spacer as BkSpacer, GridBox as BkGridBox,
-                          Box as BkBox)
+                          Box as BkBox, Markup as BkMarkup)
 from bokeh.models.widgets import Tabs as BkTabs, Panel as BkPanel
 
 from .util import param_name, param_reprs
@@ -449,23 +449,52 @@ class GridSpec(Panel):
     height = param.Integer(default=600)
 
     _bokeh_model = BkGridBox
-    
+
     @property
     def _grid(self):
         grid = np.zeros((self.nrows, self.ncols))
-        for (r, c, h, w) in self.objects:
-            grid[r:r+h, c:c+w] = 1
+        for (y0, x0, y1, x1) in self.objects:
+            x0 = 0 if x0 is None else x0
+            x1 = self.nrows if x1 is None else x1
+            y0 = 0 if y0 is None else y0
+            y1 = self.ncols if y1 is None else y1
+            grid[y0:y1, x0:x1] = 1
         return grid
+
+    def _init_properties(self):
+        properties = super(GridSpec, self)._init_properties()
+        if self.sizing_mode not in ['fixed', None]:
+            if 'min_width' not in properties and 'width' in properties:
+                properties['min_width'] = properties['width']
+            if 'min_height' not in properties and 'height' in properties:
+                properties['min_height'] = properties['height']
+        return properties
 
     def _get_objects(self, model, old_objects, doc, root, comm=None):
         children = []
-        for key, obj in self.objects.items():
+        width = int(float(self.width)/self.ncols)
+        height = int(float(self.height)/self.nrows)
+        for (y0, x0, y1, x1), obj in self.objects.items():
+            x0 = 0 if x0 is None else x0
+            x1 = (self.ncols-1 if x1 is None else x1
+            y0 = 0 if y0 is None else y0
+            y1 = (self.nrows-1) if y1 is None else y1
+            r, c, h, w = (y0, x0, y1-y0, x1-x0)
+
             model = obj._get_model(doc, root, model, comm)
-            if isinstance(model, BkBox) and len(model.children) == 1:
-                model.children[0].sizing_mode = 'stretch_both'
+            if self.sizing_mode in ['fixed', None]:
+                properties = {'width': w*width, 'height': h*height}
             else:
-                model.sizing_mode = 'stretch_both'
-            children.append((model, *key))
+                properties = {'sizing_mode': 'stretch_both'}
+
+            if isinstance(model, BkMarkup):
+                model.style.update(width='100%', height='100%')
+
+            if isinstance(model, BkBox) and len(model.children) == 1:
+                model.children[0].update(**properties)
+            else:
+                model.update(**properties)
+            children.append((model, r, c, h, w))
 
         new_objects = list(self.objects.values())
         if isinstance(old_objects, dict):
@@ -481,11 +510,13 @@ class GridSpec(Panel):
 
     @property
     def nrows(self):
-        return max([(r+h-1) for (r, _, h, _) in self.objects]) if self.objects else 0
+        max_yidx = [y1 for (_, _, y1, _) in self.objects if y1 is not None]
+        return max(max_yidx)+1 if max_yidx else 0
 
     @property
     def ncols(self):
-        return max([(c+w-1) for (_, c, _, w) in self.objects]) if self.objects else 0
+        max_xidx = [x1 for (_, _, _, x1) in self.objects if x1 is not None]
+        return max(max_xidx)+1 if max_xidx else 0
 
     def __iter__(self):
         for obj in self.objects.values():
@@ -493,14 +524,26 @@ class GridSpec(Panel):
     
     def __setitem__(self, index, obj):
         from .pane.base import Pane
-        xidx, yidx = index
-        x0, x1 = (xidx.start, xidx.stop) if isinstance(xidx, slice) else (xidx, xidx+1)
-        y0, y1 = (yidx.start, yidx.stop) if isinstance(yidx, slice) else (yidx, yidx+1)
+        yidx, xidx = index
+        if isinstance(xidx, slice):
+            x0, x1 = (xidx.start, xidx.stop)
+        else:
+            x0, x1 = (xidx, xidx+1)
+
+        if isinstance(yidx, slice):
+            y0, y1 = (yidx.start, yidx.stop)
+        else:
+            y0, y1 = (yidx, yidx+1)
+
+        l = 0 if x0 is None else x0
+        r = self.nrows if x1 is None else x1
+        t = 0 if y0 is None else y0
+        b = self.ncols if y1 is None else y1
         grid = self._grid
-        grid[y0:y1, x0:x1] += 1
+        grid[t:b, l:r] += 1
         if (grid>1).any():
             raise IndexError('Specified region overlaps with region that was already occupied.')
-        self.objects[(y0, x0, y1-y0, x1-x0)] = Pane(obj)
+        self.objects[(y0, x0, y1, x1)] = Pane(obj)
 
 
         
