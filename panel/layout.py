@@ -470,14 +470,12 @@ class GridSpec(Panel):
             y1 = (self.nrows) if y1 is None else y1
             r, c, h, w = (y0, x0, y1-y0, x1-x0)
 
-            model = obj._get_model(doc, root, model, comm)
             if self.sizing_mode in ['fixed', None]:
                 properties = {'width': w*width, 'height': h*height}
             else:
-                properties = {'sizing_mode': 'stretch_both'}
-
-            if isinstance(model, BkMarkup):
-                model.style.update(width='100%', height='100%')
+                properties = {'sizing_mode': self.sizing_mode}
+            obj.set_param(**properties)
+            model = obj._get_model(doc, root, model, comm)
 
             if isinstance(model, BkBox) and len(model.children) == 1:
                 model.children[0].update(**properties)
