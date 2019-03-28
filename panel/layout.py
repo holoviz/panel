@@ -9,7 +9,7 @@ import numpy as np
 
 from bokeh.models import (Column as BkColumn, Row as BkRow,
                           Spacer as BkSpacer, GridBox as BkGridBox,
-                          Box as BkBox)
+                          Box as BkBox, Markup as BkMarkup)
 from bokeh.models.widgets import Tabs as BkTabs, Panel as BkPanel
 
 from .util import param_name, param_reprs
@@ -477,6 +477,17 @@ class GridSpec(Panel):
             obj.set_param(**properties)
             model = obj._get_model(doc, root, model, comm)
 
+            if isinstance(model, BkMarkup) and self.sizing_mode not in ['fixed', None]:
+                if model.style is None:
+                    model.style = {}
+                style = {}
+                if 'width' not in model.style:
+                    style['width'] = '100%'
+                if 'height' not in model.style:
+                    style['height'] = '100%'
+                if style:
+                    model.style.update(style)
+
             if isinstance(model, BkBox) and len(model.children) == 1:
                 model.children[0].update(**properties)
             else:
@@ -510,10 +521,10 @@ class GridSpec(Panel):
         grid = np.zeros((self.nrows, self.ncols), dtype='uint8')
         for (y0, x0, y1, x1) in self.objects:
             x0 = 0 if x0 is None else x0
-            x1 = self.nrows if x1 is None else x1
+            x1 = self.ncols if x1 is None else x1
             y0 = 0 if y0 is None else y0
-            y1 = self.ncols if y1 is None else y1
-            grid[y0:y1, x0:x1] = 1
+            y1 = self.nrows if y1 is None else y1
+            grid[y0:y1, x0:x1] += 1
         return grid
 
     def __iter__(self):
@@ -549,13 +560,24 @@ class GridSpec(Panel):
         r = self.nrows if x1 is None else x1
         t = 0 if y0 is None else y0
         b = self.ncols if y1 is None else y1
-        grid = self.grid
-        grid[t:b, l:r] += 1
-        overlap = grid>1
-        if (overlap).any():
+
+        key = (y0, x0, y1, x1)
+
+        overlap = key in self.objects
+        if not overlap:
+            self.objects[key] = Pane(obj)
+            grid = self.grid
+        else:
+            grid = self.grid
+            grid[t:b, l:r] += 1
+        overlap_grid = grid>1
+
+        if (overlap_grid).any():
+            if not overlap:
+                self.objects.pop((y0, x0, y1, x1))
             overlapping = ''
             objects = []
-            for (yidx, xidx) in zip(*np.where(overlap)):
+            for (yidx, xidx) in zip(*np.where(overlap_grid)):
                 obj = self[yidx, xidx]
                 if obj not in objects:
                     objects.append(obj)
@@ -565,7 +587,6 @@ class GridSpec(Panel):
                              'The following shows a view of the grid '
                              '(empty: 0, occupied: 1, overlapping: 2):\n\n'+
                              str(grid.astype('uint8')))
-        self.objects[(y0, x0, y1, x1)] = Pane(obj)
 
 
         
