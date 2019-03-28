@@ -9,7 +9,7 @@ import numpy as np
 
 from bokeh.models import (Column as BkColumn, Row as BkRow,
                           Spacer as BkSpacer, GridBox as BkGridBox,
-                          Box as BkBox, Markup as BkMarkup)
+                          Box as BkBox)
 from bokeh.models.widgets import Tabs as BkTabs, Panel as BkPanel
 
 from .util import param_name, param_reprs
@@ -486,7 +486,7 @@ class GridSpec(Panel):
         new_objects = list(self.objects.values())
         if isinstance(old_objects, dict):
             old_objects = list(old_objects.values())
-        for o in old_objects:
+        for old in old_objects:
             if old not in new_objects:
                 old._cleanup(root)
         return children
