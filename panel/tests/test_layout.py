@@ -4,7 +4,7 @@ import pytest
 
 from bokeh.models import (Div, Row as BkRow, Tabs as BkTabs,
                           Column as BkColumn, Panel as BkPanel)
-from panel.layout import Column, Row, Tabs, Spacer
+from panel.layout import Column, Row, Tabs, Spacer, GridSpec
 from panel.pane import Bokeh, Pane
 from panel.param import Param
 from panel._testing.util import check_layoutable_properties
@@ -817,3 +817,146 @@ def test_layout_with_param_setitem(document, comm):
     test.select = 1
     assert model.children[1].text == '<pre>1</pre>'
 
+
+def test_gridspec_integer_setitem():
+    div = Div()
+    gspec = GridSpec()
+    gspec[0, 0] = div
+
+    assert list(gspec.objects) == [(0, 0, 1, 1)]
+
+
+def test_gridspec_slice_setitem():
+    div = Div()
+    gspec = GridSpec()
+    gspec[0, :] = div
+
+    assert list(gspec.objects) == [(0, None, 1, None)]
+
+
+def test_gridspec_setitem_int_overlap():
+    div = Div()
+    gspec = GridSpec()
+    gspec[0, 0] = div
+    with pytest.raises(IndexError):
+        gspec[0, 0] = 'String'
+
+
+def test_gridspec_setitem_slice_overlap():
+    div = Div()
+    gspec = GridSpec()
+    gspec[0, :] = div
+    with pytest.raises(IndexError):
+        gspec[0, 1] = div
+
+
+def test_gridspec_fixed_with_int_setitem(document, comm):
+    div1 = Div()
+    div2 = Div()
+    gspec = GridSpec(width=800, height=500)
+
+    gspec[0, 0] = div1
+    gspec[1, 1] = div2
+
+    model = gspec.get_root(document, comm=comm)
+    assert model.children == [(div1, 0, 0, 1, 1), (div2, 1, 1, 1, 1)]
+    assert div1.width == 400
+    assert div1.height == 250
+    assert div2.width == 400
+    assert div2.height == 250
+
+
+def test_gridspec_fixed_with_slice_setitem(document, comm):
+    div1 = Div()
+    div2 = Div()
+    gspec = GridSpec(width=900, height=500)
+
+    gspec[0, 0:2] = div1
+    gspec[1, 2] = div2
+
+    model = gspec.get_root(document, comm=comm)
+    assert model.children == [(div1, 0, 0, 1, 2), (div2, 1, 2, 1, 1)]
+    assert div1.width == 600
+    assert div1.height == 250
+    assert div2.width == 300
+    assert div2.height == 250
+
+
+def test_gridspec_fixed_with_upper_partial_slice_setitem(document, comm):
+    div1 = Div()
+    div2 = Div()
+    gspec = GridSpec(width=900, height=500)
+
+    gspec[0, :2] = div1
+    gspec[1, 2] = div2
+
+    model = gspec.get_root(document, comm=comm)
+    assert model.children == [(div1, 0, 0, 1, 2), (div2, 1, 2, 1, 1)]
+    assert div1.width == 600
+    assert div1.height == 250
+    assert div2.width == 300
+    assert div2.height == 250
+
+
+def test_gridspec_fixed_with_lower_partial_slice_setitem(document, comm):
+    div1 = Div()
+    div2 = Div()
+    gspec = GridSpec(width=900, height=500)
+
+    gspec[0, 1:] = div1
+    gspec[1, 2] = div2
+
+    model = gspec.get_root(document, comm=comm)
+    assert model.children == [(div1, 0, 1, 1, 2), (div2, 1, 2, 1, 1)]
+    assert div1.width == 600
+    assert div1.height == 250
+    assert div2.width == 300
+    assert div2.height == 250
+
+
+def test_gridspec_fixed_with_empty_slice_setitem(document, comm):
+    div1 = Div()
+    div2 = Div()
+    gspec = GridSpec(width=900, height=500)
+
+    gspec[0, :] = div1
+    gspec[1, 2] = div2
+
+    model = gspec.get_root(document, comm=comm)
+    assert model.children == [(div1, 0, 0, 1, 3), (div2, 1, 2, 1, 1)]
+    assert div1.width == 900
+    assert div1.height == 250
+    assert div2.width == 300
+    assert div2.height == 250
+
+
+def test_gridspec_stretch_with_int_setitem(document, comm):
+    div1 = Div()
+    div2 = Div()
+    gspec = GridSpec(sizing_mode='stretch_both')
+
+    gspec[0, 0] = div1
+    gspec[1, 1] = div2
+
+    model = gspec.get_root(document, comm=comm)
+    assert model.children == [(div1, 0, 0, 1, 1), (div2, 1, 1, 1, 1)]
+    assert div1.sizing_mode == 'stretch_both'
+    assert div1.style == {'width': '100%', 'height': '100%'}
+    assert div2.sizing_mode == 'stretch_both'
+    assert div2.style == {'width': '100%', 'height': '100%'}
+
+
+def test_gridspec_stretch_with_slice_setitem(document, comm):
+    div1 = Div()
+    div2 = Div()
+    gspec = GridSpec(sizing_mode='stretch_both')
+
+    gspec[0, 0:2] = div1
+    gspec[1, 2] = div2
+
+    model = gspec.get_root(document, comm=comm)
+    assert model.children == [(div1, 0, 0, 1, 2), (div2, 1, 2, 1, 1)]
+    assert div1.sizing_mode == 'stretch_both'
+    assert div1.style == {'width': '100%', 'height': '100%'}
+    assert div2.sizing_mode == 'stretch_both'
+    assert div2.style == {'width': '100%', 'height': '100%'}
