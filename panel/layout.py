@@ -450,17 +450,6 @@ class GridSpec(Panel):
 
     _bokeh_model = BkGridBox
 
-    @property
-    def _grid(self):
-        grid = np.zeros((self.nrows, self.ncols))
-        for (y0, x0, y1, x1) in self.objects:
-            x0 = 0 if x0 is None else x0
-            x1 = self.nrows if x1 is None else x1
-            y0 = 0 if y0 is None else y0
-            y1 = self.ncols if y1 is None else y1
-            grid[y0:y1, x0:x1] = 1
-        return grid
-
     def _init_properties(self):
         properties = super(GridSpec, self)._init_properties()
         if self.sizing_mode not in ['fixed', None]:
@@ -476,9 +465,9 @@ class GridSpec(Panel):
         height = int(float(self.height)/self.nrows)
         for (y0, x0, y1, x1), obj in self.objects.items():
             x0 = 0 if x0 is None else x0
-            x1 = (self.ncols-1 if x1 is None else x1
+            x1 = (self.ncols) if x1 is None else x1
             y0 = 0 if y0 is None else y0
-            y1 = (self.nrows-1) if y1 is None else y1
+            y1 = (self.nrows) if y1 is None else y1
             r, c, h, w = (y0, x0, y1-y0, x1-x0)
 
             model = obj._get_model(doc, root, model, comm)
@@ -511,17 +500,40 @@ class GridSpec(Panel):
     @property
     def nrows(self):
         max_yidx = [y1 for (_, _, y1, _) in self.objects if y1 is not None]
-        return max(max_yidx)+1 if max_yidx else 0
+        return max(max_yidx) if max_yidx else 0
 
     @property
     def ncols(self):
         max_xidx = [x1 for (_, _, _, x1) in self.objects if x1 is not None]
-        return max(max_xidx)+1 if max_xidx else 0
+        return max(max_xidx) if max_xidx else 0
+
+    @property
+    def grid(self):
+        grid = np.zeros((self.nrows, self.ncols), dtype='uint8')
+        for (y0, x0, y1, x1) in self.objects:
+            x0 = 0 if x0 is None else x0
+            x1 = self.nrows if x1 is None else x1
+            y0 = 0 if y0 is None else y0
+            y1 = self.ncols if y1 is None else y1
+            grid[y0:y1, x0:x1] = 1
+        return grid
 
     def __iter__(self):
         for obj in self.objects.values():
             yield obj
-    
+
+    def __getitem__(self, index):
+        yidx, xidx = index
+        grid = np.full((self.nrows, self.ncols), None)
+        items = self.objects.items()
+        for i, ((y0, x0, y1, x1), obj) in enumerate(items):
+            x0 = 0 if x0 is None else x0
+            x1 = self.nrows if x1 is None else x1
+            y0 = 0 if y0 is None else y0
+            y1 = self.ncols if y1 is None else y1
+            grid[y0:y1, x0:x1] = obj
+        return grid[yidx, xidx]
+
     def __setitem__(self, index, obj):
         from .pane.base import Pane
         yidx, xidx = index
@@ -539,10 +551,22 @@ class GridSpec(Panel):
         r = self.nrows if x1 is None else x1
         t = 0 if y0 is None else y0
         b = self.ncols if y1 is None else y1
-        grid = self._grid
+        grid = self.grid
         grid[t:b, l:r] += 1
-        if (grid>1).any():
-            raise IndexError('Specified region overlaps with region that was already occupied.')
+        overlap = grid>1
+        if (overlap).any():
+            overlapping = ''
+            objects = []
+            for (yidx, xidx) in zip(*np.where(overlap)):
+                obj = self[yidx, xidx]
+                if obj not in objects:
+                    objects.append(obj)
+                    overlapping += '    (%d, %d): %s\n\n' % (yidx, xidx, obj)
+            raise IndexError('Specified region overlaps with the following '
+                             'existing object(s) in the grid:\n\n'+overlapping+
+                             'The following shows a view of the grid '
+                             '(empty: 0, occupied: 1, overlapping: 2):\n\n'+
+                             str(grid.astype('uint8')))
         self.objects[(y0, x0, y1, x1)] = Pane(obj)
 
 
