@@ -58,7 +58,6 @@ export class VTKPlotView extends HTMLBoxView {
       delete state.vtkCamera;
       delete state.viewPlaneNormal;
       this.model.camera = state;
-      this.model.properties.camera.change.emit();
       this._setting = false;
     }
   }

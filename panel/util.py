@@ -30,10 +30,17 @@ def hashable(x):
 
 def isIn(obj, objs):
     """
-    Checks if the object is in the list of objects, unlike the ``in``
-    Python operator this will check only for identity not equality.
+    Checks if the object is in the list of objects safely.
     """
-    return any(o is obj for o in objs)
+    for o in objs:
+        if o is obj:
+            return True
+        try:
+            if o == obj:
+                return True
+        except:
+            pass
+    return False
 
 
 def indexOf(obj, objs):
@@ -42,9 +49,14 @@ def indexOf(obj, objs):
     list.index method this function only checks for identity not
     equality.
     """
-    indexes = [i for i, o in enumerate(objs) if o is obj]
-    if indexes:
-        return indexes[0]
+    for i, o in enumerate(objs):
+        if o is obj:
+            return i
+        try:
+            if o == obj:
+                return i
+        except:
+            pass
     raise ValueError('%s not in list' % obj)
 
 

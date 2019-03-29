@@ -13,6 +13,30 @@ def test_select_list_constructor():
     assert select.options == ['A', 1]
 
 
+def test_select_float_option_with_equality():
+    opts = {'A': 3.14, '1': 2.0}
+    select = Select(options=opts, value=3.14, name='Select')
+    assert select.value == 3.14
+
+    select.value = 2
+    assert select.value == 2.0
+
+    select.value = 3.14
+    assert select.value == 3.14
+
+
+def test_select_text_option_with_equality():
+    opts = {'A': 'ABC', '1': 'DEF'}
+    select = Select(options=opts, value='DEF', name='Select')
+    assert select.value == 'DEF'
+
+    select.value = 'ABC'
+    assert select.value == 'ABC'
+
+    select.value = 'DEF'
+    assert select.value == 'DEF'
+
+
 def test_select(document, comm):
     opts = {'A': 'a', '1': 1}
     select = Select(options=opts, value=opts['1'], name='Select')
