@@ -14,6 +14,8 @@ from six import string_types
 
 import param
 
+literal_types = (string_types, int, float)
+
 
 if sys.version_info.major > 2:
     unicode = str
@@ -33,7 +35,8 @@ def isIn(obj, objs):
     Checks if the object is in the list of objects, unlike the ``in``
     Python operator this will check only for identity not equality.
     """
-    return any(o is obj for o in objs)
+    return any(o is obj or (isinstance(o, literal_types) and o == obj)
+               for o in objs)
 
 
 def indexOf(obj, objs):
@@ -42,7 +45,8 @@ def indexOf(obj, objs):
     list.index method this function only checks for identity not
     equality.
     """
-    indexes = [i for i, o in enumerate(objs) if o is obj]
+    indexes = [i for i, o in enumerate(objs) if o is obj or
+               (isinstance(o, literal_types) and o == obj)]
     if indexes:
         return indexes[0]
     raise ValueError('%s not in list' % obj)
