@@ -608,7 +608,9 @@ class Reactive(Viewable):
     def _change_event(self, doc=None):
         try:
             state.curdoc = doc
-            state._thread_id = threading.get_ident()
+            thread = threading.current_thread()
+            thread_id = thread.ident if thread else None
+            state._thread_id = thread_id
             events = self._events
             self._events = {}
             self.set_param(**self._process_property_change(events))

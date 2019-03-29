@@ -40,7 +40,9 @@ class _state(param.Parameterized):
     _servers = {}
 
     def _unblocked(self, doc):
-        return (doc is self.curdoc and self._thread_id == threading.get_ident())
+        thread = threading.current_thread()
+        thread_id = thread.ident if thread else None
+        return (doc is self.curdoc and self._thread_id == thread_id)
 
     @property
     def curdoc(self):
