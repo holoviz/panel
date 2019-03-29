@@ -92,7 +92,11 @@ def get_server(panel, port=0, websocket_origin=None, loop=None,
 
     def do_stop(*args, **kwargs):
         server.io_loop.stop()
-    signal.signal(signal.SIGINT, sig_exit)
+
+    try:
+        signal.signal(signal.SIGINT, sig_exit)
+    except ValueError:
+        pass # Can't use signal on a thread
 
     if start:
         server.start()
