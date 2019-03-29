@@ -187,12 +187,12 @@ class Pipeline(param.Parameterized):
         import holoviews.plotting.bokeh # noqa
         stages = len(self._stages)
         line = hv.Path([[(0, 0), (stages-1, 0)]]).options(
-            line_width=10, color='black', backend='bokeh'
+            line_width=6, color='black', backend='bokeh'
         )
         vals = np.arange(stages)
         active = [1 if v == self._stage else 0 for v in vals]
         points = hv.Points((vals, np.zeros(stages), active), vdims=['active']).options(
-            color_index='active', line_color='black', cmap={0: 'white', 1: 'gray'},
+            color_index='active', line_color='black', cmap={0: 'white', 1: '#5cb85c'},
             show_legend=False, size=20, default_tools=[], tools=['tap'],
             nonselection_alpha=1, backend='bokeh'
         )
