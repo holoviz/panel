@@ -119,7 +119,7 @@ class Link(param.Parameterized):
         for link, src, tgt in found:
             cb = cls._callbacks[type(link)]
             if src is None or (getattr(link, '_requires_target', False)
-                                    and tgt is None):
+                               and tgt is None):
                 continue
             callbacks.append(cb(root_model, link, src, tgt))
         return callbacks
