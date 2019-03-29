@@ -3,6 +3,7 @@ Various utilities for recording and embedding state in a rendered app.
 """
 from __future__ import absolute_import, division, unicode_literals
 
+import threading
 
 import param
 
@@ -27,6 +28,9 @@ class _state(param.Parameterized):
     # Whether to hold comm events
     _hold = False
 
+    # Used to ensure that events are not scheduled from the wrong thread
+    _thread_id = None
+
     _comm_manager = _CommManager
 
     # An index of all currently active views
@@ -34,6 +38,11 @@ class _state(param.Parameterized):
 
     # An index of all curently active servers
     _servers = {}
+
+    def _unblocked(self, doc):
+        thread = threading.current_thread()
+        thread_id = thread.ident if thread else None
+        return (doc is self.curdoc and self._thread_id == thread_id)
 
     @property
     def curdoc(self):

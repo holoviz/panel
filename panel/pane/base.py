@@ -119,7 +119,7 @@ class PaneBase(Reactive):
     def _update_pane(self, event):
         for ref, (model, parent) in self._models.items():
             viewable, root, doc, comm = state._views[ref]
-            if comm or doc is state.curdoc:
+            if comm or state._unblocked(doc):
                 self._update_object(model, doc, root, parent, comm)
                 if comm and 'embedded' not in root.tags:
                     push(doc, comm)

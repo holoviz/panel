@@ -95,7 +95,7 @@ class HoloViews(PaneBase):
             key = tuple(w.value for w in widgets)
 
         if plot.backend == 'bokeh':
-            if plot.comm or plot.document is state.curdoc:
+            if plot.comm or state._unblocked(plot.document):
                 plot.update(key)
                 if plot.comm and 'embedded' not in plot.root.tags:
                     plot.push()
