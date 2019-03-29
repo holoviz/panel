@@ -5,20 +5,23 @@ User Guide
 * `Introduction <Introduction.html>`_
    An overview of the capabilities of Panel.
 
+* `Overview <Overview.html>`_
+   A high-level overview of the user guide and key concepts in Panel.
+
+* `Components <Components.html>`_
+   An introduction to the three main component types: Widgets, Panes and Panel layouts.
+
+* `Customization <Customization.html>`_
+   How to customize the visual appearance, layout and size of Panel components.
+
 * `Deploy & Export <Deploy_and_Export.html>`_
    Introduction to displaying, exporting and deploying panel apps
 
 * `Interact <Interact.html>`_
    Quickly making a panel using `interact()`.
 
-* `Panes <Panes.html>`_
-   Adding visual components to your panel with panes.
-
 * `Widgets <Widgets.html>`_
    Declaring and working with Panel widgets.
-
-* `Layouts <Layouts.html>`_
-   Declaring and working with Panel layouts.
 
 * `Parameters <Param.html>`_
    Using Param to express panels in a self-contained class.
@@ -43,12 +46,12 @@ Supplementary guides
     :maxdepth: 2
 
     Introduction <Introduction>
+    Overview <Overview>
     Components <Components>
+    Customization <Customization>
     Deploy & Export <Deploy_and_Export>
-    Interact <Interact>
-    Panes <Panes>
     Widgets <Widgets>
-    Layouts <Layouts>
+    Interact <Interact>
     Parameters <Param>
     Linking <Links>
     Pipelines <Pipelines>
