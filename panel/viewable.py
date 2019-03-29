@@ -563,7 +563,7 @@ class Reactive(Viewable):
                 if ref not in state._views:
                     continue
                 viewable, root, doc, comm = state._views[ref]
-                if comm or (doc is state.curdoc and state._thread_id == threading.get_ident()):
+                if comm or not state._blocked(doc):
                     self._update_model(events, msg, root, model, doc, comm)
                     if comm and 'embedded' not in root.tags:
                         push(doc, comm)

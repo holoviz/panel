@@ -3,6 +3,7 @@ Various utilities for recording and embedding state in a rendered app.
 """
 from __future__ import absolute_import, division, unicode_literals
 
+import threading
 
 import param
 
@@ -37,6 +38,9 @@ class _state(param.Parameterized):
 
     # An index of all curently active servers
     _servers = {}
+
+    def _blocked(self, doc):
+        return doc is self.curdoc and self._thread_id == threading.get_ident()
 
     @property
     def curdoc(self):
