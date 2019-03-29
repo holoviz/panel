@@ -39,8 +39,8 @@ class _state(param.Parameterized):
     # An index of all curently active servers
     _servers = {}
 
-    def _blocked(self, doc):
-        return doc is self.curdoc and self._thread_id == threading.get_ident()
+    def _unblocked(self, doc):
+        return (doc is self.curdoc and self._thread_id == threading.get_ident())
 
     @property
     def curdoc(self):
