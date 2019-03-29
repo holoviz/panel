@@ -6,6 +6,7 @@ response to changes to parameters and the underlying bokeh models.
 from __future__ import absolute_import, division, unicode_literals
 
 import re
+import threading
 
 from functools import partial
 
@@ -562,7 +563,7 @@ class Reactive(Viewable):
                 if ref not in state._views:
                     continue
                 viewable, root, doc, comm = state._views[ref]
-                if comm or doc is state.curdoc:
+                if comm or (doc is state.curdoc and state._thread_id == threading.get_ident()):
                     self._update_model(events, msg, root, model, doc, comm)
                     if comm and 'embedded' not in root.tags:
                         push(doc, comm)
@@ -607,12 +608,14 @@ class Reactive(Viewable):
     def _change_event(self, doc=None):
         try:
             state.curdoc = doc
+            state._thread_id = threading.get_ident()
             events = self._events
             self._events = {}
             self.set_param(**self._process_property_change(events))
         finally:
             self._processing = False
             state.curdoc = None
+            state._thread_id = None
 
     def _get_customjs(self, change, client_comm, plot_id):
         """

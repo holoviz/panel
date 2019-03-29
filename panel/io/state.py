@@ -27,6 +27,9 @@ class _state(param.Parameterized):
     # Whether to hold comm events
     _hold = False
 
+    # Used to ensure that events are not scheduled from the wrong thread
+    _thread_id = None
+
     _comm_manager = _CommManager
 
     # An index of all currently active views
