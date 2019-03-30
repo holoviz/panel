@@ -446,11 +446,18 @@ class GridSpec(Panel):
     objects = param.Dict(default={}, doc="""
         The dictionary of child objects that make up the grid.""")
 
+    mode = param.ObjectSelector(
+        default='warn', objects=['warn', 'error', 'override'], doc="""
+        Whether to warn, error or simply override on overlapping
+        assignment.""")
+
     width = param.Integer(default=600)
 
     height = param.Integer(default=600)
 
     _bokeh_model = BkGridBox
+
+    _rename = {'objects': 'children', 'mode': None}
 
     def __init__(self, **params):
         if 'objects' not in params:
@@ -467,9 +474,17 @@ class GridSpec(Panel):
         return properties
 
     def _get_objects(self, model, old_objects, doc, root, comm=None):
+        if self.ncols:
+            width = int(float(self.width)/self.ncols)
+        else:
+            width = 0
+
+        if self.nrows:
+            height = int(float(self.height)/self.nrows)
+        else:
+            height = 0
+
         children = []
-        width = int(float(self.width)/self.ncols)
-        height = int(float(self.height)/self.nrows)
         for (y0, x0, y1, x1), obj in self.objects.items():
             x0 = 0 if x0 is None else x0
             x1 = (self.ncols) if x1 is None else x1
@@ -519,6 +534,19 @@ class GridSpec(Panel):
         min_yidx = [y0 for (y0, x0, _, _) in self.objects if y0 is not None]
         return min(min_yidx) if min_yidx and len(min_yidx) == len(self.objects) else 0
 
+    @property
+    def _object_grid(self):
+        grid = np.full((self.nrows, self.ncols), None)
+        for i, ((y0, x0, y1, x1), obj) in enumerate(self.objects.items()):
+            l = 0 if x0 is None else x0
+            r = self.ncols if x1 is None else x1
+            t = 0 if y0 is None else y0
+            b = self.nrows if y1 is None else y1
+            for y in range(t, b):
+                for x in range(l, r):
+                    grid[y, x] = {((y0, x0, y1, x1), obj)}
+        return grid
+
     #----------------------------------------------------------------
     # Public API
     #----------------------------------------------------------------
@@ -548,23 +576,30 @@ class GridSpec(Panel):
         for obj in self.objects.values():
             yield obj
 
+    def __delitem__(self, index, trigger=True):
+        if isinstance(index, tuple):
+            yidx, xidx = index
+        else:
+            yidx, xidx = index, slice(None)
+
+        subgrid = self._object_grid[yidx, xidx]
+        if isinstance(subgrid, np.ndarray):
+            deleted = OrderedDict([list(o)[0] for o in subgrid.flatten()])
+        else:
+            deleted = [list(subgrid)[0][0]]
+        if deleted:
+            for key in deleted:
+                del self.objects[key]
+            if trigger:
+                self.param.trigger('objects')
+
     def __getitem__(self, index):
         if isinstance(index, tuple):
             yidx, xidx = index
         else:
             yidx, xidx = index, slice(None)
 
-        grid = np.full((self.nrows, self.ncols), None)
-        items = self.objects.items()
-        for i, ((y0, x0, y1, x1), obj) in enumerate(items):
-            l = 0 if x0 is None else x0
-            r = self.nrows if x1 is None else x1
-            t = 0 if y0 is None else y0
-            b = self.ncols if y1 is None else y1
-            for y in range(t, b):
-                for x in range(l, r):
-                    grid[y, x] = {((y0, x0, y1, x1), obj)}
-        subgrid = grid[yidx, xidx]
+        subgrid = self._object_grid[yidx, xidx]
         if isinstance(subgrid, np.ndarray):
             params = dict(self.get_param_values())
             params['objects'] = OrderedDict([list(o)[0] for o in subgrid.flatten()])
@@ -616,30 +651,31 @@ class GridSpec(Panel):
 
         key = (y0, x0, y1, x1)
 
-        overlap = key in self.objects
-        if not overlap:
-            self.objects[key] = Pane(obj)
-            grid = self.grid
-        else:
-            grid = self.grid
-            grid[t:b, l:r] += 1
+        grid = self.grid
+        grid[t:b, l:r] += 1
         overlap_grid = grid>1
-
         if (overlap_grid).any():
-            if not overlap:
-                self.objects.pop((y0, x0, y1, x1))
             overlapping = ''
             objects = []
             for (yidx, xidx) in zip(*np.where(overlap_grid)):
-                obj = self[yidx, xidx]
-                if obj not in objects:
-                    objects.append(obj)
-                    overlapping += '    (%d, %d): %s\n\n' % (yidx, xidx, obj)
-            raise IndexError('Specified region overlaps with the following '
-                             'existing object(s) in the grid:\n\n'+overlapping+
-                             'The following shows a view of the grid '
-                             '(empty: 0, occupied: 1, overlapping: 2):\n\n'+
-                             str(grid.astype('uint8')))
+                old_obj = self[yidx, xidx]
+                if old_obj not in objects:
+                    objects.append(old_obj)
+                    overlapping += '    (%d, %d): %s\n\n' % (yidx, xidx, old_obj)
+            overlap_text = ('Specified region overlaps with the following '
+                            'existing object(s) in the grid:\n\n'+overlapping+
+                            'The following shows a view of the grid '
+                            '(empty: 0, occupied: 1, overlapping: 2):\n\n'+
+                            str(grid.astype('uint8')))
+            if self.mode == 'error':
+                raise IndexError(overlap_text)
+            elif self.mode == 'warn':
+                self.param.warning(overlap_text)
+            self.__delitem__(index, False)
+        new_obj = Pane(obj)
+
+        self.objects[key] = new_obj
+        self.param.trigger('objects')
 
 
         
