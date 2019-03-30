@@ -245,7 +245,7 @@ class ListPanel(Panel):
         """
         from .pane import panel
         new_objects = list(self)
-        new_objects.append(panel(pane))
+        new_objects.append(panel(obj))
         self.objects = new_objects
 
     def clear(self):
@@ -264,7 +264,7 @@ class ListPanel(Panel):
         """
         from .pane import panel
         new_objects = list(self)
-        new_objects.extend(list(map(panel, panes)))
+        new_objects.extend(list(map(panel, objects)))
         self.objects = new_objects
 
     def insert(self, index, obj):
@@ -278,7 +278,7 @@ class ListPanel(Panel):
         """
         from .pane import panel
         new_objects = list(self)
-        new_objects.insert(index, panel(pane))
+        new_objects.insert(index, panel(obj))
         self.objects = new_objects
 
     def pop(self, index):
@@ -305,7 +305,7 @@ class ListPanel(Panel):
         obj (object): The object to remove from the layout.
         """
         new_objects = list(self)
-        new_objects.remove(pane)
+        new_objects.remove(obj)
         self.objects = new_objects
 
     def reverse(self):
@@ -752,7 +752,7 @@ class GridSpec(Panel):
         Cloned GridSpec object
         """
         p = dict(self.param.get_param_values(), **params)
-        return type(self)(*objects, **params)
+        return type(self)(**p)
 
     def __iter__(self):
         for obj in self.objects.values():
