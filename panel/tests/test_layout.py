@@ -836,7 +836,7 @@ def test_gridspec_slice_setitem():
 
 def test_gridspec_setitem_int_overlap():
     div = Div()
-    gspec = GridSpec()
+    gspec = GridSpec(mode='error')
     gspec[0, 0] = div
     with pytest.raises(IndexError):
         gspec[0, 0] = 'String'
@@ -844,10 +844,30 @@ def test_gridspec_setitem_int_overlap():
 
 def test_gridspec_setitem_slice_overlap():
     div = Div()
-    gspec = GridSpec()
+    gspec = GridSpec(mode='error')
     gspec[0, :] = div
     with pytest.raises(IndexError):
         gspec[0, 1] = div
+
+
+def test_gridspec_setitem_cell_override():
+    div = Div()
+    div2 = Div()
+    gspec = GridSpec()
+    gspec[0, 0] = div
+    gspec[0, 0] = div2
+    assert (0, 0, 1, 1) in gspec.objects
+    assert gspec.objects[(0, 0, 1, 1)].object is div2
+
+
+def test_gridspec_setitem_span_override():
+    div = Div()
+    div2 = Div()
+    gspec = GridSpec()
+    gspec[0, :] = div
+    gspec[0, 0] = div2
+    assert (0, 0, 1, 1) in gspec.objects
+    assert gspec.objects[(0, 0, 1, 1)].object is div2
 
 
 def test_gridspec_fixed_with_int_setitem(document, comm):

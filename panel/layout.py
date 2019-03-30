@@ -832,9 +832,15 @@ class GridSpec(Panel):
         b = self.ncols if y1 is None else y1
 
         key = (y0, x0, y1, x1)
+        overlap = key in self.objects
+        clone = self.clone(mode='override')
+        if not overlap:
+            clone.objects[key] = Pane(obj)
+            grid = clone.grid
+        else:
+            grid = clone.grid
+            grid[t:b, l:r] += 1
 
-        grid = self.grid
-        grid[t:b, l:r] += 1
         overlap_grid = grid>1
         if (overlap_grid).any():
             overlapping = ''
@@ -854,9 +860,7 @@ class GridSpec(Panel):
             elif self.mode == 'warn':
                 self.param.warning(overlap_text)
             self.__delitem__(index, False)
-        new_obj = Pane(obj)
-
-        self.objects[key] = new_obj
+        self.objects[key] = Pane(obj)
         self.param.trigger('objects')
 
 
