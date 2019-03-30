@@ -287,6 +287,20 @@ class Viewable(Layoutable):
     # Public API
     #----------------------------------------------------------------
 
+    def clone(self, **params):
+        """
+        Makes a copy of the object sharing the same parameters.
+
+        Arguments
+        ---------
+        params: Keyword arguments override the parameters on the clone.
+
+        Returns
+        -------
+        Cloned Viewable object
+        """
+        return type(self)(**dict(self.param.get_param_values(), **params))
+
     def pprint(self):
         """
         Prints a compositional repr of the class.
@@ -628,7 +642,7 @@ class Reactive(Viewable):
         """
         return get_comm_customjs(change, client_comm, plot_id,
                                  self._timeout, self._debounce)
-        
+
     #----------------------------------------------------------------
     # Model API
     #----------------------------------------------------------------

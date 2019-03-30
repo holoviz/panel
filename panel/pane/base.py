@@ -149,6 +149,20 @@ class PaneBase(Reactive):
         """
         return None
 
+    def clone(self, object=None, **params):
+        """
+        Makes a copy of the Pane sharing the same parameters.
+
+        Arguments
+        ---------
+        params: Keyword arguments override the parameters on the clone.
+
+        Returns
+        -------
+        Cloned Pane object
+        """
+        return type(self)(object, **dict(self.param.get_param_values(), **params))
+
     def get_root(self, doc=None, comm=None):
         """
         Returns the root model and applies pre-processing hooks
