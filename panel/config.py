@@ -182,7 +182,7 @@ class panel_extension(_pyviz_extension):
             _JupyterCommManager.get_client_comm(self._process_comm_msg,
                                                 "hv-extension-comm")
         load_notebook(config.inline)
-        self._loaded = True
+        panel_extension._loaded = True
 
         state._comm_manager = _JupyterCommManager
 

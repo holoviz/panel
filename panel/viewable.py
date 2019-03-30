@@ -18,7 +18,7 @@ from bokeh.io import curdoc as _curdoc
 from bokeh.models import CustomJS
 from pyviz_comms import JupyterCommManager
 
-from .config import config
+from .config import config, panel_extension
 from .io.embed import embed_state
 from .io.model import add_to_doc
 from .io.notebook import (get_comm_customjs, push, render_mimebundle,
@@ -248,6 +248,8 @@ class Viewable(Layoutable):
             hook(self, root)
 
     def _repr_mimebundle_(self, include=None, exclude=None):
+        if not panel_extension._loaded:
+            return None
         state._comm_manager = JupyterCommManager
         doc = _Document()
         comm = state._comm_manager.get_server_comm()
