@@ -41,7 +41,7 @@ class Layoutable(param.Parameterized):
         preserved).
     """)
 
-    background = param.Color(default=None, doc="""
+    background = param.Parameter(default=None, doc="""
         Background color of the component.""")
 
     css_classes = param.List(default=None, doc="""
