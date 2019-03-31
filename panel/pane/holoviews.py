@@ -47,6 +47,8 @@ class HoloViews(PaneBase):
 
     _panes = {'bokeh': Bokeh, 'matplotlib': Matplotlib, 'plotly': Plotly}
 
+    _rename = {'backend': None, 'widget_type': None, 'widgets': None}
+
     def __init__(self, object=None, **params):
         super(HoloViews, self).__init__(object, **params)
         self.widget_box = Column()

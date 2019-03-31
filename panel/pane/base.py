@@ -161,7 +161,11 @@ class PaneBase(Reactive):
         -------
         Cloned Pane object
         """
-        return type(self)(object, **dict(self.param.get_param_values(), **params))
+        params = dict(self.param.get_param_values(), **params)
+        old_object = params.pop('object')
+        if object is None:
+            object = old_object
+        return type(self)(object, **params)
 
     def get_root(self, doc=None, comm=None):
         """
