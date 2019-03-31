@@ -18,6 +18,7 @@ from bokeh.io import curdoc as _curdoc
 from bokeh.models import CustomJS
 from pyviz_comms import JupyterCommManager
 
+from .callbacks import PeriodicCallback
 from .config import config, panel_extension
 from .io.embed import embed_state
 from .io.model import add_to_doc
@@ -777,7 +778,6 @@ class Reactive(Viewable):
         -------
         Return a PeriodicCallback object with start and stop methods.
         """
-        from .callbacks import PeriodicCallback
         cb = PeriodicCallback(callback=callback, period=period,
                               count=count, timeout=timeout)
         if start:

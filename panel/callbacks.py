@@ -10,8 +10,6 @@ import param
 
 from bokeh.io import curdoc as _curdoc
 
-from .viewable import Reactive
-
 
 class PeriodicCallback(param.Parameterized):
     """
