@@ -377,9 +377,6 @@ def test_holoviews_link_within_pane(document, comm):
     pane = Pane(Pane(hv.Layout([c1, c2]), backend='bokeh'))
     column = pane.get_root(document, comm=comm)
 
-    from panel.io.model import bokeh_repr
-    print(bokeh_repr(column))
-
     assert len(column.children) == 1
     subcolumn = column.children[0]
     assert isinstance(subcolumn, BkColumn)
