@@ -125,7 +125,7 @@ def test_holoviews_pane_initialize_empty(document, comm):
     pane.object = hv.Curve([1, 2, 3])
     model = row.children[0]
     assert isinstance(model, Figure)
-    
+
 
 @hv_available
 def test_holoviews_widgets_from_dynamicmap(document, comm):
@@ -219,7 +219,7 @@ def test_holoviews_updates_widgets(document, comm):
 def test_holoviews_widgets_update_plot(document, comm):
     hmap = hv.HoloMap({(i, chr(65+i)): hv.Curve([i]) for i in range(3)}, kdims=['X', 'Y'])
 
-    hv_pane = HoloViews(hmap)
+    hv_pane = HoloViews(hmap, backend='bokeh')
     layout = hv_pane.get_root(document, comm)
 
     cds = layout.children[0].select_one(ColumnDataSource)
@@ -322,7 +322,7 @@ def test_holoviews_link_across_panes(document, comm):
 
     RangeToolLink(c1, c2)
 
-    layout = Row(c1, c2)
+    layout = Row(Pane(c1, backend='bokeh'), Pane(c2, backend='bokeh'))
     row = layout.get_root(document, comm=comm)
 
     assert len(row.children) == 2
@@ -334,7 +334,7 @@ def test_holoviews_link_across_panes(document, comm):
     range_tool = row.select_one({'type': RangeTool})
     assert isinstance(range_tool, RangeTool)
     assert range_tool.x_range == p2.x_range
-    
+
 
 @hv_available
 def test_holoviews_link_after_adding_item(document, comm):
@@ -343,26 +343,26 @@ def test_holoviews_link_after_adding_item(document, comm):
 
     c1 = hv.Curve([])
     c2 = hv.Curve([])
-    
+
     RangeToolLink(c1, c2)
-    
-    layout = Row(c1)
+
+    layout = Row(Pane(c1, backend='bokeh'))
     row = layout.get_root(document, comm=comm)
-    
+
     assert len(row.children) == 1
     p1, = row.children
-    
+
     assert isinstance(p1, Figure)
     range_tool = row.select_one({'type': RangeTool})
     assert range_tool is None
-    
-    layout.append(c2)
+
+    layout.append(Pane(c2, backend='bokeh'))
     _, p2 = row.children
     assert isinstance(p2, Figure)
     range_tool = row.select_one({'type': RangeTool})
     assert isinstance(range_tool, RangeTool)
     assert range_tool.x_range == p2.x_range
-    
+
 
 @hv_available
 def test_holoviews_link_within_pane(document, comm):
@@ -374,8 +374,7 @@ def test_holoviews_link_within_pane(document, comm):
 
     RangeToolLink(c1, c2)
 
-    pane = Pane(hv.Layout([c1, c2]))
-    print(pane)
+    pane = Pane(Pane(hv.Layout([c1, c2]), backend='bokeh'))
     column = pane.get_root(document, comm=comm)
 
     assert len(column.children) == 1

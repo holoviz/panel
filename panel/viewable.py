@@ -18,7 +18,7 @@ from bokeh.io import curdoc as _curdoc
 from bokeh.models import CustomJS
 from pyviz_comms import JupyterCommManager
 
-from .config import config
+from .config import config, panel_extension
 from .io.embed import embed_state
 from .io.model import add_to_doc
 from .io.notebook import (get_comm_customjs, push, render_mimebundle,
@@ -41,7 +41,7 @@ class Layoutable(param.Parameterized):
         preserved).
     """)
 
-    background = param.Color(default=None, doc="""
+    background = param.Parameter(default=None, doc="""
         Background color of the component.""")
 
     css_classes = param.List(default=None, doc="""
@@ -248,6 +248,8 @@ class Viewable(Layoutable):
             hook(self, root)
 
     def _repr_mimebundle_(self, include=None, exclude=None):
+        if not panel_extension._loaded:
+            return None
         state._comm_manager = JupyterCommManager
         doc = _Document()
         comm = state._comm_manager.get_server_comm()
@@ -284,6 +286,20 @@ class Viewable(Layoutable):
     #----------------------------------------------------------------
     # Public API
     #----------------------------------------------------------------
+
+    def clone(self, **params):
+        """
+        Makes a copy of the object sharing the same parameters.
+
+        Arguments
+        ---------
+        params: Keyword arguments override the parameters on the clone.
+
+        Returns
+        -------
+        Cloned Viewable object
+        """
+        return type(self)(**dict(self.param.get_param_values(), **params))
 
     def pprint(self):
         """
@@ -626,7 +642,7 @@ class Reactive(Viewable):
         """
         return get_comm_customjs(change, client_comm, plot_id,
                                  self._timeout, self._debounce)
-        
+
     #----------------------------------------------------------------
     # Model API
     #----------------------------------------------------------------

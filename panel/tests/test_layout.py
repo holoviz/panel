@@ -310,6 +310,28 @@ def test_layout_clear(panel, document, comm):
     assert p1._models == p2._models == {}
 
 
+@pytest.mark.parametrize('panel', [Column, Row])
+def test_layout_clone_args(panel):
+    div1 = Div()
+    div2 = Div()
+    layout = panel(div1, div2)
+    clone = layout.clone(div2, div1)
+
+    assert layout.objects[0].object is clone.objects[1].object
+    assert layout.objects[1].object is clone.objects[0].object
+
+
+@pytest.mark.parametrize('panel', [Column, Row])
+def test_layout_clone_kwargs(panel):
+    div1 = Div()
+    div2 = Div()
+    layout = panel(div1, div2)
+    clone = layout.clone(width=400, sizing_mode='stretch_height')
+
+    assert clone.width == 400
+    assert clone.sizing_mode == 'stretch_height'
+
+
 def test_tabs_basic_constructor(document, comm):
     tabs = Tabs('plain', 'text')
 
@@ -646,6 +668,36 @@ def test_tabs_setitem(document, comm):
     assert p1._models == {}
 
 
+def test_tabs_clone():
+    div1 = Div()
+    div2 = Div()
+    tabs = Tabs(Pane(div1), Pane(div2))
+    clone = tabs.clone()
+
+    assert ([(k, v) for k, v in tabs.param.get_param_values() if k != 'name'] ==
+            [(k, v) for k, v in clone.param.get_param_values() if k != 'name'])
+
+
+def test_tabs_clone_args():
+    div1 = Div()
+    div2 = Div()
+    tabs = Tabs(div1, div2)
+    clone = tabs.clone(div2, div1)
+
+    assert tabs.objects[0].object is clone.objects[1].object
+    assert tabs.objects[1].object is clone.objects[0].object
+
+
+def test_tabs_clone_kwargs():
+    div1 = Div()
+    div2 = Div()
+    tabs = Tabs(div1, div2)
+    clone = tabs.clone(width=400, sizing_mode='stretch_height')
+
+    assert clone.width == 400
+    assert clone.sizing_mode == 'stretch_height'
+
+
 def test_tabs_setitem_out_of_bounds(document, comm):
     div1 = Div()
     div2 = Div()
@@ -798,6 +850,12 @@ def test_spacer(document, comm):
     assert model.height == 400
 
 
+def test_spacer_clone():
+    spacer = Spacer(width=400, height=300)
+
+    assert spacer.param.get_param_values() == spacer.clone().param.get_param_values()
+
+
 def test_layout_with_param_setitem(document, comm):
     import param
     class TestClass(param.Parameterized):
@@ -826,6 +884,16 @@ def test_gridspec_integer_setitem():
     assert list(gspec.objects) == [(0, 0, 1, 1)]
 
 
+def test_gridspec_clone():
+    div = Div()
+    gspec = GridSpec()
+    gspec[0, 0] = div
+    clone = gspec.clone()
+
+    assert gspec.objects == clone.objects
+    assert gspec.param.get_param_values() == clone.param.get_param_values()
+
+
 def test_gridspec_slice_setitem():
     div = Div()
     gspec = GridSpec()
@@ -836,7 +904,7 @@ def test_gridspec_slice_setitem():
 
 def test_gridspec_setitem_int_overlap():
     div = Div()
-    gspec = GridSpec()
+    gspec = GridSpec(mode='error')
     gspec[0, 0] = div
     with pytest.raises(IndexError):
         gspec[0, 0] = 'String'
@@ -844,10 +912,30 @@ def test_gridspec_setitem_int_overlap():
 
 def test_gridspec_setitem_slice_overlap():
     div = Div()
-    gspec = GridSpec()
+    gspec = GridSpec(mode='error')
     gspec[0, :] = div
     with pytest.raises(IndexError):
         gspec[0, 1] = div
+
+
+def test_gridspec_setitem_cell_override():
+    div = Div()
+    div2 = Div()
+    gspec = GridSpec()
+    gspec[0, 0] = div
+    gspec[0, 0] = div2
+    assert (0, 0, 1, 1) in gspec.objects
+    assert gspec.objects[(0, 0, 1, 1)].object is div2
+
+
+def test_gridspec_setitem_span_override():
+    div = Div()
+    div2 = Div()
+    gspec = GridSpec()
+    gspec[0, :] = div
+    gspec[0, 0] = div2
+    assert (0, 0, 1, 1) in gspec.objects
+    assert gspec.objects[(0, 0, 1, 1)].object is div2
 
 
 def test_gridspec_fixed_with_int_setitem(document, comm):

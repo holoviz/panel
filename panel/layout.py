@@ -148,8 +148,13 @@ class ListPanel(Panel):
 
     def __init__(self, *objects, **params):
         from .pane import panel
-        objects = [panel(pane) for pane in objects]
-        super(Panel, self).__init__(objects=objects, **params)
+        if objects:
+            if 'objects' in params:
+                raise ValueError("A %s's objects should be supplied either "
+                                 "as positional arguments or as a keyword, "
+                                 "not both." % type(self).__name__)
+            params['objects'] = [panel(pane) for pane in objects]
+        super(Panel, self).__init__(**params)
 
     #----------------------------------------------------------------
     # Public API
@@ -204,40 +209,109 @@ class ListPanel(Panel):
             new_objects[i] = panel(pane)
         self.objects = new_objects
 
-    def append(self, pane):
+    def clone(self, *objects, **params):
+        """
+        Makes a copy of the layout sharing the same parameters.
+
+        Arguments
+        ---------
+        objects: Objects to add to the cloned layout.
+        params: Keyword arguments override the parameters on the clone.
+
+        Returns
+        -------
+        Cloned layout object
+        """
+        if not objects:
+            if 'objects' in params:
+                objects = params.pop('objects')
+            else:
+                objects = self.objects
+        elif 'objects' in params:
+            raise ValueError("A %s's objects should be supplied either "
+                             "as arguments or as a keyword, not both."
+                             % type(self).__name__)
+        p = dict(self.param.get_param_values(), **params)
+        del p['objects']
+        return type(self)(*objects, **params)
+
+    def append(self, obj):
+        """
+        Appends an object to the layout.
+
+        Arguments
+        ---------
+        obj (object): Panel component to add to the layout.
+        """
         from .pane import panel
         new_objects = list(self)
-        new_objects.append(panel(pane))
+        new_objects.append(panel(obj))
         self.objects = new_objects
 
     def clear(self):
+        """
+        Clears the objects on this layout.
+        """
         self.objects = []
 
-    def extend(self, panes):
+    def extend(self, objects):
+        """
+        Extends the objects on this layout with a list.
+
+        Arguments
+        ---------
+        objects (list): List of panel components to add to the layout.
+        """
         from .pane import panel
         new_objects = list(self)
-        new_objects.extend(list(map(panel, panes)))
+        new_objects.extend(list(map(panel, objects)))
         self.objects = new_objects
 
-    def insert(self, index, pane):
+    def insert(self, index, obj):
+        """
+        Inserts an object in the layout at the specified index.
+
+        Arguments
+        ---------
+        index (int): Index at which to insert the object.
+        object (object): Panel components to insert in the layout.
+        """
         from .pane import panel
         new_objects = list(self)
-        new_objects.insert(index, panel(pane))
+        new_objects.insert(index, panel(obj))
         self.objects = new_objects
 
     def pop(self, index):
+        """
+        Pops an item from the layout by index.
+
+        Arguments
+        ---------
+        index (int): The index of the item to pop from the layout.
+        """
         new_objects = list(self)
         if index in new_objects:
             index = new_objects.index(index)
-        new_objects.pop(index)
+        obj = new_objects.pop(index)
         self.objects = new_objects
+        return obj
 
-    def remove(self, pane):
+    def remove(self, obj):
+        """
+        Removes an object from the layout.
+
+        Arguments
+        ---------
+        obj (object): The object to remove from the layout.
+        """
         new_objects = list(self)
-        new_objects.remove(pane)
+        new_objects.remove(obj)
         self.objects = new_objects
 
     def reverse(self):
+        """
+        Reverses the objects in the layout.
+        """
         new_objects = list(self)
         new_objects.reverse()
         self.objects = new_objects
@@ -267,8 +341,15 @@ class Tabs(ListPanel):
     active = param.Integer(default=0, doc="""
         Number of the currently active tab.""")
 
+    closable = param.Boolean(default=False, doc="""
+        Whether it should be possible to close tabs.""")
+
     objects = param.List(default=[], doc="""
         The list of child objects that make up the tabs.""")
+
+    tabs_location = param.ObjectSelector(
+        default='above', objects=['above', 'below', 'left', 'right'], doc="""
+        The location of the tabs relative to the tab contents.""")
 
     height = param.Integer(default=None, bounds=(0, None))
 
@@ -281,6 +362,12 @@ class Tabs(ListPanel):
     _linked_props = ['active']
 
     def __init__(self, *items, **params):
+        if 'objects' in params:
+            if items:
+                raise ValueError('Tabs objects should be supplied either '
+                                 'as positional arguments or as a keyword, '
+                                 'not both.')
+            items = params['objects']
         objects, self._names = self._to_objects_and_names(items)
         super(Tabs, self).__init__(*objects, **params)
         self.param.watch(self._update_names, 'objects')
@@ -306,6 +393,10 @@ class Tabs(ListPanel):
             names.append(name)
         return objects, names
 
+    def _init_properties(self):
+        return {k: v for k, v in self.param.get_param_values()
+                if v is not None and k != 'closable'}
+
     #----------------------------------------------------------------
     # Callback API
     #----------------------------------------------------------------
@@ -327,6 +418,13 @@ class Tabs(ListPanel):
     # Model API
     #----------------------------------------------------------------
 
+    def _update_model(self, events, msg, root, model, doc, comm=None):
+        if 'closable' in msg:
+            closable = msg.pop('closable')
+            for child in model.tabs:
+                child.closable = closable
+        super(Tabs, self)._update_model(events, msg, root, model, doc, comm)
+
     def _get_objects(self, model, old_objects, doc, root, comm=None):
         """
         Returns new child models for the layout while reusing unchanged
@@ -346,7 +444,8 @@ class Tabs(ListPanel):
                 child, _ = pane._models[root.ref['id']]
             else:
                 child = pane._get_model(doc, root, model, comm)
-            child = BkPanel(title=name, name=pane.name, child=child)
+            child = BkPanel(title=name, name=pane.name, child=child,
+                            closable=self.closable)
             new_models.append(child)
         for obj in old_objects:
             if obj not in self.objects:
@@ -393,7 +492,40 @@ class Tabs(ListPanel):
             new_objects[i], self._names[i] = self._to_object_and_name(pane)
         self.objects = new_objects
 
+    def clone(self, *objects, **params):
+        """
+        Makes a copy of the Tabs sharing the same parameters.
+
+        Arguments
+        ---------
+        objects: Objects to add to the cloned Tabs object.
+        params: Keyword arguments override the parameters on the clone.
+
+        Returns
+        -------
+        Cloned Tabs object
+        """
+        if not objects:
+            if 'objects' in params:
+                objects = params.pop('objects')
+            else:
+                objects = zip(self._names, self.objects)
+        elif 'objects' in params:
+            raise ValueError('Tabs objects should be supplied either '
+                             'as positional arguments or as a keyword, '
+                             'not both.')
+        p = dict(self.param.get_param_values(), **params)
+        del p['objects']
+        return type(self)(*objects, **params)
+
     def append(self, pane):
+        """
+        Appends an object to the tabs.
+
+        Arguments
+        ---------
+        obj (object): Panel component to add as a tab.
+        """
         new_object, new_name = self._to_object_and_name(pane)
         new_objects = list(self)
         new_objects.append(new_object)
@@ -401,10 +533,20 @@ class Tabs(ListPanel):
         self.objects = new_objects
 
     def clear(self):
+        """
+        Clears the tabs.
+        """
         self._names = []
         self.objects = []
 
     def extend(self, panes):
+        """
+        Extends the the tabs with a list.
+
+        Arguments
+        ---------
+        objects (list): List of panel components to add as tabs.
+        """
         new_objects, new_names = self._to_objects_and_names(panes)
         objects = list(self)
         objects.extend(new_objects)
@@ -412,6 +554,14 @@ class Tabs(ListPanel):
         self.objects = objects
 
     def insert(self, index, pane):
+        """
+        Inserts an object in the tabs at the specified index.
+
+        Arguments
+        ---------
+        index (int): Index at which to insert the object.
+        object (object): Panel components to insert as tabs.
+        """
         new_object, new_name = self._to_object_and_name(pane)
         new_objects = list(self.objects)
         new_objects.insert(index, new_object)
@@ -419,6 +569,13 @@ class Tabs(ListPanel):
         self.objects = new_objects
 
     def pop(self, index):
+        """
+        Pops an item from the tabs by index.
+
+        Arguments
+        ---------
+        index (int): The index of the item to pop from the tabs.
+        """
         new_objects = list(self)
         if index in new_objects:
             index = new_objects.index(index)
@@ -427,6 +584,13 @@ class Tabs(ListPanel):
         self.objects = new_objects
 
     def remove(self, pane):
+        """
+        Removes an object from the tabs.
+
+        Arguments
+        ---------
+        obj (object): The object to remove from the tabs.
+        """
         new_objects = list(self)
         if pane in new_objects:
             index = new_objects.index(pane)
@@ -435,6 +599,9 @@ class Tabs(ListPanel):
         self.objects = new_objects
 
     def reverse(self):
+        """
+        Reverses the tabs.
+        """
         new_objects = list(self)
         new_objects.reverse()
         self._names.reverse()
@@ -446,11 +613,18 @@ class GridSpec(Panel):
     objects = param.Dict(default={}, doc="""
         The dictionary of child objects that make up the grid.""")
 
+    mode = param.ObjectSelector(
+        default='warn', objects=['warn', 'error', 'override'], doc="""
+        Whether to warn, error or simply override on overlapping
+        assignment.""")
+
     width = param.Integer(default=600)
 
     height = param.Integer(default=600)
 
     _bokeh_model = BkGridBox
+
+    _rename = {'objects': 'children', 'mode': None}
 
     def __init__(self, **params):
         if 'objects' not in params:
@@ -467,9 +641,17 @@ class GridSpec(Panel):
         return properties
 
     def _get_objects(self, model, old_objects, doc, root, comm=None):
+        if self.ncols:
+            width = int(float(self.width)/self.ncols)
+        else:
+            width = 0
+
+        if self.nrows:
+            height = int(float(self.height)/self.nrows)
+        else:
+            height = 0
+
         children = []
-        width = int(float(self.width)/self.ncols)
-        height = int(float(self.height)/self.nrows)
         for (y0, x0, y1, x1), obj in self.objects.items():
             x0 = 0 if x0 is None else x0
             x1 = (self.ncols) if x1 is None else x1
@@ -519,6 +701,19 @@ class GridSpec(Panel):
         min_yidx = [y0 for (y0, x0, _, _) in self.objects if y0 is not None]
         return min(min_yidx) if min_yidx and len(min_yidx) == len(self.objects) else 0
 
+    @property
+    def _object_grid(self):
+        grid = np.full((self.nrows, self.ncols), None)
+        for i, ((y0, x0, y1, x1), obj) in enumerate(self.objects.items()):
+            l = 0 if x0 is None else x0
+            r = self.ncols if x1 is None else x1
+            t = 0 if y0 is None else y0
+            b = self.nrows if y1 is None else y1
+            for y in range(t, b):
+                for x in range(l, r):
+                    grid[y, x] = {((y0, x0, y1, x1), obj)}
+        return grid
+
     #----------------------------------------------------------------
     # Public API
     #----------------------------------------------------------------
@@ -544,9 +739,41 @@ class GridSpec(Panel):
             grid[y0:y1, x0:x1] += 1
         return grid
 
+    def clone(self, **params):
+        """
+        Makes a copy of the GridSpec sharing the same parameters.
+
+        Arguments
+        ---------
+        params: Keyword arguments override the parameters on the clone.
+
+        Returns
+        -------
+        Cloned GridSpec object
+        """
+        p = dict(self.param.get_param_values(), **params)
+        return type(self)(**p)
+
     def __iter__(self):
         for obj in self.objects.values():
             yield obj
+
+    def __delitem__(self, index, trigger=True):
+        if isinstance(index, tuple):
+            yidx, xidx = index
+        else:
+            yidx, xidx = index, slice(None)
+
+        subgrid = self._object_grid[yidx, xidx]
+        if isinstance(subgrid, np.ndarray):
+            deleted = OrderedDict([list(o)[0] for o in subgrid.flatten()])
+        else:
+            deleted = [list(subgrid)[0][0]]
+        if deleted:
+            for key in deleted:
+                del self.objects[key]
+            if trigger:
+                self.param.trigger('objects')
 
     def __getitem__(self, index):
         if isinstance(index, tuple):
@@ -554,17 +781,7 @@ class GridSpec(Panel):
         else:
             yidx, xidx = index, slice(None)
 
-        grid = np.full((self.nrows, self.ncols), None)
-        items = self.objects.items()
-        for i, ((y0, x0, y1, x1), obj) in enumerate(items):
-            l = 0 if x0 is None else x0
-            r = self.nrows if x1 is None else x1
-            t = 0 if y0 is None else y0
-            b = self.ncols if y1 is None else y1
-            for y in range(t, b):
-                for x in range(l, r):
-                    grid[y, x] = {((y0, x0, y1, x1), obj)}
-        subgrid = grid[yidx, xidx]
+        subgrid = self._object_grid[yidx, xidx]
         if isinstance(subgrid, np.ndarray):
             params = dict(self.get_param_values())
             params['objects'] = OrderedDict([list(o)[0] for o in subgrid.flatten()])
@@ -615,34 +832,38 @@ class GridSpec(Panel):
         b = self.ncols if y1 is None else y1
 
         key = (y0, x0, y1, x1)
-
         overlap = key in self.objects
+        clone = self.clone(mode='override')
         if not overlap:
-            self.objects[key] = Pane(obj)
-            grid = self.grid
+            clone.objects[key] = Pane(obj)
+            grid = clone.grid
         else:
-            grid = self.grid
+            grid = clone.grid
             grid[t:b, l:r] += 1
-        overlap_grid = grid>1
 
+        overlap_grid = grid>1
         if (overlap_grid).any():
-            if not overlap:
-                self.objects.pop((y0, x0, y1, x1))
             overlapping = ''
             objects = []
             for (yidx, xidx) in zip(*np.where(overlap_grid)):
-                obj = self[yidx, xidx]
-                if obj not in objects:
-                    objects.append(obj)
-                    overlapping += '    (%d, %d): %s\n\n' % (yidx, xidx, obj)
-            raise IndexError('Specified region overlaps with the following '
-                             'existing object(s) in the grid:\n\n'+overlapping+
-                             'The following shows a view of the grid '
-                             '(empty: 0, occupied: 1, overlapping: 2):\n\n'+
-                             str(grid.astype('uint8')))
+                old_obj = self[yidx, xidx]
+                if old_obj not in objects:
+                    objects.append(old_obj)
+                    overlapping += '    (%d, %d): %s\n\n' % (yidx, xidx, old_obj)
+            overlap_text = ('Specified region overlaps with the following '
+                            'existing object(s) in the grid:\n\n'+overlapping+
+                            'The following shows a view of the grid '
+                            '(empty: 0, occupied: 1, overlapping: 2):\n\n'+
+                            str(grid.astype('uint8')))
+            if self.mode == 'error':
+                raise IndexError(overlap_text)
+            elif self.mode == 'warn':
+                self.param.warning(overlap_text)
+            self.__delitem__(index, False)
+        self.objects[key] = Pane(obj)
+        self.param.trigger('objects')
 
 
-        
 class Spacer(Reactive):
     """Empty object used to control formatting (using positive or negative space)"""
 

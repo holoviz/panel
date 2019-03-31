@@ -35,6 +35,7 @@ nbsite_gallery_conf = {
             'title': 'Reference Gallery',
             'sections': [
                 'panes',
+                'layouts',
                 'widgets'
             ]
         }

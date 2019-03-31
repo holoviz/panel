@@ -26,7 +26,8 @@ def is_sympy_expr(obj):
 
 class LaTeX(DivPaneBase):
 
-    renderer = param.ObjectSelector(default=None, objects=['katex', 'mathjax'], doc="""
+    renderer = param.ObjectSelector(default=None, allow_None=True,
+                                    objects=['katex', 'mathjax'], doc="""
         The JS renderer used to render the LaTeX expression.""")
 
     # Priority is dependent on the data type
@@ -70,7 +71,9 @@ class LaTeX(DivPaneBase):
     def _get_properties(self):
         properties = super(LaTeX, self)._get_properties()
         obj = self.object
-        if hasattr(obj, '_repr_latex_'):
+        if obj is None:
+            obj = ''
+        elif hasattr(obj, '_repr_latex_'):
             obj = obj._repr_latex_()
         elif is_sympy_expr(obj):
             import sympy
