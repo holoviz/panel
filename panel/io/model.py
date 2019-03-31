@@ -58,7 +58,7 @@ def bokeh_repr(obj, depth=0, ignored=['children', 'text', 'name', 'toolbar', 're
     Returns a string repr for a bokeh model, useful for recreating
     panel objects using pure bokeh.
     """
-    from .viewable import Viewable
+    from ..viewable import Viewable
     if isinstance(obj, Viewable):
         obj = obj.get_root(Document())
 
