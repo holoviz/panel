@@ -16,6 +16,8 @@ class Ace(PaneBase):
     theme = param.String(default='chrome', doc="Theme of the editor")
      
     language = param.String(default='python', doc="Language of the editor")
+    
+    annotations = param.List(doc="List of annotations to add to the editor")
 
     _updates = False
 
@@ -38,6 +40,6 @@ class Ace(PaneBase):
         model = AcePlot(**props)
         if root is None:
             root = model
-        self._link_props(model, ['code', 'language', 'theme'], doc, root, comm)
+        self._link_props(model, ['code', 'language', 'theme', 'annotations'], doc, root, comm)
         self._models[root.ref['id']] = (model, parent)
         return model

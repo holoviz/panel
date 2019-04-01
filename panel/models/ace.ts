@@ -33,11 +33,11 @@ export class AcePlotView extends HTMLBoxView {
     this.connect(this.model.properties.code.change, () => this._update_code_from_model())
     this.connect(this.model.properties.theme.change, () => this._update_theme())
     this.connect(this.model.properties.language.change, () => this._update_language())
+    this.connect(this.model.properties.annotations.change, () => this._add_annotations())
   }
 
   render(): void {
     super.render()
-    debugger
     if (!(this._container === this.el.childNodes[0]))
       this.el.appendChild(this._container)
       this._container.textContent = this.model.code
@@ -69,6 +69,10 @@ export class AcePlotView extends HTMLBoxView {
     this._editor.session.setMode("ace/mode/" + `${this.model.language}`)
   }
 
+  _add_annotations(): void{
+    this._editor.session.setAnnotations(this.model.annotations)
+  }
+
   after_layout(): void{
     super.after_layout()
     this._editor.resize()
@@ -82,6 +86,7 @@ export namespace AcePlot {
     code: p.Property<string>
     language: p.Property<string>
     theme: p.Property<string>
+    annotations: p.Property<any[]>
   }
 }
 
@@ -99,9 +104,10 @@ export class AcePlot extends HTMLBox {
     this.prototype.default_view = AcePlotView
 
     this.define<AcePlot.Props>({
-      code: [ p.String ],
-      language: [ p.String, 'python' ],
-      theme: [ p.String, 'chrome' ]
+      code:        [ p.String           ],
+      language:    [ p.String, 'python' ],
+      theme:       [ p.String, 'chrome' ],
+      annotations: [ p.Any              ]
     })
 
     this.override({

@@ -3,11 +3,10 @@ Defines custom AcePlot bokeh model to render Ace editor.
 """
 import os
 
-from bokeh.core.properties import String, Override
+from bokeh.core.properties import String, Override, Dict, Any, List
 from bokeh.models import HTMLBox
 
 from ..compiler import CUSTOM_MODELS
-
 
 class AcePlot(HTMLBox):
     """
@@ -27,6 +26,8 @@ class AcePlot(HTMLBox):
     theme = String(default='chrome')
 
     language = String(default='python')
+
+    annotations = List(Dict(String, Any))
 
     height = Override(default=300)
 
