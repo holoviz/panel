@@ -580,6 +580,25 @@ class ParamMethod(PaneBase):
         self._models[ref] = (model, parent)
         return model
 
+    def select(self, selector=None):
+        """
+        Iterates over the Viewable and any potential children in the
+        applying the Selector.
+
+        Arguments
+        ---------
+        selector: type or callable or None
+          The selector allows selecting a subset of Viewables by
+          declaring a type or callable function to filter by.
+
+        Returns
+        -------
+        viewables: list(Viewable)
+        """
+        selected = super(ParamMethod, self).select(selector)
+        selected += self._pane.select(selector)
+        return selected
+
     def _cleanup(self, root=None):
         self._inner_layout._cleanup(root)
         super(ParamMethod, self)._cleanup(root)
