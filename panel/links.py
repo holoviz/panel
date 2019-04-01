@@ -141,6 +141,9 @@ class GenericLink(Link):
         A dictionary mapping between source specification to target
         specification.""")
 
+    # Whether the link requires a target
+    _requires_target = True
+
 
 class LinkCallback(param.Parameterized):
 
