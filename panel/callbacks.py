@@ -41,14 +41,15 @@ class PeriodicCallback(param.Parameterized):
         self._start_time = None
         self._timeout = None
         self._cb = None
+        self._doc = None
 
     def start(self):
         if self._cb is not None:
             raise RuntimeError('Periodic callback has already started.')
         self._start_time = time.time()
         if _curdoc().session_context:
-            doc = _curdoc()
-            self._cb = doc.add_periodic_callback(self._periodic_callback, self.period)
+            self._doc = _curdoc()
+            self._cb = self._doc.add_periodic_callback(self._periodic_callback, self.period)
         else:
             from tornado.ioloop import PeriodicCallback
             self._cb = PeriodicCallback(self._periodic_callback, self.period)
@@ -67,9 +68,8 @@ class PeriodicCallback(param.Parameterized):
     def stop(self):
         self._counter = 0
         self._timeout = None
-        if _curdoc().session_context:
-            doc = _curdoc()
-            doc.remove_periodic_callback(self._cb)
+        if self._doc:
+            self._doc.remove_periodic_callback(self._cb)
         else:
             self._cb.stop()
         self._cb = None
