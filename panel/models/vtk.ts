@@ -91,7 +91,7 @@ export class VTKPlotView extends HTMLBoxView {
         })
         sceneImporter.setUrl('index.json');
         sceneImporter.onReady(() => {
-          this._rendererEl.getRenderWindow().render()
+          setTimeout(() => this._rendererEl.getRenderWindow().render(),100)
         })
       }
     })
