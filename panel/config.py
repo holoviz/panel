@@ -152,7 +152,8 @@ class panel_extension(_pyviz_extension):
                 'mathjax': 'panel.models.mathjax',
                 'plotly': 'panel.models.plotly',
                 'vega': 'panel.models.vega',
-                'vtk': 'panel.models.vtk'}
+                'vtk': 'panel.models.vtk',
+                'ace': 'panel.models.ace'}
 
     def __call__(self, *args, **params):
         # Abort if IPython not found
