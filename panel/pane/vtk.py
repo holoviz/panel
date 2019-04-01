@@ -422,6 +422,13 @@ class VTK(PaneBase):
                         dataset = gf.GetOutput()
                     else:
                         dataset = mapper.GetInput()
+                        
+                    if dataset and not isinstance(dataset, (vtk.vtkPolyData)):
+                        # All data must be PolyData surfaces!
+                        gf = vtk.vtkGeometryFilter()
+                        gf.SetInputData(dataset)
+                        gf.Update()
+                        dataset = gf.GetOutputDataObject(0)
 
                     if dataset and dataset.GetPoints():
                         componentName = str(id(renProp))
