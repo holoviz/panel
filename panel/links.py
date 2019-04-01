@@ -111,9 +111,10 @@ class Link(param.Parameterized):
         if 'holoviews' in sys.modules:
             hv_views = root_view.select(HoloViews)
             map_hve_bk = generate_panel_bokeh_map(root_model, hv_views)
-            found += [(link, src, tgt) for src in linkable if src in cls.registry
+            hv_found = [(link, src, tgt) for src in linkable if src in cls.registry
                       for link in cls.registry[src]
                       for tgt in map_hve_bk[link.target]]
+            found += hv_found
 
         callbacks = []
         for link, src, tgt in found:
@@ -140,9 +141,6 @@ class GenericLink(Link):
     properties = param.Dict(default={}, doc="""
         A dictionary mapping between source specification to target
         specification.""")
-
-    # Whether the link requires a target
-    _requires_target = True
 
 
 class LinkCallback(param.Parameterized):
@@ -201,9 +199,13 @@ class LinkCallback(param.Parameterized):
 
     def _init_callback(self, root_model, link, source, src_spec, target, tgt_spec, code):
         references = {k: v for k, v in link.get_param_values()
-                      if k not in ('source', 'target', 'name', 'code')}
+                      if k not in ('source', 'target', 'name', 'code', 'bidirectional')}
 
         src_model = self._resolve_model(root_model, source, src_spec[0])
+        link_id = id(link)
+        if any(link_id in cb.tags for cbs in src_model.js_property_callbacks.values() for cb in cbs):
+            # Skip registering callback if already registered
+            return
         references['source'] = src_model
 
         tgt_model = self._resolve_model(root_model, target, tgt_spec[0])
@@ -226,7 +228,7 @@ class LinkCallback(param.Parameterized):
         if code is None:
             code = self._get_code(link, source, src_spec[1], target, tgt_spec[1])
 
-        src_cb = CustomJS(args=references, code=code)
+        src_cb = CustomJS(args=references, code=code, tags=[link_id])
         changes, events = self._get_triggers(link, src_spec)
         for ch in changes:
             src_model.js_on_change(ch, src_cb)
