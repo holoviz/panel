@@ -111,10 +111,9 @@ class Link(param.Parameterized):
         if 'holoviews' in sys.modules:
             hv_views = root_view.select(HoloViews)
             map_hve_bk = generate_panel_bokeh_map(root_model, hv_views)
-            hv_found = [(link, src, tgt) for src in linkable if src in cls.registry
+            found += [(link, src, tgt) for src in linkable if src in cls.registry
                       for link in cls.registry[src]
                       for tgt in map_hve_bk[link.target]]
-            found += hv_found
 
         callbacks = []
         for link, src, tgt in found:
@@ -199,7 +198,7 @@ class LinkCallback(param.Parameterized):
 
     def _init_callback(self, root_model, link, source, src_spec, target, tgt_spec, code):
         references = {k: v for k, v in link.get_param_values()
-                      if k not in ('source', 'target', 'name', 'code', 'bidirectional')}
+                      if k not in ('source', 'target', 'name', 'code')}
 
         src_model = self._resolve_model(root_model, source, src_spec[0])
         link_id = id(link)
