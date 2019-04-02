@@ -20,6 +20,10 @@ class Ace(PaneBase):
     annotations = param.List(doc="List of annotations to add to the editor")
 
     _updates = False
+    
+    @classmethod
+    def applies(cls, obj):
+        return False
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         """
