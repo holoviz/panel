@@ -541,7 +541,7 @@ class VTK(PaneBase):
 
         # Save texture data if any
         for key, val in textureToSave.items():
-            _write_data_set(val, None, newDSName=key, compress=doCompressArrays)
+            _write_data_set(scDirs, val, None, newDSName=key, compress=doCompressArrays)
 
         activeCamera = renderer.GetActiveCamera()
         background = renderer.GetBackground()
