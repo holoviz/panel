@@ -204,6 +204,10 @@ class LinkCallback(param.Parameterized):
                       if k not in ('source', 'target', 'name', 'code')}
 
         src_model = self._resolve_model(root_model, source, src_spec[0])
+        link_id = id(link)
+        if any(link_id in cb.tags for cbs in src_model.js_property_callbacks.values() for cb in cbs):
+            # Skip registering callback if already registered
+            return
         references['source'] = src_model
 
         tgt_model = self._resolve_model(root_model, target, tgt_spec[0])
@@ -226,7 +230,7 @@ class LinkCallback(param.Parameterized):
         if code is None:
             code = self._get_code(link, source, src_spec[1], target, tgt_spec[1])
 
-        src_cb = CustomJS(args=references, code=code)
+        src_cb = CustomJS(args=references, code=code, tags=[link_id])
         changes, events = self._get_triggers(link, src_spec)
         for ch in changes:
             src_model.js_on_change(ch, src_cb)

@@ -57,7 +57,7 @@ class _state(param.Parameterized):
 
     @property
     def session_args(self):
-        return self.curdoc.session_context.arguments if self.curdoc else {}
+        return self.curdoc.session_context.request.arguments if self.curdoc else {}
 
 
 state = _state()

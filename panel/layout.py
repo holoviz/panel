@@ -62,7 +62,11 @@ class Panel(Reactive):
             old = events['objects'].old
             msg[self._rename['objects']] = self._get_objects(model, old, doc, root, comm)
         model.update(**msg)
-        self._preprocess(root) #preprocess links between new elements
+
+        from .io import state
+        ref = root.ref['id']
+        if ref in state._views:
+            state._views[ref][0]._preprocess(root)
 
     #----------------------------------------------------------------
     # Model API
