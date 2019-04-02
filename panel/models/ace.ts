@@ -14,6 +14,7 @@ export class AcePlotView extends HTMLBoxView {
   model: AcePlot
   protected _ace: any
   protected _editor: any
+  protected _langTools: any
   protected _container: HTMLDivElement
 
   initialize(): void {
@@ -44,7 +45,10 @@ export class AcePlotView extends HTMLBoxView {
       this._editor = this._ace.edit(this._container.id)
       this._editor.setTheme("ace/theme/" + `${this.model.theme}`)
       this._editor.session.setMode("ace/mode/" + `${this.model.language}`)
+      this._langTools = this._ace.require('ace/ext/language_tools')
       this._editor.setOptions({
+        enableBasicAutocompletion: true,
+        enableSnippets: true,
         fontFamily: "monospace", //hack for cursor position
       });
       this._editor.on('change', () => this._update_code_from_editor())

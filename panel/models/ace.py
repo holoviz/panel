@@ -14,7 +14,8 @@ class AcePlot(HTMLBox):
     a Bokeh plot.
     """
 
-    __javascript__ = ['https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.3/ace.js']
+    __javascript__ = ['https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.3/ace.js',
+                      'https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.3/ext-language_tools.js']
 
     __js_require__ = {'paths': {'ace': 'https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.3/ace'},
                       'shim': {'ace': 'ace'}}
