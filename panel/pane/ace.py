@@ -2,28 +2,37 @@ import sys
 
 import param
 
+from six import string_types
 from pyviz_comms import JupyterComm
 
 from .base import PaneBase
+
 
 class Ace(PaneBase):
     """
     Ace panes allow rendering Ace editor.
     """
-    
+
+    priority = 0
+
     code = param.String(doc="State of the current code in the editor")
-    
+
     theme = param.String(default='chrome', doc="Theme of the editor")
-     
+
     language = param.String(default='python', doc="Language of the editor")
-    
+
     annotations = param.List(doc="List of annotations to add to the editor")
 
-    _updates = False
-    
+    _updates = True
+
+    _rename = {'object': 'code'}
+
     @classmethod
     def applies(cls, obj):
-        return False
+        if isinstance(obj, string_types):
+            return None
+        else:
+            return False
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         """
@@ -40,6 +49,7 @@ class Ace(PaneBase):
         else:
             AcePlot = getattr(sys.modules['panel.models.ace'], 'AcePlot')
 
+        self.code = self.object if self.object else ''
         props = self._process_param_change(self._init_properties())
         model = AcePlot(**props)
         if root is None:
@@ -47,3 +57,6 @@ class Ace(PaneBase):
         self._link_props(model, ['code', 'language', 'theme', 'annotations'], doc, root, comm)
         self._models[root.ref['id']] = (model, parent)
         return model
+
+    def _update(self, model):
+        model.code = self.object if self.object else ''
