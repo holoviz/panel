@@ -18,6 +18,7 @@ from bokeh.io import curdoc as _curdoc
 from bokeh.models import CustomJS
 from pyviz_comms import JupyterCommManager
 
+from .callbacks import PeriodicCallback
 from .config import config, panel_extension
 from .io.embed import embed_state
 from .io.model import add_to_doc
@@ -751,6 +752,36 @@ class Reactive(Viewable):
         params = list(callbacks) if callbacks else list(links)
         cb = self.param.watch(link, params)
         self._callbacks.append(cb)
+        return cb
+
+    def add_periodic_callback(self, callback, period=500, count=None,
+                              timeout=None, start=True):
+        """
+        Schedules a periodic callback to be run at an interval set by
+        the period. Returns a PeriodicCallback object with the option
+        to stop and start the callback.
+
+        Arguments
+        ---------
+        callback: callable
+          Callable function to be executed at periodic interval.
+        period: int
+          Interval in milliseconds at which callback will be executed.
+        count: int
+          Maximum number of times callback will be invoked.
+        timeout: int
+          Timeout in seconds when the callback should be stopped.
+        start: boolean (default=True)
+          Whether to start callback immediately.
+
+        Returns
+        -------
+        Return a PeriodicCallback object with start and stop methods.
+        """
+        cb = PeriodicCallback(callback=callback, period=period,
+                              count=count, timeout=timeout)
+        if start:
+            cb.start()
         return cb
 
     def jslink(self, target, code=None, **links):
