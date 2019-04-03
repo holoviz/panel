@@ -124,7 +124,7 @@ class YT(HTML):
 
     @classmethod
     def applies(cls, obj):
-        return ('yt' in repr(obj) and
+        return (getattr(obj, '__module__', '').startswith('yt.') and
                 hasattr(obj, "plots") and
                 hasattr(obj, "_repr_html_"))
 
