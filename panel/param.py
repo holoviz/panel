@@ -306,6 +306,8 @@ class Param(PaneBase):
                 kw['end'] = bounds[1]
             if ('start' not in kw or 'end' not in kw) and not issubclass(widget_class, LiteralInput):
                 widget_class = LiteralInput
+            if hasattr(widget_class, 'step') and getattr(p_obj, 'step', None):
+                kw['step'] = p_obj.step
 
         kwargs = {k: v for k, v in kw.items() if k in widget_class.param}
         
@@ -354,6 +356,8 @@ class Param(PaneBase):
                     start, end = p_obj.get_soft_bounds()
                     updates['start'] = start
                     updates['end'] = end
+                elif change.what == 'step':
+                    updates['step'] = p_obj.step
                 elif self._updating:
                     return
                 else:
@@ -372,6 +376,8 @@ class Param(PaneBase):
                 watchers.append(self.object.param.watch(link, p_name, 'objects'))
             if hasattr(p_obj, 'get_soft_bounds'):
                 watchers.append(self.object.param.watch(link, p_name, 'bounds'))
+            if 'step' in kw:
+                watchers.append(self.object.param.watch(link, p_name, 'step'))
             watchers.append(self.object.param.watch(link, p_name))
 
         options = kwargs.get('options', [])
