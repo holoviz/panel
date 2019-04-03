@@ -6,6 +6,7 @@ response to changes to parameters and the underlying bokeh models.
 from __future__ import absolute_import, division, unicode_literals
 
 import re
+import sys
 import threading
 
 from functools import partial
@@ -249,8 +250,17 @@ class Viewable(Layoutable):
             hook(self, root)
 
     def _repr_mimebundle_(self, include=None, exclude=None):
-        if not panel_extension._loaded:
+        loaded = panel_extension._loaded
+        if not loaded and 'holoviews' in sys.modules:
+            import holoviews as hv
+            loaded = hv.extension._loaded
+        if not loaded:
+            self.param.warning('Displaying Panel objects in the notebook '
+                               'requires the panel extension to be loaded. '
+                               'Ensure you run pn.extension() before '
+                               'displaying objects in the notebook.')
             return None
+
         state._comm_manager = JupyterCommManager
         doc = _Document()
         comm = state._comm_manager.get_server_comm()
