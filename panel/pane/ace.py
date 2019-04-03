@@ -25,8 +25,6 @@ class Ace(PaneBase):
 
     _updates = True
 
-    _rename = {'object': 'code'}
-
     @classmethod
     def applies(cls, obj):
         if isinstance(obj, string_types):
