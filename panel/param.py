@@ -385,10 +385,13 @@ class Param(PaneBase):
             options = options.values()
         if ((is_parameterized(value) or any(is_parameterized(o) for o in options))
             and (self.expand_button or (self.expand_button is None and not self.expand))):
-            toggle = Toggle(name='\u00B7\u00B7\u00B7', button_type='primary',
-                            disabled=not is_parameterized(value),
-                            max_width=40, height_policy='fit')
-            return Row(widget, toggle)
+            widget.margin = (5, 0, 5, 10)
+            toggle = Toggle(name='\u22EE', button_type='primary',
+                            disabled=not is_parameterized(value), max_height=30,
+                            max_width=20, height_policy='fit', align='center',
+                            margin=(0, 0, 0, 10))
+            widget.width = self._widget_box.width-60
+            return Row(widget, toggle, width_policy='max', margin=0)
         else:
             return widget
 
