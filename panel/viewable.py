@@ -6,6 +6,7 @@ response to changes to parameters and the underlying bokeh models.
 from __future__ import absolute_import, division, unicode_literals
 
 import re
+import sys
 import threading
 
 from functools import partial
@@ -250,7 +251,12 @@ class Viewable(Layoutable):
 
     def _repr_mimebundle_(self, include=None, exclude=None):
         if not panel_extension._loaded:
-            return None
+            if 'holoviews' in sys.modules:
+                import holoviews as hv
+                if not hv.extension._loaded:
+                    return None
+            else:
+                return None
         state._comm_manager = JupyterCommManager
         doc = _Document()
         comm = state._comm_manager.get_server_comm()
