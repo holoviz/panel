@@ -33,18 +33,6 @@ from .widgets import (
     DatetimeInput, DateRangeSlider, ColorPicker, Widget)
 
 
-def ObjectSelector(pobj):
-    """
-    Determines param.ObjectSelector widget depending on whether all values
-    are numeric.
-    """
-    options = list(pobj.objects.values()) if isinstance(pobj.objects, dict) else pobj.objects
-    if options and all(param._is_number(o) for o in options):
-        return DiscreteSlider
-    else:
-        return Select
-
-
 def FileSelector(pobj):
     """
     Determines whether to use a TextInput or Select widget for FileSelector
@@ -53,7 +41,6 @@ def FileSelector(pobj):
         return Select
     else:
         return TextInput
-
 
 
 class Param(PaneBase):
@@ -120,7 +107,7 @@ class Param(PaneBase):
         param.Color:          ColorPicker,
         param.Dict:           LiteralInput,
         param.Selector:       Select,
-        param.ObjectSelector: ObjectSelector,
+        param.ObjectSelector: Select,
         param.FileSelector:   FileSelector,
         param.Boolean:        Checkbox,
         param.Number:         FloatSlider,
