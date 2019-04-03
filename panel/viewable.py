@@ -250,13 +250,17 @@ class Viewable(Layoutable):
             hook(self, root)
 
     def _repr_mimebundle_(self, include=None, exclude=None):
-        if not panel_extension._loaded:
-            if 'holoviews' in sys.modules:
-                import holoviews as hv
-                if not hv.extension._loaded:
-                    return None
-            else:
-                return None
+        loaded = panel_extension._loaded
+        if not loaded and 'holoviews' in sys.modules:
+            import holoviews as hv
+            loaded = hv.extension._loaded
+        if not loaded:
+            self.param.warning('Displaying Panel objects in the notebook '
+                               'requires the panel extension to be loaded. '
+                               'Ensure you run pn.extension() before '
+                               'displaying objects in the notebook.')
+            return None
+
         state._comm_manager = JupyterCommManager
         doc = _Document()
         comm = state._comm_manager.get_server_comm()
