@@ -33,6 +33,11 @@ from .util import param_reprs
 
 class Layoutable(param.Parameterized):
 
+    align = param.ObjectSelector(default='start',
+                                 objects=['start', 'end', 'center'], doc="""
+        Whether the object should be aligned with the start, end or
+        center of its container""")
+
     aspect_ratio = param.Parameter(default=None, doc="""
         Describes the proportional relationship between component's
         width and height.  This works if any of component's dimensions
