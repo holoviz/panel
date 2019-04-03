@@ -21,7 +21,9 @@ class Ace(PaneBase):
 
     language = param.String(default='python', doc="Language of the editor")
 
-    annotations = param.List(doc="List of annotations to add to the editor")
+    annotations = param.List(default=[], doc="List of annotations to add to the editor")
+
+    readonly = param.Boolean(default=False, doc="Define if editor content can be modified")
 
     _updates = True
 
@@ -52,7 +54,7 @@ class Ace(PaneBase):
         model = AcePlot(**props)
         if root is None:
             root = model
-        self._link_props(model, ['code', 'language', 'theme', 'annotations'], doc, root, comm)
+        self._link_props(model, ['code', 'language', 'theme', 'annotations', 'readonly'], doc, root, comm)
         self._models[root.ref['id']] = (model, parent)
         return model
 
