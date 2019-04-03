@@ -29,8 +29,8 @@ from .util import (
 from .viewable import Layoutable, Reactive
 from .widgets import (
     LiteralInput, Select, Checkbox, FloatSlider, IntSlider, RangeSlider,
-    MultiSelect, StaticText, Button, Toggle, TextInput, DiscreteSlider,
-    DatetimeInput, DateRangeSlider, ColorPicker, Widget)
+    MultiSelect, StaticText, Button, Toggle, TextInput, DatetimeInput,
+    DateRangeSlider, ColorPicker, Widget)
 
 
 def FileSelector(pobj):
