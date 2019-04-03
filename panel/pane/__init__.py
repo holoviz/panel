@@ -17,6 +17,7 @@ from .plotly import Plotly # noqa
 from .plot import Bokeh, Matplotlib, RGGPlot, YT # noqa
 from .vega import Vega # noqa
 from .vtk import VTK # noqa
+from .ace import Ace # noqa
 
 
 def panel(obj, **kwargs):
