@@ -17,8 +17,9 @@ class AcePlot(HTMLBox):
     __javascript__ = ['https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.3/ace.js',
                       'https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.3/ext-language_tools.js']
 
-    __js_require__ = {'paths': {'ace': 'https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.3/ace'},
-                      'shim': {'ace': 'ace'}}
+    __js_require__ = {'paths': {'ace': 'https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.3/ace',
+                                'ace_lang_tools': 'https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.3/ext-language_tools'},
+                      'exports': {'ace': 'ace'}}
 
     __implementation__ = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'ace.ts')
 
