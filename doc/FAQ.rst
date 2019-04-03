@@ -35,19 +35,14 @@ Conversely, what Panel adds on top of Bokeh is full bidirectional communication 
 **A:** This error usually means that you forgot to run panel.extension() in a notebook context to set up the code for communicating between JavaScript and Python.  It's easy to get confused and think you don't need that line, because notebooks will often work fine as long as *some* notebook somewhere in your Jupyter session has run the command, but the only reliable way to make the communication channels available is to make sure *every* notebook includes this command.
 
 
-**Q: Why is the spacing messed up in my panel?**
-
-**A:** Panels are composed of multiple Panes (or other Viewable objects). There are two main ways the spacing between viewable objects can be incorrect: either the object is not reporting its correct size, or the layout engine is not laying things out reasonably. Some pane types are unable to discover the size of what is in them, such as ``pane.HTML``, and for these you will need to provide explicit ``height`` and/or ``width`` settings (as in ``pn.Row(pn.panel(obj, height=300))``. Other spacing problems appear to be caused by issues with the Bokeh layout system, which is currently being improved.  In the meantime you should be able to use ``pn.Spacer(height=..., width=...)`` to adjust spacing manually when needed, with either positive or negative heights or widths.
-
-
 **Q: Why is my object being shown using the wrong type of pane?**
 
 **A:** A global set of precedence values is used to ensure that the richest representation of a given object is chosen when you pass it to a Row or Column. However, you are also welcome to instantiate a specific Pane type explicitly, as in ``pn.Row(pane.HTML(obj, height=300))``.  If the default Pane type is fine but you still want to be able to pass specific options like width or height in this way, you can use the pn.panel function explicitly, as in  ``pn.Row(pn.panel(obj, height=300))``.
 
 
-**Q: For Matplotlib plots in a notebook, why do I get no plot, two plots, or plots that don't update?**
+**Q: For Matplotlib plots in a notebook, why do I get no plot, two plots, or plots that fail to update?**
 
-**A:** Matplotlib behaves a bit strangely in notebooks. Normal Python objects like Python literals and containers display when they are returned as a cell's value, but Matplotlib figures have a textual representation by default but then (depending on the Matplotlib backend) also display like print statements, i.e. with a plot as a side effect rather than return value. To force predictable Panel-compatible behavior,
+**A:** Matplotlib behaves a bit strangely in notebooks. Normal Python objects like Python literals and containers display when they are returned as a cell's value, but Matplotlib figures have a textual representation by default but then (depending on the Matplotlib backend) also display like print statements, i.e. with a plot as a side effect rather than as a representation of the return value. To force predictable Panel-compatible behavior,
    1. Ensure that your callback returns a figure object, not relying on side effects.
    2. Either avoid calling `%matplotlib inline`, or else ensure that each figure you create is closed before you return it in a callback (so that Matplotlib inline won't try to display it itself). E.g.:
        - fig = df.plot().get_figure()
@@ -89,8 +84,8 @@ For instance, ipywidgets provide many of the same capabilities as Panel, but the
 |Separates content from presentation   | Yes             | Could eventually     | No              | No                 | No                     |
 |                                      |                 | using traitlets      |                 |                    |                        |
 +--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+
-|Servable from public site             | Possible        | As live notebooks    | Possible        | Yes, shinyapps.io  | Yes, Plotly Cloud      |
-|                                      | with mybinder   | via mybinder         | with mybinder   |                    |                        |
+|Servable from public site             | Yes; mybinder   | As live notebooks    | Yes; mybinder,  | Yes, shinyapps.io  | Yes, Plotly Cloud      |
+|                                      | Heroku, etc.    | via mybinder         | Heroku, etc.    |                    |                        |
 +--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+
 +Servable within private enterprise    | Yes, AE5        | Yes, AE5 (with       | Yes, AE5        | Yes, AE5 or Shiny  | Yes, AE5 or Plotly     |
 |network                               |                 | readonly code cells) |                 | Server             | Enterprise             |
