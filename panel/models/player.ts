@@ -299,7 +299,7 @@ export abstract class Player extends Widget {
       value:             [ p.Any,         0            ],
     })
 
-    this.override({width: 350})
+    this.override({width: 400})
   }
 }
 
