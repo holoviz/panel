@@ -466,7 +466,7 @@ class VTK(PaneBase):
                         if dsAttrs:
                             if colorArrayName >= 0:
                                 dataArray = dsAttrs.GetArray(colorArrayName)
-                            elif dsAttrs.GetNumberOfArrays() == 1:
+                            elif dsAttrs.GetNumberOfArrays() >= 1:
                                 dataArray = dsAttrs.GetArray(0)
 
                         if dataArray:
