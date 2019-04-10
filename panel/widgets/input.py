@@ -131,11 +131,11 @@ class ColorPicker(Widget):
 
 class Spinner(Widget):
 
-    low = param.Number(default=None, doc="""
-        Optional lowest allowable value""")
+    start = param.Number(default=None, doc="""
+        Optional minimum allowable value""")
 
-    high = param.Number(default=None, doc="""
-        Optional highest allowable value""")
+    end = param.Number(default=None, doc="""
+        Optional maximum allowable value""")
 
     value = param.Number(default=0, doc="""
         The initial value of the spinner""")
@@ -145,7 +145,7 @@ class Spinner(Widget):
 
     _widget_type = _BkSpinner
 
-    _rename = {'name': 'title'}
+    _rename = {'name': 'title', 'start': 'low', 'end': 'high'}
 
 
 class LiteralInput(Widget):
