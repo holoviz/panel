@@ -94,6 +94,7 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
     load_path: str (default=None)
       The path or URL the json files will be loaded from.
     """
+    from ..links import Link
     from ..models.state import State
     from ..widgets import Widget, DiscreteSlider
 
@@ -101,7 +102,8 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
     _, _, _, comm = state._views[target]
 
     model.tags.append('embedded')
-    widgets = [w for w in panel.select(Widget) if w._supports_embed]
+    widgets = [w for w in panel.select(Widget) if w._supports_embed
+               and w not in Link.registry]
     state_model = State()
 
     values = []
