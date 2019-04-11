@@ -56,18 +56,17 @@ class CustomInstallCommand(install):
 ########## dependencies ##########
 
 install_requires = [
-    'bokeh >=1.1.0dev11',
-    'param >=1.9.0a4',
+    'bokeh >=1.1.0',
+    'param >=1.9.0',
     'pyviz_comms >=0.7.2',
     'markdown',
     'pyct >=0.4.4',
-    'tornado <6',
     'testpath<0.4' # temporary due to pip issue?
 ]
 
 _recommended = [
     'notebook >=5.4',
-    'holoviews >=1.12.0a1',
+    'holoviews >=1.12.0',
     'matplotlib',
     'pillow',
     'plotly'
@@ -106,10 +105,10 @@ extras_require['all'] = sorted(set(sum(extras_require.values(), [])))
 # until pyproject.toml/equivalent is widely supported (setup_requires
 # doesn't work well with pip)
 extras_require['build'] = [
-    'param >=1.9.0a4',
+    'param >=1.9.0',
     'pyct >=0.4.4',
     'setuptools >=30.3.0',
-    'bokeh >=1.0.0',
+    'bokeh >=1.1.0',
     'pyviz_comms >=0.6.0',
     'nodejs >=9.11.1',
 ]
