@@ -43,8 +43,8 @@ class Pipeline(param.Parameterized):
         self._state = None
         self._progress_sel = hv.streams.Selection1D()
         self._progress_sel.add_subscriber(self._set_stage)
-        prev_button =  Param(self.param, parameters=['previous'], show_name=False)
-        next_button =  Param(self.param, parameters=['next'], show_name=False)
+        prev_button =  Param(self.param.previous, width=100)
+        next_button =  Param(self.param.next, width=100)
         prev_button.layout[0].disabled = True
         self._progress_bar = Row(self._make_progress, prev_button, next_button)
         spinner = Pane(os.path.join(os.path.dirname(__file__), 'assets', 'spinner.gif'))
@@ -85,7 +85,6 @@ class Pipeline(param.Parameterized):
     def layout(self):
         self._progress_bar[0] = self._make_progress
         return self._layout
-
 
     def _init_stage(self):
         name, stage = self._stages[self._stage]
@@ -156,6 +155,7 @@ class Pipeline(param.Parameterized):
             self._update_button()
         except Exception as e:
             self._stage -= 1
+            self._state = prev_state
             self._error.object = ('Next stage raised following error:\n\n\t%s: %s'
                                   % (type(e).__name__, str(e)))
             self._layout[2][0] = prev_state
@@ -168,12 +168,14 @@ class Pipeline(param.Parameterized):
     @param.depends('previous', watch=True)
     def _previous(self):
         self._stage -= 1
+        old_stage = self._layout[2][0]
         try:
             self._state = self._states[self._stage]
             self._layout[2][0] = self._state.panel()
             self._update_button()
         except Exception as e:
             self._stage += 1
+            self._state = old_stage
             self._error.object = ('Previous stage raised following error:\n\n\t%s: %s'
                                   % (type(e).__name__, str(e)))
             if self.debug:
