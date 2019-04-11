@@ -14,12 +14,12 @@ import param
 
 from bokeh.models.widgets import (
     CheckboxGroup as _BkCheckboxGroup, ColorPicker as _BkColorPicker,
-    DatePicker as _BkDatePicker, Div as _BkDiv, TextInput as _BkTextInput)
+    DatePicker as _BkDatePicker, Div as _BkDiv, TextInput as _BkTextInput,
+    Spinner as _BkSpinner)
 
 from ..models import FileInput as _BkFileInput
 from ..util import as_unicode
 from .base import Widget
-
 
 
 class TextInput(Widget):
@@ -127,6 +127,25 @@ class ColorPicker(Widget):
     _widget_type = _BkColorPicker
 
     _rename = {'value': 'color', 'name': 'title'}
+
+
+class Spinner(Widget):
+
+    start = param.Number(default=None, doc="""
+        Optional minimum allowable value""")
+
+    end = param.Number(default=None, doc="""
+        Optional maximum allowable value""")
+
+    value = param.Number(default=0, doc="""
+        The initial value of the spinner""")
+
+    step = param.Number(default=1, doc="""
+        The step added or subtracted to the current value""")
+
+    _widget_type = _BkSpinner
+
+    _rename = {'name': 'title', 'start': 'low', 'end': 'high'}
 
 
 class LiteralInput(Widget):
