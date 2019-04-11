@@ -121,7 +121,8 @@ jobs:
           local_dir: ./builtdocs
           fqdn: panel.pyviz.org
           on:
-            branch: master
+            tags: true
+            all_branches: true
 
     - <<: *doc_build
       stage: docs_daily
@@ -131,5 +132,6 @@ jobs:
           github_token: $GITHUB_TOKEN
           local_dir: ./builtdocs
           repo: pyviz-dev/panel
-          on:
-            branch: master
+        on:
+          tags: true
+          all_branches: true
