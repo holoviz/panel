@@ -127,11 +127,11 @@ jobs:
     - <<: *doc_build
       stage: docs_daily
       deploy:
-        - provider: pages
-          skip_cleanup: true
-          github_token: $GITHUB_TOKEN
-          local_dir: ./builtdocs
-          repo: pyviz-dev/panel
+        provider: pages
+        skip_cleanup: true
+        github_token: $GITHUB_TOKEN
+        local_dir: ./builtdocs
+        repo: pyviz-dev/panel
         on:
           tags: true
           all_branches: true
