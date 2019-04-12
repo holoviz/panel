@@ -331,7 +331,7 @@ class VTK(PaneBase):
 
     camera = param.Dict(doc="""State of the rendered VTK camera.""")
 
-    keybinds = param.Boolean(default=True, doc="""Activate/Deactivate keys binding""")
+    keybinding = param.Boolean(default=False, doc="""Activate/Deactivate keys binding""")
 
     _updates = True
 
@@ -360,7 +360,7 @@ class VTK(PaneBase):
         model = VTKPlot(data=data, **props)
         if root is None:
             root = model
-        self._link_props(model, ['data', 'camera', 'keybinds'], doc, root, comm)
+        self._link_props(model, ['data', 'camera', 'keybinding'], doc, root, comm)
         self._models[root.ref['id']] = (model, parent)
         return model
 
@@ -491,7 +491,7 @@ class VTK(PaneBase):
                         textureName = None
                         if renProp.GetTexture() and renProp.GetTexture().GetInput():
                             textureData = renProp.GetTexture().GetInput()
-                            textureName = 'texture_%d' % _get_object_id(textureData, objIds);
+                            textureName = 'texture_%d' % _get_object_id(textureData, objIds)
                             textureToSave[textureName] = textureData
 
                         representation = renProp.GetProperty().GetRepresentation() if hasattr(renProp, 'GetProperty') else 2
