@@ -473,7 +473,7 @@ class VTK(PaneBase):
 
                         if dataArray:
                             # component = -1 => let specific instance get scalar from vector before mapping
-                            colorArray = lookupTable.MapScalars(dataArray, colorMode, -1);
+                            colorArray = lookupTable.MapScalars(dataArray, colorMode, -1)
                             colorArrayName = '__CustomRGBColorArray__'
                             colorArray.SetName(colorArrayName)
                             colorMode = 0
