@@ -331,7 +331,12 @@ class VTK(PaneBase):
 
     camera = param.Dict(doc="""State of the rendered VTK camera.""")
 
-    keybinding = param.Boolean(default=False, doc="""Activate/Deactivate keys binding""")
+    keybinding = param.Boolean(default=False, doc="""
+        Activate/Deactivate keys binding.
+
+        Warning: These keys bind may not work as expected in a notebook
+        context if they interact with already binded keys
+    """)
 
     _updates = True
 
