@@ -44,11 +44,11 @@ export class VTKPlotView extends HTMLBoxView {
     super.connect_signals()
     this.connect(this.model.properties.data.change, () => this._plot())
     this.connect(this.model.properties.camera.change, () => this._set_camera_state())
-    this.connect(this.model.properties.keybinding.change, () => this._key_binding())
+    this.connect(this.model.properties.enable_keybindings.change, () => this._key_binding())
   }
 
   _key_binding(): void {
-    if (this.model.keybinding) {
+    if (this.model.enable_keybindings) {
       document.querySelector('body')!.addEventListener('keypress',this._interactor.handleKeyPress)
       document.querySelector('body')!.addEventListener('keydown',this._interactor.handleKeyDown)
       document.querySelector('body')!.addEventListener('keyup',this._interactor.handleKeyUp)
@@ -126,7 +126,7 @@ export namespace VTKPlot {
     data: p.Property<string>
     append: p.Property<boolean>
     camera: p.Property<any>
-    keybinding: p.Property<boolean>
+    enable_keybindings: p.Property<boolean>
   }
 }
 
@@ -144,10 +144,10 @@ export class VTKPlot extends HTMLBox {
     this.prototype.default_view = VTKPlotView
 
     this.define<VTKPlot.Props>({
-      data:       [ p.String         ],
-      append:     [ p.Boolean, false ],
-      camera:     [ p.Any            ],
-      keybinding: [ p.Boolean, false]
+      data:               [ p.String         ],
+      append:             [ p.Boolean, false ],
+      camera:             [ p.Any            ],
+      enable_keybindings: [ p.Boolean, false ]
     })
 
     this.override({

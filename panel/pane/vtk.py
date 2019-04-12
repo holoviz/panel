@@ -331,7 +331,7 @@ class VTK(PaneBase):
 
     camera = param.Dict(doc="""State of the rendered VTK camera.""")
 
-    keybinding = param.Boolean(default=False, doc="""
+    enable_keybindings = param.Boolean(default=False, doc="""
         Activate/Deactivate keys binding.
 
         Warning: These keys bind may not work as expected in a notebook
@@ -365,7 +365,7 @@ class VTK(PaneBase):
         model = VTKPlot(data=data, **props)
         if root is None:
             root = model
-        self._link_props(model, ['data', 'camera', 'keybinding'], doc, root, comm)
+        self._link_props(model, ['data', 'camera', 'enable_keybindings'], doc, root, comm)
         self._models[root.ref['id']] = (model, parent)
         return model
 
