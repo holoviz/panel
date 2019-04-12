@@ -145,6 +145,11 @@ class ListPanel(Panel):
     An abstract baseclass for Panel objects with list-like children.
     """
 
+    margin = param.Parameter(default=0, doc="""
+        Allows to create additional space around the component. May
+        be specified as a two-tuple of the form (vertical, horizontal)
+        or a four-tuple (top, right, bottom, left).""")
+
     objects = param.List(default=[], doc="""
         The list of child objects that make up the layout.""")
 
@@ -326,6 +331,34 @@ class Row(ListPanel):
     Horizontal layout of Viewables.
     """
 
+    height_policy = param.ObjectSelector(
+        default="max", objects=['auto', 'fixed', 'fit', 'min', 'max'], doc="""
+        Describes how the component should maintain its height.
+
+        * "auto"
+          Use component's preferred sizing policy.
+        * "fixed"
+          Use exactly ``width`` pixels. Component will overflow if it
+          can't fit in the available horizontal space.
+        * "fit"
+          Use component's preferred width (if set) and allow it to fit
+          into the available horizontal space within the minimum and
+          maximum width bounds (if set). Component's width neither
+          will be aggressively minimized nor maximized.
+        * "min"
+          Use as little horizontal space as possible, not less than
+          the minimum width (if set).  The starting point is the
+          preferred width (if set). The width of the component may
+          shrink or grow depending on the parent layout, aspect
+          management and other factors.
+        * "max"
+          Use as much horizontal space as possible, not more than the
+          maximum width (if set).  The starting point is the preferred
+          width (if set). The width of the component may shrink or
+          grow depending on the parent layout, aspect management and
+          other factors.
+    """)
+
     _bokeh_model = BkRow
 
 
@@ -333,6 +366,34 @@ class Column(ListPanel):
     """
     Vertical layout of Viewables.
     """
+
+    width_policy = param.ObjectSelector(
+        default="max", objects=['auto', 'fixed', 'fit', 'min', 'max'], doc="""
+        Describes how the component should maintain its width.
+
+        * "auto"
+          Use component's preferred sizing policy.
+        * "fixed"
+          Use exactly ``width`` pixels. Component will overflow if it
+          can't fit in the available horizontal space.
+        * "fit"
+          Use component's preferred width (if set) and allow it to fit
+          into the available horizontal space within the minimum and
+          maximum width bounds (if set). Component's width neither
+          will be aggressively minimized nor maximized.
+        * "min"
+          Use as little horizontal space as possible, not less than
+          the minimum width (if set).  The starting point is the
+          preferred width (if set). The width of the component may
+          shrink or grow depending on the parent layout, aspect
+          management and other factors.
+        * "max"
+          Use as much horizontal space as possible, not more than the
+          maximum width (if set).  The starting point is the preferred
+          width (if set). The width of the component may shrink or
+          grow depending on the parent layout, aspect management and
+          other factors.
+    """)
 
     _bokeh_model = BkColumn
 
