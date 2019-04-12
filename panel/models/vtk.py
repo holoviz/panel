@@ -31,6 +31,8 @@ class VTKPlot(HTMLBox):
 
     camera = Dict(String, Any)
 
+    keybinds = Bool(default=True)
+
     height = Override(default=300)
 
     width = Override(default=300)

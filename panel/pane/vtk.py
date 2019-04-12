@@ -331,6 +331,8 @@ class VTK(PaneBase):
 
     camera = param.Dict(doc="""State of the rendered VTK camera.""")
 
+    keybinds = param.Boolean(default=True, doc="""Activate/Deactivate keys binding""")
+
     _updates = True
 
     @classmethod
@@ -358,7 +360,7 @@ class VTK(PaneBase):
         model = VTKPlot(data=data, **props)
         if root is None:
             root = model
-        self._link_props(model, ['data', 'camera'], doc, root, comm)
+        self._link_props(model, ['data', 'camera', 'keybinds'], doc, root, comm)
         self._models[root.ref['id']] = (model, parent)
         return model
 
@@ -404,7 +406,7 @@ class VTK(PaneBase):
                     mapper = renProp.GetMapper()
                     if mapper is None:
                         continue
-                    dataObject = mapper.GetInputDataObject(0, 0);
+                    dataObject = mapper.GetInputDataObject(0, 0)
                     dataset = None
 
                     if dataObject.IsA('vtkCompositeDataSet'):
@@ -422,7 +424,7 @@ class VTK(PaneBase):
                         dataset = gf.GetOutput()
                     else:
                         dataset = mapper.GetInput()
-                        
+
                     if dataset and not isinstance(dataset, (vtk.vtkPolyData)):
                         # All data must be PolyData surfaces!
                         gf = vtk.vtkGeometryFilter()

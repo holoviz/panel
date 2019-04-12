@@ -10,6 +10,7 @@ export class VTKPlotView extends HTMLBoxView {
   protected _rendererEl: any
   protected _renderer: any
   protected _camera: any
+  protected _interactor: any
   protected _setting: boolean = false
 
   initialize(): void {
@@ -31,6 +32,7 @@ export class VTKPlotView extends HTMLBoxView {
         container: this._container
       });
       this._renderer = this._rendererEl.getRenderer()
+      this._interactor = this._rendererEl.getInteractor()
       this._camera = this._renderer.getActiveCamera()
       this._plot()
       this._camera.onModified(() => this._get_camera_state())
@@ -41,6 +43,19 @@ export class VTKPlotView extends HTMLBoxView {
     super.connect_signals()
     this.connect(this.model.properties.data.change, () => this._plot())
     this.connect(this.model.properties.camera.change, () => this._set_camera_state())
+    this.connect(this.model.properties.keybinds.change, () => this._key_binding())
+  }
+
+  _key_binding(): void {
+    if (this.model.keybinds) {
+      document.querySelector('body')!.addEventListener('keypress',this._interactor.handleKeyPress)
+      document.querySelector('body')!.addEventListener('keydown',this._interactor.handleKeyDown)
+      document.querySelector('body')!.addEventListener('keyup',this._interactor.handleKeyUp)
+    } else {
+      document.querySelector('body')!.removeEventListener('keypress',this._interactor.handleKeyPress)
+      document.querySelector('body')!.removeEventListener('keydown',this._interactor.handleKeyDown)
+      document.querySelector('body')!.removeEventListener('keyup',this._interactor.handleKeyUp)
+    }
   }
 
   render() {
@@ -110,6 +125,7 @@ export namespace VTKPlot {
     data: p.Property<string>
     append: p.Property<boolean>
     camera: p.Property<any>
+    keybinds: p.Property<boolean>
   }
 }
 
@@ -127,9 +143,10 @@ export class VTKPlot extends HTMLBox {
     this.prototype.default_view = VTKPlotView
 
     this.define<VTKPlot.Props>({
-      data:   [ p.String         ],
-      append: [ p.Boolean, false ],
-      camera: [ p.Any            ]
+      data:     [ p.String         ],
+      append:   [ p.Boolean, false ],
+      camera:   [ p.Any            ],
+      keybinds: [ p.Boolean, true]
     })
 
     this.override({
