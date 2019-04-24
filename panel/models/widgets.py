@@ -65,6 +65,19 @@ class Audio(Widget):
     volume = Int(0, help="""The volume of the audio player.""")
 
 
+class VideoStream(Widget):
+
+    __implementation__ = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'videostream.ts')
+
+    paused = Bool(False, help="""Whether the video is paused""")
+
+    snapshot = Bool(False, help="""On change generate a snapshot of the current video frame""")
+
+    value = Any(help="""Snapshot Data""")
+
+
+
 CUSTOM_MODELS['panel.models.widgets.Player'] = Player
 CUSTOM_MODELS['panel.models.widgets.FileInput'] = FileInput
 CUSTOM_MODELS['panel.models.widgets.Audio'] = Audio
+CUSTOM_MODELS['panel.models.widgets.VideoStream'] = VideoStream

@@ -6,15 +6,15 @@ from __future__ import absolute_import, division, unicode_literals
 
 from .base import Widget, CompositeWidget # noqa
 from .button import Button, Toggle # noqa
-from .input import ( # noqa
+from .input import (# noqa
     ColorPicker, Checkbox, DatetimeInput, DatePicker, FileInput,
     LiteralInput, StaticText, TextInput, Spinner)
-from .misc import Audio # noqa
+from .misc import Audio, VideoStream # noqa
 from .player import DiscretePlayer, Player # noqa
-from .slider import ( # noqa
+from .slider import (# noqa
     DateSlider, DateRangeSlider, DiscreteSlider, FloatSlider,
     IntSlider, IntRangeSlider, RangeSlider)
-from .select import ( # noqa
+from .select import (# noqa
     AutocompleteInput, CheckBoxGroup, CheckButtonGroup, CrossSelector,
     MultiSelect, RadioButtonGroup, RadioBoxGroup, Select, ToggleGroup)
 

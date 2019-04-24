@@ -9,9 +9,9 @@ from base64 import b64encode
 
 import param
 
-from ..models import Audio as _BkAudio
+from ..models import (Audio as _BkAudio,
+                      VideoStream as _BkVideoStream)
 from .base import Widget
-
 
 
 class Audio(Widget):
@@ -50,3 +50,18 @@ class Audio(Widget):
                                            mime=fmt)
         return msg
 
+
+class VideoStream(Widget):
+
+    paused = param.Boolean(default=False, doc="""
+        Whether the video is currently paused""")
+
+    snapshot = param.Boolean(default=False, doc="""
+        On change generate a snapshot""")
+
+    value = param.String(default='', doc="""
+        snapshot""")
+
+    _widget_type = _BkVideoStream
+
+    _rename = {'name': None}
