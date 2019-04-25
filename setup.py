@@ -69,7 +69,7 @@ _recommended = [
     'holoviews >=1.12.0',
     'matplotlib',
     'pillow',
-    'plotly'
+    'plotly <3.8.0'
 ]
 
 extras_require = {
@@ -85,7 +85,7 @@ extras_require = {
         'codecov',
         # For Panes.ipynb
         'hvplot',
-        'plotly',
+        'plotly <3.8.0',
         'altair',
         'vega_datasets',
         'vtk ==8.1.1'
