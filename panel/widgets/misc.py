@@ -9,6 +9,8 @@ from base64 import b64encode
 
 import param
 
+from ..io.notebook import push
+from ..io.state import state
 from ..models import (Audio as _BkAudio,
                       VideoStream as _BkVideoStream)
 from .base import Widget
@@ -53,15 +55,30 @@ class Audio(Widget):
 
 class VideoStream(Widget):
 
+    format = param.ObjectSelector(default='png', objects=['png', 'jpeg'],
+                                  doc="""
+        The file format as which the video is returned.""")
+
     paused = param.Boolean(default=False, doc="""
         Whether the video is currently paused""")
 
-    snapshot = param.Boolean(default=False, doc="""
-        On change generate a snapshot""")
+    timeout = param.Number(default=None, doc="""
+        Interval between snapshots in millisecons""")
 
     value = param.String(default='', doc="""
-        snapshot""")
+        A base64 representation of the video stream snapshot.""")
 
     _widget_type = _BkVideoStream
 
     _rename = {'name': None}
+
+    def snapshot(self):
+        """
+        Triggers a snapshot of the current VideoStream state to sync
+        the widget value.
+        """
+        for ref, (m, _) in self._models.items():
+            m.snapshot = not m.snapshot
+            (self, root, doc, comm) = state._views[ref]
+            if comm and 'embedded' not in root.tags:
+                push(doc, comm)

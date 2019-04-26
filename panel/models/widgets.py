@@ -69,11 +69,21 @@ class VideoStream(Widget):
 
     __implementation__ = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'videostream.ts')
 
+    format = Enum('png', 'jpeg', default='png')
+
     paused = Bool(False, help="""Whether the video is paused""")
 
     snapshot = Bool(False, help="""On change generate a snapshot of the current video frame""")
 
+    timeout = Float(None, help="""
+        The timeout between snapshots (if None snapshot only generated
+        when snapshot property is changed""")
+
     value = Any(help="""Snapshot Data""")
+
+    height = Override(default=240)
+
+    width = Override(default=320)
 
 
 
