@@ -26,9 +26,9 @@ export class VideoStreamView extends WidgetView {
   }
 
   set_timeout(): void {
-    if (!this.timer) {
+    if (this.timer) {
       clearInterval(this.timer);
-      this.timer = null
+      this.timer = null;
     }
     if (this.model.timeout !== null) {
       this.timer = setInterval(() => this.snapshot(), this.model.timeout);
@@ -42,6 +42,14 @@ export class VideoStreamView extends WidgetView {
     if (context)
       context.drawImage(this.videoEl, 0, 0, this.canvasEl.width, this.canvasEl.height)
     this.model.value = this.canvasEl.toDataURL("image/"+this.model.format, 0.95)
+  }
+
+  remove(): void {
+    super.remove()
+    if (this.timer) {
+      clearInterval(this.timer);
+      this.timer = null;
+    }
   }
 
   render(): void {
