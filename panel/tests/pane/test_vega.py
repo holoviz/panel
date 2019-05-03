@@ -14,7 +14,10 @@ from panel.models.vega import VegaPlot
 from panel.pane import Pane, PaneBase, Vega
 
 vega_example = {
-    'config': {'view': {'width': 400, 'height': 300}},
+    'config': {
+        'mark': {'tooltip': None},
+        'view': {'height': 300, 'width': 400}
+    },
     'data': {'values': [{'x': 'A', 'y': 5},
                         {'x': 'B', 'y': 3},
                         {'x': 'C', 'y': 6},
@@ -23,7 +26,7 @@ vega_example = {
     'mark': 'bar',
     'encoding': {'x': {'type': 'ordinal', 'field': 'x'},
                  'y': {'type': 'quantitative', 'field': 'y'}},
-    '$schema': 'https://vega.github.io/schema/vega-lite/v2.6.0.json'
+    '$schema': 'https://vega.github.io/schema/vega-lite/v3.2.1.json'
 }
 
 def test_get_vega_pane_type_from_dict():
