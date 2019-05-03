@@ -56,6 +56,7 @@ jobs:
         - source activate test-environment
         - conda install -c conda-forge mesalib
         - doit develop_install -o recommended -o tests -o build $CHANS_DEV
+        - python setup.py develop
         - doit env_capture
       before_script:
         - "/sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -ac -screen 0 1280x1024x24"
