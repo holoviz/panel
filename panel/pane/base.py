@@ -116,6 +116,11 @@ class PaneBase(Reactive):
             else:
                 parent.children[index] = new_model
 
+        from ..io import state
+        ref = root.ref['id']
+        if ref in state._views:
+            state._views[ref][0]._preprocess(root)
+
     def _update_pane(self, event):
         for ref, (model, parent) in self._models.items():
             viewable, root, doc, comm = state._views[ref]
