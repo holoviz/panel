@@ -60,8 +60,7 @@ install_requires = [
     'param >=1.9.0',
     'pyviz_comms >=0.7.2',
     'markdown',
-    'pyct >=0.4.4',
-    'testpath<0.4' # temporary due to pip issue?
+    'pyct >=0.4.4'
 ]
 
 _recommended = [
@@ -69,7 +68,7 @@ _recommended = [
     'holoviews >=1.12.0',
     'matplotlib',
     'pillow',
-    'plotly <3.8.0'
+    'plotly'
 ]
 
 extras_require = {
