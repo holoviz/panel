@@ -29,7 +29,7 @@ def css_files(self):
     for cssf in config.css_files:
         if os.path.isfile(cssf):
             continue
-        file.append(cssf)
+        files.append(cssf)
     return files
 
 Resources.css_raw = property(css_raw)
