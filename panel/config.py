@@ -5,6 +5,7 @@ components.
 """
 from __future__ import absolute_import, division, unicode_literals
 
+import glob
 import os
 import sys
 
@@ -23,6 +24,9 @@ from .io.state import state
 # Public API
 #---------------------------------------------------------------------
 
+_PATH = os.path.abspath(os.path.dirname(__file__))
+_CSS_FILES = glob.glob(os.path.join(_PATH, '_styles', '*.css'))
+
 class _config(param.Parameterized):
     """
     Holds global configuration options for Panel. The options can be
@@ -37,7 +41,7 @@ class _config(param.Parameterized):
         os.environ['PANEL_EMBED'] = 'True'
     """
 
-    css_files = param.List(default=[], doc="""
+    css_files = param.List(default=_CSS_FILES, doc="""
         External CSS files to load as part of the template.""")
 
     js_files = param.Dict(default={}, doc="""

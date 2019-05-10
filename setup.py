@@ -80,7 +80,7 @@ extras_require = {
         'pytest',
         'scipy',
         'nbsmoke >=0.2.0',
-        'pytest-cov',
+        'pytest-cov ==2.5.1',
         'codecov',
         # For Panes.ipynb
         'hvplot',
