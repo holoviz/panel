@@ -1,0 +1,11 @@
+dependencies:
+  - panel>=0.5.1
+  - holoviews=1.12.2
+  - hvplot=0.4.0
+  - param=1.9.0
+  - tornado<6
+  - matplotlib
+  - scipy
+  - conda-forge::altair
+  - conda-forge::plotly
+  - conda-forge::vtk=8.1.1
