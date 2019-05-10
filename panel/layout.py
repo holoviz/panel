@@ -342,6 +342,20 @@ class Column(ListPanel):
     _bokeh_model = BkColumn
 
 
+class WidgetBox(Column):
+    """
+    Vertical layout of widgets.
+    """
+
+    css_classes = param.List(default=['widget-box'], doc="""
+        CSS classes to apply to the layout.""")
+
+    margin = param.Parameter(default=5, doc="""
+        Allows to create additional space around the component. May
+        be specified as a two-tuple of the form (vertical, horizontal)
+        or a four-tuple (top, right, bottom, left).""")
+
+
 class Tabs(ListPanel):
     """
     Panel of Viewables to be displayed in separate tabs.
