@@ -67,7 +67,7 @@ class Vega(PaneBase):
 
     def _get_sources(self, json, sources):
         datasets = json.get('datasets', {})
-        for name in datasets:
+        for name in list(datasets):
             if name in sources or isinstance(datasets[name], dict):
                 continue
             data = datasets.pop(name)
