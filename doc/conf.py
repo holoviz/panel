@@ -27,6 +27,9 @@ nbsite_gallery_conf = {
         'gallery': {
             'title': 'Gallery',
             'sections': [
+                'interact',
+                'layout',
+                'param',
                 'links',
                 'external'
             ]

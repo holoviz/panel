@@ -84,7 +84,7 @@ extras_require = {
         'codecov',
         # For Panes.ipynb
         'hvplot',
-        'plotly <3.8.0',
+        'plotly',
         'altair',
         'vega_datasets',
         'vtk ==8.1.1'
