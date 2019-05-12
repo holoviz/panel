@@ -1,5 +1,4 @@
-/* CSS for pandas tables (dataframes) */
-.panel-df table {
+table.panel-df {
     margin-left: auto;
     margin-right: auto;
     border: none;
