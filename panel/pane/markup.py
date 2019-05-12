@@ -85,7 +85,7 @@ class HTML(DivPaneBase):
         properties = super(HTML, self)._get_properties()
         text = '' if self.object is None else self.object
         if hasattr(text, 'to_html') and any(text.__module__ for m in ('pandas', 'dask')):
-            text = text.to_html(classes=['panel-df'])
+            text = text.to_html(classes=['panel-df']).replace('border="1"', '')
         elif hasattr(text, '_repr_html_'):
             text = text._repr_html_()
         return dict(properties, text=escape(text))
