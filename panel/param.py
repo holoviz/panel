@@ -615,6 +615,72 @@ class ParamMethod(PaneBase):
         return inspect.ismethod(obj) and isinstance(get_method_owner(obj), param.Parameterized)
 
 
+class ParamFunction(ParamMethod):
+    """
+    ParamFunction panes wrap functions decorated with the param.depends
+    decorator and rerenders the output when any of the function's
+    dependencies change. This allows building reactive components into
+    a Panel which depend on other parameters, e.g. tying the value of
+    a widget to some other output.
+    """
+
+    def __init__(self, object, **params):
+        self._kwargs =  {p: params.pop(p) for p in list(params)
+                         if p not in self.param}
+        PaneBase.__init__(self, object, **params)
+        kwargs = dict(self.get_param_values(), **self._kwargs)
+        del kwargs['object']
+        self._pane = Pane(self._eval_function(self.object), **kwargs)
+        self._inner_layout = Row(self._pane, **{k: v for k, v in params.items() if k in Row.param})
+        self._link_object_params()
+
+    @classmethod
+    def _eval_function(self, function):
+        deps = function._dinfo['dependencies']
+        args = (getattr(d.owner, d.name) for d in deps['args'])
+        kwargs = {n: getattr(d.owner, d.name) for n, d in deps['kwargs']}
+        return function(*args, **kwargs)
+
+    def _link_object_params(self):
+        def update_pane(*events):
+            new_object = self._eval_function(self.object)
+            pane_type = self.get_pane_type(new_object)
+            try:
+                links = Link.registry.get(new_object)
+            except TypeError:
+                links = []
+            if type(self._pane) is pane_type and not links:
+                if isinstance(new_object, Reactive):
+                    pvals = dict(self._pane.get_param_values())
+                    new_params = {k: v for k, v in new_object.get_param_values()
+                                  if k != 'name' and v is not pvals[k]}
+                    self._pane.set_param(**new_params)
+                else:
+                    self._pane.object = new_object
+                return
+
+            # Replace pane entirely
+            kwargs = dict(self.get_param_values(), **self._kwargs)
+            del kwargs['object']
+            self._pane = Pane(new_object, **kwargs)
+            self._inner_layout[0] = self._pane
+
+        deps = self.object._dinfo['dependencies']
+        dep_params = list(deps['args']) + list(deps['kwargs'].values())
+        for p in dep_params:
+            watcher = p.owner.param.watch(update_pane, p.name)
+            self._callbacks.append(watcher)
+
+    #----------------------------------------------------------------
+    # Public API
+    #----------------------------------------------------------------
+
+    @classmethod
+    def applies(cls, obj):
+        return isinstance(obj, types.FunctionType) and hasattr(obj, '_dinfo')
+
+
+
 class JSONInit(param.Parameterized):
     """
     Callable that can be passed to Widgets.initializer to set Parameter
