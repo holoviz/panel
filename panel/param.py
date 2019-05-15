@@ -500,13 +500,24 @@ class ParamMethod(PaneBase):
         super(ParamMethod, self).__init__(object, **params)
         kwargs = dict(self.get_param_values(), **self._kwargs)
         del kwargs['object']
-        self._pane = Pane(self.object(), **kwargs)
+        self._pane = Pane(self._eval_function(self.object), **kwargs)
         self._inner_layout = Row(self._pane, **{k: v for k, v in params.items() if k in Row.param})
         self._link_object_params()
 
     #----------------------------------------------------------------
     # Callback API
     #----------------------------------------------------------------
+
+    @classmethod
+    def _eval_function(self, function):
+        args, kwargs = (), {}
+        if hasattr(function, '_dinfo'):
+            arg_deps = function._dinfo['dependencies']
+            kw_deps = function._dinfo['kw']
+            if kw_deps or any(isinstance(d, param.Parameter) for d in arg_deps):
+                args = (getattr(dep.owner, dep.name) for dep in arg_deps)
+                kwargs = {n: getattr(dep.owner, dep.name) for n, dep in kw_deps.items()}
+        return function(*args, **kwargs)
 
     def _link_object_params(self):
         parameterized = get_method_owner(self.object)
@@ -539,7 +550,7 @@ class ParamMethod(PaneBase):
                         deps.append(p)
 
             # Try updating existing pane
-            new_object = self.object()
+            new_object = self._eval_function(self.object)
             pane_type = self.get_pane_type(new_object)
             try:
                 links = Link.registry.get(new_object)
@@ -623,24 +634,6 @@ class ParamFunction(ParamMethod):
     a Panel which depend on other parameters, e.g. tying the value of
     a widget to some other output.
     """
-
-    def __init__(self, object, **params):
-        self._kwargs =  {p: params.pop(p) for p in list(params)
-                         if p not in self.param}
-        PaneBase.__init__(self, object, **params)
-        kwargs = dict(self.get_param_values(), **self._kwargs)
-        del kwargs['object']
-        self._pane = Pane(self._eval_function(self.object), **kwargs)
-        self._inner_layout = Row(self._pane, **{k: v for k, v in params.items() if k in Row.param})
-        self._link_object_params()
-
-    @classmethod
-    def _eval_function(self, function):
-        deps = function._dinfo['dependencies']
-        args = (getattr(d.owner, d.name) for d in deps['args'])
-        kwargs = {n: getattr(d.owner, d.name) for n, d in deps['kwargs']}
-        return function(*args, **kwargs)
-
     def _link_object_params(self):
         def update_pane(*events):
             new_object = self._eval_function(self.object)
@@ -665,8 +658,8 @@ class ParamFunction(ParamMethod):
             self._pane = Pane(new_object, **kwargs)
             self._inner_layout[0] = self._pane
 
-        deps = self.object._dinfo['dependencies']
-        dep_params = list(deps['args']) + list(deps['kwargs'].values())
+        deps = self.object._dinfo
+        dep_params = list(deps['dependencies']) + list(deps['kw'].values())
         for p in dep_params:
             watcher = p.owner.param.watch(update_pane, p.name)
             self._callbacks.append(watcher)
@@ -678,7 +671,6 @@ class ParamFunction(ParamMethod):
     @classmethod
     def applies(cls, obj):
         return isinstance(obj, types.FunctionType) and hasattr(obj, '_dinfo')
-
 
 
 class JSONInit(param.Parameterized):
