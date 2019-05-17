@@ -342,8 +342,10 @@ class VTK(PaneBase):
 
     @classmethod
     def applies(cls, obj):
-        return (isinstance(obj, getattr(vtk, 'vtkRenderWindow', type(None))) or
-                hasattr(obj, 'read') or (isinstance(obj, string_types) and obj.endswith('.vtkjs')))
+        if vtk is None:
+            return False
+        return (isinstance(obj, vtk.vtkRenderWindow) or
+                (isinstance(obj, string_types) and obj.endswith('.vtkjs')))
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         """
