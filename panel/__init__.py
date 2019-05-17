@@ -16,5 +16,7 @@ from .layout import Row, Column, WidgetBox, Tabs, Spacer, GridSpec # noqa
 from .pane import panel, Pane # noqa
 from .param import Param # noqa
 
+depends = _param.depends
+
 __version__ = str(_param.version.Version(
     fpath=__file__, archive_commit="$Format:%h$", reponame="panel"))

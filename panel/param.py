@@ -500,13 +500,46 @@ class ParamMethod(PaneBase):
         super(ParamMethod, self).__init__(object, **params)
         kwargs = dict(self.get_param_values(), **self._kwargs)
         del kwargs['object']
-        self._pane = Pane(self.object(), **kwargs)
+        self._pane = Pane(self._eval_function(self.object), **kwargs)
         self._inner_layout = Row(self._pane, **{k: v for k, v in params.items() if k in Row.param})
         self._link_object_params()
 
     #----------------------------------------------------------------
     # Callback API
     #----------------------------------------------------------------
+
+    @classmethod
+    def _eval_function(self, function):
+        args, kwargs = (), {}
+        if hasattr(function, '_dinfo'):
+            arg_deps = function._dinfo['dependencies']
+            kw_deps = function._dinfo['kw']
+            if kw_deps or any(isinstance(d, param.Parameter) for d in arg_deps):
+                args = (getattr(dep.owner, dep.name) for dep in arg_deps)
+                kwargs = {n: getattr(dep.owner, dep.name) for n, dep in kw_deps.items()}
+        return function(*args, **kwargs)
+
+    def _update_pane(self, *args):
+        new_object = self._eval_function(self.object)
+        pane_type = self.get_pane_type(new_object)
+        try:
+            links = Link.registry.get(new_object)
+        except TypeError:
+            links = []
+        if type(self._pane) is pane_type and not links:
+            if isinstance(new_object, Reactive):
+                pvals = dict(self._pane.get_param_values())
+                new_params = {k: v for k, v in new_object.get_param_values()
+                              if k != 'name' and v is not pvals[k]}
+                self._pane.set_param(**new_params)
+            else:
+                self._pane.object = new_object
+        else:
+            # Replace pane entirely
+            kwargs = dict(self.get_param_values(), **self._kwargs)
+            del kwargs['object']
+            self._pane = Pane(new_object, **kwargs)
+            self._inner_layout[0] = self._pane
 
     def _link_object_params(self):
         parameterized = get_method_owner(self.object)
@@ -537,29 +570,7 @@ class ParamMethod(PaneBase):
                     self._callbacks.append(watcher)
                     for p in params:
                         deps.append(p)
-
-            # Try updating existing pane
-            new_object = self.object()
-            pane_type = self.get_pane_type(new_object)
-            try:
-                links = Link.registry.get(new_object)
-            except TypeError:
-                links = []
-            if type(self._pane) is pane_type and not links:
-                if isinstance(new_object, Reactive):
-                    pvals = dict(self._pane.get_param_values())
-                    new_params = {k: v for k, v in new_object.get_param_values()
-                                  if k != 'name' and v is not pvals[k]}
-                    self._pane.set_param(**new_params)
-                else:
-                    self._pane.object = new_object
-                return
-
-            # Replace pane entirely
-            kwargs = dict(self.get_param_values(), **self._kwargs)
-            del kwargs['object']
-            self._pane = Pane(new_object, **kwargs)
-            self._inner_layout[0] = self._pane
+            self._update_pane()
 
         for _, params in full_groupby(params, lambda x: (x.inst or x.cls, x.what)):
             p = params[0]
@@ -613,6 +624,31 @@ class ParamMethod(PaneBase):
     @classmethod
     def applies(cls, obj):
         return inspect.ismethod(obj) and isinstance(get_method_owner(obj), param.Parameterized)
+
+
+class ParamFunction(ParamMethod):
+    """
+    ParamFunction panes wrap functions decorated with the param.depends
+    decorator and rerenders the output when any of the function's
+    dependencies change. This allows building reactive components into
+    a Panel which depend on other parameters, e.g. tying the value of
+    a widget to some other output.
+    """
+
+    def _link_object_params(self):
+        deps = self.object._dinfo
+        dep_params = list(deps['dependencies']) + list(deps['kw'].values())
+        for p in dep_params:
+            watcher = p.owner.param.watch(self._update_pane, p.name)
+            self._callbacks.append(watcher)
+
+    #----------------------------------------------------------------
+    # Public API
+    #----------------------------------------------------------------
+
+    @classmethod
+    def applies(cls, obj):
+        return isinstance(obj, types.FunctionType) and hasattr(obj, '_dinfo')
 
 
 class JSONInit(param.Parameterized):
