@@ -56,7 +56,7 @@ jobs:
         - source activate test-environment
         - conda install -c conda-forge mesalib
         - doit develop_install -o recommended -o tests -o build $CHANS_DEV
-        - python setup.py develop
+        - pip install -e . --no-deps -v
         - bokeh sampledata
         - doit env_capture
       before_script:
