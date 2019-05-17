@@ -397,6 +397,23 @@ def test_param_precedence(document, comm):
     assert test_pane._widgets['a'] in test_pane._widget_box.objects
 
 
+def test_param_precedence_ordering(document, comm):
+    class Test(param.Parameterized):
+        a = param.Number(default=1.2, bounds=(0, 5), precedence=-1)
+        b = param.Boolean(default=True, precedence=1)
+
+    test = Test()
+    test_pane = Pane(test)
+
+    # Check changing precedence attribute hides and shows widget
+    a_param = test.param['a']
+    a_param.precedence = 2
+    assert test_pane._widget_box.objects == [test_pane._widgets[w] for w in ('name', 'b', 'a')]
+
+    a_param.precedence = 1
+    assert test_pane._widget_box.objects == [test_pane._widgets[w] for w in ('name', 'a', 'b')]
+
+
 def test_param_step(document, comm):
     class Test(param.Parameterized):
         a = param.Number(default=1.2, bounds=(0, 5), step=0.1)
