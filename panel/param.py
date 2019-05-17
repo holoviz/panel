@@ -519,6 +519,28 @@ class ParamMethod(PaneBase):
                 kwargs = {n: getattr(dep.owner, dep.name) for n, dep in kw_deps.items()}
         return function(*args, **kwargs)
 
+    def _update_pane(self, *args):
+        new_object = self._eval_function(self.object)
+        pane_type = self.get_pane_type(new_object)
+        try:
+            links = Link.registry.get(new_object)
+        except TypeError:
+            links = []
+        if type(self._pane) is pane_type and not links:
+            if isinstance(new_object, Reactive):
+                pvals = dict(self._pane.get_param_values())
+                new_params = {k: v for k, v in new_object.get_param_values()
+                              if k != 'name' and v is not pvals[k]}
+                self._pane.set_param(**new_params)
+            else:
+                self._pane.object = new_object
+        else:
+            # Replace pane entirely
+            kwargs = dict(self.get_param_values(), **self._kwargs)
+            del kwargs['object']
+            self._pane = Pane(new_object, **kwargs)
+            self._inner_layout[0] = self._pane
+
     def _link_object_params(self):
         parameterized = get_method_owner(self.object)
         params = parameterized.param.params_depended_on(self.object.__name__)
@@ -548,29 +570,7 @@ class ParamMethod(PaneBase):
                     self._callbacks.append(watcher)
                     for p in params:
                         deps.append(p)
-
-            # Try updating existing pane
-            new_object = self._eval_function(self.object)
-            pane_type = self.get_pane_type(new_object)
-            try:
-                links = Link.registry.get(new_object)
-            except TypeError:
-                links = []
-            if type(self._pane) is pane_type and not links:
-                if isinstance(new_object, Reactive):
-                    pvals = dict(self._pane.get_param_values())
-                    new_params = {k: v for k, v in new_object.get_param_values()
-                                  if k != 'name' and v is not pvals[k]}
-                    self._pane.set_param(**new_params)
-                else:
-                    self._pane.object = new_object
-                return
-
-            # Replace pane entirely
-            kwargs = dict(self.get_param_values(), **self._kwargs)
-            del kwargs['object']
-            self._pane = Pane(new_object, **kwargs)
-            self._inner_layout[0] = self._pane
+            self._update_pane()
 
         for _, params in full_groupby(params, lambda x: (x.inst or x.cls, x.what)):
             p = params[0]
@@ -634,34 +634,12 @@ class ParamFunction(ParamMethod):
     a Panel which depend on other parameters, e.g. tying the value of
     a widget to some other output.
     """
+
     def _link_object_params(self):
-        def update_pane(*events):
-            new_object = self._eval_function(self.object)
-            pane_type = self.get_pane_type(new_object)
-            try:
-                links = Link.registry.get(new_object)
-            except TypeError:
-                links = []
-            if type(self._pane) is pane_type and not links:
-                if isinstance(new_object, Reactive):
-                    pvals = dict(self._pane.get_param_values())
-                    new_params = {k: v for k, v in new_object.get_param_values()
-                                  if k != 'name' and v is not pvals[k]}
-                    self._pane.set_param(**new_params)
-                else:
-                    self._pane.object = new_object
-                return
-
-            # Replace pane entirely
-            kwargs = dict(self.get_param_values(), **self._kwargs)
-            del kwargs['object']
-            self._pane = Pane(new_object, **kwargs)
-            self._inner_layout[0] = self._pane
-
         deps = self.object._dinfo
         dep_params = list(deps['dependencies']) + list(deps['kw'].values())
         for p in dep_params:
-            watcher = p.owner.param.watch(update_pane, p.name)
+            watcher = p.owner.param.watch(self._update_pane, p.name)
             self._callbacks.append(watcher)
 
     #----------------------------------------------------------------
