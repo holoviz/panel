@@ -28,12 +28,9 @@ from six import string_types
 
 import param
 
-from bokeh.util.dependencies import import_optional
 from pyviz_comms import JupyterComm
 
 from .base import PaneBase
-
-vtk = import_optional('vtk')
 
 arrayTypesMapping = '  bBhHiIlLfdL' # last one is idtype
 
@@ -86,6 +83,8 @@ def _get_object_id(obj, objIds):
 def _dump_data_array(scDirs, datasetDir, dataDir, array, root={}, compress=True):
     if not array:
         return None
+
+    import vtk
 
     if array.GetDataType() == 12:
         # IdType need to be converted to Uint32
@@ -342,8 +341,13 @@ class VTK(PaneBase):
 
     @classmethod
     def applies(cls, obj):
-        return (isinstance(obj, getattr(vtk, 'vtkRenderWindow', type(None))) or
-                hasattr(obj, 'read') or (isinstance(obj, string_types) and obj.endswith('.vtkjs')))
+        if isinstance(obj, string_types) and obj.endswith('.vtkjs'):
+            return True
+        elif 'vtk' not in sys.modules:
+            return False
+        else:
+            import vtk
+            return isinstance(obj, vtk.vtkRenderWindow)
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         """
@@ -389,6 +393,8 @@ class VTK(PaneBase):
         model.data = self._get_vtkjs()
 
     def _vtksjs_from_render_window(self, render_window):
+        import vtk
+
         render_window.OffScreenRenderingOn() # to not pop a vtk windows
         render_window.Render()
         renderers = render_window.GetRenderers()
