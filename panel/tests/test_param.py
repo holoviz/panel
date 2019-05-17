@@ -8,7 +8,7 @@ from bokeh.models import (
     Tabs as BkTabs, Column as BkColumn, TextInput)
 from panel.pane import Pane, PaneBase, Matplotlib, Bokeh
 from panel.layout import Tabs, Row
-from panel.param import Param, ParamMethod, JSONInit
+from panel.param import Param, ParamMethod, ParamFunction, JSONInit
 from panel.widgets import LiteralInput
 from panel._testing.util import mpl_available, mpl_figure
 
@@ -762,6 +762,50 @@ class View(param.Parameterized):
     @param.depends('a')
     def mixed_view(self):
         return self.view() if (self.a % 2) else self.mpl_view()
+
+
+def test_get_param_function_pane_type():
+    test = View()
+
+    def view(a):
+        return Div(text='%d' % a)
+
+    assert PaneBase.get_pane_type(view) is not ParamFunction
+    assert PaneBase.get_pane_type(param.depends(test.param.a)(view)) is ParamFunction
+
+
+def test_param_function_pane(document, comm):
+    test = View()
+
+    @param.depends(test.param.a)
+    def view(a):
+        return Div(text='%d' % a)
+
+    pane = Pane(view)
+    inner_pane = pane._pane
+    assert isinstance(inner_pane, Bokeh)
+
+    # Create pane
+    row = pane.get_root(document, comm=comm)
+    assert isinstance(row, BkRow)
+    assert len(row.children) == 1
+    inner_row = row.children[0]
+    model = inner_row.children[0]
+    assert pane._models[row.ref['id']][0] is inner_row
+    assert isinstance(model, Div)
+    assert model.text == '0'
+
+    # Update pane
+    test.a = 5
+    new_model = inner_row.children[0]
+    assert inner_pane is pane._pane
+    assert new_model.text == '5'
+    assert pane._models[row.ref['id']][0] is inner_row
+
+    # Cleanup pane
+    pane._cleanup(row)
+    assert pane._models == {}
+    assert inner_pane._models == {}
 
 
 def test_get_param_method_pane_type():
