@@ -342,9 +342,10 @@ class Param(PaneBase):
                 if change.what == 'constant':
                     updates['disabled'] = change.new
                 elif change.what == 'precedence':
-                    if change.new < 0 and widget in self._widget_box.objects:
+                    if (change.new < self.display_threshold and
+                        widget in self._widget_box.objects):
                         self._widget_box.pop(widget)
-                    elif change.new >= 0 and widget not in self._widget_box.objects:
+                    elif change.new >= self.display_threshold:
                         precedence = lambda k: self.object.param[k].precedence
                         params = self._ordered_params
                         if self.show_name:
