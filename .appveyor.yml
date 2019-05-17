@@ -9,6 +9,7 @@ install:
   - "SET PATH=%CONDA%;%CONDA%\\Scripts;%PATH%"
   - "conda install -y -c pyviz pyctdev && doit ecosystem_setup"
   - "doit develop_install -o recommended -o tests %CHANS_DEV%"
+  - "bokeh sampledata"
 
 build: off
   
