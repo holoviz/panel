@@ -211,7 +211,9 @@ class Param(PaneBase):
             self._widgets = {}
         else:
             self._widgets = self._get_widgets()
-        widgets = [widget for widget in self._widgets.values()]
+        widgets = [widget for p, widget in self._widgets.items()
+                   if (self.object.param[p].precedence is None)
+                   or (self.object.param[p].precedence >= self.display_threshold)]
         self._widget_box.objects = widgets
         if not (self.expand_button == False and not self.expand):
             self._link_subobjects()
@@ -340,14 +342,18 @@ class Param(PaneBase):
                 if change.what == 'constant':
                     updates['disabled'] = change.new
                 elif change.what == 'precedence':
-                    if change.new < 0 and widget in self._widget_box.objects:
+                    if (change.new < self.display_threshold and
+                        widget in self._widget_box.objects):
                         self._widget_box.pop(widget)
-                    elif change.new >= 0 and widget not in self._widget_box.objects:
+                    elif change.new >= self.display_threshold:
                         precedence = lambda k: self.object.param[k].precedence
+                        params = self._ordered_params
+                        if self.show_name:
+                            params.insert(0, 'name')
                         widgets = []
-                        for k, ws in self._widgets.items():
+                        for k in params:
                             if precedence(k) is None or precedence(k) >= self.display_threshold:
-                                widgets.append(ws)
+                                widgets.append(self._widgets[k])
                         self._widget_box.objects = widgets
                     return
                 elif change.what == 'objects':
@@ -395,27 +401,28 @@ class Param(PaneBase):
         else:
             return widget
 
+    @property
+    def _ordered_params(self):
+        params = [(p, pobj) for p, pobj in self.object.param.objects('existing').items()
+                  if p in self.parameters or p == 'name']
+        key_fn = lambda x: x[1].precedence if x[1].precedence is not None else self.default_precedence
+        sorted_precedence = sorted(params, key=key_fn)
+        filtered = [(k, p) for k, p in sorted_precedence]
+        groups = itertools.groupby(filtered, key=key_fn)
+        # Params preserve definition order in Python 3.6+
+        dict_ordered_py3 = (sys.version_info.major == 3 and sys.version_info.minor >= 6)
+        dict_ordered = dict_ordered_py3 or (sys.version_info.major > 3)
+        ordered_groups = [list(grp) if dict_ordered else sorted(grp) for (_, grp) in groups]
+        ordered_params = [el[0] for group in ordered_groups for el in group if el[0] != 'name']
+        return ordered_params
+
     #----------------------------------------------------------------
     # Model API
     #----------------------------------------------------------------
 
     def _get_widgets(self):
         """Return name,widget boxes for all parameters (i.e., a property sheet)"""
-        params = [(p, pobj) for p, pobj in self.object.param.objects('existing').items()
-                  if p in self.parameters or p == 'name']
-        key_fn = lambda x: x[1].precedence if x[1].precedence is not None else self.default_precedence
-        sorted_precedence = sorted(params, key=key_fn)
-        filtered = [(k,p) for (k,p) in sorted_precedence
-                    if ((p.precedence is None) or (p.precedence >= self.display_threshold))]
-        groups = itertools.groupby(filtered, key=key_fn)
-        # Params preserve definition order in Python 3.6+
-        dict_ordered_py3 = (sys.version_info.major == 3 and sys.version_info.minor >= 6)
-        dict_ordered = dict_ordered_py3 or (sys.version_info.major > 3)
-        ordered_groups = [list(grp) if dict_ordered else sorted(grp) for (k,grp) in groups]
-        ordered_params = [el[0] for group in ordered_groups for el in group]
-
         # Format name specially
-        ordered_params.pop(ordered_params.index('name'))
         if self.expand_layout is Tabs:
             widgets = []
         elif self.show_name:
@@ -423,7 +430,7 @@ class Param(PaneBase):
             widgets = [('name', StaticText(value='<b>{0}</b>'.format(name)))]
         else:
             widgets = []
-        widgets += [(pname, self.widget(pname)) for pname in ordered_params]
+        widgets += [(pname, self.widget(pname)) for pname in self._ordered_params]
         return OrderedDict(widgets)
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
