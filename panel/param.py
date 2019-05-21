@@ -324,7 +324,6 @@ class Param(PaneBase):
 
         watchers = self._callbacks
         if isinstance(p_obj, param.Action):
-            widget.button_type = 'success'
             def action(change):
                 value(self.object)
             watchers.append(widget.param.watch(action, 'clicks'))
