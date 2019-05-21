@@ -87,7 +87,8 @@ extras_require = {
         'plotly',
         'altair',
         'vega_datasets',
-        'vtk ==8.1.1'
+        'vtk ==8.1.1',
+        'scikit-learn'
     ],
     'recommended': _recommended,
     'doc': _recommended + [
