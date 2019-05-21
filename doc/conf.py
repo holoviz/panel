@@ -31,6 +31,7 @@ nbsite_gallery_conf = {
                 'simple',
                 'apis',
                 'layout',
+                'dynamic',
                 'param',
                 'links',
                 'external'
