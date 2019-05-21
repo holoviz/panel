@@ -33,6 +33,8 @@ stages:
     if: tag =~ ^v(\d+|\.)+[^a-z]\d+$
   - name: docs
     if: tag =~ ^v(\d+|\.)+[^a-z]\d+$
+  - name: docs_dev
+    if: tag =~ ^v(\d+|\.)+[a-z]\d+$
   - name: docs_daily
     if: ((type = cron OR commit_message =~ /\[doc-build\]/) and branch = master)
 
@@ -124,6 +126,18 @@ jobs:
           on:
             tags: true
             all_branches: true
+
+    - <<: *doc_build
+      stage: docs_dev
+      deploy:
+        provider: pages
+        skip_cleanup: true
+        github_token: $GITHUB_TOKEN
+        local_dir: ./builtdocs
+        repo: pyviz-dev/panel
+        on:
+          tags: true
+          all_branches: true
 
     - <<: *doc_build
       stage: docs_daily
