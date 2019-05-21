@@ -31,6 +31,7 @@ from .widgets import (
     LiteralInput, Select, Checkbox, FloatSlider, IntSlider, RangeSlider,
     MultiSelect, StaticText, Button, Toggle, TextInput, DatetimeInput,
     DateRangeSlider, ColorPicker, Widget)
+from .widgets.button import _ButtonBase
 
 
 def FileSelector(pobj):
@@ -291,7 +292,10 @@ class Param(PaneBase):
             widget_class = self.widgets[p_name]
         value = getattr(self.object, p_name)
 
-        label = p_obj.label if self.show_labels else ''
+        if not self.show_labels and not issubclass(widget_class, _ButtonBase):
+            label = ''
+        else:
+            label = p_obj.label
         kw = dict(value=value, disabled=p_obj.constant, name=label)
 
         if hasattr(p_obj, 'get_range'):
@@ -320,7 +324,6 @@ class Param(PaneBase):
 
         watchers = self._callbacks
         if isinstance(p_obj, param.Action):
-            widget.button_type = 'success'
             def action(change):
                 value(self.object)
             watchers.append(widget.param.watch(action, 'clicks'))
@@ -513,7 +516,7 @@ class ParamMethod(PaneBase):
         args, kwargs = (), {}
         if hasattr(function, '_dinfo'):
             arg_deps = function._dinfo['dependencies']
-            kw_deps = function._dinfo['kw']
+            kw_deps = function._dinfo.get('kw', {})
             if kw_deps or any(isinstance(d, param.Parameter) for d in arg_deps):
                 args = (getattr(dep.owner, dep.name) for dep in arg_deps)
                 kwargs = {n: getattr(dep.owner, dep.name) for n, dep in kw_deps.items()}
