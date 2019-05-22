@@ -96,7 +96,8 @@ extras_require = {
         'sphinx_ioam_theme',
         'sphinx <2',
         'selenium',
-        'phantomjs'
+        'phantomjs',
+        'lxml'
     ]
 }
 
