@@ -32,10 +32,10 @@ Some example Panel apps: (Click on the title to see the code, or the image to de
    <style>table {border-spacing: 15px} td { border: 1px solid black; vertical-align: top} </style>
    <table>
      <tr>
-       <td border=1><a href="https://anaconda.org/jbednar/datashadercliffordinteract"><b>Interact</b></a><br><a href="https://mybinder.org/v2/gh/panel-demos/clifford-interact/master?urlpath=/proxy/5006/app"><img src="_static/collage/interact.png" /></a></td>
-       <td border=1><a href="https://anaconda.org/jbednar/panel_gapminders"><b>Gapminders</b></a><br><a href="https://mybinder.org/v2/gh/panel-demos/gapminder/master?urlpath=/proxy/5006/app"><img src="_static/collage/gapminders.png" /></a></td>
-       <td border=1><a href="https://anaconda.org/jbednar/nyc_taxi_panel"><b>NYC Taxi</b></a><br><a href="https://mybinder.org/v2/gh/panel-demos/nyc_taxi/master?urlpath=/proxy/5006/app"><img src="_static/collage/nyc_taxi.png" /></a></td>
-       <td border=1><a href="https://anaconda.org/jbednar/glaciers"><b>Glaciers</b></a><br><a href="https://mybinder.org/v2/gh/panel-demos/glaciers/master?urlpath=/proxy/5006/app"><img src="_static/collage/glaciers.png" /></a></td>
+       <td border=1><a href="https://anaconda.org/jbednar/datashadercliffordinteract"><b>Interact</b></a><br><a href="https://clifford-interact.pyviz.demo.anaconda.com"><img src="_static/collage/interact.png" /></a></td>
+       <td border=1><a href="https://anaconda.org/jbednar/panel_gapminders"><b>Gapminders</b></a><br><a href="https://gapminder.pyviz.demo.anaconda.com"><img src="_static/collage/gapminders.png" /></a></td>
+       <td border=1><a href="https://anaconda.org/jbednar/nyc_taxi_panel"><b>NYC Taxi</b></a><br><a href="https://nyc-taxi.pyviz.demo.anaconda.com"><img src="_static/collage/nyc_taxi.png" /></a></td>
+       <td border=1><a href="https://anaconda.org/jbednar/glaciers"><b>Glaciers</b></a><br><a href="https://glaciers.pyviz.demo.anaconda.com"><img src="_static/collage/glaciers.png" /></a></td>
        <td border=1><a href="https://anaconda.org/jbednar/eulersmethod"><b>Euler's Method</b></a><br><a href="https://anaconda.org/jbednar/eulersmethod"><img src="_static/collage/eulers_method.png" /></a></td>
      <tr>
    </table>
