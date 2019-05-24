@@ -111,6 +111,7 @@ with detailed tutorials and examples.
    :maxdepth: 2
 
    Home <self>
+   Getting Started <getting_started/index>
    User Guide <user_guide/index>
    Gallery <gallery/index>
    Reference Gallery <reference/index>
