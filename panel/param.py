@@ -640,7 +640,7 @@ class ParamFunction(ParamMethod):
 
     def _link_object_params(self):
         deps = self.object._dinfo
-        dep_params = list(deps['dependencies']) + list(deps['kw'].values())
+        dep_params = list(deps['dependencies']) + list(deps.get('kw', {}).values())
         for p in dep_params:
             watcher = p.owner.param.watch(self._update_pane, p.name)
             self._callbacks.append(watcher)
