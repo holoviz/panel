@@ -22,9 +22,9 @@ Panel makes it simple to make:
 
 Panel objects are reactive, immediately updating to reflect changes to their state, which makes it simple to compose viewable objects and link them into simple, one-off apps to do a specific exploratory task. The same objects can then be reused in more complex combinations to build more ambitious apps, while always sharing the same code that works well on its own.
 
-Panel lets you move the same code freely between an interactive `Jupyter Notebook <http://jupyter.org>`__ prompt and a fully deployable standalone server.  That way you can easily switch between exploring your data, building visualizations, adding custom interactivity, sharing with non-technical users, and back again at any point, using the same tools and the same code throughout. Panel thus helps support your entire workflow, so that you never have to commit to only one way of using your data and your analyses, and don't have to rewrite your code just to make it usable in a different way.
+Panel lets you move the same code freely between an interactive `Jupyter Notebook <http://jupyter.org>`__ prompt and a fully deployable standalone server.  That way you can easily switch between exploring your data, building visualizations, adding custom interactivity, sharing with non-technical users, and back again at any point, using the same tools and the same code throughout. Panel thus helps support your entire workflow, so that you never have to commit to only one way of using your data and your analyses, and don't have to rewrite your code just to make it usable in a different way. In many cases, using Panel can turn projects that used to take weeks or months into something you finish on the same day you started, creating a full Python-backed deployed web service for your visualized data in minutes or hours without having to run a software development project or hand your work over to another team.
 
-Some example Panel apps: (Click on the title to see the code, or the image to deploy on mybinder if it has resources available.)
+Some example Panel apps: (Click on the title to see the code, or the image for the live, deployed app (when available).)
 
 
 .. raw:: html
@@ -32,7 +32,7 @@ Some example Panel apps: (Click on the title to see the code, or the image to de
    <style>table {border-spacing: 15px} td { border: 1px solid black; vertical-align: top} </style>
    <table>
      <tr>
-       <td border=1><a href="https://anaconda.org/jbednar/datashadercliffordinteract"><b>Interact</b></a><br><a href="https://clifford-interact.pyviz.demo.anaconda.com"><img src="_static/collage/interact.png" /></a></td>
+       <td border=1><a href="https://anaconda.org/jbednar/datashadercliffordinteract"><b>Interact</b></a><br><a href="https://clifford.pyviz.demo.anaconda.com"><img src="_static/collage/interact.png" /></a></td>
        <td border=1><a href="https://anaconda.org/jbednar/panel_gapminders"><b>Gapminders</b></a><br><a href="https://gapminder.pyviz.demo.anaconda.com"><img src="_static/collage/gapminders.png" /></a></td>
        <td border=1><a href="https://anaconda.org/jbednar/nyc_taxi_panel"><b>NYC Taxi</b></a><br><a href="https://nyc-taxi.pyviz.demo.anaconda.com"><img src="_static/collage/nyc_taxi.png" /></a></td>
        <td border=1><a href="https://anaconda.org/jbednar/glaciers"><b>Glaciers</b></a><br><a href="https://glaciers.pyviz.demo.anaconda.com"><img src="_static/collage/glaciers.png" /></a></td>
@@ -44,7 +44,7 @@ Some example Panel apps: (Click on the title to see the code, or the image to de
 Using Panel for declarative, reactive programming
 -------------------------------------------------
 
-Panel can also be used with the separate `Param <http://param.pyviz.org>`__ project to create interactively configurable objects with or without associated visualizations, in a fully declarative way. With this approach, you declare your configurable object using the pure-Python, zero-dependency ``param`` library, annotating your code with parameter ranges, documentation, and dependencies between parameters and your code. Using this information, you can make all of your domain-specific code be optionally configurable in a GUI, with optional visual displays and debugging information if you like, all with just a few lines of declarations. With this approach, you don't ever have to commit to whether your code will be used in a notebook, in a GUI app, or completely behind the scenes in batch processing or reports -- the same code can support all of these cases equally well, once you declare the associated parameters and constraints. This approach lets you completely separate your domain-specific code from anything to do with web browsers, GUI toolkits, or other volatile technologies that would otherwise make your hard work become obsolete as they change over time.
+Panel can also be used with the separate `Param <http://param.pyviz.org>`__ project to create interactively configurable objects with or without associated visualizations, in a fully declarative way. With this approach, you declare your configurable object using the pure-Python, zero-dependency ``param`` library, annotating your code with parameter ranges, documentation, and dependencies between parameters and your code. Using this information, you can make all of your domain-specific code be *optionally* configurable in a GUI, with *optional* visual displays and debugging information if you like, all with just a few lines of declarations. With this approach, you don't ever have to commit to whether your code will eventually be used in a notebook, in a GUI app, or completely behind the scenes in batch processing, servers, or reports -- the same code can support all of these cases equally well, once you declare the associated parameters and constraints. This approach lets you completely separate your domain-specific code from anything to do with web browsers, GUI toolkits, or other volatile technologies that would otherwise make your hard work become obsolete as they change over time.
 
 The `User Guide <user_guide>`_ explains how to use Panel.  Panel is currently in prerelease status, which means that it is available for public use but has an API that is expected to change with each new release without detailed notice.
 
@@ -74,7 +74,7 @@ Support for classic Jupyter Notebook is included with Panel. If you want to work
 Getting Started
 ---------------
 
-Once you've installed Panel, you can get your own copy of all the examples shown on this website::
+Once you've installed Panel, you can get your own copy of all the notebooks used to make this website::
 
   panel examples
   cd panel-examples
