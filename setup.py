@@ -88,7 +88,8 @@ extras_require = {
         'altair',
         'vega_datasets',
         'vtk ==8.1.1',
-        'scikit-learn'
+        'scikit-learn',
+        'datashader'
     ],
     'recommended': _recommended,
     'doc': _recommended + [
