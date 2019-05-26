@@ -51,6 +51,7 @@ nbsite_gallery_conf = {
 }
 
 _NAV =  (
+    ('Getting started', 'getting_started/index'),
     ('User Guide', 'user_guide/index'),
     ('Gallery', 'gallery/index'),
     ('Reference Gallery', 'reference/index'),

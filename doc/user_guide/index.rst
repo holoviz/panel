@@ -19,7 +19,7 @@ guide.
    An introduction to the three main component types: Widgets, Panes and Panel layouts.
 
 * `APIs <APIs.html>`_
-  An introduction to the different APIs panel provides to build interactive applications and dashboards.
+   An introduction to the different APIs panel provides to build interactive applications and dashboards.
 
 Reference guide
 ---------------
