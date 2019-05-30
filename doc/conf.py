@@ -4,7 +4,7 @@ from nbsite.shared_conf import *
 
 project = u'Panel'
 authors = u'Panel contributors'
-copyright = u'2018 ' + authors
+copyright = u'2019 ' + authors
 description = 'High-level dashboarding for python visualization libraries'
 
 import panel
@@ -28,25 +28,31 @@ nbsite_gallery_conf = {
             'title': 'Gallery',
             'sections': [
                 {'path': 'demos',
+                 'title': 'Demos',
                  'description': 'A set of sophisticated apps built to demonstrate the features of Panel.'},
                 {'path': 'simple',
+                 'title': 'Simple Apps',
                  'description': 'Simple example apps meant to provide a quick introduction to Panel.'},
                 {'path': 'apis',
                  'title': 'APIs',
                  'description': ('Examples meant to demonstrate the usage of different Panel APIs '
                                  'such as interact and reactive functions.')},
                 {'path': 'layout',
+                 'title': 'Layouts',
                  'description': 'How to leverage Panel layout components to achieve complex layouts.'},
                 {'path': 'dynamic',
                  'title': 'Dynamic UIs',
                  'description': ('Examples demonstrating how to build dynamic UIs with components that'
                                  'are added or removed interactively.')},
                 {'path': 'param',
+                 'title': 'Param based apps',
                  'description': 'Using the Param library to express UIs independently of Panel.'},
                 {'path': 'links',
+                 'title': 'Linking',
                  'description': ('Using Javascript based links to define interactivity without '
                                  'without requiring a live kernel.')},
                 {'path': 'external',
+                 'title': 'External libraries',
                  'description': 'Wrapping external libraries with Panel.'}
             ]
         },
