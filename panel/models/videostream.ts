@@ -53,9 +53,9 @@ export class VideoStreamView extends WidgetView {
   }
 
   render(): void {
+    super.render()
     if (this.videoEl)
       return
-    super.render()
     this.videoEl = document.createElement('video')
     if (!this.model.sizing_mode || this.model.sizing_mode === 'fixed') {
 	  if (this.model.height)
