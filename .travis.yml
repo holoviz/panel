@@ -81,7 +81,7 @@ jobs:
       stage: conda_dev_package
       env: DESC="" TRAVIS_NOCACHE=$TRAVIS_JOB_ID LABELS=$LABELS_DEV CHANS=$CHANS_DEV
       install:
-        - doit package_build $CHANS $PKG_TEST_PYTHON --test-group=unit
+        - doit package_build $CHANS $PKG_TEST_PYTHON --test-group=unit_deploy
       script: doit package_upload --token=$ANACONDA_TOKEN $LABELS
 
     - &pip_pkg
@@ -92,7 +92,7 @@ jobs:
         - doit develop_install $CHANS_DEV -o build && pip uninstall -y panel
         - doit pip_on_conda
         - conda install $CHANS_DEV nodejs
-        - doit ecosystem=pip package_build $PKG_TEST_PYTHON --test-group=unit
+        - doit ecosystem=pip package_build $PKG_TEST_PYTHON --test-group=unit_deploy
       script: doit ecosystem=pip package_upload -u $PYPIUSER -p $PYPIPASS --pypi ${PYPI}
 
     ## release packages
