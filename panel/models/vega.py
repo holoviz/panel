@@ -16,14 +16,14 @@ class VegaPlot(LayoutDOM):
     """
 
     __javascript__ = ["https://cdn.jsdelivr.net/npm/vega@5.3.1",
-                      'https://cdn.jsdelivr.net/npm/vega-lite@3.0.0',
+                      'https://cdn.jsdelivr.net/npm/vega-lite@3.2.1',
                       'https://cdn.jsdelivr.net/npm/vega-embed@4.0.0-rc1']
 
     __js_require__ = {
         'baseUrl': 'https://cdn.jsdelivr.net/npm/',
         'paths': {
             "vega-embed":  "vega-embed@4.0.0/build/vega-embed.min",
-            "vega-lite": "vega-lite@3.0.0/build/vega-lite.min",
+            "vega-lite": "vega-lite@3.2.1/build/vega-lite.min",
             "vega": "vega@5.3.1/build/vega.min"
         },
         'exports': {'vega-embed': 'vegaEmbed', 'vega': 'vega', 'vega-lite': 'vl'}
