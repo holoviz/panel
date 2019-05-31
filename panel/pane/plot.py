@@ -59,6 +59,10 @@ class Matplotlib(PNG):
     dpi = param.Integer(default=144, bounds=(1, None), doc="""
         Scales the dpi of the matplotlib figure.""")
 
+    tight = param.Boolean(default=False, doc="""
+        Automatically adjust the figure size to fit the
+        subplots and other artist elements.""")
+
     _rerender_params = ['object', 'dpi']
 
     @classmethod
@@ -80,7 +84,13 @@ class Matplotlib(PNG):
     def _img(self):
         self.object.set_dpi(self.dpi)
         b = BytesIO()
-        self.object.canvas.print_figure(b)
+
+        if self.tight:
+            bbox_inches = 'tight'
+        else:
+            bbox_inches = None
+
+        self.object.canvas.print_figure(b, bbox_inches=bbox_inches)
         return b.getvalue()
 
 
