@@ -323,11 +323,7 @@ class Param(PaneBase):
             widget = widget_class(**kwargs)
 
         watchers = self._callbacks
-        if isinstance(p_obj, param.Action):
-            def action(change):
-                value(self.object)
-            watchers.append(widget.param.watch(action, 'clicks'))
-        elif isinstance(widget, Toggle):
+        if isinstance(widget, Toggle):
             pass
         else:
             def link_widget(change):
@@ -339,8 +335,14 @@ class Param(PaneBase):
                 finally:
                     self._updating = False
 
-            widget.param.watch(link_widget, 'value')
-            def link(change):
+            if isinstance(p_obj, param.Action):
+                def action(change):
+                    value(self.object)
+                watcher = widget.param.watch(action, 'clicks')
+            else:
+                watcher = widget.param.watch(link_widget, 'value')
+
+            def link(change, watchers=[watcher]):
                 updates = {}
                 if change.what == 'constant':
                     updates['disabled'] = change.new
@@ -367,7 +369,15 @@ class Param(PaneBase):
                     updates['end'] = end
                 elif change.what == 'step':
                     updates['step'] = p_obj.step
+                elif change.what == 'label':
+                    updates['name'] = p_obj.label
                 elif self._updating:
+                    return
+                elif isinstance(p_obj, param.Action):
+                    widget.param.unwatch(watchers[0])
+                    def action(event):
+                        change.new(self.object)
+                    watchers[0] = widget.param.watch(action, 'clicks')
                     return
                 else:
                     updates['value'] = change.new
@@ -381,6 +391,7 @@ class Param(PaneBase):
             # Set up links to parameterized object
             watchers.append(self.object.param.watch(link, p_name, 'constant'))
             watchers.append(self.object.param.watch(link, p_name, 'precedence'))
+            watchers.append(self.object.param.watch(link, p_name, 'label'))
             if hasattr(p_obj, 'get_range'):
                 watchers.append(self.object.param.watch(link, p_name, 'objects'))
             if hasattr(p_obj, 'get_soft_bounds'):
