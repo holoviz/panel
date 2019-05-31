@@ -122,13 +122,13 @@ class Pipeline(param.Parameterized):
         steps = idx-self._stage
         if steps < 0:
             for i in range(abs(steps)):
-                e = self._previous()
-                if e:
+                self.param.trigger('previous')
+                if self._error.object:
                     break
         else:
             for i in range(steps):
-                e = self._next()
-                if e:
+                self.param.trigger('next')
+                if self._error.object:
                     break
 
     def _update_button(self):
