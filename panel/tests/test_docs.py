@@ -2,15 +2,21 @@
 These tests verify that all of the panes, layouts, and widgets defined by panel are
 represented in the reference gallery.
 """
-import os
-from inspect import isclass
-import panel as pn
+from __future__ import absolute_import, division, unicode_literals
 
+import os
+
+from inspect import isclass
+
+import pytest
+import panel as pn
 
 here = os.path.abspath(os.path.dirname(__file__))
 ref = os.path.join(here, '..', '..', 'examples', 'reference')
+docs_available = pytest.mark.skipif(os.path.isdir(ref), reason="docs not found")
 
 
+@docs_available
 def test_layouts_are_in_reference_gallery():
     exceptions = set(['ListPanel', 'Panel'])
     docs = {os.path.splitext(f)[0] for f in os.listdir(os.path.join(ref, 'layouts'))}
@@ -23,6 +29,7 @@ def test_layouts_are_in_reference_gallery():
     assert layouts - exceptions - docs == set()
 
 
+@docs_available
 def test_widgets_are_in_reference_gallery():
     exceptions = set(['CompositeWidget', 'Widget', 'ToggleGroup'])
     docs = {os.path.splitext(f)[0] for f in os.listdir(os.path.join(ref, 'widgets'))}
@@ -35,6 +42,7 @@ def test_widgets_are_in_reference_gallery():
     assert widgets - exceptions - docs == set()
 
 
+@docs_available
 def test_panes_are_in_reference_gallery():
     exceptions = set(['PaneBase', 'YT', 'RGGPlot'])
     docs = {os.path.splitext(f)[0] for f in os.listdir(os.path.join(ref, 'panes'))}
