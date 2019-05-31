@@ -397,6 +397,24 @@ def test_param_precedence(document, comm):
     assert test_pane._widgets['a'] in test_pane._widget_box.objects
 
 
+def test_param_label(document, comm):
+    class Test(param.Parameterized):
+        a = param.Number(default=1.2, bounds=(0, 5), label='A')
+        b = param.Action(label='B')
+
+    test = Test()
+    test_pane = Pane(test)
+
+    # Check updating label changes widget name
+    a_param = test.param['a']
+    a_param.label = 'B'
+    assert test_pane._widgets['a'].name == 'B'
+
+    b_param = test.param['b']
+    b_param.label = 'C'
+    assert test_pane._widgets['b'].name == 'C'
+
+
 def test_param_precedence_ordering(document, comm):
     class Test(param.Parameterized):
         a = param.Number(default=1.2, bounds=(0, 5), precedence=-1)
