@@ -200,6 +200,11 @@ class panel_extension(_pyviz_extension):
             if hv.extension._loaded:
                 return
             import holoviews.plotting.bokeh # noqa
+
+            if hasattr(ip, 'kernel'):
+                with param.logging_level('ERROR'):
+                    hv.plotting.Renderer.load_nb()
+
             if hasattr(hv.Store, 'set_current_backend'):
                 hv.Store.set_current_backend('bokeh')
             else:
