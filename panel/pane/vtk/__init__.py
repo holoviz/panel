@@ -1,2 +1,2 @@
 
-from .vtk import VTK
+from .vtk import VTK # noqa
