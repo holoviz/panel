@@ -19,7 +19,7 @@ import param
 
 from pyviz_comms import JupyterComm
 
-from .base import PaneBase
+from ..base import PaneBase
 
 if sys.version_info >= (2, 7):
     base64encode = lambda x: base64.b64encode(x).decode('utf-8')
@@ -65,7 +65,7 @@ class VTK(PaneBase):
                                    'the notebook kernel and ensure you load '
                                    'it as part of the extension using:'
                                    '\n\npn.extension(\'vtk\')\n')
-            from ..models.vtk import VTKPlot
+            from ...models.vtk import VTKPlot
         else:
             VTKPlot = getattr(sys.modules['panel.models.vtk'], 'VTKPlot')
 
@@ -99,18 +99,9 @@ class VTK(PaneBase):
         elif hasattr(self.object, 'read'):
             vtkjs = self.object.read()
         else:
-            vtkjs = VTK._serializer(self.object)
+            vtkjs = VTK._serializer(self.object).read()
         return base64encode(vtkjs) if vtkjs is not None else vtkjs
 
     def _update(self, model):
         model.data = self._get_vtkjs()
-
-
-if vtk is not None:
-    try:
-        from vtki.export import serialize_plotter_vtkjs
-        VTK.set_serializer(serialize_plotter_vtkjs)
-    except ImportError:
-        from ._vtkjs_serializer import render_window_serializer
-        VTK.set_serializer(render_window_serializer)
 

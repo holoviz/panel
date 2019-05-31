@@ -59,7 +59,7 @@ def test_vtk_pane_from_url(document, comm):
 
 @vtk_available
 def test_vtk_data_array_dump():
-    from panel.pane._vtkjs_serializer import _dump_data_array
+    from panel.pane.vtk.vtkjs_serializer import _dump_data_array
     root_keys = ['ref', 'vtkClass', 'name', 'dataType',
                  'numberOfComponents', 'size', 'ranges']
     renWin = make_render_window()

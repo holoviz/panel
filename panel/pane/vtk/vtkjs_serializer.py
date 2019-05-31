@@ -322,6 +322,11 @@ def _write_data_set(scDirs, dataset, colorArrayInfo, newDSName, compress=True):
 
 
 def render_window_serializer(render_window):
+    """ 
+    Function to convert a vtk render window in a list of 2-tuple where first value 
+    correspond to a relative file path in the `vtkjs` directory structure and values
+    of the binary content of the corresponding file.
+    """
     render_window.OffScreenRenderingOn() # to not pop a vtk windows
     render_window.Render()
     renderers = render_window.GetRenderers()
@@ -500,6 +505,7 @@ def render_window_serializer(render_window):
 
     scDirs.append(['index.json', json.dumps(sceneDescription, indent=4)])
 
+    # create binary stream of the vtkjs directory structure
     compression = zipfile.ZIP_DEFLATED
     in_memory = BytesIO()
     zf = zipfile.ZipFile(in_memory, mode="w")
@@ -510,4 +516,5 @@ def render_window_serializer(render_window):
             zf.close()
 
     in_memory.seek(0)
-    return in_memory.read()
+    return in_memory
+
