@@ -2,14 +2,12 @@
 Templates allow multiple Panel objects to be embedded into custom HTML
 documents.
 """
-import os
-import sys
+from __future__ import absolute_import, division, unicode_literals
 
 import param
 
 from bokeh.io import curdoc as _curdoc
 from bokeh.document.document import Document as _Document
-from jinja2 import Environment, Markup, FileSystemLoader
 from jinja2.environment import Template as _Template
 from pyviz_comms import JupyterCommManager
 from six import string_types
@@ -18,23 +16,13 @@ from .io.model import add_to_doc
 from .io.notebook import render_mimebundle, render_model
 from .io.server import StoppableThread, get_server
 from .io.state import state
-from .pane import panel as _panel
+from .layout import Column
+from .pane import panel as _panel, HTML, Str
+from .widgets import Button
 
-
-def get_env():
-    """
-    Get the correct Jinja2 Environment, also for frozen scripts.
-    """
-    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
-        # PyInstaller uses _MEIPASS and only works with jinja2.FileSystemLoader
-        templates_path = os.path.join(sys._MEIPASS, 'panel', '_templates')
-    else:
-        # Non-frozen Python and cx_Freeze can use __file__ directly
-        templates_path = os.path.join(os.path.dirname(__file__), '_templates')
-
-    return Environment(loader=FileSystemLoader(templates_path))
-
-_env = get_env()
+_server_info = (
+    '<b>Running server:</b> <a target="_blank" href="https://localhost:{port}">'
+    'https://localhost:{port}</a>')
 
 
 class Template(object):
@@ -67,6 +55,25 @@ class Template(object):
         items = {} if items is None else items
         for name, item in items.items():
             self.add_panel(name, item)
+        self._server = None
+        self._layout = self._build_layout()
+
+    def _build_layout(self):
+        str_repr = Str(repr(self))
+        server_info = HTML('')
+        button = Button(name='Launch server')
+        def launch(event):
+            if self._server:
+                button.name = 'Launch server'
+                server_info.object = ''
+                self._server.stop()
+                self._server = None
+            else:
+                button.name = 'Stop server'
+                self._server = self._get_server(start=True, show=True)
+                server_info.object = _server_info.format(port=self._server.port)
+        button.param.watch(launch, 'clicks')
+        return Column(str_repr, server_info, button)
 
     def _get_server(self, port=0, websocket_origin=None, loop=None,
                    show=False, start=False, **kwargs):
@@ -80,6 +87,18 @@ class Template(object):
         if server_id:
             state._servers[server_id][2].append(doc)
         return self.server_doc(doc)
+
+    def __repr__(self):
+        cls = type(self).__name__
+        spacer = '\n    '
+        objs = ['[%s] %s' % (name, obj.__repr__(1))
+                for name, obj in self._render_items.items()]
+        template = '{cls}{spacer}{objs}'
+        return template.format(
+            cls=cls, objs=('%s' % spacer).join(objs), spacer=spacer)
+
+    def _repr_mimebundle_(self, include=None, exclude=None):
+        return self._layout._repr_mimebundle_(include, exclude)
 
     #----------------------------------------------------------------
     # Public API
@@ -103,6 +122,7 @@ class Template(object):
                              'has a unique name by which it can be '
                              'referenced in the template.' % name)
         self._render_items[name] = _panel(panel)
+        self._layout[0].object = repr(self)
 
     def server_doc(self, doc=None, title=None):
         """
@@ -149,8 +169,9 @@ class Template(object):
         -------
         The Panel object itself
         """
-        doc = self.server_doc(title=title)
-        return doc
+        if _curdoc().session_context:
+            self.server_doc(title=title)
+        return self
 
     def show(self, port=0, websocket_origin=None, threaded=False):
         """
