@@ -461,18 +461,23 @@ class Viewable(Layoutable):
         add_to_doc(model, doc)
         return doc
 
-    def servable(self):
+    def servable(self, title=None):
         """
         Serves the object if in a `panel serve` context and returns
         the panel object to allow it to display itself in a notebook
         context.
+
+        Arguments
+        ---------
+        title : str
+          A string title to give the Document (if served as an app)
 
         Returns
         -------
         The Panel object itself
         """
         if _curdoc().session_context:
-            self.server_doc()
+            self.server_doc(title=title)
         return self
 
     def show(self, port=0, websocket_origin=None, threaded=False):
