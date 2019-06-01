@@ -1,5 +1,5 @@
 """
-Templates allow multiple panel objects to be embedded into custom HTML
+Templates allow multiple Panel objects to be embedded into custom HTML
 documents.
 """
 import os
@@ -21,8 +21,9 @@ from .io.state import state
 
 
 def get_env():
-    ''' Get the correct Jinja2 Environment, also for frozen scripts.
-    '''
+    """
+    Get the correct Jinja2 Environment, also for frozen scripts.
+    """
     if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
         # PyInstaller uses _MEIPASS and only works with jinja2.FileSystemLoader
         templates_path = join(sys._MEIPASS, 'panel', '_templates')
@@ -39,10 +40,10 @@ class Template(object):
     """
     A Template is a high-level component to render multiple Panel
     objects into a single HTML document. The Template object should be
-    given a string or jinja2 Template object in the constructor and
+    given a string or Jinja2 Template object in the constructor and
     can then be populated with Panel objects. When adding panels to
-    the Template a unique name must be provided making it possible to
-    refer to them uniquely in the template e.g. two panels addded like
+    the Template a unique name must be provided, making it possible to
+    refer to them uniquely in the template. For instance, two panels added like
     this:
 
         template.add_panel('A', pn.panel('A'))
@@ -105,12 +106,12 @@ class Template(object):
 
     def server_doc(self, doc=None, title=None):
         """
-        Returns a serveable bokeh Document with the panel attached
+        Returns a servable bokeh Document with the panel attached
 
         Arguments
         ---------
         doc : bokeh.Document (optional)
-          The bokeh Document to attach the panel to as a root,
+          The Bokeh Document to attach the panel to as a root,
           defaults to bokeh.io.curdoc()
         title : str
           A string title to give the Document
@@ -118,7 +119,7 @@ class Template(object):
         Returns
         -------
         doc : bokeh.Document
-          The bokeh document the panel was attached to
+          The Bokeh document the panel was attached to
         """
         doc = doc or _curdoc()
         if title is not None:
@@ -136,7 +137,7 @@ class Template(object):
     def servable(self, title=None):
         """
         Serves the object if in a `panel serve` context and returns
-        the panel object to allow it to display itself in a notebook
+        the Panel object to allow it to display itself in a notebook
         context.
 
         Arguments
@@ -153,7 +154,7 @@ class Template(object):
 
     def show(self, port=0, websocket_origin=None, threaded=False):
         """
-        Starts a bokeh server and displays the Viewable in a new tab
+        Starts a Bokeh server and displays the Viewable in a new tab
 
         Arguments
         ---------
@@ -173,7 +174,7 @@ class Template(object):
         Returns
         -------
         server: bokeh.server.Server or threading.Thread
-          Returns the bokeh server instance or the thread the server
+          Returns the Bokeh server instance or the thread the server
           was launched on (if threaded=True)
         """
         if threaded:
