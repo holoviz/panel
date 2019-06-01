@@ -18,6 +18,7 @@ from .io.model import add_to_doc
 from .io.notebook import render_mimebundle, render_model
 from .io.server import StoppableThread, get_server
 from .io.state import state
+from .pane import panel as _panel
 
 
 def get_env():
@@ -26,10 +27,10 @@ def get_env():
     """
     if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
         # PyInstaller uses _MEIPASS and only works with jinja2.FileSystemLoader
-        templates_path = join(sys._MEIPASS, 'panel', '_templates')
+        templates_path = os.path.join(sys._MEIPASS, 'panel', '_templates')
     else:
         # Non-frozen Python and cx_Freeze can use __file__ directly
-        templates_path = osjoin(os.dirname(__file__), '_templates')
+        templates_path = os.path.join(os.path.dirname(__file__), '_templates')
 
     return Environment(loader=FileSystemLoader(templates_path))
 
@@ -96,13 +97,12 @@ class Template(object):
         panel : panel.Viewable
           A Panel component to embed in the template.
         """
-        
         if name in self._render_items:
             raise ValueError('The name %s has already been used for '
                              'another panel. Ensure each panel '
                              'has a unique name by which it can be '
                              'referenced in the template.' % name)
-        self._render_items[name] = panel
+        self._render_items[name] = _panel(panel)
 
     def server_doc(self, doc=None, title=None):
         """
@@ -124,7 +124,7 @@ class Template(object):
         doc = doc or _curdoc()
         if title is not None:
             doc.title = title
-        for name, obj in self._render_items:
+        for name, obj in self._render_items.items():
             model = obj.get_root(doc)
             model.name = name
             if hasattr(doc, 'on_session_destroyed'):
