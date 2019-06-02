@@ -8,7 +8,6 @@ from setuptools import setup, find_packages
 from setuptools.command.develop import develop
 from setuptools.command.install import install
 from setuptools.command.sdist import sdist
-from setuptools.command.sdist import bdist
 
 import pyct.build
 
@@ -60,13 +59,6 @@ class CustomSdistCommand(sdist):
         _build_models()
         sdist.run(self)
 
-
-class CustomBdistCommand(sdist):
-    """Custom installation for bdist mode."""
-
-    def run(self):
-        _build_models()
-        bdist.run(self)
 
 
 ########## dependencies ##########
@@ -148,7 +140,6 @@ setup_args = dict(
         'develop': CustomDevelopCommand,
         'install': CustomInstallCommand,
         'sdist':   CustomSdistCommand,
-        'bdist':   CustomBdistCommand
     },
     packages=find_packages(),
     include_package_data=True,
