@@ -2,21 +2,23 @@
 User Guide
 **********
 
-The user guide aims to impart a good understanding of the core
-concepts behind building interactive apps and dashboards using Panel.
+The Panel user guide introduces the main concepts required for
+building interactive apps and dashboards using Panel, and gives
+an overview of the functionality available. The guide is split
+into core, reference, and supplementary sections.
 
 Core Guide
 ----------
 
-To get an initial understanding of the core components of Panel and
-how to use it in practice it is recommended to go through the core
-guide.
+To get an initial understanding of the core concepts and components of Panel and
+how to use it in practice, it is recommended that all users go through each of
+the core guide sections.
 
 * `Overview <Overview.html>`_
-   A high-level overview of the user guide and key concepts in Panel.
+   A high-level overview of the key concepts behind Panel.
 
 * `Components <Components.html>`_
-   An introduction to the three main component types: Widgets, Panes and Panel layouts.
+   An introduction to the three main component types: Widgets, Panes, and Panels.
 
 * `APIs <APIs.html>`_
    An introduction to the different APIs panel provides to build interactive applications and dashboards.
@@ -24,14 +26,15 @@ guide.
 Reference guide
 ---------------
 
-The reference guides provide a more in depth treatment on some of the
-APIs and components in panel.
+The reference guides provide a more in-depth treatment of some of the
+APIs and components in Panel, with detailed information that you can refer to
+when needed.
 
 * `Customization <Customization.html>`_
-   How to customize the visual appearance, layout and size of Panel components.
+   How to customize the visual appearance, layout, and size of Panel components.
 
 * `Deploy & Export <Deploy_and_Export.html>`_
-   Introduction to displaying, exporting and deploying panel apps
+   Introduction to displaying, exporting, and deploying Panel apps.
 
 * `Interact <Interact.html>`_
    Quickly making a panel using `interact()`.
@@ -55,7 +58,7 @@ Supplementary guides
 --------------------
 
 * `Django Apps <Django_Apps.html>`_
-   How to embed a panel/bokeh app inside a Django deployment
+   How to embed a Panel/Bokeh app inside a Django web-server deployment.
 
 
 .. toctree::
@@ -65,7 +68,7 @@ Supplementary guides
 
     Overview <Overview>
     Components <Components>
-	APIs <APIs>
+    APIs <APIs>
     Customization <Customization>
     Deploy & Export <Deploy_and_Export>
     Widgets <Widgets>
