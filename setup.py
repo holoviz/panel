@@ -7,6 +7,8 @@ import json
 from setuptools import setup, find_packages
 from setuptools.command.develop import develop
 from setuptools.command.install import install
+from setuptools.command.sdist import sdist
+from setuptools.command.sdist import bdist
 
 import pyct.build
 
@@ -28,30 +30,44 @@ def get_setup_version(reponame):
         print("WARNING: param>=1.6.0 unavailable. If you are installing a package, this warning can safely be ignored. If you are creating a package or otherwise operating in a git repository, you should install param>=1.6.0.")
         return json.load(open(version_file_path, 'r'))['version_string']
 
+def _build_models():
+    try:
+        from panel.compiler import build_custom_models
+        print("Building custom models:")
+        build_custom_models()
+    except ImportError as e:
+        print("Custom model compilation failed with: %s" % e)
+    
 
 class CustomDevelopCommand(develop):
     """Custom installation for development mode."""
 
     def run(self):
-        try:
-            from panel.compiler import build_custom_models
-            print("Building custom models:")
-            build_custom_models()
-        except ImportError as e:
-            print("Custom model compilation failed with: %s" % e)
+        _build_models()
         develop.run(self)
 
 class CustomInstallCommand(install):
     """Custom installation for install mode."""
 
     def run(self):
-        try:
-            from panel.compiler import build_custom_models
-            print("Building custom models:")
-            build_custom_models()
-        except ImportError as e:
-            print("Custom model compilation failed with: %s" % e)
+        _build_models()
         install.run(self)
+
+class CustomSdistCommand(sdist):
+    """Custom installation for sdist mode."""
+
+    def run(self):
+        _build_models()
+        sdist.run(self)
+
+
+class CustomBdistCommand(sdist):
+    """Custom installation for bdist mode."""
+
+    def run(self):
+        _build_models()
+        bdist.run(self)
+
 
 ########## dependencies ##########
 
@@ -131,6 +147,8 @@ setup_args = dict(
     cmdclass={
         'develop': CustomDevelopCommand,
         'install': CustomInstallCommand,
+        'sdist':   CustomSdistCommand,
+        'bdist':   CustomBdistCommand
     },
     packages=find_packages(),
     include_package_data=True,
