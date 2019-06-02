@@ -4,16 +4,11 @@ documents.
 """
 from __future__ import absolute_import, division, unicode_literals
 
-import param
-
 from bokeh.io import curdoc as _curdoc
-from bokeh.document.document import Document as _Document
 from jinja2.environment import Template as _Template
-from pyviz_comms import JupyterCommManager
 from six import string_types
 
 from .io.model import add_to_doc
-from .io.notebook import render_mimebundle, render_model
 from .io.server import StoppableThread, get_server
 from .io.state import state
 from .layout import Column
