@@ -29,6 +29,46 @@ vega_example = {
     '$schema': 'https://vega.github.io/schema/vega-lite/v3.2.1.json'
 }
 
+vega_inline_example = {
+    'config': {
+        'view': {'width': 400, 'height': 300},
+        'mark': {'tooltip': None}},
+    'data': {'name': 'data-2f2c0ff233b8675aa09202457ebe7506',
+             'format': {'property': 'features', 'type': 'json'}},
+    'mark': 'geoshape',
+    'encoding': {
+        'color': {
+            'type': 'quantitative',
+            'field': 'properties.percent_no_internet'
+        }
+    },
+    'projection': {'type': 'albersUsa'},
+    '$schema': 'https://vega.github.io/schema/vega-lite/v3.2.1.json',
+    'datasets': {
+        'data-2f2c0ff233b8675aa09202457ebe7506': {
+            'type': 'FeatureCollection',
+            'features': [
+                {'id': '0',
+                 'type': 'Feature',
+                 'properties': {
+                     'name': 'Autauga County, Alabama',
+                     'percent_no_internet': 0.2341122827016244,
+                     'percent_no_internet_normalized': 0.2589760005042632},
+                 'geometry': {
+                     'type': 'Polygon',
+                     'coordinates': [[[-86.411786, 32.706342],
+                                      [-86.411786, 32.410587],
+                                      [-86.499417, 32.344863],
+                                      [-86.817079, 32.339387],
+                                      [-86.915664, 32.662526],
+                                      [-86.411786, 32.706342]]]
+                 }
+                }
+            ]
+        }
+    }
+}
+
 def test_get_vega_pane_type_from_dict():
     assert PaneBase.get_pane_type(vega_example) is Vega
 
@@ -59,6 +99,20 @@ def test_vega_pane(document, comm):
     pane._cleanup(model)
     assert pane._models == {}
 
+
+def test_vega_pane_inline(document, comm):
+    pane = Pane(vega_inline_example)
+
+    # Create pane
+    model = pane.get_root(document, comm=comm)
+    assert isinstance(model, VegaPlot)
+
+    assert model.data == vega_inline_example
+    assert model.data_sources == {}
+
+    pane._cleanup(model)
+    assert pane._models == {}
+    
 
 def altair_example():
     import altair as alt

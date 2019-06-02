@@ -66,9 +66,11 @@ class Vega(PaneBase):
         return obj.to_dict()
 
     def _get_sources(self, json, sources):
-        for name, data in json.pop('datasets', {}).items():
-            if name in sources:
+        datasets = json.get('datasets', {})
+        for name in list(datasets):
+            if name in sources or isinstance(datasets[name], dict):
                 continue
+            data = datasets.pop(name)
             columns = set(data[0]) if data else []
             if self.is_altair(self.object):
                 import altair as alt
