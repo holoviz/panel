@@ -15,6 +15,7 @@ from .io import state # noqa
 from .layout import Row, Column, WidgetBox, Tabs, Spacer, GridSpec # noqa
 from .pane import panel, Pane # noqa
 from .param import Param # noqa
+from .template import Template # noqa
 
 depends = _param.depends
 

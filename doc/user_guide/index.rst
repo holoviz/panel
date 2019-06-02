@@ -51,6 +51,8 @@ when needed.
 * `Pipelines <Pipelines.html>`_
    Using Parameterized classes to declare linear workflows containing multiple panels.
 
+* `Templates <Templates.html>`_
+   Learn how to compose multiple Panels into a custom HTML document.
 
 Supplementary guides
 --------------------
@@ -66,7 +68,7 @@ Supplementary guides
 
     Overview <Overview>
     Components <Components>
-	APIs <APIs>
+    APIs <APIs>
     Customization <Customization>
     Deploy & Export <Deploy_and_Export>
     Widgets <Widgets>
@@ -74,4 +76,5 @@ Supplementary guides
     Parameters <Param>
     Linking <Links>
     Pipelines <Pipelines>
+    Templates <Templates>
     Django Apps <Django_Apps>
