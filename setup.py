@@ -59,7 +59,27 @@ class CustomSdistCommand(sdist):
         _build_models()
         sdist.run(self)
 
+_COMMANDS = {
+    'develop': CustomDevelopCommand,
+    'install': CustomInstallCommand,
+    'sdist':   CustomSdistCommand,
+}
 
+try:
+    from wheel.bdist_wheel import bdist_wheel
+
+    class CustomBdistWheelCommand(bdist_wheel):
+        """Custom bdist_wheel command to force cancelling qiskit-terra wheel
+        creation."""
+
+        def run(self):
+            """Do nothing so the command intentionally fails."""
+            _build_models()
+            bdist_wheel.run(self)
+
+    _COMMANDS['bdist_wheel'] = CustomBdistWheelCommand
+except:
+    pass
 
 ########## dependencies ##########
 
@@ -136,11 +156,7 @@ setup_args = dict(
     platforms=['Windows', 'Mac OS X', 'Linux'],
     license='BSD',
     url='http://pyviz.org',
-    cmdclass={
-        'develop': CustomDevelopCommand,
-        'install': CustomInstallCommand,
-        'sdist':   CustomSdistCommand,
-    },
+    cmdclass=_COMMANDS,
     packages=find_packages(),
     include_package_data=True,
     classifiers=[
