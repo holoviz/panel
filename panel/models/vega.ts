@@ -67,7 +67,7 @@ export class VegaPlotView extends HTMLBoxView {
   _plot(): void {
     if (!this.model.data || !(window as any).vegaEmbed)
       return
-    if (!('datasets' in this.model.data)) {
+    if (this.model.data_sources && (Object.keys(this.model.data_sources).length > 0)) {
       const datasets = this._fetch_datasets()
       if ('data' in datasets) {
         this.model.data.data['values'] = datasets['data']
@@ -80,7 +80,6 @@ export class VegaPlotView extends HTMLBoxView {
       const url_components = url.split('.');
       const format = url_components[url_components.length-1];
       get_file(this.model.data.data.url, (result: string) => this._receive_file(result, format))
-      return;
     }
     (window as any).vegaEmbed(this.el, this.model.data, {actions: false})
   }
