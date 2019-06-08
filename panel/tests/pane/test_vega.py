@@ -155,7 +155,7 @@ def test_altair_pane(document, comm):
     chart.data.values[0]['x'] = 'C'
     pane.object = chart
     point_example = dict(vega_example, mark='point')
-    assert model.data == point_example
+    assert dict(model.data, **blank_schema) == dict(point_example, **blank_schema)
     cds_data = model.data_sources['data'].data
     assert np.array_equal(cds_data['x'], np.array(['C', 'B', 'C', 'D', 'E'])) 
     assert np.array_equal(cds_data['y'], np.array([5, 3, 6, 7, 2]))
