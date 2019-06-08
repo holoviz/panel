@@ -13,6 +13,8 @@ import numpy as np
 from panel.models.vega import VegaPlot
 from panel.pane import Pane, PaneBase, Vega
 
+blank_schema = {'$schema': ''}
+
 vega_example = {
     'config': {
         'mark': {'tooltip': None},
@@ -82,7 +84,7 @@ def test_vega_pane(document, comm):
 
     expected = dict(vega_example, data={})
 
-    assert model.data == expected
+    assert dict(model.data, **blank_schema) == dict(expected, **blank_schema)
     cds_data = model.data_sources['data'].data
     assert np.array_equal(cds_data['x'], np.array(['A', 'B', 'C', 'D', 'E'])) 
     assert np.array_equal(cds_data['y'], np.array([5, 3, 6, 7, 2]))
@@ -107,7 +109,7 @@ def test_vega_pane_inline(document, comm):
     model = pane.get_root(document, comm=comm)
     assert isinstance(model, VegaPlot)
 
-    assert model.data == vega_inline_example
+    assert dict(model.data, **blank_schema) == dict(vega_inline_example, **blank_schema)
     assert model.data_sources == {}
 
     pane._cleanup(model)
@@ -142,8 +144,7 @@ def test_altair_pane(document, comm):
     assert isinstance(model, VegaPlot)
 
     expected = dict(vega_example, data={})
-
-    assert model.data == expected
+    assert dict(model.data, **blank_schema) == dict(expected, **blank_schema)
 
     cds_data = model.data_sources['data'].data
     assert np.array_equal(cds_data['x'], np.array(['A', 'B', 'C', 'D', 'E'])) 
