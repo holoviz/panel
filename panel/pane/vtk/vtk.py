@@ -102,11 +102,14 @@ class VTK(PaneBase):
         elif hasattr(self.object, 'read'):
             vtkjs = self.object.read()
         else:
-            if not VTK._serializers:
+            available_serializer = [v for k, v in VTK._serializers.items() if isinstance(self.object, k)]
+            if len(available_serializer) == 0:
                 import vtk
                 from .vtkjs_serializer import render_window_serializer
                 VTK.register_serializer(vtk.vtkRenderWindow, render_window_serializer)
-            serializer = [v for k, v in VTK._serializers.items() if isinstance(self.object, k)][0]
+                serializer = render_window_serializer
+            else:
+                serializer = available_serializer[0]
             vtkjs = serializer(self.object)
         return base64encode(vtkjs) if vtkjs is not None else vtkjs
 
