@@ -115,7 +115,10 @@ class DatePicker(Widget):
     def _process_property_change(self, msg):
         msg = super(DatePicker, self)._process_property_change(msg)
         if 'value' in msg:
-            msg['value'] = datetime.strptime(msg['value'][4:], '%b %d %Y')
+            if not isiterable(msg['value']):
+                msg['value'] = datetime.strptime(str(msg['value']), '%Y-%m-%d')
+            else:
+                msg['value'] = datetime.strptime(msg['value'][4:], '%b %d %Y')
         return msg
 
 
