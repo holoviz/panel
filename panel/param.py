@@ -285,9 +285,17 @@ class Param(PaneBase):
     def widget(self, p_name):
         """Get widget for param_name"""
         p_obj = self.object.param[p_name]
+        kw_widget = {}
 
         if self.widgets is None or p_name not in self.widgets:
             widget_class = self.widget_type(p_obj)
+        elif isinstance(self.widgets[p_name], dict):
+            if 'widget' in self.widgets[p_name]:
+                widget_class = self.widgets[p_name]['widget']
+                self.widgets[p_name].pop('widget')
+            else:
+                widget_class = self.widget_type(p_obj)
+            kw_widget = self.widgets[p_name]
         else:
             widget_class = self.widgets[p_name]
         value = getattr(self.object, p_name)
@@ -297,13 +305,15 @@ class Param(PaneBase):
         else:
             label = p_obj.label
         kw = dict(value=value, disabled=p_obj.constant, name=label)
-
+        
+        # Update kwargs
+        kw.update(kw_widget)
+        
         if hasattr(p_obj, 'get_range'):
             options = p_obj.get_range()
             if not options and value is not None:
                 options = [value]
             kw['options'] = options
-
         if hasattr(p_obj, 'get_soft_bounds'):
             bounds = p_obj.get_soft_bounds()
             if bounds[0] is not None:
