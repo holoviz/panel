@@ -507,14 +507,14 @@ def render_window_serializer(render_window):
 
     # create binary stream of the vtkjs directory structure
     compression = zipfile.ZIP_DEFLATED
-    in_memory = BytesIO()
-    zf = zipfile.ZipFile(in_memory, mode="w")
-    try:
-        for dirPath, data in (scDirs):
-            zf.writestr(dirPath, data, compress_type=compression)
-    finally:
-            zf.close()
-
-    in_memory.seek(0)
-    return in_memory
+    with BytesIO() as in_memory:
+        zf = zipfile.ZipFile(in_memory, mode="w")
+        try:
+            for dirPath, data in (scDirs):
+                zf.writestr(dirPath, data, compress_type=compression)
+        finally:
+                zf.close()
+        in_memory.seek(0)
+        vtkjs = in_memory.read()
+    return vtkjs
 

@@ -42,11 +42,12 @@ class VTK(PaneBase):
     """)
 
     _updates = True
-    _serializer = None
+    _serializers = {}
 
     @classmethod
     def applies(cls, obj):
-        if isinstance(obj, string_types) and obj.endswith('.vtkjs'):
+        if (isinstance(obj, string_types) and obj.endswith('.vtkjs') or
+            any([isinstance(obj, k) for k in cls._serializers.keys()])):
             return True
         elif 'vtk' not in sys.modules:
             return False
@@ -79,12 +80,14 @@ class VTK(PaneBase):
         return model
 
     @classmethod
-    def set_serializer(cls, serializer):
+    def register_serializer(cls, class_type, serializer):
         """
-        A serializer is a function which take a `vtk` render window as input
-        and return the binary zip stream of the corresponding `vtkjs` file 
+        Register a seriliazer for a given type of class.
+        A serializer is a function which take an instance of `class_type` 
+        (like a vtk.vtkRenderWindow) as input and return the binary zip 
+        stream of the corresponding `vtkjs` file 
         """
-        cls._serializer = serializer
+        cls._serializers.update({class_type:serializer})
 
     def _get_vtkjs(self):
         if self.object is None:
@@ -99,10 +102,15 @@ class VTK(PaneBase):
         elif hasattr(self.object, 'read'):
             vtkjs = self.object.read()
         else:
-            if VTK._serializer is None:
+            available_serializer = [v for k, v in VTK._serializers.items() if isinstance(self.object, k)]
+            if len(available_serializer) == 0:
+                import vtk
                 from .vtkjs_serializer import render_window_serializer
-                VTK.set_serializer(render_window_serializer)
-            vtkjs = VTK._serializer(self.object).read()
+                VTK.register_serializer(vtk.vtkRenderWindow, render_window_serializer)
+                serializer = render_window_serializer
+            else:
+                serializer = available_serializer[0]
+            vtkjs = serializer(self.object)
         return base64encode(vtkjs) if vtkjs is not None else vtkjs
 
     def _update(self, model):
