@@ -45,7 +45,7 @@ jobs:
 
     - &conda_default
       stage: test
-      env: DESC="dev test_all"
+      env: DESC="dev test_all" PYTHON_VERSION=3.6
       before_install:
         # install doit/pyctdev and use to install miniconda...
         - pip install pyctdev && doit miniconda_install && pip uninstall -y doit pyctdev
@@ -54,7 +54,7 @@ jobs:
         # ...and now install doit/pyctdev into miniconda
         - conda install -c pyviz "pyctdev>=0.5" && doit ecosystem_setup
       install:
-        - doit env_create $CHANS_DEV --python=$PYENV_VERSION
+        - doit env_create $CHANS_DEV --python=$PYTHON_VERSION
         - source activate test-environment
         - conda install -c conda-forge mesalib
         - doit develop_install -o recommended -o tests -o build $CHANS_DEV
@@ -70,7 +70,7 @@ jobs:
       after_success: codecov
 
     - <<: *conda_default
-      env: DESC="py2 tests" PYENV_VERSION=2.7
+      env: DESC="py2 tests" PYTHON_VERSION=2.7
 
     ########## END-USER PACKAGES ##########
 
