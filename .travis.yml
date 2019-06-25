@@ -13,7 +13,7 @@ sudo: false
 
 env:
   global:
-    - PYENV_VERSION=3.6
+    - PYENV_VERSION=3.7
     - CHANS_DEV="-c pyviz/label/dev -c bokeh/label/dev -c conda-forge"
     - CHANS_REL="-c pyviz -c conda-forge"
     - LABELS_DEV="--label dev"
@@ -26,7 +26,7 @@ stages:
   - name: conda_dev_package
     if: tag =~ ^v(\d+|\.)+[a-z]\d+$
   - name: conda_package
-    if: tag =~ ^v(\d+|\.)+[^a-z]\d+$ 
+    if: tag =~ ^v(\d+|\.)+[^a-z]\d+$
   - name: pip_dev_package
     if: tag =~ ^v(\d+|\.)+[a-z]\d+$
   - name: pip_package
