@@ -13,7 +13,7 @@ sudo: false
 
 env:
   global:
-    - PYENV_VERSION=3.6
+    - PYENV_VERSION=3.7
     - CHANS_DEV="-c pyviz/label/dev -c bokeh/label/dev -c conda-forge"
     - CHANS_REL="-c pyviz -c conda-forge"
     - LABELS_DEV="--label dev"
@@ -26,7 +26,7 @@ stages:
   - name: conda_dev_package
     if: tag =~ ^v(\d+|\.)+[a-z]\d+$
   - name: conda_package
-    if: tag =~ ^v(\d+|\.)+[^a-z]\d+$ 
+    if: tag =~ ^v(\d+|\.)+[^a-z]\d+$
   - name: pip_dev_package
     if: tag =~ ^v(\d+|\.)+[a-z]\d+$
   - name: pip_package
@@ -45,7 +45,7 @@ jobs:
 
     - &conda_default
       stage: test
-      env: DESC="dev test_all"
+      env: DESC="dev test_all" PYTHON_VERSION=3.6
       before_install:
         # install doit/pyctdev and use to install miniconda...
         - pip install pyctdev && doit miniconda_install && pip uninstall -y doit pyctdev
@@ -54,7 +54,7 @@ jobs:
         # ...and now install doit/pyctdev into miniconda
         - conda install -c pyviz "pyctdev>=0.5" && doit ecosystem_setup
       install:
-        - doit env_create $CHANS_DEV --python=$PYENV_VERSION
+        - doit env_create $CHANS_DEV --python=$PYTHON_VERSION
         - source activate test-environment
         - conda install -c conda-forge mesalib
         - doit develop_install -o recommended -o tests -o build $CHANS_DEV
@@ -70,7 +70,7 @@ jobs:
       after_success: codecov
 
     - <<: *conda_default
-      env: DESC="py2 tests" PYENV_VERSION=2.7
+      env: DESC="py2 tests" PYTHON_VERSION=2.7
 
     ########## END-USER PACKAGES ##########
 
