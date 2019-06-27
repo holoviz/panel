@@ -290,9 +290,8 @@ class Param(PaneBase):
         if self.widgets is None or p_name not in self.widgets:
             widget_class = self.widget_type(p_obj)
         elif isinstance(self.widgets[p_name], dict):
-            if 'widget' in self.widgets[p_name]:
-                widget_class = self.widgets[p_name]['widget']
-                self.widgets[p_name].pop('widget')
+            if 'type' in self.widgets[p_name]:
+                widget_class = self.widgets[p_name].pop('type')
             else:
                 widget_class = self.widget_type(p_obj)
             kw_widget = self.widgets[p_name]
