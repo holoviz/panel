@@ -24,6 +24,20 @@ Support for classic Jupyter Notebook is included with Panel. If you want to work
   conda install -c conda-forge jupyterlab
   jupyter labextension install @pyviz/jupyterlab_pyviz
 
+
+.. |CondaPyViz| image:: https://img.shields.io/conda/v/pyviz/panel.svg
+.. _CondaPyViz: https://anaconda.org/pyviz/panel
+
+.. |CondaDefaults| image:: https://img.shields.io/conda/v/anaconda/panel.svg?label=conda%7Cdefaults
+.. _CondaDefaults: https://anaconda.org/anaconda/panel
+
+.. |PyPI| image:: https://img.shields.io/pypi/v/panel.svg
+.. _PyPI: https://pypi.python.org/pypi/panel
+
+.. |License| image:: https://img.shields.io/pypi/l/panel.svg
+.. _License: https://github.com/pyviz/panel/blob/master/LICENSE.txt
+
+
 Using Panel
 -----------
 

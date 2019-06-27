@@ -36,7 +36,7 @@ def _build_models():
         build_custom_models()
     except ImportError as e:
         print("Custom model compilation failed with: %s" % e)
-    
+
 
 class CustomDevelopCommand(develop):
     """Custom installation for development mode."""
@@ -121,7 +121,7 @@ extras_require = {
     ],
     'recommended': _recommended,
     'doc': _recommended + [
-        'nbsite',
+        'nbsite >=0.6.1',
         'sphinx_ioam_theme',
         'sphinx <2',
         'selenium',
