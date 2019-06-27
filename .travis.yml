@@ -20,6 +20,7 @@ env:
     - LABELS_REL="--label dev --label main"
     - PKG_TEST_PYTHON="--test-python=py36"
     - DISPLAY=":99.0"
+    - PYTHON_VERSION=3.6
 
 stages:
   - test
@@ -45,7 +46,7 @@ jobs:
 
     - &conda_default
       stage: test
-      env: DESC="dev test_all" PYTHON_VERSION=3.6
+      env: DESC="dev test_all"
       before_install:
         # install doit/pyctdev and use to install miniconda...
         - pip install pyctdev && doit miniconda_install && pip uninstall -y doit pyctdev
