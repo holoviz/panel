@@ -537,6 +537,23 @@ def test_set_widgets(document, comm):
     assert isinstance(number, TextInput)
     assert isinstance(text, TextInput)
 
+    pane.widgets = {'a': {'height':100}}
+
+    assert len(model.children) == 3
+    title, number, text = model.children
+    assert isinstance(title, Div)
+    assert isinstance(number, Slider)
+    assert number.height == 100
+    assert isinstance(text, TextInput)
+
+    pane.widgets = {'a': {'type': LiteralInput, 'height':100}}
+
+    assert len(model.children) == 3
+    title, number, text = model.children
+    assert isinstance(title, Div)
+    assert isinstance(number, TextInput)
+    assert number.height == 100
+    assert isinstance(text, TextInput)
 
 def test_set_show_name(document, comm):
     class Test(param.Parameterized):
