@@ -347,6 +347,20 @@ class WidgetBox(Column):
     Vertical layout of widgets.
     """
 
+    @property
+    def horizontal(self):
+        return _bokeh_model == BkRow
+
+    @horizontal.setter
+    def horizontal(self, value):
+        if not isinstance(value, bool):
+            raise ValueError(f"Invalid value {value}. The horizontal attribute
+                               must be a boolean.")
+        if value:
+            _bokeh_model = BkRow
+        else:
+            _bokeh_model = BkColumn
+
     css_classes = param.List(default=['widget-box'], doc="""
         CSS classes to apply to the layout.""")
 
