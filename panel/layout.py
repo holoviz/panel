@@ -356,7 +356,7 @@ class WidgetBox(ListPanel):
     @horizontal.setter
     def horizontal(self, value):
         if not isinstance(value, bool):
-            raise ValueError(f"Invalid value {value}. The horizontal attribute "
+            raise ValueError("Invalid value " +  value + ". The horizontal attribute "
                               "must be a bool.")
         if value:
             self._bokeh_model = BkRow
