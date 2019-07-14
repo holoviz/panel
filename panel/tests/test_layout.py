@@ -1057,7 +1057,7 @@ def test_widgetbox(document, comm):
 
     assert isinstance(model, widget_box._bokeh_model)
 
-    # Test the horixontal param
+    # Test the horizontal param.
     assert not widget_box.horizontal
     widget_box.horizontal = True
     assert widget_box.horizontal
