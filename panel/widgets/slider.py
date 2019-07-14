@@ -257,7 +257,7 @@ class IntRangeSlider(RangeSlider):
 
 class DateRangeSlider(_SliderBase):
 
-    value = param.Tuple(default=None, length=2)
+    value = param.Tuple(default=(None, None), length=2)
 
     start = param.Date(default=None)
 
