@@ -10,6 +10,7 @@ import numpy as np
 
 from bokeh.models import ColumnDataSource
 from pyviz_comms import JupyterComm
+import param
 
 from .base import PaneBase
 
@@ -22,6 +23,14 @@ class Plotly(PaneBase):
     to a ColumnDataSource which allows using binary transport to sync
     the figure on bokeh server and via Comms.
     """
+
+    config = param.Dict(doc="""config data""")
+    relayout_data = param.Dict(doc="""relayout callback data""")
+    restyle_data = param.List(doc="""restyle callback data""")
+    click_data = param.Dict(doc="""click callback data""")
+    hover_data = param.Dict(doc="""hover callback data""")
+    clickannotation_data = param.Dict(doc="""clickannotation callback data""")
+    selected_data = param.Dict(doc="""selected callback data""")
 
     _updates = True
 
@@ -78,8 +87,24 @@ class Plotly(PaneBase):
             fig = self._to_figure(self.object)
             json = fig.to_plotly_json()
             sources = self._get_sources(json)
-        model = PlotlyPlot(data=json.get('data', []), layout=json.get('layout', {}),
+        model = PlotlyPlot(data=json.get('data', []),
+                           layout=json.get('layout', {}),
+                           config=self.config,
                            data_sources=sources)
+
+        if root is None:
+            root = model
+
+        self._link_props(
+            model, [
+                'config', 'relayout_data', 'restyle_data', 'click_data',  'hover_data',
+                'clickannotation_data', 'selected_data'
+            ],
+            doc,
+            root,
+            comm
+        )
+
         if root is None:
             root = model
         self._models[root.ref['id']] = (model, parent)
@@ -89,7 +114,6 @@ class Plotly(PaneBase):
         if self.object is None:
             model.update(data=[], layout={})
             return
-
 
         fig = self._to_figure(self.object)
         json = fig.to_plotly_json()
