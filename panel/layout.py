@@ -347,21 +347,14 @@ class WidgetBox(ListPanel):
     Vertical layout of widgets.
     """
 
-    _bokeh_model = BkColumn
+    _rename = {'objects': 'children', 'horizontal': None}
+
+    horizontal = param.Boolean(default=False, doc="""Whether to lay out the
+                    widgets in a Row layout as opposed to a Column layout.""")
 
     @property
-    def horizontal(self):
-        return self._bokeh_model == BkRow
-
-    @horizontal.setter
-    def horizontal(self, value):
-        if not isinstance(value, bool):
-            raise ValueError("Invalid value " +  value + ". The horizontal attribute "
-                              "must be a bool.")
-        if value:
-            self._bokeh_model = BkRow
-        else:
-            self._bokeh_model = BkColumn
+    def _bokeh_model(self):
+        return BkRow if self.horizontal else BkColumn
 
     css_classes = param.List(default=['widget-box'], doc="""
         CSS classes to apply to the layout.""")
