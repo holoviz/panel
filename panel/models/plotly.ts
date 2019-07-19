@@ -105,15 +105,6 @@ export class PlotlyPlotView extends HTMLBoxView {
     this.connect(this.model.properties.config.change, this.render);
     this.connect(this.model.properties.data_sources.change, () => this._connect_sources());
 
-    // Python -> JavaScript messages
-    this.connect(this.model.properties._py2js_addTraces.change, this.do_addTraces);
-    this.connect(this.model.properties._py2js_restyle.change, this.do_restyle);
-    this.connect(this.model.properties._py2js_relayout.change, this.do_relayout);
-    this.connect(this.model.properties._py2js_update.change, this.do_update);
-    this.connect(this.model.properties._py2js_animate.change, this.do_animate);
-    this.connect(this.model.properties._py2js_deleteTraces.change, this.do_deleteTraces);
-    this.connect(this.model.properties._py2js_moveTraces.change, this.do_moveTraces);
-
     this._connected = [];
     this._connect_sources();
   }
@@ -219,126 +210,17 @@ export class PlotlyPlotView extends HTMLBoxView {
     return trace;
   }
 
-  /**
-     * Input a trace index specification and return an Array of trace
-     * indexes where:
-     *
-     *  - null|undefined -> Array of all traces
-     *  - Trace index as Number -> Single element array of input index
-     *  - Array of trace indexes -> Input array unchanged
-     *
-     * @param {undefined|null|Number|Array.<Number>} trace_indexes
-     * @returns {Array.<Number>}
-     *  Array of trace indexes
-     * @private
-     */
-    _normalize_trace_indexes(trace_indexes: any): Array<number> {
-        if (trace_indexes === null || trace_indexes === undefined) {
-            var numTraces = this.model.data.length;
-            trace_indexes = Array.from(Array(numTraces).keys())
-        }
-        if (!Array.isArray(trace_indexes)) {
-            // Make sure idx is an array
-            trace_indexes = [trace_indexes];
-        }
-        return trace_indexes
-    }
-
   _restyle(index: number): void {
     if (!(window as any).Plotly) { return }
     const trace = this._get_trace(index, true);
+
     (window as any).Plotly.restyle(this.el, trace, index)
   }
 
   _relayout(): void {
     if (!(window as any).Plotly) { return }
+
     (window as any).Plotly.relayout(this.el, this.model.layout)
-  }
-
-  // Python -> JavaScript messages
-  do_addTraces(): void {
-    let Plotly = (window as any).Plotly;
-    let msgData = this.model._py2js_addTraces;
-
-    if (!Plotly || !msgData) { return }
-
-    Plotly.addTraces(this.el, msgData.trace_data)
-  }
-
-  do_restyle(): void {
-    let Plotly = (window as any).Plotly;
-    let msgData = this.model._py2js_restyle;
-
-    if (!Plotly || !msgData) { return }
-
-    let restyleData = msgData.restyle_data;
-    let traceIndexes = this._normalize_trace_indexes(msgData.restyle_traces);
-
-    Plotly.restyle(this.el, restyleData, traceIndexes);
-  }
-
-  do_relayout(): void {
-    let Plotly = (window as any).Plotly;
-    let msgData = this.model._py2js_relayout;
-
-    if (!Plotly || !msgData) { return }
-
-    Plotly.relayout(this.el, msgData.relayout_data);
-  }
-
-  do_update(): void {
-    let Plotly = (window as any).Plotly;
-    let msgData = this.model._py2js_update;
-
-    if (!Plotly || !msgData) { return }
-
-    let style = msgData.style_data || {};
-    let layout = msgData.layout_data || {};
-    let traceIndexes = this._normalize_trace_indexes(msgData.style_traces);
-
-    Plotly.update(this.el, style, layout, traceIndexes);
-  }
-
-  do_animate(): void {
-    let Plotly = (window as any).Plotly;
-    let msgData = this.model._py2js_animate;
-
-    if (!Plotly || !msgData) { return }
-
-    let animationOpts = msgData.animation_opts;
-    let styles = msgData.style_data;
-    let layout = msgData.layout_data;
-    let traceIndexes = this._normalize_trace_indexes(msgData.style_traces);
-    let animationData = {
-        data: styles,
-        layout: layout,
-        traces: traceIndexes
-    };
-
-    Plotly.animate(this.el, animationData, animationOpts)
-  }
-
-  do_deleteTraces(): void {
-    let Plotly = (window as any).Plotly;
-    let msgData = this.model._py2js_deleteTraces;
-
-    if (!Plotly || !msgData) { return }
-
-    let delete_inds = msgData.delete_inds;
-
-    Plotly.deleteTraces(this.el, delete_inds)
-  }
-
-  do_moveTraces(): void {
-    let Plotly = (window as any).Plotly;
-    let msgData = this.model._py2js_moveTraces;
-
-    if (!Plotly || !msgData) { return }
-
-    let currentInds = msgData.current_trace_inds;
-    let newInds = msgData.new_trace_inds;
-
-    Plotly.moveTraces(this.el, currentInds, newInds)
   }
 }
 
@@ -355,13 +237,6 @@ export namespace PlotlyPlot {
     hover_data: p.Property<any>
     clickannotation_data: p.Property<any>
     selected_data: p.Property<any>
-    _py2js_addTraces: p.Property<any>
-    _py2js_deleteTraces: p.Property<any>
-    _py2js_moveTraces: p.Property<any>
-    _py2js_restyle: p.Property<any>
-    _py2js_relayout: p.Property<any>
-    _py2js_update: p.Property<any>
-    _py2js_animate: p.Property<any>
   }
 }
 
@@ -389,13 +264,6 @@ export class PlotlyPlot extends HTMLBox {
       hover_data: [ p.Any, {} ],
       clickannotation_data: [ p.Any, {} ],
       selected_data: [ p.Any, {} ],
-      _py2js_addTraces: [ p.Any, {} ],
-      _py2js_deleteTraces: [ p.Any, {} ],
-      _py2js_moveTraces: [ p.Any, {} ],
-      _py2js_restyle: [ p.Any, {} ],
-      _py2js_relayout: [ p.Any, {} ],
-      _py2js_update: [ p.Any, {} ],
-      _py2js_animate: [ p.Any, {} ],
     })
   }
 }

@@ -5,6 +5,7 @@ bokeh model.
 from __future__ import absolute_import, division, unicode_literals
 
 import sys
+from functools import partial
 
 import numpy as np
 
@@ -32,14 +33,6 @@ class Plotly(PaneBase):
     clickannotation_data = param.Dict(doc="""clickannotation callback data""")
     selected_data = param.Dict(doc="""selected callback data""")
 
-    _py2js_addTraces = param.Dict(doc="""addTraces message data""")
-    _py2js_restyle = param.Dict(doc="""restule message data""")
-    _py2js_relayout = param.Dict(doc="""relayout message data""")
-    _py2js_update = param.Dict(doc="""update message data""")
-    _py2js_animate = param.Dict(doc="""animate message data""")
-    _py2js_deleteTraces = param.Dict(doc="""deleteTraces message data""")
-    _py2js_moveTraces = param.Dict(doc="""moveTraces message data""")
-
     _updates = True
 
     priority = 0.8
@@ -60,13 +53,13 @@ class Plotly(PaneBase):
             # We only patch `Figure` objects (not subclasses like FigureWidget) so
             # we don't interfere with subclasses that override these methods.
             fig = object
-            fig._send_addTraces_msg = self._send_addTraces_msg
-            fig._send_moveTraces_msg = self._send_moveTraces_msg
-            fig._send_deleteTraces_msg = self._send_deleteTraces_msg
-            fig._send_restyle_msg = self._send_restyle_msg
-            fig._send_relayout_msg = self._send_relayout_msg
-            fig._send_update_msg = self._send_update_msg
-            fig._send_animate_msg = self._send_animate_msg
+            fig._send_addTraces_msg = partial(self._update_figure, fig)
+            fig._send_moveTraces_msg = partial(self._update_figure, fig)
+            fig._send_deleteTraces_msg = partial(self._update_figure, fig)
+            fig._send_restyle_msg = partial(self._update_figure, fig)
+            fig._send_relayout_msg = partial(self._update_figure, fig)
+            fig._send_update_msg = partial(self._update_figure, fig)
+            fig._send_animate_msg = partial(self._update_figure, fig)
 
     def _to_figure(self, obj):
         import plotly.graph_objs as go
@@ -141,14 +134,7 @@ class Plotly(PaneBase):
         self._link_props(
             model, [
                 'config', 'relayout_data', 'restyle_data', 'click_data',  'hover_data',
-                'clickannotation_data', 'selected_data',
-                '_py2js_addTraces',
-                '_py2js_restyle',
-                '_py2js_relayout',
-                '_py2js_update',
-                '_py2js_animate',
-                '_py2js_deleteTraces',
-                '_py2js_moveTraces',
+                'clickannotation_data', 'selected_data'
             ],
             doc,
             root,
@@ -218,55 +204,5 @@ class Plotly(PaneBase):
         if update_layout:
             model.layout = json.get('layout')
 
-    def _send_addTraces_msg(self, new_traces_data):
-        add_traces_msg = {"trace_data": new_traces_data}
-        self._py2js_addTraces = add_traces_msg
-        self._py2js_addTraces = None
-
-    def _send_moveTraces_msg(self, current_inds, new_inds):
-        move_msg = {"current_trace_inds": current_inds, "new_trace_inds": new_inds}
-        self._py2js_moveTraces = move_msg
-        self._py2js_moveTraces = None
-
-    def _send_deleteTraces_msg(self, delete_inds):
-        delete_msg = {"delete_inds": delete_inds}
-        self._py2js_deleteTraces = delete_msg
-        self._py2js_deleteTraces = None
-
-    def _send_restyle_msg(self, restyle_data, trace_indexes=None, **_):
-        restyle_msg = {
-            "restyle_data": restyle_data,
-            "restyle_traces": trace_indexes,
-        }
-
-        self._py2js_restyle = restyle_msg
-        self._py2js_restyle = None
-
-    def _send_relayout_msg(self, layout_data, **_):
-        msg_data = {"relayout_data": layout_data}
-
-        self._py2js_relayout = msg_data
-        self._py2js_relayout = None
-
-    def _send_update_msg(self, restyle_data, relayout_data, trace_indexes=None, **_):
-        update_msg = {
-            "style_data": restyle_data,
-            "layout_data": relayout_data,
-            "style_traces": trace_indexes,
-        }
-
-        self._py2js_update = update_msg
-        self._py2js_update = None
-
-    def _send_animate_msg(
-        self, styles_data, relayout_data, trace_indexes, animation_opts
-    ):
-        animate_msg = {
-            "style_data": styles_data,
-            "layout_data": relayout_data,
-            "style_traces": trace_indexes,
-            "animation_opts": animation_opts,
-        }
-
-        self._py2js_animate = animate_msg
-        self._py2js_animate = None
+    def _update_figure(self, fig, *args, **kwargs):
+        self.object = fig

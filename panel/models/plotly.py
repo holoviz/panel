@@ -38,14 +38,5 @@ class PlotlyPlot(LayoutDOM):
     clickannotation_data = Dict(String, Any)
     selected_data = Dict(String, Any)
 
-    # Python -> JavaScript message properties
-    _py2js_addTraces = Dict(String, Any)
-    _py2js_deleteTraces = Dict(String, Any)
-    _py2js_moveTraces = Dict(String, Any)
-    _py2js_restyle = Dict(String, Any)
-    _py2js_relayout = Dict(String, Any)
-    _py2js_update = Dict(String, Any)
-    _py2js_animate = Dict(String, Any)
-
 
 CUSTOM_MODELS['panel.models.plotly.PlotlyPlot'] = PlotlyPlot
