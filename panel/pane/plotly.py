@@ -81,16 +81,33 @@ class Plotly(PaneBase):
         data = data if isinstance(data, list) else [data]
         return go.Figure(data=data, layout=layout)
 
-    def _get_sources(self, json):
+    @staticmethod
+    def _get_sources(json):
         sources = []
-        traces = json['data']
+        traces = json.get('data', [])
         for trace in traces:
             data = {}
-            for key, value in list(trace.items()):
-                if isinstance(value, np.ndarray):
-                    data[key] = [trace.pop(key)]
+            Plotly._get_sources_for_trace(trace, data)
             sources.append(ColumnDataSource(data))
         return sources
+
+    @staticmethod
+    def _get_sources_for_trace(json, data, parent_path=''):
+        for key, value in list(json.items()):
+            full_path = key if not parent_path else (parent_path + '.' + key)
+            if isinstance(value, np.ndarray):
+                # Extract numpy array
+                data[full_path] = [json.pop(key)]
+            elif isinstance(value, dict):
+                # Recurse into dictionaries:
+                Plotly._get_sources_for_trace(value, data=data, parent_path=full_path)
+            elif isinstance(value, list) and value and isinstance(value[0], dict):
+                # recurse into object arrays:
+                for i, element in enumerate(value):
+                    element_path = full_path + '.' + str(i)
+                    Plotly._get_sources_for_trace(
+                        element, data=data, parent_path=element_path
+                    )
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         """
@@ -112,7 +129,7 @@ class Plotly(PaneBase):
         else:
             fig = self._to_figure(self.object)
             json = fig.to_plotly_json()
-            sources = self._get_sources(json)
+            sources = Plotly._get_sources(json)
         model = PlotlyPlot(data=json.get('data', []),
                            layout=json.get('layout', {}),
                            config=self.config,

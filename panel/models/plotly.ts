@@ -203,10 +203,17 @@ export class PlotlyPlotView extends HTMLBoxView {
         }
         array = arrays;
       }
+      let prop_path = column.split(".");
+      let prop = prop_path[prop_path.length - 1];
+      var prop_parent = trace;
+      for(let k of prop_path.slice(0, -1)) {
+        prop_parent = prop_parent[k]
+      }
+
       if (update) {
-        trace[column] = [array];
+        prop_parent[prop] = [array];
       } else {
-        trace[column] = array;
+        prop_parent[prop] = array;
       }
     }
     return trace;
@@ -273,8 +280,6 @@ export class PlotlyPlotView extends HTMLBoxView {
   do_relayout(): void {
     let Plotly = (window as any).Plotly;
     let msgData = this.model._py2js_relayout;
-
-    console.log(msgData);
 
     if (!Plotly || !msgData) { return }
 
