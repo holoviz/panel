@@ -201,7 +201,7 @@ export class PlotlyPlotView extends HTMLBoxView {
         prop_parent = prop_parent[k]
       }
 
-      if (update) {
+      if (update && prop_path.length == 1) {
         prop_parent[prop] = [array];
       } else {
         prop_parent[prop] = array;

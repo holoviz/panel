@@ -102,6 +102,25 @@ class Plotly(PaneBase):
                         element, data=data, parent_path=element_path
                     )
 
+    def _update_data_sources(self, cds, trace):
+        trace_arrays = {}
+        Plotly._get_sources_for_trace(trace, trace_arrays)
+
+        for key, new_col in trace_arrays.items():
+            new = new_col[0]
+
+            try:
+                old = cds.data.get(key)[0]
+                update_array = (
+                    (type(old) != type(new)) or
+                    (new.shape != old.shape) or
+                    (new != old).any())
+            except:
+                update_array = True
+
+            if update_array:
+                cds.data[key] = [new]
+
     def _get_model(self, doc, root=None, parent=None, comm=None):
         """
         Should return the bokeh model to be rendered.
@@ -162,18 +181,8 @@ class Plotly(PaneBase):
             else:
                 cds = ColumnDataSource()
                 new_sources.append(cds)
-            for key, new in list(trace.items()):
-                if isinstance(new, np.ndarray):
-                    try:
-                        old = cds.data.get(key)[0]
-                        update_array = (
-                            (type(old) != type(new)) or
-                            (new.shape != old.shape) or
-                            (new != old).all())
-                    except:
-                        update_array = True
-                    if update_array:
-                        cds.data[key] = [trace.pop(key)]
+
+            self._update_data_sources(cds, trace)
 
         try:
             update_layout = model.layout != json.get('layout')
