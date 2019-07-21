@@ -10,6 +10,7 @@ from collections import OrderedDict, defaultdict
 from functools import partial
 
 import param
+
 from bokeh.models import Spacer as _BkSpacer
 
 from ..io import state
@@ -189,9 +190,10 @@ class HoloViews(PaneBase):
         return isinstance(obj, Dimensioned)
 
     @classmethod
-    def widgets_from_dimensions(cls, object, widget_types={}, widgets_type='individual', fancy=False):
+    def widgets_from_dimensions(cls, object, widget_types={}, widgets_type='individual',
+                                fancy=False):
         from holoviews.core import Dimension
-        from holoviews.core.util import isnumeric, unicode, datetime_types
+        from holoviews.core.util import isnumeric, unicode, datetime_types, unique_iterator
         from holoviews.core.traversal import unique_dimkeys
         from holoviews.plotting.util import get_dynamic_mode
         from ..widgets import Widget, DiscreteSlider, Select, FloatSlider, DatetimeInput
@@ -217,7 +219,7 @@ class HoloViews(PaneBase):
             else:
                 kwargs = {}
 
-            vals = dim.values or values.get(dim, None)
+            vals = list(unique_iterator(dim.values or values.get(dim, None)))
             dim_values[dim.name] = vals
             if widgets_type == 'scrubber':
                 if not vals:
