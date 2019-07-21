@@ -69,12 +69,11 @@ class HoloViews(PaneBase):
     #----------------------------------------------------------------
 
     def _update_widgets(self, *events):
-        kwargs = {'margin': 20} if self.fancy_layout else {}
         if self.object is None:
             widgets, values = [], []
         else:
-            widgets, values = self.widgets_from_dimensions(self.object, self.widgets,
-                                                           self.widget_type, **kwargs)
+            widgets, values = self.widgets_from_dimensions(
+                self.object, self.widgets, self.widget_type, fancy=self.fancy_layout)
         self._values = values
 
         # Clean up anything models listening to the previous widgets
@@ -190,7 +189,7 @@ class HoloViews(PaneBase):
         return isinstance(obj, Dimensioned)
 
     @classmethod
-    def widgets_from_dimensions(cls, object, widget_types={}, widgets_type='individual', **kwargs):
+    def widgets_from_dimensions(cls, object, widget_types={}, widgets_type='individual', fancy=False):
         from holoviews.core import Dimension
         from holoviews.core.util import isnumeric, unicode, datetime_types
         from holoviews.core.traversal import unique_dimkeys
@@ -206,8 +205,18 @@ class HoloViews(PaneBase):
         values = dict() if dynamic else dict(zip(dims, zip(*keys)))
         dim_values = OrderedDict()
         widgets = []
-        for dim in dims:
+        for i, dim in enumerate(dims):
             widget_type, widget, widget_kwargs = None, None, {}
+            if fancy:
+                if i == 0:
+                    kwargs = {'margin': (20, 20, 5, 20)}
+                elif i == (len(dims)-1):
+                    kwargs = {'margin': (5, 20, 20, 20)}
+                else:
+                    kwargs = {'margin': (0, 20, 5, 20)}
+            else:
+                kwargs = {}
+
             vals = dim.values or values.get(dim, None)
             dim_values[dim.name] = vals
             if widgets_type == 'scrubber':
