@@ -4,7 +4,7 @@ import pytest
 
 from bokeh.models import (Div, Row as BkRow, Tabs as BkTabs,
                           Column as BkColumn, Panel as BkPanel)
-from panel.layout import Column, Row, Tabs, Spacer, GridSpec
+from panel.layout import Column, Row, Tabs, Spacer, GridSpec, WidgetBox
 from panel.pane import Bokeh, Pane
 from panel.param import Param
 from panel._testing.util import check_layoutable_properties
@@ -1048,3 +1048,16 @@ def test_gridspec_stretch_with_slice_setitem(document, comm):
     assert div1.style == {'width': '100%', 'height': '100%'}
     assert div2.sizing_mode == 'stretch_both'
     assert div2.style == {'width': '100%', 'height': '100%'}
+
+
+def test_widgetbox(document, comm):
+    widget_box = WidgetBox("WidgetBox")
+
+    model = widget_box.get_root(document, comm=comm)
+
+    assert isinstance(model, widget_box._bokeh_model)
+
+    # Test the horizontal param.
+    assert not widget_box.horizontal
+    widget_box.horizontal = True
+    assert widget_box.horizontal
