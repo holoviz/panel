@@ -210,12 +210,15 @@ class HoloViews(PaneBase):
         for i, dim in enumerate(dims):
             widget_type, widget, widget_kwargs = None, None, {}
             if fancy:
-                if i == 0:
-                    kwargs = {'margin': (20, 20, 5, 20)}
+                if i == 0 and i == (len(dims)-1):
+                    margin = (20, 20, 20, 20)
+                elif i == 0:
+                    margin = (20, 20, 5, 20)
                 elif i == (len(dims)-1):
-                    kwargs = {'margin': (5, 20, 20, 20)}
+                    margin = (5, 20, 20, 20)
                 else:
-                    kwargs = {'margin': (0, 20, 5, 20)}
+                    margin = (0, 20, 5, 20)
+                kwargs = {'margin': margin, 'width': 250}
             else:
                 kwargs = {}
 
