@@ -338,9 +338,11 @@ class CrossSelector(CompositeWidget, MultiSelect):
         self._search[True].param.watch(self._filter_options, 'value')
 
         # Define Layout
-        blacklist = Column(self._search[False], self._lists[False])
-        whitelist = Column(self._search[True], self._lists[True])
-        buttons = Column(self._buttons[True], self._buttons[False], width=50)
+        blacklist = Column(self._search[False], self._lists[False],
+                           sizing_mode=self.sizing_mode)
+        whitelist = Column(self._search[True], self._lists[True],
+                           sizing_mode=self.sizing_mode)
+        buttons = Column(self._buttons[True], self._buttons[False])
 
         self._composite = Row(blacklist, Column(VSpacer(), buttons, VSpacer()), whitelist,
                               css_classes=self.css_classes, margin=self.margin, **layout)
