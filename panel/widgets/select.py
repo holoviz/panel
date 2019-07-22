@@ -367,7 +367,7 @@ class CrossSelector(CompositeWidget, MultiSelect):
                 setattr(self._lists[True], event.name, width)
                 setattr(self._lists[False], event.name, width)
 
-        
+
     @param.depends('size', watch=True)
     def _update_size(self):
         self._lists[False].size = self.size
@@ -380,7 +380,7 @@ class CrossSelector(CompositeWidget, MultiSelect):
 
     @param.depends('value', watch=True)
     def _update_value(self):
-        labels, values = self.labels, self.values 
+        labels, values = self.labels, self.values
         selected = [labels[indexOf(v, values)] for v in self.value
                     if isIn(v, values)]
         unselected = [k for k in labels if k not in selected]
