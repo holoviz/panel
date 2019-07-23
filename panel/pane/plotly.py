@@ -44,22 +44,9 @@ class Plotly(PaneBase):
                                                    and 'data' in obj and 'layout' in obj))
 
     def __init__(self, object=None, **params):
-        import plotly.graph_objs as go
         super(Plotly, self).__init__(object, **params)
-
-        if type(object) is go.Figure:
-
-            # Monkey patch the message stubs used by FigureWidget.
-            # We only patch `Figure` objects (not subclasses like FigureWidget) so
-            # we don't interfere with subclasses that override these methods.
-            fig = object
-            fig._send_addTraces_msg = partial(self._update_figure, fig)
-            fig._send_moveTraces_msg = partial(self._update_figure, fig)
-            fig._send_deleteTraces_msg = partial(self._update_figure, fig)
-            fig._send_restyle_msg = partial(self._update_figure, fig)
-            fig._send_relayout_msg = partial(self._update_figure, fig)
-            fig._send_update_msg = partial(self._update_figure, fig)
-            fig._send_animate_msg = partial(self._update_figure, fig)
+        self._figure = None
+        self._update_figure()
 
     def _to_figure(self, obj):
         import plotly.graph_objs as go
@@ -101,6 +88,28 @@ class Plotly(PaneBase):
                     Plotly._get_sources_for_trace(
                         element, data=data, parent_path=element_path
                     )
+
+    @param.depends('object', watch=True)
+    def _update_figure(self):
+        import plotly.graph_objs as go
+
+        if (self.object is None or
+                type(self.object) is not go.Figure or
+                self.object is self._figure):
+            return
+
+        # Monkey patch the message stubs used by FigureWidget.
+        # We only patch `Figure` objects (not subclasses like FigureWidget) so
+        # we don't interfere with subclasses that override these methods.
+        fig = self.object
+        fig._send_addTraces_msg = lambda *_, **__: self.param.trigger('object')
+        fig._send_moveTraces_msg = lambda *_, **__: self.param.trigger('object')
+        fig._send_deleteTraces_msg = lambda *_, **__: self.param.trigger('object')
+        fig._send_restyle_msg = lambda *_, **__: self.param.trigger('object')
+        fig._send_relayout_msg = lambda *_, **__: self.param.trigger('object')
+        fig._send_update_msg = lambda *_, **__: self.param.trigger('object')
+        fig._send_animate_msg = lambda *_, **__: self.param.trigger('object')
+        self._figure = fig
 
     def _update_data_sources(self, cds, trace):
         trace_arrays = {}
@@ -212,6 +221,3 @@ class Plotly(PaneBase):
 
         if update_layout:
             model.layout = json.get('layout')
-
-    def _update_figure(self, fig, *args, **kwargs):
-        self.object = fig
