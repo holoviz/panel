@@ -5,7 +5,6 @@ bokeh model.
 from __future__ import absolute_import, division, unicode_literals
 
 import sys
-from functools import partial
 
 import numpy as np
 
