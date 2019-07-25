@@ -5,6 +5,8 @@ import pytest
 try:
     import plotly
     import plotly.graph_objs as go
+    import plotly.io as pio
+    pio.templates.default = None
 except:
     plotly = None
 plotly_available = pytest.mark.skipif(plotly is None, reason="requires plotly")
