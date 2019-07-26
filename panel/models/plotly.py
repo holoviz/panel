@@ -3,7 +3,7 @@ Defines a custom PlotlyPlot bokeh model to render Plotly plots.
 """
 import os
 
-from bokeh.core.properties import Dict, String, List, Any, Instance, Enum
+from bokeh.core.properties import Dict, String, List, Any, Instance, Enum, Int
 from bokeh.models import LayoutDOM, ColumnDataSource
 
 from ..compiler import CUSTOM_MODELS
@@ -17,8 +17,10 @@ class PlotlyPlot(LayoutDOM):
 
     __javascript__ = ['https://cdn.plot.ly/plotly-latest.min.js']
 
-    __js_require__ = {'paths': {'plotly': 'https://cdn.plot.ly/plotly-latest.min'},
-                      'exports': {'plotly': 'Plotly'}}
+    __js_require__ = {'paths': {'plotly': 'https://cdn.plot.ly/plotly-latest.min',
+                                'lodash': 'https://cdn.jsdelivr.net/npm/lodash@4.17.15/lodash.min'},
+                      'exports': {'plotly': 'Plotly',
+                                  'lodash': '_'}}
 
     __implementation__ = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'plotly.ts')
 
@@ -38,7 +40,8 @@ class PlotlyPlot(LayoutDOM):
     clickannotation_data = Dict(String, Any)
     selected_data = Dict(String, Any)
     viewport = Dict(String, Any)
-    viewport_update_policy = Enum("continuous", "mouseup")
+    viewport_update_policy = Enum("continuous", "mouseup", "throttle")
+    viewport_update_throttle = Int()
 
 
 CUSTOM_MODELS['panel.models.plotly.PlotlyPlot'] = PlotlyPlot

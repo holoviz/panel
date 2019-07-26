@@ -32,7 +32,9 @@ class Plotly(PaneBase):
     clickannotation_data = param.Dict(doc="""clickannotation callback data""")
     selected_data = param.Dict(doc="""selected callback data""")
     viewport = param.Dict(doc="""current viewport state""")
-    viewport_update_policy = param.Selector(objects=["continuous", "mouseup"])
+    viewport_update_policy = param.Selector(
+        objects=["continuous", "mouseup", "throttle"])
+    viewport_update_throttle = param.Integer(bounds=(0, None), default=200)
 
     _updates = True
 
@@ -164,7 +166,7 @@ class Plotly(PaneBase):
             model, [
                 'config', 'relayout_data', 'restyle_data', 'click_data',  'hover_data',
                 'clickannotation_data', 'selected_data', 'viewport',
-                'viewport_update_policy'
+                'viewport_update_policy', 'viewport_update_throttle'
             ],
             doc,
             root,
