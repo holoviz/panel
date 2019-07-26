@@ -115,6 +115,8 @@ export class PlotlyPlotView extends HTMLBoxView {
     this.connect(this.model.properties.layout.change, this._relayout);
     this.connect(this.model.properties.config.change, this.render);
     this.connect(this.model.properties.data_sources.change, () => this._connect_sources());
+    this.connect(this.model.properties.viewport.change, this._updateViewportFromProperty);
+
 
     this._connected = [];
     this._connect_sources();
@@ -248,6 +250,22 @@ export class PlotlyPlotView extends HTMLBoxView {
     Plotly.relayout(this.el, this.model.layout)
   }
 
+  _updateViewportFromProperty(): void {
+    if (!Plotly) { return }
+
+    const fullLayout = (this.el as any)._fullLayout;
+
+    // Call relayout if viewport differs from fullLayout
+    _.forOwn(this.model.viewport, (value: any, key: string) => {
+      if (!_.isEqual(_.get(fullLayout, key), value)) {
+        Plotly.relayout(this.el, this.model.viewport);
+        return false
+      } else {
+        return true
+      }
+    });
+  }
+
   _updateViewportProperty(): void {
     const fullLayout = (this.el as any)._fullLayout;
     let viewport: any = {};
@@ -259,7 +277,7 @@ export class PlotlyPlotView extends HTMLBoxView {
       }
       let maybe_axis = prop.slice(0, 5);
       if (maybe_axis === 'xaxis' || maybe_axis === 'yaxis') {
-        viewport[prop] = fullLayout[prop].range
+        viewport[prop + '.range'] = fullLayout[prop].range
       }
     }
 
