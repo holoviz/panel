@@ -31,6 +31,8 @@ class Plotly(PaneBase):
     hover_data = param.Dict(doc="""hover callback data""")
     clickannotation_data = param.Dict(doc="""clickannotation callback data""")
     selected_data = param.Dict(doc="""selected callback data""")
+    viewport = param.Dict(doc="""current viewport state""")
+    viewport_update_policy = param.Selector(objects=["continuous", "mouseup"])
 
     _updates = True
 
@@ -161,7 +163,8 @@ class Plotly(PaneBase):
         self._link_props(
             model, [
                 'config', 'relayout_data', 'restyle_data', 'click_data',  'hover_data',
-                'clickannotation_data', 'selected_data'
+                'clickannotation_data', 'selected_data', 'viewport',
+                'viewport_update_policy'
             ],
             doc,
             root,

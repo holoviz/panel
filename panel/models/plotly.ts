@@ -9,6 +9,7 @@ function isPlainObject (obj: any) {
 
 interface PlotlyHTMLElement extends HTMLElement {
     on(event: 'plotly_relayout', callback: (eventData: any) => void): void;
+    on(event: 'plotly_relayouting', callback: (eventData: any) => void): void;
     on(event: 'plotly_restyle', callback: (eventData: any) => void): void;
     on(event: 'plotly_click', callback: (eventData: any) => void): void;
     on(event: 'plotly_hover', callback: (eventData: any) => void): void;
@@ -94,6 +95,24 @@ const filterEventData = (gd: any, eventData: any, event: string) => {
     return filteredEventData;
 };
 
+const computeViewport = (gd: any) => {
+  const fullLayout = gd._fullLayout;
+  let viewport: any = {};
+
+  // Get range for all xaxis and yaxis properties
+  for (let prop in fullLayout) {
+    if (!fullLayout.hasOwnProperty(prop)) {
+      continue
+    }
+    let maybe_axis = prop.slice(0, 5);
+    if (maybe_axis === 'xaxis' || maybe_axis === 'yaxis') {
+      viewport[prop] = fullLayout[prop].range
+    }
+  }
+
+  return viewport;
+};
+
 export class PlotlyPlotView extends HTMLBoxView {
   model: PlotlyPlot
   _connected: string[]
@@ -130,19 +149,33 @@ export class PlotlyPlotView extends HTMLBoxView {
       data.push(this._get_trace(i, false));
     }
 
-    (window as any).Plotly.react(this.el, data, this.model.layout, this.model.config);
+    (window as any).Plotly.react(this.el, data, this.model.layout, this.model.config).then(() => {
+        this.model.viewport = computeViewport(this.el);
+      }
+    );
 
     // Install callbacks
     //  - plotly_relayout
     (<PlotlyHTMLElement>(this.el)).on('plotly_relayout', (eventData: any) => {
       this.model.relayout_data = filterEventData(
           this.el, eventData, 'relayout');
+
+      this.model.viewport = computeViewport(this.el);
+    });
+
+    //  - plotly_relayouting
+    (<PlotlyHTMLElement>(this.el)).on('plotly_relayouting', () => {
+      if (this.model.viewport_update_policy === 'continuous') {
+        this.model.viewport = computeViewport(this.el);
+      }
     });
 
     //  - plotly_restyle
     (<PlotlyHTMLElement>(this.el)).on('plotly_restyle', (eventData: any) => {
       this.model.restyle_data = filterEventData(
           this.el, eventData, 'restyle');
+
+      this.model.viewport = computeViewport(this.el);
     });
 
     //  - plotly_click
@@ -237,6 +270,8 @@ export namespace PlotlyPlot {
     hover_data: p.Property<any>
     clickannotation_data: p.Property<any>
     selected_data: p.Property<any>
+    viewport: p.Property<any>
+    viewport_update_policy: p.Property<string>
   }
 }
 
@@ -264,6 +299,8 @@ export class PlotlyPlot extends HTMLBox {
       hover_data: [ p.Any, {} ],
       clickannotation_data: [ p.Any, {} ],
       selected_data: [ p.Any, {} ],
+      viewport: [ p.Any, {} ],
+      viewport_update_policy: [ p.String, "continuous" ]
     })
   }
 }

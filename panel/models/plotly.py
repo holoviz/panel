@@ -3,7 +3,7 @@ Defines a custom PlotlyPlot bokeh model to render Plotly plots.
 """
 import os
 
-from bokeh.core.properties import Dict, String, List, Any, Instance
+from bokeh.core.properties import Dict, String, List, Any, Instance, Enum
 from bokeh.models import LayoutDOM, ColumnDataSource
 
 from ..compiler import CUSTOM_MODELS
@@ -37,6 +37,8 @@ class PlotlyPlot(LayoutDOM):
     hover_data = Dict(String, Any)
     clickannotation_data = Dict(String, Any)
     selected_data = Dict(String, Any)
+    viewport = Dict(String, Any)
+    viewport_update_policy = Enum("continuous", "mouseup")
 
 
 CUSTOM_MODELS['panel.models.plotly.PlotlyPlot'] = PlotlyPlot
