@@ -143,7 +143,8 @@ export class PlotlyPlotView extends HTMLBoxView {
       data.push(this._get_trace(i, false));
     }
 
-    Plotly.react(this.el, data, this.model.layout, this.model.config).then(() => {
+    Plotly.react(this.el, _.cloneDeep(data), _.cloneDeep(this.model.layout), this.model.config).then(() => {
+        this._updateViewportFromProperty();
         this._updateSetViewportFunction();
         this._updateViewportProperty();
       }
@@ -155,7 +156,9 @@ export class PlotlyPlotView extends HTMLBoxView {
       this.model.relayout_data = filterEventData(
           this.el, eventData, 'relayout');
 
-      this._updateViewportProperty();
+      if (eventData['_update_from_property'] !== true) {
+        this._updateViewportProperty();
+      }
     });
 
     //  - plotly_relayouting
@@ -242,24 +245,26 @@ export class PlotlyPlotView extends HTMLBoxView {
     if (!Plotly) { return }
     const trace = this._get_trace(index, true);
 
-    Plotly.restyle(this.el, trace, index)
+    Plotly.restyle(this.el, _.cloneDeep(trace), index)
   }
 
   _relayout(): void {
     if (!Plotly) { return }
 
-    Plotly.relayout(this.el, this.model.layout)
+    Plotly.relayout(this.el, _.cloneDeep(this.model.layout))
   }
 
   _updateViewportFromProperty(): void {
-    if (!Plotly || this._settingViewport) { return }
+    if (!Plotly || this._settingViewport || !this.model.viewport ) { return }
 
     const fullLayout = (this.el as any)._fullLayout;
 
     // Call relayout if viewport differs from fullLayout
     _.forOwn(this.model.viewport, (value: any, key: string) => {
       if (!_.isEqual(_.get(fullLayout, key), value)) {
-        Plotly.relayout(this.el, _.cloneDeep(this.model.viewport));
+        let clonedViewport = _.cloneDeep(this.model.viewport)
+        clonedViewport['_update_from_property'] = true;
+        Plotly.relayout(this.el, clonedViewport);
         return false
       } else {
         return true
@@ -291,15 +296,19 @@ export class PlotlyPlotView extends HTMLBoxView {
     if (this.model.viewport_update_policy === "continuous" ||
         this.model.viewport_update_policy === "mouseup") {
       this._setViewport = (viewport: any) => {
-        this._settingViewport = true;
-        this.model.viewport = viewport
-        this._settingViewport = false;
+        if (!this._settingViewport) {
+          this._settingViewport = true;
+          this.model.viewport = viewport;
+          this._settingViewport = false;
+        }
       }
     } else {
       this._setViewport = _.throttle((viewport: any) => {
-        this._settingViewport = true;
-        this.model.viewport = viewport;
-        this._settingViewport = false;
+        if (!this._settingViewport) {
+          this._settingViewport = true;
+          this.model.viewport = viewport;
+          this._settingViewport = false;
+        }
       }, this.model.viewport_update_throttle);
     }
   }
