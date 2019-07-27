@@ -105,7 +105,6 @@ export class PlotlyPlotView extends HTMLBoxView {
   connect_signals(): void {
     super.connect_signals();
 
-    this._updateSetViewportFunction();
     this.connect(this.model.properties.viewport_update_policy.change,
         this._updateSetViewportFunction);
     this.connect(this.model.properties.viewport_update_throttle.change,
@@ -144,6 +143,7 @@ export class PlotlyPlotView extends HTMLBoxView {
     }
 
     Plotly.react(this.el, data, this.model.layout, this.model.config).then(() => {
+        this._updateSetViewportFunction();
         this._updateViewportProperty();
       }
     );
