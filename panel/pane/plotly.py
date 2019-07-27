@@ -157,6 +157,7 @@ class Plotly(PaneBase):
         model = PlotlyPlot(data=json.get('data', []),
                            layout=json.get('layout', {}),
                            config=self.config,
+                           viewport=self.viewport,
                            viewport_update_policy=self.viewport_update_policy,
                            viewport_update_throttle=self.viewport_update_throttle,
                            data_sources=sources)
