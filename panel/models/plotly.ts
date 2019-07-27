@@ -258,7 +258,7 @@ export class PlotlyPlotView extends HTMLBoxView {
     // Call relayout if viewport differs from fullLayout
     _.forOwn(this.model.viewport, (value: any, key: string) => {
       if (!_.isEqual(_.get(fullLayout, key), value)) {
-        Plotly.relayout(this.el, this.model.viewport);
+        Plotly.relayout(this.el, _.cloneDeep(this.model.viewport));
         return false
       } else {
         return true
@@ -277,7 +277,7 @@ export class PlotlyPlotView extends HTMLBoxView {
       }
       let maybe_axis = prop.slice(0, 5);
       if (maybe_axis === 'xaxis' || maybe_axis === 'yaxis') {
-        viewport[prop + '.range'] = fullLayout[prop].range
+        viewport[prop + '.range'] = _.cloneDeep(fullLayout[prop].range)
       }
     }
 
