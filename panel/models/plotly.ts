@@ -101,6 +101,7 @@ export class PlotlyPlotView extends HTMLBoxView {
   model: PlotlyPlot
   _connected: string[]
   _setViewport: Function
+  _settingViewport: boolean = false
 
   connect_signals(): void {
     super.connect_signals();
@@ -251,7 +252,7 @@ export class PlotlyPlotView extends HTMLBoxView {
   }
 
   _updateViewportFromProperty(): void {
-    if (!Plotly) { return }
+    if (!Plotly || this._settingViewport) { return }
 
     const fullLayout = (this.el as any)._fullLayout;
 
@@ -290,11 +291,15 @@ export class PlotlyPlotView extends HTMLBoxView {
     if (this.model.viewport_update_policy === "continuous" ||
         this.model.viewport_update_policy === "mouseup") {
       this._setViewport = (viewport: any) => {
+        this._settingViewport = true;
         this.model.viewport = viewport
+        this._settingViewport = false;
       }
     } else {
       this._setViewport = _.throttle((viewport: any) => {
+        this._settingViewport = true;
         this.model.viewport = viewport;
+        this._settingViewport = false;
       }, this.model.viewport_update_throttle);
     }
   }
