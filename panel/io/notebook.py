@@ -50,9 +50,9 @@ if (!window.PyViz) {{
 var receiver = window.PyViz.receivers['{plot_id}'];
 var events = receiver ? receiver._partial.content.events : [];
 for (var event of events) {{
-  if ((event.kind == 'ModelChanged') && (event.attr == '{change}') &&
-      (cb_obj.id == event.model.id) &&
-      (cb_obj['{change}'] == event.new)) {{
+  if ((event.kind === 'ModelChanged') && (event.attr === '{change}') &&
+      (cb_obj.id === event.model.id) &&
+      (JSON.stringify(cb_obj['{change}']) === JSON.stringify(event.new))) {{
     events.pop(events.indexOf(event))
     return;
   }}
