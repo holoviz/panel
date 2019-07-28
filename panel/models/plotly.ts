@@ -153,10 +153,10 @@ export class PlotlyPlotView extends HTMLBoxView {
     // Install callbacks
     //  - plotly_relayout
     (<PlotlyHTMLElement>(this.el)).on('plotly_relayout', (eventData: any) => {
-      this.model.relayout_data = filterEventData(
-          this.el, eventData, 'relayout');
-
       if (eventData['_update_from_property'] !== true) {
+        this.model.relayout_data = filterEventData(
+            this.el, eventData, 'relayout');
+
         this._updateViewportProperty();
       }
     });
