@@ -66,7 +66,10 @@ def get_comm_customjs(change, client_comm, plot_id, timeout=5000, debounce=50):
     """
     # Abort callback if value matches last received event
     abort = ABORT_JS.format(plot_id=plot_id, change=change)
-    data_template = "data = {{{change}: cb_obj['{change}'], 'id': cb_obj.id}};"
+    data_template = """\
+data = {{{change}: cb_obj['{change}'], 'id': cb_obj.id}};
+cb_obj.event_name = '{change}';"""
+
     fetch_data = data_template.format(change=change)
     self_callback = JS_CALLBACK.format(
         comm_id=client_comm.id, timeout=timeout, debounce=debounce,
