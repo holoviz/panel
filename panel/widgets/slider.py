@@ -17,7 +17,7 @@ from bokeh.models.widgets import (
 
 from ..config import config
 from ..io import state
-from ..util import value_as_datetime
+from ..util import value_as_datetime, value_as_date
 from .base import Widget, CompositeWidget
 from ..layout import Column
 from .input import StaticText
@@ -125,6 +125,12 @@ class DateSlider(_SliderBase):
     end = param.Date(default=None)
 
     _widget_type = _BkDateSlider
+
+    def _process_property_change(self, msg):
+        msg = super(_SliderBase, self)._process_property_change(msg)
+        if 'value' in msg:
+            msg['value'] = value_as_date(msg['value'])
+        return msg
 
 
 class DiscreteSlider(CompositeWidget, _SliderBase):
