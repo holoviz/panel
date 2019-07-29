@@ -170,3 +170,11 @@ def value_as_datetime(value):
     if isinstance(value, numbers.Number):
         value = datetime.utcfromtimestamp(value / 1000)
     return value
+
+
+def value_as_date(value):
+    if isinstance(value, numbers.Number):
+        value = datetime.utcfromtimestamp(value / 1000).date()
+    elif isinstance(value, datetime):
+        value = value.date()
+    return value

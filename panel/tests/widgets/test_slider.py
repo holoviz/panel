@@ -1,11 +1,11 @@
 from __future__ import absolute_import, division, unicode_literals
 
-from datetime import datetime
+from datetime import datetime, date
 from collections import OrderedDict
 
 from bokeh.models import Div as BkDiv, Slider as BkSlider, Column as BkColumn
 
-from panel.widgets import (DateRangeSlider, DiscreteSlider,
+from panel.widgets import (DateSlider, DateRangeSlider, DiscreteSlider,
                            FloatSlider, IntSlider, RangeSlider)
 
 
@@ -66,6 +66,32 @@ def test_range_slider(document, comm):
 
     slider.value = (0, 1)
     assert widget.value == (0, 1)
+
+
+def test_date_slider(document, comm):
+    date_slider = DateSlider(name='DateSlider',
+                             value=date(2018, 9, 4),
+                             start=date(2018, 9, 1), end=date(2018, 9, 10))
+
+    widget = date_slider.get_root(document, comm=comm)
+
+    assert isinstance(widget, date_slider._widget_type)
+    assert widget.title == 'DateSlider'
+    assert widget.value == date(2018, 9, 4)
+    assert widget.start == date(2018, 9, 1)
+    assert widget.end == date(2018, 9, 10)
+
+    epoch = datetime(1970, 1, 1)
+    widget.value = (datetime(2018, 9, 3)-epoch).total_seconds()*1000
+    date_slider._comm_change({'value': widget.value})
+    assert date_slider.value == date(2018, 9, 3)
+
+    # Test raw timestamp value:
+    date_slider._comm_change({'value': (datetime(2018, 9, 4)-epoch).total_seconds()*1000.0})
+    assert date_slider.value == date(2018, 9, 4)
+
+    date_slider.value = date(2018, 9, 6)
+    assert widget.value == date_slider.value
 
 
 def test_date_range_slider(document, comm):
