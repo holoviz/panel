@@ -43,6 +43,7 @@ class PlotlyPlot(LayoutDOM):
     viewport = Dict(String, Any)
     viewport_update_policy = Enum("continuous", "mouseup", "throttle")
     viewport_update_throttle = Int()
+    _render_count = Int()
 
 
 CUSTOM_MODELS['panel.models.plotly.PlotlyPlot'] = PlotlyPlot

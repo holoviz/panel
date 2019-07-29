@@ -49,6 +49,8 @@ Policy by which the viewport parameter is updated during user interactions:
 Time interval in milliseconds at which viewport updates are synchronized when
 viewport_update_policy is "throttle"'''
     )
+    _render_count = param.Integer(
+        doc="""Number of renders, increment to trigger re-render""", default=0)
 
     _updates = True
 
@@ -132,6 +134,7 @@ viewport_update_policy is "throttle"'''
         trace_arrays = {}
         Plotly._get_sources_for_trace(trace, trace_arrays)
 
+        update_sources = False
         for key, new_col in trace_arrays.items():
             new = new_col[0]
 
@@ -145,7 +148,10 @@ viewport_update_policy is "throttle"'''
                 update_array = True
 
             if update_array:
+                update_sources = True
                 cds.data[key] = [new]
+
+        return update_sources
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         """
@@ -174,7 +180,8 @@ viewport_update_policy is "throttle"'''
                            viewport=self.viewport,
                            viewport_update_policy=self.viewport_update_policy,
                            viewport_update_throttle=self.viewport_update_throttle,
-                           data_sources=sources)
+                           data_sources=sources,
+                           _render_count=self._render_count)
 
         if root is None:
             root = model
@@ -183,7 +190,7 @@ viewport_update_policy is "throttle"'''
             model, [
                 'config', 'relayout_data', 'restyle_data', 'click_data',  'hover_data',
                 'clickannotation_data', 'selected_data', 'viewport',
-                'viewport_update_policy', 'viewport_update_throttle'
+                'viewport_update_policy', 'viewport_update_throttle', '_render_count'
             ],
             doc,
             root,
@@ -198,6 +205,7 @@ viewport_update_policy is "throttle"'''
     def _update(self, model):
         if self.object is None:
             model.update(data=[], layout={})
+            model._render_count += 1
             return
 
         fig = self._to_figure(self.object)
@@ -205,6 +213,7 @@ viewport_update_policy is "throttle"'''
 
         traces = json['data']
         new_sources = []
+        update_sources = False
         for i, trace in enumerate(traces):
             if i < len(model.data_sources):
                 cds = model.data_sources[i]
@@ -212,8 +221,7 @@ viewport_update_policy is "throttle"'''
                 cds = ColumnDataSource()
                 new_sources.append(cds)
 
-            self._update_data_sources(cds, trace)
-
+            update_sources = update_sources or self._update_data_sources(cds, trace)
         try:
             update_layout = model.layout != json.get('layout')
         except:
@@ -242,3 +250,7 @@ viewport_update_policy is "throttle"'''
 
         if update_layout:
             model.layout = json.get('layout')
+
+        # Check if we should trigger rendering
+        if new_sources or update_sources or update_data or update_layout:
+            model._render_count += 1
