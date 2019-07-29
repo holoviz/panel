@@ -99,9 +99,9 @@ const filterEventData = (gd: any, eventData: any, event: string) => {
 
 export class PlotlyPlotView extends HTMLBoxView {
   model: PlotlyPlot
-  _connected: string[]
   _setViewport: Function
   _settingViewport: boolean = false
+  _plotInitialized: boolean = false
 
   connect_signals(): void {
     super.connect_signals();
@@ -111,105 +111,88 @@ export class PlotlyPlotView extends HTMLBoxView {
     this.connect(this.model.properties.viewport_update_throttle.change,
         this._updateSetViewportFunction);
 
-    this.connect(this.model.properties.data.change, this.render);
-    this.connect(this.model.properties.layout.change, this._relayout);
-    this.connect(this.model.properties.config.change, this.render);
-    this.connect(this.model.properties.data_sources.change, () => this._connect_sources());
+    this.connect(this.model.properties._render_count.change, this.render);
     this.connect(this.model.properties.viewport.change, this._updateViewportFromProperty);
-
-
-    this._connected = [];
-    this._connect_sources();
-  }
-
-  _connect_sources(): void {
-    for (let i = 0; i < this.model.data.length; i++) {
-      const cds = this.model.data_sources[i]
-      if (this._connected.indexOf(cds.id) < 0) {
-        this.connect(cds.properties.data.change, () => this._restyle(i))
-        this._connected.push(cds.id)
-      }
-    }
   }
 
   render(): void {
-    super.render()
-    if (!Plotly) { return }
-    if (!this.model.data.length && !Object.keys(this.model.layout).length) {
-      Plotly.purge(this.el);
-    }
+    if (!(window as any).Plotly) { return }
+
     const data = [];
     for (let i = 0; i < this.model.data.length; i++) {
       data.push(this._get_trace(i, false));
     }
 
-    Plotly.react(this.el, _.cloneDeep(data), _.cloneDeep(this.model.layout), this.model.config).then(() => {
-        this._updateViewportFromProperty();
+    Plotly.react(this.el, data, _.cloneDeep(this.model.layout), this.model.config).then(() => {
         this._updateSetViewportFunction();
         this._updateViewportProperty();
+
+        if (!this._plotInitialized) {
+          // Install callbacks
+
+          //  - plotly_relayout
+          (<PlotlyHTMLElement>(this.el)).on('plotly_relayout', (eventData: any) => {
+            if (eventData['_update_from_property'] !== true) {
+              this.model.relayout_data = filterEventData(
+                  this.el, eventData, 'relayout');
+
+              this._updateViewportProperty();
+            }
+          });
+
+          //  - plotly_relayouting
+          (<PlotlyHTMLElement>(this.el)).on('plotly_relayouting', () => {
+            if (this.model.viewport_update_policy !== 'mouseup') {
+              this._updateViewportProperty();
+            }
+          });
+
+          //  - plotly_restyle
+          (<PlotlyHTMLElement>(this.el)).on('plotly_restyle', (eventData: any) => {
+            this.model.restyle_data = filterEventData(
+                this.el, eventData, 'restyle');
+
+            this._updateViewportProperty();
+          });
+
+          //  - plotly_click
+          (<PlotlyHTMLElement>(this.el)).on('plotly_click', (eventData: any) => {
+            this.model.click_data = filterEventData(
+                this.el, eventData, 'click');
+          });
+
+          //  - plotly_hover
+          (<PlotlyHTMLElement>(this.el)).on('plotly_hover', (eventData: any) => {
+            this.model.hover_data = filterEventData(
+                this.el, eventData, 'hover');
+          });
+
+          //  - plotly_selected
+          (<PlotlyHTMLElement>(this.el)).on('plotly_selected', (eventData: any) => {
+            this.model.selected_data = filterEventData(
+                this.el, eventData, 'selected');
+          });
+
+          //  - plotly_clickannotation
+          (<PlotlyHTMLElement>(this.el)).on('plotly_clickannotation', (eventData: any) => {
+            delete eventData["event"];
+            delete eventData["fullAnnotation"];
+            this.model.clickannotation_data = eventData
+          });
+
+          //  - plotly_deselect
+          (<PlotlyHTMLElement>(this.el)).on('plotly_deselect', () => {
+            this.model.selected_data = null;
+          });
+
+          //  - plotly_unhover
+          (<PlotlyHTMLElement>(this.el)).on('plotly_unhover', () => {
+            this.model.hover_data = null;
+          });
+        }
+        this._plotInitialized = true;
       }
     );
-
-    // Install callbacks
-    //  - plotly_relayout
-    (<PlotlyHTMLElement>(this.el)).on('plotly_relayout', (eventData: any) => {
-      if (eventData['_update_from_property'] !== true) {
-        this.model.relayout_data = filterEventData(
-            this.el, eventData, 'relayout');
-
-        this._updateViewportProperty();
-      }
-    });
-
-    //  - plotly_relayouting
-    (<PlotlyHTMLElement>(this.el)).on('plotly_relayouting', () => {
-      if (this.model.viewport_update_policy !== 'mouseup') {
-        this._updateViewportProperty();
-      }
-    });
-
-    //  - plotly_restyle
-    (<PlotlyHTMLElement>(this.el)).on('plotly_restyle', (eventData: any) => {
-      this.model.restyle_data = filterEventData(
-          this.el, eventData, 'restyle');
-
-      this._updateViewportProperty();
-    });
-
-    //  - plotly_click
-    (<PlotlyHTMLElement>(this.el)).on('plotly_click', (eventData: any) => {
-      this.model.click_data = filterEventData(
-          this.el, eventData, 'click');
-    });
-
-    //  - plotly_hover
-    (<PlotlyHTMLElement>(this.el)).on('plotly_hover', (eventData: any) => {
-      this.model.hover_data = filterEventData(
-          this.el, eventData, 'hover');
-    });
-
-    //  - plotly_selected
-    (<PlotlyHTMLElement>(this.el)).on('plotly_selected', (eventData: any) => {
-      this.model.selected_data = filterEventData(
-          this.el, eventData, 'selected');
-    });
-
-    //  - plotly_clickannotation
-    (<PlotlyHTMLElement>(this.el)).on('plotly_clickannotation', (eventData: any) => {
-      delete eventData["event"];
-      delete eventData["fullAnnotation"];
-      this.model.clickannotation_data = eventData
-    });
-
-    //  - plotly_deselect
-    (<PlotlyHTMLElement>(this.el)).on('plotly_deselect', () => {
-      this.model.selected_data = null;
-    });
-
-    //  - plotly_unhover
-    (<PlotlyHTMLElement>(this.el)).on('plotly_unhover', () => {
-      this.model.hover_data = null;
-    });
   }
 
   _get_trace(index: number, update: boolean): any {
@@ -239,19 +222,6 @@ export class PlotlyPlotView extends HTMLBoxView {
       }
     }
     return trace;
-  }
-
-  _restyle(index: number): void {
-    if (!Plotly) { return }
-    const trace = this._get_trace(index, true);
-
-    Plotly.restyle(this.el, _.cloneDeep(trace), index)
-  }
-
-  _relayout(): void {
-    if (!Plotly) { return }
-
-    Plotly.relayout(this.el, _.cloneDeep(this.model.layout))
   }
 
   _updateViewportFromProperty(): void {
@@ -330,6 +300,7 @@ export namespace PlotlyPlot {
     viewport: p.Property<any>
     viewport_update_policy: p.Property<string>
     viewport_update_throttle: p.Property<number>
+    _render_count: p.Property<number>
   }
 }
 
@@ -359,7 +330,8 @@ export class PlotlyPlot extends HTMLBox {
       selected_data: [ p.Any, {} ],
       viewport: [ p.Any, {} ],
       viewport_update_policy: [ p.String, "continuous" ],
-      viewport_update_throttle: [ p.Number, 200 ]
+      viewport_update_throttle: [ p.Number, 200 ],
+      _render_count: [ p.Number, 0 ],
     })
   }
 }
