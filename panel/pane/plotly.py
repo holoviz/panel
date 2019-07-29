@@ -221,7 +221,7 @@ viewport_update_policy is "throttle"'''
                 cds = ColumnDataSource()
                 new_sources.append(cds)
 
-            update_sources = update_sources or self._update_data_sources(cds, trace)
+            update_sources = self._update_data_sources(cds, trace) or update_sources
         try:
             update_layout = model.layout != json.get('layout')
         except:
