@@ -31,6 +31,24 @@ class Plotly(PaneBase):
     hover_data = param.Dict(doc="""hover callback data""")
     clickannotation_data = param.Dict(doc="""clickannotation callback data""")
     selected_data = param.Dict(doc="""selected callback data""")
+    viewport = param.Dict(doc="""current viewport state""")
+    viewport_update_policy = param.Selector(
+        objects=["continuous", "mouseup", "throttle"],
+        default="continuous",
+        doc="""\
+Policy by which the viewport parameter is updated during user interactions:
+ - "continuous": updates are synchronized continually while panning
+ - "mouseup": updates are synchronized when mouse button is released after panning
+ - "throttle": updates are synchronized while panning, at intervals determined by the
+               viewport_update_throttle parameter"""
+    )
+    viewport_update_throttle = param.Integer(
+        bounds=(0, None),
+        default=200,
+        doc='''\
+Time interval in milliseconds at which viewport updates are synchronized when
+viewport_update_policy is "throttle"'''
+    )
 
     _updates = True
 
@@ -153,6 +171,9 @@ class Plotly(PaneBase):
         model = PlotlyPlot(data=json.get('data', []),
                            layout=json.get('layout', {}),
                            config=self.config,
+                           viewport=self.viewport,
+                           viewport_update_policy=self.viewport_update_policy,
+                           viewport_update_throttle=self.viewport_update_throttle,
                            data_sources=sources)
 
         if root is None:
@@ -161,7 +182,8 @@ class Plotly(PaneBase):
         self._link_props(
             model, [
                 'config', 'relayout_data', 'restyle_data', 'click_data',  'hover_data',
-                'clickannotation_data', 'selected_data'
+                'clickannotation_data', 'selected_data', 'viewport',
+                'viewport_update_policy', 'viewport_update_throttle'
             ],
             doc,
             root,
