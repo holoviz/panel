@@ -645,13 +645,19 @@ class Reactive(Viewable):
     def _link_props(self, model, properties, doc, root, comm=None):
         if comm is None:
             for p in properties:
+                if isinstance(p, tuple):
+                    p, _ = p
                 model.on_change(p, partial(self._server_change, doc))
         elif config.embed:
             pass
         else:
             client_comm = state._comm_manager.get_client_comm(on_msg=self._comm_change)
             for p in properties:
-                customjs = self._get_customjs(p, client_comm, root.ref['id'])
+                if isinstance(p, tuple):
+                    p, attr = p
+                else:
+                    p, attr = p, p
+                customjs = self._get_customjs(attr, client_comm, root.ref['id'])
                 model.js_on_change(p, customjs)
 
     def _comm_change(self, msg):
@@ -671,6 +677,9 @@ class Reactive(Viewable):
             self._processing = True
             doc.add_timeout_callback(partial(self._change_event, doc), self._debounce)
 
+    def _process_events(self, events):
+        self.set_param(**self._process_property_change(events))
+
     def _change_event(self, doc=None):
         try:
             state.curdoc = doc
@@ -679,7 +688,7 @@ class Reactive(Viewable):
             state._thread_id = thread_id
             events = self._events
             self._events = {}
-            self.set_param(**self._process_property_change(events))
+            self._process_events(events)
         finally:
             self._processing = False
             state.curdoc = None
