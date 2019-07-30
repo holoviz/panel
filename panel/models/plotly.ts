@@ -332,7 +332,7 @@ export class PlotlyPlot extends HTMLBox {
       clickannotation_data: [ p.Any, {} ],
       selected_data: [ p.Any, {} ],
       viewport: [ p.Any, {} ],
-      viewport_update_policy: [ p.String, "continuous" ],
+      viewport_update_policy: [ p.String, "mouseup" ],
       viewport_update_throttle: [ p.Number, 200 ],
       _render_count: [ p.Number, 0 ],
     })

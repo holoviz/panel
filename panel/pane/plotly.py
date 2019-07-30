@@ -33,12 +33,12 @@ class Plotly(PaneBase):
     selected_data = param.Dict(doc="""selected callback data""")
     viewport = param.Dict(doc="""current viewport state""")
     viewport_update_policy = param.Selector(
-        objects=["continuous", "mouseup", "throttle"],
-        default="continuous",
+        objects=["mouseup", "continuous", "throttle"],
+        default="mouseup",
         doc="""\
 Policy by which the viewport parameter is updated during user interactions:
- - "continuous": updates are synchronized continually while panning
  - "mouseup": updates are synchronized when mouse button is released after panning
+ - "continuous": updates are synchronized continually while panning
  - "throttle": updates are synchronized while panning, at intervals determined by the
                viewport_update_throttle parameter"""
     )
