@@ -39,13 +39,6 @@ class Player(Widget):
     height = Override(default=250)
 
 
-class FileInput(Widget):
-
-    __implementation__ = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'fileinput.ts')
-
-    value = Any(help="Encoded file data")
-
-
 class Audio(Widget):
 
     __implementation__ = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'audio.ts')
@@ -88,6 +81,5 @@ class VideoStream(Widget):
 
 
 CUSTOM_MODELS['panel.models.widgets.Player'] = Player
-CUSTOM_MODELS['panel.models.widgets.FileInput'] = FileInput
 CUSTOM_MODELS['panel.models.widgets.Audio'] = Audio
 CUSTOM_MODELS['panel.models.widgets.VideoStream'] = VideoStream

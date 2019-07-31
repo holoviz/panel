@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, unicode_literals
 import pytest
 from datetime import datetime, date
 
-from panel.models import FileInput as BkFileInput
+from bokeh.models.widgets import FileInput as BkFileInput
 from panel.widgets import (Checkbox, DatePicker, DatetimeInput, FileInput,
                            LiteralInput, TextInput, StaticText)
 
@@ -59,11 +59,9 @@ def test_file_input(document, comm):
 
     assert isinstance(widget, BkFileInput)
 
-    file_input._comm_change({'value': 'data:text/plain;base64,U29tZSB0ZXh0Cg=='})
+    file_input._comm_change({'mime_type': 'text/plain', 'value': 'U29tZSB0ZXh0Cg=='})
     assert file_input.value == b'Some text\n'
-
-    file_input.param.trigger('value')
-    assert widget.value == 'data:text/plain;base64,U29tZSB0ZXh0Cg=='
+    assert file_input.mime_type == 'text/plain'
 
 
 def test_literal_input(document, comm):

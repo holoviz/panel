@@ -7,7 +7,7 @@ from __future__ import absolute_import, division, unicode_literals
 
 import param
 
-from ..viewable import Reactive
+from ..viewable import Reactive, Layoutable
 
 
 class Widget(Reactive):
@@ -51,10 +51,13 @@ class Widget(Reactive):
             root = model
         # Link parameters and bokeh model
         values = dict(self.get_param_values())
-        properties = list(self._process_param_change(values))
+        properties = self._filter_properties(list(self._process_param_change(values)))
         self._models[root.ref['id']] = (model, parent)
         self._link_props(model, properties, doc, root, comm)
         return model
+
+    def _filter_properties(self, properties):
+        return [p for p in properties if p not in Layoutable.param]
 
     def _get_embed_state(self, root, max_opts=3):
         """
