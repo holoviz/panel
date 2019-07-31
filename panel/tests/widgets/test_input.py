@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, unicode_literals
 import pytest
 from datetime import datetime, date
 
-from panel.models import FileInput as BkFileInput
+from bokeh.models.widgets import FileInput as BkFileInput
 from panel.widgets import (Checkbox, DatePicker, DatetimeInput, FileInput,
                            LiteralInput, TextInput, StaticText)
 
