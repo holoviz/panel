@@ -15,9 +15,8 @@ import param
 from bokeh.models.widgets import (
     CheckboxGroup as _BkCheckboxGroup, ColorPicker as _BkColorPicker,
     DatePicker as _BkDatePicker, Div as _BkDiv, TextInput as _BkTextInput,
-    Spinner as _BkSpinner)
+    Spinner as _BkSpinner, FileInput as _BkFileInput)
 
-from ..models import FileInput as _BkFileInput
 from ..util import as_unicode
 from .base import Widget
 
@@ -33,32 +32,32 @@ class TextInput(Widget):
 
 class FileInput(Widget):
 
+    filename = param.String(default=None)
+
     mime_type = param.String(default=None)
 
     value = param.Parameter(default=None)
 
     _widget_type = _BkFileInput
 
-    _rename = {'name': None, 'mime_type': None}
+    _rename = {'name': None}
 
     def _process_param_change(self, msg):
         msg = super(FileInput, self)._process_param_change(msg)
         if 'value' in msg:
-            if self.mime_type:
-                template = 'data:{mime};base64,{data}'
-                data = b64encode(msg['value'])
-                msg['value'] = template.format(data=data.decode('utf-8'),
-                                               mime=self.mime_type)
-            else:
-                msg['value'] = ''
+            msg.pop('value')
+        if 'mime_type' in msg:
+            msg.pop('mime_type')
         return msg
+
+    def _filter_properties(self, properties):
+        properties = super(FileInput, self)._filter_properties(properties)
+        return properties + ['value', 'mime_type']
 
     def _process_property_change(self, msg):
         msg = super(FileInput, self)._process_property_change(msg)
         if 'value' in msg:
-            header, content = msg['value'].split(",", 1)
-            msg['mime_type'] = header.split(':')[1].split(';')[0]
-            msg['value'] = b64decode(content)
+            msg['value'] = b64decode(msg['value'])
         return msg
 
     def save(self, filename):

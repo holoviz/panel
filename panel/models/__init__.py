@@ -7,4 +7,4 @@ files.
 
 from .markup import HTML # noqa
 from .state import State # noqa
-from .widgets import Audio, FileInput, Player, VideoStream # noqa
+from .widgets import Audio, Player, VideoStream # noqa
