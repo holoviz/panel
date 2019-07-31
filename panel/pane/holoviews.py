@@ -116,6 +116,7 @@ class HoloViews(PaneBase):
     #----------------------------------------------------------------
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
+        from holoviews import Store
         if root is None:
             return self.get_root(doc, comm)
         ref = root.ref['id']
@@ -123,7 +124,8 @@ class HoloViews(PaneBase):
             model = _BkSpacer()
         else:
             plot = self._render(doc, comm, root)
-            child_pane = self._panes.get(self.backend, Pane)(plot.state)
+            backend = self.backend or Store.current_backend
+            child_pane = self._panes.get(backend, Pane)(plot.state)
             self._update_plot(plot, child_pane)
             model = child_pane._get_model(doc, root, parent, comm)
             if ref in self._plots:
