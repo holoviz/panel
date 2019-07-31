@@ -102,6 +102,7 @@ export class PlotlyPlotView extends HTMLBoxView {
   _setViewport: Function
   _settingViewport: boolean = false
   _plotInitialized: boolean = false
+  _reacting: boolean = false
 
   connect_signals(): void {
     super.connect_signals();
@@ -123,6 +124,7 @@ export class PlotlyPlotView extends HTMLBoxView {
       data.push(this._get_trace(i, false));
     }
 
+    this._reacting = true;
     Plotly.react(this.el, data, _.cloneDeep(this.model.layout), this.model.config).then(() => {
         this._updateSetViewportFunction();
         this._updateViewportProperty();
@@ -191,6 +193,7 @@ export class PlotlyPlotView extends HTMLBoxView {
           });
         }
         this._plotInitialized = true;
+        this._reacting = false;
       }
     );
   }
@@ -225,7 +228,7 @@ export class PlotlyPlotView extends HTMLBoxView {
   }
 
   _updateViewportFromProperty(): void {
-    if (!Plotly || this._settingViewport || !this.model.viewport ) { return }
+    if (!Plotly || this._settingViewport || this._reacting || !this.model.viewport ) { return }
 
     const fullLayout = (this.el as any)._fullLayout;
 
@@ -329,7 +332,7 @@ export class PlotlyPlot extends HTMLBox {
       clickannotation_data: [ p.Any, {} ],
       selected_data: [ p.Any, {} ],
       viewport: [ p.Any, {} ],
-      viewport_update_policy: [ p.String, "continuous" ],
+      viewport_update_policy: [ p.String, "mouseup" ],
       viewport_update_throttle: [ p.Number, 200 ],
       _render_count: [ p.Number, 0 ],
     })
