@@ -6,7 +6,7 @@ from __future__ import absolute_import, division, unicode_literals
 
 import ast
 
-from base64 import b64decode, b64encode
+from base64 import b64decode
 from datetime import datetime
 from six import string_types
 
