@@ -90,6 +90,8 @@ jobs:
       env: PYPI=testpypi PYPIUSER=$TPPU PYPIPASS=$TPPP
       stage: pip_dev_package
       install:
+        - doit env_create $CHANS_DEV --python=$PYTHON_VERSION
+        - source activate test-environment
         - doit develop_install $CHANS_DEV -o build && pip uninstall -y panel
         - doit pip_on_conda
         - conda install $CHANS_DEV nodejs
