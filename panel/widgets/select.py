@@ -300,6 +300,10 @@ class CrossSelector(CompositeWidget, MultiSelect):
        The number of options shown at once (note this is the
        only way to control the height of this widget)""")
 
+    definition_order = param.Integer(default=True, doc=""" Whether to
+       preserve definition order after filtering. Disable to allow the
+       order of selection to define the order of the selected list.""")
+
     def __init__(self, *args, **kwargs):
         super(CrossSelector, self).__init__(**kwargs)
         # Compute selected and unselected values
@@ -418,7 +422,10 @@ class CrossSelector(CompositeWidget, MultiSelect):
         query = self._query[selected]
         other = self._lists[not selected].labels
         labels = self.labels
-        options = [k for k in labels if k not in other]
+        if self.definition_order:
+            options = [k for k in labels if k not in other]
+        else:
+            options = self._lists[selected].values
         if not query:
             self._lists[selected].options = options
             self._lists[selected].value = []

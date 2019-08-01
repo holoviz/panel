@@ -302,3 +302,13 @@ def test_cross_select_move_unselected_to_selected():
 
     assert cross_select.value == ['A', 1, 'B', 3]
     assert cross_select._lists[True].options == ['A', 'B', '1', '3']
+
+
+def test_cross_select_move_unselected_to_selected_not_definition_order():
+    cross_select = CrossSelector(options=['B', 'A', 'C', 1, 2, 3], value=['A', 1], size=5, definition_order=False)
+
+    cross_select._lists[False].value = ['B', '3']
+    cross_select._buttons[True].clicks = 1
+
+    assert cross_select.value == ['A', 1, 'B', 3]
+    assert cross_select._lists[True].options == ['A', '1', 'B', '3']
