@@ -103,7 +103,7 @@ jobs:
       env: DESC="" TRAVIS_NOCACHE=$TRAVIS_JOB_ID LABELS=$LABELS_REL CHANS=$CHANS_REL
 
     - <<: *pip_pkg
-      env: PYPI=pypi PYPIUSER=$PPU PYPIPASS=$PPP
+      env: PYPI=pypi PYPIUSER=$PPU PYPIPASS=$PPP PYENV_VERSION=3.6
       stage: pip_package
 
     ########## DOCS ##########
