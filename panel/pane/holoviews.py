@@ -61,7 +61,7 @@ class HoloViews(PaneBase):
             self.layout.insert(0, HSpacer())
         self._update_widgets()
         if self.fancy_layout:
-            self.layout.append(HSpacer())
+            self.layout.insert(2, HSpacer())
         self._plots = {}
         self.param.watch(self._update_widgets, self._rerender_params)
 
@@ -91,12 +91,12 @@ class HoloViews(PaneBase):
         self.widget_box.objects = widgets
         if widgets and not self.widget_box in self.layout.objects:
             if self.fancy_layout:
-                self.layout.insert(2, Column(VSpacer(), self.widget_box, VSpacer()))
+                self.layout.append(Column(VSpacer(), self.widget_box, VSpacer()))
             else:
                 self.layout.append(self.widget_box)
         elif not widgets:
-            if self.fancy_layout and self.widget_box in self.layout[2]:
-                self.layout[2].pop(self.widget_box)
+            if self.fancy_layout and self.widget_box in self.layout[-1]:
+                self.layout[-1].pop(self.widget_box)
             elif self.widget_box in self.layout.objects:
                 self.layout.pop(self.widget_box)
 
