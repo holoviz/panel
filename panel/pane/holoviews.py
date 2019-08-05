@@ -96,7 +96,7 @@ class HoloViews(PaneBase):
                 self.layout.append(self.widget_box)
         elif not widgets:
             if self.fancy_layout and self.widget_box in self.layout[-1]:
-                self.layout[-1].pop(self.widget_box)
+                self.layout.pop(-1)
             elif self.widget_box in self.layout.objects:
                 self.layout.pop(self.widget_box)
 
