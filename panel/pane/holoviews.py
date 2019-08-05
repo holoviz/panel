@@ -33,7 +33,7 @@ class HoloViews(PaneBase):
         The HoloViews backend used to render the plot (if None defaults
         to the currently selected renderer).""")
 
-    fancy_layout = param.Boolean(default=False, doc="""
+    fancy_layout = param.Boolean(default=False, constant=True, doc="""
         Whether the widgets should be laid out like the classic HoloViews
         widgets.""")
 
