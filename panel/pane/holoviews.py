@@ -14,7 +14,7 @@ import param
 from bokeh.models import Spacer as _BkSpacer
 
 from ..io import state
-from ..layout import Panel, Column, WidgetBox, HSpacer, VSpacer
+from ..layout import Panel, Column, WidgetBox, HSpacer, VSpacer, Row
 from ..viewable import Viewable
 from ..widgets import Player
 from .base import PaneBase, Pane
@@ -59,6 +59,10 @@ class HoloViews(PaneBase):
         self.widget_box = WidgetBox() if self.fancy_layout else Column()
         if self.fancy_layout:
             self.layout.insert(0, HSpacer())
+            if params.get('widget_type', self.widget_type) == 'scrubber':
+                self.layout[1] = Column(self, Row())
+            else:
+                self.layout.append(Column())
         self._update_widgets()
         if self.fancy_layout:
             self.layout.insert(2, HSpacer())
@@ -89,14 +93,26 @@ class HoloViews(PaneBase):
             self._callbacks.append(watcher)
 
         self.widget_box.objects = widgets
-        if widgets and not self.widget_box in self.layout.objects:
-            if self.fancy_layout:
-                self.layout.append(Column(VSpacer(), self.widget_box, VSpacer()))
+
+        if self.fancy_layout:
+            if self.widget_type == 'scrubber':
+                widget_container = self.layout[1][1]
             else:
-                self.layout.append(self.widget_box)
-        elif not widgets:
-            if self.fancy_layout and self.widget_box in self.layout[-1]:
-                self.layout.pop(-1)
+                widget_container = self.layout[-1]
+        else:
+            widget_container = self.layout
+
+        if widgets and self.widget_box not in widget_container:
+            if self.fancy_layout:
+                if self.widget_type == 'scrubber':
+                    widget_container[:] = [HSpacer(), self.widget_box, HSpacer()]
+                else:
+                    widget_container[:] = [VSpacer(), self.widget_box, VSpacer()]
+            else:
+                widget_container.append(self.widget_box)
+        elif not widgets and self.widget_box in widget_container:
+            if self.fancy_layout:
+                widget_container[:] = []
             elif self.widget_box in self.layout.objects:
                 self.layout.pop(self.widget_box)
 
@@ -209,7 +225,7 @@ class HoloViews(PaneBase):
         widgets = []
         for i, dim in enumerate(dims):
             widget_type, widget, widget_kwargs = None, None, {}
-            if fancy:
+            if fancy and widgets_type == 'individual':
                 if i == 0 and i == (len(dims)-1):
                     margin = (20, 20, 20, 20)
                 elif i == 0:
@@ -274,7 +290,7 @@ class HoloViews(PaneBase):
             if widget is not None:
                 widgets.append(widget)
         if widgets_type == 'scrubber':
-            widgets = [Player(length=nframes)]
+            widgets = [Player(length=nframes, width=550)]
         return widgets, dim_values
 
 
