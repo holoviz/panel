@@ -18,6 +18,7 @@ from bokeh.models.widgets import (
 from ..config import config
 from ..io import state
 from ..util import value_as_datetime, value_as_date
+from ..viewable import Layoutable
 from .base import Widget, CompositeWidget
 from ..layout import Column
 from .input import StaticText
@@ -164,11 +165,12 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
                              % self.value)
 
         self._text = StaticText(margin=(5, 0, 0, 5), style={'white-space': 'nowrap'})
-        self._slider = IntSlider()
+        self._slider = None
         self._composite = Column(self._text, self._slider)
         self._update_options()
         self.param.watch(self._update_options, ['options', 'formatter'])
         self.param.watch(self._update_value, ['value'])
+        self.param.watch(self._update_style, [p for p in Layoutable.param if p !='name'])
 
     def _update_options(self, *events):
         values, labels = self.values, self.labels
@@ -177,9 +179,11 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
             self.value = values[0]
         else:
             value = values.index(self.value)
+
         self._slider = IntSlider(start=0, end=len(self.options)-1, value=value,
                                  tooltips=False, show_value=False, margin=(0, 5, 5, 5),
                                  _supports_embed=False)
+        self._update_style()
         js_code = self._text_link.format(labels=repr(self.labels))
         self._jslink = self._slider.jslink(self._text, code={'value': js_code})
         self._slider.param.watch(self._sync_value, 'value')
@@ -199,6 +203,23 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
             self._slider.value = index
         finally:
             self._syncing = False
+
+    def _update_style(self, *events):
+        style = {p: getattr(self, p) for p in Layoutable.param if p != 'name'}
+        margin = style.pop('margin')
+        if isinstance(margin, tuple):
+            if len(margin) == 2:
+                t = b = margin[0]
+                r = l = margin[1]
+            else:
+                t, r, b, l = margin
+        else:
+            t = r = b = l = margin
+        text_margin = (t, 0, 0, l)
+        slider_margin = (0, r, b, l)
+        self._text.param.set_param(
+            margin=text_margin, **{k: v for k, v in style.items() if k != 'style'})
+        self._slider.param.set_param(margin=slider_margin, **style)
 
     def _sync_value(self, event):
         if self._syncing:
