@@ -222,7 +222,9 @@ class HoloViews(PaneBase):
             else:
                 kwargs = {}
 
-            vals = list(unique_iterator(dim.values or values.get(dim, None)))
+            vals = dim.values or values.get(dim, None)
+            if vals is not None:
+                vals = list(unique_iterator(vals))
             dim_values[dim.name] = vals
             if widgets_type == 'scrubber':
                 if not vals:
