@@ -251,6 +251,31 @@ def test_holoviews_with_widgets_not_shown(document, comm):
 
 
 @hv_available
+def test_holoviews_fancy_layout(document, comm):
+    hmap = hv.HoloMap({(i, chr(65+i)): hv.Curve([i]) for i in range(3)}, kdims=['X', 'Y'])
+
+    hv_pane = HoloViews(hmap, fancy_layout=True)
+    layout_obj = hv_pane.layout
+    layout = layout_obj.get_root(document, comm)
+    model = layout.children[1]
+    assert hv_pane is layout_obj[1]
+    assert len(hv_pane.widget_box.objects) == 2
+    assert hv_pane.widget_box is layout_obj[-1][1]
+    assert hv_pane.widget_box.objects[0].name == 'X'
+    assert hv_pane.widget_box.objects[1].name == 'Y'
+
+    assert hv_pane._models[layout.ref['id']][1].children[1] is model
+
+    hv_pane.object = hv.Curve([1, 2, 3])
+    assert len(hv_pane.widget_box.objects) == 0
+    assert len(layout_obj) == 3
+    assert hv_pane is layout_obj[1]
+
+    hv_pane.object = hmap
+    assert hv_pane.widget_box is layout_obj[-1][1]
+
+
+@hv_available
 def test_holoviews_widgets_from_holomap():
     hmap = hv.HoloMap({(i, chr(65+i)): hv.Curve([i]) for i in range(3)}, kdims=['X', 'Y'])
 

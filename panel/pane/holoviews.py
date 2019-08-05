@@ -10,10 +10,11 @@ from collections import OrderedDict, defaultdict
 from functools import partial
 
 import param
+
 from bokeh.models import Spacer as _BkSpacer
 
 from ..io import state
-from ..layout import Panel, Column
+from ..layout import Panel, Column, WidgetBox, HSpacer, VSpacer
 from ..viewable import Viewable
 from ..widgets import Player
 from .base import PaneBase, Pane
@@ -31,6 +32,10 @@ class HoloViews(PaneBase):
         default=None, objects=['bokeh', 'plotly', 'matplotlib'], doc="""
         The HoloViews backend used to render the plot (if None defaults
         to the currently selected renderer).""")
+
+    fancy_layout = param.Boolean(default=False, constant=True, doc="""
+        Whether the widgets should be laid out like the classic HoloViews
+        widgets.""")
 
     linked_axes = param.Boolean(default=True, doc="""
         Whether to use link the axes of bokeh plots inside this pane
@@ -59,8 +64,12 @@ class HoloViews(PaneBase):
 
     def __init__(self, object=None, **params):
         super(HoloViews, self).__init__(object, **params)
-        self.widget_box = Column()
+        self.widget_box = WidgetBox() if self.fancy_layout else Column()
+        if self.fancy_layout:
+            self.layout.insert(0, HSpacer())
         self._update_widgets()
+        if self.fancy_layout:
+            self.layout.insert(2, HSpacer())
         self._plots = {}
         self.param.watch(self._update_widgets, self._rerender_params)
 
@@ -72,8 +81,8 @@ class HoloViews(PaneBase):
         if self.object is None:
             widgets, values = [], []
         else:
-            widgets, values = self.widgets_from_dimensions(self.object, self.widgets,
-                                                           self.widget_type)
+            widgets, values = self.widgets_from_dimensions(
+                self.object, self.widgets, self.widget_type, fancy=self.fancy_layout)
         self._values = values
 
         # Clean up anything models listening to the previous widgets
@@ -89,9 +98,15 @@ class HoloViews(PaneBase):
 
         self.widget_box.objects = widgets
         if widgets and not self.widget_box in self.layout.objects:
-            self.layout.append(self.widget_box)
-        elif not widgets and self.widget_box in self.layout.objects:
-            self.layout.pop(self.widget_box)
+            if self.fancy_layout:
+                self.layout.append(Column(VSpacer(), self.widget_box, VSpacer()))
+            else:
+                self.layout.append(self.widget_box)
+        elif not widgets:
+            if self.fancy_layout and self.widget_box in self.layout[-1]:
+                self.layout.pop(-1)
+            elif self.widget_box in self.layout.objects:
+                self.layout.pop(self.widget_box)
 
     def _update_plot(self, plot, pane):
         from holoviews.core.util import cross_index, wrap_tuple_streams
@@ -196,8 +211,8 @@ class HoloViews(PaneBase):
         from holoviews.plotting.plot import Plot
         return isinstance(obj, Dimensioned) or isinstance(obj, Plot)
 
-    @classmethod
-    def widgets_from_dimensions(cls, object, widget_types={}, widgets_type='individual'):
+    def widgets_from_dimensions(cls, object, widget_types={}, widgets_type='individual',
+                                fancy=False):
         from holoviews.core import Dimension, DynamicMap
         from holoviews.core.options import SkipRendering
         from holoviews.core.util import isnumeric, unicode, datetime_types, unique_iterator
@@ -228,8 +243,21 @@ class HoloViews(PaneBase):
         values = dict() if dynamic else dict(zip(dims, zip(*keys)))
         dim_values = OrderedDict()
         widgets = []
-        for dim in dims:
+        for i, dim in enumerate(dims):
             widget_type, widget, widget_kwargs = None, None, {}
+            if fancy:
+                if i == 0 and i == (len(dims)-1):
+                    margin = (20, 20, 20, 20)
+                elif i == 0:
+                    margin = (20, 20, 5, 20)
+                elif i == (len(dims)-1):
+                    margin = (5, 20, 20, 20)
+                else:
+                    margin = (0, 20, 5, 20)
+                kwargs = {'margin': margin, 'width': 250}
+            else:
+                kwargs = {}
+
             vals = dim.values or values.get(dim, None)
             if vals is not None:
                 vals = list(unique_iterator(vals))
@@ -245,7 +273,7 @@ class HoloViews(PaneBase):
                     continue
                 elif isinstance(widget, dict):
                     widget_type = widget.get('type', widget_type)
-                    widget_kwargs = widget
+                    widget_kwargs = dict(widget)
                 elif isinstance(widget, type) and issubclass(widget, Widget):
                     widget_type = widget
                 else:
@@ -253,6 +281,8 @@ class HoloViews(PaneBase):
                                      'to be a widget instance or type, %s '
                                      'dimension widget declared as %s.' %
                                      (dim, widget))
+            widget_kwargs.update(kwargs)
+
             if vals:
                 if all(isnumeric(v) or isinstance(v, datetime_types) for v in vals) and len(vals) > 1:
                     vals = sorted(vals)
