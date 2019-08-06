@@ -14,7 +14,7 @@ import param
 from bokeh.models import Spacer as _BkSpacer
 
 from ..io import state
-from ..layout import Panel, Column, WidgetBox, HSpacer, VSpacer, Row
+from ..layout import Panel, ListPanel, Column, WidgetBox, HSpacer, VSpacer, Row
 from ..viewable import Viewable
 from ..widgets import Player
 from .base import PaneBase, Pane
@@ -33,11 +33,19 @@ class HoloViews(PaneBase):
         The HoloViews backend used to render the plot (if None defaults
         to the currently selected renderer).""")
 
-    layout_style = param.ObjectSelector(default='right', constant=True, objects=[
-        'left', 'bottom', 'right', 'top', 'center_left', 'center_right',
-        'center_bottom', 'center_top'], doc="""
+    center = param.Boolean(default=False, constant=True, doc="""
+        Whether to center the plot.""")
+
+    widget_location = param.ObjectSelector(default='right', constant=True, objects=[
+        'left', 'bottom', 'right', 'top', 'top_left', 'top_right',
+        'bottom_left', 'bottom_right', 'left_top', 'left_bottom',
+        'right_top', 'right_bottom'], doc="""
         The layout of the plot and the widgets. The value refers to the
         position of the widgets relative to the plot.""")
+
+    widget_layout = param.ClassSelector(class_=ListPanel, is_instance=False,
+                                        default=WidgetBox, doc="""
+        The layout object to display the widgets in.""")
 
     widget_type = param.ObjectSelector(default='individual',
                                        objects=['individual', 'scrubber'], doc=""")
@@ -58,27 +66,41 @@ class HoloViews(PaneBase):
 
     def __init__(self, object=None, **params):
         super(HoloViews, self).__init__(object, **params)
-        self.widget_box = WidgetBox()
-        centered = 'center' in self.layout_style
-        layout = self.layout_style
-        if layout == 'center_left':
-            components = [Column(VSpacer(), self.widget_box, VSpacer()), HSpacer(), self, HSpacer()]
-        elif layout == 'center_right':
-            components = [HSpacer(), self, HSpacer(), Column(VSpacer(), self.widget_box, VSpacer())]
-        elif layout == 'center_top':
-            widget_container = Column(Row(HSpacer(), self.widget_box, HSpacer()), self)
-            components = [HSpacer(), widget_container, HSpacer()]
-        elif layout == 'center_bottom':
-            widget_container = Column(self, Row(HSpacer(), self.widget_box, HSpacer()))
-            components = [HSpacer(), widget_container, HSpacer()]
-        elif layout == 'left':
-            components = [self.widget_box, self]
-        elif layout == 'right':
-            components = [self, self.widget_box]
-        elif layout == 'top':
-            components = Column(self.widget_box, self)
-        elif layout == 'bottom':
-            components = Column(self, self.widget_box)
+        self.widget_box = self.widget_layout()
+        loc = self.widget_location
+
+        if loc in ('left', 'right'):
+            widgets = Column(VSpacer(), self.widget_box, VSpacer())
+        elif loc in ('top', 'bottom'):
+            widgets = Row(HSpacer(), self.widget_box, HSpacer())
+        elif loc in ('top_left', 'bottom_left'):
+            widgets = Row(self.widget_box, HSpacer())
+        elif loc in ('top_right', 'bottom_right'):
+            widgets = Row(HSpacer(), self.widget_box)
+        elif loc in ('left_top', 'right_top'):
+            widgets = Column(self.widget_box, VSpacer())
+        elif loc in ('left_bottom', 'right_bottom'):
+            widgets = Column(VSpacer(), self.widget_box)
+
+        if self.center:
+            if loc.startswith('left'):
+                components = [widgets, HSpacer(), self, HSpacer()]
+            elif loc.startswith('right'):
+                components = [HSpacer(), self, HSpacer(), widgets]
+            elif loc.startswith('top'):
+                components = [HSpacer(), Column(widgets, self), HSpacer()]
+            elif loc.startswith('bottom'):
+                components = [HSpacer(), Column(self, widgets), HSpacer()]
+        else:
+            if loc.startswith('left'):
+                components = [widgets, self]
+            elif loc.startswith('right'):
+                components = [self, widgets]
+            elif loc.startswith('top'):
+                components = [Column(widgets, self)]
+            elif loc.startswith('bottom'):
+                components = [Column(self, widgets)]
+
         self.layout[:] = components
         self._update_widgets()
         self._plots = {}
