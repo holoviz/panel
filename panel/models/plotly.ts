@@ -103,6 +103,11 @@ export class PlotlyPlotView extends HTMLBoxView {
   _settingViewport: boolean = false
   _plotInitialized: boolean = false
   _reacting: boolean = false
+  _relayouting: boolean = false
+
+  _end_relayouting = _.debounce(() => {
+    this._relayouting = false
+    }, 2000, {leading: false})
 
   connect_signals(): void {
     super.connect_signals();
@@ -124,8 +129,22 @@ export class PlotlyPlotView extends HTMLBoxView {
       data.push(this._get_trace(i, false));
     }
 
+    let newLayout = _.cloneDeep(this.model.layout);
+
+    if (this._relayouting) {
+      const layout = (this.el as any).layout;
+
+      // For each xaxis* and yaxis* property of layout, if the value has a 'range'
+      // property then use this in newLayout
+      _.forOwn(layout, (value: any, key: string) => {
+        if (key.slice(1, 5) === "axis" && _.has(value, 'range')) {
+          newLayout[key].range = value.range;
+        }
+      });
+    }
+
     this._reacting = true;
-    Plotly.react(this.el, data, _.cloneDeep(this.model.layout), this.model.config).then(() => {
+    Plotly.react(this.el, data, newLayout, this.model.config).then(() => {
         this._updateSetViewportFunction();
         this._updateViewportProperty();
 
@@ -139,12 +158,15 @@ export class PlotlyPlotView extends HTMLBoxView {
                   this.el, eventData, 'relayout');
 
               this._updateViewportProperty();
+
+              this._end_relayouting();
             }
           });
 
           //  - plotly_relayouting
           (<PlotlyHTMLElement>(this.el)).on('plotly_relayouting', () => {
             if (this.model.viewport_update_policy !== 'mouseup') {
+              this._relayouting = true;
               this._updateViewportProperty();
             }
           });
