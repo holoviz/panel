@@ -47,8 +47,15 @@ ABORT_JS = """
 if (!window.PyViz) {{
   return;
 }}
+var events = [];
 var receiver = window.PyViz.receivers['{plot_id}'];
-var events = receiver ? receiver._partial.content.events : [];
+if (receiver &&
+        receiver._partial &&
+        receiver._partial.content &&
+        receiver._partial.content.events) {{
+    events = receiver._partial.content.events;
+}}
+
 for (var event of events) {{
   if ((event.kind === 'ModelChanged') && (event.attr === '{change}') &&
       (cb_obj.id === event.model.id) &&
