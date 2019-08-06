@@ -14,7 +14,7 @@ import param
 from bokeh.models import Spacer as _BkSpacer
 
 from ..io import state
-from ..layout import Panel, ListPanel, Column, WidgetBox, HSpacer, VSpacer, Row
+from ..layout import Panel, Column, WidgetBox, HSpacer, VSpacer, Row
 from ..viewable import Viewable
 from ..widgets import Player
 from .base import PaneBase, Pane
