@@ -33,18 +33,18 @@ class HoloViews(PaneBase):
         The HoloViews backend used to render the plot (if None defaults
         to the currently selected renderer).""")
 
-    center = param.Boolean(default=False, constant=True, doc="""
+    center = param.Boolean(default=False, doc="""
         Whether to center the plot.""")
 
-    widget_location = param.ObjectSelector(default='right', constant=True, objects=[
+    widget_location = param.ObjectSelector(default='right', objects=[
         'left', 'bottom', 'right', 'top', 'top_left', 'top_right',
         'bottom_left', 'bottom_right', 'left_top', 'left_bottom',
         'right_top', 'right_bottom'], doc="""
         The layout of the plot and the widgets. The value refers to the
         position of the widgets relative to the plot.""")
 
-    widget_layout = param.ClassSelector(class_=ListPanel, is_instance=False,
-                                        default=WidgetBox, doc="""
+    widget_layout = param.ObjectSelector(
+        objects=[WidgetBox, Row, Column], constant=True, default=WidgetBox, doc="""
         The layout object to display the widgets in.""")
 
     widget_type = param.ObjectSelector(default='individual',
@@ -58,17 +58,25 @@ class HoloViews(PaneBase):
 
     priority = 0.8
 
-    _rerender_params = ['object', 'widgets', 'backend', 'widget_type']
+    _rerender_params = ['object', 'backend']
 
     _panes = {'bokeh': Bokeh, 'matplotlib': Matplotlib, 'plotly': Plotly}
 
-    _rename = {'backend': None, 'widget_type': None, 'widgets': None}
+    _rename = {'backend': None, 'widget_type': None, 'widgets': None,
+               'widget_layout': None, 'widget_location': None, 'center': None}
 
     def __init__(self, object=None, **params):
         super(HoloViews, self).__init__(object, **params)
         self.widget_box = self.widget_layout()
-        loc = self.widget_location
+        self._update_widgets()
+        self._update_layout()
+        self._plots = {}
+        self.param.watch(self._update_widgets, self._rerender_params)
 
+
+    @param.depends('center', 'widget_location', watch=True)
+    def _update_layout(self):
+        loc = self.widget_location
         if loc in ('left', 'right'):
             widgets = Column(VSpacer(), self.widget_box, VSpacer())
         elif loc in ('top', 'bottom'):
@@ -100,16 +108,13 @@ class HoloViews(PaneBase):
                 components = [Column(widgets, self)]
             elif loc.startswith('bottom'):
                 components = [Column(self, widgets)]
-
         self.layout[:] = components
-        self._update_widgets()
-        self._plots = {}
-        self.param.watch(self._update_widgets, self._rerender_params)
 
     #----------------------------------------------------------------
     # Callback API
     #----------------------------------------------------------------
 
+    @param.depends('widget_type', 'widgets', watch=True)
     def _update_widgets(self, *events):
         if self.object is None:
             widgets, values = [], []
@@ -129,7 +134,7 @@ class HoloViews(PaneBase):
             watcher = widget.param.watch(self._widget_callback, 'value')
             self._callbacks.append(watcher)
 
-        self.widget_box.objects = widgets
+        self.widget_box[:] = widgets
 
     def _update_plot(self, plot, pane):
         from holoviews.core.util import cross_index
