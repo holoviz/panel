@@ -33,9 +33,11 @@ class HoloViews(PaneBase):
         The HoloViews backend used to render the plot (if None defaults
         to the currently selected renderer).""")
 
-    fancy_layout = param.Boolean(default=False, constant=True, doc="""
-        Whether the widgets should be laid out like the classic HoloViews
-        widgets.""")
+    layout_style = param.ObjectSelector(default='right', constant=True, objects=[
+        'left', 'bottom', 'right', 'top', 'center_left', 'center_right',
+        'center_bottom', 'center_top'], doc="""
+        The layout of the plot and the widgets. The value refers to the
+        position of the widgets relative to the plot.""")
 
     widget_type = param.ObjectSelector(default='individual',
                                        objects=['individual', 'scrubber'], doc=""")
@@ -56,16 +58,29 @@ class HoloViews(PaneBase):
 
     def __init__(self, object=None, **params):
         super(HoloViews, self).__init__(object, **params)
-        self.widget_box = WidgetBox() if self.fancy_layout else Column()
-        if self.fancy_layout:
-            self.layout.insert(0, HSpacer())
-            if params.get('widget_type', self.widget_type) == 'scrubber':
-                self.layout[1] = Column(self, Row())
-            else:
-                self.layout.append(Column())
+        self.widget_box = WidgetBox()
+        centered = 'center' in self.layout_style
+        layout = self.layout_style
+        if layout == 'center_left':
+            components = [Column(VSpacer(), self.widget_box, VSpacer()), HSpacer(), self, HSpacer()]
+        elif layout == 'center_right':
+            components = [HSpacer(), self, HSpacer(), Column(VSpacer(), self.widget_box, VSpacer())]
+        elif layout == 'center_top':
+            widget_container = Column(Row(HSpacer(), self.widget_box, HSpacer()), self)
+            components = [HSpacer(), widget_container, HSpacer()]
+        elif layout == 'center_bottom':
+            widget_container = Column(self, Row(HSpacer(), self.widget_box, HSpacer()))
+            components = [HSpacer(), widget_container, HSpacer()]
+        elif layout == 'left':
+            components = [self.widget_box, self]
+        elif layout == 'right':
+            components = [self, self.widget_box]
+        elif layout == 'top':
+            components = Column(self.widget_box, self)
+        elif layout == 'bottom':
+            components = Column(self, self.widget_box)
+        self.layout[:] = components
         self._update_widgets()
-        if self.fancy_layout:
-            self.layout.insert(2, HSpacer())
         self._plots = {}
         self.param.watch(self._update_widgets, self._rerender_params)
 
@@ -78,7 +93,7 @@ class HoloViews(PaneBase):
             widgets, values = [], []
         else:
             widgets, values = self.widgets_from_dimensions(
-                self.object, self.widgets, self.widget_type, fancy=self.fancy_layout)
+                self.object, self.widgets, self.widget_type)
         self._values = values
 
         # Clean up anything models listening to the previous widgets
@@ -93,28 +108,6 @@ class HoloViews(PaneBase):
             self._callbacks.append(watcher)
 
         self.widget_box.objects = widgets
-
-        if self.fancy_layout:
-            if self.widget_type == 'scrubber':
-                widget_container = self.layout[1][1]
-            else:
-                widget_container = self.layout[-1]
-        else:
-            widget_container = self.layout
-
-        if widgets and self.widget_box not in widget_container:
-            if self.fancy_layout:
-                if self.widget_type == 'scrubber':
-                    widget_container[:] = [HSpacer(), self.widget_box, HSpacer()]
-                else:
-                    widget_container[:] = [VSpacer(), self.widget_box, VSpacer()]
-            else:
-                widget_container.append(self.widget_box)
-        elif not widgets and self.widget_box in widget_container:
-            if self.fancy_layout:
-                widget_container[:] = []
-            elif self.widget_box in self.layout.objects:
-                self.layout.pop(self.widget_box)
 
     def _update_plot(self, plot, pane):
         from holoviews.core.util import cross_index
@@ -206,8 +199,7 @@ class HoloViews(PaneBase):
         return isinstance(obj, Dimensioned)
 
     @classmethod
-    def widgets_from_dimensions(cls, object, widget_types={}, widgets_type='individual',
-                                fancy=False):
+    def widgets_from_dimensions(cls, object, widget_types={}, widgets_type='individual'):
         from holoviews.core import Dimension
         from holoviews.core.util import isnumeric, unicode, datetime_types, unique_iterator
         from holoviews.core.traversal import unique_dimkeys
@@ -225,7 +217,7 @@ class HoloViews(PaneBase):
         widgets = []
         for i, dim in enumerate(dims):
             widget_type, widget, widget_kwargs = None, None, {}
-            if fancy and widgets_type == 'individual':
+            if widgets_type == 'individual':
                 if i == 0 and i == (len(dims)-1):
                     margin = (20, 20, 20, 20)
                 elif i == 0:
