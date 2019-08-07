@@ -68,8 +68,8 @@ class HoloViews(PaneBase):
     def __init__(self, object=None, **params):
         super(HoloViews, self).__init__(object, **params)
         self.widget_box = self.widget_layout()
+        self._widget_container = []
         self._update_widgets()
-        self._update_layout()
         self._plots = {}
         self.param.watch(self._update_widgets, self._rerender_params)
 
@@ -77,7 +77,9 @@ class HoloViews(PaneBase):
     @param.depends('center', 'widget_location', watch=True)
     def _update_layout(self):
         loc = self.widget_location
-        if loc in ('left', 'right'):
+        if not len(self.widget_box):
+            widgets = []
+        elif loc in ('left', 'right'):
             widgets = Column(VSpacer(), self.widget_box, VSpacer())
         elif loc in ('top', 'bottom'):
             widgets = Row(HSpacer(), self.widget_box, HSpacer())
@@ -90,7 +92,13 @@ class HoloViews(PaneBase):
         elif loc in ('left_bottom', 'right_bottom'):
             widgets = Column(VSpacer(), self.widget_box)
 
-        if self.center:
+        self._widget_container = widgets
+        if not widgets:
+            if self.center:
+                components = [HSpacer(), self, HSpacer()]
+            else:
+                components = [self]
+        elif self.center:
             if loc.startswith('left'):
                 components = [widgets, HSpacer(), self, HSpacer()]
             elif loc.startswith('right'):
@@ -135,6 +143,9 @@ class HoloViews(PaneBase):
             self._callbacks.append(watcher)
 
         self.widget_box[:] = widgets
+        if ((widgets and self.widget_box not in self._widget_container) or
+            (not widgets and self.widget_box in self._widget_container)):
+            self._update_layout()
 
     def _update_plot(self, plot, pane):
         from holoviews.core.util import cross_index
