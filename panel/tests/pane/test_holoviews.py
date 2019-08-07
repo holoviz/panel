@@ -208,12 +208,12 @@ def test_holoviews_updates_widgets(document, comm):
 
     hv_pane.widgets = {'X': Select}
     assert isinstance(hv_pane.widget_box[0], Select)
-    assert isinstance(layout.children[1].children[1].children[0], BkSelect)
+    assert isinstance(layout.children[1].children[0].children[0], BkSelect)
 
     hv_pane.widgets = {'X': DiscreteSlider}
     assert isinstance(hv_pane.widget_box[0], DiscreteSlider)
-    assert isinstance(layout.children[1].children[1].children[0], BkColumn)
-    assert isinstance(layout.children[1].children[1].children[0].children[1], BkSlider)
+    assert isinstance(layout.children[1].children[0].children[0], BkColumn)
+    assert isinstance(layout.children[1].children[0].children[0].children[1], BkSlider)
 
 @hv_available
 def test_holoviews_widgets_update_plot(document, comm):

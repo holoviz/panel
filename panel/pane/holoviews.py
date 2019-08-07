@@ -36,7 +36,7 @@ class HoloViews(PaneBase):
     center = param.Boolean(default=False, doc="""
         Whether to center the plot.""")
 
-    widget_location = param.ObjectSelector(default='right', objects=[
+    widget_location = param.ObjectSelector(default='right_top', objects=[
         'left', 'bottom', 'right', 'top', 'top_left', 'top_right',
         'bottom_left', 'bottom_right', 'left_top', 'left_bottom',
         'right_top', 'right_bottom'], doc="""
