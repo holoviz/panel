@@ -17,4 +17,5 @@ from .slider import (# noqa
 from .select import (# noqa
     AutocompleteInput, CheckBoxGroup, CheckButtonGroup, CrossSelector,
     MultiSelect, RadioButtonGroup, RadioBoxGroup, Select, ToggleGroup)
+from .tables import DataFrame # noqa
 

@@ -15,7 +15,6 @@ from .image import GIF, JPG, PNG, SVG # noqa
 from .markup import HTML, Markdown, Str # noqa
 from .plotly import Plotly # noqa
 from .plot import Bokeh, Matplotlib, RGGPlot, YT # noqa
-from .tables import DataFrame # noqa
 from .vega import Vega # noqa
 from .vtk import VTK, VTKVolume # noqa
 from .ace import Ace # noqa
