@@ -226,6 +226,7 @@ class ListPanel(Panel):
                                  (expected, type(self).__name__))
         for i, pane in zip(range(start, end), panes):
             new_objects[i] = panel(pane)
+
         self.objects = new_objects
 
     def clone(self, *objects, **params):
