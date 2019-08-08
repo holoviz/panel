@@ -11,6 +11,11 @@ services:
 
 sudo: false
 
+addons:
+  apt:
+    packages:
+    - libglu1-mesa
+
 env:
   global:
     - PYENV_VERSION=3.7
