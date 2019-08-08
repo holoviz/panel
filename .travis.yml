@@ -21,6 +21,7 @@ env:
     - PKG_TEST_PYTHON="--test-python=py36"
     - DISPLAY=":99.0"
     - PYTHON_VERSION=3.6
+    - DEPS="-o recommended -o tests -o build"
 
 stages:
   - test
@@ -58,7 +59,7 @@ jobs:
         - doit env_create $CHANS_DEV --python=$PYTHON_VERSION
         - source activate test-environment
         - conda install -c conda-forge mesalib
-        - doit develop_install -o recommended -o tests -o build $CHANS_DEV
+        - doit develop_install $CHANS_DEV $DEPS
         - python setup.py develop --no-deps
         - bokeh sampledata
         - doit env_capture
@@ -113,10 +114,8 @@ jobs:
     - &doc_build
       <<: *conda_default
       stage: docs
-      env: DESC="docs" HV_DOC_HTML='true'
+      env: DESC="docs" HV_DOC_HTML='true' DEPS="-o recommended -o tests -o build -o doc -examples"
       script:
-        - doit develop_install $CHANS_DEV -o doc -o examples
-        # note: will vastly simplified in a future version of nbsite
         - nbsite generate-rst --org pyviz --project-name panel
         - nbsite build --what=html --output=builtdocs
         - touch ./builtdocs/.nojekyll
