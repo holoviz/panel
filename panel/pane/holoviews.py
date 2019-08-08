@@ -67,11 +67,13 @@ class HoloViews(PaneBase):
 
     def __init__(self, object=None, **params):
         super(HoloViews, self).__init__(object, **params)
+        self._initialized = False
         self.widget_box = self.widget_layout()
         self._widget_container = []
         self._update_widgets()
         self._plots = {}
         self.param.watch(self._update_widgets, self._rerender_params)
+        self._initialized = True
 
 
     @param.depends('center', 'widget_location', watch=True)
@@ -144,7 +146,8 @@ class HoloViews(PaneBase):
 
         self.widget_box[:] = widgets
         if ((widgets and self.widget_box not in self._widget_container) or
-            (not widgets and self.widget_box in self._widget_container)):
+            (not widgets and self.widget_box in self._widget_container) or
+            not self._initialized):
             self._update_layout()
 
     def _update_plot(self, plot, pane):
