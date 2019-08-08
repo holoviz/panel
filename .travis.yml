@@ -9,6 +9,13 @@ os:
 services:
   - xvfb
 
+sudo: false
+
+addons:
+  apt:
+    packages:
+    - libglu1-mesa
+
 env:
   global:
     - PYENV_VERSION=3.7
@@ -47,7 +54,6 @@ jobs:
       stage: test
       env: DESC="dev test_all"
       before_install:
-        - sudo apt-get install libglu1-mesa
         # install doit/pyctdev and use to install miniconda...
         - pip install pyctdev && doit miniconda_install && pip uninstall -y doit pyctdev
         - export PATH="$HOME/miniconda/bin:$PATH" && hash -r
