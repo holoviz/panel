@@ -114,7 +114,7 @@ jobs:
     - &doc_build
       <<: *conda_default
       stage: docs
-      env: DESC="docs" HV_DOC_HTML='true' DEPS="-o recommended -o tests -o build -o doc -examples"
+      env: DESC="docs" HV_DOC_HTML='true' DEPS="-o recommended -o tests -o build -o doc -o examples"
       script:
         - nbsite generate-rst --org pyviz --project-name panel
         - nbsite build --what=html --output=builtdocs
