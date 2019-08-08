@@ -64,14 +64,21 @@ class HoloViews(PaneBase):
 
     def __init__(self, object=None, **params):
         super(HoloViews, self).__init__(object, **params)
+<<<<<<< HEAD
         self.widget_box = WidgetBox() if self.fancy_layout else Column()
         if self.fancy_layout:
             self.layout.insert(0, HSpacer())
+=======
+        self._initialized = False
+        self.widget_box = self.widget_layout()
+        self._widget_container = []
+>>>>>>> 20847d0... Small fix for HoloViews pane initialization
         self._update_widgets()
         if self.fancy_layout:
             self.layout.insert(2, HSpacer())
         self._plots = {}
         self.param.watch(self._update_widgets, self._rerender_params)
+        self._initialized = True
 
     #----------------------------------------------------------------
     # Callback API
