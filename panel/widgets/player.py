@@ -45,6 +45,8 @@ class Player(PlayerBase):
 
     value = param.Integer(default=0, doc="Current player value")
 
+    _supports_embed = True
+
     def __init__(self, **params):
         if 'length' in params:
             if 'start' in params or 'end' in params:
@@ -54,6 +56,11 @@ class Player(PlayerBase):
         elif params.get('start', 0) > 0 and not 'value' in params:
             params['value'] = params['start']
         super(Player, self).__init__(**params)
+
+    def _get_embed_state(self, root, max_opts=3):
+        return (self, self._models[root.ref['id']][0], range(self.start, self.end, self.step),
+                lambda x: x.value, 'value', 'cb_obj.value')
+
 
 
 class DiscretePlayer(PlayerBase, SelectBase):
