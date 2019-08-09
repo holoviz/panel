@@ -61,12 +61,19 @@ class Panel(Reactive):
         if self._rename['objects'] in msg:
             old = events['objects'].old
             msg[self._rename['objects']] = self._get_objects(model, old, doc, root, comm)
+
+        held = doc._hold
+        if comm is None and not held:
+            doc.hold()
         model.update(**msg)
 
         from .io import state
         ref = root.ref['id']
         if ref in state._views:
             state._views[ref][0]._preprocess(root)
+
+        if comm is None and not held:
+            doc.unhold()
 
     #----------------------------------------------------------------
     # Model API
