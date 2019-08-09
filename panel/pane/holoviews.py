@@ -36,6 +36,10 @@ class HoloViews(PaneBase):
     center = param.Boolean(default=False, doc="""
         Whether to center the plot.""")
 
+    linked_axes = param.Boolean(default=False, doc="""
+        Whether to use link the axes of bokeh plots inside this pane
+        across a panel layout.""")
+
     widget_location = param.ObjectSelector(default='right_top', objects=[
         'left', 'bottom', 'right', 'top', 'top_left', 'top_right',
         'bottom_left', 'bottom_right', 'left_top', 'left_bottom',
@@ -408,5 +412,29 @@ def find_links(root_view, root_model):
     root_view._found_links.update(new_found)
     return callbacks
 
+def link_axes(root_view, root_model):
+    ref = root_model.ref['id']
+    range_map = defaultdict(list)
+    for pane in root_view.select(pn.pane.HoloViews):
+        if not pane.linked_axes:
+            continue
+        for p in pane._plots[ref][0].traverse(specs=[ElementPlot]):
+            fig = p.state
+            if fig.x_range.tags:
+                range_map[fig.x_range.tags[0]].append((fig, p, fig.x_range))
+            if fig.y_range.tags:
+                range_map[fig.y_range.tags[0]].append((fig, p, fig.y_range))
 
+
+    for tag, axes in range_map.items():
+        fig, p, axis = axes[0]
+        for fig, p, _ in axes[1:]:
+            if tag in fig.x_range.tags and not axis is fig.x_range:
+                fig.x_range = axis
+                p.handles['x_range'] = axis
+            if tag in fig.y_range.tags and not axis is fig.y_range:
+                fig.y_range = axis
+                p.handles['y_range'] = axis
+
+Viewable._preprocessing_hooks.append(link_axes)
 Viewable._preprocessing_hooks.append(find_links)
