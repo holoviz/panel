@@ -64,21 +64,59 @@ class HoloViews(PaneBase):
 
     def __init__(self, object=None, **params):
         super(HoloViews, self).__init__(object, **params)
-<<<<<<< HEAD
         self.widget_box = WidgetBox() if self.fancy_layout else Column()
         if self.fancy_layout:
             self.layout.insert(0, HSpacer())
-=======
-        self._initialized = False
-        self.widget_box = self.widget_layout()
-        self._widget_container = []
->>>>>>> 20847d0... Small fix for HoloViews pane initialization
         self._update_widgets()
         if self.fancy_layout:
             self.layout.insert(2, HSpacer())
         self._plots = {}
         self.param.watch(self._update_widgets, self._rerender_params)
         self._initialized = True
+
+    @param.depends('center', 'widget_location', watch=True)
+    def _update_layout(self):
+        loc = self.widget_location
+        if not len(self.widget_box):
+            widgets = []
+        elif loc in ('left', 'right'):
+            widgets = Column(VSpacer(), self.widget_box, VSpacer())
+        elif loc in ('top', 'bottom'):
+            widgets = Row(HSpacer(), self.widget_box, HSpacer())
+        elif loc in ('top_left', 'bottom_left'):
+            widgets = Row(self.widget_box, HSpacer())
+        elif loc in ('top_right', 'bottom_right'):
+            widgets = Row(HSpacer(), self.widget_box)
+        elif loc in ('left_top', 'right_top'):
+            widgets = Column(self.widget_box, VSpacer())
+        elif loc in ('left_bottom', 'right_bottom'):
+            widgets = Column(VSpacer(), self.widget_box)
+
+        self._widget_container = widgets
+        if not widgets:
+            if self.center:
+                components = [HSpacer(), self, HSpacer()]
+            else:
+                components = [self]
+        elif self.center:
+            if loc.startswith('left'):
+                components = [widgets, HSpacer(), self, HSpacer()]
+            elif loc.startswith('right'):
+                components = [HSpacer(), self, HSpacer(), widgets]
+            elif loc.startswith('top'):
+                components = [HSpacer(), Column(widgets, Row(HSpacer(), self, HSpacer())), HSpacer()]
+            elif loc.startswith('bottom'):
+                components = [HSpacer(), Column(Row(HSpacer(), self, HSpacer()), widgets), HSpacer()]
+        else:
+            if loc.startswith('left'):
+                components = [widgets, self]
+            elif loc.startswith('right'):
+                components = [self, widgets]
+            elif loc.startswith('top'):
+                components = [Column(widgets, self)]
+            elif loc.startswith('bottom'):
+                components = [Column(self, widgets)]
+        self.layout[:] = components
 
     #----------------------------------------------------------------
     # Callback API

@@ -254,25 +254,76 @@ def test_holoviews_with_widgets_not_shown(document, comm):
 def test_holoviews_fancy_layout(document, comm):
     hmap = hv.HoloMap({(i, chr(65+i)): hv.Curve([i]) for i in range(3)}, kdims=['X', 'Y'])
 
-    hv_pane = HoloViews(hmap, fancy_layout=True)
-    layout_obj = hv_pane.layout
-    layout = layout_obj.get_root(document, comm)
-    model = layout.children[1]
-    assert hv_pane is layout_obj[1]
-    assert len(hv_pane.widget_box.objects) == 2
-    assert hv_pane.widget_box is layout_obj[-1][1]
-    assert hv_pane.widget_box.objects[0].name == 'X'
-    assert hv_pane.widget_box.objects[1].name == 'Y'
+    hv_pane = HoloViews(hmap, backend='bokeh')
+    layout = hv_pane.layout
+    model = layout.get_root(document, comm)
 
-    assert hv_pane._models[layout.ref['id']][1].children[1] is model
+    for center in (True, False):
+        for loc in HoloViews.param.widget_location.objects:
+            hv_pane.set_param(center=center, widget_location=loc)
+            if center:
+                if loc.startswith('left'):
+                    assert len(layout) == 4
+                    widgets, hv_obj = layout[0], layout[2]
+                    wmodel, hv_model = model.children[0],  model.children[2]
+                elif loc.startswith('right'):
+                    assert len(layout) == 4
+                    hv_obj, widgets = layout[1], layout[3]
+                    wmodel, hv_model = model.children[3],  model.children[1]
+                elif loc.startswith('top'):
+                    assert len(layout) == 3
+                    col = layout[1]
+                    cmodel = model.children[1]
+                    assert isinstance(col, Column)
+                    widgets, hv_col = col
+                    hv_obj = hv_col[1]
+                    wmodel, hv_model = cmodel.children[0],  cmodel.children[1].children[1]
+                elif loc.startswith('bottom'):
+                    col = layout[1]
+                    cmodel = model.children[1]
+                    assert isinstance(col, Column)
+                    hv_col, widgets = col
+                    hv_obj = hv_col[1]
+                    wmodel, hv_model = cmodel.children[1],  cmodel.children[0].children[1]
+            else:
+                if loc.startswith('left'):
+                    assert len(layout) == 2
+                    widgets, hv_obj = layout
+                    wmodel, hv_model = model.children
+                elif loc.startswith('right'):
+                    assert len(layout) == 2
+                    hv_obj, widgets = layout
+                    hv_model, wmodel = model.children
+                elif loc.startswith('top'):
+                    assert len(layout) == 1
+                    col = layout[0]
+                    cmodel = model.children[0]
+                    assert isinstance(col, Column)
+                    widgets, hv_obj = col
+                    wmodel, hv_model = cmodel.children
+                elif loc.startswith('bottom'):
+                    assert len(layout) == 1
+                    col = layout[0]
+                    cmodel = model.children[0]
+                    assert isinstance(col, Column)
+                    hv_obj, widgets = col
+                    hv_model, wmodel = cmodel.children
+            assert hv_pane is hv_obj
+            assert isinstance(hv_model, Figure)
 
-    hv_pane.object = hv.Curve([1, 2, 3])
-    assert len(hv_pane.widget_box.objects) == 0
-    assert len(layout_obj) == 3
-    assert hv_pane is layout_obj[1]
-
-    hv_pane.object = hmap
-    assert hv_pane.widget_box is layout_obj[-1][1]
+            if loc in ('left', 'right', 'top', 'bottom',
+                       'top_right', 'right_bottom', 'bottom_right',
+                       'left_bottom'):
+                box = widgets[1]
+                boxmodel = wmodel.children[1]
+            else:
+                box = widgets[0]
+                boxmodel = wmodel.children[0]
+            assert hv_pane.widget_box is box
+            assert isinstance(boxmodel, BkColumn)
+            assert isinstance(boxmodel.children[0], BkColumn)
+            assert isinstance(boxmodel.children[0].children[1], BkSlider)
+            assert isinstance(boxmodel.children[1], BkSelect)
 
 
 @hv_available
