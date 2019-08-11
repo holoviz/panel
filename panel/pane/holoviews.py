@@ -36,7 +36,7 @@ class HoloViews(PaneBase):
     center = param.Boolean(default=False, doc="""
         Whether to center the plot.""")
 
-    linked_axes = param.Boolean(default=False, doc="""
+    linked_axes = param.Boolean(default=True, doc="""
         Whether to use link the axes of bokeh plots inside this pane
         across a panel layout.""")
 
@@ -412,19 +412,38 @@ def find_links(root_view, root_model):
     root_view._found_links.update(new_found)
     return callbacks
 
+
 def link_axes(root_view, root_model):
+    """
+    Pre-processing hook to allow linking axes across HoloViews bokeh
+    plots.
+    """
+    panes = root_view.select(HoloViews)
+
+    if not panes:
+        return
+
+    from holoviews.core.options import Store
+    from holoviews.plotting.bokeh.element import ElementPlot
+
     ref = root_model.ref['id']
     range_map = defaultdict(list)
-    for pane in root_view.select(pn.pane.HoloViews):
-        if not pane.linked_axes:
+    for pane in panes:
+        if ref not in pane._plots:
             continue
-        for p in pane._plots[ref][0].traverse(specs=[ElementPlot]):
+        plot = pane._plots[ref][0]
+        if not pane.linked_axes or plot.renderer.backend != 'bokeh':
+            continue
+        for p in plot.traverse(specs=[ElementPlot]):
+            axiswise = Store.lookup_options('bokeh', p.current_frame, 'norm').kwargs.get('axiswise')
+            if not p.shared_axes or axiswise:
+                continue
+
             fig = p.state
             if fig.x_range.tags:
                 range_map[fig.x_range.tags[0]].append((fig, p, fig.x_range))
             if fig.y_range.tags:
                 range_map[fig.y_range.tags[0]].append((fig, p, fig.y_range))
-
 
     for tag, axes in range_map.items():
         fig, p, axis = axes[0]
