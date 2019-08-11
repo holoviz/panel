@@ -275,14 +275,16 @@ def test_holoviews_layouts(document, comm):
                     col = layout[1]
                     cmodel = model.children[1]
                     assert isinstance(col, Column)
-                    widgets, hv_obj = col
-                    wmodel, hv_model = cmodel.children[0],  cmodel.children[1]
+                    widgets, hv_col = col
+                    hv_obj = hv_col[1]
+                    wmodel, hv_model = cmodel.children[0],  cmodel.children[1].children[1]
                 elif loc.startswith('bottom'):
                     col = layout[1]
                     cmodel = model.children[1]
                     assert isinstance(col, Column)
-                    hv_obj, widgets = col
-                    wmodel, hv_model = cmodel.children[1],  cmodel.children[0]
+                    hv_col, widgets = col
+                    hv_obj = hv_col[1]
+                    wmodel, hv_model = cmodel.children[1],  cmodel.children[0].children[1]
             else:
                 if loc.startswith('left'):
                     assert len(layout) == 2

@@ -110,9 +110,9 @@ class HoloViews(PaneBase):
             elif loc.startswith('right'):
                 components = [HSpacer(), self, HSpacer(), widgets]
             elif loc.startswith('top'):
-                components = [HSpacer(), Column(widgets, self), HSpacer()]
+                components = [HSpacer(), Column(widgets, Row(HSpacer(), self, HSpacer())), HSpacer()]
             elif loc.startswith('bottom'):
-                components = [HSpacer(), Column(self, widgets), HSpacer()]
+                components = [HSpacer(), Column(Row(HSpacer(), self, HSpacer()), widgets), HSpacer()]
         else:
             if loc.startswith('left'):
                 components = [widgets, self]
