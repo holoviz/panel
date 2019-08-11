@@ -36,6 +36,10 @@ class HoloViews(PaneBase):
     center = param.Boolean(default=False, doc="""
         Whether to center the plot.""")
 
+    linked_axes = param.Boolean(default=True, doc="""
+        Whether to use link the axes of bokeh plots inside this pane
+        across a panel layout.""")
+
     widget_location = param.ObjectSelector(default='right_top', objects=[
         'left', 'bottom', 'right', 'top', 'top_left', 'top_right',
         'bottom_left', 'bottom_right', 'left_top', 'left_bottom',
@@ -409,4 +413,47 @@ def find_links(root_view, root_model):
     return callbacks
 
 
+def link_axes(root_view, root_model):
+    """
+    Pre-processing hook to allow linking axes across HoloViews bokeh
+    plots.
+    """
+    panes = root_view.select(HoloViews)
+
+    if not panes:
+        return
+
+    from holoviews.core.options import Store
+    from holoviews.plotting.bokeh.element import ElementPlot
+
+    ref = root_model.ref['id']
+    range_map = defaultdict(list)
+    for pane in panes:
+        if ref not in pane._plots:
+            continue
+        plot = pane._plots[ref][0]
+        if not pane.linked_axes or plot.renderer.backend != 'bokeh':
+            continue
+        for p in plot.traverse(specs=[ElementPlot]):
+            axiswise = Store.lookup_options('bokeh', p.current_frame, 'norm').kwargs.get('axiswise')
+            if not p.shared_axes or axiswise:
+                continue
+
+            fig = p.state
+            if fig.x_range.tags:
+                range_map[fig.x_range.tags[0]].append((fig, p, fig.x_range))
+            if fig.y_range.tags:
+                range_map[fig.y_range.tags[0]].append((fig, p, fig.y_range))
+
+    for tag, axes in range_map.items():
+        fig, p, axis = axes[0]
+        for fig, p, _ in axes[1:]:
+            if tag in fig.x_range.tags and not axis is fig.x_range:
+                fig.x_range = axis
+                p.handles['x_range'] = axis
+            if tag in fig.y_range.tags and not axis is fig.y_range:
+                fig.y_range = axis
+                p.handles['y_range'] = axis
+
+Viewable._preprocessing_hooks.append(link_axes)
 Viewable._preprocessing_hooks.append(find_links)
