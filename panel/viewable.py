@@ -273,6 +273,7 @@ class Viewable(Layoutable):
         if config.embed:
             embed_state(self, model, doc,
                         json=config.embed_json,
+                        json_prefix=config.embed_json_prefix,
                         save_path=config.embed_save_path,
                         load_path=config.embed_load_path)
             return render_model(model)
