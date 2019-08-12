@@ -57,6 +57,9 @@ class _config(param.Parameterized):
     _embed_json = param.Boolean(default=False, doc="""
         Whether to save embedded state to json files.""")
 
+    _embed_json_prefix = param.String(default='', doc="""
+        Prefix for randomly generated json directories.""")
+
     _embed_save_path = param.String(default='./', doc="""
         Where to save json files for embedded state.""")
 
@@ -102,11 +105,22 @@ class _config(param.Parameterized):
         self._embed_json = value
 
     @property
+    def embed_json_prefix(self):
+        if self._embed_json_prefix is not None:
+            return self._embed_json_prefix
+        else:
+            return os.environ.get('PANEL_EMBED_JSON_PREFIX', _config._embed_json_prefix)
+
+    @embed_json_prefix.setter
+    def embed_json_prefix(self, value):
+        self._embed_json_prefix = value
+
+    @property
     def embed_save_path(self):
         if self._embed_save_path is not None:
             return self._embed_save_path
         else:
-            return os.environ.get('PANEL_EMBED_SAVE_PATH', _config._embed_save_path) in self._truthy
+            return os.environ.get('PANEL_EMBED_SAVE_PATH', _config._embed_save_path)
 
     @embed_save_path.setter
     def embed_save_path(self, value):
@@ -117,7 +131,7 @@ class _config(param.Parameterized):
         if self._embed_load_path is not None:
             return self._embed_load_path
         else:
-            return os.environ.get('PANEL_EMBED_LOAD_PATH', _config._embed_load_path) in self._truthy
+            return os.environ.get('PANEL_EMBED_LOAD_PATH', _config._embed_load_path)
 
     @embed_load_path.setter
     def embed_load_path(self, value):

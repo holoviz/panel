@@ -273,6 +273,7 @@ class Viewable(Layoutable):
         if config.embed:
             embed_state(self, model, doc,
                         json=config.embed_json,
+                        json_prefix=config.embed_json_prefix,
                         save_path=config.embed_save_path,
                         load_path=config.embed_load_path)
             return render_model(model)
@@ -405,7 +406,8 @@ class Viewable(Layoutable):
 
     def save(self, filename, title=None, resources=None, template=None,
              template_variables={}, embed=False, max_states=1000,
-             max_opts=3, embed_json=False, save_path='./', load_path=None):
+             max_opts=3, embed_json=False, json_prefix='', save_path='./',
+             load_path=None):
         """
         Saves Panel objects to file.
 
@@ -425,6 +427,8 @@ class Viewable(Layoutable):
            The maximum number of states for a single widget
         embed_json: boolean (default=True)
            Whether to export the data to json files
+        json_prefix: str (default='')
+           Prefix for the auto-generated json directory
         save_path: str (default='./')
            The path to save json files to
         load_path: str (default=None)
@@ -432,7 +436,7 @@ class Viewable(Layoutable):
         """
         return save(self, filename, title, resources, template,
                     template_variables, embed, max_states, max_opts,
-                    embed_json, save_path, load_path)
+                    embed_json, json_prefix, save_path, load_path)
 
     def server_doc(self, doc=None, title=None):
         """
