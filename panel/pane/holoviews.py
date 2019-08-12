@@ -176,11 +176,20 @@ class HoloViews(PaneBase):
 
     @classmethod
     def widgets_from_dimensions(cls, object, widget_types={}, widgets_type='individual'):
-        from holoviews.core import Dimension
+        from holoviews.core import Dimension, DynamicMap
+        from holoviews.core.options import SkipRendering
         from holoviews.core.util import isnumeric, unicode, datetime_types
         from holoviews.core.traversal import unique_dimkeys
         from holoviews.plotting.util import get_dynamic_mode
         from ..widgets import Widget, DiscreteSlider, Select, FloatSlider, DatetimeInput
+
+        if isinstance(object, DynamicMap) and object.unbounded:
+            dims = ', '.join('%r' % dim for dim in object.unbounded)
+            msg = ('DynamicMap cannot be displayed without explicit indexing '
+                   'as {dims} dimension(s) are unbounded. '
+                   '\nSet dimensions bounds with the DynamicMap redim.range '
+                   'or redim.values methods.')
+            raise SkipRendering(msg.format(dims=dims))
 
         dynamic, bounded = get_dynamic_mode(object)
         dims, keys = unique_dimkeys(object)

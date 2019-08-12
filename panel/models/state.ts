@@ -59,7 +59,14 @@ export class State extends Model {
   _receive_json(result: string, path: string): void {
     const state = JSON.parse(result)
     this._cache[path] = state
-    this.apply_state(state)
+	let current: any = this.state
+    for (const i of this.values) {
+      current = current[i]
+    }
+    if (current === path)
+      this.apply_state(state)
+	else if (this._cache[current])
+      this.apply_state(this._cache[current])
   }
 
   set_state(widget: any, value: any): void {
