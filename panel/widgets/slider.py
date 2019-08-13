@@ -79,7 +79,9 @@ class ContinuousSlider(_SliderBase):
         vals = [dtype(v) for v in np.arange(start, end+step, step)]
 
         # Replace model
-        dw = DiscreteSlider(options=vals, name=self.name)
+        layout_opts = {k: v for k, v in self.param.get_param_values()
+                       if k in Layoutable.param and k != 'name'}
+        dw = DiscreteSlider(options=vals, name=self.name, **layout_opts)
         dw.link(self, value='value')
         self._models.pop(ref)
         index = parent.children.index(w_model)
