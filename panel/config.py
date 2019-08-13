@@ -81,12 +81,15 @@ class _config(param.Parameterized):
     @contextmanager
     def set(self, **kwargs):
         values = [(k, v) for k, v in self.param.get_param_values() if k != 'name']
+        overrides = [(k, getattr(self, k+'_')) for k in self.param if k.startswith('_')]
         for k, v in kwargs.items():
             setattr(self, k, v)
         try:
             yield
         finally:
             self.set_param(**dict(values))
+            for k, v in overrides:
+                setattr(self, k+'_', v)
 
     @property
     def embed(self):
