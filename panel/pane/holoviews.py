@@ -155,7 +155,7 @@ class HoloViews(PaneBase):
             self._update_layout()
 
     def _update_plot(self, plot, pane):
-        from holoviews.core.util import cross_index
+        from holoviews.core.util import cross_index, wrap_tuple_streams
 
         widgets = self.widget_box.objects
         if not widgets:
@@ -164,6 +164,11 @@ class HoloViews(PaneBase):
             key = cross_index([v for v in self._values.values()], widgets[0].value)
         else:
             key = tuple(w.value for w in widgets)
+            if plot.dynamic:
+                widget_dims = [w.name for w in widgets]
+                key = [key[widget_dims.index(kdim.name)] if kdim.name in widget_dims else None
+                       for kdim in plot.dimensions]
+                key = wrap_tuple_streams(tuple(key), plot.dimensions, plot.streams)
 
         if plot.backend == 'bokeh':
             if plot.comm or state._unblocked(plot.document):
@@ -444,6 +449,9 @@ def link_axes(root_view, root_model):
         if not pane.linked_axes or plot.renderer.backend != 'bokeh':
             continue
         for p in plot.traverse(specs=[ElementPlot]):
+            if p.current_frame is None:
+                continue
+
             axiswise = Store.lookup_options('bokeh', p.current_frame, 'norm').kwargs.get('axiswise')
             if not p.shared_axes or axiswise:
                 continue
