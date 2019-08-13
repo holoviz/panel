@@ -191,14 +191,18 @@ class HoloViews(PaneBase):
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         from holoviews import Store
+        from holoviews.plotting.plot import Plot
         if root is None:
             return self.get_root(doc, comm)
         ref = root.ref['id']
         if self.object is None:
             model = _BkSpacer()
         else:
-            plot = self._render(doc, comm, root)
-            backend = self.backend or Store.current_backend
+            if isinstance(self.object, Plot):
+                plot = self.object
+            else:
+                plot = self._render(doc, comm, root)
+            backend = plot.renderer.backend
             child_pane = self._panes.get(backend, Pane)(plot.state)
             self._update_plot(plot, child_pane)
             model = child_pane._get_model(doc, root, parent, comm)
@@ -246,7 +250,8 @@ class HoloViews(PaneBase):
         if 'holoviews' not in sys.modules:
             return False
         from holoviews.core.dimension import Dimensioned
-        return isinstance(obj, Dimensioned)
+        from holoviews.plotting.plot import Plot
+        return isinstance(obj, Dimensioned) or isinstance(obj, Plot)
 
     @classmethod
     def widgets_from_dimensions(cls, object, widget_types={}, widgets_type='individual'):
@@ -254,8 +259,14 @@ class HoloViews(PaneBase):
         from holoviews.core.options import SkipRendering
         from holoviews.core.util import isnumeric, unicode, datetime_types, unique_iterator
         from holoviews.core.traversal import unique_dimkeys
+        from holoviews.plotting.plot import Plot, GenericCompositePlot
         from holoviews.plotting.util import get_dynamic_mode
         from ..widgets import Widget, DiscreteSlider, Select, FloatSlider, DatetimeInput, IntSlider
+
+        if isinstance(object, GenericCompositePlot):
+            object = plot.layout
+        elif isinstance(object, Plot):
+            object = object.hmap
 
         if isinstance(object, DynamicMap) and object.unbounded:
             dims = ', '.join('%r' % dim for dim in object.unbounded)
