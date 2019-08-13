@@ -45,6 +45,17 @@ class HoloViews(PaneBase):
         Explicit renderer instance to use for rendering the HoloViews
         plot. Overrides the backend.""")
 
+    widget_location = param.ObjectSelector(default='right_top', objects=[
+        'left', 'bottom', 'right', 'top', 'top_left', 'top_right',
+        'bottom_left', 'bottom_right', 'left_top', 'left_bottom',
+        'right_top', 'right_bottom'], doc="""
+        The layout of the plot and the widgets. The value refers to the
+        position of the widgets relative to the plot.""")
+
+    widget_layout = param.ObjectSelector(
+        objects=[WidgetBox, Row, Column], constant=True, default=WidgetBox, doc="""
+        The layout object to display the widgets in.""")
+
     widget_type = param.ObjectSelector(default='individual',
                                        objects=['individual', 'scrubber'], doc=""")
         Whether to generate individual widgets for each dimension or
