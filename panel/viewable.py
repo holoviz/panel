@@ -282,7 +282,12 @@ class Viewable(Layoutable):
                                'Ensure you run pn.extension() before '
                                'displaying objects in the notebook.')
             return None
-        state._comm_manager = JupyterCommManager
+
+        try:
+            assert get_ipython().kernel is not None # noqa
+            state._comm_manager = JupyterCommManager
+        except:
+            pass
         comm = state._comm_manager.get_server_comm()
         doc = _Document()
         model = self._render_model(doc, comm)

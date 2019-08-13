@@ -210,10 +210,10 @@ class panel_extension(_pyviz_extension):
             #       to allow multiple cleanup comms to be registered
             _JupyterCommManager.get_client_comm(self._process_comm_msg,
                                                 "hv-extension-comm")
+            state._comm_manager = _JupyterCommManager
+
         load_notebook(config.inline)
         panel_extension._loaded = True
-
-        state._comm_manager = _JupyterCommManager
 
         if 'holoviews' in sys.modules:
             import holoviews as hv
