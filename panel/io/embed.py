@@ -100,6 +100,7 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
     from ..widgets import Widget, DiscreteSlider
 
     if not isinstance(panel, Panel):
+        add_to_doc(model, doc)
         return
     target = model.ref['id']
     _, _, _, comm = state._views[target]
