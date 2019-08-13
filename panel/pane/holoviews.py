@@ -40,6 +40,11 @@ class HoloViews(PaneBase):
         Whether to use link the axes of bokeh plots inside this pane
         across a panel layout.""")
 
+
+    renderer = param.Parameter(default=None, doc="""
+        Explicit renderer instance to use for rendering the HoloViews
+        plot. Overrides the backend.""")
+
     widget_location = param.ObjectSelector(default='right_top', objects=[
         'left', 'bottom', 'right', 'top', 'top_left', 'top_right',
         'bottom_left', 'bottom_right', 'left_top', 'left_bottom',
@@ -190,15 +195,18 @@ class HoloViews(PaneBase):
     #----------------------------------------------------------------
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        from holoviews import Store
+        from holoviews.plotting.plot import Plot
         if root is None:
             return self.get_root(doc, comm)
         ref = root.ref['id']
         if self.object is None:
             model = _BkSpacer()
         else:
-            plot = self._render(doc, comm, root)
-            backend = self.backend or Store.current_backend
+            if isinstance(self.object, Plot):
+                plot = self.object
+            else:
+                plot = self._render(doc, comm, root)
+            backend = plot.renderer.backend
             child_pane = self._panes.get(backend, Pane)(plot.state)
             self._update_plot(plot, child_pane)
             model = child_pane._get_model(doc, root, parent, comm)
@@ -211,15 +219,20 @@ class HoloViews(PaneBase):
         return model
 
     def _render(self, doc, comm, root):
-        from holoviews import Store, renderer
-        if not Store.renderers:
-            loaded_backend = (self.backend or 'bokeh')
-            renderer(loaded_backend)
-            Store.current_backend = loaded_backend
-        backend = self.backend or Store.current_backend
-        renderer = Store.renderers[backend]
-        if backend == 'bokeh':
-            renderer = renderer.instance(mode='server' if comm is None else 'default')
+        from holoviews import Store, renderer as load_renderer
+        if self.renderer:
+            renderer = self.renderer
+            backend = renderer.backend
+        else:
+            if not Store.renderers:
+                loaded_backend = (self.backend or 'bokeh')
+                load_renderer(loaded_backend)
+                Store.current_backend = loaded_backend
+            backend = self.backend or Store.current_backend
+            renderer = Store.renderers[backend]
+        mode = 'server' if comm is None else 'default'
+        if backend == 'bokeh' and mode != renderer.mode:
+            renderer = renderer.instance(mode=mode)
         kwargs = {'doc': doc, 'root': root} if backend == 'bokeh' else {}
         if comm:
             kwargs['comm'] = comm
@@ -246,7 +259,8 @@ class HoloViews(PaneBase):
         if 'holoviews' not in sys.modules:
             return False
         from holoviews.core.dimension import Dimensioned
-        return isinstance(obj, Dimensioned)
+        from holoviews.plotting.plot import Plot
+        return isinstance(obj, Dimensioned) or isinstance(obj, Plot)
 
     @classmethod
     def widgets_from_dimensions(cls, object, widget_types={}, widgets_type='individual'):
@@ -254,8 +268,14 @@ class HoloViews(PaneBase):
         from holoviews.core.options import SkipRendering
         from holoviews.core.util import isnumeric, unicode, datetime_types, unique_iterator
         from holoviews.core.traversal import unique_dimkeys
+        from holoviews.plotting.plot import Plot, GenericCompositePlot
         from holoviews.plotting.util import get_dynamic_mode
         from ..widgets import Widget, DiscreteSlider, Select, FloatSlider, DatetimeInput, IntSlider
+
+        if isinstance(object, GenericCompositePlot):
+            object = object.layout
+        elif isinstance(object, Plot):
+            object = object.hmap
 
         if isinstance(object, DynamicMap) and object.unbounded:
             dims = ', '.join('%r' % dim for dim in object.unbounded)
