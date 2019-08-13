@@ -104,7 +104,10 @@ def save(panel, filename, title=None, resources=None, template=None,
 
     html = file_html(doc, resources, title, **kwargs)
     if hasattr(filename, 'write'):
-        filename.write(decode_utf8(html))
+        html = decode_utf8(html)
+        if isinstance(filename, io.BytesIO):
+            html = html.encode('utf-8')
+        filename.write(html)
         return
     with io.open(filename, mode="w", encoding="utf-8") as f:
         f.write(decode_utf8(html))
