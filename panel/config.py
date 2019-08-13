@@ -72,6 +72,12 @@ class _config(param.Parameterized):
 
     _truthy = ['True', 'true', '1', True, 1]
 
+    def __init__(self, **params):
+        super(_config, self).__init__(**params)
+        for p in self.param:
+            if p.startswith('_'):
+                setattr(self, p+'_', None)
+
     @contextmanager
     def set(self, **kwargs):
         values = [(k, v) for k, v in self.param.get_param_values() if k != 'name']
@@ -84,69 +90,69 @@ class _config(param.Parameterized):
 
     @property
     def embed(self):
-        if self._embed is not None:
-            return self._embed
+        if self._embed_ is not None:
+            return self._embed_
         else:
             return os.environ.get('PANEL_EMBED', _config._embed) in self._truthy
 
     @embed.setter
     def embed(self, value):
-        self._embed = value
+        self._embed_ = value
 
     @property
     def embed_json(self):
-        if self._embed_json is not None:
-            return self._embed_json
+        if self._embed_json_ is not None:
+            return self._embed_json_
         else:
             return os.environ.get('PANEL_EMBED_JSON', _config._embed_json) in self._truthy
 
     @embed_json.setter
     def embed_json(self, value):
-        self._embed_json = value
+        self._embed_json_ = value
 
     @property
     def embed_json_prefix(self):
-        if self._embed_json_prefix is not None:
-            return self._embed_json_prefix
+        if self._embed_json_prefix_ is not None:
+            return self._embed_json_prefix_
         else:
             return os.environ.get('PANEL_EMBED_JSON_PREFIX', _config._embed_json_prefix)
 
     @embed_json_prefix.setter
     def embed_json_prefix(self, value):
-        self._embed_json_prefix = value
+        self._embed_json_prefix_ = value
 
     @property
     def embed_save_path(self):
-        if self._embed_save_path is not None:
-            return self._embed_save_path
+        if self._embed_save_path_ is not None:
+            return self._embed_save_path_
         else:
             return os.environ.get('PANEL_EMBED_SAVE_PATH', _config._embed_save_path)
 
     @embed_save_path.setter
     def embed_save_path(self, value):
-        self._embed_save_path = value
+        self._embed_save_path_ = value
 
     @property
     def embed_load_path(self):
-        if self._embed_load_path is not None:
-            return self._embed_load_path
+        if self._embed_load_path_ is not None:
+            return self._embed_load_path_
         else:
             return os.environ.get('PANEL_EMBED_LOAD_PATH', _config._embed_load_path)
 
     @embed_load_path.setter
     def embed_load_path(self, value):
-        self._embed_load_path = value
+        self._embed_load_path_ = value
 
     @property
     def inline(self):
-        if self._inline is not None:
-            return self._inline
+        if self._inline_ is not None:
+            return self._inline_
         else:
             return os.environ.get('PANEL_INLINE', _config._inline) in self._truthy
 
     @inline.setter
     def inline(self, value):
-        self._inline = value
+        self._inline_ = value
 
 
 if hasattr(_config.param, 'objects'):
