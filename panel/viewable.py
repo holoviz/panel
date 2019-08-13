@@ -254,6 +254,23 @@ class Viewable(Layoutable):
         for hook in self._preprocessing_hooks:
             hook(self, root)
 
+    def _render_model(self, doc=None, comm=None):
+        if doc is None:
+            doc = _Document()
+        if comm is None:
+            comm = state._comm_manager.get_server_comm()
+        model = self.get_root(doc, comm)
+
+        if config.embed:
+            embed_state(self, model, doc,
+                        json=config.embed_json,
+                        json_prefix=config.embed_json_prefix,
+                        save_path=config.embed_save_path,
+                        load_path=config.embed_load_path)
+        else:
+            add_to_doc(model, doc)
+        return model
+
     def _repr_mimebundle_(self, include=None, exclude=None):
         loaded = panel_extension._loaded
         if not loaded and 'holoviews' in sys.modules:
@@ -266,16 +283,15 @@ class Viewable(Layoutable):
                                'displaying objects in the notebook.')
             return None
 
-        state._comm_manager = JupyterCommManager
-        doc = _Document()
+        try:
+            assert get_ipython().kernel is not None # noqa
+            state._comm_manager = JupyterCommManager
+        except:
+            pass
         comm = state._comm_manager.get_server_comm()
-        model = self.get_root(doc, comm)
+        doc = _Document()
+        model = self._render_model(doc, comm)
         if config.embed:
-            embed_state(self, model, doc,
-                        json=config.embed_json,
-                        json_prefix=config.embed_json_prefix,
-                        save_path=config.embed_save_path,
-                        load_path=config.embed_load_path)
             return render_model(model)
         return render_mimebundle(model, doc, comm)
 

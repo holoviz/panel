@@ -155,7 +155,7 @@ class HoloViews(PaneBase):
             self._update_layout()
 
     def _update_plot(self, plot, pane):
-        from holoviews.core.util import cross_index
+        from holoviews.core.util import cross_index, wrap_tuple_streams
 
         widgets = self.widget_box.objects
         if not widgets:
@@ -164,6 +164,11 @@ class HoloViews(PaneBase):
             key = cross_index([v for v in self._values.values()], widgets[0].value)
         else:
             key = tuple(w.value for w in widgets)
+            if plot.dynamic:
+                widget_dims = [w.name for w in widgets]
+                key = [key[widget_dims.index(kdim.name)] if kdim.name in widget_dims else None
+                       for kdim in plot.dimensions]
+                key = wrap_tuple_streams(tuple(key), plot.dimensions, plot.streams)
 
         if plot.backend == 'bokeh':
             if plot.comm or state._unblocked(plot.document):
@@ -250,7 +255,7 @@ class HoloViews(PaneBase):
         from holoviews.core.util import isnumeric, unicode, datetime_types, unique_iterator
         from holoviews.core.traversal import unique_dimkeys
         from holoviews.plotting.util import get_dynamic_mode
-        from ..widgets import Widget, DiscreteSlider, Select, FloatSlider, DatetimeInput
+        from ..widgets import Widget, DiscreteSlider, Select, FloatSlider, DatetimeInput, IntSlider
 
         if isinstance(object, DynamicMap) and object.unbounded:
             dims = ', '.join('%r' % dim for dim in object.unbounded)
@@ -271,6 +276,7 @@ class HoloViews(PaneBase):
         widgets = []
         for i, dim in enumerate(dims):
             widget_type, widget, widget_kwargs = None, None, {}
+
             if widgets_type == 'individual':
                 if i == 0 and i == (len(dims)-1):
                     margin = (20, 20, 20, 20)
@@ -322,13 +328,20 @@ class HoloViews(PaneBase):
                 widget_kwargs = dict(dict(name=dim.label, options=options, value=default), **widget_kwargs)
                 widget = widget_type(**widget_kwargs)
             elif dim.range != (None, None):
-                if dim.range[0] == dim.range[1]:
+                start, end = dim.range
+                if start == end:
                     continue
-                default = dim.range[0] if dim.default is None else dim.default
-                step = 0.1 if dim.step is None else dim.step
-                widget_type = widget_type or FloatSlider
-                if isinstance(default, datetime_types):
+                default = start if dim.default is None else dim.default
+                if widget_type is not None:
+                    pass
+                elif all(isinstance(v, int) for v in (start, end, default)):
+                    widget_type = IntSlider
+                    step = 1 if dim.step is None else dim.step
+                elif isinstance(default, datetime_types):
                     widget_type = DatetimeInput
+                else:
+                    widget_type = FloatSlider
+                    step = 0.1 if dim.step is None else dim.step
                 widget_kwargs = dict(dict(step=step, name=dim.label, start=dim.range[0],
                                           end=dim.range[1], value=default),
                                      **widget_kwargs)
@@ -444,6 +457,9 @@ def link_axes(root_view, root_model):
         if not pane.linked_axes or plot.renderer.backend != 'bokeh':
             continue
         for p in plot.traverse(specs=[ElementPlot]):
+            if p.current_frame is None:
+                continue
+
             axiswise = Store.lookup_options('bokeh', p.current_frame, 'norm').kwargs.get('axiswise')
             if not p.shared_axes or axiswise:
                 continue
