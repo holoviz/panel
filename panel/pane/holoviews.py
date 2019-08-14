@@ -7,6 +7,7 @@ from __future__ import absolute_import, division, unicode_literals
 import sys
 
 from collections import OrderedDict, defaultdict
+from distutils.version import LooseVersion
 from functools import partial
 
 import param
@@ -39,7 +40,6 @@ class HoloViews(PaneBase):
     linked_axes = param.Boolean(default=True, doc="""
         Whether to use link the axes of bokeh plots inside this pane
         across a panel layout.""")
-
 
     renderer = param.Parameter(default=None, doc="""
         Explicit renderer instance to use for rendering the HoloViews
@@ -206,6 +206,7 @@ class HoloViews(PaneBase):
                 plot = self.object
             else:
                 plot = self._render(doc, comm, root)
+            plot._pane = self
             backend = plot.renderer.backend
             child_pane = self._panes.get(backend, Pane)(plot.state)
             self._update_plot(plot, child_pane)
@@ -219,7 +220,9 @@ class HoloViews(PaneBase):
         return model
 
     def _render(self, doc, comm, root):
+        import holoviews as hv
         from holoviews import Store, renderer as load_renderer
+
         if self.renderer:
             renderer = self.renderer
             backend = renderer.backend
@@ -233,7 +236,12 @@ class HoloViews(PaneBase):
         mode = 'server' if comm is None else 'default'
         if backend == 'bokeh' and mode != renderer.mode:
             renderer = renderer.instance(mode=mode)
-        kwargs = {'doc': doc, 'root': root} if backend == 'bokeh' else {}
+
+        if backend == 'bokeh' or LooseVersion(hv.__version__) >= '1.13.0':
+            kwargs = {'doc': doc, 'root': root}
+        else:
+            kwargs = {}
+
         if comm:
             kwargs['comm'] = comm
         return renderer.get_plot(self.object, **kwargs)
