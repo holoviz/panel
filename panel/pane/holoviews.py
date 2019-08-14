@@ -299,6 +299,9 @@ class HoloViews(PaneBase):
         values = dict() if dynamic else dict(zip(dims, zip(*keys)))
         dim_values = OrderedDict()
         widgets = []
+        dims = [d for d in dims if values.get(d) is not None or
+                d.values or d.range != (None, None)]
+
         for i, dim in enumerate(dims):
             widget_type, widget, widget_kwargs = None, None, {}
             if fancy:
