@@ -32,6 +32,8 @@ class TextInput(Widget):
 
 class FileInput(Widget):
 
+    accept = param.String(default=None)
+
     filename = param.String(default=None)
 
     mime_type = param.String(default=None)
