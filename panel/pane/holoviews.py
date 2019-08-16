@@ -212,14 +212,14 @@ class HoloViews(PaneBase):
                 plot = self.object
             else:
                 plot = self._render(doc, comm, root)
-            plot._pane = self
+            plot.pane = self
             backend = plot.renderer.backend
             child_pane = self._panes.get(backend, Pane)(plot.state)
             self._update_plot(plot, child_pane)
             model = child_pane._get_model(doc, root, parent, comm)
             if ref in self._plots:
                 old_plot, old_pane = self._plots[ref]
-                old_plot.comm = None # Ensure comm does not cleaned up
+                old_plot.comm = None # Ensures comm does not get cleaned up
                 old_plot.cleanup()
             self._plots[ref] = (plot, child_pane)
         self._models[ref] = (model, parent)
@@ -245,11 +245,11 @@ class HoloViews(PaneBase):
 
         if backend == 'bokeh' or LooseVersion(str(hv.__version__)) >= str('1.13.0'):
             kwargs = {'doc': doc, 'root': root}
+            if comm:
+                kwargs['comm'] = comm
         else:
             kwargs = {}
 
-        if comm:
-            kwargs['comm'] = comm
         return renderer.get_plot(self.object, **kwargs)
 
     def _cleanup(self, root):
