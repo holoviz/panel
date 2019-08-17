@@ -184,7 +184,11 @@ class HoloViews(PaneBase):
                 plot.document.add_next_tick_callback(partial(plot.update, key))
         else:
             plot.update(key)
-            pane.object = plot.state
+            if hasattr(plot.renderer, 'get_plot_state'):
+                pane.object = plot.renderer.get_plot_state(plot)
+            else:
+                # Compatibility with holoviews<1.13.0
+                pane.object = plot.state
 
     def _widget_callback(self, event):
         for _, (plot, pane) in self._plots.items():
