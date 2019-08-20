@@ -9,7 +9,7 @@ from bokeh.models import HTMLBox
 
 from ..compiler import CUSTOM_MODELS
 
-vtk_cdn = "https://unpkg.com/vtk.js@8.3.15/dist/vtk.js"
+vtk_cdn = "https://unpkg.com/vtk.js"
 
 
 class VTKPlot(HTMLBox):
@@ -36,7 +36,6 @@ class VTKPlot(HTMLBox):
     height = Override(default=300)
 
     width = Override(default=300)
-
 
 
 CUSTOM_MODELS['panel.models.plots.VTKPlot'] = VTKPlot
