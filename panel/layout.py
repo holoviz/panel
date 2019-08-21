@@ -361,37 +361,45 @@ class GridBox(ListPanel):
     rows or columns.
     """
 
-    nrows = param.Integer(default=None)
+    nrows = param.Integer(default=None, bounds=(0, None), doc="""
+      Number of rows to reflow the layout into.""")
 
-    ncols = param.Integer(default=None)
+    ncols = param.Integer(default=None, bounds=(0, None),  doc="""
+      Number of columns to reflow the layout into.""")
 
     _bokeh_model = BkGridBox
-
-    _rename = {'nrows': None, 'ncols': None, 'objects': 'children'}
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         model = self._bokeh_model()
         if root is None:
             root = model
         objects = self._get_objects(model, [], doc, root, comm)
-        model.children = _bk_grid(objects, nrows=self.nrows, ncols=self.ncols).children
-        props = dict(self._init_properties())
+        grid = _bk_grid(objects, nrows=self.nrows, ncols=self.ncols,
+                        sizing_mode=self.sizing_mode)
+        model.children = grid.children
+        props = {k: v for k, v in self._init_properties().items()
+                 if k not in ('nrows', 'ncols')}
         model.update(**self._process_param_change(props))
         self._models[root.ref['id']] = (model, parent)
         self._link_props(model, self._linked_props, doc, root, comm)
         return model
 
     def _update_model(self, events, msg, root, model, doc, comm=None):
-        if self._rename['objects'] in msg:
-            old = events['objects'].old
+        if self._rename['objects'] in msg or 'ncols' in msg or 'nrows' in msg:
+            if 'objects' in events:
+                old = events['objects'].old
+            else:
+                old = self.objects
             objects = self._get_objects(model, old, doc, root, comm)
-            children = _bk_grid(objects, nrows=self.nrows, ncols=self.ncols).children
+            grid = _bk_grid(objects, nrows=self.nrows, ncols=self.ncols,
+                            sizing_mode=self.sizing_mode)
+            children = grid.children
             msg[self._rename['objects']] = children
 
         held = doc._hold
         if comm is None and not held:
             doc.hold()
-        model.update(**msg)
+        model.update(**{k: v for k, v in msg.items() if k not in ('nrows', 'ncols')})
 
         from .io import state
         ref = root.ref['id']
