@@ -9,6 +9,7 @@ from collections import OrderedDict
 import param
 import numpy as np
 
+from bokeh.layouts import grid as _bk_grid
 from bokeh.models import (Column as BkColumn, Row as BkRow,
                           Spacer as BkSpacer, GridBox as BkGridBox,
                           Box as BkBox, Markup as BkMarkup)
@@ -351,6 +352,55 @@ class Column(ListPanel):
     """
 
     _bokeh_model = BkColumn
+
+
+
+class GridBox(ListPanel):
+    """
+    List-like Grid which wraps depending on the specified number of
+    rows or columns.
+    """
+
+    nrows = param.Integer(default=None)
+
+    ncols = param.Integer(default=None)
+
+    _bokeh_model = BkGridBox
+
+    _rename = {'nrows': None, 'ncols': None, 'objects': 'children'}
+
+    def _get_model(self, doc, root=None, parent=None, comm=None):
+        model = self._bokeh_model()
+        if root is None:
+            root = model
+        objects = self._get_objects(model, [], doc, root, comm)
+        model.children = _bk_grid(objects, nrows=self.nrows, ncols=self.ncols).children
+        props = dict(self._init_properties())
+        model.update(**self._process_param_change(props))
+        self._models[root.ref['id']] = (model, parent)
+        self._link_props(model, self._linked_props, doc, root, comm)
+        return model
+
+    def _update_model(self, events, msg, root, model, doc, comm=None):
+        if self._rename['objects'] in msg:
+            old = events['objects'].old
+            objects = self._get_objects(model, old, doc, root, comm)
+            children = _bk_grid(objects, nrows=self.nrows, ncols=self.ncols).children
+            msg[self._rename['objects']] = children
+
+        held = doc._hold
+        if comm is None and not held:
+            doc.hold()
+        model.update(**msg)
+
+        from .io import state
+        ref = root.ref['id']
+        if ref in state._views:
+            state._views[ref][0]._preprocess(root)
+
+        if comm is None and not held:
+            doc.unhold()
+
 
 
 class WidgetBox(ListPanel):
