@@ -55,6 +55,12 @@ class PeriodicCallback(param.Parameterized):
             self._cb = PeriodicCallback(self._periodic_callback, self.period)
             self._cb.start()
 
+    @param.depends('period', watch=True)
+    def _update_period(self):
+        if self._cb:
+            self.stop()
+            self.start()
+
     def _periodic_callback(self):
         self.callback()
         self._counter += 1
