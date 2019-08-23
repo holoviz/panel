@@ -361,6 +361,25 @@ def get_dataset_scalars(dataset, scalar_mode, array_access_mode, array_id, array
     return scalars, cell_flag
 
 
+property_list = ['color', 'ambientColor', 'diffuseColor', 'specularColor', 'edgeColor',
+                 'ambient', 'diffuse', 'specular', 'specularPower', 'opacity',
+                 'interpolation', 'representation', 'edgeVisibility', 'backfaceCulling',
+                 'frontfaceCulling', 'pointSize', 'lineWidth', 'lighting', 'shading']
+
+
+def extract_renprop_properties(renprop):
+    if hasattr(renprop, 'GetProperty'): # default properties
+        properties = {property_name: getattr(renprop.GetProperty(), 'Get' + property_name[0].upper() + property_name[1:])()
+                      for property_name in property_list}
+        if properties['representation'] == 1:
+            properties['colorToUse'] = properties['color']
+        else:
+            properties['colorToUse'] = properties['diffuseColor']
+    else :
+        properties = None
+    return properties
+
+
 def render_window_serializer(render_window):
     """
     Function to convert a vtk render window in a list of 2-tuple where first value
@@ -426,14 +445,16 @@ def render_window_serializer(render_window):
                     colorArray = None
                     dataArray = None
                     colorArrayName = ''
-
                     lookupTable = mapper.GetLookupTable()
 
                     if scalar_visibility:
                         dataArray, arrayLocation = get_dataset_scalars(dataset, scalar_mode, array_access_mode, array_id, array_name)
                         # component = -1 => let specific instance get scalar from vector before mapping
                         if dataArray:
-                            colorArray = lookupTable.MapScalars(dataArray, color_mode, -1)
+                            if dataArray.GetLookupTable():
+                                colorArray = dataArray.GetLookupTable().MapScalars(dataArray, color_mode, -1)
+                            else:
+                                colorArray = lookupTable.MapScalars(dataArray, color_mode, -1)
                             colorArrayName = '__CustomRGBColorArray__'
                             colorArray.SetName(colorArrayName)
                             color_mode = 0
@@ -451,15 +472,6 @@ def render_window_serializer(render_window):
                         textureData = renProp.GetTexture().GetInput()
                         textureName = 'texture_%d' % _get_object_id(textureData, objIds)
                         textureToSave[textureName] = textureData
-
-                    representation = renProp.GetProperty().GetRepresentation() if hasattr(renProp, 'GetProperty') else 2
-                    if representation == 1:
-                        colorToUse = renProp.GetProperty().GetColor() if hasattr(renProp, 'GetProperty') else [1, 1, 1]
-                    else:
-                        colorToUse = renProp.GetProperty().GetDiffuseColor() if hasattr(renProp, 'GetProperty') else [1, 1, 1]
-                    pointSize = renProp.GetProperty().GetPointSize() if hasattr(renProp, 'GetProperty') else 1.0
-                    opacity = renProp.GetProperty().GetOpacity() if hasattr(renProp, 'GetProperty') else 1.0
-                    edgeVisibility = renProp.GetProperty().GetEdgeVisibility() if hasattr(renProp, 'GetProperty') else False
 
                     p3dPosition = renProp.GetPosition() if renProp.IsA('vtkProp3D') else [0, 0, 0]
                     p3dScale = renProp.GetScale() if renProp.IsA('vtkProp3D') else [1, 1, 1]
@@ -483,13 +495,7 @@ def render_window_serializer(render_window):
                             "colorMode": color_mode,
                             "scalarMode": scalar_mode
                         },
-                        "property": {
-                            "representation": representation,
-                            "edgeVisibility": edgeVisibility,
-                            "diffuseColor": colorToUse,
-                            "pointSize": pointSize,
-                            "opacity": opacity
-                        },
+                        "property": extract_renprop_properties(renProp),
                         "lookupTable": {
                             "tableRange": lookupTable.GetRange(),
                             "hueRange": lookupTable.GetHueRange() if hasattr(lookupTable, 'GetHueRange') else [0.5, 0]
