@@ -1,7 +1,8 @@
-import * as p from "core/properties"
-import {clone} from "core/util/object"
-import {HTMLBox, HTMLBoxView} from "models/layouts/html_box"
-import {div} from "core/dom"
+import * as p from "@bokehjs/core/properties"
+import {clone} from "@bokehjs/core/util/object"
+import {HTMLBox, HTMLBoxView} from "@bokehjs/models/layouts/html_box"
+import {div} from "@bokehjs/core/dom"
+
 const vtk = (window as any).vtk
 
 function majorAxis(vec3: number[], idxA: number, idxB: number): number[] {
@@ -48,7 +49,7 @@ export class VTKPlotView extends HTMLBoxView {
     orientationWidget.setViewportSize(0.15)
     orientationWidget.setMinPixelSize(100)
     orientationWidget.setMaxPixelSize(300)
-    
+
     this._orientationWidget = orientationWidget
 
     const widgetManager = vtk.Widgets.Core.vtkWidgetManager.newInstance()
@@ -90,12 +91,12 @@ export class VTKPlotView extends HTMLBoxView {
       if (direction[2]) {
         this._camera.setViewUp(majorAxis(viewUp, 0, 1))
       }
-      
+
       this._orientationWidget.updateMarkerOrientation()
       this._renderer.resetCameraClippingRange()
       this._rendererEl.getRenderWindow().render()
     })
-    
+
     this._orientation_widget_visbility(this.model.orientation_widget)
   }
 

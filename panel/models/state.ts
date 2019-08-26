@@ -1,8 +1,8 @@
-import * as p from "core/properties"
-import {View} from "core/view"
-import {copy} from "core/util/array"
-import {Model} from "model"
-import {Receiver} from "protocol/receiver"
+import * as p from "@bokehjs/core/properties"
+import {View} from "@bokehjs/core/view"
+import {copy} from "@bokehjs/core/util/array"
+import {Model} from "@bokehjs/model"
+import {Receiver} from "@bokehjs/protocol/receiver"
 
 function get_json(file: string, callback: any): void {
   var xobj = new XMLHttpRequest();

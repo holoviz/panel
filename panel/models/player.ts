@@ -1,6 +1,6 @@
-import * as p from "core/properties"
-import {div} from "core/dom"
-import {Widget, WidgetView} from "models/widgets/widget"
+import * as p from "@bokehjs/core/properties"
+import {div} from "@bokehjs/core/dom"
+import {Widget, WidgetView} from "@bokehjs/models/widgets/widget"
 
 export class PlayerView extends WidgetView {
   model: Player

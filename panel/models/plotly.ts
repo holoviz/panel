@@ -1,6 +1,6 @@
-import * as p from "core/properties"
-import {clone} from "core/util/object"
-import {HTMLBox, HTMLBoxView} from "models/layouts/html_box"
+import * as p from "@bokehjs/core/properties"
+import {clone} from "@bokehjs/core/util/object"
+import {HTMLBox, HTMLBoxView} from "@bokehjs/models/layouts/html_box"
 const _ = (window as any)._;
 const Plotly = (window as any).Plotly;
 

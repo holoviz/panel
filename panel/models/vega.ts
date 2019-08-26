@@ -1,5 +1,5 @@
-import * as p from "core/properties"
-import {HTMLBox, HTMLBoxView} from "models/layouts/html_box"
+import * as p from "@bokehjs/core/properties"
+import {HTMLBox, HTMLBoxView} from "@bokehjs/models/layouts/html_box"
 
 function get_file(file: string, callback: any): void {
   var xobj = new XMLHttpRequest();

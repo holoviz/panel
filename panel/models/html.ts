@@ -1,5 +1,5 @@
-import * as p from "core/properties"
-import {Markup, MarkupView} from "models/widgets/markup"
+import * as p from "@bokehjs/core/properties"
+import {Markup, MarkupView} from "@bokehjs/models/widgets/markup"
 
 function htmlDecode(input: string): string | null {
   var doc = new DOMParser().parseFromString(input, "text/html");

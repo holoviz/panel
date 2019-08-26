@@ -1,6 +1,6 @@
-import * as p from "core/properties"
-import {HTMLBox, HTMLBoxView} from "models/layouts/html_box"
-import { div } from 'core/dom';
+import * as p from "@bokehjs/core/properties"
+import {HTMLBox, HTMLBoxView} from "@bokehjs/models/layouts/html_box"
+import { div } from "@bokehjs/core/dom";
 
 function ID() {
   // Math.random should be unique because of its seeding algorithm.
