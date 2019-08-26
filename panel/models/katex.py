@@ -1,11 +1,7 @@
 """
 Defines a custom KaTeX bokeh model to render text using KaTeX.
 """
-import os
-
 from bokeh.models import Markup
-
-from ..compiler import CUSTOM_MODELS
 
 
 class KaTeX(Markup):
@@ -22,7 +18,4 @@ class KaTeX(Markup):
 
     __css__ = ["https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.6.0/katex.min.css"]
 
-    __implementation__ = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'katex.ts')
-
-
-CUSTOM_MODELS['panel.models.katex.KaTeX'] = KaTeX
+    __implementation__ = 'katex.ts'

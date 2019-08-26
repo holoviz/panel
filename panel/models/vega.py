@@ -1,12 +1,8 @@
 """
 Defines custom VegaPlot bokeh model to render Vega json plots.
 """
-import os
-
 from bokeh.core.properties import Dict, String, Any, Instance
 from bokeh.models import LayoutDOM, ColumnDataSource
-
-from ..compiler import CUSTOM_MODELS
 
 
 class VegaPlot(LayoutDOM):
@@ -29,11 +25,8 @@ class VegaPlot(LayoutDOM):
         'exports': {'vega-embed': 'vegaEmbed', 'vega': 'vega', 'vega-lite': 'vl'}
     }
 
-    __implementation__ = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'vega.ts')
+    __implementation__ = 'vega.ts'
 
     data = Dict(String, Any)
 
     data_sources = Dict(String, Instance(ColumnDataSource))
-
-
-CUSTOM_MODELS['panel.models.vega.VegaPlot'] = VegaPlot

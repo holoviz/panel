@@ -1,12 +1,8 @@
 """
-Defines a custom PlotlyPlot bokeh model to render Plotly plots. 
+Defines a custom PlotlyPlot bokeh model to render Plotly plots.
 """
-import os
-
 from bokeh.core.properties import Dict, String, List, Any, Instance, Enum, Int
 from bokeh.models import LayoutDOM, ColumnDataSource
-
-from ..compiler import CUSTOM_MODELS
 
 
 class PlotlyPlot(LayoutDOM):
@@ -23,7 +19,7 @@ class PlotlyPlot(LayoutDOM):
                       'exports': {'plotly': 'Plotly',
                                   'lodash': '_'}}
 
-    __implementation__ = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'plotly.ts')
+    __implementation__ = 'plotly.ts'
 
     data = List(Any)
 
@@ -44,6 +40,3 @@ class PlotlyPlot(LayoutDOM):
     viewport_update_policy = Enum( "mouseup", "continuous", "throttle")
     viewport_update_throttle = Int()
     _render_count = Int()
-
-
-CUSTOM_MODELS['panel.models.plotly.PlotlyPlot'] = PlotlyPlot

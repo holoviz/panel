@@ -2,15 +2,10 @@
 """
 Defines custom VTKPlot bokeh model to render VTK objects.
 """
-import os
-
 from bokeh.core.properties import String, Bool, Dict, Any, Override
 from bokeh.models import HTMLBox
 
-from ..compiler import CUSTOM_MODELS
-
 vtk_cdn = "https://unpkg.com/vtk.js"
-
 
 class VTKPlot(HTMLBox):
     """
@@ -23,7 +18,7 @@ class VTKPlot(HTMLBox):
     __js_require__ = {"paths": {"vtk": vtk_cdn[:-3]},
                       "shim": {"vtk": {"exports": "vtk"}}}
 
-    __implementation__ = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'vtk.ts')
+    __implementation__ = 'vtk.ts'
 
     append = Bool(default=False)
 
@@ -41,10 +36,6 @@ class VTKPlot(HTMLBox):
 
     width = Override(default=300)
 
-
-CUSTOM_MODELS['panel.models.plots.VTKPlot'] = VTKPlot
-
-
 class VTKVolumePlot(HTMLBox):
     """
     A Bokeh model that wraps around a vtk-js library and renders it inside
@@ -56,7 +47,7 @@ class VTKVolumePlot(HTMLBox):
     __js_require__ = {"paths": {"vtk": vtk_cdn[:-3]},
                       "shim": {"vtk": {"exports": "vtk"}}}
 
-    __implementation__ = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'vtkvolume.ts')
+    __implementation__ = 'vtkvolume.ts'
 
     actor = Any(readonly=True)
 
@@ -65,6 +56,3 @@ class VTKVolumePlot(HTMLBox):
     height = Override(default=300)
 
     width = Override(default=300)
-
-
-CUSTOM_MODELS['panel.models.plots.VTKVolumePlot'] = VTKVolumePlot
