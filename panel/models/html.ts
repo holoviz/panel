@@ -43,9 +43,7 @@ export class HTML extends Markup {
     super(attrs)
   }
 
-  static initClass(): void {
-    this.prototype.type = "HTML"
+  static init_HTML(): void {
     this.prototype.default_view = HTMLView
   }
 }
-HTML.initClass()

@@ -85,7 +85,7 @@ export class AcePlotView extends HTMLBoxView {
     super.after_layout()
     this._editor.resize()
   }
-  
+
 }
 
 export namespace AcePlot {
@@ -108,8 +108,7 @@ export class AcePlot extends HTMLBox {
     super(attrs)
   }
 
-  static initClass(): void {
-    this.prototype.type = "AcePlot"
+  static init_AcePlot(): void {
     this.prototype.default_view = AcePlotView
 
     this.define<AcePlot.Props>({
@@ -126,4 +125,3 @@ export class AcePlot extends HTMLBox {
     })
   }
 }
-AcePlot.initClass()

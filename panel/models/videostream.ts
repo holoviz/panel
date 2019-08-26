@@ -88,7 +88,7 @@ export namespace VideoStream {
     paused: p.Property<boolean>
     snapshot: p.Property<boolean>
     timeout: p.Property<number|null>
-    value: p.Property<any>  
+    value: p.Property<any>
   }
 }
 
@@ -101,8 +101,7 @@ export abstract class VideoStream extends Widget {
     super(attrs)
   }
 
-  static initClass(): void {
-    this.prototype.type = "VideoStream"
+  static init_VideoStream(): void {
     this.prototype.default_view = VideoStreamView
 
     this.define<VideoStream.Props>({
@@ -119,5 +118,3 @@ export abstract class VideoStream extends Widget {
     });
   }
 }
-
-VideoStream.initClass()

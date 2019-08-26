@@ -338,8 +338,7 @@ export class PlotlyPlot extends HTMLBox {
     super(attrs)
   }
 
-  static initClass(): void {
-    this.prototype.type = "PlotlyPlot"
+  static init_PlotlyPlot(): void {
     this.prototype.default_view = PlotlyPlotView
 
     this.define<PlotlyPlot.Props>({
@@ -360,4 +359,3 @@ export class PlotlyPlot extends HTMLBox {
     })
   }
 }
-PlotlyPlot.initClass()

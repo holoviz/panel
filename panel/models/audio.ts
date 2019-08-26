@@ -112,19 +112,16 @@ export abstract class Audio extends Widget {
     super(attrs)
   }
 
-  static initClass(): void {
-    this.prototype.type = "Audio"
+  static init_Audio(): void {
     this.prototype.default_view = AudioView
 
     this.define<Audio.Props>({
       loop:     [ p.Boolean,   false ],
       paused:   [ p.Boolean,   true  ],
       time:     [ p.Number, 0     ],
-	  throttle: [ p.Number, 250   ],
+      throttle: [ p.Number, 250   ],
       value:    [ p.Any,    ''    ],
       volume:   [ p.Number, null  ],
     })
   }
 }
-
-Audio.initClass()

@@ -37,9 +37,7 @@ export class KaTeX extends Markup {
     super(attrs)
   }
 
-  static initClass(): void {
-    this.prototype.type = "KaTeX"
+  static init_KaTeX(): void {
     this.prototype.default_view = KaTeXView
   }
 }
-KaTeX.initClass()

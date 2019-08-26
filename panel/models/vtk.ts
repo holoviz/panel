@@ -240,8 +240,7 @@ export class VTKPlot extends HTMLBox {
     super(attrs)
   }
 
-  static initClass(): void {
-    this.prototype.type = "VTKPlot"
+  static init_VTKPlot(): void {
     this.prototype.default_view = VTKPlotView
 
     this.define<VTKPlot.Props>({
@@ -258,4 +257,3 @@ export class VTKPlot extends HTMLBox {
     });
   }
 }
-VTKPlot.initClass()

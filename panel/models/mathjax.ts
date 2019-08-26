@@ -12,7 +12,7 @@ export class MathJaxView extends MarkupView {
       tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
     });
   }
-  
+
   render(): void {
     super.render();
     if (!this._hub) { return }
@@ -37,9 +37,7 @@ export class MathJax extends Markup {
     super(attrs)
   }
 
-  static initClass(): void {
-    this.prototype.type = "MathJax"
+  static init_MathJax(): void {
     this.prototype.default_view = MathJaxView
   }
 }
-MathJax.initClass()

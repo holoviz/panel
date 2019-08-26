@@ -102,8 +102,7 @@ export class VegaPlot extends HTMLBox {
     super(attrs)
   }
 
-  static initClass(): void {
-    this.prototype.type = "VegaPlot"
+  static init_VegaPlot(): void {
     this.prototype.default_view = VegaPlotView
 
     this.define<VegaPlot.Props>({
@@ -112,4 +111,3 @@ export class VegaPlot extends HTMLBox {
     })
   }
 }
-VegaPlot.initClass()

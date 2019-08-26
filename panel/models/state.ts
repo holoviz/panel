@@ -89,8 +89,7 @@ export class State extends Model {
     }
   }
 
-  static initClass(): void {
-    this.prototype.type = "State"
+  static init_State(): void {
     this.prototype.default_view = StateView
 
     this.define<State.Props>({
@@ -101,4 +100,3 @@ export class State extends Model {
     })
   }
 }
-State.initClass()

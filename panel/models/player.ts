@@ -285,8 +285,7 @@ export abstract class Player extends Widget {
     super(attrs)
   }
 
-  static initClass(): void {
-    this.prototype.type = "Player"
+  static init_Player(): void {
     this.prototype.default_view = PlayerView
 
     this.define<Player.Props>({
@@ -302,5 +301,3 @@ export abstract class Player extends Widget {
     this.override({width: 400})
   }
 }
-
-Player.initClass()
