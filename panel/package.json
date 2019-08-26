@@ -1,0 +1,11 @@
+{
+  "name": "panel",
+  "version": "0.0.1",
+  "description": "A high level dashboarding library for python visualization libraries.",
+  "license": "BSD-3-Clause",
+  "repository": {},
+  "dependencies": {
+    "bokehjs": "^1.3.4"
+  },
+  "devDependencies": {}
+}
