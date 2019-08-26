@@ -19,8 +19,6 @@ class PlotlyPlot(LayoutDOM):
                       'exports': {'plotly': 'Plotly',
                                   'lodash': '_'}}
 
-    __implementation__ = 'plotly.ts'
-
     data = List(Any)
 
     layout = Dict(String, Any)

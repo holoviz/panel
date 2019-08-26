@@ -17,5 +17,3 @@ class KaTeX(Markup):
                       'exports': {'katex': 'katex', 'autoLoad': 'renderMathInElement'}}
 
     __css__ = ["https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.6.0/katex.min.css"]
-
-    __implementation__ = 'katex.ts'

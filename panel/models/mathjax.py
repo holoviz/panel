@@ -17,5 +17,3 @@ class MathJax(Markup):
         },
         'shim': {'mathjax': {'exports': "MathJax"}}
     }
-
-    __implementation__ = 'mathjax.ts'

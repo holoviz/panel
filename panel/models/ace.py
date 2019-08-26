@@ -17,8 +17,6 @@ class AcePlot(HTMLBox):
                                 'ace_lang_tools': 'https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.3/ext-language_tools'},
                       'exports': {'ace': 'ace'}}
 
-    __implementation__ = 'ace.ts'
-
     code = String()
 
     theme = String(default='chrome')

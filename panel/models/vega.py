@@ -25,8 +25,6 @@ class VegaPlot(LayoutDOM):
         'exports': {'vega-embed': 'vegaEmbed', 'vega': 'vega', 'vega-lite': 'vl'}
     }
 
-    __implementation__ = 'vega.ts'
-
     data = Dict(String, Any)
 
     data_sources = Dict(String, Instance(ColumnDataSource))

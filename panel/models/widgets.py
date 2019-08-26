@@ -12,8 +12,6 @@ class Player(Widget):
     The Player widget provides controls to play through a number of frames.
     """
 
-    __implementation__ = 'player.ts'
-
     start = Int(help="Lower bound of the Player slider")
 
     end = Int(help="Upper bound of the Player slider")
@@ -37,8 +35,6 @@ class Player(Widget):
 
 class Audio(Widget):
 
-    __implementation__ = 'audio.ts'
-
     loop = Bool(False, help="""Whether the audio should loop""")
 
     paused = Bool(False, help="""Whether the audio is paused""")
@@ -55,8 +51,6 @@ class Audio(Widget):
 
 
 class VideoStream(Widget):
-
-    __implementation__ = 'videostream.ts'
 
     format = Enum('png', 'jpeg', default='png')
 

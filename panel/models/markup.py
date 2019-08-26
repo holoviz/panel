@@ -10,5 +10,3 @@ class HTML(Markup):
     """
     A bokeh model to render HTML markup including embedded script tags.
     """
-
-    __implementation__ = 'html.ts'
