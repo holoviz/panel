@@ -30,20 +30,18 @@ def get_setup_version(reponame):
         return json.load(open(version_file_path, 'r'))['version_string']
 
 
-def _build_models():
-    try:
-        from panel.compiler import build_custom_models
-        print("Building custom models:")
-        build_custom_models()
-    except ImportError as e:
-        print("Custom model compilation failed with: %s" % e)
+def _build_paneljs():
+    from bokeh.ext import build
+    print("Building custom models:")
+    panel_dir = os.path.join(os.path.dirname(__file__), "panel")
+    build(panel_dir)
 
 
 class CustomDevelopCommand(develop):
     """Custom installation for development mode."""
 
     def run(self):
-        _build_models()
+        _build_paneljs()
         develop.run(self)
 
 
@@ -51,7 +49,7 @@ class CustomInstallCommand(install):
     """Custom installation for install mode."""
 
     def run(self):
-        _build_models()
+        _build_paneljs()
         install.run(self)
 
 
@@ -59,7 +57,7 @@ class CustomSdistCommand(sdist):
     """Custom installation for sdist mode."""
 
     def run(self):
-        _build_models()
+        _build_paneljs()
         sdist.run(self)
 
 
