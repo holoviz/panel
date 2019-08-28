@@ -41,7 +41,7 @@ class PlotlyPlot(LayoutDOM):
     clickannotation_data = Dict(String, Any)
     selected_data = Dict(String, Any)
     viewport = Dict(String, Any)
-    viewport_update_policy = Enum("continuous", "mouseup", "throttle")
+    viewport_update_policy = Enum( "mouseup", "continuous", "throttle")
     viewport_update_throttle = Int()
     _render_count = Int()
 

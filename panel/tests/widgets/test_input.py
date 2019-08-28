@@ -53,7 +53,7 @@ def test_date_picker(document, comm):
 
 
 def test_file_input(document, comm):
-    file_input = FileInput()
+    file_input = FileInput(accept='.txt')
 
     widget = file_input.get_root(document, comm=comm)
 
@@ -62,6 +62,7 @@ def test_file_input(document, comm):
     file_input._comm_change({'mime_type': 'text/plain', 'value': 'U29tZSB0ZXh0Cg=='})
     assert file_input.value == b'Some text\n'
     assert file_input.mime_type == 'text/plain'
+    assert file_input.accept == '.txt'
 
 
 def test_literal_input(document, comm):

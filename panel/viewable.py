@@ -254,6 +254,23 @@ class Viewable(Layoutable):
         for hook in self._preprocessing_hooks:
             hook(self, root)
 
+    def _render_model(self, doc=None, comm=None):
+        if doc is None:
+            doc = _Document()
+        if comm is None:
+            comm = state._comm_manager.get_server_comm()
+        model = self.get_root(doc, comm)
+
+        if config.embed:
+            embed_state(self, model, doc,
+                        json=config.embed_json,
+                        json_prefix=config.embed_json_prefix,
+                        save_path=config.embed_save_path,
+                        load_path=config.embed_load_path)
+        else:
+            add_to_doc(model, doc)
+        return model
+
     def _repr_mimebundle_(self, include=None, exclude=None):
         loaded = panel_extension._loaded
         if not loaded and 'holoviews' in sys.modules:
@@ -266,15 +283,15 @@ class Viewable(Layoutable):
                                'displaying objects in the notebook.')
             return None
 
-        state._comm_manager = JupyterCommManager
-        doc = _Document()
+        try:
+            assert get_ipython().kernel is not None # noqa
+            state._comm_manager = JupyterCommManager
+        except:
+            pass
         comm = state._comm_manager.get_server_comm()
-        model = self.get_root(doc, comm)
+        doc = _Document()
+        model = self._render_model(doc, comm)
         if config.embed:
-            embed_state(self, model, doc,
-                        json=config.embed_json,
-                        save_path=config.embed_save_path,
-                        load_path=config.embed_load_path)
             return render_model(model)
         return render_mimebundle(model, doc, comm)
 
@@ -405,7 +422,8 @@ class Viewable(Layoutable):
 
     def save(self, filename, title=None, resources=None, template=None,
              template_variables={}, embed=False, max_states=1000,
-             max_opts=3, embed_json=False, save_path='./', load_path=None):
+             max_opts=3, embed_json=False, json_prefix='', save_path='./',
+             load_path=None):
         """
         Saves Panel objects to file.
 
@@ -425,6 +443,8 @@ class Viewable(Layoutable):
            The maximum number of states for a single widget
         embed_json: boolean (default=True)
            Whether to export the data to json files
+        json_prefix: str (default='')
+           Prefix for the auto-generated json directory
         save_path: str (default='./')
            The path to save json files to
         load_path: str (default=None)
@@ -432,7 +452,7 @@ class Viewable(Layoutable):
         """
         return save(self, filename, title, resources, template,
                     template_variables, embed, max_states, max_opts,
-                    embed_json, save_path, load_path)
+                    embed_json, json_prefix, save_path, load_path)
 
     def server_doc(self, doc=None, title=None):
         """

@@ -47,7 +47,8 @@ def save_png(model, filename):
 
 def save(panel, filename, title=None, resources=None, template=None,
          template_variables={}, embed=False, max_states=1000,
-         max_opts=3, embed_json=False, save_path='./', load_path=None):
+         max_opts=3, embed_json=False, json_prefix='', save_path='./',
+         load_path=None):
     """
     Saves Panel objects to file.
 
@@ -69,6 +70,8 @@ def save(panel, filename, title=None, resources=None, template=None,
       The maximum number of states for a single widget
     embed_json: boolean (default=True)
       Whether to export the data to json files
+    json_prefix: str (default='')
+      Prefix for the randomly json directory
     save_path: str (default='./')
       The path to save json files to
     load_path: str (default=None)
@@ -80,7 +83,7 @@ def save(panel, filename, title=None, resources=None, template=None,
         model = panel.get_root(doc, comm)
         if embed:
             embed_state(panel, model, doc, max_states, max_opts,
-                        embed_json, save_path, load_path)
+                        embed_json, json_prefix, save_path, load_path)
         else:
             add_to_doc(model, doc, True)
 
@@ -101,7 +104,10 @@ def save(panel, filename, title=None, resources=None, template=None,
 
     html = file_html(doc, resources, title, **kwargs)
     if hasattr(filename, 'write'):
-        filename.write(decode_utf8(html))
+        html = decode_utf8(html)
+        if isinstance(filename, io.BytesIO):
+            html = html.encode('utf-8')
+        filename.write(html)
         return
     with io.open(filename, mode="w", encoding="utf-8") as f:
         f.write(decode_utf8(html))

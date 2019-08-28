@@ -9,6 +9,7 @@ from collections import OrderedDict
 import param
 import numpy as np
 
+from bokeh.layouts import grid as _bk_grid
 from bokeh.models import (Column as BkColumn, Row as BkRow,
                           Spacer as BkSpacer, GridBox as BkGridBox,
                           Box as BkBox, Markup as BkMarkup)
@@ -61,12 +62,19 @@ class Panel(Reactive):
         if self._rename['objects'] in msg:
             old = events['objects'].old
             msg[self._rename['objects']] = self._get_objects(model, old, doc, root, comm)
+
+        held = doc._hold
+        if comm is None and not held:
+            doc.hold()
         model.update(**msg)
 
         from .io import state
         ref = root.ref['id']
         if ref in state._views:
             state._views[ref][0]._preprocess(root)
+
+        if comm is None and not held:
+            doc.unhold()
 
     #----------------------------------------------------------------
     # Model API
@@ -88,14 +96,17 @@ class Panel(Reactive):
         for i, pane in enumerate(self.objects):
             pane = panel(pane)
             self.objects[i] = pane
+
+        for obj in old_objects:
+            if obj not in self.objects:
+                obj._cleanup(root)
+
+        for i, pane in enumerate(self.objects):
             if pane in old_objects:
                 child, _ = pane._models[root.ref['id']]
             else:
                 child = pane._get_model(doc, root, model, comm)
             new_models.append(child)
-        for obj in old_objects:
-            if obj not in self.objects:
-                obj._cleanup(root)
         return new_models
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
@@ -216,6 +227,7 @@ class ListPanel(Panel):
                                  (expected, type(self).__name__))
         for i, pane in zip(range(start, end), panes):
             new_objects[i] = panel(pane)
+
         self.objects = new_objects
 
     def clone(self, *objects, **params):
@@ -340,6 +352,63 @@ class Column(ListPanel):
     """
 
     _bokeh_model = BkColumn
+
+
+
+class GridBox(ListPanel):
+    """
+    List-like Grid which wraps depending on the specified number of
+    rows or columns.
+    """
+
+    nrows = param.Integer(default=None, bounds=(0, None), doc="""
+      Number of rows to reflow the layout into.""")
+
+    ncols = param.Integer(default=None, bounds=(0, None),  doc="""
+      Number of columns to reflow the layout into.""")
+
+    _bokeh_model = BkGridBox
+
+    def _get_model(self, doc, root=None, parent=None, comm=None):
+        model = self._bokeh_model()
+        if root is None:
+            root = model
+        objects = self._get_objects(model, [], doc, root, comm)
+        grid = _bk_grid(objects, nrows=self.nrows, ncols=self.ncols,
+                        sizing_mode=self.sizing_mode)
+        model.children = grid.children
+        props = {k: v for k, v in self._init_properties().items()
+                 if k not in ('nrows', 'ncols')}
+        model.update(**self._process_param_change(props))
+        self._models[root.ref['id']] = (model, parent)
+        self._link_props(model, self._linked_props, doc, root, comm)
+        return model
+
+    def _update_model(self, events, msg, root, model, doc, comm=None):
+        if self._rename['objects'] in msg or 'ncols' in msg or 'nrows' in msg:
+            if 'objects' in events:
+                old = events['objects'].old
+            else:
+                old = self.objects
+            objects = self._get_objects(model, old, doc, root, comm)
+            grid = _bk_grid(objects, nrows=self.nrows, ncols=self.ncols,
+                            sizing_mode=self.sizing_mode)
+            children = grid.children
+            msg[self._rename['objects']] = children
+
+        held = doc._hold
+        if comm is None and not held:
+            doc.hold()
+        model.update(**{k: v for k, v in msg.items() if k not in ('nrows', 'ncols')})
+
+        from .io import state
+        ref = root.ref['id']
+        if ref in state._views:
+            state._views[ref][0]._preprocess(root)
+
+        if comm is None and not held:
+            doc.unhold()
+
 
 
 class WidgetBox(ListPanel):
@@ -472,6 +541,12 @@ class Tabs(ListPanel):
         for i, (name, pane) in enumerate(zip(self._names, self)):
             pane = panel(pane, name=name)
             self.objects[i] = pane
+
+        for obj in old_objects:
+            if obj not in self.objects:
+                obj._cleanup(root)
+
+        for i, (name, pane) in enumerate(zip(self._names, self)):
             if pane in old_objects:
                 child, _ = pane._models[root.ref['id']]
             else:
@@ -479,9 +554,6 @@ class Tabs(ListPanel):
             child = BkPanel(title=name, name=pane.name, child=child,
                             closable=self.closable)
             new_models.append(child)
-        for obj in old_objects:
-            if obj not in self.objects:
-                obj._cleanup(root)
         return new_models
 
     #----------------------------------------------------------------

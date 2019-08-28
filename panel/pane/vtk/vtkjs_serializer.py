@@ -13,6 +13,8 @@ import os, sys, json, random, string, hashlib, zipfile
 
 from io import BytesIO
 
+from .enums import SCALAR_MODE, ACCESS_MODE
+
 if sys.version_info >= (2, 7):
     buffer = memoryview
 else:
@@ -321,9 +323,47 @@ def _write_data_set(scDirs, dataset, colorArrayInfo, newDSName, compress=True):
     scDirs.append([os.path.join(newDSName, 'index.json'), json.dumps(root, indent=2)])
 
 
+def get_dataset_scalars(dataset, scalar_mode, array_access_mode, array_id, array_name):
+
+    if scalar_mode == SCALAR_MODE.Default.value:
+        scalars = dataset.GetPointData().GetScalars()
+        cell_flag = 'pointData'
+        if not scalars:
+            scalars = dataset.GetCellData().GetScalars()
+            cell_flag = 'cellData'
+    elif scalar_mode == SCALAR_MODE.UsePointData.value:
+        scalars = dataset.GetPointData().GetScalars()
+        cell_flag = 'pointData'
+    elif scalar_mode == SCALAR_MODE.UseCellData.value:
+        scalars = dataset.GetCellData().GetScalars()
+        cell_flag = 'cellData'
+    elif scalar_mode == SCALAR_MODE.UsePointFieldData.value:
+        pd = dataset.GetPointData()
+        if array_access_mode == ACCESS_MODE.ById.value:
+            scalars = pd.GetAbstractArray(array_id)
+        else:
+            scalars = pd.GetAbstractArray(array_name)
+        cell_flag = 'pointData'
+    elif scalar_mode == SCALAR_MODE.UseCellFieldData.value:
+        cd = dataset.GetCellData()
+        if array_access_mode == ACCESS_MODE.ById.value:
+            scalars = cd.GetAbstractArray(array_id)
+        else:
+            scalars = cd.GetAbstractArray(array_name)
+        cell_flag = 'cellData'
+    elif scalar_mode == SCALAR_MODE.UseFieldData.value:
+        fd = dataset.GetFieldData()
+        if array_access_mode == ACCESS_MODE.ById.value:
+            scalars = fd.GetAbstractArray(array_id)
+        else:
+            scalars = fd.GetAbstractArray(array_name)
+        cell_flag = 'fieldData'
+    return scalars, cell_flag
+
+
 def render_window_serializer(render_window):
-    """ 
-    Function to convert a vtk render window in a list of 2-tuple where first value 
+    """
+    Function to convert a vtk render window in a list of 2-tuple where first value
     correspond to a relative file path in the `vtkjs` directory structure and values
     of the binary content of the corresponding file.
     """
@@ -340,10 +380,8 @@ def render_window_serializer(render_window):
     textureToSave = {}
 
     for renderer in renderers:
-        renProps = renderer.GetViewProps()
-        for rpIdx in range(renProps.GetNumberOfItems()):
-            renProp = renProps.GetItemAsObject(rpIdx)
-            if not renProp.GetVisibility():
+        for renProp in renderer.GetViewProps():
+            if not renProp.GetVisibility() or not isinstance(renProp, vtk.vtkActor):
                 continue
             if hasattr(renProp, 'GetMapper'):
                 mapper = renProp.GetMapper()
@@ -377,51 +415,28 @@ def render_window_serializer(render_window):
 
                 if dataset and dataset.GetPoints():
                     componentName = str(id(renProp))
-                    scalarVisibility = mapper.GetScalarVisibility()
-                    arrayAccessMode = mapper.GetArrayAccessMode()
-                    colorArrayName = mapper.GetArrayName() if arrayAccessMode == 1 else mapper.GetArrayId()
-                    colorMode = mapper.GetColorMode()
-                    scalarMode = mapper.GetScalarMode()
-                    lookupTable = mapper.GetLookupTable()
+                    scalar_visibility = mapper.GetScalarVisibility()
+                    array_access_mode = mapper.GetArrayAccessMode()
+                    array_name = mapper.GetArrayName() # if arrayAccessMode == 1 else mapper.GetArrayId()
+                    array_id = mapper.GetArrayId()
+                    color_mode = mapper.GetColorMode()
+                    scalar_mode = mapper.GetScalarMode()
 
-                    dsAttrs = None
                     arrayLocation = ''
-
-                    if scalarVisibility:
-                        if scalarMode == 0:
-                            # By default (ScalarModeToDefault), the filter will use point data,
-                            # and if no point data is available, then cell data is used
-                            # https://vtk.org/doc/nightly/html/classvtkMapper.html#af330900726eb1a5e18e5f7f557306e52
-                            if dataset.GetPointData().GetNumberOfArrays() >= 1:
-                                dsAttrs = dataset.GetPointData()
-                                arrayLocation = 'pointData'
-                            else:
-                                dsAttrs = dataset.GetCellData()
-                                arrayLocation = 'cellData'
-                        if scalarMode == 3 or scalarMode == 1: # VTK_SCALAR_MODE_USE_POINT_FIELD_DATA or VTK_SCALAR_MODE_USE_POINT_DATA
-                            dsAttrs = dataset.GetPointData()
-                            arrayLocation = 'pointData'
-                        elif scalarMode == 4 or scalarMode == 2: # VTK_SCALAR_MODE_USE_CELL_FIELD_DATA or VTK_SCALAR_MODE_USE_CELL_DATA
-                            dsAttrs = dataset.GetCellData()
-                            arrayLocation = 'cellData'
-
                     colorArray = None
                     dataArray = None
+                    colorArrayName = ''
 
-                    if dsAttrs:
-                        if colorArrayName >= 0:
-                            dataArray = dsAttrs.GetArray(colorArrayName)
-                        elif dsAttrs.GetNumberOfArrays() >= 1:
-                            dataArray = dsAttrs.GetArray(0)
+                    lookupTable = mapper.GetLookupTable()
 
-                    if dataArray:
+                    if scalar_visibility:
+                        dataArray, arrayLocation = get_dataset_scalars(dataset, scalar_mode, array_access_mode, array_id, array_name)
                         # component = -1 => let specific instance get scalar from vector before mapping
-                        colorArray = lookupTable.MapScalars(dataArray, colorMode, -1)
-                        colorArrayName = '__CustomRGBColorArray__'
-                        colorArray.SetName(colorArrayName)
-                        colorMode = 0
-                    else:
-                        colorArrayName = ''
+                        if dataArray:
+                            colorArray = lookupTable.MapScalars(dataArray, color_mode, -1)
+                            colorArrayName = '__CustomRGBColorArray__'
+                            colorArray.SetName(colorArrayName)
+                            color_mode = 0
 
                     colorArrayInfo = {
                         'colorArray': colorArray,
@@ -465,8 +480,8 @@ def render_window_serializer(render_window):
                         "actorRotation": p3dRotateWXYZ,
                         "mapper": {
                             "colorByArrayName": colorArrayName,
-                            "colorMode": colorMode,
-                            "scalarMode": scalarMode
+                            "colorMode": color_mode,
+                            "scalarMode": scalar_mode
                         },
                         "property": {
                             "representation": representation,

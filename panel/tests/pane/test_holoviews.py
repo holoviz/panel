@@ -208,12 +208,12 @@ def test_holoviews_updates_widgets(document, comm):
 
     hv_pane.widgets = {'X': Select}
     assert isinstance(hv_pane.widget_box[0], Select)
-    assert isinstance(layout.children[1].children[0], BkSelect)
+    assert isinstance(layout.children[1].children[0].children[0], BkSelect)
 
     hv_pane.widgets = {'X': DiscreteSlider}
     assert isinstance(hv_pane.widget_box[0], DiscreteSlider)
-    assert isinstance(layout.children[1].children[0], BkColumn)
-    assert isinstance(layout.children[1].children[0].children[1], BkSlider)
+    assert isinstance(layout.children[1].children[0].children[0], BkColumn)
+    assert isinstance(layout.children[1].children[0].children[0].children[1], BkSlider)
 
 @hv_available
 def test_holoviews_widgets_update_plot(document, comm):
@@ -251,28 +251,79 @@ def test_holoviews_with_widgets_not_shown(document, comm):
 
 
 @hv_available
-def test_holoviews_fancy_layout(document, comm):
+def test_holoviews_layouts(document, comm):
     hmap = hv.HoloMap({(i, chr(65+i)): hv.Curve([i]) for i in range(3)}, kdims=['X', 'Y'])
 
-    hv_pane = HoloViews(hmap, fancy_layout=True)
-    layout_obj = hv_pane.layout
-    layout = layout_obj.get_root(document, comm)
-    model = layout.children[1]
-    assert hv_pane is layout_obj[1]
-    assert len(hv_pane.widget_box.objects) == 2
-    assert hv_pane.widget_box is layout_obj[-1][1]
-    assert hv_pane.widget_box.objects[0].name == 'X'
-    assert hv_pane.widget_box.objects[1].name == 'Y'
+    hv_pane = HoloViews(hmap, backend='bokeh')
+    layout = hv_pane.layout
+    model = layout.get_root(document, comm)
 
-    assert hv_pane._models[layout.ref['id']][1].children[1] is model
+    for center in (True, False):
+        for loc in HoloViews.param.widget_location.objects:
+            hv_pane.set_param(center=center, widget_location=loc)
+            if center:
+                if loc.startswith('left'):
+                    assert len(layout) == 4
+                    widgets, hv_obj = layout[0], layout[2]
+                    wmodel, hv_model = model.children[0],  model.children[2]
+                elif loc.startswith('right'):
+                    assert len(layout) == 4
+                    hv_obj, widgets = layout[1], layout[3]
+                    wmodel, hv_model = model.children[3],  model.children[1]
+                elif loc.startswith('top'):
+                    assert len(layout) == 3
+                    col = layout[1]
+                    cmodel = model.children[1]
+                    assert isinstance(col, Column)
+                    widgets, hv_col = col
+                    hv_obj = hv_col[1]
+                    wmodel, hv_model = cmodel.children[0],  cmodel.children[1].children[1]
+                elif loc.startswith('bottom'):
+                    col = layout[1]
+                    cmodel = model.children[1]
+                    assert isinstance(col, Column)
+                    hv_col, widgets = col
+                    hv_obj = hv_col[1]
+                    wmodel, hv_model = cmodel.children[1],  cmodel.children[0].children[1]
+            else:
+                if loc.startswith('left'):
+                    assert len(layout) == 2
+                    widgets, hv_obj = layout
+                    wmodel, hv_model = model.children
+                elif loc.startswith('right'):
+                    assert len(layout) == 2
+                    hv_obj, widgets = layout
+                    hv_model, wmodel = model.children
+                elif loc.startswith('top'):
+                    assert len(layout) == 1
+                    col = layout[0]
+                    cmodel = model.children[0]
+                    assert isinstance(col, Column)
+                    widgets, hv_obj = col
+                    wmodel, hv_model = cmodel.children
+                elif loc.startswith('bottom'):
+                    assert len(layout) == 1
+                    col = layout[0]
+                    cmodel = model.children[0]
+                    assert isinstance(col, Column)
+                    hv_obj, widgets = col
+                    hv_model, wmodel = cmodel.children
+            assert hv_pane is hv_obj
+            assert isinstance(hv_model, Figure)
 
-    hv_pane.object = hv.Curve([1, 2, 3])
-    assert len(hv_pane.widget_box.objects) == 0
-    assert len(layout_obj) == 3
-    assert hv_pane is layout_obj[1]
-
-    hv_pane.object = hmap
-    assert hv_pane.widget_box is layout_obj[-1][1]
+            if loc in ('left', 'right', 'top', 'bottom',
+                       'top_right', 'right_bottom', 'bottom_right',
+                       'left_bottom'):
+                box = widgets[1]
+                boxmodel = wmodel.children[1]
+            else:
+                box = widgets[0]
+                boxmodel = wmodel.children[0]
+            assert hv_pane.widget_box is box
+            assert isinstance(boxmodel, BkColumn)
+            assert isinstance(boxmodel.children[0], BkColumn)
+            assert isinstance(boxmodel.children[0].children[1], BkSlider)
+            assert isinstance(boxmodel.children[1], BkSelect)
 
 
 @hv_available
@@ -335,6 +386,86 @@ def test_holoviews_widgets_explicit_widget_instance_override():
     widgets, _ = HoloViews.widgets_from_dimensions(hmap, widget_types={'X': widget})
 
     assert widgets[0] is widget
+
+
+@hv_available
+def test_holoviews_linked_axes(document, comm):
+    c1 = hv.Curve([1, 2, 3])
+    c2 = hv.Curve([1, 2, 3])
+
+    layout = Row(HoloViews(c1, backend='bokeh'), HoloViews(c2, backend='bokeh'))
+
+    row_model = layout.get_root(document, comm=comm)
+
+    print(row_model.children)
+
+    p1, p2 = row_model.select({'type': Figure})
+
+    assert p1.x_range is p2.x_range
+    assert p1.y_range is p2.y_range
+
+
+@hv_available
+def test_holoviews_linked_x_axis(document, comm):
+    c1 = hv.Curve([1, 2, 3])
+    c2 = hv.Curve([1, 2, 3], vdims='y2')
+
+    layout = Row(HoloViews(c1, backend='bokeh'), HoloViews(c2, backend='bokeh'))
+
+    row_model = layout.get_root(document, comm=comm)
+
+    p1, p2 = row_model.select({'type': Figure})
+
+    assert p1.x_range is p2.x_range
+    assert p1.y_range is not p2.y_range
+
+
+@hv_available
+def test_holoviews_axiswise_not_linked_axes(document, comm):
+    c1 = hv.Curve([1, 2, 3])
+    c2 = hv.Curve([1, 2, 3]).opts(axiswise=True, backend='bokeh')
+
+    layout = Row(HoloViews(c1, backend='bokeh'), HoloViews(c2, backend='bokeh'))
+
+    row_model = layout.get_root(document, comm=comm)
+
+    p1, p2 = row_model.select({'type': Figure})
+
+    assert p1.x_range is not p2.x_range
+    assert p1.y_range is not p2.y_range
+
+
+@hv_available
+def test_holoviews_shared_axes_opt_not_linked_axes(document, comm):
+    c1 = hv.Curve([1, 2, 3])
+    c2 = hv.Curve([1, 2, 3]).opts(shared_axes=False, backend='bokeh')
+
+    layout = Row(HoloViews(c1, backend='bokeh'), HoloViews(c2, backend='bokeh'))
+
+    row_model = layout.get_root(document, comm=comm)
+
+    p1, p2 = row_model.select({'type': Figure})
+
+    assert p1.x_range is not p2.x_range
+    assert p1.y_range is not p2.y_range
+
+
+@hv_available
+def test_holoviews_not_linked_axes(document, comm):
+    c1 = hv.Curve([1, 2, 3])
+    c2 = hv.Curve([1, 2, 3])
+
+    layout = Row(
+        HoloViews(c1, backend='bokeh'),
+        HoloViews(c2, backend='bokeh', linked_axes=False)
+    )
+
+    row_model = layout.get_root(document, comm=comm)
+
+    p1, p2 = row_model.select({'type': Figure})
+
+    assert p1.x_range is not p2.x_range
+    assert p1.y_range is not p2.y_range
 
 
 @hv_available
