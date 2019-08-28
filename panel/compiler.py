@@ -20,7 +20,12 @@ def require_components():
     from .config import config
 
     configs, requirements, exports = [], [], []
-    js_requires = list(CUSTOM_MODELS.values())
+    js_requires = []
+
+    from bokeh.model import Model
+    for qual_name, model in Model.model_class_reverse_map.items():
+        if qual_name.split(".")[0] == "panel":
+            js_requires.append(model)
 
     for export, js in config.js_files.items():
         name = js.split('/')[-1].replace('.min', '').split('.')[-2]
