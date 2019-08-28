@@ -101,6 +101,8 @@ export abstract class VideoStream extends Widget {
     super(attrs)
   }
 
+  static __module__ = "panel.models.widgets"
+
   static init_VideoStream(): void {
     this.prototype.default_view = VideoStreamView
 

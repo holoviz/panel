@@ -102,6 +102,8 @@ export class VegaPlot extends HTMLBox {
     super(attrs)
   }
 
+  static __module__ = "panel.models.vega"
+
   static init_VegaPlot(): void {
     this.prototype.default_view = VegaPlotView
 

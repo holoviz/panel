@@ -43,6 +43,8 @@ export class HTML extends Markup {
     super(attrs)
   }
 
+  static __module__ = "panel.models.markup"
+
   static init_HTML(): void {
     this.prototype.default_view = HTMLView
   }

@@ -338,6 +338,8 @@ export class PlotlyPlot extends HTMLBox {
     super(attrs)
   }
 
+  static __module__ = "panel.models.plotly"
+
   static init_PlotlyPlot(): void {
     this.prototype.default_view = PlotlyPlotView
 

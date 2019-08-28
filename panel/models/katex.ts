@@ -37,6 +37,8 @@ export class KaTeX extends Markup {
     super(attrs)
   }
 
+  static __module__ = "panel.models.katex"
+
   static init_KaTeX(): void {
     this.prototype.default_view = KaTeXView
   }

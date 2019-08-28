@@ -37,6 +37,8 @@ export class MathJax extends Markup {
     super(attrs)
   }
 
+  static __module__ = "panel.models.mathjax"
+
   static init_MathJax(): void {
     this.prototype.default_view = MathJaxView
   }

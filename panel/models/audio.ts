@@ -112,6 +112,8 @@ export abstract class Audio extends Widget {
     super(attrs)
   }
 
+  static __module__ = "panel.models.widgets"
+
   static init_Audio(): void {
     this.prototype.default_view = AudioView
 

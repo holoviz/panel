@@ -108,6 +108,8 @@ export class AcePlot extends HTMLBox {
     super(attrs)
   }
 
+  static __module__ = "panel.models.ace"
+
   static init_AcePlot(): void {
     this.prototype.default_view = AcePlotView
 

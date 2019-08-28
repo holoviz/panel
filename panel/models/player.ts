@@ -285,6 +285,8 @@ export abstract class Player extends Widget {
     super(attrs)
   }
 
+  static __module__ = "panel.models.widgets"
+
   static init_Player(): void {
     this.prototype.default_view = PlayerView
 

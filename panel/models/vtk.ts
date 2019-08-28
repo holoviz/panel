@@ -241,6 +241,8 @@ export class VTKPlot extends HTMLBox {
     super(attrs)
   }
 
+  static __module__ = "panel.models.vtk"
+
   static init_VTKPlot(): void {
     this.prototype.default_view = VTKPlotView
 
