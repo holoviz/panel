@@ -82,7 +82,7 @@ class ImageBase(DivPaneBase):
         elif self.height is not None:
             width = int((self.height/height)*width)
             height = self.height
-        if self._is_url(self.object) or not self.embed:
+        if self.embed:
             src = self.object
         else:
             b64 = base64.b64encode(data).decode("utf-8")
