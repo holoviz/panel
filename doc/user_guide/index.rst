@@ -2,28 +2,79 @@
 User Guide
 **********
 
+The Panel user guide introduces the main concepts required for
+building interactive apps and dashboards using Panel, and gives
+an overview of the functionality available. The guide is split
+into core, reference, and supplementary sections.
+
+Core Guide
+----------
+
+To get an initial understanding of the core concepts and components of Panel and
+how to use it in practice, it is recommended that all users go through each of
+the core guide sections.
+
+* `Overview <Overview.html>`_
+   A high-level overview of the key concepts behind Panel.
+
+* `Components <Components.html>`_
+   An introduction to the three main component types: Widgets, Panes, and Panels.
+
+* `APIs <APIs.html>`_
+   An introduction to the different APIs panel provides to build interactive applications and dashboards.
+
+Reference guide
+---------------
+
+The reference guides provide a more in-depth treatment of some of the
+APIs and components in Panel, with detailed information that you can refer to
+when needed.
+
+* `Customization <Customization.html>`_
+   How to customize the visual appearance, layout, and size of Panel components.
+
+* `Deploy & Export <Deploy_and_Export.html>`_
+   Introduction to displaying, exporting, and deploying Panel apps.
+
 * `Interact <Interact.html>`_
    Quickly making a panel using `interact()`.
-
-* `Panes <Panes.html>`_
-   Adding visual components to your panel with panes.
 
 * `Widgets <Widgets.html>`_
    Declaring and working with Panel widgets.
 
-* `Layouts <Layouts.html>`_
-   Declaring and working with Panel layouts.
-
 * `Parameters <Param.html>`_
    Using Param to express panels in a self-contained class.
+
+* `Linking <Links.html>`_
+   Defining links between Panel objects in Python and Javascript.
+
+* `Pipelines <Pipelines.html>`_
+   Using Parameterized classes to declare linear workflows containing multiple panels.
+
+* `Templates <Templates.html>`_
+   Learn how to compose multiple Panels into a custom HTML document.
+
+Supplementary guides
+--------------------
+
+* `Django Apps <Django_Apps.html>`_
+   How to embed a Panel/Bokeh app inside a Django web-server deployment.
+
 
 .. toctree::
     :titlesonly:
     :hidden:
     :maxdepth: 2
 
-    Interact <Interact>
-    Panes <Panes>
+    Overview <Overview>
+    Components <Components>
+    APIs <APIs>
+    Customization <Customization>
+    Deploy & Export <Deploy_and_Export>
     Widgets <Widgets>
-    Layouts <Layouts>
+    Interact <Interact>
     Parameters <Param>
+    Linking <Links>
+    Pipelines <Pipelines>
+    Templates <Templates>
+    Django Apps <Django_Apps>

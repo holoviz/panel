@@ -1,11 +1,18 @@
-from bokeh.models import (Div as BkDiv, Column as BkColumn,
-                          WidgetBox as BkWidgetBox, Paragraph as BkParagraph)
+from bokeh.models import Div as BkDiv, Column as BkColumn
 
 from panel.interact import interactive
+from panel.pane import HTML
 from panel import widgets
 
-from .test_layout import get_div
 
+def test_interact_title():
+    def test(a):
+        return a
+
+    interact_pane = interactive(test, a=False, params={'name': 'Test'})
+    html = interact_pane.widget_box[0]
+    assert isinstance(html, HTML)
+    assert html.object == '<h2>Test</h2>'
 
 def test_boolean_interact():
     def test(a):
@@ -96,6 +103,41 @@ def test_tuple_range_interact_with_default_of_different_type():
     assert widget.start == 0
     assert widget.end == 4
 
+def test_tuple_range_interact_with_step_and_value():
+    def test(a):
+        return a
+
+    interact_pane = interactive(test, a=(0, 4, 1, 0))
+    widget = interact_pane._widgets['a']
+    assert isinstance(widget, widgets.IntSlider)
+    assert widget.value == 0
+    assert widget.start == 0
+    assert widget.step == 1
+    assert widget.end == 4
+
+def test_tuple_float_range_interact_with_step_and_value():
+    def test(a):
+        return a
+
+    interact_pane = interactive(test, a=(0, 4, .1, 0))
+    widget = interact_pane._widgets['a']
+    assert isinstance(widget, widgets.FloatSlider)
+    assert widget.value == 0
+    assert widget.start == 0
+    assert widget.step == .1
+    assert widget.end == 4
+
+def test_tuple_range_interact_with_no_step_and_value():
+    def test(a):
+        return a
+
+    interact_pane = interactive(test, a=(0, 4, None, 0))
+    widget = interact_pane._widgets['a']
+    assert isinstance(widget, widgets.IntSlider)
+    assert widget.value == 0
+    assert widget.start == 0
+    assert widget.end == 4
+
 def test_numeric_list_interact():
     def test(a):
         return a
@@ -115,7 +157,7 @@ def test_string_list_interact():
     widget = interact_pane._widgets['a']
     assert isinstance(widget, widgets.Select)
     assert widget.value == 'A'
-    assert widget.options == dict(zip(options, options))
+    assert widget.options == options
 
 def test_manual_interact():
     def test(a):
@@ -136,11 +178,11 @@ def test_interact_updates_panel(document, comm):
     assert isinstance(widget, widgets.Checkbox)
     assert widget.value == False
 
-    column = interact_pane.layout._get_model(document, comm=comm)
+    column = interact_pane.layout.get_root(document, comm=comm)
     assert isinstance(column, BkColumn)
     div = column.children[1].children[0]
     assert div.text == '<pre>False</pre>'
-    
+
     widget.value = True
     assert div.text == '<pre>True</pre>'
 
@@ -149,24 +191,22 @@ def test_interact_replaces_panel(document, comm):
         return a if a else BkDiv(text='Test')
 
     interact_pane = interactive(test, a=False)
-    pane = interact_pane._pane
     widget = interact_pane._widgets['a']
     assert isinstance(widget, widgets.Checkbox)
     assert widget.value == False
 
-    column = interact_pane.layout._get_model(document, comm=comm)
+    column = interact_pane.layout.get_root(document, comm=comm)
     assert isinstance(column, BkColumn)
-    div = get_div(column.children[1].children[0])
+    div = column.children[1].children[0]
     assert div.text == 'Test'
-    
+
     widget.value = True
-    assert pane._callbacks == {}
-    div = get_div(column.children[1].children[0])
+    div = column.children[1].children[0]
     assert div.text == '<pre>True</pre>'
 
 def test_interact_replaces_model(document, comm):
     def test(a):
-        return BkParagraph(text='Pre Test') if a else BkDiv(text='Test')
+        return 'ABC' if a else BkDiv(text='Test')
 
     interact_pane = interactive(test, a=False)
     pane = interact_pane._pane
@@ -174,27 +214,20 @@ def test_interact_replaces_model(document, comm):
     assert isinstance(widget, widgets.Checkbox)
     assert widget.value == False
 
-    column = interact_pane.layout._get_model(document, comm=comm)
+    column = interact_pane.layout.get_root(document, comm=comm)
     assert isinstance(column, BkColumn)
-    box = column.children[1].children[0]
-    assert isinstance(box, BkWidgetBox)
-    div = box.children[0]
+    div = column.children[1].children[0]
     assert isinstance(div, BkDiv)
     assert div.text == 'Test'
-    assert column.children[1].ref['id'] in interact_pane._callbacks
-    assert box.ref['id'] in pane._callbacks
-    
-    widget.value = True
-    assert box.ref['id'] not in pane._callbacks
-    assert pane._callbacks == {}
-    new_pane = interact_pane._pane
-    new_box = column.children[1].children[0]
-    pre = new_box.children[0]
-    assert isinstance(pre, BkParagraph)
-    assert pre.text == 'Pre Test'
-    assert column.children[1].ref['id'] in interact_pane._callbacks
-    assert new_box.ref['id'] in new_pane._callbacks
+    assert pane._models[column.ref['id']][0] is div
 
-    interact_pane._cleanup(column.children[1])
-    assert interact_pane._callbacks == {}
-    assert pane._callbacks == {}
+    widget.value = True
+    new_pane = interact_pane._pane
+    assert new_pane is not pane
+    new_div = column.children[1].children[0]
+    assert isinstance(new_div, BkDiv)
+    assert new_div.text.endswith('<p>ABC</p>')
+    assert new_pane._models[column.ref['id']][0] is new_div
+
+    interact_pane._cleanup(column)
+    assert len(interact_pane._callbacks) == 1

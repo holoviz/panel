@@ -1,7 +1,7 @@
 Roadmap
 =======
 
-(As of 10/2018)
+(As of 4/2019)
 
 The Panel library is new, but it builds on at least a decade of work
 in previous and related Python projects. Thus there are many parts of Panel
@@ -37,10 +37,7 @@ include:
    horizontally, and so on. These improvements will happen gradually,
    and mostly depend on changes to the underlying Bokeh library.
    
-Other features we'd love to see in Panel but which are not currently
-funded or scheduled include:
-   
-1. **Static export**: Panel widgets are currently only "live" when
+4. **Static export**: Panel widgets are currently only "live" when
    backed by a Python server, but in many cases the mapping from widget
    to displayed object follows a well-defined pattern, which can
    be captured in JavaScript code that runs with or without a Python
@@ -52,7 +49,18 @@ funded or scheduled include:
    `holoviews.org <http://holoviews.org>`__, but
    Panel will need its own separate implementation for static export.
 
-2. **Other plotting libraries**: Panel already supports a wide variety
+5. **Responsive sizing**: Panel objects (panes and similar viewable
+   items) currently accept a fixed height and width in pixels.  In
+   many cases, it's desirable to have at least some of the objects
+   responsively adjust to the screen size available, so that they can
+   make use of whatever screen or window area is available. Responsive
+   sizing can be implemented once Bokeh's current layout-refactoring
+   project has been completed.
+   
+Other features we'd love to see in Panel but which are not currently
+funded or scheduled include:
+   
+1. **Other plotting libraries**: Panel already supports a wide variety
    of libraries, including all the libraries currently in use by the
    authors or their collaborators.  Most other libraries can trivially
    be supported as well, if anyone can provide an example of a plot
@@ -63,21 +71,13 @@ funded or scheduled include:
    but any library that produces PNG, SVG, HTML, or another basic
    type should be very straightforward to include.
 
-3. **Themes**: By default, Panel apps use Bokeh's default theming,
+2. **Themes**: By default, Panel apps use Bokeh's default theming,
    but other look-and-feel options can be provided by using other
    available Bokeh themes, making your own, or embedding into a Bokeh
    Jinja2 template. We'll add examples of such theming to the Panel
    website as we develop them.
 
-4. **Responsive sizing**: Panel objects (panes and similar viewable
-   items) currently accept a fixed height and width in pixels.  In
-   many cases, it's desirable to have at least some of the objects
-   responsively adjust to the screen size available, so that they can
-   make use of whatever screen or window area is available. Responsive
-   sizing can be implemented once Bokeh's current layout-refactoring
-   project has been completed.
-   
-5. **BI tools**: Panel is designed for displaying content that you
+3. **BI tools**: Panel is designed for displaying content that you
    already have developed in a Jupyter notebook, but it could also
    be used as a way for building business-intelligence-style
    dashboards that mix traditional Python plotting output with
@@ -87,7 +87,7 @@ funded or scheduled include:
    BI-type dashboards where the content comes directly from
    Python.
 
-6. **Jupyter notebook extension**: The Jupyter-Dashboards project
+4. **Jupyter notebook extension**: The Jupyter-Dashboards project
    provided a `Jupyter extension <https://jupyter-dashboards-layout.readthedocs.io>`__
    allowing drag and drop layout for Jupyter notebook cells. This
    approach worked well in many cases, but the underlying server used
@@ -103,7 +103,7 @@ funded or scheduled include:
    need to be addressed when a notebook is used in a non-linear
    dashboard in this way.
 
-7. **Support for Traitlets**: Panel currently supports declarative user 
+5. **Support for Traitlets**: Panel currently supports declarative user 
    interfaces for objects defined using the Param library, and similar
    support could be added for objects defined using the Traitlets
    library. Traitlets and Param offer similar functionality, so the

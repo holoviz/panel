@@ -1,11 +1,15 @@
 #!/usr/bin/env python
 
 import os
+import sys
 import json
-import hashlib
+
 from setuptools import setup, find_packages
 from setuptools.command.develop import develop
 from setuptools.command.install import install
+from setuptools.command.sdist import sdist
+
+import pyct.build
 
 
 def get_setup_version(reponame):
@@ -13,7 +17,6 @@ def get_setup_version(reponame):
     Helper to get the current version from either git describe or the
     .version file (if available).
     """
-    import json
     basepath = os.path.split(__file__)[0]
     version_file_path = os.path.join(basepath, reponame, '.version')
     try:
@@ -26,20 +29,71 @@ def get_setup_version(reponame):
         print("WARNING: param>=1.6.0 unavailable. If you are installing a package, this warning can safely be ignored. If you are creating a package or otherwise operating in a git repository, you should install param>=1.6.0.")
         return json.load(open(version_file_path, 'r'))['version_string']
 
+def _build_models():
+    try:
+        from panel.compiler import build_custom_models
+        print("Building custom models:")
+        build_custom_models()
+    except ImportError as e:
+        print("Custom model compilation failed with: %s" % e)
+
+
+class CustomDevelopCommand(develop):
+    """Custom installation for development mode."""
+
+    def run(self):
+        _build_models()
+        develop.run(self)
+
+class CustomInstallCommand(install):
+    """Custom installation for install mode."""
+
+    def run(self):
+        _build_models()
+        install.run(self)
+
+class CustomSdistCommand(sdist):
+    """Custom installation for sdist mode."""
+
+    def run(self):
+        _build_models()
+        sdist.run(self)
+
+_COMMANDS = {
+    'develop': CustomDevelopCommand,
+    'install': CustomInstallCommand,
+    'sdist':   CustomSdistCommand,
+}
+
+try:
+    from wheel.bdist_wheel import bdist_wheel
+
+    class CustomBdistWheelCommand(bdist_wheel):
+        """Custom bdist_wheel command to force cancelling qiskit-terra wheel
+        creation."""
+
+        def run(self):
+            """Do nothing so the command intentionally fails."""
+            _build_models()
+            bdist_wheel.run(self)
+
+    _COMMANDS['bdist_wheel'] = CustomBdistWheelCommand
+except:
+    pass
 
 ########## dependencies ##########
 
 install_requires = [
-    'bokeh >=1.0.0',
-    'param >=1.8.1',
-    'pyviz_comms >=0.6.0',
+    'bokeh >=1.3.0',
+    'param >=1.9.0',
+    'pyviz_comms >=0.7.2',
     'markdown',
-    'testpath<0.4' # temporary due to pip issue?
+    'pyct >=0.4.4'
 ]
 
 _recommended = [
     'notebook >=5.4',
-    'holoviews>=1.11.0a9',
+    'holoviews >=1.12.0',
     'matplotlib',
     'pillow',
     'plotly'
@@ -54,70 +108,39 @@ extras_require = {
         'pytest',
         'scipy',
         'nbsmoke >=0.2.0',
-        'pytest-cov',
+        'pytest-cov ==2.5.1',
+        'codecov',
         # For Panes.ipynb
+        'hvplot',
         'plotly',
         'altair',
-        'vega_datasets'
+        'vega_datasets',
+        'vtk ==8.1.1',
+        'scikit-learn',
+        'datashader'
     ],
     'recommended': _recommended,
     'doc': _recommended + [
-        'nbsite',
-        'sphinx_ioam_theme'
+        'nbsite >=0.6.1',
+        'sphinx_ioam_theme',
+        'sphinx <2',
+        'selenium',
+        'phantomjs',
+        'lxml'
     ]
 }
 
-def build_custom_models():
-    """
-    Compiles custom bokeh models and stores the compiled JSON alongside
-    the original code.
-    """
-    from panel.util import CUSTOM_MODELS
-    from bokeh.util.compiler import _get_custom_models, _compile_models
-    custom_models = _get_custom_models(list(CUSTOM_MODELS.values()))
-    compiled_models = _compile_models(custom_models)
-    for name, model in custom_models.items():
-        compiled = compiled_models.get(name)
-        if compiled is None:
-            return
-        print('\tBuilt %s custom model' % name)
-        impl = model.implementation
-        hashed = hashlib.sha256(impl.code.encode('utf-8')).hexdigest()
-        compiled['hash'] = hashed
-        fp = impl.file.replace('.ts', '.json')
-        with open(fp, 'w') as f:
-            json.dump(compiled, f)
-
-class CustomDevelopCommand(develop):
-    """Custom installation for development mode."""
-    def run(self):
-        try:
-            print("Building custom models:")
-            build_custom_models()
-        except ImportError as e:
-            print("Custom model compilation failed with: %s" % e)
-        develop.run(self)
-
-class CustomInstallCommand(install):
-    """Custom installation for install mode."""
-    def run(self):
-        try:
-            print("Building custom models:")
-            build_custom_models()
-        except ImportError as e:
-            print("Custom model compilation failed with: %s" % e)
-        install.run(self)
-        
 extras_require['all'] = sorted(set(sum(extras_require.values(), [])))
 
 # until pyproject.toml/equivalent is widely supported (setup_requires
 # doesn't work well with pip)
 extras_require['build'] = [
-    'param >=1.7.0',
+    'param >=1.9.0',
     'pyct >=0.4.4',
     'setuptools >=30.3.0',
-    'bokeh >=1.0.0',
+    'bokeh >=1.1.0',
     'pyviz_comms >=0.6.0',
+    'nodejs >=9.11.1',
 ]
 
 setup_args = dict(
@@ -126,20 +149,17 @@ setup_args = dict(
     description='A high level dashboarding library for python visualization libraries.',
     long_description=open('README.md').read() if os.path.isfile('README.md') else 'Consult README.md',
     long_description_content_type="text/markdown",
-    author= "PyViz developers",
-    author_email= "developers@pyviz.org",
-    maintainer= "PyViz",
-    maintainer_email= "developers@pyviz.org",
+    author="PyViz developers",
+    author_email="developers@pyviz.org",
+    maintainer="PyViz",
+    maintainer_email="developers@pyviz.org",
     platforms=['Windows', 'Mac OS X', 'Linux'],
     license='BSD',
     url='http://pyviz.org',
-    cmdclass={
-        'develop': CustomDevelopCommand,
-        'install': CustomInstallCommand,
-    },
+    cmdclass=_COMMANDS,
     packages=find_packages(),
     include_package_data=True,
-    classifiers = [
+    classifiers=[
         "License :: OSI Approved :: BSD License",
         "Development Status :: 5 - Production/Stable",
         "Programming Language :: Python :: 2.7",
@@ -161,6 +181,12 @@ setup_args = dict(
     tests_require=extras_require['tests']
 )
 
+if __name__ == "__main__":
 
-if __name__=="__main__":
+    example_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                'panel', 'examples')
+
+    if 'develop' not in sys.argv and 'egg_info' not in sys.argv:
+        pyct.build.examples(example_path, __file__, force=True)
+
     setup(**setup_args)

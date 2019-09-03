@@ -46,10 +46,6 @@
   <script type="text/javascript" async
   src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML">
   </script>
-  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/vega@4.2.0?noext"></script>
-  <script src="https://cdn.jsdelivr.net/npm/vega-lite@3.0.0-rc4?noext"></script>
-  <script src="https://cdn.jsdelivr.net/npm/vega-embed@3.18.2?noext"></script>
   <script src="{{ pathto('_static/' + theme_js, 1) }}"></script>
   {% for link in js_includes %}
      <script src="{{ pathto('_static/' + link, 1) }}"></script>
@@ -71,10 +67,12 @@
       <a href="{{ pathto('index') }}" class="logo">
         <img src="{{ pathto('_static/' + theme_logo, 1) }}" alt="Logo">
       </a>
-      <a href="{{ pathto('index') }}" class="navigation-menu logo-text">{{ PROJECT }}</a>
       <a href="javascript:void(0)" class="navigation-menu-button" id="js-mobile-menu">Menu</a>
 	  <nav>
         <ul id="js-navigation-menu" class="navigation-menu show">
+        {%- for name, link in SOCIAL  %}
+          <li class="nav-link doc-head"><a href="{{ link }}">{{ name }}</a></li>
+        {%- endfor %}
           <li class="nav-link">
             <div style="display:inline-block;vertical-align: middle;">
               <div class="search-bar">

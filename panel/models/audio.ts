@@ -1,0 +1,130 @@
+import * as p from "core/properties"
+import {Widget, WidgetView} from "models/widgets/widget"
+
+export class AudioView extends WidgetView {
+  model: Audio
+  protected audioEl: HTMLAudioElement
+  protected dialogEl: HTMLElement
+  private _blocked: boolean
+  private _time: any
+
+  initialize(): void {
+    super.initialize()
+    this._blocked = false
+    this._time = Date.now()
+  }
+
+  connect_signals(): void {
+    super.connect_signals()
+    this.connect(this.model.change, () => this.render())
+    this.connect(this.model.properties.loop.change, () => this.set_loop())
+    this.connect(this.model.properties.paused.change, () => this.set_paused())
+    this.connect(this.model.properties.time.change, () => this.set_time())
+    this.connect(this.model.properties.value.change, () => this.set_value())
+    this.connect(this.model.properties.volume.change, () => this.set_volume())
+  }
+
+  render(): void {
+    if (this.audioEl) {
+      return
+    }
+    this.audioEl = document.createElement('audio')
+    this.audioEl.controls = true
+    this.audioEl.src = this.model.value
+    this.audioEl.currentTime = this.model.time
+    this.audioEl.loop = this.model.loop
+    if (this.model.volume != null)
+      this.audioEl.volume = this.model.volume/100
+    else
+      this.model.volume = this.audioEl.volume*100
+    this.audioEl.onpause = () => this.model.paused = true
+    this.audioEl.onplay = () => this.model.paused = false
+    this.audioEl.ontimeupdate = () => this.update_time(this)
+    this.audioEl.onvolumechange = () => this.update_volume(this)
+    this.el.appendChild(this.audioEl)
+    if (!this.model.paused)
+      this.audioEl.play()
+  }
+
+  update_time(view: AudioView): void {
+	if ((Date.now() - view._time) < view.model.throttle) {
+      return
+	}
+    view._blocked = true
+    view.model.time = view.audioEl.currentTime
+	view._time = Date.now()
+  }
+
+  update_volume(view: AudioView): void {
+    view._blocked = true
+    view.model.volume = view.audioEl.volume*100
+  }
+
+  set_loop(): void {
+    this.audioEl.loop = this.model.loop
+  }
+
+  set_paused(): void {
+    if (!this.audioEl.paused && this.model.paused)
+      this.audioEl.pause()
+    if (this.audioEl.paused && !this.model.paused)
+      this.audioEl.play()
+  }
+
+  set_volume(): void {
+    if (this._blocked)
+      this._blocked = false
+      return
+    if (this.model.volume != null)
+	  this.audioEl.volume = (this.model.volume as number)/100
+  }
+
+  set_time(): void {
+    if (this._blocked)
+      this._blocked = false
+      return
+    this.audioEl.currentTime = this.model.time
+  }
+
+  set_value(): void {
+    this.audioEl.src = this.model.value
+  }
+}
+
+export namespace Audio {
+  export type Attrs = p.AttrsOf<Props>
+  export type Props = Widget.Props & {
+    loop: p.Property<boolean>
+    paused: p.Property<boolean>
+    time: p.Property<number>
+    throttle: p.Property<number>
+    value: p.Property<any>
+    volume: p.Property<number | null>
+  }
+}
+
+export interface Audio extends Audio.Attrs {}
+
+export abstract class Audio extends Widget {
+  properties: Audio.Props
+
+  constructor(attrs?: Partial<Audio.Attrs>) {
+    super(attrs)
+  }
+
+  static initClass(): void {
+    this.prototype.type = "Audio"
+    this.prototype.default_view = AudioView
+
+    this.define<Audio.Props>({
+      loop:     [ p.Boolean,   false ],
+      paused:   [ p.Boolean,   true  ],
+      time:     [ p.Number, 0     ],
+	  throttle: [ p.Number, 250   ],
+      value:    [ p.Any,    ''    ],
+      volume:   [ p.Number, null  ],
+    })
+  }
+}
+
+Audio.initClass()

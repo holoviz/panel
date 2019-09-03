@@ -1,73 +1,48 @@
 import * as p from "core/properties"
-import {LayoutDOM, LayoutDOMView} from "models/layouts/layout_dom"
+import {HTMLBox, HTMLBoxView} from "models/layouts/html_box"
 
-export class VegaPlotView extends LayoutDOMView {
+function get_file(file: string, callback: any): void {
+  var xobj = new XMLHttpRequest();
+  xobj.overrideMimeType("application/json");
+  xobj.open('GET', file, true);
+  xobj.onreadystatechange = function () {
+    if (xobj.readyState == 4 && xobj.status == 200) {
+      callback(xobj.responseText);
+    }
+  };
+  xobj.send(null);
+}
+
+export class VegaPlotView extends HTMLBoxView {
   model: VegaPlot
-  protected _initialized: boolean
+  _connected: string[]
 
-  initialize(options): void {
-    super.initialize(options)
-    const vega_url = "https://cdn.jsdelivr.net/npm/vega@4.2.0?noext"
-    const vega_lite_url = "https://cdn.jsdelivr.net/npm/vega-lite@3.0.0-rc4?noext"
-    const vega_embed_url = "https://cdn.jsdelivr.net/npm/vega-embed@3.18.2?noext"
+  connect_signals(): void {
+    super.connect_signals()
+    this.connect(this.model.properties.data.change, this._plot)
+    this.connect(this.model.properties.data_sources.change, () => this._connect_sources())
+    this._connected = []
+    this._connect_sources()
+  }
 
-    this._initialized = false;
-    if (window.vega) {
-      this._init()
-    } else if ((window.Jupyter !== undefined) && (window.Jupyter.notebook !== undefined)) {
-      window.requirejs.config({
-        paths: {
-          "vega-embed":  vega_embed_url,
-          "vega-lib": "https://cdn.jsdelivr.net/npm/vega-lib?noext",
-          "vega-lite": vega_lite_url,
-          "vega": vega_url
-        }
-      });
-      var that = this
-      window.require(["vega-embed", "vega", "vega-lite"], function(vegaEmbed, vega, vegaLite) {
-        window.vega = vega
-        window.vl = vegaLite
-        window.vegaEmbed = vegaEmbed
-        that._init()
-      })
-    } else {
-      const init = () => { this._init() }
-      const load_vega_embed = () => { this._add_script(vega_embed_url, init) }
-      const load_vega_lite = () => { this._add_script(vega_lite_url, load_vega_embed) }
-      this._add_script(vega_url, load_vega_lite)
+  _connect_sources(): void {
+    for (const ds in this.model.data_sources) {
+      const cds = this.model.data_sources[ds]
+      if (this._connected.indexOf(ds) < 0) {
+        this.connect(cds.properties.data.change, this._plot)
+        this._connected.push(ds)
+      }
     }
   }
 
-  _add_script(url: string, callback): void {
-    const script = document.createElement('script')
-    script.src = url
-    script.async = false
-    script.onreadystatechange = script.onload = callback
-    document.querySelector("head").appendChild(script)
-  }
-
-  get_width(): number {
-    return undefined;
-  }
-
-  get_height(): number {
-    return undefined;
-  }
-
-  _init(): void {
-    this._plot()
-    this._initialized = true
-    this.connect(this.model.properties.data.change, this._plot)
-  }
-
   _fetch_datasets() {
-    const datasets = {}
+    const datasets: any = {}
     for (const ds in this.model.data_sources) {
       const cds = this.model.data_sources[ds];
-      const data = []
+      const data: any = []
       const columns = cds.columns()
-      for (const i = 0; i < cds.data[columns[0]].length; i++) {
-        const item = {}
+      for (let i = 0; i < cds.data[columns[0]].length; i++) {
+        const item: any = {}
         for (const column of columns) {
           item[column] = cds.data[column][i]
         }
@@ -80,30 +55,47 @@ export class VegaPlotView extends LayoutDOMView {
 
   render(): void {
     super.render()
+    this._plot()
+  }
+
+  _receive_file(data: string, format: string): void {
+    const values = (format === 'json') ? JSON.parse(data): data;
+    this.model.data.data = {values: values, format: {type: format}};
+    this._plot();
   }
 
   _plot(): void {
-    if (!('datasets' in this.model.data)) {
+    if (!this.model.data || !(window as any).vegaEmbed)
+      return
+    if (this.model.data_sources && (Object.keys(this.model.data_sources).length > 0)) {
       const datasets = this._fetch_datasets()
       if ('data' in datasets) {
         this.model.data.data['values'] = datasets['data']
-         delete datasets['data']
+        delete datasets['data']
       }
       this.model.data['datasets'] = datasets
     }
-    vegaEmbed(this.el, this.model.data, {actions: false})
+    if (this.model.data.data && this.model.data.data.url) {
+      const url = this.model.data.data.url;
+      const url_components = url.split('.');
+      const format = url_components[url_components.length-1];
+      get_file(this.model.data.data.url, (result: string) => this._receive_file(result, format))
+    }
+    (window as any).vegaEmbed(this.el, this.model.data, {actions: false})
   }
 }
 
-
 export namespace VegaPlot {
-  export interface Attrs extends LayoutDOM.Attrs {}
-  export interface Props extends LayoutDOM.Props {}
+  export type Attrs = p.AttrsOf<Props>
+  export type Props = HTMLBox.Props & {
+    data: p.Property<any>
+    data_sources: p.Property<any>
+  }
 }
 
 export interface VegaPlot extends VegaPlot.Attrs {}
 
-export class VegaPlot extends LayoutDOM {
+export class VegaPlot extends HTMLBox {
   properties: VegaPlot.Props
 
   constructor(attrs?: Partial<VegaPlot.Attrs>) {
@@ -114,7 +106,7 @@ export class VegaPlot extends LayoutDOM {
     this.prototype.type = "VegaPlot"
     this.prototype.default_view = VegaPlotView
 
-    this.define({
+    this.define<VegaPlot.Props>({
       data: [ p.Any         ],
       data_sources: [ p.Any  ],
     })

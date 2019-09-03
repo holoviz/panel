@@ -21,9 +21,6 @@ def test_link():
     assert obj.a == 1
     assert obj2.a == 1
 
-    obj._cleanup(None, final=True)
-    assert obj._callbacks == {}
-
 
 def test_param_rename():
     "Test that Reactive renames params and properties"
@@ -41,28 +38,6 @@ def test_param_rename():
 
     properties = obj._process_param_change({'a': 1})
     assert properties == {'b': 1}
-
-
-def test_link_params_nb(document, comm):
-
-    class ReactiveLink(Reactive):
-
-        text = param.String(default='A')
-
-    obj = ReactiveLink()
-    div = Div()
-
-    # Link params and ensure callback is cached
-    obj._link_params(div, ['text'], document, None, comm)
-    assert div.ref['id'] in obj._callbacks
-
-    # Set object parameter and assert bokeh property updates
-    obj.text = 'B'
-    assert div.text == 'B'
-
-    # Assert cleanup deletes callback
-    obj._cleanup(div, True)
-    assert obj._callbacks == {}
 
 
 def test_link_properties_nb(document, comm):

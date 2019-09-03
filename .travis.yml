@@ -6,30 +6,43 @@ language: generic
 os:
   - linux
 
+services:
+  - xvfb
+
 sudo: false
+
+addons:
+  apt:
+    packages:
+    - libglu1-mesa
 
 env:
   global:
-    - PYENV_VERSION=3.6
-    - CHANS_DEV="-c pyviz/label/dev -c jbednar -c bokeh/label/dev"
-    - CHANS_REL="-c pyviz -c jbednar"
+    - PYENV_VERSION=3.7
+    - CHANS_DEV="-c pyviz/label/dev -c bokeh/label/dev -c conda-forge"
+    - CHANS_REL="-c pyviz -c conda-forge"
     - LABELS_DEV="--label dev"
     - LABELS_REL="--label dev --label main"
     - PKG_TEST_PYTHON="--test-python=py36"
+    - DISPLAY=":99.0"
+    - PYTHON_VERSION=3.6
 
 stages:
   - test
   - name: conda_dev_package
     if: tag =~ ^v(\d+|\.)+[a-z]\d+$
   - name: conda_package
-    if: tag =~ ^v(\d+|\.)+[^a-z]\d+$ 
-  - name: docs
-    if: (branch = master) AND (type != pull_request)
+    if: tag =~ ^v(\d+|\.)+[^a-z]\d+$
   - name: pip_dev_package
     if: tag =~ ^v(\d+|\.)+[a-z]\d+$
   - name: pip_package
     if: tag =~ ^v(\d+|\.)+[^a-z]\d+$
-
+  - name: docs
+    if: tag =~ ^v(\d+|\.)+[^a-z]\d+$
+  - name: docs_dev
+    if: tag =~ ^v(\d+|\.)+[a-z]\d+$
+  - name: docs_daily
+    if: ((type = cron OR commit_message =~ /\[doc-build\]/) and branch = master)
 
 jobs:
   include:
@@ -45,21 +58,25 @@ jobs:
         - export PATH="$HOME/miniconda/bin:$PATH" && hash -r
         - conda config --set always_yes True
         # ...and now install doit/pyctdev into miniconda
-        - conda install -c pyviz pyctdev && doit ecosystem_setup
+        - conda install -c pyviz "pyctdev>=0.5" && doit ecosystem_setup
       install:
-        - doit env_create $CHANS_DEV --python=$PYENV_VERSION
+        - doit env_create $CHANS_DEV --python=$PYTHON_VERSION
         - source activate test-environment
-        - doit develop_install -o recommended -o tests $CHANS_DEV
-        - pip install codecov altair
+        - conda install -c conda-forge mesalib
+        - doit develop_install -o recommended -o tests -o build $CHANS_DEV
+        - python setup.py develop --no-deps
+        - bokeh sampledata
         - doit env_capture
+      before_script:
+        - "/sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -ac -screen 0 1280x1024x24"
+        - sleep 3
       script: doit test_all_recommended
+      after_failure:
+        - sleep 10
       after_success: codecov
 
-    # python 2 flake checking typically catches python 2 syntax
-    # errors where python 3's been assumed...
-    #- <<: *conda_default
-    #  env: DESC="py2 flakes" PYENV_VERSION=2.7
-    #  script: doit test_lint
+    - <<: *conda_default
+      env: DESC="py2 tests" PYTHON_VERSION=2.7
 
     ########## END-USER PACKAGES ##########
 
@@ -70,7 +87,7 @@ jobs:
       stage: conda_dev_package
       env: DESC="" TRAVIS_NOCACHE=$TRAVIS_JOB_ID LABELS=$LABELS_DEV CHANS=$CHANS_DEV
       install:
-        - doit package_build $CHANS $PKG_TEST_PYTHON --test-group=unit
+        - doit package_build $CHANS $PKG_TEST_PYTHON --test-group=unit_deploy
       script: doit package_upload --token=$ANACONDA_TOKEN $LABELS
 
     - &pip_pkg
@@ -78,10 +95,12 @@ jobs:
       env: PYPI=testpypi PYPIUSER=$TPPU PYPIPASS=$TPPP
       stage: pip_dev_package
       install:
+        - doit env_create $CHANS_DEV --python=$PYTHON_VERSION
+        - source activate test-environment
         - doit develop_install $CHANS_DEV -o build && pip uninstall -y panel
         - doit pip_on_conda
-        - conda install $CHANS_DEV nodejs=9.11.1
-        - doit ecosystem=pip package_build $PKG_TEST_PYTHON --test-group=unit
+        - conda install $CHANS_DEV nodejs
+        - doit ecosystem=pip package_build $PKG_TEST_PYTHON --test-group=unit_deploy
       script: doit ecosystem=pip package_upload -u $PYPIUSER -p $PYPIPASS --pypi ${PYPI}
 
     ## release packages
@@ -96,23 +115,45 @@ jobs:
 
     ########## DOCS ##########
 
-    - <<: *conda_default
+    - &doc_build
+      <<: *conda_default
       stage: docs
-      env: DESC="docs"
+      env: DESC="docs" HV_DOC_HTML='true'
       script:
-        - doit develop_install $CHANS_DEV -o doc -o examples -c conda-forge # phantomjs still not on defaults
+        - doit develop_install $CHANS_DEV -o doc -o examples
         # note: will vastly simplified in a future version of nbsite
-        - cd doc
-        - nbsite_nbpagebuild.py pyviz panel ../examples .
-        - HV_DOC_HTML='true' sphinx-build -b html . ./_build/html
-        - nbsite_fix_links.py _build/html
-        - nbsite_cleandisthtml.py ./_build/html take_a_chance
-        - touch ./_build/html/.nojekyll
+        - nbsite generate-rst --org pyviz --project-name panel
+        - nbsite build --what=html --output=builtdocs
+        - touch ./builtdocs/.nojekyll
       deploy:
         - provider: pages
           skip_cleanup: true
           github_token: $GITHUB_TOKEN
-          local_dir: ./doc/_build/html
+          local_dir: ./builtdocs
           fqdn: panel.pyviz.org
           on:
-            branch: master
+            tags: true
+            all_branches: true
+
+    - <<: *doc_build
+      stage: docs_dev
+      deploy:
+        provider: pages
+        skip_cleanup: true
+        github_token: $GITHUB_TOKEN
+        local_dir: ./builtdocs
+        repo: pyviz-dev/panel
+        on:
+          tags: true
+          all_branches: true
+
+    - <<: *doc_build
+      stage: docs_daily
+      deploy:
+        provider: pages
+        skip_cleanup: true
+        github_token: $GITHUB_TOKEN
+        local_dir: ./builtdocs
+        repo: pyviz-dev/panel
+        on:
+          all_branches: true

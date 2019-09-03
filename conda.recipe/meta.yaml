@@ -10,11 +10,16 @@ source:
 build:
   noarch: python
   script: python setup.py install --single-version-externally-managed --record record.txt
+  entry_points:
+    {% for group,epoints in sdata.get("entry_points",{}).items() %}
+    {% for entry_point in epoints %}
+    - {{ entry_point }}
+    {% endfor %}
+    {% endfor %}
 
 requirements:
   build:
     - python {{ sdata['python_requires'] }}
-    - nodejs=9.11.1
     {% for dep in sdata['extras_require']['build'] %}
     - {{ dep }}
     {% endfor %}
@@ -27,9 +32,9 @@ requirements:
 test:
   imports:
     - panel
-  requires:
-    {% for dep in sdata['extras_require']['tests'] %}
-    - {{ dep }}
+  requires:	
+    {% for dep in sdata['extras_require']['tests'] %}	
+    - {{ dep }}	
     {% endfor %}
 
 about:

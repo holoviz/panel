@@ -8,30 +8,37 @@ code were copied directly from ipywidgets:
 Copyright (c) Jupyter Development Team and PyViz Development Team.
 Distributed under the terms of the Modified BSD License.
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, division, unicode_literals
 
 import types
-from numbers import Real, Integral
-from collections import Iterable, Mapping, OrderedDict
+
+from collections import OrderedDict
 from inspect import getcallargs
+from numbers import Real, Integral
+from six import string_types
 
 try:  # Python >= 3.3
     from inspect import signature, Parameter
+    from collections.abc import Iterable, Mapping
+    empty = Parameter.empty
 except ImportError:
-    from IPython.utils.signatures import signature, Parameter
+    from collections import Iterable, Mapping
+    try:
+        from IPython.utils.signatures import signature, Parameter
+        empty = Parameter.empty
+    except:
+        signature, Parameter, empty = None, None, None
 
 try:
     from inspect import getfullargspec as check_argspec
 except ImportError:
     from inspect import getargspec as check_argspec # py2
 
-empty = Parameter.empty
-
 import param
 
-from .layout import WidgetBox, Panel, Column, Row
-from .pane import PaneBase, Pane
-from .util import basestring, as_unicode
+from .layout import Panel, Column, Row
+from .pane import PaneBase, Pane, HTML
+from .util import as_unicode
 from .widgets import (Checkbox, TextInput, Widget, IntSlider, FloatSlider,
                       Select, DiscreteSlider, Button)
 
@@ -82,7 +89,7 @@ def _yield_abbreviations_for_parameter(parameter, kwargs):
         if name in kwargs:
             value = kwargs.pop(name)
         elif ann is not empty:
-            param.main.warn("Using function annotations to implicitly specify interactive controls is deprecated. Use an explicit keyword argument for the parameter instead.", DeprecationWarning)
+            param.main.warning("Using function annotations to implicitly specify interactive controls is deprecated. Use an explicit keyword argument for the parameter instead.", DeprecationWarning)
             value = ann
         elif default is not empty:
             value = default
@@ -117,6 +124,10 @@ class interactive(PaneBase):
     manual_name = param.String(default='Run Interact')
 
     def __init__(self, object, params={}, **kwargs):
+        if signature is None:
+            raise ImportError('interact requires either recent Python version '
+                              '(>=3.3 or IPython to inspect function signatures.')
+
         super(interactive, self).__init__(object, **params)
 
         new_kwargs = self.find_abbreviations(kwargs)
@@ -135,12 +146,64 @@ class interactive(PaneBase):
         if self.manual_update:
             widgets.append(('manual', Button(name=self.manual_name)))
         self._widgets = OrderedDict(widgets)
-        self._pane = Pane(self.object(**self.kwargs), name=self.name,
-                          _temporary=True)
+        self._pane = Pane(self.object(**self.kwargs), name=self.name)
         self._inner_layout = Row(self._pane)
-        self.widget_box = WidgetBox(*(widget for _, widget in widgets
-                                      if isinstance(widget, Widget)))
-        self.layout.objects = [self.widget_box, self]
+        widgets = [widget for _, widget in widgets if isinstance(widget, Widget)]
+        if 'name' in params:
+            widgets.insert(0, HTML('<h2>%s</h2>' % self.name))
+        self.widget_box = Column(*widgets)
+        self.layout.objects = [self.widget_box, self._inner_layout]
+        self._link_widgets()
+
+    #----------------------------------------------------------------
+    # Model API
+    #----------------------------------------------------------------
+
+    def _get_model(self, doc, root=None, parent=None, comm=None):
+        return self._inner_layout._get_model(doc, root, parent, comm)
+
+    #----------------------------------------------------------------
+    # Callback API
+    #----------------------------------------------------------------
+
+    def _synced_params(self):
+        return []
+
+    def _link_widgets(self):
+        if self.manual_update:
+            widgets = [('manual', self._widgets['manual'])]
+        else:
+            widgets = self._widgets.items()
+
+        for name, widget in widgets:
+            def update_pane(change):
+                # Try updating existing pane
+                new_object = self.object(**self.kwargs)
+                pane_type = self.get_pane_type(new_object)
+                if type(self._pane) is pane_type:
+                    if isinstance(new_object, (PaneBase, Panel)):
+                        new_params = {k: v for k, v in new_object.get_param_values()
+                                      if k != 'name'}
+                        self._pane.set_param(**new_params)
+                    else:
+                        self._pane.object = new_object
+                    return
+
+                # Replace pane entirely
+                self._pane = Pane(new_object)
+                self._inner_layout[0] = self._pane
+
+            pname = 'clicks' if name == 'manual' else 'value'
+            watcher = widget.param.watch(update_pane, pname)
+            self._callbacks.append(watcher)
+
+    def _cleanup(self, root):
+        self._inner_layout._cleanup(root)
+        super(interactive, self)._cleanup(root)
+
+    #----------------------------------------------------------------
+    # Public API
+    #----------------------------------------------------------------
 
     @property
     def kwargs(self):
@@ -168,50 +231,6 @@ class interactive(PaneBase):
                 new_kwargs.append((name, value, default))
         return new_kwargs
 
-    def _get_model(self, doc, root=None, parent=None, comm=None):
-        layout = self._inner_layout._get_model(doc, root, parent, comm)
-        self._link_widgets(layout, doc, root, parent, comm)
-        return layout
-
-    def _link_widgets(self, layout, doc, root, parent, comm):
-        if self.manual_update:
-            widgets = [('manual', self._widgets['manual'])]
-        else:
-            widgets = self._widgets.items()
-
-        for name, widget in widgets:
-            def update_pane(change):
-                # Try updating existing pane
-                new_object = self.object(**self.kwargs)
-                pane_type = self.get_pane_type(new_object)
-                if type(self._pane) is pane_type:
-                    if isinstance(new_object, PaneBase):
-                        new_params = {k: v for k, v in new_object.get_param_values()
-                                      if k != 'name'}
-                        try:
-                            self._pane.set_param(**new_params)
-                        except:
-                            raise
-                        finally:
-                            new_object._cleanup(None, new_object._temporary)
-                    elif isinstance(self._pane, Panel):
-                        self._pane.objects = new_object.objects
-                        new_object._cleanup(None, new_object._temporary)
-                    else:
-                        self._pane.object = new_object
-
-                # Replace pane entirely
-                self._pane = Pane(new_object, _temporary=True)
-                self._inner_layout[0] = self._pane
-
-            pname = 'clicks' if name == 'manual' else 'value'
-            watcher = widget.param.watch(update_pane, pname)
-            self._callbacks[layout.ref['id']].append(watcher)
-
-    def _cleanup(self, model=None, final=False):
-        self._inner_layout._cleanup(model, final)
-        super(interactive, self)._cleanup(model, final)
-
     def widgets_from_abbreviations(self, seq):
         """Given a sequence of (name, abbrev, default) tuples, return a sequence of Widgets."""
         result = []
@@ -222,7 +241,7 @@ class interactive(PaneBase):
                 widget = self.widget_from_abbrev(abbrev, name, default)
             if not (isinstance(widget, Widget) or isinstance(widget, fixed)):
                 if widget is None:
-                    raise ValueError("{!r} cannot be transformed to a widget".format(abbrev))
+                    continue
                 else:
                     raise TypeError("{!r} is not a ValueWidget".format(widget))
             result.append((name, widget))
@@ -232,7 +251,7 @@ class interactive(PaneBase):
     def applies(cls, object):
         return isinstance(object, types.FunctionType)
 
-    @classmethod    
+    @classmethod
     def widget_from_abbrev(cls, abbrev, name, default=empty):
         """Build a ValueWidget instance given an abbreviation or Widget."""
         if isinstance(abbrev, Widget):
@@ -266,12 +285,12 @@ class interactive(PaneBase):
             return widget
 
         # No idea...
-        return None
+        return fixed(abbrev)
 
     @staticmethod
     def widget_from_single_value(o, name):
         """Make widgets from single values, which can be used as parameter defaults."""
-        if isinstance(o, basestring):
+        if isinstance(o, string_types):
             return TextInput(value=as_unicode(o), name=name)
         elif isinstance(o, bool):
             return Checkbox(value=o, name=name)
@@ -305,6 +324,23 @@ class interactive(PaneBase):
             else:
                 cls = FloatSlider
             return cls(value=value, start=min, end=max, step=step, name=name)
+        elif _matches(o, (Real, Real, Real, Real)):
+            step = o[2]
+            if step <= 0:
+                raise ValueError("step must be >= 0, not %r" % step)
+            min, max, value = _get_min_max_value(o[0], o[1], value=o[3], step=step)
+            if all(isinstance(_, Integral) for _ in o):
+                cls = IntSlider
+            else:
+                cls = FloatSlider
+            return cls(value=value, start=min, end=max, step=step, name=name)
+        elif len(o) == 4:
+            min, max, value = _get_min_max_value(o[0], o[1], value=o[3])
+            if all(isinstance(_, Integral) for _ in [o[0], o[1], o[3]]):
+                cls = IntSlider
+            else:
+                cls = FloatSlider
+            return cls(value=value, start=min, end=max, name=name)
 
     @staticmethod
     def widget_from_iterable(o, name):
@@ -332,16 +368,16 @@ class _InteractFactory(object):
     """
     Factory for instances of :class:`interactive`.
 
-    Parameters
-    ----------
-    cls : class
-        The subclass of :class:`interactive` to construct.
-    options : dict
-        A dict of options used to construct the interactive
-        function. By default, this is returned by
-        ``cls.default_options()``.
-    kwargs : dict
-        A dict of **kwargs to use for widgets.
+    Arguments
+    ---------
+    cls: class
+      The subclass of :class:`interactive` to construct.
+    options: dict
+      A dict of options used to construct the interactive
+      function. By default, this is returned by
+      ``cls.default_options()``.
+    kwargs: dict
+      A dict of **kwargs to use for widgets.
     """
     def __init__(self, cls, options, kwargs={}):
         self.cls = cls
@@ -414,7 +450,7 @@ class _InteractFactory(object):
         # If kwargs are given, replace self by a new
         # _InteractFactory with the updated kwargs
         if kwargs:
-            params = interactive.params()
+            params = list(interactive.param)
             kw = dict(self.kwargs)
             kw.update({k: v for k, v in kwargs.items() if k not in params})
             opts = dict(self.opts, **{k: v for k, v in kwargs.items() if k in params})

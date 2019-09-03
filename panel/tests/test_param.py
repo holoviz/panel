@@ -1,25 +1,16 @@
 import os
 
 import param
-import pytest
 
 from bokeh.models import (
     Div, Slider, Select, RangeSlider, MultiSelect, Row as BkRow,
-    WidgetBox as BkWidgetBox, CheckboxGroup, Toggle, Button,
-    TextInput as BkTextInput, Tabs as BkTabs, Column as BkColumn)
+    CheckboxGroup, Toggle, Button, TextInput as BkTextInput,
+    Tabs as BkTabs, Column as BkColumn, TextInput)
 from panel.pane import Pane, PaneBase, Matplotlib, Bokeh
 from panel.layout import Tabs, Row
-from panel.param import Param, ParamMethod, JSONInit
-
-from .test_layout import get_div
-from .fixtures import mpl_figure
-
-try:
-    import matplotlib as mpl
-    mpl.use('Agg')
-except:
-    mpl = None
-mpl_available = pytest.mark.skipif(mpl is None, reason="requires matplotlib")
+from panel.param import Param, ParamMethod, ParamFunction, JSONInit
+from panel.widgets import LiteralInput
+from panel._testing.util import mpl_available, mpl_figure
 
 
 def test_instantiate_from_class():
@@ -29,6 +20,15 @@ def test_instantiate_from_class():
         a = param.Number()
 
     assert isinstance(Pane(Test), Param)
+
+
+def test_instantiate_from_parameter():
+
+    class Test(param.Parameterized):
+
+        a = param.Number()
+
+    assert isinstance(Pane(Test.param.a), Param)
 
 
 def test_instantiate_from_parameters():
@@ -47,6 +47,15 @@ def test_instantiate_from_instance():
         a = param.Number()
 
     assert isinstance(Pane(Test()), Param)
+
+
+def test_instantiate_from_parameter_on_instance():
+
+    class Test(param.Parameterized):
+
+        a = param.Number()
+
+    assert isinstance(Pane(Test().param.a), Param)
 
 
 def test_instantiate_from_parameters_on_instance():
@@ -75,41 +84,54 @@ def test_param_pane_repr_with_params(document, comm):
     assert repr(Pane(Test(), parameters=['a'])) == "Param(Test, parameters=['a'])"
 
 
-def test_get_model(document, comm):
+def test_get_root(document, comm):
 
     class Test(param.Parameterized):
         pass
 
     test = Test()
-    test_pane = Pane(test, _temporary=True)
-    model = test_pane._get_model(document, comm=comm)
+    test_pane = Pane(test)
+    model = test_pane.get_root(document, comm=comm)
 
     assert isinstance(model, BkColumn)
     assert len(model.children) == 1
 
-    box = model.children[0]
-    assert isinstance(box, BkWidgetBox)
-    assert len(box.children) == 1
-
-    div = box.children[0]
+    div = model.children[0]
     assert isinstance(div, Div)
-    assert div.text == '<b>'+test.name+'</b>'
+    assert div.text == '<b>'+test.name[:-5]+'</b>'
 
 
-def test_get_model_tabs(document, comm):
+def test_single_param(document, comm):
+
+    class Test(param.Parameterized):
+        a = param.Parameter(default=0)
+
+    test = Test()
+    test_pane = Pane(test.param.a)
+    model = test_pane.get_root(document, comm=comm)
+
+    assert isinstance(model, BkColumn)
+    assert len(model.children) == 1
+
+    widget = model.children[0]
+    assert isinstance(widget, TextInput)
+    assert widget.value == '0'
+
+
+def test_get_root_tabs(document, comm):
 
     class Test(param.Parameterized):
         pass
 
     test = Test()
-    test_pane = Pane(test, expand_layout=Tabs, _temporary=True)
-    model = test_pane._get_model(document, comm=comm)
+    test_pane = Pane(test, expand_layout=Tabs)
+    model = test_pane.get_root(document, comm=comm)
 
     assert isinstance(model, BkTabs)
     assert len(model.tabs) == 1
 
     box = model.tabs[0].child
-    assert isinstance(box, BkWidgetBox)
+    assert isinstance(box, BkColumn)
     assert len(box.children) == 0
 
 
@@ -118,10 +140,10 @@ def test_number_param(document, comm):
         a = param.Number(default=1.2, bounds=(0, 5))
 
     test = Test()
-    test_pane = Pane(test, _temporary=True)
-    model = test_pane._get_model(document, comm=comm)
+    test_pane = Pane(test)
+    model = test_pane.get_root(document, comm=comm)
 
-    slider = model.children[0].children[1]
+    slider = model.children[1]
     assert isinstance(slider, Slider)
     assert slider.value == 1.2
     assert slider.start == 0
@@ -134,7 +156,7 @@ def test_number_param(document, comm):
     assert slider.value == 3.3
 
     # Check changing param attribute updates widget
-    a_param = test.params('a')
+    a_param = test.param['a']
     a_param.bounds = (0.1, 5.5)
     assert slider.start == 0.1
     assert slider.end == 5.5
@@ -158,10 +180,10 @@ def test_boolean_param(document, comm):
         a = param.Boolean(default=False)
 
     test = Test()
-    test_pane = Pane(test, _temporary=True)
-    model = test_pane._get_model(document, comm=comm)
+    test_pane = Pane(test)
+    model = test_pane.get_root(document, comm=comm)
 
-    checkbox = model.children[0].children[1]
+    checkbox = model.children[1]
     assert isinstance(checkbox, CheckboxGroup)
     assert checkbox.labels == ['A']
     assert checkbox.active == []
@@ -172,7 +194,7 @@ def test_boolean_param(document, comm):
     assert checkbox.active == [0]
 
     # Check changing param attribute updates widget
-    a_param = test.params('a')
+    a_param = test.param['a']
     a_param.constant = True
     assert checkbox.disabled == True
 
@@ -189,10 +211,10 @@ def test_range_param(document, comm):
         a = param.Range(default=(0.1, 0.5), bounds=(0, 1.1))
 
     test = Test()
-    test_pane = Pane(test, _temporary=True)
-    model = test_pane._get_model(document, comm=comm)
+    test_pane = Pane(test)
+    model = test_pane.get_root(document, comm=comm)
 
-    widget = model.children[0].children[1]
+    widget = model.children[1]
     assert isinstance(widget, RangeSlider)
     assert widget.start == 0
     assert widget.end == 1.1
@@ -203,7 +225,7 @@ def test_range_param(document, comm):
     assert widget.value == (0.2, 0.4)
 
     # Check changing param attribute updates widget
-    a_param = test.params('a')
+    a_param = test.param['a']
     a_param.bounds = (0.1, 0.6)
     assert widget.start == 0.1
     assert widget.end == 0.6
@@ -226,10 +248,10 @@ def test_integer_param(document, comm):
         a = param.Integer(default=2, bounds=(0, 5))
 
     test = Test()
-    test_pane = Pane(test, _temporary=True)
-    model = test_pane._get_model(document, comm=comm)
+    test_pane = Pane(test)
+    model = test_pane.get_root(document, comm=comm)
 
-    slider = model.children[0].children[1]
+    slider = model.children[1]
     assert isinstance(slider, Slider)
     assert slider.value == 2
     assert slider.start == 0
@@ -242,7 +264,7 @@ def test_integer_param(document, comm):
     assert slider.value == 3
 
     # Check changing param attribute updates widget
-    a_param = test.params('a')
+    a_param = test.param['a']
     a_param.bounds = (1, 6)
     assert slider.start == 1
     assert slider.end == 6
@@ -266,10 +288,10 @@ def test_object_selector_param(document, comm):
         a = param.ObjectSelector(default='b', objects=[1, 'b', 'c'])
 
     test = Test()
-    test_pane = Pane(test, _temporary=True)
-    model = test_pane._get_model(document, comm=comm)
+    test_pane = Pane(test)
+    model = test_pane.get_root(document, comm=comm)
 
-    slider = model.children[0].children[1]
+    slider = model.children[1]
     assert isinstance(slider, Select)
     assert slider.options == ['1', 'b', 'c']
     assert slider.value == 'b'
@@ -280,8 +302,8 @@ def test_object_selector_param(document, comm):
     assert slider.value == '1'
 
     # Check changing param attribute updates widget
-    a_param = test.params('a')
-    a_param.objects = ['c', 'd', '1']
+    a_param = test.param['a']
+    a_param.objects = ['c', 'd', 1]
     assert slider.options == ['c', 'd', '1']
 
     a_param.constant = True
@@ -302,10 +324,10 @@ def test_list_selector_param(document, comm):
         a = param.ListSelector(default=['b', 1], objects=[1, 'b', 'c'])
 
     test = Test()
-    test_pane = Pane(test, _temporary=True)
-    model = test_pane._get_model(document, comm=comm)
+    test_pane = Pane(test)
+    model = test_pane.get_root(document, comm=comm)
 
-    slider = model.children[0].children[1]
+    slider = model.children[1]
     assert isinstance(slider, MultiSelect)
     assert slider.options == ['1', 'b', 'c']
     assert slider.value == ['b', '1']
@@ -316,8 +338,8 @@ def test_list_selector_param(document, comm):
     assert slider.value == ['c', '1']
 
     # Check changing param attribute updates widget
-    a_param = test.params('a')
-    a_param.objects = ['c', 'd', '1']
+    a_param = test.param['a']
+    a_param.objects = ['c', 'd', 1]
     assert slider.options == ['c', 'd', '1']
 
     a_param.constant = True
@@ -339,10 +361,10 @@ def test_action_param(document, comm):
         b = param.List(default=[])
 
     test = Test()
-    test_pane = Pane(test, _temporary=True)
-    model = test_pane._get_model(document, comm=comm)
+    test_pane = Pane(test)
+    model = test_pane.get_root(document, comm=comm)
 
-    slider = model.children[0].children[1]
+    slider = model.children[1]
     assert isinstance(slider, Button)
 
 
@@ -352,11 +374,11 @@ def test_explicit_params(document, comm):
         b = param.Integer(default=1)
 
     test = Test()
-    test_pane = Pane(test, parameters=['a'], _temporary=True)
-    model = test_pane._get_model(document, comm=comm)
+    test_pane = Pane(test, parameters=['a'])
+    model = test_pane.get_root(document, comm=comm)
 
-    assert len(model.children[0].children) == 2
-    assert isinstance(model.children[0].children[1], CheckboxGroup)
+    assert len(model.children) == 2
+    assert isinstance(model.children[1], CheckboxGroup)
 
 
 def test_param_precedence(document, comm):
@@ -364,15 +386,213 @@ def test_param_precedence(document, comm):
         a = param.Number(default=1.2, bounds=(0, 5))
 
     test = Test()
-    test_pane = Pane(test, _temporary=True)
+    test_pane = Pane(test)
 
     # Check changing precedence attribute hides and shows widget
-    a_param = test.params('a')
+    a_param = test.param['a']
     a_param.precedence = -1
-    assert test_pane._widgets['a'][0] not in test_pane._widget_box.objects
+    assert test_pane._widgets['a'] not in test_pane._widget_box.objects
 
     a_param.precedence = 1
-    assert test_pane._widgets['a'][0] in test_pane._widget_box.objects
+    assert test_pane._widgets['a'] in test_pane._widget_box.objects
+
+
+def test_param_label(document, comm):
+    class Test(param.Parameterized):
+        a = param.Number(default=1.2, bounds=(0, 5), label='A')
+        b = param.Action(label='B')
+
+    test = Test()
+    test_pane = Pane(test)
+
+    # Check updating label changes widget name
+    a_param = test.param['a']
+    a_param.label = 'B'
+    assert test_pane._widgets['a'].name == 'B'
+
+    b_param = test.param['b']
+    b_param.label = 'C'
+    assert test_pane._widgets['b'].name == 'C'
+
+
+def test_param_precedence_ordering(document, comm):
+    class Test(param.Parameterized):
+        a = param.Number(default=1.2, bounds=(0, 5), precedence=-1)
+        b = param.Boolean(default=True, precedence=1)
+
+    test = Test()
+    test_pane = Pane(test)
+
+    # Check changing precedence attribute hides and shows widget
+    a_param = test.param['a']
+    a_param.precedence = 2
+    assert test_pane._widget_box.objects == [test_pane._widgets[w] for w in ('name', 'b', 'a')]
+
+    a_param.precedence = 1
+    assert test_pane._widget_box.objects == [test_pane._widgets[w] for w in ('name', 'a', 'b')]
+
+
+def test_param_step(document, comm):
+    class Test(param.Parameterized):
+        a = param.Number(default=1.2, bounds=(0, 5), step=0.1)
+
+    test = Test()
+    test_pane = Pane(test)
+    assert test_pane._widgets['a'].step == 0.1
+
+    a_param = test.param['a']
+    a_param.step = 0.25
+    assert test_pane._widgets['a'].step == 0.25
+
+
+def test_replace_param_object(document, comm):
+    class Test(param.Parameterized):
+        a = param.Number(bounds=(0, 10))
+
+    pane = Param()
+
+    model = pane.get_root(document, comm=comm)
+
+    assert model.children == []
+
+    pane.object = Test()
+
+    assert len(model.children) == 2
+    title, widget = model.children
+
+    assert isinstance(title, Div)
+    assert title.text == '<b>Test</b>'
+
+    assert isinstance(widget, Slider)
+    assert widget.start == 0
+    assert widget.end == 10
+
+
+def test_set_parameters(document, comm):
+    class Test(param.Parameterized):
+        a = param.Number(bounds=(0, 10))
+        b = param.String(default='A')
+
+    pane = Param(Test())
+
+    model = pane.get_root(document, comm=comm)
+
+    assert len(model.children) == 3
+    title, slider, text = model.children
+    assert isinstance(title, Div)
+    assert isinstance(slider, Slider)
+    assert isinstance(text, TextInput)
+
+    pane.parameters = ['b']
+
+    assert len(model.children) == 2
+    title, text = model.children
+    assert isinstance(title, Div)
+    assert isinstance(text, TextInput)
+
+
+def test_set_display_threshold(document, comm):
+    class Test(param.Parameterized):
+        a = param.Number(bounds=(0, 10), precedence=1)
+        b = param.String(default='A', precedence=2)
+
+    pane = Param(Test())
+
+    model = pane.get_root(document, comm=comm)
+
+    assert len(model.children) == 3
+    title, slider, text = model.children
+    assert isinstance(title, Div)
+    assert isinstance(slider, Slider)
+    assert isinstance(text, TextInput)
+
+    pane.display_threshold = 1.5
+
+    assert len(model.children) == 2
+    title, text = model.children
+    assert isinstance(title, Div)
+    assert isinstance(text, TextInput)
+
+
+def test_set_widgets(document, comm):
+    class Test(param.Parameterized):
+        a = param.Number(default=1, bounds=(0, 10), precedence=1)
+        b = param.String(default='A', precedence=2)
+
+    pane = Param(Test())
+
+    model = pane.get_root(document, comm=comm)
+
+    assert len(model.children) == 3
+    title, slider, text = model.children
+    assert isinstance(title, Div)
+    assert isinstance(slider, Slider)
+    assert isinstance(text, TextInput)
+
+    pane.widgets = {'a': LiteralInput(value=1, type=(float, int))}
+
+    assert len(model.children) == 3
+    title, number, text = model.children
+    assert isinstance(title, Div)
+    assert isinstance(number, TextInput)
+    assert isinstance(text, TextInput)
+
+    pane.widgets = {'a': {'height':100}}
+
+    assert len(model.children) == 3
+    title, number, text = model.children
+    assert isinstance(title, Div)
+    assert isinstance(number, Slider)
+    assert number.height == 100
+    assert isinstance(text, TextInput)
+
+    pane.widgets = {'a': {'type': LiteralInput, 'height':100}}
+
+    assert len(model.children) == 3
+    title, number, text = model.children
+    assert isinstance(title, Div)
+    assert isinstance(number, TextInput)
+    assert number.height == 100
+    assert isinstance(text, TextInput)
+
+def test_set_show_name(document, comm):
+    class Test(param.Parameterized):
+        a = param.Number(bounds=(0, 10))
+
+    pane = Param(Test())
+
+    model = pane.get_root(document, comm=comm)
+
+    assert len(model.children) == 2
+    title, widget = model.children
+    assert isinstance(title, Div)
+    assert isinstance(widget, Slider)
+
+    pane.show_name = False
+
+    assert len(model.children) == 1
+    assert isinstance(model.children[0], Slider)
+
+
+def test_set_show_labels(document, comm):
+    class Test(param.Parameterized):
+        a = param.Number(bounds=(0, 10))
+
+    pane = Param(Test())
+
+    model = pane.get_root(document, comm=comm)
+
+    assert len(model.children) == 2
+    title, widget = model.children
+    assert isinstance(title, Div)
+    assert isinstance(widget, Slider)
+    assert widget.title == 'A'
+
+    pane.show_labels = False
+
+    assert len(model.children) == 2
+    assert isinstance(model.children[1], Slider)
+    assert model.children[1].title == ''
 
 
 def test_expand_param_subobject(document, comm):
@@ -380,32 +600,27 @@ def test_expand_param_subobject(document, comm):
         a = param.Parameter()
 
     test = Test(a=Test(name='Nested'))
-    test_pane = Pane(test, _temporary=True)
-    model = test_pane._get_model(document, comm=comm)
+    test_pane = Pane(test)
+    model = test_pane.get_root(document, comm=comm)
 
-    toggle = model.children[0].children[2]
+    toggle = model.children[1].children[1]
     assert isinstance(toggle, Toggle)
 
     # Expand subpane
-    test_pane._widgets['a'][1].active = True
-    assert len(model.children) == 2
-    _, subpanel = test_pane.layout.objects
-    row = model.children[1]
-    assert 'instance' in subpanel._callbacks
-    assert isinstance(row, BkColumn)
-    assert len(row.children) == 1
-    box = row.children[0]
-    assert isinstance(box, BkWidgetBox)
-    assert len(box.children) == 2
-    div, widget = box.children
+    test_pane._widgets['a'][1].value = True
+    assert len(model.children) == 3
+    _, _, subpanel = test_pane.layout.objects
+    col = model.children[2]
+    assert isinstance(col, BkColumn)
+    assert isinstance(col, BkColumn)
+    assert len(col.children) == 2
+    div, widget = col.children
     assert div.text == '<b>Nested</b>'
     assert isinstance(widget, BkTextInput)
 
     # Collapse subpanel
-    test_pane._widgets['a'][1].active = False
-    assert len(model.children) == 1
-    assert subpanel._callbacks == {}
-
+    test_pane._widgets['a'][1].value = False
+    assert len(model.children) == 2
 
 
 def test_switch_param_subobject(document, comm):
@@ -414,49 +629,41 @@ def test_switch_param_subobject(document, comm):
 
     o1 = Test(name='Subobject 1')
     o2 = Test(name='Subobject 2')
-    Test.params('a').objects = [o1, o2, 3]
+    Test.param['a'].objects = [o1, o2, 3]
     test = Test(a=o1, name='Nested')
-    test_pane = Pane(test, _temporary=True)
-    model = test_pane._get_model(document, comm=comm)
+    test_pane = Pane(test)
+    model = test_pane.get_root(document, comm=comm)
 
-    toggle = model.children[0].children[2]
+    toggle = model.children[1].children[1]
     assert isinstance(toggle, Toggle)
 
     # Expand subpane
-    test_pane._widgets['a'][1].active = True
-    assert len(model.children) == 2
-    _, subpanel = test_pane.layout.objects
-    row = model.children[1]
-    assert 'instance' in subpanel._callbacks
-    assert isinstance(row, BkColumn)
-    assert len(row.children) == 1
-    box = row.children[0]
-    assert isinstance(box, BkWidgetBox)
-    assert len(box.children) == 3
-    div, select, widget = box.children
+    test_pane._widgets['a'][1].value = True
+    assert len(model.children) == 3
+    _, _, subpanel = test_pane.layout.objects
+    col = model.children[2]
+    assert isinstance(col, BkColumn)
+    assert len(col.children) == 2
+    div, row = col.children
     assert div.text == '<b>Subobject 1</b>'
-    assert isinstance(select, Select)
+    assert isinstance(row.children[0], Select)
 
     # Switch subobject
-    test_pane._widgets['a'][0].value = o2    
-    _, subpanel = test_pane.layout.objects
-    row = model.children[1]
-    assert 'instance' in subpanel._callbacks
-    assert isinstance(row, BkColumn)
-    assert len(row.children) == 1
-    box = row.children[0]
-    assert isinstance(box, BkWidgetBox)
-    assert len(box.children) == 3
-    div, select, widget = box.children
+    test_pane._widgets['a'][0].value = o2
+    _, _, subpanel = test_pane.layout.objects
+    col = model.children[2]
+    assert isinstance(col, BkColumn)
+    assert len(col.children) == 2
+    div, row = col.children
     assert div.text == '<b>Subobject 2</b>'
-    assert isinstance(select, Select)
+    assert isinstance(row.children[0], Select)
 
     # Collapse subpanel
-    test_pane._widgets['a'][1].active = False
-    assert len(model.children) == 1
-    assert subpanel._callbacks == {}
+    test_pane._widgets['a'][1].value = False
+    assert len(model.children) == 2
+    assert subpanel._models == {}
 
-    
+
 
 def test_expand_param_subobject_into_row(document, comm):
     class Test(param.Parameterized):
@@ -464,63 +671,58 @@ def test_expand_param_subobject_into_row(document, comm):
 
     test = Test(a=Test(name='Nested'))
     row = Row()
-    test_pane = Pane(test, expand_layout=row, _temporary=True)
+    test_pane = Pane(test, expand_layout=row)
     layout = Row(test_pane, row)
-    model = layout._get_model(document, comm=comm)
+    model = layout.get_root(document, comm=comm)
 
-    toggle = model.children[0].children[2]
+    toggle = model.children[0].children[1].children[1]
     assert isinstance(toggle, Toggle)
 
     # Expand subpane
-    test_pane._widgets['a'][1].active = True
+    test_pane._widgets['a'][1].value = True
     assert len(model.children) == 2
     subpanel = row.objects[0]
     row = model.children[1]
-    assert 'instance' in subpanel._callbacks
     assert isinstance(row, BkRow)
     assert len(row.children) == 1
     box = row.children[0]
-    assert isinstance(box, BkWidgetBox)
+    assert isinstance(box, BkColumn)
     assert len(box.children) == 2
     div, widget = box.children
     assert div.text == '<b>Nested</b>'
     assert isinstance(widget, BkTextInput)
 
     # Collapse subpanel
-    test_pane._widgets['a'][1].active = False
+    test_pane._widgets['a'][1].value = False
     assert len(row.children) == 0
-    assert subpanel._callbacks == {}
+    assert subpanel._models == {}
 
-    
+
 def test_expand_param_subobject_expand(document, comm):
     class Test(param.Parameterized):
         a = param.Parameter()
 
     test = Test(a=Test(name='Nested'))
-    test_pane = Pane(test, _temporary=True, expand=True, expand_button=True)
-    model = test_pane._get_model(document, comm=comm)
+    test_pane = Pane(test, expand=True, expand_button=True)
+    model = test_pane.get_root(document, comm=comm)
 
-    toggle = model.children[0].children[2]
+    toggle = model.children[1].children[1]
     assert isinstance(toggle, Toggle)
 
     # Expand subpane
-    assert len(model.children) == 2
-    _, subpanel = test_pane.layout.objects
-    row = model.children[1]
-    assert 'instance' in subpanel._callbacks
-    assert isinstance(row, BkColumn)
-    assert len(row.children) == 1
-    box = row.children[0]
-    assert isinstance(box, BkWidgetBox)
-    assert len(box.children) == 2
-    div, widget = box.children
+    assert len(model.children) == 3
+    _, _, subpanel = test_pane.layout.objects
+    col = model.children[2]
+    assert isinstance(col, BkColumn)
+    assert len(col.children) == 2
+    div, widget = col.children
     assert div.text == '<b>Nested</b>'
     assert isinstance(widget, BkTextInput)
 
     # Collapse subpanel
-    test_pane._widgets['a'][1].active = False
-    assert len(model.children) == 1
-    assert subpanel._callbacks == {}
+    test_pane._widgets['a'][1].value = False
+    assert len(model.children) == 2
+    assert subpanel._models == {}
 
 
 def test_param_subobject_expand_no_toggle(document, comm):
@@ -528,60 +730,50 @@ def test_param_subobject_expand_no_toggle(document, comm):
         a = param.Parameter()
 
     test = Test(a=Test(name='Nested'))
-    test_pane = Pane(test, _temporary=True, expand=True,
+    test_pane = Pane(test, expand=True,
                      expand_button=False)
-    model = test_pane._get_model(document, comm=comm)
+    model = test_pane.get_root(document, comm=comm)
 
     # Assert no toggle was added
-    assert len(model.children[0].children) == 2
+    assert len(model.children) == 3
 
     # Expand subpane
-    assert len(model.children) == 2
-    _, subpanel = test_pane.layout.objects
-    row = model.children[1]
-    assert 'instance' in subpanel._callbacks
-    assert isinstance(row, BkColumn)
-    assert len(row.children) == 1
-    box = row.children[0]
-    assert isinstance(box, BkWidgetBox)
-    assert len(box.children) == 2
-    div, widget = box.children
+    _, _, subpanel = test_pane.layout.objects
+    div, widget = model.children[2].children
     assert div.text == '<b>Nested</b>'
     assert isinstance(widget, BkTextInput)
-    
+
 
 def test_expand_param_subobject_tabs(document, comm):
     class Test(param.Parameterized):
-        a = param.Parameter()
+        abc = param.Parameter()
 
-    test = Test(a=Test(name='Nested'))
-    test_pane = Pane(test, expand_layout=Tabs, _temporary=True)
-    model = test_pane._get_model(document, comm=comm)
+    test = Test(abc=Test(name='Nested'), name='A')
+    test_pane = Pane(test, expand_layout=Tabs)
+    model = test_pane.get_root(document, comm=comm)
 
-    toggle = model.tabs[0].child.children[1]
+    toggle = model.tabs[0].child.children[0].children[1]
     assert isinstance(toggle, Toggle)
 
     # Expand subpanel
-    test_pane._widgets['a'][1].active = True
+    test_pane._widgets['abc'][1].value = True
     assert len(model.tabs) == 2
     _, subpanel = test_pane.layout.objects
     subtabs = model.tabs[1].child
-    assert model.tabs[1].title == 'Nested'
-    assert 'instance' in subpanel._callbacks
+    assert model.tabs[1].title == 'Abc'
     assert isinstance(subtabs, BkTabs)
     assert len(subtabs.tabs) == 1
-    assert subtabs.tabs[0].title == 'A'
+    assert subtabs.tabs[0].title == 'Nested'
 
     box = subtabs.tabs[0].child
-    assert isinstance(box, BkWidgetBox)
+    assert isinstance(box, BkColumn)
     assert len(box.children) == 1
     widget = box.children[0]
     assert isinstance(widget, BkTextInput)
 
     # Collapse subpanel
-    test_pane._widgets['a'][1].active = False
+    test_pane._widgets['abc'][1].value = False
     assert len(model.tabs) == 1
-    assert subpanel._callbacks == {}
 
 
 class View(param.Parameterized):
@@ -607,6 +799,50 @@ class View(param.Parameterized):
         return self.view() if (self.a % 2) else self.mpl_view()
 
 
+def test_get_param_function_pane_type():
+    test = View()
+
+    def view(a):
+        return Div(text='%d' % a)
+
+    assert PaneBase.get_pane_type(view) is not ParamFunction
+    assert PaneBase.get_pane_type(param.depends(test.param.a)(view)) is ParamFunction
+
+
+def test_param_function_pane(document, comm):
+    test = View()
+
+    @param.depends(test.param.a)
+    def view(a):
+        return Div(text='%d' % a)
+
+    pane = Pane(view)
+    inner_pane = pane._pane
+    assert isinstance(inner_pane, Bokeh)
+
+    # Create pane
+    row = pane.get_root(document, comm=comm)
+    assert isinstance(row, BkRow)
+    assert len(row.children) == 1
+    inner_row = row.children[0]
+    model = inner_row.children[0]
+    assert pane._models[row.ref['id']][0] is inner_row
+    assert isinstance(model, Div)
+    assert model.text == '0'
+
+    # Update pane
+    test.a = 5
+    new_model = inner_row.children[0]
+    assert inner_pane is pane._pane
+    assert new_model.text == '5'
+    assert pane._models[row.ref['id']][0] is inner_row
+
+    # Cleanup pane
+    pane._cleanup(row)
+    assert pane._models == {}
+    assert inner_pane._models == {}
+
+
 def test_get_param_method_pane_type():
     assert PaneBase.get_pane_type(View().view) is ParamMethod
 
@@ -618,27 +854,26 @@ def test_param_method_pane(document, comm):
     assert isinstance(inner_pane, Bokeh)
 
     # Create pane
-    row = pane._get_model(document, comm=comm)
+    row = pane.get_root(document, comm=comm)
     assert isinstance(row, BkRow)
     assert len(row.children) == 1
-    model = row.children[0]
-    div = get_div(model)
-    assert model.ref['id'] in inner_pane._callbacks
-    assert isinstance(div, Div)
-    assert div.text == '0'
+    inner_row = row.children[0]
+    model = inner_row.children[0]
+    assert pane._models[row.ref['id']][0] is inner_row
+    assert isinstance(model, Div)
+    assert model.text == '0'
 
     # Update pane
     test.a = 5
-    new_model = row.children[0]
-    div = get_div(new_model)
+    new_model = inner_row.children[0]
     assert inner_pane is pane._pane
-    assert div.text == '5'
-    assert len(inner_pane._callbacks) == 1
-    assert new_model.ref['id'] in inner_pane._callbacks
+    assert new_model.text == '5'
+    assert pane._models[row.ref['id']][0] is inner_row
 
     # Cleanup pane
     pane._cleanup(row)
-    assert inner_pane._callbacks == {}
+    assert pane._models == {}
+    assert inner_pane._models == {}
 
 
 def test_param_method_pane_subobject(document, comm):
@@ -649,34 +884,33 @@ def test_param_method_pane_subobject(document, comm):
     assert isinstance(inner_pane, Bokeh)
 
     # Create pane
-    row = pane._get_model(document, comm=comm)
+    row = pane.get_root(document, comm=comm)
     assert isinstance(row, BkRow)
     assert len(row.children) == 1
-    model = row.children[0]
-    div = get_div(model)
+    inner_row = row.children[0]
+    model = inner_row.children[0]
+    assert isinstance(model, Div)
+    assert model.text == '42'
 
     # Ensure that subobject is being watched
-    assert row.ref['id'] in pane._callbacks
-    watchers = pane._callbacks[row.ref['id']]
+    watchers = pane._callbacks
     assert any(w.inst is subobject for w in watchers)
-    assert model.ref['id'] in inner_pane._callbacks
-    assert isinstance(div, Div)
-    assert div.text == '42'
+    assert pane._models[row.ref['id']][0] is inner_row
 
     # Ensure that switching the subobject triggers update in watchers
     new_subobject = View(name='Nested', a=42)
     test.b = new_subobject
-    assert row.ref['id'] in pane._callbacks
-    watchers = pane._callbacks[row.ref['id']]
+    assert pane._models[row.ref['id']][0] is inner_row
+    watchers = pane._callbacks
     assert not any(w.inst is subobject for w in watchers)
     assert any(w.inst is new_subobject for w in watchers)
-    
+
     # Cleanup pane
     pane._cleanup(row)
-    assert pane._callbacks == {}
-    assert inner_pane._callbacks == {}
+    assert pane._models == {}
+    assert inner_pane._models == {}
 
-    
+
 @mpl_available
 def test_param_method_pane_mpl(document, comm):
     test = View()
@@ -685,26 +919,26 @@ def test_param_method_pane_mpl(document, comm):
     assert isinstance(inner_pane, Matplotlib)
 
     # Create pane
-    row = pane._get_model(document, comm=comm)
+    row = pane.get_root(document, comm=comm)
     assert isinstance(row, BkRow)
     assert len(row.children) == 1
-    model = row.children[0]
-    assert model.ref['id'] in inner_pane._callbacks
-    div = get_div(model)
-    text = div.text
+    inner_row = row.children[0]
+    model = inner_row.children[0]
+    assert pane._models[row.ref['id']][0] is inner_row
+    text = model.text
 
     # Update pane
     test.a = 5
-    model = row.children[0]
+    new_model = inner_row.children[0]
     assert inner_pane is pane._pane
-    assert div is get_div(model)
-    assert div.text != text
-    assert len(inner_pane._callbacks) == 1
-    assert model.ref['id'] in inner_pane._callbacks
+    assert new_model is model
+    assert new_model.text != text
+    assert pane._models[row.ref['id']][0] is inner_row
 
     # Cleanup pane
     pane._cleanup(row)
-    assert inner_pane._callbacks == {}
+    assert pane._models == {}
+    assert inner_pane._models == {}
 
 
 @mpl_available
@@ -715,29 +949,25 @@ def test_param_method_pane_changing_type(document, comm):
     assert isinstance(inner_pane, Matplotlib)
 
     # Create pane
-    row = pane._get_model(document, comm=comm)
+    row = pane.get_root(document, comm=comm)
     assert isinstance(row, BkRow)
     assert len(row.children) == 1
-    model = row.children[0]
-    assert model.ref['id'] in inner_pane._callbacks
-    div = get_div(model)
-    text = div.text
+    inner_row = row.children[0]
+    model = inner_row.children[0]
+    text = model.text
+    assert text.startswith('<img src')
 
     # Update pane
     test.a = 5
-    model = row.children[0]
+    new_model = inner_row.children[0]
     new_pane = pane._pane
-    assert inner_pane._callbacks == {}
     assert isinstance(new_pane, Bokeh)
-    div = get_div(model)
-    assert isinstance(div, Div)
-    assert div.text != text
-    assert len(new_pane._callbacks) == 1
-    assert model.ref['id'] in new_pane._callbacks
+    assert isinstance(new_model, Div)
+    assert new_model.text != text
 
     # Cleanup pane
-    new_pane._cleanup(model)
-    assert new_pane._callbacks == {}
+    new_pane._cleanup(row)
+    assert new_pane._models == {}
 
 
 def test_jsoninit_class_from_env_var():

@@ -1,0 +1,194 @@
+from __future__ import absolute_import, division, unicode_literals
+
+from datetime import datetime, date
+from collections import OrderedDict
+
+from bokeh.models import Div as BkDiv, Slider as BkSlider, Column as BkColumn
+
+from panel.widgets import (DateSlider, DateRangeSlider, DiscreteSlider,
+                           FloatSlider, IntSlider, RangeSlider)
+
+
+def test_float_slider(document, comm):
+
+    slider = FloatSlider(start=0.1, end=0.5, value=0.4, name='Slider')
+
+    widget = slider.get_root(document, comm=comm)
+
+    assert isinstance(widget, slider._widget_type)
+    assert widget.title == 'Slider'
+    assert widget.step == 0.1
+    assert widget.start == 0.1
+    assert widget.end == 0.5
+    assert widget.value == 0.4
+
+    slider._comm_change({'value': 0.2})
+    assert slider.value == 0.2
+
+    slider.value = 0.3
+    assert widget.value == 0.3
+
+def test_int_slider(document, comm):
+
+    slider = IntSlider(start=0, end=3, value=1, name='Slider')
+
+    widget = slider.get_root(document, comm=comm)
+
+    assert isinstance(widget, slider._widget_type)
+    assert widget.title == 'Slider'
+    assert widget.step == 1
+    assert widget.start == 0
+    assert widget.end == 3
+    assert widget.value == 1
+
+    slider._comm_change({'value': 2})
+    assert slider.value == 2
+
+    slider.value = 0
+    assert widget.value == 0
+
+
+def test_range_slider(document, comm):
+
+    slider = RangeSlider(start=0., end=3, value=(0, 3), name='Slider')
+
+    widget = slider.get_root(document, comm=comm)
+
+    assert isinstance(widget, slider._widget_type)
+    assert widget.title == 'Slider'
+    assert widget.step == 0.1
+    assert widget.start == 0
+    assert widget.end == 3
+    assert widget.value == (0, 3)
+
+    slider._comm_change({'value': (0, 2)})
+    assert slider.value == (0, 2)
+
+    slider.value = (0, 1)
+    assert widget.value == (0, 1)
+
+
+def test_date_slider(document, comm):
+    date_slider = DateSlider(name='DateSlider',
+                             value=date(2018, 9, 4),
+                             start=date(2018, 9, 1), end=date(2018, 9, 10))
+
+    widget = date_slider.get_root(document, comm=comm)
+
+    assert isinstance(widget, date_slider._widget_type)
+    assert widget.title == 'DateSlider'
+    assert widget.value == date(2018, 9, 4)
+    assert widget.start == date(2018, 9, 1)
+    assert widget.end == date(2018, 9, 10)
+
+    epoch = datetime(1970, 1, 1)
+    widget.value = (datetime(2018, 9, 3)-epoch).total_seconds()*1000
+    date_slider._comm_change({'value': widget.value})
+    assert date_slider.value == date(2018, 9, 3)
+
+    # Test raw timestamp value:
+    date_slider._comm_change({'value': (datetime(2018, 9, 4)-epoch).total_seconds()*1000.0})
+    assert date_slider.value == date(2018, 9, 4)
+
+    date_slider.value = date(2018, 9, 6)
+    assert widget.value == date_slider.value
+
+
+def test_date_range_slider(document, comm):
+    date_slider = DateRangeSlider(name='DateRangeSlider',
+                                  value=(datetime(2018, 9, 2), datetime(2018, 9, 4)),
+                                  start=datetime(2018, 9, 1), end=datetime(2018, 9, 10))
+
+    widget = date_slider.get_root(document, comm=comm)
+
+    assert isinstance(widget, date_slider._widget_type)
+    assert widget.title == 'DateRangeSlider'
+    assert widget.value == (datetime(2018, 9, 2), datetime(2018, 9, 4))
+    assert widget.start == datetime(2018, 9, 1)
+    assert widget.end == datetime(2018, 9, 10)
+
+    epoch = datetime(1970, 1, 1)
+    widget.value = ((datetime(2018, 9, 3)-epoch).total_seconds()*1000,
+                    (datetime(2018, 9, 6)-epoch).total_seconds()*1000)
+    date_slider._comm_change({'value': widget.value})
+    assert date_slider.value == (datetime(2018, 9, 3), datetime(2018, 9, 6))
+
+    date_slider.value = (datetime(2018, 9, 4), datetime(2018, 9, 6))
+    assert widget.value == date_slider.value
+
+
+
+def test_discrete_slider(document, comm):
+    discrete_slider = DiscreteSlider(name='DiscreteSlider', value=1,
+                                     options=[0.1, 1, 10, 100])
+
+    box = discrete_slider.get_root(document, comm=comm)
+
+    label = box.children[0]
+    widget = box.children[1]
+    assert isinstance(label, BkDiv)
+    assert isinstance(widget, BkSlider)
+    assert widget.value == 1
+    assert widget.start == 0
+    assert widget.end == 3
+    assert widget.step == 1
+    assert label.text == 'DiscreteSlider: <b>1</b>'
+
+    widget.value = 2
+    discrete_slider._slider._comm_change({'value': 2})
+    assert discrete_slider.value == 10
+
+    discrete_slider.value = 100
+    assert widget.value == 3
+
+
+def test_discrete_date_slider(document, comm):
+    dates = OrderedDict([('2016-01-0%d' % i, datetime(2016, 1, i)) for i in range(1, 4)])
+    discrete_slider = DiscreteSlider(name='DiscreteSlider', value=dates['2016-01-02'],
+                                     options=dates)
+
+    box = discrete_slider.get_root(document, comm=comm)
+
+    assert isinstance(box, BkColumn)
+
+    label = box.children[0]
+    widget = box.children[1]
+    assert isinstance(label, BkDiv)
+    assert isinstance(widget, BkSlider)
+    assert widget.value == 1
+    assert widget.start == 0
+    assert widget.end == 2
+    assert widget.step == 1
+    assert label.text == 'DiscreteSlider: <b>2016-01-02</b>'
+
+    widget.value = 2
+    discrete_slider._slider._comm_change({'value': 2})
+    assert discrete_slider.value == dates['2016-01-03']
+
+    discrete_slider.value = dates['2016-01-01']
+    assert widget.value == 0
+
+
+def test_discrete_slider_options_dict(document, comm):
+    options = OrderedDict([('0.1', 0.1), ('1', 1), ('10', 10), ('100', 100)])
+    discrete_slider = DiscreteSlider(name='DiscreteSlider', value=1,
+                                     options=options)
+
+    box = discrete_slider.get_root(document, comm=comm)
+
+    label = box.children[0]
+    widget = box.children[1]
+    assert isinstance(label, BkDiv)
+    assert isinstance(widget, BkSlider)
+    assert widget.value == 1
+    assert widget.start == 0
+    assert widget.end == 3
+    assert widget.step == 1
+    assert label.text == 'DiscreteSlider: <b>1</b>'
+
+    widget.value = 2
+    discrete_slider._slider._comm_change({'value': 2})
+    assert discrete_slider.value == 10
+
+    discrete_slider.value = 100
+    assert widget.value == 3
