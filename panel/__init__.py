@@ -16,7 +16,7 @@ from .layout import Row, Column, WidgetBox, Tabs, Spacer, GridSpec, GridBox # no
 from .pane import panel, Pane # noqa
 from .param import Param # noqa
 from .template import Template # noqa
-from .depends import depends
+from .depends import depends # noqa
 
 __version__ = str(_param.version.Version(
     fpath=__file__, archive_commit="$Format:%h$", reponame="panel"))
