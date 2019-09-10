@@ -447,14 +447,6 @@ class _InteractFactory(object):
             def square(num=2):
                 print("{} squared is {}".format(num, num*num))
         """
-        for k, v in kwargs.items():
-            if isinstance(v, param.parameterized.Parameter):
-                pass
-            elif isinstance(v, Widget):
-                kwargs[k] = v.param.value
-        if all(isinstance(v, param.parameterized.Parameter) for v in kwargs.values()):
-            return Pane(param.depends(**kwargs)(__interact_f))
-
         # If kwargs are given, replace self by a new
         # _InteractFactory with the updated kwargs
         if kwargs:
