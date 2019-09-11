@@ -25,12 +25,13 @@ Comparing Panel and Dash
 
 Panel and Dash can both be used to create dashboards in Python, but take very different approaches:
 
+- Panel provides full, seamless support for usage in Jupyter notebooks, making it simple to add controls and layouts wherever they are needed in a workflow, without necessarily building up to any particular shareable app.  Dash is focused almost exclusively on standalone dashboards, though there are some workarounds available for using Dash in notebooks.
 
-- Panel focuses _only_ on helping Python users create apps and dashboards from Python, with a concise and expressive Pythonic syntax. Dash reveals more of the underlying HTML and CSS details, which is useful for customization but is distracting and verbose when exploring datasets in Python.
+- Panel focuses on helping Python users create apps and dashboards using Python, with a concise and expressive Pythonic syntax. Dash reveals more of the underlying HTML and CSS details, which is useful for customization but is distracting and verbose when exploring datasets in Python.
 
 - Panel is plotting library agnostic, fully supporting a wide range of Python libraries out of the box, including Plotly. Dash has full support for Plotly, but other libraries have only limited support, using extension packages.
 
-- Dash dashboards work entirely on the client side once built, which has the advantage of being highly scalable for many simultaneous clients, but the disadvantage of not being able to perform server-side operations in Python like [Datashader](http://datashader.org).
+- Dash dashboards work entirely on the client side (in the browser) once built, which has the advantage of being highly scalable for many simultaneous clients, but the disadvantage of not being able to perform server-side operations in Python like [Datashader](http://datashader.org).
 
 
 Comparing Panel and ipywidgets
