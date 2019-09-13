@@ -122,6 +122,15 @@ class StoppableThread(threading.Thread):
         if self.stopped:
             self._cb.stop()
             self.io_loop.stop()
+    
+    def run(self):
+        try:
+            if self._target:
+                bokeh_server = self._target(*self._args, **self._kwargs)
+        finally:
+            if isinstance(bokeh_server, Server):
+                bokeh_server.stop()
+            del self._target, self._args, self._kwargs
 
     def stop(self):
         self._stop_event.set()
