@@ -284,6 +284,9 @@ def _dump_poly_data(scDirs, datasetDir, dataDir, dataset, colorArrayInfo, root={
     # # PointData TCoords
     _dump_tcoords(scDirs, datasetDir, dataDir, dataset, container, compress)
 
+    # # PointData Normals
+    _dump_normals(scDirs, datasetDir, dataDir, dataset, container, compress)
+
     return root
 
 
