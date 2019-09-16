@@ -9,6 +9,7 @@ https://github.com/Kitware/vtk-js/blob/master/LICENSE
 """
 
 import vtk
+import numpy as np
 import os, sys, json, random, string, hashlib, zipfile
 
 from io import BytesIO
@@ -383,7 +384,18 @@ def extract_renprop_properties(renprop):
     return properties
 
 
-def render_window_serializer(render_window):
+def vtk_lut_to_palette(lut):
+    if lut.GetScale() != 0:
+        raise NotImplementedError('Only linear Scale lookup tables are implemented')
+    scale = 'Linear'
+    low, high = lut.GetTableRange()
+    nb_values = lut.GetNumberOfTableValues()
+    rgb_values = [lut.GetTableValue(val)[:-1] for val in range(nb_values)]
+    palette = ["#{0:02x}{1:02x}{2:02x}".format(int(255 * r), int(255 * g), int(255 * b)) for r, g, b in rgb_values]
+    return {"palette": palette, "low":low, "high":high, "scale": scale}
+
+
+def render_window_serializer(render_window, legend=None):
     """
     Function to convert a vtk render window in a list of 2-tuple where first value
     correspond to a relative file path in the `vtkjs` directory structure and values
@@ -455,10 +467,13 @@ def render_window_serializer(render_window):
                         # component = -1 => let specific instance get scalar from vector before mapping
                         if dataArray:
                             if dataArray.GetLookupTable():
+                                lookupTable = dataArray.GetLookupTable()
                                 colorArray = dataArray.GetLookupTable().MapScalars(dataArray, color_mode, -1)
                             else:
                                 colorArray = lookupTable.MapScalars(dataArray, color_mode, -1)
                             colorArrayName = '__CustomRGBColorArray__'
+                            if array_name and legend is not None:
+                                legend.update({array_name: vtk_lut_to_palette(lookupTable)})
                             colorArray.SetName(colorArrayName)
                             color_mode = 0
 
