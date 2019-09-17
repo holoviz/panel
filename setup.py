@@ -29,6 +29,7 @@ def get_setup_version(reponame):
         print("WARNING: param>=1.6.0 unavailable. If you are installing a package, this warning can safely be ignored. If you are creating a package or otherwise operating in a git repository, you should install param>=1.6.0.")
         return json.load(open(version_file_path, 'r'))['version_string']
 
+
 def _build_models():
     try:
         from panel.compiler import build_custom_models
@@ -45,6 +46,7 @@ class CustomDevelopCommand(develop):
         _build_models()
         develop.run(self)
 
+
 class CustomInstallCommand(install):
     """Custom installation for install mode."""
 
@@ -52,12 +54,14 @@ class CustomInstallCommand(install):
         _build_models()
         install.run(self)
 
+
 class CustomSdistCommand(sdist):
     """Custom installation for sdist mode."""
 
     def run(self):
         _build_models()
         sdist.run(self)
+
 
 _COMMANDS = {
     'develop': CustomDevelopCommand,
@@ -126,7 +130,8 @@ extras_require = {
         'sphinx <2',
         'selenium',
         'phantomjs',
-        'lxml'
+        'lxml',
+        'pyvista'
     ]
 }
 
