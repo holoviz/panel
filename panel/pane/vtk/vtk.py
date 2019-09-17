@@ -42,7 +42,11 @@ class VTK(PaneBase):
         context if they interact with already binded keys
     """)
 
-    infer_legend = param.Boolean(default=False, doc="""In case of a vtkRenderWindow try to infer colorbar of actors""")
+    orientation_widget = param.Boolean(default=False, doc="""
+        Activate/Deactivate the orientation widget display.
+    """)
+
+    infer_legend = param.Boolean(default=False, doc="""In case of a vtkRenderWindow try to infer colorbar of actors.""")
 
     _updates = True
     _serializers = {}
@@ -99,7 +103,7 @@ class VTK(PaneBase):
             model = vtkplot
         if root is None:
             root = model
-        self._link_props(vtkplot, ['data', 'camera', 'enable_keybindings'], doc, root, comm)
+        self._link_props(vtkplot, ['data', 'camera', 'enable_keybindings', 'orientation_widget'], doc, root, comm)
         self._models[root.ref['id']] = (model, parent)
         return model
 

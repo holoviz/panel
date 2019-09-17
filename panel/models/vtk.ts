@@ -22,6 +22,7 @@ export class VTKPlotView extends HTMLBoxView {
   protected _interactor: any
   protected _setting: boolean = false
   protected _orientationWidget: any
+  protected _widgetManager: any
 
   initialize(): void {
     super.initialize()
@@ -61,6 +62,7 @@ export class VTKPlotView extends HTMLBoxView {
     widget.setPlaceFactor(1);
 
     const vw = widgetManager.addWidget(widget);
+    this._widgetManager = widgetManager
 
     // Manage user interaction
     vw.onOrientationChange((inputs : any) => {
@@ -88,11 +90,12 @@ export class VTKPlotView extends HTMLBoxView {
       if (direction[2]) {
         this._camera.setViewUp(majorAxis(viewUp, 0, 1));
       }
-
+      
       this._orientationWidget.updateMarkerOrientation();
-      // widgetManager.enablePicking();
       this._rendererEl.getRenderWindow().render()
     });
+    
+    this._orientation_widget_visbility(this.model.orientation_widget)
   }
 
   after_layout(): void {
@@ -116,14 +119,31 @@ export class VTKPlotView extends HTMLBoxView {
     }
   }
 
+  _orientation_widget_visbility(visbility: boolean): void {
+    this._orientationWidget.setEnabled(visbility)
+    if(visbility){
+      this._orientationWidget.updateMarkerOrientation();
+      this._widgetManager.enablePicking()
+    }else{
+      this._widgetManager.disablePicking()
+    }
+    this._rendererEl.getRenderWindow().render()
+  }
+
   connect_signals(): void {
     super.connect_signals()
     this.connect(this.model.properties.data.change, () => this._plot())
     this.connect(this.model.properties.camera.change, () => this._set_camera_state())
+    this.connect(this.model.properties.orientation_widget.change, () => {
+      this._orientation_widget_visbility(this.model.orientation_widget)
+    })
+
     this._container.addEventListener('mouseenter', () => {
-      document.querySelector('body')!.addEventListener('keypress',this._interactor.handleKeyPress)
-      document.querySelector('body')!.addEventListener('keydown',this._interactor.handleKeyDown)
-      document.querySelector('body')!.addEventListener('keyup',this._interactor.handleKeyUp)
+      if(this.model.enable_keybindings){
+        document.querySelector('body')!.addEventListener('keypress',this._interactor.handleKeyPress)
+        document.querySelector('body')!.addEventListener('keydown',this._interactor.handleKeyDown)
+        document.querySelector('body')!.addEventListener('keyup',this._interactor.handleKeyUp)
+      }
     })
     this._container.addEventListener('mouseleave', () => {
       document.querySelector('body')!.removeEventListener('keypress',this._interactor.handleKeyPress)
@@ -212,6 +232,7 @@ export namespace VTKPlot {
     append: p.Property<boolean>
     camera: p.Property<any>
     enable_keybindings: p.Property<boolean>
+    orientation_widget: p.Property<boolean>
   }
 }
 
@@ -232,7 +253,8 @@ export class VTKPlot extends HTMLBox {
       data:               [ p.String         ],
       append:             [ p.Boolean, false ],
       camera:             [ p.Any            ],
-      enable_keybindings: [ p.Boolean, false ]
+      enable_keybindings: [ p.Boolean, false ],
+      orientation_widget: [ p.Boolean, false ]
     })
 
     this.override({

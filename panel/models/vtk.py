@@ -33,6 +33,8 @@ class VTKPlot(HTMLBox):
 
     enable_keybindings = Bool(default=False)
 
+    orientation_widget = Bool(default=False)
+
     height = Override(default=300)
 
     width = Override(default=300)
