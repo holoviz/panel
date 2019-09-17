@@ -77,19 +77,24 @@ class VTK(PaneBase):
         props = self._process_param_change(self._init_properties())
         vtkplot = VTKPlot(data=data, **props)
         if hasattr(self, '_legend') and self._legend:
+            import numpy as np
             from bokeh.plotting import figure
-            from bokeh.models import LinearColorMapper, ColorBar, Row
-            ColorBars = [ColorBar(color_mapper=LinearColorMapper(low=v['low'], high=v['high'], palette=v['palette']), title=k) for k, v in self._legend.items()]
-            sizing_mode = 'stretch_height' if vtkplot.sizing_mode in ['stretch_height', 'stretch_both'] else 'fixed'
-            plot = figure(x_range=(0, 1), y_range=(0, 1), toolbar_location=None, width=110 * len(ColorBars),
-                          sizing_mode=sizing_mode, height=vtkplot.height, min_height=vtkplot.min_height)
-
+            from bokeh.models import LinearColorMapper, ColorBar, Column, FixedTicker
+            cbs = []
+            for k, v in self._legend.items():
+                ticks = np.linspace(v['low'], v['high'], 5)
+                cbs.append(ColorBar(color_mapper=LinearColorMapper(low=v['low'], high=v['high'], palette=v['palette']), title=k,
+                                    ticker=FixedTicker(ticks=ticks),
+                                    label_standoff=5, background_fill_alpha=0, orientation='horizontal', location=(0, 0)))
+            plot_height = 90 * len(cbs)
+            plot = figure(x_range=(0, 1), y_range=(0, 1), toolbar_location=None, height=plot_height,
+                          sizing_mode='stretch_width')
             plot.xaxis.visible = False
             plot.yaxis.visible = False
             plot.grid.visible = False
             plot.outline_line_alpha = 0
-            [plot.add_layout(color_bar, 'right') for color_bar in ColorBars]
-            model = Row(vtkplot, plot, sizing_mode=vtkplot.sizing_mode, height=vtkplot.height, width=vtkplot.width)
+            [plot.add_layout(cb, 'below') for cb in cbs]
+            model = Column(vtkplot, plot, sizing_mode=vtkplot.sizing_mode, height=vtkplot.height + plot_height + 10, width=vtkplot.width)
         else:
             model = vtkplot
         if root is None:
