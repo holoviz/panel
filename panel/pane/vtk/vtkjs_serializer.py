@@ -9,7 +9,6 @@ https://github.com/Kitware/vtk-js/blob/master/LICENSE
 """
 
 import vtk
-import numpy as np
 import os, sys, json, random, string, hashlib, zipfile
 
 from io import BytesIO
@@ -395,7 +394,68 @@ def vtk_lut_to_palette(lut):
     return {"palette": palette, "low":low, "high":high, "scale": scale}
 
 
-def render_window_serializer(render_window, legend=None):
+def construct_palettes(render_window):
+    """
+    """
+    legend = {}
+    render_window.OffScreenRenderingOn() # to not pop a vtk windows
+    render_window.Render()
+    renderers = render_window.GetRenderers()
+    for renderer in renderers:
+        for renProp in renderer.GetViewProps():
+            if not renProp.GetVisibility() or not isinstance(renProp, vtk.vtkActor):
+                continue
+            if hasattr(renProp, 'GetMapper'):
+                mapper = renProp.GetMapper()
+                if mapper is None:
+                    continue
+                dataObject = mapper.GetInputDataObject(0, 0)
+                dataset = None
+
+                if dataObject.IsA('vtkCompositeDataSet'):
+                    if dataObject.GetNumberOfBlocks() == 1:
+                        dataset = dataObject.GetBlock(0)
+                    else:
+                        gf = vtk.vtkCompositeDataGeometryFilter()
+                        gf.SetInputData(dataObject)
+                        gf.Update()
+                        dataset = gf.GetOutput()
+                elif dataObject.IsA('vtkUnstructuredGrid'):
+                    gf = vtk.vtkGeometryFilter()
+                    gf.SetInputData(dataObject)
+                    gf.Update()
+                    dataset = gf.GetOutput()
+                else:
+                    dataset = mapper.GetInput()
+
+                if dataset and not isinstance(dataset, (vtk.vtkPolyData)):
+                    # All data must be PolyData surfaces!
+                    gf = vtk.vtkGeometryFilter()
+                    gf.SetInputData(dataset)
+                    gf.Update()
+                    dataset = gf.GetOutputDataObject(0)
+
+                if dataset and dataset.GetPoints():
+                    scalar_visibility = mapper.GetScalarVisibility()
+                    array_access_mode = mapper.GetArrayAccessMode()
+                    array_name = mapper.GetArrayName() # if arrayAccessMode == 1 else mapper.GetArrayId()
+                    array_id = mapper.GetArrayId()
+                    scalar_mode = mapper.GetScalarMode()
+                    dataArray = None
+                    lookupTable = mapper.GetLookupTable()
+
+                    if scalar_visibility:
+                        dataArray, _ = get_dataset_scalars(dataset, scalar_mode, array_access_mode, array_id, array_name)
+                        # component = -1 => let specific instance get scalar from vector before mapping
+                        if dataArray:
+                            if dataArray.GetLookupTable():
+                                lookupTable = dataArray.GetLookupTable()
+                            if array_name and legend is not None:
+                                legend.update({array_name: vtk_lut_to_palette(lookupTable)})
+    return legend
+
+
+def render_window_serializer(render_window):
     """
     Function to convert a vtk render window in a list of 2-tuple where first value
     correspond to a relative file path in the `vtkjs` directory structure and values
@@ -472,8 +532,6 @@ def render_window_serializer(render_window, legend=None):
                             else:
                                 colorArray = lookupTable.MapScalars(dataArray, color_mode, -1)
                             colorArrayName = '__CustomRGBColorArray__'
-                            if array_name and legend is not None:
-                                legend.update({array_name: vtk_lut_to_palette(lookupTable)})
                             colorArray.SetName(colorArrayName)
                             color_mode = 0
 

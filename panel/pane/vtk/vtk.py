@@ -14,7 +14,6 @@ except ImportError: # python 2
     from urllib import urlopen
 
 from six import string_types
-from functools import partial
 
 import param
 
@@ -46,10 +45,12 @@ class VTK(PaneBase):
         Activate/Deactivate the orientation widget display.
     """)
 
-    infer_legend = param.Boolean(default=False, doc="""In case of a vtkRenderWindow try to infer colorbar of actors.""")
-
     _updates = True
     _serializers = {}
+
+    def __init__(self, obj=None, **params):
+        super(VTK, self).__init__(obj, **params)
+        self._legend = None
 
     @classmethod
     def applies(cls, obj):
@@ -79,33 +80,47 @@ class VTK(PaneBase):
 
         data = self._get_vtkjs()
         props = self._process_param_change(self._init_properties())
-        vtkplot = VTKPlot(data=data, **props)
-        if hasattr(self, '_legend') and self._legend:
-            import numpy as np
-            from bokeh.plotting import figure
-            from bokeh.models import LinearColorMapper, ColorBar, Column, FixedTicker
-            cbs = []
-            for k, v in self._legend.items():
-                ticks = np.linspace(v['low'], v['high'], 5)
-                cbs.append(ColorBar(color_mapper=LinearColorMapper(low=v['low'], high=v['high'], palette=v['palette']), title=k,
-                                    ticker=FixedTicker(ticks=ticks),
-                                    label_standoff=5, background_fill_alpha=0, orientation='horizontal', location=(0, 0)))
-            plot_height = 90 * len(cbs)
-            plot = figure(x_range=(0, 1), y_range=(0, 1), toolbar_location=None, height=plot_height,
-                          sizing_mode='stretch_width')
-            plot.xaxis.visible = False
-            plot.yaxis.visible = False
-            plot.grid.visible = False
-            plot.outline_line_alpha = 0
-            [plot.add_layout(cb, 'below') for cb in cbs]
-            model = Column(vtkplot, plot, sizing_mode=vtkplot.sizing_mode, height=vtkplot.height + plot_height + 10, width=vtkplot.width)
-        else:
-            model = vtkplot
+        model = VTKPlot(data=data, **props)
         if root is None:
             root = model
-        self._link_props(vtkplot, ['data', 'camera', 'enable_keybindings', 'orientation_widget'], doc, root, comm)
+        self._link_props(model, ['data', 'camera', 'enable_keybindings', 'orientation_widget'], doc, root, comm)
         self._models[root.ref['id']] = (model, parent)
         return model
+
+    def _update_object(self, old_model, doc, root, parent, comm):
+        self._legend = None
+        super()._update_object(old_model, doc, root, parent, comm)
+
+    def construct_colorbars(self, orientation='horizontal'):
+        if self._legend is None:
+            try:
+                from .vtkjs_serializer import construct_palettes
+                self._legend = construct_palettes(self.object)
+            except:
+                self._legend = {}
+        if self._legend:
+            import numpy as np
+            from bokeh.plotting import figure
+            from bokeh.models import LinearColorMapper, ColorBar, FixedTicker
+            if orientation == 'horizontal':
+                cbs = []
+                for k, v in self._legend.items():
+                    ticks = np.linspace(v['low'], v['high'], 5)
+                    cbs.append(ColorBar(color_mapper=LinearColorMapper(low=v['low'], high=v['high'], palette=v['palette']), title=k,
+                                        ticker=FixedTicker(ticks=ticks),
+                                        label_standoff=5, background_fill_alpha=0, orientation='horizontal', location=(0, 0)))
+                plot = figure(x_range=(0, 1), y_range=(0, 1), toolbar_location=None, height=90 * len(cbs),
+                              sizing_mode='stretch_width')
+                plot.xaxis.visible = False
+                plot.yaxis.visible = False
+                plot.grid.visible = False
+                plot.outline_line_alpha = 0
+                [plot.add_layout(cb, 'below') for cb in cbs]
+                return plot
+            else:
+                raise ValueError('orientation can only be horizontal')
+        else:
+            return None
 
     def _init_properties(self):
         return {k: v for k, v in self.param.get_param_values()
@@ -142,17 +157,7 @@ class VTK(PaneBase):
                 serializer = render_window_serializer
             else:
                 serializer = available_serializer[0]
-
-            try:
-                from .vtkjs_serializer import render_window_serializer
-                if serializer is render_window_serializer and self.infer_legend:
-                    self._legend = {}
-                    partial_serializer = partial(serializer, legend=self._legend)
-                else:
-                    partial_serializer = serializer
-            except ImportError:
-                partial_serializer = serializer
-            vtkjs = partial_serializer(self.object)
+            vtkjs = serializer(self.object)
 
         return base64encode(vtkjs) if vtkjs is not None else vtkjs
 

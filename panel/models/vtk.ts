@@ -53,23 +53,23 @@ export class VTKPlotView extends HTMLBoxView {
     
     this._orientationWidget = orientationWidget
 
-    const widgetManager = this._vtk.Widgets.Core.vtkWidgetManager.newInstance();
-    widgetManager.setRenderer(orientationWidget.getRenderer());
+    const widgetManager = this._vtk.Widgets.Core.vtkWidgetManager.newInstance()
+    widgetManager.setRenderer(orientationWidget.getRenderer())
 
-    const widget = this._vtk.Widgets.Widgets3D.vtkInteractiveOrientationWidget.newInstance();
+    const widget = this._vtk.Widgets.Widgets3D.vtkInteractiveOrientationWidget.newInstance()
     widget.placeWidget(axes.getBounds());
     widget.setBounds(axes.getBounds());
     widget.setPlaceFactor(1);
 
-    const vw = widgetManager.addWidget(widget);
+    const vw = widgetManager.addWidget(widget)
     this._widgetManager = widgetManager
 
     // Manage user interaction
     vw.onOrientationChange((inputs : any) => {
       const direction = inputs.direction
-      const focalPoint = this._camera.getFocalPoint();
-      const position = this._camera.getPosition();
-      const viewUp = this._camera.getViewUp();
+      const focalPoint = this._camera.getFocalPoint()
+      const position = this._camera.getPosition()
+      const viewUp = this._camera.getViewUp()
 
       const distance = Math.sqrt(
         Math.pow(position[0]-focalPoint[0],2) + Math.pow(position[1]-focalPoint[1],2) + Math.pow(position[2]-focalPoint[2],2)
@@ -82,16 +82,16 @@ export class VTKPlotView extends HTMLBoxView {
       );
 
       if (direction[0]) {
-        this._camera.setViewUp(majorAxis(viewUp, 1, 2));
+        this._camera.setViewUp(majorAxis(viewUp, 1, 2))
       }
       if (direction[1]) {
-        this._camera.setViewUp(majorAxis(viewUp, 0, 2));
+        this._camera.setViewUp(majorAxis(viewUp, 0, 2))
       }
       if (direction[2]) {
-        this._camera.setViewUp(majorAxis(viewUp, 0, 1));
+        this._camera.setViewUp(majorAxis(viewUp, 0, 1))
       }
       
-      this._orientationWidget.updateMarkerOrientation();
+      this._orientationWidget.updateMarkerOrientation()
       this._rendererEl.getRenderWindow().render()
     });
     
@@ -122,11 +122,11 @@ export class VTKPlotView extends HTMLBoxView {
   _orientation_widget_visbility(visbility: boolean): void {
     this._orientationWidget.setEnabled(visbility)
     if(visbility){
-      this._orientationWidget.updateMarkerOrientation();
       this._widgetManager.enablePicking()
     }else{
       this._widgetManager.disablePicking()
     }
+    this._orientationWidget.updateMarkerOrientation()
     this._rendererEl.getRenderWindow().render()
   }
 
