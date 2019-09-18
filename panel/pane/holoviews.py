@@ -32,6 +32,10 @@ class HoloViews(PaneBase):
         The HoloViews backend used to render the plot (if None defaults
         to the currently selected renderer).""")
 
+    linked_axes = param.Boolean(default=True, doc="""
+        Whether to use link the axes of bokeh plots inside this pane
+        across a panel layout.""")
+
     renderer = param.Parameter(default=None, doc="""
         Explicit renderer instance to use for rendering the HoloViews
         plot. Overrides the backend.""")
