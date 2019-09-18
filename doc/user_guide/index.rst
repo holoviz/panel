@@ -54,6 +54,9 @@ when needed.
 * `Templates <Templates.html>`_
    Learn how to compose multiple Panels into a custom HTML document.
 
+* `Server Deployment <Server_Deployment.html>`_
+   Step-by-step guides for deploying Panel apps locally, on a web server or on common cloud providers.
+
 Supplementary guides
 --------------------
 
