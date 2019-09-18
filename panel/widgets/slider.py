@@ -66,6 +66,8 @@ class ContinuousSlider(_SliderBase):
     __abstract = True
 
     def _get_embed_state(self, root, max_opts=3):
+        from ..viewable import Layoutable
+        
         ref = root.ref['id']
         w_model, parent = self._models[ref]
         _, _, doc, comm = state._views[ref]
