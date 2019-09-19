@@ -1,20 +1,19 @@
 import * as p from "core/properties"
-import {clone} from "core/util/object";
-import {HTMLBox, HTMLBoxView} from "models/layouts/html_box";
-import {div} from "core/dom";
-
+import {clone} from "core/util/object"
+import {HTMLBox, HTMLBoxView} from "models/layouts/html_box"
+import {div} from "core/dom"
+const vtk = (window as any).vtk
 
 function majorAxis(vec3: number[], idxA: number, idxB: number): number[] {
-  const axis = [0, 0, 0];
-  const idx = Math.abs(vec3[idxA]) > Math.abs(vec3[idxB]) ? idxA : idxB;
-  const value = vec3[idx] > 0 ? 1 : -1;
-  axis[idx] = value;
-  return axis;
+  const axis = [0, 0, 0]
+  const idx = Math.abs(vec3[idxA]) > Math.abs(vec3[idxB]) ? idxA : idxB
+  const value = vec3[idx] > 0 ? 1 : -1
+  axis[idx] = value
+  return axis
 }
 
 export class VTKPlotView extends HTMLBoxView {
   model: VTKPlot
-  protected _vtk: any
   protected _container: HTMLDivElement
   protected _rendererEl: any
   protected _renderer: any
@@ -26,7 +25,6 @@ export class VTKPlotView extends HTMLBoxView {
 
   initialize(): void {
     super.initialize()
-    this._vtk = (window as any).vtk
     this._container = div({
       style: {
         width: "100%",
@@ -36,16 +34,16 @@ export class VTKPlotView extends HTMLBoxView {
   }
 
   _create_orientation_widget(): void {
-    const axes = this._vtk.Rendering.Core.vtkAxesActor.newInstance()
+    const axes = vtk.Rendering.Core.vtkAxesActor.newInstance()
 
     // add orientation widget
-    const orientationWidget = this._vtk.Interaction.Widgets.vtkOrientationMarkerWidget.newInstance({
+    const orientationWidget = vtk.Interaction.Widgets.vtkOrientationMarkerWidget.newInstance({
       actor: axes,
       interactor: this._interactor,
     })
     orientationWidget.setEnabled(true)
     orientationWidget.setViewportCorner(
-      this._vtk.Interaction.Widgets.vtkOrientationMarkerWidget.Corners.BOTTOM_RIGHT
+      vtk.Interaction.Widgets.vtkOrientationMarkerWidget.Corners.BOTTOM_RIGHT
     )
     orientationWidget.setViewportSize(0.15)
     orientationWidget.setMinPixelSize(100)
@@ -53,10 +51,10 @@ export class VTKPlotView extends HTMLBoxView {
     
     this._orientationWidget = orientationWidget
 
-    const widgetManager = this._vtk.Widgets.Core.vtkWidgetManager.newInstance()
+    const widgetManager = vtk.Widgets.Core.vtkWidgetManager.newInstance()
     widgetManager.setRenderer(orientationWidget.getRenderer())
 
-    const widget = this._vtk.Widgets.Widgets3D.vtkInteractiveOrientationWidget.newInstance()
+    const widget = vtk.Widgets.Widgets3D.vtkInteractiveOrientationWidget.newInstance()
     widget.placeWidget(axes.getBounds());
     widget.setBounds(axes.getBounds());
     widget.setPlaceFactor(1);
@@ -92,6 +90,7 @@ export class VTKPlotView extends HTMLBoxView {
       }
       
       this._orientationWidget.updateMarkerOrientation()
+      this._renderer.resetCameraClippingRange()
       this._rendererEl.getRenderWindow().render()
     });
     
@@ -101,7 +100,7 @@ export class VTKPlotView extends HTMLBoxView {
   after_layout(): void {
     super.after_layout()
     if (!this._rendererEl) {
-      this._rendererEl = this._vtk.Rendering.Misc.vtkFullScreenRenderWindow.newInstance({
+      this._rendererEl = vtk.Rendering.Misc.vtkFullScreenRenderWindow.newInstance({
         rootContainer: this.el,
         container: this._container
       });
@@ -112,7 +111,7 @@ export class VTKPlotView extends HTMLBoxView {
       this._plot()
       this._camera.onModified(() => this._get_camera_state())
       this._remove_default_key_binding()
-      
+      this.model.renderer_el = this._rendererEl
       this._interactor.onRightButtonPress((_callData: any) => {
         console.log('Not Implemented')
       })
@@ -188,6 +187,7 @@ export class VTKPlotView extends HTMLBoxView {
       if (this._orientationWidget != null){
         this._orientationWidget.updateMarkerOrientation();
       }
+      this._renderer.resetCameraClippingRange()
       this._rendererEl.getRenderWindow().render();
     }
   }
@@ -200,14 +200,14 @@ export class VTKPlotView extends HTMLBoxView {
       this._rendererEl.getRenderWindow().render()
       return
     }
-    const dataAccessHelper = this._vtk.IO.Core.DataAccessHelper.get('zip', {
+    const dataAccessHelper = vtk.IO.Core.DataAccessHelper.get('zip', {
       zipContent: atob(this.model.data),
       callback: (_zip: any) => {
-        const sceneImporter = this._vtk.IO.Core.vtkHttpSceneLoader.newInstance({
+        const sceneImporter = vtk.IO.Core.vtkHttpSceneLoader.newInstance({
           renderer: this._rendererEl.getRenderer(),
           dataAccessHelper,
         })
-        const fn = this._vtk.macro.debounce(() => {
+        const fn = vtk.macro.debounce(() => {
           if (this._orientationWidget == null){
             this._create_orientation_widget()
           }
@@ -233,6 +233,8 @@ export namespace VTKPlot {
     camera: p.Property<any>
     enable_keybindings: p.Property<boolean>
     orientation_widget: p.Property<boolean>
+    renderer_el: p.Property<any>
+    data_sources: p.Property<any[]>
   }
 }
 
@@ -254,7 +256,9 @@ export class VTKPlot extends HTMLBox {
       append:             [ p.Boolean, false ],
       camera:             [ p.Any            ],
       enable_keybindings: [ p.Boolean, false ],
-      orientation_widget: [ p.Boolean, false ]
+      orientation_widget: [ p.Boolean, false ],
+      renderer_el:        [ p.Any            ],
+      data_sources:       [ p.Array, []      ]
     })
 
     this.override({

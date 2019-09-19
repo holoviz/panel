@@ -7,6 +7,7 @@ from __future__ import absolute_import, division, unicode_literals
 import sys
 import os
 import base64
+from dask.dataframe.core import _rename
 
 try:
     from urllib.request import urlopen
@@ -45,8 +46,13 @@ class VTK(PaneBase):
         Activate/Deactivate the orientation widget display.
     """)
 
+    event_sources = param.List(default=[], doc="""
+        List of ColumnDataSource to enable custom interaction
+    """)
+
     _updates = True
     _serializers = {}
+    _rename = {'event_sources': 'data_sources'}
 
     def __init__(self, obj=None, **params):
         super(VTK, self).__init__(obj, **params)
@@ -78,7 +84,8 @@ class VTK(PaneBase):
         else:
             VTKPlot = getattr(sys.modules['panel.models.vtk'], 'VTKPlot')
 
-        data = self._get_vtkjs()
+        vtkjs = self._get_vtkjs()
+        data = base64encode(vtkjs) if vtkjs is not None else vtkjs
         props = self._process_param_change(self._init_properties())
         model = VTKPlot(data=data, **props)
         if root is None:
@@ -153,14 +160,21 @@ class VTK(PaneBase):
             if len(available_serializer) == 0:
                 import vtk
                 from .vtkjs_serializer import render_window_serializer
+
                 VTK.register_serializer(vtk.vtkRenderWindow, render_window_serializer)
                 serializer = render_window_serializer
+
             else:
                 serializer = available_serializer[0]
             vtkjs = serializer(self.object)
 
-        return base64encode(vtkjs) if vtkjs is not None else vtkjs
+        return vtkjs
 
     def _update(self, model):
-        model.data = self._get_vtkjs()
+        vtkjs = self._get_vtkjs()
+        model.data = base64encode(vtkjs) if vtkjs is not None else vtkjs
+
+    def export_vtkjs(self, filename='vtk_panel.vtkjs'):
+        with open(filename, 'wb') as f:
+            f.write(self._get_vtkjs())
 
