@@ -29,8 +29,8 @@ class ImageBase(DivPaneBase):
     provide their own way of obtaining or generating a PNG.
     """
 
-    embed = param.Boolean(default=False, doc="""
-        Whether to embed the image as base64 if provided a URL.""")
+    embed = param.Boolean(default=True, doc="""
+        Whether to embed the image as base64.""")
 
     imgtype = 'None'
 
@@ -82,7 +82,7 @@ class ImageBase(DivPaneBase):
         elif self.height is not None:
             width = int((self.height/height)*width)
             height = self.height
-        if self._is_url(self.object) and not self.embed:
+        if not self.embed:
             src = self.object
         else:
             b64 = base64.b64encode(data).decode("utf-8")
