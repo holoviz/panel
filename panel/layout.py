@@ -807,7 +807,7 @@ class GridSpec(Panel):
 
     @property
     def _object_grid(self):
-        grid = np.full((self.nrows, self.ncols), None)
+        grid = np.full((self.nrows, self.ncols), None, dtype=object)
         for i, ((y0, x0, y1, x1), obj) in enumerate(self.objects.items()):
             l = 0 if x0 is None else x0
             r = self.ncols if x1 is None else x1
