@@ -40,7 +40,7 @@ class FileInput(Widget):
 
     _widget_type = _BkFileInput
 
-    _rename = {'name': None}
+    _rename = {'name': None, 'filename': None}
 
     def _process_param_change(self, msg):
         msg = super(FileInput, self)._process_param_change(msg)
