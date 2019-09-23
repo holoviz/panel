@@ -9,18 +9,18 @@ from jinja2.environment import Template as _Template
 from six import string_types
 
 from .io.model import add_to_doc
-from .io.server import StoppableThread, get_server
 from .io.state import state
 from .layout import Column
 from .pane import panel as _panel, HTML, Str
 from .widgets import Button
+from .base import ServableMixin
 
 _server_info = (
     '<b>Running server:</b> <a target="_blank" href="https://localhost:{port}">'
     'https://localhost:{port}</a>')
 
 
-class Template(object):
+class Template(ServableMixin, object):
     """
     A Template is a high-level component to render multiple Panel
     objects into a single HTML document. The Template object should be
@@ -70,11 +70,6 @@ class Template(object):
         button.param.watch(launch, 'clicks')
         return Column(str_repr, server_info, button)
 
-    def _get_server(self, port=0, websocket_origin=None, loop=None,
-                   show=False, start=False, **kwargs):
-        return get_server(self, port, websocket_origin, loop, show,
-                          start, **kwargs)
-
     def _modify_doc(self, server_id, doc):
         """
         Callback to handle FunctionHandler document creation.
@@ -98,7 +93,7 @@ class Template(object):
     #----------------------------------------------------------------
     # Public API
     #----------------------------------------------------------------
-    
+
     def add_panel(self, name, panel):
         """
         Add panels to the Template, which may then be referenced by
@@ -148,59 +143,3 @@ class Template(object):
             add_to_doc(model, doc)
         doc.template = self.template
         return doc
-
-    def servable(self, title=None):
-        """
-        Serves the object if in a `panel serve` context and returns
-        the Panel object to allow it to display itself in a notebook
-        context.
-
-        Arguments
-        ---------
-        title : str
-          A string title to give the Document (if served as an app)
-
-        Returns
-        -------
-        The Panel object itself
-        """
-        if _curdoc().session_context:
-            self.server_doc(title=title)
-        return self
-
-    def show(self, port=0, websocket_origin=None, threaded=False):
-        """
-        Starts a Bokeh server and displays the Viewable in a new tab
-
-        Arguments
-        ---------
-        port: int (optional, default=0)
-          Allows specifying a specific port
-        websocket_origin: str or list(str) (optional)
-          A list of hosts that can connect to the websocket.
-
-          This is typically required when embedding a server app in
-          an external web site.
-
-          If None, "localhost" is used.
-        threaded: boolean (optional, default=False)
-          Whether to launch the Server on a separate thread, allowing
-          interactive use.
-
-        Returns
-        -------
-        server: bokeh.server.Server or threading.Thread
-          Returns the Bokeh server instance or the thread the server
-          was launched on (if threaded=True)
-        """
-        if threaded:
-            from tornado.ioloop import IOLoop
-            loop = IOLoop()
-            server = StoppableThread(
-                target=self._get_server, io_loop=loop,
-                args=(port, websocket_origin, loop, True, True))
-            server.start()
-        else:
-            server = self._get_server(port, websocket_origin, show=True, start=True)
-
-        return server
