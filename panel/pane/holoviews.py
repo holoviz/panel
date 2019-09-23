@@ -171,7 +171,7 @@ class HoloViews(PaneBase):
             key = tuple(w.value for w in widgets)
             if plot.dynamic:
                 widget_dims = [w.name for w in widgets]
-                key = [key[widget_dims.index(kdim.name)] if kdim.name in widget_dims else None
+                key = [key[widget_dims.index(kdim)] if kdim in widget_dims else None
                        for kdim in plot.dimensions]
                 key = wrap_tuple_streams(tuple(key), plot.dimensions, plot.streams)
 
