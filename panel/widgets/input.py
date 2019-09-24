@@ -16,7 +16,7 @@ from bokeh.models.widgets import (
     CheckboxGroup as _BkCheckboxGroup, ColorPicker as _BkColorPicker,
     DatePicker as _BkDatePicker, Div as _BkDiv, TextInput as _BkTextInput,
     PasswordInput as _BkPasswordInput, Spinner as _BkSpinner, 
-    FileInput as _BkFileInput)
+    FileInput as _BkFileInput, TextAreaInput as _BkTextAreaInput)
 
 from ..util import as_unicode
 from .base import Widget
@@ -37,6 +37,16 @@ class PasswordInput(Widget):
     placeholder = param.String(default='')
 
     _widget_type = _BkPasswordInput
+
+class TextAreaInput(Widget):
+
+    value = param.String(default='', allow_None=True)
+
+    placeholder = param.String(default='')
+
+    max_length = param.Integer(default=5000)
+        
+    _widget_type = _BkTextAreaInput
 
 class FileInput(Widget):
 
