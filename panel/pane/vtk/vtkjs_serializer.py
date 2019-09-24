@@ -299,10 +299,6 @@ def extract_renprop_properties(renprop):
     if hasattr(renprop, 'GetProperty'): # default properties
         properties = {property_name: getattr(renprop.GetProperty(), 'Get' + property_name[0].upper() + property_name[1:])()
                       for property_name in property_list}
-        if properties['representation'] == 1:
-            properties['colorToUse'] = properties['color']
-        else:
-            properties['colorToUse'] = properties['diffuseColor']
     else :
         properties = None
     return properties
@@ -378,6 +374,15 @@ def construct_palettes(render_window):
                             if array_name and legend is not None:
                                 legend.update({array_name: vtk_lut_to_palette(lookupTable)})
     return legend
+
+
+def volume_serializer(imageData):
+    writer = vtk.vtkXMLImageDataWriter()
+    writer.SetCompressorTypeToZLib()
+    writer.SetInputData(imageData)
+    writer.WriteToOutputStringOn()
+    writer.Write()
+    return writer.GetOutputString().encode()
 
 
 def render_window_serializer(render_window):
@@ -500,7 +505,7 @@ def render_window_serializer(render_window):
                         },
                         "property": extract_renprop_properties(renProp),
                         "lookupTable": {
-                            "tableRange": lookupTable.GetRange(),
+                            "range": lookupTable.GetRange(),
                             "hueRange": lookupTable.GetHueRange() if hasattr(lookupTable, 'GetHueRange') else [0.5, 0]
                         }
                     })

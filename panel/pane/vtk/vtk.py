@@ -7,7 +7,6 @@ from __future__ import absolute_import, division, unicode_literals
 import sys
 import os
 import base64
-from dask.dataframe.core import _rename
 
 try:
     from urllib.request import urlopen
@@ -26,6 +25,97 @@ if sys.version_info >= (2, 7):
     base64encode = lambda x: base64.b64encode(x).decode('utf-8')
 else:
     base64encode = lambda x: x.encode('base64')
+
+
+class VTKVolume(PaneBase):
+    _updates = True
+    _serializers = {}
+
+    @classmethod
+    def applies(cls, obj):
+        if (isinstance(obj, string_types) and obj.endswith('.vti') or
+            any([isinstance(obj, k) for k in cls._serializers.keys()])):
+            return True
+        elif 'vtk' not in sys.modules:
+            return False
+        else:
+            import vtk
+            return isinstance(obj, vtk.vtkImageData)
+
+    def _get_model(self, doc, root=None, parent=None, comm=None):
+        """
+        Should return the bokeh model to be rendered.
+        """
+        if 'panel.models.vtk' not in sys.modules:
+            if isinstance(comm, JupyterComm):
+                self.param.warning('VTKVolumePlot was not imported on instantiation '
+                                   'and may not render in a notebook. Restart '
+                                   'the notebook kernel and ensure you load '
+                                   'it as part of the extension using:'
+                                   '\n\npn.extension(\'vtk\')\n')
+            from ...models.vtk import VTKVolumePlot
+        else:
+            VTKVolumePlot = getattr(sys.modules['panel.models.vtk'], 'VTKVolumePlot')
+
+        volume_serial = self._serialize()
+        data = base64encode(volume_serial) if volume_serial is not None else volume_serial
+        props = self._process_param_change(self._init_properties())
+        model = VTKVolumePlot(data=data, **props)
+        if root is None:
+            root = model
+        self._link_props(model, ['data'], doc, root, comm)
+        self._models[root.ref['id']] = (model, parent)
+        return model
+
+    def _update_object(self, old_model, doc, root, parent, comm):
+        self._legend = None
+        super()._update_object(old_model, doc, root, parent, comm)
+
+    def _init_properties(self):
+        return {k: v for k, v in self.param.get_param_values()
+                if v is not None and k not in ['default_layout', 'object']}
+
+    @classmethod
+    def register_serializer(cls, class_type, serializer):
+        """
+        Register a seriliazer for a given type of class.
+        A serializer is a function which take an instance of `class_type`
+        (like a vtk.vtkRenderWindow) as input and return the binary zip
+        stream of the corresponding `vtkjs` file
+        """
+        cls._serializers.update({class_type:serializer})
+
+    def _serialize(self):
+        if self.object is None:
+            volume_serial = None
+        elif isinstance(self.object, string_types) and self.object.endswith('.vti'):
+            if os.path.isfile(self.object):
+                with open(self.object, 'rb') as f:
+                    volume_serial = f.read()
+            else:
+                data_url = urlopen(self.object)
+                volume_serial = data_url.read()
+        elif hasattr(self.object, 'read'):
+            volume_serial = self.object.read()
+        else:
+            available_serializer = [v for k, v in VTK._serializers.items() if isinstance(self.object, k)]
+            if len(available_serializer) == 0:
+                import vtk
+                if isinstance(self.object, vtk.vtkImageData):
+                    from .vtkjs_serializer import volume_serializer
+
+                    VTK.register_serializer(vtk.vtkImageData, volume_serializer)
+                    serializer = volume_serializer
+
+            else:
+                serializer = available_serializer[0]
+            volume_serial = serializer(self.object)
+
+        return volume_serial
+
+    def _update(self, model):
+        volume_serial = self._serialize()
+        model.data = base64encode(volume_serial) if volume_serial is not None else volume_serial
 
 
 class VTK(PaneBase):
@@ -163,7 +253,6 @@ class VTK(PaneBase):
 
                 VTK.register_serializer(vtk.vtkRenderWindow, render_window_serializer)
                 serializer = render_window_serializer
-
             else:
                 serializer = available_serializer[0]
             vtkjs = serializer(self.object)

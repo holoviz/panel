@@ -208,9 +208,10 @@ export class VTKPlotView extends HTMLBoxView {
           dataAccessHelper,
         })
         const fn = vtk.macro.debounce(() => {
-          if (this._orientationWidget == null){
+          if (this._orientationWidget == null)
             this._create_orientation_widget()
-          }
+
+          this._renderer.resetCamera()
           this._rendererEl.getRenderWindow().render()
         }, 100)
         sceneImporter.setUrl('index.json')
@@ -224,10 +225,10 @@ export class VTKPlotView extends HTMLBoxView {
   }
 }
 
-
 export namespace VTKPlot {
   export type Attrs = p.AttrsOf<Props>
   export type Props = HTMLBox.Props & {
+    data_type: p.Property<string>
     data: p.Property<string>
     append: p.Property<boolean>
     camera: p.Property<any>
@@ -257,8 +258,7 @@ export class VTKPlot extends HTMLBox {
       camera:             [ p.Any            ],
       enable_keybindings: [ p.Boolean, false ],
       orientation_widget: [ p.Boolean, false ],
-      renderer_el:        [ p.Any            ],
-      data_sources:       [ p.Array, []      ]
+      renderer_el:        [ p.Any            ]
     })
 
     this.override({

@@ -45,3 +45,27 @@ class VTKPlot(HTMLBox):
 
 
 CUSTOM_MODELS['panel.models.plots.VTKPlot'] = VTKPlot
+
+
+class VTKVolumePlot(HTMLBox):
+    """
+    A Bokeh model that wraps around a vtk-js library and renders it inside
+    a Bokeh plot.
+    """
+
+    __javascript__ = [vtk_cdn]
+
+    __js_require__ = {"paths": {"vtk": vtk_cdn[:-3]},
+                      "shim": {"vtk": {"exports": "vtk"}}}
+
+    __implementation__ = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'vtkvolume.ts')
+
+    data = String(help="""The serialized data""")
+
+    height = Override(default=300)
+
+    width = Override(default=300)
+
+
+CUSTOM_MODELS['panel.models.plots.VTKVolumePlot'] = VTKVolumePlot
+
