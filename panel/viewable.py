@@ -845,6 +845,28 @@ class Reactive(Viewable):
             cb.start()
         return cb
 
+    def jscallback(self, args={}, **callbacks):
+        """
+        
+        Arguments
+        ----------
+        target: HoloViews object or bokeh Model or panel Viewable
+          The target to link the value to.
+        **callbacks: dict
+          A mapping between properties on the source model and the code
+          to execute when that property changes
+
+        Returns
+        -------
+        link: GenericCallback
+          The GenericCallback which can be used to disable the callback.
+        """
+
+        from .links import GenericCallback
+        for k, v in list(callbacks.items()):
+            callbacks[k] = self._rename.get(v, v)
+        return GenericCallback(self, code=callbacks, args=args)
+
     def jslink(self, target, code=None, **links):
         """
         Links properties on the source object to those on the target
