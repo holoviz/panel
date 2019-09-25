@@ -16,6 +16,7 @@ except ImportError: # python 2
 from six import string_types
 
 import param
+import numpy as np
 
 from pyviz_comms import JupyterComm
 
@@ -33,8 +34,8 @@ class VTKVolume(PaneBase):
 
     @classmethod
     def applies(cls, obj):
-        if (isinstance(obj, string_types) and obj.endswith('.vti') or
-            any([isinstance(obj, k) for k in cls._serializers.keys()])):
+
+        if isinstance(obj, np.ndarray) and obj.ndim == 3:
             return True
         elif 'vtk' not in sys.modules:
             return False
@@ -57,10 +58,14 @@ class VTKVolume(PaneBase):
         else:
             VTKVolumePlot = getattr(sys.modules['panel.models.vtk'], 'VTKVolumePlot')
 
-        volume_serial = self._serialize()
-        data = base64encode(volume_serial) if volume_serial is not None else volume_serial
         props = self._process_param_change(self._init_properties())
-        model = VTKVolumePlot(data=data, **props)
+        data_array = self._get_data_array()
+
+        model = VTKVolumePlot(data=base64encode(data_array.ravel(order='F' if data_array.flags['F_CONTIGUOUS'] else 'C')),
+                              dims=data_array.shape if data_array.flags['F_CONTIGUOUS'] else data_array.shape[::-1],
+                              spacing=(1, 1, 1),
+                              dtype=data_array.dtype.name,
+                              ** props)
         if root is None:
             root = model
         self._link_props(model, ['data'], doc, root, comm)
@@ -75,47 +80,35 @@ class VTKVolume(PaneBase):
         return {k: v for k, v in self.param.get_param_values()
                 if v is not None and k not in ['default_layout', 'object']}
 
+    def _update(self, model):
+        volume_serial = self._serialize()
+        model.data = base64encode(volume_serial) if volume_serial is not None else volume_serial
+
     @classmethod
     def register_serializer(cls, class_type, serializer):
         """
         Register a seriliazer for a given type of class.
         A serializer is a function which take an instance of `class_type`
-        (like a vtk.vtkRenderWindow) as input and return the binary zip
-        stream of the corresponding `vtkjs` file
+        (like a vtk.vtkImageData) as input and return a numpy array of the data
         """
         cls._serializers.update({class_type:serializer})
 
-    def _serialize(self):
-        if self.object is None:
-            volume_serial = None
-        elif isinstance(self.object, string_types) and self.object.endswith('.vti'):
-            if os.path.isfile(self.object):
-                with open(self.object, 'rb') as f:
-                    volume_serial = f.read()
-            else:
-                data_url = urlopen(self.object)
-                volume_serial = data_url.read()
-        elif hasattr(self.object, 'read'):
-            volume_serial = self.object.read()
+    def _get_data_array(self):
+        if self.object is np.ndarray:
+            data_array = self.object
         else:
             available_serializer = [v for k, v in VTK._serializers.items() if isinstance(self.object, k)]
             if len(available_serializer) == 0:
                 import vtk
-                if isinstance(self.object, vtk.vtkImageData):
-                    from .vtkjs_serializer import volume_serializer
+                from .vtkjs_serializer import volume_serializer
 
-                    VTK.register_serializer(vtk.vtkImageData, volume_serializer)
-                    serializer = volume_serializer
-
+                VTK.register_serializer(vtk.vtkRenderWindow, volume_serializer)
+                serializer = volume_serializer
             else:
                 serializer = available_serializer[0]
-            volume_serial = serializer(self.object)
+            data_array = serializer(self.object)
 
-        return volume_serial
-
-    def _update(self, model):
-        volume_serial = self._serialize()
-        model.data = base64encode(volume_serial) if volume_serial is not None else volume_serial
+        return data_array
 
 
 class VTK(PaneBase):
@@ -196,7 +189,6 @@ class VTK(PaneBase):
             except:
                 self._legend = {}
         if self._legend:
-            import numpy as np
             from bokeh.plotting import figure
             from bokeh.models import LinearColorMapper, ColorBar, FixedTicker
             if orientation == 'horizontal':

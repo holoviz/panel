@@ -1,5 +1,6 @@
 
 import * as p from "core/properties"
+import {ARRAY_TYPES, DType} from "core/util/serialization"
 import {HTMLBox, HTMLBoxView} from "models/layouts/html_box"
 import {div} from "core/dom"
 const vtk = (window as any).vtk
@@ -29,6 +30,10 @@ export class VTKVolumePlotView extends HTMLBoxView {
         height: "100%"
       }
     });
+    this._controllerWidget = vtk.Interaction.UI.vtkVolumeController.newInstance({
+      size: [400, 150],
+      rescaleColorMap: true,
+    })
   }
 
 
@@ -40,10 +45,6 @@ export class VTKVolumePlotView extends HTMLBoxView {
   render() {
     //create transfer color ui widgets
     super.render()
-    this._controllerWidget = vtk.Interaction.UI.vtkVolumeController.newInstance({
-      size: [400, 150],
-      rescaleColorMap: true,
-    })
     this._controllerWidget.setContainer(this.el)
     if (!(this._container === this.el.childNodes[1]))
       this.el.appendChild(this._container)
@@ -55,22 +56,39 @@ export class VTKVolumePlotView extends HTMLBoxView {
         rootContainer: this.el,
         container: this._container
       });
+      this._rendererEl.getRenderWindow().getInteractor().setDesiredUpdateRate(45)
+      this._plot()
     }
-    this._plot()
+    
+    this._rendererEl.getRenderer().resetCamera()
+    this._rendererEl.getRenderWindow().render()
+  }
+
+  _create_source(): any{
+    debugger
+    const source = vtk.Common.DataModel.vtkImageData.newInstance({
+      spacing: this.model.spacing
+    })
+    source.setDimensions(this.model.dims)
+    source.setOrigin(this.model.dims.map((v: number) => v/2))
+    const dataArray = vtk.Common.Core.vtkDataArray.newInstance({
+      name: "scalars",
+      numberOfComponents: 1,
+      values: new ARRAY_TYPES[this.model.dtype as DType](utf8ToAB(atob(this.model.data)))
+    })
+    source.getPointData().setScalars(dataArray)
+    return source
   }
 
   _plot(): void {
-    //Read data
-    const vtiReader = vtk.IO.XML.vtkXMLImageDataReader.newInstance()
-    vtiReader.parseAsArrayBuffer(utf8ToAB(atob(this.model.data)))
 
-    this._rendererEl.getRenderWindow().getInteractor().setDesiredUpdateRate(15)
 
     //Create vtk volume and add it to the scene
+    const source = this._create_source()
     const actor = vtk.Rendering.Core.vtkVolume.newInstance()
-    const source = vtiReader.getOutputData(0)
     const mapper = vtk.Rendering.Core.vtkVolumeMapper.newInstance()
-    
+
+
     actor.setMapper(mapper)
     mapper.setInputData(source)
 
@@ -120,25 +138,18 @@ export class VTKVolumePlotView extends HTMLBoxView {
     actor.getProperty().setSpecularPower(8.0);
 
     this._rendererEl.getRenderer().addVolume(actor)
-    this._rendererEl.setResizeCallback(({ width }: {width: number, height: number}) => {
-      // 2px padding + 2x1px boder + 5px edge = 14
-      if (width > 414) {
-        this._controllerWidget.setSize(400, 150)
-      } else {
-        this._controllerWidget.setSize(width - 14, 150)
-      }
-      this._controllerWidget.render()
-    })
     this._controllerWidget.setupContent(this._rendererEl.getRenderWindow(), actor, true)
-    this._rendererEl.getRenderer().resetCamera()
-    this._rendererEl.getRenderWindow().render()
   }
 }
 
 export namespace VTKVolumePlot {
   export type Attrs = p.AttrsOf<Props>
   export type Props = HTMLBox.Props & {
-    data: p.Property<string>
+    data: p.Property<string>,
+    dtype: p.Property<string>,
+    spacing: p.Property<any>,
+    dims: p.Property<any>,
+    actor: p.Property<any>
   }
 }
 
@@ -156,7 +167,11 @@ export class VTKVolumePlot extends HTMLBox {
     this.prototype.default_view = VTKVolumePlotView
 
     this.define<VTKVolumePlot.Props>({
-      data:               [ p.Instance ],
+      data:     [ p.String ],
+      dtype:    [ p.String ],
+      dims:     [ p.Any ],
+      spacing:  [ p.Any ],
+      actor:    [ p.Any ],
     })
 
     this.override({

@@ -11,6 +11,7 @@ https://github.com/Kitware/vtk-js/blob/master/LICENSE
 import vtk
 import os, sys, json, random, string, hashlib, zipfile
 
+from vtk.util import numpy_support
 from io import BytesIO
 
 from .enums import SCALAR_MODE, ACCESS_MODE
@@ -377,12 +378,8 @@ def construct_palettes(render_window):
 
 
 def volume_serializer(imageData):
-    writer = vtk.vtkXMLImageDataWriter()
-    writer.SetCompressorTypeToZLib()
-    writer.SetInputData(imageData)
-    writer.WriteToOutputStringOn()
-    writer.Write()
-    return writer.GetOutputString().encode()
+    data = numpy_support.vtk_to_numpy(imageData.GetPointData().GetScalars())
+    return data.reshape(*imageData.GetDimensions(), order='F')
 
 
 def render_window_serializer(render_window):
