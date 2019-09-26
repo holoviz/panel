@@ -5,6 +5,14 @@ import {HTMLBox, HTMLBoxView} from "models/layouts/html_box"
 import {div} from "core/dom"
 const vtk = (window as any).vtk
 
+type VolumeType = {
+  buffer: string
+  dims: number[]
+  dtype: DType
+  spacing: number[]
+  origin: number[] | null
+  extent: number[] | null
+}
 
 function utf8ToAB(utf8_str: string): ArrayBuffer {
   var buf = new ArrayBuffer(utf8_str.length) // 2 bytes for each char
@@ -66,15 +74,16 @@ export class VTKVolumePlotView extends HTMLBoxView {
 
   _create_source(): any{
     debugger
+    const data = this.model.data
     const source = vtk.Common.DataModel.vtkImageData.newInstance({
-      spacing: this.model.spacing
+      spacing: data.spacing
     })
-    source.setDimensions(this.model.dims)
-    source.setOrigin(this.model.dims.map((v: number) => v/2))
+    source.setDimensions(data.dims)
+    source.setOrigin(data.origin != null ? data.origin : data.dims.map((v: number) => v/2))
     const dataArray = vtk.Common.Core.vtkDataArray.newInstance({
       name: "scalars",
       numberOfComponents: 1,
-      values: new ARRAY_TYPES[this.model.dtype as DType](utf8ToAB(atob(this.model.data)))
+      values: new ARRAY_TYPES[data.dtype as DType](utf8ToAB(atob(data.buffer)))
     })
     source.getPointData().setScalars(dataArray)
     return source
@@ -104,8 +113,8 @@ export class VTKVolumePlotView extends HTMLBoxView {
     
     actor.getProperty().setRGBTransferFunction(0, lookupTable);
     actor.getProperty().setScalarOpacity(0, piecewiseFunction);
-    // actor.getProperty().setInterpolationTypeToFastLinear();
-    actor.getProperty().setInterpolationTypeToLinear();
+    actor.getProperty().setInterpolationTypeToFastLinear();
+    //actor.getProperty().setInterpolationTypeToLinear();
 
     // For better looking volume rendering
     // - distance in world coordinates a scalar opacity of 1.0
@@ -145,10 +154,7 @@ export class VTKVolumePlotView extends HTMLBoxView {
 export namespace VTKVolumePlot {
   export type Attrs = p.AttrsOf<Props>
   export type Props = HTMLBox.Props & {
-    data: p.Property<string>,
-    dtype: p.Property<string>,
-    spacing: p.Property<any>,
-    dims: p.Property<any>,
+    data: p.Property<VolumeType>,
     actor: p.Property<any>
   }
 }
@@ -167,10 +173,7 @@ export class VTKVolumePlot extends HTMLBox {
     this.prototype.default_view = VTKVolumePlotView
 
     this.define<VTKVolumePlot.Props>({
-      data:     [ p.String ],
-      dtype:    [ p.String ],
-      dims:     [ p.Any ],
-      spacing:  [ p.Any ],
+      data:     [ p.Any ],
       actor:    [ p.Any ],
     })
 

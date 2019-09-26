@@ -4,7 +4,7 @@ Defines custom VTKPlot bokeh model to render VTK objects.
 """
 import os
 
-from bokeh.core.properties import String, Bool, Dict, Any, Override, Seq, Int, Float
+from bokeh.core.properties import String, Bool, Dict, Any, Override
 from bokeh.models import HTMLBox
 
 from ..compiler import CUSTOM_MODELS
@@ -60,13 +60,7 @@ class VTKVolumePlot(HTMLBox):
 
     actor = Any(readonly=True)
 
-    data = String()
-
-    dtype = String()
-
-    dims = Seq(Int)
-
-    spacing = Seq(Float)
+    data = Dict(String, Any)
 
     height = Override(default=300)
 

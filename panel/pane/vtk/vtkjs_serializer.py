@@ -11,7 +11,6 @@ https://github.com/Kitware/vtk-js/blob/master/LICENSE
 import vtk
 import os, sys, json, random, string, hashlib, zipfile
 
-from vtk.util import numpy_support
 from io import BytesIO
 
 from .enums import SCALAR_MODE, ACCESS_MODE
@@ -375,11 +374,6 @@ def construct_palettes(render_window):
                             if array_name and legend is not None:
                                 legend.update({array_name: vtk_lut_to_palette(lookupTable)})
     return legend
-
-
-def volume_serializer(imageData):
-    data = numpy_support.vtk_to_numpy(imageData.GetPointData().GetScalars())
-    return data.reshape(*imageData.GetDimensions(), order='F')
 
 
 def render_window_serializer(render_window):
