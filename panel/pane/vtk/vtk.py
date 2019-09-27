@@ -169,13 +169,8 @@ class VTK(PaneBase):
         Activate/Deactivate the orientation widget display.
     """)
 
-    event_sources = param.List(default=[], doc="""
-        List of ColumnDataSource to enable custom interaction
-    """)
-
     _updates = True
     _serializers = {}
-    _rename = {'event_sources': 'data_sources'}
 
     def __init__(self, obj=None, **params):
         super(VTK, self).__init__(obj, **params)

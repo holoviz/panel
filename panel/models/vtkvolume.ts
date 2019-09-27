@@ -28,52 +28,35 @@ export class VTKVolumePlotView extends HTMLBoxView {
   protected _container: HTMLDivElement
   protected _rendererEl: any
   protected _controllerWidget: any
-  
-
-  initialize(): void {
-    super.initialize()
-    this._container = div({
-      style: {
-        width: "100%",
-        height: "100%"
-      }
-    });
-    this._controllerWidget = vtk.Interaction.UI.vtkVolumeController.newInstance({
-      size: [400, 150],
-      rescaleColorMap: true,
-    })
-  }
-
-
-  connect_signals(): void {
-    super.connect_signals()
-    this.connect(this.model.properties.data.change, () => this._plot())
-  }
-
-  render() {
-    //create transfer color ui widgets
-    super.render()
-    this._controllerWidget.setContainer(this.el)
-    if (!(this._container === this.el.childNodes[1]))
-      this.el.appendChild(this._container)
-  }
 
   after_layout(): void{
     if (!this._rendererEl) {
+      this._controllerWidget = vtk.Interaction.UI.vtkVolumeController.newInstance({
+        size: [400, 150],
+        rescaleColorMap: false,
+      })
+      this._controllerWidget.setContainer(this.el)
+      this._container = div({
+        style: {
+          width: "100%",
+          height: "100%"
+        }
+      })
+      this.el.appendChild(this._container)
       this._rendererEl = vtk.Rendering.Misc.vtkFullScreenRenderWindow.newInstance({
         rootContainer: this.el,
         container: this._container
       });
+      this._rendererEl.getRenderWindow().getInteractor()
       this._rendererEl.getRenderWindow().getInteractor().setDesiredUpdateRate(45)
       this._plot()
+      this._rendererEl.getRenderer().resetCamera()
+      this._rendererEl.getRenderWindow().render()
     }
-    
-    this._rendererEl.getRenderer().resetCamera()
-    this._rendererEl.getRenderWindow().render()
+    super.after_layout()
   }
 
   _create_source(): any{
-    debugger
     const data = this.model.data
     const source = vtk.Common.DataModel.vtkImageData.newInstance({
       spacing: data.spacing
