@@ -17,11 +17,19 @@ from bokeh.models import (CustomJS, Model as BkModel)
 
 
 class Callback(param.Parameterized):
+    """
+    A Callback defines some callback to be triggered when a property
+    changes on the source object.
+    """
 
     args = param.Dict(default={}, allow_None=True, doc="""
         A mapping of names to Python objects. These objects are made
         available to the callback's code snippet as the values of
         named parameters to the callback.""")
+
+    code = param.Dict(default=None, doc="""
+        A dictionary mapping from a source specication to a JS code
+        snippet to be executed if the source property changes.""")
 
     # Mapping from a source id to a Link instance
     registry = weakref.WeakKeyDictionary()
@@ -106,12 +114,12 @@ class Callback(param.Parameterized):
             if src is None or (getattr(link, '_requires_target', False)
                                and tgt is None):
                 continue
-            overrides = arg_overrides[id(link)]
+            overrides = arg_overrides.get(id(link), {})
             callbacks.append(cb(root_model, link, src, tgt,
                                 arg_overrides=overrides))
         return callbacks
 
-        
+
 class Link(Callback):
     """
     A Link defines some connection between a source and target model.
@@ -126,12 +134,19 @@ class Link(Callback):
     directional links between the source and target object.
     """
 
+    properties = param.Dict(default={}, doc="""
+        A dictionary mapping between source specification to target
+        specification.""")
+
+    # Whether the link requires a target
+    _requires_target = True
+
     def __init__(self, source, target=None, **params):
         if self._requires_target and target is None:
             raise ValueError('%s must define a target.' % type(self).__name__)
         # Source is stored as a weakref to allow it to be garbage collected
         self._target = None if target is None else weakref.ref(target)
-        super(Link, self).__init__(**params)
+        super(Link, self).__init__(source, **params)
 
     @property
     def target(self):
@@ -165,41 +180,19 @@ class Link(Callback):
             links.pop(links.index(self))
 
 
-class GenericLink(Link):
-    """
-    Links two panel object using generic source and target
-    specifications, which either map from a source model property
-    to a target model property or from a source model property to
-    a JS code snippet to be executed.
-    """
 
-    code = param.Dict(default=None, doc="""
-        A dictionary mapping from a source specication to a JS code
-        snippet to be executed if the source property changes.""")
+class CallbackGenerator(object):
 
-    properties = param.Dict(default={}, doc="""
-        A dictionary mapping between source specification to target
-        specification.""")
-
-    # Whether the link requires a target
-    _requires_target = True
-
-
-class GenericCallback(Callback):
-    """
-    A Callback which executes the provided code when the associated
-    properties change.
-    """
-
-    code = param.Dict(default=None, doc="""
-        A dictionary mapping from a source specication to a JS code
-        snippet to be executed if the source property changes.""")
-
-    # Whether the link requires a target
-    _requires_target = False
-    
-
-class LinkCallback(param.Parameterized):
+    def __init__(self, root_model, link, source, target=None, arg_overrides={}):
+        self.root_model = root_model
+        self.link = link
+        self.source = source
+        self.target = target
+        self.arg_overrides = arg_overrides
+        self.validate()
+        specs = self._get_specs(link, source, target)
+        for src_spec, tgt_spec, code in specs:
+            self._init_callback(root_model, link, source, src_spec, target, tgt_spec, code)
 
     @classmethod
     def _resolve_model(cls, root_model, obj, model_spec):
@@ -242,17 +235,6 @@ class LinkCallback(param.Parameterized):
             for spec in model_spec.split('.'):
                 model = getattr(model, spec)
         return model
-
-    def __init__(self, root_model, link, source, target=None, arg_overrides={}):
-        self.root_model = root_model
-        self.link = link
-        self.source = source
-        self.target = target
-        self.arg_overrides = arg_overrides
-        self.validate()
-        specs = self._get_specs(link, source, target)
-        for src_spec, tgt_spec, code in specs:
-            self._init_callback(root_model, link, source, src_spec, target, tgt_spec, code)
 
     def _init_callback(self, root_model, link, source, src_spec, target, tgt_spec, code):
         references = {k: v for k, v in link.get_param_values()
@@ -301,6 +283,11 @@ class LinkCallback(param.Parameterized):
         for ev in events:
             src_model.js_on_event(ev, src_cb)
 
+    def _process_references(self, references):
+        """
+        Method to process references in place.
+        """
+
     def _get_specs(self, link):
         """
         Return a list of spec tuples that define source and target
@@ -320,7 +307,7 @@ class LinkCallback(param.Parameterized):
         """
         return [], []
 
-    def _initialize_models(self, link, src_model, tgt_model):
+    def _initialize_models(self, link, source, src_model, src_spec, target, tgt_model, tgt_spec):
         """
         Applies any necessary initialization to the source and target
         models.
@@ -331,20 +318,31 @@ class LinkCallback(param.Parameterized):
         pass
 
 
-class GenericLinkCallback(LinkCallback):
+
+class JSCallbackGenerator(CallbackGenerator):
+
+    def _get_triggers(self, link, src_spec):
+        return [src_spec[1]], []
+
+    def _get_specs(self, link, source, target):
+        for src_spec, code in link.code.items():
+            src_specs = src_spec.split('.')
+            if len(src_specs) > 1:
+                src_spec = ('.'.join(src_specs[:-1]), src_specs[-1])
+            else:
+                src_prop = src_specs[0]
+                if isinstance(source, Reactive):
+                    src_prop = source._rename.get(src_prop, src_prop)
+                src_spec = (None, src_prop)
+        return [(src_spec, (None, None), code)]
+
+
+
+class JSLinkCallbackGenerator(JSCallbackGenerator):
 
     def _get_specs(self, link, source, target):
         if link.code:
-            for src_spec, code in link.code.items():
-                src_specs = src_spec.split('.')
-                if len(src_specs) > 1:
-                    src_spec = ('.'.join(src_specs[:-1]), src_specs[-1])
-                else:
-                    src_prop = src_specs[0]
-                    if isinstance(source, Reactive):
-                        src_prop = source._rename.get(src_prop, src_prop)
-                    src_spec = (None, src_prop)
-            return [(src_spec, (None, None), code)]
+            return super(JSLinkCallbackGenerator, self)._get_specs(link, source, target)
 
         specs = []
         for src_spec, tgt_spec in link.properties.items():
@@ -393,12 +391,8 @@ class GenericLinkCallback(LinkCallback):
                     tgt=tgt_spec, tgt_repr=unicode_repr(tgt_spec),
                     src=src_spec, src_repr=unicode_repr(src_spec)))
 
-    def _get_triggers(self, link, src_spec):
-        return [src_spec[1]], []
 
-
-GenericLink.register_callback(callback=GenericLinkCallback)
-GenericCallback.register_callback(callback=GenericLinkCallback)
-
+Callback.register_callback(callback=JSCallbackGenerator)
+Link.register_callback(callback=JSLinkCallbackGenerator)
 
 Viewable._preprocessing_hooks.append(Callback._process_callbacks)
