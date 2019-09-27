@@ -4,11 +4,14 @@ documents.
 """
 from __future__ import absolute_import, division, unicode_literals
 
+from bokeh.document.document import Document as _Document
 from bokeh.io import curdoc as _curdoc
 from jinja2.environment import Template as _Template
 from six import string_types
 
+from .config import panel_extension
 from .io.model import add_to_doc
+from .io.notebook import render_template
 from .io.server import StoppableThread, get_server
 from .io.state import state
 from .layout import Column
@@ -92,13 +95,52 @@ class Template(object):
         return template.format(
             cls=cls, objs=('%s' % spacer).join(objs), spacer=spacer)
 
+    def _init_doc(self, doc=None, comm=None, title=None):
+        doc = doc or _curdoc()
+        if title is not None:
+            doc.title = title
+        for name, obj in self._render_items.items():
+            model = obj.get_root(doc, comm)
+            model.name = name
+            if hasattr(doc, 'on_session_destroyed'):
+                doc.on_session_destroyed(obj._server_destroy)
+                obj._documents[doc] = model
+            add_to_doc(model, doc)
+        doc.template = self.template
+        return doc
+
     def _repr_mimebundle_(self, include=None, exclude=None):
         return self._layout._repr_mimebundle_(include, exclude)
 
+    def _repr_mimebundle_(self, include=None, exclude=None):
+        loaded = panel_extension._loaded
+        if not loaded and 'holoviews' in sys.modules:
+            import holoviews as hv
+            loaded = hv.extension._loaded
+        if not loaded:
+            self.param.warning('Displaying Panel objects in the notebook '
+                               'requires the panel extension to be loaded. '
+                               'Ensure you run pn.extension() before '
+                               'displaying objects in the notebook.')
+            return None
+
+        e = None
+
+        try:
+            assert get_ipython().kernel is not None # noqa
+            state._comm_manager = JupyterCommManager
+        except Exception as e:
+            error = e
+            pass
+        doc = _Document()
+        comm = state._comm_manager.get_server_comm()
+        self._init_doc(doc, comm)
+        return render_template(doc, comm)
+    
     #----------------------------------------------------------------
     # Public API
     #----------------------------------------------------------------
-    
+
     def add_panel(self, name, panel):
         """
         Add panels to the Template, which may then be referenced by
@@ -136,18 +178,7 @@ class Template(object):
         doc : bokeh.Document
           The Bokeh document the panel was attached to
         """
-        doc = doc or _curdoc()
-        if title is not None:
-            doc.title = title
-        for name, obj in self._render_items.items():
-            model = obj.get_root(doc)
-            model.name = name
-            if hasattr(doc, 'on_session_destroyed'):
-                doc.on_session_destroyed(obj._server_destroy)
-                obj._documents[doc] = model
-            add_to_doc(model, doc)
-        doc.template = self.template
-        return doc
+        return self._init_doc(doc, title=title)
 
     def servable(self, title=None):
         """

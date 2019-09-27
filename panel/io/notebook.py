@@ -9,20 +9,24 @@ import os
 import uuid
 
 from contextlib import contextmanager
+from six import string_types
 
 import bokeh
 import bokeh.embed.notebook
 
 from bokeh.core.templates import DOC_NB_JS
 from bokeh.core.json_encoder import serialize_json
+from bokeh.core.templates import MACROS
 from bokeh.document import Document
 from bokeh.embed import server_document
 from bokeh.embed.bundle import bundle_for_objs_and_resources
-from bokeh.embed.elements import div_for_render_item
+from bokeh.embed.elements import div_for_render_item, script_for_render_items
 from bokeh.embed.util import standalone_docs_json_and_render_items
+from bokeh.embed.wrappers import wrap_in_script_tag
 from bokeh.models import CustomJS, LayoutDOM, Model
 from bokeh.resources import CDN, INLINE
-from bokeh.util.string import encode_utf8
+from bokeh.util.string import encode_utf8, escape
+from bokeh.util.serialization import make_id
 from jinja2 import Environment, Markup, FileSystemLoader
 from pyviz_comms import (
     JS_CALLBACK, PYVIZ_PROXY, Comm, JupyterCommManager as _JupyterCommManager,
@@ -109,7 +113,7 @@ def get_env():
 _env = get_env()
 _env.filters['json'] = lambda obj: Markup(json.dumps(obj))
 AUTOLOAD_NB_JS = _env.get_template("autoload_panel_js.js")
-
+NB_TEMPLATE_BASE = _env.get_template('nb_template.html')
 
 def _autoload_js(bundle, configs, requirements, exports, load_timeout=5000):
     return AUTOLOAD_NB_JS.render(
@@ -120,6 +124,62 @@ def _autoload_js(bundle, configs, requirements, exports, load_timeout=5000):
         requirements = requirements,
         exports   = exports
     )
+
+
+def html_for_render_items(comm_js, docs_json, render_items, title, template=None, template_variables={}):
+    if title is None:
+        title = 'Panel App'
+
+    comm_js = wrap_in_script_tag(comm_js)
+
+    json_id = make_id()
+    json = escape(serialize_json(docs_json), quote=False)
+    json = wrap_in_script_tag(json, "application/json", json_id)
+
+    script = wrap_in_script_tag(script_for_render_items(json_id, render_items))
+
+    context = template_variables.copy()
+
+    context.update(dict(
+        title = title,
+        bokeh_js = comm_js,
+        plot_script = json + script,
+        docs = render_items,
+        base = NB_TEMPLATE_BASE,
+        macros = MACROS,
+    ))
+
+    if len(render_items) == 1:
+        context["doc"] = context["docs"][0]
+        context["roots"] = context["doc"].roots
+
+    # XXX: backwards compatibility, remove for 1.0
+    context["plot_div"] = "\n".join(div_for_render_item(item) for item in render_items)
+
+    if template is None:
+        template = NB_TEMPLATE_BASE
+    elif isinstance(template, string_types):
+        template = _env.from_string("{% extends base %}\n" + template)
+
+    html = template.render(context)
+    return encode_utf8(html)
+
+
+def render_template(document, comm=None):
+    (docs_json, render_items) = standalone_docs_json_and_render_items(document)
+
+    if comm:
+        msg_handler = bokeh_msg_handler.format(plot_id='')
+        comm_js = comm.js_template.format(plot_id='', comm_id=comm.id, msg_handler=msg_handler)
+    else:
+        comm_js = ''
+
+    html = html_for_render_items(
+        comm_js, docs_json, render_items, '', template=document.template,
+        template_variables=document.template_variables)
+
+    return ({'text/html': html, EXEC_MIME: ''},
+            {EXEC_MIME: {'id': ''}})
 
 
 def render_model(model, comm=None):
