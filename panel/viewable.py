@@ -847,27 +847,30 @@ class Reactive(Viewable):
 
     def jscallback(self, args={}, **callbacks):
         """
-        
+        Allows defining a JS callback to be triggered when a property
+        changes on the source object. The keyword arguments define the
+        properties that trigger a callback and the JS code that gets
+        executed.
+
         Arguments
         ----------
-        target: HoloViews object or bokeh Model or panel Viewable
-          The target to link the value to.
+        args: A mapping of objects to make available to the JS callback
         **callbacks: dict
           A mapping between properties on the source model and the code
           to execute when that property changes
 
         Returns
         -------
-        link: GenericCallback
-          The GenericCallback which can be used to disable the callback.
+        callback: Callback
+          The Callback which can be used to disable the callback.
         """
 
-        from .links import GenericCallback
+        from .links import Callback
         for k, v in list(callbacks.items()):
             callbacks[k] = self._rename.get(v, v)
-        return GenericCallback(self, code=callbacks, args=args)
+        return Callback(self, code=callbacks, args=args)
 
-    def jslink(self, target, code=None, **links):
+    def jslink(self, target, code=None, args=None, **links):
         """
         Links properties on the source object to those on the target
         object in JS code. Supports two modes, either specify a
@@ -900,10 +903,12 @@ class Reactive(Viewable):
         elif not links and not code:
             raise ValueError('Declare parameters to link or a set of '
                              'callbacks, neither was defined.')
+        if args is None:
+            args = {}
 
-        from .links import GenericLink
+        from .links import Link
         if isinstance(target, Reactive):
             mapping = code or links
             for k, v in list(mapping.items()):
                 mapping[k] = target._rename.get(v, v)
-        return GenericLink(self, target, properties=links, code=code)
+        return Link(self, target, properties=links, code=code, args=args)
