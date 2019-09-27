@@ -24,13 +24,13 @@ export class VTKPlotView extends HTMLBoxView {
   protected _widgetManager: any
 
   initialize(): void {
-    super.initialize()
     this._container = div({
       style: {
         width: "100%",
         height: "100%"
       }
-    });
+    })
+    super.initialize()
   }
 
   _create_orientation_widget(): void {
@@ -70,14 +70,16 @@ export class VTKPlotView extends HTMLBoxView {
       const viewUp = this._camera.getViewUp()
 
       const distance = Math.sqrt(
-        Math.pow(position[0]-focalPoint[0],2) + Math.pow(position[1]-focalPoint[1],2) + Math.pow(position[2]-focalPoint[2],2)
-      );
+        Math.pow(position[0]-focalPoint[0],2) +
+        Math.pow(position[1]-focalPoint[1],2) +
+        Math.pow(position[2]-focalPoint[2],2)
+      )
 
       this._camera.setPosition(
         focalPoint[0] + direction[0] * distance,
         focalPoint[1] + direction[1] * distance,
         focalPoint[2] + direction[2] * distance
-      );
+      )
 
       if (direction[0]) {
         this._camera.setViewUp(majorAxis(viewUp, 1, 2))
@@ -92,14 +94,14 @@ export class VTKPlotView extends HTMLBoxView {
       this._orientationWidget.updateMarkerOrientation()
       this._renderer.resetCameraClippingRange()
       this._rendererEl.getRenderWindow().render()
-    });
+    })
     
     this._orientation_widget_visbility(this.model.orientation_widget)
   }
 
   after_layout(): void {
-    super.after_layout()
     if (!this._rendererEl) {
+      this.el.appendChild(this._container)
       this._rendererEl = vtk.Rendering.Misc.vtkFullScreenRenderWindow.newInstance({
         rootContainer: this.el,
         container: this._container
@@ -112,10 +114,11 @@ export class VTKPlotView extends HTMLBoxView {
       this._camera.onModified(() => this._get_camera_state())
       this._remove_default_key_binding()
       this.model.renderer_el = this._rendererEl
-      this._interactor.onRightButtonPress((_callData: any) => {
+      /*this._interactor.onRightButtonPress((_callData: any) => {
         console.log('Not Implemented')
-      })
+      })*/
     }
+    super.after_layout()
   }
 
   _orientation_widget_visbility(visbility: boolean): void {
@@ -157,12 +160,6 @@ export class VTKPlotView extends HTMLBoxView {
     document.querySelector('body')!.removeEventListener('keyup',this._interactor.handleKeyUp)
   }
 
-  render() {
-    super.render()
-    if (!(this._container === this.el.childNodes[0]))
-      this.el.appendChild(this._container)
-  }
-
   _get_camera_state(): void {
     if (!this._setting) {
       this._setting = true;
@@ -193,16 +190,14 @@ export class VTKPlotView extends HTMLBoxView {
   }
 
   _plot(): void{
-    if (!this.model.append) {
-      this._delete_all_actors()
-    }
+    this._delete_all_actors()
     if (!this.model.data) {
       this._rendererEl.getRenderWindow().render()
       return
     }
     const dataAccessHelper = vtk.IO.Core.DataAccessHelper.get('zip', {
       zipContent: atob(this.model.data),
-      callback: (_zip: any) => {
+      callback: (_zip: unknown) => {
         const sceneImporter = vtk.IO.Core.vtkHttpSceneLoader.newInstance({
           renderer: this._rendererEl.getRenderer(),
           dataAccessHelper,
@@ -228,14 +223,11 @@ export class VTKPlotView extends HTMLBoxView {
 export namespace VTKPlot {
   export type Attrs = p.AttrsOf<Props>
   export type Props = HTMLBox.Props & {
-    data_type: p.Property<string>
     data: p.Property<string>
-    append: p.Property<boolean>
     camera: p.Property<any>
     enable_keybindings: p.Property<boolean>
     orientation_widget: p.Property<boolean>
     renderer_el: p.Property<any>
-    data_sources: p.Property<any[]>
   }
 }
 
@@ -254,7 +246,6 @@ export class VTKPlot extends HTMLBox {
 
     this.define<VTKPlot.Props>({
       data:               [ p.String         ],
-      append:             [ p.Boolean, false ],
       camera:             [ p.Any            ],
       enable_keybindings: [ p.Boolean, false ],
       orientation_widget: [ p.Boolean, false ],

@@ -147,7 +147,6 @@ class VTKVolume(PaneBase):
         else:
             sub_array = array
             self._sub_spacing = self.spacing
-        print(dowsnscale_factor)
         return sub_array
 
 

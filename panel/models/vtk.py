@@ -68,4 +68,3 @@ class VTKVolumePlot(HTMLBox):
 
 
 CUSTOM_MODELS['panel.models.plots.VTKVolumePlot'] = VTKVolumePlot
-
