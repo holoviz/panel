@@ -36,14 +36,15 @@ class VTKVolume(PaneBase):
     max_data_size = param.Number(default=(256 ** 3) * 2 / 1e6, doc="Maximum data size transfert allowed without subsampling")
     origin = param.Tuple(default=None, length=3, allow_None=True)
 
-    def __init__(self, obj, **params):
-        super().__init__(obj, **params)
+    def __init__(self, obj=None, **params):
+        super(VTKVolume, self).__init__(obj, **params)
         self._sub_spacing = self.spacing
 
     @classmethod
     def applies(cls, obj):
 
-        if isinstance(obj, np.ndarray) and obj.ndim == 3:
+        if ((isinstance(obj, np.ndarray) and obj.ndim == 3) or
+            any([isinstance(obj, k) for k in cls._serializers.keys()])):
             return True
         elif 'vtk' not in sys.modules:
             return False
@@ -105,9 +106,10 @@ class VTKVolume(PaneBase):
                     dtype=sub_array.dtype.name)
 
     def _get_volume_data(self):
-        if isinstance(self.object, np.ndarray):
-            volume_data = self._volume_from_array(self._subsample_array(self.object))
-
+        if self.object is None:
+            return None
+        elif isinstance(self.object, np.ndarray):
+            return self._volume_from_array(self._subsample_array(self.object))
         else:
             available_serializer = [v for k, v in VTKVolume._serializers.items() if isinstance(self.object, k)]
             if len(available_serializer) == 0:
@@ -125,9 +127,7 @@ class VTKVolume(PaneBase):
                 serializer = volume_serializer
             else:
                 serializer = available_serializer[0]
-            volume_data = serializer(self.object)
-
-        return volume_data
+            return serializer(self.object)
 
     def _subsample_array(self, array):
         original_shape = array.shape
