@@ -4,6 +4,10 @@ documents.
 """
 from __future__ import absolute_import, division, unicode_literals
 
+import sys
+
+import param
+
 from bokeh.document.document import Document as _Document
 from bokeh.io import curdoc as _curdoc
 from jinja2.environment import Template as _Template
@@ -15,7 +19,7 @@ from .io.notebook import render_template
 from .io.server import StoppableThread, get_server
 from .io.state import state
 from .layout import Column
-from .pane import panel as _panel, HTML, Str
+from .pane import panel as _panel, PaneBase, HTML, Str
 from .widgets import Button
 
 _server_info = (
@@ -99,13 +103,23 @@ class Template(object):
         doc = doc or _curdoc()
         if title is not None:
             doc.title = title
+        root = None
         for name, obj in self._render_items.items():
-            model = obj.get_root(doc, comm)
+            if root is None:
+                model = obj.get_root(doc, comm)
+                root = model
+            elif isinstance(obj, PaneBase):
+                if obj._updates:
+                    model = obj._get_model(doc, root, root, comm=comm)
+                else:
+                    model = obj.layout._get_model(doc, root, root, comm=comm)
+            else:
+                model = obj._get_model(doc, root, root, comm)
             model.name = name
             if hasattr(doc, 'on_session_destroyed'):
                 doc.on_session_destroyed(obj._server_destroy)
                 obj._documents[doc] = model
-            add_to_doc(model, doc)
+            add_to_doc(model, doc, hold=bool(comm))
         doc.template = self.template
         return doc
 
@@ -118,7 +132,7 @@ class Template(object):
             import holoviews as hv
             loaded = hv.extension._loaded
         if not loaded:
-            self.param.warning('Displaying Panel objects in the notebook '
+            param.main.warning('Displaying Panel objects in the notebook '
                                'requires the panel extension to be loaded. '
                                'Ensure you run pn.extension() before '
                                'displaying objects in the notebook.')
@@ -136,7 +150,7 @@ class Template(object):
         comm = state._comm_manager.get_server_comm()
         self._init_doc(doc, comm)
         return render_template(doc, comm)
-    
+
     #----------------------------------------------------------------
     # Public API
     #----------------------------------------------------------------

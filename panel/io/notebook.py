@@ -70,6 +70,41 @@ for (var event of events) {{
 }}
 """
 
+# Following JS block becomes body of the message handler callback
+bokeh_msg_handler = """
+var plot_id = "{plot_id}";
+
+if ((plot_id in window.PyViz.plot_index) && (window.PyViz.plot_index[plot_id] != null)) {{
+  var plot = window.PyViz.plot_index[plot_id];
+}} else if ((Bokeh !== undefined) && (plot_id in Bokeh.index)) {{
+  var plot = Bokeh.index[plot_id];
+}}
+
+if (plot == null) {{
+  return
+}}
+
+if (plot_id in window.PyViz.receivers) {{
+  var receiver = window.PyViz.receivers[plot_id];
+}} else if (Bokeh.protocol === undefined) {{
+  return;
+}} else {{
+  var receiver = new Bokeh.protocol.Receiver();
+  window.PyViz.receivers[plot_id] = receiver;
+}}
+
+if ((buffers != undefined) && (buffers.length > 0)) {{
+  receiver.consume(buffers[0].buffer)
+}} else {{
+  receiver.consume(msg)
+}}
+
+const comm_msg = receiver.message;
+if ((comm_msg != null) && (Object.keys(comm_msg.content).length > 0)) {{
+  plot.model.document.apply_json_patch(comm_msg.content, comm_msg.buffers)
+}}
+"""
+
 def get_comm_customjs(change, client_comm, plot_id, timeout=5000, debounce=50):
     """
     Returns a CustomJS callback that can be attached to send the
@@ -126,10 +161,7 @@ def _autoload_js(bundle, configs, requirements, exports, load_timeout=5000):
     )
 
 
-def html_for_render_items(comm_js, docs_json, render_items, title, template=None, template_variables={}):
-    if title is None:
-        title = 'Panel App'
-
+def html_for_render_items(comm_js, docs_json, render_items, template=None, template_variables={}):
     comm_js = wrap_in_script_tag(comm_js)
 
     json_id = make_id()
@@ -141,7 +173,7 @@ def html_for_render_items(comm_js, docs_json, render_items, title, template=None
     context = template_variables.copy()
 
     context.update(dict(
-        title = title,
+        title = '',
         bokeh_js = comm_js,
         plot_script = json + script,
         docs = render_items,
@@ -153,9 +185,6 @@ def html_for_render_items(comm_js, docs_json, render_items, title, template=None
         context["doc"] = context["docs"][0]
         context["roots"] = context["doc"].roots
 
-    # XXX: backwards compatibility, remove for 1.0
-    context["plot_div"] = "\n".join(div_for_render_item(item) for item in render_items)
-
     if template is None:
         template = NB_TEMPLATE_BASE
     elif isinstance(template, string_types):
@@ -166,20 +195,21 @@ def html_for_render_items(comm_js, docs_json, render_items, title, template=None
 
 
 def render_template(document, comm=None):
+    plot_id = document.roots[0].ref['id']
     (docs_json, render_items) = standalone_docs_json_and_render_items(document)
 
     if comm:
-        msg_handler = bokeh_msg_handler.format(plot_id='')
-        comm_js = comm.js_template.format(plot_id='', comm_id=comm.id, msg_handler=msg_handler)
+        msg_handler = bokeh_msg_handler.format(plot_id=plot_id)
+        comm_js = comm.js_template.format(plot_id=plot_id, comm_id=comm.id, msg_handler=msg_handler)
     else:
         comm_js = ''
 
     html = html_for_render_items(
-        comm_js, docs_json, render_items, '', template=document.template,
+        comm_js, docs_json, render_items, template=document.template,
         template_variables=document.template_variables)
 
     return ({'text/html': html, EXEC_MIME: ''},
-            {EXEC_MIME: {'id': ''}})
+            {EXEC_MIME: {'id': plot_id}})
 
 
 def render_model(model, comm=None):
