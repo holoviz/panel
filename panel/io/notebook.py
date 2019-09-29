@@ -17,11 +17,11 @@ from bokeh.core.templates import DOC_NB_JS
 from bokeh.core.json_encoder import serialize_json
 from bokeh.document import Document
 from bokeh.embed import server_document
+from bokeh.embed.bundle import bundle_for_objs_and_resources
 from bokeh.embed.elements import div_for_render_item
 from bokeh.embed.util import standalone_docs_json_and_render_items
 from bokeh.models import CustomJS, LayoutDOM, Model
 from bokeh.resources import CDN, INLINE
-from bokeh.util.compiler import bundle_all_models
 from bokeh.util.string import encode_utf8
 from jinja2 import Environment, Markup, FileSystemLoader
 from pyviz_comms import (
@@ -111,12 +111,9 @@ _env.filters['json'] = lambda obj: Markup(json.dumps(obj))
 AUTOLOAD_NB_JS = _env.get_template("autoload_panel_js.js")
 
 
-def _autoload_js(resources, custom_models_js, configs, requirements, exports, load_timeout=5000):
+def _autoload_js(bundle, configs, requirements, exports, load_timeout=5000):
     return AUTOLOAD_NB_JS.render(
-        js_urls   = resources.js_files,
-        css_urls  = resources.css_files,
-        js_raw    = resources.js_raw + [custom_models_js],
-        css_raw   = resources.css_raw_str,
+        bundle    = bundle,
         force     = True,
         timeout   = load_timeout,
         configs   = configs,
@@ -199,14 +196,13 @@ def load_notebook(inline=True, load_timeout=5000):
     from IPython.display import publish_display_data
 
     resources = INLINE if inline else CDN
-    custom_models_js = bundle_all_models() or ""
-
+    bundle = bundle_for_objs_and_resources(None, resources)
     configs, requirements, exports = require_components()
-    bokeh_js = _autoload_js(resources, custom_models_js, configs,
-                            requirements, exports, load_timeout)
+
+    bokeh_js = _autoload_js(bundle, configs, requirements, exports, load_timeout)
     publish_display_data({
         'application/javascript': bokeh_js,
-        LOAD_MIME : bokeh_js
+        LOAD_MIME: bokeh_js,
     })
     bokeh.io.notebook.curstate().output_notebook()
 
