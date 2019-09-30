@@ -9,7 +9,7 @@ from bokeh.models import HTMLBox
 
 from ..compiler import CUSTOM_MODELS
 
-vtk_cdn = "https://unpkg.com/vtk.js@8.3.15/dist/vtk.js"
+vtk_cdn = "https://unpkg.com/vtk.js"
 
 
 class VTKPlot(HTMLBox):
@@ -33,10 +33,38 @@ class VTKPlot(HTMLBox):
 
     enable_keybindings = Bool(default=False)
 
+    orientation_widget = Bool(default=False)
+
+    renderer_el = Any(readonly=True)
+
     height = Override(default=300)
 
     width = Override(default=300)
 
 
-
 CUSTOM_MODELS['panel.models.plots.VTKPlot'] = VTKPlot
+
+
+class VTKVolumePlot(HTMLBox):
+    """
+    A Bokeh model that wraps around a vtk-js library and renders it inside
+    a Bokeh plot.
+    """
+
+    __javascript__ = [vtk_cdn]
+
+    __js_require__ = {"paths": {"vtk": vtk_cdn[:-3]},
+                      "shim": {"vtk": {"exports": "vtk"}}}
+
+    __implementation__ = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'vtkvolume.ts')
+
+    actor = Any(readonly=True)
+
+    data = Dict(String, Any)
+
+    height = Override(default=300)
+
+    width = Override(default=300)
+
+
+CUSTOM_MODELS['panel.models.plots.VTKVolumePlot'] = VTKVolumePlot
