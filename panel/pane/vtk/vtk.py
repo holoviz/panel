@@ -155,12 +155,9 @@ class VTK(PaneBase):
     VTK panes allow rendering VTK objects.
     """
 
-    serialize_policy = param.ObjectSelector(default='instantiation',
-                                            objects=['instantiation', 'display'],
-                                            constant=True,
-                                            doc="""
-        Define if the object serialization occurs
-        at panel instanciation or when the panel is displayed.
+    serialize_on_instantiation = param.Boolean(default=True, doc="""
+        Define if the object serialization occurs at panel instantiation
+        or when the panel is displayed.
     """)
 
     camera = param.Dict(doc="""State of the rendered VTK camera.""")
@@ -183,7 +180,7 @@ class VTK(PaneBase):
         super(VTK, self).__init__(obj, **params)
         self._legend = None
         self._vtkjs = None
-        if self.serialize_policy == 'instantiation':
+        if self.serialize_on_instantiation:
             self._vtkjs = self._get_vtkjs()
 
     @classmethod
@@ -258,7 +255,7 @@ class VTK(PaneBase):
 
     def _init_properties(self):
         return {k: v for k, v in self.param.get_param_values()
-                if v is not None and k not in ['default_layout', 'object', 'infer_legend', 'serialize_policy']}
+                if v is not None and k not in ['default_layout', 'object', 'infer_legend', 'serialize_on_instantiation']}
 
     @classmethod
     def register_serializer(cls, class_type, serializer):
