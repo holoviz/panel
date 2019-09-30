@@ -132,17 +132,17 @@ class VTKVolume(PaneBase):
     def _subsample_array(self, array):
         original_shape = array.shape
         spacing = self.spacing
-        extent = tuple((ds - 1) * ps for ds, ps in zip(original_shape, spacing))
+        extent = tuple((o_s - 1) * s for o_s, s in zip(original_shape, spacing))
         dim_ratio = np.cbrt((np.prod(original_shape) / 1e6) / self.max_data_size)
-        max_shape = tuple(int(d / dim_ratio) for d in original_shape)
-        dowsnscale_factor = [ms / max(ds, ms) for ms, ds in zip(max_shape, original_shape)]
+        max_shape = tuple(int(o_s / dim_ratio) for o_s in original_shape)
+        dowsnscale_factor = [max(o_s, m_s) / m_s for m_s, o_s in zip(max_shape, original_shape)]
 
-        if any(dowsnscale_factor):
+        if any([d_f > 1 for d_f in dowsnscale_factor]):
             try:
                 import scipy.ndimage as nd
-                sub_array = nd.interpolation.zoom(array, zoom=dowsnscale_factor, order=0)
+                sub_array = nd.interpolation.zoom(array, zoom=[1 / d_f for d_f in dowsnscale_factor], order=0)
             except ImportError:
-                sub_array = array[::int(np.ceil(1 / dowsnscale_factor[0])), ::int(np.ceil(1 / dowsnscale_factor[1])), ::int(np.ceil(1 / dowsnscale_factor[2]))]
+                sub_array = array[::int(np.ceil(dowsnscale_factor[0])), ::int(np.ceil(dowsnscale_factor[1])), ::int(np.ceil(dowsnscale_factor[2]))]
             self._sub_spacing = tuple(e / (s - 1) for e, s in zip(extent, sub_array.shape))
         else:
             sub_array = array
@@ -243,7 +243,7 @@ class VTK(PaneBase):
                     cbs.append(ColorBar(color_mapper=LinearColorMapper(low=v['low'], high=v['high'], palette=v['palette']), title=k,
                                         ticker=FixedTicker(ticks=ticks),
                                         label_standoff=5, background_fill_alpha=0, orientation='horizontal', location=(0, 0)))
-                plot = figure(x_range=(0, 1), y_range=(0, 1), toolbar_location=None, height=90 * len(cbs),
+                plot = figure(x_range=(0, 1), y_range=(0, 1), toolbar_location=None, frame_height=0,
                               sizing_mode='stretch_width')
                 plot.xaxis.visible = False
                 plot.yaxis.visible = False
