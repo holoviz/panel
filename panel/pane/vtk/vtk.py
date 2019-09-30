@@ -155,13 +155,21 @@ class VTK(PaneBase):
     VTK panes allow rendering VTK objects.
     """
 
+    serialize_policy = param.ObjectSelector(default='instantiation',
+                                            objects=['instantiation', 'display'],
+                                            constant=True,
+                                            doc="""
+        Define if the object serialization occurs
+        at panel instanciation or when the panel is displayed.
+    """)
+
     camera = param.Dict(doc="""State of the rendered VTK camera.""")
 
     enable_keybindings = param.Boolean(default=False, doc="""
         Activate/Deactivate keys binding.
 
         Warning: These keys bind may not work as expected in a notebook
-        context if they interact with already binded keys
+        context if they interact with already binded keys.
     """)
 
     orientation_widget = param.Boolean(default=False, doc="""
@@ -174,6 +182,9 @@ class VTK(PaneBase):
     def __init__(self, obj=None, **params):
         super(VTK, self).__init__(obj, **params)
         self._legend = None
+        self._vtkjs = None
+        if self.serialize_policy == 'instantiation':
+            self._vtkjs = self._get_vtkjs()
 
     @classmethod
     def applies(cls, obj):
@@ -247,7 +258,7 @@ class VTK(PaneBase):
 
     def _init_properties(self):
         return {k: v for k, v in self.param.get_param_values()
-                if v is not None and k not in ['default_layout', 'object', 'infer_legend']}
+                if v is not None and k not in ['default_layout', 'object', 'infer_legend', 'serialize_policy']}
 
     @classmethod
     def register_serializer(cls, class_type, serializer):
@@ -260,32 +271,33 @@ class VTK(PaneBase):
         cls._serializers.update({class_type:serializer})
 
     def _get_vtkjs(self):
-        if self.object is None:
-            vtkjs = None
-        elif isinstance(self.object, string_types) and self.object.endswith('.vtkjs'):
-            if os.path.isfile(self.object):
-                with open(self.object, 'rb') as f:
-                    vtkjs = f.read()
+        if self._vtkjs is None and self.object is not None:
+            if isinstance(self.object, string_types) and self.object.endswith('.vtkjs'):
+                if os.path.isfile(self.object):
+                    with open(self.object, 'rb') as f:
+                        vtkjs = f.read()
+                else:
+                    data_url = urlopen(self.object)
+                    vtkjs = data_url.read()
+            elif hasattr(self.object, 'read'):
+                vtkjs = self.object.read()
             else:
-                data_url = urlopen(self.object)
-                vtkjs = data_url.read()
-        elif hasattr(self.object, 'read'):
-            vtkjs = self.object.read()
-        else:
-            available_serializer = [v for k, v in VTK._serializers.items() if isinstance(self.object, k)]
-            if len(available_serializer) == 0:
-                import vtk
-                from .vtkjs_serializer import render_window_serializer
+                available_serializer = [v for k, v in VTK._serializers.items() if isinstance(self.object, k)]
+                if len(available_serializer) == 0:
+                    import vtk
+                    from .vtkjs_serializer import render_window_serializer
 
-                VTK.register_serializer(vtk.vtkRenderWindow, render_window_serializer)
-                serializer = render_window_serializer
-            else:
-                serializer = available_serializer[0]
-            vtkjs = serializer(self.object)
+                    VTK.register_serializer(vtk.vtkRenderWindow, render_window_serializer)
+                    serializer = render_window_serializer
+                else:
+                    serializer = available_serializer[0]
+                vtkjs = serializer(self.object)
+            self._vtkjs = vtkjs
 
-        return vtkjs
+        return self._vtkjs
 
     def _update(self, model):
+        self._vtkjs = None
         vtkjs = self._get_vtkjs()
         model.data = base64encode(vtkjs) if vtkjs is not None else vtkjs
 
