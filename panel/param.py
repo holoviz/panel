@@ -658,6 +658,8 @@ class ParamFunction(ParamMethod):
     a widget to some other output.
     """
 
+    priority = 0.6
+
     def _link_object_params(self):
         deps = self.object._dinfo
         dep_params = list(deps['dependencies']) + list(deps.get('kw', {}).values())
