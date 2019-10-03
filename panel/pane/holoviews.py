@@ -200,7 +200,7 @@ class HoloViews(PaneBase):
     def widgets_from_dimensions(cls, object, widget_types={}, widgets_type='individual'):
         from holoviews.core import Dimension, DynamicMap
         from holoviews.core.options import SkipRendering
-        from holoviews.core.util import isnumeric, unicode, datetime_types
+        from holoviews.core.util import isnumeric, unicode, datetime_types, unique_iterator
         from holoviews.core.traversal import unique_dimkeys
         from holoviews.plotting.plot import Plot, GenericCompositePlot
         from holoviews.plotting.util import get_dynamic_mode
@@ -231,6 +231,8 @@ class HoloViews(PaneBase):
         for dim in dims:
             widget_type, widget, widget_kwargs = None, None, {}
             vals = dim.values or values.get(dim, None)
+            if vals is not None:
+                vals = list(unique_iterator(vals))
             dim_values[dim.name] = vals
             if widgets_type == 'scrubber':
                 if not vals:

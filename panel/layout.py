@@ -95,14 +95,17 @@ class Panel(Reactive):
         for i, pane in enumerate(self.objects):
             pane = panel(pane)
             self.objects[i] = pane
+
+        for obj in old_objects:
+            if obj not in self.objects:
+                obj._cleanup(root)
+
+        for i, pane in enumerate(self.objects):
             if pane in old_objects:
                 child, _ = pane._models[root.ref['id']]
             else:
                 child = pane._get_model(doc, root, model, comm)
             new_models.append(child)
-        for obj in old_objects:
-            if obj not in self.objects:
-                obj._cleanup(root)
         return new_models
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
@@ -479,6 +482,12 @@ class Tabs(ListPanel):
         for i, (name, pane) in enumerate(zip(self._names, self)):
             pane = panel(pane, name=name)
             self.objects[i] = pane
+
+        for obj in old_objects:
+            if obj not in self.objects:
+                obj._cleanup(root)
+
+        for i, (name, pane) in enumerate(zip(self._names, self)):
             if pane in old_objects:
                 child, _ = pane._models[root.ref['id']]
             else:
@@ -486,9 +495,6 @@ class Tabs(ListPanel):
             child = BkPanel(title=name, name=pane.name, child=child,
                             closable=self.closable)
             new_models.append(child)
-        for obj in old_objects:
-            if obj not in self.objects:
-                obj._cleanup(root)
         return new_models
 
     #----------------------------------------------------------------
