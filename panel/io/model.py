@@ -6,6 +6,7 @@ from __future__ import absolute_import, division, unicode_literals
 import textwrap
 
 from bokeh.document import Document
+from bokeh.document.events import ColumnDataChangedEvent
 from bokeh.models import Model, Box
 from bokeh.protocol import Protocol
 
@@ -24,6 +25,14 @@ def diff(doc, binary=True, events=None):
     events = list(doc._held_events) if events is None else events
     if not events or state._hold:
         return None
+
+    # Filter ColumnDataChangedEvents which reference non-existing
+    # columns, later event will include the changes
+    fixed_events = []
+    for e in events:
+        if isinstance(e.hint, ColumnDataChangedEvent) and e.hint.cols is not None:
+            e.hint.cols = None
+        fixed_events.append(e)
     msg = Protocol("1.0").create("PATCH-DOC", events, use_buffers=binary)
     doc._held_events = [e for e in doc._held_events if e not in events]
     return msg

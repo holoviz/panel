@@ -109,6 +109,8 @@ class MultiSelect(Select):
 
     _widget_type = _BkMultiSelect
 
+    _supports_embed = False
+
     def _process_param_change(self, msg):
         msg = super(Select, self)._process_param_change(msg)
         labels, values = self.labels, self.values
@@ -132,6 +134,7 @@ class MultiSelect(Select):
         return msg
 
 
+
 class AutocompleteInput(Widget):
 
     options = param.List(default=[])
@@ -145,7 +148,10 @@ class AutocompleteInput(Widget):
     _rename = {'name': 'title', 'options': 'completions'}
 
 
+
 class _RadioGroupBase(Select):
+
+    _supports_embed = False
 
     __abstract = True
 
@@ -179,12 +185,20 @@ class _RadioGroupBase(Select):
                 msg['value'] = list(self.values)[index]
         return msg
 
+    def _get_embed_state(self, root, max_opts=3):
+        return (self, self._models[root.ref['id']][0], self.values,
+                lambda x: x.active, 'active', 'cb_obj.active')
+
+
 
 class RadioButtonGroup(_RadioGroupBase, _ButtonBase):
 
     _widget_type = _BkRadioButtonGroup
 
     _rename = {'name': 'title'}
+
+    _supports_embed = True
+
 
 
 class RadioBoxGroup(_RadioGroupBase):
@@ -193,12 +207,17 @@ class RadioBoxGroup(_RadioGroupBase):
         Whether the items be arrange vertically (``False``) or
         horizontally in-line (``True``).""")
 
+    _supports_embed = True
+
     _widget_type = _BkRadioBoxGroup
+
 
 
 class _CheckGroupBase(Select):
 
     value = param.List(default=[])
+
+    _supports_embed = False
 
     __abstract = True
 
@@ -223,11 +242,13 @@ class _CheckGroupBase(Select):
         return msg
 
 
+
 class CheckButtonGroup(_CheckGroupBase, _ButtonBase):
 
     _widget_type = _BkCheckboxButtonGroup
 
     _rename = {'name': 'title'}
+
 
 
 class CheckBoxGroup(_CheckGroupBase):
@@ -237,6 +258,7 @@ class CheckBoxGroup(_CheckGroupBase):
         horizontally in-line (``True``).""")
 
     _widget_type = _BkCheckboxGroup
+
 
 
 class ToggleGroup(Select):
@@ -279,6 +301,7 @@ class ToggleGroup(Select):
                 return RadioButtonGroup(**params)
             else:
                 return RadioBoxGroup(**params)
+
 
 
 class CrossSelector(CompositeWidget, MultiSelect):
