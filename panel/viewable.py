@@ -5,6 +5,7 @@ response to changes to parameters and the underlying bokeh models.
 """
 from __future__ import absolute_import, division, unicode_literals
 
+import logging
 import re
 import sys
 import threading
@@ -497,6 +498,10 @@ class Viewable(Layoutable):
         The Panel object itself
         """
         if _curdoc().session_context:
+            logger = logging.getLogger('bokeh')
+            for handler in logger.handlers:
+                if isinstance(handler, logging.StreamHandler):
+                    handler.setLevel(logging.WARN)
             self.server_doc(title=title)
         return self
 
