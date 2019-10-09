@@ -171,7 +171,7 @@ class HoloViews(PaneBase):
             key = tuple(w.value for w in widgets)
             if plot.dynamic:
                 widget_dims = [w.name for w in widgets]
-                key = [key[widget_dims.index(kdim.name)] if kdim.name in widget_dims else None
+                key = [key[widget_dims.index(kdim)] if kdim in widget_dims else None
                        for kdim in plot.dimensions]
                 key = wrap_tuple_streams(tuple(key), plot.dimensions, plot.streams)
 
@@ -212,7 +212,12 @@ class HoloViews(PaneBase):
                 plot = self._render(doc, comm, root)
             plot.pane = self
             backend = plot.renderer.backend
-            child_pane = self._panes.get(backend, Pane)(plot.state)
+            if hasattr(plot.renderer, 'get_plot_state'):
+                state = plot.renderer.get_plot_state(plot)
+            else:
+                # Compatibility with holoviews<1.13.0
+                state = plot.state
+            child_pane = self._panes.get(backend, Pane)(state)
             self._update_plot(plot, child_pane)
             model = child_pane._get_model(doc, root, parent, comm)
             if ref in self._plots:

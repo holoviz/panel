@@ -69,8 +69,7 @@ def test_vtk_data_array_dump():
     mapper.Update() # create data
     data = mapper.GetInput().GetPoints().GetData()
     scDir = []
-    root = {}
-    _dump_data_array(scDir, '', 'test', data, root=root, compress=False)
+    root = _dump_data_array(scDir, '', 'test', data)
     assert len(set(root_keys) - set(root.keys())) == 0
     assert len(scDir) == 1
     assert isinstance(scDir[0][0], string_types)

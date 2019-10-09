@@ -15,7 +15,8 @@ import param
 from bokeh.models.widgets import (
     CheckboxGroup as _BkCheckboxGroup, ColorPicker as _BkColorPicker,
     DatePicker as _BkDatePicker, Div as _BkDiv, TextInput as _BkTextInput,
-    Spinner as _BkSpinner, FileInput as _BkFileInput)
+    PasswordInput as _BkPasswordInput, Spinner as _BkSpinner, 
+    FileInput as _BkFileInput, TextAreaInput as _BkTextAreaInput)
 
 from ..util import as_unicode
 from .base import Widget
@@ -29,6 +30,23 @@ class TextInput(Widget):
 
     _widget_type = _BkTextInput
 
+class PasswordInput(Widget):
+
+    value = param.String(default='', allow_None=True)
+
+    placeholder = param.String(default='')
+
+    _widget_type = _BkPasswordInput
+
+class TextAreaInput(Widget):
+
+    value = param.String(default='', allow_None=True)
+
+    placeholder = param.String(default='')
+
+    max_length = param.Integer(default=5000)
+        
+    _widget_type = _BkTextAreaInput
 
 class FileInput(Widget):
 
@@ -42,7 +60,7 @@ class FileInput(Widget):
 
     _widget_type = _BkFileInput
 
-    _rename = {'name': None}
+    _rename = {'name': None, 'filename': None}
 
     def _process_param_change(self, msg):
         msg = super(FileInput, self)._process_param_change(msg)
