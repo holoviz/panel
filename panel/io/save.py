@@ -46,7 +46,7 @@ def save_png(model, filename):
 #---------------------------------------------------------------------
 
 def save(panel, filename, title=None, resources=None, template=None,
-         template_variables={}, embed=False, max_states=1000,
+         template_variables=None, embed=False, max_states=1000,
          max_opts=3, embed_json=False, json_prefix='', save_path='./',
          load_path=None):
     """
@@ -62,6 +62,10 @@ def save(panel, filename, title=None, resources=None, template=None,
       Optional title for the plot
     resources: bokeh resources
       One of the valid bokeh.resources (e.g. CDN or INLINE)
+    template:
+      template file, as used by bokeh.file_html. If None will use bokeh defaults
+    template_variables:
+      template_variables file dict, as used by bokeh.file_html
     embed: bool
       Whether the state space should be embedded in the saved file.
     max_states: int
@@ -101,6 +105,8 @@ def save(panel, filename, title=None, resources=None, template=None,
         resources = CDN
     if template:
         kwargs['template'] = template
+    if template_variables:
+        kwargs['template_variables'] = template_variables
 
     html = file_html(doc, resources, title, **kwargs)
     if hasattr(filename, 'write'):
