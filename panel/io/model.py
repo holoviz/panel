@@ -12,7 +12,6 @@ from bokeh.protocol import Protocol
 
 from .state import state
 
-
 #---------------------------------------------------------------------
 # Public API
 #---------------------------------------------------------------------
@@ -62,11 +61,16 @@ def add_to_doc(obj, doc, hold=False):
         doc.hold()
 
 
-def bokeh_repr(obj, depth=0, ignored=['children', 'text', 'name', 'toolbar', 'renderers', 'below', 'center', 'left', 'right']):
+_DEFAULT_IGNORED_REPR = frozenset(['children', 'text', 'name', 'toolbar', 'renderers', 'below', 'center', 'left', 'right'])
+
+def bokeh_repr(obj, depth=0, ignored=None):
     """
     Returns a string repr for a bokeh model, useful for recreating
     panel objects using pure bokeh.
     """
+    if ignored is None:
+        ignored = _DEFAULT_IGNORED_REPR
+
     from ..viewable import Viewable
     if isinstance(obj, Viewable):
         obj = obj.get_root(Document())
