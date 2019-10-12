@@ -52,9 +52,13 @@ class ImageBase(DivPaneBase):
 
     @classmethod
     def _is_url(cls, obj):
-        return (isinstance(obj, string_types) and
-                (obj.startswith('http://') or obj.startswith('https://'))
-                and obj.endswith('.'+cls.imgtype))
+        if isinstance(obj, string_types):
+            lower_string = obj.lower()
+            return (
+                lower_string.startswith('http://')
+                or lower_string.startswith('https://')
+            ) and lower_string.endswith('.'+cls.imgtype)
+        return False
 
     def _img(self):
         if hasattr(self.object, '_repr_{}_'.format(self.imgtype)):

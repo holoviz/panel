@@ -1,5 +1,8 @@
 from __future__ import absolute_import, division, unicode_literals
 
+import sys
+import pytest
+
 from base64 import b64decode, b64encode
 
 from panel.pane import GIF, JPG, PNG, SVG
@@ -65,6 +68,7 @@ def test_load_from_byteio():
     image_data = image_pane._img()
     assert b'PNG' in image_data
 
+@pytest.mark.skipif(sys.version_info.major <= 2, reason="Doesn't work with python 2")
 def test_load_from_stringio():
     """Testing a loading a image from a StringIO"""
     memory = StringIO()
@@ -74,3 +78,12 @@ def test_load_from_stringio():
     image_pane = PNG(memory)
     image_data = image_pane._img()
     assert 'PNG' in image_data
+
+def test_loading_a_image_from_url():
+    """Tests the loading of a image from a url"""
+    url = 'https://upload.wikimedia.org/wikipedia/commons/7/71/' \
+          '1700_CE_world_map.PNG'
+
+    image_pane = PNG(url)
+    image_data = image_pane._img()
+    assert b'PNG' in image_data
