@@ -40,16 +40,16 @@ class _state(param.Parameterized):
     _servers = {}
 
     def __repr__(self):
+        server_info = []
+        for server, panel, docs in self._servers.values():
+            server_info.append("{:d}:{}@{!r}".format(server.port, server.address, panel))
         return (
-            "state("
-            "servers={})".format(",".join(
-                "{:d}:{}".format(server.port, server.address) for server in self._servers
-            )))
+            "state(servers={})".format(",".join(server_info)))
 
     def kill_all_servers(self):
         """Stop all servers and clear them from the current state."""
-        for server in self._servers:
-            server.stop()
+        for server_id in self._servers:
+            self._servers[server_id][0].stop()
         self._servers = {}
 
     def _unblocked(self, doc):
