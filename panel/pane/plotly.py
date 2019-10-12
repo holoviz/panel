@@ -13,6 +13,7 @@ from pyviz_comms import JupyterComm
 import param
 
 from .base import PaneBase
+from ..util import isdatetime
 
 
 class Plotly(PaneBase):
@@ -153,6 +154,21 @@ viewport_update_policy is "throttle"'''
 
         return update_sources
 
+    @staticmethod
+    def _plotly_json_wrapper(fig):
+        """Wraps around to_plotly_json and applies necessary fixes.
+
+        For #382: Map datetime elements to strings.
+        """
+        json = fig.to_plotly_json()
+        data = json['data']
+
+        for idx in range(len(data)):
+            for key in data[idx]:
+                if isdatetime(data[idx][key]):
+                    data[idx][key].astype(str)
+        return json
+
     def _get_model(self, doc, root=None, parent=None, comm=None):
         """
         Should return the bokeh model to be rendered.
@@ -172,7 +188,7 @@ viewport_update_policy is "throttle"'''
             json, sources = {}, []
         else:
             fig = self._to_figure(self.object)
-            json = fig.to_plotly_json()
+            json = self._plotly_json_wrapper(fig)
             sources = Plotly._get_sources(json)
         model = PlotlyPlot(data=json.get('data', []),
                            layout=json.get('layout', {}),
@@ -209,7 +225,7 @@ viewport_update_policy is "throttle"'''
             return
 
         fig = self._to_figure(self.object)
-        json = fig.to_plotly_json()
+        json = self._plotly_json_wrapper(fig)
 
         traces = json['data']
         new_sources = []
