@@ -67,7 +67,7 @@ def save(panel, filename, title=None, resources=None, template=None,
     template_variables:
       template_variables file dict, as used by bokeh.file_html
     embed: bool
-      Whether the state space should be embedded in the saved file. If None use bokeh defaults
+      Whether the state space should be embedded in the saved file.
     max_states: int
       The maximum number of states to embed
     max_opts: int
