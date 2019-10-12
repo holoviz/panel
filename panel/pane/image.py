@@ -39,10 +39,16 @@ class ImageBase(DivPaneBase):
     @classmethod
     def applies(cls, obj):
         imgtype = cls.imgtype
-        return (hasattr(obj, '_repr_'+imgtype+'_') or
-                (isinstance(obj, string_types) and
-                 ((os.path.isfile(obj) and obj.endswith('.'+imgtype)) or
-                  cls._is_url(obj))))
+        if hasattr(obj, '_repr_{}_'.format(imgtype)):
+            return True
+        if isinstance(obj, string_types):
+            if os.path.isfile(obj) and obj.endswith('.'+imgtype):
+                return True
+            if cls._is_url(obj):
+                return True
+        if hasattr(obj, 'read'):  # Check for file like object
+            return True
+        return False
 
     @classmethod
     def _is_url(cls, obj):
@@ -51,12 +57,15 @@ class ImageBase(DivPaneBase):
                 and obj.endswith('.'+cls.imgtype))
 
     def _img(self):
-        if not isinstance(self.object, string_types):
-            return getattr(self.object, '_repr_'+self.imgtype+'_')()
-        elif os.path.isfile(self.object):
-            with open(self.object, 'rb') as f:
-                return f.read()
-        else:
+        if hasattr(self.object, '_repr_{}_'.format(self.imgtype)):
+            return getattr(self.object, '_repr_' + self.imgtype + '_')()
+        if isinstance(self.object, string_types):
+            if os.path.isfile(self.object):
+                with open(self.object, 'rb') as f:
+                    return f.read()
+        if hasattr(self.object, 'read'):
+            return self.object.read()
+        if self._is_url(self.object):
             import requests
             r = requests.request(url=self.object, method='GET')
             return r.content
