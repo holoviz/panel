@@ -110,6 +110,11 @@ class FloatSlider(ContinuousSlider):
 
 class IntSlider(ContinuousSlider):
 
+    def __init__(self, **params):
+        if 'value' not in params:
+            params['value'] = params.get('start', self.param.start.default)
+        super(ContinuousSlider, self).__init__(**params)
+
     value = param.Integer(default=0)
 
     start = param.Integer(default=0)
