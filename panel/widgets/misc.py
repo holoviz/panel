@@ -15,14 +15,15 @@ import numpy as np
 from ..io.notebook import push
 from ..io.state import state
 from ..models import (Audio as _BkAudio,
+                      Video as _BkVideo,
                       VideoStream as _BkVideoStream)
 from .base import Widget
 
 
-class Audio(Widget):
+class MediaBase(Widget):
 
     loop = param.Boolean(default=False, doc="""
-        Whether the audio should loop""")
+        Whether the meida should loop""")
 
     time = param.Number(default=0, doc="""
         The current timestamp""")
@@ -31,20 +32,19 @@ class Audio(Widget):
         How frequently to sample the current playback time in milliseconds""")
 
     paused = param.Boolean(default=True, doc="""
-        Whether the audio is currently paused""")
-
-    sample_rate = param.Integer(default=44100, doc="""
-        The sample_rate of the audio when given a NumPy array.""")
-
-    value = param.ClassSelector(default='', class_=(string_types + (np.ndarray,)), doc="""
-        The audio file either local or remote.""")
+        Whether the media is currently paused""")
+    
+    value = param.String(default='', doc="""
+        The media file either local or remote.""")
 
     volume = param.Number(default=None, bounds=(0, 100), doc="""
-        The volume of the audio player.""")
-
-    _widget_type = _BkAudio
+        The volume of the media player.""")
 
     _rename = {'name': None, 'sample_rate': None}
+
+    _default_mime = None
+    
+    _media_type = None
 
     def _from_numpy(self, data):
         from scipy.io import wavfile
@@ -69,7 +69,7 @@ class Audio(Widget):
             elif value.lower().startswith('http'):
                 return msg
             elif not value:
-                data, fmt = b'', 'wav'
+                data, fmt = b'', self._default_mime
             else:
                 raise ValueError('Value should be either path to a sound file or numpy array')
             template = 'data:audio/{mime};base64,{data}'
@@ -77,6 +77,29 @@ class Audio(Widget):
                                            mime=fmt)
         return msg
 
+
+class Audio(Widget):
+
+    sample_rate = param.Integer(default=44100, doc="""
+        The sample_rate of the audio when given a NumPy array.""")
+
+    value = param.ClassSelector(default='', class_=(string_types + (np.ndarray,)), doc="""
+        The audio file either local or remote.""")
+
+    _media_type = 'audio'
+    
+    _default_mime = 'wav'
+
+    _widget_type = _BkAudio
+
+
+class Video(Widget):
+
+    _media_type = 'video'
+
+    _default_mime = 'mp4'
+
+    _widget_type = _BkVideo
 
 
 class VideoStream(Widget):

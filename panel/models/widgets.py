@@ -50,6 +50,26 @@ class Audio(Widget):
     volume = Int(0, help="""The volume of the audio player.""")
 
 
+class Video(Widget):
+
+    __implementation__ = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'video.ts')
+
+    loop = Bool(False, help="""Whether the video should loop""")
+
+    paused = Bool(False, help="""Whether the video is paused""")
+
+    time = Float(0, help="""
+        The current time stamp of the video playback""")
+
+    throttle = Int(250, help="""
+        The frequency at which the time value is updated in milliseconds.""")
+
+    value = Any(help="Encoded file data")
+
+    volume = Int(0, help="""The volume of the video player.""")
+
+    
+
 class VideoStream(Widget):
 
     format = Enum('png', 'jpeg', default='png')
