@@ -13,16 +13,20 @@ class MathJax(Markup):
     A bokeh model that renders text using MathJax.
     """
 
-    __javascript__ = ["https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-MML-AM_CHTML"]
+    __javascript__ = [
+        "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-MML-AM_CHTML"
+    ]
 
     __js_require__ = {
-        'paths': {
-            'mathjax': "//cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS_HTML"
+        "paths": {
+            "mathjax": "//cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS_HTML"
         },
-        'shim': {'mathjax': {'exports': "MathJax"}}
+        "shim": {"mathjax": {"exports": "MathJax"}},
     }
 
-    __implementation__ = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'mathjax.ts')
+    __implementation__ = os.path.join(
+        os.path.abspath(os.path.dirname(__file__)), "mathjax.ts"
+    )
 
 
-CUSTOM_MODELS['panel.models.mathjax.MathJax'] = MathJax
+CUSTOM_MODELS["panel.models.mathjax.MathJax"] = MathJax

@@ -36,9 +36,9 @@ class Bokeh(PaneBase):
             model = BkSpacer()
         else:
             model = self.object
-        ref = root.ref['id']
-        for js in model.select({'type': CustomJS}):
-            js.code = js.code.replace(model.ref['id'], ref)
+        ref = root.ref["id"]
+        for js in model.select({"type": CustomJS}):
+            js.code = js.code.replace(model.ref["id"], ref)
 
         if model._document and doc is not model._document:
             remove_root(model, doc)
@@ -56,37 +56,46 @@ class Matplotlib(PNG):
     resolution of the image not the displayed size.
     """
 
-    dpi = param.Integer(default=144, bounds=(1, None), doc="""
-        Scales the dpi of the matplotlib figure.""")
+    dpi = param.Integer(
+        default=144,
+        bounds=(1, None),
+        doc="""
+        Scales the dpi of the matplotlib figure.""",
+    )
 
-    tight = param.Boolean(default=False, doc="""
+    tight = param.Boolean(
+        default=False,
+        doc="""
         Automatically adjust the figure size to fit the
-        subplots and other artist elements.""")
+        subplots and other artist elements.""",
+    )
 
-    _rerender_params = ['object', 'dpi']
+    _rerender_params = ["object", "dpi"]
 
     @classmethod
     def applies(cls, obj):
-        if 'matplotlib' not in sys.modules:
+        if "matplotlib" not in sys.modules:
             return False
         from matplotlib.figure import Figure
+
         is_fig = isinstance(obj, Figure)
         if is_fig and obj.canvas is None:
-            raise ValueError('Matplotlib figure has no canvas and '
-                             'cannot be rendered.')
+            raise ValueError(
+                "Matplotlib figure has no canvas and " "cannot be rendered."
+            )
         return is_fig
 
     def _imgshape(self, data):
         """Calculate and return image width,height"""
         w, h = self.object.get_size_inches()
-        return int(w*72), int(h*72)
+        return int(w * 72), int(h * 72)
 
     def _img(self):
         self.object.set_dpi(self.dpi)
         b = BytesIO()
 
         if self.tight:
-            bbox_inches = 'tight'
+            bbox_inches = "tight"
         else:
             bbox_inches = None
 
@@ -106,18 +115,24 @@ class RGGPlot(PNG):
 
     dpi = param.Integer(default=144, bounds=(1, None))
 
-    _rerender_params = ['object', 'dpi', 'width', 'height']
+    _rerender_params = ["object", "dpi", "width", "height"]
 
     @classmethod
     def applies(cls, obj):
-        return type(obj).__name__ == 'GGPlot' and hasattr(obj, 'r_repr')
+        return type(obj).__name__ == "GGPlot" and hasattr(obj, "r_repr")
 
     def _img(self):
         from rpy2.robjects.lib import grdevices
         from rpy2 import robjects
-        with grdevices.render_to_bytesio(grdevices.png,
-                 type="cairo-png", width=self.width, height=self.height,
-                 res=self.dpi, antialias="subpixel") as b:
+
+        with grdevices.render_to_bytesio(
+            grdevices.png,
+            type="cairo-png",
+            width=self.width,
+            height=self.height,
+            res=self.dpi,
+            antialias="subpixel",
+        ) as b:
             robjects.r("print")(self.object)
         return b.getvalue()
 
@@ -134,9 +149,11 @@ class YT(HTML):
 
     @classmethod
     def applies(cls, obj):
-        return (getattr(obj, '__module__', '').startswith('yt.') and
-                hasattr(obj, "plots") and
-                hasattr(obj, "_repr_html_"))
+        return (
+            getattr(obj, "__module__", "").startswith("yt.")
+            and hasattr(obj, "plots")
+            and hasattr(obj, "_repr_html_")
+        )
 
     def _get_properties(self):
         p = super(YT, self)._get_properties()
@@ -144,15 +161,17 @@ class YT(HTML):
             return p
 
         width = height = 0
-        if self.width  is None or self.height is None:
-            for k,v in self.object.plots.items():
+        if self.width is None or self.height is None:
+            for k, v in self.object.plots.items():
                 if hasattr(v, "_repr_png_"):
                     img = v._repr_png_()
-                    w,h = PNG._imgshape(img)
+                    w, h = PNG._imgshape(img)
                     height += h
                     width = max(w, width)
 
-        if self.width  is None: p["width"]  = width
-        if self.height is None: p["height"] = height
+        if self.width is None:
+            p["width"] = width
+        if self.height is None:
+            p["height"] = height
 
         return p

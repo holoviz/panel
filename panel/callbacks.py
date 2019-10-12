@@ -21,19 +21,30 @@ class PeriodicCallback(param.Parameterized):
     will run.
     """
 
-    callback = param.Callable(doc="""
-       The callback to execute periodically.""")
+    callback = param.Callable(
+        doc="""
+       The callback to execute periodically."""
+    )
 
-    count = param.Integer(default=None, doc="""
+    count = param.Integer(
+        default=None,
+        doc="""
         Number of times the callback will be executed, by default
-        this is unlimited.""")
+        this is unlimited.""",
+    )
 
-    period = param.Integer(default=500, doc="""
-        Period in milliseconds at which the callback is executed.""")
+    period = param.Integer(
+        default=500,
+        doc="""
+        Period in milliseconds at which the callback is executed.""",
+    )
 
-    timeout = param.Integer(default=None, doc="""
+    timeout = param.Integer(
+        default=None,
+        doc="""
         Timeout in seconds from the start time at which the callback
-        expires""")
+        expires""",
+    )
 
     def __init__(self, **params):
         super(PeriodicCallback, self).__init__(**params)
@@ -45,17 +56,20 @@ class PeriodicCallback(param.Parameterized):
 
     def start(self):
         if self._cb is not None:
-            raise RuntimeError('Periodic callback has already started.')
+            raise RuntimeError("Periodic callback has already started.")
         self._start_time = time.time()
         if _curdoc().session_context:
             self._doc = _curdoc()
-            self._cb = self._doc.add_periodic_callback(self._periodic_callback, self.period)
+            self._cb = self._doc.add_periodic_callback(
+                self._periodic_callback, self.period
+            )
         else:
             from tornado.ioloop import PeriodicCallback
+
             self._cb = PeriodicCallback(self._periodic_callback, self.period)
             self._cb.start()
 
-    @param.depends('period', watch=True)
+    @param.depends("period", watch=True)
     def _update_period(self):
         if self._cb:
             self.stop()
@@ -65,7 +79,7 @@ class PeriodicCallback(param.Parameterized):
         self.callback()
         self._counter += 1
         if self._timeout is not None:
-            dt = (time.time() - self._start_time)
+            dt = time.time() - self._start_time
             if dt > self._timeout:
                 self.stop()
         if self._counter == self.count:
@@ -79,4 +93,3 @@ class PeriodicCallback(param.Parameterized):
         else:
             self._cb.stop()
         self._cb = None
-

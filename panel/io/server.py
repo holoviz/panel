@@ -13,9 +13,10 @@ from bokeh.server.server import Server
 from .state import state
 
 
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
 # Private API
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
+
 
 def _origin_url(url):
     if url.startswith("http"):
@@ -25,16 +26,19 @@ def _origin_url(url):
 
 def _server_url(url, port):
     if url.startswith("http"):
-        return '%s:%d%s' % (url.rsplit(':', 1)[0], port, "/")
+        return "%s:%d%s" % (url.rsplit(":", 1)[0], port, "/")
     else:
-        return 'http://%s:%d%s' % (url.split(':')[0], port, "/")
+        return "http://%s:%d%s" % (url.split(":")[0], port, "/")
 
-#---------------------------------------------------------------------
+
+# ---------------------------------------------------------------------
 # Public API
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
 
-def get_server(panel, port=0, websocket_origin=None, loop=None,
-               show=False, start=False, **kwargs):
+
+def get_server(
+    panel, port=0, websocket_origin=None, loop=None, show=False, start=False, **kwargs
+):
     """
     Returns a Server instance with this panel attached as the root
     app.
@@ -65,26 +69,29 @@ def get_server(panel, port=0, websocket_origin=None, loop=None,
       Bokeh Server instance running this panel
     """
     from tornado.ioloop import IOLoop
+
     opts = dict(kwargs)
     if loop:
         loop.make_current()
-        opts['io_loop'] = loop
+        opts["io_loop"] = loop
     else:
-        opts['io_loop'] = IOLoop.current()
+        opts["io_loop"] = IOLoop.current()
 
     if websocket_origin:
         if not isinstance(websocket_origin, list):
             websocket_origin = [websocket_origin]
-        opts['allow_websocket_origin'] = websocket_origin
+        opts["allow_websocket_origin"] = websocket_origin
 
-    server_id = kwargs.pop('server_id', None)
-    server = Server({'/': partial(panel._modify_doc, server_id)}, port=port, **opts)
+    server_id = kwargs.pop("server_id", None)
+    server = Server({"/": partial(panel._modify_doc, server_id)}, port=port, **opts)
     if server_id:
         state._servers[server_id] = (server, panel, [])
 
     if show:
+
         def show_callback():
-            server.show('/')
+            server.show("/")
+
         server.io_loop.add_callback(show_callback)
 
     def sig_exit(*args, **kwargs):
@@ -96,7 +103,7 @@ def get_server(panel, port=0, websocket_origin=None, loop=None,
     try:
         signal.signal(signal.SIGINT, sig_exit)
     except ValueError:
-        pass # Can't use signal on a thread
+        pass  # Can't use signal on a thread
 
     if start:
         server.start()
@@ -112,6 +119,7 @@ class StoppableThread(threading.Thread):
 
     def __init__(self, io_loop=None, timeout=1000, **kwargs):
         from tornado import ioloop
+
         super(StoppableThread, self).__init__(**kwargs)
         self._stop_event = threading.Event()
         self.io_loop = io_loop
@@ -124,10 +132,14 @@ class StoppableThread(threading.Thread):
             self.io_loop.stop()
 
     def run(self):
-        if hasattr(self, '_target'):
+        if hasattr(self, "_target"):
             target, args, kwargs = self._target, self._args, self._kwargs
         else:
-            target, args, kwargs = self._Thread__target, self._Thread__args, self._Thread__kwargs
+            target, args, kwargs = (
+                self._Thread__target,
+                self._Thread__args,
+                self._Thread__kwargs,
+            )
         if not target:
             return
         bokeh_server = None
@@ -136,7 +148,7 @@ class StoppableThread(threading.Thread):
         finally:
             if isinstance(bokeh_server, Server):
                 bokeh_server.stop()
-            if hasattr(self, '_target'):
+            if hasattr(self, "_target"):
                 del self._target, self._args, self._kwargs
             else:
                 del self._Thread__target, self._Thread__args, self._Thread__kwargs

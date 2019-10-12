@@ -8,26 +8,35 @@ from bokeh.models import HTMLBox
 
 from ..compiler import CUSTOM_MODELS
 
+
 class AcePlot(HTMLBox):
     """
     A Bokeh model that wraps around a Ace editor and renders it inside
     a Bokeh plot.
     """
 
-    __javascript__ = ['https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.3/ace.js',
-                      'https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.3/ext-language_tools.js']
+    __javascript__ = [
+        "https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.3/ace.js",
+        "https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.3/ext-language_tools.js",
+    ]
 
-    __js_require__ = {'paths': {'ace': 'https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.3/ace',
-                                'ace_lang_tools': 'https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.3/ext-language_tools'},
-                      'exports': {'ace': 'ace'}}
+    __js_require__ = {
+        "paths": {
+            "ace": "https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.3/ace",
+            "ace_lang_tools": "https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.3/ext-language_tools",
+        },
+        "exports": {"ace": "ace"},
+    }
 
-    __implementation__ = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'ace.ts')
+    __implementation__ = os.path.join(
+        os.path.abspath(os.path.dirname(__file__)), "ace.ts"
+    )
 
     code = String()
 
-    theme = String(default='chrome')
+    theme = String(default="chrome")
 
-    language = String(default='python')
+    language = String(default="python")
 
     annotations = List(Dict(String, Any), default=[])
 
@@ -38,5 +47,4 @@ class AcePlot(HTMLBox):
     width = Override(default=300)
 
 
-
-CUSTOM_MODELS['panel.models.ace.AcePlot'] = AcePlot
+CUSTOM_MODELS["panel.models.ace.AcePlot"] = AcePlot

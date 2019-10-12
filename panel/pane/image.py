@@ -29,36 +29,45 @@ class ImageBase(DivPaneBase):
     provide their own way of obtaining or generating a PNG.
     """
 
-    embed = param.Boolean(default=True, doc="""
-        Whether to embed the image as base64.""")
+    embed = param.Boolean(
+        default=True,
+        doc="""
+        Whether to embed the image as base64.""",
+    )
 
-    imgtype = 'None'
+    imgtype = "None"
 
     __abstract = True
 
     @classmethod
     def applies(cls, obj):
         imgtype = cls.imgtype
-        return (hasattr(obj, '_repr_'+imgtype+'_') or
-                (isinstance(obj, string_types) and
-                 ((os.path.isfile(obj) and obj.endswith('.'+imgtype)) or
-                  cls._is_url(obj))))
+        return hasattr(obj, "_repr_" + imgtype + "_") or (
+            isinstance(obj, string_types)
+            and (
+                (os.path.isfile(obj) and obj.endswith("." + imgtype))
+                or cls._is_url(obj)
+            )
+        )
 
     @classmethod
     def _is_url(cls, obj):
-        return (isinstance(obj, string_types) and
-                (obj.startswith('http://') or obj.startswith('https://'))
-                and obj.endswith('.'+cls.imgtype))
+        return (
+            isinstance(obj, string_types)
+            and (obj.startswith("http://") or obj.startswith("https://"))
+            and obj.endswith("." + cls.imgtype)
+        )
 
     def _img(self):
         if not isinstance(self.object, string_types):
-            return getattr(self.object, '_repr_'+self.imgtype+'_')()
+            return getattr(self.object, "_repr_" + self.imgtype + "_")()
         elif os.path.isfile(self.object):
-            with open(self.object, 'rb') as f:
+            with open(self.object, "rb") as f:
                 return f.read()
         else:
             import requests
-            r = requests.request(url=self.object, method='GET')
+
+            r = requests.request(url=self.object, method="GET")
             return r.content
 
     def _imgshape(self, data):
@@ -68,103 +77,111 @@ class ImageBase(DivPaneBase):
     def _get_properties(self):
         p = super(ImageBase, self)._get_properties()
         if self.object is None:
-            return dict(p, text='<img></img>')
+            return dict(p, text="<img></img>")
         data = self._img()
         if not isinstance(data, bytes):
             data = base64.b64decode(data)
         width, height = self._imgshape(data)
         if self.width is not None:
             if self.height is None:
-                height = int((self.width/width)*height)
+                height = int((self.width / width) * height)
             else:
                 height = self.height
             width = self.width
         elif self.height is not None:
-            width = int((self.height/height)*width)
+            width = int((self.height / height) * width)
             height = self.height
         if not self.embed:
             src = self.object
         else:
             b64 = base64.b64encode(data).decode("utf-8")
-            src = "data:image/"+self.imgtype+";base64,{b64}".format(b64=b64)
+            src = "data:image/" + self.imgtype + ";base64,{b64}".format(b64=b64)
 
         smode = self.sizing_mode
-        if smode in ['fixed', None]:
-            w, h = '%spx' % width, '%spx' % height
-        elif smode == 'stretch_both':
-            w, h = '100%', '100%'
-        elif smode == 'stretch_height':
-            w, h = '%spx' % width, '100%'
-        elif smode == 'stretch_height':
-            w, h = '100%', '%spx' % height
-        elif smode == 'scale_height':
-            w, h = 'auto', '100%'
+        if smode in ["fixed", None]:
+            w, h = "%spx" % width, "%spx" % height
+        elif smode == "stretch_both":
+            w, h = "100%", "100%"
+        elif smode == "stretch_height":
+            w, h = "%spx" % width, "100%"
+        elif smode == "stretch_height":
+            w, h = "100%", "%spx" % height
+        elif smode == "scale_height":
+            w, h = "auto", "100%"
         else:
-            w, h = '100%', 'auto'
+            w, h = "100%", "auto"
 
         html = "<img src='{src}' width='{width}' height='{height}'></img>".format(
-            src=src, width=w, height=h)
+            src=src, width=w, height=h
+        )
 
         return dict(p, width=width, height=height, text=html)
 
 
 class PNG(ImageBase):
 
-    imgtype = 'png'
+    imgtype = "png"
 
     @classmethod
     def _imgshape(cls, data):
         import struct
-        w, h = struct.unpack('>LL', data[16:24])
+
+        w, h = struct.unpack(">LL", data[16:24])
         return int(w), int(h)
 
 
 class GIF(ImageBase):
 
-    imgtype = 'gif'
+    imgtype = "gif"
 
     @classmethod
     def _imgshape(cls, data):
         import struct
+
         w, h = struct.unpack("<HH", data[6:10])
         return int(w), int(h)
 
 
 class JPG(ImageBase):
 
-    imgtype = 'jpg'
+    imgtype = "jpg"
 
     @classmethod
     def _imgshape(cls, data):
         import struct
+
         b = BytesIO(data)
         b.read(2)
         c = b.read(1)
-        while (c and ord(c) != 0xDA):
-            while (ord(c) != 0xFF): c = b.read(1)
-            while (ord(c) == 0xFF): c = b.read(1)
-            if (ord(c) >= 0xC0 and ord(c) <= 0xC3):
+        while c and ord(c) != 0xDA:
+            while ord(c) != 0xFF:
+                c = b.read(1)
+            while ord(c) == 0xFF:
+                c = b.read(1)
+            if ord(c) >= 0xC0 and ord(c) <= 0xC3:
                 b.read(3)
                 h, w = struct.unpack(">HH", b.read(4))
                 break
             else:
-                b.read(int(struct.unpack(">H", b.read(2))[0])-2)
+                b.read(int(struct.unpack(">H", b.read(2))[0]) - 2)
             c = b.read(1)
         return int(w), int(h)
 
 
 class SVG(ImageBase):
 
-    imgtype = 'svg'
+    imgtype = "svg"
 
     @classmethod
     def applies(cls, obj):
-        return (super(SVG, cls).applies(obj) or
-                (isinstance(obj, string_types) and obj.lstrip().startswith('<svg')))
+        return super(SVG, cls).applies(obj) or (
+            isinstance(obj, string_types) and obj.lstrip().startswith("<svg")
+        )
 
     def _img(self):
-        if (isinstance(self.object, string_types) and
-            self.object.lstrip().startswith('<svg')):
+        if isinstance(self.object, string_types) and self.object.lstrip().startswith(
+            "<svg"
+        ):
             return self.object
         return super(SVG, self)._img()
 
@@ -174,11 +191,11 @@ class SVG(ImageBase):
     def _get_properties(self):
         p = super(ImageBase, self)._get_properties()
         if self.object is None:
-            return dict(p, text='<img></img>')
+            return dict(p, text="<img></img>")
         data = self._img()
         width, height = self._imgshape(data)
         if not isinstance(data, bytes):
-            data = data.encode('utf-8')
+            data = data.encode("utf-8")
         b64 = base64.b64encode(data).decode("utf-8")
         src = "data:image/svg+xml;base64,{b64}".format(b64=b64)
         html = "<img src='{src}' width={width} height={height}></img>".format(

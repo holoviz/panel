@@ -20,10 +20,14 @@ class VTKPlot(HTMLBox):
 
     __javascript__ = [vtk_cdn]
 
-    __js_require__ = {"paths": {"vtk": vtk_cdn[:-3]},
-                      "shim": {"vtk": {"exports": "vtk"}}}
+    __js_require__ = {
+        "paths": {"vtk": vtk_cdn[:-3]},
+        "shim": {"vtk": {"exports": "vtk"}},
+    }
 
-    __implementation__ = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'vtk.ts')
+    __implementation__ = os.path.join(
+        os.path.abspath(os.path.dirname(__file__)), "vtk.ts"
+    )
 
     append = Bool(default=False)
 
@@ -42,7 +46,7 @@ class VTKPlot(HTMLBox):
     width = Override(default=300)
 
 
-CUSTOM_MODELS['panel.models.plots.VTKPlot'] = VTKPlot
+CUSTOM_MODELS["panel.models.plots.VTKPlot"] = VTKPlot
 
 
 class VTKVolumePlot(HTMLBox):
@@ -53,10 +57,14 @@ class VTKVolumePlot(HTMLBox):
 
     __javascript__ = [vtk_cdn]
 
-    __js_require__ = {"paths": {"vtk": vtk_cdn[:-3]},
-                      "shim": {"vtk": {"exports": "vtk"}}}
+    __js_require__ = {
+        "paths": {"vtk": vtk_cdn[:-3]},
+        "shim": {"vtk": {"exports": "vtk"}},
+    }
 
-    __implementation__ = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'vtkvolume.ts')
+    __implementation__ = os.path.join(
+        os.path.abspath(os.path.dirname(__file__)), "vtkvolume.ts"
+    )
 
     actor = Any(readonly=True)
 
@@ -67,4 +75,4 @@ class VTKVolumePlot(HTMLBox):
     width = Override(default=300)
 
 
-CUSTOM_MODELS['panel.models.plots.VTKVolumePlot'] = VTKVolumePlot
+CUSTOM_MODELS["panel.models.plots.VTKVolumePlot"] = VTKVolumePlot

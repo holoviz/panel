@@ -12,20 +12,20 @@ def test_ace_pane(document, comm):
 
     # Create pane
     model = pane.get_root(document, comm=comm)
-    assert pane._models[model.ref['id']][0] is model
+    assert pane._models[model.ref["id"]][0] is model
     assert model.code == code
 
     # Replace Pane.object
     pane.object = None
-    assert pane._models[model.ref['id']][0] is model
-    assert model.code == ''
+    assert pane._models[model.ref["id"]][0] is model
+    assert model.code == ""
 
     # Replace params
     pane.code = "test"
-    pane.language = 'xml'
-    pane.theme = 'monokai'
+    pane.language = "xml"
+    pane.theme = "monokai"
 
-    assert pane._models[model.ref['id']][0] is model
+    assert pane._models[model.ref["id"]][0] is model
     assert model.code == "test"
     assert model.language == "xml"
     assert model.theme == "monokai"

@@ -8,16 +8,16 @@ images, equations etc.
 from __future__ import absolute_import, division, unicode_literals
 
 from ..viewable import Viewable
-from .base import PaneBase, Pane # noqa
-from .equation import LaTeX # noqa
-from .holoviews import HoloViews # noqa
-from .image import GIF, JPG, PNG, SVG # noqa
-from .markup import HTML, Markdown, Str # noqa
-from .plotly import Plotly # noqa
-from .plot import Bokeh, Matplotlib, RGGPlot, YT # noqa
-from .vega import Vega # noqa
-from .vtk import VTK, VTKVolume # noqa
-from .ace import Ace # noqa
+from .base import PaneBase, Pane  # noqa
+from .equation import LaTeX  # noqa
+from .holoviews import HoloViews  # noqa
+from .image import GIF, JPG, PNG, SVG  # noqa
+from .markup import HTML, Markdown, Str  # noqa
+from .plotly import Plotly  # noqa
+from .plot import Bokeh, Matplotlib, RGGPlot, YT  # noqa
+from .vega import Vega  # noqa
+from .vtk import VTK, VTKVolume  # noqa
+from .ace import Ace  # noqa
 
 
 def panel(obj, **kwargs):
@@ -39,8 +39,8 @@ def panel(obj, **kwargs):
     """
     if isinstance(obj, Viewable):
         return obj
-    if kwargs.get('name', False) is None:
-        kwargs.pop('name')
+    if kwargs.get("name", False) is None:
+        kwargs.pop("name")
     pane = PaneBase.get_pane_type(obj)(obj, **kwargs)
     if len(pane.layout) == 1 and pane._unpack:
         return pane.layout[0]

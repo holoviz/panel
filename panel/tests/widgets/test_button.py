@@ -4,30 +4,30 @@ from panel.widgets import Button, Toggle
 
 
 def test_button(document, comm):
-    button = Button(name='Button')
+    button = Button(name="Button")
 
     widget = button.get_root(document, comm=comm)
 
     assert isinstance(widget, button._widget_type)
     assert widget.clicks == 0
-    assert widget.label == 'Button'
+    assert widget.label == "Button"
 
     widget.clicks = 1
-    button._comm_change({'clicks': widget.clicks})
+    button._comm_change({"clicks": widget.clicks})
     assert button.clicks == 1
 
 
 def test_toggle(document, comm):
-    toggle = Toggle(name='Toggle', value=True)
+    toggle = Toggle(name="Toggle", value=True)
 
     widget = toggle.get_root(document, comm=comm)
 
     assert isinstance(widget, toggle._widget_type)
     assert widget.active == True
-    assert widget.label == 'Toggle'
+    assert widget.label == "Toggle"
 
     widget.active = False
-    toggle._comm_change({'active': widget.active})
+    toggle._comm_change({"active": widget.active})
     assert toggle.value == False
 
     toggle.value = True

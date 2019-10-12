@@ -30,12 +30,12 @@ def make_render_window():
 
 
 def test_get_vtk_pane_type_from_url():
-    url = r'https://raw.githubusercontent.com/Kitware/vtk-js/master/Data/StanfordDragon.vtkjs'
+    url = r"https://raw.githubusercontent.com/Kitware/vtk-js/master/Data/StanfordDragon.vtkjs"
     assert PaneBase.get_pane_type(url) is VTK
 
 
 def test_get_vtk_pane_type_from_file():
-    file = r'StanfordDragon.vtkjs'
+    file = r"StanfordDragon.vtkjs"
     assert PaneBase.get_pane_type(file) is VTK
 
 
@@ -46,30 +46,38 @@ def test_get_vtk_pane_type_from_render_window():
 
 
 def test_vtk_pane_from_url(document, comm):
-    url = r'https://raw.githubusercontent.com/Kitware/vtk-js/master/Data/StanfordDragon.vtkjs'
+    url = r"https://raw.githubusercontent.com/Kitware/vtk-js/master/Data/StanfordDragon.vtkjs"
 
     pane = Pane(url)
 
     # Create pane
     model = pane.get_root(document, comm=comm)
     assert isinstance(model, VTKPlot)
-    assert pane._models[model.ref['id']][0] is model
+    assert pane._models[model.ref["id"]][0] is model
     assert isinstance(model.data, string_types)
 
 
 @vtk_available
 def test_vtk_data_array_dump():
     from panel.pane.vtk.vtkjs_serializer import _dump_data_array
-    root_keys = ['ref', 'vtkClass', 'name', 'dataType',
-                 'numberOfComponents', 'size', 'ranges']
+
+    root_keys = [
+        "ref",
+        "vtkClass",
+        "name",
+        "dataType",
+        "numberOfComponents",
+        "size",
+        "ranges",
+    ]
     renWin = make_render_window()
     renderers = list(renWin.GetRenderers())
     ren_props = list(renderers[0].GetViewProps())
     mapper = ren_props[0].GetMapper()
-    mapper.Update() # create data
+    mapper.Update()  # create data
     data = mapper.GetInput().GetPoints().GetData()
     scDir = []
-    root = _dump_data_array(scDir, '', 'test', data)
+    root = _dump_data_array(scDir, "", "test", data)
     assert len(set(root_keys) - set(root.keys())) == 0
     assert len(scDir) == 1
     assert isinstance(scDir[0][0], string_types)

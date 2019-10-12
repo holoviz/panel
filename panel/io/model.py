@@ -13,9 +13,10 @@ from bokeh.protocol import Protocol
 from .state import state
 
 
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
 # Public API
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
+
 
 def diff(doc, binary=True, events=None):
     """
@@ -42,7 +43,7 @@ def remove_root(obj, replace=None):
     """
     Removes the document from any previously displayed bokeh object
     """
-    for model in obj.select({'type': Model}):
+    for model in obj.select({"type": Model}):
         prev_doc = model.document
         model._document = None
         if prev_doc:
@@ -62,12 +63,27 @@ def add_to_doc(obj, doc, hold=False):
         doc.hold()
 
 
-def bokeh_repr(obj, depth=0, ignored=['children', 'text', 'name', 'toolbar', 'renderers', 'below', 'center', 'left', 'right']):
+def bokeh_repr(
+    obj,
+    depth=0,
+    ignored=[
+        "children",
+        "text",
+        "name",
+        "toolbar",
+        "renderers",
+        "below",
+        "center",
+        "left",
+        "right",
+    ],
+):
     """
     Returns a string repr for a bokeh model, useful for recreating
     panel objects using pure bokeh.
     """
     from ..viewable import Viewable
+
     if isinstance(obj, Viewable):
         obj = obj.get_root(Document())
 
@@ -79,18 +95,18 @@ def bokeh_repr(obj, depth=0, ignored=['children', 'text', 'name', 'toolbar', 're
         if k in ignored:
             continue
         if isinstance(v, Model):
-            v = '%s()' % type(v).__name__
+            v = "%s()" % type(v).__name__
         else:
             v = repr(v)
         if len(v) > 30:
-            v = v[:30] + '...'
-        props.append('%s=%s' % (k, v))
-    props = ', '.join(props)
+            v = v[:30] + "..."
+        props.append("%s=%s" % (k, v))
+    props = ", ".join(props)
     if isinstance(obj, Box):
-        r += '{cls}(children=[\n'.format(cls=cls)
+        r += "{cls}(children=[\n".format(cls=cls)
         for obj in obj.children:
-            r += textwrap.indent(bokeh_repr(obj, depth=depth+1) + ',\n', '  ')
-        r += '], %s)' % props
+            r += textwrap.indent(bokeh_repr(obj, depth=depth + 1) + ",\n", "  ")
+        r += "], %s)" % props
     else:
-        r += '{cls}({props})'.format(cls=cls,  props=props)
+        r += "{cls}({props})".format(cls=cls, props=props)
     return r

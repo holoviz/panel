@@ -16,19 +16,25 @@ class Widget(Reactive):
     parameters on the Widget instance.
     """
 
-    disabled = param.Boolean(default=False, doc="""
-       Whether the widget is disabled.""")
+    disabled = param.Boolean(
+        default=False,
+        doc="""
+       Whether the widget is disabled.""",
+    )
 
-    name = param.String(default='')
+    name = param.String(default="")
 
     height = param.Integer(default=None, bounds=(0, None))
 
     width = param.Integer(default=None, bounds=(0, None))
 
-    margin = param.Parameter(default=(5, 10), doc="""
+    margin = param.Parameter(
+        default=(5, 10),
+        doc="""
         Allows to create additional space around the component. May
         be specified as a two-tuple of the form (vertical, horizontal)
-        or a four-tuple (top, right, bottom, left).""")
+        or a four-tuple (top, right, bottom, left).""",
+    )
 
     __abstract = True
 
@@ -36,13 +42,13 @@ class Widget(Reactive):
 
     _supports_embed = False
 
-    _rename = {'name': 'title'}
+    _rename = {"name": "title"}
 
     def __init__(self, **params):
-        if 'name' not in params:
-            params['name'] = ''
-        if '_supports_embed' in params:
-            self._supports_embed = params.pop('_supports_embed')
+        if "name" not in params:
+            params["name"] = ""
+        if "_supports_embed" in params:
+            self._supports_embed = params.pop("_supports_embed")
         super(Widget, self).__init__(**params)
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
@@ -52,7 +58,7 @@ class Widget(Reactive):
         # Link parameters and bokeh model
         values = dict(self.get_param_values())
         properties = self._filter_properties(list(self._process_param_change(values)))
-        self._models[root.ref['id']] = (model, parent)
+        self._models[root.ref["id"]] = (model, parent)
         self._link_props(model, properties, doc, root, comm)
         return model
 

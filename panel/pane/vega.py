@@ -34,10 +34,13 @@ class Vega(PaneBase):
     the figure on bokeh server and via Comms.
     """
 
-    margin = param.Parameter(default=(5, 5, 30, 5), doc="""
+    margin = param.Parameter(
+        default=(5, 5, 30, 5),
+        doc="""
         Allows to create additional space around the component. May
         be specified as a two-tuple of the form (vertical, horizontal)
-        or a four-tuple (top, right, bottom, left).""")
+        or a four-tuple (top, right, bottom, left).""",
+    )
 
     priority = 0.8
 
@@ -45,14 +48,15 @@ class Vega(PaneBase):
 
     @classmethod
     def is_altair(cls, obj):
-        if 'altair' in sys.modules:
+        if "altair" in sys.modules:
             import altair as alt
+
             return isinstance(obj, alt.api.TopLevelMixin)
         return False
 
     @classmethod
     def applies(cls, obj):
-        if isinstance(obj, dict) and 'vega' in obj.get('$schema', '').lower():
+        if isinstance(obj, dict) and "vega" in obj.get("$schema", "").lower():
             return True
         return cls.is_altair(obj)
 
@@ -60,13 +64,13 @@ class Vega(PaneBase):
     def _to_json(cls, obj):
         if isinstance(obj, dict):
             json = dict(obj)
-            if 'data' in json:
-                json['data'] = dict(json['data'])
+            if "data" in json:
+                json["data"] = dict(json["data"])
             return json
         return obj.to_dict()
 
     def _get_sources(self, json, sources):
-        datasets = json.get('datasets', {})
+        datasets = json.get("datasets", {})
         for name in list(datasets):
             if name in sources or isinstance(datasets[name], dict):
                 continue
@@ -74,29 +78,33 @@ class Vega(PaneBase):
             columns = set(data[0]) if data else []
             if self.is_altair(self.object):
                 import altair as alt
-                if (not isinstance(self.object.data, alt.Data) and
-                    columns == set(self.object.data)):
+
+                if not isinstance(self.object.data, alt.Data) and columns == set(
+                    self.object.data
+                ):
                     data = ColumnDataSource.from_df(self.object.data)
                 else:
                     data = ds_as_cds(data)
                 sources[name] = ColumnDataSource(data=data)
             else:
                 sources[name] = ColumnDataSource(data=ds_as_cds(data))
-        data = json.get('data', {}).pop('values', {})
+        data = json.get("data", {}).pop("values", {})
         if data:
-            sources['data'] = ColumnDataSource(data=ds_as_cds(data))
+            sources["data"] = ColumnDataSource(data=ds_as_cds(data))
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        if 'panel.models.vega' not in sys.modules:
+        if "panel.models.vega" not in sys.modules:
             if isinstance(comm, JupyterComm):
-                self.param.warning('VegaPlot was not imported on instantiation '
-                                   'and may not render in a notebook. Restart '
-                                   'the notebook kernel and ensure you load '
-                                   'it as part of the extension using:'
-                                   '\n\npn.extension(\'vega\')\n')
+                self.param.warning(
+                    "VegaPlot was not imported on instantiation "
+                    "and may not render in a notebook. Restart "
+                    "the notebook kernel and ensure you load "
+                    "it as part of the extension using:"
+                    "\n\npn.extension('vega')\n"
+                )
             from ..models.vega import VegaPlot
         else:
-            VegaPlot = getattr(sys.modules['panel.models.vega'], 'VegaPlot')
+            VegaPlot = getattr(sys.modules["panel.models.vega"], "VegaPlot")
 
         sources = {}
         if self.object is None:
@@ -108,7 +116,7 @@ class Vega(PaneBase):
         model = VegaPlot(data=json, data_sources=sources, **props)
         if root is None:
             root = model
-        self._models[root.ref['id']] = (model, parent)
+        self._models[root.ref["id"]] = (model, parent)
         return model
 
     def _update(self, model):

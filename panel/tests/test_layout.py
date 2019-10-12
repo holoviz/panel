@@ -2,8 +2,13 @@ from __future__ import absolute_import
 
 import pytest
 
-from bokeh.models import (Div, Row as BkRow, Tabs as BkTabs,
-                          Column as BkColumn, Panel as BkPanel)
+from bokeh.models import (
+    Div,
+    Row as BkRow,
+    Tabs as BkTabs,
+    Column as BkColumn,
+    Panel as BkPanel,
+)
 from panel.layout import Column, Row, Tabs, Spacer, GridSpec, WidgetBox
 from panel.pane import Bokeh, Pane
 from panel.param import Param
@@ -15,7 +20,7 @@ def tabs(document, comm):
     """Set up a tabs instance"""
     div1, div2 = Div(), Div()
 
-    return Tabs(('Tab1', div1), ('Tab2', div2))
+    return Tabs(("Tab1", div1), ("Tab2", div2))
 
 
 def assert_tab_is_similar(tab1, tab2):
@@ -25,27 +30,27 @@ def assert_tab_is_similar(tab1, tab2):
     assert tab1.title == tab2.title
 
 
-@pytest.mark.parametrize('layout', [Column, Row, Tabs, Spacer])
+@pytest.mark.parametrize("layout", [Column, Row, Tabs, Spacer])
 def test_layout_properties(layout, document, comm):
     l = layout()
     model = l.get_root(document, comm)
     check_layoutable_properties(l, model)
 
 
-@pytest.mark.parametrize('layout', [Column, Row, Tabs, Spacer])
+@pytest.mark.parametrize("layout", [Column, Row, Tabs, Spacer])
 def test_layout_model_cache_cleanup(layout, document, comm):
     l = layout()
 
     model = l.get_root(document, comm)
 
-    assert model.ref['id'] in l._models
-    assert l._models[model.ref['id']] == (model, None)
+    assert model.ref["id"] in l._models
+    assert l._models[model.ref["id"]] == (model, None)
 
     l._cleanup(model)
     assert l._models == {}
 
 
-@pytest.mark.parametrize('panel', [Column, Row])
+@pytest.mark.parametrize("panel", [Column, Row])
 def test_layout_constructor(panel):
     div1 = Div()
     div2 = Div()
@@ -54,7 +59,7 @@ def test_layout_constructor(panel):
     assert all(isinstance(p, Bokeh) for p in layout.objects)
 
 
-@pytest.mark.parametrize('panel', [Column, Row])
+@pytest.mark.parametrize("panel", [Column, Row])
 def test_layout_getitem(panel):
     div1 = Div()
     div2 = Div()
@@ -64,17 +69,17 @@ def test_layout_getitem(panel):
     assert layout[1].object is div2
 
 
-@pytest.mark.parametrize('panel', [Column, Row])
+@pytest.mark.parametrize("panel", [Column, Row])
 def test_layout_repr(panel):
     div1 = Div()
     div2 = Div()
     layout = panel(div1, div2)
 
     name = panel.__name__
-    assert repr(layout) == '%s\n    [0] Bokeh(Div)\n    [1] Bokeh(Div)' % name
+    assert repr(layout) == "%s\n    [0] Bokeh(Div)\n    [1] Bokeh(Div)" % name
 
 
-@pytest.mark.parametrize('panel', [Column, Row])
+@pytest.mark.parametrize("panel", [Column, Row])
 def test_layout_select_by_type(panel):
     div1 = Div()
     div2 = Div()
@@ -87,18 +92,18 @@ def test_layout_select_by_type(panel):
     assert panes[1].object is div2
 
 
-@pytest.mark.parametrize('panel', [Column, Row])
+@pytest.mark.parametrize("panel", [Column, Row])
 def test_layout_select_by_function(panel):
     div1 = Div()
     div2 = Div()
     layout = panel(div1, div2)
 
-    panes = layout.select(lambda x: getattr(x, 'object', None) is div2)
+    panes = layout.select(lambda x: getattr(x, "object", None) is div2)
     assert len(panes) == 1
     assert panes[0].object is div2
 
 
-@pytest.mark.parametrize(['panel', 'model_type'], [(Column, BkColumn), (Row, BkRow)])
+@pytest.mark.parametrize(["panel", "model_type"], [(Column, BkColumn), (Row, BkRow)])
 def test_layoutget_root(panel, model_type, document, comm):
     div1 = Div()
     div2 = Div()
@@ -110,7 +115,7 @@ def test_layoutget_root(panel, model_type, document, comm):
     assert model.children == [div1, div2]
 
 
-@pytest.mark.parametrize('panel', [Column, Row])
+@pytest.mark.parametrize("panel", [Column, Row])
 def test_layout_reverse(panel, document, comm):
     div1 = Div()
     div2 = Div()
@@ -122,7 +127,7 @@ def test_layout_reverse(panel, document, comm):
     assert model.children == [div2, div1]
 
 
-@pytest.mark.parametrize('panel', [Column, Row])
+@pytest.mark.parametrize("panel", [Column, Row])
 def test_layout_append(panel, document, comm):
     div1 = Div()
     div2 = Div()
@@ -135,7 +140,7 @@ def test_layout_append(panel, document, comm):
     assert model.children == [div1, div2, div3]
 
 
-@pytest.mark.parametrize('panel', [Column, Row])
+@pytest.mark.parametrize("panel", [Column, Row])
 def test_layout_extend(panel, document, comm):
     div1 = Div()
     div2 = Div()
@@ -149,7 +154,7 @@ def test_layout_extend(panel, document, comm):
     assert model.children == [div1, div2, div4, div3]
 
 
-@pytest.mark.parametrize('panel', [Column, Row])
+@pytest.mark.parametrize("panel", [Column, Row])
 def test_layout_insert(panel, document, comm):
     div1 = Div()
     div2 = Div()
@@ -162,7 +167,7 @@ def test_layout_insert(panel, document, comm):
     assert model.children == [div1, div3, div2]
 
 
-@pytest.mark.parametrize('panel', [Column, Row])
+@pytest.mark.parametrize("panel", [Column, Row])
 def test_layout_setitem(panel, document, comm):
     div1 = Div()
     div2 = Div()
@@ -171,14 +176,14 @@ def test_layout_setitem(panel, document, comm):
 
     model = layout.get_root(document, comm=comm)
 
-    assert p1._models[model.ref['id']][0] is model.children[0]
+    assert p1._models[model.ref["id"]][0] is model.children[0]
     div3 = Div()
     layout[0] = div3
     assert model.children == [div3, div2]
     assert p1._models == {}
 
 
-@pytest.mark.parametrize('panel', [Column, Row])
+@pytest.mark.parametrize("panel", [Column, Row])
 def test_layout_setitem_out_of_bounds(panel, document, comm):
     div1 = Div()
     div2 = Div()
@@ -190,7 +195,7 @@ def test_layout_setitem_out_of_bounds(panel, document, comm):
         layout[2] = div3
 
 
-@pytest.mark.parametrize('panel', [Column, Row])
+@pytest.mark.parametrize("panel", [Column, Row])
 def test_layout_setitem_replace_all(panel, document, comm):
     div1 = Div()
     div2 = Div()
@@ -199,7 +204,7 @@ def test_layout_setitem_replace_all(panel, document, comm):
 
     model = layout.get_root(document, comm=comm)
 
-    assert p1._models[model.ref['id']][0] is model.children[0]
+    assert p1._models[model.ref["id"]][0] is model.children[0]
     div3 = Div()
     div4 = Div()
     layout[:] = [div3, div4]
@@ -208,7 +213,7 @@ def test_layout_setitem_replace_all(panel, document, comm):
     assert p2._models == {}
 
 
-@pytest.mark.parametrize('panel', [Column, Row])
+@pytest.mark.parametrize("panel", [Column, Row])
 def test_layout_setitem_replace_all_error(panel, document, comm):
     div1 = Div()
     div2 = Div()
@@ -220,7 +225,7 @@ def test_layout_setitem_replace_all_error(panel, document, comm):
         layout[:] = div3
 
 
-@pytest.mark.parametrize('panel', [Column, Row])
+@pytest.mark.parametrize("panel", [Column, Row])
 def test_layout_setitem_replace_slice(panel, document, comm):
     div1 = Div()
     div2 = Div()
@@ -230,7 +235,7 @@ def test_layout_setitem_replace_slice(panel, document, comm):
 
     model = layout.get_root(document, comm=comm)
 
-    assert p1._models[model.ref['id']][0] is model.children[0]
+    assert p1._models[model.ref["id"]][0] is model.children[0]
     div3 = Div()
     div4 = Div()
     layout[1:] = [div3, div4]
@@ -239,7 +244,7 @@ def test_layout_setitem_replace_slice(panel, document, comm):
     assert p3._models == {}
 
 
-@pytest.mark.parametrize('panel', [Column, Row])
+@pytest.mark.parametrize("panel", [Column, Row])
 def test_layout_setitem_replace_slice_error(panel, document, comm):
     div1 = Div()
     div2 = Div()
@@ -252,7 +257,7 @@ def test_layout_setitem_replace_slice_error(panel, document, comm):
         layout[1:] = [div3]
 
 
-@pytest.mark.parametrize('panel', [Column, Row])
+@pytest.mark.parametrize("panel", [Column, Row])
 def test_layout_setitem_replace_slice_out_of_bounds(panel, document, comm):
     div1 = Div()
     div2 = Div()
@@ -265,7 +270,7 @@ def test_layout_setitem_replace_slice_out_of_bounds(panel, document, comm):
         layout[3:4] = [div3]
 
 
-@pytest.mark.parametrize('panel', [Column, Row])
+@pytest.mark.parametrize("panel", [Column, Row])
 def test_layout_pop(panel, document, comm):
     div1 = Div()
     div2 = Div()
@@ -274,13 +279,13 @@ def test_layout_pop(panel, document, comm):
 
     model = layout.get_root(document, comm=comm)
 
-    assert p1._models[model.ref['id']][0] is model.children[0]
+    assert p1._models[model.ref["id"]][0] is model.children[0]
     layout.pop(0)
     assert model.children == [div2]
     assert p1._models == {}
 
 
-@pytest.mark.parametrize('panel', [Column, Row])
+@pytest.mark.parametrize("panel", [Column, Row])
 def test_layout_remove(panel, document, comm):
     div1 = Div()
     div2 = Div()
@@ -289,13 +294,13 @@ def test_layout_remove(panel, document, comm):
 
     model = layout.get_root(document, comm=comm)
 
-    assert p1._models[model.ref['id']][0] is model.children[0]
+    assert p1._models[model.ref["id"]][0] is model.children[0]
     layout.remove(p1)
     assert model.children == [div2]
     assert p1._models == {}
 
 
-@pytest.mark.parametrize('panel', [Column, Row])
+@pytest.mark.parametrize("panel", [Column, Row])
 def test_layout_clear(panel, document, comm):
     div1 = Div()
     div2 = Div()
@@ -304,13 +309,13 @@ def test_layout_clear(panel, document, comm):
 
     model = layout.get_root(document, comm=comm)
 
-    assert p1._models[model.ref['id']][0] is model.children[0]
+    assert p1._models[model.ref["id"]][0] is model.children[0]
     layout.clear()
     assert model.children == []
     assert p1._models == p2._models == {}
 
 
-@pytest.mark.parametrize('panel', [Column, Row])
+@pytest.mark.parametrize("panel", [Column, Row])
 def test_layout_clone_args(panel):
     div1 = Div()
     div2 = Div()
@@ -321,19 +326,19 @@ def test_layout_clone_args(panel):
     assert layout.objects[1].object is clone.objects[0].object
 
 
-@pytest.mark.parametrize('panel', [Column, Row])
+@pytest.mark.parametrize("panel", [Column, Row])
 def test_layout_clone_kwargs(panel):
     div1 = Div()
     div2 = Div()
     layout = panel(div1, div2)
-    clone = layout.clone(width=400, sizing_mode='stretch_height')
+    clone = layout.clone(width=400, sizing_mode="stretch_height")
 
     assert clone.width == 400
-    assert clone.sizing_mode == 'stretch_height'
+    assert clone.sizing_mode == "stretch_height"
 
 
 def test_tabs_basic_constructor(document, comm):
-    tabs = Tabs('plain', 'text')
+    tabs = Tabs("plain", "text")
 
     model = tabs.get_root(document, comm=comm)
 
@@ -342,14 +347,14 @@ def test_tabs_basic_constructor(document, comm):
     assert all(isinstance(c, BkPanel) for c in model.tabs)
     tab1, tab2 = model.tabs
 
-    assert 'plain' in tab1.child.text
-    assert 'text' in tab2.child.text
+    assert "plain" in tab1.child.text
+    assert "text" in tab2.child.text
 
 
 def test_tabs_constructor(document, comm):
     div1 = Div()
     div2 = Div()
-    tabs = Tabs(('Div1', div1), ('Div2', div2))
+    tabs = Tabs(("Div1", div1), ("Div2", div2))
     p1, p2 = tabs.objects
 
     model = tabs.get_root(document, comm=comm)
@@ -359,16 +364,16 @@ def test_tabs_constructor(document, comm):
     assert all(isinstance(c, BkPanel) for c in model.tabs)
     tab1, tab2 = model.tabs
 
-    assert tab1.title == 'Div1'
+    assert tab1.title == "Div1"
     assert tab1.child is div1
-    assert tab2.title == 'Div2'
+    assert tab2.title == "Div2"
     assert tab2.child is div2
 
 
 def test_tabs_implicit_constructor(document, comm):
     div1, div2 = Div(), Div()
-    p1 = Pane(div1, name='Div1')
-    p2 = Pane(div2, name='Div2')
+    p1 = Pane(div1, name="Div1")
+    p2 = Pane(div2, name="Div2")
     tabs = Tabs(p1, p2)
 
     model = tabs.get_root(document, comm=comm)
@@ -378,17 +383,17 @@ def test_tabs_implicit_constructor(document, comm):
     assert all(isinstance(c, BkPanel) for c in model.tabs)
     tab1, tab2 = model.tabs
 
-    assert tab1.title == tab1.name == p1.name == 'Div1'
+    assert tab1.title == tab1.name == p1.name == "Div1"
     assert tab1.child is div1
-    assert tab2.title == tab2.name == p2.name == 'Div2'
+    assert tab2.title == tab2.name == p2.name == "Div2"
     assert tab2.child is div2
 
 
 def test_tabs_constructor_with_named_objects(document, comm):
     div1, div2 = Div(), Div()
-    p1 = Pane(div1, name='Div1')
-    p2 = Pane(div2, name='Div2')
-    tabs = Tabs(('Tab1', p1), ('Tab2', p2))
+    p1 = Pane(div1, name="Div1")
+    p2 = Pane(div2, name="Div2")
+    tabs = Tabs(("Tab1", p1), ("Tab2", p2))
 
     model = tabs.get_root(document, comm=comm)
 
@@ -397,24 +402,24 @@ def test_tabs_constructor_with_named_objects(document, comm):
     assert all(isinstance(c, BkPanel) for c in model.tabs)
     tab1, tab2 = model.tabs
 
-    assert tab1.title == 'Tab1'
-    assert tab1.name == p1.name == 'Div1'
+    assert tab1.title == "Tab1"
+    assert tab1.name == p1.name == "Div1"
     assert tab1.child is div1
-    assert tab2.title == 'Tab2'
-    assert tab2.name == p2.name =='Div2'
+    assert tab2.title == "Tab2"
+    assert tab2.name == p2.name == "Div2"
     assert tab2.child is div2
 
 
 def test_tabs_set_panes(document, comm):
     div1, div2 = Div(), Div()
-    p1 = Pane(div1, name='Div1')
-    p2 = Pane(div2, name='Div2')
+    p1 = Pane(div1, name="Div1")
+    p2 = Pane(div2, name="Div2")
     tabs = Tabs(p1, p2)
 
     model = tabs.get_root(document, comm=comm)
 
     div3 = Div()
-    p3 = Pane(div3, name='Div3')
+    p3 = Pane(div3, name="Div3")
     tabs.objects = [p1, p2, p3]
 
     assert isinstance(model, BkTabs)
@@ -422,18 +427,18 @@ def test_tabs_set_panes(document, comm):
     assert all(isinstance(c, BkPanel) for c in model.tabs)
     tab1, tab2, tab3 = model.tabs
 
-    assert tab1.title == tab1.name == p1.name =='Div1'
+    assert tab1.title == tab1.name == p1.name == "Div1"
     assert tab1.child is div1
-    assert tab2.title == tab2.name == p2.name =='Div2'
+    assert tab2.title == tab2.name == p2.name == "Div2"
     assert tab2.child is div2
-    assert tab3.title == tab3.name == p3.name =='Div3'
+    assert tab3.title == tab3.name == p3.name == "Div3"
     assert tab3.child is div3
 
 
 def test_tabs_reverse(document, comm):
     div1, div2 = Div(), Div()
-    p1 = Pane(div1, name='Div1')
-    p2 = Pane(div2, name='Div2')
+    p1 = Pane(div1, name="Div1")
+    p2 = Pane(div2, name="Div2")
     tabs = Tabs(p1, p2)
 
     model = tabs.get_root(document, comm=comm)
@@ -441,9 +446,9 @@ def test_tabs_reverse(document, comm):
     tabs.reverse()
     tab1, tab2 = model.tabs
     assert tab1.child is div2
-    assert tab1.title == tab1.name == p2.name == 'Div2'
+    assert tab1.title == tab1.name == p2.name == "Div2"
     assert tab2.child is div1
-    assert tab2.title == tab2.name == p1.name == 'Div1'
+    assert tab2.title == tab2.name == p1.name == "Div1"
 
 
 def test_tabs_append(document, comm, tabs):
@@ -466,9 +471,9 @@ def test_empty_tabs_append(document, comm):
     model = tabs.get_root(document, comm=comm)
 
     div1 = Div()
-    tabs.append(('test title', div1))
+    tabs.append(("test title", div1))
     assert len(model.tabs) == 1
-    assert model.tabs[0].title == 'test title'
+    assert model.tabs[0].title == "test title"
 
 
 def test_tabs_append_uses_object_name(document, comm, tabs):
@@ -476,7 +481,7 @@ def test_tabs_append_uses_object_name(document, comm, tabs):
     tab1_before, tab2_before = model.tabs
 
     div3 = Div()
-    p3 = Pane(div3, name='Div3')
+    p3 = Pane(div3, name="Div3")
     tabs.append(p3)
 
     tab1, tab2, tab3 = model.tabs
@@ -484,7 +489,7 @@ def test_tabs_append_uses_object_name(document, comm, tabs):
     assert_tab_is_similar(tab2_before, tab2)
 
     assert tab3.child is div3
-    assert tab3.title == tab3.name == p3.name == 'Div3'
+    assert tab3.title == tab3.name == p3.name == "Div3"
 
 
 def test_tabs_append_with_tuple_and_unnamed_contents(document, comm, tabs):
@@ -492,14 +497,14 @@ def test_tabs_append_with_tuple_and_unnamed_contents(document, comm, tabs):
     tab1_before, tab2_before = model.tabs
 
     div3 = Div()
-    tabs.append(('Div3', div3))
+    tabs.append(("Div3", div3))
 
     tab1, tab2, tab3 = model.tabs
     assert_tab_is_similar(tab1_before, tab1)
     assert_tab_is_similar(tab2_before, tab2)
 
     assert tab3.child is div3
-    assert tab3.title == 'Div3'
+    assert tab3.title == "Div3"
 
 
 def test_tabs_append_with_tuple_and_named_contents(document, comm, tabs):
@@ -507,16 +512,16 @@ def test_tabs_append_with_tuple_and_named_contents(document, comm, tabs):
     tab1_before, tab2_before = model.tabs
 
     div3 = Div()
-    p3 = Pane(div3, name='Div3')
-    tabs.append(('Tab3', p3))
+    p3 = Pane(div3, name="Div3")
+    tabs.append(("Tab3", p3))
 
     tab1, tab2, tab3 = model.tabs
     assert_tab_is_similar(tab1_before, tab1)
     assert_tab_is_similar(tab2_before, tab2)
 
     assert tab3.child is div3
-    assert tab3.title == 'Tab3'
-    assert tab3.name == p3.name == 'Div3'
+    assert tab3.title == "Tab3"
+    assert tab3.name == p3.name == "Div3"
 
 
 def test_tabs_extend(document, comm, tabs):
@@ -539,7 +544,7 @@ def test_tabs_extend_uses_object_name(document, comm, tabs):
     tab1_before, tab2_before = model.tabs
 
     div3, div4 = Div(), Div()
-    p3, p4 = Pane(div3, name='Div3'), Pane(div4, name='Div4')
+    p3, p4 = Pane(div3, name="Div3"), Pane(div4, name="Div4")
     tabs.extend([p4, p3])
 
     tab1, tab2, tab3, tab4 = model.tabs
@@ -547,9 +552,9 @@ def test_tabs_extend_uses_object_name(document, comm, tabs):
     assert_tab_is_similar(tab2_before, tab2)
 
     assert tab3.child is div4
-    assert tab3.title == p4.name == 'Div4'
+    assert tab3.title == p4.name == "Div4"
     assert tab4.child is div3
-    assert tab4.title  == p3.name == 'Div3'
+    assert tab4.title == p3.name == "Div3"
 
 
 def test_tabs_extend_with_tuple_and_unnamed_contents(document, comm, tabs):
@@ -557,16 +562,16 @@ def test_tabs_extend_with_tuple_and_unnamed_contents(document, comm, tabs):
     tab1_before, tab2_before = model.tabs
 
     div3, div4 = Div(), Div()
-    tabs.extend([('Div4', div4), ('Div3', div3)])
+    tabs.extend([("Div4", div4), ("Div3", div3)])
 
     tab1, tab2, tab3, tab4 = model.tabs
     assert_tab_is_similar(tab1_before, tab1)
     assert_tab_is_similar(tab2_before, tab2)
 
     assert tab3.child is div4
-    assert tab3.title == 'Div4'
+    assert tab3.title == "Div4"
     assert tab4.child is div3
-    assert tab4.title == 'Div3'
+    assert tab4.title == "Div3"
 
 
 def test_tabs_extend_with_tuple_and_named_contents(document, comm, tabs):
@@ -574,19 +579,19 @@ def test_tabs_extend_with_tuple_and_named_contents(document, comm, tabs):
     tab1_before, tab2_before = model.tabs
 
     div3, div4 = Div(), Div()
-    p3, p4 = Pane(div3, name='Div3'), Pane(div4, name='Div4')
-    tabs.extend([('Tab4', p4), ('Tab3', p3)])
+    p3, p4 = Pane(div3, name="Div3"), Pane(div4, name="Div4")
+    tabs.extend([("Tab4", p4), ("Tab3", p3)])
 
     tab1, tab2, tab3, tab4 = model.tabs
     assert_tab_is_similar(tab1_before, tab1)
     assert_tab_is_similar(tab2_before, tab2)
 
     assert tab3.child is div4
-    assert tab3.title == 'Tab4'
-    assert tab3.name == p4.name == 'Div4'
+    assert tab3.title == "Tab4"
+    assert tab3.name == p4.name == "Div4"
     assert tab4.child is div3
-    assert tab4.title == 'Tab3'
-    assert tab4.name == p3.name == 'Div3'
+    assert tab4.title == "Tab3"
+    assert tab4.name == p3.name == "Div3"
 
 
 def test_tabs_insert(document, comm, tabs):
@@ -608,14 +613,14 @@ def test_tabs_insert_uses_object_name(document, comm, tabs):
     tab1_before, tab2_before = model.tabs
 
     div3 = Div()
-    p3 = Pane(div3, name='Div3')
+    p3 = Pane(div3, name="Div3")
     tabs.insert(1, p3)
 
     tab1, tab2, tab3 = model.tabs
 
     assert_tab_is_similar(tab1_before, tab1)
     assert tab2.child is div3
-    assert tab2.title == tab2.name == p3.name == 'Div3'
+    assert tab2.title == tab2.name == p3.name == "Div3"
     assert_tab_is_similar(tab2_before, tab3)
 
 
@@ -624,12 +629,12 @@ def test_tabs_insert_with_tuple_and_unnamed_contents(document, comm, tabs):
     tab1_before, tab2_before = model.tabs
 
     div3 = Div()
-    tabs.insert(1, ('Div3', div3))
+    tabs.insert(1, ("Div3", div3))
     tab1, tab2, tab3 = model.tabs
 
     assert_tab_is_similar(tab1_before, tab1)
     assert tab2.child is div3
-    assert tab2.title == 'Div3'
+    assert tab2.title == "Div3"
     assert_tab_is_similar(tab2_before, tab3)
 
 
@@ -638,14 +643,14 @@ def test_tabs_insert_with_tuple_and_named_contents(document, comm, tabs):
     tab1_before, tab2_before = model.tabs
 
     div3 = Div()
-    p3 = Pane(div3, name='Div3')
-    tabs.insert(1, ('Tab3', p3))
+    p3 = Pane(div3, name="Div3")
+    tabs.insert(1, ("Tab3", p3))
     tab1, tab2, tab3 = model.tabs
 
     assert_tab_is_similar(tab1_before, tab1)
     assert tab2.child is div3
-    assert tab2.title == 'Tab3'
-    assert tab2.name  == p3.name == 'Div3'
+    assert tab2.title == "Tab3"
+    assert tab2.name == p3.name == "Div3"
     assert_tab_is_similar(tab2_before, tab3)
 
 
@@ -658,12 +663,12 @@ def test_tabs_setitem(document, comm):
     model = tabs.get_root(document, comm=comm)
 
     tab1, tab2 = model.tabs
-    assert p1._models[model.ref['id']][0] is tab1.child
+    assert p1._models[model.ref["id"]][0] is tab1.child
     div3 = Div()
-    tabs[0] = ('C', div3)
+    tabs[0] = ("C", div3)
     tab1, tab2 = model.tabs
     assert tab1.child is div3
-    assert tab1.title == 'C'
+    assert tab1.title == "C"
     assert tab2.child is div2
     assert p1._models == {}
 
@@ -674,8 +679,9 @@ def test_tabs_clone():
     tabs = Tabs(Pane(div1), Pane(div2))
     clone = tabs.clone()
 
-    assert ([(k, v) for k, v in tabs.param.get_param_values() if k != 'name'] ==
-            [(k, v) for k, v in clone.param.get_param_values() if k != 'name'])
+    assert [(k, v) for k, v in tabs.param.get_param_values() if k != "name"] == [
+        (k, v) for k, v in clone.param.get_param_values() if k != "name"
+    ]
 
 
 def test_tabs_clone_args():
@@ -692,10 +698,10 @@ def test_tabs_clone_kwargs():
     div1 = Div()
     div2 = Div()
     tabs = Tabs(div1, div2)
-    clone = tabs.clone(width=400, sizing_mode='stretch_height')
+    clone = tabs.clone(width=400, sizing_mode="stretch_height")
 
     assert clone.width == 400
-    assert clone.sizing_mode == 'stretch_height'
+    assert clone.sizing_mode == "stretch_height"
 
 
 def test_tabs_setitem_out_of_bounds(document, comm):
@@ -717,15 +723,15 @@ def test_tabs_setitem_replace_all(document, comm):
 
     model = layout.get_root(document, comm=comm)
 
-    assert p1._models[model.ref['id']][0] is model.tabs[0].child
+    assert p1._models[model.ref["id"]][0] is model.tabs[0].child
     div3 = Div()
     div4 = Div()
-    layout[:] = [('B', div3), ('C', div4)]
+    layout[:] = [("B", div3), ("C", div4)]
     tab1, tab2 = model.tabs
     assert tab1.child is div3
-    assert tab1.title == 'B'
+    assert tab1.title == "B"
     assert tab2.child is div4
-    assert tab2.title == 'C'
+    assert tab2.title == "C"
     assert p1._models == {}
     assert p2._models == {}
 
@@ -745,22 +751,22 @@ def test_tabs_setitem_replace_slice(document, comm):
     div1 = Div()
     div2 = Div()
     div3 = Div()
-    layout = Tabs(('A', div1), ('B', div2), ('C', div3))
+    layout = Tabs(("A", div1), ("B", div2), ("C", div3))
     p1, p2, p3 = layout.objects
 
     model = layout.get_root(document, comm=comm)
 
-    assert p1._models[model.ref['id']][0] is model.tabs[0].child
+    assert p1._models[model.ref["id"]][0] is model.tabs[0].child
     div3 = Div()
     div4 = Div()
-    layout[1:] = [('D', div3), ('E', div4)]
+    layout[1:] = [("D", div3), ("E", div4)]
     tab1, tab2, tab3 = model.tabs
     assert tab1.child is div1
-    assert tab1.title == 'A'
+    assert tab1.title == "A"
     assert tab2.child is div3
-    assert tab2.title == 'D'
+    assert tab2.title == "D"
     assert tab3.child is div4
-    assert tab3.title == 'E'
+    assert tab3.title == "E"
     assert p2._models == {}
     assert p3._models == {}
 
@@ -798,7 +804,7 @@ def test_tabs_pop(document, comm):
     model = tabs.get_root(document, comm=comm)
 
     tab1 = model.tabs[0]
-    assert p1._models[model.ref['id']][0] is tab1.child
+    assert p1._models[model.ref["id"]][0] is tab1.child
     tabs.pop(0)
     assert len(model.tabs) == 1
     tab1 = model.tabs[0]
@@ -815,7 +821,7 @@ def test_tabs_remove(document, comm):
     model = tabs.get_root(document, comm=comm)
 
     tab1 = model.tabs[0]
-    assert p1._models[model.ref['id']][0] is tab1.child
+    assert p1._models[model.ref["id"]][0] is tab1.child
     tabs.remove(p1)
     assert len(model.tabs) == 1
     tab1 = model.tabs[0]
@@ -858,22 +864,22 @@ def test_spacer_clone():
 
 def test_layout_with_param_setitem(document, comm):
     import param
+
     class TestClass(param.Parameterized):
-        select = param.ObjectSelector(default=0, objects=[0,1])
+        select = param.ObjectSelector(default=0, objects=[0, 1])
 
         def __init__(self, **params):
             super(TestClass, self).__init__(**params)
-            self._layout = Row(Param(self.param, parameters=['select']),
-                               self.select)
+            self._layout = Row(Param(self.param, parameters=["select"]), self.select)
 
-        @param.depends('select', watch=True)
+        @param.depends("select", watch=True)
         def _load(self):
             self._layout[-1] = self.select
 
     test = TestClass()
     model = test._layout.get_root(document, comm=comm)
     test.select = 1
-    assert model.children[1].text == '<pre>1</pre>'
+    assert model.children[1].text == "<pre>1</pre>"
 
 
 def test_gridspec_integer_setitem():
@@ -904,15 +910,15 @@ def test_gridspec_slice_setitem():
 
 def test_gridspec_setitem_int_overlap():
     div = Div()
-    gspec = GridSpec(mode='error')
+    gspec = GridSpec(mode="error")
     gspec[0, 0] = div
     with pytest.raises(IndexError):
-        gspec[0, 0] = 'String'
+        gspec[0, 0] = "String"
 
 
 def test_gridspec_setitem_slice_overlap():
     div = Div()
-    gspec = GridSpec(mode='error')
+    gspec = GridSpec(mode="error")
     gspec[0, :] = div
     with pytest.raises(IndexError):
         gspec[0, 1] = div
@@ -1021,33 +1027,33 @@ def test_gridspec_fixed_with_empty_slice_setitem(document, comm):
 def test_gridspec_stretch_with_int_setitem(document, comm):
     div1 = Div()
     div2 = Div()
-    gspec = GridSpec(sizing_mode='stretch_both')
+    gspec = GridSpec(sizing_mode="stretch_both")
 
     gspec[0, 0] = div1
     gspec[1, 1] = div2
 
     model = gspec.get_root(document, comm=comm)
     assert model.children == [(div1, 0, 0, 1, 1), (div2, 1, 1, 1, 1)]
-    assert div1.sizing_mode == 'stretch_both'
-    assert div1.style == {'width': '100%', 'height': '100%'}
-    assert div2.sizing_mode == 'stretch_both'
-    assert div2.style == {'width': '100%', 'height': '100%'}
+    assert div1.sizing_mode == "stretch_both"
+    assert div1.style == {"width": "100%", "height": "100%"}
+    assert div2.sizing_mode == "stretch_both"
+    assert div2.style == {"width": "100%", "height": "100%"}
 
 
 def test_gridspec_stretch_with_slice_setitem(document, comm):
     div1 = Div()
     div2 = Div()
-    gspec = GridSpec(sizing_mode='stretch_both')
+    gspec = GridSpec(sizing_mode="stretch_both")
 
     gspec[0, 0:2] = div1
     gspec[1, 2] = div2
 
     model = gspec.get_root(document, comm=comm)
     assert model.children == [(div1, 0, 0, 1, 2), (div2, 1, 2, 1, 1)]
-    assert div1.sizing_mode == 'stretch_both'
-    assert div1.style == {'width': '100%', 'height': '100%'}
-    assert div2.sizing_mode == 'stretch_both'
-    assert div2.style == {'width': '100%', 'height': '100%'}
+    assert div1.sizing_mode == "stretch_both"
+    assert div1.style == {"width": "100%", "height": "100%"}
+    assert div2.sizing_mode == "stretch_both"
+    assert div2.style == {"width": "100%", "height": "100%"}
 
 
 def test_widgetbox(document, comm):

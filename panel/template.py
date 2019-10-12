@@ -17,7 +17,8 @@ from .widgets import Button
 
 _server_info = (
     '<b>Running server:</b> <a target="_blank" href="https://localhost:{port}">'
-    'https://localhost:{port}</a>')
+    "https://localhost:{port}</a>"
+)
 
 
 class Template(object):
@@ -55,25 +56,33 @@ class Template(object):
 
     def _build_layout(self):
         str_repr = Str(repr(self))
-        server_info = HTML('')
-        button = Button(name='Launch server')
+        server_info = HTML("")
+        button = Button(name="Launch server")
+
         def launch(event):
             if self._server:
-                button.name = 'Launch server'
-                server_info.object = ''
+                button.name = "Launch server"
+                server_info.object = ""
                 self._server.stop()
                 self._server = None
             else:
-                button.name = 'Stop server'
+                button.name = "Stop server"
                 self._server = self._get_server(start=True, show=True)
                 server_info.object = _server_info.format(port=self._server.port)
-        button.param.watch(launch, 'clicks')
+
+        button.param.watch(launch, "clicks")
         return Column(str_repr, server_info, button)
 
-    def _get_server(self, port=0, websocket_origin=None, loop=None,
-                   show=False, start=False, **kwargs):
-        return get_server(self, port, websocket_origin, loop, show,
-                          start, **kwargs)
+    def _get_server(
+        self,
+        port=0,
+        websocket_origin=None,
+        loop=None,
+        show=False,
+        start=False,
+        **kwargs
+    ):
+        return get_server(self, port, websocket_origin, loop, show, start, **kwargs)
 
     def _modify_doc(self, server_id, doc):
         """
@@ -85,20 +94,21 @@ class Template(object):
 
     def __repr__(self):
         cls = type(self).__name__
-        spacer = '\n    '
-        objs = ['[%s] %s' % (name, obj.__repr__(1))
-                for name, obj in self._render_items.items()]
-        template = '{cls}{spacer}{objs}'
-        return template.format(
-            cls=cls, objs=('%s' % spacer).join(objs), spacer=spacer)
+        spacer = "\n    "
+        objs = [
+            "[%s] %s" % (name, obj.__repr__(1))
+            for name, obj in self._render_items.items()
+        ]
+        template = "{cls}{spacer}{objs}"
+        return template.format(cls=cls, objs=("%s" % spacer).join(objs), spacer=spacer)
 
     def _repr_mimebundle_(self, include=None, exclude=None):
         return self._layout._repr_mimebundle_(include, exclude)
 
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
     # Public API
-    #----------------------------------------------------------------
-    
+    # ----------------------------------------------------------------
+
     def add_panel(self, name, panel):
         """
         Add panels to the Template, which may then be referenced by
@@ -112,10 +122,12 @@ class Template(object):
           A Panel component to embed in the template.
         """
         if name in self._render_items:
-            raise ValueError('The name %s has already been used for '
-                             'another panel. Ensure each panel '
-                             'has a unique name by which it can be '
-                             'referenced in the template.' % name)
+            raise ValueError(
+                "The name %s has already been used for "
+                "another panel. Ensure each panel "
+                "has a unique name by which it can be "
+                "referenced in the template." % name
+            )
         self._render_items[name] = _panel(panel)
         self._layout[0].object = repr(self)
 
@@ -142,7 +154,7 @@ class Template(object):
         for name, obj in self._render_items.items():
             model = obj.get_root(doc)
             model.name = name
-            if hasattr(doc, 'on_session_destroyed'):
+            if hasattr(doc, "on_session_destroyed"):
                 doc.on_session_destroyed(obj._server_destroy)
                 obj._documents[doc] = model
             add_to_doc(model, doc)
@@ -195,10 +207,13 @@ class Template(object):
         """
         if threaded:
             from tornado.ioloop import IOLoop
+
             loop = IOLoop()
             server = StoppableThread(
-                target=self._get_server, io_loop=loop,
-                args=(port, websocket_origin, loop, True, True))
+                target=self._get_server,
+                io_loop=loop,
+                args=(port, websocket_origin, loop, True, True),
+            )
             server.start()
         else:
             server = self._get_server(port, websocket_origin, show=True, start=True)

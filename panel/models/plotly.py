@@ -15,15 +15,22 @@ class PlotlyPlot(LayoutDOM):
     a bokeh plot.
     """
 
-    __javascript__ = ['https://cdn.plot.ly/plotly-latest.min.js',
-                      'https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.15/lodash.min.js']
+    __javascript__ = [
+        "https://cdn.plot.ly/plotly-latest.min.js",
+        "https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.15/lodash.min.js",
+    ]
 
-    __js_require__ = {'paths': {'plotly': 'https://cdn.plot.ly/plotly-latest.min',
-                                'lodash': 'https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.15/lodash.min'},
-                      'exports': {'plotly': 'Plotly',
-                                  'lodash': '_'}}
+    __js_require__ = {
+        "paths": {
+            "plotly": "https://cdn.plot.ly/plotly-latest.min",
+            "lodash": "https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.15/lodash.min",
+        },
+        "exports": {"plotly": "Plotly", "lodash": "_"},
+    }
 
-    __implementation__ = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'plotly.ts')
+    __implementation__ = os.path.join(
+        os.path.abspath(os.path.dirname(__file__)), "plotly.ts"
+    )
 
     data = List(Any)
 
@@ -41,9 +48,9 @@ class PlotlyPlot(LayoutDOM):
     clickannotation_data = Dict(String, Any)
     selected_data = Dict(String, Any)
     viewport = Dict(String, Any)
-    viewport_update_policy = Enum( "mouseup", "continuous", "throttle")
+    viewport_update_policy = Enum("mouseup", "continuous", "throttle")
     viewport_update_throttle = Int()
     _render_count = Int()
 
 
-CUSTOM_MODELS['panel.models.plotly.PlotlyPlot'] = PlotlyPlot
+CUSTOM_MODELS["panel.models.plotly.PlotlyPlot"] = PlotlyPlot

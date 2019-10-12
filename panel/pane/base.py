@@ -39,13 +39,20 @@ class PaneBase(Reactive):
     the applies classmethod and the _get_model private method.
     """
 
-    default_layout = param.ClassSelector(default=Row, class_=(Panel),
-                                         is_instance=False, doc="""
+    default_layout = param.ClassSelector(
+        default=Row,
+        class_=(Panel),
+        is_instance=False,
+        doc="""
         Defines the layout the model(s) returned by the pane will
-        be placed in.""")
+        be placed in.""",
+    )
 
-    object = param.Parameter(default=None, doc="""
-        The object being wrapped, which will be converted to a Bokeh model.""")
+    object = param.Parameter(
+        default=None,
+        doc="""
+        The object being wrapped, which will be converted to a Bokeh model.""",
+    )
 
     # When multiple Panes apply to an object, the one with the highest
     # numerical priority is selected. The default is an intermediate value.
@@ -60,15 +67,17 @@ class PaneBase(Reactive):
     _unpack = True
 
     # List of parameters that trigger a rerender of the Bokeh model
-    _rerender_params = ['object']
+    _rerender_params = ["object"]
 
     __abstract = True
 
     def __init__(self, object=None, **params):
         applies = self.applies(object)
-        if (isinstance(applies, bool) and not applies) and object is not None :
-            raise ValueError("%s pane does not support objects of type '%s'" %
-                             (type(self).__name__, type(object).__name__))
+        if (isinstance(applies, bool) and not applies) and object is not None:
+            raise ValueError(
+                "%s pane does not support objects of type '%s'"
+                % (type(self).__name__, type(object).__name__)
+            )
 
         super(PaneBase, self).__init__(object=object, **params)
         kwargs = {k: v for k, v in params.items() if k in Layoutable.param}
@@ -77,10 +86,10 @@ class PaneBase(Reactive):
 
     def __repr__(self, depth=0):
         cls = type(self).__name__
-        params = param_reprs(self, ['object'])
-        obj = 'Empty' if self.object is None else type(self.object).__name__ 
-        template = '{cls}({obj}, {params})' if params else '{cls}({obj})'
-        return template.format(cls=cls, params=', '.join(params), obj=obj)
+        params = param_reprs(self, ["object"])
+        obj = "Empty" if self.object is None else type(self.object).__name__
+        template = "{cls}({obj}, {params})" if params else "{cls}({obj})"
+        return template.format(cls=cls, params=", ".join(params), obj=obj)
 
     def __getitem__(self, index):
         """
@@ -88,17 +97,20 @@ class PaneBase(Reactive):
         """
         return self.layout[index]
 
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
     # Callback API
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
 
     def _synced_params(self):
-        ignored_params = ['name', 'default_layout']+self._rerender_params
+        ignored_params = ["name", "default_layout"] + self._rerender_params
         return [p for p in self.param if p not in ignored_params]
 
     def _init_properties(self):
-        return {k: v for k, v in self.param.get_param_values()
-                if v is not None and k not in ['default_layout', 'object']}
+        return {
+            k: v
+            for k, v in self.param.get_param_values()
+            if v is not None and k not in ["default_layout", "object"]
+        }
 
     def _update_object(self, old_model, doc, root, parent, comm):
         if self._updates:
@@ -108,16 +120,19 @@ class PaneBase(Reactive):
             try:
                 index = parent.children.index(old_model)
             except IndexError:
-                self.warning('%s pane model %s could not be replaced '
-                             'with new model %s, ensure that the '
-                             'parent is not modified at the same '
-                             'time the panel is being updated.' %
-                             (type(self).__name__, old_model, new_model))
+                self.warning(
+                    "%s pane model %s could not be replaced "
+                    "with new model %s, ensure that the "
+                    "parent is not modified at the same "
+                    "time the panel is being updated."
+                    % (type(self).__name__, old_model, new_model)
+                )
             else:
                 parent.children[index] = new_model
 
         from ..io import state
-        ref = root.ref['id']
+
+        ref = root.ref["id"]
         if ref in state._views:
             state._views[ref][0]._preprocess(root)
 
@@ -126,7 +141,7 @@ class PaneBase(Reactive):
             viewable, root, doc, comm = state._views[ref]
             if comm or state._unblocked(doc):
                 self._update_object(model, doc, root, parent, comm)
-                if comm and 'embedded' not in root.tags:
+                if comm and "embedded" not in root.tags:
                     push(doc, comm)
             else:
                 cb = partial(self._update_object, model, doc, root, parent, comm)
@@ -140,9 +155,9 @@ class PaneBase(Reactive):
         """
         raise NotImplementedError
 
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
     # Public API
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
 
     @classmethod
     def applies(cls, obj):
@@ -167,7 +182,7 @@ class PaneBase(Reactive):
         Cloned Pane object
         """
         params = dict(self.param.get_param_values(), **params)
-        old_object = params.pop('object')
+        old_object = params.pop("object")
         if object is None:
             object = old_object
         return type(self)(object, **params)
@@ -193,7 +208,7 @@ class PaneBase(Reactive):
         else:
             root = self.layout._get_model(doc, comm=comm)
         self._preprocess(root)
-        ref = root.ref['id']
+        ref = root.ref["id"]
         state._views[ref] = (self, root, doc, comm)
         return root
 
@@ -218,17 +233,20 @@ class PaneBase(Reactive):
         for p in param.concrete_descendents(PaneBase).values():
             priority = p.applies(obj) if p.priority is None else p.priority
             if isinstance(priority, bool) and priority:
-                raise ValueError('If a Pane declares no priority '
-                                 'the applies method should return a '
-                                 'priority value specific to the '
-                                 'object type or False, but the %s pane '
-                                 'declares no priority.' % p.__name__)
+                raise ValueError(
+                    "If a Pane declares no priority "
+                    "the applies method should return a "
+                    "priority value specific to the "
+                    "object type or False, but the %s pane "
+                    "declares no priority." % p.__name__
+                )
             elif priority is None or priority is False:
                 continue
             descendents.append((priority, p))
         pane_types = reversed(sorted(descendents, key=lambda x: x[0]))
         for _, pane_type in pane_types:
             applies = pane_type.applies(obj)
-            if isinstance(applies, bool) and not applies: continue
+            if isinstance(applies, bool) and not applies:
+                continue
             return pane_type
-        raise TypeError('%s type could not be rendered.' % type(obj).__name__)
+        raise TypeError("%s type could not be rendered." % type(obj).__name__)

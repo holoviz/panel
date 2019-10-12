@@ -20,20 +20,27 @@ def test_render_mimebundle(document, comm):
     div = Div()
     data, metadata = render_mimebundle(div, document, comm)
 
-    assert metadata == {'application/vnd.holoviews_exec.v0+json': {'id': div.ref['id']}}
-    assert 'application/vnd.holoviews_exec.v0+json' in data
-    assert 'text/html' in data
-    assert data['application/vnd.holoviews_exec.v0+json'] == ''
+    assert metadata == {"application/vnd.holoviews_exec.v0+json": {"id": div.ref["id"]}}
+    assert "application/vnd.holoviews_exec.v0+json" in data
+    assert "text/html" in data
+    assert data["application/vnd.holoviews_exec.v0+json"] == ""
 
 
 def test_abbreviated_repr_dict():
-    assert abbreviated_repr({'key': 'some really, really long string'}) == "{'key': 'some really, ...}"
+    assert (
+        abbreviated_repr({"key": "some really, really long string"})
+        == "{'key': 'some really, ...}"
+    )
 
 
 def test_abbreviated_repr_list():
-    assert abbreviated_repr(['some really, really long string']) == "['some really, ...]"
+    assert (
+        abbreviated_repr(["some really, really long string"]) == "['some really, ...]"
+    )
 
 
 def test_abbreviated_repr_ordereddict():
-    assert (abbreviated_repr(OrderedDict([('key', 'some really, really long string')]))
-            == "OrderedDict([('key', ...])")
+    assert (
+        abbreviated_repr(OrderedDict([("key", "some really, really long string")]))
+        == "OrderedDict([('key', ...])"
+    )

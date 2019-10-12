@@ -12,14 +12,14 @@ import pytest
 import panel as pn
 
 here = os.path.abspath(os.path.dirname(__file__))
-ref = os.path.join(here, '..', '..', 'examples', 'reference')
+ref = os.path.join(here, "..", "..", "examples", "reference")
 docs_available = pytest.mark.skipif(not os.path.isdir(ref), reason="docs not found")
 
 
 @docs_available
 def test_layouts_are_in_reference_gallery():
-    exceptions = set(['ListPanel', 'Panel'])
-    docs = {os.path.splitext(f)[0] for f in os.listdir(os.path.join(ref, 'layouts'))}
+    exceptions = set(["ListPanel", "Panel"])
+    docs = {os.path.splitext(f)[0] for f in os.listdir(os.path.join(ref, "layouts"))}
 
     def is_panel_layout(attr):
         layout = getattr(pn.layout, attr)
@@ -31,8 +31,8 @@ def test_layouts_are_in_reference_gallery():
 
 @docs_available
 def test_widgets_are_in_reference_gallery():
-    exceptions = set(['CompositeWidget', 'Widget', 'ToggleGroup'])
-    docs = {os.path.splitext(f)[0] for f in os.listdir(os.path.join(ref, 'widgets'))}
+    exceptions = set(["CompositeWidget", "Widget", "ToggleGroup"])
+    docs = {os.path.splitext(f)[0] for f in os.listdir(os.path.join(ref, "widgets"))}
 
     def is_panel_widget(attr):
         widget = getattr(pn.widgets, attr)
@@ -44,8 +44,8 @@ def test_widgets_are_in_reference_gallery():
 
 @docs_available
 def test_panes_are_in_reference_gallery():
-    exceptions = set(['PaneBase', 'YT', 'RGGPlot'])
-    docs = {os.path.splitext(f)[0] for f in os.listdir(os.path.join(ref, 'panes'))}
+    exceptions = set(["PaneBase", "YT", "RGGPlot"])
+    docs = {os.path.splitext(f)[0] for f in os.listdir(os.path.join(ref, "panes"))}
 
     def is_panel_pane(attr):
         pane = getattr(pn.pane, attr)

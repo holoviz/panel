@@ -16,9 +16,9 @@ from .model import add_to_doc, diff
 from .state import state
 
 
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
 # Private API
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
 
 STATE_JS = """
 var state = null
@@ -32,28 +32,33 @@ if (!state) {{ return; }}
 state.set_state(cb_obj, {js_getter})
 """
 
+
 def record_events(doc):
     msg = diff(doc, False)
     if msg is None:
-        return {'header': '{}', 'metadata': '{}', 'content': '{}'}
-    return {'header': msg.header_json, 'metadata': msg.metadata_json,
-            'content': msg.content_json}
+        return {"header": "{}", "metadata": "{}", "content": "{}"}
+    return {
+        "header": msg.header_json,
+        "metadata": msg.metadata_json,
+        "content": msg.content_json,
+    }
 
 
-def save_dict(state, key=(), depth=0, max_depth=None, save_path='', load_path=None):
+def save_dict(state, key=(), depth=0, max_depth=None, save_path="", load_path=None):
     filename_dict = {}
     for k, v in state.items():
-        curkey = key+(k,)
+        curkey = key + (k,)
         if depth < max_depth:
-            filename_dict[k] = save_dict(v, curkey, depth+1, max_depth,
-                                         save_path, load_path)
+            filename_dict[k] = save_dict(
+                v, curkey, depth + 1, max_depth, save_path, load_path
+            )
         else:
-            filename = '_'.join([str(i) for i in curkey]) +'.json'
+            filename = "_".join([str(i) for i in curkey]) + ".json"
             filepath = os.path.join(save_path, filename)
             directory = os.path.dirname(filepath)
             if not os.path.exists(directory):
                 os.makedirs(directory)
-            with open(filepath, 'w') as f:
+            with open(filepath, "w") as f:
                 json.dump(v, f)
             refpath = filepath
             if load_path:
@@ -61,12 +66,23 @@ def save_dict(state, key=(), depth=0, max_depth=None, save_path='', load_path=No
             filename_dict[k] = refpath
     return filename_dict
 
-#---------------------------------------------------------------------
-# Public API
-#---------------------------------------------------------------------
 
-def embed_state(panel, model, doc, max_states=1000, max_opts=3,
-                json=False, json_prefix='', save_path='./', load_path=None):
+# ---------------------------------------------------------------------
+# Public API
+# ---------------------------------------------------------------------
+
+
+def embed_state(
+    panel,
+    model,
+    doc,
+    max_states=1000,
+    max_opts=3,
+    json=False,
+    json_prefix="",
+    save_path="./",
+    load_path=None,
+):
     """
     Embeds the state of the application on a State model which allows
     exporting a static version of an app. This works by finding all
@@ -100,7 +116,7 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
     from ..pane import PaneBase
     from ..widgets import Widget, DiscreteSlider
 
-    target = model.ref['id']
+    target = model.ref["id"]
     if isinstance(panel, PaneBase) and target in panel.layout._models:
         panel = panel.layout
 
@@ -109,20 +125,26 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
         return
     _, _, _, comm = state._views[target]
 
-    model.tags.append('embedded')
-    widgets = [w for w in panel.select(Widget) if w._supports_embed
-               and w not in Link.registry]
+    model.tags.append("embedded")
+    widgets = [
+        w for w in panel.select(Widget) if w._supports_embed and w not in Link.registry
+    ]
     state_model = State()
 
     values = []
     for w in widgets:
-        w, w_model, vals, getter, on_change, js_getter = w._get_embed_state(model, max_opts)
+        w, w_model, vals, getter, on_change, js_getter = w._get_embed_state(
+            model, max_opts
+        )
         if isinstance(w, DiscreteSlider):
-            w_model = w._composite[1]._models[target][0].select_one({'type': w._widget_type})
+            w_model = (
+                w._composite[1]._models[target][0].select_one({"type": w._widget_type})
+            )
         else:
-            w_model = w._models[target][0].select_one({'type': w._widget_type})
-        js_callback = CustomJS(code=STATE_JS.format(
-            id=state_model.ref['id'], js_getter=js_getter))
+            w_model = w._models[target][0].select_one({"type": w._widget_type})
+        js_callback = CustomJS(
+            code=STATE_JS.format(id=state_model.ref["id"], js_getter=js_getter)
+        )
         w_model.js_on_change(on_change, js_callback)
         values.append((w, w_model, vals, getter))
 
@@ -134,11 +156,12 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
     cross_product = list(product(*[vals[::-1] for _, _, vals, _ in values]))
 
     if len(cross_product) > max_states:
-        raise RuntimeError('The cross product of different application '
-                           'states is too large to explore (N=%d), either reduce '
-                           'the number of options on the widgets or increase '
-                           'the max_states specified on static export.' %
-                           len(cross_product))
+        raise RuntimeError(
+            "The cross product of different application "
+            "states is too large to explore (N=%d), either reduce "
+            "the number of options on the widgets or increase "
+            "the max_states specified on static export." % len(cross_product)
+        )
 
     nested_dict = lambda: defaultdict(nested_dict)
     state_dict = nested_dict()
@@ -170,13 +193,21 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
             pass
 
     if json:
-        random_dir = '_'.join([json_prefix, uuid.uuid4().hex])
+        random_dir = "_".join([json_prefix, uuid.uuid4().hex])
         save_path = os.path.join(save_path, random_dir)
         if load_path is not None:
             load_path = os.path.join(load_path, random_dir)
-        state_dict = save_dict(state_dict, max_depth=len(widgets)-1,
-                               save_path=save_path, load_path=load_path)
+        state_dict = save_dict(
+            state_dict,
+            max_depth=len(widgets) - 1,
+            save_path=save_path,
+            load_path=load_path,
+        )
 
-    state_model.update(json=json, state=state_dict, values=init_vals,
-                       widgets={m.ref['id']: i for i, (_, m, _, _) in enumerate(values)})
+    state_model.update(
+        json=json,
+        state=state_dict,
+        values=init_vals,
+        widgets={m.ref["id"]: i for i, (_, m, _, _) in enumerate(values)},
+    )
     doc.add_root(state_model)

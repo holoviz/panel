@@ -15,18 +15,24 @@ class PlayerBase(Widget):
 
     interval = param.Integer(default=500, doc="Interval between updates")
 
-    loop_policy = param.ObjectSelector(default='once',
-                                       objects=['once', 'loop', 'reflect'], doc="""
-       Policy used when player hits last frame""")
+    loop_policy = param.ObjectSelector(
+        default="once",
+        objects=["once", "loop", "reflect"],
+        doc="""
+       Policy used when player hits last frame""",
+    )
 
-    step = param.Integer(default=1, doc="""
-       Number of frames to step forward and back by on each event.""")
+    step = param.Integer(
+        default=1,
+        doc="""
+       Number of frames to step forward and back by on each event.""",
+    )
 
     height = param.Integer(default=80)
 
     _widget_type = _BkPlayer
 
-    _rename = {'name': None}
+    _rename = {"name": None}
 
     __abstract = True
 
@@ -48,19 +54,26 @@ class Player(PlayerBase):
     _supports_embed = True
 
     def __init__(self, **params):
-        if 'length' in params:
-            if 'start' in params or 'end' in params:
-                raise ValueError('Supply either length or start and end to Player not both')
-            params['start'] = 0
-            params['end'] = params.pop('length')-1
-        elif params.get('start', 0) > 0 and not 'value' in params:
-            params['value'] = params['start']
+        if "length" in params:
+            if "start" in params or "end" in params:
+                raise ValueError(
+                    "Supply either length or start and end to Player not both"
+                )
+            params["start"] = 0
+            params["end"] = params.pop("length") - 1
+        elif params.get("start", 0) > 0 and not "value" in params:
+            params["value"] = params["start"]
         super(Player, self).__init__(**params)
 
     def _get_embed_state(self, root, max_opts=3):
-        return (self, self._models[root.ref['id']][0], range(self.start, self.end, self.step),
-                lambda x: x.value, 'value', 'cb_obj.value')
-
+        return (
+            self,
+            self._models[root.ref["id"]][0],
+            range(self.start, self.end, self.step),
+            lambda x: x.value,
+            "value",
+            "cb_obj.value",
+        )
 
 
 class DiscretePlayer(PlayerBase, SelectBase):
@@ -74,26 +87,26 @@ class DiscretePlayer(PlayerBase, SelectBase):
 
     value = param.Parameter()
 
-    _rename = {'name': None, 'options': None}
+    _rename = {"name": None, "options": None}
 
     def _process_param_change(self, msg):
         values = self.values
-        if 'options' in msg:
-            msg['start'] = 0
-            msg['end'] = len(values) - 1
+        if "options" in msg:
+            msg["start"] = 0
+            msg["end"] = len(values) - 1
             if values and not isIn(self.value, values):
                 self.value = values[0]
-        if 'value' in msg:
-            value = msg['value']
+        if "value" in msg:
+            value = msg["value"]
             if isIn(value, values):
-                msg['value'] = indexOf(value, values)
+                msg["value"] = indexOf(value, values)
             elif values:
                 self.value = values[0]
         return super(DiscretePlayer, self)._process_param_change(msg)
 
     def _process_property_change(self, msg):
-        if 'value' in msg:
-            value = msg.pop('value')
+        if "value" in msg:
+            value = msg.pop("value")
             if value < len(self.options):
-                msg['value'] = self.values[value]
+                msg["value"] = self.values[value]
         return msg

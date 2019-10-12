@@ -1,3 +1,1 @@
-pytest_plugins = (
-    "panel._testing.fixtures",
-)
+pytest_plugins = ("panel._testing.fixtures",)

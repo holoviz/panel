@@ -26,7 +26,7 @@ def hashable(x):
     if isinstance(x, MutableSequence):
         return tuple(x)
     elif isinstance(x, MutableMapping):
-        return tuple([(k,v) for k,v in x.items()])
+        return tuple([(k, v) for k, v in x.items()])
     else:
         return x
 
@@ -60,7 +60,7 @@ def indexOf(obj, objs):
                 return i
         except:
             pass
-    raise ValueError('%s not in list' % obj)
+    raise ValueError("%s not in list" % obj)
 
 
 def as_unicode(obj):
@@ -69,7 +69,7 @@ def as_unicode(obj):
     (i.e. bytes) types in python 2.
     """
     if sys.version_info.major < 3 and isinstance(obj, str):
-        obj = obj.decode('utf-8')
+        obj = obj.decode("utf-8")
     return unicode(obj)
 
 
@@ -77,7 +77,7 @@ def param_name(name):
     """
     Removes the integer id from a Parameterized class name.
     """
-    match = re.match('(.)+(\d){5}', name)
+    match = re.match("(.)+(\d){5}", name)
     return name[:-5] if match else name
 
 
@@ -90,7 +90,7 @@ def unicode_repr(obj):
     return repr(obj)
 
 
-def abbreviated_repr(value, max_length=25, natural_breaks=(',', ' ')):
+def abbreviated_repr(value, max_length=25, natural_breaks=(",", " ")):
     """
     Returns an abbreviated repr for the supplied object. Attempts to
     find a natural break point while adhering to the maximum length.
@@ -98,23 +98,23 @@ def abbreviated_repr(value, max_length=25, natural_breaks=(',', ' ')):
     vrepr = repr(value)
     if len(vrepr) > max_length:
         # Attempt to find natural cutoff point
-        abbrev = vrepr[max_length//2:]
+        abbrev = vrepr[max_length // 2 :]
         natural_break = None
         for brk in natural_breaks:
             if brk in abbrev:
-                natural_break = abbrev.index(brk) + max_length//2
+                natural_break = abbrev.index(brk) + max_length // 2
                 break
         if natural_break and natural_break < max_length:
             max_length = natural_break + 1
 
-        end_char = ''
+        end_char = ""
         if isinstance(value, list):
-            end_char = ']'
+            end_char = "]"
         elif isinstance(value, OrderedDict):
-            end_char = '])'
+            end_char = "])"
         elif isinstance(value, (dict, set)):
-            end_char = '}'
-        return vrepr[:max_length+1] + '...' + end_char
+            end_char = "}"
+        return vrepr[: max_length + 1] + "..." + end_char
     return vrepr
 
 
@@ -126,13 +126,19 @@ def param_reprs(parameterized, skip=[]):
     cls = type(parameterized).__name__
     param_reprs = []
     for p, v in sorted(parameterized.get_param_values()):
-        if v is parameterized.param[p].default: continue
-        elif v is None: continue
-        elif isinstance(v, string_types) and v == '': continue
-        elif isinstance(v, list) and v == []: continue
-        elif isinstance(v, dict) and v == {}: continue
-        elif p in skip or (p == 'name' and v.startswith(cls)): continue
-        param_reprs.append('%s=%s' % (p, abbreviated_repr(v)))
+        if v is parameterized.param[p].default:
+            continue
+        elif v is None:
+            continue
+        elif isinstance(v, string_types) and v == "":
+            continue
+        elif isinstance(v, list) and v == []:
+            continue
+        elif isinstance(v, dict) and v == {}:
+            continue
+        elif p in skip or (p == "name" and v.startswith(cls)):
+            continue
+        param_reprs.append("%s=%s" % (p, abbreviated_repr(v)))
     return param_reprs
 
 
@@ -152,7 +158,7 @@ def get_method_owner(meth):
     the class owning the supplied classmethod.
     """
     if inspect.ismethod(meth):
-        if sys.version_info < (3,0):
+        if sys.version_info < (3, 0):
             return meth.im_class if meth.im_self is None else meth.im_self
         else:
             return meth.__self__
@@ -162,8 +168,9 @@ def is_parameterized(obj):
     """
     Whether an object is a Parameterized class or instance.
     """
-    return (isinstance(obj, param.Parameterized) or
-            (isinstance(obj, type) and issubclass(obj, param.Parameterized)))
+    return isinstance(obj, param.Parameterized) or (
+        isinstance(obj, type) and issubclass(obj, param.Parameterized)
+    )
 
 
 def isdatetime(value):
@@ -171,11 +178,14 @@ def isdatetime(value):
     Whether the array or scalar is recognized datetime type.
     """
     if isinstance(value, np.ndarray):
-        return (value.dtype.kind == "M" or
-                (value.dtype.kind == "O" and len(value) and
-                 isinstance(value[0], datetime_types)))
+        return value.dtype.kind == "M" or (
+            value.dtype.kind == "O"
+            and len(value)
+            and isinstance(value[0], datetime_types)
+        )
     else:
         return isinstance(value, datetime_types)
+
 
 def value_as_datetime(value):
     """

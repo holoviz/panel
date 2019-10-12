@@ -18,12 +18,18 @@ class _state(param.Parameterized):
     apps to indicate their state to a user.
     """
 
-    _curdoc = param.ClassSelector(class_=Document, doc="""
+    _curdoc = param.ClassSelector(
+        class_=Document,
+        doc="""
         The bokeh Document for which a server event is currently being
-        processed.""")
+        processed.""",
+    )
 
-    webdriver = param.Parameter(default=None, doc="""
-        Selenium webdriver used to export bokeh models to pngs.""")
+    webdriver = param.Parameter(
+        default=None,
+        doc="""
+        Selenium webdriver used to export bokeh models to pngs.""",
+    )
 
     # Whether to hold comm events
     _hold = False
@@ -42,7 +48,7 @@ class _state(param.Parameterized):
     def _unblocked(self, doc):
         thread = threading.current_thread()
         thread_id = thread.ident if thread else None
-        return (doc is self.curdoc and self._thread_id == thread_id)
+        return doc is self.curdoc and self._thread_id == thread_id
 
     @property
     def curdoc(self):

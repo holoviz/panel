@@ -8,7 +8,9 @@ from ..compiler import CUSTOM_MODELS
 
 class State(Model):
 
-    __implementation__ = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'state.ts')
+    __implementation__ = os.path.join(
+        os.path.abspath(os.path.dirname(__file__)), "state.ts"
+    )
 
     json = Bool(False, help="Whether the values point to json files")
 
@@ -19,4 +21,4 @@ class State(Model):
     values = List(Any)
 
 
-CUSTOM_MODELS['panel.models.state.State'] = State
+CUSTOM_MODELS["panel.models.state.State"] = State

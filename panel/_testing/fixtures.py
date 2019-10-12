@@ -5,7 +5,7 @@ from __future__ import absolute_import, division, unicode_literals
 
 import re
 import shutil
-    
+
 import pytest
 
 from bokeh.document import Document
@@ -25,9 +25,10 @@ def comm():
 @pytest.yield_fixture
 def hv_bokeh():
     import holoviews as hv
-    hv.renderer('bokeh')
+
+    hv.renderer("bokeh")
     prev_backend = hv.Store.current_backend
-    hv.Store.current_backend = 'bokeh'
+    hv.Store.current_backend = "bokeh"
     yield
     hv.Store.current_backend = prev_backend
 
@@ -35,9 +36,10 @@ def hv_bokeh():
 @pytest.yield_fixture
 def hv_mpl():
     import holoviews as hv
-    hv.renderer('matplotlib')
+
+    hv.renderer("matplotlib")
     prev_backend = hv.Store.current_backend
-    hv.Store.current_backend = 'matplotlib'
+    hv.Store.current_backend = "matplotlib"
     yield
     hv.Store.current_backend = prev_backend
 

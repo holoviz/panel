@@ -20,11 +20,14 @@ from six import string_types
 try:  # Python >= 3.3
     from inspect import signature, Parameter
     from collections.abc import Iterable, Mapping
+
     empty = Parameter.empty
 except ImportError:
     from collections import Iterable, Mapping
+
     try:
         from IPython.utils.signatures import signature, Parameter
+
         empty = Parameter.empty
     except:
         signature, Parameter, empty = None, None, None
@@ -32,15 +35,23 @@ except ImportError:
 try:
     from inspect import getfullargspec as check_argspec
 except ImportError:
-    from inspect import getargspec as check_argspec # py2
+    from inspect import getargspec as check_argspec  # py2
 
 import param
 
 from .layout import Panel, Column, Row
 from .pane import PaneBase, Pane, HTML
 from .util import as_unicode
-from .widgets import (Checkbox, TextInput, Widget, IntSlider, FloatSlider,
-                      Select, DiscreteSlider, Button)
+from .widgets import (
+    Checkbox,
+    TextInput,
+    Widget,
+    IntSlider,
+    FloatSlider,
+    Select,
+    DiscreteSlider,
+    Button,
+)
 
 
 def _get_min_max_value(min, max, value=None, step=None):
@@ -48,7 +59,11 @@ def _get_min_max_value(min, max, value=None, step=None):
     # Either min and max need to be given, or value needs to be given
     if value is None:
         if min is None or max is None:
-            raise ValueError('unable to infer range, value from: ({0}, {1}, {2})'.format(min, max, value))
+            raise ValueError(
+                "unable to infer range, value from: ({0}, {1}, {2})".format(
+                    min, max, value
+                )
+            )
         diff = max - min
         value = min + (diff / 2)
         # Ensure that value has the same type as diff
@@ -56,15 +71,15 @@ def _get_min_max_value(min, max, value=None, step=None):
             value = min + (diff // 2)
     else:  # value is not None
         if not isinstance(value, Real):
-            raise TypeError('expected a real number, got: %r' % value)
+            raise TypeError("expected a real number, got: %r" % value)
         # Infer min/max from value
         if value == 0:
             # This gives (0, 1) of the correct type
             vrange = (value, value + 1)
         elif value > 0:
-            vrange = (-value, 3*value)
+            vrange = (-value, 3 * value)
         else:
-            vrange = (3*value, -value)
+            vrange = (3 * value, -value)
         if min is None:
             min = vrange[0]
         if max is None:
@@ -74,7 +89,11 @@ def _get_min_max_value(min, max, value=None, step=None):
         tick = int((value - min) / step)
         value = min + tick * step
     if not min <= value <= max:
-        raise ValueError('value must be between min and max (min={0}, value={1}, max={2})'.format(min, value, max))
+        raise ValueError(
+            "value must be between min and max (min={0}, value={1}, max={2})".format(
+                min, value, max
+            )
+        )
     return min, max, value
 
 
@@ -89,7 +108,10 @@ def _yield_abbreviations_for_parameter(parameter, kwargs):
         if name in kwargs:
             value = kwargs.pop(name)
         elif ann is not empty:
-            param.main.warning("Using function annotations to implicitly specify interactive controls is deprecated. Use an explicit keyword argument for the parameter instead.", DeprecationWarning)
+            param.main.warning(
+                "Using function annotations to implicitly specify interactive controls is deprecated. Use an explicit keyword argument for the parameter instead.",
+                DeprecationWarning,
+            )
             value = ann
         elif default is not empty:
             value = default
@@ -109,24 +131,30 @@ def _matches(o, pattern):
     """Match a pattern of types in a sequence."""
     if not len(o) == len(pattern):
         return False
-    comps = zip(o,pattern)
-    return all(isinstance(obj,kind) for obj,kind in comps)
+    comps = zip(o, pattern)
+    return all(isinstance(obj, kind) for obj, kind in comps)
 
 
 class interactive(PaneBase):
 
-    default_layout = param.ClassSelector(default=Column, class_=(Panel),
-                                         is_instance=False)
+    default_layout = param.ClassSelector(
+        default=Column, class_=(Panel), is_instance=False
+    )
 
-    manual_update = param.Boolean(default=False, doc="""
-        Whether to update manually by clicking on button.""")
+    manual_update = param.Boolean(
+        default=False,
+        doc="""
+        Whether to update manually by clicking on button.""",
+    )
 
-    manual_name = param.String(default='Run Interact')
+    manual_name = param.String(default="Run Interact")
 
     def __init__(self, object, params={}, **kwargs):
         if signature is None:
-            raise ImportError('interact requires either recent Python version '
-                              '(>=3.3 or IPython to inspect function signatures.')
+            raise ImportError(
+                "interact requires either recent Python version "
+                "(>=3.3 or IPython to inspect function signatures."
+            )
 
         super(interactive, self).__init__(object, **params)
 
@@ -140,50 +168,54 @@ class interactive(PaneBase):
             # if we can't inspect, we can't validate
             pass
         else:
-            getcallargs(object, **{n:v for n,v,_ in new_kwargs})
+            getcallargs(object, **{n: v for n, v, _ in new_kwargs})
 
         widgets = self.widgets_from_abbreviations(new_kwargs)
         if self.manual_update:
-            widgets.append(('manual', Button(name=self.manual_name)))
+            widgets.append(("manual", Button(name=self.manual_name)))
         self._widgets = OrderedDict(widgets)
         self._pane = Pane(self.object(**self.kwargs), name=self.name)
         self._inner_layout = Row(self._pane)
         widgets = [widget for _, widget in widgets if isinstance(widget, Widget)]
-        if 'name' in params:
-            widgets.insert(0, HTML('<h2>%s</h2>' % self.name))
+        if "name" in params:
+            widgets.insert(0, HTML("<h2>%s</h2>" % self.name))
         self.widget_box = Column(*widgets)
         self.layout.objects = [self.widget_box, self._inner_layout]
         self._link_widgets()
 
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
     # Model API
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         return self._inner_layout._get_model(doc, root, parent, comm)
 
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
     # Callback API
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
 
     def _synced_params(self):
         return []
 
     def _link_widgets(self):
         if self.manual_update:
-            widgets = [('manual', self._widgets['manual'])]
+            widgets = [("manual", self._widgets["manual"])]
         else:
             widgets = self._widgets.items()
 
         for name, widget in widgets:
+
             def update_pane(change):
                 # Try updating existing pane
                 new_object = self.object(**self.kwargs)
                 pane_type = self.get_pane_type(new_object)
                 if type(self._pane) is pane_type:
                     if isinstance(new_object, (PaneBase, Panel)):
-                        new_params = {k: v for k, v in new_object.get_param_values()
-                                      if k != 'name'}
+                        new_params = {
+                            k: v
+                            for k, v in new_object.get_param_values()
+                            if k != "name"
+                        }
                         self._pane.set_param(**new_params)
                     else:
                         self._pane.object = new_object
@@ -193,7 +225,7 @@ class interactive(PaneBase):
                 self._pane = Pane(new_object)
                 self._inner_layout[0] = self._pane
 
-            pname = 'clicks' if name == 'manual' else 'value'
+            pname = "clicks" if name == "manual" else "value"
             watcher = widget.param.watch(update_pane, pname)
             self._callbacks.append(watcher)
 
@@ -201,14 +233,13 @@ class interactive(PaneBase):
         self._inner_layout._cleanup(root)
         super(interactive, self)._cleanup(root)
 
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
     # Public API
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
 
     @property
     def kwargs(self):
-        return {k: widget.value for k, widget in self._widgets.items()
-                if k != 'manual'}
+        return {k: widget.value for k, widget in self._widgets.items() if k != "manual"}
 
     def signature(self):
         return signature(self.object)
@@ -222,12 +253,18 @@ class interactive(PaneBase):
             sig = self.signature()
         except (ValueError, TypeError):
             # can't inspect, no info from function; only use kwargs
-            return [ (key, value, value) for key, value in kwargs.items() ]
+            return [(key, value, value) for key, value in kwargs.items()]
 
         for parameter in sig.parameters.values():
-            for name, value, default in _yield_abbreviations_for_parameter(parameter, kwargs):
+            for name, value, default in _yield_abbreviations_for_parameter(
+                parameter, kwargs
+            ):
                 if value is empty:
-                    raise ValueError('cannot find widget or abbreviation for argument: {!r}'.format(name))
+                    raise ValueError(
+                        "cannot find widget or abbreviation for argument: {!r}".format(
+                            name
+                        )
+                    )
                 new_kwargs.append((name, value, default))
         return new_kwargs
 
@@ -306,7 +343,7 @@ class interactive(PaneBase):
     @staticmethod
     def widget_from_tuple(o, name, default=empty):
         """Make widgets from a tuple abbreviation."""
-        int_default = (default is empty or isinstance(default, int))
+        int_default = default is empty or isinstance(default, int)
         if _matches(o, (Real, Real)):
             min, max, value = _get_min_max_value(o[0], o[1])
             if all(isinstance(_, Integral) for _ in o) and int_default:
@@ -349,7 +386,9 @@ class interactive(PaneBase):
         # Select expects a dict or list, so we convert an arbitrary
         # iterable to either of those.
         values = list(o.values()) if isinstance(o, Mapping) else list(o)
-        widget_type = DiscreteSlider if all(param._is_number(v) for v in values) else Select
+        widget_type = (
+            DiscreteSlider if all(param._is_number(v) for v in values) else Select
+        )
         if isinstance(o, (list, dict)):
             return widget_type(options=o, name=name)
         elif isinstance(o, Mapping):
@@ -379,6 +418,7 @@ class _InteractFactory(object):
     kwargs: dict
       A dict of **kwargs to use for widgets.
     """
+
     def __init__(self, cls, options, kwargs={}):
         self.cls = cls
         self.opts = options
@@ -504,8 +544,9 @@ interact_manual = interact.options(manual_update=True, manual_name="Run Interact
 
 class fixed(param.Parameterized):
     """A pseudo-widget whose value is fixed and never synced to the client."""
+
     value = param.Parameter(doc="Any Python object")
-    description = param.String(default='')
+    description = param.String(default="")
 
     def __init__(self, value, **kwargs):
         super(fixed, self).__init__(value=value, **kwargs)

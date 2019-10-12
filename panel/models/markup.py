@@ -15,7 +15,9 @@ class HTML(Markup):
     A bokeh model to render HTML markup including embedded script tags.
     """
 
-    __implementation__ = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'html.ts')
+    __implementation__ = os.path.join(
+        os.path.abspath(os.path.dirname(__file__)), "html.ts"
+    )
 
 
-CUSTOM_MODELS['panel.models.markup.HTML'] = HTML
+CUSTOM_MODELS["panel.models.markup.HTML"] = HTML

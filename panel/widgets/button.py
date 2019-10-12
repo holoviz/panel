@@ -13,10 +13,12 @@ from .base import Widget
 
 class _ButtonBase(Widget):
 
-    button_type = param.ObjectSelector(default='default', objects=[
-        'default', 'primary', 'success', 'warning', 'danger'])
+    button_type = param.ObjectSelector(
+        default="default",
+        objects=["default", "primary", "success", "warning", "danger"],
+    )
 
-    _rename = {'name': 'label'}
+    _rename = {"name": "label"}
 
     __abstract = True
 
@@ -28,20 +30,29 @@ class Button(_ButtonBase):
     _widget_type = _BkButton
 
     def on_click(self, callback):
-        self.param.watch(callback, 'clicks')
+        self.param.watch(callback, "clicks")
 
 
 class Toggle(_ButtonBase):
 
-    value = param.Boolean(default=False, doc="""
-        Whether the button is currently toggled.""")
+    value = param.Boolean(
+        default=False,
+        doc="""
+        Whether the button is currently toggled.""",
+    )
 
-    _rename = {'value': 'active', 'name': 'label'}
+    _rename = {"value": "active", "name": "label"}
 
     _supports_embed = True
 
     _widget_type = _BkToggle
 
     def _get_embed_state(self, root, max_opts=3):
-        return (self, self._models[root.ref['id']][0], [False, True],
-                lambda x: x.active, 'active', 'cb_obj.active')
+        return (
+            self,
+            self._models[root.ref["id"]][0],
+            [False, True],
+            lambda x: x.active,
+            "active",
+            "cb_obj.active",
+        )

@@ -20,9 +20,10 @@ from .model import add_to_doc
 from .state import state
 
 
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
 # Public API
-#---------------------------------------------------------------------
+# ---------------------------------------------------------------------
+
 
 def save_png(model, filename):
     """
@@ -41,14 +42,27 @@ def save_png(model, filename):
     webdriver = state.webdriver
     export_png(model, filename, webdriver=webdriver)
 
-#---------------------------------------------------------------------
-# Public API
-#---------------------------------------------------------------------
 
-def save(panel, filename, title=None, resources=None, template=None,
-         template_variables={}, embed=False, max_states=1000,
-         max_opts=3, embed_json=False, json_prefix='', save_path='./',
-         load_path=None):
+# ---------------------------------------------------------------------
+# Public API
+# ---------------------------------------------------------------------
+
+
+def save(
+    panel,
+    filename,
+    title=None,
+    resources=None,
+    template=None,
+    template_variables={},
+    embed=False,
+    max_states=1000,
+    max_opts=3,
+    embed_json=False,
+    json_prefix="",
+    save_path="./",
+    load_path=None,
+):
     """
     Saves Panel objects to file.
 
@@ -82,31 +96,40 @@ def save(panel, filename, title=None, resources=None, template=None,
     with config.set(embed=embed):
         model = panel.get_root(doc, comm)
         if embed:
-            embed_state(panel, model, doc, max_states, max_opts,
-                        embed_json, json_prefix, save_path, load_path)
+            embed_state(
+                panel,
+                model,
+                doc,
+                max_states,
+                max_opts,
+                embed_json,
+                json_prefix,
+                save_path,
+                load_path,
+            )
         else:
             add_to_doc(model, doc, True)
 
     if isinstance(filename, string_types):
-        if filename.endswith('png'):
+        if filename.endswith("png"):
             save_png(model, filename=filename)
             return
-        if not filename.endswith('.html'):
-            filename = filename + '.html'
+        if not filename.endswith(".html"):
+            filename = filename + ".html"
 
     kwargs = {}
     if title is None:
-        title = 'Panel'
+        title = "Panel"
     if resources is None:
         resources = CDN
     if template:
-        kwargs['template'] = template
+        kwargs["template"] = template
 
     html = file_html(doc, resources, title, **kwargs)
-    if hasattr(filename, 'write'):
+    if hasattr(filename, "write"):
         html = decode_utf8(html)
         if isinstance(filename, io.BytesIO):
-            html = html.encode('utf-8')
+            html = html.encode("utf-8")
         filename.write(html)
         return
     with io.open(filename, mode="w", encoding="utf-8") as f:

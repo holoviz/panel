@@ -11,7 +11,8 @@ hv_available = pytest.mark.skipif(hv is None, reason="requires holoviews")
 
 try:
     import matplotlib as mpl
-    mpl.use('Agg')
+
+    mpl.use("Agg")
 except:
     mpl = None
 mpl_available = pytest.mark.skipif(mpl is None, reason="requires matplotlib")
@@ -19,6 +20,7 @@ mpl_available = pytest.mark.skipif(mpl is None, reason="requires matplotlib")
 
 def mpl_figure():
     import matplotlib.pyplot as plt
+
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.plot(np.random.rand(10, 2))
@@ -27,11 +29,11 @@ def mpl_figure():
 
 
 def check_layoutable_properties(layoutable, model):
-    layoutable.background = '#ffffff'
-    assert model.background == '#ffffff'
+    layoutable.background = "#ffffff"
+    assert model.background == "#ffffff"
 
-    layoutable.css_classes = ['custom_class']
-    assert model.css_classes == ['custom_class']
+    layoutable.css_classes = ["custom_class"]
+    assert model.css_classes == ["custom_class"]
 
     layoutable.width = 500
     assert model.width == 500
@@ -54,11 +56,11 @@ def check_layoutable_properties(layoutable, model):
     layoutable.margin = 10
     assert model.margin == (10, 10, 10, 10)
 
-    layoutable.sizing_mode = 'stretch_width'
-    assert model.sizing_mode == 'stretch_width'
+    layoutable.sizing_mode = "stretch_width"
+    assert model.sizing_mode == "stretch_width"
 
-    layoutable.width_policy = 'max'
-    assert model.width_policy == 'max'
+    layoutable.width_policy = "max"
+    assert model.width_policy == "max"
 
-    layoutable.height_policy = 'min'
-    assert model.height_policy == 'min'
+    layoutable.height_policy = "min"
+    assert model.height_policy == "min"

@@ -24,8 +24,14 @@ from .callbacks import PeriodicCallback
 from .config import config, panel_extension
 from .io.embed import embed_state
 from .io.model import add_to_doc
-from .io.notebook import (get_comm_customjs, push, render_mimebundle,
-                          render_model, show_embed, show_server)
+from .io.notebook import (
+    get_comm_customjs,
+    push,
+    render_mimebundle,
+    render_model,
+    show_embed,
+    show_server,
+)
 from .io.save import save
 from .io.state import state
 from .io.server import StoppableThread, get_server
@@ -34,54 +40,94 @@ from .util import param_reprs
 
 class Layoutable(param.Parameterized):
 
-    align = param.ObjectSelector(default='start',
-                                 objects=['start', 'end', 'center'], doc="""
+    align = param.ObjectSelector(
+        default="start",
+        objects=["start", "end", "center"],
+        doc="""
         Whether the object should be aligned with the start, end or
-        center of its container""")
+        center of its container""",
+    )
 
-    aspect_ratio = param.Parameter(default=None, doc="""
+    aspect_ratio = param.Parameter(
+        default=None,
+        doc="""
         Describes the proportional relationship between component's
         width and height.  This works if any of component's dimensions
         are flexible in size. If set to a number, ``width / height =
         aspect_ratio`` relationship will be maintained.  Otherwise, if
         set to ``"auto"``, component's preferred width and height will
         be used to determine the aspect (if not set, no aspect will be
-        preserved).
-    """)
+        preserved).""",
+    )
 
-    background = param.Parameter(default=None, doc="""
-        Background color of the component.""")
+    background = param.Parameter(
+        default=None,
+        doc="""
+        Background color of the component.""",
+    )
 
-    css_classes = param.List(default=None, doc="""
-        CSS classes to apply to the layout.""")
+    css_classes = param.List(
+        default=None,
+        doc="""
+        CSS classes to apply to the layout.""",
+    )
 
-    width = param.Integer(default=None, bounds=(0, None), doc="""
+    width = param.Integer(
+        default=None,
+        bounds=(0, None),
+        doc="""
         The width of the component (in pixels). This can be either
-        fixed or preferred width, depending on width sizing policy.""")
+        fixed or preferred width, depending on width sizing policy.""",
+    )
 
-    height = param.Integer(default=None, bounds=(0, None), doc="""
+    height = param.Integer(
+        default=None,
+        bounds=(0, None),
+        doc="""
         The height of the component (in pixels).  This can be either
-        fixed or preferred height, depending on height sizing policy.""")
+        fixed or preferred height, depending on height sizing policy.""",
+    )
 
-    min_width = param.Integer(default=None, bounds=(0, None), doc="""
-        Minimal width of the component (in pixels) if width is adjustable.""")
+    min_width = param.Integer(
+        default=None,
+        bounds=(0, None),
+        doc="""
+        Minimal width of the component (in pixels) if width is adjustable.""",
+    )
 
-    min_height = param.Integer(default=None, bounds=(0, None), doc="""
-        Minimal height of the component (in pixels) if height is adjustable.""")
+    min_height = param.Integer(
+        default=None,
+        bounds=(0, None),
+        doc="""
+        Minimal height of the component (in pixels) if height is adjustable.""",
+    )
 
-    max_width = param.Integer(default=None, bounds=(0, None), doc="""
-        Minimal width of the component (in pixels) if width is adjustable.""")
+    max_width = param.Integer(
+        default=None,
+        bounds=(0, None),
+        doc="""
+        Minimal width of the component (in pixels) if width is adjustable.""",
+    )
 
-    max_height = param.Integer(default=None, bounds=(0, None), doc="""
-        Minimal height of the component (in pixels) if height is adjustable.""")
+    max_height = param.Integer(
+        default=None,
+        bounds=(0, None),
+        doc="""
+        Minimal height of the component (in pixels) if height is adjustable.""",
+    )
 
-    margin = param.Parameter(default=5, doc="""
+    margin = param.Parameter(
+        default=5,
+        doc="""
         Allows to create additional space around the component. May
         be specified as a two-tuple of the form (vertical, horizontal)
-        or a four-tuple (top, right, bottom, left).""")
+        or a four-tuple (top, right, bottom, left).""",
+    )
 
     width_policy = param.ObjectSelector(
-        default="auto", objects=['auto', 'fixed', 'fit', 'min', 'max'], doc="""
+        default="auto",
+        objects=["auto", "fixed", "fit", "min", "max"],
+        doc="""
         Describes how the component should maintain its width.
 
         * "auto"
@@ -105,11 +151,13 @@ class Layoutable(param.Parameterized):
           maximum width (if set).  The starting point is the preferred
           width (if set). The width of the component may shrink or
           grow depending on the parent layout, aspect management and
-          other factors.
-    """)
+          other factors.""",
+    )
 
     height_policy = param.ObjectSelector(
-        default="auto", objects=['auto', 'fixed', 'fit', 'min', 'max'], doc="""
+        default="auto",
+        objects=["auto", "fixed", "fit", "min", "max"],
+        doc="""
         Describes how the component should maintain its height.
 
         * "auto"
@@ -133,12 +181,22 @@ class Layoutable(param.Parameterized):
           maximum width (if set).  The starting point is the preferred
           width (if set). The width of the component may shrink or
           grow depending on the parent layout, aspect management and
-          other factors.
-    """)
+          other factors""",
+    )
 
-    sizing_mode = param.ObjectSelector(default=None, objects=[
-        'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
-        'scale_width', 'scale_height', 'scale_both', None], doc="""
+    sizing_mode = param.ObjectSelector(
+        default=None,
+        objects=[
+            "fixed",
+            "stretch_width",
+            "stretch_height",
+            "stretch_both",
+            "scale_width",
+            "scale_height",
+            "scale_both",
+            None,
+        ],
+        doc="""
 
         How the component should size itself.
 
@@ -178,14 +236,16 @@ class Layoutable(param.Parameterized):
         * "scale_both"
           Component will responsively resize to both the available
           width and height, while maintaining the original or provided
-          aspect ratio.
-    """)
+          aspect ratio.""",
+    )
 
     def __init__(self, **params):
-        if (params.get('width', None) is not None and
-            params.get('height', None) is not None and
-            'sizing_mode' not in params):
-            params['sizing_mode'] = 'fixed'
+        if (
+            params.get("width", None) is not None
+            and params.get("height", None) is not None
+            and "sizing_mode" not in params
+        ):
+            params["sizing_mode"] = "fixed"
         super(Layoutable, self).__init__(**params)
 
 
@@ -210,8 +270,9 @@ class Viewable(Layoutable):
         self._found_links = set()
 
     def __repr__(self, depth=0):
-        return '{cls}({params})'.format(cls=type(self).__name__,
-                                        params=', '.join(param_reprs(self)))
+        return "{cls}({params})".format(
+            cls=type(self).__name__, params=", ".join(param_reprs(self))
+        )
 
     def __str__(self):
         return self.__repr__()
@@ -263,29 +324,36 @@ class Viewable(Layoutable):
         model = self.get_root(doc, comm)
 
         if config.embed:
-            embed_state(self, model, doc,
-                        json=config.embed_json,
-                        json_prefix=config.embed_json_prefix,
-                        save_path=config.embed_save_path,
-                        load_path=config.embed_load_path)
+            embed_state(
+                self,
+                model,
+                doc,
+                json=config.embed_json,
+                json_prefix=config.embed_json_prefix,
+                save_path=config.embed_save_path,
+                load_path=config.embed_load_path,
+            )
         else:
             add_to_doc(model, doc)
         return model
 
     def _repr_mimebundle_(self, include=None, exclude=None):
         loaded = panel_extension._loaded
-        if not loaded and 'holoviews' in sys.modules:
+        if not loaded and "holoviews" in sys.modules:
             import holoviews as hv
+
             loaded = hv.extension._loaded
         if not loaded:
-            self.param.warning('Displaying Panel objects in the notebook '
-                               'requires the panel extension to be loaded. '
-                               'Ensure you run pn.extension() before '
-                               'displaying objects in the notebook.')
+            self.param.warning(
+                "Displaying Panel objects in the notebook "
+                "requires the panel extension to be loaded. "
+                "Ensure you run pn.extension() before "
+                "displaying objects in the notebook."
+            )
             return None
 
         try:
-            assert get_ipython().kernel is not None # noqa
+            assert get_ipython().kernel is not None  # noqa
             state._comm_manager = JupyterCommManager
         except:
             pass
@@ -312,14 +380,20 @@ class Viewable(Layoutable):
             state._servers[server_id][2].append(doc)
         return self.server_doc(doc)
 
-    def _get_server(self, port=0, websocket_origin=None, loop=None,
-                   show=False, start=False, **kwargs):
-        return get_server(self, port, websocket_origin, loop, show,
-                          start, **kwargs)
+    def _get_server(
+        self,
+        port=0,
+        websocket_origin=None,
+        loop=None,
+        show=False,
+        start=False,
+        **kwargs
+    ):
+        return get_server(self, port, websocket_origin, loop, show, start, **kwargs)
 
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
     # Public API
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
 
     def clone(self, **params):
         """
@@ -356,9 +430,13 @@ class Viewable(Layoutable):
         -------
         viewables: list(Viewable)
         """
-        if (selector is None or
-            (isinstance(selector, type) and isinstance(self, selector)) or
-            (callable(selector) and not isinstance(selector, type) and selector(self))):
+        if (
+            selector is None
+            or (isinstance(selector, type) and isinstance(self, selector))
+            or (
+                callable(selector) and not isinstance(selector, type) and selector(self)
+            )
+        ):
             return [self]
         else:
             return []
@@ -376,8 +454,9 @@ class Viewable(Layoutable):
         """
         return show_server(self, notebook_url, port)
 
-    def embed(self, max_states=1000, max_opts=3, json=False,
-              save_path='./', load_path=None):
+    def embed(
+        self, max_states=1000, max_opts=3, json=False, save_path="./", load_path=None
+    ):
         """
         Renders a static version of a panel in a notebook by evaluating
         the set of states defined by the widgets in the model. Note
@@ -417,14 +496,25 @@ class Viewable(Layoutable):
         doc = doc or _curdoc()
         root = self._get_model(doc, comm=comm)
         self._preprocess(root)
-        ref = root.ref['id']
+        ref = root.ref["id"]
         state._views[ref] = (self, root, doc, comm)
         return root
 
-    def save(self, filename, title=None, resources=None, template=None,
-             template_variables={}, embed=False, max_states=1000,
-             max_opts=3, embed_json=False, json_prefix='', save_path='./',
-             load_path=None):
+    def save(
+        self,
+        filename,
+        title=None,
+        resources=None,
+        template=None,
+        template_variables={},
+        embed=False,
+        max_states=1000,
+        max_opts=3,
+        embed_json=False,
+        json_prefix="",
+        save_path="./",
+        load_path=None,
+    ):
         """
         Saves Panel objects to file.
 
@@ -451,9 +541,21 @@ class Viewable(Layoutable):
         load_path: str (default=None)
            The path or URL the json files will be loaded from.
         """
-        return save(self, filename, title, resources, template,
-                    template_variables, embed, max_states, max_opts,
-                    embed_json, json_prefix, save_path, load_path)
+        return save(
+            self,
+            filename,
+            title,
+            resources,
+            template,
+            template_variables,
+            embed,
+            max_states,
+            max_opts,
+            embed_json,
+            json_prefix,
+            save_path,
+            load_path,
+        )
 
     def server_doc(self, doc=None, title=None):
         """
@@ -476,7 +578,7 @@ class Viewable(Layoutable):
         if title is not None:
             doc.title = title
         model = self.get_root(doc)
-        if hasattr(doc, 'on_session_destroyed'):
+        if hasattr(doc, "on_session_destroyed"):
             doc.on_session_destroyed(self._server_destroy)
             self._documents[doc] = model
         add_to_doc(model, doc)
@@ -498,7 +600,7 @@ class Viewable(Layoutable):
         The Panel object itself
         """
         if _curdoc().session_context:
-            logger = logging.getLogger('bokeh')
+            logger = logging.getLogger("bokeh")
             for handler in logger.handlers:
                 if isinstance(handler, logging.StreamHandler):
                     handler.setLevel(logging.WARN)
@@ -532,16 +634,18 @@ class Viewable(Layoutable):
         """
         if threaded:
             from tornado.ioloop import IOLoop
+
             loop = IOLoop()
             server = StoppableThread(
-                target=self._get_server, io_loop=loop,
-                args=(port, websocket_origin, loop, True, True))
+                target=self._get_server,
+                io_loop=loop,
+                args=(port, websocket_origin, loop, True, True),
+            )
             server.start()
         else:
             server = self._get_server(port, websocket_origin, show=True, start=True)
 
         return server
-
 
 
 class Reactive(Viewable):
@@ -578,18 +682,20 @@ class Reactive(Viewable):
         self._callbacks = []
         self._link_params()
 
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
     # Callback API
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
 
     def _update_model(self, events, msg, root, model, doc, comm=None):
         if comm:
             filtered = {}
             for k, v in msg.items():
                 try:
-                    change = (k not in self._changing or
-                              self._changing[k] != v or
-                              self._changing['id'] != model.ref['id'])
+                    change = (
+                        k not in self._changing
+                        or self._changing[k] != v
+                        or self._changing["id"] != model.ref["id"]
+                    )
                 except:
                     change = True
                 if change:
@@ -597,8 +703,12 @@ class Reactive(Viewable):
             for attr, new in filtered.items():
                 setattr(model, attr, new)
                 event = doc._held_events[-1] if doc._held_events else None
-                if (event and event.model is model and event.attr == attr and
-                    event.new is new):
+                if (
+                    event
+                    and event.model is model
+                    and event.attr == attr
+                    and event.new is new
+                ):
                     continue
                 # If change did not trigger event trigger it manually
                 old = getattr(model, attr)
@@ -627,10 +737,12 @@ class Reactive(Viewable):
                 viewable, root, doc, comm = state._views[ref]
                 if comm or state._unblocked(doc):
                     self._update_model(events, msg, root, model, doc, comm)
-                    if comm and 'embedded' not in root.tags:
+                    if comm and "embedded" not in root.tags:
                         push(doc, comm)
                 else:
-                    cb = partial(self._update_model, events, msg, root, model, doc, comm)
+                    cb = partial(
+                        self._update_model, events, msg, root, model, doc, comm
+                    )
                     doc.add_next_tick_callback(cb)
 
         params = self._synced_params()
@@ -647,14 +759,14 @@ class Reactive(Viewable):
         else:
             client_comm = state._comm_manager.get_client_comm(on_msg=self._comm_change)
             for p in properties:
-                customjs = self._get_customjs(p, client_comm, root.ref['id'])
+                customjs = self._get_customjs(p, client_comm, root.ref["id"])
                 model.js_on_change(p, customjs)
 
     def _comm_change(self, msg):
         if not msg:
             return
         self._changing.update(msg)
-        msg.pop('id', None)
+        msg.pop("id", None)
         self._events.update(msg)
         try:
             self._change_event()
@@ -686,16 +798,16 @@ class Reactive(Viewable):
         Returns a CustomJS callback that can be attached to send the
         model state across the notebook comms.
         """
-        return get_comm_customjs(change, client_comm, plot_id,
-                                 self._timeout, self._debounce)
+        return get_comm_customjs(
+            change, client_comm, plot_id, self._timeout, self._debounce
+        )
 
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
     # Model API
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
 
     def _init_properties(self):
-        return {k: v for k, v in self.param.get_param_values()
-                if v is not None}
+        return {k: v for k, v in self.param.get_param_values() if v is not None}
 
     def _synced_params(self):
         return list(self.param)
@@ -719,23 +831,26 @@ class Reactive(Viewable):
         _rename class level attribute to map between parameter and
         property names.
         """
-        properties = {self._rename.get(k, k): v for k, v in msg.items()
-                      if self._rename.get(k, False) is not None}
-        if 'width' in properties and self.sizing_mode is None:
-            properties['min_width'] = properties['width']
-        if 'height' in properties and self.sizing_mode is None:
-            properties['min_height'] = properties['height']
+        properties = {
+            self._rename.get(k, k): v
+            for k, v in msg.items()
+            if self._rename.get(k, False) is not None
+        }
+        if "width" in properties and self.sizing_mode is None:
+            properties["min_width"] = properties["width"]
+        if "height" in properties and self.sizing_mode is None:
+            properties["min_height"] = properties["height"]
         return properties
 
     def _cleanup(self, root):
         super(Reactive, self)._cleanup(root)
 
         # Clean up comms
-        model, _ = self._models.pop(root.ref['id'], (None, None))
+        model, _ = self._models.pop(root.ref["id"], (None, None))
         if model is None:
             return
 
-        customjs = model.select({'type': CustomJS})
+        customjs = model.select({"type": CustomJS})
         pattern = "data\['comm_id'\] = \"(.*)\""
         for js in customjs:
             comm_ids = list(re.findall(pattern, js.code))
@@ -749,9 +864,9 @@ class Reactive(Viewable):
                 except:
                     pass
 
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
     # Public API
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
 
     def link(self, target, callbacks=None, **links):
         """
@@ -773,17 +888,23 @@ class Reactive(Viewable):
           on the supplied object.
         """
         if links and callbacks:
-            raise ValueError('Either supply a set of parameters to '
-                             'link as keywords or a set of callbacks, '
-                             'not both.')
+            raise ValueError(
+                "Either supply a set of parameters to "
+                "link as keywords or a set of callbacks, "
+                "not both."
+            )
         elif not links and not callbacks:
-            raise ValueError('Declare parameters to link or a set of '
-                             'callbacks, neither was defined.')
+            raise ValueError(
+                "Declare parameters to link or a set of "
+                "callbacks, neither was defined."
+            )
 
         _updating = []
+
         def link(*events):
             for event in events:
-                if event.name in _updating: continue
+                if event.name in _updating:
+                    continue
                 _updating.append(event.name)
                 try:
                     if callbacks:
@@ -794,13 +915,15 @@ class Reactive(Viewable):
                     raise
                 finally:
                     _updating.pop(_updating.index(event.name))
+
         params = list(callbacks) if callbacks else list(links)
         cb = self.param.watch(link, params)
         self._callbacks.append(cb)
         return cb
 
-    def add_periodic_callback(self, callback, period=500, count=None,
-                              timeout=None, start=True):
+    def add_periodic_callback(
+        self, callback, period=500, count=None, timeout=None, start=True
+    ):
         """
         Schedules a periodic callback to be run at an interval set by
         the period. Returns a PeriodicCallback object with the option
@@ -823,8 +946,9 @@ class Reactive(Viewable):
         -------
         Return a PeriodicCallback object with start and stop methods.
         """
-        cb = PeriodicCallback(callback=callback, period=period,
-                              count=count, timeout=timeout)
+        cb = PeriodicCallback(
+            callback=callback, period=period, count=count, timeout=timeout
+        )
         if start:
             cb.start()
         return cb
@@ -856,14 +980,19 @@ class Reactive(Viewable):
           the target model.
         """
         if links and code:
-            raise ValueError('Either supply a set of properties to '
-                             'link as keywords or a set of JS code '
-                             'callbacks, not both.')
+            raise ValueError(
+                "Either supply a set of properties to "
+                "link as keywords or a set of JS code "
+                "callbacks, not both."
+            )
         elif not links and not code:
-            raise ValueError('Declare parameters to link or a set of '
-                             'callbacks, neither was defined.')
+            raise ValueError(
+                "Declare parameters to link or a set of "
+                "callbacks, neither was defined."
+            )
 
         from .links import GenericLink
+
         if isinstance(target, Reactive):
             mapping = code or links
             for k, v in list(mapping.items()):

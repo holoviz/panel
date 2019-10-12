@@ -31,27 +31,33 @@ class DivPaneBase(PaneBase):
 
     __abstract = True
 
-    style = param.Dict(default=None, doc="""
-        Dictionary of CSS property:value pairs to apply to this Div.""")
+    style = param.Dict(
+        default=None,
+        doc="""
+        Dictionary of CSS property:value pairs to apply to this Div.""",
+    )
 
-    _rename = {'object': 'text'}
+    _rename = {"object": "text"}
 
     _bokeh_model = _BkDiv
 
     def _get_properties(self):
-        props = {p : getattr(self, p) for p in list(Layoutable.param) + ['style']
-                 if getattr(self, p) is not None}
-        if self.sizing_mode not in ['fixed', None]:
-            if 'style' not in props:
-                props['style'] = {}
-            props['style'].update(width='100%', height='100%')
+        props = {
+            p: getattr(self, p)
+            for p in list(Layoutable.param) + ["style"]
+            if getattr(self, p) is not None
+        }
+        if self.sizing_mode not in ["fixed", None]:
+            if "style" not in props:
+                props["style"] = {}
+            props["style"].update(width="100%", height="100%")
         return props
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         model = self._bokeh_model(**self._get_properties())
         if root is None:
             root = model
-        self._models[root.ref['id']] = (model, parent)
+        self._models[root.ref["id"]] = (model, parent)
         return model
 
     def _update(self, model):
@@ -74,7 +80,7 @@ class HTML(DivPaneBase):
 
     @classmethod
     def applies(cls, obj):
-        if hasattr(obj, '_repr_html_'):
+        if hasattr(obj, "_repr_html_"):
             return 0.2
         elif isinstance(obj, string_types):
             return None
@@ -83,10 +89,12 @@ class HTML(DivPaneBase):
 
     def _get_properties(self):
         properties = super(HTML, self)._get_properties()
-        text = '' if self.object is None else self.object
-        if hasattr(text, 'to_html') and any(text.__module__ for m in ('pandas', 'dask')):
-            text = text.to_html(classes=['panel-df']).replace('border="1"', '')
-        elif hasattr(text, '_repr_html_'):
+        text = "" if self.object is None else self.object
+        if hasattr(text, "to_html") and any(
+            text.__module__ for m in ("pandas", "dask")
+        ):
+            text = text.to_html(classes=["panel-df"]).replace('border="1"', "")
+        elif hasattr(text, "_repr_html_"):
             text = text._repr_html_()
         return dict(properties, text=escape(text))
 
@@ -109,9 +117,9 @@ class Str(DivPaneBase):
     def _get_properties(self):
         properties = super(Str, self)._get_properties()
         if self.object is None:
-            text = ''
+            text = ""
         else:
-            text = '<pre>'+escape(str(self.object))+'</pre>'
+            text = "<pre>" + escape(str(self.object)) + "</pre>"
         return dict(properties, text=text)
 
 
@@ -128,7 +136,7 @@ class Markdown(DivPaneBase):
 
     @classmethod
     def applies(cls, obj):
-        if hasattr(obj, '_repr_markdown_'):
+        if hasattr(obj, "_repr_markdown_"):
             return 0.3
         elif isinstance(obj, string_types):
             return 0.1
@@ -137,13 +145,14 @@ class Markdown(DivPaneBase):
 
     def _get_properties(self):
         import markdown
+
         data = self.object
         if data is None:
-            data = ''
+            data = ""
         elif not isinstance(data, string_types):
             data = data._repr_markdown_()
         properties = super(Markdown, self)._get_properties()
-        properties['style'] = properties.get('style', {})
-        extensions = ['markdown.extensions.extra', 'markdown.extensions.smarty']
-        html = markdown.markdown(data, extensions=extensions, output_format='html5')
+        properties["style"] = properties.get("style", {})
+        extensions = ["markdown.extensions.extra", "markdown.extensions.smarty"]
+        html = markdown.markdown(data, extensions=extensions, output_format="html5")
         return dict(properties, text=html)

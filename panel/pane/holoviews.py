@@ -30,49 +30,91 @@ class HoloViews(PaneBase):
     """
 
     backend = param.ObjectSelector(
-        default=None, objects=['bokeh', 'plotly', 'matplotlib'], doc="""
+        default=None,
+        objects=["bokeh", "plotly", "matplotlib"],
+        doc="""
         The HoloViews backend used to render the plot (if None defaults
-        to the currently selected renderer).""")
+        to the currently selected renderer).""",
+    )
 
-    center = param.Boolean(default=False, doc="""
-        Whether to center the plot.""")
+    center = param.Boolean(
+        default=False,
+        doc="""
+        Whether to center the plot.""",
+    )
 
-    linked_axes = param.Boolean(default=True, doc="""
+    linked_axes = param.Boolean(
+        default=True,
+        doc="""
         Whether to use link the axes of bokeh plots inside this pane
-        across a panel layout.""")
+        across a panel layout.""",
+    )
 
-    renderer = param.Parameter(default=None, doc="""
+    renderer = param.Parameter(
+        default=None,
+        doc="""
         Explicit renderer instance to use for rendering the HoloViews
-        plot. Overrides the backend.""")
+        plot. Overrides the backend.""",
+    )
 
-    widget_location = param.ObjectSelector(default='right_top', objects=[
-        'left', 'bottom', 'right', 'top', 'top_left', 'top_right',
-        'bottom_left', 'bottom_right', 'left_top', 'left_bottom',
-        'right_top', 'right_bottom'], doc="""
+    widget_location = param.ObjectSelector(
+        default="right_top",
+        objects=[
+            "left",
+            "bottom",
+            "right",
+            "top",
+            "top_left",
+            "top_right",
+            "bottom_left",
+            "bottom_right",
+            "left_top",
+            "left_bottom",
+            "right_top",
+            "right_bottom",
+        ],
+        doc="""
         The layout of the plot and the widgets. The value refers to the
-        position of the widgets relative to the plot.""")
+        position of the widgets relative to the plot.""",
+    )
 
     widget_layout = param.ObjectSelector(
-        objects=[WidgetBox, Row, Column], constant=True, default=WidgetBox, doc="""
-        The layout object to display the widgets in.""")
+        objects=[WidgetBox, Row, Column],
+        constant=True,
+        default=WidgetBox,
+        doc="""
+        The layout object to display the widgets in.""",
+    )
 
-    widget_type = param.ObjectSelector(default='individual',
-                                       objects=['individual', 'scrubber'], doc=""")
+    widget_type = param.ObjectSelector(
+        default="individual",
+        objects=["individual", "scrubber"],
+        doc=""")
         Whether to generate individual widgets for each dimension or
-        on global scrubber.""")
+        on global scrubber.""",
+    )
 
-    widgets = param.Dict(default={}, doc="""
+    widgets = param.Dict(
+        default={},
+        doc="""
         A mapping from dimension name to a widget instance which will
-        be used to override the default widgets.""")
+        be used to override the default widgets.""",
+    )
 
     priority = 0.8
 
-    _rerender_params = ['object', 'backend']
+    _rerender_params = ["object", "backend"]
 
-    _panes = {'bokeh': Bokeh, 'matplotlib': Matplotlib, 'plotly': Plotly}
+    _panes = {"bokeh": Bokeh, "matplotlib": Matplotlib, "plotly": Plotly}
 
-    _rename = {'backend': None, 'widget_type': None, 'widgets': None,
-               'widget_layout': None, 'widget_location': None, 'center': None}
+    _rename = {
+        "backend": None,
+        "widget_type": None,
+        "widgets": None,
+        "widget_layout": None,
+        "widget_location": None,
+        "center": None,
+    }
 
     def __init__(self, object=None, **params):
         super(HoloViews, self).__init__(object, **params)
@@ -84,23 +126,22 @@ class HoloViews(PaneBase):
         self.param.watch(self._update_widgets, self._rerender_params)
         self._initialized = True
 
-
-    @param.depends('center', 'widget_location', watch=True)
+    @param.depends("center", "widget_location", watch=True)
     def _update_layout(self):
         loc = self.widget_location
         if not len(self.widget_box):
             widgets = []
-        elif loc in ('left', 'right'):
+        elif loc in ("left", "right"):
             widgets = Column(VSpacer(), self.widget_box, VSpacer())
-        elif loc in ('top', 'bottom'):
+        elif loc in ("top", "bottom"):
             widgets = Row(HSpacer(), self.widget_box, HSpacer())
-        elif loc in ('top_left', 'bottom_left'):
+        elif loc in ("top_left", "bottom_left"):
             widgets = Row(self.widget_box, HSpacer())
-        elif loc in ('top_right', 'bottom_right'):
+        elif loc in ("top_right", "bottom_right"):
             widgets = Row(HSpacer(), self.widget_box)
-        elif loc in ('left_top', 'right_top'):
+        elif loc in ("left_top", "right_top"):
             widgets = Column(self.widget_box, VSpacer())
-        elif loc in ('left_bottom', 'right_bottom'):
+        elif loc in ("left_bottom", "right_bottom"):
             widgets = Column(VSpacer(), self.widget_box)
 
         self._widget_container = widgets
@@ -110,36 +151,45 @@ class HoloViews(PaneBase):
             else:
                 components = [self]
         elif self.center:
-            if loc.startswith('left'):
+            if loc.startswith("left"):
                 components = [widgets, HSpacer(), self, HSpacer()]
-            elif loc.startswith('right'):
+            elif loc.startswith("right"):
                 components = [HSpacer(), self, HSpacer(), widgets]
-            elif loc.startswith('top'):
-                components = [HSpacer(), Column(widgets, Row(HSpacer(), self, HSpacer())), HSpacer()]
-            elif loc.startswith('bottom'):
-                components = [HSpacer(), Column(Row(HSpacer(), self, HSpacer()), widgets), HSpacer()]
+            elif loc.startswith("top"):
+                components = [
+                    HSpacer(),
+                    Column(widgets, Row(HSpacer(), self, HSpacer())),
+                    HSpacer(),
+                ]
+            elif loc.startswith("bottom"):
+                components = [
+                    HSpacer(),
+                    Column(Row(HSpacer(), self, HSpacer()), widgets),
+                    HSpacer(),
+                ]
         else:
-            if loc.startswith('left'):
+            if loc.startswith("left"):
                 components = [widgets, self]
-            elif loc.startswith('right'):
+            elif loc.startswith("right"):
                 components = [self, widgets]
-            elif loc.startswith('top'):
+            elif loc.startswith("top"):
                 components = [Column(widgets, self)]
-            elif loc.startswith('bottom'):
+            elif loc.startswith("bottom"):
                 components = [Column(self, widgets)]
         self.layout[:] = components
 
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
     # Callback API
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
 
-    @param.depends('widget_type', 'widgets', watch=True)
+    @param.depends("widget_type", "widgets", watch=True)
     def _update_widgets(self, *events):
         if self.object is None:
             widgets, values = [], []
         else:
             widgets, values = self.widgets_from_dimensions(
-                self.object, self.widgets, self.widget_type)
+                self.object, self.widgets, self.widget_type
+            )
         self._values = values
 
         # Clean up anything models listening to the previous widgets
@@ -150,13 +200,15 @@ class HoloViews(PaneBase):
 
         # Add new widget callbacks
         for widget in widgets:
-            watcher = widget.param.watch(self._widget_callback, 'value')
+            watcher = widget.param.watch(self._widget_callback, "value")
             self._callbacks.append(watcher)
 
         self.widget_box[:] = widgets
-        if ((widgets and self.widget_box not in self._widget_container) or
-            (not widgets and self.widget_box in self._widget_container) or
-            not self._initialized):
+        if (
+            (widgets and self.widget_box not in self._widget_container)
+            or (not widgets and self.widget_box in self._widget_container)
+            or not self._initialized
+        ):
             self._update_layout()
 
     def _update_plot(self, plot, pane):
@@ -165,26 +217,28 @@ class HoloViews(PaneBase):
         widgets = self.widget_box.objects
         if not widgets:
             return
-        elif self.widget_type == 'scrubber':
+        elif self.widget_type == "scrubber":
             key = cross_index([v for v in self._values.values()], widgets[0].value)
         else:
             key = tuple(w.value for w in widgets)
             if plot.dynamic:
                 widget_dims = [w.name for w in widgets]
-                key = [key[widget_dims.index(kdim)] if kdim in widget_dims else None
-                       for kdim in plot.dimensions]
+                key = [
+                    key[widget_dims.index(kdim)] if kdim in widget_dims else None
+                    for kdim in plot.dimensions
+                ]
                 key = wrap_tuple_streams(tuple(key), plot.dimensions, plot.streams)
 
-        if plot.backend == 'bokeh':
+        if plot.backend == "bokeh":
             if plot.comm or state._unblocked(plot.document):
                 plot.update(key)
-                if plot.comm and 'embedded' not in plot.root.tags:
+                if plot.comm and "embedded" not in plot.root.tags:
                     plot.push()
             else:
                 plot.document.add_next_tick_callback(partial(plot.update, key))
         else:
             plot.update(key)
-            if hasattr(plot.renderer, 'get_plot_state'):
+            if hasattr(plot.renderer, "get_plot_state"):
                 pane.object = plot.renderer.get_plot_state(plot)
             else:
                 # Compatibility with holoviews<1.13.0
@@ -194,15 +248,16 @@ class HoloViews(PaneBase):
         for _, (plot, pane) in self._plots.items():
             self._update_plot(plot, pane)
 
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
     # Model API
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         from holoviews.plotting.plot import Plot
+
         if root is None:
             return self.get_root(doc, comm)
-        ref = root.ref['id']
+        ref = root.ref["id"]
         if self.object is None:
             model = _BkSpacer()
         else:
@@ -212,7 +267,7 @@ class HoloViews(PaneBase):
                 plot = self._render(doc, comm, root)
             plot.pane = self
             backend = plot.renderer.backend
-            if hasattr(plot.renderer, 'get_plot_state'):
+            if hasattr(plot.renderer, "get_plot_state"):
                 state = plot.renderer.get_plot_state(plot)
             else:
                 # Compatibility with holoviews<1.13.0
@@ -222,7 +277,7 @@ class HoloViews(PaneBase):
             model = child_pane._get_model(doc, root, parent, comm)
             if ref in self._plots:
                 old_plot, old_pane = self._plots[ref]
-                old_plot.comm = None # Ensures comm does not get cleaned up
+                old_plot.comm = None  # Ensures comm does not get cleaned up
                 old_plot.cleanup()
             self._plots[ref] = (plot, child_pane)
         self._models[ref] = (model, parent)
@@ -237,19 +292,19 @@ class HoloViews(PaneBase):
             backend = renderer.backend
         else:
             if not Store.renderers:
-                loaded_backend = (self.backend or 'bokeh')
+                loaded_backend = self.backend or "bokeh"
                 load_renderer(loaded_backend)
                 Store.current_backend = loaded_backend
             backend = self.backend or Store.current_backend
             renderer = Store.renderers[backend]
-        mode = 'server' if comm is None else 'default'
-        if backend == 'bokeh' and mode != renderer.mode:
+        mode = "server" if comm is None else "default"
+        if backend == "bokeh" and mode != renderer.mode:
             renderer = renderer.instance(mode=mode)
 
-        if backend == 'bokeh' or LooseVersion(str(hv.__version__)) >= str('1.13.0'):
-            kwargs = {'doc': doc, 'root': root}
+        if backend == "bokeh" or LooseVersion(str(hv.__version__)) >= str("1.13.0"):
+            kwargs = {"doc": doc, "root": root}
             if comm:
-                kwargs['comm'] = comm
+                kwargs["comm"] = comm
         else:
             kwargs = {}
 
@@ -260,34 +315,49 @@ class HoloViews(PaneBase):
         Traverses HoloViews object to find and clean up any streams
         connected to existing plots.
         """
-        old_plot, old_pane = self._plots.pop(root.ref['id'], (None, None))
+        old_plot, old_pane = self._plots.pop(root.ref["id"], (None, None))
         if old_plot:
             old_plot.cleanup()
         if old_pane:
             old_pane._cleanup(root)
         super(HoloViews, self)._cleanup(root)
 
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
     # Public API
-    #----------------------------------------------------------------
+    # ----------------------------------------------------------------
 
     @classmethod
     def applies(cls, obj):
-        if 'holoviews' not in sys.modules:
+        if "holoviews" not in sys.modules:
             return False
         from holoviews.core.dimension import Dimensioned
         from holoviews.plotting.plot import Plot
+
         return isinstance(obj, Dimensioned) or isinstance(obj, Plot)
 
     @classmethod
-    def widgets_from_dimensions(cls, object, widget_types={}, widgets_type='individual'):
+    def widgets_from_dimensions(
+        cls, object, widget_types={}, widgets_type="individual"
+    ):
         from holoviews.core import Dimension, DynamicMap
         from holoviews.core.options import SkipRendering
-        from holoviews.core.util import isnumeric, unicode, datetime_types, unique_iterator
+        from holoviews.core.util import (
+            isnumeric,
+            unicode,
+            datetime_types,
+            unique_iterator,
+        )
         from holoviews.core.traversal import unique_dimkeys
         from holoviews.plotting.plot import Plot, GenericCompositePlot
         from holoviews.plotting.util import get_dynamic_mode
-        from ..widgets import Widget, DiscreteSlider, Select, FloatSlider, DatetimeInput, IntSlider
+        from ..widgets import (
+            Widget,
+            DiscreteSlider,
+            Select,
+            FloatSlider,
+            DatetimeInput,
+            IntSlider,
+        )
 
         if isinstance(object, GenericCompositePlot):
             object = object.layout
@@ -295,38 +365,43 @@ class HoloViews(PaneBase):
             object = object.hmap
 
         if isinstance(object, DynamicMap) and object.unbounded:
-            dims = ', '.join('%r' % dim for dim in object.unbounded)
-            msg = ('DynamicMap cannot be displayed without explicit indexing '
-                   'as {dims} dimension(s) are unbounded. '
-                   '\nSet dimensions bounds with the DynamicMap redim.range '
-                   'or redim.values methods.')
+            dims = ", ".join("%r" % dim for dim in object.unbounded)
+            msg = (
+                "DynamicMap cannot be displayed without explicit indexing "
+                "as {dims} dimension(s) are unbounded. "
+                "\nSet dimensions bounds with the DynamicMap redim.range "
+                "or redim.values methods."
+            )
             raise SkipRendering(msg.format(dims=dims))
 
         dynamic, bounded = get_dynamic_mode(object)
         dims, keys = unique_dimkeys(object)
-        if dims == [Dimension('Frame')] and keys == [(0,)]:
+        if dims == [Dimension("Frame")] and keys == [(0,)]:
             return [], {}
 
         nframes = 1
         values = dict() if dynamic else dict(zip(dims, zip(*keys)))
         dim_values = OrderedDict()
         widgets = []
-        dims = [d for d in dims if values.get(d) is not None or
-                d.values or d.range != (None, None)]
+        dims = [
+            d
+            for d in dims
+            if values.get(d) is not None or d.values or d.range != (None, None)
+        ]
 
         for i, dim in enumerate(dims):
             widget_type, widget, widget_kwargs = None, None, {}
 
-            if widgets_type == 'individual':
-                if i == 0 and i == (len(dims)-1):
+            if widgets_type == "individual":
+                if i == 0 and i == (len(dims) - 1):
                     margin = (20, 20, 20, 20)
                 elif i == 0:
                     margin = (20, 20, 5, 20)
-                elif i == (len(dims)-1):
+                elif i == (len(dims) - 1):
                     margin = (5, 20, 20, 20)
                 else:
                     margin = (0, 20, 5, 20)
-                kwargs = {'margin': margin, 'width': 250}
+                kwargs = {"margin": margin, "width": 250}
             else:
                 kwargs = {}
 
@@ -334,9 +409,11 @@ class HoloViews(PaneBase):
             if vals is not None:
                 vals = list(unique_iterator(vals))
             dim_values[dim.name] = vals
-            if widgets_type == 'scrubber':
+            if widgets_type == "scrubber":
                 if not vals:
-                    raise ValueError('Scrubber widget may only be used if all dimensions define values.')
+                    raise ValueError(
+                        "Scrubber widget may only be used if all dimensions define values."
+                    )
                 nframes *= len(vals)
             elif dim.name in widget_types:
                 widget = widget_types[dim.name]
@@ -344,19 +421,23 @@ class HoloViews(PaneBase):
                     widgets.append(widget)
                     continue
                 elif isinstance(widget, dict):
-                    widget_type = widget.get('type', widget_type)
+                    widget_type = widget.get("type", widget_type)
                     widget_kwargs = dict(widget)
                 elif isinstance(widget, type) and issubclass(widget, Widget):
                     widget_type = widget
                 else:
-                    raise ValueError('Explicit widget definitions expected '
-                                     'to be a widget instance or type, %s '
-                                     'dimension widget declared as %s.' %
-                                     (dim, widget))
+                    raise ValueError(
+                        "Explicit widget definitions expected "
+                        "to be a widget instance or type, %s "
+                        "dimension widget declared as %s." % (dim, widget)
+                    )
             widget_kwargs.update(kwargs)
 
             if vals:
-                if all(isnumeric(v) or isinstance(v, datetime_types) for v in vals) and len(vals) > 1:
+                if (
+                    all(isnumeric(v) or isinstance(v, datetime_types) for v in vals)
+                    and len(vals) > 1
+                ):
                     vals = sorted(vals)
                     labels = [unicode(dim.pprint_value(v)) for v in vals]
                     options = OrderedDict(zip(labels, vals))
@@ -365,7 +446,10 @@ class HoloViews(PaneBase):
                     options = list(vals)
                     widget_type = widget_type or Select
                 default = vals[0] if dim.default is None else dim.default
-                widget_kwargs = dict(dict(name=dim.label, options=options, value=default), **widget_kwargs)
+                widget_kwargs = dict(
+                    dict(name=dim.label, options=options, value=default),
+                    **widget_kwargs
+                )
                 widget = widget_type(**widget_kwargs)
             elif dim.range != (None, None):
                 start, end = dim.range
@@ -382,13 +466,20 @@ class HoloViews(PaneBase):
                 else:
                     widget_type = FloatSlider
                     step = 0.1 if dim.step is None else dim.step
-                widget_kwargs = dict(dict(step=step, name=dim.label, start=dim.range[0],
-                                          end=dim.range[1], value=default),
-                                     **widget_kwargs)
+                widget_kwargs = dict(
+                    dict(
+                        step=step,
+                        name=dim.label,
+                        start=dim.range[0],
+                        end=dim.range[1],
+                        value=default,
+                    ),
+                    **widget_kwargs
+                )
                 widget = widget_type(**widget_kwargs)
             if widget is not None:
                 widgets.append(widget)
-        if widgets_type == 'scrubber':
+        if widgets_type == "scrubber":
             widgets = [Player(length=nframes, width=550)]
         return widgets, dim_values
 
@@ -399,10 +490,14 @@ def is_bokeh_element_plot(plot):
     with the bokeh backend.
     """
     from holoviews.plotting.plot import GenericElementPlot, GenericOverlayPlot, Plot
+
     if not isinstance(plot, Plot):
         return False
-    return (plot.renderer.backend == 'bokeh' and isinstance(plot, GenericElementPlot)
-            and not isinstance(plot, GenericOverlayPlot))
+    return (
+        plot.renderer.backend == "bokeh"
+        and isinstance(plot, GenericElementPlot)
+        and not isinstance(plot, GenericOverlayPlot)
+    )
 
 
 def generate_panel_bokeh_map(root_model, panel_views):
@@ -410,9 +505,9 @@ def generate_panel_bokeh_map(root_model, panel_views):
     mapping panel elements to its bokeh models
     """
     map_hve_bk = defaultdict(list)
-    ref = root_model.ref['id']
+    ref = root_model.ref["id"]
     for pane in panel_views:
-        if root_model.ref['id'] in pane._models:
+        if root_model.ref["id"] in pane._models:
             plot, subpane = pane._plots.get(ref, (None, None))
             if plot is None:
                 continue
@@ -432,8 +527,12 @@ def find_links(root_view, root_model):
         return
 
     hv_views = root_view.select(HoloViews)
-    root_plots = [plot for view in hv_views for plot, _ in view._plots.values()
-                  if getattr(plot, 'root', None) is root_model]
+    root_plots = [
+        plot
+        for view in hv_views
+        for plot, _ in view._plots.values()
+        if getattr(plot, "root", None) is root_model
+    ]
 
     if not root_plots:
         return
@@ -444,11 +543,15 @@ def find_links(root_view, root_model):
     except:
         return
 
-    plots = [(plot, root_plot) for root_plot in root_plots
-             for plot in root_plot.traverse(lambda x: x, [is_bokeh_element_plot])]
+    plots = [
+        (plot, root_plot)
+        for root_plot in root_plots
+        for plot in root_plot.traverse(lambda x: x, [is_bokeh_element_plot])
+    ]
 
-    potentials = [(LinkCallback.find_link(plot), root_plot)
-                  for plot, root_plot in plots]
+    potentials = [
+        (LinkCallback.find_link(plot), root_plot) for plot, root_plot in plots
+    ]
     source_links = [p for p in potentials if p[0] is not None]
     found = []
     for (plot, links), root_plot in source_links:
@@ -457,8 +560,11 @@ def find_links(root_view, root_model):
                 # If link has no target don't look further
                 found.append((link, plot, None))
                 continue
-            potentials = [LinkCallback.find_link(plot, link) for plot, inner_root in plots
-                          if inner_root is not root_plot]
+            potentials = [
+                LinkCallback.find_link(plot, link)
+                for plot, inner_root in plots
+                if inner_root is not root_plot
+            ]
             tgt_links = [p for p in potentials if p is not None]
             if tgt_links:
                 found.append((link, plot, tgt_links[0][0]))
@@ -466,9 +572,10 @@ def find_links(root_view, root_model):
     new_found = set(found) - root_view._found_links
     callbacks = []
     for link, src_plot, tgt_plot in new_found:
-        cb = Link._callbacks['bokeh'][type(link)]
-        if src_plot is None or (getattr(link, '_requires_target', False)
-                                and tgt_plot is None):
+        cb = Link._callbacks["bokeh"][type(link)]
+        if src_plot is None or (
+            getattr(link, "_requires_target", False) and tgt_plot is None
+        ):
             continue
         callbacks.append(cb(root_model, link, src_plot, tgt_plot))
     root_view._found_links.update(new_found)
@@ -488,19 +595,21 @@ def link_axes(root_view, root_model):
     from holoviews.core.options import Store
     from holoviews.plotting.bokeh.element import ElementPlot
 
-    ref = root_model.ref['id']
+    ref = root_model.ref["id"]
     range_map = defaultdict(list)
     for pane in panes:
         if ref not in pane._plots:
             continue
         plot = pane._plots[ref][0]
-        if not pane.linked_axes or plot.renderer.backend != 'bokeh':
+        if not pane.linked_axes or plot.renderer.backend != "bokeh":
             continue
         for p in plot.traverse(specs=[ElementPlot]):
             if p.current_frame is None:
                 continue
 
-            axiswise = Store.lookup_options('bokeh', p.current_frame, 'norm').kwargs.get('axiswise')
+            axiswise = Store.lookup_options(
+                "bokeh", p.current_frame, "norm"
+            ).kwargs.get("axiswise")
             if not p.shared_axes or axiswise:
                 continue
 
@@ -515,10 +624,11 @@ def link_axes(root_view, root_model):
         for fig, p, _ in axes[1:]:
             if tag in fig.x_range.tags and not axis is fig.x_range:
                 fig.x_range = axis
-                p.handles['x_range'] = axis
+                p.handles["x_range"] = axis
             if tag in fig.y_range.tags and not axis is fig.y_range:
                 fig.y_range = axis
-                p.handles['y_range'] = axis
+                p.handles["y_range"] = axis
+
 
 Viewable._preprocessing_hooks.append(link_axes)
 Viewable._preprocessing_hooks.append(find_links)
