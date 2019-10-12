@@ -7,13 +7,16 @@ import re
 import sys
 import inspect
 import numbers
+import datetime as dt
 
 from collections import defaultdict, MutableSequence, MutableMapping, OrderedDict
 from datetime import datetime
 from six import string_types
 
 import param
+import numpy as np
 
+datetime_types = (np.datetime64, dt.datetime, dt.date)
 
 if sys.version_info.major > 2:
     unicode = str
@@ -162,6 +165,17 @@ def is_parameterized(obj):
     return (isinstance(obj, param.Parameterized) or
             (isinstance(obj, type) and issubclass(obj, param.Parameterized)))
 
+
+def isdatetime(value):
+    """
+    Whether the array or scalar is recognized datetime type.
+    """
+    if isinstance(value, np.ndarray):
+        return (value.dtype.kind == "M" or
+                (value.dtype.kind == "O" and len(value) and
+                 isinstance(value[0], datetime_types)))
+    else:
+        return isinstance(value, datetime_types)
 
 def value_as_datetime(value):
     """
