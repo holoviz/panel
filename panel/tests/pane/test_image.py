@@ -58,7 +58,7 @@ def test_imgshape():
 def test_load_from_byteio():
     """Testing a loading a image from a ByteIo"""
     memory = BytesIO()
-    with open('../test_data/logo.png', 'rb') as image_file:
+    with open('panel/tests/test_data/logo.png', 'rb') as image_file:
         memory.write(image_file.read())
     memory.seek(0)
     image_pane = PNG(memory)
@@ -68,7 +68,7 @@ def test_load_from_byteio():
 def test_load_from_stringio():
     """Testing a loading a image from a StringIO"""
     memory = StringIO()
-    with open('../test_data/logo.png', 'rb') as image_file:
+    with open('panel/tests/test_data/logo.png', 'rb') as image_file:
         memory.write(str(image_file.read()))
     memory.seek(0)
     image_pane = PNG(memory)
