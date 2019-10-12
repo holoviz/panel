@@ -30,22 +30,31 @@ def test_float_slider(document, comm):
 
 def test_int_slider(document, comm):
 
-    slider = IntSlider(start=0, end=3, value=1, name='Slider')
+    slider = IntSlider(start=1, end=3, value=2, name='Slider')
 
     widget = slider.get_root(document, comm=comm)
 
     assert isinstance(widget, slider._widget_type)
     assert widget.title == 'Slider'
     assert widget.step == 1
-    assert widget.start == 0
+    assert widget.start == 1
     assert widget.end == 3
+    assert widget.value == 2
+
+    slider._comm_change({'value': 3})
+    assert slider.value == 3
+
+    slider.value = 1
     assert widget.value == 1
 
-    slider._comm_change({'value': 2})
-    assert slider.value == 2
+def test_int_slider_init_value(document, comm):
+    """Checks if the int slider has the right value after the startup"""
+    slider = IntSlider(start=1, end=5)
+    widget = slider.get_root(document, comm=comm)
 
-    slider.value = 0
-    assert widget.value == 0
+    assert isinstance(widget, slider._widget_type)
+    assert widget.start == 1
+    assert widget.value == 1
 
 
 def test_range_slider(document, comm):

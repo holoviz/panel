@@ -60,11 +60,17 @@ class _SliderBase(Widget):
     __abstract = True
 
 
+
 class ContinuousSlider(_SliderBase):
 
     _supports_embed = True
 
     __abstract = True
+
+    def __init__(self, **params):
+        super(ContinuousSlider, self).__init__(**params)
+        if self.start > self.value:
+            self.value = self.start
 
     def _get_embed_state(self, root, max_opts=3):
         ref = root.ref['id']
