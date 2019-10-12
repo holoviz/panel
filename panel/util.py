@@ -174,6 +174,8 @@ def isdatetime(value):
         return (value.dtype.kind == "M" or
                 (value.dtype.kind == "O" and len(value) and
                  isinstance(value[0], datetime_types)))
+    elif isinstance(value, list):
+        return all(isinstance(d, datetime_types) for d in value)
     else:
         return isinstance(value, datetime_types)
 
