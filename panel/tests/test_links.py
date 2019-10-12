@@ -1,13 +1,16 @@
 from __future__ import absolute_import
 
-import holoviews as hv
+try:
+    import holoviews as hv
+except ImportError:
+    hv = None
 
 from bokeh.plotting import figure
 from panel.layout import Row
 from panel.links import GenericLink
 from panel.pane import HoloViews
 from panel.widgets import FloatSlider, RangeSlider, ColorPicker
-from panel._testing.util import hv_available
+from panel.tests.util import hv_available
 
 
 @hv_available

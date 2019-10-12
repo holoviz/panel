@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, unicode_literals
 from bokeh.models import Div, Row as BkRow
 
 from panel.pane import Bokeh, Pane, PaneBase, Matplotlib
-from panel._testing.util import mpl_figure, mpl_available
+from panel.tests.util import mpl_figure, mpl_available
 
 
 

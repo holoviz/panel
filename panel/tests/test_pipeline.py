@@ -6,7 +6,7 @@ import param
 from panel.layout import Row, Column
 from panel.param import Param, ParamMethod
 from panel.pipeline import Pipeline
-from panel._testing.util import hv_available
+from panel.tests.util import hv_available
 
 if LooseVersion(param.__version__) < '1.8.2':
     pytest.skip("skipping if param version < 1.8.2", allow_module_level=True)
