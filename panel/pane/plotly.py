@@ -93,7 +93,6 @@ viewport_update_policy is "throttle"'''
 
     @staticmethod
     def _get_sources_for_trace(json, data, parent_path=''):
-        print(json)
         for key, value in list(json.items()):
             full_path = key if not parent_path else (parent_path + '.' + key)
             if isinstance(value, np.ndarray):
