@@ -5,7 +5,11 @@ from collections import OrderedDict
 
 import pytest
 import numpy as np
-import holoviews as hv
+
+try:
+    import holoviews as hv
+except:
+    hv = None
 
 from bokeh.models import (Row as BkRow, Column as BkColumn, GlyphRenderer,
                           Scatter, Line, GridBox, Select as BkSelect,
