@@ -280,7 +280,7 @@ class HoloViews(PaneBase):
         return isinstance(obj, Dimensioned) or isinstance(obj, Plot)
 
     @classmethod
-    def widgets_from_dimensions(cls, object, widget_types={}, widgets_type='individual'):
+    def widgets_from_dimensions(cls, object, widget_types=None, widgets_type='individual'):
         from holoviews.core import Dimension, DynamicMap
         from holoviews.core.options import SkipRendering
         from holoviews.core.util import isnumeric, unicode, datetime_types, unique_iterator
@@ -288,6 +288,9 @@ class HoloViews(PaneBase):
         from holoviews.plotting.plot import Plot, GenericCompositePlot
         from holoviews.plotting.util import get_dynamic_mode
         from ..widgets import Widget, DiscreteSlider, Select, FloatSlider, DatetimeInput, IntSlider
+
+        if widget_types is None:
+            widget_types = {}
 
         if isinstance(object, GenericCompositePlot):
             object = object.layout
