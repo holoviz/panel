@@ -36,8 +36,21 @@ class _state(param.Parameterized):
     # An index of all currently active views
     _views = {}
 
-    # An index of all curently active servers
+    # An index of all currently active servers
     _servers = {}
+
+    def __repr__(self):
+        return (
+            "state("
+            "servers={})".format(",".join(
+                "{:d}:{}".format(server.port, server.address) for server in self._servers
+            )))
+
+    def kill_all_servers(self):
+        """Stop all servers and clear them from the current state."""
+        for server in self._servers:
+            server.stop()
+        self._servers = {}
 
     def _unblocked(self, doc):
         thread = threading.current_thread()
