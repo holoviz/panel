@@ -50,7 +50,7 @@ class Pipeline(param.Parameterized):
         spinner = Pane(os.path.join(os.path.dirname(__file__), 'assets', 'spinner.gif'))
         self._spinner_layout = Row(HSpacer(), Column(VSpacer(), spinner, VSpacer()), HSpacer())
         stage_layout = Row()
-        if len(stages):
+        if stages:
             stage_layout.append(self._init_stage())
         self._layout = Column(self._progress_bar, self._error, stage_layout)
 
