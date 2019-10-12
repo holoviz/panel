@@ -1,5 +1,7 @@
 from __future__ import absolute_import, division, unicode_literals
 
+import datetime as dt
+
 import pytest
 
 try:
@@ -68,6 +70,54 @@ def test_plotly_pane_single_trace(document, comm):
     # Cleanup
     pane._cleanup(model)
     assert pane._models == {}
+
+
+@plotly_available
+def test_plotly_pane_datetime_list_transform(document, comm):
+    index = [dt.datetime(2019, 1, i) for i in range(1, 11)]
+    data = np.random.randn(10)
+    traces = [go.Scatter(x=index, y=data)]
+    fig = go.Figure(traces)
+    pane = Pane(fig)
+
+    model = pane.get_root(document, comm)
+    assert all(isinstance(v, str) for v in model.data[0]['x'])
+
+
+@plotly_available
+def test_plotly_pane_datetime_array_transform(document, comm):
+    index = np.array([dt.datetime(2019, 1, i) for i in range(1, 11)])
+    data = np.random.randn(10)
+    traces = [go.Scatter(x=index, y=data)]
+    fig = go.Figure(traces)
+    pane = Pane(fig)
+
+    model = pane.get_root(document, comm)
+    assert model.data_sources[0].data['x'][0].dtype.kind in 'SU'
+
+
+@plotly_available
+def test_plotly_pane_datetime64_list_transform(document, comm):
+    index = [np.datetime64(dt.datetime(2019, 1, i)) for i in range(1, 11)]
+    data = np.random.randn(10)
+    traces = [go.Scatter(x=index, y=data)]
+    fig = go.Figure(traces)
+    pane = Pane(fig)
+
+    model = pane.get_root(document, comm)
+    assert all(isinstance(v, str) for v in model.data[0]['x'])
+
+
+@plotly_available
+def test_plotly_pane_datetime64_array_transform(document, comm):
+    index = np.array([dt.datetime(2019, 1, i) for i in range(1, 11)]).astype('M8[us]')
+    data = np.random.randn(10)
+    traces = [go.Scatter(x=index, y=data)]
+    fig = go.Figure(traces)
+    pane = Pane(fig)
+
+    model = pane.get_root(document, comm)
+    assert model.data_sources[0].data['x'][0].dtype.kind in 'SU'
 
 
 @plotly_available

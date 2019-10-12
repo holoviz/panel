@@ -166,7 +166,12 @@ viewport_update_policy is "throttle"'''
         for idx in range(len(data)):
             for key in data[idx]:
                 if isdatetime(data[idx][key]):
-                    data[idx][key].astype(str)
+                    arr = data[idx][key]
+                    if isinstance(arr, np.ndarray):
+                        arr = arr.astype(str) 
+                    else:
+                        arr = [str(v) for v in arr]
+                    data[idx][key] = arr
         return json
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
