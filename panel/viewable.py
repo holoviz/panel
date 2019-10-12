@@ -422,7 +422,7 @@ class Viewable(Layoutable):
         return root
 
     def save(self, filename, title=None, resources=None, template=None,
-             template_variables={}, embed=False, max_states=1000,
+             template_variables=None, embed=False, max_states=1000,
              max_opts=3, embed_json=False, json_prefix='', save_path='./',
              load_path=None):
         """
@@ -436,6 +436,10 @@ class Viewable(Layoutable):
            Optional title for the plot
         resources: bokeh resources
            One of the valid bokeh.resources (e.g. CDN or INLINE)
+       template:
+           passed to underlying io.save
+       template_variables:
+           passed to underlying io.save
         embed: bool
            Whether the state space should be embedded in the saved file.
         max_states: int

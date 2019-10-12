@@ -29,13 +29,13 @@ class Pipeline(param.Parameterized):
 
     previous = param.Action(default=lambda x: x.param.trigger('previous'))
 
-    def __init__(self, stages=[], **params):
+    def __init__(self, stages=None, **params):
         try:
             import holoviews as hv
         except:
             raise ImportError('Pipeline requires holoviews to be installed')
 
-        self._stages = list(stages)
+        self._stages = [] if stages is None else list(stages)
         self._stage = 0
         super(Pipeline, self).__init__(**params)
         self._error = Markdown('')
@@ -50,7 +50,7 @@ class Pipeline(param.Parameterized):
         spinner = Pane(os.path.join(os.path.dirname(__file__), 'assets', 'spinner.gif'))
         self._spinner_layout = Row(HSpacer(), Column(VSpacer(), spinner, VSpacer()), HSpacer())
         stage_layout = Row()
-        if len(stages):
+        if stages:
             stage_layout.append(self._init_stage())
         self._layout = Column(self._progress_bar, self._error, stage_layout)
 

@@ -118,7 +118,7 @@ def abbreviated_repr(value, max_length=25, natural_breaks=(',', ' ')):
     return vrepr
 
 
-def param_reprs(parameterized, skip=[]):
+def param_reprs(parameterized, skip=None):
     """
     Returns a list of reprs for parameters on the parameterized object.
     Skips default and empty values.
@@ -131,7 +131,7 @@ def param_reprs(parameterized, skip=[]):
         elif isinstance(v, string_types) and v == '': continue
         elif isinstance(v, list) and v == []: continue
         elif isinstance(v, dict) and v == {}: continue
-        elif p in skip or (p == 'name' and v.startswith(cls)): continue
+        elif (skip and p in skip) or (p == 'name' and v.startswith(cls)): continue
         param_reprs.append('%s=%s' % (p, abbreviated_repr(v)))
     return param_reprs
 

@@ -379,10 +379,10 @@ class _InteractFactory(object):
     kwargs: dict
       A dict of **kwargs to use for widgets.
     """
-    def __init__(self, cls, options, kwargs={}):
+    def __init__(self, cls, options, kwargs=None):
         self.cls = cls
         self.opts = options
-        self.kwargs = kwargs
+        self.kwargs = kwargs or {}
 
     def widget(self, f):
         """
