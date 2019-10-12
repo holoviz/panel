@@ -107,7 +107,7 @@ class PaneBase(Reactive):
             new_model = self._get_model(doc, root, parent, comm)
             try:
                 index = parent.children.index(old_model)
-            except IndexError:
+            except ValueError:
                 self.warning('%s pane model %s could not be replaced '
                              'with new model %s, ensure that the '
                              'parent is not modified at the same '
