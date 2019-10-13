@@ -50,7 +50,10 @@ class _state(param.Parameterized):
     def kill_all_servers(self):
         """Stop all servers and clear them from the current state."""
         for server_id in self._servers:
-            self._servers[server_id][0].stop()
+            try:
+                self._servers[server_id][0].stop()
+            except AssertionError:  # can't stop a server twice
+                pass
         self._servers = {}
 
     def _unblocked(self, doc):
