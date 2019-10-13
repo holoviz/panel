@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, division, unicode_literals
 
 import sys
 import threading
@@ -14,7 +14,6 @@ from bokeh.models.widgets import (
     CheckboxEditor, BooleanFormatter
 )
 
-from ..io import push, state
 from ..viewable import Layoutable
 from ..util import isdatetime
 from .base import Widget
@@ -138,13 +137,22 @@ class DataFrame(Widget):
     def _process_events(self, events):
         if 'data' in events:
             data = events.pop('data')
+            updated = False
             for k, v in data.items():
                 if k == 'index':
                     continue
                 k = self._renamed_cols.get(k, k)
                 if isinstance(v, dict):
                     v = [v for k, v in sorted(v.items(), key=lambda k: int(k[0]))]
-                self.value[k] = v
+                try:
+                    isequal = (self.value[k].values == v).all()
+                except:
+                    isequal = False
+                if not isequal:
+                    self.value[k] = v
+                    updated = True
+            if updated:
+                self.param.trigger('value')
         if 'indices' in events:
             self.selected = events.pop('indices')
         super(DataFrame, self)._process_events(events)
