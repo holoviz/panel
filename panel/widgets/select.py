@@ -111,12 +111,11 @@ class Select(SelectBase):
 
 class MultiSelect(Select):
 
-    size = param.Integer(
-        default=4,
-        doc="""
+    # fmt: off
+    size = param.Integer(default=4, doc="""
         The number of items displayed at once (i.e. determines the
-        widget height).""",
-    )
+        widget height).""")
+    # fmt: on
 
     value = param.List(default=[])
 
@@ -218,12 +217,11 @@ class RadioButtonGroup(_RadioGroupBase, _ButtonBase):
 
 class RadioBoxGroup(_RadioGroupBase):
 
-    inline = param.Boolean(
-        default=False,
-        doc="""
+    # fmt: off
+    inline = param.Boolean(default=False, doc="""
         Whether the items be arrange vertically (``False``) or
-        horizontally in-line (``True``).""",
-    )
+        horizontally in-line (``True``).""")
+    # fmt: on
 
     _supports_embed = True
 
@@ -269,12 +267,11 @@ class CheckButtonGroup(_CheckGroupBase, _ButtonBase):
 
 class CheckBoxGroup(_CheckGroupBase):
 
-    inline = param.Boolean(
-        default=False,
-        doc="""
+    # fmt: off
+    inline = param.Boolean(default=False, doc="""
         Whether the items be arrange vertically (``False``) or
-        horizontally in-line (``True``).""",
-    )
+        horizontally in-line (``True``).""")
+    # fmt: on
 
     _widget_type = _BkCheckboxGroup
 
@@ -336,33 +333,23 @@ class CrossSelector(CompositeWidget, MultiSelect):
     name to select them in bulk.
     """
 
-    width = param.Integer(
-        default=600,
-        doc="""
+    # fmt: off
+    width = param.Integer(default=600, doc="""
        The number of options shown at once (note this is the
-       only way to control the height of this widget)""",
-    )
+       only way to control the height of this widget)""")
 
-    height = param.Integer(
-        default=200,
-        doc="""
+    height = param.Integer(default=200, doc="""
        The number of options shown at once (note this is the
-       only way to control the height of this widget)""",
-    )
+       only way to control the height of this widget)""")
 
-    size = param.Integer(
-        default=10,
-        doc="""
+    size = param.Integer(default=10, doc="""
        The number of options shown at once (note this is the
-       only way to control the height of this widget)""",
-    )
+       only way to control the height of this widget)""")
 
-    definition_order = param.Integer(
-        default=True,
-        doc=""" Whether to
+    definition_order = param.Integer(default=True, doc=""" Whether to
        preserve definition order after filtering. Disable to allow the
-       order of selection to define the order of the selected list.""",
-    )
+       order of selection to define the order of the selected list.""")
+    # fmt: on
 
     def __init__(self, *args, **kwargs):
         super(CrossSelector, self).__init__(**kwargs)

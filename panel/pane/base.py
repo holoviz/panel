@@ -39,20 +39,15 @@ class PaneBase(Reactive):
     the applies classmethod and the _get_model private method.
     """
 
-    default_layout = param.ClassSelector(
-        default=Row,
-        class_=(Panel),
-        is_instance=False,
-        doc="""
+    # fmt: off
+    default_layout = param.ClassSelector(default=Row, class_=(Panel),
+                                         is_instance=False, doc="""
         Defines the layout the model(s) returned by the pane will
-        be placed in.""",
-    )
+        be placed in.""")
 
-    object = param.Parameter(
-        default=None,
-        doc="""
-        The object being wrapped, which will be converted to a Bokeh model.""",
-    )
+    object = param.Parameter(default=None, doc="""
+        The object being wrapped, which will be converted to a Bokeh model.""")
+    # fmt: on
 
     # When multiple Panes apply to an object, the one with the highest
     # numerical priority is selected. The default is an intermediate value.
@@ -119,7 +114,7 @@ class PaneBase(Reactive):
             new_model = self._get_model(doc, root, parent, comm)
             try:
                 index = parent.children.index(old_model)
-            except IndexError:
+            except ValueError:
                 self.warning(
                     "%s pane model %s could not be replaced "
                     "with new model %s, ensure that the "

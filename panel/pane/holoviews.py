@@ -29,77 +29,43 @@ class HoloViews(PaneBase):
     Bokeh model while respecting the currently selected backend.
     """
 
+    # fmt: off
     backend = param.ObjectSelector(
-        default=None,
-        objects=["bokeh", "plotly", "matplotlib"],
-        doc="""
+        default=None, objects=['bokeh', 'plotly', 'matplotlib'], doc="""
         The HoloViews backend used to render the plot (if None defaults
-        to the currently selected renderer).""",
-    )
+        to the currently selected renderer).""")
 
-    center = param.Boolean(
-        default=False,
-        doc="""
-        Whether to center the plot.""",
-    )
+    center = param.Boolean(default=False, doc="""
+        Whether to center the plot.""")
 
-    linked_axes = param.Boolean(
-        default=True,
-        doc="""
+    linked_axes = param.Boolean(default=True, doc="""
         Whether to use link the axes of bokeh plots inside this pane
-        across a panel layout.""",
-    )
+        across a panel layout.""")
 
-    renderer = param.Parameter(
-        default=None,
-        doc="""
+    renderer = param.Parameter(default=None, doc="""
         Explicit renderer instance to use for rendering the HoloViews
-        plot. Overrides the backend.""",
-    )
+        plot. Overrides the backend.""")
 
-    widget_location = param.ObjectSelector(
-        default="right_top",
-        objects=[
-            "left",
-            "bottom",
-            "right",
-            "top",
-            "top_left",
-            "top_right",
-            "bottom_left",
-            "bottom_right",
-            "left_top",
-            "left_bottom",
-            "right_top",
-            "right_bottom",
-        ],
-        doc="""
+    widget_location = param.ObjectSelector(default='right_top', objects=[
+        'left', 'bottom', 'right', 'top', 'top_left', 'top_right',
+        'bottom_left', 'bottom_right', 'left_top', 'left_bottom',
+        'right_top', 'right_bottom'], doc="""
         The layout of the plot and the widgets. The value refers to the
-        position of the widgets relative to the plot.""",
-    )
+        position of the widgets relative to the plot.""")
 
     widget_layout = param.ObjectSelector(
-        objects=[WidgetBox, Row, Column],
-        constant=True,
-        default=WidgetBox,
-        doc="""
-        The layout object to display the widgets in.""",
-    )
+        objects=[WidgetBox, Row, Column], constant=True, default=WidgetBox, doc="""
+        The layout object to display the widgets in.""")
 
-    widget_type = param.ObjectSelector(
-        default="individual",
-        objects=["individual", "scrubber"],
-        doc=""")
+    widget_type = param.ObjectSelector(default='individual',
+                                       objects=['individual', 'scrubber'], doc=""")
         Whether to generate individual widgets for each dimension or
-        on global scrubber.""",
-    )
+        on global scrubber.""")
 
-    widgets = param.Dict(
-        default={},
-        doc="""
+    widgets = param.Dict(default={}, doc="""
         A mapping from dimension name to a widget instance which will
-        be used to override the default widgets.""",
-    )
+        be used to override the default widgets.""")
+    # fmt: on
 
     priority = 0.8
 
@@ -337,7 +303,7 @@ class HoloViews(PaneBase):
 
     @classmethod
     def widgets_from_dimensions(
-        cls, object, widget_types={}, widgets_type="individual"
+        cls, object, widget_types=None, widgets_type="individual"
     ):
         from holoviews.core import Dimension, DynamicMap
         from holoviews.core.options import SkipRendering
@@ -358,6 +324,9 @@ class HoloViews(PaneBase):
             DatetimeInput,
             IntSlider,
         )
+
+        if widget_types is None:
+            widget_types = {}
 
         if isinstance(object, GenericCompositePlot):
             object = object.layout

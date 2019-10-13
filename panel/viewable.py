@@ -40,94 +40,55 @@ from .util import param_reprs
 
 class Layoutable(param.Parameterized):
 
-    align = param.ObjectSelector(
-        default="start",
-        objects=["start", "end", "center"],
-        doc="""
+    # fmt: off
+    align = param.ObjectSelector(default='start',
+                                 objects=['start', 'end', 'center'], doc="""
         Whether the object should be aligned with the start, end or
-        center of its container""",
-    )
+        center of its container""")
 
-    aspect_ratio = param.Parameter(
-        default=None,
-        doc="""
+    aspect_ratio = param.Parameter(default=None, doc="""
         Describes the proportional relationship between component's
         width and height.  This works if any of component's dimensions
         are flexible in size. If set to a number, ``width / height =
         aspect_ratio`` relationship will be maintained.  Otherwise, if
         set to ``"auto"``, component's preferred width and height will
         be used to determine the aspect (if not set, no aspect will be
-        preserved).""",
-    )
+        preserved).
+    """)
 
-    background = param.Parameter(
-        default=None,
-        doc="""
-        Background color of the component.""",
-    )
+    background = param.Parameter(default=None, doc="""
+        Background color of the component.""")
 
-    css_classes = param.List(
-        default=None,
-        doc="""
-        CSS classes to apply to the layout.""",
-    )
+    css_classes = param.List(default=None, doc="""
+        CSS classes to apply to the layout.""")
 
-    width = param.Integer(
-        default=None,
-        bounds=(0, None),
-        doc="""
+    width = param.Integer(default=None, bounds=(0, None), doc="""
         The width of the component (in pixels). This can be either
-        fixed or preferred width, depending on width sizing policy.""",
-    )
+        fixed or preferred width, depending on width sizing policy.""")
 
-    height = param.Integer(
-        default=None,
-        bounds=(0, None),
-        doc="""
+    height = param.Integer(default=None, bounds=(0, None), doc="""
         The height of the component (in pixels).  This can be either
-        fixed or preferred height, depending on height sizing policy.""",
-    )
+        fixed or preferred height, depending on height sizing policy.""")
 
-    min_width = param.Integer(
-        default=None,
-        bounds=(0, None),
-        doc="""
-        Minimal width of the component (in pixels) if width is adjustable.""",
-    )
+    min_width = param.Integer(default=None, bounds=(0, None), doc="""
+        Minimal width of the component (in pixels) if width is adjustable.""")
 
-    min_height = param.Integer(
-        default=None,
-        bounds=(0, None),
-        doc="""
-        Minimal height of the component (in pixels) if height is adjustable.""",
-    )
+    min_height = param.Integer(default=None, bounds=(0, None), doc="""
+        Minimal height of the component (in pixels) if height is adjustable.""")
 
-    max_width = param.Integer(
-        default=None,
-        bounds=(0, None),
-        doc="""
-        Minimal width of the component (in pixels) if width is adjustable.""",
-    )
+    max_width = param.Integer(default=None, bounds=(0, None), doc="""
+        Minimal width of the component (in pixels) if width is adjustable.""")
 
-    max_height = param.Integer(
-        default=None,
-        bounds=(0, None),
-        doc="""
-        Minimal height of the component (in pixels) if height is adjustable.""",
-    )
+    max_height = param.Integer(default=None, bounds=(0, None), doc="""
+        Minimal height of the component (in pixels) if height is adjustable.""")
 
-    margin = param.Parameter(
-        default=5,
-        doc="""
+    margin = param.Parameter(default=5, doc="""
         Allows to create additional space around the component. May
         be specified as a two-tuple of the form (vertical, horizontal)
-        or a four-tuple (top, right, bottom, left).""",
-    )
+        or a four-tuple (top, right, bottom, left).""")
 
     width_policy = param.ObjectSelector(
-        default="auto",
-        objects=["auto", "fixed", "fit", "min", "max"],
-        doc="""
+        default="auto", objects=['auto', 'fixed', 'fit', 'min', 'max'], doc="""
         Describes how the component should maintain its width.
 
         * "auto"
@@ -151,13 +112,11 @@ class Layoutable(param.Parameterized):
           maximum width (if set).  The starting point is the preferred
           width (if set). The width of the component may shrink or
           grow depending on the parent layout, aspect management and
-          other factors.""",
-    )
+          other factors.
+    """)
 
     height_policy = param.ObjectSelector(
-        default="auto",
-        objects=["auto", "fixed", "fit", "min", "max"],
-        doc="""
+        default="auto", objects=['auto', 'fixed', 'fit', 'min', 'max'], doc="""
         Describes how the component should maintain its height.
 
         * "auto"
@@ -181,22 +140,12 @@ class Layoutable(param.Parameterized):
           maximum width (if set).  The starting point is the preferred
           width (if set). The width of the component may shrink or
           grow depending on the parent layout, aspect management and
-          other factors""",
-    )
+          other factors.
+    """)
 
-    sizing_mode = param.ObjectSelector(
-        default=None,
-        objects=[
-            "fixed",
-            "stretch_width",
-            "stretch_height",
-            "stretch_both",
-            "scale_width",
-            "scale_height",
-            "scale_both",
-            None,
-        ],
-        doc="""
+    sizing_mode = param.ObjectSelector(default=None, objects=[
+        'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
+        'scale_width', 'scale_height', 'scale_both', None], doc="""
 
         How the component should size itself.
 
@@ -236,8 +185,9 @@ class Layoutable(param.Parameterized):
         * "scale_both"
           Component will responsively resize to both the available
           width and height, while maintaining the original or provided
-          aspect ratio.""",
-    )
+          aspect ratio.
+    """)
+    # fmt: on
 
     def __init__(self, **params):
         if (
@@ -506,7 +456,7 @@ class Viewable(Layoutable):
         title=None,
         resources=None,
         template=None,
-        template_variables={},
+        template_variables=None,
         embed=False,
         max_states=1000,
         max_opts=3,
@@ -526,6 +476,10 @@ class Viewable(Layoutable):
            Optional title for the plot
         resources: bokeh resources
            One of the valid bokeh.resources (e.g. CDN or INLINE)
+       template:
+           passed to underlying io.save
+       template_variables:
+           passed to underlying io.save
         embed: bool
            Whether the state space should be embedded in the saved file.
         max_states: int

@@ -16,43 +16,25 @@ from .base import Widget
 
 
 class Audio(Widget):
+    # fmt:off
+    loop = param.Boolean(default=False, doc="""
+        Whether the audio should loop""")
 
-    loop = param.Boolean(
-        default=False,
-        doc="""
-        Whether the audio should loop""",
-    )
+    time = param.Number(default=0, doc="""
+        The current timestamp""")
 
-    time = param.Number(
-        default=0,
-        doc="""
-        The current timestamp""",
-    )
+    throttle = param.Integer(default=250, doc="""
+        How frequently to sample the current playback time in milliseconds""")
 
-    throttle = param.Integer(
-        default=250,
-        doc="""
-        How frequently to sample the current playback time in milliseconds""",
-    )
+    paused = param.Boolean(default=True, doc="""
+        Whether the audio is currently paused""")
 
-    paused = param.Boolean(
-        default=True,
-        doc="""
-        Whether the audio is currently paused""",
-    )
+    value = param.String(default='', doc="""
+        The audio file either local or remote.""")
 
-    value = param.String(
-        default="",
-        doc="""
-        The audio file either local or remote.""",
-    )
-
-    volume = param.Number(
-        default=None,
-        bounds=(0, 100),
-        doc="""
-        The volume of the audio player.""",
-    )
+    volume = param.Number(default=None, bounds=(0, 100), doc="""
+        The volume of the audio player.""")
+    # fmt: on
 
     _widget_type = _BkAudio
 
@@ -72,30 +54,19 @@ class Audio(Widget):
 
 class VideoStream(Widget):
 
-    format = param.ObjectSelector(
-        default="png",
-        objects=["png", "jpeg"],
-        doc="""
-        The file format as which the video is returned.""",
-    )
+    # fmt: off
+    format = param.ObjectSelector(default='png', objects=['png', 'jpeg'], doc="""
+        The file format as which the video is returned.""")
 
-    paused = param.Boolean(
-        default=False,
-        doc="""
-        Whether the video is currently paused""",
-    )
+    paused = param.Boolean(default=False, doc="""
+        Whether the video is currently paused""")
 
-    timeout = param.Number(
-        default=None,
-        doc="""
-        Interval between snapshots in millisecons""",
-    )
+    timeout = param.Number(default=None, doc="""
+        Interval between snapshots in millisecons""")
 
-    value = param.String(
-        default="",
-        doc="""
-        A base64 representation of the video stream snapshot.""",
-    )
+    value = param.String(default='', doc="""
+        A base64 representation of the video stream snapshot.""")
+    # fmt: on
 
     _widget_type = _BkVideoStream
 

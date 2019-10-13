@@ -29,55 +29,36 @@ from .input import StaticText
 
 class _SliderBase(Widget):
 
-    bar_color = param.Color(
-        default="#e6e6e6",
-        doc="""
-        Color of the slider bar as a hexidecimal RGB value.""",
-    )
+    # fmt: off
+    bar_color = param.Color(default="#e6e6e6", doc="""
+        Color of the slider bar as a hexidecimal RGB value.""")
 
     callback_policy = param.ObjectSelector(
-        default="continuous",
-        objects=["continuous", "throttle", "mouseup"],
-        doc="""
+        default='continuous', objects=['continuous', 'throttle', 'mouseup'], doc="""
         Policy to determine when slider events are triggered:
 
         * "continuous": the callback will be executed immediately for each movement of the slider
         * "throttle": the callback will be executed at most every ``callback_throttle`` milliseconds.
         * "mouseup": the callback will be executed only once when the slider is released.
-        """,
-    )
+        """)
 
-    callback_throttle = param.Integer(
-        default=200,
-        doc="""
-        Number of milliseconds to pause between callback calls as the slider is moved.""",
-    )
+    callback_throttle = param.Integer(default=200, doc="""
+        Number of milliseconds to pause between callback calls as the slider is moved.""")
 
-    direction = param.ObjectSelector(
-        default="ltr",
-        objects=["ltr", "rtl"],
-        doc="""
-        Whether the slider should go from left-to-right ('ltr') or right-to-left ('rtl')""",
-    )
+    direction = param.ObjectSelector(default='ltr', objects=['ltr', 'rtl'],
+                                     doc="""
+        Whether the slider should go from left-to-right ('ltr') or right-to-left ('rtl')""")
 
-    orientation = param.ObjectSelector(
-        default="horizontal",
-        objects=["horizontal", "vertical"],
-        doc="""
-        Whether the slider should be oriented horizontally or vertically.""",
-    )
+    orientation = param.ObjectSelector(default='horizontal',
+                                       objects=['horizontal', 'vertical'], doc="""
+        Whether the slider should be oriented horizontally or vertically.""")
 
-    show_value = param.Boolean(
-        default=True,
-        doc="""
-        Whether to show the widget value""",
-    )
+    show_value = param.Boolean(default=True, doc="""
+        Whether to show the widget value""")
 
-    tooltips = param.Boolean(
-        default=True,
-        doc="""
-        Whether the slider handle should display tooltips""",
-    )
+    tooltips = param.Boolean(default=True, doc="""
+        Whether the slider handle should display tooltips""")
+    # fmt: on
 
     _widget_type = _BkSlider
 
@@ -138,10 +119,9 @@ class FloatSlider(ContinuousSlider):
 
 
 class IntSlider(ContinuousSlider):
-
     def __init__(self, **params):
-        if 'value' not in params:
-            params['value'] = params.get('start', self.param.start.default)
+        if "value" not in params:
+            params["value"] = params.get("start", self.param.start.default)
         super(ContinuousSlider, self).__init__(**params)
 
     value = param.Integer(default=0)

@@ -31,11 +31,10 @@ class DivPaneBase(PaneBase):
 
     __abstract = True
 
-    style = param.Dict(
-        default=None,
-        doc="""
-        Dictionary of CSS property:value pairs to apply to this Div.""",
-    )
+    # fmt: off
+    style = param.Dict(default=None, doc="""
+        Dictionary of CSS property:value pairs to apply to this Div.""")
+    # fmt: on
 
     _rename = {"object": "text"}
 

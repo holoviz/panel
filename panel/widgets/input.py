@@ -106,11 +106,10 @@ class FileInput(Widget):
 
 class StaticText(Widget):
 
-    style = param.Dict(
-        default=None,
-        doc="""
-        Dictionary of CSS property:value pairs to apply to this Div.""",
-    )
+    # fmt: off
+    style = param.Dict(default=None, doc="""
+        Dictionary of CSS property:value pairs to apply to this Div.""")
+    # fmt: on
 
     value = param.Parameter(default=None)
 
@@ -153,11 +152,7 @@ class DatePicker(Widget):
 
 class ColorPicker(Widget):
 
-    value = param.Color(
-        default=None,
-        doc="""
-        The selected color""",
-    )
+    value = param.Color(default=None, doc="The selected color")
 
     _widget_type = _BkColorPicker
 
@@ -166,29 +161,19 @@ class ColorPicker(Widget):
 
 class Spinner(Widget):
 
-    start = param.Number(
-        default=None,
-        doc="""
-        Optional minimum allowable value""",
-    )
+    # fmt: off
+    start = param.Number(default=None, doc="""
+        Optional minimum allowable value""")
 
-    end = param.Number(
-        default=None,
-        doc="""
-        Optional maximum allowable value""",
-    )
+    end = param.Number(default=None, doc="""
+        Optional maximum allowable value""")
 
-    value = param.Number(
-        default=0,
-        doc="""
-        The initial value of the spinner""",
-    )
+    value = param.Number(default=0, doc="""
+        The initial value of the spinner""")
 
-    step = param.Number(
-        default=1,
-        doc="""
-        The step added or subtracted to the current value""",
-    )
+    step = param.Number(default=1, doc="""
+        The step added or subtracted to the current value""")
+    # fmt: on
 
     _widget_type = _BkSpinner
 
@@ -263,11 +248,10 @@ class DatetimeInput(LiteralInput):
     input widget. Optionally a type may be declared.
     """
 
-    format = param.String(
-        default="%Y-%m-%d %H:%M:%S",
-        doc="""
-        Datetime format used for parsing and formatting the datetime.""",
-    )
+    # fmt: off
+    format = param.String(default='%Y-%m-%d %H:%M:%S', doc="""
+        Datetime format used for parsing and formatting the datetime.""")
+    # fmt: on
 
     value = param.Date(default=None)
 

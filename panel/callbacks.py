@@ -21,30 +21,21 @@ class PeriodicCallback(param.Parameterized):
     will run.
     """
 
-    callback = param.Callable(
-        doc="""
-       The callback to execute periodically."""
-    )
+    # fmt: off
+    callback = param.Callable(doc="""
+       The callback to execute periodically.""")
 
-    count = param.Integer(
-        default=None,
-        doc="""
+    count = param.Integer(default=None, doc="""
         Number of times the callback will be executed, by default
-        this is unlimited.""",
-    )
+        this is unlimited.""")
 
-    period = param.Integer(
-        default=500,
-        doc="""
-        Period in milliseconds at which the callback is executed.""",
-    )
+    period = param.Integer(default=500, doc="""
+        Period in milliseconds at which the callback is executed.""")
 
-    timeout = param.Integer(
-        default=None,
-        doc="""
+    timeout = param.Integer(default=None, doc="""
         Timeout in seconds from the start time at which the callback
-        expires""",
-    )
+        expires""")
+    # fmt: on
 
     def __init__(self, **params):
         super(PeriodicCallback, self).__init__(**params)

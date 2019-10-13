@@ -29,11 +29,10 @@ class Panel(Reactive):
     Abstract baseclass for a layout of Viewables.
     """
 
-    objects = param.Parameter(
-        default=[],
-        doc="""
-        The list of child objects that make up the layout.""",
-    )
+    # fmt: off
+    objects = param.Parameter(default=[], doc="""
+        The list of child objects that make up the layout.""")
+    # fmt: on
 
     _bokeh_model = None
 
@@ -169,19 +168,15 @@ class ListPanel(Panel):
     An abstract baseclass for Panel objects with list-like children.
     """
 
-    margin = param.Parameter(
-        default=0,
-        doc="""
+    # fmt: off
+    margin = param.Parameter(default=0, doc="""
         Allows to create additional space around the component. May
         be specified as a two-tuple of the form (vertical, horizontal)
-        or a four-tuple (top, right, bottom, left).""",
-    )
+        or a four-tuple (top, right, bottom, left).""")
 
-    objects = param.List(
-        default=[],
-        doc="""
-        The list of child objects that make up the layout.""",
-    )
+    objects = param.List(default=[], doc="""
+        The list of child objects that make up the layout.""")
+    # fmt: on
 
     __abstract = True
 
@@ -394,19 +389,13 @@ class GridBox(ListPanel):
     rows or columns.
     """
 
-    nrows = param.Integer(
-        default=None,
-        bounds=(0, None),
-        doc="""
-      Number of rows to reflow the layout into.""",
-    )
+    # fmt: off
+    nrows = param.Integer(default=None, bounds=(0, None), doc="""
+      Number of rows to reflow the layout into.""")
 
-    ncols = param.Integer(
-        default=None,
-        bounds=(0, None),
-        doc="""
-      Number of columns to reflow the layout into.""",
-    )
+    ncols = param.Integer(default=None, bounds=(0, None),  doc="""
+      Number of columns to reflow the layout into.""")
+    # fmt: on
 
     _bokeh_model = BkGridBox
 
@@ -477,19 +466,15 @@ class WidgetBox(ListPanel):
     def _bokeh_model(self):
         return BkRow if self.horizontal else BkColumn
 
-    css_classes = param.List(
-        default=["widget-box"],
-        doc="""
-        CSS classes to apply to the layout.""",
-    )
+    # fmt: off
+    css_classes = param.List(default=['widget-box'], doc="""
+        CSS classes to apply to the layout.""")
 
-    margin = param.Parameter(
-        default=5,
-        doc="""
+    margin = param.Parameter(default=5, doc="""
         Allows to create additional space around the component. May
         be specified as a two-tuple of the form (vertical, horizontal)
-        or a four-tuple (top, right, bottom, left).""",
-    )
+        or a four-tuple (top, right, bottom, left).""")
+    # fmt: on
 
 
 class Tabs(ListPanel):
@@ -497,34 +482,24 @@ class Tabs(ListPanel):
     Panel of Viewables to be displayed in separate tabs.
     """
 
-    active = param.Integer(
-        default=0,
-        doc="""
-        Number of the currently active tab.""",
-    )
+    # fmt: off
+    active = param.Integer(default=0, doc="""
+        Number of the currently active tab.""")
 
-    closable = param.Boolean(
-        default=False,
-        doc="""
-        Whether it should be possible to close tabs.""",
-    )
+    closable = param.Boolean(default=False, doc="""
+        Whether it should be possible to close tabs.""")
 
-    objects = param.List(
-        default=[],
-        doc="""
-        The list of child objects that make up the tabs.""",
-    )
+    objects = param.List(default=[], doc="""
+        The list of child objects that make up the tabs.""")
 
     tabs_location = param.ObjectSelector(
-        default="above",
-        objects=["above", "below", "left", "right"],
-        doc="""
-        The location of the tabs relative to the tab contents.""",
-    )
+        default='above', objects=['above', 'below', 'left', 'right'], doc="""
+        The location of the tabs relative to the tab contents.""")
 
     height = param.Integer(default=None, bounds=(0, None))
 
     width = param.Integer(default=None, bounds=(0, None))
+    # fmt: on
 
     _bokeh_model = BkTabs
 
@@ -802,23 +777,19 @@ class Tabs(ListPanel):
 
 class GridSpec(Panel):
 
-    objects = param.Dict(
-        default={},
-        doc="""
-        The dictionary of child objects that make up the grid.""",
-    )
+    # fmt: off
+    objects = param.Dict(default={}, doc="""
+        The dictionary of child objects that make up the grid.""")
 
     mode = param.ObjectSelector(
-        default="warn",
-        objects=["warn", "error", "override"],
-        doc="""
+        default='warn', objects=['warn', 'error', 'override'], doc="""
         Whether to warn, error or simply override on overlapping
-        assignment.""",
-    )
+        assignment.""")
 
     width = param.Integer(default=600)
 
     height = param.Integer(default=600)
+    # fmt: on
 
     _bokeh_model = BkGridBox
 

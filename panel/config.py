@@ -44,63 +44,36 @@ class _config(param.Parameterized):
         os.environ['PANEL_EMBED'] = 'True'
     """
 
-    css_files = param.List(
-        default=_CSS_FILES,
-        doc="""
-        External CSS files to load as part of the template.""",
-    )
+    # fmt: off
+    css_files = param.List(default=_CSS_FILES, doc="""
+        External CSS files to load as part of the template.""")
 
-    js_files = param.Dict(
-        default={},
-        doc="""
+    js_files = param.Dict(default={}, doc="""
         External JS files to load as part of the template. Dictionary
-        should map from exported name to the URL of the JS file.""",
-    )
+        should map from exported name to the URL of the JS file.""")
 
-    raw_css = param.List(
-        default=[],
-        doc="""
-        List of raw CSS strings to add to the template.""",
-    )
+    raw_css = param.List(default=[], doc="""
+        List of raw CSS strings to add to the template.""")
 
-    _embed = param.Boolean(
-        default=False,
-        allow_None=True,
-        doc="""
-        Whether plot data will be embedded.""",
-    )
+    _embed = param.Boolean(default=False, allow_None=True, doc="""
+        Whether plot data will be embedded.""")
 
-    _embed_json = param.Boolean(
-        default=False,
-        doc="""
-        Whether to save embedded state to json files.""",
-    )
+    _embed_json = param.Boolean(default=False, doc="""
+        Whether to save embedded state to json files.""")
 
-    _embed_json_prefix = param.String(
-        default="",
-        doc="""
-        Prefix for randomly generated json directories.""",
-    )
+    _embed_json_prefix = param.String(default='', doc="""
+        Prefix for randomly generated json directories.""")
 
-    _embed_save_path = param.String(
-        default="./",
-        doc="""
-        Where to save json files for embedded state.""",
-    )
+    _embed_save_path = param.String(default='./', doc="""
+        Where to save json files for embedded state.""")
 
-    _embed_load_path = param.String(
-        default=None,
-        doc="""
-        Where to load json files for embedded state.""",
-    )
+    _embed_load_path = param.String(default=None, doc="""
+        Where to load json files for embedded state.""")
 
-    _inline = param.Boolean(
-        default=True,
-        allow_None=True,
-        doc="""
+    _inline = param.Boolean(default=True, allow_None=True, doc="""
         Whether to inline JS and CSS resources.
-        If disabled, resources are loaded from CDN if one is available.""",
-    )
+        If disabled, resources are loaded from CDN if one is available.""")
+    # fmt: on
 
     _truthy = ["True", "true", "1", True, 1]
 

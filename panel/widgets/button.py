@@ -35,11 +35,10 @@ class Button(_ButtonBase):
 
 class Toggle(_ButtonBase):
 
-    value = param.Boolean(
-        default=False,
-        doc="""
-        Whether the button is currently toggled.""",
-    )
+    # fmt: off
+    value = param.Boolean(default=False, doc="""
+        Whether the button is currently toggled.""")
+    # fmt: on
 
     _rename = {"value": "active", "name": "label"}
 

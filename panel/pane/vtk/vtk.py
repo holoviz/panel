@@ -32,14 +32,13 @@ class VTKVolume(PaneBase):
     _updates = True
     _serializers = {}
 
-    spacing = param.Tuple(
-        default=(1, 1, 1), length=3, doc="Distance between voxel in each direction"
-    )
-    max_data_size = param.Number(
-        default=(256 ** 3) * 2 / 1e6,
-        doc="Maximum data size transfert allowed without subsampling",
-    )
+    # fmt: off
+    spacing = param.Tuple(default=(1, 1, 1), length=3, doc="""
+        Distance between voxel in each direction""")
+    max_data_size = param.Number(default=(256 ** 3) * 2 / 1e6, doc="""
+        Maximum data size transfert allowed without subsampling""")
     origin = param.Tuple(default=None, length=3, allow_None=True)
+    # fmt: on
 
     def __init__(self, obj=None, **params):
         super(VTKVolume, self).__init__(obj, **params)
@@ -195,32 +194,23 @@ class VTK(PaneBase):
     VTK panes allow rendering VTK objects.
     """
 
-    serialize_on_instantiation = param.Boolean(
-        default=True,
-        doc="""
+    # fmt: off
+    serialize_on_instantiation = param.Boolean(default=True, doc="""
         Define if the object serialization occurs at panel instantiation
-        or when the panel is displayed.
-    """,
-    )
+        or when the panel is displayed.""")
 
-    camera = param.Dict(doc="""State of the rendered VTK camera.""")
+    camera = param.Dict(doc="""
+        State of the rendered VTK camera.""")
 
-    enable_keybindings = param.Boolean(
-        default=False,
-        doc="""
+    enable_keybindings = param.Boolean(default=False, doc="""
         Activate/Deactivate keys binding.
 
         Warning: These keys bind may not work as expected in a notebook
-        context if they interact with already binded keys.
-    """,
-    )
+        context if they interact with already binded keys.""")
 
-    orientation_widget = param.Boolean(
-        default=False,
-        doc="""
-        Activate/Deactivate the orientation widget display.
-    """,
-    )
+    orientation_widget = param.Boolean(default=False, doc="""
+        Activate/Deactivate the orientation widget display.""")
+    # fmt: on
 
     _updates = True
     _serializers = {}

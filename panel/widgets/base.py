@@ -16,25 +16,21 @@ class Widget(Reactive):
     parameters on the Widget instance.
     """
 
-    disabled = param.Boolean(
-        default=False,
-        doc="""
-       Whether the widget is disabled.""",
-    )
+    # fmt: off
+    disabled = param.Boolean(default=False, doc="""
+       Whether the widget is disabled.""")
 
-    name = param.String(default="")
+    name = param.String(default='')
 
     height = param.Integer(default=None, bounds=(0, None))
 
     width = param.Integer(default=None, bounds=(0, None))
 
-    margin = param.Parameter(
-        default=(5, 10),
-        doc="""
+    margin = param.Parameter(default=(5, 10), doc="""
         Allows to create additional space around the component. May
         be specified as a two-tuple of the form (vertical, horizontal)
-        or a four-tuple (top, right, bottom, left).""",
-    )
+        or a four-tuple (top, right, bottom, left).""")
+    # fmt: on
 
     __abstract = True
 

@@ -55,7 +55,7 @@ def test_int_slider(document, comm):
     assert widget.value == 0
 
     # Testing that value matches start value if value not set.
-    slider_2 = IntSlider(start=1, end=3, name='Slider_2')
+    slider_2 = IntSlider(start=1, end=3, name="Slider_2")
     widget_2 = slider_2.get_root(document, comm=comm)
     assert widget_2.value == widget_2.start
 

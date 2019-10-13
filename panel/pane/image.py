@@ -29,11 +29,10 @@ class ImageBase(DivPaneBase):
     provide their own way of obtaining or generating a PNG.
     """
 
-    embed = param.Boolean(
-        default=True,
-        doc="""
-        Whether to embed the image as base64.""",
-    )
+    # fmt: off
+    embed = param.Boolean(default=True, doc="""
+        Whether to embed the image as base64.""")
+    # fmt: on
 
     imgtype = "None"
 
@@ -42,29 +41,37 @@ class ImageBase(DivPaneBase):
     @classmethod
     def applies(cls, obj):
         imgtype = cls.imgtype
-        return hasattr(obj, "_repr_" + imgtype + "_") or (
-            isinstance(obj, string_types)
-            and (
-                (os.path.isfile(obj) and obj.endswith("." + imgtype))
-                or cls._is_url(obj)
-            )
-        )
+        if hasattr(obj, "_repr_{}_".format(imgtype)):
+            return True
+        if isinstance(obj, string_types):
+            if os.path.isfile(obj) and obj.endswith("." + imgtype):
+                return True
+            if cls._is_url(obj):
+                return True
+        if hasattr(obj, "read"):  # Check for file like object
+            return True
+        return False
 
     @classmethod
     def _is_url(cls, obj):
-        return (
-            isinstance(obj, string_types)
-            and (obj.startswith("http://") or obj.startswith("https://"))
-            and obj.endswith("." + cls.imgtype)
-        )
+        if isinstance(obj, string_types):
+            lower_string = obj.lower()
+            return (
+                lower_string.startswith("http://")
+                or lower_string.startswith("https://")
+            ) and lower_string.endswith("." + cls.imgtype)
+        return False
 
     def _img(self):
-        if not isinstance(self.object, string_types):
+        if hasattr(self.object, "_repr_{}_".format(self.imgtype)):
             return getattr(self.object, "_repr_" + self.imgtype + "_")()
-        elif os.path.isfile(self.object):
-            with open(self.object, "rb") as f:
-                return f.read()
-        else:
+        if isinstance(self.object, string_types):
+            if os.path.isfile(self.object):
+                with open(self.object, "rb") as f:
+                    return f.read()
+        if hasattr(self.object, "read"):
+            return self.object.read()
+        if self._is_url(self.object):
             import requests
 
             r = requests.request(url=self.object, method="GET")

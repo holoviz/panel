@@ -13,20 +13,16 @@ from .select import SelectBase
 
 class PlayerBase(Widget):
 
+    # fmt: off
     interval = param.Integer(default=500, doc="Interval between updates")
 
-    loop_policy = param.ObjectSelector(
-        default="once",
-        objects=["once", "loop", "reflect"],
-        doc="""
-       Policy used when player hits last frame""",
-    )
+    loop_policy = param.ObjectSelector(default='once',
+                                       objects=['once', 'loop', 'reflect'], doc="""
+       Policy used when player hits last frame""")
 
-    step = param.Integer(
-        default=1,
-        doc="""
-       Number of frames to step forward and back by on each event.""",
-    )
+    step = param.Integer(default=1, doc="""
+       Number of frames to step forward and back by on each event.""")
+    # fmt: on
 
     height = param.Integer(default=80)
 
