@@ -42,9 +42,10 @@ class _state(param.Parameterized):
     def __repr__(self):
         server_info = []
         for server, panel, docs in self._servers.values():
-            server_info.append("{:d}:{}@{!r}".format(server.port, server.address, panel))
-        return (
-            "state(servers={})".format(",".join(server_info)))
+            server_info.append("{}:{:d} - {!r}".format(
+                server.address or "localhost", server.port, panel)
+            )
+        return "state(servers=\n  {}\n)".format(",\n  ".join(server_info))
 
     def kill_all_servers(self):
         """Stop all servers and clear them from the current state."""
