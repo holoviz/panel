@@ -9,9 +9,13 @@ import inspect
 import numbers
 import datetime as dt
 
-from collections import defaultdict, MutableSequence, MutableMapping, OrderedDict
 from datetime import datetime
 from six import string_types
+from collections import defaultdict, OrderedDict
+try:
+    from collections.abc import MutableSequence, MutableMapping
+except ImportError:  # support for python>3.8
+    from collections import MutableSequence, MutableMapping
 
 import param
 import numpy as np
@@ -77,7 +81,7 @@ def param_name(name):
     """
     Removes the integer id from a Parameterized class name.
     """
-    match = re.match('(.)+(\d){5}', name)
+    match = re.match(r'(.)+(\d){5}', name)
     return name[:-5] if match else name
 
 
