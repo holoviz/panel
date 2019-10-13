@@ -54,20 +54,25 @@ class Audio(Widget):
 
     def _process_param_change(self, msg):
         msg = super(Audio, self)._process_param_change(msg)
-        if 'value' in msg and isinstance(msg['value'], np.ndarray):
-            fmt = 'wav'
-            buffer = self._from_numpy(msg['value'])
-            data = b64encode(buffer.getvalue())
-        elif 'value' in msg and os.path.isfile(msg['value']):
-            fmt = msg['value'].split('.')[-1]
-            with open(msg['value'], 'rb') as f:
-                data = f.read()
-            data = b64encode(data)
-        else:
-            raise ValueError('Value should be either path to a sound file or numpy array')
-        template = 'data:audio/{mime};base64,{data}'
-        msg['value'] = template.format(data=data.decode('utf-8'),
-                                       mime=fmt)
+
+        if 'value' in msg:
+            value =  msg['value']
+            if isinstance(value, np.ndarray):
+                fmt = 'wav'
+                buffer = self._from_numpy(value)
+                data = b64encode(buffer.getvalue())
+            elif os.path.isfile(value):
+                fmt = value.split('.')[-1]
+                with open(value, 'rb') as f:
+                    data = f.read()
+                data = b64encode(data)
+            elif not value:
+                data, fmt = b'', 'wav'
+            else:
+                raise ValueError('Value should be either path to a sound file or numpy array')
+            template = 'data:audio/{mime};base64,{data}'
+            msg['value'] = template.format(data=data.decode('utf-8'),
+                                           mime=fmt)
         return msg
 
 class VideoStream(Widget):
