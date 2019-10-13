@@ -1,7 +1,7 @@
 from __future__ import absolute_import, division, unicode_literals
 
 from io import BytesIO
-from base64 import b64encode, b64decode
+from base64 import b64encode
 
 import numpy as np
 from scipy.io import wavfile
