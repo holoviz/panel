@@ -1,17 +1,12 @@
 from __future__ import absolute_import, division, unicode_literals
 
-import sys
-import threading
-
-from functools import partial
 
 import param
 
 from bokeh.models import ColumnDataSource
 from bokeh.models.widgets import (
-    Div, DataTable, TableColumn, NumberEditor, NumberFormatter,
-    DateFormatter, DateEditor, StringFormatter, StringEditor, IntEditor,
-    CheckboxEditor, BooleanFormatter
+    DataTable, TableColumn, NumberEditor, NumberFormatter,
+    DateFormatter, DateEditor, StringFormatter, StringEditor, IntEditor
 )
 
 from ..viewable import Layoutable

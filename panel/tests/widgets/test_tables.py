@@ -2,8 +2,8 @@ from __future__ import absolute_import, division, unicode_literals
 
 try:
     import pandas as pd
-except ImportError as e:
-    raise 
+except ImportError:
+    pass
 
 from bokeh.models.widgets.tables import (
     NumberFormatter, IntEditor, NumberEditor, StringFormatter,
