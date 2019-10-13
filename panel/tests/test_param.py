@@ -10,7 +10,7 @@ from panel.pane import Pane, PaneBase, Matplotlib, Bokeh
 from panel.layout import Tabs, Row
 from panel.param import Param, ParamMethod, ParamFunction, JSONInit
 from panel.widgets import LiteralInput
-from panel._testing.util import mpl_available, mpl_figure
+from panel.tests.util import mpl_available, mpl_figure
 
 
 def test_instantiate_from_class():

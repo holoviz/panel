@@ -7,7 +7,7 @@ import param
 from panel.interact import interactive
 from panel.pane import Pane, PaneBase, Bokeh, HoloViews
 from panel.param import ParamMethod
-from panel._testing.util import check_layoutable_properties
+from panel.tests.util import check_layoutable_properties
 
 all_panes = [w for w in param.concrete_descendents(PaneBase).values()
              if not w.__name__.startswith('_') and not

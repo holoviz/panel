@@ -7,7 +7,7 @@ from bokeh.models import (Div, Row as BkRow, Tabs as BkTabs,
 from panel.layout import Column, Row, Tabs, Spacer, GridSpec, WidgetBox
 from panel.pane import Bokeh, Pane
 from panel.param import Param
-from panel._testing.util import check_layoutable_properties
+from panel.tests.util import check_layoutable_properties
 
 
 @pytest.fixture

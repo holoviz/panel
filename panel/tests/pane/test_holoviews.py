@@ -20,7 +20,7 @@ from bokeh.plotting import Figure
 from panel.layout import Column, Row
 from panel.pane import Pane, PaneBase, HoloViews
 from panel.widgets import FloatSlider, DiscreteSlider, Select
-from panel._testing.util import hv_available, mpl_available
+from panel.tests.util import hv_available, mpl_available
 
 
 @hv_available
