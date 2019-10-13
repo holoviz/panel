@@ -41,5 +41,5 @@ def test_kill_all_servers(html_server_session, markdown_server_session):
     _, server_1, _ = html_server_session
     _, server_2, _ = markdown_server_session
     state.kill_all_servers()
-    assert server_1.stopped
-    assert server_2.stopped
+    assert server_1._stopped
+    assert server_2._stopped

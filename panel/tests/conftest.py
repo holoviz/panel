@@ -67,7 +67,10 @@ def html_server_session():
         io_loop=server.io_loop
     )
     yield html, server, session
-    server.stop()
+    try:
+        server.stop()
+    except AssertionError:
+        pass  # tests may already close this
 
 
 @pytest.fixture()
@@ -80,4 +83,7 @@ def markdown_server_session():
         io_loop=server.io_loop
     )
     yield html, server, session
-    server.stop()
+    try:
+        server.stop()
+    except AssertionError:
+        pass  # tests may already close this
