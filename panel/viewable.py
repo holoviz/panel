@@ -740,7 +740,7 @@ class Reactive(Viewable):
             return
 
         customjs = model.select({'type': CustomJS})
-        pattern = "data\['comm_id'\] = \"(.*)\""
+        pattern = r"data\['comm_id'\] = \"(.*)\""
         for js in customjs:
             comm_ids = list(re.findall(pattern, js.code))
             if not comm_ids:

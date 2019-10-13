@@ -45,7 +45,7 @@ def hv_mpl():
 @pytest.yield_fixture
 def tmpdir(request, tmpdir_factory):
     name = request.node.name
-    name = re.sub("[\W]", "_", name)
+    name = re.sub(r"[\W]", "_", name)
     MAXVAL = 30
     if len(name) > MAXVAL:
         name = name[:MAXVAL]
