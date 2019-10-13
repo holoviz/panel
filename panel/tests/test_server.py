@@ -33,8 +33,8 @@ def test_server_change_io_state(html_server_session):
 
 def test_show_server_info(html_server_session, markdown_server_session):
     server_info = repr(state)
-    assert "localhost:5006 - HTML(str)" in server_info
-    assert "localhost:5007 - Markdown(str)" in server_info
+    assert "localhost:5006 - HTML" in server_info
+    assert "localhost:5007 - Markdown" in server_info
 
 
 def test_kill_all_servers(html_server_session, markdown_server_session):
