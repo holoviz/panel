@@ -1,5 +1,9 @@
+from __future__ import absolute_import
+
 import sys
 import threading
+
+from functools import partial
 
 import param
 
@@ -10,8 +14,9 @@ from bokeh.models.widgets import (
     CheckboxEditor, BooleanFormatter
 )
 
-from ..io import state
+from ..io import push, state
 from ..viewable import Layoutable
+from ..util import isdatetime
 from .base import Widget
 
 
@@ -25,13 +30,23 @@ class DataFrame(Widget):
       Bokeh CellFormatter to use for a particular column
       (overrides the default chosen based on the type).""")
 
-    editable = param.Boolean(default=True, doc="""
-      Whether the table should be editable.""")
+    fit_columns = param.Boolean(default=True, doc="""
+      Whether columns should be fit to the available width.
+      This results in no horizontal scrollbar showing up, but data
+      can get unreadable if there is no enough space available.""")
 
     selection = param.List(default=[], doc="""
       The currently selected rows of the table.""")
 
+    row_height = param.Integer(default=25, doc="""
+      The height of each table row.""")
+
+    widths = param.Dict(default={}, doc="""
+      A mapping from column name to column width.""")
+
     value = param.Parameter(default=None)
+
+    _manual_params = ['value', 'editors', 'formatters', 'selection', 'width']
 
     def __init__(self, value=None, **params):
         super(DataFrame, self).__init__(value=value, **params)
@@ -65,8 +80,10 @@ class DataFrame(Widget):
                 formatter = self.formatters[col]
             if str(col) != col:
                 self._renamed_cols[str(col)] = col
+            width = self.widths.get(str(col))
             column = TableColumn(field=str(col), title=str(col),
-                                 editor=editor, formatter=formatter)
+                                 editor=editor, formatter=formatter,
+                                 width=width)
             columns.append(column)
         return columns
 
@@ -75,12 +92,22 @@ class DataFrame(Widget):
                  if getattr(self, p) is not None}
         data = {k if isinstance(k, str) else str(k): v
                 for k, v in ColumnDataSource.from_df(self.value).items()}
+        if props.get('height', None) is None:
+            length = max([len(v) for v in data.values()])
+            props['height'] = length * self.row_height + 30
         props['source'] = ColumnDataSource(data=data)
         props['columns'] = self._get_columns()
         props['index_position'] = None
-        props['editable'] = self.editable
+        props['fit_columns'] = self.fit_columns
+        props['row_height'] = self.row_height
+        props['editable'] = not self.disabled
         return props
 
+    def _process_param_change(self, msg):
+        if 'disabled' in msg:
+            msg['editable'] = not msg.pop('disabled')
+        return super(DataFrame, self)._process_param_change(msg)
+    
     def _get_model(self, doc, root=None, parent=None, comm=None):
         model = DataTable(**self._get_properties())
         if root is None:
@@ -90,6 +117,24 @@ class DataFrame(Widget):
         self._models[root.ref['id']] = (model, parent)
         return model
 
+    def _manual_update(self, event, model, doc, root, parent, comm):
+        if event.name == 'value':
+            cds = model.source
+            data = {k if isinstance(k, str) else str(k): v
+                    for k, v in ColumnDataSource.from_df(self.value).items()}
+            cds.data = data
+            model.columns = self._get_columns()
+        elif event.name == 'selection':
+            model.source.selected.indices = self.selection
+        else:
+            for col in model.columns:
+                if col.name in self.editors:
+                    col.editor = self.editors[col.name]
+                if col.name in self.formatters:
+                    col.formatter = self.formatters[col.name]
+                if col.name in self.widths:
+                    col.width = self.widths[col.name]
+
     def _process_events(self, events):
         if 'data' in events:
             data = events.pop('data')
@@ -97,7 +142,18 @@ class DataFrame(Widget):
                 if k == 'index':
                     continue
                 k = self._renamed_cols.get(k, k)
+                if isinstance(v, dict):
+                    v = [v for k, v in sorted(v.items(), key=lambda k: int(k[0]))]
                 self.value[k] = v
         if 'indices' in events:
             self.selected = events.pop('indices')
         super(DataFrame, self)._process_events(events)
+
+    @property
+    def selected_dataframe(self):
+        """
+        Returns a DataFrame of the currently selected rows.
+        """
+        if not self.selection:
+            return self.value
+        return self.value.iloc[self.selection]
