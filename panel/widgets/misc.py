@@ -66,6 +66,8 @@ class Audio(Widget):
                 with open(value, 'rb') as f:
                     data = f.read()
                 data = b64encode(data)
+            elif str.lower(value).startswith('http'):
+                return msg
             elif not value:
                 data, fmt = b'', 'wav'
             else:

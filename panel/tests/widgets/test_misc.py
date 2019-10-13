@@ -21,3 +21,12 @@ def test_audio_array(document, comm):
 
     assert widget_value.split(',')[1] == b64_encoded
     assert widget.value.startswith('data:audio/wav;base64')
+
+
+def test_audio_url(document, comm):
+    audio_url = 'http://ccrma.stanford.edu/~jos/mp3/pno-cs.mp3'
+    audio2 = Audio(name='Audio', value=audio_url)
+    url_widget = audio2.get_root(document, comm=comm)
+
+    assert audio_url == url_widget.value
+
