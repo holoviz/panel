@@ -14,7 +14,7 @@ from six import string_types
 from collections import defaultdict, OrderedDict
 try:
     from collections.abc import MutableSequence, MutableMapping
-except ImportError:  # support for python>3.8
+except ImportError:  # python <= 3.7
     from collections import MutableSequence, MutableMapping
 
 import param
