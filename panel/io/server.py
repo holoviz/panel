@@ -5,6 +5,7 @@ from __future__ import absolute_import, division, unicode_literals
 
 import signal
 import threading
+import uuid
 
 from functools import partial
 
@@ -77,10 +78,9 @@ def get_server(panel, port=0, websocket_origin=None, loop=None,
             websocket_origin = [websocket_origin]
         opts['allow_websocket_origin'] = websocket_origin
 
-    server_id = kwargs.pop('server_id', None)
+    server_id = kwargs.pop('server_id', uuid.uuid4().hex)
     server = Server({'/': partial(panel._modify_doc, server_id)}, port=port, **opts)
-    if server_id:
-        state._servers[server_id] = (server, panel, [])
+    state._servers[server_id] = (server, panel, [])
 
     if show:
         def show_callback():
