@@ -69,7 +69,7 @@ nbsite_gallery_conf = {
     'deployment_url': 'https://panel-gallery.pyviz.demo.anaconda.com/'
 }
 
-_NAV =  (
+_NAV = (
     ('Getting started', 'getting_started/index'),
     ('User Guide', 'user_guide/index'),
     ('Gallery', 'gallery/index'),
@@ -88,7 +88,6 @@ html_context.update({
     'VERSION': version,
     'WEBSITE_URL': 'https://panel.pyviz.org',
     'WEBSITE_SERVER': 'https://panel.pyviz.org',
-    'VERSION': version,
     'NAV': _NAV,
     'LINKS': _NAV,
     'SOCIAL': (

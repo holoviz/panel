@@ -12,9 +12,9 @@ import datetime as dt
 from datetime import datetime
 from six import string_types
 from collections import defaultdict, OrderedDict
-try:
+try:  # python >= 3.3
     from collections.abc import MutableSequence, MutableMapping
-except ImportError:  # support for python>3.8
+except ImportError:
     from collections import MutableSequence, MutableMapping
 
 import param
