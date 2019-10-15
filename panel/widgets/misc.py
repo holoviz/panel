@@ -5,9 +5,13 @@ from __future__ import absolute_import, division, unicode_literals
 
 import os
 
+from io import BytesIO
 from base64 import b64encode
+from six import string_types
 
 import param
+import numpy as np
+from scipy.io import wavfile
 
 from ..io.notebook import push
 from ..io.state import state
@@ -30,7 +34,10 @@ class Audio(Widget):
     paused = param.Boolean(default=True, doc="""
         Whether the audio is currently paused""")
 
-    value = param.String(default='', doc="""
+    sample_rate = param.Integer(default=44100, doc="""
+        The sample_rate of the audio when given a NumPy array.""")
+
+    value = param.ClassSelector(default='', class_=(string_types + (np.ndarray,)), doc="""
         The audio file either local or remote.""")
 
     volume = param.Number(default=None, bounds=(0, 100), doc="""
@@ -38,19 +45,38 @@ class Audio(Widget):
 
     _widget_type = _BkAudio
 
-    _rename = {'name': None}
+    _rename = {'name': None, 'sample_rate': None}
+
+    def _from_numpy(self, data):
+        buffer = BytesIO()
+        wavfile.write(buffer, self.sample_rate, data)
+        return buffer
 
     def _process_param_change(self, msg):
         msg = super(Audio, self)._process_param_change(msg)
-        if 'value' in msg and os.path.isfile(msg['value']):
-            fmt = msg['value'].split('.')[-1]
-            with open(msg['value'], 'rb') as f:
-                data = f.read()
+
+        if 'value' in msg:
+            value =  msg['value']
+            if isinstance(value, np.ndarray):
+                fmt = 'wav'
+                buffer = self._from_numpy(value)
+                data = b64encode(buffer.getvalue())
+            elif os.path.isfile(value):
+                fmt = value.split('.')[-1]
+                with open(value, 'rb') as f:
+                    data = f.read()
+                data = b64encode(data)
+            elif value.lower().startswith('http'):
+                return msg
+            elif not value:
+                data, fmt = b'', 'wav'
+            else:
+                raise ValueError('Value should be either path to a sound file or numpy array')
             template = 'data:audio/{mime};base64,{data}'
-            data = b64encode(data)
             msg['value'] = template.format(data=data.decode('utf-8'),
                                            mime=fmt)
         return msg
+
 
 
 class VideoStream(Widget):
