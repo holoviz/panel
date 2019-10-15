@@ -32,7 +32,7 @@ def dataframe():
         'int': [1, 2, 3],
         'float': [3.14, 6.28, 9.42],
         'str': ['A', 'B', 'C']
-    }, index=[1, 2, 3])
+    }, index=[1, 2, 3], columns=['int', 'float', 'str'])
 
 
 @pytest.yield_fixture
