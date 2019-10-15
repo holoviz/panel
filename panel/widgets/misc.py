@@ -66,7 +66,7 @@ class Audio(Widget):
                 with open(value, 'rb') as f:
                     data = f.read()
                 data = b64encode(data)
-            elif str.lower(value).startswith('http'):
+            elif value.lower().startswith('http'):
                 return msg
             elif not value:
                 data, fmt = b'', 'wav'
@@ -76,6 +76,8 @@ class Audio(Widget):
             msg['value'] = template.format(data=data.decode('utf-8'),
                                            mime=fmt)
         return msg
+
+
 
 class VideoStream(Widget):
 
