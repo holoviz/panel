@@ -47,6 +47,9 @@ class DataFrame(Widget):
         self._renamed_cols = {}
 
     def _get_columns(self):
+        if self.value is None:
+            return []
+
         index = [self.value.index.name or 'index']
         col_names = index + list(self.value.columns)
         columns = []
@@ -84,10 +87,13 @@ class DataFrame(Widget):
     def _get_properties(self):
         props = {p : getattr(self, p) for p in list(Layoutable.param)
                  if getattr(self, p) is not None}
-        data = {k if isinstance(k, str) else str(k): v
-                for k, v in ColumnDataSource.from_df(self.value).items()}
+        if self.value is None:
+            data = {}
+        else:
+            data = {k if isinstance(k, str) else str(k): v
+                    for k, v in ColumnDataSource.from_df(self.value).items()}
         if props.get('height', None) is None:
-            length = max([len(v) for v in data.values()])
+            length = max([len(v) for v in data.values()]) if data else 0
             props['height'] = length * self.row_height + 30
         props['source'] = ColumnDataSource(data=data)
         props['columns'] = self._get_columns()
