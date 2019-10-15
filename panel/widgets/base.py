@@ -84,8 +84,7 @@ class Widget(Reactive):
         return model
 
     def _synced_params(self):
-        ignored_params = ['name', 'default_layout']+self._manual_params
-        return [p for p in self.param if p not in ignored_params]
+        return [p for p in self.param if p not in self._manual_params]
 
     def _filter_properties(self, properties):
         return [p for p in properties if p not in Layoutable.param]
