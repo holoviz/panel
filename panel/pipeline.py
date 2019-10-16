@@ -51,15 +51,8 @@ class Pipeline(param.Parameterized):
         except:
             raise ImportError('Pipeline requires holoviews to be installed')
 
-        self._stages = []
-        for stage in stages:
-            kwargs = {}
-            if len(stage) == 2:
-                name, stage = stage
-            elif len(stage) == 3:
-                name, stage, kwargs = stage
-            self.add_stage(name, stage, **kwargs)
         self._stage = 0
+        self._stages = []
         super(Pipeline, self).__init__(**params)
         self._states = []
         self._state = None
@@ -73,11 +66,19 @@ class Pipeline(param.Parameterized):
         spinner = Pane(os.path.join(os.path.dirname(__file__), 'assets', 'spinner.gif'))
         self._spinner_layout = Row(HSpacer(), Column(VSpacer(), spinner, VSpacer()), HSpacer())
         stage_layout = Row()
+        self._layout = Column(self._progress_bar, stage_layout)
+        for stage in stages:
+            kwargs = {}
+            if len(stage) == 2:
+                name, stage = stage
+            elif len(stage) == 3:
+                name, stage, kwargs = stage
+            self.add_stage(name, stage, **kwargs)
         if len(stages):
             stage = self._init_stage()
             stage_layout.append(stage)
             self._update_button(stage)
-        self._layout = Column(self._progress_bar, stage_layout)
+
 
     def add_stage(self, name, stage, **kwargs):
         self._validate(stage)
@@ -96,7 +97,7 @@ class Pipeline(param.Parameterized):
 
     def __repr__(self):
         repr_str = 'Pipeline:'
-        for i, (name, stage) in enumerate(self._stages):
+        for i, (name, stage, _) in enumerate(self._stages):
             if isinstance(stage, param.Parameterized):
                 cls_name = type(stage).__name__
             else:
