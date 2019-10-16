@@ -8,7 +8,7 @@ import param
 import numpy as np
 
 from .layout import Row, Column, HSpacer, VSpacer, Spacer
-from .pane import HoloViews, HTML, Pane
+from .pane import HoloViews, Pane
 from .widgets import Button
 from .param import Param
 from .util import param_reprs
@@ -110,7 +110,7 @@ class Pipeline(param.Parameterized):
 
     @property
     def layout(self):
-        self._progress_bar[1] = self._make_progress
+        self._progress_bar[1] = self._make_progress()
         return self._layout
 
     def _unblock(self, event):
@@ -194,12 +194,15 @@ class Pipeline(param.Parameterized):
             disabled = (not getattr(stage, ready)) if ready in stage.param else False
             self._progress_bar[3].layout[0].disabled = disabled
 
-    def _get_error_button(cls, e):
+    def _get_error_button(self, e):
         msg = str(e) if isinstance(e, PipelineError) else ""
-        type, value, trb = sys.exc_info()
-        tb_list = tb.format_tb(trb, None) + tb.format_exception_only(type, value)
-        traceback = (("%s\n\nTraceback (innermost last):\n" + "%-20s %s") %
-                     (msg, ''.join(tb_list[-5:-1]), tb_list[-1]))
+        if self.debug:
+            type, value, trb = sys.exc_info()
+            tb_list = tb.format_tb(trb, None) + tb.format_exception_only(type, value)
+            traceback = (("%s\n\nTraceback (innermost last):\n" + "%-20s %s") %
+                         (msg, ''.join(tb_list[-5:-1]), tb_list[-1]))
+        else:
+            traceback = msg or "Undefined error, enable debug mode."
         button = Button(name='Error', button_type='danger', width=100,
                         align='center')
         button.jslink(button, code={'clicks': "alert(`{tb}`)".format(tb=traceback)})
@@ -254,21 +257,22 @@ class Pipeline(param.Parameterized):
         import holoviews.plotting.bokeh # noqa
         stages = len(self._stages)
         line = hv.Path([[(0, 0), (stages-1, 0)]]).options(
-            line_width=6, color='black', backend='bokeh'
+            line_width=6, color='black', default_tools=[], backend='bokeh'
         )
         vals = np.arange(stages)
         active = [1 if v == self._stage else 0 for v in vals]
         points = hv.Points((vals, np.zeros(stages), active), vdims=['active']).options(
             color_index='active', line_color='black', cmap={0: 'white', 1: '#5cb85c'},
-            show_legend=False, size=20, default_tools=[], tools=['tap'],
+            show_legend=False, size=20, default_tools=['tap'],
             nonselection_alpha=1, backend='bokeh'
         )
         point_labels = points.add_dimension('text', 0, [s[0] for s in self._stages], vdim=True)
-        labels = hv.Labels(point_labels).options(yoffset=-2.5, backend='bokeh')
+        labels = hv.Labels(point_labels).options(yoffset=-2.5, default_tools=[], backend='bokeh')
         self._progress_sel.source = points
         hv_plot = (line * points * labels).options(
-            xaxis=None, yaxis=None, width=800, show_frame=False, toolbar=None,
+            xaxis=None, yaxis=None, width=800, show_frame=False,
             height=80, xlim=(-0.5, stages-0.5), ylim=(-4, 1.5),
-            clone=False, backend='bokeh'
+            clone=False, default_tools=[], active_tools=['tap'],
+            toolbar=None, backend='bokeh'
         )
         return HoloViews(hv_plot, backend='bokeh')
