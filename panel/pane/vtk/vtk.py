@@ -231,8 +231,7 @@ class VTK(PaneBase):
             except:
                 self._legend = {}
         if self._legend:
-            from bokeh.plotting import figure
-            from bokeh.models import LinearColorMapper, ColorBar, FixedTicker
+            from bokeh.models import Plot, LinearColorMapper, ColorBar, FixedTicker
             if orientation == 'horizontal':
                 cbs = []
                 for k, v in self._legend.items():
@@ -240,12 +239,8 @@ class VTK(PaneBase):
                     cbs.append(ColorBar(color_mapper=LinearColorMapper(low=v['low'], high=v['high'], palette=v['palette']), title=k,
                                         ticker=FixedTicker(ticks=ticks),
                                         label_standoff=5, background_fill_alpha=0, orientation='horizontal', location=(0, 0)))
-                plot = figure(x_range=(0, 1), y_range=(0, 1), toolbar_location=None, frame_height=0,
-                              sizing_mode='stretch_width')
-                plot.xaxis.visible = False
-                plot.yaxis.visible = False
-                plot.grid.visible = False
-                plot.outline_line_alpha = 0
+                plot = Plot(toolbar_location=None, frame_height=0, sizing_mode='stretch_width',
+                            outline_line_width=0)
                 [plot.add_layout(cb, 'below') for cb in cbs]
                 return plot
             else:
