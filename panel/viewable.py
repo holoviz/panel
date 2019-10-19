@@ -675,7 +675,10 @@ class Reactive(Viewable):
         self._events.update({attr: new})
         if not self._processing:
             self._processing = True
-            doc.add_timeout_callback(partial(self._change_event, doc), self._debounce)
+            if doc.session_context:
+                doc.add_timeout_callback(partial(self._change_event, doc), self._debounce)
+            else:
+                self._change_event(doc)
 
     def _process_events(self, events):
         self.set_param(**self._process_property_change(events))
