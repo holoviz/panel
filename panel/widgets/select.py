@@ -66,14 +66,17 @@ class Select(SelectBase):
         if 'value' in msg:
             val = msg['value']
             if isIn(val, values):
-                msg['value'] = labels[indexOf(val, values)]
+                msg['value'] = self.unicode_values[indexOf(val, values)]
             elif values:
                 self.value = self.values[0]
             elif self.value is not None:
                 self.value = None
 
         if 'options' in msg:
-            msg['options'] = labels
+            if isinstance(self.options, dict):
+                msg['options'] = [(v,l) for l,v in zip(labels, self.unicode_values)]
+            else:
+                msg['options'] = self.unicode_values
             val = self.value
             if values:
                 if not isIn(val, values):
@@ -81,6 +84,10 @@ class Select(SelectBase):
             elif val is not None:
                 self.value = None
         return msg
+
+    @property
+    def unicode_values(self):
+        return [as_unicode(v) for v in self.values]
 
     def _process_property_change(self, msg):
         msg = super(Select, self)._process_property_change(msg)
@@ -90,7 +97,7 @@ class Select(SelectBase):
             elif msg['value'] is None:
                 msg['value'] = self.values[0]
             else:
-                msg['value'] = self._items[msg['value']]
+                msg['value'] = self._items[self.labels[indexOf(msg['value'],self.unicode_values)]]
         msg.pop('options', None)
         return msg
 
