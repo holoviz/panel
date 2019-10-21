@@ -74,9 +74,6 @@ jobs:
         - sleep 10
       after_success: codecov
 
-    - <<: *conda_default
-      env: DESC="py2 tests" PYTHON_VERSION=2.7
-
     ########## END-USER PACKAGES ##########
 
     ## dev packages

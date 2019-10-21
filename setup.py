@@ -165,20 +165,22 @@ setup_args = dict(
     classifiers=[
         "License :: OSI Approved :: BSD License",
         "Development Status :: 5 - Production/Stable",
-        "Programming Language :: Python :: 2.7",
-        "Programming Language :: Python :: 3.3",
-        "Programming Language :: Python :: 3.4",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
         "Operating System :: OS Independent",
         "Intended Audience :: Science/Research",
         "Intended Audience :: Developers",
         "Natural Language :: English",
         "Topic :: Scientific/Engineering",
-        "Topic :: Software Development :: Libraries"],
-    python_requires=">=2.7",
+        "Topic :: Software Development :: Libraries",
+    ],
+    python_requires=">=3.6",
     entry_points={
         'console_scripts': [
-            'panel = panel.cli:main'
-        ]},
+            'panel = panel.cli:main',
+        ],
+    },
     install_requires=install_requires,
     extras_require=extras_require,
     tests_require=extras_require['tests']
