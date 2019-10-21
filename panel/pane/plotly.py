@@ -2,7 +2,6 @@
 Defines a PlotlyPane which renders a plotly plot using PlotlyPlot
 bokeh model.
 """
-from __future__ import absolute_import, division, unicode_literals
 
 import sys
 

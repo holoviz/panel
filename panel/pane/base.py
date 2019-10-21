@@ -2,7 +2,6 @@
 Defines the PaneBase class defining the API for panes which convert
 objects to a visual representation expressed as a bokeh model.
 """
-from __future__ import absolute_import, division, unicode_literals
 
 from functools import partial
 

@@ -1,7 +1,6 @@
 """
 Defines Links which allow declaring links between bokeh properties.
 """
-from __future__ import absolute_import, division, unicode_literals
 
 import param
 import weakref

@@ -2,7 +2,6 @@
 Defines various Select widgets which allow choosing one or more items
 from a list of options.
 """
-from __future__ import absolute_import, division, unicode_literals
 
 import re
 

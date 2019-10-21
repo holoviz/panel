@@ -2,7 +2,6 @@
 HoloViews integration for Panel including a Pane to render HoloViews
 objects and their widgets and support for Links
 """
-from __future__ import absolute_import, division, unicode_literals
 
 import sys
 

@@ -1,7 +1,6 @@
 """
 Utilities for building custom models included in panel.
 """
-from __future__ import absolute_import, division, unicode_literals
 
 #---------------------------------------------------------------------
 # Public API

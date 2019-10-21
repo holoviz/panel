@@ -2,7 +2,6 @@
 Templates allow multiple Panel objects to be embedded into custom HTML
 documents.
 """
-from __future__ import absolute_import, division, unicode_literals
 
 from bokeh.io import curdoc as _curdoc
 from jinja2.environment import Template as _Template

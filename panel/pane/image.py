@@ -2,7 +2,6 @@
 Contains Image panes including renderers for PNG, SVG, GIF and JPG
 file types.
 """
-from __future__ import absolute_import, division, unicode_literals
 
 import base64
 import os

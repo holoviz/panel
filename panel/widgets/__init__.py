@@ -2,7 +2,6 @@
 The widgets module contains Widget which provide bi-directional
 communication between a rendered panel and the Widget parameters.
 """
-from __future__ import absolute_import, division, unicode_literals
 
 from .base import Widget, CompositeWidget # noqa
 from .button import Button, Toggle # noqa

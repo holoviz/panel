@@ -5,7 +5,6 @@ objects are one of three main components in panel the other two being
 layouts and widgets. Panes may render anything including plots, text,
 images, equations etc.
 """
-from __future__ import absolute_import, division, unicode_literals
 
 from ..viewable import Viewable
 from .base import PaneBase, Pane # noqa

@@ -3,7 +3,6 @@ The config module supplies the global config object and the extension
 which provides convenient support for  loading and configuring panel
 components.
 """
-from __future__ import absolute_import, division, unicode_literals
 
 import glob
 import os

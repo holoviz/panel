@@ -1,7 +1,6 @@
 """
 Miscellaneous widgets which do not fit into the other main categories.
 """
-from __future__ import absolute_import, division, unicode_literals
 
 import os
 

@@ -1,8 +1,6 @@
 """
 Various general utilities used in the panel codebase.
 """
-from __future__ import absolute_import, division, unicode_literals
-
 import re
 import sys
 import inspect

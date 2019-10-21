@@ -2,7 +2,6 @@
 Patches bokeh resources to make it easy to add external JS and CSS
 resources via the panel.config object.
 """
-from __future__ import absolute_import, division, unicode_literals
 
 import os
 

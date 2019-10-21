@@ -1,7 +1,6 @@
 """
 Utilities for creating bokeh Server instances.
 """
-from __future__ import absolute_import, division, unicode_literals
 
 import signal
 import threading

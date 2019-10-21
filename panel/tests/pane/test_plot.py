@@ -1,4 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
 
 from bokeh.models import Div, Row as BkRow
 

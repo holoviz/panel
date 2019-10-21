@@ -1,7 +1,6 @@
 """
 Pane class which render plots from different libraries
 """
-from __future__ import absolute_import, division, unicode_literals
 
 import sys
 

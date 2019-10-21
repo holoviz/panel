@@ -3,7 +3,6 @@ Defines the Widget base class which provides bi-directional
 communication between the rendered dashboard and the Widget
 parameters.
 """
-from __future__ import absolute_import, division, unicode_literals
 
 import param
 import numpy as np

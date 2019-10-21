@@ -1,4 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
 
 from io import BytesIO
 from base64 import b64encode

@@ -2,7 +2,6 @@
 The input widgets generally allow entering arbitrary information into
 a text field or similar.
 """
-from __future__ import absolute_import, division, unicode_literals
 
 import ast
 

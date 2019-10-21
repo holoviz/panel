@@ -2,7 +2,6 @@
 Renders objects representing equations including LaTeX strings and
 SymPy objects.
 """
-from __future__ import absolute_import, division, unicode_literals
 
 import sys
 

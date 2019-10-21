@@ -1,7 +1,6 @@
 """
 Custom bokeh Widget models.
 """
-from __future__ import absolute_import, division, unicode_literals
 
 from bokeh.core.properties import Int, Float, Override, Enum, Any, Bool
 from bokeh.models import Widget

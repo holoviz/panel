@@ -2,7 +2,6 @@
 Pane class which render various markup languages including HTML,
 Markdown, and also regular strings.
 """
-from __future__ import absolute_import, division, unicode_literals
 
 try:
     from html import escape

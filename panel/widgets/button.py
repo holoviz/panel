@@ -2,7 +2,6 @@
 Defines Button and button-like widgets which allow triggering events
 or merely toggling between on-off states.
 """
-from __future__ import absolute_import, division, unicode_literals
 
 import param
 
