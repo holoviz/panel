@@ -7,7 +7,6 @@ import os
 
 from io import BytesIO
 from base64 import b64encode
-from six import string_types
 
 import param
 import numpy as np
@@ -37,7 +36,7 @@ class Audio(Widget):
     sample_rate = param.Integer(default=44100, doc="""
         The sample_rate of the audio when given a NumPy array.""")
 
-    value = param.ClassSelector(default='', class_=(string_types + (np.ndarray,)), doc="""
+    value = param.ClassSelector(default='', class_=(str, np.ndarray,), doc="""
         The audio file either local or remote.""")
 
     volume = param.Number(default=None, bounds=(0, 100), doc="""

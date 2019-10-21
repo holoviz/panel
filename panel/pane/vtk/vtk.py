@@ -13,8 +13,6 @@ try:
 except ImportError: # python 2
     from urllib import urlopen
 
-from six import string_types
-
 import param
 import numpy as np
 
@@ -185,7 +183,7 @@ class VTK(PaneBase):
 
     @classmethod
     def applies(cls, obj):
-        if (isinstance(obj, string_types) and obj.endswith('.vtkjs') or
+        if (isinstance(obj, str) and obj.endswith('.vtkjs') or
             any([isinstance(obj, k) for k in cls._serializers.keys()])):
             return True
         elif 'vtk' not in sys.modules:
@@ -269,7 +267,7 @@ class VTK(PaneBase):
 
     def _get_vtkjs(self):
         if self._vtkjs is None and self.object is not None:
-            if isinstance(self.object, string_types) and self.object.endswith('.vtkjs'):
+            if isinstance(self.object, str) and self.object.endswith('.vtkjs'):
                 if os.path.isfile(self.object):
                     with open(self.object, 'rb') as f:
                         vtkjs = f.read()

@@ -5,8 +5,6 @@ from __future__ import absolute_import, division, unicode_literals
 
 import io
 
-from six import string_types
-
 from bokeh.document.document import Document
 from bokeh.embed import file_html
 from bokeh.io.export import export_png, create_webdriver
@@ -91,7 +89,7 @@ def save(panel, filename, title=None, resources=None, template=None,
         else:
             add_to_doc(model, doc, True)
 
-    if isinstance(filename, string_types):
+    if isinstance(filename, str):
         if filename.endswith('png'):
             save_png(model, filename=filename)
             return

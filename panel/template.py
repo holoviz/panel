@@ -6,7 +6,6 @@ from __future__ import absolute_import, division, unicode_literals
 
 from bokeh.io import curdoc as _curdoc
 from jinja2.environment import Template as _Template
-from six import string_types
 
 from .io.model import add_to_doc
 from .io.server import StoppableThread, get_server
@@ -43,7 +42,7 @@ class Template(object):
     """
 
     def __init__(self, template=None, items=None):
-        if isinstance(template, string_types):
+        if isinstance(template, str):
             template = _Template(template)
         self.template = template
         self._render_items = {}
@@ -98,7 +97,7 @@ class Template(object):
     #----------------------------------------------------------------
     # Public API
     #----------------------------------------------------------------
-    
+
     def add_panel(self, name, panel):
         """
         Add panels to the Template, which may then be referenced by

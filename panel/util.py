@@ -10,7 +10,6 @@ import numbers
 import datetime as dt
 
 from datetime import datetime
-from six import string_types
 from collections import defaultdict, OrderedDict
 try:  # python >= 3.3
     from collections.abc import MutableSequence, MutableMapping
@@ -132,7 +131,7 @@ def param_reprs(parameterized, skip=None):
     for p, v in sorted(parameterized.get_param_values()):
         if v is parameterized.param[p].default: continue
         elif v is None: continue
-        elif isinstance(v, string_types) and v == '': continue
+        elif isinstance(v, str) and v == '': continue
         elif isinstance(v, list) and v == []: continue
         elif isinstance(v, dict) and v == {}: continue
         elif (skip and p in skip) or (p == 'name' and v.startswith(cls)): continue

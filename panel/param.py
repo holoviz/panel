@@ -12,7 +12,6 @@ import inspect
 import itertools
 
 from collections import OrderedDict, namedtuple
-from six import string_types
 
 import param
 
@@ -165,7 +164,7 @@ class Param(PaneBase):
         for p, v in sorted(self.get_param_values()):
             if v is self.param[p].default: continue
             elif v is None: continue
-            elif isinstance(v, string_types) and v == '': continue
+            elif isinstance(v, str) and v == '': continue
             elif p == 'object' or (p == 'name' and (v.startswith(obj_cls) or v.startswith(cls))): continue
             elif p == 'parameters' and v == parameters: continue
             try:
@@ -304,10 +303,10 @@ class Param(PaneBase):
         else:
             label = p_obj.label
         kw = dict(value=value, disabled=p_obj.constant, name=label)
-        
+
         # Update kwargs
         kw.update(kw_widget)
-        
+
         if hasattr(p_obj, 'get_range'):
             options = p_obj.get_range()
             if not options and value is not None:
@@ -325,7 +324,7 @@ class Param(PaneBase):
                 kw['step'] = p_obj.step
 
         kwargs = {k: v for k, v in kw.items() if k in widget_class.param}
-        
+
         if isinstance(widget_class, Widget):
             widget = widget_class
         else:

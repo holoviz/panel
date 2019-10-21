@@ -9,7 +9,6 @@ try:
 except:
     vtk = None
 
-from six import string_types
 from panel.models.vtk import VTKPlot
 from panel.pane import Pane, PaneBase, VTK
 
@@ -54,7 +53,7 @@ def test_vtk_pane_from_url(document, comm):
     model = pane.get_root(document, comm=comm)
     assert isinstance(model, VTKPlot)
     assert pane._models[model.ref['id']][0] is model
-    assert isinstance(model.data, string_types)
+    assert isinstance(model.data, str)
 
 
 @vtk_available
@@ -72,5 +71,5 @@ def test_vtk_data_array_dump():
     root = _dump_data_array(scDir, '', 'test', data)
     assert len(set(root_keys) - set(root.keys())) == 0
     assert len(scDir) == 1
-    assert isinstance(scDir[0][0], string_types)
+    assert isinstance(scDir[0][0], str)
     assert isinstance(scDir[0][1], bytes)

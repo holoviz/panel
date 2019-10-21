@@ -2,7 +2,6 @@ import sys
 
 import param
 
-from six import string_types
 from pyviz_comms import JupyterComm
 
 from .base import PaneBase
@@ -29,7 +28,7 @@ class Ace(PaneBase):
 
     @classmethod
     def applies(cls, obj):
-        if isinstance(obj, string_types):
+        if isinstance(obj, str):
             return None
         else:
             return False

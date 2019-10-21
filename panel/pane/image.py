@@ -8,7 +8,6 @@ import base64
 import os
 
 from io import BytesIO
-from six import string_types
 
 import param
 
@@ -41,7 +40,7 @@ class ImageBase(DivPaneBase):
         imgtype = cls.imgtype
         if hasattr(obj, '_repr_{}_'.format(imgtype)):
             return True
-        if isinstance(obj, string_types):
+        if isinstance(obj, str):
             if os.path.isfile(obj) and obj.endswith('.'+imgtype):
                 return True
             if cls._is_url(obj):
@@ -52,7 +51,7 @@ class ImageBase(DivPaneBase):
 
     @classmethod
     def _is_url(cls, obj):
-        if isinstance(obj, string_types):
+        if isinstance(obj, str):
             lower_string = obj.lower()
             return (
                 lower_string.startswith('http://')
@@ -63,7 +62,7 @@ class ImageBase(DivPaneBase):
     def _img(self):
         if hasattr(self.object, '_repr_{}_'.format(self.imgtype)):
             return getattr(self.object, '_repr_' + self.imgtype + '_')()
-        if isinstance(self.object, string_types):
+        if isinstance(self.object, str):
             if os.path.isfile(self.object):
                 with open(self.object, 'rb') as f:
                     return f.read()
@@ -173,10 +172,10 @@ class SVG(ImageBase):
     @classmethod
     def applies(cls, obj):
         return (super(SVG, cls).applies(obj) or
-                (isinstance(obj, string_types) and obj.lstrip().startswith('<svg')))
+                (isinstance(obj, str) and obj.lstrip().startswith('<svg')))
 
     def _img(self):
-        if (isinstance(self.object, string_types) and
+        if (isinstance(self.object, str) and
             self.object.lstrip().startswith('<svg')):
             return self.object
         return super(SVG, self)._img()

@@ -8,14 +8,13 @@ import ast
 
 from base64 import b64decode
 from datetime import datetime
-from six import string_types
 
 import param
 
 from bokeh.models.widgets import (
     CheckboxGroup as _BkCheckboxGroup, ColorPicker as _BkColorPicker,
     DatePicker as _BkDatePicker, Div as _BkDiv, TextInput as _BkTextInput,
-    PasswordInput as _BkPasswordInput, Spinner as _BkSpinner, 
+    PasswordInput as _BkPasswordInput, Spinner as _BkSpinner,
     FileInput as _BkFileInput, TextAreaInput as _BkTextAreaInput)
 
 from ..util import as_unicode
@@ -45,7 +44,7 @@ class TextAreaInput(Widget):
     placeholder = param.String(default='')
 
     max_length = param.Integer(default=5000)
-        
+
     _widget_type = _BkTextAreaInput
 
 class FileInput(Widget):
@@ -88,7 +87,7 @@ class FileInput(Widget):
         ---------
         filename (str): File path or file-like object
         """
-        if isinstance(filename, string_types):
+        if isinstance(filename, str):
             with open(filename, 'wb') as f:
                 f.write(self.value)
         else:
@@ -134,7 +133,7 @@ class DatePicker(Widget):
     def _process_property_change(self, msg):
         msg = super(DatePicker, self)._process_property_change(msg)
         if 'value' in msg:
-            if isinstance(msg['value'], string_types):
+            if isinstance(msg['value'], str):
                 msg['value'] = datetime.strptime(msg['value'][4:], '%b %d %Y')
         return msg
 

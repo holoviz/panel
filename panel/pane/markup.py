@@ -8,7 +8,6 @@ try:
     from html import escape
 except:
     from cgi import escape
-from six import string_types
 
 import param
 
@@ -76,7 +75,7 @@ class HTML(DivPaneBase):
     def applies(cls, obj):
         if hasattr(obj, '_repr_html_'):
             return 0.2
-        elif isinstance(obj, string_types):
+        elif isinstance(obj, str):
             return None
         else:
             return False
@@ -130,7 +129,7 @@ class Markdown(DivPaneBase):
     def applies(cls, obj):
         if hasattr(obj, '_repr_markdown_'):
             return 0.3
-        elif isinstance(obj, string_types):
+        elif isinstance(obj, str):
             return 0.1
         else:
             return False
@@ -140,7 +139,7 @@ class Markdown(DivPaneBase):
         data = self.object
         if data is None:
             data = ''
-        elif not isinstance(data, string_types):
+        elif not isinstance(data, str):
             data = data._repr_markdown_()
         properties = super(Markdown, self)._get_properties()
         properties['style'] = properties.get('style', {})

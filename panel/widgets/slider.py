@@ -5,8 +5,6 @@ parameters.
 """
 from __future__ import absolute_import, division, unicode_literals
 
-from six import string_types
-
 import param
 import numpy as np
 
@@ -247,7 +245,7 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
         if isinstance(self.options, dict):
             return [title + ('<b>%s</b>' % o) for o in self.options]
         else:
-            return [title + ('<b>%s</b>' % (o if isinstance(o, string_types) else (self.formatter % o)))
+            return [title + ('<b>%s</b>' % (o if isinstance(o, str) else (self.formatter % o)))
                     for o in self.options]
     @property
     def values(self):
