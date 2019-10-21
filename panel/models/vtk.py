@@ -1,4 +1,3 @@
-# coding: utf-8
 """
 Defines custom VTKPlot bokeh model to render VTK objects.
 """

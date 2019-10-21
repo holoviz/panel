@@ -1,4 +1,3 @@
-# coding: utf-8
 """
 Defines a VTKPane which renders a vtk plot using VTKPlot bokeh model.
 """

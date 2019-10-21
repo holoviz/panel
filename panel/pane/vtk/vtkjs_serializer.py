@@ -1,4 +1,3 @@
-# coding: utf-8
 """
 Serializer of vtk render windows
 Adpation from :
