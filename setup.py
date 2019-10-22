@@ -90,7 +90,8 @@ install_requires = [
     'param >=1.9.0',
     'pyviz_comms >=0.7.2',
     'markdown',
-    'pyct >=0.4.4'
+    'pyct >=0.4.4',
+    'typing_extensions >=3.7.4',
 ]
 
 _recommended = [
@@ -98,7 +99,7 @@ _recommended = [
     'holoviews >=1.12.0',
     'matplotlib',
     'pillow',
-    'plotly'
+    'plotly',
 ]
 
 extras_require = {
@@ -119,7 +120,7 @@ extras_require = {
         'vega_datasets',
         'vtk ==8.1.1',
         'scikit-learn',
-        'datashader'
+        'datashader',
     ],
     'recommended': _recommended,
     'doc': _recommended + [
@@ -129,7 +130,7 @@ extras_require = {
         'selenium',
         'phantomjs',
         'lxml',
-        'pyvista'
+        'pyvista',
     ]
 }
 

@@ -9,3 +9,5 @@ dependencies:
   - conda-forge::altair
   - conda-forge::plotly
   - conda-forge::vtk=8.1.1
+  - mypy>=0.740
+  - typing_extensions>=3.7.4
