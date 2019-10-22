@@ -4,6 +4,7 @@ in flexible ways to build complex dashboards.
 """
 
 from collections import OrderedDict
+from typing import List
 
 import param
 import numpy as np
@@ -33,7 +34,7 @@ class Panel(Reactive):
 
     _rename = {'objects': 'children'}
 
-    _linked_props = []
+    _linked_props: List[str] = []
 
     def __repr__(self, depth=0, max_depth=10):
         if depth > max_depth:

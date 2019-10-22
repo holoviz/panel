@@ -10,12 +10,14 @@ import sys
 import threading
 
 from functools import partial
+from typing import List, Dict, Callable, Union, ClassVar
 
 import param
 
 from bokeh.document.document import Document as _Document, _combine_document_events
 from bokeh.document.events import ModelChangedEvent
 from bokeh.io import curdoc as _curdoc
+from bokeh.model import Model
 from bokeh.models import CustomJS
 from pyviz_comms import JupyterCommManager
 
@@ -201,7 +203,7 @@ class Viewable(Layoutable):
 
     __abstract = True
 
-    _preprocessing_hooks = []
+    _preprocessing_hooks: List[Callable[["Viewable", Model], None]] = []
 
     def __init__(self, **params):
         super().__init__(**params)
@@ -209,11 +211,11 @@ class Viewable(Layoutable):
         self._models = {}
         self._found_links = set()
 
-    def __repr__(self, depth=0):
+    def __repr__(self, depth: int = 0) -> str:
         return '{cls}({params})'.format(cls=type(self).__name__,
                                         params=', '.join(param_reprs(self)))
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.__repr__()
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
@@ -238,7 +240,7 @@ class Viewable(Layoutable):
         """
         raise NotImplementedError
 
-    def _cleanup(self, model):
+    def _cleanup(self, model: Model) -> None:
         """
         Clean up method which is called when a Viewable is destroyed.
 
@@ -248,7 +250,7 @@ class Viewable(Layoutable):
           Bokeh model for the view being cleaned up
         """
 
-    def _preprocess(self, root):
+    def _preprocess(self, root: Model) -> None:
         """
         Applies preprocessing hooks to the model.
         """
@@ -570,7 +572,7 @@ class Reactive(Viewable):
     _debounce = 50
 
     # Mapping from parameter name to bokeh model property name
-    _rename = {}
+    _rename: ClassVar[Dict[str, Union[str, None]]] = {}
 
     def __init__(self, **params):
         # temporary flag denotes panes created for temporary, internal

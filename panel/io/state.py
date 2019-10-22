@@ -3,12 +3,18 @@ Various utilities for recording and embedding state in a rendered app.
 """
 
 import threading
+from typing import List, Dict, Tuple, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import panel # noqa: F401
 
 import param
 
 from bokeh.document import Document
+from bokeh.model import Model
 from bokeh.io import curdoc as _curdoc
-from pyviz_comms import CommManager as _CommManager
+from bokeh.server.server import Server
+from pyviz_comms import Comm, CommManager as _CommManager
 
 __all__ = ["state"]
 
@@ -34,10 +40,10 @@ class _state(param.Parameterized):
     _comm_manager = _CommManager
 
     # An index of all currently active views
-    _views = {}
+    _views: Dict[str, Tuple["panel.viewable.Viewable", Model, Document, Comm]] = {}
 
     # An index of all currently active servers
-    _servers = {}
+    _servers: Dict[str, Tuple[Server, "panel.layout.Panel", List[Document]]] = {}
 
     def __repr__(self):
         server_info = []

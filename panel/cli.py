@@ -3,11 +3,13 @@ Commandline interface to Panel
 """
 
 import sys
+from typing import List, Optional
+
 from bokeh.__main__ import main as bokeh_entry_point
 
 __all__ = []
 
-def transform_cmds(argv):
+def transform_cmds(argv: List[str]) -> List[str]:
     """
     Allows usage with anaconda-project by remapping the argv list provided
     into arguments accepted by Bokeh 0.12.7 or later.
@@ -34,7 +36,7 @@ def transform_cmds(argv):
     return transformed
 
 
-def main(args=None):
+def main(args: Optional[List[str]] = None) -> None:
     """Special case: Allow Bokeh to handle the `serve` command; rest is handled by pyct."""
     if len(sys.argv) > 1 and 'serve' == sys.argv[1]:
         sys.argv = transform_cmds(sys.argv)
@@ -45,7 +47,7 @@ def main(args=None):
         except ImportError:
             print("install pyct to enable this command (e.g. `conda install -c pyviz pyct` or `pip install pyct[cmd]`)")
             sys.exit(1)
-        pyct.cmd.substitute_main('panel',args=args)
+        pyct.cmd.substitute_main('panel', args=args)
 
 if __name__ == "__main__":
     main()

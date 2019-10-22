@@ -10,6 +10,7 @@ import inspect
 import itertools
 
 from collections import OrderedDict, namedtuple
+from typing import List
 
 import param
 
@@ -119,7 +120,7 @@ class Param(PaneBase):
         param.DateRange:      DateRangeSlider
     }
 
-    _rerender_params = []
+    _rerender_params: List[str] = []
 
     def __init__(self, object=None, **params):
         if isinstance(object, param.Parameter):
