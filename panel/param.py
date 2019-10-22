@@ -4,7 +4,6 @@ set of widgets.
 """
 
 import os
-import sys
 import json
 import types
 import inspect

@@ -2,7 +2,6 @@
 Various general utilities used in the panel codebase.
 """
 import re
-import sys
 import inspect
 import numbers
 import datetime as dt
