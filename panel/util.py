@@ -9,10 +9,7 @@ import datetime as dt
 
 from datetime import datetime
 from collections import defaultdict, OrderedDict
-try:  # python >= 3.3
-    from collections.abc import MutableSequence, MutableMapping
-except ImportError:
-    from collections import MutableSequence, MutableMapping
+from collections.abc import MutableSequence, MutableMapping
 
 import param
 import numpy as np
@@ -153,10 +150,7 @@ def get_method_owner(meth):
     the class owning the supplied classmethod.
     """
     if inspect.ismethod(meth):
-        if sys.version_info < (3,0):
-            return meth.im_class if meth.im_self is None else meth.im_self
-        else:
-            return meth.__self__
+        return meth.__self__
 
 
 def is_parameterized(obj):

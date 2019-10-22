@@ -1,6 +1,5 @@
 
 import sys
-import pytest
 
 from base64 import b64decode, b64encode
 
@@ -38,7 +37,7 @@ def test_svg_pane(document, comm):
     assert pane._models == {}
 
 
-twopixel = dict(\
+twopixel = dict(
     gif = b'R0lGODlhAgABAPAAAEQ6Q2NYYCH5BAAAAAAAIf8LSW1hZ2VNYWdpY2sNZ2FtbWE' + \
           b'9MC40NTQ1NQAsAAAAAAIAAQAAAgIMCgA7',
     png = b'iVBORw0KGgoAAAANSUhEUgAAAAIAAAABCAYAAAD0In+KAAAAFElEQVQIHQEJAPb' + \
@@ -67,7 +66,6 @@ def test_load_from_byteio():
     image_data = image_pane._img()
     assert b'PNG' in image_data
 
-@pytest.mark.skipif(sys.version_info.major <= 2, reason="Doesn't work with python 2")
 def test_load_from_stringio():
     """Testing a loading a image from a StringIO"""
     memory = StringIO()

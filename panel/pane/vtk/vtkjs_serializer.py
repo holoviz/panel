@@ -14,11 +14,6 @@ from io import BytesIO
 
 from .enums import SCALAR_MODE, ACCESS_MODE
 
-if sys.version_info >= (2, 7):
-    buffer = memoryview
-else:
-    buffer = buffer
-
 arrayTypesMapping = [
   ' ', # VTK_VOID            0
   ' ', # VTK_BIT             1
@@ -93,9 +88,9 @@ def _dump_data_array(scDirs, datasetDir, dataDir, array):
         newArray.SetNumberOfTuples(arraySize)
         for i in range(arraySize):
             newArray.SetValue(i, -1 if array.GetValue(i) < 0 else array.GetValue(i))
-        pBuffer = buffer(newArray)
+        pBuffer = memoryview(newArray)
     else:
-        pBuffer = buffer(array)
+        pBuffer = memoryview(array)
 
     pMd5 = hashlib.md5(pBuffer).hexdigest()
     pPath = os.path.join(dataDir, pMd5)

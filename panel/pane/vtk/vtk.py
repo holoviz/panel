@@ -6,10 +6,7 @@ import sys
 import os
 import base64
 
-try:
-    from urllib.request import urlopen
-except ImportError: # python 2
-    from urllib import urlopen
+from urllib.request import urlopen
 
 import param
 import numpy as np

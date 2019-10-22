@@ -430,10 +430,7 @@ class Param(PaneBase):
         sorted_precedence = sorted(params, key=key_fn)
         filtered = [(k, p) for k, p in sorted_precedence]
         groups = itertools.groupby(filtered, key=key_fn)
-        # Params preserve definition order in Python 3.6+
-        dict_ordered_py3 = (sys.version_info.major == 3 and sys.version_info.minor >= 6)
-        dict_ordered = dict_ordered_py3 or (sys.version_info.major > 3)
-        ordered_groups = [list(grp) if dict_ordered else sorted(grp) for (_, grp) in groups]
+        ordered_groups = [list(grp) for (_, grp) in groups]
         ordered_params = [el[0] for group in ordered_groups for el in group if el[0] != 'name']
         return ordered_params
 

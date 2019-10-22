@@ -15,22 +15,10 @@ from collections import OrderedDict
 from inspect import getcallargs
 from numbers import Real, Integral
 
-try:  # Python >= 3.3
-    from inspect import signature, Parameter
-    from collections.abc import Iterable, Mapping
-    empty = Parameter.empty
-except ImportError:
-    from collections import Iterable, Mapping
-    try:
-        from IPython.utils.signatures import signature, Parameter
-        empty = Parameter.empty
-    except:
-        signature, Parameter, empty = None, None, None
+from inspect import getfullargspec, signature, Parameter
+from collections.abc import Iterable, Mapping
 
-try:
-    from inspect import getfullargspec as check_argspec
-except ImportError:
-    from inspect import getargspec as check_argspec # py2
+empty = Parameter.empty
 
 import param
 
@@ -133,7 +121,7 @@ class interactive(PaneBase):
         # that will lead to a valid call of the function. This protects against unspecified
         # and doubly-specified arguments.
         try:
-            check_argspec(object)
+            getfullargspec(object)
         except TypeError:
             # if we can't inspect, we can't validate
             pass
