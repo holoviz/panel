@@ -3,6 +3,7 @@ if "PYCTDEV_ECOSYSTEM" not in os.environ:
     os.environ["PYCTDEV_ECOSYSTEM"] = "conda"
 
 from pyctdev import *  # noqa: api
+from pyctdev import CmdAction
 from pyctdev._conda import _options_param, _channel_param, _conda_build_deps, _conda_install_with_options_hacked
 
 def task_pip_on_conda():	

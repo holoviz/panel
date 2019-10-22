@@ -76,7 +76,7 @@ try:
 
         def run(self):
             """Do nothing so the command intentionally fails."""
-            _build_models()
+            _build_paneljs()
             bdist_wheel.run(self)
 
     _COMMANDS['bdist_wheel'] = CustomBdistWheelCommand
@@ -148,7 +148,7 @@ extras_require['build'] = [
 
 setup_args = dict(
     name='panel',
-    version=get_setup_version("panel"),
+    version='v0.7.0', #get_setup_version("panel"),
     description='A high level dashboarding library for python visualization libraries.',
     long_description=open('README.md').read() if os.path.isfile('README.md') else 'Consult README.md',
     long_description_content_type="text/markdown",
