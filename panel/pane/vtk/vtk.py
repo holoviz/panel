@@ -4,7 +4,7 @@ Defines a VTKPane which renders a vtk plot using VTKPlot bokeh model.
 
 import sys
 import os
-import base64
+from base64 import b64encode
 
 from urllib.request import urlopen
 
@@ -14,12 +14,6 @@ import numpy as np
 from pyviz_comms import JupyterComm
 
 from ..base import PaneBase
-
-if sys.version_info >= (2, 7):
-    base64encode = lambda x: base64.b64encode(x).decode('utf-8')
-else:
-    base64encode = lambda x: x.encode('base64')
-
 
 class VTKVolume(PaneBase):
     _updates = True
@@ -92,7 +86,7 @@ class VTKVolume(PaneBase):
         cls._serializers.update({class_type:serializer})
 
     def _volume_from_array(self, sub_array):
-        return dict(buffer=base64encode(sub_array.ravel(order='F' if sub_array.flags['F_CONTIGUOUS'] else 'C')),
+        return dict(buffer=b64encode(sub_array.ravel(order='F' if sub_array.flags['F_CONTIGUOUS'] else 'C')),
                     dims=sub_array.shape if sub_array.flags['F_CONTIGUOUS'] else sub_array.shape[::-1],
                     spacing=self._sub_spacing if sub_array.flags['F_CONTIGUOUS'] else self._sub_spacing[::-1],
                     origin=self.origin,
@@ -203,7 +197,7 @@ class VTK(PaneBase):
             VTKPlot = getattr(sys.modules['panel.models.vtk'], 'VTKPlot')
 
         vtkjs = self._get_vtkjs()
-        data = base64encode(vtkjs) if vtkjs is not None else vtkjs
+        data = str(b64encode(vtkjs)) if vtkjs is not None else None
         props = self._process_param_change(self._init_properties())
         model = VTKPlot(data=data, **props)
         if root is None:
@@ -289,7 +283,7 @@ class VTK(PaneBase):
     def _update(self, model):
         self._vtkjs = None
         vtkjs = self._get_vtkjs()
-        model.data = base64encode(vtkjs) if vtkjs is not None else vtkjs
+        model.data = str(b64encode(vtkjs)) if vtkjs is not None else None
 
     def export_vtkjs(self, filename='vtk_panel.vtkjs'):
         with open(filename, 'wb') as f:

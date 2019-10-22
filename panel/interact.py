@@ -24,7 +24,6 @@ import param
 
 from .layout import Panel, Column, Row
 from .pane import PaneBase, Pane, HTML
-from .util import as_unicode
 from .widgets import (Checkbox, TextInput, Widget, IntSlider, FloatSlider,
                       Select, DiscreteSlider, Button)
 
@@ -277,7 +276,7 @@ class interactive(PaneBase):
     def widget_from_single_value(o, name):
         """Make widgets from single values, which can be used as parameter defaults."""
         if isinstance(o, str):
-            return TextInput(value=as_unicode(o), name=name)
+            return TextInput(value=o, name=name)
         elif isinstance(o, bool):
             return Checkbox(value=o, name=name)
         elif isinstance(o, Integral):

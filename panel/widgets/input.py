@@ -16,7 +16,6 @@ from bokeh.models.widgets import (
     PasswordInput as _BkPasswordInput, Spinner as _BkSpinner,
     FileInput as _BkFileInput, TextAreaInput as _BkTextAreaInput)
 
-from ..util import as_unicode
 from .base import Widget
 
 
@@ -110,7 +109,7 @@ class StaticText(Widget):
         msg = super()._process_property_change(msg)
         msg.pop('title', None)
         if 'value' in msg:
-            text = as_unicode(msg.pop('value'))
+            text = str(msg.pop('value'))
             if self.name:
                 text = self._format.format(title=self.name, value=text)
             msg['text'] = text
@@ -220,7 +219,7 @@ class LiteralInput(Widget):
         msg = super()._process_param_change(msg)
         msg.pop('type', None)
         if 'value' in msg:
-            msg['value'] = '' if msg['value'] is None else as_unicode(msg['value'])
+            msg['value'] = '' if msg['value'] is None else str(msg['value'])
         msg['title'] = self.name
         return msg
 

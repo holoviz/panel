@@ -16,7 +16,7 @@ from bokeh.models.widgets import (
     Select as _BkSelect)
 
 from ..layout import Column, Row, VSpacer
-from ..util import as_unicode, isIn, indexOf
+from ..util import isIn, indexOf
 from ..viewable import Layoutable
 from .base import Widget, CompositeWidget
 from .button import _ButtonBase, Button
@@ -31,7 +31,7 @@ class SelectBase(Widget):
 
     @property
     def labels(self):
-        return [as_unicode(o) for o in self.options]
+        return [str(o) for o in self.options]
 
     @property
     def values(self):

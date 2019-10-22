@@ -16,9 +16,6 @@ import numpy as np
 
 datetime_types = (np.datetime64, dt.datetime, dt.date)
 
-if sys.version_info.major > 2:
-    unicode = str
-
 
 def hashable(x):
     if isinstance(x, MutableSequence):
@@ -61,31 +58,12 @@ def indexOf(obj, objs):
     raise ValueError('%s not in list' % obj)
 
 
-def as_unicode(obj):
-    """
-    Safely casts any object to unicode including regular string
-    (i.e. bytes) types in python 2.
-    """
-    if sys.version_info.major < 3 and isinstance(obj, str):
-        obj = obj.decode('utf-8')
-    return unicode(obj)
-
-
 def param_name(name):
     """
     Removes the integer id from a Parameterized class name.
     """
     match = re.match(r'(.)+(\d){5}', name)
     return name[:-5] if match else name
-
-
-def unicode_repr(obj):
-    """
-    Returns a repr without the unicode prefix.
-    """
-    if sys.version_info.major == 2 and isinstance(obj, unicode):
-        return repr(obj)[1:]
-    return repr(obj)
 
 
 def abbreviated_repr(value, max_length=25, natural_breaks=(',', ' ')):
