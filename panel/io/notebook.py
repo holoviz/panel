@@ -21,7 +21,6 @@ from bokeh.embed.elements import div_for_render_item
 from bokeh.embed.util import standalone_docs_json_and_render_items
 from bokeh.models import CustomJS, LayoutDOM, Model
 from bokeh.resources import CDN, INLINE
-from bokeh.util.string import encode_utf8
 from jinja2 import Environment, Markup, FileSystemLoader
 from pyviz_comms import (
     JS_CALLBACK, PYVIZ_PROXY, Comm, JupyterCommManager as _JupyterCommManager,
@@ -134,7 +133,7 @@ def render_model(model, comm=None):
         docs_json=serialize_json(docs_json),
         render_items=serialize_json([render_item]),
     )
-    bokeh_script, bokeh_div = encode_utf8(script), encode_utf8(div)
+    bokeh_script, bokeh_div = script, div
     html = "<div id='{id}'>{html}</div>".format(id=target, html=bokeh_div)
 
     # Publish bokeh plot JS

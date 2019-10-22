@@ -8,7 +8,6 @@ from bokeh.document.document import Document
 from bokeh.embed import file_html
 from bokeh.io.export import export_png, create_webdriver
 from bokeh.resources import CDN
-from bokeh.util.string import decode_utf8
 from pyviz_comms import Comm
 
 from ..config import config
@@ -107,10 +106,9 @@ def save(panel, filename, title=None, resources=None, template=None,
 
     html = file_html(doc, resources, title, **kwargs)
     if hasattr(filename, 'write'):
-        html = decode_utf8(html)
         if isinstance(filename, io.BytesIO):
             html = html.encode('utf-8')
         filename.write(html)
         return
     with open(filename, mode="w", encoding="utf-8") as f:
-        f.write(decode_utf8(html))
+        f.write(html)
