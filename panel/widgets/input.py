@@ -61,7 +61,7 @@ class FileInput(Widget):
     _rename = {'name': None, 'filename': None}
 
     def _process_param_change(self, msg):
-        msg = super(FileInput, self)._process_param_change(msg)
+        msg = super()._process_param_change(msg)
         if 'value' in msg:
             msg.pop('value')
         if 'mime_type' in msg:
@@ -69,11 +69,11 @@ class FileInput(Widget):
         return msg
 
     def _filter_properties(self, properties):
-        properties = super(FileInput, self)._filter_properties(properties)
+        properties = super()._filter_properties(properties)
         return properties + ['value', 'mime_type']
 
     def _process_property_change(self, msg):
-        msg = super(FileInput, self)._process_property_change(msg)
+        msg = super()._process_property_change(msg)
         if 'value' in msg:
             msg['value'] = b64decode(msg['value'])
         return msg
@@ -107,7 +107,7 @@ class StaticText(Widget):
     _rename = {'name': 'title', 'value': 'text'}
 
     def _process_param_change(self, msg):
-        msg = super(StaticText, self)._process_property_change(msg)
+        msg = super()._process_property_change(msg)
         msg.pop('title', None)
         if 'value' in msg:
             text = as_unicode(msg.pop('value'))
@@ -130,7 +130,7 @@ class DatePicker(Widget):
     _rename = {'start': 'min_date', 'end': 'max_date', 'name': 'title'}
 
     def _process_property_change(self, msg):
-        msg = super(DatePicker, self)._process_property_change(msg)
+        msg = super()._process_property_change(msg)
         if 'value' in msg:
             if isinstance(msg['value'], str):
                 msg['value'] = datetime.strptime(msg['value'][4:], '%b %d %Y')
@@ -180,7 +180,7 @@ class LiteralInput(Widget):
     _widget_type = _BkTextInput
 
     def __init__(self, **params):
-        super(LiteralInput, self).__init__(**params)
+        super().__init__(**params)
         self._state = ''
         self._validate(None)
         self.param.watch(self._validate, 'value')
@@ -197,7 +197,7 @@ class LiteralInput(Widget):
                              (types, new, type(new).__name__))
 
     def _process_property_change(self, msg):
-        msg = super(LiteralInput, self)._process_property_change(msg)
+        msg = super()._process_property_change(msg)
         new_state = ''
         if 'value' in msg:
             value = msg.pop('value')
@@ -217,7 +217,7 @@ class LiteralInput(Widget):
         return msg
 
     def _process_param_change(self, msg):
-        msg = super(LiteralInput, self)._process_param_change(msg)
+        msg = super()._process_param_change(msg)
         msg.pop('type', None)
         if 'value' in msg:
             msg['value'] = '' if msg['value'] is None else as_unicode(msg['value'])
@@ -243,7 +243,7 @@ class DatetimeInput(LiteralInput):
     type = datetime
 
     def __init__(self, **params):
-        super(DatetimeInput, self).__init__(**params)
+        super().__init__(**params)
         self.param.watch(self._validate, 'value')
         self._validate(None)
 
@@ -302,13 +302,13 @@ class Checkbox(Widget):
     _widget_type = _BkCheckboxGroup
 
     def _process_property_change(self, msg):
-        msg = super(Checkbox, self)._process_property_change(msg)
+        msg = super()._process_property_change(msg)
         if 'active' in msg:
             msg['value'] = 0 in msg.pop('active')
         return msg
 
     def _process_param_change(self, msg):
-        msg = super(Checkbox, self)._process_param_change(msg)
+        msg = super()._process_param_change(msg)
         if 'value' in msg:
             msg['active'] = [0] if msg.pop('value', None) else []
         if 'title' in msg:

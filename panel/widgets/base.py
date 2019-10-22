@@ -51,7 +51,7 @@ class Widget(Reactive):
             params['name'] = ''
         if '_supports_embed' in params:
             self._supports_embed = params.pop('_supports_embed')
-        super(Widget, self).__init__(**params)
+        super().__init__(**params)
         self.param.watch(self._update_widget, self._manual_params)
 
     def _manual_update(self, event, model, doc, root, parent, comm):
@@ -140,7 +140,7 @@ class CompositeWidget(Widget):
         -------
         viewables: list(Viewable)
         """
-        objects = super(CompositeWidget, self).select(selector)
+        objects = super().select(selector)
         for obj in self._composite.objects:
             objects += obj.select(selector)
         return objects

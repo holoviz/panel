@@ -138,7 +138,7 @@ class YT(HTML):
                 hasattr(obj, "_repr_html_"))
 
     def _get_properties(self):
-        p = super(YT, self)._get_properties()
+        p = super()._get_properties()
         if self.object is None:
             return p
 

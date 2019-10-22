@@ -42,7 +42,7 @@ class DataFrame(Widget):
     _manual_params = ['value', 'editors', 'formatters', 'selection', 'width']
 
     def __init__(self, value=None, **params):
-        super(DataFrame, self).__init__(value=value, **params)
+        super().__init__(value=value, **params)
         self._renamed_cols = {}
 
     def _get_columns(self):
@@ -105,8 +105,8 @@ class DataFrame(Widget):
     def _process_param_change(self, msg):
         if 'disabled' in msg:
             msg['editable'] = not msg.pop('disabled')
-        return super(DataFrame, self)._process_param_change(msg)
-    
+        return super()._process_param_change(msg)
+
     def _get_model(self, doc, root=None, parent=None, comm=None):
         model = DataTable(**self._get_properties())
         if root is None:
@@ -155,7 +155,7 @@ class DataFrame(Widget):
                 self.param.trigger('value')
         if 'indices' in events:
             self.selected = events.pop('indices')
-        super(DataFrame, self)._process_events(events)
+        super()._process_events(events)
 
     @property
     def selected_dataframe(self):

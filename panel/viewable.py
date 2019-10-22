@@ -185,7 +185,7 @@ class Layoutable(param.Parameterized):
             params.get('height', None) is not None and
             'sizing_mode' not in params):
             params['sizing_mode'] = 'fixed'
-        super(Layoutable, self).__init__(**params)
+        super().__init__(**params)
 
 
 class Viewable(Layoutable):
@@ -203,7 +203,7 @@ class Viewable(Layoutable):
     _preprocessing_hooks = []
 
     def __init__(self, **params):
-        super(Viewable, self).__init__(**params)
+        super().__init__(**params)
         self._documents = {}
         self._models = {}
         self._found_links = set()
@@ -574,7 +574,7 @@ class Reactive(Viewable):
     def __init__(self, **params):
         # temporary flag denotes panes created for temporary, internal
         # use which should be garbage collected once they have been used
-        super(Reactive, self).__init__(**params)
+        super().__init__(**params)
         self._processing = False
         self._events = {}
         self._changing = {}
@@ -743,7 +743,7 @@ class Reactive(Viewable):
         return properties
 
     def _cleanup(self, root):
-        super(Reactive, self)._cleanup(root)
+        super()._cleanup(root)
 
         # Clean up comms
         model, _ = self._models.pop(root.ref['id'], (None, None))

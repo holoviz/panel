@@ -35,7 +35,7 @@ class PeriodicCallback(param.Parameterized):
         expires""")
 
     def __init__(self, **params):
-        super(PeriodicCallback, self).__init__(**params)
+        super().__init__(**params)
         self._counter = 0
         self._start_time = None
         self._timeout = None

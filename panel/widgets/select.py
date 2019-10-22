@@ -54,13 +54,13 @@ class Select(SelectBase):
     _supports_embed = True
 
     def __init__(self, **params):
-        super(Select, self).__init__(**params)
+        super().__init__(**params)
         values = self.values
         if self.value is None and None not in values and values:
             self.value = values[0]
 
     def _process_param_change(self, msg):
-        msg = super(Select, self)._process_param_change(msg)
+        msg = super()._process_param_change(msg)
         labels, values = self.labels, self.values
         if 'value' in msg:
             val = msg['value']
@@ -82,7 +82,7 @@ class Select(SelectBase):
         return msg
 
     def _process_property_change(self, msg):
-        msg = super(Select, self)._process_property_change(msg)
+        msg = super()._process_property_change(msg)
         if 'value' in msg:
             if not self.values:
                 pass
@@ -327,7 +327,7 @@ class CrossSelector(CompositeWidget, MultiSelect):
        order of selection to define the order of the selected list.""")
 
     def __init__(self, *args, **kwargs):
-        super(CrossSelector, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         # Compute selected and unselected values
 
         labels, values = self.labels, self.values

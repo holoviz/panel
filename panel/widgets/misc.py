@@ -51,7 +51,7 @@ class Audio(Widget):
         return buffer
 
     def _process_param_change(self, msg):
-        msg = super(Audio, self)._process_param_change(msg)
+        msg = super()._process_param_change(msg)
 
         if 'value' in msg:
             value =  msg['value']

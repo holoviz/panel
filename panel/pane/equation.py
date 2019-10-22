@@ -66,7 +66,7 @@ class LaTeX(DivPaneBase):
         return model
 
     def _get_properties(self):
-        properties = super(LaTeX, self)._get_properties()
+        properties = super()._get_properties()
         obj = self.object
         if obj is None:
             obj = ''

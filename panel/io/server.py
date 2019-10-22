@@ -111,7 +111,7 @@ class StoppableThread(threading.Thread):
 
     def __init__(self, io_loop=None, timeout=1000, **kwargs):
         from tornado import ioloop
-        super(StoppableThread, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self._stop_event = threading.Event()
         self.io_loop = io_loop
         self._cb = ioloop.PeriodicCallback(self._check_stopped, timeout)

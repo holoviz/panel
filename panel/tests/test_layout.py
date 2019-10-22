@@ -861,9 +861,8 @@ def test_layout_with_param_setitem(document, comm):
         select = param.ObjectSelector(default=0, objects=[0,1])
 
         def __init__(self, **params):
-            super(TestClass, self).__init__(**params)
-            self._layout = Row(Param(self.param, parameters=['select']),
-                               self.select)
+            super().__init__(**params)
+            self._layout = Row(Param(self.param, parameters=['select']), self.select)
 
         @param.depends('select', watch=True)
         def _load(self):

@@ -77,7 +77,7 @@ class ImageBase(DivPaneBase):
         raise NotImplementedError
 
     def _get_properties(self):
-        p = super(ImageBase, self)._get_properties()
+        p = super()._get_properties()
         if self.object is None:
             return dict(p, text='<img></img>')
         data = self._img()
@@ -170,14 +170,14 @@ class SVG(ImageBase):
 
     @classmethod
     def applies(cls, obj):
-        return (super(SVG, cls).applies(obj) or
+        return (super().applies(obj) or
                 (isinstance(obj, str) and obj.lstrip().startswith('<svg')))
 
     def _img(self):
         if (isinstance(self.object, str) and
             self.object.lstrip().startswith('<svg')):
             return self.object
-        return super(SVG, self)._img()
+        return super()._img()
 
     def _imgshape(self, data):
         return (self.width, self.height)

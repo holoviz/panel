@@ -157,7 +157,7 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
 
     def __init__(self, **params):
         self._syncing = False
-        super(DiscreteSlider, self).__init__(**params)
+        super().__init__(**params)
         if 'formatter' not in params and all(isinstance(v, (int, np.int_)) for v in self.values):
             self.formatter = '%d'
         if self.value is None and None not in self.values and self.options:
@@ -264,14 +264,14 @@ class RangeSlider(_SliderBase):
     _widget_type = _BkRangeSlider
 
     def __init__(self, **params):
-        super(RangeSlider, self).__init__(**params)
+        super().__init__(**params)
         values = [self.value[0], self.value[1], self.start, self.end]
         if (all(v is None or isinstance(v, int) for v in values) and
             'step' not in params):
             self.step = 1
 
     def _process_property_change(self, msg):
-        msg = super(RangeSlider, self)._process_property_change(msg)
+        msg = super()._process_property_change(msg)
         if 'value' in msg:
             msg['value'] = tuple(msg['value'])
         return msg
@@ -299,7 +299,7 @@ class DateRangeSlider(_SliderBase):
     _widget_type = _BkDateRangeSlider
 
     def _process_property_change(self, msg):
-        msg = super(DateRangeSlider, self)._process_property_change(msg)
+        msg = super()._process_property_change(msg)
         if 'value' in msg:
             v1, v2 = msg['value']
             msg['value'] = (value_as_datetime(v1), value_as_datetime(v2))

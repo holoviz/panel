@@ -80,7 +80,7 @@ class HTML(DivPaneBase):
             return False
 
     def _get_properties(self):
-        properties = super(HTML, self)._get_properties()
+        properties = super()._get_properties()
         text = '' if self.object is None else self.object
         if hasattr(text, 'to_html') and any(text.__module__ for m in ('pandas', 'dask')):
             text = text.to_html(classes=['panel-df']).replace('border="1"', '')
@@ -105,7 +105,7 @@ class Str(DivPaneBase):
         return True
 
     def _get_properties(self):
-        properties = super(Str, self)._get_properties()
+        properties = super()._get_properties()
         if self.object is None:
             text = ''
         else:
@@ -140,7 +140,7 @@ class Markdown(DivPaneBase):
             data = ''
         elif not isinstance(data, str):
             data = data._repr_markdown_()
-        properties = super(Markdown, self)._get_properties()
+        properties = super()._get_properties()
         properties['style'] = properties.get('style', {})
         extensions = ['markdown.extensions.extra', 'markdown.extensions.smarty']
         html = markdown.markdown(data, extensions=extensions, output_format='html5')

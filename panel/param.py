@@ -130,7 +130,7 @@ class Param(PaneBase):
             object = object.cls if object.self is None else object.self
         if 'parameters' not in params and object is not None:
             params['parameters'] = [p for p in object.param if p != 'name']
-        super(Param, self).__init__(object, **params)
+        super().__init__(object, **params)
         self._updating = False
 
         # Construct Layout
@@ -461,7 +461,7 @@ class Param(PaneBase):
 
     def _cleanup(self, root):
         self.layout._cleanup(root)
-        super(Param, self)._cleanup(root)
+        super()._cleanup(root)
 
     #----------------------------------------------------------------
     # Public API
@@ -518,7 +518,7 @@ class ParamMethod(PaneBase):
     def __init__(self, object, **params):
         self._kwargs =  {p: params.pop(p) for p in list(params)
                          if p not in self.param}
-        super(ParamMethod, self).__init__(object, **params)
+        super().__init__(object, **params)
         kwargs = dict(self.get_param_values(), **self._kwargs)
         del kwargs['object']
         self._pane = Pane(self._eval_function(self.object), **kwargs)
@@ -630,13 +630,13 @@ class ParamMethod(PaneBase):
         -------
         viewables: list(Viewable)
         """
-        selected = super(ParamMethod, self).select(selector)
+        selected = super().select(selector)
         selected += self._pane.select(selector)
         return selected
 
     def _cleanup(self, root=None):
         self._inner_layout._cleanup(root)
-        super(ParamMethod, self)._cleanup(root)
+        super()._cleanup(root)
 
     #----------------------------------------------------------------
     # Public API

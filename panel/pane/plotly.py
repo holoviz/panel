@@ -63,7 +63,7 @@ viewport_update_policy is "throttle"'''
                                                    and 'data' in obj and 'layout' in obj))
 
     def __init__(self, object=None, **params):
-        super(Plotly, self).__init__(object, **params)
+        super().__init__(object, **params)
         self._figure = None
         self._update_figure()
 
@@ -167,7 +167,7 @@ viewport_update_policy is "throttle"'''
                 if isdatetime(data[idx][key]):
                     arr = data[idx][key]
                     if isinstance(arr, np.ndarray):
-                        arr = arr.astype(str) 
+                        arr = arr.astype(str)
                     else:
                         arr = [str(v) for v in arr]
                     data[idx][key] = arr

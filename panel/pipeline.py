@@ -36,7 +36,7 @@ class Pipeline(param.Parameterized):
 
         self._stages = [] if stages is None else list(stages)
         self._stage = 0
-        super(Pipeline, self).__init__(**params)
+        super().__init__(**params)
         self._error = Markdown('')
         self._states = []
         self._state = None

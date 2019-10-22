@@ -47,7 +47,7 @@ class Link(param.Parameterized):
         # Source is stored as a weakref to allow it to be garbage collected
         self._source = None if source is None else weakref.ref(source)
         self._target = None if target is None else weakref.ref(target)
-        super(Link, self).__init__(**params)
+        super().__init__(**params)
         self.link()
 
     @classmethod

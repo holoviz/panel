@@ -74,7 +74,7 @@ class HoloViews(PaneBase):
                'widget_layout': None, 'widget_location': None, 'center': None}
 
     def __init__(self, object=None, **params):
-        super(HoloViews, self).__init__(object, **params)
+        super().__init__(object, **params)
         self._initialized = False
         self.widget_box = self.widget_layout()
         self._widget_container = []
@@ -264,7 +264,7 @@ class HoloViews(PaneBase):
             old_plot.cleanup()
         if old_pane:
             old_pane._cleanup(root)
-        super(HoloViews, self)._cleanup(root)
+        super()._cleanup(root)
 
     #----------------------------------------------------------------
     # Public API

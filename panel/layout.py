@@ -42,7 +42,7 @@ class Panel(Reactive):
         params = param_reprs(self, ['objects'])
         objs = ['[%d] %s' % (i, obj.__repr__(depth+1)) for i, obj in enumerate(self)]
         if not params and not objs:
-            return super(Panel, self).__repr__(depth+1)
+            return super().__repr__(depth+1)
         elif not params:
             template = '{cls}{spacer}{objs}'
         elif not objs:
@@ -120,7 +120,7 @@ class Panel(Reactive):
         return model
 
     def _cleanup(self, root):
-        super(Panel, self)._cleanup(root)
+        super()._cleanup(root)
         for p in self.objects:
             p._cleanup(root)
 
@@ -143,7 +143,7 @@ class Panel(Reactive):
         -------
         viewables: list(Viewable)
         """
-        objects = super(Panel, self).select(selector)
+        objects = super().select(selector)
         for obj in self:
             objects += obj.select(selector)
         return objects
@@ -469,7 +469,7 @@ class Tabs(ListPanel):
                                  'not both.')
             items = params['objects']
         objects, self._names = self._to_objects_and_names(items)
-        super(Tabs, self).__init__(*objects, **params)
+        super().__init__(*objects, **params)
         self.param.watch(self._update_names, 'objects')
         # ALERT: Ensure that name update happens first, should be
         #        replaced by watch precedence support in param
@@ -523,7 +523,7 @@ class Tabs(ListPanel):
             closable = msg.pop('closable')
             for child in model.tabs:
                 child.closable = closable
-        super(Tabs, self)._update_model(events, msg, root, model, doc, comm)
+        super()._update_model(events, msg, root, model, doc, comm)
 
     def _get_objects(self, model, old_objects, doc, root, comm=None):
         """
@@ -732,10 +732,10 @@ class GridSpec(Panel):
     def __init__(self, **params):
         if 'objects' not in params:
             params['objects'] = OrderedDict()
-        super(GridSpec, self).__init__(**params)
+        super().__init__(**params)
 
     def _init_properties(self):
-        properties = super(GridSpec, self)._init_properties()
+        properties = super()._init_properties()
         if self.sizing_mode not in ['fixed', None]:
             if 'min_width' not in properties and 'width' in properties:
                 properties['min_width'] = properties['width']
