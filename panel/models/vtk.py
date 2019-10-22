@@ -4,8 +4,11 @@ Defines custom VTKPlot bokeh model to render VTK objects.
 from bokeh.core.properties import String, Bool, Dict, Any, Override
 from bokeh.models import HTMLBox
 
+from ..util import public
+
 vtk_cdn = "https://unpkg.com/vtk.js"
 
+@public
 class VTKPlot(HTMLBox):
     """
     A Bokeh model that wraps around a vtk-js library and renders it inside
@@ -33,6 +36,8 @@ class VTKPlot(HTMLBox):
 
     width = Override(default=300)
 
+
+@public
 class VTKVolumePlot(HTMLBox):
     """
     A Bokeh model that wraps around a vtk-js library and renders it inside

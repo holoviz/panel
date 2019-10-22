@@ -5,8 +5,10 @@ import param
 from pyviz_comms import JupyterComm
 
 from .base import PaneBase
+from ..util import public
 
 
+@public
 class Ace(PaneBase):
     """
     Ace panes allow rendering Ace editor.

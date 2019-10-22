@@ -5,7 +5,9 @@ Custom bokeh Widget models.
 from bokeh.core.properties import Int, Float, Override, Enum, Any, Bool
 from bokeh.models import Widget
 
+from ..util import public
 
+@public
 class Player(Widget):
     """
     The Player widget provides controls to play through a number of frames.
@@ -32,6 +34,7 @@ class Player(Widget):
     height = Override(default=250)
 
 
+@public
 class Audio(Widget):
 
     loop = Bool(False, help="""Whether the audio should loop""")
@@ -49,6 +52,7 @@ class Audio(Widget):
     volume = Int(0, help="""The volume of the audio player.""")
 
 
+@public
 class VideoStream(Widget):
 
     format = Enum('png', 'jpeg', default='png')

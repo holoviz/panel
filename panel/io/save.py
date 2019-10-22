@@ -10,6 +10,7 @@ from bokeh.io.export import export_png, create_webdriver
 from bokeh.resources import CDN
 from pyviz_comms import Comm
 
+from ..util import public
 from ..config import config
 from .embed import embed_state
 from .model import add_to_doc
@@ -20,6 +21,7 @@ from .state import state
 # Public API
 #---------------------------------------------------------------------
 
+@public
 def save_png(model, filename):
     """
     Saves a bokeh model to png
@@ -37,10 +39,7 @@ def save_png(model, filename):
     webdriver = state.webdriver
     export_png(model, filename, webdriver=webdriver)
 
-#---------------------------------------------------------------------
-# Public API
-#---------------------------------------------------------------------
-
+@public
 def save(panel, filename, title=None, resources=None, template=None,
          template_variables=None, embed=False, max_states=1000,
          max_opts=3, embed_json=False, json_prefix='', save_path='./',

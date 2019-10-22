@@ -13,6 +13,7 @@ import os, sys, json, random, string, hashlib, zipfile
 from io import BytesIO
 
 from .enums import SCALAR_MODE, ACCESS_MODE
+from ...util import public
 
 arrayTypesMapping = [
   ' ', # VTK_VOID            0
@@ -309,6 +310,7 @@ def vtk_lut_to_palette(lut):
     return {"palette": palette, "low":low, "high":high, "scale": scale}
 
 
+@public
 def construct_palettes(render_window):
     """
     """
@@ -370,6 +372,7 @@ def construct_palettes(render_window):
     return legend
 
 
+@public
 def render_window_serializer(render_window):
     """
     Function to convert a vtk render window in a list of 2-tuple where first value

@@ -7,9 +7,10 @@ import numpy as np
 from .layout import Row, Column, HSpacer, VSpacer
 from .pane import HoloViews, Markdown, Pane
 from .param import Param
-from .util import param_reprs
+from .util import param_reprs, public
 
 
+@public
 class Pipeline(param.Parameterized):
     """
     Allows connecting a linear series of panels to define a workflow.

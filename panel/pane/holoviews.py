@@ -17,11 +17,13 @@ from ..io import state
 from ..layout import Panel, Column, WidgetBox, HSpacer, VSpacer, Row
 from ..viewable import Viewable
 from ..widgets import Player
+from ..util import public
 from .base import PaneBase, Pane
 from .plot import Bokeh, Matplotlib
 from .plotly import Plotly
 
 
+@public
 class HoloViews(PaneBase):
     """
     HoloViews panes render any HoloViews object to a corresponding

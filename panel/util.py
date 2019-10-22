@@ -16,7 +16,11 @@ import numpy as np
 
 datetime_types = (np.datetime64, dt.datetime, dt.date)
 
+from .decorator import public
 
+__all__ = ["public"]
+
+@public
 def hashable(x):
     if isinstance(x, MutableSequence):
         return tuple(x)
@@ -26,6 +30,7 @@ def hashable(x):
         return x
 
 
+@public
 def isIn(obj, objs):
     """
     Checks if the object is in the list of objects safely.
@@ -41,6 +46,7 @@ def isIn(obj, objs):
     return False
 
 
+@public
 def indexOf(obj, objs):
     """
     Returns the index of an object in a list of objects. Unlike the
@@ -58,6 +64,7 @@ def indexOf(obj, objs):
     raise ValueError('%s not in list' % obj)
 
 
+@public
 def param_name(name):
     """
     Removes the integer id from a Parameterized class name.
@@ -66,6 +73,7 @@ def param_name(name):
     return name[:-5] if match else name
 
 
+@public
 def abbreviated_repr(value, max_length=25, natural_breaks=(',', ' ')):
     """
     Returns an abbreviated repr for the supplied object. Attempts to
@@ -94,6 +102,7 @@ def abbreviated_repr(value, max_length=25, natural_breaks=(',', ' ')):
     return vrepr
 
 
+@public
 def param_reprs(parameterized, skip=None):
     """
     Returns a list of reprs for parameters on the parameterized object.
@@ -112,6 +121,7 @@ def param_reprs(parameterized, skip=None):
     return param_reprs
 
 
+@public
 def full_groupby(l, key=lambda x: x):
     """
     Groupby implementation which does not require a prior sort
@@ -122,6 +132,7 @@ def full_groupby(l, key=lambda x: x):
     return d.items()
 
 
+@public
 def get_method_owner(meth):
     """
     Returns the instance owning the supplied instancemethod or
@@ -131,6 +142,7 @@ def get_method_owner(meth):
         return meth.__self__
 
 
+@public
 def is_parameterized(obj):
     """
     Whether an object is a Parameterized class or instance.
@@ -139,6 +151,7 @@ def is_parameterized(obj):
             (isinstance(obj, type) and issubclass(obj, param.Parameterized)))
 
 
+@public
 def isdatetime(value):
     """
     Whether the array or scalar is recognized datetime type.
@@ -152,6 +165,8 @@ def isdatetime(value):
     else:
         return isinstance(value, datetime_types)
 
+
+@public
 def value_as_datetime(value):
     """
     Retrieve the value tuple as a tuple of datetime objects.
@@ -161,6 +176,7 @@ def value_as_datetime(value):
     return value
 
 
+@public
 def value_as_date(value):
     if isinstance(value, numbers.Number):
         value = datetime.utcfromtimestamp(value / 1000).date()

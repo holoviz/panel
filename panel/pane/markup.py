@@ -14,9 +14,11 @@ from bokeh.models import Div as _BkDiv
 
 from ..viewable import Layoutable
 from ..models import HTML as _BkHTML
+from ..util import public
 from .base import PaneBase
 
 
+@public
 class DivPaneBase(PaneBase):
     """
     Baseclass for Panes which render HTML inside a Bokeh Div.
@@ -56,6 +58,7 @@ class DivPaneBase(PaneBase):
         model.update(**self._get_properties())
 
 
+@public
 class HTML(DivPaneBase):
     """
     HTML panes wrap HTML text in a bokeh Div model.  The
@@ -89,6 +92,7 @@ class HTML(DivPaneBase):
         return dict(properties, text=escape(text))
 
 
+@public
 class Str(DivPaneBase):
     """
     A Str pane renders any object for which `str()` can be called,
@@ -113,6 +117,7 @@ class Str(DivPaneBase):
         return dict(properties, text=text)
 
 
+@public
 class Markdown(DivPaneBase):
     """
     A Markdown pane renders the markdown markup language to HTML and

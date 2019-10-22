@@ -28,9 +28,9 @@ from .io.notebook import (get_comm_customjs, push, render_mimebundle,
 from .io.save import save
 from .io.state import state
 from .io.server import StoppableThread, get_server
-from .util import param_reprs
+from .util import param_reprs, public
 
-
+@public
 class Layoutable(param.Parameterized):
 
     align = param.ObjectSelector(default='start',
@@ -188,6 +188,7 @@ class Layoutable(param.Parameterized):
         super().__init__(**params)
 
 
+@public
 class Viewable(Layoutable):
     """
     Viewable is the baseclass all objects in the panel library are
@@ -546,7 +547,7 @@ class Viewable(Layoutable):
         return server
 
 
-
+@public
 class Reactive(Viewable):
     """
     Reactive is a Viewable object that also supports syncing between

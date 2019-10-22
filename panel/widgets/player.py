@@ -5,11 +5,12 @@ Defines Player widgets which offer media-player like controls.
 import param
 
 from ..models.widgets import Player as _BkPlayer
-from ..util import isIn, indexOf
+from ..util import isIn, indexOf, public
 from .base import Widget
 from .select import SelectBase
 
 
+@public
 class PlayerBase(Widget):
 
     interval = param.Integer(default=500, doc="Interval between updates")
@@ -30,6 +31,7 @@ class PlayerBase(Widget):
     __abstract = True
 
 
+@public
 class Player(PlayerBase):
     """
     The Player provides controls to play and skip through a number of
@@ -62,6 +64,7 @@ class Player(PlayerBase):
 
 
 
+@public
 class DiscretePlayer(PlayerBase, SelectBase):
     """
     The DiscretePlayer provides controls to iterate through a list of

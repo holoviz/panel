@@ -12,9 +12,10 @@ from bokeh.io import curdoc as _curdoc
 from ..io import push, state
 from ..layout import Panel, Row
 from ..viewable import Viewable, Reactive, Layoutable
-from ..util import param_reprs
+from ..util import param_reprs, public
 
 
+@public
 def Pane(obj, **kwargs):
     """
     Converts any object to a Pane if a matching Pane class exists.
@@ -24,6 +25,7 @@ def Pane(obj, **kwargs):
     return PaneBase.get_pane_type(obj)(obj, **kwargs)
 
 
+@public
 class PaneBase(Reactive):
     """
     PaneBase is the abstract baseclass for all atomic displayable units

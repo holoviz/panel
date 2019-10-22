@@ -9,7 +9,9 @@ import param
 
 from bokeh.io import curdoc as _curdoc
 
+from .util import public
 
+@public
 class PeriodicCallback(param.Parameterized):
     """
     Periodic encapsulates a periodic callback which will run both

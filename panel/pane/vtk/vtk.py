@@ -14,7 +14,10 @@ import numpy as np
 from pyviz_comms import JupyterComm
 
 from ..base import PaneBase
+from ...util import public
 
+
+@public
 class VTKVolume(PaneBase):
     _updates = True
     _serializers = {}
@@ -137,6 +140,7 @@ class VTKVolume(PaneBase):
         return sub_array
 
 
+@public
 class VTK(PaneBase):
     """
     VTK panes allow rendering VTK objects.

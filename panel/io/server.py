@@ -11,7 +11,7 @@ from functools import partial
 from bokeh.server.server import Server
 
 from .state import state
-
+from ..util import public
 
 #---------------------------------------------------------------------
 # Private API
@@ -33,6 +33,7 @@ def _server_url(url, port):
 # Public API
 #---------------------------------------------------------------------
 
+@public
 def get_server(panel, port=0, websocket_origin=None, loop=None,
                show=False, start=False, **kwargs):
     """
@@ -106,6 +107,7 @@ def get_server(panel, port=0, websocket_origin=None, loop=None,
     return server
 
 
+@public
 class StoppableThread(threading.Thread):
     """Thread class with a stop() method."""
 

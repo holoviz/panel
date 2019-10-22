@@ -27,6 +27,7 @@ from pyviz_comms import (
     bokeh_msg_handler, nb_mime_js)
 
 from ..compiler import require_components
+from ..util import public
 from .embed import embed_state
 from .model import add_to_doc, diff
 from .server import _server_url, _origin_url, get_server
@@ -180,6 +181,7 @@ def mimebundle_to_html(bundle):
 #---------------------------------------------------------------------
 
 
+@public
 @contextmanager
 def block_comm():
     """
@@ -190,6 +192,7 @@ def block_comm():
     state._hold = False
 
 
+@public
 def load_notebook(inline=True, load_timeout=5000):
     from IPython.display import publish_display_data
 
@@ -209,6 +212,7 @@ def load_notebook(inline=True, load_timeout=5000):
     publish_display_data(data={LOAD_MIME: JS, 'application/javascript': JS})
 
 
+@public
 def show_server(panel, notebook_url, port):
     """
     Displays a bokeh server inline in the notebook.
@@ -254,6 +258,7 @@ def show_server(panel, notebook_url, port):
     return server
 
 
+@public
 def show_embed(panel, max_states=1000, max_opts=3, json=False,
               save_path='./', load_path=None):
     """

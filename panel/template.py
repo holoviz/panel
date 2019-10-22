@@ -12,12 +12,14 @@ from .io.state import state
 from .layout import Column
 from .pane import panel as _panel, HTML, Str
 from .widgets import Button
+from .util import public
 
 _server_info = (
     '<b>Running server:</b> <a target="_blank" href="https://localhost:{port}">'
     'https://localhost:{port}</a>')
 
 
+@public
 class Template(object):
     """
     A Template is a high-level component to render multiple Panel

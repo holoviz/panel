@@ -22,7 +22,7 @@ from .layout import Row, Panel, Tabs, Column
 from .links import Link
 from .pane.base import Pane, PaneBase
 from .util import (
-    abbreviated_repr, full_groupby,
+    public, abbreviated_repr, full_groupby,
     get_method_owner, is_parameterized, param_name)
 from .viewable import Layoutable, Reactive
 from .widgets import (
@@ -32,6 +32,7 @@ from .widgets import (
 from .widgets.button import _ButtonBase
 
 
+@public
 def FileSelector(pobj):
     """
     Determines whether to use a TextInput or Select widget for FileSelector
@@ -42,6 +43,7 @@ def FileSelector(pobj):
         return TextInput
 
 
+@public
 class Param(PaneBase):
     """
     Param panes render a Parameterized class to a set of widgets which
@@ -502,6 +504,7 @@ class Param(PaneBase):
         return root
 
 
+@public
 class ParamMethod(PaneBase):
     """
     ParamMethod panes wrap methods on parameterized classes and
@@ -644,6 +647,7 @@ class ParamMethod(PaneBase):
         return inspect.ismethod(obj) and isinstance(get_method_owner(obj), param.Parameterized)
 
 
+@public
 class ParamFunction(ParamMethod):
     """
     ParamFunction panes wrap functions decorated with the param.depends
@@ -671,6 +675,7 @@ class ParamFunction(ParamMethod):
         return isinstance(obj, types.FunctionType) and hasattr(obj, '_dinfo')
 
 
+@public
 class JSONInit(param.Parameterized):
     """
     Callable that can be passed to Widgets.initializer to set Parameter

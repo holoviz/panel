@@ -2,10 +2,13 @@
 Utilities for building custom models included in panel.
 """
 
+from .util import public
+
 #---------------------------------------------------------------------
 # Public API
 #---------------------------------------------------------------------
 
+@public
 def require_components():
     """
     Returns JS snippet to load the required dependencies in the classic

@@ -1,7 +1,9 @@
 from bokeh.models import Model
 from bokeh.core.properties import Bool, Dict, Any, List
 
+from ..util import public
 
+@public
 class State(Model):
 
     json = Bool(False, help="Whether the values point to json files")

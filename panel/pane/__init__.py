@@ -7,6 +7,8 @@ images, equations etc.
 """
 
 from ..viewable import Viewable
+from ..util import public
+
 from .base import PaneBase, Pane # noqa
 from .equation import LaTeX # noqa
 from .holoviews import HoloViews # noqa
@@ -19,6 +21,7 @@ from .vtk import VTK, VTKVolume # noqa
 from .ace import Ace # noqa
 
 
+@public
 def panel(obj, **kwargs):
     """
     Creates a panel from any supplied object by wrapping it in a pane

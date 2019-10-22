@@ -10,6 +10,7 @@ import param
 from pyviz_comms import JupyterComm
 
 from .markup import DivPaneBase
+from ..util import public
 
 
 def is_sympy_expr(obj):
@@ -21,6 +22,7 @@ def is_sympy_expr(obj):
     return False
 
 
+@public
 class LaTeX(DivPaneBase):
 
     renderer = param.ObjectSelector(default=None, allow_None=True,

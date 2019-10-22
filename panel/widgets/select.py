@@ -16,13 +16,14 @@ from bokeh.models.widgets import (
     Select as _BkSelect)
 
 from ..layout import Column, Row, VSpacer
-from ..util import isIn, indexOf
+from ..util import isIn, indexOf, public
 from ..viewable import Layoutable
 from .base import Widget, CompositeWidget
 from .button import _ButtonBase, Button
 from .input import TextInput
 
 
+@public
 class SelectBase(Widget):
 
     options = param.ClassSelector(default=[], class_=(dict, list))
@@ -45,6 +46,7 @@ class SelectBase(Widget):
         return dict(zip(self.labels, self.values))
 
 
+@public
 class Select(SelectBase):
 
     value = param.Parameter(default=None)
@@ -98,6 +100,7 @@ class Select(SelectBase):
                 lambda x: x.value, 'value', 'cb_obj.value')
 
 
+@public
 class MultiSelect(Select):
 
     size = param.Integer(default=4, doc="""
@@ -133,7 +136,7 @@ class MultiSelect(Select):
         return msg
 
 
-
+@public
 class AutocompleteInput(Widget):
 
     options = param.List(default=[])
@@ -189,7 +192,7 @@ class _RadioGroupBase(Select):
                 lambda x: x.active, 'active', 'cb_obj.active')
 
 
-
+@public
 class RadioButtonGroup(_RadioGroupBase, _ButtonBase):
 
     _widget_type = _BkRadioButtonGroup
@@ -199,7 +202,7 @@ class RadioButtonGroup(_RadioGroupBase, _ButtonBase):
     _supports_embed = True
 
 
-
+@public
 class RadioBoxGroup(_RadioGroupBase):
 
     inline = param.Boolean(default=False, doc="""
@@ -241,7 +244,7 @@ class _CheckGroupBase(Select):
         return msg
 
 
-
+@public
 class CheckButtonGroup(_CheckGroupBase, _ButtonBase):
 
     _widget_type = _BkCheckboxButtonGroup
@@ -249,7 +252,7 @@ class CheckButtonGroup(_CheckGroupBase, _ButtonBase):
     _rename = {'name': 'title'}
 
 
-
+@public
 class CheckBoxGroup(_CheckGroupBase):
 
     inline = param.Boolean(default=False, doc="""
@@ -259,7 +262,7 @@ class CheckBoxGroup(_CheckGroupBase):
     _widget_type = _BkCheckboxGroup
 
 
-
+@public
 class ToggleGroup(Select):
     """This class is a factory of ToggleGroup widgets.
 
@@ -302,7 +305,7 @@ class ToggleGroup(Select):
                 return RadioBoxGroup(**params)
 
 
-
+@public
 class CrossSelector(CompositeWidget, MultiSelect):
     """
     A composite widget which allows selecting from a list of items

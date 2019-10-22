@@ -8,7 +8,7 @@ from bokeh.models import ColumnDataSource
 from pyviz_comms import JupyterComm
 
 from .base import PaneBase
-
+from ..util import public
 
 def ds_as_cds(dataset):
     """
@@ -24,6 +24,7 @@ def ds_as_cds(dataset):
     return data
 
 
+@public
 class Vega(PaneBase):
     """
     Vega panes allow rendering Vega plots and traces.

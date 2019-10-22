@@ -10,11 +10,13 @@ from bokeh.models import Model, Box
 from bokeh.protocol import Protocol
 
 from .state import state
+from ..util import public
 
 #---------------------------------------------------------------------
 # Public API
 #---------------------------------------------------------------------
 
+@public
 def diff(doc, binary=True, events=None):
     """
     Returns a json diff required to update an existing plot with
@@ -36,6 +38,7 @@ def diff(doc, binary=True, events=None):
     return msg
 
 
+@public
 def remove_root(obj, replace=None):
     """
     Removes the document from any previously displayed bokeh object
@@ -49,6 +52,7 @@ def remove_root(obj, replace=None):
             model._document = replace
 
 
+@public
 def add_to_doc(obj, doc, hold=False):
     """
     Adds a model to the supplied Document removing it from any existing Documents.
@@ -62,6 +66,7 @@ def add_to_doc(obj, doc, hold=False):
 
 _DEFAULT_IGNORED_REPR = frozenset(['children', 'text', 'name', 'toolbar', 'renderers', 'below', 'center', 'left', 'right'])
 
+@public
 def bokeh_repr(obj, depth=0, ignored=None):
     """
     Returns a string repr for a bokeh model, useful for recreating

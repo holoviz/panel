@@ -17,7 +17,7 @@ from pyviz_comms import (JupyterCommManager as _JupyterCommManager,
 
 from .io.notebook import load_notebook
 from .io.state import state
-
+from .util import public
 
 #---------------------------------------------------------------------
 # Public API
@@ -26,6 +26,7 @@ from .io.state import state
 _PATH = os.path.abspath(os.path.dirname(__file__))
 _CSS_FILES = glob.glob(os.path.join(_PATH, '_styles', '*.css'))
 
+@public
 class _config(param.Parameterized):
     """
     Holds global configuration options for Panel. The options can be
@@ -166,6 +167,7 @@ config = _config(**{k: None if p.allow_None else getattr(_config, k)
                     for k, p in _params.items() if k != 'name'})
 
 
+@public
 class panel_extension(_pyviz_extension):
     """
     Initializes the pyviz notebook extension to allow plotting with

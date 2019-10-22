@@ -17,8 +17,10 @@ from bokeh.models.widgets import (
     FileInput as _BkFileInput, TextAreaInput as _BkTextAreaInput)
 
 from .base import Widget
+from ..util import public
 
 
+@public
 class TextInput(Widget):
 
     value = param.String(default='', allow_None=True)
@@ -27,6 +29,7 @@ class TextInput(Widget):
 
     _widget_type = _BkTextInput
 
+@public
 class PasswordInput(Widget):
 
     value = param.String(default='', allow_None=True)
@@ -35,6 +38,7 @@ class PasswordInput(Widget):
 
     _widget_type = _BkPasswordInput
 
+@public
 class TextAreaInput(Widget):
 
     value = param.String(default='', allow_None=True)
@@ -45,6 +49,7 @@ class TextAreaInput(Widget):
 
     _widget_type = _BkTextAreaInput
 
+@public
 class FileInput(Widget):
 
     accept = param.String(default=None)
@@ -92,6 +97,7 @@ class FileInput(Widget):
             filename.write(self.value)
 
 
+@public
 class StaticText(Widget):
 
     style = param.Dict(default=None, doc="""
@@ -116,6 +122,7 @@ class StaticText(Widget):
         return msg
 
 
+@public
 class DatePicker(Widget):
 
     value = param.Date(default=None)
@@ -136,6 +143,7 @@ class DatePicker(Widget):
         return msg
 
 
+@public
 class ColorPicker(Widget):
 
     value = param.Color(default=None, doc="""
@@ -146,6 +154,7 @@ class ColorPicker(Widget):
     _rename = {'value': 'color', 'name': 'title'}
 
 
+@public
 class Spinner(Widget):
 
     start = param.Number(default=None, doc="""
@@ -165,6 +174,7 @@ class Spinner(Widget):
     _rename = {'name': 'title', 'start': 'low', 'end': 'high'}
 
 
+@public
 class LiteralInput(Widget):
     """
     LiteralInput allows declaring Python literals using a text
@@ -224,6 +234,7 @@ class LiteralInput(Widget):
         return msg
 
 
+@public
 class DatetimeInput(LiteralInput):
     """
     DatetimeInput allows declaring Python literals using a text
@@ -292,6 +303,7 @@ class DatetimeInput(LiteralInput):
         return msg
 
 
+@public
 class Checkbox(Widget):
 
     value = param.Boolean(default=False)

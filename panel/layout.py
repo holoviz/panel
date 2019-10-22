@@ -14,10 +14,11 @@ from bokeh.models import (Column as BkColumn, Row as BkRow,
                           Box as BkBox, Markup as BkMarkup)
 from bokeh.models.widgets import Tabs as BkTabs, Panel as BkPanel
 
-from .util import param_name, param_reprs
+from .util import param_name, param_reprs, public
 from .viewable import Reactive
 
 
+@public
 class Panel(Reactive):
     """
     Abstract baseclass for a layout of Viewables.
@@ -149,7 +150,7 @@ class Panel(Reactive):
         return objects
 
 
-
+@public
 class ListPanel(Panel):
     """
     An abstract baseclass for Panel objects with list-like children.
@@ -337,6 +338,7 @@ class ListPanel(Panel):
         self.objects = new_objects
 
 
+@public
 class Row(ListPanel):
     """
     Horizontal layout of Viewables.
@@ -345,6 +347,7 @@ class Row(ListPanel):
     _bokeh_model = BkRow
 
 
+@public
 class Column(ListPanel):
     """
     Vertical layout of Viewables.
@@ -353,7 +356,7 @@ class Column(ListPanel):
     _bokeh_model = BkColumn
 
 
-
+@public
 class GridBox(ListPanel):
     """
     List-like Grid which wraps depending on the specified number of
@@ -409,7 +412,7 @@ class GridBox(ListPanel):
             doc.unhold()
 
 
-
+@public
 class WidgetBox(ListPanel):
     """
     Vertical layout of widgets.
@@ -433,6 +436,7 @@ class WidgetBox(ListPanel):
         or a four-tuple (top, right, bottom, left).""")
 
 
+@public
 class Tabs(ListPanel):
     """
     Panel of Viewables to be displayed in separate tabs.
@@ -711,6 +715,7 @@ class Tabs(ListPanel):
         self.objects = new_objects
 
 
+@public
 class GridSpec(Panel):
 
     objects = param.Dict(default={}, doc="""
@@ -967,6 +972,7 @@ class GridSpec(Panel):
         self.param.trigger('objects')
 
 
+@public
 class Spacer(Reactive):
     """Empty object used to control formatting (using positive or negative space)"""
 
@@ -981,6 +987,7 @@ class Spacer(Reactive):
         return model
 
 
+@public
 class VSpacer(Spacer):
     """
     Spacer which automatically fills all available vertical space.
@@ -989,6 +996,7 @@ class VSpacer(Spacer):
     sizing_mode = param.Parameter(default='stretch_height', readonly=True)
 
 
+@public
 class HSpacer(Spacer):
     """
     Spacer which automatically fills all available horizontal space.

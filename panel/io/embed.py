@@ -13,6 +13,7 @@ from bokeh.models import CustomJS
 
 from .model import add_to_doc, diff
 from .state import state
+from ..util import public
 
 
 #---------------------------------------------------------------------
@@ -64,6 +65,7 @@ def save_dict(state, key=(), depth=0, max_depth=None, save_path='', load_path=No
 # Public API
 #---------------------------------------------------------------------
 
+@public
 def embed_state(panel, model, doc, max_states=1000, max_opts=3,
                 json=False, json_prefix='', save_path='./', load_path=None):
     """

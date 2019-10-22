@@ -9,10 +9,11 @@ from bokeh.models.widgets import (
 )
 
 from ..viewable import Layoutable
-from ..util import isdatetime
+from ..util import isdatetime, public
 from .base import Widget
 
 
+@public
 class DataFrame(Widget):
 
     editors = param.Dict(default={}, doc="""

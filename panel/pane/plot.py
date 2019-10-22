@@ -11,11 +11,13 @@ import param
 from bokeh.models import LayoutDOM, CustomJS, Spacer as BkSpacer
 
 from ..io import remove_root
+from ..util import public
 from .base import PaneBase
 from .markup import HTML
 from .image import PNG
 
 
+@public
 class Bokeh(PaneBase):
     """
     Bokeh panes allow including any Bokeh model in a panel.
@@ -46,6 +48,7 @@ class Bokeh(PaneBase):
         return model
 
 
+@public
 class Matplotlib(PNG):
     """
     A Matplotlib pane renders a matplotlib figure to png and wraps the
@@ -93,6 +96,7 @@ class Matplotlib(PNG):
         return b.getvalue()
 
 
+@public
 class RGGPlot(PNG):
     """
     An RGGPlot pane renders an r2py-based ggplot2 figure to png
@@ -121,6 +125,7 @@ class RGGPlot(PNG):
         return b.getvalue()
 
 
+@public
 class YT(HTML):
     """
     YT panes wrap plottable objects from the YT library.

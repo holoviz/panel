@@ -3,7 +3,9 @@ Defines a custom MathJax bokeh model to render text using MathJax.
 """
 from bokeh.models import Markup
 
+from ..util import public
 
+@public
 class MathJax(Markup):
     """
     A bokeh model that renders text using MathJax.

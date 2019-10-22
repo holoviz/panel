@@ -10,9 +10,10 @@ import param
 
 from ..io import push, state
 from ..viewable import Reactive, Layoutable
+from ..util import public
 
 
-
+@public
 class Widget(Reactive):
     """
     Widgets allow syncing changes in bokeh widget models with the
@@ -117,6 +118,7 @@ class Widget(Reactive):
         """
 
 
+@public
 class CompositeWidget(Widget):
     """
     A baseclass for widgets which are made up of two or more other

@@ -10,6 +10,7 @@ from bokeh.document import Document
 from bokeh.io import curdoc as _curdoc
 from pyviz_comms import CommManager as _CommManager
 
+__all__ = ["state"]
 
 class _state(param.Parameterized):
     """

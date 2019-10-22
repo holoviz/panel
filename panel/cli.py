@@ -5,6 +5,7 @@ Commandline interface to Panel
 import sys
 from bokeh.__main__ import main as bokeh_entry_point
 
+__all__ = []
 
 def transform_cmds(argv):
     """

@@ -13,11 +13,13 @@ from scipy.io import wavfile
 
 from ..io.notebook import push
 from ..io.state import state
+from ..util import public
 from ..models import (Audio as _BkAudio,
                       VideoStream as _BkVideoStream)
 from .base import Widget
 
 
+@public
 class Audio(Widget):
 
     loop = param.Boolean(default=False, doc="""
@@ -76,7 +78,7 @@ class Audio(Widget):
         return msg
 
 
-
+@public
 class VideoStream(Widget):
 
     format = param.ObjectSelector(default='png', objects=['png', 'jpeg'],

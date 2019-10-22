@@ -4,6 +4,10 @@ Defines custom AcePlot bokeh model to render Ace editor.
 from bokeh.core.properties import String, Override, Dict, Any, List, Bool
 from bokeh.models import HTMLBox
 
+from ..util import public
+
+
+@public
 class AcePlot(HTMLBox):
     """
     A Bokeh model that wraps around a Ace editor and renders it inside

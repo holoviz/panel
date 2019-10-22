@@ -12,9 +12,10 @@ from pyviz_comms import JupyterComm
 import param
 
 from .base import PaneBase
-from ..util import isdatetime
+from ..util import isdatetime, public
 
 
+@public
 class Plotly(PaneBase):
     """
     Plotly panes allow rendering plotly Figures and traces.

@@ -11,8 +11,9 @@ from io import BytesIO
 import param
 
 from .markup import DivPaneBase
+from ..util import public
 
-
+@public
 class ImageBase(DivPaneBase):
     """
     Encodes an image as base64 and wraps it in a Bokeh Div model.
@@ -119,6 +120,7 @@ class ImageBase(DivPaneBase):
         return dict(p, width=width, height=height, text=html)
 
 
+@public
 class PNG(ImageBase):
 
     imgtype = 'png'
@@ -130,6 +132,7 @@ class PNG(ImageBase):
         return int(w), int(h)
 
 
+@public
 class GIF(ImageBase):
 
     imgtype = 'gif'
@@ -141,6 +144,7 @@ class GIF(ImageBase):
         return int(w), int(h)
 
 
+@public
 class JPG(ImageBase):
 
     imgtype = 'jpg'
@@ -164,6 +168,7 @@ class JPG(ImageBase):
         return int(w), int(h)
 
 
+@public
 class SVG(ImageBase):
 
     imgtype = 'svg'

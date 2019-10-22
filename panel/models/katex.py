@@ -3,7 +3,9 @@ Defines a custom KaTeX bokeh model to render text using KaTeX.
 """
 from bokeh.models import Markup
 
+from ..util import public
 
+@public
 class KaTeX(Markup):
     """
     A bokeh model that renders text using KaTeX.

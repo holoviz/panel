@@ -8,6 +8,7 @@ import param
 from bokeh.models import Button as _BkButton, Toggle as _BkToggle
 
 from .base import Widget
+from ..util import public
 
 
 class _ButtonBase(Widget):
@@ -20,6 +21,7 @@ class _ButtonBase(Widget):
     __abstract = True
 
 
+@public
 class Button(_ButtonBase):
 
     clicks = param.Integer(default=0)
@@ -30,6 +32,7 @@ class Button(_ButtonBase):
         self.param.watch(callback, 'clicks')
 
 
+@public
 class Toggle(_ButtonBase):
 
     value = param.Boolean(default=False, doc="""

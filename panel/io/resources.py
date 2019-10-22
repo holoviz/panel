@@ -7,6 +7,8 @@ import os
 
 from bokeh.resources import Resources
 
+__all__ = []
+
 def css_raw(self):
     from ..config import config
     raw = super(Resources, self).css_raw

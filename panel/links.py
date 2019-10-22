@@ -10,10 +10,11 @@ from .viewable import Viewable, Reactive
 from .layout import Panel
 from .pane.holoviews import HoloViews, generate_panel_bokeh_map, is_bokeh_element_plot
 from .widgets import CompositeWidget
+from .util import public
 
 from bokeh.models import (CustomJS, Model as BkModel)
 
-
+@public
 class Link(param.Parameterized):
     """
     A Link defines some connection between a source and target model.
@@ -122,7 +123,7 @@ class Link(param.Parameterized):
             callbacks.append(cb(root_model, link, src, tgt))
         return callbacks
 
-
+@public
 class GenericLink(Link):
     """
     Links two panel object using generic source and target
@@ -142,7 +143,7 @@ class GenericLink(Link):
     # Whether the link requires a target
     _requires_target = True
 
-
+@public
 class LinkCallback(param.Parameterized):
 
     @classmethod
@@ -264,7 +265,7 @@ class LinkCallback(param.Parameterized):
     def validate(self):
         pass
 
-
+@public
 class GenericLinkCallback(LinkCallback):
 
     def _get_specs(self, link, source, target):

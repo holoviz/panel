@@ -14,7 +14,7 @@ from bokeh.models.widgets import (
 
 from ..config import config
 from ..io import state
-from ..util import value_as_datetime, value_as_date
+from ..util import value_as_datetime, value_as_date, public
 from ..viewable import Layoutable
 from .base import Widget, CompositeWidget
 from ..layout import Column
@@ -57,6 +57,7 @@ class _SliderBase(Widget):
     __abstract = True
 
 
+@public
 class ContinuousSlider(_SliderBase):
 
     _supports_embed = True
@@ -94,6 +95,7 @@ class ContinuousSlider(_SliderBase):
         return (dw, w_model, vals, lambda x: x.value, 'value', 'cb_obj.value')
 
 
+@public
 class FloatSlider(ContinuousSlider):
 
     start = param.Number(default=0.0)
@@ -105,6 +107,7 @@ class FloatSlider(ContinuousSlider):
     step = param.Number(default=0.1)
 
 
+@public
 class IntSlider(ContinuousSlider):
 
     def __init__(self, **params):
@@ -121,6 +124,7 @@ class IntSlider(ContinuousSlider):
     step = param.Integer(default=1)
 
 
+@public
 class DateSlider(_SliderBase):
 
     value = param.Date(default=None)
@@ -138,6 +142,7 @@ class DateSlider(_SliderBase):
         return msg
 
 
+@public
 class DiscreteSlider(CompositeWidget, _SliderBase):
 
     options = param.ClassSelector(default=[], class_=(dict, list))
@@ -251,6 +256,7 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
         return list(self.options.values()) if isinstance(self.options, dict) else self.options
 
 
+@public
 class RangeSlider(_SliderBase):
 
     value = param.NumericTuple(default=(0, 1), length=2)
@@ -277,6 +283,7 @@ class RangeSlider(_SliderBase):
         return msg
 
 
+@public
 class IntRangeSlider(RangeSlider):
 
     start = param.Integer(default=0)
@@ -286,6 +293,7 @@ class IntRangeSlider(RangeSlider):
     step = param.Integer(default=1)
 
 
+@public
 class DateRangeSlider(_SliderBase):
 
     value = param.Tuple(default=(None, None), length=2)

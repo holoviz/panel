@@ -22,6 +22,7 @@ empty = Parameter.empty
 
 import param
 
+from .util import public
 from .layout import Panel, Column, Row
 from .pane import PaneBase, Pane, HTML
 from .widgets import (Checkbox, TextInput, Widget, IntSlider, FloatSlider,
@@ -98,6 +99,7 @@ def _matches(o, pattern):
     return all(isinstance(obj,kind) for obj,kind in comps)
 
 
+@public
 class interactive(PaneBase):
 
     default_layout = param.ClassSelector(default=Column, class_=(Panel),
@@ -487,6 +489,7 @@ interact = interactive.factory()
 interact_manual = interact.options(manual_update=True, manual_name="Run Interact")
 
 
+@public
 class fixed(param.Parameterized):
     """A pseudo-widget whose value is fixed and never synced to the client."""
     value = param.Parameter(doc="Any Python object")
