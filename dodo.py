@@ -40,6 +40,8 @@ def task_develop_install():
     return {'actions': [
         CmdAction(_conda_build_deps),
         CmdAction(_conda_install_with_options_hacked),
-        CmdAction(_build_dev),
-        "conda install --use-local panel"],
+        #CmdAction(_build_dev), # Switch to locally built version at later point
+        #"conda install --use-local panel"
+        "conda uninstall panel --force",
+        "python setup.py develop --no-deps"],
             'params': [_options_param,_channel_param]}
