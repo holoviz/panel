@@ -112,5 +112,5 @@ def save(panel, filename, title=None, resources=None, template=None,
             html = html.encode('utf-8')
         filename.write(html)
         return
-    with io.open(filename, mode="w", encoding="utf-8") as f:
+    with open(filename, mode="w", encoding="utf-8") as f:
         f.write(decode_utf8(html))
