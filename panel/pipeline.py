@@ -217,7 +217,7 @@ class Pipeline(param.Parameterized):
         return repr_str
 
     def __getitem__(self, index):
-        return self._stages[index][1]
+        return self._stages[index][0]
 
     def _unblock(self, event):
         if self._state is not event.obj or self._block:
@@ -260,15 +260,15 @@ class Pipeline(param.Parameterized):
                 kwargs.update({k: v for k, v in state.param.get_param_values()
                                if k in stage.param and k != 'name' and k in params})
 
-        ready_param = stage_kwargs.get('ready_parameter', self.ready_parameter)
-        if ready_param and ready_param in stage.param:
-            stage.param.watch(self._unblock, ready_param, onlychanged=False)
-
         if isinstance(stage, param.Parameterized):
             stage.set_param(**kwargs)
             self._state = stage
         else:
             self._state = stage(**kwargs)
+
+        ready_param = stage_kwargs.get('ready_parameter', self.ready_parameter)
+        if ready_param and ready_param in stage.param:
+            self._state.param.watch(self._unblock, ready_param, onlychanged=False)
 
         self._states[self._stage] = self._state
         return self._state.panel()
@@ -347,6 +347,11 @@ class Pipeline(param.Parameterized):
             self._error = None
             self._update_button()
             self._route.append(self._stage)
+            stage_kwargs = self._stages[self._stage][-1]
+            ready_param = stage_kwargs.get('ready_parameter', self.ready_parameter)
+            if (ready_param and getattr(self._state, ready_param, False) and
+                stage_kwargs.get('auto_advance', self.auto_advance)):
+                self._next()
         finally:
             self._update_progress()
 
@@ -455,6 +460,9 @@ class Pipeline(param.Parameterized):
           Additional arguments declaring the behavior of the stage.
         """
         self._validate(stage)
+        for k in kwargs:
+            if k not in self.param:
+                raise ValueError("Keyword argument %s is not a valid parameter. " % k)
         self._stages[name] = (stage, kwargs)
 
     def define_graph(self, graph, force=False):
@@ -522,7 +530,7 @@ class Pipeline(param.Parameterized):
         else:
             self._update_progress()
         self._update_button()
-        
+
     @property
     def layout(self):
         self.init()
