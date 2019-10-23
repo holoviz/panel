@@ -89,23 +89,50 @@ def get_breadths(node, graph, depth=0, breadths=None):
 
 class Pipeline(param.Parameterized):
     """
-    Allows connecting a linear series of panels to define a workflow.
-    Each stage in a pipeline should declare a panel method which
-    returns a panel object that can be displayed and annotate its
-    outputs using the param.output decorator.
+    A Pipeline represents a directed graph of stages, which each
+    returns a panel object to render. A pipeline therefore represents
+    a UI workflow of multiple linear or branching stages.
+
+    The Pipeline layout consists of a number of sub-components:
+
+    * header:
+      - title: The name of the current stage.
+      - error: A field to display the error state.
+      - network: A network diagram representing the pipeline.
+      - buttons: All navigation buttons and selectors.
+      - prev_button: The button to go to the previous stage.
+      - prev_selector: The selector widget to select between previous
+                       branching stages.
+      - next_button:   The button to go to the previous stage
+      - next_selector: The selector widget to select the next
+                       branching stages.
+    * stage: The contents of the current pipeline stage.
+
+    By default any outputs of one stage annotated with the
+    param.output decorator are fed into the next stage. Additionally,
+    if the inherit_params parameter is set any parameters which are
+    declared on both the previous and next stage are also inherited.
+
+    The stages are declared using the add_stage method and must each
+    be given a unique name. By default any stages will simply be
+    connected linearly, however an explicit graph can be declared using
+    the define_graph method.
     """
 
-    auto_advance = param.Boolean(default=False, precedence=-1, doc="""
+    auto_advance = param.Boolean(default=False, doc="""
         Whether to automatically advance if the ready parameter is True.""")
 
-    debug = param.Boolean(default=False, precedence=-1, doc="""
+    debug = param.Boolean(default=False, doc="""
         Whether to raise errors, useful for debugging while building an application.""")
 
-    inherit_params = param.Boolean(default=True, precedence=-1, doc="""
+    inherit_params = param.Boolean(default=True, doc="""
         Whether parameters should be inherited between pipeline stages""")
 
     ready_parameter = param.String(default=None, doc="""
         Parameter name to watch to check whether a stage is ready.""")
+
+    show_header = param.Boolean(default=True, doc="""
+        Whether to show the header with the title, network diagram, and buttons.""")
 
     next = param.Action(default=lambda x: x.param.trigger('next'))
 
@@ -117,42 +144,51 @@ class Pipeline(param.Parameterized):
         except:
             raise ImportError('Pipeline requires holoviews to be installed')
 
+        super(Pipeline, self).__init__(**params)
+
+        # Initialize internal state
         self._stage = None
         self._stages = OrderedDict()
-        super(Pipeline, self).__init__(**params)
         self._states = {}
         self._state = None
         self._linear = True
         self._block = False
         self._error = None
         self._graph = {}
+        self._route = []
+
+        # Declare UI components
         self._progress_sel = hv.streams.Selection1D()
         self._progress_sel.add_subscriber(self._set_stage)
-        self._prev_button = Param(self.param.previous).layout[0]
-        self._prev_button.width = 125
-        self._prev_selector = Select(width=125)
-        self._next_button = Param(self.param.next).layout[0]
-        self._next_button.width = 125
-        self._next_selector = Select(width=125)
-        self._prev_button.disabled = True
-        self._next_selector.param.watch(self._update_progress, 'value')
-        self._progress_bar = Row(
-            Column(
-                Markdown('# Header', margin=(0, 0, 0, 5)),
-                Spacer(width=100),
-            ),
-            self._make_progress(),
-            self._prev_button,
-            self._next_button,
+        self.prev_button = Param(self.param.previous).layout[0]
+        self.prev_button.width = 125
+        self.prev_selector = Select(width=125)
+        self.next_button = Param(self.param.next).layout[0]
+        self.next_button.width = 125
+        self.next_selector = Select(width=125)
+        self.prev_button.disabled = True
+        self.next_selector.param.watch(self._update_progress, 'value')
+        self.network = HoloViews(backend='bokeh')
+        self.title = Markdown('# Header', margin=(0, 0, 0, 5))
+        self.error = Row(width=100)
+        self.buttons = Row(self.prev_button, self.next_button)
+        self.header = Row(
+            Column(self.title, self.error),
+            self.network,
+            self.buttons,
             sizing_mode='stretch_width'
         )
+        self.network.object = self._make_progress()
         spinner = Pane(os.path.join(os.path.dirname(__file__), 'assets', 'spinner.gif'))
         self._spinner_layout = Row(
             HSpacer(),
             Column(VSpacer(), spinner, VSpacer()),
             HSpacer()
         )
-        self._layout = Column(self._progress_bar, Row(), sizing_mode='stretch_width')
+        self.stage = Row()
+        self._layout = Column(self.header, self.stage, sizing_mode='stretch_width')
+
+        # Initialize stages and the graph
         for stage in stages:
             kwargs = {}
             if len(stage) == 2:
@@ -188,7 +224,7 @@ class Pipeline(param.Parameterized):
             self._block = False
             return
 
-        button = self._progress_bar[-1][0]
+        button = self.next_button
         if button.disabled and event.new:
             button.disabled = False
         elif not button.disabled and not event.new:
@@ -238,43 +274,43 @@ class Pipeline(param.Parameterized):
         return self._state.panel()
 
     def _set_stage(self, index):
-        self._next_selector.value = list(self._stages)[index[0]]
+        self.next_selector.value = list(self._stages)[index[0]]
 
     @property
     def _next_stage(self):
-        return self._next_selector.value
+        return self.next_selector.value
 
     @property
     def _prev_stage(self):
-        return self._prev_selector.value
+        return self.prev_selector.value
 
     def _update_button(self):
         options = list(self._graph.get(self._stage, []))
-        self._next_selector.options = options
-        self._next_selector.value = options[0] if options else None
-        self._next_selector.disabled = not bool(options)
+        self.next_selector.options = options
+        self.next_selector.value = options[0] if options else None
+        self.next_selector.disabled = not bool(options)
         previous = []
         for src, tgts in self._graph.items():
             if self._stage in tgts:
                 previous.append(src)
-        self._prev_selector.options = previous
-        self._prev_selector.value = previous[0] if previous else None
-        self._prev_selector.disabled = not bool(previous)
+        self.prev_selector.options = previous
+        self.prev_selector.value = self._route[-1] if previous else None
+        self.prev_selector.disabled = not bool(previous)
 
         # Disable previous button
         if self._prev_stage is None:
-            self._prev_button.disabled = True
+            self.prev_button.disabled = True
         else:
-            self._prev_button.disabled = False
+            self.prev_button.disabled = False
 
         # Disable next button
         if self._next_stage is None:
-            self._next_button.disabled = True
+            self.next_button.disabled = True
         else:
             stage, kwargs = self._stages[self._stage]
             ready = kwargs.get('ready_parameter', self.ready_parameter)
             disabled = (not getattr(stage, ready)) if ready in stage.param else False
-            self._next_button.disabled = disabled
+            self.next_button.disabled = disabled
 
     def _get_error_button(self, e):
         msg = str(e) if isinstance(e, PipelineError) else ""
@@ -294,22 +330,23 @@ class Pipeline(param.Parameterized):
     def _next(self):
         prev_state, prev_stage = self._state, self._stage
         self._stage = self._next_stage
-        self._layout[1][0] = self._spinner_layout
+        self.stage[0] = self._spinner_layout
         try:
-            self._layout[1][0] = self._init_stage()
+            self.stage[0] = self._init_stage()
         except Exception as e:
             self._error = self._stage
             self._stage = prev_stage
             self._state = prev_state
-            self._layout[1][0] = prev_state.panel()
-            self._progress_bar[0][1] = self._get_error_button(e)
+            self.stage[0] = prev_state.panel()
+            self.error[:] = [self._get_error_button(e)]
             if self.debug:
                 raise e
             return e
         else:
+            self.error = [Spacer(width=100)]
             self._error = None
-            self._progress_bar[0][1] = Spacer(width=100)
             self._update_button()
+            self._route.append(self._stage)
         finally:
             self._update_progress()
 
@@ -320,27 +357,28 @@ class Pipeline(param.Parameterized):
         try:
             if self._stage in self._states:
                 self._state = self._states[self._stage]
-                self._layout[1][0] = self._state.panel()
+                self.stage[0] = self._state.panel()
             else:
-                self._layout[1][0] = self._init_stage()
+                self.stage[0] = self._init_stage()
             self._block = True
         except Exception as e:
+            self.error[:] = [self._get_error_button(e)]
             self._error = self._stage
-            self._stage = prev_xstage
+            self._stage = prev_stage
             self._state = prev_state
-            self._progress_bar[0][1] = self._get_error_button(e)
             if self.debug:
                 raise e
         else:
+            self.error[:] = [Spacer(width=100)]
             self._error = None
-            self._progress_bar[0][1] = Spacer(width=100)
             self._update_button()
+            self._route.pop()
         finally:
             self._update_progress()
 
     def _update_progress(self, *args):
-        self._progress_bar[0][0].object = '# Stage: ' + self._stage
-        self._progress_bar[1] = self._make_progress()
+        self.title.object = '## Stage: ' + self._stage
+        self.network.object = self._make_progress()
 
     def _make_progress(self):
         import holoviews as hv
@@ -397,7 +435,7 @@ class Pipeline(param.Parameterized):
             default_tools=['hover'], toolbar=None,
             backend='bokeh'
         )
-        return HoloViews(plot, backend='bokeh')
+        return plot
 
     #----------------------------------------------------------------
     # Public API
@@ -437,6 +475,8 @@ class Pipeline(param.Parameterized):
             self._graph = {}
             return
 
+        graph = {k: v if isinstance(v, tuple) else (v,) for k, v in graph.items()}
+
         not_found = []
         for source, targets in graph.items():
             if source not in stages:
@@ -453,8 +493,6 @@ class Pipeline(param.Parameterized):
             if not (self._linear or force):
                 raise ValueError("Graph has already been defined, "
                                  "cannot override existing graph.")
-            graph = {k: v if isinstance(v, tuple) else (v,)
-                     for k, v in graph.items()}
             self._linear = False
         else:
             graph = {s: (t,) for s, t in zip(stages[:-1], stages[1:])}
@@ -466,17 +504,26 @@ class Pipeline(param.Parameterized):
 
         self._stage = root
         self._graph = graph
+        self._route = [root]
         if not self._linear:
-            self._progress_bar[2] = Column(self._prev_selector, self._prev_button)
-            self._progress_bar[3] = Column(self._next_selector, self._next_button)
+            self.buttons[:] = [
+                Column(self.prev_selector, self.prev_button),
+                Column(self.next_selector, self.next_button)
+            ]
+        self.stage[:] = [self._init_stage()]
         self._update_progress()
 
-    @property
-    def layout(self):
+    def init(self):
+        """
+        Initialize the Pipeline before first display.
+        """
         if self._linear or not self._graph:
             self.define_graph(self._graph)
         else:
             self._update_progress()
-        self._layout[1][:] = [self._init_stage()]
         self._update_button()
+        
+    @property
+    def layout(self):
+        self.init()
         return self._layout
