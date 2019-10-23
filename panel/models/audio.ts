@@ -1,5 +1,5 @@
-import * as p from "core/properties"
-import {Widget, WidgetView} from "models/widgets/widget"
+import * as p from "@bokehjs/core/properties"
+import {Widget, WidgetView} from "@bokehjs/models/widgets/widget"
 
 export class AudioView extends WidgetView {
   model: Audio
@@ -112,19 +112,18 @@ export abstract class Audio extends Widget {
     super(attrs)
   }
 
-  static initClass(): void {
-    this.prototype.type = "Audio"
+  static __module__ = "panel.models.widgets"
+
+  static init_Audio(): void {
     this.prototype.default_view = AudioView
 
     this.define<Audio.Props>({
       loop:     [ p.Boolean,   false ],
       paused:   [ p.Boolean,   true  ],
       time:     [ p.Number, 0     ],
-	  throttle: [ p.Number, 250   ],
+      throttle: [ p.Number, 250   ],
       value:    [ p.Any,    ''    ],
       volume:   [ p.Number, null  ],
     })
   }
 }
-
-Audio.initClass()

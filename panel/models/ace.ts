@@ -1,6 +1,6 @@
-import * as p from "core/properties"
-import {HTMLBox, HTMLBoxView} from "models/layouts/html_box"
-import { div } from 'core/dom';
+import * as p from "@bokehjs/core/properties"
+import {HTMLBox, HTMLBoxView} from "@bokehjs/models/layouts/html_box"
+import { div } from "@bokehjs/core/dom";
 
 function ID() {
   // Math.random should be unique because of its seeding algorithm.
@@ -85,7 +85,7 @@ export class AcePlotView extends HTMLBoxView {
     super.after_layout()
     this._editor.resize()
   }
-  
+
 }
 
 export namespace AcePlot {
@@ -108,8 +108,9 @@ export class AcePlot extends HTMLBox {
     super(attrs)
   }
 
-  static initClass(): void {
-    this.prototype.type = "AcePlot"
+  static __module__ = "panel.models.ace"
+
+  static init_AcePlot(): void {
     this.prototype.default_view = AcePlotView
 
     this.define<AcePlot.Props>({
@@ -126,4 +127,3 @@ export class AcePlot extends HTMLBox {
     })
   }
 }
-AcePlot.initClass()

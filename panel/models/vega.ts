@@ -1,5 +1,5 @@
-import * as p from "core/properties"
-import {HTMLBox, HTMLBoxView} from "models/layouts/html_box"
+import * as p from "@bokehjs/core/properties"
+import {HTMLBox, HTMLBoxView} from "@bokehjs/models/layouts/html_box"
 
 function get_file(file: string, callback: any): void {
   var xobj = new XMLHttpRequest();
@@ -102,8 +102,9 @@ export class VegaPlot extends HTMLBox {
     super(attrs)
   }
 
-  static initClass(): void {
-    this.prototype.type = "VegaPlot"
+  static __module__ = "panel.models.vega"
+
+  static init_VegaPlot(): void {
     this.prototype.default_view = VegaPlotView
 
     this.define<VegaPlot.Props>({
@@ -112,4 +113,3 @@ export class VegaPlot extends HTMLBox {
     })
   }
 }
-VegaPlot.initClass()

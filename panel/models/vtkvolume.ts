@@ -1,8 +1,8 @@
 
-import * as p from "core/properties"
-import {ARRAY_TYPES, DType} from "core/util/serialization"
-import {HTMLBox, HTMLBoxView} from "models/layouts/html_box"
-import {div} from "core/dom"
+import * as p from "@bokehjs/core/properties"
+import {ARRAY_TYPES, DType} from "@bokehjs/core/util/serialization"
+import {HTMLBox, HTMLBoxView} from "@bokehjs/models/layouts/html_box"
+import {div} from "@bokehjs/core/dom"
 const vtk = (window as any).vtk
 
 type VolumeType = {
@@ -93,7 +93,7 @@ export class VTKVolumePlotView extends HTMLBoxView {
                                                   .map((v: number) => v * v)
                                                   .reduce((a: number, b: number) => a + b, 0));
     mapper.setSampleDistance(sampleDistance);
-    
+
     actor.getProperty().setRGBTransferFunction(0, lookupTable);
     actor.getProperty().setScalarOpacity(0, piecewiseFunction);
     actor.getProperty().setInterpolationTypeToFastLinear();

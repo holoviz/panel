@@ -1,6 +1,6 @@
-import * as p from "core/properties"
-import {div} from "core/dom"
-import {Widget, WidgetView} from "models/widgets/widget"
+import * as p from "@bokehjs/core/properties"
+import {div} from "@bokehjs/core/dom"
+import {Widget, WidgetView} from "@bokehjs/models/widgets/widget"
 
 export class PlayerView extends WidgetView {
   model: Player
@@ -285,8 +285,9 @@ export abstract class Player extends Widget {
     super(attrs)
   }
 
-  static initClass(): void {
-    this.prototype.type = "Player"
+  static __module__ = "panel.models.widgets"
+
+  static init_Player(): void {
     this.prototype.default_view = PlayerView
 
     this.define<Player.Props>({
@@ -302,5 +303,3 @@ export abstract class Player extends Widget {
     this.override({width: 400})
   }
 }
-
-Player.initClass()

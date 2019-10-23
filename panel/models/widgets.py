@@ -3,20 +3,14 @@ Custom bokeh Widget models.
 """
 from __future__ import absolute_import, division, unicode_literals
 
-import os
-
 from bokeh.core.properties import Int, Float, Override, Enum, Any, Bool
 from bokeh.models import Widget
-
-from ..compiler import CUSTOM_MODELS
 
 
 class Player(Widget):
     """
     The Player widget provides controls to play through a number of frames.
     """
-
-    __implementation__ = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'player.ts')
 
     start = Int(help="Lower bound of the Player slider")
 
@@ -41,8 +35,6 @@ class Player(Widget):
 
 class Audio(Widget):
 
-    __implementation__ = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'audio.ts')
-
     loop = Bool(False, help="""Whether the audio should loop""")
 
     paused = Bool(False, help="""Whether the audio is paused""")
@@ -60,8 +52,6 @@ class Audio(Widget):
 
 class VideoStream(Widget):
 
-    __implementation__ = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'videostream.ts')
-
     format = Enum('png', 'jpeg', default='png')
 
     paused = Bool(False, help="""Whether the video is paused""")
@@ -77,9 +67,3 @@ class VideoStream(Widget):
     height = Override(default=240)
 
     width = Override(default=320)
-
-
-
-CUSTOM_MODELS['panel.models.widgets.Player'] = Player
-CUSTOM_MODELS['panel.models.widgets.Audio'] = Audio
-CUSTOM_MODELS['panel.models.widgets.VideoStream'] = VideoStream

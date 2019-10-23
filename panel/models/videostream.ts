@@ -1,5 +1,5 @@
-import * as p from "core/properties"
-import {Widget, WidgetView} from "models/widgets/widget"
+import * as p from "@bokehjs/core/properties"
+import {Widget, WidgetView} from "@bokehjs/models/widgets/widget"
 
 export class VideoStreamView extends WidgetView {
   model: VideoStream
@@ -88,7 +88,7 @@ export namespace VideoStream {
     paused: p.Property<boolean>
     snapshot: p.Property<boolean>
     timeout: p.Property<number|null>
-    value: p.Property<any>  
+    value: p.Property<any>
   }
 }
 
@@ -101,8 +101,9 @@ export abstract class VideoStream extends Widget {
     super(attrs)
   }
 
-  static initClass(): void {
-    this.prototype.type = "VideoStream"
+  static __module__ = "panel.models.widgets"
+
+  static init_VideoStream(): void {
     this.prototype.default_view = VideoStreamView
 
     this.define<VideoStream.Props>({
@@ -119,5 +120,3 @@ export abstract class VideoStream extends Widget {
     });
   }
 }
-
-VideoStream.initClass()

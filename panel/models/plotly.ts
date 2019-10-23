@@ -1,6 +1,6 @@
-import * as p from "core/properties"
-import {clone} from "core/util/object"
-import {HTMLBox, HTMLBoxView} from "models/layouts/html_box"
+import * as p from "@bokehjs/core/properties"
+import {clone} from "@bokehjs/core/util/object"
+import {HTMLBox, HTMLBoxView} from "@bokehjs/models/layouts/html_box"
 const _ = (window as any)._;
 const Plotly = (window as any).Plotly;
 
@@ -338,8 +338,9 @@ export class PlotlyPlot extends HTMLBox {
     super(attrs)
   }
 
-  static initClass(): void {
-    this.prototype.type = "PlotlyPlot"
+  static __module__ = "panel.models.plotly"
+
+  static init_PlotlyPlot(): void {
     this.prototype.default_view = PlotlyPlotView
 
     this.define<PlotlyPlot.Props>({
@@ -360,4 +361,3 @@ export class PlotlyPlot extends HTMLBox {
     })
   }
 }
-PlotlyPlot.initClass()
