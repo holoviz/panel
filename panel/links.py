@@ -5,7 +5,7 @@ Defines Links which allow declaring links between bokeh properties.
 import param
 import weakref
 import sys
-from typing import Any, Type, TypeVar, Generic, MutableMapping, Dict, Callable
+from typing import Any, Type, TypeVar, MutableMapping, Dict, Callable
 
 from .viewable import Viewable, Reactive
 from .layout import Panel
@@ -21,7 +21,7 @@ Dst = TypeVar("Dst")
 Callback = Callable[[BkModel, "Link", Src, Dst], Any]
 
 @public
-class Link(param.Parameterized, Generic[Src]):
+class Link(param.Parameterized): # TODO: Generic[Src], a 3.6 limitation, needs param changes
     """
     A Link defines some connection between a source and target model.
     It allows defining callbacks in response to some change or event
@@ -36,7 +36,7 @@ class Link(param.Parameterized, Generic[Src]):
     """
 
     # Mapping from a source id to a Link instance
-    registry: MutableMapping[Src, "Link"] = weakref.WeakKeyDictionary()
+    registry: MutableMapping[Any, "Link"] = weakref.WeakKeyDictionary() # TODO: Any -> Src
 
     # Mapping to define callbacks by backend and Link type.
     # e.g. Link._callbacks[Link] = Callback
