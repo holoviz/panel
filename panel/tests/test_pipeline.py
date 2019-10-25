@@ -3,9 +3,9 @@ from distutils.version import LooseVersion
 import pytest
 import param
 
-from panel.layout import Row, Column, Spacer
+from panel.layout import Row, Column
 from panel.pane import HoloViews
-from panel.param import Param, ParamMethod
+from panel.param import ParamMethod
 from panel.pipeline import Pipeline
 from panel.widgets import Button, Select
 
