@@ -359,7 +359,7 @@ class Pipeline(param.Parameterized):
                 raise e
             return e
         else:
-            self.error = [Spacer(width=100)]
+            self.error[:] = []
             self._error = None
             self._update_button()
             self._route.append(self._stage)
@@ -390,7 +390,7 @@ class Pipeline(param.Parameterized):
             if self.debug:
                 raise e
         else:
-            self.error[:] = [Spacer(width=100)]
+            self.error[:] = []
             self._error = None
             self._update_button()
             self._route.pop()
