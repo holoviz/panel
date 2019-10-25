@@ -11,7 +11,6 @@ from six import string_types
 
 import param
 import numpy as np
-from scipy.io import wavfile
 
 from ..io.notebook import push
 from ..io.state import state
@@ -48,6 +47,7 @@ class Audio(Widget):
     _rename = {'name': None, 'sample_rate': None}
 
     def _from_numpy(self, data):
+        from scipy.io import wavfile
         buffer = BytesIO()
         wavfile.write(buffer, self.sample_rate, data)
         return buffer
