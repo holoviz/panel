@@ -303,11 +303,10 @@ class Pipeline(param.Parameterized):
         options = list(self._graph.get(self._stage, []))
         next_param = kwargs.get('next_parameter', self.next_parameter)
         option = getattr(self._state, next_param) if next_param and next_param in stage.param else None
-        print(next_param, option)
         if option is None:
-            option = options[0]
+            option = options[0] if options else None
         self.next_selector.options = options
-        self.next_selector.value = option if options else None
+        self.next_selector.value = option
         self.next_selector.disabled = not bool(options)
         previous = []
         for src, tgts in self._graph.items():
@@ -544,7 +543,7 @@ class Pipeline(param.Parameterized):
         """
         Initialize the Pipeline before first display.
         """
-        if self._linear or not self._graph:
+        if not self._graph:
             self.define_graph(self._graph)
         else:
             self._update_progress()
