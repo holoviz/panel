@@ -143,6 +143,8 @@ class AutocompleteInput(Widget):
 
     value = param.Parameter(default=None)
 
+    min_characters = param.Parameter(default=2)
+
     _widget_type = _BkAutocompleteInput
 
     _rename = {'name': 'title', 'options': 'completions'}
