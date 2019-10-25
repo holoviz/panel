@@ -137,15 +137,15 @@ class MultiSelect(Select):
 
 class AutocompleteInput(Widget):
 
+    min_characters = param.Integer(default=2, doc="""
+        The number of characters a user must type before
+        completions are presented.""")
+
     options = param.List(default=[])
 
     placeholder = param.String(default='')
 
     value = param.Parameter(default=None)
-
-    min_characters = param.Integer(default=2, doc="""
-        The number of characters a user must type before
-        completions are presented.""")
 
     _widget_type = _BkAutocompleteInput
 
