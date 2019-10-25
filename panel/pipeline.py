@@ -280,7 +280,6 @@ class Pipeline(param.Parameterized):
             self._state.param.watch(self._unblock, ready_param, onlychanged=False)
 
         next_param = stage_kwargs.get('next_parameter', self.next_parameter)
-        print(next_param)
         if next_param and next_param in stage.param:
             self._state.param.watch(self._select_next, next_param, onlychanged=False)
 
