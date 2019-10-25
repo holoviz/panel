@@ -7,7 +7,6 @@ import traceback as tb
 from collections import OrderedDict, defaultdict
 
 import param
-import numpy as np
 
 from .layout import Row, Column, HSpacer, VSpacer, Spacer
 from .pane import HoloViews, Pane, Markdown
