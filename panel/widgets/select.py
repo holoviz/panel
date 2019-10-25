@@ -143,7 +143,9 @@ class AutocompleteInput(Widget):
 
     value = param.Parameter(default=None)
 
-    min_characters = param.Parameter(default=2)
+    min_characters = param.Integer(default=2, doc="""
+        The number of characters a user must type before
+        completions are presented.""")
 
     _widget_type = _BkAutocompleteInput
 
