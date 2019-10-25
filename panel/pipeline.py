@@ -8,7 +8,7 @@ from collections import OrderedDict, defaultdict
 
 import param
 
-from .layout import Row, Column, HSpacer, VSpacer, Spacer
+from .layout import Row, Column, HSpacer, VSpacer
 from .pane import HoloViews, Pane, Markdown
 from .widgets import Button, Select
 from .param import Param
