@@ -7,6 +7,7 @@ from panel.layout import Row, Column, Spacer
 from panel.pane import HoloViews
 from panel.param import Param, ParamMethod
 from panel.pipeline import Pipeline
+from panel.widgets import Button
 from panel.tests.util import hv_available
 
 if LooseVersion(param.__version__) < '1.8.2':
@@ -18,6 +19,8 @@ class Stage1(param.Parameterized):
     a = param.Number(default=5, bounds=(0, 10))
 
     b = param.Number(default=5, bounds=(0, 10))
+
+    ready = param.Boolean(default=False)
 
     @param.output(c=param.Number)
     def output(self):
@@ -54,20 +57,21 @@ def test_pipeline_from_classes():
 
     assert isinstance(layout, Column)
     assert isinstance(layout[0], Row)
-    error, progress, prev_button, next_button = layout[0].objects
+    (title, error), progress, (prev_button, next_button) = layout[0].objects
 
-    assert isinstance(error, Spacer)
-    assert isinstance(prev_button, Param)
-    assert isinstance(next_button, Param)
+    assert isinstance(error, Row)
+    assert isinstance(prev_button, Button)
+    assert isinstance(next_button, Button)
     assert isinstance(progress, HoloViews)
 
     hv_obj = progress.object
-    points = hv_obj.get(1)
-    assert isinstance(points, hv.Points)
-    assert len(points) == 2
-    labels = hv_obj.get(2)
+    graph = hv_obj.get(0)
+    assert isinstance(graph, hv.Graph)
+    assert len(graph) == 1
+    labels = hv_obj.get(1)
     assert isinstance(labels, hv.Labels)
-    assert list(labels['text']) == ['Stage 1', 'Stage 2']
+    print(labels)
+    assert list(labels['Stage']) == ['Stage 1', 'Stage 2']
 
     stage = layout[1][0]
     assert isinstance(stage, Row)
@@ -97,20 +101,21 @@ def test_pipeline_from_instances():
 
     assert isinstance(layout, Column)
     assert isinstance(layout[0], Row)
-    error, progress, prev_button, next_button = layout[0].objects
+    (title, error), progress, (prev_button, next_button) = layout[0].objects
 
-    assert isinstance(error, Spacer)
-    assert isinstance(prev_button, Param)
-    assert isinstance(next_button, Param)
+    assert isinstance(error, Row)
+    assert isinstance(prev_button, Button)
+    assert isinstance(next_button, Button)
     assert isinstance(progress, HoloViews)
 
     hv_obj = progress.object
-    points = hv_obj.get(1)
-    assert isinstance(points, hv.Points)
-    assert len(points) == 2
-    labels = hv_obj.get(2)
+    graph = hv_obj.get(0)
+    assert isinstance(graph, hv.Graph)
+    assert len(graph) == 1
+    labels = hv_obj.get(1)
     assert isinstance(labels, hv.Labels)
-    assert list(labels['text']) == ['Stage 1', 'Stage 2']
+    print(labels)
+    assert list(labels['Stage']) == ['Stage 1', 'Stage 2']
 
     stage = layout[1][0]
     assert isinstance(stage, Row)
@@ -142,20 +147,21 @@ def test_pipeline_from_add_stages():
 
     assert isinstance(layout, Column)
     assert isinstance(layout[0], Row)
-    error, progress, prev_button, next_button = layout[0].objects
+    (title, error), progress, (prev_button, next_button) = layout[0].objects
 
-    assert isinstance(error, Spacer)
-    assert isinstance(prev_button, Param)
-    assert isinstance(next_button, Param)
+    assert isinstance(error, Row)
+    assert isinstance(prev_button, Button)
+    assert isinstance(next_button, Button)
     assert isinstance(progress, HoloViews)
 
     hv_obj = progress.object
-    points = hv_obj.get(1)
-    assert isinstance(points, hv.Points)
-    assert len(points) == 2
-    labels = hv_obj.get(2)
+    graph = hv_obj.get(0)
+    assert isinstance(graph, hv.Graph)
+    assert len(graph) == 1
+    labels = hv_obj.get(1)
     assert isinstance(labels, hv.Labels)
-    assert list(labels['text']) == ['Stage 1', 'Stage 2']
+    print(labels)
+    assert list(labels['Stage']) == ['Stage 1', 'Stage 2']
 
     stage = layout[1][0]
     assert isinstance(stage, Row)
@@ -194,7 +200,7 @@ def test_pipeline_add_stage_validate_add_twice():
 def test_pipeline_getitem():
     pipeline = Pipeline()
     pipeline.add_stage('Stage 1', Stage1)
-    assert pipeline[0] == Stage1
+    assert pipeline['Stage 1'] == Stage1
 
 
 @hv_available
