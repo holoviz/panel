@@ -19,7 +19,9 @@ from bokeh.models import (CustomJS, Model as BkModel)
 class Callback(param.Parameterized):
     """
     A Callback defines some callback to be triggered when a property
-    changes on the source object.
+    changes on the source object. A Callback can execute arbitrary
+    Javascript code and will make all objects referenced in the args
+    available in the JS namespace.
     """
 
     args = param.Dict(default={}, allow_None=True, doc="""
@@ -241,6 +243,7 @@ class CallbackGenerator(object):
                       if k not in ('source', 'target', 'name', 'code', 'args')}
 
         src_model = self._resolve_model(root_model, source, src_spec[0])
+        ref = root_model.ref['id']
         link_id = id(link)
         if any(link_id in cb.tags for cbs in src_model.js_property_callbacks.values() for cb in cbs):
             # Skip registering callback if already registered
@@ -259,14 +262,28 @@ class CallbackGenerator(object):
             arg_model = self._resolve_model(root_model, v, None)
             if arg_model is not None:
                 references[k] = arg_model
+            elif not isinstance(v, param.Parameterized):
+                references[k] = v
 
         if 'holoviews' in sys.modules:
-            if is_bokeh_element_plot(source):
-                for k, v in source.handles.items():
+            if isinstance(source, HoloViews):
+                src = source._plots[ref][0]
+            else:
+                src = source
+
+            prefix = 'source_' if hasattr(link, 'target') else ''
+            if is_bokeh_element_plot(src):
+                for k, v in src.handles.items():
                     if isinstance(v, BkModel):
-                        references['source_' + k] = v
-            if is_bokeh_element_plot(target):
-                for k, v in target.handles.items():
+                        references[prefix + k] = v
+
+            if isinstance(target, HoloViews):
+                tgt = target._plots[ref][0]
+            else:
+                tgt = target
+
+            if is_bokeh_element_plot(tgt):
+                for k, v in tgt.handles.items():
                     if isinstance(v, BkModel):
                         references['target_' + k] = v
 
