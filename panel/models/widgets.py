@@ -52,8 +52,6 @@ class Audio(Widget):
 
 class Video(Widget):
 
-    __implementation__ = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'video.ts')
-
     loop = Bool(False, help="""Whether the video should loop""")
 
     paused = Bool(False, help="""Whether the video is paused""")
@@ -68,7 +66,6 @@ class Video(Widget):
 
     volume = Int(0, help="""The volume of the video player.""")
 
-    
 
 class VideoStream(Widget):
 

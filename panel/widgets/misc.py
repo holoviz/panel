@@ -20,7 +20,7 @@ from ..models import (Audio as _BkAudio,
 from .base import Widget
 
 
-class MediaBase(Widget):
+class _MediaBase(Widget):
 
     loop = param.Boolean(default=False, doc="""
         Whether the meida should loop""")
@@ -53,7 +53,7 @@ class MediaBase(Widget):
         return buffer
 
     def _process_param_change(self, msg):
-        msg = super(Audio, self)._process_param_change(msg)
+        msg = super(_MediaBase, self)._process_param_change(msg)
 
         if 'value' in msg:
             value =  msg['value']
@@ -78,7 +78,7 @@ class MediaBase(Widget):
         return msg
 
 
-class Audio(Widget):
+class Audio(_MediaBase):
 
     sample_rate = param.Integer(default=44100, doc="""
         The sample_rate of the audio when given a NumPy array.""")
@@ -93,7 +93,7 @@ class Audio(Widget):
     _widget_type = _BkAudio
 
 
-class Video(Widget):
+class Video(_MediaBase):
 
     _media_type = 'video'
 

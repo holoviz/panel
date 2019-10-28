@@ -114,8 +114,7 @@ export abstract class Video extends Widget {
 
   static __module__ = "panel.models.widgets"
 
-  static initClass(): void {
-    this.prototype.type = "Video"
+  static init_Video(): void {
     this.prototype.default_view = VideoView
 
     this.define<Video.Props>({
