@@ -30,6 +30,27 @@ class Button(_ButtonBase):
     def on_click(self, callback):
         self.param.watch(callback, 'clicks')
 
+    def js_on_click(self, args={}, code=""):
+        """
+        Allows defining a JS callback to be triggered when the button
+        is clicked.
+
+        Arguments
+        ----------
+        args: dict
+          A mapping of objects to make available to the JS callback
+        code: str
+          The Javascript code to execute when the button is clicked.
+
+        Returns
+        -------
+        callback: Callback
+          The Callback which can be used to disable the callback.
+        """
+        from .links import Callback
+        return Callback(self, code={'clicks': code}, args=args)
+
+
 
 class Toggle(_ButtonBase):
 
