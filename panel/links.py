@@ -8,10 +8,8 @@ import weakref
 import sys
 
 from .viewable import Viewable, Reactive
-from .layout import Panel
 from .pane.holoviews import HoloViews, generate_panel_bokeh_map, is_bokeh_element_plot
 from .util import unicode_repr
-from .widgets import CompositeWidget
 
 from bokeh.models import (CustomJS, Model as BkModel)
 
@@ -250,13 +248,11 @@ class CallbackGenerator(object):
             return
         references['source'] = src_model
 
-        tgt_mode = None
+        tgt_model = None
         if link._requires_target:
             tgt_model = self._resolve_model(root_model, target, tgt_spec[0])
             if tgt_model is not None:
                 references['target'] = tgt_model
-        else:
-            tgt_model = None
 
         for k, v in dict(link.args, **self.arg_overrides).items():
             arg_model = self._resolve_model(root_model, v, None)
