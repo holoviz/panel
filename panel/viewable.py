@@ -854,7 +854,8 @@ class Reactive(Viewable):
 
         Arguments
         ----------
-        args: A mapping of objects to make available to the JS callback
+        args: dict
+          A mapping of objects to make available to the JS callback
         **callbacks: dict
           A mapping between properties on the source model and the code
           to execute when that property changes
