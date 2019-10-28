@@ -128,7 +128,7 @@ def test_widget_jscallback(document, comm):
     assert customjs.code == "some_code"
 
 
-def test_widget_jscallback(document, comm):
+def test_widget_jscallback_args_scalar(document, comm):
     widget = ColorPicker(value='#ff00ff')
 
     widget.jscallback(value='some_code', args={'scalar': 1})
