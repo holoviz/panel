@@ -7,7 +7,7 @@ except ImportError:
 
 from bokeh.plotting import figure
 from panel.layout import Row
-from panel.links import GenericLink
+from panel.links import Link
 from panel.pane import HoloViews
 from panel.widgets import FloatSlider, RangeSlider, ColorPicker
 from panel.tests.util import hv_available
@@ -48,7 +48,7 @@ def test_bkwidget_hvplot_links(document, comm):
     bokeh_widget = Slider(value=5, start=1, end=10, step=1e-1)
     points1 = hv.Points([1, 2, 3])
 
-    GenericLink(bokeh_widget, points1, properties={'value': 'glyph.size'})
+    Link(bokeh_widget, points1, properties={'value': 'glyph.size'})
 
     row = Row(points1, bokeh_widget)
     model = row.get_root(document, comm=comm)
@@ -76,7 +76,7 @@ def test_bkwidget_bkplot_links(document, comm):
     bokeh_fig = figure()
     scatter = bokeh_fig.scatter([1, 2, 3], [1, 2, 3])
 
-    GenericLink(bokeh_widget, scatter, properties={'value': 'glyph.size'})
+    Link(bokeh_widget, scatter, properties={'value': 'glyph.size'})
 
     row = Row(bokeh_fig, bokeh_widget)
     row.get_root(document, comm=comm)
@@ -114,6 +114,59 @@ def test_widget_bkplot_link(document, comm):
             "catch(err) { console.log('WARNING: Could not set fill_color on target, raised error: ' + err); return; }"
             "target['fill_color'] = value")
     assert link_customjs.code == code
+
+
+def test_widget_jscallback(document, comm):
+    widget = ColorPicker(value='#ff00ff')
+
+    widget.jscallback(value='some_code')
+
+    model = widget.get_root(document, comm=comm)
+
+    customjs = model.js_property_callbacks['change:color'][-1]
+    assert customjs.args['source'] is model
+    assert customjs.code == "some_code"
+
+
+def test_widget_jscallback(document, comm):
+    widget = ColorPicker(value='#ff00ff')
+
+    widget.jscallback(value='some_code', args={'scalar': 1})
+
+    model = widget.get_root(document, comm=comm)
+
+    customjs = model.js_property_callbacks['change:color'][-1]
+    assert customjs.args['scalar'] == 1
+
+
+def test_widget_jscallback_args_model(document, comm):
+    widget = ColorPicker(value='#ff00ff')
+    widget2 = ColorPicker(value='#ff00ff')
+
+    widget.jscallback(value='some_code', args={'widget': widget2})
+
+    model = Row(widget, widget2).get_root(document, comm=comm)
+
+    customjs = model.children[0].js_property_callbacks['change:color'][-1]
+    assert customjs.args['source'] is model.children[0]
+    assert customjs.args['widget'] is model.children[1]
+    assert customjs.code == "some_code"
+
+
+@hv_available
+def test_hvplot_jscallback(document, comm):
+    points1 = hv.Points([1, 2, 3])
+
+    hvplot = HoloViews(points1)
+
+    hvplot.jscallback(**{'x_range.start': "some_code"})
+
+    model = hvplot.get_root(document, comm=comm)
+    x_range = hvplot._plots[model.ref['id']][0].handles['x_range']
+
+    customjs = x_range.js_property_callbacks['change:start'][-1]
+    assert customjs.args['source'] is x_range
+    assert customjs.code == "some_code"
 
 
 @hv_available
