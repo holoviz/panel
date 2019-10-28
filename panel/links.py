@@ -246,7 +246,7 @@ class CallbackGenerator(object):
         if any(link_id in cb.tags for cbs in src_model.js_property_callbacks.values() for cb in cbs):
             # Skip registering callback if already registered
             return
-        references['source'] = src_model
+        references['source'] = references['cb_obj'] = src_model
 
         tgt_model = None
         if link._requires_target:
@@ -270,8 +270,9 @@ class CallbackGenerator(object):
             prefix = 'source_' if hasattr(link, 'target') else ''
             if is_bokeh_element_plot(src):
                 for k, v in src.handles.items():
-                    if isinstance(v, BkModel):
-                        references[prefix + k] = v
+                    k = prefix + k
+                    if isinstance(v, BkModel) and k not in references:
+                        references[k] = v
 
             if isinstance(target, HoloViews):
                 tgt = target._plots[ref][0]
@@ -280,8 +281,9 @@ class CallbackGenerator(object):
 
             if is_bokeh_element_plot(tgt):
                 for k, v in tgt.handles.items():
-                    if isinstance(v, BkModel):
-                        references['target_' + k] = v
+                    k = 'target_' + k
+                    if isinstance(v, BkModel) and k not in references:
+                        references[k] = v
 
         self._initialize_models(link, source, src_model, src_spec[1], target, tgt_model, tgt_spec[1])
         self._process_references(references)
