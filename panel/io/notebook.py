@@ -30,7 +30,7 @@ from bokeh.util.serialization import make_id
 from jinja2 import Environment, Markup, FileSystemLoader
 from pyviz_comms import (
     JS_CALLBACK, PYVIZ_PROXY, Comm, JupyterCommManager as _JupyterCommManager,
-    bokeh_msg_handler, nb_mime_js)
+    nb_mime_js)
 
 from ..compiler import require_components
 from .embed import embed_state

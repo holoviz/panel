@@ -12,6 +12,7 @@ from bokeh.document.document import Document as _Document
 from bokeh.io import curdoc as _curdoc
 from jinja2.environment import Template as _Template
 from six import string_types
+from pyviz_comms import JupyterCommManager as _JupyterCommManager
 
 from .config import panel_extension
 from .io.model import add_to_doc
@@ -151,9 +152,8 @@ class Template(object):
 
         try:
             assert get_ipython().kernel is not None # noqa
-            state._comm_manager = JupyterCommManager
-        except Exception as e:
-            error = e
+            state._comm_manager = _JupyterCommManager
+        except:
             pass
         doc = _Document()
         comm = state._comm_manager.get_server_comm()
