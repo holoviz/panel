@@ -34,8 +34,8 @@ class Template(object):
     given a string or Jinja2 Template object in the constructor and
     can then be populated with Panel objects. When adding panels to
     the Template a unique name must be provided, making it possible to
-    refer to them uniquely in the template. For instance, two panels added like
-    this:
+    refer to them uniquely in the template. For instance, two panels
+    added like this:
 
         template.add_panel('A', pn.panel('A'))
         template.add_panel('B', pn.panel('B'))
@@ -47,18 +47,27 @@ class Template(object):
 
     Once a template has been fully populated it can be rendered using
     the same API as other Panel objects.
+
+    Since embedding complex CSS frameworks inside a notebook can have
+    undesirable side-effects and a notebook does not afford the same
+    amount of screen space a Template may given separate template
+    and nb_template objects. This allows for different layouts when
+    served as a standalone server and when used in the notebook.
     """
 
-    def __init__(self, template=None, items=None):
+    def __init__(self, template=None, items=None, nb_template=None):
         if isinstance(template, string_types):
             template = _Template(template)
         self.template = template
+        if isinstance(nb_template, string_types):
+            nb_template = _Template(nb_template)
+        self.nb_template = nb_template or template
         self._render_items = {}
+        self._server = None
+        self._layout = self._build_layout()
         items = {} if items is None else items
         for name, item in items.items():
             self.add_panel(name, item)
-        self._server = None
-        self._layout = self._build_layout()
 
     def _build_layout(self):
         str_repr = Str(repr(self))
@@ -99,7 +108,7 @@ class Template(object):
         return template.format(
             cls=cls, objs=('%s' % spacer).join(objs), spacer=spacer)
 
-    def _init_doc(self, doc=None, comm=None, title=None):
+    def _init_doc(self, doc=None, comm=None, title=None, notebook=False):
         doc = doc or _curdoc()
         if title is not None:
             doc.title = title
@@ -120,11 +129,11 @@ class Template(object):
                 doc.on_session_destroyed(obj._server_destroy)
                 obj._documents[doc] = model
             add_to_doc(model, doc, hold=bool(comm))
-        doc.template = self.template
+        if notebook:
+            doc.template = self.nb_template
+        else:
+            doc.template = self.template
         return doc
-
-    def _repr_mimebundle_(self, include=None, exclude=None):
-        return self._layout._repr_mimebundle_(include, exclude)
 
     def _repr_mimebundle_(self, include=None, exclude=None):
         loaded = panel_extension._loaded
@@ -148,7 +157,7 @@ class Template(object):
             pass
         doc = _Document()
         comm = state._comm_manager.get_server_comm()
-        self._init_doc(doc, comm)
+        self._init_doc(doc, comm, notebook=True)
         return render_template(doc, comm)
 
     #----------------------------------------------------------------
