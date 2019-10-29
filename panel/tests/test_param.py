@@ -291,32 +291,32 @@ def test_object_selector_param(document, comm):
     test_pane = Pane(test)
     model = test_pane.get_root(document, comm=comm)
 
-    slider = model.children[1]
-    assert isinstance(slider, Select)
-    assert slider.options == ['1', 'b', 'c']
-    assert slider.value == 'b'
-    assert slider.disabled == False
+    select = model.children[1]
+    assert isinstance(select, Select)
+    assert select.options == [('1','1'), ('b','b'), ('c','c')]
+    assert select.value == 'b'
+    assert select.disabled == False
 
     # Check changing param value updates widget
     test.a = 1
-    assert slider.value == '1'
+    assert select.value == '1'
 
     # Check changing param attribute updates widget
     a_param = test.param['a']
     a_param.objects = ['c', 'd', 1]
-    assert slider.options == ['c', 'd', '1']
+    assert select.options == [('c','c'), ('d','d'), ('1','1')]
 
     a_param.constant = True
-    assert slider.disabled == True
+    assert select.disabled == True
 
     # Ensure cleanup works
     test_pane._cleanup(model)
     a_param.constant = False
     a_param.objects = [1, 'c', 'd']
     test.a = 'd'
-    assert slider.value == '1'
-    assert slider.options == ['c', 'd', '1']
-    assert slider.disabled == True
+    assert select.value == '1'
+    assert select.options == [('c','c'), ('d','d'), ('1','1')]
+    assert select.disabled == True
 
 
 def test_list_selector_param(document, comm):
