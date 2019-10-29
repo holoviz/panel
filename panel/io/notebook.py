@@ -86,8 +86,6 @@ if (plot == null) {{
 
 if (plot_id in window.PyViz.receivers) {{
   var receiver = window.PyViz.receivers[plot_id];
-}} else if (Bokeh.protocol === undefined) {{
-  return;
 }} else {{
   var receiver = new Bokeh.protocol.Receiver();
   window.PyViz.receivers[plot_id] = receiver;
