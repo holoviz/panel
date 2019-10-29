@@ -113,6 +113,7 @@ class Template(object):
         doc = doc or _curdoc()
         if title is not None:
             doc.title = title
+
         root = None
         for name, obj in self._render_items.items():
             if root is None:
@@ -147,8 +148,6 @@ class Template(object):
                                'Ensure you run pn.extension() before '
                                'displaying objects in the notebook.')
             return None
-
-        e = None
 
         try:
             assert get_ipython().kernel is not None # noqa
