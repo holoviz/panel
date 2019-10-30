@@ -629,6 +629,7 @@ class Reactive(Viewable):
                 if ref not in state._views:
                     continue
                 viewable, root, doc, comm = state._views[ref]
+
                 if comm or state._unblocked(doc):
                     self._update_model(events, msg, root, model, doc, comm)
                     if comm and 'embedded' not in root.tags:

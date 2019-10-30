@@ -4,15 +4,23 @@ documents.
 """
 from __future__ import absolute_import, division, unicode_literals
 
+import sys
+
+import param
+
+from bokeh.document.document import Document as _Document
 from bokeh.io import curdoc as _curdoc
 from jinja2.environment import Template as _Template
 from six import string_types
+from pyviz_comms import JupyterCommManager as _JupyterCommManager
 
+from .config import panel_extension
 from .io.model import add_to_doc
+from .io.notebook import render_template
 from .io.server import StoppableThread, get_server
 from .io.state import state
 from .layout import Column
-from .pane import panel as _panel, HTML, Str
+from .pane import panel as _panel, PaneBase, HTML, Str
 from .widgets import Button
 
 _server_info = (
@@ -27,8 +35,8 @@ class Template(object):
     given a string or Jinja2 Template object in the constructor and
     can then be populated with Panel objects. When adding panels to
     the Template a unique name must be provided, making it possible to
-    refer to them uniquely in the template. For instance, two panels added like
-    this:
+    refer to them uniquely in the template. For instance, two panels
+    added like this:
 
         template.add_panel('A', pn.panel('A'))
         template.add_panel('B', pn.panel('B'))
@@ -40,18 +48,27 @@ class Template(object):
 
     Once a template has been fully populated it can be rendered using
     the same API as other Panel objects.
+
+    Since embedding complex CSS frameworks inside a notebook can have
+    undesirable side-effects and a notebook does not afford the same
+    amount of screen space a Template may given separate template
+    and nb_template objects. This allows for different layouts when
+    served as a standalone server and when used in the notebook.
     """
 
-    def __init__(self, template=None, items=None):
+    def __init__(self, template=None, items=None, nb_template=None):
         if isinstance(template, string_types):
             template = _Template(template)
         self.template = template
+        if isinstance(nb_template, string_types):
+            nb_template = _Template(nb_template)
+        self.nb_template = nb_template or template
         self._render_items = {}
+        self._server = None
+        self._layout = self._build_layout()
         items = {} if items is None else items
         for name, item in items.items():
             self.add_panel(name, item)
-        self._server = None
-        self._layout = self._build_layout()
 
     def _build_layout(self):
         str_repr = Str(repr(self))
@@ -92,13 +109,60 @@ class Template(object):
         return template.format(
             cls=cls, objs=('%s' % spacer).join(objs), spacer=spacer)
 
+    def _init_doc(self, doc=None, comm=None, title=None, notebook=False):
+        doc = doc or _curdoc()
+        if title is not None:
+            doc.title = title
+
+        root = None
+        for name, obj in self._render_items.items():
+            if root is None:
+                model = obj.get_root(doc, comm)
+                root = model
+            elif isinstance(obj, PaneBase):
+                if obj._updates:
+                    model = obj._get_model(doc, root, root, comm=comm)
+                else:
+                    model = obj.layout._get_model(doc, root, root, comm=comm)
+            else:
+                model = obj._get_model(doc, root, root, comm)
+            model.name = name
+            if hasattr(doc, 'on_session_destroyed'):
+                doc.on_session_destroyed(obj._server_destroy)
+                obj._documents[doc] = model
+            add_to_doc(model, doc, hold=bool(comm))
+        if notebook:
+            doc.template = self.nb_template
+        else:
+            doc.template = self.template
+        return doc
+
     def _repr_mimebundle_(self, include=None, exclude=None):
-        return self._layout._repr_mimebundle_(include, exclude)
+        loaded = panel_extension._loaded
+        if not loaded and 'holoviews' in sys.modules:
+            import holoviews as hv
+            loaded = hv.extension._loaded
+        if not loaded:
+            param.main.warning('Displaying Panel objects in the notebook '
+                               'requires the panel extension to be loaded. '
+                               'Ensure you run pn.extension() before '
+                               'displaying objects in the notebook.')
+            return None
+
+        try:
+            assert get_ipython().kernel is not None # noqa
+            state._comm_manager = _JupyterCommManager
+        except:
+            pass
+        doc = _Document()
+        comm = state._comm_manager.get_server_comm()
+        self._init_doc(doc, comm, notebook=True)
+        return render_template(doc, comm)
 
     #----------------------------------------------------------------
     # Public API
     #----------------------------------------------------------------
-    
+
     def add_panel(self, name, panel):
         """
         Add panels to the Template, which may then be referenced by
@@ -136,18 +200,7 @@ class Template(object):
         doc : bokeh.Document
           The Bokeh document the panel was attached to
         """
-        doc = doc or _curdoc()
-        if title is not None:
-            doc.title = title
-        for name, obj in self._render_items.items():
-            model = obj.get_root(doc)
-            model.name = name
-            if hasattr(doc, 'on_session_destroyed'):
-                doc.on_session_destroyed(obj._server_destroy)
-                obj._documents[doc] = model
-            add_to_doc(model, doc)
-        doc.template = self.template
-        return doc
+        return self._init_doc(doc, title=title)
 
     def servable(self, title=None):
         """
