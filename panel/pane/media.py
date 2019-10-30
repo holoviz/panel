@@ -12,11 +12,7 @@ from six import string_types
 import numpy as np
 import param
 
-from ..models import (
-    Audio as _BkAudio,
-    Video as _BkVideo,
-    VideoStream as _BkVideoStream
-)
+from ..models import Audio as _BkAudio, Video as _BkVideo
 from .base import PaneBase
 
 

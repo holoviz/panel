@@ -14,9 +14,7 @@ import numpy as np
 
 from ..io.notebook import push
 from ..io.state import state
-from ..models import (Audio as _BkAudio,
-                      Video as _BkVideo,
-                      VideoStream as _BkVideoStream)
+from ..models import Audio as _BkAudio, VideoStream as _BkVideoStream
 from .base import Widget
 
 
