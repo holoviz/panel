@@ -3,8 +3,8 @@ Custom bokeh Widget models.
 """
 from __future__ import absolute_import, division, unicode_literals
 
-from bokeh.core.properties import Int, Float, Override, Enum, Any, Bool
-from bokeh.models import Widget
+from bokeh.core.properties import Int, Float, Override, Enum, Any, Bool, Dict, String
+from bokeh.models.widgets import Markup, Widget
 
 
 class Player(Widget):
@@ -84,3 +84,12 @@ class VideoStream(Widget):
     height = Override(default=240)
 
     width = Override(default=320)
+
+
+class Progress(Widget):
+
+    value = Any(help="""Current value""")
+
+    style = Dict(String, Any, default={}, help="""
+    Raw CSS style declaration. Note this may be web browser dependent.
+    """)

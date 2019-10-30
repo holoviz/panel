@@ -14,7 +14,9 @@ import numpy as np
 
 from ..io.notebook import push
 from ..io.state import state
-from ..models import Audio as _BkAudio, VideoStream as _BkVideoStream
+from ..models import (
+    Audio as _BkAudio, VideoStream as _BkVideoStream, Progress as _BkProgress
+)
 from .base import Widget
 
 
@@ -125,3 +127,12 @@ class VideoStream(Widget):
             (self, root, doc, comm) = state._views[ref]
             if comm and 'embedded' not in root.tags:
                 push(doc, comm)
+
+
+class Progress(Widget):
+
+    value = param.Number(default=None, bounds=(0, 100))
+
+    _rename = {'name': None}
+
+    _widget_type = _BkProgress
