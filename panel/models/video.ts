@@ -25,10 +25,18 @@ export class VideoView extends WidgetView {
   }
 
   render(): void {
-    if (this.videoEl) {
+    if (this.videoEl)
       return
-    }
     this.videoEl = document.createElement('video')
+	if (!this.model.sizing_mode || this.model.sizing_mode === 'fixed') {
+	  if (this.model.height)
+	    this.videoEl.height = this.model.height;
+	  if (this.model.width)
+	    this.videoEl.width = this.model.width;
+	}
+	this.videoEl.style.objectFit = 'fill'
+	this.videoEl.style.minWidth = '100%';
+    this.videoEl.style.minHeight = '100%';
     this.videoEl.controls = true
     this.videoEl.src = this.model.value
     this.videoEl.currentTime = this.model.time
@@ -47,9 +55,8 @@ export class VideoView extends WidgetView {
   }
 
   update_time(view: VideoView): void {
-	if ((Date.now() - view._time) < view.model.throttle) {
+	if ((Date.now() - view._time) < view.model.throttle)
       return
-	}
     view._blocked = true
     view.model.time = view.videoEl.currentTime
 	view._time = Date.now()
@@ -72,17 +79,19 @@ export class VideoView extends WidgetView {
   }
 
   set_volume(): void {
-    if (this._blocked)
+    if (this._blocked) {
       this._blocked = false
       return
+    }
     if (this.model.volume != null)
 	  this.videoEl.volume = (this.model.volume as number)/100
   }
 
   set_time(): void {
-    if (this._blocked)
+    if (this._blocked) {
       this._blocked = false
       return
+    }
     this.videoEl.currentTime = this.model.time
   }
 
@@ -127,5 +136,3 @@ export abstract class Video extends Widget {
     })
   }
 }
-
-Video.initClass()

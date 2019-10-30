@@ -46,6 +46,11 @@ class _MediaBase(Widget):
     
     _media_type = None
 
+    def __init__(self, **params):
+        self.param.warning('%s widget is deprecated, use the equivalent '
+                           'Pane type instead.' % type(self).__name__)
+        super(_MediaBase, self).__init__(**params)
+
     def _from_numpy(self, data):
         from scipy.io import wavfile
         buffer = BytesIO()
@@ -91,15 +96,6 @@ class Audio(_MediaBase):
     _default_mime = 'wav'
 
     _widget_type = _BkAudio
-
-
-class Video(_MediaBase):
-
-    _media_type = 'video'
-
-    _default_mime = 'mp4'
-
-    _widget_type = _BkVideo
 
 
 class VideoStream(Widget):

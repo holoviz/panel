@@ -25,9 +25,8 @@ export class AudioView extends WidgetView {
   }
 
   render(): void {
-    if (this.audioEl) {
+    if (this.audioEl)
       return
-    }
     this.audioEl = document.createElement('audio')
     this.audioEl.controls = true
     this.audioEl.src = this.model.value
@@ -47,9 +46,8 @@ export class AudioView extends WidgetView {
   }
 
   update_time(view: AudioView): void {
-	if ((Date.now() - view._time) < view.model.throttle) {
+	if ((Date.now() - view._time) < view.model.throttle)
       return
-	}
     view._blocked = true
     view.model.time = view.audioEl.currentTime
 	view._time = Date.now()
@@ -72,17 +70,20 @@ export class AudioView extends WidgetView {
   }
 
   set_volume(): void {
-    if (this._blocked)
+    if (this._blocked) {
       this._blocked = false
       return
-    if (this.model.volume != null)
+    }
+    if (this.model.volume != null) {
 	  this.audioEl.volume = (this.model.volume as number)/100
+	}
   }
 
   set_time(): void {
-    if (this._blocked)
+    if (this._blocked) {
       this._blocked = false
       return
+    }
     this.audioEl.currentTime = this.model.time
   }
 
