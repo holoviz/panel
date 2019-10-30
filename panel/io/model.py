@@ -29,7 +29,8 @@ def diff(doc, binary=True, events=None):
     # columns, later event will include the changes
     fixed_events = []
     for e in events:
-        if isinstance(e.hint, ColumnDataChangedEvent) and e.hint.cols is not None:
+        if (hasattr(e, 'hint') and isinstance(e.hint, ColumnDataChangedEvent)
+            and e.hint.cols is not None):
             e.hint.cols = None
         fixed_events.append(e)
     msg = Protocol("1.0").create("PATCH-DOC", events, use_buffers=binary)
