@@ -30,7 +30,7 @@ class _MediaBase(PaneBase):
     paused = param.Boolean(default=True, doc="""
         Whether the media is currently paused""")
 
-    object = param.String(default='', doc="""
+    object = param.String(default='', allow_None=True, doc="""
         The media file either local or remote.""")
 
     volume = param.Number(default=None, bounds=(0, 100), doc="""
@@ -116,7 +116,8 @@ class _MediaBase(PaneBase):
 
 class Audio(_MediaBase):
 
-    object = param.ClassSelector(default='', class_=(string_types + (np.ndarray,)), doc="""
+    object = param.ClassSelector(default='', class_=(string_types + (np.ndarray,)),
+                                 allow_None=True, doc="""
         The audio file either local or remote.""")
 
     sample_rate = param.Integer(default=44100, doc="""
