@@ -50,6 +50,23 @@ class Audio(Widget):
     volume = Int(0, help="""The volume of the audio player.""")
 
 
+class Video(Widget):
+
+    loop = Bool(False, help="""Whether the video should loop""")
+
+    paused = Bool(False, help="""Whether the video is paused""")
+
+    time = Float(0, help="""
+        The current time stamp of the video playback""")
+
+    throttle = Int(250, help="""
+        The frequency at which the time value is updated in milliseconds.""")
+
+    value = Any(help="Encoded file data")
+
+    volume = Int(0, help="""The volume of the video player.""")
+
+
 class VideoStream(Widget):
 
     format = Enum('png', 'jpeg', default='png')
