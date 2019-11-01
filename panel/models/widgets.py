@@ -4,7 +4,7 @@ Custom bokeh Widget models.
 from __future__ import absolute_import, division, unicode_literals
 
 from bokeh.core.properties import Int, Float, Override, Enum, Any, Bool, Dict, String
-from bokeh.models.widgets import Markup, Widget
+from bokeh.models.widgets import Widget
 
 
 class Player(Widget):
