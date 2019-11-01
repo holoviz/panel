@@ -218,6 +218,9 @@ class Pipeline(param.Parameterized):
             repr_str += '\n    [%d] %s: %s(%s)' % (i, name, cls_name, params)
         return repr_str
 
+    def __str__(self):
+        return self.__repr__()
+
     def __getitem__(self, index):
         return self._stages[index][0]
 
@@ -454,7 +457,7 @@ class Pipeline(param.Parameterized):
             tools=[], default_tools=['hover'], selection_policy=None,
             node_hover_fill_color='gray', backend='bokeh')
         labels = hv.Labels(nodes, ['x', 'y'], 'Stage').opts(
-            yoffset=-.30, backend='bokeh')
+            yoffset=-.30, default_tools=[], backend='bokeh')
         plot = (graph * labels) if self._linear else graph
         plot.opts(
             xaxis=None, yaxis=None, min_width=400, responsive=True,
