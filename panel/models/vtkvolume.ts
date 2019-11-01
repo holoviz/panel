@@ -3,6 +3,7 @@ import * as p from "@bokehjs/core/properties"
 import {ARRAY_TYPES, DType} from "@bokehjs/core/util/serialization"
 import {HTMLBox, HTMLBoxView} from "@bokehjs/models/layouts/html_box"
 import {div} from "@bokehjs/core/dom"
+
 const vtk = (window as any).vtk
 
 type VolumeType = {
@@ -151,8 +152,9 @@ export class VTKVolumePlot extends HTMLBox {
     super(attrs)
   }
 
-  static initClass(): void {
-    this.prototype.type = "VTKVolumePlot"
+  static __module__ = "panel.models.vtk"
+
+  static init_VTKVolumePlot(): void {
     this.prototype.default_view = VTKVolumePlotView
 
     this.define<VTKVolumePlot.Props>({
@@ -166,4 +168,3 @@ export class VTKVolumePlot extends HTMLBox {
     });
   }
 }
-VTKVolumePlot.initClass()
