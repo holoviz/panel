@@ -217,8 +217,6 @@ def test_pipeline_define_graph():
 
     pipeline.define_graph({'Stage 1': ('Stage 2', 'Stage 2b')})
 
-    pipeline.init()
-
     assert pipeline._stage == 'Stage 1'
 
     assert isinstance(pipeline.buttons, Row)
@@ -256,8 +254,6 @@ def test_pipeline_define_next_parameter_respected():
 
     pipeline.define_graph({'Stage 1': ('Stage 2', 'Stage 2b')})
 
-    pipeline.init()
-
     assert pipeline.next_selector.value == 'Stage 2b'
 
     pipeline._state.next = 'Stage 2'
@@ -273,8 +269,6 @@ def test_pipeline_error_condition():
     pipeline.add_stage('Stage 1', Stage1)
 
     pipeline.define_graph({'Stage 1': ('Stage 2', 'Stage 2b')})
-
-    pipeline.init()
 
     pipeline.next_selector.value = 'Stage 2b'
     pipeline._next()
@@ -301,8 +295,6 @@ def test_pipeline_previous_follows_initial_path():
         'Stage 2b': 'Stage 3'
     })
 
-    pipeline.init()
-
     assert pipeline._route == ['Stage 1']
 
     pipeline.next_selector.value = 'Stage 2b'
@@ -325,8 +317,6 @@ def test_pipeline_ready_respected():
     pipeline.add_stage('Stage 1', Stage1)
     pipeline.add_stage('Stage 2', Stage2)
 
-    pipeline.init()
-
     assert pipeline.next_button.disabled
 
     pipeline._state.ready = True
@@ -338,8 +328,6 @@ def test_pipeline_auto_advance_respected():
     pipeline = Pipeline(ready_parameter='ready', auto_advance=True)
     pipeline.add_stage('Stage 1', Stage1)
     pipeline.add_stage('Stage 2', Stage2)
-
-    pipeline.init()
 
     assert pipeline.next_button.disabled
 
@@ -355,8 +343,6 @@ def test_pipeline_network_diagram_states():
     pipeline.add_stage('Stage 2b', Stage2b)
 
     pipeline.define_graph({'Stage 1': ('Stage 2', 'Stage 2b')})
-
-    pipeline.init()
 
     [s1, s2, s2b] = pipeline.network.object.nodes['State']
 
