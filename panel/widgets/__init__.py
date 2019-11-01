@@ -9,7 +9,7 @@ from .button import Button, Toggle # noqa
 from .input import (# noqa
     ColorPicker, Checkbox, DatetimeInput, DatePicker, FileInput,
     LiteralInput, StaticText, TextInput, Spinner)
-from .misc import Audio, VideoStream # noqa
+from .misc import Audio, Progress, VideoStream # noqa
 from .player import DiscretePlayer, Player # noqa
 from .slider import (# noqa
     DateSlider, DateRangeSlider, DiscreteSlider, FloatSlider,
