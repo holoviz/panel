@@ -12,6 +12,7 @@ from six import string_types
 import param
 import numpy as np
 
+from ..depends import depends
 from ..io.notebook import push
 from ..io.state import state
 from ..models import (
@@ -131,8 +132,25 @@ class VideoStream(Widget):
 
 class Progress(Widget):
 
-    value = param.Number(default=None, bounds=(0, 100))
+    active = param.Boolean(default=True, doc="""
+        If no value is set the active property toggles animation of the
+        progress bar on and off.""")
+
+    bar_style = param.ObjectSelector(default='success', objects=[
+        'primary', 'secondary', 'success', 'info', 'danger', 'warning',
+        'light', 'dark'])
+
+    max = param.Integer(default=100, doc="The maximum value of the progress bar.")
+
+    value = param.Integer(default=None, bounds=(0, 100), doc="""
+        The current value of the progress bar. If set to None the progress
+        bar will be indeterminate and animate depending on the active
+        parameter.""")
 
     _rename = {'name': None}
 
     _widget_type = _BkProgress
+
+    @depends('max')
+    def _update_value_bounds(self):
+        self.param.value.bounds = (0, self.max)

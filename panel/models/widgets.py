@@ -88,7 +88,14 @@ class VideoStream(Widget):
 
 class Progress(Widget):
 
-    value = Any(help="""Current value""")
+    active = Bool(True, help="""Whether to animate the bar""")
+
+    bar_style = Enum('primary', 'secondary', 'success', 'info',
+                     'danger', 'warning', 'light', 'dark', default='primary')
+
+    max = Int(100, help="""Maximum value""")
+
+    value = Int(help="""Current value""")
 
     style = Dict(String, Any, default={}, help="""
     Raw CSS style declaration. Note this may be web browser dependent.

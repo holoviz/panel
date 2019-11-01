@@ -12,31 +12,42 @@ export class ProgressView extends WidgetView {
       this.render()
       this.root.compute_layout() // XXX: invalidate_layout?
     })
+    this.connect(this.model.properties.active.change, () => this.setCSS())
+    this.connect(this.model.properties.bar_style.change, () => this.setCSS())
+    this.connect(this.model.properties.css_classes.change, () => this.setCSS())
     this.connect(this.model.properties.value.change, () => this.setValue())
+    this.connect(this.model.properties.max.change, () => this.setMax())
   }
 
   render(): void {
     super.render()
     const style: any = {...this.model.style, display: "inline-block"}
     this.progressEl = document.createElement('progress')
-    this.progressEl.max = 100
+    this.setValue()
+    this.setMax()
 
+    // Set styling
     if (!this.model.sizing_mode || this.model.sizing_mode === 'fixed') {
       if (this.model.width)
         this.progressEl.style.width = this.model.width + 'px';
-      console.log(this.progressEl.style.width)
     } else if (this.model.sizing_mode == 'stretch_width' ||
                this.model.sizing_mode == 'stretch_both' ||
                this.model.width_policy == 'max' ||
                this.model.width_policy == 'fit') {
       this.progressEl.style.width = '100%'
     }
-    if (this.model.value != null)
-      this.progressEl.value = this.model.value
-    for (const prop in style) {
-      this.el.style.setProperty(prop, style[prop]);
-    }
+    this.setCSS()
+    for (const prop in style)
+      this.progressEl.style.setProperty(prop, style[prop]);
     this.el.appendChild(this.progressEl)
+  }
+
+  setCSS(): void {
+    const css = this.model.css_classes.join(" ") + " " + this.model.bar_style;
+    if (this.model.active)
+      this.progressEl.className = css + " active";
+    else
+      this.progressEl.className = css;
   }
 
   setValue(): void {
@@ -44,18 +55,25 @@ export class ProgressView extends WidgetView {
       this.progressEl.value = this.model.value
   }
 
+  setMax(): void {
+    if (this.model.max != null)
+      this.progressEl.max = this.model.max
+  }
+
   _update_layout(): void {
     this.layout = new VariadicBox(this.el)
     this.layout.set_sizing(this.box_sizing())
   }
-
 }
 
 export namespace Progress {
   export type Attrs = p.AttrsOf<Props>
 
   export type Props = Widget.Props & {
+    active: p.Property<boolean>
+    bar_style: p.Property<string>
     style: p.Property<{[key: string]: string}>
+    max: p.Property<number | null>
     value: p.Property<number | null>
   }
 }
@@ -74,8 +92,11 @@ export class Progress extends Widget {
   static init_Progress(): void {
     this.prototype.default_view = ProgressView
     this.define<Progress.Props>({
-      style: [ p.Any, {} ],
-      value: [ p.Number, null ],
+      active:    [ p.Boolean, true ],
+      bar_style: [ p.String, 'primary' ],
+      style:     [ p.Any, {} ],
+      max:       [ p.Number, 100 ],
+      value:     [ p.Number, null ],
     })
   }
 }
