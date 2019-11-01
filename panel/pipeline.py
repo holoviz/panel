@@ -251,6 +251,7 @@ class Pipeline(param.Parameterized):
                 previous.append(src)
         prev_states = [self._states[prev] for prev in previous if prev in self._states]
 
+        outputs = []
         kwargs, results = {}, {}
         for state in prev_states:
             for name, (_, method, index) in state.param.outputs().items():
@@ -262,6 +263,7 @@ class Pipeline(param.Parameterized):
                 if index is not None:
                     result = result[index]
                 kwargs[name] = result
+                outputs.append(name)
             if stage_kwargs.get('inherit_params', self.inherit_params):
                 params = [k for k, v in state.param.objects('existing').items()
                               if v.precedence is None or v.precedence >= 0]
@@ -273,6 +275,10 @@ class Pipeline(param.Parameterized):
             self._state = stage
         else:
             self._state = stage(**kwargs)
+
+        # Hide widgets for parameters that are supplied by the previous stage
+        for output in outputs:
+            self._state.param[output].precedence = -1
 
         ready_param = stage_kwargs.get('ready_parameter', self.ready_parameter)
         if ready_param and ready_param in stage.param:
