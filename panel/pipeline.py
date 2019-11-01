@@ -188,7 +188,7 @@ class Pipeline(param.Parameterized):
             HSpacer()
         )
         self.stage = Row()
-        self._layout = Column(self.header, self.stage, sizing_mode='stretch_width')
+        self.layout = Column(self.header, self.stage, sizing_mode='stretch_width')
 
         # Initialize stages and the graph
         for stage in stages:
@@ -217,6 +217,9 @@ class Pipeline(param.Parameterized):
             params = ', '.join(param_reprs(stage))
             repr_str += '\n    [%d] %s: %s(%s)' % (i, name, cls_name, params)
         return repr_str
+
+    def __str__(self):
+        return self.__repr__()
 
     def __getitem__(self, index):
         return self._stages[index][0]
@@ -251,6 +254,7 @@ class Pipeline(param.Parameterized):
                 previous.append(src)
         prev_states = [self._states[prev] for prev in previous if prev in self._states]
 
+        outputs = []
         kwargs, results = {}, {}
         for state in prev_states:
             for name, (_, method, index) in state.param.outputs().items():
@@ -262,6 +266,7 @@ class Pipeline(param.Parameterized):
                 if index is not None:
                     result = result[index]
                 kwargs[name] = result
+                outputs.append(name)
             if stage_kwargs.get('inherit_params', self.inherit_params):
                 params = [k for k, v in state.param.objects('existing').items()
                               if v.precedence is None or v.precedence >= 0]
@@ -273,6 +278,10 @@ class Pipeline(param.Parameterized):
             self._state = stage
         else:
             self._state = stage(**kwargs)
+
+        # Hide widgets for parameters that are supplied by the previous stage
+        for output in outputs:
+            self._state.param[output].precedence = -1
 
         ready_param = stage_kwargs.get('ready_parameter', self.ready_parameter)
         if ready_param and ready_param in stage.param:
@@ -448,15 +457,18 @@ class Pipeline(param.Parameterized):
             tools=[], default_tools=['hover'], selection_policy=None,
             node_hover_fill_color='gray', backend='bokeh')
         labels = hv.Labels(nodes, ['x', 'y'], 'Stage').opts(
-            yoffset=-.30, backend='bokeh')
+            yoffset=-.30, default_tools=[], backend='bokeh')
         plot = (graph * labels) if self._linear else graph
         plot.opts(
-            xaxis=None, yaxis=None, min_width=600, responsive=True,
+            xaxis=None, yaxis=None, min_width=400, responsive=True,
             show_frame=False, height=height, xlim=(-0.25, depth+0.25), ylim=(0, 1),
             default_tools=['hover'], toolbar=None,
             backend='bokeh'
         )
         return plot
+
+    def _repr_mimebundle_(self, include=None, exclude=None):
+        return self.layout._repr_mimebundle_(include, exclude)
 
     #----------------------------------------------------------------
     # Public API
@@ -479,7 +491,21 @@ class Pipeline(param.Parameterized):
         for k in kwargs:
             if k not in self.param:
                 raise ValueError("Keyword argument %s is not a valid parameter. " % k)
+        
+        if not self._linear and self._graph:
+            raise RuntimeError("Cannot add stage after graph has been defined.")
+
         self._stages[name] = (stage, kwargs)
+        if len(self._stages) == 1:
+            self._stage = name
+            self._route = [name]
+            self._graph = {}
+            self.stage[:] = [self._init_stage()]
+        else:
+            previous = [s for s in self._stages if s not in self._graph][0]
+            self._graph[previous] = (name,)
+        self._update_progress()
+        self._update_button()
 
     def define_graph(self, graph, force=False):
         """
@@ -536,18 +562,4 @@ class Pipeline(param.Parameterized):
             ]
         self.stage[:] = [self._init_stage()]
         self._update_progress()
-
-    def init(self):
-        """
-        Initialize the Pipeline before first display.
-        """
-        if not self._graph:
-            self.define_graph(self._graph)
-        else:
-            self._update_progress()
         self._update_button()
-
-    @property
-    def layout(self):
-        self.init()
-        return self._layout
