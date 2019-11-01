@@ -90,7 +90,7 @@ class Progress(Widget):
 
     active = Bool(True, help="""Whether to animate the bar""")
 
-    bar_style = Enum('primary', 'secondary', 'success', 'info',
+    bar_color = Enum('primary', 'secondary', 'success', 'info',
                      'danger', 'warning', 'light', 'dark', default='primary')
 
     max = Int(100, help="""Maximum value""")

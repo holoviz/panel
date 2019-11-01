@@ -136,7 +136,7 @@ class Progress(Widget):
         If no value is set the active property toggles animation of the
         progress bar on and off.""")
 
-    bar_style = param.ObjectSelector(default='success', objects=[
+    bar_color = param.ObjectSelector(default='success', objects=[
         'primary', 'secondary', 'success', 'info', 'danger', 'warning',
         'light', 'dark'])
 

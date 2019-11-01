@@ -13,7 +13,7 @@ export class ProgressView extends WidgetView {
       this.root.compute_layout() // XXX: invalidate_layout?
     })
     this.connect(this.model.properties.active.change, () => this.setCSS())
-    this.connect(this.model.properties.bar_style.change, () => this.setCSS())
+    this.connect(this.model.properties.bar_color.change, () => this.setCSS())
     this.connect(this.model.properties.css_classes.change, () => this.setCSS())
     this.connect(this.model.properties.value.change, () => this.setValue())
     this.connect(this.model.properties.max.change, () => this.setMax())
@@ -43,7 +43,7 @@ export class ProgressView extends WidgetView {
   }
 
   setCSS(): void {
-    const css = this.model.css_classes.join(" ") + " " + this.model.bar_style;
+    const css = this.model.css_classes.join(" ") + " " + this.model.bar_color;
     if (this.model.active)
       this.progressEl.className = css + " active";
     else
@@ -71,7 +71,7 @@ export namespace Progress {
 
   export type Props = Widget.Props & {
     active: p.Property<boolean>
-    bar_style: p.Property<string>
+    bar_color: p.Property<string>
     style: p.Property<{[key: string]: string}>
     max: p.Property<number | null>
     value: p.Property<number | null>
@@ -93,7 +93,7 @@ export class Progress extends Widget {
     this.prototype.default_view = ProgressView
     this.define<Progress.Props>({
       active:    [ p.Boolean, true ],
-      bar_style: [ p.String, 'primary' ],
+      bar_color: [ p.String, 'primary' ],
       style:     [ p.Any, {} ],
       max:       [ p.Number, 100 ],
       value:     [ p.Number, null ],
