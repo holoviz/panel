@@ -133,8 +133,8 @@ class Audio(_MediaBase):
 
     @classmethod
     def applies(cls, obj):
-        return super(Audio, cls).applies(obj) or isinstance(obj, np.ndarray)
-
+        return (super(Audio, cls).applies(obj) or 
+                (isinstance(obj, np.ndarray) and obj.ndim==1 and obj.dtype in [np.int16, np.uint16]))
 
 
 class Video(_MediaBase):
