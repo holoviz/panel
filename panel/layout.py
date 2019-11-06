@@ -718,9 +718,8 @@ class GridSpec(Panel):
         The dictionary of child objects that make up the grid.""")
 
     mode = param.ObjectSelector(
-        default='warn', objects=['warn', 'error', 'override'], doc="""
-        Whether to warn, error or simply override on overlapping
-        assignment.""")
+        default='override', objects=['error', 'override'], doc="""
+        Whether to error or simply override on overlapping assignment.""")
 
     width = param.Integer(default=600)
 
@@ -951,6 +950,7 @@ class GridSpec(Panel):
             objects = []
             for (yidx, xidx) in zip(*np.where(overlap_grid)):
                 old_obj = self[yidx, xidx]
+                print((yidx, xidx), old_obj)
                 if old_obj not in objects:
                     objects.append(old_obj)
                     overlapping += '    (%d, %d): %s\n\n' % (yidx, xidx, old_obj)
@@ -961,8 +961,7 @@ class GridSpec(Panel):
                             str(grid.astype('uint8')))
             if self.mode == 'error':
                 raise IndexError(overlap_text)
-            elif self.mode == 'warn':
-                self.param.warning(overlap_text)
+            self.objects.__delitem__(*self.__getitem__(index).objects.keys())
             self.__delitem__(index, False)
         self.objects[key] = Pane(obj)
         self.param.trigger('objects')
