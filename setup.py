@@ -86,7 +86,7 @@ except:
 ########## dependencies ##########
 
 install_requires = [
-    'bokeh >=1.3.0',
+    'bokeh >=1.4.0',
     'param >=1.9.0',
     'pyviz_comms >=0.7.2',
     'markdown',
@@ -141,7 +141,7 @@ extras_require['build'] = [
     'param >=1.9.0',
     'pyct >=0.4.4',
     'setuptools >=30.3.0',
-    'bokeh >=1.3.0',
+    'bokeh >=1.4.0',
     'pyviz_comms >=0.6.0',
     'nodejs >=9.11.1',
 ]
