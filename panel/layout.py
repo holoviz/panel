@@ -950,7 +950,6 @@ class GridSpec(Panel):
             objects = []
             for (yidx, xidx) in zip(*np.where(overlap_grid)):
                 old_obj = self[yidx, xidx]
-                print((yidx, xidx), old_obj)
                 if old_obj not in objects:
                     objects.append(old_obj)
                     overlapping += '    (%d, %d): %s\n\n' % (yidx, xidx, old_obj)
