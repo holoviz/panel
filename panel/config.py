@@ -27,6 +27,19 @@ from .io.state import state
 _PATH = os.path.abspath(os.path.dirname(__file__))
 _CSS_FILES = glob.glob(os.path.join(_PATH, '_styles', '*.css'))
 
+def validate_config(config, parameter, value):
+    """
+    Validates parameter setting on a hidden config parameter.
+    """
+    orig = getattr(config, parameter)
+    try:
+        setattr(config, parameter, value)
+    except Exception as e:
+        raise e
+    finally:
+        setattr(config, parameter, orig)
+
+
 class _config(param.Parameterized):
     """
     Holds global configuration options for Panel. The options can be
@@ -66,6 +79,11 @@ class _config(param.Parameterized):
     _embed_load_path = param.String(default=None, doc="""
         Where to load json files for embedded state.""")
 
+    _jupyter_ext = param.ObjectSelector(
+        default='default', objects=['default', 'ipywidgets'], doc="""
+        Whether to render output in Jupyter with the default Jupyter
+        extension or use the jupyter_bokeh ipywidget model.""") 
+
     _inline = param.Boolean(default=True, allow_None=True, doc="""
         Whether to inline JS and CSS resources.
         If disabled, resources are loaded from CDN if one is available.""")
@@ -100,8 +118,21 @@ class _config(param.Parameterized):
 
     @embed.setter
     def embed(self, value):
+        validate_config(self, '_embed', value)
         self._embed_ = value
 
+    @property
+    def jupyter_ext(self):
+        if self._jupyter_ext_ is not None:
+            return self._jupyter_ext_
+        else:
+            return os.environ.get('PANEL_JUPYTER_EXT', _config._jupyter_ext)
+
+    @jupyter_ext.setter
+    def jupyter_ext(self, value):
+        validate_config(self, '_jupyter_ext', value)
+        self._jupyter_ext_ = value
+        
     @property
     def embed_json(self):
         if self._embed_json_ is not None:
@@ -111,6 +142,7 @@ class _config(param.Parameterized):
 
     @embed_json.setter
     def embed_json(self, value):
+        validate_config(self, '_embed_json', value)
         self._embed_json_ = value
 
     @property
@@ -122,6 +154,7 @@ class _config(param.Parameterized):
 
     @embed_json_prefix.setter
     def embed_json_prefix(self, value):
+        validate_config(self, '_embed_json_prefix', value)
         self._embed_json_prefix_ = value
 
     @property
@@ -133,6 +166,7 @@ class _config(param.Parameterized):
 
     @embed_save_path.setter
     def embed_save_path(self, value):
+        validate_config(self, '_embed_save_path', value)
         self._embed_save_path_ = value
 
     @property
@@ -144,6 +178,7 @@ class _config(param.Parameterized):
 
     @embed_load_path.setter
     def embed_load_path(self, value):
+        validate_config(self, '_embed_load_path', value)
         self._embed_load_path_ = value
 
     @property
@@ -155,6 +190,7 @@ class _config(param.Parameterized):
 
     @inline.setter
     def inline(self, value):
+        validate_config(self, '_inline', value)
         self._inline_ = value
 
 

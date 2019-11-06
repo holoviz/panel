@@ -277,6 +277,25 @@ class Viewable(Layoutable):
         if not loaded and 'holoviews' in sys.modules:
             import holoviews as hv
             loaded = hv.extension._loaded
+
+        if config.jupyter_ext == 'ipywidgets':
+            ipywidget = self.ipywidget()
+            plaintext = repr(ipywidget)
+            if len(plaintext) > 110:
+                plaintext = plaintext[:110] + '…'
+            data = {
+                'text/plain': plaintext,
+            }
+            if ipywidget._view_name is not None:
+                data['application/vnd.jupyter.widget-view+json'] = {
+                    'version_major': 2,
+                    'version_minor': 0,
+                    'model_id': ipywidget._model_id
+                }
+            if ipywidget._view_name is not None:
+                ipywidget._handle_displayed()
+            return data, {}
+            
         if not loaded:
             self.param.warning('Displaying Panel objects in the notebook '
                                'requires the panel extension to be loaded. '
@@ -420,6 +439,18 @@ class Viewable(Layoutable):
         ref = root.ref['id']
         state._views[ref] = (self, root, doc, comm)
         return root
+
+    def ipywidget(self):
+        """
+        Creates a root model from the Panel object and wraps it in
+        a jupyter_bokeh ipywidget BokehModel.
+
+        Returns
+        -------
+        Returns an ipywidget model which renders the Panel object.
+        """
+        from jupyter_bokeh import BokehModel
+        return BokehModel(self.get_root())
 
     def save(self, filename, title=None, resources=None, template=None,
              template_variables=None, embed=False, max_states=1000,
