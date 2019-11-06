@@ -24,9 +24,6 @@ class Panel(Reactive):
     Abstract baseclass for a layout of Viewables.
     """
 
-    objects = param.Parameter(default=[], doc="""
-        The list of child objects that make up the layout.""")
-
     _bokeh_model = None
 
     __abstract = True
