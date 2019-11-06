@@ -79,7 +79,7 @@ class _config(param.Parameterized):
     _embed_load_path = param.String(default=None, doc="""
         Where to load json files for embedded state.""")
 
-    _jupyter_ext = param.ObjectSelector(
+    _comms = param.ObjectSelector(
         default='default', objects=['default', 'ipywidgets'], doc="""
         Whether to render output in Jupyter with the default Jupyter
         extension or use the jupyter_bokeh ipywidget model.""") 
@@ -122,16 +122,16 @@ class _config(param.Parameterized):
         self._embed_ = value
 
     @property
-    def jupyter_ext(self):
-        if self._jupyter_ext_ is not None:
-            return self._jupyter_ext_
+    def comms(self):
+        if self._comms_ is not None:
+            return self._comms_
         else:
-            return os.environ.get('PANEL_JUPYTER_EXT', _config._jupyter_ext)
+            return os.environ.get('PANEL_COMMS', _config._comms)
 
-    @jupyter_ext.setter
-    def jupyter_ext(self, value):
-        validate_config(self, '_jupyter_ext', value)
-        self._jupyter_ext_ = value
+    @comms.setter
+    def comms(self, value):
+        validate_config(self, '_comms', value)
+        self._comms_ = value
         
     @property
     def embed_json(self):

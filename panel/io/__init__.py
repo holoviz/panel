@@ -8,4 +8,4 @@ from .state import state # noqa
 from .model import add_to_doc, remove_root, diff # noqa
 from .resources import Resources # noqa
 from .server import get_server # noqa
-from .notebook import block_comm, load_notebook, push # noqa
+from .notebook import block_comm, ipywidget, load_notebook, push # noqa

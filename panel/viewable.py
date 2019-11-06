@@ -278,7 +278,7 @@ class Viewable(Layoutable):
             import holoviews as hv
             loaded = hv.extension._loaded
 
-        if config.jupyter_ext == 'ipywidgets':
+        if config.comms == 'ipywidgets':
             ipywidget = self.ipywidget()
             plaintext = repr(ipywidget)
             if len(plaintext) > 110:
@@ -439,18 +439,6 @@ class Viewable(Layoutable):
         ref = root.ref['id']
         state._views[ref] = (self, root, doc, comm)
         return root
-
-    def ipywidget(self):
-        """
-        Creates a root model from the Panel object and wraps it in
-        a jupyter_bokeh ipywidget BokehModel.
-
-        Returns
-        -------
-        Returns an ipywidget model which renders the Panel object.
-        """
-        from jupyter_bokeh import BokehModel
-        return BokehModel(self.get_root())
 
     def save(self, filename, title=None, resources=None, template=None,
              template_variables=None, embed=False, max_states=1000,
