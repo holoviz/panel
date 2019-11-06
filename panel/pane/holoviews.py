@@ -87,6 +87,8 @@ class HoloViews(PaneBase):
 
     @param.depends('center', 'widget_location', watch=True)
     def _update_layout(self):
+        from holoviews.core.options import Store
+
         loc = self.widget_location
         if not len(self.widget_box):
             widgets = []
@@ -103,13 +105,28 @@ class HoloViews(PaneBase):
         elif loc in ('left_bottom', 'right_bottom'):
             widgets = Column(VSpacer(), self.widget_box)
 
+        # Do not center if content is responsive
+        backend = self.backend or Store.current_backend
+        if self.object is None:
+            opts = {}
+        else:
+            try:
+                opts = Store.lookup_options(backend, self.object, 'plot').kwargs
+            except KeyError:
+                opts = {}
+        responsive_modes = ('stretch_width', 'stretch_both', 'scale_width', 'scale_both')
+        center = self.center
+        if ((opts.get('responsive') and not (opts.get('width') or opts.get('frame_width'))) or
+             opts.get('sizing_mode') in responsive_modes):
+            center = False
+
         self._widget_container = widgets
         if not widgets:
-            if self.center:
+            if center:
                 components = [HSpacer(), self, HSpacer()]
             else:
                 components = [self]
-        elif self.center:
+        elif center:
             if loc.startswith('left'):
                 components = [widgets, HSpacer(), self, HSpacer()]
             elif loc.startswith('right'):
