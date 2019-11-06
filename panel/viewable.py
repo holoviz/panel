@@ -280,12 +280,7 @@ class Viewable(Layoutable):
 
         if config.comms == 'ipywidgets':
             ipywidget = self.ipywidget()
-            plaintext = repr(ipywidget)
-            if len(plaintext) > 110:
-                plaintext = plaintext[:110] + '…'
-            data = {
-                'text/plain': plaintext,
-            }
+            data = {}
             if ipywidget._view_name is not None:
                 data['application/vnd.jupyter.widget-view+json'] = {
                     'version_major': 2,
@@ -295,7 +290,7 @@ class Viewable(Layoutable):
             if ipywidget._view_name is not None:
                 ipywidget._handle_displayed()
             return data, {}
-            
+
         if not loaded:
             self.param.warning('Displaying Panel objects in the notebook '
                                'requires the panel extension to be loaded. '
@@ -666,7 +661,7 @@ class Reactive(Viewable):
         if comm is None:
             for p in properties:
                 if isinstance(p, tuple):
-                    p, _ = p
+                    _, p = p
                 model.on_change(p, partial(self._server_change, doc))
         elif config.embed:
             pass
