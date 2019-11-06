@@ -277,6 +277,20 @@ class Viewable(Layoutable):
         if not loaded and 'holoviews' in sys.modules:
             import holoviews as hv
             loaded = hv.extension._loaded
+
+        if config.comms == 'ipywidgets':
+            ipywidget = self.ipywidget()
+            data = {}
+            if ipywidget._view_name is not None:
+                data['application/vnd.jupyter.widget-view+json'] = {
+                    'version_major': 2,
+                    'version_minor': 0,
+                    'model_id': ipywidget._model_id
+                }
+            if ipywidget._view_name is not None:
+                ipywidget._handle_displayed()
+            return data, {}
+
         if not loaded:
             self.param.warning('Displaying Panel objects in the notebook '
                                'requires the panel extension to be loaded. '
@@ -647,7 +661,7 @@ class Reactive(Viewable):
         if comm is None:
             for p in properties:
                 if isinstance(p, tuple):
-                    p, _ = p
+                    _, p = p
                 model.on_change(p, partial(self._server_change, doc))
         elif config.embed:
             pass
