@@ -16,6 +16,12 @@ except:
     mpl = None
 mpl_available = pytest.mark.skipif(mpl is None, reason="requires matplotlib")
 
+try:
+    import pandas as pd
+except:
+    pd = None
+pd_available = pytest.mark.skipif(pd is None, reason="requires pandas")
+
 
 def mpl_figure():
     import matplotlib.pyplot as plt
