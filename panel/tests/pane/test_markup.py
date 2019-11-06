@@ -1,11 +1,24 @@
 from __future__ import absolute_import, division, unicode_literals
 
 from panel.pane import HTML, Markdown, PaneBase, Pane, Str
+from panel.tests.util import pd_available
 
 
 def test_get_markdown_pane_type():
     assert PaneBase.get_pane_type("**Markdown**") is Markdown
 
+@pd_available
+def test_get_dataframe_pane_type():
+    import pandas as pd
+    df = pd.util.testing.makeDataFrame()
+    assert PaneBase.get_pane_type(df) is HTML
+
+@pd_available
+def test_get_series_pane_type():
+    import pandas as pd
+    df = pd.util.testing.makeDataFrame()
+    assert PaneBase.get_pane_type(df.iloc[:, 0]) is HTML
+    
 
 def test_markdown_pane(document, comm):
     pane = Pane("**Markdown**")

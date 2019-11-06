@@ -74,7 +74,9 @@ class HTML(DivPaneBase):
 
     @classmethod
     def applies(cls, obj):
-        if hasattr(obj, '_repr_html_'):
+        module, name = getattr(obj, '__module__', ''), type(obj).__name__
+        if ((any(m in module for m in ('pandas', 'dask')) and
+            name in ('DataFrame', 'Series')) or hasattr(obj, '_repr_html_')):
             return 0.2
         elif isinstance(obj, string_types):
             return None
@@ -84,8 +86,13 @@ class HTML(DivPaneBase):
     def _get_properties(self):
         properties = super(HTML, self)._get_properties()
         text = '' if self.object is None else self.object
-        if hasattr(text, 'to_html') and any(text.__module__ for m in ('pandas', 'dask')):
-            text = text.to_html(classes=['panel-df']).replace('border="1"', '')
+        module, name = getattr(text, '__module__', ''), type(text).__name__
+
+        if any(m in module for m in ('pandas', 'dask')):
+            if name == 'Series':
+                text = text.to_frame()
+            if hasattr(text, 'to_html'):
+                text = text.to_html(classes=['panel-df']).replace('border="1"', '')
         elif hasattr(text, '_repr_html_'):
             text = text._repr_html_()
         return dict(properties, text=escape(text))
