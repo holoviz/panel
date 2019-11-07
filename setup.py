@@ -112,10 +112,11 @@ extras_require = {
         'nbsmoke >=0.2.0',
         'pytest-cov ==2.5.1',
         'codecov',
-        # For Panes.ipynb
+        # For examples
         'hvplot',
         'plotly',
         'altair',
+        'streamz',
         'vega_datasets',
         'vtk ==8.1.1',
         'scikit-learn',
