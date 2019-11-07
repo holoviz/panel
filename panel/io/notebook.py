@@ -391,16 +391,20 @@ def ipywidget(panel):
     widget = BokehModel(model)
     if hasattr(widget, '_view_count'):
         widget._view_count = 0
-        def view_count_changed(change, current=[]):
-            if change['old'] > 1 and change['new'] == 0 and current:
+        def view_count_changed(change, current=[model]):
+            new_model = None
+            if change['old'] > 0 and change['new'] == 0 and current:
                 panel._cleanup(current[0])
-            elif change['old'] == 0 and change['new'] > 0 and current:
-                try:
-                    panel._cleanup(current[0])
-                except:
-                    pass
-                model = panel.get_root()
-                widget.update_from_model(current)
-            current[:] = [model]
+                current[:] = []
+            elif (change['old'] == 0 and change['new'] > 0 and
+                  (not current or current[0] is not model)):
+                if current:
+                    try:
+                        panel._cleanup(current[0])
+                    except:
+                        pass
+                new_model = panel.get_root()
+                widget.update_from_model(new_model)
+                current[:] = [new_model]
         widget.observe(view_count_changed, '_view_count')
     return widget
