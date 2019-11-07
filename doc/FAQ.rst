@@ -50,6 +50,14 @@ Conversely, what Panel adds on top of Bokeh is full bidirectional communication 
        - return fig
    3. You may need to force Matplotlib to choose off-screen rendering as images by starting your code with ``import matplotlib as mpl ; mpl.use('Agg')`
 
+**Q: How do I debug error messages in a notebook?**
+
+**A**: When displaying a Panel object in a Jupyter notebook, any errors triggered by interacting with the app or dashboard will be logged to the browser's developer console instead of the usual python standard output on the commandline. How you access the developer console depends on your browser:
+
+- **Chrome**: Menu -> More tools -> Developer Tools
+- **Firefox**: Menu -> Web developer -> Browser console
+- **Safari**: Menu -> Develop -> Show error console
+
 
 **Q: How does Panel relate to other widget/app/dashboard tools?**
 
