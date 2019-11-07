@@ -475,6 +475,8 @@ def render_window_serializer(render_window):
                             "url": componentName
                         },
                         "actor": {
+                            # customProp
+                            "id": renProp.__this__,
                             # vtkProp
                             "visibility": renProp.GetVisibility() if renProp.IsA('vtkProp') else 0,
                             "pickable": renProp.GetPickable()  if renProp.IsA('vtkProp') else 0,
