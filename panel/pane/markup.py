@@ -86,15 +86,60 @@ class HTML(DivPaneBase):
     def _get_properties(self):
         properties = super(HTML, self)._get_properties()
         text = '' if self.object is None else self.object
-        module, name = getattr(text, '__module__', ''), type(text).__name__
-
-        if any(m in module for m in ('pandas', 'dask')):
-            if name == 'Series':
-                text = text.to_frame()
-            if hasattr(text, 'to_html'):
-                text = text.to_html(classes=['panel-df']).replace('border="1"', '')
-        elif hasattr(text, '_repr_html_'):
+        if hasattr(text, '_repr_html_'):
             text = text._repr_html_()
+        return dict(properties, text=escape(text))
+
+
+class DataFrame(HTML):
+    """
+    DataFrame renders pandas, dask and streamz DataFrame types using
+    their custom HTML repr. In the case of a streamz DataFrame the
+    rendered data will update periodically.
+    """
+
+    _object = param.Parameter(default=None)
+
+    _rerender_params = ['object', '_object']
+
+    def __init__(self, object=None, **params):
+        super(DataFrame, self).__init__(object, **params)
+        self._stream = None
+        self._setup_stream()
+
+    @classmethod
+    def applies(cls, obj):
+        if (any(obj.__module__ for m in ('pandas', 'dask', 'streamz')) and
+            type(obj).__name__ in ('DataFrame', 'Series', 'Random')):
+            return 0.3
+        else:
+            return False
+
+    def _set_object(self, object):
+        self._object = object
+
+    @param.depends('object', watch=True)
+    def _setup_stream(self):
+        if self._stream:
+            self._stream.destroy()
+            self._stream = None
+        if not hasattr(self.object, 'stream'):
+            return
+        self._stream = self.object.stream.latest().rate_limit(0.5).gather()
+        self._stream.sink(self._set_object)
+
+    def _get_properties(self):
+        properties = DivPaneBase._get_properties(self)
+        if self._stream:
+            df = self._object
+        else:
+            df = self.object
+        if hasattr(df, 'to_frame'):
+            df = df.to_frame()
+        if hasattr(df, 'to_html'):
+            text = df.to_html(classes=['panel-df']).replace('border="1"', '')
+        else:
+            text = ''
         return dict(properties, text=escape(text))
 
 
