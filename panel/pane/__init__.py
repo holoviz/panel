@@ -13,7 +13,7 @@ from .base import PaneBase, Pane # noqa
 from .equation import LaTeX # noqa
 from .holoviews import HoloViews # noqa
 from .image import GIF, JPG, PNG, SVG # noqa
-from .markup import HTML, Markdown, Str # noqa
+from .markup import DataFrame, HTML, Markdown, Str # noqa
 from .media import Audio, Video # noqa
 from .plotly import Plotly # noqa
 from .plot import Bokeh, Matplotlib, RGGPlot, YT # noqa

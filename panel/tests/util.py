@@ -22,6 +22,12 @@ except:
     pd = None
 pd_available = pytest.mark.skipif(pd is None, reason="requires pandas")
 
+try:
+    import streamz
+except:
+    streamz = None
+streamz_available = pytest.mark.skipif(streamz is None, reason="requires streamz")
+
 
 def mpl_figure():
     import matplotlib.pyplot as plt
