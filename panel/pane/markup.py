@@ -96,11 +96,79 @@ class DataFrame(HTML):
     DataFrame renders pandas, dask and streamz DataFrame types using
     their custom HTML repr. In the case of a streamz DataFrame the
     rendered data will update periodically.
+
     """
 
-    _object = param.Parameter(default=None)
+    bold_rows = param.Boolean(default=True, doc="""
+        Make the row labels bold in the output.""")
 
-    _rerender_params = ['object', '_object']
+    border = param.Integer(default=0, doc="""
+        A ``border=border`` attribute is included in the opening
+        `<table>` tag.""")
+
+    classes = param.List(default=['panel-df'], doc="""
+        CSS class(es) to apply to the resulting html table.""")
+
+    col_space = param.ClassSelector(default=None, class_=(str, int), doc="""
+        The minimum width of each column in CSS length units. An int
+        is assumed to be px units.""")
+
+    decimal = param.String(default='.', doc="""
+        Character recognized as decimal separator, e.g. ',' in Europe.""")
+
+    float_format = param.Callable(default=None, doc="""
+        Formatter function to apply to columns' elements if they are
+        floats. The result of this function must be a unicode string.""")
+
+    formatters = param.ClassSelector(default=None, class_=(dict, list), doc="""
+        Formatter functions to apply to columns' elements by position
+        or name. The result of each function must be a unicode string.""")
+
+    header = param.Boolean(default=True, doc="""
+        Whether to print column labels.""")
+
+    index = param.Boolean(default=True, doc="""
+        Whether to print index (row) labels.""")
+
+    index_names = param.Boolean(default=True, doc="""
+        Prints the names of the indexes.""")
+
+    justify = param.ObjectSelector(default=None, objects=[
+        'left', 'right', 'center', 'justify', 'justify-all', 'start',
+        'end', 'inherit', 'match-parent', 'initial', 'unset'], doc="""
+        How to justify the column labels.""")
+
+    max_rows = param.Integer(default=None, doc="""
+        Maximum number of rows to display.""")
+
+    max_cols = param.Integer(default=None, doc="""
+        Maximum number of columns to display.""")
+
+    na_rep = param.String(default='NaN', doc="""
+        String representation of NAN to use.""")
+
+    render_links = param.Boolean(default=False, doc="""
+        Convert URLs to HTML links.""")
+
+    show_dimensions = param.Boolean(default=False, doc="""
+        Display DataFrame dimensions (number of rows by number of
+        columns).""")
+
+    sparsify = param.Boolean(default=True, doc="""
+        Set to False for a DataFrame with a hierarchical index to
+        print every multi-index key at each row.""")
+
+    _object = param.Parameter(default=None, doc="""Hidden parameter.""")
+
+    _rerender_params = [
+        'object', '_object', 'bold_rows', 'border', 'classes',
+        'col_space', 'decimal', 'float_format', 'formatters',
+        'header', 'index', 'index_names', 'justify', 'max_rows',
+        'max_cols', 'na_rep', 'render_links', 'show_dimensions',
+        'sparsify'
+    ]
+
+    _dask_params = ['max_rows']
 
     def __init__(self, object=None, **params):
         super(DataFrame, self).__init__(object, **params)
@@ -109,8 +177,10 @@ class DataFrame(HTML):
 
     @classmethod
     def applies(cls, obj):
-        if (any(obj.__module__ for m in ('pandas', 'dask', 'streamz')) and
-            type(obj).__name__ in ('DataFrame', 'Series', 'Random')):
+        module = getattr(obj, '__module__', '')
+        name = type(obj).__name__
+        if (any(m in module for m in ('pandas', 'dask', 'streamz')) and
+            name in ('DataFrame', 'Series', 'Random', 'DataFrames', 'Seriess')):
             return 0.3
         else:
             return False
@@ -147,11 +217,18 @@ class DataFrame(HTML):
             df = self.object
         if hasattr(df, 'to_frame'):
             df = df.to_frame()
+
+        module = getattr(df, '__module__', '')
         if hasattr(df, 'to_html'):
-            text = df.to_html(classes=['panel-df']).replace('border="1"', '')
+            if 'dask' in module:
+                html = df.to_html(max_rows=self.max_rows).replace('border="1"', '')
+            else:
+                kwargs = {p: getattr(self, p) for p in self._rerender_params
+                          if 'object' not in p}
+                html = df.to_html(**kwargs)
         else:
-            text = ''
-        return dict(properties, text=escape(text))
+            html = ''
+        return dict(properties, text=escape(html))
 
 
 class Str(DivPaneBase):
