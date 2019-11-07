@@ -650,7 +650,10 @@ class Reactive(Viewable):
                         push(doc, comm)
                 else:
                     cb = partial(self._update_model, events, msg, root, model, doc, comm)
-                    doc.add_next_tick_callback(cb)
+                    if doc.session_context:
+                        doc.add_next_tick_callback(cb)
+                    else:
+                        cb()
 
         params = self._synced_params()
         if params:

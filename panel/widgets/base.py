@@ -70,7 +70,10 @@ class Widget(Reactive):
                     push(doc, comm)
             else:
                 cb = partial(self._manual_update, event, model, doc, root, parent, comm)
-                doc.add_next_tick_callback(cb)
+                if doc.session_context:
+                    doc.add_next_tick_callback(cb)
+                else:
+                    cb()
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         model = self._widget_type(**self._process_param_change(self._init_properties()))

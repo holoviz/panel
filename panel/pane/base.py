@@ -130,7 +130,10 @@ class PaneBase(Reactive):
                     push(doc, comm)
             else:
                 cb = partial(self._update_object, model, doc, root, parent, comm)
-                doc.add_next_tick_callback(cb)
+                if doc.session_context:
+                    doc.add_next_tick_callback(cb)
+                else:
+                    cb()
 
     def _update(self, model):
         """
