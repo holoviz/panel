@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 
 from panel.widgets import Select, MultiSelect, CrossSelector, ToggleGroup
+from panel.util import as_unicode
 
 
 def test_select_list_constructor():
@@ -45,18 +46,18 @@ def test_select(document, comm):
 
     assert isinstance(widget, select._widget_type)
     assert widget.title == 'Select'
-    assert widget.value == '1'
-    assert widget.options == ['A', '1']
+    assert widget.value == as_unicode(opts['1'])
+    assert widget.options == [(as_unicode(v),k) for k,v in opts.items()]
 
-    select._comm_change({'value': 'A'})
+    select._comm_change({'value': as_unicode(opts['A'])})
     assert select.value == opts['A']
 
-    widget.value = '1'
-    select._comm_change({'value': '1'})
+    widget.value = as_unicode(opts['1'])
+    select.value = opts['1']
     assert select.value == opts['1']
 
     select.value = opts['A']
-    assert widget.value == 'A'
+    assert widget.value == as_unicode(opts['A'])
 
 
 def test_select_change_options(document, comm):
@@ -67,7 +68,7 @@ def test_select_change_options(document, comm):
 
     select.options = {'A': 'a'}
     assert select.value == opts['A']
-    assert widget.value == 'A'
+    assert widget.value == as_unicode(opts['A'])
 
     select.options = {}
     assert select.value == None
@@ -82,12 +83,12 @@ def test_select_non_hashable_options(document, comm):
 
     select.value = opts['A']
     assert select.value is opts['A']
-    assert widget.value == 'A'
+    assert widget.value == as_unicode(opts['A'])
 
     opts.pop('A')
     select.options = opts
     assert select.value is opts['1']
-    assert widget.value == '1'
+    assert widget.value == as_unicode(opts['1'])
 
 
 def test_select_mutables(document, comm):
@@ -98,19 +99,19 @@ def test_select_mutables(document, comm):
 
     assert isinstance(widget, select._widget_type)
     assert widget.title == 'Select'
-    assert widget.value == 'B'
-    assert widget.options == ['A', 'B', 'C']
+    assert widget.value == as_unicode(opts['B'])
+    assert widget.options == [(as_unicode(v),k) for k,v in opts.items()]
 
-    widget.value = 'B'
-    select._comm_change({'value': 'A'})
+    widget.value = as_unicode(opts['B'])
+    select._comm_change({'value': as_unicode(opts['A'])})
     assert select.value == opts['A']
 
-    widget.value = 'B'
-    select._comm_change({'value': 'B'})
+    widget.value = as_unicode(opts['B'])
+    select._comm_change({'value': as_unicode(opts['B'])})
     assert select.value == opts['B']
 
     select.value = opts['A']
-    assert widget.value == 'A'
+    assert widget.value == as_unicode(opts['A'])
 
 
 def test_select_change_options_on_watch(document, comm):
@@ -125,8 +126,8 @@ def test_select_change_options_on_watch(document, comm):
     model = select.get_root(document, comm=comm)
 
     select.value = 1
-    assert model.value == 'D'
-    assert model.options == ['D', 'E']
+    assert model.value == as_unicode(list(select.options.values())[0])
+    assert model.options == [(as_unicode(v),k) for k,v in select.options.items()]
 
 
 def test_multi_select(document, comm):
