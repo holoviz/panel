@@ -133,7 +133,7 @@ class DataFrame(HTML):
     index_names = param.Boolean(default=True, doc="""
         Prints the names of the indexes.""")
 
-    justify = param.ObjectSelector(default=None, objects=[
+    justify = param.ObjectSelector(default=None, allow_None=True, objects=[
         'left', 'right', 'center', 'justify', 'justify-all', 'start',
         'end', 'inherit', 'match-parent', 'initial', 'unset'], doc="""
         How to justify the column labels.""")
