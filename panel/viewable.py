@@ -24,8 +24,10 @@ from .callbacks import PeriodicCallback
 from .config import config, panel_extension
 from .io.embed import embed_state
 from .io.model import add_to_doc
-from .io.notebook import (get_comm_customjs, push, render_mimebundle,
-                          render_model, show_embed, show_server)
+from .io.notebook import (
+    get_comm_customjs, ipywidget, push, render_mimebundle,
+    render_model, show_embed, show_server
+)
 from .io.save import save
 from .io.state import state
 from .io.server import StoppableThread, get_server
@@ -279,16 +281,16 @@ class Viewable(Layoutable):
             loaded = hv.extension._loaded
 
         if config.comms == 'ipywidgets':
-            ipywidget = self.ipywidget()
+            widget = ipywidget(self)
             data = {}
-            if ipywidget._view_name is not None:
+            if widget._view_name is not None:
                 data['application/vnd.jupyter.widget-view+json'] = {
                     'version_major': 2,
                     'version_minor': 0,
-                    'model_id': ipywidget._model_id
+                    'model_id': widget._model_id
                 }
-            if ipywidget._view_name is not None:
-                ipywidget._handle_displayed()
+            if widget._view_name is not None:
+                widget._handle_displayed()
             return data, {}
 
         if not loaded:
@@ -650,7 +652,10 @@ class Reactive(Viewable):
                         push(doc, comm)
                 else:
                     cb = partial(self._update_model, events, msg, root, model, doc, comm)
-                    doc.add_next_tick_callback(cb)
+                    if doc.session_context:
+                        doc.add_next_tick_callback(cb)
+                    else:
+                        cb()
 
         params = self._synced_params()
         if params:

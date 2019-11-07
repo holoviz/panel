@@ -198,7 +198,10 @@ class HoloViews(PaneBase):
                 if plot.comm and 'embedded' not in plot.root.tags:
                     plot.push()
             else:
-                plot.document.add_next_tick_callback(partial(plot.update, key))
+                if plot.document.session_context:
+                    plot.document.add_next_tick_callback(partial(plot.update, key))
+                else:
+                    plot.update(key)
         else:
             plot.update(key)
             if hasattr(plot.renderer, 'get_plot_state'):

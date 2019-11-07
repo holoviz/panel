@@ -120,7 +120,8 @@ extras_require = {
         'vega_datasets',
         'vtk ==8.1.1',
         'scikit-learn',
-        'datashader'
+        'datashader',
+        'jupyter_bokeh'
     ],
     'recommended': _recommended,
     'doc': _recommended + [
