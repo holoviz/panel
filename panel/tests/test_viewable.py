@@ -1,6 +1,6 @@
 from __future__ import absolute_import, division, unicode_literals
 
-from panel import config,
+from panel import config
 from panel.pane import Str
 
 
