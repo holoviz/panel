@@ -120,13 +120,24 @@ class DataFrame(HTML):
 
     @param.depends('object', watch=True)
     def _setup_stream(self):
-        if self._stream:
+        if not self._models or not hasattr(self.object, 'stream'):
+            return
+        elif self._stream:
             self._stream.destroy()
             self._stream = None
-        if not hasattr(self.object, 'stream'):
-            return
         self._stream = self.object.stream.latest().rate_limit(0.5).gather()
         self._stream.sink(self._set_object)
+
+    def _get_model(self, doc, root=None, parent=None, comm=None):
+        model = super(DataFrame, self)._get_model(doc, root, parent, comm)
+        self._setup_stream()
+        return model
+
+    def _cleanup(self, model):
+        super(DataFrame, self)._cleanup(model)
+        if not self._models and self._stream:
+            self._stream.destroy()
+            self._stream = None
 
     def _get_properties(self):
         properties = DivPaneBase._get_properties(self)
