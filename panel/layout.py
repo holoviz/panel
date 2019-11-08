@@ -12,7 +12,6 @@ from functools import partial
 import param
 import numpy as np
 
-from bokeh.layouts import grid as _bk_grid
 from bokeh.models import (
     Box as BkBox, Column as BkColumn, Div as BkDiv, GridBox as BkGridBox,
     Markup as BkMarkup, Row as BkRow, Spacer as BkSpacer
