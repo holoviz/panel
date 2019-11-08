@@ -719,7 +719,7 @@ class GridSpec(Panel):
 
     mode = param.ObjectSelector(
         default='warn', objects=['warn', 'error', 'override'], doc="""
-        Whether to error or simply override on overlapping assignment.""")
+        Whether to warn, error or simply override on overlapping assignment.""")
 
     width = param.Integer(default=600)
 
