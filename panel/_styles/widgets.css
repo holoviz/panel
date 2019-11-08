@@ -9,6 +9,10 @@
 	overflow-y: hidden;
 }
 
+.scrollable {
+  overflow: scroll;
+}
+
 progress {
 	appearance: none;
 	-moz-appearance: none;
