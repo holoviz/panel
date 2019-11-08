@@ -824,12 +824,12 @@ class GridSpec(Panel):
     @property
     def nrows(self):
         max_yidx = [y1 for (_, _, y1, _) in self.objects if y1 is not None]
-        return max(max_yidx) if max_yidx else 0
+        return max(max_yidx) if max_yidx else (1 if len(self.objects) else 0)
 
     @property
     def ncols(self):
         max_xidx = [x1 for (_, _, _, x1) in self.objects if x1 is not None]
-        return max(max_xidx) if max_xidx else 0
+        return max(max_xidx) if max_xidx else (1 if len(self.objects) else 0)
 
     @property
     def grid(self):
@@ -947,7 +947,10 @@ class GridSpec(Panel):
             overlapping = ''
             objects = []
             for (yidx, xidx) in zip(*np.where(overlap_grid)):
-                old_obj = self[yidx, xidx]
+                try:
+                    old_obj = self[yidx, xidx]
+                except:
+                    continue
                 if old_obj not in objects:
                     objects.append(old_obj)
                     overlapping += '    (%d, %d): %s\n\n' % (yidx, xidx, old_obj)
@@ -962,7 +965,10 @@ class GridSpec(Panel):
                 self.param.warning(overlap_text)
 
             subgrid = self._object_grid[index]
-            objects = OrderedDict([list(o)[0] for o in subgrid.flatten()])
+            if isinstance(subgrid, set):
+                objects = [list(subgrid)[0][0]] if subgrid else []
+            else:
+                objects = [list(o)[0][0] for o in subgrid.flatten()]
             for dkey in objects:
                 del self.objects[dkey]
         self.objects[key] = Pane(obj)
