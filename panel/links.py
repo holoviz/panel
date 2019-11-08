@@ -105,7 +105,12 @@ class Callback(param.Parameterized):
                             found.append((link, src, tgt))
                     arg_overrides[id(link)] = {}
                     for k, v in link.args.items():
-                        for tgt in map_hve_bk.get(v, []):
+                        # Not all args are hashable
+                        try:
+                            hv_objs = map_hve_bk.get(v, [])
+                        except:
+                            continue
+                        for tgt in hv_objs:
                             arg_overrides[id(link)][k] = tgt
 
         callbacks = []
