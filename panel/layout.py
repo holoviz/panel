@@ -4,20 +4,26 @@ in flexible ways to build complex dashboards.
 """
 from __future__ import absolute_import, division, unicode_literals
 
-from collections import OrderedDict
+import math
+
+from collections import OrderedDict, namedtuple
+from functools import partial
 
 import param
 import numpy as np
 
 from bokeh.layouts import grid as _bk_grid
 from bokeh.models import (
-    Column as BkColumn, Row as BkRow, Spacer as BkSpacer,
-    GridBox as BkGridBox, Box as BkBox, Markup as BkMarkup,
-    Div as BkDiv)
+    Box as BkBox, Column as BkColumn, Div as BkDiv, GridBox as BkGridBox,
+    Markup as BkMarkup, Row as BkRow, Spacer as BkSpacer
+)
 from bokeh.models.widgets import Tabs as BkTabs, Panel as BkPanel
 
 from .util import param_name, param_reprs
 from .viewable import Reactive
+
+_row = namedtuple("row", ["children"])
+_col = namedtuple("col", ["children"])
 
 
 class Panel(Reactive):
@@ -367,14 +373,106 @@ class GridBox(ListPanel):
 
     _bokeh_model = BkGridBox
 
+    _rename = {'objects': 'children', 'col_sizing': 'cols', 'row_sizing': 'rows'}
+
+    @classmethod
+    def _flatten_grid(cls, layout, nrows=None, ncols=None):
+        Item = namedtuple("Item", ["layout", "r0", "c0", "r1", "c1"])
+        Grid = namedtuple("Grid", ["nrows", "ncols", "items"])
+
+        def gcd(a, b):
+            a, b = abs(a), abs(b)
+            while b != 0:
+                a, b = b, a % b
+            return a
+
+        def lcm(a, *rest):
+            for b in rest:
+                a = (a*b) // gcd(a, b)
+            return a
+
+        nonempty = lambda child: child.nrows != 0 and child.ncols != 0
+
+        def _flatten(layout, nrows=None, ncols=None):
+            _flatten_ = partial(_flatten, nrows=nrows, ncols=ncols)
+            if isinstance(layout, _row):
+                children = list(filter(nonempty, map(_flatten_, layout.children)))
+                if not children:
+                    return Grid(0, 0, [])
+
+                nrows = lcm(*[ child.nrows for child in children ])
+                if not ncols: # This differs from bokeh.layout.grid
+                    ncols = sum([ child.ncols for child in children ])
+
+                items = []
+                offset = 0
+                for child in children:
+                    factor = nrows//child.nrows
+
+                    for (layout, r0, c0, r1, c1) in child.items:
+                        items.append((layout, factor*r0, c0 + offset, factor*r1, c1 + offset))
+
+                    offset += child.ncols
+
+                return Grid(nrows, ncols, items)
+            elif isinstance(layout, _col):
+                children = list(filter(nonempty, map(_flatten_, layout.children)))
+                if not children:
+                    return Grid(0, 0, [])
+
+                if not nrows: # This differs from bokeh.layout.grid
+                    nrows = sum([ child.nrows for child in children ])
+                ncols = lcm(*[ child.ncols for child in children ])
+
+                items = []
+                offset = 0
+                for child in children:
+                    factor = ncols//child.ncols
+
+                    for (layout, r0, c0, r1, c1) in child.items:
+                        items.append((layout, r0 + offset, factor*c0, r1 + offset, factor*c1))
+
+                    offset += child.nrows
+
+                return Grid(nrows, ncols, items)
+            else:
+                return Grid(1, 1, [Item(layout, 0, 0, 1, 1)])
+
+        grid = _flatten(layout, nrows, ncols)
+
+        children = []
+        for (layout, r0, c0, r1, c1) in grid.items:
+            if layout is not None:
+                children.append((layout, r0, c0, r1 - r0, c1 - c0))
+        return children
+
+    @classmethod
+    def _get_children(cls, children, nrows=None, ncols=None):
+        """
+        This is a copy of parts of the bokeh.layouts.grid implementation
+        to avoid distributing non-filled columns.
+        """
+        if nrows is not None or ncols is not None:
+            N = len(children)
+            if ncols is None:
+                ncols = math.ceil(N/nrows)
+            layout = _col([ _row(children[i:i+ncols]) for i in range(0, N, ncols) ])
+        else:
+            def traverse(children, level=0):
+                if isinstance(children, list):
+                    container = _col if level % 2 == 0 else _row
+                    return container([ traverse(child, level+1) for child in children ])
+                else:
+                    return children
+            layout = traverse(children)
+        return cls._flatten_grid(layout, nrows, ncols)
+
     def _get_model(self, doc, root=None, parent=None, comm=None):
         model = self._bokeh_model()
         if root is None:
             root = model
         objects = self._get_objects(model, [], doc, root, comm)
-        grid = _bk_grid(objects, nrows=self.nrows, ncols=self.ncols,
-                        sizing_mode=self.sizing_mode)
-        model.children = grid.children
+        model.children = self._get_children(objects, self.nrows, self.ncols)
         props = {k: v for k, v in self._init_properties().items()
                  if k not in ('nrows', 'ncols')}
         model.update(**self._process_param_change(props))
@@ -389,9 +487,7 @@ class GridBox(ListPanel):
             else:
                 old = self.objects
             objects = self._get_objects(model, old, doc, root, comm)
-            grid = _bk_grid(objects, nrows=self.nrows, ncols=self.ncols,
-                            sizing_mode=self.sizing_mode)
-            children = grid.children
+            children = self._get_children(objects, self.nrows, self.ncols)
             msg[self._rename['objects']] = children
 
         held = doc._hold
