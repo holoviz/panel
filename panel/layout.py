@@ -454,7 +454,7 @@ class GridBox(ListPanel):
         if nrows is not None or ncols is not None:
             N = len(children)
             if ncols is None:
-                ncols = math.ceil(N/nrows)
+                ncols = int(math.ceil(N/nrows))
             layout = _col([ _row(children[i:i+ncols]) for i in range(0, N, ncols) ])
         else:
             def traverse(children, level=0):
