@@ -825,8 +825,7 @@ class GridSpec(Panel):
 
     mode = param.ObjectSelector(
         default='warn', objects=['warn', 'error', 'override'], doc="""
-        Whether to warn, error or simply override on overlapping
-        assignment.""")
+        Whether to warn, error or simply override on overlapping assignment.""")
 
     width = param.Integer(default=600)
 
@@ -931,12 +930,12 @@ class GridSpec(Panel):
     @property
     def nrows(self):
         max_yidx = [y1 for (_, _, y1, _) in self.objects if y1 is not None]
-        return max(max_yidx) if max_yidx else 0
+        return max(max_yidx) if max_yidx else (1 if len(self.objects) else 0)
 
     @property
     def ncols(self):
         max_xidx = [x1 for (_, _, _, x1) in self.objects if x1 is not None]
-        return max(max_xidx) if max_xidx else 0
+        return max(max_xidx) if max_xidx else (1 if len(self.objects) else 0)
 
     @property
     def grid(self):
@@ -968,7 +967,7 @@ class GridSpec(Panel):
         for obj in self.objects.values():
             yield obj
 
-    def __delitem__(self, index, trigger=True):
+    def __delitem__(self, index):
         if isinstance(index, tuple):
             yidx, xidx = index
         else:
@@ -979,11 +978,9 @@ class GridSpec(Panel):
             deleted = OrderedDict([list(o)[0] for o in subgrid.flatten()])
         else:
             deleted = [list(subgrid)[0][0]]
-        if deleted:
-            for key in deleted:
-                del self.objects[key]
-            if trigger:
-                self.param.trigger('objects')
+        for key in deleted:
+            del self.objects[key]
+        self.param.trigger('objects')
 
     def __getitem__(self, index):
         if isinstance(index, tuple):
@@ -1043,7 +1040,7 @@ class GridSpec(Panel):
 
         key = (y0, x0, y1, x1)
         overlap = key in self.objects
-        clone = self.clone(mode='override')
+        clone = self.clone(objects=OrderedDict(self.objects), mode='override')
         if not overlap:
             clone.objects[key] = Pane(obj)
             grid = clone.grid
@@ -1056,7 +1053,10 @@ class GridSpec(Panel):
             overlapping = ''
             objects = []
             for (yidx, xidx) in zip(*np.where(overlap_grid)):
-                old_obj = self[yidx, xidx]
+                try:
+                    old_obj = self[yidx, xidx]
+                except:
+                    continue
                 if old_obj not in objects:
                     objects.append(old_obj)
                     overlapping += '    (%d, %d): %s\n\n' % (yidx, xidx, old_obj)
@@ -1069,7 +1069,14 @@ class GridSpec(Panel):
                 raise IndexError(overlap_text)
             elif self.mode == 'warn':
                 self.param.warning(overlap_text)
-            self.__delitem__(index, False)
+
+            subgrid = self._object_grid[index]
+            if isinstance(subgrid, set):
+                objects = [list(subgrid)[0][0]] if subgrid else []
+            else:
+                objects = [list(o)[0][0] for o in subgrid.flatten()]
+            for dkey in objects:
+                del self.objects[dkey]
         self.objects[key] = Pane(obj)
         self.param.trigger('objects')
 
