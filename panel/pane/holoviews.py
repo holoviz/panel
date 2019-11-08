@@ -364,6 +364,9 @@ class HoloViews(PaneBase):
             elif dim.name in widget_types:
                 widget = widget_types[dim.name]
                 if isinstance(widget, Widget):
+                    widget.set_param(**kwargs)
+                    if not widget.name:
+                        widget.name = dim.label
                     widgets.append(widget)
                     continue
                 elif isinstance(widget, dict):
