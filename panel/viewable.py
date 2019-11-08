@@ -891,7 +891,7 @@ class Reactive(Viewable):
             callbacks[k] = self._rename.get(v, v)
         return Callback(self, code=callbacks, args=args)
 
-    def jslink(self, target, code=None, args=None, **links):
+    def jslink(self, target, code=None, args=None, bidirectional=False, **links):
         """
         Links properties on the source object to those on the target
         object in JS code. Supports two modes, either specify a
@@ -907,6 +907,8 @@ class Reactive(Viewable):
         code: dict
           Custom code which will be executed when the widget value
           changes.
+        bidirectional: boolean
+          Whether to link source and target bi-directionally
         **links: dict
           A mapping between properties on the source model and the
           target model property to link it to.
@@ -932,4 +934,5 @@ class Reactive(Viewable):
             mapping = code or links
             for k, v in list(mapping.items()):
                 mapping[k] = target._rename.get(v, v)
-        return Link(self, target, properties=links, code=code, args=args)
+        return Link(self, target, properties=links, code=code, args=args,
+                    bidirectional=bidirectional)

@@ -139,6 +139,9 @@ class Link(Callback):
     directional links between the source and target object.
     """
 
+    bidirectional = param.Boolean(default=False, doc="""
+        Whether to link source and target in both directions.""")
+
     properties = param.Dict(default={}, doc="""
         A dictionary mapping between source specification to target
         specification.""")
@@ -302,6 +305,18 @@ class CallbackGenerator(object):
             src_model.js_on_change(ch, src_cb)
         for ev in events:
             src_model.js_on_event(ev, src_cb)
+
+        if getattr(link, 'bidirectional', False):
+            code = self._get_code(link, target, tgt_spec[1], source, src_spec[1])
+            reverse_references = dict(references)
+            reverse_references['source'] = tgt_model
+            reverse_references['target'] = src_model
+            tgt_cb = CustomJS(args=reverse_references, code=code, tags=[link_id])
+            changes, events = self._get_triggers(link, tgt_spec)
+            for ch in changes:
+                tgt_model.js_on_change(ch, tgt_cb)
+            for ev in events:
+                tgt_model.js_on_event(ev, tgt_cb)
 
     def _process_references(self, references):
         """
