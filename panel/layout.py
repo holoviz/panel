@@ -162,6 +162,10 @@ class ListPanel(Panel):
     objects = param.List(default=[], doc="""
         The list of child objects that make up the layout.""")
 
+    scroll = param.Boolean(default=False, doc="""
+        Whether to add scrollbars if the content overflows the size
+        of the container.""")
+
     __abstract = True
 
     def __init__(self, *objects, **params):
@@ -173,6 +177,15 @@ class ListPanel(Panel):
                                  "not both." % type(self).__name__)
             params['objects'] = [panel(pane) for pane in objects]
         super(Panel, self).__init__(**params)
+
+    def _process_param_change(self, params):
+        scroll = params.pop('scroll', None)
+        css_classes = self.css_classes or []
+        if scroll:
+            params['css_classes'] = css_classes + ['scrollable']
+        elif scroll == False:
+            params['css_classes'] = css_classes
+        return super(ListPanel, self)._process_param_change(params)
 
     #----------------------------------------------------------------
     # Public API
