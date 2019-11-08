@@ -10,9 +10,10 @@ import param
 import numpy as np
 
 from bokeh.layouts import grid as _bk_grid
-from bokeh.models import (Column as BkColumn, Row as BkRow,
-                          Spacer as BkSpacer, GridBox as BkGridBox,
-                          Box as BkBox, Markup as BkMarkup)
+from bokeh.models import (
+    Column as BkColumn, Row as BkRow, Spacer as BkSpacer,
+    GridBox as BkGridBox, Box as BkBox, Markup as BkMarkup,
+    Div as BkDiv)
 from bokeh.models.widgets import Tabs as BkTabs, Panel as BkPanel
 
 from .util import param_name, param_reprs
@@ -993,3 +994,20 @@ class HSpacer(Spacer):
     """
 
     sizing_mode = param.Parameter(default='stretch_width', readonly=True)
+
+
+class Divider(Reactive):
+    """A Divider line"""
+
+    width_policy = param.ObjectSelector(default="fit", readonly=True)
+
+    _bokeh_model = BkDiv
+
+    def _get_model(self, doc, root=None, parent=None, comm=None):
+        properties = self._process_param_change(self._init_properties())
+        properties['style'] = {'width': '100%', 'height': '100%'}
+        model = self._bokeh_model(text='<hr></hr>', **properties)
+        if root is None:
+            root = model
+        self._models[root.ref['id']] = (model, parent)
+        return model
