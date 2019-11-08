@@ -4,7 +4,7 @@ import pytest
 
 from bokeh.models import (Div, Row as BkRow, Tabs as BkTabs,
                           Column as BkColumn, Panel as BkPanel)
-from panel.layout import Column, Row, Tabs, Spacer, GridSpec, WidgetBox
+from panel.layout import Column, Row, Tabs, Spacer, GridSpec, GridBox, WidgetBox
 from panel.pane import Bokeh, Pane
 from panel.param import Param
 from panel.tests.util import check_layoutable_properties
@@ -1061,3 +1061,33 @@ def test_widgetbox(document, comm):
     assert not widget_box.horizontal
     widget_box.horizontal = True
     assert widget_box.horizontal
+
+
+def test_gridbox_ncols(document, comm):
+    grid_box = GridBox(Div(), Div(), Div(), Div(), Div(), Div(), Div(), Div(), ncols=3)
+
+    model = grid_box.get_root(document, comm=comm)
+
+    assert len(model.children) == 8
+    coords = [
+        (0, 0, 1, 1), (0, 1, 1, 1), (0, 2, 1, 1),
+        (1, 0, 1, 1), (1, 1, 1, 1), (1, 2, 1, 1),
+        (2, 0, 1, 1), (2, 1, 1, 1)
+    ]
+    for child, coord in zip(model.children, coords):
+        assert child[1:] == coord
+
+
+def test_gridbox_nrows(document, comm):
+    grid_box = GridBox(Div(), Div(), Div(), Div(), Div(), Div(), Div(), Div(), nrows=2)
+
+    model = grid_box.get_root(document, comm=comm)
+
+    assert len(model.children) == 8
+
+    coords = [
+        (0, 0, 1, 1), (0, 1, 1, 1), (0, 2, 1, 1), (0, 3, 1, 1),
+        (1, 0, 1, 1), (1, 1, 1, 1), (1, 2, 1, 1), (1, 3, 1, 1)
+    ]
+    for child, coord in zip(model.children, coords):
+        assert child[1:] == coord
