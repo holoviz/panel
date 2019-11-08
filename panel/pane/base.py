@@ -9,6 +9,7 @@ from functools import partial
 import param
 
 from bokeh.io import curdoc as _curdoc
+from bokeh.models.layouts import GridBox as _BkGridBox
 
 from ..io import push, state
 from ..layout import Panel, Row
@@ -106,7 +107,16 @@ class PaneBase(Reactive):
         else:
             new_model = self._get_model(doc, root, parent, comm)
             try:
-                index = parent.children.index(old_model)
+                if isinstance(parent, _BkGridBox):
+                    indexes = [i for i, child in enumerate(parent.children)
+                               if child[0] is old_model]
+                    if indexes:
+                        index = indexes[0]
+                    else:
+                        raise ValueError
+                    new_model = (new_model,) + parent.children[index][1:]
+                else:
+                    index = parent.children.index(old_model)
             except ValueError:
                 self.warning('%s pane model %s could not be replaced '
                              'with new model %s, ensure that the '
