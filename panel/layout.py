@@ -539,6 +539,20 @@ class WidgetBox(ListPanel):
         be specified as a two-tuple of the form (vertical, horizontal)
         or a four-tuple (top, right, bottom, left).""")
 
+    disabled = param.Boolean(default=False, doc="""
+       Whether the widget is disabled.""")
+
+    @param.depends('disabled', 'objects', watch=True)
+    def _disable_widgets(self):
+        for obj in self:
+            if hasattr(obj, 'disabled'):
+                obj.disabled = self.disabled
+
+    def __init__(self, *objects, **params):
+        super(WidgetBox, self).__init__(*objects, **params)
+        if self.disabled:
+            self._disable_widgets()
+
 
 class Tabs(ListPanel):
     """
