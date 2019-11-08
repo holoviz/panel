@@ -718,7 +718,7 @@ class GridSpec(Panel):
         The dictionary of child objects that make up the grid.""")
 
     mode = param.ObjectSelector(
-        default='override', objects=['error', 'override'], doc="""
+        default='warn', objects=['warn', 'error', 'override'], doc="""
         Whether to error or simply override on overlapping assignment.""")
 
     width = param.Integer(default=600)
@@ -861,7 +861,7 @@ class GridSpec(Panel):
         for obj in self.objects.values():
             yield obj
 
-    def __delitem__(self, index, trigger=True):
+    def __delitem__(self, index):
         if isinstance(index, tuple):
             yidx, xidx = index
         else:
@@ -872,11 +872,9 @@ class GridSpec(Panel):
             deleted = OrderedDict([list(o)[0] for o in subgrid.flatten()])
         else:
             deleted = [list(subgrid)[0][0]]
-        if deleted:
-            for key in deleted:
-                del self.objects[key]
-            if trigger:
-                self.param.trigger('objects')
+        for key in deleted:
+            del self.objects[key]
+        self.param.trigger('objects')
 
     def __getitem__(self, index):
         if isinstance(index, tuple):
@@ -936,7 +934,7 @@ class GridSpec(Panel):
 
         key = (y0, x0, y1, x1)
         overlap = key in self.objects
-        clone = self.clone(mode='override')
+        clone = self.clone(objects=OrderedDict(self.objects), mode='override')
         if not overlap:
             clone.objects[key] = Pane(obj)
             grid = clone.grid
@@ -960,8 +958,13 @@ class GridSpec(Panel):
                             str(grid.astype('uint8')))
             if self.mode == 'error':
                 raise IndexError(overlap_text)
-            self.objects.__delitem__(*self.__getitem__(index).objects.keys())
-            self.__delitem__(index, False)
+            elif self.mode == 'warn':
+                self.param.warning(overlap_text)
+
+            subgrid = self._object_grid[index]
+            objects = OrderedDict([list(o)[0] for o in subgrid.flatten()])
+            for dkey in objects:
+                del self.objects[dkey]
         self.objects[key] = Pane(obj)
         self.param.trigger('objects')
 
