@@ -36,15 +36,15 @@ Conversely, what Panel adds on top of Bokeh is full bidirectional communication 
 
 **Q: Why is my object being shown using the wrong type of pane?**
 
-**A:** A global set of precedence values is used to ensure that the richest representation of a given object is chosen when you pass it to a Row or Column. For instance, if `obj` is "# Some text", it be displayed as a `pn.Str`, `pn.HTML`, or `pn.Markdown`, all of which can render a Python string like that.  By default, something like `pn.Row(obj)` will select a Markdown pane for the obj, because Markdown has a higher precendence than the other options.  If you want to override the default pane type selected, you can specify the precise Pane type you wish, as in ``pn.Row(pane.Str("# Some text"))``, which also allows you to pass in options like ``pn.Row(pane.Str("# Some text", height=300))``.  If the default Pane type is fine but you still want to be able to pass specific options like width or height in this way, you can invoke the ``pn.panel`` function to create a defauot pane with the supplied arguments, as in  ``pn.Row(pn.panel(obj, height=300))``.
+**A:** A global set of precedence values is used to ensure that the richest representation of a given object is chosen when you pass it to a Row or Column. For instance, if ``obj`` is "# Some text", it be displayed as a ``pn.Str``, ``pn.HTML``, or ``pn.Markdown``, all of which can render a Python string like that.  By default, something like ``pn.Row(obj)`` will select a Markdown pane for the obj, because Markdown has a higher precendence than the other options.  If you want to override the default pane type selected, you can specify the precise Pane type you wish, as in ``pn.Row(pane.Str("# Some text"))``, which also allows you to pass in options like ``pn.Row(pane.Str("# Some text", height=300))``.  If the default Pane type is fine but you still want to be able to pass specific options like width or height in this way, you can invoke the ``pn.panel`` function to create a defauot pane with the supplied arguments, as in  ``pn.Row(pn.panel(obj, height=300))``.
 
 
 **Q: For Matplotlib plots in a notebook, why do I get no plot, two plots, or plots that fail to update?**
 
 **A:** The Matplotlib pyplot interface behaves in a way that is not easily compatible with Panel in a notebook. Normal Python objects like Python literals and containers display when they are returned as a cell's value, but Matplotlib figures created using pyplot have a textual representation by default but then (depending on the Matplotlib backend and IPython configuration) also display like print statements do, i.e. with a plot as a side effect rather than as a representation of the return value. To force predictable Panel-compatible behavior we therefore recommend using the object-oriented API:
 
-   1. Create a figure object explicitly using `from matplotlib.figure import Figure`
-   2. In versions of matplotlib < 3.1 use `from matplotlib.backends.backend_agg import FigureCanvas` to initialize a canvas
+   1. Create a figure object explicitly using ``from matplotlib.figure import Figure``
+   2. In versions of matplotlib < 3.1 use ``from matplotlib.backends.backend_agg import FigureCanvas`` to initialize a canvas
    3. Return the figure in your callback.
 
 As an example creating a simple plot might look like this::
@@ -127,47 +127,52 @@ That said, Panel is in no way a clone of Shiny; Panel is a complete solution for
 
 **Q: How does Panel relate to other widget/app/dashboard tools?**
 
-**A:** Panel is currently the only Python tool that fully supports writing live widget and app code in Jupyter Notebooks and then deploying it on standalone web servers. Panel is thus unique in supporting the entire life cycle of working with data: from initial exploration, to adding custom interactivity to make one-off analyses easier, to building a complex dashboard from multiple components, to deploying your polished Python-backed dashboard in a public-facing or on-premises private server, and then iterating by bringing those same components back to the notebook for further exploration and improvement. Other tools support *some* of the same capabilities, but by focusing on only one part of this life cycle they require you to start over when you need to use your work in a different way.
+**A:** Python has a rich, dynamic, and ever-expanding ecosystem, so any comparison can quickly go out of date. Also, most tools compare to only a small part of what Panel provides, as Panel is designed to support the entire life cycle of working with data: from initial exploration, to adding custom interactivity to make one-off analyses easier, to building a complex dashboard from multiple components, to deploying your polished Python-backed dashboard in a public-facing or on-premises private server, and then iterating by bringing those same components back to the notebook for further exploration and improvement. Other tools support *some* of the same capabilities, but by focusing on only one part of this life cycle they typically require you to start over when you need to use your work in a different way.
 
-For instance, ipywidgets provide many of the same capabilities as Panel, but they are tightly tied to the Jupyter environment, and are not generally able to be used in a secure standalone server. Dash can develop polished dashboards, but it is not designed for supporting initial exploration in a notebook, and is largely focused on Plotly charts rather than the visualization libraries that you are already using. The components of Dash apps or ipywidgets apps are also tightly tied to that particular delivery mechanism, while Panel also supports developing your domain-specific code in a general way independent of notebooks or apps, separating your content from the details of its presentation. Here's a general overview of what each library supports:
+First, let's consider technologies for serving applications written in Python. For full functionality, Panel requires a Python server process and a "comms" mechanism for communicating between Python and the JavaScript front-end that runs in the web browser.  Panel supports three server technologies:
+
++--------------------------------------+-----------------+-----------------+-------------------------+
+|                                      | Jupyter         | Bokeh Server    | Voila                   |
++======================================+=================+=================+=========================+
+|Supports Panel apps                   | Yes             | Yes             | Yes (via jupyter_bokeh) |
++--------------------------------------+-----------------+-----------------+-------------------------+
+|Notebook or web page layout?          | Notebook        | Web page        | Web page                |
++--------------------------------------+-----------------+-----------------+-------------------------+
+
+Panel uses Bokeh Server to serve apps by default, aliasing it as ``panel serve``, but it fully supports Jupyter and can be used with Voila if you install the separate `jupyter_bokeh` library. Other server technologies like Streamlit and Dash do not currently provide full support for Panel.
+
+Once you have selected a server, here's a guide comparing Panel to other dashboarding tools:
 
 
-+--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+
-|                                      | Panel           | ipywidgets           | Bokeh           | Shiny              | Dash (Plotly)          |
-+======================================+=================+======================+=================+====================+========================+
-|Provides widgets and layouts          | Yes             | Yes                  | Yes             | Yes                | Yes                    |
-+--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+
-|Supports interactive plots            | Yes             | Yes                  | Yes             | Yes                | Yes                    |
-+--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+
-|Reactive updates in Jupyter notebooks | Yes             | Yes                  | Partial (*)     | No                 | No                     |
-+--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+
-|Deployable in a server                | Yes             | No                   | Yes             | Yes                | Yes                    |
-+--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+
-|Fully usable in Jupyter               | Yes             | Yes                  | Partial (*)     | No                 | No, only via iframe    |
-+--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+
-|Supports Matplotlib plots             | Yes             | Yes                  | No              | No                 | No                     |
-+--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+
-|Supports Bokeh plots                  | Yes             | Yes                  | Yes             | No                 | No                     |
-+--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+
-|Supports Plotly plots                 | Yes             | Yes                  | No              | No                 | Yes                    |
-+--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+
-|Supports R ggplot plots               | Yes             | No                   | No              | Yes                | No                     |
-+--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+
-|Supports Altair/Vega plots            | Yes             | Yes                  | No              | Yes                | No                     |
-+--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+
-|Separates content from presentation   | Yes             | Could eventually     | No              | No                 | No                     |
-|                                      |                 | using traitlets      |                 |                    |                        |
-+--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+
-|Servable from public site             | Yes; mybinder   | As live notebooks    | Yes; mybinder,  | Yes, shinyapps.io  | Yes, Plotly Cloud      |
-|                                      | Heroku, etc.    | via mybinder         | Heroku, etc.    |                    |                        |
-+--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+
-+Servable within private enterprise    | Yes, AE5        | Yes, AE5 (with       | Yes, AE5        | Yes, AE5 or Shiny  | Yes, AE5 or Plotly     |
-|network                               |                 | readonly code cells) |                 | Server             | Enterprise             |
-+--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+
++--------------------------------------+-----------------+----------------------+-----------------+--------------------+--------------------+------------------------+
+|                                      | Panel           | ipywidgets           | Bokeh           | Streamlit          | Shiny              | Dash (Plotly)          |
++======================================+=================+======================+=================+====================+====================+========================+
+|Provides widgets and layouts          | Yes             | Yes                  | Yes             | Yes                | Yes                | Yes                    |
++--------------------------------------+-----------------+----------------------+-----------------+--------------------+--------------------+------------------------+
+|Supports fully interactive plots      | Yes             | Yes                  | Yes             | No?                | Yes?               | Yes                    |
++--------------------------------------+-----------------+----------------------+-----------------+--------------------+--------------------+------------------------+
+|Fully usable in Jupyter               | Yes             | Yes                  | Yes, with       | No                 | No                 | No, only via iframe    |
+|                                      |                 |                      | jupyter_bokeh   |                    |                    |                        |
++--------------------------------------+-----------------+----------------------+-----------------+--------------------+--------------------+------------------------+
+|Supports Matplotlib plots             | Yes             | Yes                  | No              | Yes                | No                 | With a separate adapter|
++--------------------------------------+-----------------+----------------------+-----------------+--------------------+--------------------+------------------------+
+|Supports Bokeh plots                  | Yes             | Yes                  | Yes             | Yes                | No                 | With a separate adapter|
++--------------------------------------+-----------------+----------------------+-----------------+--------------------+--------------------+------------------------+
+|Supports Plotly plots                 | Yes             | Yes                  | No              | Yes                | No                 | Yes                    |
++--------------------------------------+-----------------+----------------------+-----------------+--------------------+--------------------+------------------------+
+|Supports R ggplot plots               | Yes             | No                   | No              | No                 | Yes                | No                     |
++--------------------------------------+-----------------+----------------------+-----------------+--------------------+--------------------+------------------------+
+|Supports Altair/Vega plots            | Yes             | Yes                  | No              | Yes                | Yes                | With a separate adapter|
++--------------------------------------+-----------------+----------------------+-----------------+--------------------+--------------------+------------------------+
+|Allows separating content from        | Yes             | No, but could with   | No              | No                 | No                 | No                     |
+|presentation                          |                 | traitlets            |                 |                    |                    |                        |
++--------------------------------------+-----------------+----------------------+-----------------+--------------------+--------------------+------------------------+
+|Servers supported                     | Jupyter, Bokeh, | Yes                  | Bokeh, Voila    | Streamlit          | Shiny server       | Dash                   |
+|                                      | Voila           |                      |                 |                    |                    |                        |
++--------------------------------------+-----------------+----------------------+-----------------+--------------------+--------------------+------------------------+
 
-\* - Bokeh can use live reactive widgets in Jupyter notebooks by launching an embedded server process or using ipywidgets/push_notebook
 
-Each of these libraries are free, open-source software packages, but they can be used with the commercial products
-`Anaconda Enterprise (AE5) <https://www.anaconda.com/enterprise/>`__,
-`Shiny Server <https://www.rstudio.com/products/shiny-server-pro>`__, or
-`Plotly Enterprise <https://plot.ly/products/on-premise>`__ to provide on-premises authenticated deployment services within a private network.
+Each of these libraries are free, open-source software packages, but all of them can be used with the commercial 
+`Anaconda Enterprise (AE5) <https://www.anaconda.com/enterprise/>`__ server product, and some can be used with other commercial servers 
+(Shiny, with `Shiny Server <https://www.rstudio.com/products/shiny-server-pro>`__, Streamlit, with `Streamlit Teams`, and Dash, with
+`Plotly Enterprise <https://plot.ly/products/on-premise>`__), to provide on-premises authenticated deployment within a private network.  Most of the servers (including Jupyter, Bokeh Server, Voila, and Dash) can be deployed on the public sites `mybinder.org <https://mybinder.org>`__ or `heroku <https://www.heroku.com>`__.
