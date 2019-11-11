@@ -8,7 +8,6 @@ import weakref
 import sys
 
 from .viewable import Viewable, Reactive
-from .pane.holoviews import HoloViews, generate_panel_bokeh_map, is_bokeh_element_plot
 from .util import unicode_repr
 
 from bokeh.models import (CustomJS, Model as BkModel)
@@ -96,6 +95,8 @@ class Callback(param.Parameterized):
 
         arg_overrides = {}
         if 'holoviews' in sys.modules:
+            from .pane.holoviews import HoloViews, generate_panel_bokeh_map
+
             hv_views = root_view.select(HoloViews)
             map_hve_bk = generate_panel_bokeh_map(root_model, hv_views)
             for src in linkable:
@@ -270,6 +271,8 @@ class CallbackGenerator(object):
                 references[k] = v
 
         if 'holoviews' in sys.modules:
+            from .pane.holoviews import HoloViews, is_bokeh_element_plot
+
             if isinstance(source, HoloViews):
                 src = source._plots[ref][0]
             else:
