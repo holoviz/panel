@@ -129,47 +129,57 @@ That said, Panel is in no way a clone of Shiny; Panel is a complete solution for
 
 **A:** Python has a rich, dynamic, and ever-expanding ecosystem, so any comparison can quickly go out of date. Also, most tools compare to only a small part of what Panel provides, as Panel is designed to support the entire life cycle of working with data: from initial exploration, to adding custom interactivity to make one-off analyses easier, to building a complex dashboard from multiple components, to deploying your polished Python-backed dashboard in a public-facing or on-premises private server, and then iterating by bringing those same components back to the notebook for further exploration and improvement. Other tools support *some* of the same capabilities, but by focusing on only one part of this life cycle they typically require you to start over when you need to use your work in a different way.
 
-First, let's consider technologies for serving applications written in Python. For full functionality, Panel requires a Python server process and a "comms" mechanism for communicating between Python and the JavaScript front-end that runs in the web browser.  Panel supports three server technologies:
+First, let's consider technologies for serving applications written in Python. For full functionality, Panel requires a Python server process and a "comms" mechanism for communicating between Python and the JavaScript front-end that runs in the web browser.  Panel supports three server/comms technologies, each with their own intended uses:
 
-+--------------------------------------+-----------------+-----------------+-------------------------+
-|                                      | Jupyter         | Bokeh Server    | Voila                   |
-+======================================+=================+=================+=========================+
-|Supports Panel apps                   | Yes             | Yes             | Yes (via jupyter_bokeh) |
-+--------------------------------------+-----------------+-----------------+-------------------------+
-|Notebook or web page layout?          | Notebook        | Web page        | Web page                |
-+--------------------------------------+-----------------+-----------------+-------------------------+
++--------------------------------------+-----------------+-------------------------+-------------------+
+|                                      | Jupyter         | Voila                   | Bokeh Server      |
++======================================+=================+=========================+===================+
+|Supports Panel apps                   | Yes             | Yes (via jupyter_bokeh) | Yes               |
++--------------------------------------+-----------------+-------------------------+-------------------+
+|Supports notebook layout (code cells) | Yes             | Yes, optionally         | No                |
++--------------------------------------+-----------------+-------------------------+-------------------+
+|Allows code editing                   | Yes             | No                      | No                |
++--------------------------------------+-----------------+-------------------------+-------------------+
+|Supports web-page layout              | No              | Yes                     | Yes               |
++--------------------------------------+-----------------+-------------------------+-------------------+
+|Supports ipywidgets                   | Yes             | Yes                     | No (as of 10/2019)|
++--------------------------------------+-----------------+-------------------------+-------------------+
 
-Panel uses Bokeh Server to serve apps by default, aliasing it as ``panel serve``, but it fully supports Jupyter and can be used with Voila if you install the separate `jupyter_bokeh` library. Other server technologies like Streamlit and Dash do not currently provide full support for Panel.
+Panel works seamlessly with Jupyter notebooks for interactive editing, and it uses Bokeh Server to serve apps by default (aliasing it as ``panel serve``). Panel can also be used with Voila if you install the separate ``jupyter_bokeh`` library, which lets you incorporate ipywidgets-based tools into the same app. Other server technologies like Streamlit and Dash do not currently provide full support for Panel; they can typically display Panel objects but don't support the bidirectional communication needed for full Python-backed panel interactivity.
 
-Once you have selected a server, here's a guide comparing Panel to other dashboarding tools:
+Actually building the dashboard that works with the server uses different libraries, some of which support the same servers above and others that have their own dedicated server architectures:
 
-
-+--------------------------------------+-----------------+----------------------+-----------------+--------------------+--------------------+------------------------+
-|                                      | Panel           | ipywidgets           | Bokeh           | Streamlit          | Shiny              | Dash (Plotly)          |
-+======================================+=================+======================+=================+====================+====================+========================+
-|Provides widgets and layouts          | Yes             | Yes                  | Yes             | Yes                | Yes                | Yes                    |
-+--------------------------------------+-----------------+----------------------+-----------------+--------------------+--------------------+------------------------+
-|Supports fully interactive plots      | Yes             | Yes                  | Yes             | No?                | Yes?               | Yes                    |
-+--------------------------------------+-----------------+----------------------+-----------------+--------------------+--------------------+------------------------+
-|Fully usable in Jupyter               | Yes             | Yes                  | Yes, with       | No                 | No                 | No, only via iframe    |
-|                                      |                 |                      | jupyter_bokeh   |                    |                    |                        |
-+--------------------------------------+-----------------+----------------------+-----------------+--------------------+--------------------+------------------------+
-|Supports Matplotlib plots             | Yes             | Yes                  | No              | Yes                | No                 | With a separate adapter|
-+--------------------------------------+-----------------+----------------------+-----------------+--------------------+--------------------+------------------------+
-|Supports Bokeh plots                  | Yes             | Yes                  | Yes             | Yes                | No                 | With a separate adapter|
-+--------------------------------------+-----------------+----------------------+-----------------+--------------------+--------------------+------------------------+
-|Supports Plotly plots                 | Yes             | Yes                  | No              | Yes                | No                 | Yes                    |
-+--------------------------------------+-----------------+----------------------+-----------------+--------------------+--------------------+------------------------+
-|Supports R ggplot plots               | Yes             | No                   | No              | No                 | Yes                | No                     |
-+--------------------------------------+-----------------+----------------------+-----------------+--------------------+--------------------+------------------------+
-|Supports Altair/Vega plots            | Yes             | Yes                  | No              | Yes                | Yes                | With a separate adapter|
-+--------------------------------------+-----------------+----------------------+-----------------+--------------------+--------------------+------------------------+
-|Allows separating content from        | Yes             | No, but could with   | No              | No                 | No                 | No                     |
-|presentation                          |                 | traitlets            |                 |                    |                    |                        |
-+--------------------------------------+-----------------+----------------------+-----------------+--------------------+--------------------+------------------------+
-|Servers supported                     | Jupyter, Bokeh, | Yes                  | Bokeh, Voila    | Streamlit          | Shiny server       | Dash                   |
-|                                      | Voila           |                      |                 |                    |                    |                        |
-+--------------------------------------+-----------------+----------------------+-----------------+--------------------+--------------------+------------------------+
++--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+--------------------+
+|                                      | Panel           | ipywidgets           | Bokeh           | Streamlit          | Dash (Plotly)          | Shiny              |
++======================================+=================+======================+=================+====================+========================+====================+
+|Provides widgets and layouts          | Yes             | Yes                  | Yes             | Yes                | Yes                    | Yes                |
++--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+--------------------+
+|Supports fully interactive plots      | Yes             | Yes                  | Yes             | No?                | Yes                    | Yes?               |
++--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+--------------------+
+|Supports incremental plot updates     | Yes             | Yes                  | Yes             | No?                | Yes                    | Yes?               |
++--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+--------------------+
+|Fully usable in Jupyter               | Yes             | Yes                  | Yes, with       | No                 | No, only via iframe    | No                 |
+|                                      |                 |                      | jupyter_bokeh   |                    |                        |                    |
++--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+--------------------+
+|Supports static HTML export           | Yes             | Not without a special| Yes             | No?                | No                     | No?                |
+|(for reports, websites, docs)         |                 | embedding procedure  |                 |                    |                        |                    |
++--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+--------------------+
+|Supports Matplotlib plots             | Yes             | Yes                  | No              | Yes                | With a separate adapter| No                 |
++--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+--------------------+
+|Supports Bokeh plots                  | Yes             | Yes                  | Yes             | Yes                | With a separate adapter| No                 |
++--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+--------------------+
+|Supports Plotly plots                 | Yes             | Yes                  | No              | Yes                | Yes                    | No                 |
++--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+--------------------+
+|Supports R ggplot plots               | Yes             | No                   | No              | No                 | No                     | Yes                |
++--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+--------------------+
+|Supports Altair/Vega plots            | Yes             | Yes                  | No              | Yes                | With a separate adapter| Yes                |
++--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+--------------------+
+|Allows separating content from        | Yes             | No, but could with   | No              | No                 | No                     | No                 |
+|presentation                          |                 | traitlets            |                 |                    |                        |                    |
++--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+--------------------+
+|Servers supported                     | Jupyter, Bokeh, | Yes                  | Bokeh, Voila    | Streamlit          | Dash                   | Shiny server       |
+|                                      | Voila           |                      |                 |                    |                        |                    |
++--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+--------------------+
 
 
 Each of these libraries are free, open-source software packages, but all of them can be used with the commercial 
