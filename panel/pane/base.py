@@ -286,7 +286,8 @@ class ReplacementPane(PaneBase):
             # Replace pane entirely
             kwargs = dict(self.get_param_values(), **self._kwargs)
             del kwargs['object']
-            self._pane = Pane(new_object, **kwargs)
+            self._pane = Pane(new_object, **{k: v for k, v in kwargs.items()
+                                             if k in pane_type.param})
             self._inner_layout[0] = self._pane
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
