@@ -21,13 +21,12 @@ from param.parameterized import classlist
 
 from .io import state
 from .layout import Row, Panel, Tabs, Column
-from .links import Link
-from .pane.base import Pane, PaneBase, ReplacementPane
+from .pane.base import PaneBase, ReplacementPane
 from .util import (
     abbreviated_repr, full_groupby, get_method_owner, is_parameterized,
     param_name
 )
-from .viewable import Layoutable, Reactive
+from .viewable import Layoutable
 from .widgets import (
     LiteralInput, Select, Checkbox, FloatSlider, IntSlider, RangeSlider,
     MultiSelect, StaticText, Button, Toggle, TextInput, DatetimeInput,
