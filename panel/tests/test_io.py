@@ -11,6 +11,8 @@ from panel.io.embed import embed_state
 from panel.pane import Str
 from panel.widgets import Select, FloatSlider, Checkbox
 
+from .util import jb_available
+
 
 def test_embed_discrete(document, comm):
     select = Select(options=['A', 'B', 'C'])
@@ -130,6 +132,7 @@ def test_save_embed_json(tmpdir):
         assert event['new'] == '<pre>%s</pre>' % v
 
 
+@jb_available
 def test_ipywidget():
     pane = Str('A')
     widget = ipywidget(pane)

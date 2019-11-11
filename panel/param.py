@@ -519,9 +519,11 @@ class ParamMethod(ReplacementPane):
     return any object which itself can be rendered as a Pane.
     """
 
-    def __init__(self, object, **params):
+    def __init__(self, object=None, **params):
         super(ParamMethod, self).__init__(object, **params)
         self._link_object_params()
+        if object is not None:
+            self._update_pane(self._eval_function(object))
 
     #----------------------------------------------------------------
     # Callback API

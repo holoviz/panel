@@ -224,6 +224,8 @@ class CallbackGenerator(object):
         model: bokeh.model.Model
           The resolved bokeh model
         """
+        from .pane.holoviews import is_bokeh_element_plot
+
         model = None
         if 'holoviews' in sys.modules and is_bokeh_element_plot(obj):
             if model_spec is None:
