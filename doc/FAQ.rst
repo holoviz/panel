@@ -124,30 +124,36 @@ That said, Panel is in no way a clone of Shiny; Panel is a complete solution for
 - Panel `Tabs <https://panel.pyviz.org/reference/layouts/Tabs.html>`__ let you provide users with a selection of different panels to choose from in any order, using one at a time.
 - Bokeh/Panel `Templates <https://panel.pyviz.org/user_guide/Templates.html>`__ let you embed your panels into any arbitrary HTML/JS/CSS web page, where you can provide any control mechanism you like (though with a lot more effort than pipelines or tabs, unless you can copy an existing template).
 
+**Q: Which server architecture should I use with Panel?**
+
+**A:** Panel can be used with the basic Python interpreter to generate HTML files for emailing or putting on a web server, but if any action in the panel requires live execution of Python code, you will need to start a Python server process with a "comms" mechanism for communicating between Python and the JavaScript front-end that runs in the web browser.  Panel supports three server/comms technologies, each with their own intended uses:
+
++--------------------------------------+-----------------+--------------------------+-------------------+
+|                                      | Jupyter         | Voila                    | Bokeh Server      |
++======================================+=================+==========================+===================+
+|Supports Panel apps                   | Yes             | Yes (via jupyter_bokeh)  | Yes               |
++--------------------------------------+-----------------+--------------------------+-------------------+
+|Supports notebook layout (code cells) | Yes             | Yes, optionally          | No                |
++--------------------------------------+-----------------+--------------------------+-------------------+
+|Allows code editing                   | Yes             | No                       | No                |
++--------------------------------------+-----------------+--------------------------+-------------------+
+|Supports web-page layout              | No              | Yes                      | Yes               |
++--------------------------------------+-----------------+--------------------------+-------------------+
+|Supports ipywidgets                   | Yes             | Yes                      | No (as of 10/2019)|
++--------------------------------------+-----------------+--------------------------+-------------------+
+|Individually selectable outputs       | N/A             | No (except with template)| Yes               |
++--------------------------------------+-----------------+--------------------------+-------------------+
+|Allows shared state across sessions   | No              | No                       | Yes               |
++--------------------------------------+-----------------+--------------------------+-------------------+
+
+Panel works seamlessly with Jupyter notebooks for interactive editing, and it uses Bokeh Server to serve apps by default (aliasing it as ``panel serve``). Panel can also be used with Voila if you install the separate ``jupyter_bokeh`` library, which lets you incorporate ipywidgets-based tools into the same app as Panel objects. Other server technologies like Streamlit and Dash do not currently provide full support for Panel; they can typically display Panel objects but don't support the bidirectional communication needed for full Python-backed panel interactivity.
+
 
 **Q: How does Panel relate to other widget/app/dashboard tools?**
 
 **A:** Python has a rich, dynamic, and ever-expanding ecosystem, so any comparison can quickly go out of date. Also, most tools compare to only a small part of what Panel provides, as Panel is designed to support the entire life cycle of working with data: from initial exploration, to adding custom interactivity to make one-off analyses easier, to building a complex dashboard from multiple components, to deploying your polished Python-backed dashboard in a public-facing or on-premises private server, and then iterating by bringing those same components back to the notebook for further exploration and improvement. Other tools support *some* of the same capabilities, but by focusing on only one part of this life cycle they typically require you to start over when you need to use your work in a different way.
 
-First, let's consider technologies for serving applications written in Python. For full functionality, Panel requires a Python server process and a "comms" mechanism for communicating between Python and the JavaScript front-end that runs in the web browser.  Panel supports three server/comms technologies, each with their own intended uses:
-
-+--------------------------------------+-----------------+-------------------------+-------------------+
-|                                      | Jupyter         | Voila                   | Bokeh Server      |
-+======================================+=================+=========================+===================+
-|Supports Panel apps                   | Yes             | Yes (via jupyter_bokeh) | Yes               |
-+--------------------------------------+-----------------+-------------------------+-------------------+
-|Supports notebook layout (code cells) | Yes             | Yes, optionally         | No                |
-+--------------------------------------+-----------------+-------------------------+-------------------+
-|Allows code editing                   | Yes             | No                      | No                |
-+--------------------------------------+-----------------+-------------------------+-------------------+
-|Supports web-page layout              | No              | Yes                     | Yes               |
-+--------------------------------------+-----------------+-------------------------+-------------------+
-|Supports ipywidgets                   | Yes             | Yes                     | No (as of 10/2019)|
-+--------------------------------------+-----------------+-------------------------+-------------------+
-
-Panel works seamlessly with Jupyter notebooks for interactive editing, and it uses Bokeh Server to serve apps by default (aliasing it as ``panel serve``). Panel can also be used with Voila if you install the separate ``jupyter_bokeh`` library, which lets you incorporate ipywidgets-based tools into the same app. Other server technologies like Streamlit and Dash do not currently provide full support for Panel; they can typically display Panel objects but don't support the bidirectional communication needed for full Python-backed panel interactivity.
-
-Actually building the dashboard that works with the server uses different libraries, some of which support the same servers above and others that have their own dedicated server architectures:
+The `Comparisons page <Comparisons.html>`__ describes some of these differences in detail, but at a high level:
 
 +--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+--------------------+
 |                                      | Panel           | ipywidgets           | Bokeh           | Streamlit          | Dash (Plotly)          | Shiny              |
@@ -174,13 +180,14 @@ Actually building the dashboard that works with the server uses different librar
 +--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+--------------------+
 |Supports Altair/Vega plots            | Yes             | Yes                  | No              | Yes                | With a separate adapter| Yes                |
 +--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+--------------------+
+|Supports Django and Django channels   | Yes             | No                   | Yes             | No                 | No?                    | No?                |
++--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+--------------------+
 |Allows separating content from        | Yes             | No, but could with   | No              | No                 | No                     | No                 |
 |presentation                          |                 | traitlets            |                 |                    |                        |                    |
 +--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+--------------------+
 |Servers supported                     | Jupyter, Bokeh, | Yes                  | Bokeh, Voila    | Streamlit          | Dash                   | Shiny server       |
 |                                      | Voila           |                      |                 |                    |                        |                    |
 +--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+--------------------+
-
 
 Each of these libraries are free, open-source software packages, but all of them can be used with the commercial 
 `Anaconda Enterprise (AE5) <https://www.anaconda.com/enterprise/>`__ server product, and some can be used with other commercial servers 
