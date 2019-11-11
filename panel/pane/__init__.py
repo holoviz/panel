@@ -17,6 +17,7 @@ from .markup import DataFrame, HTML, Markdown, Str # noqa
 from .media import Audio, Video # noqa
 from .plotly import Plotly # noqa
 from .plot import Bokeh, Matplotlib, RGGPlot, YT # noqa
+from .streamz import Streamz # noqa
 from .vega import Vega # noqa
 from .vtk import VTK, VTKVolume # noqa
 
