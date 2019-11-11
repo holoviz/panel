@@ -28,6 +28,12 @@ except:
     streamz = None
 streamz_available = pytest.mark.skipif(streamz is None, reason="requires streamz")
 
+try:
+    import jupyter_bokeh
+except:
+    jupyter_bokeh = None
+jb_available = pytest.mark.skipif(jupyter_bokeh is None, reason="requires jupyter_bokeh")
+
 
 def mpl_figure():
     import matplotlib.pyplot as plt

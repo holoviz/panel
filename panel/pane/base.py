@@ -13,6 +13,7 @@ from bokeh.models.layouts import GridBox as _BkGridBox
 
 from ..io import push, state
 from ..layout import Panel, Row
+from ..links import Link
 from ..viewable import Viewable, Reactive, Layoutable
 from ..util import param_reprs
 
@@ -245,3 +246,79 @@ class PaneBase(Reactive):
             if isinstance(applies, bool) and not applies: continue
             return pane_type
         raise TypeError('%s type could not be rendered.' % type(obj).__name__)
+
+
+
+class ReplacementPane(PaneBase):
+    """
+    A Pane type which allows for complete replacement of the underlying
+    bokeh model by creating an internal layout to replace the children
+    on.
+    """
+
+    __abstract = True
+
+    _updates = True
+
+    def __init__(self, object=None, **params):
+        self._kwargs =  {p: params.pop(p) for p in list(params)
+                         if p not in self.param}
+        super(ReplacementPane, self).__init__(object, **params)
+        self._pane = Pane(None)
+        self._inner_layout = Row(self._pane, **{k: v for k, v in params.items() if k in Row.param})
+
+    def _update_pane(self, new_object):
+        pane_type = self.get_pane_type(new_object)
+        try:
+            links = Link.registry.get(new_object)
+        except TypeError:
+            links = []
+        if type(self._pane) is pane_type and not links:
+            if isinstance(new_object, Reactive):
+                pvals = dict(self._pane.get_param_values())
+                new_params = {k: v for k, v in new_object.get_param_values()
+                              if k != 'name' and v is not pvals[k]}
+                self._pane.set_param(**new_params)
+            else:
+                self._pane.object = new_object
+        else:
+            # Replace pane entirely
+            kwargs = dict(self.get_param_values(), **self._kwargs)
+            del kwargs['object']
+            self._pane = Pane(new_object, **{k: v for k, v in kwargs.items()
+                                             if k in pane_type.param})
+            self._inner_layout[0] = self._pane
+
+    def _get_model(self, doc, root=None, parent=None, comm=None):
+        if root:
+            ref = root.ref['id']
+            if ref in self._models:
+                self._cleanup(root)
+        model = self._inner_layout._get_model(doc, root, parent, comm)
+        if root is None:
+            ref = model.ref['id']
+        self._models[ref] = (model, parent)
+        return model
+
+    def _cleanup(self, root=None):
+        self._inner_layout._cleanup(root)
+        super(ReplacementPane, self)._cleanup(root)
+
+    def select(self, selector=None):
+        """
+        Iterates over the Viewable and any potential children in the
+        applying the Selector.
+
+        Arguments
+        ---------
+        selector: type or callable or None
+          The selector allows selecting a subset of Viewables by
+          declaring a type or callable function to filter by.
+
+        Returns
+        -------
+        viewables: list(Viewable)
+        """
+        selected = super(ReplacementPane, self).select(selector)
+        selected += self._pane.select(selector)
+        return selected

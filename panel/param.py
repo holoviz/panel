@@ -21,16 +21,17 @@ from param.parameterized import classlist
 
 from .io import state
 from .layout import Row, Panel, Tabs, Column
-from .links import Link
-from .pane.base import Pane, PaneBase
+from .pane.base import PaneBase, ReplacementPane
 from .util import (
-    abbreviated_repr, full_groupby,
-    get_method_owner, is_parameterized, param_name)
-from .viewable import Layoutable, Reactive
+    abbreviated_repr, full_groupby, get_method_owner, is_parameterized,
+    param_name
+)
+from .viewable import Layoutable
 from .widgets import (
     LiteralInput, Select, Checkbox, FloatSlider, IntSlider, RangeSlider,
     MultiSelect, StaticText, Button, Toggle, TextInput, DatetimeInput,
-    DateRangeSlider, ColorPicker, Widget)
+    DateRangeSlider, ColorPicker, Widget
+)
 from .widgets.button import _ButtonBase
 
 
@@ -104,20 +105,20 @@ class Param(PaneBase):
 
     _mapping = {
         param.Action:         Button,
-        param.Parameter:      LiteralInput,
-        param.Color:          ColorPicker,
-        param.Dict:           LiteralInput,
-        param.Selector:       Select,
-        param.ObjectSelector: Select,
-        param.FileSelector:   FileSelector,
         param.Boolean:        Checkbox,
-        param.Number:         FloatSlider,
-        param.Integer:        IntSlider,
-        param.Range:          RangeSlider,
-        param.String:         TextInput,
-        param.ListSelector:   MultiSelect,
+        param.Color:          ColorPicker,
         param.Date:           DatetimeInput,
-        param.DateRange:      DateRangeSlider
+        param.DateRange:      DateRangeSlider,
+        param.Dict:           LiteralInput,
+        param.FileSelector:   FileSelector,
+        param.Integer:        IntSlider,
+        param.ListSelector:   MultiSelect,
+        param.Number:         FloatSlider,
+        param.ObjectSelector: Select,
+        param.Parameter:      LiteralInput,
+        param.Range:          RangeSlider,
+        param.Selector:       Select,
+        param.String:         TextInput,
     }
 
     _rerender_params = []
@@ -507,7 +508,7 @@ class Param(PaneBase):
         return root
 
 
-class ParamMethod(PaneBase):
+class ParamMethod(ReplacementPane):
     """
     ParamMethod panes wrap methods on parameterized classes and
     rerenders the plot when any of the method's parameters change. By
@@ -517,15 +518,11 @@ class ParamMethod(PaneBase):
     return any object which itself can be rendered as a Pane.
     """
 
-    def __init__(self, object, **params):
-        self._kwargs =  {p: params.pop(p) for p in list(params)
-                         if p not in self.param}
+    def __init__(self, object=None, **params):
         super(ParamMethod, self).__init__(object, **params)
-        kwargs = dict(self.get_param_values(), **self._kwargs)
-        del kwargs['object']
-        self._pane = Pane(self._eval_function(self.object), **kwargs)
-        self._inner_layout = Row(self._pane, **{k: v for k, v in params.items() if k in Row.param})
         self._link_object_params()
+        if object is not None:
+            self._update_pane(self._eval_function(object))
 
     #----------------------------------------------------------------
     # Callback API
@@ -541,28 +538,6 @@ class ParamMethod(PaneBase):
                 args = (getattr(dep.owner, dep.name) for dep in arg_deps)
                 kwargs = {n: getattr(dep.owner, dep.name) for n, dep in kw_deps.items()}
         return function(*args, **kwargs)
-
-    def _update_pane(self, *args):
-        new_object = self._eval_function(self.object)
-        pane_type = self.get_pane_type(new_object)
-        try:
-            links = Link.registry.get(new_object)
-        except TypeError:
-            links = []
-        if type(self._pane) is pane_type and not links:
-            if isinstance(new_object, Reactive):
-                pvals = dict(self._pane.get_param_values())
-                new_params = {k: v for k, v in new_object.get_param_values()
-                              if k != 'name' and v is not pvals[k]}
-                self._pane.set_param(**new_params)
-            else:
-                self._pane.object = new_object
-        else:
-            # Replace pane entirely
-            kwargs = dict(self.get_param_values(), **self._kwargs)
-            del kwargs['object']
-            self._pane = Pane(new_object, **kwargs)
-            self._inner_layout[0] = self._pane
 
     def _link_object_params(self):
         parameterized = get_method_owner(self.object)
@@ -593,7 +568,8 @@ class ParamMethod(PaneBase):
                     self._callbacks.append(watcher)
                     for p in params:
                         deps.append(p)
-            self._update_pane()
+            new_object = self._eval_function(self.object)
+            self._update_pane(new_object)
 
         for _, params in full_groupby(params, lambda x: (x.inst or x.cls, x.what)):
             p = params[0]
@@ -603,50 +579,13 @@ class ParamMethod(PaneBase):
             self._callbacks.append(watcher)
 
     #----------------------------------------------------------------
-    # Model API
-    #----------------------------------------------------------------
-
-    def _get_model(self, doc, root=None, parent=None, comm=None):
-        if root is None:
-            return self.get_root(doc, comm)
-
-        ref = root.ref['id']
-        if ref in self._models:
-            self._cleanup(root)
-        model = self._inner_layout._get_model(doc, root, parent, comm)
-        self._models[ref] = (model, parent)
-        return model
-
-    def select(self, selector=None):
-        """
-        Iterates over the Viewable and any potential children in the
-        applying the Selector.
-
-        Arguments
-        ---------
-        selector: type or callable or None
-          The selector allows selecting a subset of Viewables by
-          declaring a type or callable function to filter by.
-
-        Returns
-        -------
-        viewables: list(Viewable)
-        """
-        selected = super(ParamMethod, self).select(selector)
-        selected += self._pane.select(selector)
-        return selected
-
-    def _cleanup(self, root=None):
-        self._inner_layout._cleanup(root)
-        super(ParamMethod, self)._cleanup(root)
-
-    #----------------------------------------------------------------
     # Public API
     #----------------------------------------------------------------
 
     @classmethod
     def applies(cls, obj):
         return inspect.ismethod(obj) and isinstance(get_method_owner(obj), param.Parameterized)
+
 
 
 class ParamFunction(ParamMethod):
@@ -660,11 +599,15 @@ class ParamFunction(ParamMethod):
 
     priority = 0.6
 
+    def _replace_pane(self, *args):
+        new_object = self._eval_function(self.object)
+        self._update_pane(new_object)
+
     def _link_object_params(self):
         deps = self.object._dinfo
         dep_params = list(deps['dependencies']) + list(deps.get('kw', {}).values())
         for p in dep_params:
-            watcher = p.owner.param.watch(self._update_pane, p.name)
+            watcher = p.owner.param.watch(self._replace_pane, p.name)
             self._callbacks.append(watcher)
 
     #----------------------------------------------------------------
