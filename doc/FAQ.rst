@@ -192,4 +192,4 @@ The `Comparisons page <Comparisons.html>`__ describes some of these differences 
 Each of these libraries are free, open-source software packages, but all of them can be used with the commercial 
 `Anaconda Enterprise (AE5) <https://www.anaconda.com/enterprise/>`__ server product, and some can be used with other commercial servers 
 (Shiny, with `Shiny Server <https://www.rstudio.com/products/shiny-server-pro>`__, Streamlit, with `Streamlit Teams`, and Dash, with
-`Dash Enterprise <https://plot.ly/products/on-premise>`__), to provide on-premises authenticated deployment within a private network.  Most of the servers (including Jupyter, Bokeh Server, Voila, and Dash) can be deployed on the public sites `mybinder.org <https://mybinder.org>`__ or `heroku <https://www.heroku.com>`__.
+`Dash Enterprise <https://plot.ly/dash>`__), to provide on-premises authenticated deployment within a private network.  Most of the servers (including Jupyter, Bokeh Server, Voila, and Dash) can be also deployed on the public sites `mybinder.org <https://mybinder.org>`__ or `heroku <https://www.heroku.com>`__.
