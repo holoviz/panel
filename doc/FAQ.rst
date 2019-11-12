@@ -122,7 +122,8 @@ That said, Panel is in no way a clone of Shiny; Panel is a complete solution for
 
 - Panel `Pipelines <https://panel.pyviz.org/user_guide/Pipelines.html>`__ provide an easy way to build a workflow where users first start on one page, make selections, then move to subsequent pages.  Pipelines can be linear (with one following page each time) or branching (with choices made on one page determining where to go on the next).
 - Panel `Tabs <https://panel.pyviz.org/reference/layouts/Tabs.html>`__ let you provide users with a selection of different panels to choose from in any order, using one at a time.
-- Bokeh/Panel `Templates <https://panel.pyviz.org/user_guide/Templates.html>`__ let you embed your panels into any arbitrary HTML/JS/CSS web page, where you can provide any control mechanism you like (though with a lot more effort than pipelines or tabs, unless you can copy an existing template).
+- Bokeh/Panel `Templates <https://panel.pyviz.org/user_guide/Templates.html>`__ let you create arbitrary HTML/JS/CSS web pages around your panel components, where you can provide any control mechanism you like (though with a lot more effort than pipelines or tabs, unless you can copy an existing template).
+- `Bokeh embed functions <http://docs.bokeh.org/en/1.3.2/docs/user_guide/embed.html>`__ allow you to embed static or server based Panel objects into your existing website.
 
 **Q: Which server architecture should I use with Panel?**
 
@@ -160,15 +161,15 @@ The `Comparisons page <Comparisons.html>`__ describes some of these differences 
 +======================================+=================+======================+=================+====================+========================+====================+
 |Provides widgets and layouts          | Yes             | Yes                  | Yes             | Yes                | Yes                    | Yes                |
 +--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+--------------------+
-|Supports fully interactive plots      | Yes             | Yes                  | Yes             | No?                | Yes                    | Yes?               |
+|Supports callbacks on plots           | Yes             | Yes                  | Yes             | No                 | Yes                    | Yes                |
 +--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+--------------------+
-|Supports incremental plot updates     | Yes             | Yes                  | Yes             | No?                | Yes                    | Yes?               |
+|Supports incremental plot updates     | Yes             | Yes                  | Yes             | Yes (in some cases)| Yes                    | Yes                |
 +--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+--------------------+
 |Fully usable in Jupyter               | Yes             | Yes                  | Yes, with       | No                 | No, only via iframe    | No                 |
 |                                      |                 |                      | jupyter_bokeh   |                    |                        |                    |
 +--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+--------------------+
-|Supports static HTML export           | Yes             | Not without a special| Yes             | No?                | No                     | No?                |
-|(for reports, websites, docs)         |                 | embedding procedure  |                 |                    |                        |                    |
+|Supports static HTML export from      | Yes             | Not without a special| Yes             | No                 | No                     | No                 |
+|notebooks (for reports, docs, etc.)   |                 | embedding procedure  |                 |                    |                        |                    |
 +--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+--------------------+
 |Supports Matplotlib plots             | Yes             | Yes                  | No              | Yes                | With a separate adapter| No                 |
 +--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+--------------------+
@@ -180,13 +181,13 @@ The `Comparisons page <Comparisons.html>`__ describes some of these differences 
 +--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+--------------------+
 |Supports Altair/Vega plots            | Yes             | Yes                  | No              | Yes                | With a separate adapter| Yes                |
 +--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+--------------------+
-|Supports Django and Django channels   | Yes             | No                   | Yes             | No                 | No?                    | No?                |
+|Supports Django and Django channels   | Yes             | No                   | Yes             | No                 | No                     | No                 |
 +--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+--------------------+
-|Allows separating content from        | Yes             | No, but could with   | No              | No                 | No                     | No                 |
-|presentation                          |                 | traitlets            |                 |                    |                        |                    |
+|Allows separating business logic from | Yes             | No                   | No              | No                 | No                     | No                 |
+|presentation                          |                 |                      |                 |                    |                        |                    |
 +--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+--------------------+
-|Servers supported                     | Jupyter, Bokeh, | Yes                  | Bokeh, Voila    | Streamlit          | Dash                   | Shiny server       |
-|                                      | Voila           |                      |                 |                    |                        |                    |
+|Servers supported                     | Jupyter, Bokeh, | Jupyter, Voila       | Jupyter, Bokeh, | Streamlit          | Dash                   | Shiny server       |
+|                                      | Voila           |                      | Voila           |                    |                        |                    |
 +--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+--------------------+
 
 Each of these libraries are free, open-source software packages, but all of them can be used with the commercial 
