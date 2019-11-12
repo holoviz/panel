@@ -33,6 +33,24 @@ def traverse(graph, v, visited):
             traverse(graph, i, visited)
 
 
+def find_route(graph, current, target):
+    """
+    Find a route to the target node from the current node.
+    """
+    next_nodes = graph.get(current)
+    if next_nodes is None:
+        return None
+    elif target in next_nodes:
+        return [target]
+    else:
+        for n in next_nodes:
+            route = find_route(graph, n, target)
+            if route is None:
+                return None
+            return [n]+route
+        return None
+
+
 def get_root(graph):
     """
     Search for the root not by finding nodes without inputs.
@@ -295,7 +313,34 @@ class Pipeline(param.Parameterized):
         return self._state.panel()
 
     def _set_stage(self, index):
-        self.next_selector.value = list(self._stages)[index[0]]
+        if not index:
+            return
+        stage = self._progress_sel.source.iloc[index[0], 2]
+        if stage in self.next_selector.options:
+            self.next_selector.value = stage
+            self.param.trigger('next')
+        elif stage in self.prev_selector.options:
+            self.prev_selector.value = stage
+            self.param.trigger('previous')
+        elif stage in self._route:
+            while len(self._route) > 1:
+                self.param.trigger('previous')
+        else:
+            # Try currently selected route
+            route = find_route(self._graph, self._next_stage, stage)
+            if route is None:
+                # Try alternate route
+                route = find_route(self._graph, self._stage, stage)
+                if route is None:
+                    raise ValueError('Could not find route to target node.')
+            else:
+                route = [self._next_stage] + route
+            for r in route:
+                if r not in self.next_selector.options:
+                    break
+                self.next_selector.value = r
+                self.param.trigger('next')
+
 
     @property
     def _next_stage(self):
@@ -449,8 +494,16 @@ class Pipeline(param.Parameterized):
         cmap = {'inactive': 'white', 'active': '#5cb85c', 'error': 'red',
                 'next': 'yellow'}
 
+        def tap_renderer(plot, element):
+            from bokeh.models import TapTool
+            gr = plot.handles['glyph_renderer']
+            tap = plot.state.select_one(TapTool)
+            tap.renderers = [gr]
+
         nodes = hv.Nodes(nodes, ['x', 'y', 'Stage'], 'State').opts(
-            alpha=0, selection_alpha=0, nonselection_alpha=0, backend='bokeh')
+            alpha=0, default_tools=['tap'], hooks=[tap_renderer],
+            hover_alpha=0, selection_alpha=0, nonselection_alpha=0, size=10,
+            backend='bokeh')
         self._progress_sel.source = nodes
         graph = hv.Graph((edges, nodes)).opts(
             edge_hover_line_color='black', node_color='State', cmap=cmap,
@@ -458,7 +511,7 @@ class Pipeline(param.Parameterized):
             node_hover_fill_color='gray', backend='bokeh')
         labels = hv.Labels(nodes, ['x', 'y'], 'Stage').opts(
             yoffset=-.30, default_tools=[], backend='bokeh')
-        plot = (graph * labels) if self._linear else graph
+        plot = (graph * labels * nodes) if self._linear else (graph * nodes)
         plot.opts(
             xaxis=None, yaxis=None, min_width=400, responsive=True,
             show_frame=False, height=height, xlim=(-0.25, depth+0.25), ylim=(0, 1),
@@ -491,7 +544,7 @@ class Pipeline(param.Parameterized):
         for k in kwargs:
             if k not in self.param:
                 raise ValueError("Keyword argument %s is not a valid parameter. " % k)
-        
+
         if not self._linear and self._graph:
             raise RuntimeError("Cannot add stage after graph has been defined.")
 
