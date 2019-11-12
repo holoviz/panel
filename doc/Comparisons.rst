@@ -13,11 +13,11 @@ Panel and Dash can both be used to create dashboards in Python, but take very di
 
 - Panel provides full, seamless support for usage in Jupyter notebooks, making it simple to add controls and layouts wherever they are needed in a workflow, without necessarily building up to any particular shareable app.  Dash is focused almost exclusively on standalone dashboards, though there are some workarounds available for using Dash in notebooks.
 
-- Panel focuses on helping Python users create apps and dashboards using Python, with a concise and expressive Pythonic syntax. Dash reveals more of the underlying HTML and CSS details, which is useful for customization but is distracting and verbose when exploring datasets in Python.
+- Panel focuses on helping Python users create apps and dashboards using Python, with a concise and expressive Pythonic syntax. Dash reveals more of the underlying HTML and CSS details, which is useful for customization but can be distracting during the data-exploration phase of a project.
 
 - Panel is plotting library agnostic, fully supporting a wide range of Python libraries out of the box, including Plotly. Dash has full support for Plotly, but other libraries have only limited support, using extension packages.
 
-- Dash dashboards ordinarily keep all of their state at the client side (in the browser), which has the advantage of being highly scalable for many simultaneous clients, but the disadvantage of making it difficult to perform server-side operations in Python like [Datashader](http://datashader.org).
+- Dash dashboards store their per-user session state in the client (the browser), which has the advantage of being highly scalable for many simultaneous client sessions.  This design requires Dash dashboards to be fully reactive, with logic defined by Python callback functions with no side-effects. In contrast, Panel dashboards store the state for all active sessions in both the server and the client, synchronizing between the two. This design allows Panel dashboards to be written in either an imperative or a reactive style, depending on the preferences of the author, but it results in dashboards that consume resources on the server per user and are thus less directly scalable that those produced by Dash.
 
 
 Comparing Panel and ipywidgets
