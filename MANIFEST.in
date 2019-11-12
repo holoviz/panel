@@ -12,3 +12,4 @@ global-exclude *~
 global-exclude *.ipynb_checkpoints/*
 graft examples
 graft panel/examples
+graft panel/dist
