@@ -6,7 +6,7 @@ import param
 from panel.layout import Row, Column
 from panel.pane import HoloViews
 from panel.param import ParamMethod
-from panel.pipeline import Pipeline
+from panel.pipeline import Pipeline, find_route
 from panel.widgets import Button, Select
 
 if LooseVersion(param.__version__) < '1.8.2':
@@ -73,6 +73,14 @@ class DummyStage(param.Parameterized):
     def panel(self):
         return 'foo'
 
+
+def test_find_route():
+    graph = {'A': ('B', 'C'), 'C': ('D',), 'D': ('E', 'F', 'G'), 'F': ('H',), 'G': ('I',)}
+
+    assert find_route(graph, 'A', 'I') == ['C', 'D', 'G', 'I']
+    assert find_route(graph, 'B', 'I') is None
+    assert find_route(graph, 'D', 'H') == ['F', 'H']
+    
 
 def test_pipeline_from_classes():
     pipeline = Pipeline([('Stage 1', Stage1), ('Stage 2', Stage2)])
@@ -246,6 +254,28 @@ def test_pipeline_define_graph():
     assert isinstance(pipeline._state, Stage2b)
 
 
+def test_pipeline_set_stage():
+    pipeline = Pipeline()
+    pipeline.add_stage('Stage 2', Stage2)
+    pipeline.add_stage('Stage 2b', Stage2b)
+    pipeline.add_stage('Stage 1', Stage1)
+    pipeline.add_stage('Final', DummyStage())
+
+    pipeline.define_graph({'Stage 1': ('Stage 2', 'Stage 2b'), 'Stage 2b': 'Final'})
+
+    pipeline._set_stage([2])
+
+    assert pipeline._stage == 'Stage 2'
+
+    pipeline._set_stage([0])
+
+    assert pipeline._stage == 'Stage 1'
+
+    pipeline._set_stage([3])
+
+    assert pipeline._stage == 'Final'
+
+
 def test_pipeline_define_next_parameter_respected():
     pipeline = Pipeline()
     pipeline.add_stage('Stage 2', Stage2)
@@ -344,7 +374,8 @@ def test_pipeline_network_diagram_states():
 
     pipeline.define_graph({'Stage 1': ('Stage 2', 'Stage 2b')})
 
-    [s1, s2, s2b] = pipeline.network.object.nodes['State']
+    print(pipeline.network.object)
+    [s1, s2, s2b] = pipeline.network.object.get(0).nodes['State']
 
     assert s1 == 'active'
     assert s2 == 'inactive'
@@ -352,7 +383,7 @@ def test_pipeline_network_diagram_states():
 
     pipeline._next()
 
-    [s1, s2, s2b] = pipeline.network.object.nodes['State']
+    [s1, s2, s2b] = pipeline.network.object.get(0).nodes['State']
 
     assert s1 == 'inactive'
     assert s2 == 'inactive'
@@ -360,7 +391,7 @@ def test_pipeline_network_diagram_states():
 
     pipeline._previous()
 
-    [s1, s2, s2b] = pipeline.network.object.nodes['State']
+    [s1, s2, s2b] = pipeline.network.object.get(0).nodes['State']
 
     assert s1 == 'active'
     assert s2 == 'inactive'
