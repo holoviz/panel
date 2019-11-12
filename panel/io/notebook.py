@@ -377,33 +377,41 @@ def show_embed(panel, max_states=1000, max_opts=3, json=False,
     publish_display_data(*render_model(model))
 
 
-def ipywidget(panel):
+def ipywidget(obj, **kwargs):
     """
     Creates a root model from the Panel object and wraps it in
     a jupyter_bokeh ipywidget BokehModel.
+
+    Arguments
+    ---------
+    obj: object
+      Any Panel object or object which can be rendered with Panel
+    **kwargs: dict
+      Keyword arguments passed to the pn.panel utility function
 
     Returns
     -------
     Returns an ipywidget model which renders the Panel object.
     """
     from jupyter_bokeh import BokehModel
-    model = panel.get_root()
+    from ..pane import panel
+    model = panel(obj, **kwargs).get_root()
     widget = BokehModel(model)
     if hasattr(widget, '_view_count'):
         widget._view_count = 0
         def view_count_changed(change, current=[model]):
             new_model = None
             if change['old'] > 0 and change['new'] == 0 and current:
-                panel._cleanup(current[0])
+                obj._cleanup(current[0])
                 current[:] = []
             elif (change['old'] == 0 and change['new'] > 0 and
                   (not current or current[0] is not model)):
                 if current:
                     try:
-                        panel._cleanup(current[0])
+                        obj._cleanup(current[0])
                     except:
                         pass
-                new_model = panel.get_root()
+                new_model = obj.get_root()
                 widget.update_from_model(new_model)
                 current[:] = [new_model]
         widget.observe(view_count_changed, '_view_count')
