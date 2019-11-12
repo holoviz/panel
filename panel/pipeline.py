@@ -46,7 +46,7 @@ def find_route(graph, current, target):
         for n in next_nodes:
             route = find_route(graph, n, target)
             if route is None:
-                return None
+                continue
             return [n]+route
         return None
 
