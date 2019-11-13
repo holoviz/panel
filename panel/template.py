@@ -32,23 +32,27 @@ _server_info = (
 class Template(param.Parameterized):
     """
     A Template is a high-level component to render multiple Panel
-    objects into a single HTML document. The Template object should be
-    given a string or Jinja2 Template object in the constructor and
-    can then be populated with Panel objects. When adding panels to
-    the Template a unique name must be provided, making it possible to
-    refer to them uniquely in the template. For instance, two panels
-    added like this:
-
-        template.add_panel('A', pn.panel('A'))
-        template.add_panel('B', pn.panel('B'))
-
-    May then be referenced in the template using the `embed` macro:
+    objects into a single HTML document defined through a Jinja2
+    template. The Template object is given a Jinja2 template and then
+    allows populating this template by adding Panel objects, which are
+    given unique names. These unique names may then be referenced in
+    the template to insert the rendered Panel object at a specific
+    location. For instance, given a Jinja2 template that defines roots
+    A and B like this:
 
         <div> {{ embed(roots.A) }} </div>
         <div> {{ embed(roots.B) }} </div>
 
+    We can then populate the template by adding panel 'A' and 'B' to
+    the Template object:
+
+        template.add_panel('A', pn.panel('A'))
+        template.add_panel('B', pn.panel('B'))
+
     Once a template has been fully populated it can be rendered using
-    the same API as other Panel objects.
+    the same API as other Panel objects. Note that all roots that have
+    been declared using the {{ embed(roots.A) }} syntax in the Jinja2
+    template must be defined when rendered.
 
     Since embedding complex CSS frameworks inside a notebook can have
     undesirable side-effects and a notebook does not afford the same
