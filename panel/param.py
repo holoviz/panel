@@ -92,7 +92,7 @@ class Param(PaneBase):
     show_name = param.Boolean(default=True, doc="""
         Whether to show the parameterized object's name""")
 
-    width = param.Integer(default=300, bounds=(0, None), doc="""
+    width = param.Integer(default=300, allow_None=True, bounds=(0, None), doc="""
         Width of widgetbox the parameter widgets are displayed in.""")
 
     widgets = param.Dict(doc="""
