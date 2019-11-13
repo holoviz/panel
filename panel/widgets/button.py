@@ -47,7 +47,7 @@ class Button(_ButtonBase):
         callback: Callback
           The Callback which can be used to disable the callback.
         """
-        from .links import Callback
+        from ..links import Callback
         return Callback(self, code={'clicks': code}, args=args)
 
 
