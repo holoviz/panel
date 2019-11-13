@@ -31,7 +31,7 @@ class _SliderBase(Widget):
 
     callback_policy = param.ObjectSelector(
         default='continuous', objects=['continuous', 'throttle', 'mouseup'], doc="""
-        Policy to determine when slider events are triggered:
+        DEPRECATED: Policy to determine when slider events are triggered:
 
         * "continuous": the callback will be executed immediately for each movement of the slider
         * "throttle": the callback will be executed at most every ``callback_throttle`` milliseconds.
@@ -105,6 +105,8 @@ class FloatSlider(ContinuousSlider):
 
     value = param.Number(default=0.0)
 
+    value_throttled = param.Number(default=None)
+
     step = param.Number(default=0.1)
 
 
@@ -117,6 +119,8 @@ class IntSlider(ContinuousSlider):
 
     value = param.Integer(default=0)
 
+    value_throttled = param.Integer(default=None)
+
     start = param.Integer(default=0)
 
     end = param.Integer(default=1)
@@ -128,6 +132,8 @@ class DateSlider(_SliderBase):
 
     value = param.Date(default=None)
 
+    value_throttled = param.Date(default=None)
+
     start = param.Date(default=None)
 
     end = param.Date(default=None)
@@ -138,6 +144,8 @@ class DateSlider(_SliderBase):
         msg = super(_SliderBase, self)._process_property_change(msg)
         if 'value' in msg:
             msg['value'] = value_as_date(msg['value'])
+        if 'value_throttled' in msg:
+            msg['value_throttled'] = value_as_date(msg['value_throttled'])
         return msg
 
 
@@ -146,6 +154,8 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
     options = param.ClassSelector(default=[], class_=(dict, list))
 
     value = param.Parameter()
+
+    value_throttled = param.Parameter()
 
     formatter = param.String(default='%.3g')
 
@@ -258,6 +268,8 @@ class RangeSlider(_SliderBase):
 
     value = param.NumericTuple(default=(0, 1), length=2)
 
+    value_throttled = param.NumericTuple(default=None, length=2)
+
     start = param.Number(default=0)
 
     end = param.Number(default=1)
@@ -277,6 +289,8 @@ class RangeSlider(_SliderBase):
         msg = super(RangeSlider, self)._process_property_change(msg)
         if 'value' in msg:
             msg['value'] = tuple(msg['value'])
+        if 'value_throttled' in msg:
+            msg['value_throttled'] = tuple(msg['value_throttled'])
         return msg
 
 
@@ -293,6 +307,8 @@ class DateRangeSlider(_SliderBase):
 
     value = param.Tuple(default=(None, None), length=2)
 
+    value_throttled = param.Tuple(default=None, length=2)
+
     start = param.Date(default=None)
 
     end = param.Date(default=None)
@@ -306,4 +322,7 @@ class DateRangeSlider(_SliderBase):
         if 'value' in msg:
             v1, v2 = msg['value']
             msg['value'] = (value_as_datetime(v1), value_as_datetime(v2))
+        if 'value_throttled' in msg:
+            v1, v2 = msg['value_throttled']
+            msg['value_throttled'] = (value_as_datetime(v1), value_as_datetime(v2))
         return msg
