@@ -24,6 +24,8 @@ class PlayerBase(Widget):
 
     height = param.Integer(default=80)
 
+    width = param.Integer(default=510)
+
     _widget_type = _BkPlayer
 
     _rename = {'name': None}
