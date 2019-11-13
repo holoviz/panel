@@ -10,6 +10,7 @@ import param
 
 from bokeh.document.document import Document as _Document
 from bokeh.io import curdoc as _curdoc
+from bokeh.models import Row as _BkRow
 from jinja2.environment import Template as _Template
 from six import string_types
 from pyviz_comms import JupyterCommManager as _JupyterCommManager
@@ -28,7 +29,7 @@ _server_info = (
     'https://localhost:{port}</a>')
 
 
-class Template(object):
+class Template(param.Parameterized):
     """
     A Template is a high-level component to render multiple Panel
     objects into a single HTML document. The Template object should be
@@ -56,7 +57,8 @@ class Template(object):
     served as a standalone server and when used in the notebook.
     """
 
-    def __init__(self, template=None, items=None, nb_template=None):
+    def __init__(self, template=None, items=None, nb_template=None, **params):
+        super(Template, self).__init__(**params)
         if isinstance(template, string_types):
             template = _Template(template)
         self.template = template
@@ -103,7 +105,7 @@ class Template(object):
     def __repr__(self):
         cls = type(self).__name__
         spacer = '\n    '
-        objs = ['[%s] %s' % (name, obj.__repr__(1))
+        objs = ['[%s] %s' % (name, obj[0].__repr__(1))
                 for name, obj in self._render_items.items()]
         template = '{cls}{spacer}{objs}'
         return template.format(
@@ -114,19 +116,19 @@ class Template(object):
         if title is not None:
             doc.title = title
 
-        root = None
-        for name, obj in self._render_items.items():
-            if root is None:
-                model = obj.get_root(doc, comm)
-                root = model
-            elif isinstance(obj, PaneBase):
+        root = _BkRow()
+        for name, (obj, tags) in self._render_items.items():
+            if isinstance(obj, PaneBase):
                 if obj._updates:
                     model = obj._get_model(doc, root, root, comm=comm)
                 else:
                     model = obj.layout._get_model(doc, root, root, comm=comm)
             else:
                 model = obj._get_model(doc, root, root, comm)
+            root.children.append(model)
+            obj._preprocess(root)
             model.name = name
+            model.tags = tags
             if hasattr(doc, 'on_session_destroyed'):
                 doc.on_session_destroyed(obj._server_destroy)
                 obj._documents[doc] = model
@@ -163,7 +165,7 @@ class Template(object):
     # Public API
     #----------------------------------------------------------------
 
-    def add_panel(self, name, panel):
+    def add_panel(self, name, panel, tags=[]):
         """
         Add panels to the Template, which may then be referenced by
         the given name using the jinja2 embed macro.
@@ -180,7 +182,7 @@ class Template(object):
                              'another panel. Ensure each panel '
                              'has a unique name by which it can be '
                              'referenced in the template.' % name)
-        self._render_items[name] = _panel(panel)
+        self._render_items[name] = (_panel(panel), tags)
         self._layout[0].object = repr(self)
 
     def server_doc(self, doc=None, title=None):
