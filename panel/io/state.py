@@ -18,12 +18,16 @@ class _state(param.Parameterized):
     apps to indicate their state to a user.
     """
 
-    _curdoc = param.ClassSelector(class_=Document, doc="""
-        The bokeh Document for which a server event is currently being
-        processed.""")
+    cache = param.Dict(default={}, doc="""
+       Global location to cache large datasets or expensive computation
+       across multiple sessions.""") 
 
     webdriver = param.Parameter(default=None, doc="""
         Selenium webdriver used to export bokeh models to pngs.""")
+
+    _curdoc = param.ClassSelector(class_=Document, doc="""
+        The bokeh Document for which a server event is currently being
+        processed.""")
 
     # Whether to hold comm events
     _hold = False
