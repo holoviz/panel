@@ -50,7 +50,7 @@ Conversely, what Panel adds on top of Bokeh is full bidirectional communication 
 As an example creating a simple plot might look like this::
 
     fig = Figure(figsize=(10, 6))
-	FigureCanvas(fig) # not needed if Matplotlib >= 3.1
+    FigureCanvas(fig) # not needed if Matplotlib >= 3.1
     ax = fig.subplots()
     ax.plot([1, 2, 3])
     pn.pane.Matplotlib(fig)

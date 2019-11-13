@@ -1,5 +1,9 @@
+Comparisons
+===========
+
+
 Comparing Panel and Bokeh
-=========================
+-------------------------
 
 Panel and Bokeh can both be used to create dashboards in Python, but are intended for different uses and different audiences:
 
@@ -12,7 +16,7 @@ Panel and Bokeh can both be used to create dashboards in Python, but are intende
 
   
 Comparing Panel and Dash
-=========================
+------------------------
 
 Panel and Dash can both be used to create dashboards in Python, but take very different approaches:
 
@@ -29,7 +33,7 @@ Panel and Dash can both be used to create dashboards in Python, but take very di
 
 
 Comparing Panel and ipywidgets
-==============================
+------------------------------
 
 Both Panel and ipywidgets (aka Jupyter Widgets) allow Python users to work with custom widgets and create apps and dashboards from Python, both in Jupyter notebooks and in standalone servers (when paired with Voila). But Panel and ipywidgets are based on different, independently developed technologies for doing so, with some implications:
 
@@ -45,7 +49,7 @@ Both Panel and ipywidgets (aka Jupyter Widgets) allow Python users to work with 
 
 
 Comparing Panel and Voila
-=========================
+-------------------------
 
 Voila is a technology for deploying Jupyter notebooks (with or without Panel code) as standalone web pages backed by Python. Voila is thus one way you can deploy your Panel apps, your ipywidgets-based apps, or any other content visible in a Jupyter notebook (including multiple languages, like R or C++). Voila is an alternative to the Bokeh Server component that is available through ``panel serve``; Panel works with either one, and you can deploy with *either* Bokeh Server (panel serve) or Voila.
 
@@ -63,7 +67,7 @@ Panel takes a different approach, in that output from a notebook cell needs to b
 
 
 Comparing Panel and streamlit
-=============================
+-----------------------------
 
 streamlit is an alternative to all of the above packages. Like Jupyter, streamlit provides an interactive, incremental way to build apps. streamlit works with Python text files written in a separate editor, while Jupyter uses a web-based notebook cell editor. Although a web-based editor makes it simple to work locally on remote files, using a local Python text file allows users to maximize their productivity by choosing their own favorite editor. Dash, Panel, and Bokeh all also support bare Python files developed in a local editor, and like streamlit they can all also watch that file and automatically re-run the file when you change it in the editor (e.g. for Panel or Bokeh, launch `bokeh serve file.py --dev` to watch the Python file and re-launch the served app on any changes). 
 

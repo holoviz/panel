@@ -28,9 +28,9 @@ from .util import (
 )
 from .viewable import Layoutable
 from .widgets import (
-    LiteralInput, Select, Checkbox, FloatSlider, IntSlider, RangeSlider,
-    MultiSelect, StaticText, Button, Toggle, TextInput, DatetimeInput,
-    DateRangeSlider, ColorPicker, Widget
+    Button, Checkbox, ColorPicker, DataFrame, DatetimeInput, DateRangeSlider,
+    FloatSlider, IntSlider, LiteralInput, MultiSelect, RangeSlider,
+    Select, StaticText, TextInput, Toggle, Widget
 )
 from .widgets.button import _ButtonBase
 
@@ -92,7 +92,7 @@ class Param(PaneBase):
     show_name = param.Boolean(default=True, doc="""
         Whether to show the parameterized object's name""")
 
-    width = param.Integer(default=300, bounds=(0, None), doc="""
+    width = param.Integer(default=300, allow_None=True, bounds=(0, None), doc="""
         Width of widgetbox the parameter widgets are displayed in.""")
 
     widgets = param.Dict(doc="""
@@ -109,6 +109,7 @@ class Param(PaneBase):
         param.Color:          ColorPicker,
         param.Date:           DatetimeInput,
         param.DateRange:      DateRangeSlider,
+        param.DataFrame:      DataFrame,
         param.Dict:           LiteralInput,
         param.FileSelector:   FileSelector,
         param.Integer:        IntSlider,

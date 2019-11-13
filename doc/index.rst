@@ -6,6 +6,19 @@
 A high-level app and dashboarding solution for Python
 -----------------------------------------------------
 
+.. raw:: html
+
+   <style>table {border-spacing: 15px} td { border: 1px solid black; vertical-align: top} </style>
+   <table>
+     <tr>
+       <td border=1><a href="https://examples.pyviz.org/attractors/clifford_panel.html"><b>Interact</b></a><br><a href="https://clifford.pyviz.demo.anaconda.com"><img src="_images/clifford.png" /></a></td>
+       <td border=1><a href="https://examples.pyviz.org/gapminders/gapminders.html"><b>Gapminders</b></a><br><a href="https://gapminder.pyviz.demo.anaconda.com"><img src="_images/gapminders.png" /></a></td>
+       <td border=1><a href="https://examples.pyviz.org/nyc_taxi/dashboard.html"><b>NYC Taxi</b></a><br><a href="https://nyc-taxi.pyviz.demo.anaconda.com"><img src="_images/nyc_taxi.png" /></a></td>
+       <td border=1><a href="https://examples.pyviz.org/glaciers/glaciers.html"><b>Glaciers</b></a><br><a href="https://glaciers.pyviz.demo.anaconda.com"><img src="_images/glaciers.png" /></a></td>
+       <td border=1><a href="https://examples.pyviz.org/portfolio_optimizer/portfolio.html"><b>Euler's Method</b></a><br><a href="https://portfolio-optimizer.pyviz.demo.anaconda.com"><img src="_images/portfolio-optimizer.png" /></a></td>
+     <tr>
+   </table>
+
 Panel is an `open-source <https://github.com/pyviz/panel/blob/master/LICENSE.txt>`_ Python library that lets you create custom interactive web apps and dashboards by connecting user-defined widgets to plots, images, tables, or text.
 
 Compared to other approaches, Panel is novel in that it supports nearly all plotting libraries, works just as well in a Jupyter notebook as on a standalone secure web server, uses the same code for both those cases, supports both Python-backed and static HTML/JavaScript exported applications, and can be used to develop rich interactive applications without tying your domain-specific code to any particular GUI or web tools.
@@ -24,23 +37,6 @@ Panel objects are reactive, immediately updating to reflect changes to their sta
 
 Panel lets you move the same code freely between an interactive `Jupyter Notebook <http://jupyter.org>`__ prompt and a fully deployable standalone server.  That way you can easily switch between exploring your data, building visualizations, adding custom interactivity, sharing with non-technical users, and back again at any point, using the same tools and the same code throughout. Panel thus helps support your entire workflow, so that you never have to commit to only one way of using your data and your analyses, and don't have to rewrite your code just to make it usable in a different way. In many cases, using Panel can turn projects that used to take weeks or months into something you finish on the same day you started, creating a full Python-backed deployed web service for your visualized data in minutes or hours without having to run a software development project or hand your work over to another team.
 
-Some example Panel apps: (Click on the title to see the code, or the image for the live, deployed app (when available).)
-
-
-.. raw:: html
-
-   <style>table {border-spacing: 15px} td { border: 1px solid black; vertical-align: top} </style>
-   <table>
-     <tr>
-       <td border=1><a href="https://anaconda.org/jbednar/datashadercliffordinteract"><b>Interact</b></a><br><a href="https://clifford.pyviz.demo.anaconda.com"><img src="_static/collage/interact.png" /></a></td>
-       <td border=1><a href="https://anaconda.org/jbednar/panel_gapminders"><b>Gapminders</b></a><br><a href="https://gapminder.pyviz.demo.anaconda.com"><img src="_static/collage/gapminders.png" /></a></td>
-       <td border=1><a href="https://anaconda.org/jbednar/nyc_taxi_panel"><b>NYC Taxi</b></a><br><a href="https://nyc-taxi.pyviz.demo.anaconda.com"><img src="_static/collage/nyc_taxi.png" /></a></td>
-       <td border=1><a href="https://anaconda.org/jbednar/glaciers"><b>Glaciers</b></a><br><a href="https://glaciers.pyviz.demo.anaconda.com"><img src="_static/collage/glaciers.png" /></a></td>
-       <td border=1><a href="https://anaconda.org/jbednar/eulersmethod"><b>Euler's Method</b></a><br><a href="https://anaconda.org/jbednar/eulersmethod"><img src="_static/collage/eulers_method.png" /></a></td>
-     <tr>
-   </table>
-
-
 Using Panel for declarative, reactive programming
 -------------------------------------------------
 
@@ -48,7 +44,7 @@ Panel can also be used with the separate `Param <http://param.pyviz.org>`__ proj
 
 The `User Guide <user_guide>`_ explains how to use Panel.  Panel is currently in prerelease status, which means that it is available for public use but has an API that is expected to change with each new release without detailed notice.
 
-If you have any `issues <https://github.com/pyviz/panel/issues>`_ or wish to `contribute code <https://help.github.com/articles/about-pull-requests>`_, you can visit our `GitHub site <https://github.com/pyviz/panel>`_ or chat with the developers on `gitter <https://gitter.im/ioam/holoviews>`_.
+If you have any `issues <https://github.com/pyviz/panel/issues>`_ or wish to `contribute code <https://help.github.com/articles/about-pull-requests>`_, you can visit our `GitHub site <https://github.com/pyviz/panel>`_ or chat with the developers on `gitter <https://gitter.im/pyviz/pyviz>`_.
 
 
 Installation
