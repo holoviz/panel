@@ -19,8 +19,8 @@ class _state(param.Parameterized):
     """
 
     cache = param.Dict(default={}, doc="""
-       Global location to cache large datasets or expensive computation
-       across multiple sessions.""") 
+       Global location you can use to cache large datasets or expensive computation results
+       across multiple client sessions for a given server.""") 
 
     webdriver = param.Parameter(default=None, doc="""
         Selenium webdriver used to export bokeh models to pngs.""")
