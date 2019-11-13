@@ -106,7 +106,8 @@ class Template(param.Parameterized):
         cls = type(self).__name__
         spacer = '\n    '
         objs = ['[%s] %s' % (name, obj[0].__repr__(1))
-                for name, obj in self._render_items.items()]
+                for name, obj in self._render_items.items()
+                if not name.startswith('_')]
         template = '{cls}{spacer}{objs}'
         return template.format(
             cls=cls, objs=('%s' % spacer).join(objs), spacer=spacer)
@@ -116,23 +117,31 @@ class Template(param.Parameterized):
         if title is not None:
             doc.title = title
 
-        root = _BkRow()
+        root = None
+        preprocess_root = _BkRow()
+        ref = preprocess_root.ref['id']
         for name, (obj, tags) in self._render_items.items():
-            if isinstance(obj, PaneBase):
+            if root is None:
+                root = model = obj.get_root(doc, comm)
+            elif isinstance(obj, PaneBase):
                 if obj._updates:
                     model = obj._get_model(doc, root, root, comm=comm)
                 else:
                     model = obj.layout._get_model(doc, root, root, comm=comm)
             else:
                 model = obj._get_model(doc, root, root, comm)
-            root.children.append(model)
-            obj._preprocess(root)
+            obj._models[ref] = obj._models[root.ref['id']]
+            preprocess_root.children.append(model)
             model.name = name
             model.tags = tags
             if hasattr(doc, 'on_session_destroyed'):
                 doc.on_session_destroyed(obj._server_destroy)
                 obj._documents[doc] = model
             add_to_doc(model, doc, hold=bool(comm))
+
+        for (obj, _) in self._render_items.values():
+            obj._preprocess(preprocess_root)
+
         if notebook:
             doc.template = self.nb_template
         else:
