@@ -12,10 +12,10 @@ A high-level app and dashboarding solution for Python
    <table>
      <tr>
        <td border=1><a href="https://examples.pyviz.org/attractors/clifford_panel.html"><b>Interact</b></a><br><a href="https://clifford.pyviz.demo.anaconda.com"><img src="_images/clifford.png" /></a></td>
-       <td border=1><a href="https://examples.pyviz.org/gapminders/gapminders.html"><b>Gapminders</b></a><br><a href="https://gapminder.pyviz.demo.anaconda.com"><img src="_images/gapminders.png" /></a></td>
+       <td border=1><a href="https://examples.pyviz.org/gapminders/gapminders.html"><b>Gapminders</b></a><br><a href="https://gapminder.pyviz.demo.anaconda.com"><img src="_images/gapminder.png" /></a></td>
        <td border=1><a href="https://examples.pyviz.org/nyc_taxi/dashboard.html"><b>NYC Taxi</b></a><br><a href="https://nyc-taxi.pyviz.demo.anaconda.com"><img src="_images/nyc_taxi.png" /></a></td>
        <td border=1><a href="https://examples.pyviz.org/glaciers/glaciers.html"><b>Glaciers</b></a><br><a href="https://glaciers.pyviz.demo.anaconda.com"><img src="_images/glaciers.png" /></a></td>
-       <td border=1><a href="https://examples.pyviz.org/portfolio_optimizer/portfolio.html"><b>Euler's Method</b></a><br><a href="https://portfolio-optimizer.pyviz.demo.anaconda.com"><img src="_images/portfolio-optimizer.png" /></a></td>
+       <td border=1><a href="https://examples.pyviz.org/portfolio_optimizer/portfolio.html"><b>Portfolio Optimizer</b></a><br><a href="https://portfolio-optimizer.pyviz.demo.anaconda.com"><img src="_images/portfolio-optimizer.png" /></a></td>
      <tr>
    </table>
 
