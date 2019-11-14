@@ -87,7 +87,8 @@ class HoloViews(PaneBase):
 
     @param.depends('center', 'widget_location', watch=True)
     def _update_layout(self):
-        from holoviews.core.options import Store
+        from holoviews.core import DynamicMap, Store
+        from holoviews.plotting.util import initialize_dynamic
 
         loc = self.widget_location
         if not len(self.widget_box):
@@ -110,8 +111,10 @@ class HoloViews(PaneBase):
         if self.object is None:
             opts = {}
         else:
+            initialize_dynamic(self.object)
+            obj = self.object.last if isinstance(self.object, DynamicMap) else self.object
             try:
-                opts = Store.lookup_options(backend, self.object, 'plot').kwargs
+                opts = Store.lookup_options(backend, obj, 'plot').kwargs
             except:
                 opts = {}
         responsive_modes = ('stretch_width', 'stretch_both', 'scale_width', 'scale_both')
