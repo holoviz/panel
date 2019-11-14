@@ -69,13 +69,16 @@ class PaneBase(Reactive):
     def __init__(self, object=None, **params):
         applies = self.applies(object)
         if (isinstance(applies, bool) and not applies) and object is not None :
-            raise ValueError("%s pane does not support objects of type '%s'" %
-                             (type(self).__name__, type(object).__name__))
-
+            self._type_error(object)
+            
         super(PaneBase, self).__init__(object=object, **params)
         kwargs = {k: v for k, v in params.items() if k in Layoutable.param}
         self.layout = self.default_layout(self, **kwargs)
         self.param.watch(self._update_pane, self._rerender_params)
+
+    def _type_error(self, object):
+        raise ValueError("%s pane does not support objects of type '%s'." %
+                         (type(self).__name__, type(object).__name__))
 
     def __repr__(self, depth=0):
         cls = type(self).__name__

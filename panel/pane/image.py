@@ -60,6 +60,12 @@ class ImageBase(DivPaneBase):
             ) and lower_string.endswith('.'+cls.imgtype)
         return False
 
+    def _type_error(self, object):
+        if isinstance(object, string_types):
+            raise ValueError("%s pane cannot parse string that is not a filename "
+                             "or URL." % type(self).__name__)
+        super(ImageBase, self)._type_error(object)
+
     def _img(self):
         if hasattr(self.object, '_repr_{}_'.format(self.imgtype)):
             return getattr(self.object, '_repr_' + self.imgtype + '_')()
@@ -174,6 +180,12 @@ class SVG(ImageBase):
     def applies(cls, obj):
         return (super(SVG, cls).applies(obj) or
                 (isinstance(obj, string_types) and obj.lstrip().startswith('<svg')))
+
+    def _type_error(self, object):
+        if isinstance(object, string_types):
+            raise ValueError("%s pane cannot parse string that is not a filename, "
+                             "URL or a SVG XML contents." % type(self).__name__)
+        super(SVG, self)._type_error(object)
 
     def _img(self):
         if (isinstance(self.object, string_types) and
