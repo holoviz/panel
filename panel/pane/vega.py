@@ -8,6 +8,7 @@ import numpy as np
 from bokeh.models import ColumnDataSource
 from pyviz_comms import JupyterComm
 
+from ..viewable import Layoutable
 from .base import PaneBase
 
 
@@ -74,7 +75,7 @@ class Vega(PaneBase):
             columns = set(data[0]) if data else []
             if self.is_altair(self.object):
                 import altair as alt
-                if (not isinstance(self.object.data, alt.Data) and
+                if (not isinstance(self.object.data, (alt.Data, alt.UrlData)) and
                     columns == set(self.object.data)):
                     data = ColumnDataSource.from_df(self.object.data)
                 else:
@@ -85,6 +86,23 @@ class Vega(PaneBase):
         data = json.get('data', {}).pop('values', {})
         if data:
             sources['data'] = ColumnDataSource(data=ds_as_cds(data))
+
+
+    @classmethod
+    def _get_dimensions(cls, json, props):
+        view = {}
+        if 'width' in json:
+            view['width'] = json['width']
+        if 'height' in json:
+            view['height'] = json['height']
+        if 'config' in json and 'view' in json['config']:
+            view = json['config']['view']
+        for p in ('width', 'height'):
+            if p not in view:
+                continue
+            if props.get(p) is None or p in view and props.get(p) < view[p]:
+                v = view[p]
+                props[p] = v+22 if isinstance(v, int) else v
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         if 'panel.models.vega' not in sys.modules:
@@ -105,6 +123,7 @@ class Vega(PaneBase):
             json = self._to_json(self.object)
             self._get_sources(json, sources)
         props = self._process_param_change(self._init_properties())
+        self._get_dimensions(json, props)
         model = VegaPlot(data=json, data_sources=sources, **props)
         if root is None:
             root = model
@@ -117,4 +136,8 @@ class Vega(PaneBase):
         else:
             json = self._to_json(self.object)
             self._get_sources(json, model.data_sources)
-        model.data = json
+        props = {p : getattr(self, p) for p in list(Layoutable.param)
+                 if getattr(self, p) is not None}
+        self._get_dimensions(json, props)
+        props['data'] = json
+        model.update(**props)
