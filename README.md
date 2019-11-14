@@ -31,10 +31,10 @@ Panel objects are reactive, immediately updating to reflect changes to their sta
 
    <table>
      <tr>
-       <td border=1><a href="https://anaconda.org/jbednar/datashadercliffordinteract"><b>Interact</b></a><br><a href="https://mybinder.org/v2/gh/panel-demos/clifford-interact/master?urlpath=/proxy/5006/app"><img src="https://github.com/pyviz/panel/raw/master/doc/_static/collage/interact.png" /></a></td>
-       <td border=1><a href="https://anaconda.org/jbednar/panel_gapminders"><b>Gapminders</b></a><br><a href="https://mybinder.org/v2/gh/panel-demos/gapminder/master?urlpath=/proxy/5006/app"><img src="https://github.com/pyviz/panel/raw/master/doc/_static/collage/gapminders.png" /></a></td>
-       <td border=1><a href="https://anaconda.org/jbednar/nyc_taxi_panel"><b>NYC Taxi</b></a><br><a href="https://mybinder.org/v2/gh/panel-demos/nyc_taxi/master?urlpath=/proxy/5006/app"><img src="https://github.com/pyviz/panel/raw/master/doc/_static/collage/nyc_taxi.png" /></a></td>
-       <td border=1><a href="https://anaconda.org/jbednar/glaciers"><b>Glaciers</b></a><br><a href="https://mybinder.org/v2/gh/panel-demos/glaciers/master?urlpath=/proxy/5006/app"><img src="https://github.com/pyviz/panel/raw/master/doc/_static/collage/glaciers.png" /></a></td>
+       <td border=1><a href="https://clifford.pyviz.demo.anaconda.com"><b>Interact</b></a><br><a href="https://clifford.pyviz.demo.anaconda.com"><img src="https://panel.pyviz.org/_images/interact.png" /></a></td>
+       <td border=1><a href="https://examples.pyviz.org/gapminders/gapminders.html"><b>Gapminders</b></a><br><a href="https://gapminders.pyviz.demo.anaconda.com"><img src="https://panel.pyviz.org/_images/gapminders.png" /></a></td>
+       <td border=1><a href="https://examples.pyviz.org/nyc_taxi/dashboard.html"><b>NYC Taxi</b></a><br><a href="https://nyc-taxi.pyviz.demo.anaconda.com"><img src="https://panel.pyviz.org/_images/nyc_taxi.png" /></a></td>
+       <td border=1><a href="https://examples.pyviz.org/glaciers/glaciers.html"><b>Glaciers</b></a><br><a href="https://glaciers.pyviz.demo.anaconda.com"><img src="https://panel.pyviz.org/_images/glaciers.png" /></a></td>
      <tr>
    </table>
 
