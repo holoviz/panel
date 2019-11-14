@@ -520,7 +520,8 @@ def link_axes(root_view, root_model):
         if ref not in pane._plots:
             continue
         plot = pane._plots[ref][0]
-        if not pane.linked_axes or plot.renderer.backend != 'bokeh' or not plot.shared_axes:
+        if (not pane.linked_axes or plot.renderer.backend != 'bokeh'
+            or not getattr(plot, 'shared_axes', False)):
             continue
         for p in plot.traverse(specs=[ElementPlot]):
             if p.current_frame is None:
