@@ -90,6 +90,9 @@ class Vega(PaneBase):
 
     @classmethod
     def _get_dimensions(cls, json, props):
+        if json is None:
+            return
+
         view = {}
         if 'width' in json:
             view['width'] = json['width']
