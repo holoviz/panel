@@ -1,18 +1,6 @@
 import * as p from "@bokehjs/core/properties"
 import {HTMLBox, HTMLBoxView} from "@bokehjs/models/layouts/html_box"
 
-function get_file(file: string, callback: any): void {
-  var xobj = new XMLHttpRequest();
-  xobj.overrideMimeType("application/json");
-  xobj.open('GET', file, true);
-  xobj.onreadystatechange = function () {
-    if (xobj.readyState == 4 && xobj.status == 200) {
-      callback(xobj.responseText);
-    }
-  };
-  xobj.send(null);
-}
-
 export class VegaPlotView extends HTMLBoxView {
   model: VegaPlot
   _connected: string[]
@@ -58,12 +46,6 @@ export class VegaPlotView extends HTMLBoxView {
     this._plot()
   }
 
-  _receive_file(data: string, format: string): void {
-    const values = (format === 'json') ? JSON.parse(data): data;
-    this.model.data.data = {values: values, format: {type: format}};
-    this._plot();
-  }
-
   _plot(): void {
     if (!this.model.data || !(window as any).vegaEmbed)
       return
@@ -74,12 +56,6 @@ export class VegaPlotView extends HTMLBoxView {
         delete datasets['data']
       }
       this.model.data['datasets'] = datasets
-    }
-    if (this.model.data.data && this.model.data.data.url) {
-      const url = this.model.data.data.url;
-      const url_components = url.split('.');
-      const format = url_components[url_components.length-1];
-      get_file(this.model.data.data.url, (result: string) => this._receive_file(result, format))
     }
     (window as any).vegaEmbed(this.el, this.model.data, {actions: false})
   }
