@@ -11,16 +11,16 @@ class VegaPlot(LayoutDOM):
     a Bokeh plot.
     """
 
-    __javascript__ = ["https://cdn.jsdelivr.net/npm/vega@5.3.1",
-                      'https://cdn.jsdelivr.net/npm/vega-lite@3.2.1',
-                      'https://cdn.jsdelivr.net/npm/vega-embed@4.0.0-rc1']
+    __javascript__ = ["https://cdn.jsdelivr.net/npm/vega@5",
+                      'https://cdn.jsdelivr.net/npm/vega-lite@3',
+                      'https://cdn.jsdelivr.net/npm/vega-embed@6']
 
     __js_require__ = {
         'baseUrl': 'https://cdn.jsdelivr.net/npm/',
         'paths': {
-            "vega-embed":  "vega-embed@4.0.0/build/vega-embed.min",
-            "vega-lite": "vega-lite@3.2.1/build/vega-lite.min",
-            "vega": "vega@5.3.1/build/vega.min"
+            "vega-embed":  "vega-embed@6/build/vega-embed.min",
+            "vega-lite": "vega-lite@3/build/vega-lite.min",
+            "vega": "vega@5/build/vega.min"
         },
         'exports': {'vega-embed': 'vegaEmbed', 'vega': 'vega', 'vega-lite': 'vl'}
     }
