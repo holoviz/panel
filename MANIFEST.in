@@ -7,6 +7,7 @@ include panel/models/*.json
 include panel/_templates/*.js
 include panel/_templates/*.html
 include panel/_styles/*.css
+include panel/tests/test_data/*.png
 global-exclude *.py[co]
 global-exclude *~
 global-exclude *.ipynb_checkpoints/*
