@@ -112,7 +112,7 @@ class HoloViews(PaneBase):
         else:
             try:
                 opts = Store.lookup_options(backend, self.object, 'plot').kwargs
-            except KeyError:
+            except:
                 opts = {}
         responsive_modes = ('stretch_width', 'stretch_both', 'scale_width', 'scale_both')
         center = self.center
