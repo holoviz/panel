@@ -44,6 +44,4 @@ Panel can also be used with the separate [Param](https://param.pyviz.org) projec
 
 ## About HoloViz
 
-Panel is part of the HoloViz family of tools.  The `HoloViz website <https://holoviz.org>`_
-shows how to use Panel together with other libraries to solve complex problems,
-with detailed tutorials and examples.
+Panel is part of the HoloViz family of tools.  The [HoloViz website](https://holoviz.org) shows how to use Panel together with other libraries to solve complex problems, with detailed tutorials and examples. For a list of examples building on this set of tools (including Panel) see [examples.pyviz.org](https://examples.pyviz.org/)
