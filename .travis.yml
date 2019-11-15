@@ -100,6 +100,7 @@ jobs:
         - doit pip_on_conda
         - conda install $CHANS_DEV nodejs
         - doit ecosystem=pip package_build $PKG_TEST_PYTHON --test-group=unit_deploy
+        - git status
       script: doit ecosystem=pip package_upload -u $PYPIUSER -p $PYPIPASS --pypi ${PYPI}
 
     ## release packages
