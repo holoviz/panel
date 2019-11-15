@@ -1,5 +1,6 @@
 from __future__ import absolute_import, division, unicode_literals
 
+import os
 import sys
 import pytest
 
@@ -61,7 +62,9 @@ def test_imgshape():
 def test_load_from_byteio():
     """Testing a loading a image from a ByteIo"""
     memory = BytesIO()
-    with open('panel/tests/test_data/logo.png', 'rb') as image_file:
+
+    path = os.path.dirname(__file__)
+    with open(os.path.join(path, '../test_data/logo.png'), 'rb') as image_file:
         memory.write(image_file.read())
     memory.seek(0)
     image_pane = PNG(memory)
@@ -72,7 +75,9 @@ def test_load_from_byteio():
 def test_load_from_stringio():
     """Testing a loading a image from a StringIO"""
     memory = StringIO()
-    with open('panel/tests/test_data/logo.png', 'rb') as image_file:
+    
+    path = os.path.dirname(__file__)
+    with open(os.path.join(path, '../test_data/logo.png'), 'rb') as image_file:
         memory.write(str(image_file.read()))
     memory.seek(0)
     image_pane = PNG(memory)
