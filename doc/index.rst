@@ -81,10 +81,10 @@ And then you can launch Jupyter to explore them yourself using either Jupyter No
   jupyter lab
 
 
-PyViz
------
+HoloViz
+-------
 
-Panel is part of the PyViz family of tools.  The `PyViz website <http://pyviz.org>`_
+Panel is part of the HoloViz family of tools.  The `HoloViz website <https://holoviz.org>`_
 shows how to use Panel together with other libraries to solve complex problems,
 with detailed tutorials and examples.
 

@@ -9,7 +9,6 @@ Here is a list of questions we have either been asked by users or potential pitf
 **A:** The Panel `Reference Guide <https://panel.pyviz.org/reference/>`__ shows examples of all the plotting libraries, data types, image formats, and other objects that can be used in a panel.  There is also a `Github issue <https://github.com/pyviz/panel/issues/2>`__ where possible types are discussed.
 
 
-
 **Q: Does it matter which plotting library I use with Panel?**
 
 **A:** Yes and no! Just about `any Python library <https://pyviz.org/tools.html>`__ will work with Panel. That said, only certain libraries will provide deeply interactive objects in a web browser, such as Bokeh and Plotly.  If you want to tie custom actions to individual subelements of such a plot, you should use a library with extensive JavaScript support. Otherwise, just use any supported library that you prefer!
@@ -43,9 +42,9 @@ Conversely, what Panel adds on top of Bokeh is full bidirectional communication 
 
 **A:** The Matplotlib pyplot interface behaves in a way that is not easily compatible with Panel in a notebook. Normal Python objects like Python literals and containers display when they are returned as a cell's value, but Matplotlib figures created using pyplot have a textual representation by default but then (depending on the Matplotlib backend and IPython configuration) also display like print statements do, i.e. with a plot as a side effect rather than as a representation of the return value. To force predictable Panel-compatible behavior we therefore recommend using the object-oriented API:
 
-   1. Create a figure object explicitly using ``from matplotlib.figure import Figure``
-   2. In versions of matplotlib < 3.1 use ``from matplotlib.backends.backend_agg import FigureCanvas`` to initialize a canvas
-   3. Return the figure in your callback.
+1. Create a figure object explicitly using ``from matplotlib.figure import Figure``
+2. In versions of matplotlib < 3.1 use ``from matplotlib.backends.backend_agg import FigureCanvas`` to initialize a canvas
+3. Return the figure in your callback.
 
 As an example creating a simple plot might look like this::
 
