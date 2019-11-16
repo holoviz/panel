@@ -66,7 +66,7 @@ nbsite_gallery_conf = {
         }
     },
     'thumbnail_url': 'https://assets.holoviews.org/panel/thumbnails',
-    'deployment_url': 'https://panel-gallery.pyviz.demo.anaconda.com/'
+    'deployment_urls': ['https://panel-gallery.pyviz.demo.anaconda.com/']
 }
 
 _NAV = (
