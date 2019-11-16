@@ -137,14 +137,18 @@ extras_require = {
 
 extras_require['all'] = sorted(set(sum(extras_require.values(), [])))
 
-# until pyproject.toml/equivalent is widely supported (setup_requires
-# doesn't work well with pip)
+# Superset of what's in pyproject.toml (includes non-python
+# dependencies).  Also, pyproject.toml isn't supported by all tools
+# anyway (e.g. older versions of pip, or conda - which also supports
+# non-python dependencies). Note that setup_requires isn't used
+# because it doesn't work well with pip.
 extras_require['build'] = [
     'param >=1.9.0',
     'pyct >=0.4.4',
     'setuptools >=30.3.0',
     'bokeh >=1.4.0',
     'pyviz_comms >=0.6.0',
+    # non-python dependency
     'nodejs >=9.11.1',
 ]
 
@@ -168,13 +172,24 @@ setup_args = dict(
         "License :: OSI Approved :: BSD License",
         "Development Status :: 5 - Production/Stable",
         "Programming Language :: Python :: 2.7",
-        "Programming Language :: Python :: 3.3",
-        "Programming Language :: Python :: 3.4",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
         "Operating System :: OS Independent",
-        "Intended Audience :: Science/Research",
         "Intended Audience :: Developers",
+        "Intended Audience :: Science/Research",
+        "Intended Audience :: Financial and Insurance Industry",
+        "Intended Audience :: Healthcare Industry",
+        "Intended Audience :: Information Technology",
+        "Intended Audience :: Legal Industry",
+        "Intended Audience :: Other Audience",
+        "Intended Audience :: Science/Research",
         "Natural Language :: English",
         "Topic :: Scientific/Engineering",
+        "Topic :: Scientific/Engineering :: Visualization",
+        "Topic :: Scientific/Engineering :: Information Analysis",
+        "Topic :: Office/Business",
+        "Topic :: Office/Business :: Financial",
         "Topic :: Software Development :: Libraries"],
     python_requires=">=2.7",
     entry_points={
