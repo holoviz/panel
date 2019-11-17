@@ -74,11 +74,11 @@ Supplementary guides
     APIs <APIs>
     Customization <Customization>
     Deploy & Export <Deploy_and_Export>
-    Widgets <Widgets>
     Interact <Interact>
+    Widgets <Widgets>
     Parameters <Param>
     Linking <Links>
     Pipelines <Pipelines>
     Templates <Templates>
-    Django Apps <Django_Apps>
     Server Deployment <Server_Deployment>
+    Django Apps <Django_Apps>
