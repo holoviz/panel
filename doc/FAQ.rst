@@ -54,6 +54,11 @@ As an example creating a simple plot might look like this::
     ax.plot([1, 2, 3])
     pn.pane.Matplotlib(fig)
 
+When using the pandas plotting API we create the figure and axes in the same way as before but then pass the axis to the plotting call::
+
+    df.plot([1, 2, 3], ax=ax)
+    pn.pane.Matplotlib(fig)
+
 
 **Q: How do I debug error messages in a notebook?**
 
@@ -108,7 +113,7 @@ That said, Panel is in no way a clone of Shiny; Panel is a complete solution for
 
 **Q: How does Panel fit into the Python ecosystem?**
 
-**A:** Panel can be used in an almost infinite variety of settings, so that's a very difficult question to answer. But we can tell you how we _designed_ Panel, and how it fits with the other tools we develop or use frequently: `HoloViz ecosystem <https://raw.githubusercontent.com/pyviz/holoviz/b4d7516aadb7c86aa9597f775477beae3145fd72/doc/flowcharts/holoviz.mermaid.svg>`__.
+**A:** Panel can be used in an almost infinite variety of settings, so that's a very difficult question to answer. But we can tell you how we *designed* Panel, and how it fits with the other tools we develop or use frequently: `HoloViz ecosystem <https://raw.githubusercontent.com/pyviz/holoviz/b4d7516aadb7c86aa9597f775477beae3145fd72/doc/flowcharts/holoviz.mermaid.svg>`__.
 
 
 **Q: Can Panel be used for real-time or streaming display updates?**
