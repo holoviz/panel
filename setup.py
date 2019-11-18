@@ -118,7 +118,7 @@ extras_require = {
         'altair',
         'streamz',
         'vega_datasets',
-        'vtk == 8.1.2',
+        'vtk ==8.1.2',
         'scikit-learn',
         'datashader',
         'jupyter_bokeh'
