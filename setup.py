@@ -118,7 +118,7 @@ extras_require = {
         'altair',
         'streamz',
         'vega_datasets',
-        'vtk ==8.1.1',
+        'vtk == 8.1.2',
         'scikit-learn',
         'datashader',
         'jupyter_bokeh'
@@ -129,7 +129,6 @@ extras_require = {
         'sphinx_ioam_theme',
         'sphinx <2',
         'selenium',
-        'phantomjs',
         'lxml',
         'pyvista'
     ]
