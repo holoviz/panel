@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<!-- Basic Page Needs
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+<meta charset="utf-8"/>
+<title>Overview — Panel 0.7.0 documentation</title>
+<meta content="High-level dashboarding for python visualization libraries" name="description"/>
+<meta content="Panel contributors" name="author"/>
+<!-- Mobile Specific Metas
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<!-- FONT
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+<script src="https://ajax.googleapis.com/ajax/libs/webfont/1.6.16/webfont.js"></script>
+<script>
+    WebFont.load({
+      google: {
+        families: ['Source Sans Pro']
+      }
+    });
+  </script>
+<!-- CSS
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+<link href="../_static/site.css" rel="stylesheet"/>
+<link href="../_static/nbsite.css" rel="stylesheet"/>
+<!-- Scripts
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+<script async="" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML" type="text/javascript">
+</script>
+<script src="../_static/js/main.js"></script>
+<script src="../_static/nbsite.js"></script>
+<script src="../_static/require.js"></script>
+<!-- Favicon
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+<link href="../_static/favicon.ico" rel="icon" type="image/png"/>
+<!-- Canonical
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+<link href="https://panel.pyviz.org/user_guide/Overview.html" rel="canonical">
+</link></head>
+<body class="">
+<header class="navigation">
+<div class="wrapper">
+<a class="logo" href="../index.html">
+<img alt="Logo" src="../_static/logo_horizontal.png"/>
+</a>
+<a class="navigation-menu-button" href="javascript:void(0)" id="js-mobile-menu">Menu</a>
+<nav>
+<ul class="navigation-menu show" id="js-navigation-menu">
+<li class="nav-link doc-head"><a href="//gitter.im/pyviz/pyviz">Gitter</a></li>
+<li class="nav-link doc-head"><a href="//github.com/pyviz/panel">Github</a></li>
+<li class="nav-link">
+<div style="display:inline-block;vertical-align: middle;">
+<div class="search-bar">
+<form action="../search.html" method="get" role="search">
+<input name="q" placeholder="Search" type="search"/>
+<button type="submit">
+<img alt="Search Icon" src="https://raw.githubusercontent.com/thoughtbot/refills/master/source/images/search-icon-black.png"/>
+</button>
+</form>
+</div>
+</div>
+</li>
+</ul>
+</nav>
+</div>
+</header>
+<div class="second-nav">
+<nav>
+<ul class="navigation-menu show">
+<li class="nav-link doc-head"><a href="../getting_started/index.html">Getting started</a></li>
+<li class="nav-link doc-head"><a href="index.html">User Guide</a></li>
+<li class="nav-link doc-head"><a href="../gallery/index.html">Gallery</a></li>
+<li class="nav-link doc-head"><a href="../reference/index.html">Reference Gallery</a></li>
+<li class="nav-link doc-head"><a href="../developer_guide/index.html">Developer Guide</a></li>
+<li class="nav-link doc-head"><a href="../FAQ.html">FAQ</a></li>
+<li class="nav-link doc-head"><a href="../about.html">About</a></li>
+</ul>
+</nav>
+</div>
+<!-- MAIN BODY OF DOCS –––––––––––––––––– -->
+<div class="docs section">
+<div id="hacketyhackhack"> <!-- style="width:20%;margin-right: 100px;"> --> <!--style="display: none;"> style="display:none;"> -->
+<div class="toc" style="width:15%; margin-right:20px;">
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/index.html">Getting Started</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">User Guide</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Components.html">Components</a></li>
+<li class="toctree-l2"><a class="reference internal" href="APIs.html">APIs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Customization.html">Customization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Deploy_and_Export.html">Deploy &amp; Export</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Interact.html">Interact</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Widgets.html">Widgets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Param.html">Parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Links.html">Linking</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Pipelines.html">Pipelines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Templates.html">Templates</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Server_Deployment.html">Server Deployment</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Django_Apps.html">Django Apps</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../gallery/index.html">Gallery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../reference/index.html">Reference Gallery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developer_guide/index.html">Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Comparisons.html">Comparisons</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Roadmap.html">Road Map</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference external" href="http://github.com/pyviz/panel">Github source</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../about.html">About</a></li>
+</ul>
+</div>
+</div>
+<div class="content"> <!-- style="max-width:80%;margin-left:auto;margin-right: auto;">-->
+<div class="section" id="overview">
+<h1>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h1>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>In order to get the best use out of the Panel user guide, it is important to have a grasp of some core concepts, ideas, and terminology.</p>
+<h3 id="Components">Components<a class="anchor-link" href="#Components">¶</a></h3><p>Panel provides three main types of component: <code>Pane</code>, <code>Widget</code>, and <code>Panel</code>. These components are introduced and explained in the <a href="./Components.html">Components user guide</a>, but briefly:</p>
+<ul>
+<li><p><strong><code>Pane</code></strong>: A <code>Pane</code> wraps a user supplied object of almost any type and turns it into a renderable view. When the wrapped <code>object</code> or any parameter changes, a pane will update the view accordingly.</p>
+</li>
+<li><p><strong><code>Widget</code></strong>: A <code>Widget</code> is a control component that allows users to provide input to your app or dashboard, typically by clicking or editing objects in a browser, but also controllable from within Python.</p>
+</li>
+<li><p><strong><code>Panel</code></strong>: A <code>Panel</code> is a hierarchical container to lay out multiple components (panes, widgets, or other <code>Panel</code>s) into an arrangement that forms an app or dashboard.</p>
+</li>
+</ul>
+<hr/>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="APIs">APIs<a class="anchor-link" href="#APIs">¶</a></h3><p>Panel is a very flexible system that supports many different usage patterns, via multiple application programming interfaces (APIs).  Each API has its own advantages and disadvantages, and is suitable for different tasks and ways of working. The <a href="APIs.html">API user guide</a> goes through each of the APIs in detail, comparing their pros and cons and providing recommendations on when to use each.</p>
+<h4 id="interact"><a href="./Interact.html"><code>interact</code></a><a class="anchor-link" href="#interact">¶</a></h4><p>The <code>interact</code> API will be familiar to ipywidgets users; it provides a very simple API to define an interactive view of the results of a Python function. This approach works by declaring functions whose arguments will be inspected to infer a set of widgets. Changing any of the resulting widgets causes the function to be re-run, updating the displayed output. This approach makes it extremely easy to get started and also easy to rearrange and reconfigure the resulting plots and widgets, but it may not be suited to more complex scenarios. See the <a href="./Interact.html">Interact user guide</a> for more detail.</p>
+<h4 id="Reactive-functions">Reactive functions<a class="anchor-link" href="#Reactive-functions">¶</a></h4><p>Defining a reactive function using the <code>pn.depends</code> decorator provides an explicit way to link specific inputs (such as the value of a widget) to some computation in a function, reactively updating the output of the function whenever the parameter changes. This approach is a highly convenient, intuitive, and flexible way of building interactive UIs.</p>
+<h4 id="Param"><a href="./Param.html"><code>Param</code></a><a class="anchor-link" href="#Param">¶</a></h4><p><code>Panel</code> itself is built on the <a href="https://param.pyviz.org">param</a> library, which allows capturing parameters and their allowable values entirely independently of any GUI code. By using Param to declare the parameters along with methods that depend on those parameters, even very complex GUIs can be encapsulated in a tidy, well-organized, maintainable, and declarative way. Panel will automatically convert parameter definition to corresponding widgets, allowing the same codebase to support command-line, batch, server, and GUI usage. This API requires the use of the param library to express the inputs and encapsulate the computations to be performed, but once implemented this approach leads to flexible, robust, and well encapsulated code. See the Panel <a href="./Param.html">Param user guide</a> for more detail.</p>
+<h4 id="Callback-API"><a href="./Widgets.html">Callback API</a><a class="anchor-link" href="#Callback-API">¶</a></h4><p>At the lowest level, you can build interactive applications using <code>Pane</code>, <code>Widget</code>, and <code>Panel</code> components and connect them using explicit callbacks. Registering callbacks on components to modify other components provides full flexibility in building interactive features, but once you have defined numerous callbacks it can be very difficult to track how they all interact. This approach affords the most amount of flexibility but can easily grow in complexity, and is not recommended as a starting point for most users. That said, it is the interface that all the other APIs are built on, so it is powerful and is a good approach for building entirely new ways of working with Panel, or when you need some specific behavior not covered by the other APIs. See the <a href="./Widgets.html">Widgets user guide</a> and <a href="./Links.html">Links user guide</a> for more detail.</p>
+<hr/>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Display-and-rendering">Display and rendering<a class="anchor-link" href="#Display-and-rendering">¶</a></h3><p>Throughout this user guide we will cover a number of ways to display Panel objects, including display in a Jupyter notebook, in a standalone server, by saving and embedding, and more. For a detailed description see the <a href="./Deploy_and_Export.html">Deploy and Export user guide</a>.</p>
+<h4 id="Notebook">Notebook<a class="anchor-link" href="#Notebook">¶</a></h4><p>All of Panel's documentation is built from Jupyter notebooks that you can explore at your own pace. Panel does not require Jupyter in any way, but it has extensive Jupyter support:</p>
+<h5 id="pn.extension()"><code>pn.extension()</code><a class="anchor-link" href="#pn.extension()">¶</a></h5><blockquote><p>The Panel extension loads BokehJS, any custom models required, and optionally additional custom JS and CSS in Jupyter notebook environments.</p>
+</blockquote>
+<h5 id="pn.ipywidget()"><code>pn.ipywidget()</code><a class="anchor-link" href="#pn.ipywidget()">¶</a></h5><blockquote><p>Given a Panel model <code>pn.ipywidget</code> will return an ipywidget model that renders the object in the notebook. This can be useful for including an panel widget in an ipywidget layout and deploying Panel objects using <a href="https://github.com/voila-dashboards/voila/">Voilà</a>.</p>
+</blockquote>
+<h5 id="Rich-display">Rich display<a class="anchor-link" href="#Rich-display">¶</a></h5><p>Jupyter notebooks allow the final value of a notebook cell to display itself, using a mechanism called <a href="https://ipython.readthedocs.io/en/stable/config/integrating.html#rich-display">rich display</a>. As long as <code>pn.extension()</code> has been called in a notebook, all Panel components (widgets, panes, and panels) will display themselves when placed on the last line of a notebook cell.</p>
+<h5 id=".app()"><code>.app()</code><a class="anchor-link" href="#.app()">¶</a></h5><blockquote><p>The <code>.app()</code> method present on all viewable Panel objects allows displaying a Panel server process inline in a notebook, which can be useful for debugging a standalone server interactively.</p>
+</blockquote>
+<h4 id="Python-REPL">Python REPL<a class="anchor-link" href="#Python-REPL">¶</a></h4><p>Even when working in a Python REPL that does not support rich-media output (e.g. in a text-based terminal), a panel can be still be launched in a browser tab:</p>
+<h5 id=".show()"><code>.show()</code><a class="anchor-link" href="#.show()">¶</a></h5><blockquote><p>The <code>.show()</code> method is present on all viewable Panel objects and starts a server instance then opens a browser tab to point to it. To support working remotely, a specific port on which to launch the app can be supplied.</p>
+</blockquote>
+<h4 id="Command-line">Command line<a class="anchor-link" href="#Command-line">¶</a></h4><p>Panel mirrors Bokeh's command-line interface for launching and exporting apps and dashboards:</p>
+<h5 id="panel-serve-app.py"><code>panel serve app.py</code><a class="anchor-link" href="#panel-serve-app.py">¶</a></h5><blockquote><p>The <code>panel serve</code> command allows allows interactively displaying and deploying Panel web-server apps from the commandline.</p>
+</blockquote>
+<h5 id="panel-serve-app.ipynb"><code>panel serve app.ipynb</code><a class="anchor-link" href="#panel-serve-app.html">¶</a></h5><blockquote><p><code>panel serve</code> also supports using Jupyter notebook files, where it will serve any Panel objects that were marked <code>.servable()</code> in a notebook cell. This feature allows you to maintain a notebook for exploring and analysis that provides certain elements meant for broader consumption as a standalone app.</p>
+</blockquote>
+<h4 id="Export">Export<a class="anchor-link" href="#Export">¶</a></h4><p>When not working interactively, a Panel object can be exported to a static file.</p>
+<h5 id=".save()-to-PNG"><code>.save()</code> to PNG<a class="anchor-link" href="#.save()-to-PNG">¶</a></h5><blockquote><p>The <code>.save</code> method present on all viewable Panel objects allows saving the visual representation of a Panel object to a PNG file.</p>
+</blockquote>
+<h5 id=".save()-to-HTML"><code>.save()</code> to HTML<a class="anchor-link" href="#.save()-to-HTML">¶</a></h5><blockquote><p><code>.save</code> to HTML allows sharing the full Panel object, including any static links ("jslink"s) between widgets and other components, but other features that depend on having a live running Python process will not work (as for many of the Panel webpages).</p>
+</blockquote>
+<h5 id="Embedding">Embedding<a class="anchor-link" href="#Embedding">¶</a></h5><blockquote><p>Panel objects can be serialized into a static JSON format that captures the widget state space and the corresponding plots or other viewable items for each combination of widget values, allowing fully usable Panel objects to be embedded into external HTML files or emails.  For simple cases, this approach allows distributing or publishing Panel apps that no longer require a Python server in any way.</p>
+</blockquote>
+<hr/>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Linking-and-callbacks">Linking and callbacks<a class="anchor-link" href="#Linking-and-callbacks">¶</a></h3><p>One of the most important aspects of a general app and dashboarding framework is the ability to link different components in flexible ways, scheduling callbacks in response to internal and external events. Panel provides convenient lower and higher-level APIs to achieve both.  For more details, see the <a href="./Links.html">Links</a> user guide.</p>
+<h5 id=".param.watch"><code>.param.watch</code><a class="anchor-link" href="#.param.watch">¶</a></h5><blockquote><p>The <code>.param.watch</code> method allows listening to parameter changes on an object using Python callbacks. It is the lowest level API and provides the most amount of control, but higher-level APIs are more appropriate for most users and most use cases.</p>
+</blockquote>
+<h5 id=".link()"><code>.link()</code><a class="anchor-link" href="#.link()">¶</a></h5><blockquote><p>The Python-based <code>.link()</code> method present on all viewable Panel objects is a convenient API to link the parameters of two objects together, uni- or bi-directionally.</p>
+</blockquote>
+<h5 id=".jscallback"><code>.jscallback</code><a class="anchor-link" href="#.jscallback">¶</a></h5><blockquote><p>The Javascript-based <code>.jscallback()</code> method allows defining arbitrary Javascript code to be executed when some property changes or event is triggered.</p>
+</blockquote>
+<h5 id=".jslink()"><code>.jslink()</code><a class="anchor-link" href="#.jslink()">¶</a></h5><blockquote><p>The JavaScript-based <code>.jslink()</code> method directly links properties of the underlying Bokeh models, making it possible to define interactivity that works even without a running Python server.</p>
+</blockquote>
+</div>
+</div>
+</div>
+<hr class="docutils">
+<p><a class="reference external" href="https://raw.githubusercontent.com/pyviz/panel/master/examples/user_guide/Overview.ipynb">Right click to download this notebook from GitHub.</a></p>
+</hr></div>
+</div>
+</div>
+<!-- END MAIN BODY OF DOCS ––––––––––––– -->
+<footer class="footer">
+<div class="footer-links">
+<ul>
+<li><span class="footer-title">Links</span></li>
+<li><a href="../getting_started/index.html">Getting started</a></li>
+<li><a href="index.html">User Guide</a></li>
+<li><a href="../gallery/index.html">Gallery</a></li>
+<li><a href="../reference/index.html">Reference Gallery</a></li>
+<li><a href="../developer_guide/index.html">Developer Guide</a></li>
+<li><a href="../FAQ.html">FAQ</a></li>
+<li><a href="../about.html">About</a></li>
+</ul>
+<ul>
+<li><span class="footer-title">Join Us</span></li>
+<li><a href="//gitter.im/pyviz/pyviz">Gitter</a></li>
+<li><a href="//github.com/pyviz/panel">Github</a></li>
+</ul>
+<ul class="copyright">
+<li>2019 Panel contributors</li>
+</ul>
+</div>
+</footer>
+<!-- Google Analytics -->
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-61554933-1', 'auto');
+  ga('send', 'pageview');
+
+</script>
+<!-- MathJax Config -->
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
+});
+</script>
+<!-- End Document
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+</body>
+</html>

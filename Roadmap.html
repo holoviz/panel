@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<!-- Basic Page Needs
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+<meta charset="utf-8"/>
+<title>Roadmap — Panel 0.7.0 documentation</title>
+<meta content="High-level dashboarding for python visualization libraries" name="description"/>
+<meta content="Panel contributors" name="author"/>
+<!-- Mobile Specific Metas
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<!-- FONT
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+<script src="https://ajax.googleapis.com/ajax/libs/webfont/1.6.16/webfont.js"></script>
+<script>
+    WebFont.load({
+      google: {
+        families: ['Source Sans Pro']
+      }
+    });
+  </script>
+<!-- CSS
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+<link href="_static/site.css" rel="stylesheet"/>
+<link href="_static/nbsite.css" rel="stylesheet"/>
+<!-- Scripts
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+<script async="" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML" type="text/javascript">
+</script>
+<script src="_static/js/main.js"></script>
+<script src="_static/nbsite.js"></script>
+<script src="_static/require.js"></script>
+<!-- Favicon
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+<link href="_static/favicon.ico" rel="icon" type="image/png"/>
+<!-- Canonical
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+<link href="https://panel.pyviz.org/Roadmap.html" rel="canonical">
+</link></head>
+<body class="">
+<header class="navigation">
+<div class="wrapper">
+<a class="logo" href="index.html">
+<img alt="Logo" src="_static/logo_horizontal.png"/>
+</a>
+<a class="navigation-menu-button" href="javascript:void(0)" id="js-mobile-menu">Menu</a>
+<nav>
+<ul class="navigation-menu show" id="js-navigation-menu">
+<li class="nav-link doc-head"><a href="//gitter.im/pyviz/pyviz">Gitter</a></li>
+<li class="nav-link doc-head"><a href="//github.com/pyviz/panel">Github</a></li>
+<li class="nav-link">
+<div style="display:inline-block;vertical-align: middle;">
+<div class="search-bar">
+<form action="search.html" method="get" role="search">
+<input name="q" placeholder="Search" type="search"/>
+<button type="submit">
+<img alt="Search Icon" src="https://raw.githubusercontent.com/thoughtbot/refills/master/source/images/search-icon-black.png"/>
+</button>
+</form>
+</div>
+</div>
+</li>
+</ul>
+</nav>
+</div>
+</header>
+<div class="second-nav">
+<nav>
+<ul class="navigation-menu show">
+<li class="nav-link doc-head"><a href="getting_started/index.html">Getting started</a></li>
+<li class="nav-link doc-head"><a href="user_guide/index.html">User Guide</a></li>
+<li class="nav-link doc-head"><a href="gallery/index.html">Gallery</a></li>
+<li class="nav-link doc-head"><a href="reference/index.html">Reference Gallery</a></li>
+<li class="nav-link doc-head"><a href="developer_guide/index.html">Developer Guide</a></li>
+<li class="nav-link doc-head"><a href="FAQ.html">FAQ</a></li>
+<li class="nav-link doc-head"><a href="about.html">About</a></li>
+</ul>
+</nav>
+</div>
+<!-- MAIN BODY OF DOCS –––––––––––––––––– -->
+<div class="docs section">
+<div id="hacketyhackhack"> <!-- style="width:20%;margin-right: 100px;"> --> <!--style="display: none;"> style="display:none;"> -->
+<div class="toc" style="width:15%; margin-right:20px;">
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="index.html">Home</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting_started/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user_guide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gallery/index.html">Gallery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="reference/index.html">Reference Gallery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="developer_guide/index.html">Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Comparisons.html">Comparisons</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Road Map</a></li>
+<li class="toctree-l1"><a class="reference internal" href="FAQ.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference external" href="http://github.com/pyviz/panel">Github source</a></li>
+<li class="toctree-l1"><a class="reference internal" href="about.html">About</a></li>
+</ul>
+</div>
+</div>
+<div class="content"> <!-- style="max-width:80%;margin-left:auto;margin-right: auto;">-->
+<div class="section" id="roadmap">
+<h1>Roadmap<a class="headerlink" href="#roadmap" title="Permalink to this headline">¶</a></h1>
+<p>(As of 11/2019)</p>
+<p>Panel is a stable library at this point in time and the major roadmap
+items mainly include adding new components and making it easier to
+achieve a polished look and feel for complicated applications. The
+main roadmap items icnlude:</p>
+<ol class="arabic simple">
+<li><strong>Other plotting &amp; widget libraries</strong>: Panel already supports a
+wide variety of libraries, including all the libraries currently in
+use by the authors or their collaborators.  Most other libraries
+can trivially be supported as well, if anyone can provide an
+example of a plot already supported by Panel converted into this
+other library.  As mentioned in <a class="reference external" href="https://github.com/pyviz/panel/issues/2">issue 2</a>, we will be working on
+bringing ipywidgets-based components to Panel.</li>
+<li><strong>Themes and Templates</strong>: By default, Panel apps use Bokeh’s
+default theming, but other look-and-feel options can be provided by
+using other available Bokeh themes, making your own, or embedding
+into a Bokeh Jinja2 template. We’ll add examples of such theming
+and provide a range of custom templates to achieve a polished look
+and feel in the coming releases.</li>
+<li><strong>BI tools</strong>: Panel is designed for displaying content that you
+already have developed in a Jupyter notebook, but it could also
+be used as a way for building business-intelligence-style
+dashboards that mix traditional Python plotting output with
+BI-style indicators like speedometers, single number displays
+(e.g. stock tickers), and so on.  Adding a small number of
+such plots or widgets could help make it simpler to build
+BI-type dashboards where the content comes directly from
+Python.</li>
+<li><strong>Jupyter notebook extension</strong>: The Jupyter-Dashboards project
+provided a <a class="reference external" href="https://jupyter-dashboards-layout.readthedocs.io">Jupyter extension</a>
+allowing drag and drop layout for Jupyter notebook cells. This
+approach worked well in many cases, but the underlying server used
+for deployment is no longer maintained, and so that approach remains
+only a proof of concept. Panel, on the other hand, is fully deployable
+outside of the notebook as well as in it, and so it would be great
+to have a drag-and-drop interface either based on the
+Jupyter-Dashboards project or developed separately to provide similar
+capabilities. As for Jupyter Dashboards, the layout information
+could be stored as cell metadata in the notebook, providing hints
+for Panel to set up the dashboard layout when served separately.
+There are likely to be tricky issues with control flow that would
+need to be addressed when a notebook is used in a non-linear
+dashboard in this way.</li>
+<li><strong>Support for Traitlets</strong>: Panel currently supports declarative user
+interfaces for objects defined using the Param library, and similar
+support could be added for objects defined using the Traitlets
+library. Traitlets and Param offer similar functionality, so the
+benefit of adding Traitlets support would primarily be for users
+who have large bodies of code already written as traitlets.</li>
+</ol>
+<p>If any of the functionality above is interesting to you (or you have
+ideas of your own!) and can offer help with implementation, please
+open an issue on this repository. And if you are lucky enough to be in
+a position to fund our developers to work on it, please contact
+<code class="docutils literal notranslate"><span class="pre">sales@anaconda.com</span></code>.</p>
+</div>
+</div>
+</div>
+<!-- END MAIN BODY OF DOCS ––––––––––––– -->
+<footer class="footer">
+<div class="footer-links">
+<ul>
+<li><span class="footer-title">Links</span></li>
+<li><a href="getting_started/index.html">Getting started</a></li>
+<li><a href="user_guide/index.html">User Guide</a></li>
+<li><a href="gallery/index.html">Gallery</a></li>
+<li><a href="reference/index.html">Reference Gallery</a></li>
+<li><a href="developer_guide/index.html">Developer Guide</a></li>
+<li><a href="FAQ.html">FAQ</a></li>
+<li><a href="about.html">About</a></li>
+</ul>
+<ul>
+<li><span class="footer-title">Join Us</span></li>
+<li><a href="//gitter.im/pyviz/pyviz">Gitter</a></li>
+<li><a href="//github.com/pyviz/panel">Github</a></li>
+</ul>
+<ul class="copyright">
+<li>2019 Panel contributors</li>
+</ul>
+</div>
+</footer>
+<!-- Google Analytics -->
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-61554933-1', 'auto');
+  ga('send', 'pageview');
+
+</script>
+<!-- MathJax Config -->
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
+});
+</script>
+<!-- End Document
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+</body>
+</html>

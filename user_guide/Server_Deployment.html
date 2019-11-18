@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<!-- Basic Page Needs
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+<meta charset="utf-8"/>
+<title>Server Deployment — Panel 0.7.0 documentation</title>
+<meta content="High-level dashboarding for python visualization libraries" name="description"/>
+<meta content="Panel contributors" name="author"/>
+<!-- Mobile Specific Metas
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<!-- FONT
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+<script src="https://ajax.googleapis.com/ajax/libs/webfont/1.6.16/webfont.js"></script>
+<script>
+    WebFont.load({
+      google: {
+        families: ['Source Sans Pro']
+      }
+    });
+  </script>
+<!-- CSS
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+<link href="../_static/site.css" rel="stylesheet"/>
+<link href="../_static/nbsite.css" rel="stylesheet"/>
+<!-- Scripts
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+<script async="" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML" type="text/javascript">
+</script>
+<script src="../_static/js/main.js"></script>
+<script src="../_static/nbsite.js"></script>
+<script src="../_static/require.js"></script>
+<!-- Favicon
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+<link href="../_static/favicon.ico" rel="icon" type="image/png"/>
+<!-- Canonical
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+<link href="https://panel.pyviz.org/user_guide/Server_Deployment.html" rel="canonical">
+</link></head>
+<body class="">
+<header class="navigation">
+<div class="wrapper">
+<a class="logo" href="../index.html">
+<img alt="Logo" src="../_static/logo_horizontal.png"/>
+</a>
+<a class="navigation-menu-button" href="javascript:void(0)" id="js-mobile-menu">Menu</a>
+<nav>
+<ul class="navigation-menu show" id="js-navigation-menu">
+<li class="nav-link doc-head"><a href="//gitter.im/pyviz/pyviz">Gitter</a></li>
+<li class="nav-link doc-head"><a href="//github.com/pyviz/panel">Github</a></li>
+<li class="nav-link">
+<div style="display:inline-block;vertical-align: middle;">
+<div class="search-bar">
+<form action="../search.html" method="get" role="search">
+<input name="q" placeholder="Search" type="search"/>
+<button type="submit">
+<img alt="Search Icon" src="https://raw.githubusercontent.com/thoughtbot/refills/master/source/images/search-icon-black.png"/>
+</button>
+</form>
+</div>
+</div>
+</li>
+</ul>
+</nav>
+</div>
+</header>
+<div class="second-nav">
+<nav>
+<ul class="navigation-menu show">
+<li class="nav-link doc-head"><a href="../getting_started/index.html">Getting started</a></li>
+<li class="nav-link doc-head"><a href="index.html">User Guide</a></li>
+<li class="nav-link doc-head"><a href="../gallery/index.html">Gallery</a></li>
+<li class="nav-link doc-head"><a href="../reference/index.html">Reference Gallery</a></li>
+<li class="nav-link doc-head"><a href="../developer_guide/index.html">Developer Guide</a></li>
+<li class="nav-link doc-head"><a href="../FAQ.html">FAQ</a></li>
+<li class="nav-link doc-head"><a href="../about.html">About</a></li>
+</ul>
+</nav>
+</div>
+<!-- MAIN BODY OF DOCS –––––––––––––––––– -->
+<div class="docs section">
+<div id="hacketyhackhack"> <!-- style="width:20%;margin-right: 100px;"> --> <!--style="display: none;"> style="display:none;"> -->
+<div class="toc" style="width:15%; margin-right:20px;">
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/index.html">Getting Started</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">User Guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="Overview.html">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Components.html">Components</a></li>
+<li class="toctree-l2"><a class="reference internal" href="APIs.html">APIs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Customization.html">Customization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Deploy_and_Export.html">Deploy &amp; Export</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Interact.html">Interact</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Widgets.html">Widgets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Param.html">Parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Links.html">Linking</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Pipelines.html">Pipelines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Templates.html">Templates</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Server Deployment</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Django_Apps.html">Django Apps</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../gallery/index.html">Gallery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../reference/index.html">Reference Gallery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developer_guide/index.html">Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Comparisons.html">Comparisons</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Roadmap.html">Road Map</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference external" href="http://github.com/pyviz/panel">Github source</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../about.html">About</a></li>
+</ul>
+</div>
+</div>
+<div class="content"> <!-- style="max-width:80%;margin-left:auto;margin-right: auto;">-->
+<div class="section" id="server-deployment">
+<h1>Server Deployment<a class="headerlink" href="#server-deployment" title="Permalink to this headline">¶</a></h1>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Panel is built on top of Bokeh, which provides a powerful <a href="https://www.tornadoweb.org/en/stable/">Tornado</a> based web-server to communicate between Python and the browser. The bokeh server makes it possible to share the app or dashboard you have built locally, your own web server or using any of the numerous cloud providers. In this guide we will go through the details of deploying an app on a local system or cloud provider step by step.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="The-server">The server<a class="anchor-link" href="#The-server">¶</a></h2><p>The Bokeh server is built on Tornado, which handles all of the communication between the browser and the backend. Whenever a user accesses the app or dashboard in a browser a new session is created which executes the app code and creates a new <code>Document</code> containing the models served to the browser where they are rendered by BokehJS.</p>
+<div style="margin-left: auto; margin-right: auto; display: block">
+<img src="https://bokeh.pydata.org/en/latest/_images/bokeh_serve.svg"/>
+</div><h3 id="Accessing-request-arguments">Accessing request arguments<a class="anchor-link" href="#Accessing-request-arguments">¶</a></h3><p>When a user accesses the Panel application via the browser they can optionally provide additional arguments in the URL. For example the query string <code>?N=10</code> will result in the following argument will be available on <code>pn.state.session_args</code>: <code>{'N': [b'10']}</code>. Such arguments may be used to customize the application.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Deployment">Deployment<a class="anchor-link" href="#Deployment">¶</a></h2><p>As was covered in <a href="Deploy_and_Export.html">Deploy and Export</a> guide a Panel app, either in a notebook or a Python script, can be annotated with <code>.servable()</code> and then launched from the commandline using <code>panel serve</code>. This launches a Tornado server on a specific port (defaulting to 5006) which you can access locally at <code>https://localhost:{PORT}</code>. This is a good option for simple deployments on a local network.</p>
+<p>However many deployment scenarios have additional requirements around authentication, scaling, and uptime.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="SSH">SSH<a class="anchor-link" href="#SSH">¶</a></h3><p>In some scenarios a standalone bokeh server may be running on remote host. In such cases, SSH can be used to “tunnel” to the server. In the simplest scenario, the Bokeh server will run on one host and will be accessed from another location, e.g., a laptop, with no intermediary machines.</p>
+<p>Run the server as usual on the remote host:</p>
+<p>Next, issue the following command on the local machine to establish an SSH tunnel to the remote host:</p>
+<pre><code>ssh -NfL localhost:5006:localhost:5006 user@remote.host</code></pre>
+<p>Replace user with your username on the remote host and remote.host with the hostname/IP address of the system hosting the Bokeh server. You may be prompted for login credentials for the remote system. After the connection is set up you will be able to navigate to localhost:5006 as though the Bokeh server were running on the local machine.</p>
+<p>The second, slightly more complicated case occurs when there is a gateway between the server and the local machine. In that situation a reverse tunnel must be established from the server to the gateway. Additionally the tunnel from the local machine will also point to the gateway.</p>
+<p>Issue the following commands on the remote host where the Bokeh server will run:</p>
+<pre><code>nohup bokeh server &amp;
+ssh -NfR 5006:localhost:5006 user@gateway.host</code></pre>
+<p>Replace user with your username on the gateway and gateway.host with the hostname/IP address of the gateway. You may be prompted for login credentials for the gateway.</p>
+<p>Now set up the other half of the tunnel, from the local machine to the gateway. On the local machine:</p>
+<pre><code>ssh -NfL localhost:5006:localhost:5006 user@gateway.host</code></pre>
+<p>Again, replace user with your username on the gateway and gateway.host with the hostname/IP address of the gateway. You should now be able to access the Bokeh server from the local machine by navigating to localhost:5006 on the local machine, as if the Bokeh server were running on the local machine. You can even set up client connections from a Jupyter notebook running on the local machine.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Reverse-proxy">Reverse proxy<a class="anchor-link" href="#Reverse-proxy">¶</a></h3><p>If the goal is to serve an web application to the general Internet, it is often desirable to host the application on an internal network, and proxy connections to it through some dedicated HTTP server. For some basic configurations to set up a Bokeh server behind some common reverse proxies, including Nginx and Apache, refer to the <a href="https://bokeh.pydata.org/en/latest/docs/user_guide/server.html#basic-reverse-proxy-setup">Bokeh documentation</a>.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Cloud-Deployments">Cloud Deployments<a class="anchor-link" href="#Cloud-Deployments">¶</a></h3><p>If you do not want to maintain your own web server and/or set up complex reverse proxies various cloud providers make it relatively simple to quickly deploy arbitrary apps on their system. In this section we will go through step-by-step to set up deployments on some of these providers.</p>
+<h4 id="MyBinder">MyBinder<a class="anchor-link" href="#MyBinder">¶</a></h4><p>Binder allows you to create custom computing environments that can be shared and used by many remote users. MyBinder is a public, free hosting option, with limited compute and memory resources, which will allow you to deploy your simple app quickly and easily.</p>
+<p>Here we will take you through the configuration to quickly set up a GitHub repository with notebooks containing Panel apps for deployment on MyBinder.org. As an example refer to the <a href="https://github.com/pyviz-demos/clifford">Clifford demo repository</a>.</p>
+<ol>
+<li><p>Create a GitHub repository and add the notebook or script you want to serve (in the example repository this is the clifford.ipynb file)</p>
+</li>
+<li><p>Add an <code>environment.yml</code> which declares a conda environment with the dependencies required to run the app (refer to the <a href="https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#creating-an-environment-file-manually">conda documentation</a> to see how to declare your dependencies). Add <code>jupyter_panel_proxy</code> as a dependency by adding either <code>conda-forge</code> or <code>pyviz</code> to the channel list:</p>
+</li>
+</ol>
+<pre><code>channels:
+- pyviz
+
+packages:
+- jupyter_panel_proxy</code></pre>
+<ol>
+<li><p>Go to mybinder.org, enter the URL of your GitHub repository and hit <code>Launch</code></p>
+</li>
+<li><p>mybinder.org will give you a link to the deployment, e.g. for the example app it is <a href="https://mybinder.org/v2/gh/panel-demos/clifford-interact/master">https://mybinder.org/v2/gh/panel-demos/clifford-interact/master</a>. To visit the app simply append <code>?urlpath=/proxy/5006/clifford</code> where you should replace clifford with the name of the notebook or script you are serving.</p>
+</li>
+</ol>
+<h4 id="Heroku">Heroku<a class="anchor-link" href="#Heroku">¶</a></h4><p>Heroku makes deployment of arbitrary apps including Panel apps and dashboards very easy and provides a free tier to get you started. This makes it a great starting point for users not too familiar with web development and deployment.</p>
+<p>To get started working with Heroku <a href="https://signup.heroku.com">signup</a> for a free account and <a href="https://devcenter.heroku.com/articles/getting-started-with-python#set-up">download and install the CLI</a>. Once you are set up follow the instructions to log into the CLI.</p>
+<ol>
+<li><p>Create a new Git repo (or to follow along clone the <a href="https://github.com/pyviz-demos/minimal-heroku-demo">minimal-heroku-demo</a> GitHub repo)</p>
+</li>
+<li><p>Add a Jupyter notebook or Python script which declares a Panel app or dashboard to the repository.</p>
+</li>
+<li><p>Define a requirements.txt containing all the requirements for your app (including Panel itself). For the sample app the requirements are as minimal as:</p>
+</li>
+</ol>
+<pre><code>panel
+hvplot
+scikit-learn</code></pre>
+<ol>
+<li>Define a <code>Procfile</code> which declares the command Heroku should run to serve the app. In the sample app the following command serves the <code>iris_kmeans.ipynb</code> example. The websocket origin should match the name of the app on Heroku <code>app-name.herokuapp.com</code> which you will declare in the next step:</li>
+</ol>
+<pre><code>web: panel serve --address="0.0.0.0" --port=$PORT iris_kmeans.ipynb --allow-websocket-origin=app-name.herokuapp.com</code></pre>
+<ol>
+<li>Create a Heroku app using the CLI ensuring that the name matches the URL we declared in the previous step:</li>
+</ol>
+<pre><code>heroku create app-name</code></pre>
+<ol>
+<li><p>Push the app to heroku and wait until it is deployed.</p>
+</li>
+<li><p>Visit the app at app-name.herokuapp.com</p>
+</li>
+</ol>
+<p>Once you have deployed the app you might find that if your app is visited by more than one user at a time it will become unresponsive. In this case you can use the Heroku CLI <a href="https://devcenter.heroku.com/articles/getting-started-with-python#scale-the-app">to scale your deployment</a>.</p>
+<h4 id="Anaconda-Enterprise-5-(AE5)">Anaconda Enterprise 5 (AE5)<a class="anchor-link" href="#Anaconda-Enterprise-5-(AE5)">¶</a></h4><p>All live examples in the Panel documentation are served on AE5, to see further examples deployed there see <a href="https://examples.pyviz.org">examples.pyviz.org</a> and for detailed instructions follow the <a href="https://examples.pyviz.org/developer_guide.html">developer guide</a>.</p>
+<h4 id="Other-Cloud-Providers">Other Cloud Providers<a class="anchor-link" href="#Other-Cloud-Providers">¶</a></h4><p>Panel can be used with just about any cloud provider that can launch a Python process, including Amazon Web Services (AWS), Google Cloud Platform (GCP), Azure, and DigitalOcean. The Panel developers will add documentation for these services as they encounter them in their own work, but we would greatly appreciate step-by-step instructions from users working on each of these systems.</p>
+</div>
+</div>
+</div>
+<hr class="docutils"/>
+<p><a class="reference external" href="https://raw.githubusercontent.com/pyviz/panel/master/examples/user_guide/Server_Deployment.ipynb">Right click to download this notebook from GitHub.</a></p>
+</div>
+</div>
+</div>
+<!-- END MAIN BODY OF DOCS ––––––––––––– -->
+<footer class="footer">
+<div class="footer-links">
+<ul>
+<li><span class="footer-title">Links</span></li>
+<li><a href="../getting_started/index.html">Getting started</a></li>
+<li><a href="index.html">User Guide</a></li>
+<li><a href="../gallery/index.html">Gallery</a></li>
+<li><a href="../reference/index.html">Reference Gallery</a></li>
+<li><a href="../developer_guide/index.html">Developer Guide</a></li>
+<li><a href="../FAQ.html">FAQ</a></li>
+<li><a href="../about.html">About</a></li>
+</ul>
+<ul>
+<li><span class="footer-title">Join Us</span></li>
+<li><a href="//gitter.im/pyviz/pyviz">Gitter</a></li>
+<li><a href="//github.com/pyviz/panel">Github</a></li>
+</ul>
+<ul class="copyright">
+<li>2019 Panel contributors</li>
+</ul>
+</div>
+</footer>
+<!-- Google Analytics -->
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-61554933-1', 'auto');
+  ga('send', 'pageview');
+
+</script>
+<!-- MathJax Config -->
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
+});
+</script>
+<!-- End Document
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+</body>
+</html>

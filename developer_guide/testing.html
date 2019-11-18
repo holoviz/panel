@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<!-- Basic Page Needs
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+<meta charset="utf-8"/>
+<title>Testing — Panel 0.7.0 documentation</title>
+<meta content="High-level dashboarding for python visualization libraries" name="description"/>
+<meta content="Panel contributors" name="author"/>
+<!-- Mobile Specific Metas
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<!-- FONT
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+<script src="https://ajax.googleapis.com/ajax/libs/webfont/1.6.16/webfont.js"></script>
+<script>
+    WebFont.load({
+      google: {
+        families: ['Source Sans Pro']
+      }
+    });
+  </script>
+<!-- CSS
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+<link href="../_static/site.css" rel="stylesheet"/>
+<link href="../_static/nbsite.css" rel="stylesheet"/>
+<!-- Scripts
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+<script async="" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML" type="text/javascript">
+</script>
+<script src="../_static/js/main.js"></script>
+<script src="../_static/nbsite.js"></script>
+<script src="../_static/require.js"></script>
+<!-- Favicon
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+<link href="../_static/favicon.ico" rel="icon" type="image/png"/>
+<!-- Canonical
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+<link href="https://panel.pyviz.org/developer_guide/testing.html" rel="canonical">
+</link></head>
+<body class="">
+<header class="navigation">
+<div class="wrapper">
+<a class="logo" href="../index.html">
+<img alt="Logo" src="../_static/logo_horizontal.png"/>
+</a>
+<a class="navigation-menu-button" href="javascript:void(0)" id="js-mobile-menu">Menu</a>
+<nav>
+<ul class="navigation-menu show" id="js-navigation-menu">
+<li class="nav-link doc-head"><a href="//gitter.im/pyviz/pyviz">Gitter</a></li>
+<li class="nav-link doc-head"><a href="//github.com/pyviz/panel">Github</a></li>
+<li class="nav-link">
+<div style="display:inline-block;vertical-align: middle;">
+<div class="search-bar">
+<form action="../search.html" method="get" role="search">
+<input name="q" placeholder="Search" type="search"/>
+<button type="submit">
+<img alt="Search Icon" src="https://raw.githubusercontent.com/thoughtbot/refills/master/source/images/search-icon-black.png"/>
+</button>
+</form>
+</div>
+</div>
+</li>
+</ul>
+</nav>
+</div>
+</header>
+<div class="second-nav">
+<nav>
+<ul class="navigation-menu show">
+<li class="nav-link doc-head"><a href="../getting_started/index.html">Getting started</a></li>
+<li class="nav-link doc-head"><a href="../user_guide/index.html">User Guide</a></li>
+<li class="nav-link doc-head"><a href="../gallery/index.html">Gallery</a></li>
+<li class="nav-link doc-head"><a href="../reference/index.html">Reference Gallery</a></li>
+<li class="nav-link doc-head"><a href="index.html">Developer Guide</a></li>
+<li class="nav-link doc-head"><a href="../FAQ.html">FAQ</a></li>
+<li class="nav-link doc-head"><a href="../about.html">About</a></li>
+</ul>
+</nav>
+</div>
+<!-- MAIN BODY OF DOCS –––––––––––––––––– -->
+<div class="docs section">
+<div id="hacketyhackhack"> <!-- style="width:20%;margin-right: 100px;"> --> <!--style="display: none;"> style="display:none;"> -->
+<div class="toc" style="width:15%; margin-right:20px;">
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../gallery/index.html">Gallery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../reference/index.html">Reference Gallery</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Developer Guide</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Testing</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../Comparisons.html">Comparisons</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Roadmap.html">Road Map</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference external" href="http://github.com/pyviz/panel">Github source</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../about.html">About</a></li>
+</ul>
+</div>
+</div>
+<div class="content"> <!-- style="max-width:80%;margin-left:auto;margin-right: auto;">-->
+<div class="section" id="testing">
+<span id="devguide-testing"></span><h1>Testing<a class="headerlink" href="#testing" title="Permalink to this headline">¶</a></h1>
+<p>This chapter describes how to run various tests locally in a
+development environment, guidelines for writing tests, and information
+regarding the continuous testing infrastructure.</p>
+<div class="contents local topic" id="contents">
+<ul class="simple">
+<li><a class="reference internal" href="#running-tests-locally" id="id1">Running Tests Locally</a><ul>
+<li><a class="reference internal" href="#test-selection" id="id2">Test Selection</a></li>
+<li><a class="reference internal" href="#integration-tests" id="id3">Integration tests</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#writing-tests" id="id4">Writing Tests</a><ul>
+<li><a class="reference internal" href="#python-unit-tests" id="id5">Python Unit Tests</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#continuous-integration" id="id6">Continuous Integration</a><ul>
+<li><a class="reference internal" href="#configuration" id="id7">Configuration</a></li>
+<li><a class="reference internal" href="#etiquette" id="id8">Etiquette</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="running-tests-locally">
+<h2><a class="toc-backref" href="#id1">Running Tests Locally</a><a class="headerlink" href="#running-tests-locally" title="Permalink to this headline">¶</a></h2>
+<p>Before attempting to run Panel tests, make sure you have successfully
+run through all of the instructions in the <a class="reference internal" href="index.html#devguide-setup"><span class="std std-ref">Getting Set Up</span></a>
+section of the Developer’s Guide.</p>
+<div class="section" id="test-selection">
+<h3><a class="toc-backref" href="#id2">Test Selection</a><a class="headerlink" href="#test-selection" title="Permalink to this headline">¶</a></h3>
+<p>Currently Panel uses linting and two types of tests regular unit tests
+which are run with pytest and notebook example tests run with nbsmoke:</p>
+<p>To run flake checking use:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>doit test_flakes
+</pre></div>
+</div>
+<p>To run unit tests use:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>doit test_unit
+</pre></div>
+</div>
+<p>To run example smoke tests use:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>doit test_examples
+</pre></div>
+</div>
+</div>
+<div class="section" id="integration-tests">
+<h3><a class="toc-backref" href="#id3">Integration tests</a><a class="headerlink" href="#integration-tests" title="Permalink to this headline">¶</a></h3>
+</div>
+</div>
+<div class="section" id="writing-tests">
+<h2><a class="toc-backref" href="#id4">Writing Tests</a><a class="headerlink" href="#writing-tests" title="Permalink to this headline">¶</a></h2>
+<p>In order to help keep Panel maintainable, all Pull Requests that touch
+code should normally be accompanied by relevant tests. While
+exceptions may be made for specific circumstances, the default
+assumption should be that a Pull Request without tests may not be
+merged.</p>
+<div class="section" id="python-unit-tests">
+<h3><a class="toc-backref" href="#id5">Python Unit Tests</a><a class="headerlink" href="#python-unit-tests" title="Permalink to this headline">¶</a></h3>
+<p>Python unit tests maintain the basic functionality of the Python
+portion of the Panel library. A few general guidelines will help you
+write Python unit tests:</p>
+<dl class="docutils">
+<dt>absolute imports</dt>
+<dd><p class="first">In order to ensure that Panel’s unit tests as relocatable and unambiguous
+as possible, always prefer absolute imports in test files. When convenient,
+import and use the entire module under test:</p>
+<ul class="last simple">
+<li><strong>GOOD</strong>: <code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">panel.widgets</span></code></li>
+<li><strong>GOOD</strong>: <code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">panel.layout</span> <span class="pre">import</span> <span class="pre">Column</span></code></li>
+<li><strong>BAD</strong>: <code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">..models.widgets</span> <span class="pre">import</span> <span class="pre">Player</span></code></li>
+</ul>
+</dd>
+<dt>pytest</dt>
+<dd>All new tests should use and assume <a class="reference external" href="https://docs.pytest.org">pytest</a> for test running, fixtures,
+parameterized testing, etc. New tests should <em>not</em> use the <code class="docutils literal notranslate"><span class="pre">unittest</span></code>
+module of the Python standard library.</dd>
+</dl>
+</div>
+</div>
+<div class="section" id="continuous-integration">
+<h2><a class="toc-backref" href="#id6">Continuous Integration</a><a class="headerlink" href="#continuous-integration" title="Permalink to this headline">¶</a></h2>
+<p>Every push to the <cite>master</cite> branch or any Pull Request branch on GitHub
+automatically triggers a full test build on the <a class="reference external" href="https://travis-ci.org/">TravisCI</a> continuous
+integration service. This is most often useful for running the full Panel
+test suite continuously, but also triggers automated scripts for publishing
+releases when a tagged branch is pushed.</p>
+<p>You can see the list of all current and previous builds at this URL:
+<a class="reference external" href="https://travis-ci.org/pyviz/panel">https://travis-ci.org/pyviz/panel</a></p>
+<div class="section" id="configuration">
+<h3><a class="toc-backref" href="#id7">Configuration</a><a class="headerlink" href="#configuration" title="Permalink to this headline">¶</a></h3>
+<p>There are a number of files that affect the build configuration:</p>
+<ul class="simple">
+<li><dl class="first docutils">
+<dt><cite>.travis.yml</cite></dt>
+<dd>Defines the build matrix and global configurations for the stages
+described below.</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt><cite>conda.recipe/meta.yaml</cite></dt>
+<dd>Instructions for building a conda noarch package for Panel.</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt><cite>setup.py</cite></dt>
+<dd>Used to build sdist packages and “dev” installs. This file is the
+single source of truth of all dependencies.</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt><cite>tox.ini</cite></dt>
+<dd>Contains the configuration for the doit commands .</dd>
+</dl>
+</li>
+</ul>
+</div>
+<div class="section" id="etiquette">
+<h3><a class="toc-backref" href="#id8">Etiquette</a><a class="headerlink" href="#etiquette" title="Permalink to this headline">¶</a></h3>
+<p>TravisCI provides five free build workers to Open Source projects. A few
+considerations will help you be considerate of others needing these limited
+resources:</p>
+<ul>
+<li><p class="first">Group commits into meaningful chunks of work before pushing to GitHub (i.e.
+don’t push on every commit).</p>
+</li>
+<li><p class="first">If you must make multiple commits in succession, navigate to TravisCI and
+cancel all but the last build, in order to free up build workers.</p>
+</li>
+<li><p class="first">If expensive <code class="docutils literal notranslate"><span class="pre">examples</span></code> tests are not needed (e.g. for a docs-only Pull
+Request), they may be disabled by adding the text</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>[ci disable examples]
+</pre></div>
+</div>
+<p>to your commit message.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- END MAIN BODY OF DOCS ––––––––––––– -->
+<footer class="footer">
+<div class="footer-links">
+<ul>
+<li><span class="footer-title">Links</span></li>
+<li><a href="../getting_started/index.html">Getting started</a></li>
+<li><a href="../user_guide/index.html">User Guide</a></li>
+<li><a href="../gallery/index.html">Gallery</a></li>
+<li><a href="../reference/index.html">Reference Gallery</a></li>
+<li><a href="index.html">Developer Guide</a></li>
+<li><a href="../FAQ.html">FAQ</a></li>
+<li><a href="../about.html">About</a></li>
+</ul>
+<ul>
+<li><span class="footer-title">Join Us</span></li>
+<li><a href="//gitter.im/pyviz/pyviz">Gitter</a></li>
+<li><a href="//github.com/pyviz/panel">Github</a></li>
+</ul>
+<ul class="copyright">
+<li>2019 Panel contributors</li>
+</ul>
+</div>
+</footer>
+<!-- Google Analytics -->
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-61554933-1', 'auto');
+  ga('send', 'pageview');
+
+</script>
+<!-- MathJax Config -->
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
+});
+</script>
+<!-- End Document
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+</body>
+</html>

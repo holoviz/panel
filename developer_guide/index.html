@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<!-- Basic Page Needs
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+<meta charset="utf-8"/>
+<title>Getting Set Up — Panel 0.7.0 documentation</title>
+<meta content="High-level dashboarding for python visualization libraries" name="description"/>
+<meta content="Panel contributors" name="author"/>
+<!-- Mobile Specific Metas
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<!-- FONT
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+<script src="https://ajax.googleapis.com/ajax/libs/webfont/1.6.16/webfont.js"></script>
+<script>
+    WebFont.load({
+      google: {
+        families: ['Source Sans Pro']
+      }
+    });
+  </script>
+<!-- CSS
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+<link href="../_static/site.css" rel="stylesheet"/>
+<link href="../_static/nbsite.css" rel="stylesheet"/>
+<!-- Scripts
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+<script async="" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML" type="text/javascript">
+</script>
+<script src="../_static/js/main.js"></script>
+<script src="../_static/nbsite.js"></script>
+<script src="../_static/require.js"></script>
+<!-- Favicon
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+<link href="../_static/favicon.ico" rel="icon" type="image/png"/>
+<!-- Canonical
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+<link href="https://panel.pyviz.org/developer_guide/index.html" rel="canonical">
+</link></head>
+<body class="">
+<header class="navigation">
+<div class="wrapper">
+<a class="logo" href="../index.html">
+<img alt="Logo" src="../_static/logo_horizontal.png"/>
+</a>
+<a class="navigation-menu-button" href="javascript:void(0)" id="js-mobile-menu">Menu</a>
+<nav>
+<ul class="navigation-menu show" id="js-navigation-menu">
+<li class="nav-link doc-head"><a href="//gitter.im/pyviz/pyviz">Gitter</a></li>
+<li class="nav-link doc-head"><a href="//github.com/pyviz/panel">Github</a></li>
+<li class="nav-link">
+<div style="display:inline-block;vertical-align: middle;">
+<div class="search-bar">
+<form action="../search.html" method="get" role="search">
+<input name="q" placeholder="Search" type="search"/>
+<button type="submit">
+<img alt="Search Icon" src="https://raw.githubusercontent.com/thoughtbot/refills/master/source/images/search-icon-black.png"/>
+</button>
+</form>
+</div>
+</div>
+</li>
+</ul>
+</nav>
+</div>
+</header>
+<div class="second-nav">
+<nav>
+<ul class="navigation-menu show">
+<li class="nav-link doc-head"><a href="../getting_started/index.html">Getting started</a></li>
+<li class="nav-link doc-head"><a href="../user_guide/index.html">User Guide</a></li>
+<li class="nav-link doc-head"><a href="../gallery/index.html">Gallery</a></li>
+<li class="nav-link doc-head"><a href="../reference/index.html">Reference Gallery</a></li>
+<li class="nav-link doc-head"><a href="#">Developer Guide</a></li>
+<li class="nav-link doc-head"><a href="../FAQ.html">FAQ</a></li>
+<li class="nav-link doc-head"><a href="../about.html">About</a></li>
+</ul>
+</nav>
+</div>
+<!-- MAIN BODY OF DOCS –––––––––––––––––– -->
+<div class="docs section">
+<div id="hacketyhackhack"> <!-- style="width:20%;margin-right: 100px;"> --> <!--style="display: none;"> style="display:none;"> -->
+<div class="toc" style="width:15%; margin-right:20px;">
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Home</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide/index.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../gallery/index.html">Gallery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../reference/index.html">Reference Gallery</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Developer Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="testing.html">Testing</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../Comparisons.html">Comparisons</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Roadmap.html">Road Map</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../FAQ.html">FAQ</a></li>
+<li class="toctree-l1"><a class="reference external" href="http://github.com/pyviz/panel">Github source</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../about.html">About</a></li>
+</ul>
+</div>
+</div>
+<div class="content"> <!-- style="max-width:80%;margin-left:auto;margin-right: auto;">-->
+<div class="section" id="getting-set-up">
+<span id="devguide-setup"></span><h1>Getting Set Up<a class="headerlink" href="#getting-set-up" title="Permalink to this headline">¶</a></h1>
+<p>The Panel library is a complex project which provides a wide range
+of data interfaces and an extensible set of plotting backends, which
+means the development and testing process involves a wide set of
+libraries.</p>
+<div class="contents local topic" id="contents">
+<ul class="simple">
+<li><a class="reference internal" href="#preliminaries" id="id2">Preliminaries</a><ul>
+<li><a class="reference internal" href="#git" id="id3">Git</a></li>
+<li><a class="reference internal" href="#conda" id="id4">Conda</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#cloning-the-repository" id="id5">Cloning the Repository</a></li>
+<li><a class="reference internal" href="#installing-dependencies" id="id6">Installing Dependencies</a><ul>
+<li><a class="reference internal" href="#conda-environments" id="id7">Conda Environments</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#building-and-installing" id="id8">Building and Installing</a></li>
+<li><a class="reference internal" href="#next-steps" id="id9">Next Steps</a></li>
+</ul>
+</div>
+<div class="section" id="preliminaries">
+<h2><a class="toc-backref" href="#id2">Preliminaries</a><a class="headerlink" href="#preliminaries" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="git">
+<h3><a class="toc-backref" href="#id3">Git</a><a class="headerlink" href="#git" title="Permalink to this headline">¶</a></h3>
+<p>The Panel source code is stored in a <a class="reference external" href="https://git-scm.com">Git</a> source control repository.
+The first step to working on Panel is to install Git on to your system.
+There are different ways to do this depending on whether, you are using
+Windows, OSX, or Linux.</p>
+<p>To install Git on any platform, refer to the <a class="reference external" href="https://git-scm.com/book/en/v2/Getting-Started-Installing-Git">Installing Git</a> section of
+the <a class="reference external" href="https://git-scm.com/book/en/v2">Pro Git Book</a>.</p>
+</div>
+<div class="section" id="conda">
+<h3><a class="toc-backref" href="#id4">Conda</a><a class="headerlink" href="#conda" title="Permalink to this headline">¶</a></h3>
+<p>Developing Panel requires a wide range of packages that are not
+easily and quickly available using pip. To make this more manageable,
+core developers rely heavily on the <a class="reference external" href="https://conda.io/docs/intro.html">conda package manager</a> for the
+free <a class="reference external" href="https://anaconda.com/downloads">Anaconda</a> Python distribution. However, <code class="docutils literal notranslate"><span class="pre">conda</span></code> can also
+install non-Python package dependencies, which helps streamline Panel
+development greatly. It is <em>strongly</em> recommended that anyone
+developing Panel also use <code class="docutils literal notranslate"><span class="pre">conda</span></code>, and the remainder of the
+instructions will assume that <code class="docutils literal notranslate"><span class="pre">conda</span></code> is available.</p>
+<p>To install Conda on any platform, see the <a class="reference external" href="https://conda.io/docs/download.html">Download conda</a> section of the
+<a class="reference external" href="https://conda.io/docs/index.html">conda documentation</a>.</p>
+</div>
+</div>
+<div class="section" id="cloning-the-repository">
+<h2><a class="toc-backref" href="#id5">Cloning the Repository</a><a class="headerlink" href="#cloning-the-repository" title="Permalink to this headline">¶</a></h2>
+<p>The source code for the Panel project is hosted on <a class="reference external" href="https://github.com">GitHub</a>. To clone the
+source repository, issue the following command:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>git clone https://github.com/pyviz/panel.git
+</pre></div>
+</div>
+<p>This will create a <code class="docutils literal notranslate"><span class="pre">panel</span></code> directory at your file system
+location. This <code class="docutils literal notranslate"><span class="pre">panel</span></code> directory is referred to as the <em>source
+checkout</em> for the remainder of this document.</p>
+</div>
+<div class="section" id="installing-dependencies">
+<span id="dev-guide-installing-dependencies"></span><h2><a class="toc-backref" href="#id6">Installing Dependencies</a><a class="headerlink" href="#installing-dependencies" title="Permalink to this headline">¶</a></h2>
+<p>Panel requires many additional packages for development and
+testing. Many of these are on the main Anaconda default channel.</p>
+<div class="section" id="conda-environments">
+<h3><a class="toc-backref" href="#id7">Conda Environments</a><a class="headerlink" href="#conda-environments" title="Permalink to this headline">¶</a></h3>
+<p>Since Panel interfaces with a large range of different libraries the
+full test suite requires a wide range of dependencies. To make it
+easier to install and run different parts of the test suite across
+different platforms Panel uses a library called pyctdev to make things
+more consistent and general.</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>conda install -c pyviz pyctdev&gt;0.5.0
+doit ecosystem_setup
+</pre></div>
+</div>
+<p>Once pyctdev is available and you are in the cloned panel repository you can
+set up an environment with:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>doit env_create -c pyviz/label/dev -c conda-forge --name<span class="o">=</span>panel_dev --python<span class="o">=</span><span class="m">3</span>.6
+</pre></div>
+</div>
+<p>Specify the desired Python version, currently Panel officially
+supports Python 2.7, 3.5, 3.6 and 3.7. Once the environment has been
+created you can activate it with:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>conda activate panel_dev
+</pre></div>
+</div>
+<p>Finally to install the dependencies required to run the full unit test
+suite:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>doit develop_install -c pyviz/label/dev -c conda-forge -o tests -o recommended
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="building-and-installing">
+<span id="devguide-python-setup"></span><h2><a class="toc-backref" href="#id8">Building and Installing</a><a class="headerlink" href="#building-and-installing" title="Permalink to this headline">¶</a></h2>
+<p>Once you have all the required depencies installed, the simplest way
+to build and install Panel to use the <code class="docutils literal notranslate"><span class="pre">setup.py</span></code> script at the top
+level of the <em>source checkout</em> directory.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">setup.py</span></code> script has two main modes of operation:</p>
+<p><code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">setup.py</span> <span class="pre">install</span></code></p>
+<blockquote>
+<div>Panel will be installed in your Python <code class="docutils literal notranslate"><span class="pre">site-packages</span></code> directory.
+In this mode, any changes to the python source code will not show up
+until <code class="docutils literal notranslate"><span class="pre">setup.py</span> <span class="pre">install</span></code> is run again.</div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">setup.py</span> <span class="pre">develop</span></code></p>
+<blockquote>
+<div>Panel will be installed to refer to the source directory. Any changes
+you make to the python source code will be available immediately without
+any additional steps.</div></blockquote>
+</div>
+<div class="section" id="next-steps">
+<h2><a class="toc-backref" href="#id9">Next Steps</a><a class="headerlink" href="#next-steps" title="Permalink to this headline">¶</a></h2>
+<p>If you have any problems with the steps here, please <a class="reference external" href="https://gitter.im/pyviz/pyviz">contact the developers</a>.</p>
+<div class="toctree-wrapper compound">
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- END MAIN BODY OF DOCS ––––––––––––– -->
+<footer class="footer">
+<div class="footer-links">
+<ul>
+<li><span class="footer-title">Links</span></li>
+<li><a href="../getting_started/index.html">Getting started</a></li>
+<li><a href="../user_guide/index.html">User Guide</a></li>
+<li><a href="../gallery/index.html">Gallery</a></li>
+<li><a href="../reference/index.html">Reference Gallery</a></li>
+<li><a href="#">Developer Guide</a></li>
+<li><a href="../FAQ.html">FAQ</a></li>
+<li><a href="../about.html">About</a></li>
+</ul>
+<ul>
+<li><span class="footer-title">Join Us</span></li>
+<li><a href="//gitter.im/pyviz/pyviz">Gitter</a></li>
+<li><a href="//github.com/pyviz/panel">Github</a></li>
+</ul>
+<ul class="copyright">
+<li>2019 Panel contributors</li>
+</ul>
+</div>
+</footer>
+<!-- Google Analytics -->
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-61554933-1', 'auto');
+  ga('send', 'pageview');
+
+</script>
+<!-- MathJax Config -->
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
+});
+</script>
+<!-- End Document
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+</body>
+</html>
