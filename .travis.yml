@@ -117,7 +117,7 @@ jobs:
     - &doc_build
       <<: *conda_default
       stage: docs
-      env: DESC="docs" HV_DOC_HTML='true'
+      env: DESC="docs"
       script:
         - doit develop_install $CHANS_DEV -o doc -o examples
         # note: will vastly simplified in a future version of nbsite

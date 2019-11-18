@@ -11,11 +11,11 @@ A high-level app and dashboarding solution for Python
    <style>table {border-spacing: 15px} td { border: 1px solid black; vertical-align: top} </style>
    <table>
      <tr>
-       <td border=1><a href="https://examples.pyviz.org/attractors/clifford_panel.html"><b>Interact</b></a><br><a href="https://clifford.pyviz.demo.anaconda.com"><img src="_images/clifford.png" /></a></td>
-       <td border=1><a href="https://examples.pyviz.org/gapminders/gapminders.html"><b>Gapminders</b></a><br><a href="https://gapminders.pyviz.demo.anaconda.com"><img src="_images/gapminders.png" /></a></td>
-       <td border=1><a href="https://examples.pyviz.org/nyc_taxi/dashboard.html"><b>NYC Taxi</b></a><br><a href="https://nyc-taxi.pyviz.demo.anaconda.com"><img src="_images/nyc_taxi.png" /></a></td>
-       <td border=1><a href="https://examples.pyviz.org/glaciers/glaciers.html"><b>Glaciers</b></a><br><a href="https://glaciers.pyviz.demo.anaconda.com"><img src="_images/glaciers.png" /></a></td>
-       <td border=1><a href="https://examples.pyviz.org/portfolio_optimizer/portfolio.html"><b>Portfolio Optimizer</b></a><br><a href="https://portfolio-optimizer.pyviz.demo.anaconda.com"><img src="_images/portfolio-optimizer.png" /></a></td>
+       <td border=1><a href="https://examples.pyviz.org/attractors/attractors_panel.html"><b>Attractors</b></a><br><a href="https://attractors.pyviz.demo.anaconda.com/attractors_panel"><img src="http://assets.holoviews.org/panel/thumbnails/index/attractors.png" /></a></td>
+       <td border=1><a href="https://examples.pyviz.org/gapminders/gapminders.html"><b>Gapminders</b></a><br><a href="https://gapminders.pyviz.demo.anaconda.com"><img src="http://assets.holoviews.org/panel/thumbnails/index/gapminders.png" /></a></td>
+       <td border=1><a href="https://examples.pyviz.org/nyc_taxi/dashboard.html"><b>NYC Taxi</b></a><br><a href="https://nyc-taxi.pyviz.demo.anaconda.com"><img src="http://assets.holoviews.org/panel/thumbnails/index/nyc_taxi.png" /></a></td>
+       <td border=1><a href="https://examples.pyviz.org/glaciers/glaciers.html"><b>Glaciers</b></a><br><a href="https://glaciers.pyviz.demo.anaconda.com"><img src="http://assets.holoviews.org/panel/thumbnails/index/glaciers.png" /></a></td>
+       <td border=1><a href="https://examples.pyviz.org/portfolio_optimizer/portfolio.html"><b>Portfolio Optimizer</b></a><br><a href="https://portfolio-optimizer.pyviz.demo.anaconda.com"><img src="http://assets.holoviews.org/panel/thumbnails/index/portfolio_optimizer.png" /></a></td>
      <tr>
    </table>
 
@@ -40,9 +40,9 @@ Panel lets you move the same code freely between an interactive `Jupyter Noteboo
 Using Panel for declarative, reactive programming
 -------------------------------------------------
 
-Panel can also be used with the separate `Param <http://param.pyviz.org>`__ project to create interactively configurable objects with or without associated visualizations, in a fully declarative way. With this approach, you declare your configurable object using the pure-Python, zero-dependency ``param`` library, annotating your code with parameter ranges, documentation, and dependencies between parameters and your code. Using this information, you can make all of your domain-specific code be *optionally* configurable in a GUI, with *optional* visual displays and debugging information if you like, all with just a few lines of declarations. With this approach, you don't ever have to commit to whether your code will eventually be used in a notebook, in a GUI app, or completely behind the scenes in batch processing, servers, or reports -- the same code can support all of these cases equally well, once you declare the associated parameters and constraints. This approach lets you completely separate your domain-specific code from anything to do with web browsers, GUI toolkits, or other volatile technologies that would otherwise make your hard work become obsolete as they change over time.
+Panel can also be used with the separate `Param <http://param.pyviz.org>`__ project to create interactively configurable objects with or without associated visualizations, in a fully declarative way. With this approach, you declare your configurable object using the pure-Python, zero-dependency ``param`` library, annotating your code with parameter ranges, documentation, and dependencies between parameters and your code. Using this information, you can make all of your domain-specific code be *optionally* configurable in a GUI, with *optional* visual displays and debugging information if you like, all with just a few lines of declarations. With this approach, you don't ever have to decide whether your code will eventually be used in a notebook, in a GUI app, or completely behind the scenes in batch processing, servers, or reports -- the same code can support all of these cases equally well, once you declare the associated parameters and constraints. This approach lets you completely separate your domain-specific code from anything to do with web browsers, GUI toolkits, or other volatile technologies that would otherwise make your hard work become obsolete as they change over time.
 
-The `User Guide <user_guide>`_ explains how to use Panel.  Panel is currently in prerelease status, which means that it is available for public use but has an API that is expected to change with each new release without detailed notice.
+The `Getting Started <getting_started>`_ will provide a quick introduction to the panel API and get you started while the `User Guide <user_guide>`_ provides a more detailed guide on how to use Panel.
 
 If you have any `issues <https://github.com/pyviz/panel/issues>`_ or wish to `contribute code <https://help.github.com/articles/about-pull-requests>`_, you can visit our `GitHub site <https://github.com/pyviz/panel>`_ or chat with the developers on `gitter <https://gitter.im/pyviz/pyviz>`_.
 
@@ -81,12 +81,15 @@ And then you can launch Jupyter to explore them yourself using either Jupyter No
   jupyter lab
 
 
-PyViz
------
+HoloViz
+-------
 
-Panel is part of the PyViz family of tools.  The `PyViz website <http://pyviz.org>`_
-shows how to use Panel together with other libraries to solve complex problems,
-with detailed tutorials and examples.
+Panel is part of the HoloViz family of tools.  The `HoloViz website
+<https://holoviz.org>`_ shows how to use Panel together with other
+libraries to solve complex problems, with detailed tutorials and
+examples. For a list of examples building on this set of tools
+(including Panel) see `examples.pyviz.org
+<https://examples.pyviz.org/>`_.
 
 .. |CondaPyViz| image:: https://img.shields.io/conda/v/pyviz/panel.svg
 .. _CondaPyViz: https://anaconda.org/pyviz/panel

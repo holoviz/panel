@@ -1,11 +1,8 @@
 About Panel
 ===========
 
-Panel is supported and maintained by `Anaconda
-<https://www.anaconda.com>`_.  Panel is part of the `PyViz
-<https://pyviz.org>`_ project to make Python data visualization tools
-simpler and more powerful.
+Panel is completely open source, available under a BSD license freely for both commercial and non-commercial use. Panel is part of the HoloViz ecosystem and works well with all the HoloViz tools.
 
-The primary PyViz developers are Philipp Rudiger, James A. Bednar,
-Julia Signell and Jean-Luc Stevens, with bug reports and patches from
-numerous members of the Github community.
+Panel was originally developed with the support of `Anaconda Inc. <https://anaconda.com>`_, and is now maintained by Anaconda developers and community contributors.
+
+If you are interested in contributing to Panel development, you can see our list of open issues that you could help address, including possible larger wishlist items. And if you are lucky enough to be in a position to fund our developers to work on documentation, features, or bug fixes, please contact sales@anaconda.com.
