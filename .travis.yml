@@ -30,11 +30,7 @@ env:
 stages:
   - test
   - name: conda_dev_package
-    if: tag =~ ^v(\d+|\.)+([a-z]|rc)\d+$
-  - name: conda_package
-    if: tag =~ ^v(\d+|\.)+[^a-z]\d+$
   - name: pip_dev_package
-    if: tag =~ ^v(\d+|\.)+([a-z]|rc)\d+$
   - name: pip_package
     if: tag =~ ^v(\d+|\.)+[^a-z]\d+$
   - name: docs
@@ -87,7 +83,7 @@ jobs:
       env: DESC="" TRAVIS_NOCACHE=$TRAVIS_JOB_ID LABELS=$LABELS_DEV CHANS=$CHANS_DEV
       install:
         - doit package_build $CHANS $PKG_TEST_PYTHON --test-group=unit_deploy
-      script: doit package_upload --token=$ANACONDA_TOKEN $LABELS
+      script: doit package_upload --user=invalid $LABELS
 
     - &pip_pkg
       <<: *conda_default
@@ -100,7 +96,7 @@ jobs:
         - doit pip_on_conda
         - conda install $CHANS_DEV nodejs
         - doit ecosystem=pip package_build $PKG_TEST_PYTHON --test-group=unit_deploy
-      script: doit ecosystem=pip package_upload -u $PYPIUSER -p $PYPIPASS --pypi ${PYPI}
+      script: doit ecosystem=pip package_upload -u invalid -p none --pypi ${PYPI}
 
     ## release packages
 
