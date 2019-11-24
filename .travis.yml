@@ -96,7 +96,7 @@ jobs:
         - doit pip_on_conda
         - conda install $CHANS_DEV nodejs
         - doit ecosystem=pip package_build $PKG_TEST_PYTHON --test-group=unit_deploy
-      script: doit ecosystem=pip package_upload -u invalid -p none --pypi ${PYPI}
+      script: doit ecosystem=pip package_upload -u invalid -p none --pypi ${PYPI} || true
 
     ## release packages
 
