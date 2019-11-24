@@ -30,6 +30,8 @@ env:
 stages:
   - test
   - name: conda_dev_package
+  - name: conda_package
+    if: tag =~ ^v(\d+|\.)+[^a-z]\d+$  
   - name: pip_dev_package
   - name: pip_package
     if: tag =~ ^v(\d+|\.)+[^a-z]\d+$
@@ -83,7 +85,7 @@ jobs:
       env: DESC="" TRAVIS_NOCACHE=$TRAVIS_JOB_ID LABELS=$LABELS_DEV CHANS=$CHANS_DEV
       install:
         - doit package_build $CHANS $PKG_TEST_PYTHON --test-group=unit_deploy
-      script: doit package_upload --user=invalid $LABELS
+      script: doit package_upload --user=invalid $LABELS || true
 
     - &pip_pkg
       <<: *conda_default
