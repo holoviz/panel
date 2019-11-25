@@ -10,7 +10,6 @@ import param
 
 from bokeh.document.document import Document as _Document
 from bokeh.io import curdoc as _curdoc
-from bokeh.models import Row as _BkRow
 from jinja2.environment import Template as _Template
 from six import string_types
 from pyviz_comms import JupyterCommManager as _JupyterCommManager
@@ -22,6 +21,7 @@ from .io.server import StoppableThread, get_server
 from .io.state import state
 from .layout import Column
 from .pane import panel as _panel, PaneBase, HTML, Str
+from .viewable import Viewable
 from .widgets import Button
 
 _server_info = (
@@ -122,7 +122,8 @@ class Template(param.Parameterized):
             doc.title = title
 
         root = None
-        preprocess_root = _BkRow()
+        col = Column()
+        preprocess_root = col.get_root(doc, comm)
         ref = preprocess_root.ref['id']
         for name, (obj, tags) in self._render_items.items():
             if root is None:
@@ -134,17 +135,19 @@ class Template(param.Parameterized):
                     model = obj.layout._get_model(doc, root, root, comm=comm)
             else:
                 model = obj._get_model(doc, root, root, comm)
-            obj._models[ref] = obj._models[root.ref['id']]
-            preprocess_root.children.append(model)
+            for sub in obj.select(Viewable):
+                sub._models[ref] = sub._models.get(root.ref['id'])
+            obj._documents[doc] = root
+            doc.on_session_destroyed(obj._server_destroy)
+            col.append(obj)
             model.name = name
             model.tags = tags
-            if hasattr(doc, 'on_session_destroyed'):
-                doc.on_session_destroyed(obj._server_destroy)
-                obj._documents[doc] = model
             add_to_doc(model, doc, hold=bool(comm))
+        state._views[ref] = (col, preprocess_root, doc, comm)
 
-        for (obj, _) in self._render_items.values():
-            obj._preprocess(preprocess_root)
+        col._preprocess(preprocess_root)
+        col._documents[doc] = preprocess_root
+        doc.on_session_destroyed(col._server_destroy)
 
         if notebook:
             doc.template = self.nb_template
