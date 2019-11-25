@@ -154,8 +154,7 @@ class Template(param.Parameterized):
             doc.template = self.nb_template
         else:
             doc.template = self.template
-        for key, value in self._render_variables.items():
-            doc._template_variables[key] = value
+        doc._template_variables.update(self._render_variables)
         return doc
 
     def _repr_mimebundle_(self, include=None, exclude=None):
@@ -221,7 +220,7 @@ class Template(param.Parameterized):
                              'another variable. Ensure each variable '
                              'has a unique name by which it can be '
                              'referenced in the template.' % name)
-        self._render_params[name] = value
+        self._render_variables[name] = value
 
     def server_doc(self, doc=None, title=None):
         """
