@@ -70,6 +70,7 @@ class Template(param.Parameterized):
             nb_template = _Template(nb_template)
         self.nb_template = nb_template or template
         self._render_items = {}
+        self._render_variables = {}
         self._server = None
         self._layout = self._build_layout()
         items = {} if items is None else items
@@ -153,6 +154,8 @@ class Template(param.Parameterized):
             doc.template = self.nb_template
         else:
             doc.template = self.template
+        for key, value in self._render_variables.items():
+            doc._template_variables[key] = value
         return doc
 
     def _repr_mimebundle_(self, include=None, exclude=None):
@@ -200,6 +203,25 @@ class Template(param.Parameterized):
                              'referenced in the template.' % name)
         self._render_items[name] = (_panel(panel), tags)
         self._layout[0].object = repr(self)
+
+    def add_variable(self, name, value):
+        """
+        Add parameters to the template, which may then be referenced
+        by the given name in the Jinja2 template.
+
+        Arguments
+        ---------
+        name : str
+          The name to refer to the panel by in the template
+        value : object
+          Any valid Jinja2 variable type.
+        """
+        if name in self._render_variables:
+            raise ValueError('The name %s has already been used for '
+                             'another variable. Ensure each variable '
+                             'has a unique name by which it can be '
+                             'referenced in the template.' % name)
+        self._render_params[name] = value
 
     def server_doc(self, doc=None, title=None):
         """
