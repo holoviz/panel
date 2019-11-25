@@ -66,6 +66,11 @@ class ContinuousSlider(_SliderBase):
 
     __abstract = True
 
+    def __init__(self, **params):
+        if 'value' not in params:
+            params['value'] = params.get('start', self.start)
+        super(ContinuousSlider, self).__init__(**params)
+
     def _get_embed_state(self, root, max_opts=3):
         ref = root.ref['id']
         w_model, parent = self._models[ref]
@@ -112,11 +117,6 @@ class FloatSlider(ContinuousSlider):
 
 class IntSlider(ContinuousSlider):
 
-    def __init__(self, **params):
-        if 'value' not in params:
-            params['value'] = params.get('start', self.param.start.default)
-        super(ContinuousSlider, self).__init__(**params)
-
     value = param.Integer(default=0)
 
     value_throttled = param.Integer(default=None)
@@ -139,6 +139,11 @@ class DateSlider(_SliderBase):
     end = param.Date(default=None)
 
     _widget_type = _BkDateSlider
+
+    def __init__(self, **params):
+        if 'value' not in params:
+            params['value'] = params.get('start', self.start)
+        super(DateSlider, self).__init__(**params)
 
     def _process_property_change(self, msg):
         msg = super(_SliderBase, self)._process_property_change(msg)
@@ -279,6 +284,9 @@ class RangeSlider(_SliderBase):
     _widget_type = _BkRangeSlider
 
     def __init__(self, **params):
+        if 'value' not in params:
+            params['value'] = (params.get('start', self.start),
+                               params.get('end', self.end))
         super(RangeSlider, self).__init__(**params)
         values = [self.value[0], self.value[1], self.start, self.end]
         if (all(v is None or isinstance(v, int) for v in values) and
@@ -316,6 +324,12 @@ class DateRangeSlider(_SliderBase):
     step = param.Number(default=1)
 
     _widget_type = _BkDateRangeSlider
+
+    def __init__(self, **params):
+        if 'value' not in params:
+            params['value'] = (params.get('start', self.start),
+                               params.get('end', self.end))
+        super(DateRangeSlider, self).__init__(**params)
 
     def _process_property_change(self, msg):
         msg = super(DateRangeSlider, self)._process_property_change(msg)
