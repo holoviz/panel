@@ -63,10 +63,12 @@ class Select(SelectBase):
     def _process_param_change(self, msg):
         msg = super(Select, self)._process_param_change(msg)
         labels, values = self.labels, self.values
+        unique = len(set(self.unicode_values)) == len(labels)
         if 'value' in msg:
             val = msg['value']
             if isIn(val, values):
-                msg['value'] = self.unicode_values[indexOf(val, values)]
+                unicode_values = self.unicode_values if unique else labels 
+                msg['value'] = unicode_values[indexOf(val, values)]
             elif values:
                 self.value = self.values[0]
             elif self.value is not None:
@@ -74,7 +76,11 @@ class Select(SelectBase):
 
         if 'options' in msg:
             if isinstance(self.options, dict):
-                msg['options'] = [(v,l) for l,v in zip(labels, self.unicode_values)]
+                if unique:
+                    options = [(v, l) for l,v in zip(labels, self.unicode_values)]
+                else:
+                    options = labels
+                msg['options'] = options
             else:
                 msg['options'] = self.unicode_values
             val = self.value
@@ -97,7 +103,11 @@ class Select(SelectBase):
             elif msg['value'] is None:
                 msg['value'] = self.values[0]
             else:
-                msg['value'] = self._items[self.labels[indexOf(msg['value'],self.unicode_values)]]
+                if isIn(msg['value'], self.unicode_values):
+                    idx = indexOf(msg['value'], self.unicode_values)
+                else:
+                    idx = indexOf(msg['value'], self.labels)
+                msg['value'] = self._items[self.labels[idx]]
         msg.pop('options', None)
         return msg
 
