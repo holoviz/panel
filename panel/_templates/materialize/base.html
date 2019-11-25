@@ -1,0 +1,137 @@
+{% from macros import embed %}
+
+<!DOCTYPE html>
+<html lang="en">
+{% block head %}
+<head>
+    {% block inner_head %}
+    <meta charset="utf-8">
+    <title>{% block title %}{{ title | e if title else "Panel App" }}{% endblock %}</title>
+    {% block preamble %}{% endblock %}
+    {% block resources %}
+        {% block css_resources %}
+        {{ bokeh_css | indent(8) if bokeh_css }}
+        {% endblock %}
+        {% block js_resources %}
+        {{ bokeh_js | indent(8) if bokeh_js }}
+        {% endblock %}
+    {% endblock %}
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <style type="text/css">
+      body {
+        background-color: var(--jp-layout-color0);
+        overflow-y: scroll;
+      }
+      .nav-wrapper {
+        background-color: {{ nav_color }};
+      }
+      .brand-logo {
+        height: 75%;
+        margin: 8px;
+      }
+    </style>
+    {% block postamble %}{% endblock %}
+    {% endblock %}
+</head>
+{% endblock %}
+{% block body %}
+<body>
+    {% block inner_body %}
+    <header>
+      <div class="navbar-fixed">
+        <nav class="top-nav">
+          <div class="nav-wrapper">
+            {% if logo is not none %}
+            <a href="#!" class="brand-logo-container">
+              <object class="brand-logo" type="image/png" data="{{ logo }}"></object>
+            </a>
+            {% endif %}
+          </div>
+        </nav>
+      </div>
+    </header>
+    {% block contents %}
+    <div id="modal1" class="modal">
+	  <div class="modal-content">
+		{{ embed(roots._modal) }}
+      </div>
+	</div>
+
+    {{ embed(roots._hidden) }}
+
+    <div class="row">
+      {% if sidebar %}
+      <div class="col s2">	  
+      <h4>{{ inner_title }}</h4>
+      {% for doc in docs %}
+        {% for root in doc.roots %}
+          {% if "main" in root.tags %}
+          {% else %}
+            {{ embed(root) | indent(10) }}
+          {% endif %}
+        {% endfor %}
+      {% endfor %}
+	  </div>
+      <div class="col s12 m10">
+      {% else %}	
+      <div class="col s12 m12">
+      {% endif %}
+
+	  {% for row in rows %}
+	  <div class="row">
+	    {% for item in row.objects %}
+          {% if item.type == "card" %}
+	      {% for doc in docs %}
+            {% for root in doc.roots %}
+	          {% if root.name in item.names %}
+		      <div class="col {{ "m" + widths[root.name]|string }}">
+                <div class="card">
+                  <div class="card-image">
+                    {{ embed(root) | indent(10) }}
+                  </div>
+                  <div class="card-action">
+                    <div class="card-title"> {{ root.name }} </div>
+                  </div>
+                </div>
+		      </div>
+              {% endif %}
+            {% endfor %}
+          {% endfor %}
+          {% elif item.type == "collapsible" %}
+		  <div class="col {{ "m" + item.width|string }}">  
+            <ul class="collapsible {{ item.class }}">
+            {% for doc in docs %}
+              {% for root in doc.roots %}
+                {% if root.name in item.names %}
+                <li class="{{ "active" if "active" in root.tags }}"> 
+                  <div class="collapsible-header"><i class="material-icons">{{ icons[root.name] if root.name in icons else "add" }}</i>{{ root.name }}</div>
+                  <div class="collapsible-body">{{ embed(root) | indent(10) }}</div>
+                </li>
+                {% endif %}
+              {% endfor %}
+            {% endfor %}
+            </ul>
+          </div>
+          <script>
+            document.addEventListener('DOMContentLoaded', function() {
+              var elems = document.querySelectorAll('.'+"{{ item.class }}");
+              var instances = M.Collapsible.init(elems);
+            });
+          </script>
+          {% endif %}
+        {% endfor %}
+      </div>
+	  {% endfor %}
+    </div>
+	{% endblock %}
+    {{ plot_script | indent(8) }}
+    {% endblock %}
+
+    <script>
+      M.AutoInit();
+    </script>
+</body>
+{% endblock %}
+</html>
