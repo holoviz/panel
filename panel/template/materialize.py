@@ -6,9 +6,9 @@ from collections import Counter
 
 import param
 
-from .base import Template
 from ..pane import HTML
 from ..layout import Panel, Row
+from .base import Template
 
 
 class MaterializeTemplate(Template):

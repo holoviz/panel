@@ -14,15 +14,15 @@ from jinja2.environment import Template as _Template
 from six import string_types
 from pyviz_comms import JupyterCommManager as _JupyterCommManager
 
-from .config import panel_extension
-from .io.model import add_to_doc
-from .io.notebook import render_template
-from .io.server import StoppableThread, get_server
-from .io.state import state
-from .layout import Column
-from .pane import panel as _panel, PaneBase, HTML, Str
-from .viewable import Viewable
-from .widgets import Button
+from ..config import panel_extension
+from ..io.model import add_to_doc
+from ..io.notebook import render_template
+from ..io.server import StoppableThread, get_server
+from ..io.state import state
+from ..layout import Column
+from ..pane import panel as _panel, PaneBase, HTML, Str
+from ..viewable import Viewable
+from ..widgets import Button
 
 _server_info = (
     '<b>Running server:</b> <a target="_blank" href="https://localhost:{port}">'
