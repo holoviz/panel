@@ -22,6 +22,7 @@ from .io.server import StoppableThread, get_server
 from .io.state import state
 from .layout import Column
 from .pane import panel as _panel, PaneBase, HTML, Str
+from .viewable import Viewable
 from .widgets import Button
 
 _server_info = (
@@ -135,8 +136,9 @@ class Template(param.Parameterized):
                     model = obj.layout._get_model(doc, root, root, comm=comm)
             else:
                 model = obj._get_model(doc, root, root, comm)
-            obj._models[ref] = obj._models[root.ref['id']]
-            preprocess_root.children.append(model)
+            for sub in obj.select(Viewable):
+                sub._models[ref] = sub._models.pop(root.ref['id'])
+            col.append(obj)
             model.name = name
             model.tags = tags
             if hasattr(doc, 'on_session_destroyed'):
@@ -145,8 +147,7 @@ class Template(param.Parameterized):
             add_to_doc(model, doc, hold=bool(comm))
         state._views[ref] = (col, preprocess_root, doc, comm)
 
-        for (obj, _) in self._render_items.values():
-            obj._preprocess(preprocess_root)
+        col._preprocess(preprocess_root)
 
         if notebook:
             doc.template = self.nb_template
