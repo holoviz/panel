@@ -122,7 +122,8 @@ class Template(param.Parameterized):
             doc.title = title
 
         root = None
-        preprocess_root = _BkRow()
+        col = Column()
+        preprocess_root = col.get_root(doc, comm)
         ref = preprocess_root.ref['id']
         for name, (obj, tags) in self._render_items.items():
             if root is None:
@@ -142,6 +143,7 @@ class Template(param.Parameterized):
                 doc.on_session_destroyed(obj._server_destroy)
                 obj._documents[doc] = model
             add_to_doc(model, doc, hold=bool(comm))
+        state._views[ref] = (col, preprocess_root, doc, comm)
 
         for (obj, _) in self._render_items.values():
             obj._preprocess(preprocess_root)
