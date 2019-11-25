@@ -10,7 +10,6 @@ import param
 
 from bokeh.document.document import Document as _Document
 from bokeh.io import curdoc as _curdoc
-from bokeh.models import Row as _BkRow
 from jinja2.environment import Template as _Template
 from six import string_types
 from pyviz_comms import JupyterCommManager as _JupyterCommManager
