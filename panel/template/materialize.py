@@ -1,5 +1,7 @@
 from __future__ import absolute_import, division, unicode_literals
 
+import param
+
 from .base import Template
 from ..pane import HTML
 from ..layout import Panel, Row
