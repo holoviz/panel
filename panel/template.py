@@ -136,17 +136,18 @@ class Template(param.Parameterized):
             else:
                 model = obj._get_model(doc, root, root, comm)
             for sub in obj.select(Viewable):
-                sub._models[ref] = sub._models.pop(root.ref['id'])
+                sub._models[ref] = sub._models.get(root.ref['id'])
+            obj._documents[doc] = root
+            doc.on_session_destroyed(obj._server_destroy)
             col.append(obj)
             model.name = name
             model.tags = tags
-            if hasattr(doc, 'on_session_destroyed'):
-                doc.on_session_destroyed(obj._server_destroy)
-                obj._documents[doc] = model
             add_to_doc(model, doc, hold=bool(comm))
         state._views[ref] = (col, preprocess_root, doc, comm)
 
         col._preprocess(preprocess_root)
+        col._documents[doc] = preprocess_root
+        doc.on_session_destroyed(col._server_destroy)
 
         if notebook:
             doc.template = self.nb_template
