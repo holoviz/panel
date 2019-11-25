@@ -19,7 +19,7 @@ from .io.model import add_to_doc
 from .io.notebook import render_template
 from .io.server import StoppableThread, get_server
 from .io.state import state
-from .layout import Column, Row, Panel
+from .layout import Column
 from .pane import panel as _panel, PaneBase, HTML, Str
 from .viewable import Viewable
 from .widgets import Button

@@ -1,1 +1,1 @@
-from .base import Template
+from .base import Template # noqa
