@@ -105,6 +105,16 @@ class _config(param.Parameterized):
     _embed_save_path = param.String(default='./', doc="""
         Where to save json files for embedded state.""")
 
+    _oauth_provider = param.ObjectSelector(default=None, allow_None=True,
+                                           objects=['github'], doc="""
+        Select between a list of authentification providers.""")
+
+    _oauth_key = param.String(default=None, doc="""
+        A client key to provide to the OAuth provider.""")
+
+    _oauth_secret = param.String(default=None, doc="""
+        A client secret to provide to the OAuth provider.""")
+
     _inline = param.Boolean(default=True, allow_None=True, doc="""
         Whether to inline JS and CSS resources. If disabled, resources
         are loaded from CDN if one is available.""")
@@ -232,6 +242,42 @@ class _config(param.Parameterized):
         validate_config(self, '_inline', value)
         self._inline_ = value
 
+    @property
+    def oauth_provider(self):
+        if self._oauth_provider_ is not None:
+            return self._oauth_provider_
+        else:
+            return os.environ.get('PANEL_OAUTH_PROVIDER', _config._oauth_provider).lower()
+
+    @oauth_provider.setter
+    def oauth_provider(self, value):
+        validate_config(self, '_oauth_provider', value.lower())
+        self._oauth_provider_ = value.lower()
+
+    @property
+    def oauth_key(self):
+        if self._oauth_key_ is not None:
+            return self._oauth_key_
+        else:
+            return os.environ.get('PANEL_OAUTH_KEY', _config._oauth_key)
+
+    @oauth_key.setter
+    def oauth_key(self, value):
+        validate_config(self, '_oauth_key', value)
+        self._oauth_key_ = value
+
+    @property
+    def oauth_secret(self):
+        if self._oauth_secret_ is not None:
+            return self._oauth_secret_
+        else:
+            return os.environ.get('PANEL_OAUTH_SECRET', _config._oauth_secret)
+
+    @oauth_secret.setter
+    def oauth_secret(self, value):
+        validate_config(self, '_oauth_secret', value)
+        self._oauth_secret_ = value
+        
 
 if hasattr(_config.param, 'objects'):
     _params = _config.param.objects()

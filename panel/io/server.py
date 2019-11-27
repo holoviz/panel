@@ -299,6 +299,10 @@ def get_server(panel, port=0, address=None, websocket_origin=None,
             websocket_origin = [websocket_origin]
         opts['allow_websocket_origin'] = websocket_origin
 
+    from ..config import config
+    if config.oauth_provider:
+        from ..auth import OAuthProvider
+        opts['auth_provider'] = OAuthProvider()
     server = Server(apps, port=port, **opts)
     if verbose:
         address = server.address or 'localhost'
@@ -308,7 +312,7 @@ def get_server(panel, port=0, address=None, websocket_origin=None,
 
     if show:
         def show_callback():
-            server.show('/')
+            server.show('/login' if config.oauth_provider else '/')
         server.io_loop.add_callback(show_callback)
 
     def sig_exit(*args, **kwargs):
