@@ -14,7 +14,7 @@ def test_audio_array(document, comm):
     data = np.random.randint(-100,100, 100).astype('int16')
     sample_rate = 10
     buffer = BytesIO()
-    scipy_io.wavfile.write(buffer, sample_rate, data)
+    wavfile.write(buffer, sample_rate, data)
     b64_encoded = b64encode(buffer.getvalue()).decode('utf-8')
 
     audio = Audio(name='Button', value=data, sample_rate=sample_rate)
