@@ -1,7 +1,5 @@
-from distutils.version import LooseVersion
-
 import pytest
-import param
+param = pytest.importorskip("param", minversion="1.8.3")
 
 from panel.layout import Row, Column
 from panel.pane import HoloViews
@@ -9,14 +7,8 @@ from panel.param import ParamMethod
 from panel.pipeline import Pipeline, find_route
 from panel.widgets import Button, Select
 
-if LooseVersion(param.__version__) < '1.8.2':
-    pytest.skip("skipping if param version < 1.8.2", allow_module_level=True)
 
-try:
-    import holoviews as hv
-except:
-    pytest.skip('Pipeline requires HoloViews.')
-
+hv = pytest.importorskip("holoviews")
 
 class Stage1(param.Parameterized):
 

@@ -3,8 +3,10 @@ from __future__ import absolute_import, division, unicode_literals
 from io import BytesIO
 from base64 import b64encode
 
+import pytest
+
 import numpy as np
-from scipy.io import wavfile
+pytest.importorskip("scipy.io")#from scipy.io import wavfile
 
 from panel.widgets import Audio
 
@@ -12,7 +14,7 @@ def test_audio_array(document, comm):
     data = np.random.randint(-100,100, 100).astype('int16')
     sample_rate = 10
     buffer = BytesIO()
-    wavfile.write(buffer, sample_rate, data)
+    scipy.io.wavfile.write(buffer, sample_rate, data)
     b64_encoded = b64encode(buffer.getvalue()).decode('utf-8')
 
     audio = Audio(name='Button', value=data, sample_rate=sample_rate)

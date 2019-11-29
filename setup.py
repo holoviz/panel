@@ -103,8 +103,6 @@ _recommended = [
 
 extras_require = {
     'tests': [
-        'coveralls',
-        'nose',
         'flake8',
         'parameterized',
         'pytest',

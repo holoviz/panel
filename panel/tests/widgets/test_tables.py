@@ -1,9 +1,7 @@
 from __future__ import absolute_import, division, unicode_literals
+import pytest
 
-try:
-    import pandas as pd
-except ImportError:
-    pass
+pd = pytest.importorskip("pandas")
 
 from bokeh.models.widgets.tables import (
     NumberFormatter, IntEditor, NumberEditor, StringFormatter,

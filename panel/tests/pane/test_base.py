@@ -9,7 +9,13 @@ from panel.pane import Pane, PaneBase, Bokeh, HoloViews
 from panel.param import ParamMethod
 from panel.tests.util import check_layoutable_properties
 
-all_panes = [w for w in param.concrete_descendents(PaneBase).values()
+def _maybe_skip(w):
+    requirements = { 'Plotly': 'plotly' }
+    req = requirements.get(w.__name__, None)
+    kw = {'marks': pytest.importorskip(req)} if req is not None else {}
+    return pytest.param(w,**kw)
+
+all_panes = [_maybe_skip(w) for w in param.concrete_descendents(PaneBase).values()
              if not w.__name__.startswith('_') and not
              issubclass(w, (Bokeh, HoloViews, ParamMethod, interactive))]
 
