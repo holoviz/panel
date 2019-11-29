@@ -127,18 +127,10 @@ class Template(param.Parameterized):
         preprocess_root = col.get_root(doc, comm)
         ref = preprocess_root.ref['id']
         for name, (obj, tags) in self._render_items.items():
-            if root is None:
-                root = model = obj.get_root(doc, comm)
-            elif isinstance(obj, PaneBase):
-                if obj._updates:
-                    model = obj._get_model(doc, root, root, comm=comm)
-                else:
-                    model = obj.layout._get_model(doc, root, root, comm=comm)
-            else:
-                model = obj._get_model(doc, root, root, comm)
+            model = obj.get_root(doc, comm)
             for sub in obj.select(Viewable):
-                sub._models[ref] = sub._models.get(root.ref['id'])
-            obj._documents[doc] = root
+                sub._models[ref] = sub._models.get(model.ref['id'])
+            obj._documents[doc] = model
             doc.on_session_destroyed(obj._server_destroy)
             col.append(obj)
             model.name = name
