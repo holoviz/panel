@@ -3,8 +3,6 @@ These that verify Templates are working correctly.
 """
 from __future__ import absolute_import, division, unicode_literals
 
-from collections import namedtuple
-
 try:
     import holoviews as hv
 except:
