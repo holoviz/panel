@@ -6,7 +6,7 @@ from base64 import b64encode
 import pytest
 
 import numpy as np
-pytest.importorskip("scipy.io")
+scipy_io = pytest.importorskip("scipy.io")
 
 from panel.widgets import Audio
 
@@ -14,7 +14,7 @@ def test_audio_array(document, comm):
     data = np.random.randint(-100,100, 100).astype('int16')
     sample_rate = 10
     buffer = BytesIO()
-    scipy.io.wavfile.write(buffer, sample_rate, data)
+    scipy_io.wavfile.write(buffer, sample_rate, data)
     b64_encoded = b64encode(buffer.getvalue()).decode('utf-8')
 
     audio = Audio(name='Button', value=data, sample_rate=sample_rate)
