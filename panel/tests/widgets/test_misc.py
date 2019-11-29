@@ -6,7 +6,7 @@ from base64 import b64encode
 import pytest
 
 import numpy as np
-scipy_io = pytest.importorskip("scipy.io")
+wavfile = pytest.importorskip("scipy.io.wavfile")
 
 from panel.widgets import Audio
 
