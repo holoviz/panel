@@ -3,14 +3,19 @@ These that verify Templates are working correctly.
 """
 from __future__ import absolute_import, division, unicode_literals
 
+from collections import namedtuple
+
 try:
     import holoviews as hv
 except:
     hv = None
 
+import param
+
 from panel.layout import Row
 from panel.pane import HoloViews
 from panel.template import Template
+from panel.widgets import FloatSlider
 
 from .util import hv_available
 
@@ -45,3 +50,30 @@ def test_template_links_axes(document, comm):
     assert m1.y_range is not m2.y_range
     assert m2.x_range is m3.x_range
     assert m2.y_range is m3.y_range
+
+
+def test_template_session_destroy(document, comm):
+    tmplt = Template(template)
+
+    widget = FloatSlider()
+    row = Row('A', 'B')
+    
+    tmplt.add_panel('A', widget)
+    tmplt.add_panel('B', row)
+
+    tmplt._init_doc(document, comm, notebook=True)
+    session_context = param.Parameterized()
+    session_context._document = document
+
+    assert len(widget._models) == 2
+    assert len(row._models) == 2
+    assert len(row[0]._models) == 2
+    assert len(row[1]._models) == 2
+
+    for cb in document.session_destroyed_callbacks:
+        cb(session_context)
+
+    assert len(widget._models) == 0
+    assert len(row._models) == 0
+    assert len(row[0]._models) == 0
+    assert len(row[1]._models) == 0
