@@ -20,7 +20,7 @@ from .io.notebook import render_template
 from .io.server import StoppableThread, get_server
 from .io.state import state
 from .layout import Column
-from .pane import panel as _panel, PaneBase, HTML, Str
+from .pane import panel as _panel, HTML, Str
 from .viewable import Viewable
 from .widgets import Button
 
@@ -122,7 +122,6 @@ class Template(param.Parameterized):
         if title is not None:
             doc.title = title
 
-        root = None
         col = Column()
         preprocess_root = col.get_root(doc, comm)
         ref = preprocess_root.ref['id']
