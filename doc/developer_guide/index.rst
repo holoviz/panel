@@ -76,7 +76,7 @@ more consistent and general.
 
 .. code-block:: sh
 
-    conda install -c pyviz pyctdev>0.5.0
+    conda install -c pyviz "pyctdev>0.5.0"
     doit ecosystem_setup
 
 Once pyctdev is available and you are in the cloned panel repository you can
