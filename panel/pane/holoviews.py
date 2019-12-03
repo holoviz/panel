@@ -536,11 +536,11 @@ def link_axes(root_view, root_model):
 
             fig = p.state
             if fig.x_range.tags:
-                range_map[fig.x_range.tags[0]].append((fig, p, fig.x_range))
+                range_map[(fig.x_range.tags[0], plot.root.ref['id'])].append((fig, p, fig.x_range))
             if fig.y_range.tags:
-                range_map[fig.y_range.tags[0]].append((fig, p, fig.y_range))
+                range_map[(fig.y_range.tags[0], plot.root.ref['id'])].append((fig, p, fig.y_range))
 
-    for tag, axes in range_map.items():
+    for (tag, _), axes in range_map.items():
         fig, p, axis = axes[0]
         for fig, p, _ in axes[1:]:
             if tag in fig.x_range.tags and not axis is fig.x_range:
