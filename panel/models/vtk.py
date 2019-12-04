@@ -24,6 +24,8 @@ class VTKPlot(HTMLBox):
 
     camera = Dict(String, Any)
 
+    axes = Dict(String, Any)
+
     enable_keybindings = Bool(default=False)
 
     orientation_widget = Bool(default=False)
