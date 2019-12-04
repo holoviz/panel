@@ -543,12 +543,23 @@ def link_axes(root_view, root_model):
     for (tag, _), axes in range_map.items():
         fig, p, axis = axes[0]
         for fig, p, _ in axes[1:]:
+            changed = []
             if tag in fig.x_range.tags and not axis is fig.x_range:
                 fig.x_range = axis
                 p.handles['x_range'] = axis
+                changed.append('x_range')
             if tag in fig.y_range.tags and not axis is fig.y_range:
                 fig.y_range = axis
                 p.handles['y_range'] = axis
+                changed.append('y_range')
+
+            # Reinitialize callbacks linked to replaced axes
+            for callback in p.callbacks:
+                if not any(c in callback.models or c in callback.extra_models for c in changed):
+                    continue
+                callback.reset()
+                callback.initialize(plot_id=p.id)
+
 
 Viewable._preprocessing_hooks.append(link_axes)
 Viewable._preprocessing_hooks.append(find_links)
