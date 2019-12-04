@@ -8,7 +8,22 @@ import {
   vtkHttpSceneLoader, vtk, vtkOutlineFilter, vtkMapper, vtkActor, create_axes
 } from "./vtk_utils"
 
-
+export type AxesProperties = {
+  grid?: boolean,
+  grid_opacity?: number,
+  axes_opacity?: number,
+  axes_color?: string,
+  grid_color?: string,
+  origin: number[],
+  xticks: number[],
+  xlabels?: number[],
+  yticks: number[],
+  ylabels?: number[],
+  zticks: number[],
+  zlabels?: number[],
+  label_font?: string,
+  label_fontsize?: string,
+}
 
 export class VTKPlotView extends HTMLBoxView {
   model: VTKPlot
@@ -143,6 +158,13 @@ export class VTKPlotView extends HTMLBoxView {
     this.connect(this.model.properties.orientation_widget.change, () => {
       this._orientation_widget_visbility(this.model.orientation_widget)
     })
+    this.connect(this.model.properties.show_axes.change, () => {
+      if(this.model.show_axes)
+        this._set_axes()
+      else
+        this._delete_axes()
+      this._rendererEl.getRenderWindow().render()
+    })
 
     this.el.addEventListener('mouseenter', () => {
       const interactor = this._rendererEl.getInteractor()
@@ -189,27 +211,33 @@ export class VTKPlotView extends HTMLBoxView {
         this._setting = false;
       }
       if (this._orientationWidget != null){
-        this._orientationWidget.updateMarkerOrientation();
+        this._orientationWidget.updateMarkerOrientation()
       }
       this._rendererEl.getRenderer().resetCameraClippingRange()
-      this._rendererEl.getRenderWindow().render();
+      this._rendererEl.getRenderWindow().render()
     }
   }
 
+  _delete_axes(): void{
+    Object.keys(this._axes).forEach((key) => this._rendererEl.getRenderer().removeActor(this._axes[key]))
+    const axesCanvas = this._rendererEl.getContainer().getElementsByClassName('axes-canvas')[0]
+    const textCtx = axesCanvas.getContext("2d");
+    if (textCtx)
+      textCtx.clearRect(0, 0, axesCanvas.clientWidth * window.devicePixelRatio, axesCanvas.clientHeight * window.devicePixelRatio)
+  }
   
   _set_axes(): void{
-    const axesCanvas = this._rendererEl.getContainer().getElementsByClassName('axes-canvas')[0]
-    const {origin, xticks, yticks, zticks} = this.model.axes
-    const {psActor, axesActor, gridActor} = create_axes(origin, xticks, yticks, zticks, axesCanvas)
-    this._axes = {
-      psActor,
-      axesActor,
-      gridActor
+    if (this.model.axes_properties){
+      const axesCanvas = this._rendererEl.getContainer().getElementsByClassName('axes-canvas')[0]
+      const {origin, xticks, yticks, zticks} = this.model.axes_properties
+      const {psActor, axesActor, gridActor} = create_axes(origin, xticks, yticks, zticks, axesCanvas)
+      this._axes = {psActor, axesActor, gridActor}
+      this._rendererEl.getRenderer().addActor(psActor)
+      this._rendererEl.getRenderer().addActor(axesActor)
+      this._rendererEl.getRenderer().addActor(gridActor)
     }
-    this._rendererEl.getRenderer().addActor(psActor)
-    this._rendererEl.getRenderer().addActor(axesActor)
-    this._rendererEl.getRenderer().addActor(gridActor)
   }
+
 
   _plot(): void{
     this._delete_all_actors()
@@ -227,7 +255,7 @@ export class VTKPlotView extends HTMLBoxView {
         const fn = vtk.macro.debounce(() => {
           if (this._orientationWidget == null)
             this._create_orientation_widget()
-          if (this._axes == null && this.model.axes)
+          if (this._axes == null && this.model.show_axes)
             this._set_axes()
             this._set_camera_state()
         }, 100)
@@ -247,7 +275,8 @@ export namespace VTKPlot {
   export type Props = HTMLBox.Props & {
     data: p.Property<string>
     camera: p.Property<any>
-    axes: p.Property<any>
+    axes_properties: p.Property<AxesProperties>
+    show_axes: p.Property<boolean>
     enable_keybindings: p.Property<boolean>
     orientation_widget: p.Property<boolean>
   }
@@ -283,8 +312,9 @@ export class VTKPlot extends HTMLBox {
     this.define<VTKPlot.Props>({
       data:               [ p.String         ],
       camera:             [ p.Any            ],
-      axes:               [ p.Any            ],
+      axes_properties:    [ p.Any            ],
       enable_keybindings: [ p.Boolean, false ],
+      show_axes:          [ p.Boolean, false ],
       orientation_widget: [ p.Boolean, false ],
     })
 

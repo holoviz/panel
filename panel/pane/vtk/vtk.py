@@ -162,9 +162,15 @@ class VTK(PaneBase):
 
     camera = param.Dict(doc="""State of the rendered VTK camera.""")
 
-    axes = param.Dict(doc="""
+    axes_properties = param.Dict(doc="""
         Axes to construct in the 3d view.
         Detail TODO
+    """)
+
+    show_axes = param.Boolean(default=False, doc="""
+        Activate/Deactivate the display of the axes
+
+        Warning: if set to true, axes_properties have to be defined.
     """)
 
     enable_keybindings = param.Boolean(default=False, doc="""
@@ -220,7 +226,7 @@ class VTK(PaneBase):
         model = VTKPlot(data=data, **props)
         if root is None:
             root = model
-        self._link_props(model, ['data', 'camera', 'axes', 'enable_keybindings', 'orientation_widget'], doc, root, comm)
+        self._link_props(model, ['data', 'camera', 'axes_properties', 'enable_keybindings', 'orientation_widget', 'show_axes'], doc, root, comm)
         self._models[root.ref['id']] = (model, parent)
         return model
 
