@@ -139,7 +139,10 @@ export class VTKPlotView extends HTMLBoxView {
 
   connect_signals(): void {
     super.connect_signals()
-    this.connect(this.model.properties.data.change, () => this._plot())
+    this.connect(this.model.properties.data.change, () => {
+      this._plot()
+      this._set_axes()
+    })
     this.connect(this.model.properties.camera.change, () => this._set_camera_state())
     this.connect(this.model.properties.orientation_widget.change, () => {
       this._orientation_widget_visbility(this.model.orientation_widget)
@@ -204,11 +207,13 @@ export class VTKPlotView extends HTMLBoxView {
   }
 
   _delete_axes(): void{
-    Object.keys(this._axes).forEach((key) => this._rendererEl.getRenderer().removeActor(this._axes[key]))
-    const axesCanvas = this._rendererEl.getContainer().getElementsByClassName('axes-canvas')[0]
-    const textCtx = axesCanvas.getContext("2d");
-    if (textCtx)
-      textCtx.clearRect(0, 0, axesCanvas.clientWidth * window.devicePixelRatio, axesCanvas.clientHeight * window.devicePixelRatio)
+    if(this._axes != null)
+      Object.keys(this._axes).forEach((key) => this._rendererEl.getRenderer().removeActor(this._axes[key]))
+      const axesCanvas = this._rendererEl.getContainer().getElementsByClassName('axes-canvas')[0]
+      const textCtx = axesCanvas.getContext("2d");
+      if (textCtx)
+        textCtx.clearRect(0, 0, axesCanvas.clientWidth * window.devicePixelRatio, axesCanvas.clientHeight * window.devicePixelRatio)
+      this._axes = null
   }
   
   _set_axes(): void{
