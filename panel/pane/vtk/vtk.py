@@ -74,7 +74,6 @@ class VTKVolume(PaneBase):
                               **props)
         if root is None:
             root = model
-        self._link_props(model, ['data'], doc, root, comm)
         self._models[root.ref['id']] = (model, parent)
         return model
 
@@ -215,7 +214,7 @@ class VTK(PaneBase):
         model = VTKPlot(data=data, **props)
         if root is None:
             root = model
-        self._link_props(model, ['data', 'camera', 'enable_keybindings', 'orientation_widget'], doc, root, comm)
+        self._link_props(model, ['camera', 'enable_keybindings', 'orientation_widget'], doc, root, comm)
         self._models[root.ref['id']] = (model, parent)
         return model
 
