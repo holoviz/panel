@@ -162,15 +162,9 @@ class VTK(PaneBase):
 
     camera = param.Dict(doc="""State of the rendered VTK camera.""")
 
-    axes_properties = param.Dict(doc="""
+    axes = param.Dict(doc="""
         Axes to construct in the 3d view.
         Detail TODO
-    """)
-
-    show_axes = param.Boolean(default=False, doc="""
-        Activate/Deactivate the display of the axes
-
-        Warning: if set to true, axes_properties have to be defined.
     """)
 
     enable_keybindings = param.Boolean(default=False, doc="""
@@ -226,7 +220,7 @@ class VTK(PaneBase):
         model = VTKPlot(data=data, **props)
         if root is None:
             root = model
-        self._link_props(model, ['data', 'camera', 'axes_properties', 'enable_keybindings', 'orientation_widget', 'show_axes'], doc, root, comm)
+        self._link_props(model, ['camera', 'enable_keybindings', 'orientation_widget'], doc, root, comm)
         self._models[root.ref['id']] = (model, parent)
         return model
 
@@ -262,6 +256,16 @@ class VTK(PaneBase):
     def _init_properties(self):
         return {k: v for k, v in self.param.get_param_values()
                 if v is not None and k not in ['default_layout', 'object', 'infer_legend', 'serialize_on_instantiation']}
+    
+
+    def _process_param_change(self, msg):
+        msg = super(VTK, self)._process_param_change(msg)
+        if 'axes' in msg and msg['axes'] is not None:
+            VTKAxes = getattr(sys.modules['panel.models.vtk'], 'VTKAxes')
+            axes = msg['axes']
+            msg['axes'] = VTKAxes(**axes)
+        return msg
+        
 
     @classmethod
     def register_serializer(cls, class_type, serializer):
