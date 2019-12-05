@@ -89,7 +89,7 @@ export class VTKAxes extends Model {
     return out
   }
   
-  _create_grid_axes(){
+  _create_grid_axes(): any{
     const pts = []
     pts.push(cartesian_product(this.xticks, this.yticks, [this.origin[2]])) //xy
     pts.push(cartesian_product([this.origin[0]], this.yticks, this.zticks)) //yz

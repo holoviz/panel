@@ -227,7 +227,6 @@ export class VTKPlotView extends HTMLBoxView {
     }
   }
 
-
   _plot(): void{
     this._delete_all_actors()
     if (!this.model.data) {
