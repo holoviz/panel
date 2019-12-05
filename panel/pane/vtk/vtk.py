@@ -163,8 +163,21 @@ class VTK(PaneBase):
     camera = param.Dict(doc="""State of the rendered VTK camera.""")
 
     axes = param.Dict(doc="""
-        Axes to construct in the 3d view.
-        Detail TODO
+        Parameters of the axes to construct in the 3d view.
+
+        Must contain at least ``xticker``, ``yticker`` and ``zticker``.
+        A ``ticker`` is a dictionary which contains:
+            - ``ticks`` (array of numbers) - required. Positions in the scene coordinates
+            of the coresponding axe ticks
+            - ``labels`` (array of strings) - optional. Label displayed respectively to
+            the `ticks` positions.
+            
+            If `labels` are not defined they are infered from the `ticks` array.
+        ``digits``: number of decimal digits when `ticks` are converted to `labels`.
+        ``fontsize``: size in pts of the ticks labels.
+        ``show_grid``: boolean. If true (default) the axes grid is visible.
+        ``grid_opactity``: float between 0-1. Defines the grid opacity.
+        ``axes_opactity``: float between 0-1. Defines the axes lines opacity.
     """)
 
     enable_keybindings = param.Boolean(default=False, doc="""
