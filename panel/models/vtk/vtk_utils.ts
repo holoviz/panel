@@ -29,4 +29,3 @@ export function cartesian_product(...arrays: any){
   acc.flatMap((c: any) => curr.map((n: any) => [].concat(c, n)))
   );
 }
-
