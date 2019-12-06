@@ -81,8 +81,8 @@ def param_name(name):
     """
     Removes the integer id from a Parameterized class name.
     """
-    match = re.match(r'(.)+(\d){5}', name)
-    return name[:-5] if match else name
+    match = re.findall(r'\D+(\d{5,})', name)
+    return name[:name.index(match[0])] if match else name
 
 
 def unicode_repr(obj):
