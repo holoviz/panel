@@ -30,7 +30,7 @@ from .io.notebook import (
 )
 from .io.save import save
 from .io.state import state
-from .io.server import StoppableThread, get_server
+from .io.server import StoppableThread, get_server, unlocked
 from .util import param_reprs
 
 
@@ -647,7 +647,8 @@ class Reactive(Viewable):
                 viewable, root, doc, comm = state._views[ref]
 
                 if comm or state._unblocked(doc):
-                    self._update_model(events, msg, root, model, doc, comm)
+                    with unlocked():
+                        self._update_model(events, msg, root, model, doc, comm)
                     if comm and 'embedded' not in root.tags:
                         push(doc, comm)
                 else:

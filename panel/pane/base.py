@@ -11,7 +11,7 @@ import param
 from bokeh.io import curdoc as _curdoc
 from bokeh.models.layouts import GridBox as _BkGridBox
 
-from ..io import push, state
+from ..io import push, state, unlocked
 from ..layout import Panel, Row
 from ..links import Link
 from ..viewable import Viewable, Reactive, Layoutable
@@ -139,7 +139,8 @@ class PaneBase(Reactive):
         for ref, (model, parent) in self._models.items():
             viewable, root, doc, comm = state._views[ref]
             if comm or state._unblocked(doc):
-                self._update_object(model, doc, root, parent, comm)
+                with unlocked():
+                    self._update_object(model, doc, root, parent, comm)
                 if comm and 'embedded' not in root.tags:
                     push(doc, comm)
             else:

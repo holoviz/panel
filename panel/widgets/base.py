@@ -9,7 +9,7 @@ from functools import partial
 
 import param
 
-from ..io import push, state
+from ..io import push, state, unlocked
 from ..viewable import Reactive, Layoutable
 
 
@@ -65,7 +65,8 @@ class Widget(Reactive):
         for ref, (model, parent) in self._models.items():
             viewable, root, doc, comm = state._views[ref]
             if comm or state._unblocked(doc):
-                self._manual_update(event, model, doc, root, parent, comm)
+                with unlocked():
+                    self._manual_update(event, model, doc, root, parent, comm)
                 if comm and 'embedded' not in root.tags:
                     push(doc, comm)
             else:
