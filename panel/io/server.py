@@ -61,7 +61,9 @@ def unlocked():
                     socket.write_message(msg.header_json, locked=False)
                     socket.write_message(msg.metadata_json, locked=False)
                     socket.write_message(msg.content_json, locked=False)
-                    msg.write_buffers(socket, locked=False)
+                    for header, payload in msg._buffers:
+                        socket.write_message(header, locked=False)
+                        socket.write_message(payload, binary=True, locked=False)
                 elif event not in events:
                     events.append(event)
         curdoc._held_events = events
