@@ -49,14 +49,20 @@ def unlocked():
         yield
         return
     connections = curdoc.session_context.session._subscribed_connections
-    curdoc.hold()
+
+    hold = curdoc._hold
+    if hold:
+        old_events = list(curdoc._held_events)
+    else:
+        old_events = []
+        curdoc.hold()
     try:
         yield
         events = []
         for conn in connections:
             socket = conn._socket
             for event in curdoc._held_events:
-                if isinstance(event, ModelChangedEvent):
+                if isinstance(event, ModelChangedEvent) and event not in old_events:
                     msg = conn.protocol.create('PATCH-DOC', [event])
                     socket.write_message(msg.header_json, locked=False)
                     socket.write_message(msg.metadata_json, locked=False)
@@ -68,7 +74,8 @@ def unlocked():
                     events.append(event)
         curdoc._held_events = events
     finally:
-        curdoc.unhold()
+        if not hold:
+            curdoc.unhold()
 
 
 def get_server(panel, port=0, websocket_origin=None, loop=None,
