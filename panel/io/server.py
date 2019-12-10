@@ -7,8 +7,10 @@ import signal
 import threading
 import uuid
 
+from contextlib import contextmanager
 from functools import partial
 
+from bokeh.document.events import ModelChangedEvent
 from bokeh.server.server import Server
 
 from .state import state
@@ -33,6 +35,48 @@ def _server_url(url, port):
 #---------------------------------------------------------------------
 # Public API
 #---------------------------------------------------------------------
+
+
+@contextmanager
+def unlocked():
+    """
+    Context manager which unlocks a Document and dispatches
+    ModelChangedEvents triggered in the context body to all sockets
+    on current sessions.
+    """
+    curdoc = state.curdoc
+    if curdoc is None or curdoc.session_context is None:
+        yield
+        return
+    connections = curdoc.session_context.session._subscribed_connections
+
+    hold = curdoc._hold
+    if hold:
+        old_events = list(curdoc._held_events)
+    else:
+        old_events = []
+        curdoc.hold()
+    try:
+        yield
+        events = []
+        for conn in connections:
+            socket = conn._socket
+            for event in curdoc._held_events:
+                if isinstance(event, ModelChangedEvent) and event not in old_events:
+                    msg = conn.protocol.create('PATCH-DOC', [event])
+                    socket.write_message(msg.header_json, locked=False)
+                    socket.write_message(msg.metadata_json, locked=False)
+                    socket.write_message(msg.content_json, locked=False)
+                    for header, payload in msg._buffers:
+                        socket.write_message(header, locked=False)
+                        socket.write_message(payload, binary=True, locked=False)
+                elif event not in events:
+                    events.append(event)
+        curdoc._held_events = events
+    finally:
+        if not hold:
+            curdoc.unhold()
+
 
 def get_server(panel, port=0, websocket_origin=None, loop=None,
                show=False, start=False, **kwargs):

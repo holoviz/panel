@@ -14,7 +14,7 @@ import param
 
 from bokeh.models import Spacer as _BkSpacer
 
-from ..io import state
+from ..io import state, unlocked
 from ..layout import Panel, Column, WidgetBox, HSpacer, VSpacer, Row
 from ..viewable import Viewable
 from ..widgets import Player
@@ -197,7 +197,8 @@ class HoloViews(PaneBase):
 
         if plot.backend == 'bokeh':
             if plot.comm or state._unblocked(plot.document):
-                plot.update(key)
+                with unlocked():
+                    plot.update(key)
                 if plot.comm and 'embedded' not in plot.root.tags:
                     plot.push()
             else:
