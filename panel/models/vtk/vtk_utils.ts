@@ -1,20 +1,25 @@
 export const vtk = (window as any).vtk
-export const vtkLineSource = vtk.Filters.Sources.vtkLineSource
-export const vtkPlaneSource = vtk.Filters.Sources.vtkPlaneSource
-export const vtkPointSource = vtk.Filters.Sources.vtkPointSource
-export const vtkSphereMapper = vtk.Rendering.Core.vtkSphereMapper
-export const vtkCubeSource = vtk.Filters.Sources.vtkCubeSource
-export const vtkOrientationMarkerWidget = vtk.Interaction.Widgets.vtkOrientationMarkerWidget
-export const vtkWidgetManager = vtk.Widgets.Core.vtkWidgetManager
-export const vtkInteractiveOrientationWidget = vtk.Widgets.Widgets3D.vtkInteractiveOrientationWidget
-export const vtkOutlineFilter = vtk.Filters.General.vtkOutlineFilter
-export const vtkDataAccessHelper = vtk.IO.Core.DataAccessHelper
-export const vtkHttpSceneLoader = vtk.IO.Core.vtkHttpSceneLoader
-export const vtkAxesActor = vtk.Rendering.Core.vtkAxesActor
-export const vtkMapper = vtk.Rendering.Core.vtkMapper
-export const vtkActor = vtk.Rendering.Core.vtkActor
-export const vtkPixelSpaceCallbackMapper = vtk.Rendering.Core.vtkPixelSpaceCallbackMapper
-export const vtkFullScreenRenderWindow =vtk.Rendering.Misc.vtkFullScreenRenderWindow
+
+export const vtkns: any = {}
+
+if (vtk) {
+  vtkns['LineSource'] = vtk.Filters.Sources.vtkLineSource
+  vtkns['PlaneSource'] = vtk.Filters.Sources.vtkPlaneSource
+  vtkns['PointSource'] = vtk.Filters.Sources.vtkPointSource
+  vtkns['SphereMapper'] = vtk.Rendering.Core.vtkSphereMapper
+  vtkns['CubeSource'] = vtk.Filters.Sources.vtkCubeSource
+  vtkns['OrientationMarkerWidget'] = vtk.Interaction.Widgets.vtkOrientationMarkerWidget
+  vtkns['WidgetManager'] = vtk.Widgets.Core.vtkWidgetManager
+  vtkns['InteractiveOrientationWidget'] = vtk.Widgets.Widgets3D.vtkInteractiveOrientationWidget
+  vtkns['OutlineFilter'] = vtk.Filters.General.vtkOutlineFilter
+  vtkns['DataAccessHelper'] = vtk.IO.Core.DataAccessHelper
+  vtkns['HttpSceneLoader'] = vtk.IO.Core.vtkHttpSceneLoader
+  vtkns['AxesActor'] = vtk.Rendering.Core.vtkAxesActor
+  vtkns['Mapper'] = vtk.Rendering.Core.vtkMapper
+  vtkns['Actor'] = vtk.Rendering.Core.vtkActor
+  vtkns['PixelSpaceCallbackMapper'] = vtk.Rendering.Core.vtkPixelSpaceCallbackMapper
+  vtkns['FullScreenRenderWindow'] = vtk.Rendering.Misc.vtkFullScreenRenderWindow
+}
 
 export function majorAxis(vec3: number[], idxA: number, idxB: number): number[] {
   const axis = [0, 0, 0]

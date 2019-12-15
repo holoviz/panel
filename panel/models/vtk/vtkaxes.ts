@@ -1,7 +1,7 @@
 import {mat4, vec3} from 'gl-matrix'
 import {Model} from "@bokehjs/model"
 import * as p from "@bokehjs/core/properties"
-import { cartesian_product, vtk, vtkMapper, vtkActor, vtkPixelSpaceCallbackMapper } from "./vtk_utils"
+import {cartesian_product, vtk, vtkns} from "./vtk_utils"
 
 
 type VTKTicker = {
@@ -24,7 +24,7 @@ export namespace VTKAxes {
       fontsize: p.Property<number>,
   }
 }
-  
+
 export interface VTKAxes extends VTKAxes.Attrs {}
 
 export class VTKAxes extends Model {
@@ -53,7 +53,7 @@ export class VTKAxes extends Model {
   get xticks(): number[]{
     return this.xticker.ticks
   }
-  
+
   get yticks(): number[]{
     return this.yticker.ticks
   }
@@ -88,13 +88,13 @@ export class VTKAxes extends Model {
     }
     return out
   }
-  
+
   _create_grid_axes(): any{
     const pts = []
     pts.push(cartesian_product(this.xticks, this.yticks, [this.origin[2]])) //xy
     pts.push(cartesian_product([this.origin[0]], this.yticks, this.zticks)) //yz
     pts.push(cartesian_product(this.xticks, [this.origin[1]], this.zticks)) //xz
-    
+
     const polys = []
     let offset = 0
     polys.push(this._make_grid_lines(this.xticks.length, this.yticks.length, offset)) //xy
@@ -116,18 +116,18 @@ export class VTKAxes extends Model {
         values: (polys as any).flat(2)
       }
     });
-    
-    const gridMapper = vtkMapper.newInstance()
-    const gridActor = vtkActor.newInstance()
+
+    const gridMapper = vtkns.Mapper.newInstance()
+    const gridActor = vtkns.Actor.newInstance()
     gridMapper.setInputData(gridPolyData)
     gridActor.setMapper(gridMapper)
     gridActor.getProperty().setOpacity(this.grid_opacity)
     gridActor.setVisibility(this.show_grid)
-    
+
     return gridActor;
   }
-  
-  
+
+
   create_axes(canvas: HTMLCanvasElement): any{
     const points = ([this.xticks, this.yticks, this.zticks].map((arr, axis) => {
       let coords = null
@@ -160,7 +160,7 @@ export class VTKAxes extends Model {
                   2, this.xticks.length+this.yticks.length, this.xticks.length+this.yticks.length+this.zticks.length-1]
       }
     });
-    const psMapper = vtkPixelSpaceCallbackMapper.newInstance();
+    const psMapper = vtkns.PixelSpaceCallbackMapper.newInstance();
     psMapper.setInputData(axesPolyData);
     psMapper.setUseZValues(true);
     psMapper.setCallback((coordsList: number[][], camera: any, aspect: any) => {
@@ -202,17 +202,17 @@ export class VTKAxes extends Model {
         });
       }
     });
-    const psActor = vtkActor.newInstance()
+    const psActor = vtkns.Actor.newInstance()
     psActor.setMapper(psMapper)
-    
-    const axesMapper = vtkMapper.newInstance()
+
+    const axesMapper = vtkns.Mapper.newInstance()
     axesMapper.setInputData(axesPolyData)
-    const axesActor = vtkActor.newInstance()
+    const axesActor = vtkns.Actor.newInstance()
     axesActor.setMapper(axesMapper)
     axesActor.getProperty().setOpacity(this.axes_opacity)
-    
+
     const gridActor = this._create_grid_axes()
-    
+
     return {psActor, axesActor, gridActor}
   }
 }

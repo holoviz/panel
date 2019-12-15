@@ -1,5 +1,7 @@
 from __future__ import absolute_import
 
+from distutils.version import LooseVersion
+
 import pytest
 
 try:
@@ -7,6 +9,7 @@ try:
 except:
     alt = None
 altair_available = pytest.mark.skipif(alt is None, reason="requires altair")
+altair_version = LooseVersion(alt.__version__)
 
 import numpy as np
 
@@ -14,6 +17,8 @@ from panel.models.vega import VegaPlot
 from panel.pane import Pane, PaneBase, Vega
 
 blank_schema = {'$schema': ''}
+
+vega4_config = {'view': {'continuousHeight': 300, 'continuousWidth': 400}}
 
 vega_example = {
     'config': {
@@ -144,6 +149,8 @@ def test_altair_pane(document, comm):
     assert isinstance(model, VegaPlot)
 
     expected = dict(vega_example, data={})
+    if altair_version >= '4.0.0':
+        expected['config'] = vega4_config
     assert dict(model.data, **blank_schema) == dict(expected, **blank_schema)
 
     cds_data = model.data_sources['data'].data
@@ -155,6 +162,8 @@ def test_altair_pane(document, comm):
     chart.data.values[0]['x'] = 'C'
     pane.object = chart
     point_example = dict(vega_example, mark='point')
+    if altair_version >= '4.0.0':
+        point_example['config'] = vega4_config
     assert dict(model.data, **blank_schema) == dict(point_example, **blank_schema)
     cds_data = model.data_sources['data'].data
     assert np.array_equal(cds_data['x'], np.array(['C', 'B', 'C', 'D', 'E'])) 
