@@ -1,13 +1,44 @@
 import * as p from "@bokehjs/core/properties"
 import {Markup, MarkupView} from "@bokehjs/models/widgets/markup"
 
+import {Layoutable} from "@bokehjs/core/layout/layoutable"
+import {Size, SizeHint, Sizeable} from "@bokehjs/core/layout/types"
+import {sized, content_size, extents} from "@bokehjs/core/dom"
+
+
 function htmlDecode(input: string): string | null {
   var doc = new DOMParser().parseFromString(input, "text/html");
   return doc.documentElement.textContent;
 }
 
+export class CachedVariadicBox extends Layoutable {
+  _cache: (Sizeable | null)
+
+  constructor(readonly el: HTMLElement) {
+    super()
+    this._cache = null;
+  }
+
+  protected _measure(viewport: Size): SizeHint {
+    if (this._cache)
+      return this._cache
+    const bounded = new Sizeable(viewport).bounded_to(this.sizing.size)
+    this._cache = sized(this.el, bounded, () => {
+      const content = new Sizeable(content_size(this.el))
+      const {border, padding} = extents(this.el)
+      return content.grow_by(border).grow_by(padding).map(Math.ceil)
+    })
+    return this._cache;
+  }
+}
+
 export class HTMLView extends MarkupView {
   model: HTML
+
+  _update_layout(): void {
+    this.layout = new CachedVariadicBox(this.el)
+    this.layout.set_sizing(this.box_sizing())
+  }
 
   render(): void {
     super.render()
