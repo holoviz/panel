@@ -2,11 +2,7 @@ import * as p from "@bokehjs/core/properties"
 import {clone} from "@bokehjs/core/util/object"
 import {HTMLBox, HTMLBoxView} from "@bokehjs/models/layouts/html_box"
 import {div, canvas} from "@bokehjs/core/dom"
-import {
-  majorAxis, vtkAxesActor, vtkOrientationMarkerWidget, vtkWidgetManager,
-  vtkInteractiveOrientationWidget, vtkDataAccessHelper, vtkFullScreenRenderWindow,
-  vtkHttpSceneLoader, vtk, vtkOutlineFilter, vtkMapper, vtkActor
-} from "./vtk_utils"
+import {majorAxis, vtk, vtkns} from "./vtk_utils"
 import {VTKAxes} from "./vtkaxes"
 
 
@@ -21,16 +17,16 @@ export class VTKPlotView extends HTMLBoxView {
   protected _axes: any
 
   _create_orientation_widget(): void {
-    const axes = vtkAxesActor.newInstance()
+    const axes = vtkns.AxesActor.newInstance()
 
     // add orientation widget
-    const orientationWidget = vtkOrientationMarkerWidget.newInstance({
+    const orientationWidget = vtkns.OrientationMarkerWidget.newInstance({
       actor: axes,
       interactor: this._rendererEl.getInteractor(),
     })
     orientationWidget.setEnabled(true)
     orientationWidget.setViewportCorner(
-      vtkOrientationMarkerWidget.Corners.BOTTOM_RIGHT
+      vtkns.OrientationMarkerWidget.Corners.BOTTOM_RIGHT
     )
     orientationWidget.setViewportSize(0.15)
     orientationWidget.setMinPixelSize(100)
@@ -38,10 +34,10 @@ export class VTKPlotView extends HTMLBoxView {
 
     this._orientationWidget = orientationWidget
 
-    const widgetManager = vtkWidgetManager.newInstance()
+    const widgetManager = vtkns.WidgetManager.newInstance()
     widgetManager.setRenderer(orientationWidget.getRenderer())
 
-    const widget = vtkInteractiveOrientationWidget.newInstance()
+    const widget = vtkns.InteractiveOrientationWidget.newInstance()
     widget.placeWidget(axes.getBounds());
     widget.setBounds(axes.getBounds());
     widget.setPlaceFactor(1);
@@ -92,7 +88,7 @@ export class VTKPlotView extends HTMLBoxView {
         }
       })
       this.el.appendChild(container)
-      this._rendererEl = vtkFullScreenRenderWindow.newInstance({
+      this._rendererEl = vtkns.FullScreenRenderWindow.newInstance({
         rootContainer: this.el,
         container: container
       })
@@ -233,10 +229,10 @@ export class VTKPlotView extends HTMLBoxView {
       this._rendererEl.getRenderWindow().render()
       return
     }
-    const dataAccessHelper = vtkDataAccessHelper.get('zip', {
+    const dataAccessHelper = vtkns.DataAccessHelper.get('zip', {
       zipContent: atob(this.model.data),
       callback: (_zip: unknown) => {
-        const sceneImporter = vtkHttpSceneLoader.newInstance({
+        const sceneImporter = vtkns.HttpSceneLoader.newInstance({
           renderer: this._rendererEl.getRenderer(),
           dataAccessHelper,
         })
@@ -280,10 +276,10 @@ export class VTKPlot extends HTMLBox {
   constructor(attrs?: Partial<VTKPlot.Attrs>) {
     super(attrs)
     this.renderer_el = null
-    this.outline = vtkOutlineFilter.newInstance() //use to display bouding box of a selected actor
-    const mapper = vtkMapper.newInstance()
+    this.outline = vtkns.OutlineFilter.newInstance() //use to display bouding box of a selected actor
+    const mapper = vtkns.Mapper.newInstance()
     mapper.setInputConnection(this.outline.getOutputPort())
-    this.outline_actor = vtkActor.newInstance()
+    this.outline_actor = vtkns.Actor.newInstance()
     this.outline_actor.setMapper(mapper)
   }
 
