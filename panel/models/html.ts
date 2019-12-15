@@ -12,23 +12,37 @@ function htmlDecode(input: string): string | null {
 }
 
 export class CachedVariadicBox extends Layoutable {
-  _cache: (Sizeable | null)
+  _cache: {[key: string]: Size}
 
   constructor(readonly el: HTMLElement) {
     super()
-    this._cache = null;
+    this._cache = {};
   }
 
   protected _measure(viewport: Size): SizeHint {
-    if (this._cache)
-      return this._cache
+    const {width_policy, height_policy} = this.sizing
+
+    let width: number | null = null;
+    let height: number | null = null;
+    if (width_policy == "fixed")
+        width = this.sizing.width != null ? this.sizing.width : 0
+    if (height_policy == "fixed")
+        height = this.sizing.height != null ? this.sizing.height : 0
+
+    const key = [viewport.width, viewport.height]
+    const key_str = key.toString()
+    if (width !== null && height !== null)
+      return {width, height}
+    else if (key_str in this._cache)
+      return this._cache[key_str]
     const bounded = new Sizeable(viewport).bounded_to(this.sizing.size)
-    this._cache = sized(this.el, bounded, () => {
+    const size = sized(this.el, bounded, () => {
       const content = new Sizeable(content_size(this.el))
       const {border, padding} = extents(this.el)
       return content.grow_by(border).grow_by(padding).map(Math.ceil)
     })
-    return this._cache;
+    this._cache[key_str] = size;
+    return size;
   }
 }
 
