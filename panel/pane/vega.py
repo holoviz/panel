@@ -62,7 +62,11 @@ class Vega(PaneBase):
         if isinstance(obj, dict):
             json = dict(obj)
             if 'data' in json:
-                json['data'] = dict(json['data'])
+                data = json['data']
+                if isinstance(data, dict):
+                    json['data'] = dict(data)
+                elif isinstance(data, list):
+                    json['data'] = [dict(d) for d in data]
             return json
         return obj.to_dict()
 
@@ -83,9 +87,15 @@ class Vega(PaneBase):
                 sources[name] = ColumnDataSource(data=data)
             else:
                 sources[name] = ColumnDataSource(data=ds_as_cds(data))
-        data = json.get('data', {}).pop('values', {})
-        if data:
-            sources['data'] = ColumnDataSource(data=ds_as_cds(data))
+        data = json.get('data', {})
+        if isinstance(data, dict):
+            data = data.pop('values', {})
+            if data:
+                sources['data'] = ColumnDataSource(data=ds_as_cds(data))
+        elif isinstance(data, list):
+            for d in data:
+                sources[d['name']] = ColumnDataSource(data=ds_as_cds(d['values']))
+            
 
 
     @classmethod
