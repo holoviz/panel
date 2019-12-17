@@ -127,6 +127,15 @@ class IntSlider(ContinuousSlider):
 
     step = param.Integer(default=1)
 
+    def _process_property_change(self, msg):
+        msg = super(_SliderBase, self)._process_property_change(msg)
+        if 'value' in msg:
+            msg['value'] = msg['value'] if msg['value'] is None else int(msg['value'])
+        if 'value_throttled' in msg:
+            throttled = msg['value_throttled']
+            msg['value_throttled'] = throttled if throttled is None else int(throttled)
+        return msg
+
 
 class DateSlider(_SliderBase):
 
@@ -309,6 +318,16 @@ class IntRangeSlider(RangeSlider):
     end = param.Integer(default=1)
 
     step = param.Integer(default=1)
+
+    def _process_property_change(self, msg):
+        msg = super(RangeSlider, self)._process_property_change(msg)
+        if 'value' in msg:
+            msg['value'] = tuple([v if v is None else int(v)
+                                  for v in msg['value']])
+        if 'value_throttled' in msg:
+            msg['value_throttled'] = tuple([v if v is None else int(v)
+                                            for v in msg['value_throttled']])
+        return msg
 
 
 class DateRangeSlider(_SliderBase):
