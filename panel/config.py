@@ -64,6 +64,11 @@ class _config(param.Parameterized):
     raw_css = param.List(default=[], doc="""
         List of raw CSS strings to add to the template.""")
 
+    sizing_mode = param.ObjectSelector(default=None, objects=[
+        'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
+        'scale_width', 'scale_height', 'scale_both', None], doc="""
+        Specify the default sizing mode behavior of panels.""")
+
     _embed = param.Boolean(default=False, allow_None=True, doc="""
         Whether plot data will be embedded.""")
 

@@ -188,6 +188,8 @@ class Layoutable(param.Parameterized):
             params.get('height', None) is not None and
             'sizing_mode' not in params):
             params['sizing_mode'] = 'fixed'
+        elif not self.param.sizing_mode.constant and not self.param.sizing_mode.readonly:
+            params['sizing_mode'] = params.get('sizing_mode', config.sizing_mode)
         super(Layoutable, self).__init__(**params)
 
 
