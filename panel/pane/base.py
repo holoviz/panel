@@ -20,6 +20,8 @@ from bokeh.models.layouts import (
 from ..io import (
     init_doc, push, state, unlocked,
 )
+from ..layout.base import NamedListPanel, Panel, Row
+from ..io import push, state, unlocked
 from ..layout import Panel, Row
 from ..links import Link
 from ..models import ReactiveHTML as _BkReactiveHTML
@@ -433,7 +435,6 @@ class PaneBase(Reactive):
         raise TypeError('%s type could not be rendered.' % type(obj).__name__)
 
 
-
 class ModelPane(PaneBase):
     """
     ModelPane provides a baseclass that allows quickly wrapping a
@@ -497,7 +498,8 @@ class ReplacementPane(PaneBase):
     children on, or updates the existing model in place.
     """
 
-    updates = param.Boolean(default=False, doc="""Whether to update the object inplace.""")
+    inplace = param.Boolean(default=False, doc="""
+        Whether to update the object inplace.""")
 
     _pane = param.ClassSelector(class_=Viewable)
 
@@ -505,7 +507,7 @@ class ReplacementPane(PaneBase):
 
     _linked_properties: ClassVar[Tuple[str]] = ()
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'_pane': None, 'updates': None}
+    _rename: ClassVar[Mapping[str, str | None]] = {'_pane': None, 'inplace': None}
 
     _updates: bool = True
 
@@ -549,6 +551,37 @@ class ReplacementPane(PaneBase):
         self._pane.param.update({event.name: event.new for event in events})
 
     @classmethod
+    def _recursive_update(cls, layout, index, old, new):
+        """
+        Recursively descends through Panel layouts and diffs their
+        contents updating only changed parameters ensuring we don't
+        have to trigger a full re-render of the entire component.
+        """
+        ignored = ('name',)
+        if type(old) is not type(new):
+            layout[index] = new
+            return
+        if isinstance(new, Panel):
+            if len(old) == len(new):
+                for i, (sub_old, sub_new) in enumerate(zip(old, new)):
+                    if isinstance(new, NamedListPanel):
+                        old._names[i] = new._names[i]
+                    recursive_update(new, i, sub_old, sub_new)
+                ignored += ('objects',)
+        pvals = dict(old.param.values())
+        new_params = {}
+        for k, v in new.param.values().items():
+            if k in ignored or v is pvals[k]:
+                continue
+            try:
+                equal = v == pvals[k]
+            except Exception:
+                equal = False
+            if not equal:
+                new_params[k] = v
+        old.set_param(**new_params)
+
+    @classmethod
     def _update_from_object(cls, object: Any, old_object: Any, was_internal: bool, inplace: bool=False, **kwargs):
         pane_type = cls.get_pane_type(object)
         try:
@@ -567,12 +600,15 @@ class ReplacementPane(PaneBase):
             ]
 
         pane, internal = None, was_internal
+        # If the object has no external referrers we can update
+        # it inplace instead of replacing it
         if type(old_object) is pane_type and ((not links and not custom_watchers and was_internal) or inplace):
-            # If the object has not external referrers we can update
-            # it inplace instead of replacing it
-            if isinstance(object, Reactive):
-                pvals = old_object.param.values()
-                new_params = {k: v for k, v in object.param.values().items()
+            if isinstance(object, Panel) and len(old_object) == len(object):
+                for i, (old, new) in enumerate(zip(old_object, object)):
+                    recursive_update(old_object, i, old, new)
+            elif isinstance(object, Reactive):
+                pvals = dict(self._pane.get_param_values())
+                new_params = {k: v for k, v in object.get_param_values()
                               if k != 'name' and v is not pvals[k]}
                 old_object.param.update(**new_params)
             else:
@@ -599,7 +635,7 @@ class ReplacementPane(PaneBase):
         kwargs = dict(self.param.values(), **self._kwargs)
         del kwargs['object']
         new_pane, internal = self._update_from_object(
-            new_object, self._pane, self._internal, self.updates, **kwargs
+            new_object, self._pane, self._internal, self.inplace, **kwargs
         )
         if new_pane is None:
             return
