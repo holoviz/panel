@@ -105,7 +105,8 @@ class PaneBase(Reactive):
         return {k: v for k, v in self.param.get_param_values()
                 if v is not None and k not in ['default_layout', 'object']}
 
-    def _update_object(self, old_model, doc, root, parent, comm):
+    def _update_object(self, ref, doc, root, parent, comm):
+        old_model = self._models[ref][0]
         if self._updates:
             self._update(old_model)
         else:
@@ -136,15 +137,15 @@ class PaneBase(Reactive):
             state._views[ref][0]._preprocess(root)
 
     def _update_pane(self, event):
-        for ref, (model, parent) in self._models.items():
+        for ref, (_, parent) in self._models.items():
             viewable, root, doc, comm = state._views[ref]
             if comm or state._unblocked(doc):
                 with unlocked():
-                    self._update_object(model, doc, root, parent, comm)
+                    self._update_object(ref, doc, root, parent, comm)
                 if comm and 'embedded' not in root.tags:
                     push(doc, comm)
             else:
-                cb = partial(self._update_object, model, doc, root, parent, comm)
+                cb = partial(self._update_object, ref, doc, root, parent, comm)
                 if doc.session_context:
                     doc.add_next_tick_callback(cb)
                 else:
