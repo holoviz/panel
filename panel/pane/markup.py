@@ -4,6 +4,8 @@ Markdown, and also regular strings.
 """
 from __future__ import absolute_import, division, unicode_literals
 
+import textwrap
+
 try:
     from html import escape
 except:
@@ -263,6 +265,13 @@ class Markdown(DivPaneBase):
     standard string, therefore it has to be invoked explicitly.
     """
 
+    dedent = param.Boolean(default=True, doc="""
+        Whether to dedent common whitespace across all lines.""")
+
+    extensions = param.List(default=[
+        "extra", "smarty", "fenced_code", "codehilite"], doc="""
+        Markdown extension to apply when transforming markup.""")
+
     # Priority depends on the data type
     priority = None
 
@@ -282,8 +291,10 @@ class Markdown(DivPaneBase):
             data = ''
         elif not isinstance(data, string_types):
             data = data._repr_markdown_()
+        if self.dedent:
+            data = textwrap.dedent(data)
         properties = super(Markdown, self)._get_properties()
         properties['style'] = properties.get('style', {})
-        extensions = ['markdown.extensions.extra', 'markdown.extensions.smarty']
-        html = markdown.markdown(data, extensions=extensions, output_format='html5')
+        html = markdown.markdown(data, extensions=self.extensions,
+                                 output_format='html5')
         return dict(properties, text=html)
