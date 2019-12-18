@@ -94,9 +94,9 @@ class Vega(PaneBase):
                 sources['data'] = ColumnDataSource(data=ds_as_cds(data))
         elif isinstance(data, list):
             for d in data:
-                sources[d['name']] = ColumnDataSource(data=ds_as_cds(d['values']))
+                if 'values' in d:
+                    sources[d['name']] = ColumnDataSource(data=ds_as_cds(d.pop('values')))
             
-
 
     @classmethod
     def _get_dimensions(cls, json, props):
