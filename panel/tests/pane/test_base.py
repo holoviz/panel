@@ -21,14 +21,20 @@ def test_pane_repr(document, comm):
 
 @pytest.mark.parametrize('pane', all_panes)
 def test_pane_layout_properties(pane, document, comm):
-    p = pane()
+    try:
+        p = pane()
+    except ImportError:
+        pytest.skip("Dependent library could not be imported.")
     model = p.get_root(document, comm)
     check_layoutable_properties(p, model)
 
 
 @pytest.mark.parametrize('pane', all_panes)
 def test_pane_clone(pane):
-    p = pane()
+    try:
+        p = pane()
+    except ImportError:
+        pytest.skip("Dependent library could not be imported.")
     clone = p.clone()
 
     assert ([(k, v) for k, v in sorted(p.param.get_param_values()) if k != 'name'] ==

@@ -130,7 +130,15 @@ def param_reprs(parameterized, skip=None):
     cls = type(parameterized).__name__
     param_reprs = []
     for p, v in sorted(parameterized.get_param_values()):
-        if v is parameterized.param[p].default: continue
+        default = parameterized.param[p].default
+        equal = v is default
+        if not equal:
+            try:
+                equal = bool(v==default)
+            except:
+                equal = False
+
+        if equal: continue
         elif v is None: continue
         elif isinstance(v, string_types) and v == '': continue
         elif isinstance(v, list) and v == []: continue
