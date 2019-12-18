@@ -551,11 +551,23 @@ class ReplacementPane(PaneBase):
         self._pane.param.update({event.name: event.new for event in events})
 
     @classmethod
-    def _recursive_update(cls, layout, index, old, new):
+    def _recursive_update(cls, layout: Panel, index: int, old: Reactive, new: Reactive):
         """
         Recursively descends through Panel layouts and diffs their
         contents updating only changed parameters ensuring we don't
         have to trigger a full re-render of the entire component.
+
+        Arguments
+        ---------
+        layout: Panel
+          The layout the items are being updated or replaced on.
+        index: int
+          The index of the item being replaced.
+        old: Reactive
+          The Reactive component being updated or replaced.
+        new: Reactive
+          The new Reactive component that the old one is being updated
+          or replaced with.
         """
         ignored = ('name',)
         if type(old) is not type(new):
