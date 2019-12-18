@@ -76,3 +76,6 @@
 .markdown h6 { margin-block-start: 1.17em }
 .markdown ul { padding-inline-start: 2em }
 .markdown ol { padding-inline-start: 2em }
+.markdown strong { font-weight: 600 }
+.markdown a { color: -webkit-link }
+.markdown a { color: -moz-hyperlinkText }
