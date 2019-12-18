@@ -301,3 +301,27 @@ class Markdown(DivPaneBase):
         html = markdown.markdown(data, extensions=self.extensions,
                                  output_format='html5')
         return dict(properties, text=html, css_classes=css_classes)
+
+
+
+class FontAwesome(DivPaneBase):
+    """
+    Renders a FontAwesome specification.
+    """
+
+    priority = None
+
+    _bokeh_model = _BkDiv
+
+    @classmethod
+    def applies(cls, obj):
+        if isinstance(obj, string_types) and obj.startswith('fa-'):
+            return 1
+        else:
+            return False
+
+    def _get_properties(self):
+        data = self.object
+        properties = super(FontAwesome, self)._get_properties()
+        text = '<i class="fas ' + data + '"></i>'
+        return dict(properties, text=text)

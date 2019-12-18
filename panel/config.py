@@ -26,6 +26,9 @@ from .io.state import state
 
 _PATH = os.path.abspath(os.path.dirname(__file__))
 _CSS_FILES = glob.glob(os.path.join(_PATH, '_styles', '*.css'))
+_CSS_FILES += [
+    "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.9.0/css/all.min.css"
+]
 
 def validate_config(config, parameter, value):
     """

@@ -5,6 +5,8 @@ defined as pairs of Python classes and TypeScript models defined in .ts
 files.
 """
 
+from .icons import FontAwesomeIcon # noqa
 from .markup import HTML # noqa
 from .state import State # noqa
 from .widgets import Audio, Player, Progress, Video, VideoStream # noqa
+from .graphs import TriMeshLayoutProvider

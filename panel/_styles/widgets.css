@@ -139,3 +139,11 @@ progress:not([value])::before {
   from {background-position: 0%}
   to {background-position: 100%}
 }
+
+.fas {
+  vertical-align: bottom;
+}
+
+.only-icon {
+  margin-bottom: -1em !important;
+}

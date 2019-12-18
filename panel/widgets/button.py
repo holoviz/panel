@@ -8,6 +8,7 @@ import param
 
 from bokeh.models import Button as _BkButton, Toggle as _BkToggle
 
+from ..models import FontAwesomeIcon
 from .base import Widget
 
 
@@ -16,9 +17,24 @@ class _ButtonBase(Widget):
     button_type = param.ObjectSelector(default='default', objects=[
         'default', 'primary', 'success', 'warning', 'danger'])
 
+    icon = param.String(default=None, doc="""
+        A FontAwesome icon specification.""")
+
     _rename = {'name': 'label'}
 
     __abstract = True
+
+    def _process_param_change(self, msg):
+        if msg.get('icon') is not None:
+            icon = msg['icon']
+            css_classes = [] if self.name else ['only-icon']
+            if icon.startswith('fa-'):
+                msg['icon'] = FontAwesomeIcon(icon=icon, css_classes=css_classes)
+            else:
+                raise ValueError('Icon is not a valid fontawesome icon.')
+        if 'name' in msg and not msg['name']:
+            msg['name'] = ' '
+        return super(_ButtonBase, self)._process_param_change(msg)
 
 
 class Button(_ButtonBase):

@@ -1,5 +1,6 @@
 export {AcePlot} from "./ace"
 export {Audio} from "./audio"
+export {FontAwesomeIcon} from "./fa_icon"
 export {HTML} from "./html"
 export {KaTeX} from "./katex"
 export {MathJax} from "./mathjax"
