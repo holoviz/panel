@@ -12,7 +12,7 @@ from six import string_types
 
 import param
 
-from .markup import DivPaneBase
+from .markup import escape, DivPaneBase
 
 
 class ImageBase(DivPaneBase):
@@ -124,7 +124,7 @@ class ImageBase(DivPaneBase):
         html = "<img src='{src}' width='{width}' height='{height}'></img>".format(
             src=src, width=w, height=h)
 
-        return dict(p, width=width, height=height, text=html)
+        return dict(p, width=width, height=height, text=escape(html))
 
 
 class PNG(ImageBase):
