@@ -86,7 +86,7 @@ def test_markdown_pane_extensions(document, comm):
     assert model.text.endswith('<div class="codehilite"><pre><span></span><span class="kc">None</span>\n</pre></div>')
 
     pane.extensions = ["extra", "smarty"]
-    assert model.text.endswith("<pre><code class="python">None\n</code></pre>")
+    assert model.text.endswith('<pre><code class="python">None\n</code></pre>')
 
 
 def test_html_pane(document, comm):
