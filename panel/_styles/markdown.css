@@ -67,3 +67,12 @@
 .codehilite .vi { color: #19177C } /* Name.Variable.Instance */
 .codehilite .vm { color: #19177C } /* Name.Variable.Magic */
 .codehilite .il { color: #666666 } /* Literal.Number.Integer.Long */
+
+.markdown h1 { margin-block-start: 0.34em }
+.markdown h2 { margin-block-start: 0.42em }
+.markdown h3 { margin-block-start: 0.5em }
+.markdown h4 { margin-block-start: 0.67em }
+.markdown h5 { margin-block-start: 0.84em }
+.markdown h6 { margin-block-start: 1.17em }
+.markdown ul { padding-inline-start: 2em }
+.markdown ol { padding-inline-start: 2em }

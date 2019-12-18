@@ -269,7 +269,7 @@ class Markdown(DivPaneBase):
         Whether to dedent common whitespace across all lines.""")
 
     extensions = param.List(default=[
-        "extra", "smarty", "fenced_code", "codehilite"], doc="""
+        "extra", "smarty", "codehilite"], doc="""
         Markdown extension to apply when transforming markup.""")
 
     # Priority depends on the data type
@@ -295,6 +295,7 @@ class Markdown(DivPaneBase):
             data = textwrap.dedent(data)
         properties = super(Markdown, self)._get_properties()
         properties['style'] = properties.get('style', {})
+        css_classes = properties.pop('css_classes', []) + ['markdown']
         html = markdown.markdown(data, extensions=self.extensions,
                                  output_format='html5')
-        return dict(properties, text=html)
+        return dict(properties, text=html, css_classes=css_classes)
