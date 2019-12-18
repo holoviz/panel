@@ -77,9 +77,9 @@ class VTKVolume(PaneBase):
         self._models[root.ref['id']] = (model, parent)
         return model
 
-    def _update_object(self, old_model, doc, root, parent, comm):
+    def _update_object(self, ref, doc, root, parent, comm):
         self._legend = None
-        super()._update_object(old_model, doc, root, parent, comm)
+        super()._update_object(ref, doc, root, parent, comm)
 
     def _init_properties(self):
         return {k: v for k, v in self.param.get_param_values()
@@ -236,9 +236,9 @@ class VTK(PaneBase):
         self._models[root.ref['id']] = (model, parent)
         return model
 
-    def _update_object(self, old_model, doc, root, parent, comm):
+    def _update_object(self, ref, doc, root, parent, comm):
         self._legend = None
-        super()._update_object(old_model, doc, root, parent, comm)
+        super()._update_object(ref, doc, root, parent, comm)
 
     def construct_colorbars(self, orientation='horizontal'):
         if self._legend is None:
