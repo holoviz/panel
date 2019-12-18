@@ -275,6 +275,8 @@ class Markdown(DivPaneBase):
     # Priority depends on the data type
     priority = None
 
+    _rerender_params = ['object', 'dedent', 'extensions']
+
     @classmethod
     def applies(cls, obj):
         if hasattr(obj, '_repr_markdown_'):
