@@ -103,13 +103,19 @@ class Vega(PaneBase):
         if json is None:
             return
 
-        view = {}
-        if 'width' in json:
-            view['width'] = json['width']
-        if 'height' in json:
-            view['height'] = json['height']
         if 'config' in json and 'view' in json['config']:
-            view = json['config']['view']
+            size_config = json['config']['view']
+        else:
+            size_config = json
+
+        view = {}
+        for w in ('width', 'continuousWidth'):
+            if w in size_config:
+                view['width'] = size_config[w]
+        for h in ('height', 'continuousHeight'):
+            if h in size_config:
+                view['height'] = size_config[h]
+
         for p in ('width', 'height'):
             if p not in view:
                 continue
