@@ -130,6 +130,7 @@ extras_require = {
         'selenium',
         'phantomjs',
         'lxml',
+        'altair<4',
         'pyvista'
     ]
 }
