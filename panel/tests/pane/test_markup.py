@@ -50,12 +50,12 @@ def test_markdown_pane(document, comm):
     # Create pane
     model = pane.get_root(document, comm=comm)
     assert pane._models[model.ref['id']][0] is model
-    assert model.text.endswith("<p><strong>Markdown</strong></p>")
+    assert model.text.endswith("&lt;p&gt;&lt;strong&gt;Markdown&lt;/strong&gt;&lt;/p&gt;")
 
     # Replace Pane.object
     pane.object = "*Markdown*"
     assert pane._models[model.ref['id']][0] is model
-    assert model.text.endswith("<p><em>Markdown</em></p>")
+    assert model.text.endswith("&lt;p&gt;&lt;em&gt;Markdown&lt;/em&gt;&lt;/p&gt;")
 
     # Cleanup
     pane._cleanup(model)
@@ -67,10 +67,10 @@ def test_markdown_pane_dedent(document, comm):
     # Create pane
     model = pane.get_root(document, comm=comm)
     assert pane._models[model.ref['id']][0] is model
-    assert model.text.endswith("<p>ABC</p>")
+    assert model.text.endswith("&lt;p&gt;ABC&lt;/p&gt;")
 
     pane.dedent = False
-    assert model.text.endswith('<div class="codehilite"><pre><span></span><span class="err">ABC</span>\n</pre></div>')
+    assert model.text.startswith('&lt;div class=&quot;codehilite')
 
 
 def test_markdown_pane_extensions(document, comm):
@@ -83,10 +83,10 @@ def test_markdown_pane_extensions(document, comm):
     # Create pane
     model = pane.get_root(document, comm=comm)
     assert pane._models[model.ref['id']][0] is model
-    assert model.text.endswith('<div class="codehilite"><pre><span></span><span class="kc">None</span>\n</pre></div>')
+    assert model.text.startswith('&lt;div class=&quot;codehilite')
 
     pane.extensions = ["extra", "smarty"]
-    assert model.text.endswith('<pre><code class="python">None\n</code></pre>')
+    assert model.text.startswith('&lt;pre&gt;&lt;code class=&quot;python')
 
 
 def test_html_pane(document, comm):

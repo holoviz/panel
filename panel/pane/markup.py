@@ -14,7 +14,7 @@ from six import string_types
 
 import param
 
-from bokeh.models import Div as _BkDiv
+from bokeh.models.widgets import Div as _BkDiv
 
 from ..viewable import Layoutable
 from ..models import HTML as _BkHTML
@@ -28,17 +28,17 @@ class DivPaneBase(PaneBase):
     the supported options like style and sizing_mode.
     """
 
+    style = param.Dict(default=None, doc="""
+        Dictionary of CSS property:value pairs to apply to this Div.""")
+
     # DivPane supports updates to the model
     _updates = True
 
     __abstract = True
 
-    style = param.Dict(default=None, doc="""
-        Dictionary of CSS property:value pairs to apply to this Div.""")
-
     _rename = {'object': 'text'}
 
-    _bokeh_model = _BkDiv
+    _bokeh_model = _BkHTML
 
     def _get_properties(self):
         props = {p : getattr(self, p) for p in list(Layoutable.param) + ['style']
@@ -62,7 +62,7 @@ class DivPaneBase(PaneBase):
 
 class HTML(DivPaneBase):
     """
-    HTML panes wrap HTML text in a bokeh Div model.  The
+    HTML panes wrap HTML text in a Panel HTML model. The
     provided object can either be a text string, or an object that
     has a `_repr_html_` method that can be called to get the HTML
     text string.  The height and width can optionally be specified, to
@@ -71,8 +71,6 @@ class HTML(DivPaneBase):
 
     # Priority is dependent on the data type
     priority = None
-
-    _bokeh_model = _BkHTML
 
     @classmethod
     def applies(cls, obj):
@@ -244,6 +242,8 @@ class Str(DivPaneBase):
 
     priority = 0
 
+    _bokeh_model = _BkDiv
+
     @classmethod
     def applies(cls, obj):
         return True
@@ -300,4 +300,4 @@ class Markdown(DivPaneBase):
         css_classes = properties.pop('css_classes', []) + ['markdown']
         html = markdown.markdown(data, extensions=self.extensions,
                                  output_format='html5')
-        return dict(properties, text=html, css_classes=css_classes)
+        return dict(properties, text=escape(html), css_classes=css_classes)
