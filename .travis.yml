@@ -117,7 +117,7 @@ jobs:
     - &doc_build
       <<: *conda_default
       stage: docs
-      env: DESC="docs"
+      env: DESC="docs" PANEL_DOC_BUILD='true'
       script:
         - doit develop_install $CHANS_DEV -o doc -o examples
         # note: will vastly simplified in a future version of nbsite
@@ -133,6 +133,9 @@ jobs:
           on:
             tags: true
             all_branches: true
+      after_failure:
+        - cat /tmp/sphinx*
+        - sleep 10
 
     - <<: *doc_build
       stage: docs_dev
