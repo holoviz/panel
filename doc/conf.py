@@ -11,7 +11,7 @@ import panel
 version = release = str(panel.__version__)
 
 html_static_path += ['_static']
-html_theme = 'sphinx_ioam_theme'
+html_theme = 'sphinx_holoviz_theme'
 html_theme_options = {
     'logo': 'logo_horizontal.png',
     'favicon': 'favicon.ico',
@@ -86,12 +86,14 @@ html_context.update({
     'DESCRIPTION': description,
     'AUTHOR': authors,
     'VERSION': version,
+    'GOOGLE_SEARCH_ID': '017396756996884923145:moq4gmnf37j',
+    'GOOGLE_ANALYTICS_UA': 'UA-154795830-2',
     'WEBSITE_URL': 'https://panel.pyviz.org',
     'WEBSITE_SERVER': 'https://panel.pyviz.org',
     'NAV': _NAV,
     'LINKS': _NAV,
     'SOCIAL': (
-        ('Gitter', '//gitter.im/pyviz/pyviz'),
+        ('Discourse', '//discourse.holoviz.org'),
         ('Github', '//github.com/pyviz/panel'),
     )
 })
