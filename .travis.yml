@@ -133,6 +133,9 @@ jobs:
           on:
             tags: true
             all_branches: true
+      after_failure:
+        - cat /tmp/sphinx*
+        - sleep 10
 
     - <<: *doc_build
       stage: docs_dev
