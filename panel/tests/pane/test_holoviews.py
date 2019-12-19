@@ -42,7 +42,7 @@ def test_holoviews_pane_mpl_renderer(document, comm):
     assert len(row.children) == 1
     model = row.children[0]
     assert pane._models[row.ref['id']][0] is model
-    assert '<img' in model.text
+    assert model.text.startswith('&lt;img src=')
 
     # Replace Pane.object
     scatter = hv.Scatter([1, 2, 3])
@@ -69,7 +69,7 @@ def test_holoviews_pane_switch_backend(document, comm):
     assert len(row.children) == 1
     model = row.children[0]
     assert pane._models[row.ref['id']][0] is model
-    assert '<img' in model.text
+    assert model.text.startswith('&lt;img src=')
 
     # Replace Pane.object
     pane.backend = 'bokeh'

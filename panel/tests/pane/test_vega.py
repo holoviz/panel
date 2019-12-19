@@ -6,10 +6,12 @@ import pytest
 
 try:
     import altair as alt
+    altair_version = LooseVersion(alt.__version__)
 except:
     alt = None
+
 altair_available = pytest.mark.skipif(alt is None, reason="requires altair")
-altair_version = LooseVersion(alt.__version__)
+
 
 import numpy as np
 

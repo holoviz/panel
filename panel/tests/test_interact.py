@@ -1,6 +1,7 @@
 from bokeh.models import Div as BkDiv, Column as BkColumn
 
 from panel.interact import interactive
+from panel.models import HTML as BkHTML
 from panel.pane import HTML
 from panel import widgets
 
@@ -225,8 +226,8 @@ def test_interact_replaces_model(document, comm):
     new_pane = interact_pane._pane
     assert new_pane is not pane
     new_div = column.children[1].children[0]
-    assert isinstance(new_div, BkDiv)
-    assert new_div.text.endswith('<p>ABC</p>')
+    assert isinstance(new_div, BkHTML)
+    assert new_div.text.endswith('&lt;p&gt;ABC&lt;/p&gt;')
     assert new_pane._models[column.ref['id']][0] is new_div
 
     interact_pane._cleanup(column)

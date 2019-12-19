@@ -47,7 +47,7 @@ def test_matplotlib_pane(document, comm):
 
     # Create pane
     model = pane.get_root(document, comm=comm)
-    assert '<img' in model.text
+    assert model.text.startswith('&lt;img')
     text = model.text
     assert pane._models[model.ref['id']][0] is model
 

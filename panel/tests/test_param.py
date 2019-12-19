@@ -950,7 +950,7 @@ def test_param_method_pane_changing_type(document, comm):
     assert len(row.children) == 1
     model = row.children[0]
     text = model.text
-    assert text.startswith('<img src')
+    assert text.startswith('&lt;img src=')
 
     # Update pane
     test.a = 5
