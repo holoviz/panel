@@ -20,20 +20,9 @@ export class CachedVariadicBox extends Layoutable {
   }
 
   protected _measure(viewport: Size): SizeHint {
-    const {width_policy, height_policy} = this.sizing
-
-    let width: number | null = null;
-    let height: number | null = null;
-    if (width_policy == "fixed")
-        width = this.sizing.width != null ? this.sizing.width : 0
-    if (height_policy == "fixed")
-        height = this.sizing.height != null ? this.sizing.height : 0
-
     const key = [viewport.width, viewport.height]
     const key_str = key.toString()
-    if (width !== null && height !== null)
-      return {width, height}
-    else if (key_str in this._cache)
+    if (key_str in this._cache)
       return this._cache[key_str]
     const bounded = new Sizeable(viewport).bounded_to(this.sizing.size)
     const size = sized(this.el, bounded, () => {
