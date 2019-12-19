@@ -249,7 +249,7 @@ class panel_extension(_pyviz_extension):
         except:
             return
 
-        if hasattr(ip, 'kernel') and not self._loaded:
+        if hasattr(ip, 'kernel') and not self._loaded and not os.environ.get("PANEL_DOC_BUILD"):
             # TODO: JLab extension and pyviz_comms should be changed
             #       to allow multiple cleanup comms to be registered
             _JupyterCommManager.get_client_comm(self._process_comm_msg,
