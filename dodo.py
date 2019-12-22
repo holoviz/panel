@@ -11,8 +11,6 @@ def task_pip_on_conda():
         'conda install -y pip twine wheel',	
         # ..and some are only available via conda-forge	
         'conda install -y -c conda-forge tox virtualenv',	
-        # this interferes with pip-installed nose	
-        'conda remove -y --force nose'	
     ]}
 
 
