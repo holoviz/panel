@@ -552,3 +552,15 @@ def test_holoviews_link_within_pane(document, comm):
     range_tool = subsubcolumn.select_one({'type': RangeTool})
     assert isinstance(range_tool, RangeTool)
     assert range_tool.x_range == p2.x_range
+
+
+@hv_available
+def test_holoviews_property_override(document, comm):
+    c1 = hv.Curve([])
+
+    pane = Pane(c1, backend='bokeh', background='red',
+                css_classes=['test_class'])
+    model = pane.get_root(document, comm=comm)
+
+    assert model.background == 'red'
+    assert model.css_classes == ['test_class']
