@@ -23,12 +23,17 @@ from bokeh.embed.util import standalone_docs_json_and_render_items
 from bokeh.embed.wrappers import wrap_in_script_tag
 from bokeh.models import CustomJS, LayoutDOM, Model
 from bokeh.resources import CDN, INLINE
-from bokeh.util.string import encode_utf8, escape
 from bokeh.util.serialization import make_id
 from pyviz_comms import (
     JS_CALLBACK, PYVIZ_PROXY, Comm, JupyterCommManager as _JupyterCommManager,
     nb_mime_js
 )
+
+try:
+    from bokeh.util.string import encode_utf8, escape
+except:
+    from html import escape
+    encode_utf8 = lambda s: s
 
 from ..compiler import require_components
 from .embed import embed_state

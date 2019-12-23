@@ -15,8 +15,12 @@ from bokeh.embed import file_html
 from bokeh.io.export import export_png, create_webdriver
 from bokeh.models import Div
 from bokeh.resources import CDN
-from bokeh.util.string import decode_utf8
 from pyviz_comms import Comm
+
+try:
+    from bokeh.util.string import decode_utf8
+except:
+    decode_utf8 = lambda s: s
 
 from ..config import config
 from ..models import HTML
