@@ -70,7 +70,7 @@ class PaneBase(Reactive):
         applies = self.applies(object)
         if (isinstance(applies, bool) and not applies) and object is not None :
             self._type_error(object)
-            
+
         super(PaneBase, self).__init__(object=object, **params)
         kwargs = {k: v for k, v in params.items() if k in Layoutable.param}
         self.layout = self.default_layout(self, **kwargs)
@@ -83,7 +83,7 @@ class PaneBase(Reactive):
     def __repr__(self, depth=0):
         cls = type(self).__name__
         params = param_reprs(self, ['object'])
-        obj = 'Empty' if self.object is None else type(self.object).__name__ 
+        obj = 'Empty' if self.object is None else type(self.object).__name__
         template = '{cls}({obj}, {params})' if params else '{cls}({obj})'
         return template.format(cls=cls, params=', '.join(params), obj=obj)
 
@@ -272,7 +272,12 @@ class ReplacementPane(PaneBase):
         self._pane = Pane(None)
         self._inner_layout = Row(self._pane, **{k: v for k, v in params.items() if k in Row.param})
 
-    def _update_pane(self, new_object):
+    def _update_pane(self, event):
+        """
+        Updating of the object should be handled manually.
+        """
+
+    def _update_inner(self, new_object):
         pane_type = self.get_pane_type(new_object)
         try:
             links = Link.registry.get(new_object)
