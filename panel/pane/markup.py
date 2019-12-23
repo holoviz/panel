@@ -40,6 +40,8 @@ class DivPaneBase(PaneBase):
 
     _bokeh_model = _BkHTML
 
+    _rerender_params = ['object', 'sizing_mode']
+
     def _get_properties(self):
         props = {p : getattr(self, p) for p in list(Layoutable.param) + ['style']
                  if getattr(self, p) is not None}
@@ -170,7 +172,7 @@ class DataFrame(HTML):
         'col_space', 'decimal', 'float_format', 'formatters',
         'header', 'index', 'index_names', 'justify', 'max_rows',
         'max_cols', 'na_rep', 'render_links', 'show_dimensions',
-        'sparsify'
+        'sparsify', 'sizing_mode'
     ]
 
     _dask_params = ['max_rows']
@@ -280,7 +282,7 @@ class Markdown(DivPaneBase):
     # Priority depends on the data type
     priority = None
 
-    _rerender_params = ['object', 'dedent', 'extensions']
+    _rerender_params = ['object', 'dedent', 'extensions', 'sizing_mode']
 
     @classmethod
     def applies(cls, obj):
