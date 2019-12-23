@@ -44,12 +44,13 @@ class DivPaneBase(PaneBase):
         props = {p : getattr(self, p) for p in list(Layoutable.param) + ['style']
                  if getattr(self, p) is not None}
         if self.sizing_mode is not None and 'stretch' in self.sizing_mode:
+            mode = self.sizing_mode[8:]
             if 'style' not in props:
                 props['style'] = {}
             style = props['style']
-            if 'width' not in style and self.sizing_mode in ('stretch_width', 'stretch_both'):
+            if 'width' not in style and mode in ('width', 'both'):
                 style['width'] = '100%'
-            if 'height' not in style and self.sizing_mode in ('stretch_height', 'stretch_both'):
+            if 'height' not in style and mode in ('height', 'both'):
                 style['height'] = '100%'
         return props
 
