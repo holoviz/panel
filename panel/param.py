@@ -540,7 +540,7 @@ class ParamMethod(ReplacementPane):
                 kwargs = {n: getattr(dep.owner, dep.name) for n, dep in kw_deps.items()}
         return function(*args, **kwargs)
 
-    def _update_pane(self, event):
+    def _update_pane(self, *events):
         callbacks = []
         for watcher in self._callbacks:
             obj = watcher.inst if watcher.inst is None else watcher.cls
