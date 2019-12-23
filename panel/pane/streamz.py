@@ -33,7 +33,7 @@ class Streamz(ReplacementPane):
             self._stream = None
         if self._pane._models or self.always_watch:
             self._stream = self.object.latest().rate_limit(self.rate_limit).gather()
-            self._stream.sink(self._update_pane)
+            self._stream.sink(self._update_inner)
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         model = super(Streamz, self)._get_model(doc, root, parent, comm)
