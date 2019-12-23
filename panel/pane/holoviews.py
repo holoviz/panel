@@ -16,7 +16,7 @@ from bokeh.models import Spacer as _BkSpacer
 
 from ..io import state, unlocked
 from ..layout import Panel, Column, WidgetBox, HSpacer, VSpacer, Row
-from ..viewable import Viewable
+from ..viewable import Layoutable, Viewable
 from ..widgets import Player
 from .base import PaneBase, Pane
 from .plot import Bokeh, Matplotlib
@@ -83,7 +83,6 @@ class HoloViews(PaneBase):
         self._plots = {}
         self.param.watch(self._update_widgets, self._rerender_params)
         self._initialized = True
-
 
     @param.depends('center', 'widget_location', watch=True)
     def _update_layout(self):
@@ -241,7 +240,9 @@ class HoloViews(PaneBase):
             else:
                 # Compatibility with holoviews<1.13.0
                 state = plot.state
-            child_pane = self._panes.get(backend, Pane)(state)
+            kwargs = {p: v for p, v in self.get_param_values()
+                      if p in Layoutable.param and p != 'name'}
+            child_pane = self._panes.get(backend, Pane)(state, **kwargs)
             self._update_plot(plot, child_pane)
             model = child_pane._get_model(doc, root, parent, comm)
             if ref in self._plots:

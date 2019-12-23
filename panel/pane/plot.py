@@ -12,6 +12,7 @@ import param
 from bokeh.models import LayoutDOM, CustomJS, Spacer as BkSpacer
 
 from ..io import remove_root
+from ..viewable import Layoutable
 from .base import PaneBase
 from .markup import HTML
 from .image import PNG
@@ -36,6 +37,16 @@ class Bokeh(PaneBase):
             model = BkSpacer()
         else:
             model = self.object
+
+        properties = {}
+        for p, value in self.param.get_param_values():
+            if (p not in Layoutable.param or p == 'name' or
+                value is self.param[p].default):
+                continue
+            properties[p] = value
+        print(properties)
+        model.update(**properties)
+
         ref = root.ref['id']
         for js in model.select({'type': CustomJS}):
             js.code = js.code.replace(model.ref['id'], ref)
