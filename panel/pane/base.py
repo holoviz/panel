@@ -136,7 +136,7 @@ class PaneBase(Reactive):
         if ref in state._views:
             state._views[ref][0]._preprocess(root)
 
-    def _update_pane(self, event):
+    def _update_pane(self, *events):
         for ref, (_, parent) in self._models.items():
             viewable, root, doc, comm = state._views[ref]
             if comm or state._unblocked(doc):
@@ -272,7 +272,7 @@ class ReplacementPane(PaneBase):
         self._pane = Pane(None)
         self._inner_layout = Row(self._pane, **{k: v for k, v in params.items() if k in Row.param})
 
-    def _update_pane(self, event):
+    def _update_pane(self, *events):
         """
         Updating of the object should be handled manually.
         """

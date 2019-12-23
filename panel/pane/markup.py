@@ -40,13 +40,20 @@ class DivPaneBase(PaneBase):
 
     _bokeh_model = _BkHTML
 
+    _rerender_params = ['object', 'sizing_mode']
+
     def _get_properties(self):
         props = {p : getattr(self, p) for p in list(Layoutable.param) + ['style']
                  if getattr(self, p) is not None}
-        if self.sizing_mode not in ['fixed', None]:
+        if self.sizing_mode is not None and 'stretch' in self.sizing_mode:
+            mode = self.sizing_mode[8:]
             if 'style' not in props:
                 props['style'] = {}
-            props['style'].update(width='100%', height='100%')
+            style = props['style']
+            if 'width' not in style and mode in ('width', 'both'):
+                style['width'] = '100%'
+            if 'height' not in style and mode in ('height', 'both'):
+                style['height'] = '100%'
         return props
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
@@ -165,7 +172,7 @@ class DataFrame(HTML):
         'col_space', 'decimal', 'float_format', 'formatters',
         'header', 'index', 'index_names', 'justify', 'max_rows',
         'max_cols', 'na_rep', 'render_links', 'show_dimensions',
-        'sparsify'
+        'sparsify', 'sizing_mode'
     ]
 
     _dask_params = ['max_rows']
@@ -224,7 +231,7 @@ class DataFrame(HTML):
                 html = df.to_html(max_rows=self.max_rows).replace('border="1"', '')
             else:
                 kwargs = {p: getattr(self, p) for p in self._rerender_params
-                          if 'object' not in p}
+                          if p not in DivPaneBase.param and p != '_object'}
                 html = df.to_html(**kwargs)
         else:
             html = ''
@@ -275,7 +282,7 @@ class Markdown(DivPaneBase):
     # Priority depends on the data type
     priority = None
 
-    _rerender_params = ['object', 'dedent', 'extensions']
+    _rerender_params = ['object', 'dedent', 'extensions', 'sizing_mode']
 
     @classmethod
     def applies(cls, obj):
