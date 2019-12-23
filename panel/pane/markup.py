@@ -231,7 +231,7 @@ class DataFrame(HTML):
                 html = df.to_html(max_rows=self.max_rows).replace('border="1"', '')
             else:
                 kwargs = {p: getattr(self, p) for p in self._rerender_params
-                          if 'object' not in p}
+                          if p not in DivPaneBase.param and p != '_object'}
                 html = df.to_html(**kwargs)
         else:
             html = ''
