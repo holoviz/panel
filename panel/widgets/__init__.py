@@ -22,4 +22,4 @@ from .select import (# noqa
     MultiSelect, RadioButtonGroup, RadioBoxGroup, Select, ToggleGroup
 )
 from .tables import DataFrame # noqa
-from .ace import Ace
+from .ace import Ace  # noqa
