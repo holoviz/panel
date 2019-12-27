@@ -17,6 +17,7 @@ from bokeh.models.widgets import (
     Select as _BkSelect)
 
 from ..layout import Column, Row, VSpacer
+from ..models import Pillbox as _BkPillbox
 from ..util import as_unicode, isIn, indexOf
 from ..viewable import Layoutable
 from .base import Widget, CompositeWidget
@@ -116,15 +117,10 @@ class Select(SelectBase):
                 lambda x: x.value, 'value', 'cb_obj.value')
 
 
-class MultiSelect(Select):
 
-    size = param.Integer(default=4, doc="""
-        The number of items displayed at once (i.e. determines the
-        widget height).""")
+class _MultiSelectBase(Select):
 
     value = param.List(default=[])
-
-    _widget_type = _BkMultiSelect
 
     _supports_embed = False
 
@@ -149,6 +145,22 @@ class MultiSelect(Select):
                             if v in labels]
         msg.pop('options', None)
         return msg
+
+
+
+class MultiSelect(_MultiSelectBase):
+
+    size = param.Integer(default=4, doc="""
+        The number of items displayed at once (i.e. determines the
+        widget height).""")
+
+    _widget_type = _BkMultiSelect
+
+
+
+class Pillbox(_MultiSelectBase):
+
+    _widget_type = _BkPillbox
 
 
 
@@ -360,7 +372,7 @@ class CrossSelector(CompositeWidget, MultiSelect):
         # Define whitelist and blacklist
         layout = dict(sizing_mode=self.sizing_mode, width_policy=self.width_policy,
                       height_policy=self.height_policy, background=self.background)
-        width = int((self.width-50)/2)
+        width = int((self.width-130)/2)
         self._lists = {
             False: MultiSelect(options=unselected, size=self.size,
                                height=self.height-50, width=width, **layout),

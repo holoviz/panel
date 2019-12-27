@@ -3,7 +3,7 @@ Custom bokeh Widget models.
 """
 from __future__ import absolute_import, division, unicode_literals
 
-from bokeh.core.properties import Int, Float, Override, Enum, Any, Bool, Dict, String
+from bokeh.core.properties import Either, Int, Float, Override, Enum, Any, Bool, Dict, String, List, Tuple
 from bokeh.models.widgets import Widget
 
 
@@ -100,3 +100,31 @@ class Progress(Widget):
     style = Dict(String, Any, default={}, help="""
     Raw CSS style declaration. Note this may be web browser dependent.
     """)
+
+
+class Pillbox(Widget):
+
+    options = List(Either(String, Tuple(String, String)), help="""
+    Available selection options. Options may be provided either as a list of
+    possible string values, or as a list of tuples, each of the form
+    ``(value, label)``. In the latter case, the visible widget text for each
+    value will be corresponding given label.
+    """)
+
+    title = String(default="", help="""
+    Widget's label.
+    """)
+
+    value = List(String, help="""
+    Initial or selected values.
+    """)
+
+    __css__ = ["https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css"]
+
+    __javascript__ = ["https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.js"]
+
+    __js_require__ = {
+        'paths': {
+            "choices":  "https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.js",
+        }
+    }
