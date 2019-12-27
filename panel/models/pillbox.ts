@@ -36,15 +36,12 @@ export class PillboxView extends InputWidgetView {
       multiple: true,
       class: bk_input,
       name: this.model.name,
-      disabled: this.model.disabled,
-	  width: "100%"
+      disabled: this.model.disabled
     }, options)
 
-	this.group_el.appendChild(this.select_el)
-
+    this.group_el.appendChild(this.select_el)
     this.render_selection()
-
-	new (window as any).Choices(this.select_el, {choices: this.model.value, removeItemButton: true})
+    new (window as any).Choices(this.select_el, {choices: this.model.value, removeItemButton: true})
     this.select_el.addEventListener("change", () => this.change_input())
 
   }
