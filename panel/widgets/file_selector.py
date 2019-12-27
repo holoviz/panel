@@ -1,5 +1,5 @@
 """
-Defines a FileBrowser widget which allows selecting files and
+Defines a FileSelector widget which allows selecting files and
 directories on the server.
 """
 from __future__ import absolute_import, division, unicode_literals
@@ -39,8 +39,8 @@ class FileSelector(CompositeWidget):
 
         # Set up layout
         layout = {p: getattr(self, p) for p in Layoutable.param
-                  if p != 'name' and getattr(self, p) is not None}
-        self._selector = CrossSelector(**layout)
+                  if p not in ('name', 'height') and getattr(self, p) is not None}
+        self._selector = CrossSelector(height=self.height-100, **layout)
         self._go = Button(name='↵', disabled=True, width=25, margin=(5, 25, 0, 0))
         self._directory = TextInput(value=self.directory, width_policy='max')
         self._home = Button(name='🏠', width=25, margin=(5, 15, 0, 10), disabled=True)
@@ -49,7 +49,7 @@ class FileSelector(CompositeWidget):
         self._up = Button(name='▲', width=25, margin=(5, 10), disabled=True)
         self._buttons = [self._home, self._back, self._forward, self._up]
         self._composite = Column(
-            Row(*self._buttons, self._directory, self._go, margin=(0, 10)),
+            Row(*self._buttons, self._directory, self._go, margin=(0, 10), width_policy='max'),
             Divider(margin=(0, 20)), self._selector, **layout
         )
 
