@@ -4,8 +4,10 @@ communication between a rendered panel and the Widget parameters.
 """
 from __future__ import absolute_import, division, unicode_literals
 
+from .ace import Ace  # noqa
 from .base import Widget, CompositeWidget # noqa
 from .button import Button, Toggle # noqa
+from .file_selector import FileSelector # noqa
 from .input import (# noqa
     ColorPicker, Checkbox, DatetimeInput, DatePicker, FileInput,
     LiteralInput, StaticText, TextInput, Spinner, PasswordInput,
@@ -22,4 +24,3 @@ from .select import (# noqa
     MultiSelect, RadioButtonGroup, RadioBoxGroup, Select, ToggleGroup
 )
 from .tables import DataFrame # noqa
-from .ace import Ace  # noqa
