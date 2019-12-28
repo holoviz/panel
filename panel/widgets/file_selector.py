@@ -4,9 +4,10 @@ directories on the server.
 """
 from __future__ import absolute_import, division, unicode_literals
 
-
 import os
 import glob
+
+from collections import OrderedDict
 
 import param
 
@@ -57,7 +58,6 @@ class FileSelector(CompositeWidget):
         )
 
         # Set up state
-        self._file_map = {}
         self._stack = []
         self._cwd = None
         self._position = -1
@@ -75,9 +75,9 @@ class FileSelector(CompositeWidget):
         self._selector._lists[False].param.watch(self._select, 'value')
 
     def _update_value(self, event):
-        value = [v for v in event.new if not self.only_files or os.path.isfile(self._file_map.get(v))]
+        value = [v for v in event.new if not self.only_files or os.path.isfile(v)]
         self._selector.value = value
-        self.value = [self._file_map[v] for v in value]
+        self.value = value
 
     def _dir_change(self, event):
         path = os.path.abspath(os.path.expanduser(self._directory.value))
@@ -107,23 +107,28 @@ class FileSelector(CompositeWidget):
         if 0 <= self._position and len(self._stack) > 1:
             self._back.disabled = False
 
-        paths = glob.glob(os.path.join(path, '*' + self.file_keyword + '*'))
-        files = sorted([p for p in paths if os.path.isfile(p)])
-        dirs = sorted([p for p in paths if os.path.isdir(p)])
+        file_paths = glob.glob(os.path.join(path, '*' + self.file_keyword + '*'))
+        files = sorted([p for p in file_paths if os.path.isfile(p)])
+        dir_paths = glob.glob(os.path.join(path, '*'))
+        dirs = sorted([p for p in dir_paths if os.path.isdir(p)])
         combined = dirs + files
         abbreviated = ['./'+f.split(os.path.sep)[-1] for f in combined]
-        self._file_map = dict(zip(abbreviated, combined))
+        options = OrderedDict()
         if path != self.directory:
-            abbreviated = ['..'] + abbreviated
-        self._selector.options = abbreviated
+            options['..'] = os.path.abspath(os.path.join(path, '..')) 
+        options.update(zip(abbreviated, combined))
+        self._selector.options = options
 
     def _select(self, event):
         if len(event.new) != 1:
+            self._directory.value = self._cwd
             return
-        sel = self._file_map.get(event.new[0], event.new[0])
-        if os.path.isdir(sel) or sel == '..':
-            self._directory.value = os.path.abspath(
-                os.path.expanduser(os.path.join(self._directory.value, sel)))
+        
+        sel = os.path.abspath(os.path.join(self._cwd, event.new[0]))
+        if os.path.isdir(sel):
+            self._directory.value = sel
+        else:
+            self._directory.value = self._cwd
 
     def _go_home(self, event):
         self._directory.value = self.directory
