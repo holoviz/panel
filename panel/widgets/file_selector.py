@@ -52,11 +52,11 @@ class FileSelector(CompositeWidget):
         self._back = Button(name='◀', width=25, margin=(5, 10), disabled=True)
         self._forward = Button(name='▶', width=25, margin=(5, 10), disabled=True)
         self._up = Button(name='▲', width=25, margin=(5, 10), disabled=True)
-        self._buttons = [self._home, self._back, self._forward, self._up]
-        self._composite = Column(
-            Row(*self._buttons, self._directory, self._go, margin=(0, 10), width_policy='max'),
-            Divider(margin=(0, 20)), self._selector, **layout
+        self._nav_bar = Row(
+            self._home, self._back, self._forward, self._up, self._directory, self._go,
+            margin=(0, 10), width_policy='max'
         )
+        self._composite = Column(self._nav_bar, Divider(margin=(0, 20)), self._selector, **layout)
 
         # Set up state
         self._stack = []
