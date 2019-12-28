@@ -27,20 +27,23 @@ class FileSelector(CompositeWidget):
         Whether to only allow selecting files.""")
 
     file_keyword = param.String(default='*', doc="""
-        Keyword for file name. Hidden from ui.""")
+        A glob-like query expression to limit the displayed files.""")
 
     value = param.List(default=[], doc="""
         List of selected files.""")
 
     def __init__(self, directory=None, **params):
         if directory is not None:
-            params['directory'] = os.path.abspath(directory)
+            params['directory'] = os.path.abspath(os.path.expanduser(directory))
         super(FileSelector, self).__init__(**params)
 
         # Set up layout
         layout = {p: getattr(self, p) for p in Layoutable.param
                   if p not in ('name', 'height') and getattr(self, p) is not None}
-        self._selector = CrossSelector(height=self.height-100, **layout)
+        sel_layout = dict(layout)
+        if self.height:
+            sel_layout['height'] = self.height-100
+        self._selector = CrossSelector(**sel_layout)
         self._go = Button(name='↵', disabled=True, width=25, margin=(5, 25, 0, 0))
         self._directory = TextInput(value=self.directory, width_policy='max')
         self._home = Button(name='🏠', width=25, margin=(5, 15, 0, 10), disabled=True)
@@ -77,7 +80,7 @@ class FileSelector(CompositeWidget):
         self.value = [self._file_map[v] for v in value]
 
     def _dir_change(self, event):
-        path = os.path.abspath(self._directory.value)
+        path = os.path.abspath(os.path.expanduser(self._directory.value))
         if not path.startswith(self.directory):
             self._directory.value = self.directory
             return
@@ -91,7 +94,7 @@ class FileSelector(CompositeWidget):
             self._selector.options = ['Entered path is not valid']
             self._selector.disabled = True
             return
-        elif event is not None:
+        elif event is not None and (not self._stack or path != self._stack[-1]):
             self._stack.append(path)
             self._position += 1
 
@@ -119,7 +122,8 @@ class FileSelector(CompositeWidget):
             return
         sel = self._file_map.get(event.new[0], event.new[0])
         if os.path.isdir(sel) or sel == '..':
-            self._directory.value = os.path.abspath(os.path.join(self._directory.value, sel))
+            self._directory.value = os.path.abspath(
+                os.path.expanduser(os.path.join(self._directory.value, sel)))
 
     def _go_home(self, event):
         self._directory.value = self.directory
