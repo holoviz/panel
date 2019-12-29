@@ -484,7 +484,7 @@ class CrossSelector(CompositeWidget, MultiSelect):
             try:
                 matches = [o for o in options if self.filter_fn(query, o)]
             except:
-                matches = list(options)
+                matches = []
             self._lists[selected].options = options if options else []
             self._lists[selected].value = [m for m in matches]
 
