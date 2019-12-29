@@ -41,7 +41,7 @@ def test_holoviews_pane_mpl_renderer(document, comm):
     assert isinstance(row, BkRow)
     assert len(row.children) == 1
     model = row.children[0]
-    assert pane._models[row.ref['id']][0] is model
+    assert pane._models[row.ref['id']][0][0] is model
     assert model.text.startswith('&lt;img src=')
 
     # Replace Pane.object
@@ -68,7 +68,7 @@ def test_holoviews_pane_switch_backend(document, comm):
     assert isinstance(row, BkRow)
     assert len(row.children) == 1
     model = row.children[0]
-    assert pane._models[row.ref['id']][0] is model
+    assert pane._models[row.ref['id']][0][0] is model
     assert model.text.startswith('&lt;img src=')
 
     # Replace Pane.object
@@ -93,7 +93,7 @@ def test_holoviews_pane_bokeh_renderer(document, comm):
     assert len(row.children) == 1
     model = row.children[0]
     assert isinstance(model, Figure)
-    assert pane._models[row.ref['id']][0] is model
+    assert pane._models[row.ref['id']][0][0] is model
     renderers = [r for r in model.renderers if isinstance(r, GlyphRenderer)]
     assert len(renderers) == 1
     assert isinstance(renderers[0].glyph, Line)
@@ -106,7 +106,7 @@ def test_holoviews_pane_bokeh_renderer(document, comm):
     renderers = [r for r in model.renderers if isinstance(r, GlyphRenderer)]
     assert len(renderers) == 1
     assert isinstance(renderers[0].glyph, Scatter)
-    assert pane._models[row.ref['id']][0] is model
+    assert pane._models[row.ref['id']][0][0] is model
 
     # Cleanup
     pane._cleanup(row)
@@ -194,7 +194,7 @@ def test_holoviews_with_widgets(document, comm):
     assert hv_pane.widget_box.objects[0].name == 'X'
     assert hv_pane.widget_box.objects[1].name == 'Y'
 
-    assert hv_pane._models[layout.ref['id']][0] is model
+    assert hv_pane._models[layout.ref['id']][0][0] is model
 
     hmap = hv.HoloMap({(i, chr(65+i)): hv.Curve([i]) for i in range(3)}, kdims=['A', 'B'])
     hv_pane.object = hmap
@@ -245,7 +245,7 @@ def test_holoviews_with_widgets_not_shown(document, comm):
     assert hv_pane.widget_box.objects[0].name == 'X'
     assert hv_pane.widget_box.objects[1].name == 'Y'
 
-    assert hv_pane._models[layout.ref['id']][0] is model
+    assert hv_pane._models[layout.ref['id']][0][0] is model
 
     hmap = hv.HoloMap({(i, chr(65+i)): hv.Curve([i]) for i in range(3)}, kdims=['A', 'B'])
     hv_pane.object = hmap

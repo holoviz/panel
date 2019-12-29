@@ -22,14 +22,14 @@ def test_bokeh_pane(document, comm):
     assert len(row.children) == 1
     model = row.children[0]
     assert model is div
-    assert pane._models[row.ref['id']][0] is model
+    assert pane._models[row.ref['id']][0][0] is model
 
     # Replace Pane.object
     div2 = Div()
     pane.object = div2
     new_model = row.children[0]
     assert new_model is div2
-    assert pane._models[row.ref['id']][0] is new_model
+    assert pane._models[row.ref['id']][0][0] is new_model
 
     # Cleanup
     pane._cleanup(row)
@@ -49,12 +49,12 @@ def test_matplotlib_pane(document, comm):
     model = pane.get_root(document, comm=comm)
     assert model.text.startswith('&lt;img')
     text = model.text
-    assert pane._models[model.ref['id']][0] is model
+    assert pane._models[model.ref['id']][0][0] is model
 
     # Replace Pane.object
     pane.object = mpl_figure()
     assert model.text != text
-    assert pane._models[model.ref['id']][0] is model
+    assert pane._models[model.ref['id']][0][0] is model
 
     # Cleanup
     pane._cleanup(model)

@@ -53,7 +53,7 @@ def test_vtk_pane_from_url(document, comm):
     # Create pane
     model = pane.get_root(document, comm=comm)
     assert isinstance(model, VTKPlot)
-    assert pane._models[model.ref['id']][0] is model
+    assert pane._models[model.ref['id']][0][0] is model
     assert isinstance(model.data, string_types)
 
 

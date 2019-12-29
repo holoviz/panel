@@ -220,7 +220,7 @@ def test_interact_replaces_model(document, comm):
     div = column.children[1].children[0]
     assert isinstance(div, BkDiv)
     assert div.text == 'Test'
-    assert pane._models[column.ref['id']][0] is div
+    assert pane._models[column.ref['id']][0][0] is div
 
     widget.value = True
     new_pane = interact_pane._pane
@@ -228,7 +228,7 @@ def test_interact_replaces_model(document, comm):
     new_div = column.children[1].children[0]
     assert isinstance(new_div, BkHTML)
     assert new_div.text.endswith('&lt;p&gt;ABC&lt;/p&gt;')
-    assert new_pane._models[column.ref['id']][0] is new_div
+    assert new_pane._models[column.ref['id']][0][0] is new_div
 
     interact_pane._cleanup(column)
     assert len(interact_pane._callbacks) == 1

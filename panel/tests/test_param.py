@@ -825,7 +825,7 @@ def test_param_function_pane(document, comm):
     assert isinstance(row, BkRow)
     assert len(row.children) == 1
     model = row.children[0]
-    assert pane._models[row.ref['id']][0] is row
+    assert pane._models[row.ref['id']][0][0] is row
     assert isinstance(model, Div)
     assert model.text == '0'
 
@@ -834,7 +834,7 @@ def test_param_function_pane(document, comm):
     new_model = row.children[0]
     assert inner_pane is pane._pane
     assert new_model.text == '5'
-    assert pane._models[row.ref['id']][0] is row
+    assert pane._models[row.ref['id']][0][0] is row
 
     # Cleanup pane
     pane._cleanup(row)
@@ -857,7 +857,7 @@ def test_param_method_pane(document, comm):
     assert isinstance(row, BkRow)
     assert len(row.children) == 1
     model = row.children[0]
-    assert pane._models[row.ref['id']][0] is row
+    assert pane._models[row.ref['id']][0][0] is row
     assert isinstance(model, Div)
     assert model.text == '0'
 
@@ -866,7 +866,7 @@ def test_param_method_pane(document, comm):
     new_model = row.children[0]
     assert inner_pane is pane._pane
     assert new_model.text == '5'
-    assert pane._models[row.ref['id']][0] is row
+    assert pane._models[row.ref['id']][0][0] is row
 
     # Cleanup pane
     pane._cleanup(row)
@@ -892,12 +892,12 @@ def test_param_method_pane_subobject(document, comm):
     # Ensure that subobject is being watched
     watchers = pane._callbacks
     assert any(w.inst is subobject for w in watchers)
-    assert pane._models[row.ref['id']][0] is row
+    assert pane._models[row.ref['id']][0][0] is row
 
     # Ensure that switching the subobject triggers update in watchers
     new_subobject = View(name='Nested', a=42)
     test.b = new_subobject
-    assert pane._models[row.ref['id']][0] is row
+    assert pane._models[row.ref['id']][0][0] is row
     watchers = pane._callbacks
     assert not any(w.inst is subobject for w in watchers)
     assert any(w.inst is new_subobject for w in watchers)
@@ -920,7 +920,7 @@ def test_param_method_pane_mpl(document, comm):
     assert isinstance(row, BkRow)
     assert len(row.children) == 1
     model = row.children[0]
-    assert pane._models[row.ref['id']][0] is row
+    assert pane._models[row.ref['id']][0][0] is row
     text = model.text
 
     # Update pane
@@ -929,7 +929,7 @@ def test_param_method_pane_mpl(document, comm):
     assert inner_pane is pane._pane
     assert new_model is model
     assert new_model.text != text
-    assert pane._models[row.ref['id']][0] is row
+    assert pane._models[row.ref['id']][0][0] is row
 
     # Cleanup pane
     pane._cleanup(row)

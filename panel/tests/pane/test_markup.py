@@ -49,12 +49,12 @@ def test_markdown_pane(document, comm):
 
     # Create pane
     model = pane.get_root(document, comm=comm)
-    assert pane._models[model.ref['id']][0] is model
+    assert pane._models[model.ref['id']][0][0] is model
     assert model.text.endswith("&lt;p&gt;&lt;strong&gt;Markdown&lt;/strong&gt;&lt;/p&gt;")
 
     # Replace Pane.object
     pane.object = "*Markdown*"
-    assert pane._models[model.ref['id']][0] is model
+    assert pane._models[model.ref['id']][0][0] is model
     assert model.text.endswith("&lt;p&gt;&lt;em&gt;Markdown&lt;/em&gt;&lt;/p&gt;")
 
     # Cleanup
@@ -66,7 +66,7 @@ def test_markdown_pane_dedent(document, comm):
 
     # Create pane
     model = pane.get_root(document, comm=comm)
-    assert pane._models[model.ref['id']][0] is model
+    assert pane._models[model.ref['id']][0][0] is model
     assert model.text.endswith("&lt;p&gt;ABC&lt;/p&gt;")
 
     pane.dedent = False
@@ -82,7 +82,7 @@ def test_markdown_pane_extensions(document, comm):
 
     # Create pane
     model = pane.get_root(document, comm=comm)
-    assert pane._models[model.ref['id']][0] is model
+    assert pane._models[model.ref['id']][0][0] is model
     assert model.text.startswith('&lt;div class=&quot;codehilite')
 
     pane.extensions = ["extra", "smarty"]
@@ -94,12 +94,12 @@ def test_html_pane(document, comm):
 
     # Create pane
     model = pane.get_root(document, comm=comm)
-    assert pane._models[model.ref['id']][0] is model
+    assert pane._models[model.ref['id']][0][0] is model
     assert model.text == "&lt;h1&gt;Test&lt;/h1&gt;"
 
     # Replace Pane.object
     pane.object = "<h2>Test</h2>"
-    assert pane._models[model.ref['id']][0] is model
+    assert pane._models[model.ref['id']][0][0] is model
     assert model.text == "&lt;h2&gt;Test&lt;/h2&gt;"
 
     # Cleanup
@@ -130,13 +130,13 @@ def test_dataframe_pane_pandas(document, comm):
 
     # Create pane
     model = pane.get_root(document, comm=comm)
-    assert pane._models[model.ref['id']][0] is model
+    assert pane._models[model.ref['id']][0][0] is model
     assert model.text.startswith('&lt;table')
     orig_text = model.text
 
     # Replace Pane.object
     pane.object = pd.util.testing.makeMixedDataFrame()
-    assert pane._models[model.ref['id']][0] is model
+    assert pane._models[model.ref['id']][0][0] is model
     assert model.text.startswith('&lt;table')
     assert model.text != orig_text
 
@@ -156,12 +156,12 @@ def test_dataframe_pane_streamz(document, comm):
     # Create pane
     model = pane.get_root(document, comm=comm)
     assert pane._stream is not None
-    assert pane._models[model.ref['id']][0] is model
+    assert pane._models[model.ref['id']][0][0] is model
     assert model.text == ''
 
     # Replace Pane.object
     pane.object = sdf.x
-    assert pane._models[model.ref['id']][0] is model
+    assert pane._models[model.ref['id']][0][0] is model
     assert model.text == ''
 
     # Cleanup
@@ -175,12 +175,12 @@ def test_string_pane(document, comm):
 
     # Create pane
     model = pane.get_root(document, comm=comm)
-    assert pane._models[model.ref['id']][0] is model
+    assert pane._models[model.ref['id']][0][0] is model
     assert model.text == "<pre>&lt;h1&gt;Test&lt;/h1&gt;</pre>"
 
     # Replace Pane.object
     pane.object = "<h2>Test</h2>"
-    assert pane._models[model.ref['id']][0] is model
+    assert pane._models[model.ref['id']][0][0] is model
     assert model.text == "<pre>&lt;h2&gt;Test&lt;/h2&gt;</pre>"
 
     # Cleanup

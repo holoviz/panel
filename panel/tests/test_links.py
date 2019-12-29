@@ -48,8 +48,8 @@ def test_pnwidget_hvplot_links(document, comm):
 
     assert len(hv_views) == 1
     assert len(widg_views) == 1
-    slider = widg_views[0]._models[model.ref['id']][0]
-    scatter = hv_views[0]._plots[model.ref['id']][0].handles['glyph']
+    slider = widg_views[0]._models[model.ref['id']][0][0]
+    scatter = hv_views[0]._plots[model.ref['id']][0][0].handles['glyph']
 
     link_customjs = slider.js_property_callbacks['change:value'][-1]
     assert link_customjs.args['source'] is slider
@@ -77,7 +77,7 @@ def test_bkwidget_hvplot_links(document, comm):
 
     assert len(hv_views) == 1
     slider = bokeh_widget
-    scatter = hv_views[0]._plots[model.ref['id']][0].handles['glyph']
+    scatter = hv_views[0]._plots[model.ref['id']][0][0].handles['glyph']
 
     link_customjs = slider.js_property_callbacks['change:value'][-1]
     assert link_customjs.args['source'] is slider
@@ -183,7 +183,7 @@ def test_hvplot_jscallback(document, comm):
     hvplot.jscallback(**{'x_range.start': "some_code"})
 
     model = hvplot.get_root(document, comm=comm)
-    x_range = hvplot._plots[model.ref['id']][0].handles['x_range']
+    x_range = hvplot._plots[model.ref['id']][0][0].handles['x_range']
 
     customjs = x_range.js_property_callbacks['change:start'][-1]
     assert customjs.args['source'] is x_range
@@ -208,8 +208,8 @@ def test_link_with_customcode(document, comm):
 
     assert len(hv_views) == 1
     assert len(widg_views) == 1
-    range_slider = widg_views[0]._models[model.ref['id']][0]
-    x_range = hv_views[0]._plots[model.ref['id']][0].handles['x_range']
+    range_slider = widg_views[0]._models[model.ref['id']][0][0]
+    x_range = hv_views[0]._plots[model.ref['id']][0][0].handles['x_range']
 
     link_customjs = range_slider.js_property_callbacks['change:value'][-1]
     assert link_customjs.args['source'] is range_slider

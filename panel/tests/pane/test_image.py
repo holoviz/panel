@@ -20,7 +20,7 @@ def test_svg_pane(document, comm):
 
     # Create pane
     model = pane.get_root(document, comm=comm)
-    assert pane._models[model.ref['id']][0] is model
+    assert pane._models[model.ref['id']][0][0] is model
     assert model.text.startswith('<img')
     assert b64encode(rect.encode('utf-8')).decode('utf-8') in model.text
 
@@ -31,7 +31,7 @@ def test_svg_pane(document, comm):
     </svg>
     """
     pane.object = circle
-    assert pane._models[model.ref['id']][0] is model
+    assert pane._models[model.ref['id']][0][0] is model
     assert model.text.startswith('<img')
     assert b64encode(circle.encode('utf-8')).decode('utf-8') in model.text
 
