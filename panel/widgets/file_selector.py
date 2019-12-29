@@ -66,6 +66,10 @@ class FileSelector(CompositeWidget):
     only_files = param.Boolean(default=False, doc="""
         Whether to only allow selecting files.""")
 
+    show_hidden = param.Boolean(default=False, doc="""
+        Whether to show hidden files and directories (starting with
+        a period).""")
+
     value = param.List(default=[], doc="""
         List of selected files.""")
 
@@ -143,7 +147,8 @@ class FileSelector(CompositeWidget):
         if 0 <= self._position and len(self._stack) > 1:
             self._back.disabled = False
 
-        paths = scan_path(path, self.file_pattern)
+        paths = [p for p in scan_path(path, self.file_pattern)
+                 if self.show_hidden or not os.path.basename(p).startswith('.')]
         abbreviated = ['./'+f.split(os.path.sep)[-1] for f in paths]
         options = OrderedDict()
         if path != self.directory:
