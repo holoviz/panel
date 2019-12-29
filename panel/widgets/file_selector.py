@@ -37,14 +37,14 @@ def scan_path(path, file_pattern='*'):
     -------
     A sorted list of paths
     """
-    paths = list(os.scandir(path))
-    dirs = [p.path for p in paths if p.is_dir()]
-    files = [p.path for p in paths if p.is_file() and
-             fnmatch(os.path.basename(p.path), file_pattern)]
+    paths = [os.path.join(path, p) for p in os.listdir(path)]
+    dirs = [p for p in paths if os.path.isdir(p)]
+    files = [p for p in paths if os.path.isfile(p) and
+             fnmatch(os.path.basename(p), file_pattern)]
     for p in paths:
-        if not p.is_symlink():
+        if not os.path.islink(p):
             continue
-        path = os.path.realpath(p.path)
+        path = os.path.realpath(p)
         if os.path.isdir(path):
             dirs.append(path)
         elif os.path.isfile(path):
