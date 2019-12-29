@@ -123,11 +123,12 @@ class VideoStream(Widget):
         Triggers a snapshot of the current VideoStream state to sync
         the widget value.
         """
-        for ref, (m, _) in self._models.items():
-            m.snapshot = not m.snapshot
+        for ref, models in self._models.items():
             (self, root, doc, comm) = state._views[ref]
-            if comm and 'embedded' not in root.tags:
-                push(doc, comm)
+            for m, p in models:
+                m.snapshot = not m.snapshot
+                if comm and 'embedded' not in root.tags:
+                    push(doc, comm)
 
 
 class Progress(Widget):

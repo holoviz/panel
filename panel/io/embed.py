@@ -118,9 +118,9 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
     for w in widgets:
         w, w_model, vals, getter, on_change, js_getter = w._get_embed_state(model, max_opts)
         if isinstance(w, DiscreteSlider):
-            w_model = w._composite[1]._models[target][0].select_one({'type': w._widget_type})
+            w_model = w._composite[1]._models[target][0][0].select_one({'type': w._widget_type})
         else:
-            w_model = w._models[target][0].select_one({'type': w._widget_type})
+            w_model = w._models[target][0][0].select_one({'type': w._widget_type})
         js_callback = CustomJS(code=STATE_JS.format(
             id=state_model.ref['id'], js_getter=js_getter))
         w_model.js_on_change(on_change, js_callback)

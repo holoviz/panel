@@ -60,7 +60,7 @@ class DivPaneBase(PaneBase):
         model = self._bokeh_model(**self._get_properties())
         if root is None:
             root = model
-        self._models[root.ref['id']] = (model, parent)
+        self._models[root.ref['id']].append((model, parent))
         return model
 
     def _update(self, model):

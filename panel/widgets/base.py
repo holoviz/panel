@@ -62,19 +62,20 @@ class Widget(Reactive):
         """
 
     def _update_widget(self, event):
-        for ref, (model, parent) in self._models.items():
+        for ref, models in self._models.items():
             viewable, root, doc, comm = state._views[ref]
-            if comm or state._unblocked(doc):
-                with unlocked():
-                    self._manual_update(event, model, doc, root, parent, comm)
-                if comm and 'embedded' not in root.tags:
-                    push(doc, comm)
-            else:
-                cb = partial(self._manual_update, event, model, doc, root, parent, comm)
-                if doc.session_context:
-                    doc.add_next_tick_callback(cb)
+            for (model, parent) in models:
+                if comm or state._unblocked(doc):
+                    with unlocked():
+                        self._manual_update(event, model, doc, root, parent, comm)
+                    if comm and 'embedded' not in root.tags:
+                        push(doc, comm)
                 else:
-                    cb()
+                    cb = partial(self._manual_update, event, model, doc, root, parent, comm)
+                    if doc.session_context:
+                        doc.add_next_tick_callback(cb)
+                    else:
+                        cb()
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         model = self._widget_type(**self._process_param_change(self._init_properties()))
@@ -83,7 +84,7 @@ class Widget(Reactive):
         # Link parameters and bokeh model
         values = dict(self.get_param_values())
         properties = self._filter_properties(list(self._process_param_change(values)))
-        self._models[root.ref['id']] = (model, parent)
+        self._models[root.ref['id']].append((model, parent))
         self._link_props(model, properties, doc, root, comm)
         return model
 

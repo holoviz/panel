@@ -78,7 +78,7 @@ class _MediaBase(PaneBase):
         model = self._bokeh_model(**props)
         if root is None:
             root = model
-        self._models[root.ref['id']] = (model, parent)
+        self._models[root.ref['id']].append((model, parent))
         self._link_props(model, list(model.properties()), doc, root, comm)
         return model
 

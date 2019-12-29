@@ -54,7 +54,7 @@ class Bokeh(PaneBase):
         if model._document and doc is not model._document:
             remove_root(model, doc)
 
-        self._models[ref] = (model, parent)
+        self._models[ref].append((model, parent))
         return model
 
 

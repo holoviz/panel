@@ -89,7 +89,7 @@ class Panel(Reactive):
         del properties['objects']
         return self._process_param_change(properties)
 
-    def _get_objects(self, model, old_objects, doc, root, comm=None):
+    def _get_objects(self, model, old_objects, doc, parent, root, comm=None):
         """
         Returns new child models for the layout while reusing unchanged
         models and cleaning up any dropped objects.
@@ -106,7 +106,7 @@ class Panel(Reactive):
 
         for i, pane in enumerate(self.objects):
             if pane in old_objects:
-                child, _ = pane._models[root.ref['id']]
+                child = [m for m, p in pane._models[root.ref['id']] if p is parent][0]
             else:
                 child = pane._get_model(doc, root, model, comm)
             new_models.append(child)
@@ -116,10 +116,10 @@ class Panel(Reactive):
         model = self._bokeh_model()
         if root is None:
             root = model
-        objects = self._get_objects(model, [], doc, root, comm)
+        objects = self._get_objects(model, [], doc, parent, root, comm)
         props = dict(self._init_properties(), objects=objects)
         model.update(**self._process_param_change(props))
-        self._models[root.ref['id']] = (model, parent)
+        self._models[root.ref['id']].append((model, parent))
         self._link_props(model, self._linked_props, doc, root, comm)
         return model
 
@@ -488,7 +488,7 @@ class GridBox(ListPanel):
         props = {k: v for k, v in self._init_properties().items()
                  if k not in ('nrows', 'ncols')}
         model.update(**self._process_param_change(props))
-        self._models[root.ref['id']] = (model, parent)
+        self._models[root.ref['id']].append((model, parent))
         self._link_props(model, self._linked_props, doc, root, comm)
         return model
 
@@ -646,7 +646,7 @@ class Tabs(ListPanel):
                 child.closable = closable
         super(Tabs, self)._update_model(events, msg, root, model, doc, comm)
 
-    def _get_objects(self, model, old_objects, doc, root, comm=None):
+    def _get_objects(self, model, old_objects, doc, parent, root, comm=None):
         """
         Returns new child models for the layout while reusing unchanged
         models and cleaning up any dropped objects.
@@ -668,7 +668,7 @@ class Tabs(ListPanel):
 
         for i, (name, pane) in enumerate(zip(self._names, self)):
             if pane in old_objects:
-                child, _ = pane._models[root.ref['id']]
+                child = [m for m, p in pane._models[root.ref['id']] if p is parent][0]
             else:
                 child = pane._get_model(doc, root, model, comm)
             child = BkPanel(title=name, name=pane.name, child=child,
@@ -1105,7 +1105,7 @@ class Spacer(Reactive):
         model = self._bokeh_model(**properties)
         if root is None:
             root = model
-        self._models[root.ref['id']] = (model, parent)
+        self._models[root.ref['id']].append((model, parent))
         return model
 
 
@@ -1138,5 +1138,5 @@ class Divider(Reactive):
         model = self._bokeh_model(text='<hr></hr>', **properties)
         if root is None:
             root = model
-        self._models[root.ref['id']] = (model, parent)
+        self._models[root.ref['id']].append((model, parent))
         return model

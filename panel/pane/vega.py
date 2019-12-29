@@ -146,7 +146,7 @@ class Vega(PaneBase):
         model = VegaPlot(data=json, data_sources=sources, **props)
         if root is None:
             root = model
-        self._models[root.ref['id']] = (model, parent)
+        self._models[root.ref['id']].append((model, parent))
         return model
 
     def _update(self, model):

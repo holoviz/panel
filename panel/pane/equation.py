@@ -65,7 +65,7 @@ class LaTeX(DivPaneBase):
         model = self._get_model_type(comm)(**self._get_properties())
         if root is None:
             root = model
-        self._models[root.ref['id']] = (model, parent)
+        self._models[root.ref['id']].append((model, parent))
         return model
 
     def _get_properties(self):

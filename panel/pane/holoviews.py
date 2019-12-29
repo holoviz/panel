@@ -250,7 +250,7 @@ class HoloViews(PaneBase):
                 old_plot.comm = None # Ensures comm does not get cleaned up
                 old_plot.cleanup()
             self._plots[ref] = (plot, child_pane)
-        self._models[ref] = (model, parent)
+        self._models[ref].append((model, parent))
         return model
 
     def _render(self, doc, comm, root):

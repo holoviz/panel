@@ -10,6 +10,7 @@ import re
 import sys
 import threading
 
+from collections import defaultdict
 from functools import partial
 
 import param
@@ -210,7 +211,7 @@ class Viewable(Layoutable):
     def __init__(self, **params):
         super(Viewable, self).__init__(**params)
         self._documents = {}
-        self._models = {}
+        self._models = defaultdict(list)
         self._found_links = set()
 
     def __repr__(self, depth=0):
@@ -643,22 +644,22 @@ class Reactive(Viewable):
             if not msg:
                 return
 
-            for ref, (model, parent) in self._models.items():
+            for ref, models in self._models.items():
                 if ref not in state._views:
                     continue
                 viewable, root, doc, comm = state._views[ref]
-
-                if comm or state._unblocked(doc):
-                    with unlocked():
-                        self._update_model(events, msg, root, model, doc, comm)
-                    if comm and 'embedded' not in root.tags:
-                        push(doc, comm)
-                else:
-                    cb = partial(self._update_model, events, msg, root, model, doc, comm)
-                    if doc.session_context:
-                        doc.add_next_tick_callback(cb)
+                for (model, parent) in models:
+                    if comm or state._unblocked(doc):
+                        with unlocked():
+                            self._update_model(events, msg, root, model, doc, comm)
+                        if comm and 'embedded' not in root.tags:
+                            push(doc, comm)
                     else:
-                        cb()
+                        cb = partial(self._update_model, events, msg, root, model, doc, comm)
+                        if doc.session_context:
+                            doc.add_next_tick_callback(cb)
+                        else:
+                            cb()
 
         params = self._synced_params()
         if params:
@@ -770,23 +771,24 @@ class Reactive(Viewable):
         super(Reactive, self)._cleanup(root)
 
         # Clean up comms
-        model, _ = self._models.pop(root.ref['id'], (None, None))
-        if model is None:
-            return
-
-        customjs = model.select({'type': CustomJS})
-        pattern = r"data\['comm_id'\] = \"(.*)\""
-        for js in customjs:
-            comm_ids = list(re.findall(pattern, js.code))
-            if not comm_ids:
+        models = self._models.pop(root.ref['id'], [])
+        for (model, parent) in models:
+            if model is None:
                 continue
-            comm_id = comm_ids[0]
-            comm = state._comm_manager._comms.pop(comm_id, None)
-            if comm:
-                try:
-                    comm.close()
-                except:
-                    pass
+
+            customjs = model.select({'type': CustomJS})
+            pattern = r"data\['comm_id'\] = \"(.*)\""
+            for js in customjs:
+                comm_ids = list(re.findall(pattern, js.code))
+                if not comm_ids:
+                    continue
+                comm_id = comm_ids[0]
+                comm = state._comm_manager._comms.pop(comm_id, None)
+                if comm:
+                    try:
+                        comm.close()
+                    except:
+                        pass
 
     #----------------------------------------------------------------
     # Public API

@@ -460,7 +460,7 @@ class Param(PaneBase):
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         model = self.layout._get_model(doc, root, parent, comm)
-        self._models[root.ref['id']] = (model, parent)
+        self._models[root.ref['id']].append((model, parent))
         return model
 
     def _cleanup(self, root):
@@ -504,7 +504,7 @@ class Param(PaneBase):
         doc = doc or _curdoc()
         root = self.layout.get_root(doc, comm)
         ref = root.ref['id']
-        self._models[ref] = (root, None)
+        self._models[ref].append((root, None))
         state._views[ref] = (self, root, doc, comm)
         return root
 

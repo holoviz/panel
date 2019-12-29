@@ -55,7 +55,7 @@ class Ace(PaneBase):
         if root is None:
             root = model
         self._link_props(model, ['code', 'language', 'theme', 'annotations', 'readonly'], doc, root, comm)
-        self._models[root.ref['id']] = (model, parent)
+        self._models[root.ref['id']].append((model, parent))
         return model
 
     def _update(self, model):

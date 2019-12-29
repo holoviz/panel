@@ -105,8 +105,8 @@ class PaneBase(Reactive):
         return {k: v for k, v in self.param.get_param_values()
                 if v is not None and k not in ['default_layout', 'object']}
 
-    def _update_object(self, ref, doc, root, parent, comm):
-        old_model = self._models[ref][0]
+    def _update_object(self, ref, idx, doc, root, parent, comm):
+        old_model = self._models[ref][idx][0]
         if self._updates:
             self._update(old_model)
         else:
@@ -137,19 +137,20 @@ class PaneBase(Reactive):
             state._views[ref][0]._preprocess(root)
 
     def _update_pane(self, *events):
-        for ref, (_, parent) in self._models.items():
+        for ref, models in self._models.items():
             viewable, root, doc, comm = state._views[ref]
-            if comm or state._unblocked(doc):
-                with unlocked():
-                    self._update_object(ref, doc, root, parent, comm)
-                if comm and 'embedded' not in root.tags:
-                    push(doc, comm)
-            else:
-                cb = partial(self._update_object, ref, doc, root, parent, comm)
-                if doc.session_context:
-                    doc.add_next_tick_callback(cb)
+            for (_, parent) in models:
+                if comm or state._unblocked(doc):
+                    with unlocked():
+                        self._update_object(ref, idx, doc, root, parent, comm)
+                    if comm and 'embedded' not in root.tags:
+                        push(doc, comm)
                 else:
-                    cb()
+                    cb = partial(self._update_object, ref, idx, doc, root, parent, comm)
+                    if doc.session_context:
+                        doc.add_next_tick_callback(cb)
+                    else:
+                        cb()
 
     def _update(self, model):
         """
@@ -307,7 +308,7 @@ class ReplacementPane(PaneBase):
         model = self._inner_layout._get_model(doc, root, parent, comm)
         if root is None:
             ref = model.ref['id']
-        self._models[ref] = (model, parent)
+        self._models[ref].append((model, parent))
         return model
 
     def _cleanup(self, root=None):
