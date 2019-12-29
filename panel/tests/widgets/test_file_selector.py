@@ -44,7 +44,6 @@ def test_file_selector_address_bar(test_dir):
     assert selector._cwd == os.path.join(test_dir, 'subdir1')
     assert selector._go.disabled
     assert selector._forward.disabled
-    assert not selector._home.disabled
     assert not selector._back.disabled
     assert selector._selector.options == {
         'a': os.path.join(test_dir, 'subdir1', 'a'),
@@ -161,8 +160,8 @@ def test_file_selector_multiple_across_dirs(test_dir):
     selector._selector._buttons[False].clicks = 1
 
     assert selector._selector.options == OrderedDict([
-        ('a', '/Users/philippjfr/test_dir/subdir1/a'),
-        ('b', '/Users/philippjfr/test_dir/subdir1/b')
+        ('a', os.path.join(test_dir, 'subdir1', 'a')),
+        ('b', os.path.join(test_dir, 'subdir1', 'b'))
     ])
     assert selector._selector._lists[False].options == ['b']
     assert selector.value == [os.path.join(test_dir, 'subdir1', 'a')]
