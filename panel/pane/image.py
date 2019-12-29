@@ -174,6 +174,10 @@ class JPG(ImageBase):
 
 class SVG(ImageBase):
 
+    encode = param.Boolean(default=True, doc="""
+        Whether to enable base64 encoding of the SVG, base64 encoded
+        SVGs do not support links.""")
+
     imgtype = 'svg'
 
     @classmethod
@@ -204,9 +208,13 @@ class SVG(ImageBase):
         width, height = self._imgshape(data)
         if not isinstance(data, bytes):
             data = data.encode('utf-8')
-        b64 = base64.b64encode(data).decode("utf-8")
-        src = "data:image/svg+xml;base64,{b64}".format(b64=b64)
-        html = "<img src='{src}' width={width} height={height}></img>".format(
-            src=src, width=width, height=height
-        )
-        return dict(p, width=width, height=height, text=html)
+
+        if self.encode:
+            b64 = base64.b64encode(data).decode("utf-8")
+            src = "data:image/svg+xml;base64,{b64}".format(b64=b64)
+            html = "<img src='{src}' width={width} height={height}></img>".format(
+                src=src, width=width, height=height
+            )
+        else:
+            html = data.decode("utf-8")
+        return dict(p, width=width, height=height, text=escape(html))
