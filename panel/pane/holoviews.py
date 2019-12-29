@@ -80,7 +80,7 @@ class HoloViews(PaneBase):
         self.widget_box = self.widget_layout()
         self._widget_container = []
         self._update_widgets()
-        self._plots = {}
+        self._plots = defaultdict(list)
         self.param.watch(self._update_widgets, self._rerender_params)
         self._initialized = True
 
@@ -214,8 +214,9 @@ class HoloViews(PaneBase):
                 pane.object = plot.state
 
     def _widget_callback(self, event):
-        for _, (plot, pane) in self._plots.items():
-            self._update_plot(plot, pane)
+        for _, plots in self._plots.items():
+            for (plot, pane, parent) in plots:
+                self._update_plot(plot, pane)
 
     #----------------------------------------------------------------
     # Model API
@@ -246,10 +247,12 @@ class HoloViews(PaneBase):
             self._update_plot(plot, child_pane)
             model = child_pane._get_model(doc, root, parent, comm)
             if ref in self._plots:
-                old_plot, old_pane = self._plots[ref]
-                old_plot.comm = None # Ensures comm does not get cleaned up
-                old_plot.cleanup()
-            self._plots[ref] = (plot, child_pane)
+                for (old_plot, old_pane, old_parent) in self._plots[ref]:
+                    if old_parent is not parent:
+                        continue
+                    old_plot.comm = None # Ensures comm does not get cleaned up
+                    old_plot.cleanup()
+            self._plots[ref].append((plot, child_pane, parent))
         self._models[ref].append((model, parent))
         return model
 
@@ -285,11 +288,12 @@ class HoloViews(PaneBase):
         Traverses HoloViews object to find and clean up any streams
         connected to existing plots.
         """
-        old_plot, old_pane = self._plots.pop(root.ref['id'], (None, None))
-        if old_plot:
-            old_plot.cleanup()
-        if old_pane:
-            old_pane._cleanup(root)
+        plots = self._plots.pop(root.ref['id'], (None, None))
+        for (old_plot, old_pane, _) in plots:
+            if old_plot:
+                old_plot.cleanup()
+            if old_pane:
+                old_pane._cleanup(root)
         super(HoloViews, self)._cleanup(root)
 
     #----------------------------------------------------------------
@@ -444,13 +448,13 @@ def generate_panel_bokeh_map(root_model, panel_views):
     ref = root_model.ref['id']
     for pane in panel_views:
         if root_model.ref['id'] in pane._models:
-            plot, subpane = pane._plots.get(ref, (None, None))
-            if plot is None:
-                continue
-            bk_plots = plot.traverse(lambda x: x, [is_bokeh_element_plot])
-            for plot in bk_plots:
-                for hv_elem in plot.link_sources:
-                    map_hve_bk[hv_elem].append(plot)
+            for (plot, subpane, _) in pane._plots.get(ref, []):
+                if plot is None:
+                    continue
+                bk_plots = plot.traverse(lambda x: x, [is_bokeh_element_plot])
+                for plot in bk_plots:
+                    for hv_elem in plot.link_sources:
+                        map_hve_bk[hv_elem].append(plot)
     return map_hve_bk
 
 
@@ -463,8 +467,8 @@ def find_links(root_view, root_model):
         return
 
     hv_views = root_view.select(HoloViews)
-    root_plots = [plot for view in hv_views for plot, _ in view._plots.values()
-                  if getattr(plot, 'root', None) is root_model]
+    root_plots = [plot for view in hv_views for plots in view._plots.values()
+                  for (plot, _, _) in plots if getattr(plot, 'root', None) is root_model]
 
     if not root_plots:
         return
@@ -524,23 +528,23 @@ def link_axes(root_view, root_model):
     for pane in panes:
         if ref not in pane._plots:
             continue
-        plot = pane._plots[ref][0]
-        if (not pane.linked_axes or plot.renderer.backend != 'bokeh'
-            or not getattr(plot, 'shared_axes', False)):
-            continue
-        for p in plot.traverse(specs=[ElementPlot]):
-            if p.current_frame is None:
+        for (plot, _, _) in pane._plots[ref]:
+            if (not pane.linked_axes or plot.renderer.backend != 'bokeh'
+                or not getattr(plot, 'shared_axes', False)):
                 continue
+            for p in plot.traverse(specs=[ElementPlot]):
+                if p.current_frame is None:
+                    continue
 
-            axiswise = Store.lookup_options('bokeh', p.current_frame, 'norm').kwargs.get('axiswise')
-            if not p.shared_axes or axiswise:
-                continue
+                axiswise = Store.lookup_options('bokeh', p.current_frame, 'norm').kwargs.get('axiswise')
+                if not p.shared_axes or axiswise:
+                    continue
 
-            fig = p.state
-            if fig.x_range.tags:
-                range_map[(fig.x_range.tags[0], plot.root.ref['id'])].append((fig, p, fig.x_range))
-            if fig.y_range.tags:
-                range_map[(fig.y_range.tags[0], plot.root.ref['id'])].append((fig, p, fig.y_range))
+                fig = p.state
+                if fig.x_range.tags:
+                    range_map[(fig.x_range.tags[0], plot.root.ref['id'])].append((fig, p, fig.x_range))
+                if fig.y_range.tags:
+                    range_map[(fig.y_range.tags[0], plot.root.ref['id'])].append((fig, p, fig.y_range))
 
     for (tag, _), axes in range_map.items():
         fig, p, axis = axes[0]
