@@ -72,6 +72,8 @@ class FileSelector(CompositeWidget):
     value = param.List(default=[], doc="""
         List of selected files.""")
 
+    _composite_type = Column
+
     def __init__(self, directory=None, **params):
         if directory is not None:
             params['directory'] = os.path.abspath(os.path.expanduser(directory))
@@ -94,7 +96,7 @@ class FileSelector(CompositeWidget):
             self._home, self._back, self._forward, self._up, self._directory, self._go,
             margin=(0, 10), width_policy='max'
         )
-        self._composite = Column(self._nav_bar, Divider(margin=(0, 20)), self._selector, **layout)
+        self._composite[:] = [self._nav_bar, Divider(margin=(0, 20)), self._selector]
 
         # Set up state
         self._stack = []
