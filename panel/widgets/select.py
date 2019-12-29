@@ -446,10 +446,7 @@ class CrossSelector(CompositeWidget, MultiSelect):
         """
         self._selected[False] = []
         self._selected[True] = []
-        self._lists[True].options = []
-        self._lists[True].value = []
-        self._lists[False].options = self.labels
-        self._lists[False].value = []
+        self._update_value()
 
     def _apply_filters(self):
         self._apply_query(False)

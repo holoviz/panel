@@ -46,12 +46,12 @@ def scan_path(path, file_pattern='*'):
             continue
         path = os.path.realpath(p)
         if os.path.isdir(path):
-            dirs.append(path)
+            dirs.append(p)
         elif os.path.isfile(path):
-            dirs.append(path)
+            dirs.append(p)
         else:
             continue
-    return sorted(dirs) + sorted(files)
+    return dirs, files
 
 
 class FileSelector(CompositeWidget):
@@ -84,12 +84,12 @@ class FileSelector(CompositeWidget):
         if self.height:
             sel_layout['height'] = self.height-100
         self._selector = CrossSelector(**sel_layout)
-        self._go = Button(name='↵', disabled=True, width=25, margin=(5, 25, 0, 0))
+        self._go = Button(name='⬇', disabled=True, width=25, margin=(5, 25, 0, 0))
         self._directory = TextInput(value=self.directory, width_policy='max')
         self._home = Button(name='🏠', width=25, margin=(5, 15, 0, 10), disabled=True)
         self._back = Button(name='◀', width=25, margin=(5, 10), disabled=True)
         self._forward = Button(name='▶', width=25, margin=(5, 10), disabled=True)
-        self._up = Button(name='▲', width=25, margin=(5, 10), disabled=True)
+        self._up = Button(name='⬆', width=25, margin=(5, 10), disabled=True)
         self._nav_bar = Row(
             self._home, self._back, self._forward, self._up, self._directory, self._go,
             margin=(0, 10), width_policy='max'
@@ -112,6 +112,7 @@ class FileSelector(CompositeWidget):
         self._forward.on_click(self._go_forward)
         self._directory.param.watch(self._dir_change, 'value')
         self._selector._lists[False].param.watch(self._select, 'value')
+        self._selector._lists[False].param.watch(self._filter_blacklist, 'options')
 
     def _update_value(self, event):
         value = [v for v in event.new if not self.only_files or os.path.isfile(v)]
@@ -146,20 +147,43 @@ class FileSelector(CompositeWidget):
         if 0 <= self._position and len(self._stack) > 1:
             self._back.disabled = False
 
-        paths = [p for p in scan_path(path, self.file_pattern)
+        selected = self.value
+        dirs, files = scan_path(path, self.file_pattern)
+        for s in selected:
+            check = os.path.realpath(s) if os.path.islink(s) else s
+            if os.path.isdir(check):
+                dirs.append(s)
+            elif os.path.isfile(check):
+                dirs.append(s)
+
+        paths = [p for p in sorted(dirs)+sorted(files)
                  if self.show_hidden or not os.path.basename(p).startswith('.')]
-        abbreviated = ['./'+f.split(os.path.sep)[-1] for f in paths]
-        options = OrderedDict()
-        if path != self.directory:
-            options['..'] = os.path.abspath(os.path.join(path, '..')) 
-        options.update(zip(abbreviated, paths))
+        abbreviated = [os.path.relpath(f, self._cwd) for f in paths]
+        options = OrderedDict(zip(abbreviated, paths))
         self._selector.options = options
+        self._selector.value = selected
+
+    def _filter_blacklist(self, event):
+        """
+        Ensure that if unselecting a currently selected path and it
+        is not in the current working directory then it is removed
+        from the blacklist.
+        """
+        dirs, files = scan_path(self._cwd, self.file_pattern)
+        paths = [p.split(os.path.sep)[-1] for p in dirs+files]
+        blacklist = self._selector._lists[False]
+        options = OrderedDict(self._selector.options)
+        self._selector.options.clear()
+        self._selector.options.update([
+            (k, v) for k, v in options.items() if k in paths or v in self.value
+        ])
+        blacklist.options = [o for o in blacklist.options if o in paths]
 
     def _select(self, event):
         if len(event.new) != 1:
             self._directory.value = self._cwd
             return
-        
+
         sel = os.path.abspath(os.path.join(self._cwd, event.new[0]))
         if os.path.isdir(sel):
             self._directory.value = sel
