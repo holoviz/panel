@@ -340,6 +340,11 @@ class CrossSelector(CompositeWidget, MultiSelect):
        The number of options shown at once (note this is the
        only way to control the height of this widget)""")
 
+    filter_fn = param.Callable(default=re.search, doc="""
+       The filter function applied when querying using the text fields,
+       defaults to re.search. Function is two arguments, the query or
+       pattern and the item label.""")
+
     size = param.Integer(default=10, doc="""
        The number of options shown at once (note this is the
        only way to control the height of this widget)""")
@@ -477,8 +482,7 @@ class CrossSelector(CompositeWidget, MultiSelect):
             self._lists[selected].value = []
         else:
             try:
-                match = re.compile(query)
-                matches = list(filter(match.search, options))
+                matches = [o for o in options if self.filter_fn(query, o)]
             except:
                 matches = list(options)
             self._lists[selected].options = options if options else []

@@ -85,7 +85,7 @@ class FileSelector(CompositeWidget):
         sel_layout = dict(layout)
         if self.height:
             sel_layout['height'] = self.height-100
-        self._selector = CrossSelector(**sel_layout)
+        self._selector = CrossSelector(filter_fn=lambda p, f: fnmatch(f, p), **sel_layout)
         self._go = Button(name='⬇', disabled=True, width=25, margin=(5, 25, 0, 0))
         self._directory = TextInput(value=self.directory, width_policy='max')
         self._back = Button(name='◀', width=25, margin=(5, 10), disabled=True)
