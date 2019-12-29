@@ -139,7 +139,7 @@ class PaneBase(Reactive):
     def _update_pane(self, *events):
         for ref, models in self._models.items():
             viewable, root, doc, comm = state._views[ref]
-            for (_, parent) in models:
+            for idx, (_, parent) in enumerate(models):
                 if comm or state._unblocked(doc):
                     with unlocked():
                         self._update_object(ref, idx, doc, root, parent, comm)
