@@ -9,6 +9,7 @@ import os
 import glob
 
 from collections import OrderedDict
+from fnmatch import fnmatch
 
 import param
 
@@ -20,16 +21,50 @@ from .input import TextInput
 from .select import CrossSelector
 
 
+def scan_path(path, file_pattern='*'):
+    """
+    Scans the supplied path for files and directories and optionally
+    filters the files with the file keyword, returning a list of sorted
+    paths of all directories and files.
+
+    Arguments
+    ---------
+    path: str
+        The path to search
+    file_pattern: str
+        A glob-like pattern to filter the files
+
+    Returns
+    -------
+    A sorted list of paths
+    """
+    paths = list(os.scandir(path))
+    dirs = [p.path for p in paths if p.is_dir()]
+    files = [p.path for p in paths if p.is_file() and
+             fnmatch(os.path.basename(p.path), file_pattern)]
+    for p in paths:
+        if not p.is_symlink():
+            continue
+        path = os.path.realpath(p.path)
+        if os.path.isdir(path):
+            dirs.append(path)
+        elif os.path.isfile(path):
+            dirs.append(path)
+        else:
+            continue
+    return sorted(dirs) + sorted(files)
+
+
 class FileSelector(CompositeWidget):
 
     directory = param.String(default=os.getcwd(), doc="""
         The directory to explore.""")
 
+    file_pattern = param.String(default='*', doc="""
+        A glob-like pattern to filter the files.""")
+
     only_files = param.Boolean(default=False, doc="""
         Whether to only allow selecting files.""")
-
-    file_keyword = param.String(default='*', doc="""
-        A glob-like query expression to limit the displayed files.""")
 
     value = param.List(default=[], doc="""
         List of selected files.""")
@@ -108,16 +143,12 @@ class FileSelector(CompositeWidget):
         if 0 <= self._position and len(self._stack) > 1:
             self._back.disabled = False
 
-        file_paths = glob.glob(os.path.join(path, '*' + self.file_keyword + '*'))
-        files = sorted([p for p in file_paths if os.path.isfile(p)])
-        dir_paths = glob.glob(os.path.join(path, '*'))
-        dirs = sorted([p for p in dir_paths if os.path.isdir(p)])
-        combined = dirs + files
-        abbreviated = ['./'+f.split(os.path.sep)[-1] for f in combined]
+        paths = scan_path(path, self.file_pattern)
+        abbreviated = ['./'+f.split(os.path.sep)[-1] for f in paths]
         options = OrderedDict()
         if path != self.directory:
             options['..'] = os.path.abspath(os.path.join(path, '..')) 
-        options.update(zip(abbreviated, combined))
+        options.update(zip(abbreviated, paths))
         self._selector.options = options
 
     def _select(self, event):

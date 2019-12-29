@@ -141,8 +141,8 @@ def test_file_selector_only_files(test_dir):
     assert selector._selector._lists[False].options == ['./subdir1', './subdir2']
 
 
-def test_file_selector_file_keyword(test_dir):
-    selector = FileSelector(test_dir, file_keyword='a')
+def test_file_selector_file_pattern(test_dir):
+    selector = FileSelector(test_dir, file_pattern='a')
     
     selector._directory.value = os.path.join(test_dir, 'subdir1')
     selector._go.clicks = 1
