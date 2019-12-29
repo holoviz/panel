@@ -135,7 +135,7 @@ class Param(PaneBase):
         if 'parameters' not in params and object is not None:
             params['parameters'] = [p for p in object.param if p != 'name']
         super(Param, self).__init__(object, **params)
-        self._updating = False
+        self._updating = []
 
         # Construct Layout
         kwargs = {p: v for p, v in self.get_param_values() if p in Layoutable.param}
@@ -338,13 +338,13 @@ class Param(PaneBase):
             pass
         else:
             def link_widget(change):
-                if self._updating:
+                if p_name in self._updating:
                     return
                 try:
-                    self._updating = True
+                    self._updating.append(p_name)
                     self.object.set_param(**{p_name: change.new})
                 finally:
-                    self._updating = False
+                    self._updating.remove(p_name)
 
             if isinstance(p_obj, param.Action):
                 def action(change):
@@ -382,7 +382,7 @@ class Param(PaneBase):
                     updates['step'] = p_obj.step
                 elif change.what == 'label':
                     updates['name'] = p_obj.label
-                elif self._updating:
+                elif p_name in self._updating:
                     return
                 elif isinstance(p_obj, param.Action):
                     widget.param.unwatch(watchers[0])
@@ -394,10 +394,10 @@ class Param(PaneBase):
                     updates['value'] = change.new
 
                 try:
-                    self._updating = True
+                    self._updating.append(p_name)
                     widget.set_param(**updates)
                 finally:
-                    self._updating = False
+                    self._updating.remove(p_name)
 
             # Set up links to parameterized object
             watchers.append(self.object.param.watch(link, p_name, 'constant'))
