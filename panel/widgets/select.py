@@ -377,8 +377,8 @@ class CrossSelector(CompositeWidget, MultiSelect):
 
         # Define search
         self._search = {
-            False: TextInput(placeholder='Filter available options', width=width),
-            True: TextInput(placeholder='Filter selected options', width=width)
+            False: TextInput(placeholder='Filter available options', width=width, **layout),
+            True: TextInput(placeholder='Filter selected options', width=width, **layout)
         }
         self._search[False].param.watch(self._filter_options, 'value')
         self._search[True].param.watch(self._filter_options, 'value')
