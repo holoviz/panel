@@ -83,19 +83,6 @@ def test_file_selector_back_and_forward(test_dir):
     assert selector._cwd == os.path.join(test_dir, 'subdir1')
 
 
-def test_file_selector_home(test_dir):
-    selector = FileSelector(test_dir)
-
-    selector._directory.value = os.path.join(test_dir, 'subdir1')
-    selector._go.clicks = 1
-
-    assert selector._cwd == os.path.join(test_dir, 'subdir1')
-
-    selector._home.clicks = 1
-
-    assert selector._cwd == test_dir
-
-
 def test_file_selector_up(test_dir):
     selector = FileSelector(test_dir)
 
