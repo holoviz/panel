@@ -73,7 +73,7 @@ class ContinuousSlider(_SliderBase):
 
     def _get_embed_state(self, root, max_opts=3):
         ref = root.ref['id']
-        w_model, parent = self._models[ref]
+        w_model, parent = self._models[ref][0]
         _, _, doc, comm = state._views[ref]
 
         # Compute sampling
@@ -262,7 +262,7 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
             self._syncing = False
 
     def _get_embed_state(self, root, max_opts=3):
-        model = self._composite[1]._models[root.ref['id']][0]
+        model = self._composite[1]._models[root.ref['id']][0][0]
         return self, model, self.values, lambda x: x.value, 'value', 'cb_obj.value'
 
     @property
