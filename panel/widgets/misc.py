@@ -16,7 +16,8 @@ from ..depends import depends
 from ..io.notebook import push
 from ..io.state import state
 from ..models import (
-    Audio as _BkAudio, VideoStream as _BkVideoStream, Progress as _BkProgress
+    Audio as _BkAudio, VideoStream as _BkVideoStream, Progress as _BkProgress,
+    FileDownload as _BkFileDownload
 )
 from .base import Widget
 
@@ -154,3 +155,86 @@ class Progress(Widget):
     @depends('max', watch=True)
     def _update_value_bounds(self):
         self.param.value.bounds = (0, self.max)
+
+
+class FileDownload(Widget):
+
+    file = param.Parameter(default=None, doc="""
+       The file, file-like object or file contents to transfer.
+       If the file is not pointing to a file on disk a filename must
+       also be provided.""")
+
+    data = param.String(default=None, doc="""
+        The data being transferred.""")
+
+    embed = param.Boolean(default=False, doc="""
+        Whether to embed the file on initialization.""")
+
+    filename = param.String(default=None, doc="""
+        A filename which will also be the default name when downloading
+        the file.""")
+
+    _clicks = param.Integer(default=0)
+
+    _mime_types = {
+        'application': {
+            'pdf': 'pdf', 'zip': 'zip'
+        },
+        'audio': {
+            'mp3': 'mp3', 'ogg': 'ogg', 'wav': 'wav', 'webm': 'webm'
+        },
+        'image': {
+            'apng': 'apng', 'bmp': 'bmp', 'gif': 'gif', 'ico': 'x-icon',
+            'cur': 'x-icon', 'jpg': 'jpeg', 'jpeg': 'jpeg',  'png': 'png',
+            'svg': 'svg+xml', 'tif': 'tiff', 'tiff': 'tiff', 'webp': 'webp'
+        },
+        'text': {
+            'css': 'css', 'csv': 'plain;charset=UTF-8', 'js': 'javascript',
+            'html': 'html', 'txt': 'plain;charset=UTF-8'
+        },
+        'video': {
+            'mp4': 'mp4', 'ogg': 'ogg', 'webm': 'webm'
+        }
+    }
+
+    _widget_type = _BkFileDownload
+
+    _rename = {'embed': None, 'file': None, 'name': 'title',
+               '_clicks': 'clicks'}
+
+    def __init__(self, file=None, **params):
+        super(FileDownload, self).__init__(file=file, **params)
+        if self.embed:
+            self._transfer()
+
+    @param.depends('clicks', watch=True)
+    def _transfer(self):
+        if self.file is None:
+            return
+
+        filename = self.filename
+        if isinstance(self.file, str) and os.path.isfile(self.file):
+            with open(self.file, 'rb') as f:
+                b64 = b64encode(f.read()).decode("utf-8")
+            if filename is None:
+                filename = os.path.basename(self.file)
+        elif filename is None:
+            return
+        elif hasattr(self.file, 'read'):
+            b64 = b64encode(self.file.read()).decode("utf-8")
+        else:
+            b64 = b64encode(self.file).decode("utf-8")
+
+        ext = filename.split('.')[-1]
+        for mtype, subtypes in self._mime_types.items():
+            stype = None
+            if ext in subtypes:
+                stype = subtypes[ext]
+                break
+        if stype is None:
+            mime = 'application/octet-stream'
+        else:
+            mime = '{type}/{subtype}'.format(type=mtype, subtype=stype)
+
+        data = "data:{mime};base64,{b64}".format(mime=mime, b64=b64)
+        self.set_param(data=data, filename=filename)
