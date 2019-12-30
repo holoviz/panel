@@ -241,7 +241,7 @@ class CallbackGenerator(object):
                     model_spec = None
                 model = obj.handles[handle_spec]
         elif isinstance(obj, Viewable):
-            model, _ = obj._models[root_model.ref['id']]
+            model = obj._models[root_model.ref['id']][0][0]
         elif isinstance(obj, BkModel):
             model = obj
         if model_spec is not None:
