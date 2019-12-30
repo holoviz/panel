@@ -605,7 +605,8 @@ class Reactive(Viewable):
     # Callback API
     #----------------------------------------------------------------
 
-    def _update_model(self, events, msg, root, model, doc, comm=None):
+    def _update_model(self, events, msg, doc, root, idx, comm=None):
+        model = self._models[root.ref['id']][idx][0]
         if comm:
             filtered = {}
             for k, v in msg.items():
@@ -648,18 +649,15 @@ class Reactive(Viewable):
                 if ref not in state._views:
                     continue
                 viewable, root, doc, comm = state._views[ref]
-                for (model, parent) in models:
-                    if comm or state._unblocked(doc):
+                for idx, _ in enumerate(models):
+                    if comm or state._unblocked(doc) or not doc.session_context:
                         with unlocked():
-                            self._update_model(events, msg, root, model, doc, comm)
+                            self._update_model(events, msg, doc, root, idx, comm)
                         if comm and 'embedded' not in root.tags:
                             push(doc, comm)
                     else:
-                        cb = partial(self._update_model, events, msg, root, model, doc, comm)
-                        if doc.session_context:
-                            doc.add_next_tick_callback(cb)
-                        else:
-                            cb()
+                        cb = partial(self._update_model, events, msg, doc, root, idx, comm)
+                        doc.add_next_tick_callback(cb)
 
         params = self._synced_params()
         if params:

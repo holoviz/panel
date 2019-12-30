@@ -61,7 +61,8 @@ class Panel(Reactive):
     # Callback API
     #----------------------------------------------------------------
 
-    def _update_model(self, events, msg, root, model, doc, comm=None):
+    def _update_model(self, events, msg, doc, root, idx, comm=None):
+        model = self._models[root.ref['id']][idx][0]
         if self._rename['objects'] in msg:
             old = events['objects'].old
             msg[self._rename['objects']] = self._get_objects(model, old, doc, root, comm)
@@ -89,7 +90,7 @@ class Panel(Reactive):
         del properties['objects']
         return self._process_param_change(properties)
 
-    def _get_objects(self, model, old_objects, doc, parent, root, comm=None):
+    def _get_objects(self, model, old_objects, doc, root, comm=None):
         """
         Returns new child models for the layout while reusing unchanged
         models and cleaning up any dropped objects.
@@ -106,7 +107,7 @@ class Panel(Reactive):
 
         for i, pane in enumerate(self.objects):
             if pane in old_objects:
-                child = [m for m, p in pane._models[root.ref['id']] if p is parent][0]
+                child = [m for m, p in pane._models[root.ref['id']] if p is model][0]
             else:
                 child = pane._get_model(doc, root, model, comm)
             new_models.append(child)
@@ -116,7 +117,7 @@ class Panel(Reactive):
         model = self._bokeh_model()
         if root is None:
             root = model
-        objects = self._get_objects(model, [], doc, parent, root, comm)
+        objects = self._get_objects(model, [], doc, root, comm)
         props = dict(self._init_properties(), objects=objects)
         model.update(**self._process_param_change(props))
         self._models[root.ref['id']].append((model, parent))
@@ -492,7 +493,8 @@ class GridBox(ListPanel):
         self._link_props(model, self._linked_props, doc, root, comm)
         return model
 
-    def _update_model(self, events, msg, root, model, doc, comm=None):
+    def _update_model(self, events, msg, doc, root, idx, comm=None):
+        model = self._models[root.ref['id']][idx][0]
         if self._rename['objects'] in msg or 'ncols' in msg or 'nrows' in msg:
             if 'objects' in events:
                 old = events['objects'].old
@@ -639,14 +641,14 @@ class Tabs(ListPanel):
     # Model API
     #----------------------------------------------------------------
 
-    def _update_model(self, events, msg, root, model, doc, comm=None):
+    def _update_model(self, events, msg, doc, root, idx, comm=None):
         if 'closable' in msg:
             closable = msg.pop('closable')
             for child in model.tabs:
                 child.closable = closable
-        super(Tabs, self)._update_model(events, msg, root, model, doc, comm)
+        super(Tabs, self)._update_model(events, msg, doc, root, idx, comm)
 
-    def _get_objects(self, model, old_objects, doc, parent, root, comm=None):
+    def _get_objects(self, model, old_objects, doc, root, comm=None):
         """
         Returns new child models for the layout while reusing unchanged
         models and cleaning up any dropped objects.
@@ -668,7 +670,7 @@ class Tabs(ListPanel):
 
         for i, (name, pane) in enumerate(zip(self._names, self)):
             if pane in old_objects:
-                child = [m for m, p in pane._models[root.ref['id']] if p is parent][0]
+                child = [m for m, p in pane._models[root.ref['id']] if p is model][0]
             else:
                 child = pane._get_model(doc, root, model, comm)
             child = BkPanel(title=name, name=pane.name, child=child,
