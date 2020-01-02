@@ -37,7 +37,7 @@ except ImportError:
 import param
 
 from .layout import Panel, Column, Row
-from .pane import PaneBase, Pane, HTML
+from .pane import PaneBase, HTML, panel
 from .util import as_unicode
 from .widgets import (Checkbox, TextInput, Widget, IntSlider, FloatSlider,
                       Select, DiscreteSlider, Button)
@@ -146,7 +146,7 @@ class interactive(PaneBase):
         if self.manual_update:
             widgets.append(('manual', Button(name=self.manual_name)))
         self._widgets = OrderedDict(widgets)
-        self._pane = Pane(self.object(**self.kwargs), name=self.name)
+        self._pane = panel(self.object(**self.kwargs), name=self.name)
         self._inner_layout = Row(self._pane)
         widgets = [widget for _, widget in widgets if isinstance(widget, Widget)]
         if 'name' in params:
@@ -190,7 +190,7 @@ class interactive(PaneBase):
                     return
 
                 # Replace pane entirely
-                self._pane = Pane(new_object)
+                self._pane = panel(new_object)
                 self._inner_layout[0] = self._pane
 
             pname = 'clicks' if name == 'manual' else 'value'
