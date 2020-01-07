@@ -171,7 +171,7 @@ class FileSelector(CompositeWidget):
         dirs, files = scan_path(self._cwd, self.file_pattern)
         paths = [p.split(os.path.sep)[-1] for p in dirs+files]
         blacklist = self._selector._lists[False]
-        options = OrderedDict(self._selector.options)
+        options = OrderedDict(self._selector._items)
         self._selector.options.clear()
         self._selector.options.update([
             (k, v) for k, v in options.items() if k in paths or v in self.value
