@@ -11,7 +11,8 @@ from panel.tests.util import check_layoutable_properties
 
 all_panes = [w for w in param.concrete_descendents(PaneBase).values()
              if not w.__name__.startswith('_') and not
-             issubclass(w, (Bokeh, HoloViews, ParamMethod, interactive))]
+             issubclass(w, (Bokeh, HoloViews, ParamMethod, interactive))
+             and w.__module__.startswith('panel')]
 
 
 def test_pane_repr(document, comm):
