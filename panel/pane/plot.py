@@ -44,7 +44,6 @@ class Bokeh(PaneBase):
                 value is self.param[p].default):
                 continue
             properties[p] = value
-        print(properties)
         model.update(**properties)
 
         ref = root.ref['id']

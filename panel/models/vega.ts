@@ -55,10 +55,12 @@ export class VegaPlotView extends HTMLBoxView {
         this.model.data.data['values'] = datasets['data']
         delete datasets['data']
       }
-      for (const d of this.model.data.data) {
-        if (d.name in datasets) {
-          d['values'] = datasets[d.name]
-          delete dataset[d.name]
+      if (this.model.data.data !== undefined) {
+        for (const d of this.model.data.data) {
+          if (d.name in datasets) {
+            d['values'] = datasets[d.name]
+            delete datasets[d.name]
+          }
         }
       }
       this.model.data['datasets'] = datasets

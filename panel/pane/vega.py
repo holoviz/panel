@@ -11,7 +11,6 @@ from pyviz_comms import JupyterComm
 from ..viewable import Layoutable
 from .base import PaneBase
 
-
 def ds_as_cds(dataset):
     """
     Converts Vega dataset into Bokeh ColumnDataSource data
@@ -79,7 +78,7 @@ class Vega(PaneBase):
             columns = set(data[0]) if data else []
             if self.is_altair(self.object):
                 import altair as alt
-                if (not isinstance(self.object.data, (alt.Data, alt.UrlData)) and
+                if (not isinstance(self.object.data, (alt.Data, alt.UrlData, type(alt.Undefined))) and
                     columns == set(self.object.data)):
                     data = ColumnDataSource.from_df(self.object.data)
                 else:
@@ -96,7 +95,7 @@ class Vega(PaneBase):
             for d in data:
                 if 'values' in d:
                     sources[d['name']] = ColumnDataSource(data=ds_as_cds(d.pop('values')))
-            
+
 
     @classmethod
     def _get_dimensions(cls, json, props):
