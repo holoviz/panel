@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+import shutil
 import sys
 import json
 
@@ -199,7 +200,6 @@ setup_args = dict(
 )
 
 if __name__ == "__main__":
-
     example_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 'panel', 'examples')
 
@@ -207,3 +207,6 @@ if __name__ == "__main__":
         pyct.build.examples(example_path, __file__, force=True)
 
     setup(**setup_args)
+
+    if os.path.isdir(example_path):
+        shutil.rmtree(example_path)
