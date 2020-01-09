@@ -459,14 +459,11 @@ def find_links(root_view, root_model):
     Traverses the supplied Viewable searching for Links between any
     HoloViews based panes.
     """
-    if not isinstance(root_view, Panel):
-        return
-
     hv_views = root_view.select(HoloViews)
     root_plots = [plot for view in hv_views for plot, _ in view._plots.values()
                   if getattr(plot, 'root', None) is root_model]
 
-    if not root_plots:
+    if not len(root_plots) > 1:
         return
 
     try:
