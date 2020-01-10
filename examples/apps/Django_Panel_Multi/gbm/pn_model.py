@@ -17,9 +17,6 @@ class GBM(param.Parameterized):
 
     def __init__(self, **params):
         super(GBM, self).__init__(**params)
-        # TODO: Plot Formatting in settings
-        hv.plotting.bokeh.ElementPlot.bgcolor = "#fbfcfc"
-        hv.plotting.bokeh.ElementPlot.gridstyle = {"grid_line_alpha": 0.6, "grid_line_dash": 'dashed'}
 
     @param.depends('mean', 'volatility', 'maturity', 'n_observations', 'n_simulations', watch=True)
     def update_plot(self, **kwargs):
@@ -32,7 +29,7 @@ class GBM(param.Parameterized):
                                     vol=self.volatility/100,
                                     dt=self.maturity / self.n_observations,
                                     n_obs=self.n_observations)
-        return df_s.hvplot(grid=True, colormap='Paired')
+        return df_s.hvplot(grid=True, colormap='Paired', value_label="Level",  legend=False)
 
     @staticmethod
     def gbm(spot: float, mean: float, vol: float, dt: float, n_obs: int) -> np.ndarray:

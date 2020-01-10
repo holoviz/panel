@@ -5,13 +5,6 @@ from bokeh.models import ColumnDataSource
 from bokeh.plotting import figure
 
 
-def __disable_logo(plot, element):
-    plot.state.toolbar.logo = None
-
-
-# hv.plotting.bokeh.ElementPlot.finalize_hooks.append(__disable_logo)
-
-
 class SineWave(param.Parameterized):
     offset = param.Number(default=0.0, bounds=(-5.0, 5.0))
     amplitude = param.Number(default=1.0, bounds=(-5.0, 5.0))

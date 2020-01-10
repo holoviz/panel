@@ -434,7 +434,7 @@ We will use the Django Template engine
     </html>
 {% endblock doc %}
 ```
-- Create **sliders/sliders.html***:
+- Create **sliders/sliders.html**:
 ```html
 {% extends 'base.html' %}
 {% load static %}

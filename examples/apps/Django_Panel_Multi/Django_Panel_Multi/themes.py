@@ -12,4 +12,10 @@ def plot_themes():
     pn.widgets.DatetimeInput.format = '%d %B %Y'
     hv.plotting.bokeh.ElementPlot.bgcolor = "#fbfcfc"
     hv.plotting.bokeh.ElementPlot.gridstyle = {"grid_line_alpha": 0.6, "grid_line_dash": 'dashed'}
+    hv.Palette.colormaps = 'Blues'
 
+    # Reminder
+    # legend positions
+    # ['top_right', 'top_left', 'bottom_left', 'bottom_right']
+    # ['right', 'left', 'top', 'bottom']
+    # return dfp.hvplot(grid=True, colormap='Paired').opts(legend_position='top_left')
