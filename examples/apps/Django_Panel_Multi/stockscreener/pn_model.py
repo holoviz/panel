@@ -1,11 +1,10 @@
-from django.conf import settings
 import datetime as dt
 
 import panel as pn
 import param
-import holoviews as hv
 import hvplot
 import hvplot.pandas
+from django.conf import settings
 
 
 class StockScreener(param.Parameterized):
@@ -14,6 +13,7 @@ class StockScreener(param.Parameterized):
     Index = pn.widgets.MultiSelect()
     Rebase = pn.widgets.Checkbox(name='Rebase', value=True)
     From = pn.widgets.DateSlider()
+
 
     def __init__(self, df, **params):
         super(StockScreener, self).__init__(**params)
@@ -35,8 +35,4 @@ class StockScreener(param.Parameterized):
         if self.Rebase.value:
             dfp = 100 * dfp / dfp.iloc[0]
 
-        # legend positions
-        # ['top_right', 'top_left', 'bottom_left', 'bottom_right']
-        # ['right', 'left', 'top', 'bottom']
-
-        return dfp.hvplot(value_label="Level", colormap=settings.COLOR_MAP)  # dfp.hvplot().opts(legend_position='top_left', responsive=True) # grid=True, colormap='Paired')
+        return dfp.hvplot(value_label="Level", colormap=settings.COLOR_MAP)

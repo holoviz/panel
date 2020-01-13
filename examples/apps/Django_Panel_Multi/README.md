@@ -139,7 +139,7 @@ urlpatterns = [
     path('', views.sliders, name='sliders'),
 ]
 ```
-- In the project urls.py the urls for the app
+- In the project **urls.py** the urls for the app
 ```python
 from bokeh.server.django import autoload
 from django.apps import apps
@@ -171,7 +171,7 @@ print(f"urlpatterns: {urlpatterns}")
 
 
 We can add another app
-## Geometric Brownian motion ("GBM") panel app
+## Geometric Brownian motion ("GBM") app
 - Create a new app:
 ```python
 python manage.py startapp gbm
@@ -247,7 +247,6 @@ def app(doc):
  - In **views.py** add:
 ```python
 # Create your views here.
-# Create your views here.
 from bokeh.embed import server_document
 
 from django.http import HttpRequest, HttpResponse
@@ -272,7 +271,7 @@ urlpatterns = [
 ]
 ```
 
-Do the same as above....and update your project urls.py
+Do the same as above....and update your project **urls.py**
 ```python
 from bokeh.server.django import autoload
 from django.apps import apps
@@ -299,6 +298,154 @@ bokeh_apps = [
 
 urlpatterns += staticfiles_urlpatterns()
 ```
+
+We can add another app
+## Stockscreener ("ss") app using pn.widgets !
+- Create a new app:
+```python
+python manage.py startapp stockscreener
+```
+- Create ***pn_model.py*** for the ss app
+```python
+import datetime as dt
+
+import panel as pn
+import param
+import hvplot
+import hvplot.pandas
+from django.conf import settings
+
+
+class StockScreener(param.Parameterized):
+    # interface
+    df = param.DataFrame(precedence=-1)
+    Index = pn.widgets.MultiSelect()
+    Rebase = pn.widgets.Checkbox(name='Rebase', value=True)
+    From = pn.widgets.DateSlider()
+
+    def __init__(self, df, **params):
+        super(StockScreener, self).__init__(**params)
+        # init df
+        self.df = df
+        self.start_date = dt.datetime(year=df.index[0].year, month=df.index[0].month, day=df.index[0].day)
+        self.end_date = dt.datetime(year=df.index[-1].year, month=df.index[-1].month, day=df.index[-1].day)
+        self.col = list(self.df.columns)
+        # init interface
+        self.Index = pn.widgets.MultiSelect(name='Index', value=self.col[0:5], options=self.col,
+                                            size=min(10, len(self.col)))
+        self.From = pn.widgets.DateSlider(name='From', start=self.start_date, end=self.end_date, value=self.start_date)
+
+    @param.depends('Index.value', 'Rebase.value', 'From.value', watch=True)
+    def update_plot(self, **kwargs):
+        unds = list(self.Index.value)
+        pos = self.df.index.get_loc(self.From.value, method='bfill')
+        dfp = self.df.iloc[pos:][unds]
+        if self.Rebase.value:
+            dfp = 100 * dfp / dfp.iloc[0]
+
+        return dfp.hvplot(value_label="Level", colormap=settings.COLOR_MAP)
+```
+- Create ***pn_app.py*** for the ss app
+```python
+import os
+
+import pandas as pd
+import panel as pn
+
+from .pn_model import StockScreener
+
+
+def app(doc):
+    data_path = os.path.join(os.path.dirname(__file__), 'datasets/market_data.csv')
+    df = pd.read_csv(data_path, index_col=0, parse_dates=True)
+    ss = StockScreener(df=df)
+    row = pn.Row(pn.Column(ss.Index, ss.From, ss.Rebase), ss.update_plot)
+    row.server_doc(doc)
+```
+ - In **views.py** add:
+```python
+# Create your views here.
+from bokeh.embed import server_document
+
+from django.http import HttpRequest, HttpResponse
+from django.shortcuts import render
+
+
+def stockscreener(request: HttpRequest) -> HttpResponse:
+    script = server_document(request.build_absolute_uri())
+    return render(request, "stockscreener/stockscreener.html", dict(script=script))
+
+```
+We assume that the templates folder is in the root directory of the django project and each app has its own folder
+
+- Create ***urls.py***:
+```python
+from django.urls import path
+
+from . import views
+
+app_name = 'stockscreener'
+urlpatterns = [
+    path('', views.stockscreener, name='stockscreener'),
+]
+```
+
+Do the same as above....and update your project **urls.py**
+```python
+from bokeh.server.django import autoload
+from django.apps import apps
+from django.contrib import admin
+from django.contrib.staticfiles.urls import staticfiles_urlpatterns
+from django.urls import path, include
+
+import sliders.pn_app as sliders_app
+import gbm.pn_app as gbm_app
+import stockscreener.pn_app as stockscreener_app
+from .themes import plot_themes
+
+pn_app_config = apps.get_app_config('bokeh.server.django')
+
+urlpatterns = [
+    path('', include('landing.urls')),
+    path('sliders/', include('sliders.urls')),
+    path('gbm/', include('gbm.urls')),
+    path('stockscreener/', include('stockscreener.urls')),
+    path('admin/', admin.site.urls),
+]
+
+bokeh_apps = [
+    autoload("sliders", sliders_app.app),
+    autoload("gbm", gbm_app.app),
+    autoload("stockscreener", stockscreener_app.app),
+]
+
+urlpatterns += staticfiles_urlpatterns()
+
+# Set the themes
+plot_themes()
+```
+Above for consistency we have a **themes.py** to format the plot in the django project directory that we run on loading the url (could create a themes for each app and run on AppConfig ready function)
+- Create **themes.py**:
+```python
+import panel as pn
+import holoviews as hv
+import hvplot
+# import hvplot.pandas
+
+
+def __disable_logo(plot, element):
+    plot.state.toolbar.logo = None
+
+
+def plot_themes():
+    # format
+    hv.plotting.bokeh.ElementPlot.finalize_hooks.append(__disable_logo)
+    pn.widgets.DatetimeInput.format = '%d %B %Y'
+    hv.plotting.bokeh.ElementPlot.bgcolor = "#fbfcfc"
+    hv.plotting.bokeh.ElementPlot.gridstyle = {"grid_line_alpha": 0.6, "grid_line_dash": 'dashed'}
+```
+
+
 
 # HTML Files
 We will use the Django Template engine

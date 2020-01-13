@@ -1,10 +1,10 @@
 import numpy as np
 import pandas as pd
-import param
 
+import param
+import panel as pn
 import hvplot
 import hvplot.pandas
-import holoviews as hv
 
 
 class GBM(param.Parameterized):
@@ -14,6 +14,9 @@ class GBM(param.Parameterized):
     maturity = param.Integer(default=1, bounds=(0, 25))
     n_observations = param.Integer(default=10, bounds=(2, 100))
     n_simulations = param.Integer(default=20, bounds=(1, 500))
+    # TODO: Add a button param.Action, pn.widgets.Button... only refresh when onclick
+    # refresh = pn.widgets.Button(name="refresh", button_type='primary')
+    # refresh.onclick(update_plot)... does not work yet...
 
     def __init__(self, **params):
         super(GBM, self).__init__(**params)
@@ -29,7 +32,8 @@ class GBM(param.Parameterized):
                                     vol=self.volatility/100,
                                     dt=self.maturity / self.n_observations,
                                     n_obs=self.n_observations)
-        return df_s.hvplot(grid=True, colormap='Paired', value_label="Level",  legend=False)
+
+        return df_s.hvplot(grid=True, colormap='Paired', value_label="Level", legend=False)
 
     @staticmethod
     def gbm(spot: float, mean: float, vol: float, dt: float, n_obs: int) -> np.ndarray:

@@ -1,4 +1,3 @@
-import holoviews as hv
 import numpy as np
 import param
 from bokeh.models import ColumnDataSource
