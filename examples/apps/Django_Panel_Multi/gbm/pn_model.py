@@ -14,14 +14,15 @@ class GBM(param.Parameterized):
     maturity = param.Integer(default=1, bounds=(0, 25))
     n_observations = param.Integer(default=10, bounds=(2, 100))
     n_simulations = param.Integer(default=20, bounds=(1, 500))
-    # TODO: Add a button param.Action, pn.widgets.Button... only refresh when onclick
-    # refresh = pn.widgets.Button(name="refresh", button_type='primary')
-    # refresh.onclick(update_plot)... does not work yet...
+    refresh = pn.widgets.Button(name="Refresh", button_type='primary')
 
     def __init__(self, **params):
         super(GBM, self).__init__(**params)
 
-    @param.depends('mean', 'volatility', 'maturity', 'n_observations', 'n_simulations', watch=True)
+    # update the plot for every changes
+    # @param.depends('mean', 'volatility', 'maturity', 'n_observations', 'n_simulations', watch=True)
+    # refresh the plot only on button refresh click
+    @param.depends('refresh.clicks')
     def update_plot(self, **kwargs):
         df_s = pd.DataFrame(index=range(0, self.n_observations))
 
