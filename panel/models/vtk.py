@@ -2,36 +2,17 @@
 """
 Defines custom VTKPlot bokeh model to render VTK objects.
 """
-from bokeh.core.properties import (String, Bool, Dict, Any, Override,
-                                   Instance, Int, Float, PositiveInt)
-from bokeh.models import HTMLBox, Model
+import os
 
-vtk_cdn = "https://unpkg.com/vtk.js"
+from bokeh.core.properties import String, Bool, Dict, Any, Instance, Override
+from bokeh.models import ColumnDataSource, HTMLBox, Model
 
+from ..widgets import StaticText
 
-class VTKAxes(Model):
-    """
-    A Bokeh model for axes
-    """
-
-    xticker = Dict(String, Any)
-
-    yticker = Dict(String, Any)
-
-    zticker = Dict(String, Any)
-
-    origin = Any()
-
-    digits = Int(default=1)
-      
-    show_grid = Bool(default=True)
-
-    grid_opacity = Float(default=0.1)
-    
-    axes_opacity = Float(default=1)
-    
-    fontsize = PositiveInt(default=12)
-
+vtk_cdn = "https://unpkg.com/vtk.js@13.5.0/dist/vtk.js"
+#vtk_cdn = "http://localhost:8080/vtk.js"
+#jszip_cdn = "https://unpkg.com/jszip@3.1.5/dist/jszip.js"
+jszip_cdn = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.js"
 
 class VTKPlot(HTMLBox):
     """
@@ -39,44 +20,29 @@ class VTKPlot(HTMLBox):
     a Bokeh plot.
     """
 
-    __javascript__ = [vtk_cdn]
+    __javascript__ = [vtk_cdn, jszip_cdn]
 
-    __js_require__ = {"paths": {"vtk": vtk_cdn[:-3]},
+    __js_require__ = {"paths": {"vtk": vtk_cdn[:-3],
+                                "jszip": jszip_cdn[:-3]},
+                      "exports": {"jszip": "jszip"},
                       "shim": {"vtk": {"exports": "vtk"}}}
+
+    __implementation__ = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'vtk.ts')
 
     append = Bool(default=False)
 
-    data = String(help="""The serialized vtk.js data""")
+    scene = String(help="""The serialized vtk.js scene""")
+
+    arrays = Dict(String, Any)
 
     camera = Dict(String, Any)
 
-    axes = Instance(VTKAxes)
+#    selection = Dict(String, Any)
+    selection = Instance(ColumnDataSource)
 
     enable_keybindings = Bool(default=False)
 
-    orientation_widget = Bool(default=False)
-
-    renderer_el = Any(readonly=True)
-
     height = Override(default=300)
 
     width = Override(default=300)
 
-class VTKVolumePlot(HTMLBox):
-    """
-    A Bokeh model that wraps around a vtk-js library and renders it inside
-    a Bokeh plot.
-    """
-
-    __javascript__ = [vtk_cdn]
-
-    __js_require__ = {"paths": {"vtk": vtk_cdn[:-3]},
-                      "shim": {"vtk": {"exports": "vtk"}}}
-
-    actor = Any(readonly=True)
-
-    data = Dict(String, Any)
-
-    height = Override(default=300)
-
-    width = Override(default=300)
