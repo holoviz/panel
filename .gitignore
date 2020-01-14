@@ -1,0 +1,7 @@
+.vscode/settings.json
+.vscode/panel.code-workspace
+__pycache__/dodo.cpython-37.pyc
+__pycache__/setup.cpython-37.pyc
+0.5.0
+panel/.version
+.doit.db
