@@ -55,22 +55,22 @@ class Widget(Reactive):
         super(Widget, self).__init__(**params)
         self.param.watch(self._update_widget, self._manual_params)
 
-    def _manual_update(self, event, model, doc, root, parent, comm):
+    def _manual_update(self, events, model, doc, root, parent, comm):
         """
         Method for handling any manual update events, i.e. events triggered
         by changes in the manual params.
         """
 
-    def _update_widget(self, event):
+    def _update_widget(self, *events):
         for ref, (model, parent) in self._models.items():
             viewable, root, doc, comm = state._views[ref]
             if comm or state._unblocked(doc):
                 with unlocked():
-                    self._manual_update(event, model, doc, root, parent, comm)
+                    self._manual_update(events, model, doc, root, parent, comm)
                 if comm and 'embedded' not in root.tags:
                     push(doc, comm)
             else:
-                cb = partial(self._manual_update, event, model, doc, root, parent, comm)
+                cb = partial(self._manual_update, events, model, doc, root, parent, comm)
                 if doc.session_context:
                     doc.add_next_tick_callback(cb)
                 else:
