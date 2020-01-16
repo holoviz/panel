@@ -9,6 +9,7 @@ from bokeh.models import ColumnDataSource
 from pyviz_comms import JupyterComm
 
 from ..viewable import Layoutable
+from ..util import string_types
 from .base import PaneBase
 
 def ds_as_cds(dataset):
@@ -116,11 +117,20 @@ class Vega(PaneBase):
                 view['height'] = size_config[h]
 
         for p in ('width', 'height'):
-            if p not in view:
+            if p not in view or isinstance(view[p], string_types):
                 continue
             if props.get(p) is None or p in view and props.get(p) < view[p]:
                 v = view[p]
                 props[p] = v+22 if isinstance(v, int) else v
+
+        responsive_height = json.get('height') == 'container'
+        responsive_width = json.get('width') == 'container'
+        if responsive_height and responsive_width:
+            props['sizing_mode'] = 'stretch_both'
+        elif responsive_width:
+            props['sizing_mode'] = 'stretch_width'
+        elif responsive_height:
+            props['sizing_mode'] = 'stretch_height'
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         if 'panel.models.vega' not in sys.modules:
