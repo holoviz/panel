@@ -109,7 +109,7 @@ extras_require = {
         'pytest',
         'scipy',
         'nbsmoke >=0.2.0',
-        'pytest-cov ==2.5.1',
+        'pytest-cov',
         'codecov',
         # For examples
         'hvplot',
@@ -117,10 +117,11 @@ extras_require = {
         'altair',
         'streamz',
         'vega_datasets',
-        'vtk ==8.1.1',
+        'vtk',
         'scikit-learn',
         'datashader',
-        'jupyter_bokeh'
+        'jupyter_bokeh',
+        'nodejs'
     ],
     'recommended': _recommended,
     'doc': _recommended + [
