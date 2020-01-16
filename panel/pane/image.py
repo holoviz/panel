@@ -174,11 +174,13 @@ class JPG(ImageBase):
 
 class SVG(ImageBase):
 
-    encode = param.Boolean(default=True, doc="""
+    encode = param.Boolean(default=False, doc="""
         Whether to enable base64 encoding of the SVG, base64 encoded
         SVGs do not support links.""")
 
     imgtype = 'svg'
+
+    _rerender_params = ['object', 'sizing_mode', 'encode', 'style']
 
     @classmethod
     def applies(cls, obj):
