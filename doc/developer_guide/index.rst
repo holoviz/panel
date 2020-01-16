@@ -72,10 +72,12 @@ Since Panel interfaces with a large range of different libraries the
 full test suite requires a wide range of dependencies. To make it
 easier to install and run different parts of the test suite across
 different platforms Panel uses a library called pyctdev to make things
-more consistent and general.
+more consistent and general. To start with `cd` into the panel
+directory and then set up conda using the following commands:
 
 .. code-block:: sh
 
+    cd panel
     conda install -c pyviz "pyctdev>0.5.0"
     doit ecosystem_setup
 
@@ -84,7 +86,7 @@ set up an environment with:
 
 .. code-block:: sh
 
-    doit env_create -c pyviz/label/dev -c conda-forge --name=panel_dev --python=3.6
+    doit env_create -c pyviz/label/dev -c conda-forge --name=panel_dev --python=3.7
 
 Specify the desired Python version, currently Panel officially
 supports Python 2.7, 3.5, 3.6 and 3.7. Once the environment has been
@@ -99,7 +101,7 @@ suite:
 
 .. code-block:: sh
 
-    doit develop_install -c pyviz/label/dev -c conda-forge -o tests -o recommended
+    doit develop_install -c pyviz/label/dev -c conda-forge -c bokeh -o tests -o recommended
 
 .. _devguide_python_setup:
 
