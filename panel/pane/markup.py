@@ -40,7 +40,7 @@ class DivPaneBase(PaneBase):
 
     _bokeh_model = _BkHTML
 
-    _rerender_params = ['object', 'sizing_mode']
+    _rerender_params = ['object', 'sizing_mode', 'style']
 
     def _get_properties(self):
         props = {p : getattr(self, p) for p in list(Layoutable.param) + ['style']

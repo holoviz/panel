@@ -7,6 +7,7 @@ import pytest
 from base64 import b64decode, b64encode
 
 from panel.pane import GIF, JPG, PNG, SVG
+from panel.pane.markup import escape
 from io import BytesIO, StringIO
 
 
@@ -16,12 +17,12 @@ def test_svg_pane(document, comm):
       <rect x="10" y="10" height="100" width="100"/>
     </svg>
     """
-    pane = SVG(rect)
+    pane = SVG(rect, encode=True)
 
     # Create pane
     model = pane.get_root(document, comm=comm)
     assert pane._models[model.ref['id']][0] is model
-    assert model.text.startswith('<img')
+    assert model.text.startswith('&lt;img src=&#x27;data:image/svg+xml;base64')
     assert b64encode(rect.encode('utf-8')).decode('utf-8') in model.text
 
     # Replace Pane.object
@@ -32,8 +33,11 @@ def test_svg_pane(document, comm):
     """
     pane.object = circle
     assert pane._models[model.ref['id']][0] is model
-    assert model.text.startswith('<img')
+    assert model.text.startswith('&lt;img src=&#x27;data:image/svg+xml;base64')
     assert b64encode(circle.encode('utf-8')).decode('utf-8') in model.text
+
+    pane.encode = False
+    assert model.text == escape(circle)
 
     # Cleanup
     pane._cleanup(model)
