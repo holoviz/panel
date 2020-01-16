@@ -88,9 +88,6 @@ class HoloViews(PaneBase):
 
     @param.depends('center', 'widget_location', watch=True)
     def _update_layout(self):
-        from holoviews.core import DynamicMap, Store
-        from holoviews.plotting.util import initialize_dynamic
-
         loc = self.widget_location
         if not len(self.widget_box):
             widgets = []

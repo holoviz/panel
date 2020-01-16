@@ -19,7 +19,7 @@ from bokeh.models import (
 from bokeh.models.widgets import Tabs as BkTabs, Panel as BkPanel
 
 from .util import param_name, param_reprs
-from .viewable import Reactive, Viewable
+from .viewable import Reactive
 
 _row = namedtuple("row", ["children"])
 _col = namedtuple("col", ["children"])
@@ -655,7 +655,7 @@ class Tabs(ListPanel):
         Returns new child models for the layout while reusing unchanged
         models and cleaning up any dropped objects.
         """
-        from .pane import panel
+        from .pane.base import RerenderError, panel
         new_models = []
         if len(self._names) != len(self):
             raise ValueError('Tab names do not match objects, ensure '
@@ -872,6 +872,8 @@ class GridSpec(Panel):
         return properties
 
     def _get_objects(self, model, old_objects, doc, root, comm=None):
+        from .pane.base import RerenderError
+
         if self.ncols:
             width = int(float(self.width)/self.ncols)
         else:
@@ -882,8 +884,15 @@ class GridSpec(Panel):
         else:
             height = 0
 
-        children = []
         current_objects = list(self.objects.values())
+        if isinstance(old_objects, dict):
+            old_objects = list(old_objects.values())
+
+        for old in old_objects:
+            if old not in current_objects:
+                old._cleanup(root)
+
+        children = []
         for i, ((y0, x0, y1, x1), obj) in enumerate(self.objects.items()):
             x0 = 0 if x0 is None else x0
             x1 = (self.ncols) if x1 is None else x1
@@ -921,13 +930,6 @@ class GridSpec(Panel):
             else:
                 child.update(**properties)
             children.append((child, r, c, h, w))
-
-        new_objects = list(self.objects.values())
-        if isinstance(old_objects, dict):
-            old_objects = list(old_objects.values())
-        for old in old_objects:
-            if old not in new_objects:
-                old._cleanup(root)
         return children
 
     @property
@@ -1048,7 +1050,7 @@ class GridSpec(Panel):
             return list(subgrid)[0][1]
 
     def __setitem__(self, index, obj):
-        from .pane.base import Pane
+        from .pane.base import panel
         if not isinstance(index, tuple):
             raise IndexError('Must supply a 2D index for GridSpec assignment.')
 
@@ -1072,7 +1074,7 @@ class GridSpec(Panel):
         overlap = key in self.objects
         clone = self.clone(objects=OrderedDict(self.objects), mode='override')
         if not overlap:
-            clone.objects[key] = Pane(obj)
+            clone.objects[key] = panel(obj)
             grid = clone.grid
         else:
             grid = clone.grid
@@ -1107,7 +1109,7 @@ class GridSpec(Panel):
                 objects = [list(o)[0][0] for o in subgrid.flatten()]
             for dkey in objects:
                 del self.objects[dkey]
-        self.objects[key] = Pane(obj)
+        self.objects[key] = panel(obj)
         self.param.trigger('objects')
 
 

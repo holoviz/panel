@@ -7,7 +7,6 @@ images, equations etc.
 """
 from __future__ import absolute_import, division, unicode_literals
 
-from ..viewable import Viewable
 from .ace import Ace # noqa
 from .base import PaneBase, Pane, panel # noqa
 from .equation import LaTeX # noqa
