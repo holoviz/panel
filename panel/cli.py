@@ -61,10 +61,10 @@ def main(args=None):
     for cmd in pyct_commands:
         cmd = cmd.replace('-', '_')
         fn = getattr(pyct.cmd, cmd)
-        subparser = subs.add_parser(cmd, help=fn.__doc__)
+        subs.add_parser(cmd, help=fn.__doc__)
 
     for cls in bokeh_commands:
-        subparser = subs.add_parser(cls.name, help=cls.help)
+        subs.add_parser(cls.name, help=cls.help)
 
     if sys.argv[1] in ('--help', '-h'):
         args = parser.parse_args(sys.argv[1:])
