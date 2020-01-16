@@ -19,7 +19,7 @@ from bokeh.models import (
 from bokeh.models.widgets import Tabs as BkTabs, Panel as BkPanel
 
 from .util import param_name, param_reprs
-from .viewable import Reactive
+from .viewable import Reactive, Viewable
 
 _row = namedtuple("row", ["children"])
 _col = namedtuple("col", ["children"])
@@ -94,7 +94,7 @@ class Panel(Reactive):
         Returns new child models for the layout while reusing unchanged
         models and cleaning up any dropped objects.
         """
-        from .pane import panel
+        from .pane.base import panel, RerenderError
         new_models = []
         for i, pane in enumerate(self.objects):
             pane = panel(pane)
@@ -104,11 +104,15 @@ class Panel(Reactive):
             if obj not in self.objects:
                 obj._cleanup(root)
 
+        current_objects = list(self.objects)
         for i, pane in enumerate(self.objects):
             if pane in old_objects:
                 child, _ = pane._models[root.ref['id']]
             else:
-                child = pane._get_model(doc, root, model, comm)
+                try:
+                    child = pane._get_model(doc, root, model, comm)
+                except RerenderError:
+                    return self._get_objects(model, current_objects[:i], doc, root, comm)
             new_models.append(child)
         return new_models
 
@@ -666,11 +670,15 @@ class Tabs(ListPanel):
             if obj not in self.objects:
                 obj._cleanup(root)
 
+        current_objects = list(self)
         for i, (name, pane) in enumerate(zip(self._names, self)):
             if pane in old_objects:
                 child, _ = pane._models[root.ref['id']]
             else:
-                child = pane._get_model(doc, root, model, comm)
+                try:
+                    child = pane._get_model(doc, root, model, comm)
+                except RerenderError:
+                    return self._get_objects(model, current_objects[:i], doc, root, comm)
             child = BkPanel(title=name, name=pane.name, child=child,
                             closable=self.closable)
             new_models.append(child)
@@ -875,7 +883,8 @@ class GridSpec(Panel):
             height = 0
 
         children = []
-        for (y0, x0, y1, x1), obj in self.objects.items():
+        current_objects = list(self.objects.values())
+        for i, ((y0, x0, y1, x1), obj) in enumerate(self.objects.items()):
             x0 = 0 if x0 is None else x0
             x1 = (self.ncols) if x1 is None else x1
             y0 = 0 if y0 is None else y0
@@ -887,24 +896,31 @@ class GridSpec(Panel):
             else:
                 properties = {'sizing_mode': self.sizing_mode}
             obj.set_param(**properties)
-            model = obj._get_model(doc, root, model, comm)
 
-            if isinstance(model, BkMarkup) and self.sizing_mode not in ['fixed', None]:
-                if model.style is None:
-                    model.style = {}
+            if obj in old_objects:
+                child, _ = obj._models[root.ref['id']]
+            else:
+                try:
+                    child = obj._get_model(doc, root, model, comm)
+                except RerenderError:
+                    return self._get_objects(model, current_objects[:i], doc, root, comm)
+
+            if isinstance(child, BkMarkup) and self.sizing_mode not in ['fixed', None]:
+                if child.style is None:
+                    child.style = {}
                 style = {}
-                if 'width' not in model.style:
+                if 'width' not in child.style:
                     style['width'] = '100%'
-                if 'height' not in model.style:
+                if 'height' not in child.style:
                     style['height'] = '100%'
                 if style:
-                    model.style.update(style)
+                    child.style.update(style)
 
-            if isinstance(model, BkBox) and len(model.children) == 1:
-                model.children[0].update(**properties)
+            if isinstance(child, BkBox) and len(child.children) == 1:
+                child.children[0].update(**properties)
             else:
-                model.update(**properties)
-            children.append((model, r, c, h, w))
+                child.update(**properties)
+            children.append((child, r, c, h, w))
 
         new_objects = list(self.objects.values())
         if isinstance(old_objects, dict):
