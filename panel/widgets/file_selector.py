@@ -75,6 +75,7 @@ class FileSelector(CompositeWidget):
     _composite_type = Column
 
     def __init__(self, directory=None, **params):
+        from ..pane import Markdown
         if directory is not None:
             params['directory'] = os.path.abspath(os.path.expanduser(directory))
         super(FileSelector, self).__init__(**params)
@@ -96,6 +97,8 @@ class FileSelector(CompositeWidget):
             margin=(0, 10), width_policy='max'
         )
         self._composite[:] = [self._nav_bar, Divider(margin=(0, 20)), self._selector]
+        self._selector._selected.insert(0, Markdown('### Selected files', margin=(-10, 10)))
+        self._selector._unselected.insert(0, Markdown('### File Browser', margin=(-10, 10)))
 
         # Set up state
         self._stack = []
