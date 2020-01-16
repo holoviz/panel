@@ -4,7 +4,13 @@ Commandline interface to Panel
 from __future__ import absolute_import, division, unicode_literals
 
 import sys
+import argparse
+
 from bokeh.__main__ import main as bokeh_entry_point
+from bokeh.command.util import die
+from bokeh.util.string import nice_join
+
+from . import __version__
 
 
 def transform_cmds(argv):
@@ -35,17 +41,53 @@ def transform_cmds(argv):
 
 
 def main(args=None):
-    """Special case: Allow Bokeh to handle the `serve` command; rest is handled by pyct."""
-    if len(sys.argv) > 1 and 'serve' == sys.argv[1]:
+    """Merges commands offered by pyct and bokeh and provides help for both"""
+    from bokeh.command.subcommands import all as bokeh_commands
+
+    try:
+        import pyct.cmd
+        pyct_commands = ['copy-examples', 'examples']
+    except:
+        pass
+
+    parser = argparse.ArgumentParser(
+        prog="panel", epilog="See '<command> --help' to read about a specific subcommand."
+    )
+
+    parser.add_argument('-v', '--version', action='version', version=__version__)
+
+    subs = parser.add_subparsers(help="Sub-commands")
+
+    for cmd in pyct_commands:
+        cmd = cmd.replace('-', '_')
+        fn = getattr(pyct.cmd, cmd)
+        subparser = subs.add_parser(cmd, help=fn.__doc__)
+
+    for cls in bokeh_commands:
+        subparser = subs.add_parser(cls.name, help=cls.help)
+
+    if sys.argv[1] in ('--help', '-h'):
+        args = parser.parse_args(sys.argv[1:])
+        args.invoke(args)
+        sys.exit()
+
+    if len(sys.argv) == 1:
+        all_commands = sorted([c.name for c in bokeh_commands] + pyct_commands)
+        die("ERROR: Must specify subcommand, one of: %s" % nice_join(all_commands))
+    
+    if len(sys.argv) > 1 and any(sys.argv[1] == c.name for c in bokeh_commands):
         sys.argv = transform_cmds(sys.argv)
         bokeh_entry_point()
-    else:
+    elif sys.argv[0]in pyct_commands:
         try:
             import pyct.cmd
         except ImportError:
             print("install pyct to enable this command (e.g. `conda install -c pyviz pyct` or `pip install pyct[cmd]`)")
             sys.exit(1)
-        pyct.cmd.substitute_main('panel',args=args)
+        pyct.cmd.substitute_main('panel', cmds=pyct_commands, args=args)
+    else:
+        parser.parse_args(sys.argv[1:])
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()
