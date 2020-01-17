@@ -28,12 +28,15 @@ export class JSONView extends PanelMarkupView {
   }
 }
 
+type Theme = "light" | "dark"
+const Theme: Theme[] = ["dark", "light"]
+
 export namespace JSON {
   export type Attrs = p.AttrsOf<Props>
   export type Props = Markup.Props & {
     depth: p.Property<number>
     hover_preview: p.Property<boolean> 
-    theme: p.Property<string>  
+    theme: p.Property<"light" | "dark">
   }
 }
 
@@ -53,7 +56,7 @@ export class JSON extends Markup {
     this.define<JSON.Props>({
       depth: [p.Number, 1],
       hover_preview: [p.Boolean, false],
-      theme: [p.String, "dark"],
+      theme: [p.Enum(Theme), "dark"],
     })
   }
 }

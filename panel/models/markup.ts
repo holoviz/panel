@@ -20,7 +20,6 @@ export class CachedVariadicBox extends Layoutable {
     // If sizing mode is responsive and has changed since last render
 	// we have to wait until second rerender to use cached value
     const min_count = (!this.changed || (this.sizing_mode == 'fixed') || (this.sizing_mode == null)) ? 0 : 1;
-	console.log(this.changed, min_count, this.sizing_mode)
     if ((key_str in this._cache) && (this._cache_count[key_str] >= min_count)) {
       this._cache_count[key_str] = this._cache_count[key_str] + 1;
       return this._cache[key_str]
