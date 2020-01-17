@@ -126,6 +126,12 @@ The ``setup.py`` script has two main modes of operation:
     you make to the python source code will be available immediately without
     any additional steps.
 
+However for better compatibility with conda we recommend you use:
+
+.. code-block:: sh
+
+    pip install -e .
+
 
 Next Steps
 ----------

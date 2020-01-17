@@ -170,7 +170,6 @@ extras_require['build'] = [
     'setuptools >=30.3.0',
     'bokeh >=1.4.0',
     'pyviz_comms >=0.6.0',
-    'csscompressor',
     # non-python dependency
     'nodejs >=9.11.1',
 ]
