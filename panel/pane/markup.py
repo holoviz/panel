@@ -15,8 +15,6 @@ from six import string_types
 
 import param
 
-from bokeh.models.widgets import Div as _BkDiv
-
 from ..viewable import Layoutable
 from ..models import HTML as _BkHTML, JSON as _BkJSON
 from .base import PaneBase
