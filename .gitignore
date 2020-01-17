@@ -5,3 +5,4 @@ __pycache__/setup.cpython-37.pyc
 0.5.0
 panel/.version
 .doit.db
+.mypy_cache/
