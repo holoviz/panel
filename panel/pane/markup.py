@@ -334,12 +334,14 @@ class JSON(DivPaneBase):
         if isinstance(obj, (list, dict)):
             try:
                 json.dumps(obj, cls=params.get('encoder', cls.encoder))
-            except:
+            except Exception as e:
                 return False
             else:
                 return 0.1
+        elif isinstance(obj, string_types):
+            return 0
         else:
-            return False
+            return None
 
     def _get_properties(self):
         properties = super(JSON, self)._get_properties()
