@@ -1,17 +1,10 @@
 import * as p from "@bokehjs/core/properties"
-import {Markup, MarkupView} from "@bokehjs/models/widgets/markup"
+import {Markup} from "@bokehjs/models/widgets/markup"
 import JSONFormatter from "json-formatter-js"
+import {PanelMarkupView} from "./markup"
 
-export class JSONView extends MarkupView {
+export class JSONView extends PanelMarkupView {
   model: JSON
-
-  connect_signals(): void {
-    super.connect_signals()
-    this.connect(this.model.change, () => {
-      this.render()
-      this.root.compute_layout() // XXX: invalidate_layout?
-    })
-  }
 
   render(): void {
     super.render();
@@ -20,17 +13,18 @@ export class JSONView extends MarkupView {
     try {
       json = window.JSON.parse(text)
     } catch(err) {
-      json = {}
+      this.markup_el.innerHTML = "<b>Invalid JSON:</b> " + err.toString()
+      return
     }
-    const config = {hoverPreviewEnabled: this.model.hover, theme: this.model.theme}
+    const config = {hoverPreviewEnabled: this.model.hover_preview, theme: this.model.theme}
     const formatter = new JSONFormatter(json, this.model.depth, config)
     const rendered = formatter.render()
-    const style = "border-radius: 5px; padding: 10px;";
+    let style = "border-radius: 5px; padding: 10px;";
     if (this.model.theme == "dark")
-      rendered.style.cssText = "background-color: rgb(30, 30, 30);" + style
+      rendered.style.cssText = "background-color: rgb(30, 30, 30);" + style;
     else
-      rendered.style.cssText = style
-    this.markup_el.appendChild(rendered)
+      rendered.style.cssText = style;
+	this.markup_el.append(rendered)
   }
 }
 
@@ -38,7 +32,7 @@ export namespace JSON {
   export type Attrs = p.AttrsOf<Props>
   export type Props = Markup.Props & {
     depth: p.Property<number>
-    hover: p.Property<boolean> 
+    hover_preview: p.Property<boolean> 
     theme: p.Property<string>  
   }
 }
@@ -58,8 +52,8 @@ export class JSON extends Markup {
     this.prototype.default_view = JSONView
     this.define<JSON.Props>({
       depth: [p.Number, 1],
-      hover: [p.Boolean, false],
-      theme: [p.String, 'light'],
+      hover_preview: [p.Boolean, false],
+      theme: [p.String, "dark"],
     })
   }
 }

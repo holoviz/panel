@@ -44,18 +44,8 @@ class DivPaneBase(PaneBase):
     _rerender_params = ['object', 'sizing_mode', 'style']
 
     def _get_properties(self):
-        props = {p : getattr(self, p) for p in list(Layoutable.param) + ['style']
-                 if getattr(self, p) is not None}
-        if self.sizing_mode is not None and 'stretch' in self.sizing_mode:
-            mode = self.sizing_mode[8:]
-            if 'style' not in props:
-                props['style'] = {}
-            style = props['style']
-            if 'width' not in style and mode in ('width', 'both'):
-                style['width'] = '100%'
-            if 'height' not in style and mode in ('height', 'both'):
-                style['height'] = '100%'
-        return props
+        return {p : getattr(self, p) for p in list(Layoutable.param) + ['style']
+                if getattr(self, p) is not None}
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         model = self._bokeh_model(**self._get_properties())
@@ -314,25 +304,37 @@ class Markdown(DivPaneBase):
 
 class JSON(DivPaneBase):
 
-    depth = param.Integer(default=1, bounds=(0, None), doc="""
+    depth = param.Integer(default=1, bounds=(-1, None), doc="""
         Depth to which the JSON tree will be expanded on initialization.""")
 
-    hover = param.Boolean(default=False, doc="""
-        Whether to display a hover preview.""")
+    encoder = param.ClassSelector(class_=json.JSONEncoder, is_instance=False, doc="""
+        Custom JSONEncoder class used to serialize objects to JSON string.""")
 
-    theme = param.ObjectSelector(default="light", objects=["light", "dark"], doc="""
+    hover_preview = param.Boolean(default=False, doc="""
+        Whether to display a hover preview for collapsed nodes.""")
+
+    margin = param.Parameter(default=(5, 20, 5, 5), doc="""
+        Allows to create additional space around the component. May
+        be specified as a two-tuple of the form (vertical, horizontal)
+        or a four-tuple (top, right, bottom, left).""")
+
+    theme = param.ObjectSelector(default="dark", objects=["light", "dark"], doc="""
         Whether the JSON tree view is expanded by default.""")
 
     priority = None
 
     _bokeh_model = _BkJSON
 
-    _rerender_params = ['object', 'sizing_mode', 'theme']
+    _rerender_params = ['object', 'sizing_mode']
+
+    _rename = {"name": None, "object": "text", "encoder": None}
 
     def _get_properties(self):
-        data = self.object
-        if data is None:
-            data = {}
         properties = super(JSON, self)._get_properties()
-        return dict(text=json.dumps(data), theme=self.theme, depth=self.depth,
-                    hover=self.hover, **properties)
+        if isinstance(self.object, string_types):
+            text = self.object
+        else:
+            text = json.dumps(self.object or {}, cls=self.encoder)
+        depth = float('inf') if self.depth < 0 else self.depth
+        return dict(text=text, theme=self.theme, depth=depth,
+                    hover_preview=self.hover_preview, **properties)

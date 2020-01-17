@@ -3,7 +3,7 @@ Custom bokeh Markup models.
 """
 from __future__ import absolute_import, division, unicode_literals
 
-from bokeh.core.properties import Bool, Int, String
+from bokeh.core.properties import Bool, Either, Int, Float, String
 from bokeh.models.widgets import Markup
 
 
@@ -18,8 +18,8 @@ class JSON(Markup):
     A bokeh model that renders JSON as tree.
     """
 
-    depth = Int(default=1, help="Depth to which the JSON tree is expanded.")
+    depth = Either(Int, Float, default=1, help="Depth to which the JSON tree is expanded.")
 
-    hover = Bool(default=False, help="Whether to show a hover preview.")
+    hover_preview = Bool(default=False, help="Whether to show a hover preview for collapsed nodes.")
 
-    theme = String(default='light', help="Whether to expand all JSON nodes.")
+    theme = String(default='dark', help="Whether to expand all JSON nodes.")
