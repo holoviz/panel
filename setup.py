@@ -42,11 +42,7 @@ def _build_paneljs():
 
 
 def _build_panelcss():
-    try:
-        from csscompressor import compress
-    except:
-        print("Could not minify CSS files.")
-        return
+    from scripts.csscompressor import compress
 
     count = 0
     for cssf in _CSS_FILES:
