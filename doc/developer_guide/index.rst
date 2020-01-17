@@ -101,7 +101,7 @@ suite:
 
 .. code-block:: sh
 
-    doit develop_install -c pyviz/label/dev -c conda-forge -c bokeh -o tests -o recommended
+    doit develop_install -c pyviz/label/dev -c conda-forge -c bokeh -c auto -o tests -o recommended -o build
 
 .. _devguide_python_setup:
 
