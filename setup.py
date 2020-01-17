@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 
+import glob
+import json
 import os
 import shutil
 import sys
-import json
 
 from setuptools import setup, find_packages
 from setuptools.command.develop import develop
@@ -12,6 +13,8 @@ from setuptools.command.sdist import sdist
 
 import pyct.build
 
+_PATH = os.path.abspath(os.path.dirname(__file__))
+_CSS_FILES = glob.glob(os.path.join(_PATH, 'panel', '_styles', '*.css'))
 
 def get_setup_version(reponame):
     """
@@ -38,11 +41,32 @@ def _build_paneljs():
     build(panel_dir)
 
 
+def _build_panelcss():
+    try:
+        from csscompressor import compress
+    except:
+        print("Could not minify CSS files.")
+        return
+
+    count = 0
+    for cssf in _CSS_FILES:
+        if cssf.endswith('min.css'):
+            continue
+        with open(cssf) as f:
+            css = f.read()
+        min_css = compress(css)
+        with open(cssf[:-3]+'min.css', 'w') as f:
+            f.write(min_css)
+        count += 1
+    print("Minified %s css files." % count)
+
+
 class CustomDevelopCommand(develop):
     """Custom installation for development mode."""
 
     def run(self):
         _build_paneljs()
+        _build_panelcss()
         develop.run(self)
 
 
@@ -51,6 +75,7 @@ class CustomInstallCommand(install):
 
     def run(self):
         _build_paneljs()
+        _build_panelcss()
         install.run(self)
 
 
@@ -59,6 +84,7 @@ class CustomSdistCommand(sdist):
 
     def run(self):
         _build_paneljs()
+        _build_panelcss()
         sdist.run(self)
 
 
@@ -72,12 +98,10 @@ try:
     from wheel.bdist_wheel import bdist_wheel
 
     class CustomBdistWheelCommand(bdist_wheel):
-        """Custom bdist_wheel command to force cancelling qiskit-terra wheel
-        creation."""
 
         def run(self):
-            """Do nothing so the command intentionally fails."""
             _build_paneljs()
+            _build_panelcss()
             bdist_wheel.run(self)
 
     _COMMANDS['bdist_wheel'] = CustomBdistWheelCommand
@@ -120,8 +144,7 @@ extras_require = {
         'vtk',
         'scikit-learn',
         'datashader',
-        'jupyter_bokeh',
-        'nodejs'
+        'jupyter_bokeh'
     ],
     'recommended': _recommended,
     'doc': _recommended + [
@@ -147,6 +170,7 @@ extras_require['build'] = [
     'setuptools >=30.3.0',
     'bokeh >=1.4.0',
     'pyviz_comms >=0.6.0',
+    'csscompressor',
     # non-python dependency
     'nodejs >=9.11.1',
 ]

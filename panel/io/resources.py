@@ -12,7 +12,7 @@ def css_raw(self):
     from ..config import config
     raw = super(Resources, self).css_raw
     for cssf in config.css_files:
-        if not os.path.isfile(cssf):
+        if not os.path.isfile(cssf) or (cssf[:-3]+'min.css') in config.css_files:
             continue
         with open(cssf) as f:
             raw.append(f.read())
