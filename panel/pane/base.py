@@ -272,8 +272,10 @@ class PaneBase(Reactive):
         descendents = []
         for p in param.concrete_descendents(PaneBase).values():
             if p.priority is None:
+                applies = True
                 priority = p.applies(obj, **(kwargs if p._applies_kw else {}))
             else:
+                applies = None
                 priority = p.priority
             if isinstance(priority, bool) and priority:
                 raise ValueError('If a Pane declares no priority '
@@ -283,9 +285,13 @@ class PaneBase(Reactive):
                                  'declares no priority.' % p.__name__)
             elif priority is None or priority is False:
                 continue
-            descendents.append((priority, p))
+            descendents.append((priority, applies, p))
         pane_types = reversed(sorted(descendents, key=lambda x: x[0]))
-        for _, pane_type in pane_types:
+        for _, applies, pane_type in pane_types:
+            if applies is None:
+                applies = pane_type.applies(obj, **(kwargs if pane_type._applies_kw else {}))
+            if not applies:
+                continue
             return pane_type
         raise TypeError('%s type could not be rendered.' % type(obj).__name__)
 
