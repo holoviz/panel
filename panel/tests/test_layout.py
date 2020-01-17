@@ -873,7 +873,7 @@ def test_layout_with_param_setitem(document, comm):
     test = TestClass()
     model = test._layout.get_root(document, comm=comm)
     test.select = 1
-    assert model.children[1].text == '<pre>1</pre>'
+    assert model.children[1].text == '&lt;pre&gt;1&lt;/pre&gt;'
 
 
 def test_gridspec_integer_setitem():

@@ -107,22 +107,6 @@ def test_html_pane(document, comm):
     assert pane._models == {}
 
 
-def test_html_pane_width_height_stretch(document, comm):
-    pane = HTML("<h1>Test</h1>", sizing_mode='stretch_width')
-
-    # Create pane
-    model = pane.get_root(document, comm=comm)
-    assert model.style == {'width': '100%'}
-
-    pane.sizing_mode = 'stretch_both'
-    assert model.style == {'width': '100%', 'height': '100%'}
-
-    pane.sizing_mode = 'stretch_height'
-    assert model.style == {'height': '100%'}
-
-    pane._cleanup(model)
-
-
 @pd_available
 def test_dataframe_pane_pandas(document, comm):
     import pandas as pd
@@ -176,12 +160,12 @@ def test_string_pane(document, comm):
     # Create pane
     model = pane.get_root(document, comm=comm)
     assert pane._models[model.ref['id']][0] is model
-    assert model.text == "<pre>&lt;h1&gt;Test&lt;/h1&gt;</pre>"
+    assert model.text == "&lt;pre&gt;&lt;h1&gt;Test&lt;/h1&gt;&lt;/pre&gt;"
 
     # Replace Pane.object
     pane.object = "<h2>Test</h2>"
     assert pane._models[model.ref['id']][0] is model
-    assert model.text == "<pre>&lt;h2&gt;Test&lt;/h2&gt;</pre>"
+    assert model.text == "&lt;pre&gt;&lt;h2&gt;Test&lt;/h2&gt;&lt;/pre&gt;"
 
     # Cleanup
     pane._cleanup(model)
