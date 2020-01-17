@@ -7,7 +7,7 @@ export class JSONView extends MarkupView {
 
   connect_signals(): void {
     super.connect_signals()
-	this.connect(this.model.change, () => {
+    this.connect(this.model.change, () => {
       this.render()
       this.root.compute_layout() // XXX: invalidate_layout?
     })
@@ -15,22 +15,22 @@ export class JSONView extends MarkupView {
 
   render(): void {
     super.render();
-	const text = this.model.text.replace(/(\r\n|\n|\r)/gm, "").replace("'", '"')
+    const text = this.model.text.replace(/(\r\n|\n|\r)/gm, "").replace("'", '"')
     let json;
-	try {
-	  json = window.JSON.parse(text)
-	} catch(err) {
-	  json = {}
-	}
-	const config = {hoverPreviewEnabled: this.model.hover, theme: this.model.theme}
-	const formatter = new JSONFormatter(json, this.model.depth, config)
-	const rendered = formatter.render()
-	const style = "border-radius: 5px; padding: 10px;";
-	if (this.model.theme == "dark")
+    try {
+      json = window.JSON.parse(text)
+    } catch(err) {
+      json = {}
+    }
+    const config = {hoverPreviewEnabled: this.model.hover, theme: this.model.theme}
+    const formatter = new JSONFormatter(json, this.model.depth, config)
+    const rendered = formatter.render()
+    const style = "border-radius: 5px; padding: 10px;";
+    if (this.model.theme == "dark")
       rendered.style.cssText = "background-color: rgb(30, 30, 30);" + style
     else
       rendered.style.cssText = style
-	this.markup_el.appendChild(rendered)
+    this.markup_el.appendChild(rendered)
   }
 }
 
@@ -57,7 +57,7 @@ export class JSON extends Markup {
   static init_JSON(): void {
     this.prototype.default_view = JSONView
     this.define<JSON.Props>({
-	  depth: [p.Number, 1],
+      depth: [p.Number, 1],
       hover: [p.Boolean, false],
       theme: [p.String, 'light'],
     })
