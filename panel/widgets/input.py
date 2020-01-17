@@ -72,7 +72,7 @@ class FileInput(Widget):
 
     def _filter_properties(self, properties):
         properties = super(FileInput, self)._filter_properties(properties)
-        return properties + ['value', 'mime_type']
+        return properties + ['value', 'mime_type', 'filename']
 
     def _process_property_change(self, msg):
         msg = super(FileInput, self)._process_property_change(msg)
