@@ -24,7 +24,7 @@ export class JSONView extends PanelMarkupView {
       rendered.style.cssText = "background-color: rgb(30, 30, 30);" + style;
     else
       rendered.style.cssText = style;
-	this.markup_el.append(rendered)
+    this.markup_el.append(rendered)
   }
 }
 
