@@ -321,11 +321,25 @@ class JSON(DivPaneBase):
 
     priority = None
 
+    _applies_kw = True
+
     _bokeh_model = _BkJSON
 
     _rerender_params = ['object', 'sizing_mode']
 
     _rename = {"name": None, "object": "text", "encoder": None}
+
+    @classmethod
+    def applies(cls, obj, **params):
+        if isinstance(obj, (list, dict)):
+            try:
+                json.dumps(obj, cls=params.get('encoder', cls.encoder))
+            except:
+                pass
+            else:
+                return 0.1
+        else:
+            return False
 
     def _get_properties(self):
         properties = super(JSON, self)._get_properties()

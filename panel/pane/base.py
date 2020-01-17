@@ -24,7 +24,7 @@ def Pane(obj, **kwargs):
     """
     if isinstance(obj, Viewable):
         return obj
-    return PaneBase.get_pane_type(obj)(obj, **kwargs)
+    return PaneBase.get_pane_type(obj, **kwargs)(obj, **kwargs)
 
 
 def panel(obj, **kwargs):
@@ -48,7 +48,7 @@ def panel(obj, **kwargs):
         return obj
     if kwargs.get('name', False) is None:
         kwargs.pop('name')
-    pane = PaneBase.get_pane_type(obj)(obj, **kwargs)
+    pane = PaneBase.get_pane_type(obj, **kwargs)(obj, **kwargs)
     if len(pane.layout) == 1 and pane._unpack:
         return pane.layout[0]
     return pane.layout
@@ -97,10 +97,13 @@ class PaneBase(Reactive):
     # List of parameters that trigger a rerender of the Bokeh model
     _rerender_params = ['object']
 
+    # Whether applies requires full set of keywords
+    _applies_kw = False
+
     __abstract = True
 
     def __init__(self, object=None, **params):
-        applies = self.applies(object)
+        applies = self.applies(object, **(params if self._applies_kw else {}))
         if (isinstance(applies, bool) and not applies) and object is not None :
             self._type_error(object)
 
@@ -250,7 +253,7 @@ class PaneBase(Reactive):
         return root
 
     @classmethod
-    def get_pane_type(cls, obj):
+    def get_pane_type(cls, obj, **kwargs):
         """
         Returns the applicable Pane type given an object by resolving
         the precedence of all types whose applies method declares that
@@ -268,7 +271,10 @@ class PaneBase(Reactive):
             return type(obj)
         descendents = []
         for p in param.concrete_descendents(PaneBase).values():
-            priority = p.applies(obj) if p.priority is None else p.priority
+            if p.priority is None:
+                priority = p.applies(obj, **(kwargs if p._applies_kw else {}))
+            else:
+                priority = p.priority
             if isinstance(priority, bool) and priority:
                 raise ValueError('If a Pane declares no priority '
                                  'the applies method should return a '
@@ -280,8 +286,6 @@ class PaneBase(Reactive):
             descendents.append((priority, p))
         pane_types = reversed(sorted(descendents, key=lambda x: x[0]))
         for _, pane_type in pane_types:
-            applies = pane_type.applies(obj)
-            if isinstance(applies, bool) and not applies: continue
             return pane_type
         raise TypeError('%s type could not be rendered.' % type(obj).__name__)
 
