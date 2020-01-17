@@ -4,6 +4,7 @@ Markdown, and also regular strings.
 """
 from __future__ import absolute_import, division, unicode_literals
 
+import json
 import textwrap
 
 try:
@@ -17,7 +18,7 @@ import param
 from bokeh.models.widgets import Div as _BkDiv
 
 from ..viewable import Layoutable
-from ..models import HTML as _BkHTML
+from ..models import HTML as _BkHTML, JSON as _BkJSON
 from .base import PaneBase
 
 
@@ -249,7 +250,7 @@ class Str(DivPaneBase):
 
     priority = 0
 
-    _bokeh_model = _BkDiv
+    _bokeh_model = _BkHTML
 
     @classmethod
     def applies(cls, obj):
@@ -260,8 +261,8 @@ class Str(DivPaneBase):
         if self.object is None:
             text = ''
         else:
-            text = '<pre>'+escape(str(self.object))+'</pre>'
-        return dict(properties, text=text)
+            text = '<pre>'+str(self.object)+'</pre>'
+        return dict(properties, text=escape(text))
 
 
 class Markdown(DivPaneBase):
@@ -308,3 +309,30 @@ class Markdown(DivPaneBase):
         html = markdown.markdown(data, extensions=self.extensions,
                                  output_format='html5')
         return dict(properties, text=escape(html), css_classes=css_classes)
+
+
+
+class JSON(DivPaneBase):
+
+    depth = param.Integer(default=1, bounds=(0, None), doc="""
+        Depth to which the JSON tree will be expanded on initialization.""")
+
+    hover = param.Boolean(default=False, doc="""
+        Whether to display a hover preview.""")
+
+    theme = param.ObjectSelector(default="light", objects=["light", "dark"], doc="""
+        Whether the JSON tree view is expanded by default.""")
+
+    priority = None
+
+    _bokeh_model = _BkJSON
+
+    _rerender_params = ['object', 'sizing_mode', 'theme']
+
+    def _get_properties(self):
+        data = self.object
+        if data is None:
+            data = {}
+        properties = super(JSON, self)._get_properties()
+        return dict(text=json.dumps(data), theme=self.theme, depth=self.depth,
+                    hover=self.hover, **properties)
