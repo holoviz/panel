@@ -334,7 +334,7 @@ class JSON(DivPaneBase):
         if isinstance(obj, (list, dict)):
             try:
                 json.dumps(obj, cls=params.get('encoder', cls.encoder))
-            except Exception as e:
+            except:
                 return False
             else:
                 return 0.1
