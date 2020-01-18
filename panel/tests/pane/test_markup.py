@@ -1,6 +1,11 @@
 from __future__ import absolute_import, division, unicode_literals
 
-from panel.pane import DataFrame, HTML, Markdown, PaneBase, Pane, Str
+import base64
+import json
+
+import numpy as np
+
+from panel.pane import DataFrame, JSON, HTML, Markdown, PaneBase, Pane, Str
 from panel.tests.util import pd_available, streamz_available
 
 
@@ -107,22 +112,6 @@ def test_html_pane(document, comm):
     assert pane._models == {}
 
 
-def test_html_pane_width_height_stretch(document, comm):
-    pane = HTML("<h1>Test</h1>", sizing_mode='stretch_width')
-
-    # Create pane
-    model = pane.get_root(document, comm=comm)
-    assert model.style == {'width': '100%'}
-
-    pane.sizing_mode = 'stretch_both'
-    assert model.style == {'width': '100%', 'height': '100%'}
-
-    pane.sizing_mode = 'stretch_height'
-    assert model.style == {'height': '100%'}
-
-    pane._cleanup(model)
-
-
 @pd_available
 def test_dataframe_pane_pandas(document, comm):
     import pandas as pd
@@ -176,12 +165,47 @@ def test_string_pane(document, comm):
     # Create pane
     model = pane.get_root(document, comm=comm)
     assert pane._models[model.ref['id']][0] is model
-    assert model.text == "<pre>&lt;h1&gt;Test&lt;/h1&gt;</pre>"
+    assert model.text == "&lt;pre&gt;&lt;h1&gt;Test&lt;/h1&gt;&lt;/pre&gt;"
 
     # Replace Pane.object
     pane.object = "<h2>Test</h2>"
     assert pane._models[model.ref['id']][0] is model
-    assert model.text == "<pre>&lt;h2&gt;Test&lt;/h2&gt;</pre>"
+    assert model.text == "&lt;pre&gt;&lt;h2&gt;Test&lt;/h2&gt;&lt;/pre&gt;"
+
+    # Cleanup
+    pane._cleanup(model)
+    assert pane._models == {}
+
+
+class NumpyEncoder(json.JSONEncoder):
+
+    def default(self, obj):
+        if isinstance(obj, np.ndarray):
+            data_b64 = base64.b64encode(obj.data).decode('utf-8')
+            return dict(__ndarray__=data_b64,
+                        dtype=str(obj.dtype),
+                        shape=obj.shape)
+        return json.JSONEncoder.default(self, obj)
+
+def test_json_applies():
+    assert JSON.applies({1: 2})
+    assert JSON.applies([1, 2, 3])
+    assert JSON.applies('{"a": 1}') == 0
+    assert not JSON.applies({'array': np.array([1, 2, 3])})
+    assert JSON.applies({'array': np.array([1, 2, 3])}, encoder=NumpyEncoder)
+
+
+def test_json_pane(document, comm):
+    pane = JSON({'a': 2})
+
+    model = pane.get_root(document, comm=comm)
+
+    assert model.text == '{"a": 2}'
+    assert pane._models[model.ref['id']][0] is model
+
+    pane.object = '{"b": 3}'
+    assert model.text == '{"b": 3}'
+    assert pane._models[model.ref['id']][0] is model
 
     # Cleanup
     pane._cleanup(model)
