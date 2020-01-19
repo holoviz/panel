@@ -78,7 +78,7 @@ def test_embed_checkbox(document, comm):
         assert event['kind'] == 'ModelChanged'
         assert event['attr'] == 'text'
         assert event['model'] == model.children[1].ref
-        assert event['new'] == '&lt;pre&gt;%s&lt;/pre&gt;' % k
+        assert event['new'] == '&lt;pre&gt;%s&lt;/pre&gt;' % k.title()
 
 
 def test_save_embed_bytesio():
