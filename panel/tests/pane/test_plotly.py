@@ -16,7 +16,7 @@ plotly_available = pytest.mark.skipif(plotly is None, reason="requires plotly")
 import numpy as np
 
 from panel.models.plotly import PlotlyPlot
-from panel.pane import Pane, PaneBase, Plotly
+from panel.pane import PaneBase, Plotly
 
 
 @plotly_available
