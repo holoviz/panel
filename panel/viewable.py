@@ -193,7 +193,86 @@ class Layoutable(param.Parameterized):
         super(Layoutable, self).__init__(**params)
 
 
-class Viewable(Layoutable):
+class ServableMixin(object):
+
+    def _modify_doc(self, server_id, title, doc):
+        """
+        Callback to handle FunctionHandler document creation.
+        """
+        if server_id:
+            state._servers[server_id][2].append(doc)
+        return self.server_doc(doc, title)
+
+    def _get_server(self, port=0, websocket_origin=None, loop=None,
+                   show=False, start=False, **kwargs):
+        return get_server(self, port, websocket_origin, loop, show,
+                          start, **kwargs)
+
+    #----------------------------------------------------------------
+    # Public API
+    #----------------------------------------------------------------
+
+    def servable(self, title=None):
+        """
+        Serves the object if in a `panel serve` context and returns
+        the Panel object to allow it to display itself in a notebook
+        context.
+        Arguments
+        ---------
+        title : str
+          A string title to give the Document (if served as an app)
+        Returns
+        -------
+        The Panel object itself
+        """
+        if _curdoc().session_context:
+            logger = logging.getLogger('bokeh')
+            for handler in logger.handlers:
+                if isinstance(handler, logging.StreamHandler):
+                    handler.setLevel(logging.WARN)
+            self.server_doc(title=title)
+        return self
+
+    def show(self, port=0, websocket_origin=None, threaded=False, title=None, **kwargs):
+        """
+        Starts a Bokeh server and displays the Viewable in a new tab.
+
+        Arguments
+        ---------
+        port: int (optional, default=0)
+          Allows specifying a specific port
+        websocket_origin: str or list(str) (optional)
+          A list of hosts that can connect to the websocket.
+          This is typically required when embedding a server app in
+          an external web site.
+          If None, "localhost" is used.
+        threaded: boolean (optional, default=False)
+          Whether to launch the Server on a separate thread, allowing
+          interactive use.
+        title : str
+          A string title to give the Document (if served as an app)
+
+        Returns
+        -------
+        server: bokeh.server.Server or threading.Thread
+          Returns the Bokeh server instance or the thread the server
+          was launched on (if threaded=True)
+        """
+        if threaded:
+            from tornado.ioloop import IOLoop
+            loop = IOLoop()
+            server = StoppableThread(
+                target=self._get_server, io_loop=loop,
+                args=(port, websocket_origin, loop, True, True, title))
+            server.start()
+        else:
+            server = self._get_server(port, websocket_origin, show=True,
+                                      start=True, title=title, **kwargs)
+
+        return server
+
+
+class Viewable(Layoutable, ServableMixin):
     """
     Viewable is the baseclass all objects in the panel library are
     built on. It defines the interface for declaring any object that
@@ -321,19 +400,6 @@ class Viewable(Layoutable):
         doc = session_context._document
         self._cleanup(self._documents[doc])
         del self._documents[doc]
-
-    def _modify_doc(self, server_id, doc):
-        """
-        Callback to handle FunctionHandler document creation.
-        """
-        if server_id:
-            state._servers[server_id][2].append(doc)
-        return self.server_doc(doc)
-
-    def _get_server(self, port=0, websocket_origin=None, loop=None,
-                   show=False, start=False, **kwargs):
-        return get_server(self, port, websocket_origin, loop, show,
-                          start, **kwargs)
 
     #----------------------------------------------------------------
     # Public API
@@ -495,75 +561,14 @@ class Viewable(Layoutable):
           The bokeh document the panel was attached to
         """
         doc = doc or _curdoc()
-        if title is not None:
-            doc.title = title
+        title = title or 'Panel Application'
+        doc.title = title
         model = self.get_root(doc)
         if hasattr(doc, 'on_session_destroyed'):
             doc.on_session_destroyed(self._server_destroy)
             self._documents[doc] = model
         add_to_doc(model, doc)
         return doc
-
-    def servable(self, title=None):
-        """
-        Serves the object if in a `panel serve` context and returns
-        the panel object to allow it to display itself in a notebook
-        context.
-
-        Arguments
-        ---------
-        title : str
-          A string title to give the Document (if served as an app)
-
-        Returns
-        -------
-        The Panel object itself
-        """
-        if _curdoc().session_context:
-            logger = logging.getLogger('bokeh')
-            for handler in logger.handlers:
-                if isinstance(handler, logging.StreamHandler):
-                    handler.setLevel(logging.WARN)
-            self.server_doc(title=title)
-        return self
-
-    def show(self, port=0, websocket_origin=None, threaded=False):
-        """
-        Starts a bokeh server and displays the Viewable in a new tab
-
-        Arguments
-        ---------
-        port: int (optional, default=0)
-          Allows specifying a specific port
-        websocket_origin: str or list(str) (optional)
-          A list of hosts that can connect to the websocket.
-
-          This is typically required when embedding a server app in
-          an external web site.
-
-          If None, "localhost" is used.
-        threaded: boolean (optional, default=False)
-          Whether to launch the Server on a separate thread, allowing
-          interactive use.
-
-        Returns
-        -------
-        server: bokeh.server.Server or threading.Thread
-          Returns the bokeh server instance or the thread the server
-          was launched on (if threaded=True)
-        """
-        if threaded:
-            from tornado.ioloop import IOLoop
-            loop = IOLoop()
-            server = StoppableThread(
-                target=self._get_server, io_loop=loop,
-                args=(port, websocket_origin, loop, True, True))
-            server.start()
-        else:
-            server = self._get_server(port, websocket_origin, show=True, start=True)
-
-        return server
-
 
 
 class Reactive(Viewable):
