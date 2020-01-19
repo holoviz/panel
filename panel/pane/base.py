@@ -313,6 +313,7 @@ class ReplacementPane(PaneBase):
                          if p not in self.param}
         super(ReplacementPane, self).__init__(object, **params)
         self._pane = Pane(None)
+        self._internal = True
         self._inner_layout = Row(self._pane, **{k: v for k, v in params.items() if k in Row.param})
 
     def _update_pane(self, *events):
@@ -326,7 +327,20 @@ class ReplacementPane(PaneBase):
             links = Link.registry.get(new_object)
         except TypeError:
             links = []
-        if type(self._pane) is pane_type and not links:
+        custom_watchers = False
+        if isinstance(new_object, Reactive):
+            watch_fns = [
+                str(w.fn) for pwatchers in new_object._param_watchers.values()
+                for awatchers in pwatchers.values() for w in awatchers
+            ]
+            custom_watchers = not all(
+                'Reactive._link_params' in wfn or 'PaneBase._update_pane' in wfn
+                for wfn in watch_fns
+            )
+
+        if type(self._pane) is pane_type and not links and not custom_watchers and self._internal:
+            # If the object has not external referrers we can update
+            # it inplace instead of replacing it
             if isinstance(new_object, Reactive):
                 pvals = dict(self._pane.get_param_values())
                 new_params = {k: v for k, v in new_object.get_param_values()
@@ -338,8 +352,20 @@ class ReplacementPane(PaneBase):
             # Replace pane entirely
             kwargs = dict(self.get_param_values(), **self._kwargs)
             del kwargs['object']
-            self._pane = Pane(new_object, **{k: v for k, v in kwargs.items()
-                                             if k in pane_type.param})
+            self._pane = panel(new_object, **{k: v for k, v in kwargs.items()
+                                              if k in pane_type.param})
+            if new_object is self._pane:
+                # If all watchers on the object are internal watchers
+                # we can make a clone of the object and update this
+                # clone going forward, otherwise we have replace the
+                # model entirely which is more expensive.
+                if not (custom_watchers or links):
+                    self._pane = self._pane.clone()
+                    self._internal = True
+                else:
+                    self._internal = False
+            else:
+                self._internal = new_object is not self._pane
             self._inner_layout[0] = self._pane
 
     def _get_model(self, doc, root=None, parent=None, comm=None):

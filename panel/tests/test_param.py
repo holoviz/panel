@@ -6,7 +6,7 @@ from bokeh.models import (
     Div, Slider, Select, RangeSlider, MultiSelect, Row as BkRow,
     CheckboxGroup, Toggle, Button, TextInput as BkTextInput,
     Tabs as BkTabs, Column as BkColumn, TextInput)
-from panel.pane import Pane, PaneBase, Matplotlib, Bokeh
+from panel.pane import Pane, PaneBase, Matplotlib, Bokeh, HTML
 from panel.layout import Tabs, Row
 from panel.param import Param, ParamMethod, ParamFunction, JSONInit
 from panel.widgets import LiteralInput
@@ -840,6 +840,37 @@ def test_param_function_pane(document, comm):
     pane._cleanup(row)
     assert pane._models == {}
     assert inner_pane._models == {}
+
+
+def test_param_function_pane_update(document, comm):
+    test = View()
+
+    objs = {
+        0: HTML("012"),
+        1: HTML("123")
+    }
+
+    @param.depends(test.param.a)
+    def view(a):
+        return objs[a]
+
+    pane = Pane(view)
+    inner_pane = pane._pane
+    assert inner_pane is not objs[0]
+    assert inner_pane.object is objs[0].object
+    assert pane._internal
+
+    test.a = 1
+
+    assert pane._pane is inner_pane
+    assert pane._internal
+
+    objs[0].param.watch(print, ['object'])
+
+    test.a = 0
+
+    assert pane._pane is not inner_pane
+    assert not pane._internal
 
 
 def test_get_param_method_pane_type():
