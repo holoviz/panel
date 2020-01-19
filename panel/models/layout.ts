@@ -63,7 +63,7 @@ export class CachedVariadicBox extends Layoutable {
     const key = [viewport.width, viewport.height, this.sizing_mode]
     const key_str = key.toString()
     // If sizing mode is responsive and has changed since last render
-	// we have to wait until second rerender to use cached value
+    // we have to wait until second rerender to use cached value
     const min_count = (!this.changed || (this.sizing_mode == 'fixed') || (this.sizing_mode == null)) ? 0 : 1;
     if ((key_str in this._cache) && (this._cache_count[key_str] >= min_count)) {
       this._cache_count[key_str] = this._cache_count[key_str] + 1;
@@ -87,14 +87,14 @@ export class PanelMarkupView extends MarkupView {
   _update_layout(): void {
     let changed = ((this._prev_sizing_mode !== undefined) &&
                    (this._prev_sizing_mode !== this.model.sizing_mode))
-	this._prev_sizing_mode = this.model.sizing_mode;
+    this._prev_sizing_mode = this.model.sizing_mode;
     this.layout = new CachedVariadicBox(this.el, this.model.sizing_mode, changed)
     this.layout.set_sizing(this.box_sizing())
   }
 
   render(): void {
     super.render()
-	set_size(this.markup_el, this.model)
+    set_size(this.markup_el, this.model)
   }
 }
 
@@ -104,13 +104,13 @@ export class PanelHTMLBoxView extends HTMLBoxView {
   _update_layout(): void {
     let changed = ((this._prev_sizing_mode !== undefined) &&
                    (this._prev_sizing_mode !== this.model.sizing_mode))
-	this._prev_sizing_mode = this.model.sizing_mode;
+    this._prev_sizing_mode = this.model.sizing_mode;
     this.layout = new CachedVariadicBox(this.el, this.model.sizing_mode, changed)
     this.layout.set_sizing(this.box_sizing())
   }
 
   render(): void {
     super.render()
-	set_size(this.el, this.model)
+    set_size(this.el, this.model)
   }
 }

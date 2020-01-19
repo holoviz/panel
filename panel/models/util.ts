@@ -38,12 +38,16 @@ export function deepCopy(obj: any): any {
   if (obj instanceof Object) {
     const copy: any = {};
     for (const attr in obj) {
-	  const key: string = attr
+      const key: string = attr
       if (obj.hasOwnProperty(key))
-		copy[key] = deepCopy(obj[key]);
+        copy[key] = deepCopy(obj[key]);
     }
     return copy;
   }
 
   throw new Error("Unable to copy obj! Its type isn't supported.");
+}
+
+export function isPlainObject (obj: any) {
+    return Object.prototype.toString.call(obj) === '[object Object]';
 }

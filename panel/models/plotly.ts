@@ -4,15 +4,11 @@ import {isEqual} from "@bokehjs/core/util/eq"
 import {HTMLBox} from "@bokehjs/models/layouts/html_box"
 
 import {debounce} from  "debounce"
-import {deepCopy, get, throttle} from "./util"
+import {deepCopy, isPlainObject, get, throttle} from "./util"
 
 import {PanelHTMLBoxView} from "./layout"
 
 const Plotly = (window as any).Plotly;
-
-function isPlainObject (obj: any) {
-	return Object.prototype.toString.call(obj) === '[object Object]';
-}
 
 interface PlotlyHTMLElement extends HTMLElement {
     on(event: 'plotly_relayout', callback: (eventData: any) => void): void;
