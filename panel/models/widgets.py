@@ -4,6 +4,7 @@ Custom bokeh Widget models.
 from __future__ import absolute_import, division, unicode_literals
 
 from bokeh.core.properties import Int, Float, Override, Enum, Any, Bool, Dict, String
+from bokeh.models.layouts import HTMLBox
 from bokeh.models.widgets import Widget
 
 
@@ -33,7 +34,7 @@ class Player(Widget):
     height = Override(default=250)
 
 
-class Audio(Widget):
+class Audio(HTMLBox):
 
     loop = Bool(False, help="""Whether the audio should loop""")
 
@@ -50,7 +51,7 @@ class Audio(Widget):
     volume = Int(0, help="""The volume of the audio player.""")
 
 
-class Video(Widget):
+class Video(HTMLBox):
 
     loop = Bool(False, help="""Whether the video should loop""")
 
@@ -67,7 +68,7 @@ class Video(Widget):
     volume = Int(0, help="""The volume of the video player.""")
 
 
-class VideoStream(Widget):
+class VideoStream(HTMLBox):
 
     format = Enum('png', 'jpeg', default='png')
 
@@ -86,7 +87,7 @@ class VideoStream(Widget):
     width = Override(default=320)
 
 
-class Progress(Widget):
+class Progress(HTMLBox):
 
     active = Bool(True, help="""Whether to animate the bar""")
 

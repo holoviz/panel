@@ -5,7 +5,7 @@ import {sized, content_size, extents} from "@bokehjs/core/dom"
 import {MarkupView} from "@bokehjs/models/widgets/markup"
 import {HTMLBox, HTMLBoxView} from "@bokehjs/models/layouts/html_box"
 
-function set_size(el: HTMLElement, model: HTMLBox): void {
+export function set_size(el: HTMLElement, model: HTMLBox): void {
   let width_policy = model.width != null ? "fixed" : "fit"
   let height_policy = model.height != null ? "fixed" : "fit"
   const {sizing_mode} = model
