@@ -11,6 +11,7 @@ from bokeh.command.util import die
 from bokeh.util.string import nice_join
 
 from . import __version__
+from .io.server import INDEX_HTML
 
 
 def transform_cmds(argv):
@@ -74,8 +75,10 @@ def main(args=None):
     if len(sys.argv) == 1:
         all_commands = sorted([c.name for c in bokeh_commands] + pyct_commands)
         die("ERROR: Must specify subcommand, one of: %s" % nice_join(all_commands))
-    
+
     if len(sys.argv) > 1 and any(sys.argv[1] == c.name for c in bokeh_commands):
+        if sys.argv[1] == 'serve' and not any(arg.startswith('--index') for arg in sys.argv):
+            sys.argv = sys.argv + ['--index=%s' % INDEX_HTML]
         sys.argv = transform_cmds(sys.argv)
         bokeh_entry_point()
     elif sys.argv[0]in pyct_commands:

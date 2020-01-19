@@ -5,7 +5,6 @@ inside the Jupyter notebook.
 from __future__ import absolute_import, division, unicode_literals
 
 import json
-import os
 import uuid
 
 from contextlib import contextmanager
