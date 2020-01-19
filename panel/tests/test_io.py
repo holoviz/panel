@@ -68,7 +68,7 @@ def test_embed_checkbox(document, comm):
         model = panel.get_root(document, comm)
     embed_state(panel, model, document)
     _, state = document.roots
-    assert set(state.state) == {True, False}
+    assert set(state.state) == {'false', 'true'}
     for k, v in state.state.items():
         content = json.loads(v['content'])
         assert 'events' in content
