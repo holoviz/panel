@@ -41,7 +41,7 @@ def test_get_plotly_pane_type_from_trace():
 @plotly_available
 def test_plotly_pane_single_trace(document, comm):
     trace = go.Scatter(x=[0, 1], y=[2, 3], uid='Test')
-    pane = Pane({'data': [trace], 'layout': {'width': 350}})
+    pane = Plotly({'data': [trace], 'layout': {'width': 350}})
 
     # Create pane
     model = pane.get_root(document, comm=comm)
@@ -78,7 +78,7 @@ def test_plotly_pane_datetime_list_transform(document, comm):
     data = np.random.randn(10)
     traces = [go.Scatter(x=index, y=data)]
     fig = go.Figure(traces)
-    pane = Pane(fig)
+    pane = Plotly(fig)
 
     model = pane.get_root(document, comm)
     assert all(isinstance(v, str) for v in model.data[0]['x'])
@@ -90,7 +90,7 @@ def test_plotly_pane_datetime_array_transform(document, comm):
     data = np.random.randn(10)
     traces = [go.Scatter(x=index, y=data)]
     fig = go.Figure(traces)
-    pane = Pane(fig)
+    pane = Plotly(fig)
 
     model = pane.get_root(document, comm)
     assert model.data_sources[0].data['x'][0].dtype.kind in 'SU'
@@ -102,7 +102,7 @@ def test_plotly_pane_datetime64_list_transform(document, comm):
     data = np.random.randn(10)
     traces = [go.Scatter(x=index, y=data)]
     fig = go.Figure(traces)
-    pane = Pane(fig)
+    pane = Plotly(fig)
 
     model = pane.get_root(document, comm)
     assert all(isinstance(v, str) for v in model.data[0]['x'])
@@ -114,7 +114,7 @@ def test_plotly_pane_datetime64_array_transform(document, comm):
     data = np.random.randn(10)
     traces = [go.Scatter(x=index, y=data)]
     fig = go.Figure(traces)
-    pane = Pane(fig)
+    pane = Plotly(fig)
 
     model = pane.get_root(document, comm)
     assert model.data_sources[0].data['x'][0].dtype.kind in 'SU'
@@ -123,7 +123,7 @@ def test_plotly_pane_datetime64_array_transform(document, comm):
 @plotly_available
 def test_plotly_pane_numpy_to_cds_traces(document, comm):
     trace = go.Scatter(x=np.array([1, 2]), y=np.array([2, 3]))
-    pane = Pane({'data': [trace], 'layout': {'width': 350}})
+    pane = Plotly({'data': [trace], 'layout': {'width': 350}})
 
     # Create pane
     model = pane.get_root(document, comm=comm)
@@ -161,3 +161,24 @@ def test_plotly_pane_numpy_to_cds_traces(document, comm):
     # Cleanup
     pane._cleanup(model)
     assert pane._models == {}
+
+
+def test_plotly_autosize(document, comm):
+    trace = go.Scatter(x=[0, 1], y=[2, 3])
+    
+    pane = Plotly(dict(data=[trace], layout={'autosize': True}))
+
+    model = pane.get_root(document, comm=comm)
+    model.sizing_mode == 'stretch_both'
+
+    pane.object['layout']['autosize'] = False
+    pane.param.trigger('object')
+    model.sizing_mode == 'fixed'
+
+    pane._cleanup(model)
+    
+    pane = Plotly(dict(data=[trace], layout={'autosize': True}), sizing_mode='fixed')
+    model = pane.get_root(document, comm=comm)
+    model.sizing_mode == 'fixed'
+
+    pane._cleanup(model)
