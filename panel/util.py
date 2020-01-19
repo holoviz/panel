@@ -94,6 +94,19 @@ def unicode_repr(obj):
     return repr(obj)
 
 
+def recursive_parameterized(parameterized, objects=None):
+    """
+    Recursively searches a Parameterized object for other Parmeterized
+    objects.
+    """
+    objects = [] if objects is None else objects
+    objects.append(parameterized)
+    for _, p in parameterized.param.get_param_values():
+        if isinstance(p, param.Parameterized) and not any(p is o for o in objects):
+            recursive_parameterized(p, objects)
+    return objects
+
+
 def abbreviated_repr(value, max_length=25, natural_breaks=(',', ' ')):
     """
     Returns an abbreviated repr for the supplied object. Attempts to
