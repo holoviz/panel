@@ -100,9 +100,9 @@ def abbreviated_repr(value, max_length=25, natural_breaks=(',', ' ')):
     find a natural break point while adhering to the maximum length.
     """
     if isinstance(value, list):
-        vrpepr = '[' + ', '.join([abbreviated_repr(v) for v in value]) + ']'
+        vrepr = '[' + ', '.join([abbreviated_repr(v) for v in value]) + ']'
     if isinstance(value, param.Parameterized):
-        vrepr = '%s(...)' % type(value).__name__
+        vrepr = type(value).__name__
     else:
         vrepr = repr(value)
     if len(vrepr) > max_length:
