@@ -4,9 +4,18 @@ resources via the panel.config object.
 """
 from __future__ import absolute_import, division, unicode_literals
 
+import json
 import os
 
 from bokeh.resources import Resources
+from jinja2 import Environment, Markup, FileSystemLoader
+
+
+def get_env():
+    ''' Get the correct Jinja2 Environment, also for frozen scripts.
+    '''
+    local_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '_templates'))
+    return Environment(loader=FileSystemLoader(local_path))
 
 def css_raw(self):
     from ..config import config
@@ -35,3 +44,6 @@ def css_files(self):
 Resources.css_raw = property(css_raw)
 Resources.js_files = property(js_files)
 Resources.css_files = property(css_files)
+
+_env = get_env()
+_env.filters['json'] = lambda obj: Markup(json.dumps(obj))

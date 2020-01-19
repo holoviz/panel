@@ -3,12 +3,14 @@ Utilities for creating bokeh Server instances.
 """
 from __future__ import absolute_import, division, unicode_literals
 
+import os
 import signal
 import threading
 import uuid
 
 from contextlib import contextmanager
 from functools import partial
+from types import FunctionType
 
 from bokeh.document.events import ModelChangedEvent
 from bokeh.server.server import Server
@@ -19,6 +21,8 @@ from .state import state
 #---------------------------------------------------------------------
 # Private API
 #---------------------------------------------------------------------
+
+INDEX_HTML = os.path.join(os.path.dirname(__file__), '..', '_templates', "index.html")
 
 def _origin_url(url):
     if url.startswith("http"):
@@ -32,6 +36,13 @@ def _server_url(url, port):
     else:
         return 'http://%s:%d%s' % (url.split(':')[0], port, "/")
 
+def _eval_panel(panel, server_id, title, doc):
+    from ..pane import panel as as_panel
+
+    if isinstance(panel, FunctionType):
+        panel = panel()
+    return as_panel(panel)._modify_doc(server_id, title, doc)
+    
 #---------------------------------------------------------------------
 # Public API
 #---------------------------------------------------------------------
@@ -76,6 +87,45 @@ def unlocked():
     finally:
         if not hold:
             curdoc.unhold()
+            
+
+def serve(panels, port=0, websocket_origin=None, loop=None,
+          show=True, start=True, title=None, **kwargs):
+    """
+    Allows serving one or more panel objects on a single server.
+    The panels argument should be either a Panel object or a function
+    returning a Panel object or a dictionary of these two. If a 
+    dictionary is supplied the keys represent the slugs at which
+    each app is served, e.g. `serve({'app': panel1, 'app2': panel2})`
+    will serve apps at /app and /app2 on the server.
+
+    Arguments
+    ---------
+    panel: Viewable, function or {str: Viewable}
+      A Panel object, a function returning a Panel object or a
+      dictionary mapping from the URL slug to either.
+    port: int (optional, default=0)
+      Allows specifying a specific port
+    websocket_origin: str or list(str) (optional)
+      A list of hosts that can connect to the websocket.
+
+      This is typically required when embedding a server app in
+      an external web site.
+
+      If None, "localhost" is used.
+    loop : tornado.ioloop.IOLoop (optional, default=IOLoop.current())
+      The tornado IOLoop to run the Server on
+    show : boolean (optional, default=False)
+      Whether to open the server in a new browser tab on start
+    start : boolean(optional, default=False)
+      Whether to start the Server
+    kwargs: dict
+      Additional keyword arguments to pass to Server instance
+    """
+    
+
+    return get_server(panels, port, websocket_origin, loop, show, start, title,
+                      **kwargs)
 
 
 def get_server(panel, port=0, websocket_origin=None, loop=None,
@@ -86,6 +136,9 @@ def get_server(panel, port=0, websocket_origin=None, loop=None,
 
     Arguments
     ---------
+    panel: Viewable, function or {str: Viewable}
+      A Panel object, a function returning a Panel object or a
+      dictionary mapping from the URL slug to either.
     port: int (optional, default=0)
       Allows specifying a specific port
     websocket_origin: str or list(str) (optional)
@@ -111,6 +164,14 @@ def get_server(panel, port=0, websocket_origin=None, loop=None,
     """
     from tornado.ioloop import IOLoop
 
+    server_id = kwargs.pop('server_id', uuid.uuid4().hex)
+    if isinstance(panel, dict):
+        apps = {slug if slug.startswith('/') else '/'+slug:
+                partial(_eval_panel, p, server_id, title)
+                for slug, p in panel.items()}
+    else:
+        apps = {'/': partial(_eval_panel, panel, server_id, title)}
+
     opts = dict(kwargs)
     if loop:
         loop.make_current()
@@ -118,13 +179,15 @@ def get_server(panel, port=0, websocket_origin=None, loop=None,
     else:
         opts['io_loop'] = IOLoop.current()
 
+    if 'index' not in opts:
+        opts['index'] = INDEX_HTML
+
     if websocket_origin:
         if not isinstance(websocket_origin, list):
             websocket_origin = [websocket_origin]
         opts['allow_websocket_origin'] = websocket_origin
 
-    server_id = kwargs.pop('server_id', uuid.uuid4().hex)
-    server = Server({'/': partial(panel._modify_doc, server_id, title)}, port=port, **opts)
+    server = Server(apps, port=port, **opts)
     state._servers[server_id] = (server, panel, [])
 
     if show:

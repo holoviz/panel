@@ -27,7 +27,6 @@ from bokeh.models import CustomJS, LayoutDOM, Model
 from bokeh.resources import CDN, INLINE
 from bokeh.util.string import encode_utf8, escape
 from bokeh.util.serialization import make_id
-from jinja2 import Environment, Markup, FileSystemLoader
 from pyviz_comms import (
     JS_CALLBACK, PYVIZ_PROXY, Comm, JupyterCommManager as _JupyterCommManager,
     nb_mime_js)
@@ -35,6 +34,7 @@ from pyviz_comms import (
 from ..compiler import require_components
 from .embed import embed_state
 from .model import add_to_doc, diff
+from .resources import _env
 from .server import _server_url, _origin_url, get_server
 from .state import state
 
@@ -136,15 +136,6 @@ def push(doc, comm, binary=True):
         comm.send(json.dumps(header))
         comm.send(buffers=[payload])
 
-
-def get_env():
-    ''' Get the correct Jinja2 Environment, also for frozen scripts.
-    '''
-    local_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '_templates'))
-    return Environment(loader=FileSystemLoader(local_path))
-
-_env = get_env()
-_env.filters['json'] = lambda obj: Markup(json.dumps(obj))
 AUTOLOAD_NB_JS = _env.get_template("autoload_panel_js.js")
 NB_TEMPLATE_BASE = _env.get_template('nb_template.html')
 
