@@ -99,7 +99,12 @@ def abbreviated_repr(value, max_length=25, natural_breaks=(',', ' ')):
     Returns an abbreviated repr for the supplied object. Attempts to
     find a natural break point while adhering to the maximum length.
     """
-    vrepr = repr(value)
+    if isinstance(value, list):
+        vrpepr = '[' + ', '.join([abbreviated_repr(v) for v in value]) + ']'
+    if isinstance(value, param.Parameterized):
+        vrepr = '%s(...)' % type(value).__name__
+    else:
+        vrepr = repr(value)
     if len(vrepr) > max_length:
         # Attempt to find natural cutoff point
         abbrev = vrepr[max_length//2:]
@@ -144,7 +149,8 @@ def param_reprs(parameterized, skip=None):
         elif isinstance(v, list) and v == []: continue
         elif isinstance(v, dict) and v == {}: continue
         elif (skip and p in skip) or (p == 'name' and v.startswith(cls)): continue
-        param_reprs.append('%s=%s' % (p, abbreviated_repr(v)))
+        else: v = abbreviated_repr(v)
+        param_reprs.append('%s=%s' % (p, v))
     return param_reprs
 
 

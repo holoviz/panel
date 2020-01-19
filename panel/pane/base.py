@@ -119,7 +119,7 @@ class PaneBase(Reactive):
     def __repr__(self, depth=0):
         cls = type(self).__name__
         params = param_reprs(self, ['object'])
-        obj = 'Empty' if self.object is None else type(self.object).__name__
+        obj = 'None' if self.object is None else '%s(...)' % type(self.object).__name__
         template = '{cls}({obj}, {params})' if params else '{cls}({obj})'
         return template.format(cls=cls, params=', '.join(params), obj=obj)
 
