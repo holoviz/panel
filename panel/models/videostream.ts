@@ -1,7 +1,9 @@
 import * as p from "@bokehjs/core/properties"
-import {Widget, WidgetView} from "@bokehjs/models/widgets/widget"
+import {HTMLBox} from "@bokehjs/models/layouts/html_box"
 
-export class VideoStreamView extends WidgetView {
+import {PanelHTMLBoxView} from "./layout"
+
+export class VideoStreamView extends PanelHTMLBoxView {
   model: VideoStream
   protected videoEl: HTMLVideoElement
   protected canvasEl: HTMLCanvasElement
@@ -83,7 +85,7 @@ export class VideoStreamView extends WidgetView {
 
 export namespace VideoStream {
   export type Attrs = p.AttrsOf<Props>
-  export type Props = Widget.Props & {
+  export type Props = HTMLBox.Props & {
     format: p.Property<string>
     paused: p.Property<boolean>
     snapshot: p.Property<boolean>
@@ -94,7 +96,7 @@ export namespace VideoStream {
 
 export interface VideoStream extends VideoStream.Attrs {}
 
-export abstract class VideoStream extends Widget {
+export abstract class VideoStream extends HTMLBox {
   properties: VideoStream.Props
 
   constructor(attrs?: Partial<VideoStream.Attrs>) {

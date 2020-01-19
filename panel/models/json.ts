@@ -1,7 +1,7 @@
 import * as p from "@bokehjs/core/properties"
 import {Markup} from "@bokehjs/models/widgets/markup"
 import JSONFormatter from "json-formatter-js"
-import {PanelMarkupView} from "./markup"
+import {PanelMarkupView} from "./layout"
 
 export class JSONView extends PanelMarkupView {
   model: JSON
