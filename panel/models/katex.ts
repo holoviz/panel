@@ -1,7 +1,8 @@
 import * as p from "@bokehjs/core/properties"
-import {Markup, MarkupView} from "@bokehjs/models/widgets/markup"
+import {Markup} from "@bokehjs/models/widgets/markup"
+import {PanelMarkupView} from "./layout"
 
-export class KaTeXView extends MarkupView {
+export class KaTeXView extends PanelMarkupView {
   model: KaTeX
 
   render(): void {

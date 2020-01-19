@@ -3,6 +3,51 @@ import {Size, SizeHint, Sizeable} from "@bokehjs/core/layout/types"
 import {sized, content_size, extents} from "@bokehjs/core/dom"
 
 import {MarkupView} from "@bokehjs/models/widgets/markup"
+import {HTMLBox, HTMLBoxView} from "@bokehjs/models/layouts/html_box"
+
+function set_size(el: HTMLElement, model: HTMLBox): void {
+  let width_policy = model.width != null ? "fixed" : "fit"
+  let height_policy = model.height != null ? "fixed" : "fit"
+  const {sizing_mode} = model
+  if (sizing_mode != null) {
+    if (sizing_mode == "fixed")
+      width_policy = height_policy = "fixed"
+    else if (sizing_mode == "stretch_both")
+      width_policy = height_policy = "max"
+    else if (sizing_mode == "stretch_width")
+      width_policy = "max"
+    else if (sizing_mode == "stretch_height")
+      height_policy = "max"
+    else {
+      switch (sizing_mode) {
+      case "scale_width":
+        width_policy = "max"
+        height_policy = "min"
+        break
+      case "scale_height":
+        width_policy = "min"
+        height_policy = "max"
+        break
+      case "scale_both":
+        width_policy = "max"
+        height_policy = "max"
+        break
+      default:
+        throw new Error("unreachable")
+      }
+    }
+  }
+  if (width_policy == "fixed" && model.width)
+    el.style.width = model.width + "px";
+  else if (width_policy == "max")
+    el.style.width = "100%";
+
+  if (height_policy == "fixed" && model.height)
+    el.style.height = model.width + "px";
+  else if (height_policy == "max")
+    el.style.height = "100%";
+}
+  
 
 export class CachedVariadicBox extends Layoutable {
   _cache: {[key: string]: Size}
@@ -49,15 +94,23 @@ export class PanelMarkupView extends MarkupView {
 
   render(): void {
     super.render()
-    if (this.model.sizing_mode == "fixed") {
-      if (this.model.width)
-        this.markup_el.style.width = this.model.width + "px";
-      if (this.model.height)
-        this.markup_el.style.height = this.model.height + "px";
-    }
-    if ((this.model.sizing_mode == "stretch_both") || (this.model.sizing_mode == "stretch_width"))
-      this.markup_el.style.width = "100%";
-    if ((this.model.sizing_mode == "stretch_both") || (this.model.sizing_mode == "stretch_height"))
-      this.markup_el.style.height = "100%";
+	set_size(this.markup_el, this.model)
+  }
+}
+
+export class PanelHTMLBoxView extends HTMLBoxView {
+  _prev_sizing_mode: string | null
+
+  _update_layout(): void {
+    let changed = ((this._prev_sizing_mode !== undefined) &&
+                   (this._prev_sizing_mode !== this.model.sizing_mode))
+	this._prev_sizing_mode = this.model.sizing_mode;
+    this.layout = new CachedVariadicBox(this.el, this.model.sizing_mode, changed)
+    this.layout.set_sizing(this.box_sizing())
+  }
+
+  render(): void {
+    super.render()
+	set_size(this.el, this.model)
   }
 }
