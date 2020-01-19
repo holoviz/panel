@@ -113,8 +113,9 @@ class StaticText(Widget):
         msg.pop('title', None)
         if 'value' in msg:
             text = as_unicode(msg.pop('value'))
+            partial = self._format.replace('{value}', '').format(title=self.name)
             if self.name:
-                text = self._format.format(title=self.name, value=text)
+                text = self._format.format(title=self.name, value=text.replace(partial, ''))
             msg['text'] = text
         return msg
 

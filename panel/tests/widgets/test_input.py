@@ -108,6 +108,9 @@ def test_static_text(document, comm):
     text.value = 'CBA'
     assert widget.text == '<b>Text:</b>: CBA'
 
+    text.value = '<b>Text:</b>: ABC'
+    assert widget.text == '<b>Text:</b>: ABC'
+
 
 def test_text_input(document, comm):
 
