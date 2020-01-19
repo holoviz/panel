@@ -79,7 +79,7 @@ def unlocked():
 
 
 def get_server(panel, port=0, websocket_origin=None, loop=None,
-               show=False, start=False, **kwargs):
+               show=False, start=False, title=None, **kwargs):
     """
     Returns a Server instance with this panel attached as the root
     app.
@@ -110,6 +110,7 @@ def get_server(panel, port=0, websocket_origin=None, loop=None,
       Bokeh Server instance running this panel
     """
     from tornado.ioloop import IOLoop
+
     opts = dict(kwargs)
     if loop:
         loop.make_current()
@@ -123,7 +124,7 @@ def get_server(panel, port=0, websocket_origin=None, loop=None,
         opts['allow_websocket_origin'] = websocket_origin
 
     server_id = kwargs.pop('server_id', uuid.uuid4().hex)
-    server = Server({'/': partial(panel._modify_doc, server_id)}, port=port, **opts)
+    server = Server({'/': partial(panel._modify_doc, server_id, title)}, port=port, **opts)
     state._servers[server_id] = (server, panel, [])
 
     if show:
