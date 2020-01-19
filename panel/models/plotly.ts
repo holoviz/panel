@@ -1,7 +1,13 @@
 import * as p from "@bokehjs/core/properties"
 import {clone} from "@bokehjs/core/util/object"
-import {HTMLBox, HTMLBoxView} from "@bokehjs/models/layouts/html_box"
-const _ = (window as any)._;
+import {isEqual} from "@bokehjs/core/util/eq"
+import {HTMLBox} from "@bokehjs/models/layouts/html_box"
+
+import {debounce} from  "debounce"
+import {deepCopy, get, throttle} from "./util"
+
+import {PanelHTMLBoxView} from "./layout"
+
 const Plotly = (window as any).Plotly;
 
 function isPlainObject (obj: any) {
@@ -97,7 +103,7 @@ const filterEventData = (gd: any, eventData: any, event: string) => {
 };
 
 
-export class PlotlyPlotView extends HTMLBoxView {
+export class PlotlyPlotView extends PanelHTMLBoxView {
   model: PlotlyPlot
   _setViewport: Function
   _settingViewport: boolean = false
@@ -105,9 +111,9 @@ export class PlotlyPlotView extends HTMLBoxView {
   _reacting: boolean = false
   _relayouting: boolean = false
 
-  _end_relayouting = _.debounce(() => {
+  _end_relayouting = debounce(() => {
     this._relayouting = false
-    }, 2000, {leading: false})
+    }, 2000, false)
 
   connect_signals(): void {
     super.connect_signals();
@@ -122,6 +128,7 @@ export class PlotlyPlotView extends HTMLBoxView {
   }
 
   render(): void {
+    super.render()
     if (!(window as any).Plotly) { return }
 
     const data = [];
@@ -129,18 +136,18 @@ export class PlotlyPlotView extends HTMLBoxView {
       data.push(this._get_trace(i, false));
     }
 
-    let newLayout = _.cloneDeep(this.model.layout);
+    let newLayout = deepCopy(this.model.layout);
 
     if (this._relayouting) {
       const layout = (this.el as any).layout;
 
       // For each xaxis* and yaxis* property of layout, if the value has a 'range'
       // property then use this in newLayout
-      _.forOwn(layout, (value: any, key: string) => {
-        if (key.slice(1, 5) === "axis" && _.has(value, 'range')) {
+      Object.keys(layout).reduce((value: any, key: string) => {
+        if (key.slice(1, 5) === "axis" && 'range' in value) {
           newLayout[key].range = value.range;
         }
-      });
+      }, {});
     }
 
     this._reacting = true;
@@ -255,16 +262,16 @@ export class PlotlyPlotView extends HTMLBoxView {
     const fullLayout = (this.el as any)._fullLayout;
 
     // Call relayout if viewport differs from fullLayout
-    _.forOwn(this.model.viewport, (value: any, key: string) => {
-      if (!_.isEqual(_.get(fullLayout, key), value)) {
-        let clonedViewport = _.cloneDeep(this.model.viewport)
+    Object.keys(this.model.viewport).reduce((value: any, key: string) => {
+      if (!isEqual(get(fullLayout, key), value)) {
+        let clonedViewport = deepCopy(this.model.viewport)
         clonedViewport['_update_from_property'] = true;
         Plotly.relayout(this.el, clonedViewport);
         return false
       } else {
         return true
       }
-    });
+    }, {});
   }
 
   _updateViewportProperty(): void {
@@ -278,11 +285,11 @@ export class PlotlyPlotView extends HTMLBoxView {
       }
       let maybe_axis = prop.slice(0, 5);
       if (maybe_axis === 'xaxis' || maybe_axis === 'yaxis') {
-        viewport[prop + '.range'] = _.cloneDeep(fullLayout[prop].range)
+        viewport[prop + '.range'] = deepCopy(fullLayout[prop].range)
       }
     }
 
-    if (!_.isEqual(viewport, this.model.viewport)) {
+    if (!isEqual(viewport, this.model.viewport)) {
       this._setViewport(viewport);
     }
   }
@@ -298,7 +305,7 @@ export class PlotlyPlotView extends HTMLBoxView {
         }
       }
     } else {
-      this._setViewport = _.throttle((viewport: any) => {
+      this._setViewport = throttle((viewport: any) => {
         if (!this._settingViewport) {
           this._settingViewport = true;
           this.model.viewport = viewport;

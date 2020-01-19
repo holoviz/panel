@@ -14,6 +14,8 @@ import param
 
 from .base import PaneBase
 from ..util import isdatetime
+from ..viewable import Layoutable
+
 
 
 class Plotly(PaneBase):
@@ -189,6 +191,8 @@ viewport_update_policy is "throttle"'''
         else:
             PlotlyPlot = getattr(sys.modules['panel.models.plotly'], 'PlotlyPlot')
 
+        properties = {p : getattr(self, p) for p in list(Layoutable.param)
+                      if getattr(self, p) is not None}
         if self.object is None:
             json, sources = {}, []
         else:
@@ -202,7 +206,7 @@ viewport_update_policy is "throttle"'''
                            viewport_update_policy=self.viewport_update_policy,
                            viewport_update_throttle=self.viewport_update_throttle,
                            data_sources=sources,
-                           _render_count=self._render_count)
+                           _render_count=self._render_count, **properties)
 
         if root is None:
             root = model
