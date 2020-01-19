@@ -10,15 +10,15 @@ export class ProgressView extends HTMLBoxView {
 
   connect_signals(): void {
     super.connect_signals()
-	const resize = () => {
+    const resize = () => {
       this.render()
       this.root.compute_layout() // XXX: invalidate_layout?
     }
-	this.connect(this.model.properties.height.change, resize)
-	this.connect(this.model.properties.width.change, resize)
-	this.connect(this.model.properties.height_policy.change, resize)
-	this.connect(this.model.properties.width_policy.change, resize)
-	this.connect(this.model.properties.sizing_mode.change, resize)
+    this.connect(this.model.properties.height.change, resize)
+    this.connect(this.model.properties.width.change, resize)
+    this.connect(this.model.properties.height_policy.change, resize)
+    this.connect(this.model.properties.width_policy.change, resize)
+    this.connect(this.model.properties.sizing_mode.change, resize)
     this.connect(this.model.properties.active.change, () => this.setCSS())
     this.connect(this.model.properties.bar_color.change, () => this.setCSS())
     this.connect(this.model.properties.css_classes.change, () => this.setCSS())
@@ -32,7 +32,7 @@ export class ProgressView extends HTMLBoxView {
     this.progressEl = document.createElement('progress')
     this.setValue()
     this.setMax()
-	set_size(this.progressEl, this.model)
+    set_size(this.progressEl, this.model)
 
     // Set styling
     this.setCSS()

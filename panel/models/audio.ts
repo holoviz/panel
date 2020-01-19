@@ -28,7 +28,7 @@ export class AudioView extends PanelHTMLBoxView {
   }
 
   render(): void {
-	super.render()
+    super.render()
     this.audioEl = document.createElement('audio')
     this.audioEl.controls = true
     this.audioEl.src = this.model.value
@@ -48,19 +48,19 @@ export class AudioView extends PanelHTMLBoxView {
   }
 
   update_time(view: AudioView): void {
-	if (view._setting) {
+    if (view._setting) {
       view._setting = false
       return
     }
-	if ((Date.now() - view._time) < view.model.throttle)
+    if ((Date.now() - view._time) < view.model.throttle)
       return
     view._blocked = true
     view.model.time = view.audioEl.currentTime
-	view._time = Date.now()
+    view._time = Date.now()
   }
 
   update_volume(view: AudioView): void {
-	if (view._setting) {
+    if (view._setting) {
       view._setting = false
       return
     }
@@ -86,8 +86,8 @@ export class AudioView extends PanelHTMLBoxView {
     }
     this._setting = true;
     if (this.model.volume != null) {
-	  this.audioEl.volume = (this.model.volume as number)/100
-	}
+      this.audioEl.volume = (this.model.volume as number)/100
+    }
   }
 
   set_time(): void {

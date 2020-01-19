@@ -28,16 +28,16 @@ export class VideoView extends PanelHTMLBoxView {
   }
 
   render(): void {
-	super.render()
+    super.render()
     this.videoEl = document.createElement('video')
-	if (!this.model.sizing_mode || this.model.sizing_mode === 'fixed') {
-	  if (this.model.height)
-	    this.videoEl.height = this.model.height;
-	  if (this.model.width)
-	    this.videoEl.width = this.model.width;
-	}
-	this.videoEl.style.objectFit = 'fill'
-	this.videoEl.style.minWidth = '100%';
+    if (!this.model.sizing_mode || this.model.sizing_mode === 'fixed') {
+      if (this.model.height)
+        this.videoEl.height = this.model.height;
+      if (this.model.width)
+        this.videoEl.width = this.model.width;
+    }
+    this.videoEl.style.objectFit = 'fill'
+    this.videoEl.style.minWidth = '100%';
     this.videoEl.style.minHeight = '100%';
     this.videoEl.controls = true
     this.videoEl.src = this.model.value
@@ -61,11 +61,11 @@ export class VideoView extends PanelHTMLBoxView {
       view._setting = false
       return
     }
-	if ((Date.now() - view._time) < view.model.throttle)
+    if ((Date.now() - view._time) < view.model.throttle)
       return
     view._blocked = true
     view.model.time = view.videoEl.currentTime
-	view._time = Date.now()
+    view._time = Date.now()
   }
 
   update_volume(view: VideoView): void {
@@ -73,7 +73,7 @@ export class VideoView extends PanelHTMLBoxView {
       view._setting = false
       return
     }
-	view._blocked = true
+    view._blocked = true
     view.model.volume = view.videoEl.volume*100
   }
 
@@ -95,7 +95,7 @@ export class VideoView extends PanelHTMLBoxView {
     }
     this._setting = true;
     if (this.model.volume != null)
-	  this.videoEl.volume = (this.model.volume as number)/100
+      this.videoEl.volume = (this.model.volume as number)/100
   }
 
   set_time(): void {
@@ -142,7 +142,7 @@ export abstract class Video extends HTMLBox {
       loop:     [ p.Boolean,   false ],
       paused:   [ p.Boolean,   true  ],
       time:     [ p.Number, 0     ],
-	  throttle: [ p.Number, 250   ],
+      throttle: [ p.Number, 250   ],
       value:    [ p.Any,    ''    ],
       volume:   [ p.Number, null  ],
     })
