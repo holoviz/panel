@@ -1,6 +1,8 @@
 import * as p from "@bokehjs/core/properties"
-import {HTMLBox, HTMLBoxView} from "@bokehjs/models/layouts/html_box"
+import {HTMLBox} from "@bokehjs/models/layouts/html_box"
 import { div } from "@bokehjs/core/dom";
+
+import {PanelHTMLBoxView} from "./layout"
 
 function ID() {
   // Math.random should be unique because of its seeding algorithm.
@@ -10,7 +12,7 @@ function ID() {
 }
 
 
-export class AcePlotView extends HTMLBoxView {
+export class AcePlotView extends PanelHTMLBoxView {
   model: AcePlot
   protected _ace: any
   protected _editor: any
