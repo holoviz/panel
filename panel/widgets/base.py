@@ -9,6 +9,7 @@ from functools import partial
 
 import param
 
+from ..layout import Row
 from ..io import push, state, unlocked
 from ..viewable import Reactive, Layoutable
 
@@ -130,6 +131,15 @@ class CompositeWidget(Widget):
 
     __abstract = True
 
+    _composite_type = Row
+
+    def __init__(self, **params):
+        super(CompositeWidget, self).__init__(**params)
+        layout = {p: getattr(self, p) for p in Layoutable.param
+                  if p != 'name' and getattr(self, p) is not None}
+        self._composite = self._composite_type(**layout)
+        self._models = self._composite._models
+
     def select(self, selector=None):
         """
         Iterates over the Viewable and any potential children in the
@@ -149,6 +159,10 @@ class CompositeWidget(Widget):
         for obj in self._composite.objects:
             objects += obj.select(selector)
         return objects
+
+    def _cleanup(self, root):
+        self._composite._cleanup(root)
+        super(CompositeWidget, self)._cleanup(root)
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         return self._composite._get_model(doc, root, parent, comm)

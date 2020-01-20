@@ -16,7 +16,7 @@ from bokeh.models.widgets import (
     RadioButtonGroup as _BkRadioButtonGroup, RadioGroup as _BkRadioBoxGroup,
     Select as _BkSelect)
 
-from ..layout import Column, Row, VSpacer
+from ..layout import Column, VSpacer
 from ..util import as_unicode, isIn, indexOf
 from ..viewable import Layoutable
 from .base import Widget, CompositeWidget
@@ -390,8 +390,9 @@ class CrossSelector(CompositeWidget, MultiSelect):
         whitelist = Column(self._search[True], self._lists[True], **layout)
         buttons = Column(self._buttons[True], self._buttons[False])
 
-        self._composite = Row(blacklist, Column(VSpacer(), buttons, VSpacer()), whitelist,
-                              css_classes=self.css_classes, margin=self.margin, **layout)
+        self._composite[:] = [
+            blacklist, Column(VSpacer(), buttons, VSpacer()), whitelist
+        ]
 
         self._selected = {False: [], True: []}
         self._query = {False: '', True: ''}
