@@ -9,11 +9,17 @@ And now PyDeck provides Python bindings. See
 - [PyDeck Repo](https://github.com/uber/deck.gl/tree/master/bindings/pydeck)
 """
 from bokeh.core.properties import Dict, String, List, Any, Instance, Enum, Int, Bool
-from bokeh.models import LayoutDOM, ColumnDataSource
+from bokeh.models import HTMLBox
+import pathlib
+
+PYDECK_TS = pathlib.Path(__file__).parent / "pydeck.ts"
+PYDECK_TS_STR = str(PYDECK_TS.resolve())
 
 
-class PyDeckPlot(LayoutDOM):
+class PyDeckPlot(HTMLBox):
     """A Bokeh model that wraps around a PyDeck plot and renders it inside a HTMLBox"""
+
+    __implementation__ = PYDECK_TS_STR
 
     json_input = String()
     mapbox_api_key = String()
