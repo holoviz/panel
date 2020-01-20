@@ -27,8 +27,8 @@ def test_file_selector_init(test_dir):
     selector = FileSelector(test_dir)
 
     assert selector._selector.options == {
-        'subdir1': os.path.join(test_dir, 'subdir1'),
-        'subdir2': os.path.join(test_dir, 'subdir2')
+        '\U0001f4c1subdir1': os.path.join(test_dir, 'subdir1'),
+        '\U0001f4c1subdir2': os.path.join(test_dir, 'subdir2')
     }
 
 
@@ -123,11 +123,11 @@ def test_file_selector_select_files(test_dir):
 def test_file_selector_only_files(test_dir):
     selector = FileSelector(test_dir, only_files=True)
 
-    selector._selector._lists[False].value = ['subdir1']
+    selector._selector._lists[False].value = ['\U0001f4c1subdir1']
     selector._selector._buttons[True].clicks = 1
 
     assert selector.value == []
-    assert selector._selector._lists[False].options == ['subdir1', 'subdir2']
+    assert selector._selector._lists[False].options == ['\U0001f4c1subdir1', '\U0001f4c1subdir2']
 
 
 def test_file_selector_file_pattern(test_dir):
@@ -142,7 +142,7 @@ def test_file_selector_file_pattern(test_dir):
 def test_file_selector_multiple_across_dirs(test_dir):
     selector = FileSelector(test_dir)
 
-    selector._selector._lists[False].value = ['subdir2']
+    selector._selector._lists[False].value = ['\U0001f4c1subdir2']
     selector._selector._buttons[True].clicks = 1
 
     assert selector.value == [os.path.join(test_dir, 'subdir2')]
@@ -156,7 +156,7 @@ def test_file_selector_multiple_across_dirs(test_dir):
     assert selector.value == [os.path.join(test_dir, 'subdir2'),
                               os.path.join(test_dir, 'subdir1', 'a')]
 
-    selector._selector._lists[True].value = [os.path.join('..', 'subdir2')]
+    selector._selector._lists[True].value = ['\U0001f4c1'+os.path.join('..', 'subdir2')]
     selector._selector._buttons[False].clicks = 1
 
     assert selector._selector.options == OrderedDict([

@@ -59,10 +59,6 @@ class FileSelector(CompositeWidget):
     directory = param.String(default=os.getcwd(), doc="""
         The directory to explore.""")
 
-    height = param.Integer(default=300, doc="""
-       The number of options shown at once (note this is the
-       only way to control the height of this widget)""")
-
     file_pattern = param.String(default='*', doc="""
         A glob-like pattern to filter the files.""")
 
@@ -72,6 +68,10 @@ class FileSelector(CompositeWidget):
     show_hidden = param.Boolean(default=False, doc="""
         Whether to show hidden files and directories (starting with
         a period).""")
+
+    size = param.Integer(default=10, doc="""
+       The number of options shown at once (note this is the
+       only way to control the height of this widget)""")
 
     value = param.List(default=[], doc="""
         List of selected files.""")
@@ -90,7 +90,8 @@ class FileSelector(CompositeWidget):
         layout = {p: getattr(self, p) for p in Layoutable.param
                   if p not in ('name', 'height', 'margin') and getattr(self, p) is not None}
         sel_layout = dict(layout, sizing_mode='stretch_both', margin=0)
-        self._selector = CrossSelector(filter_fn=lambda p, f: fnmatch(f, p), **sel_layout)
+        self._selector = CrossSelector(filter_fn=lambda p, f: fnmatch(f, p),
+                                       size=self.size, **sel_layout)
         self._back = Button(name='◀', width=25, margin=(5, 10, 0, 0), disabled=True)
         self._forward = Button(name='▶', width=25, margin=(5, 10), disabled=True)
         self._up = Button(name='⬆', width=25, margin=(5, 10), disabled=True)
@@ -103,6 +104,7 @@ class FileSelector(CompositeWidget):
         self._composite[:] = [self._nav_bar, Divider(margin=0), self._selector]
         self._selector._selected.insert(0, Markdown('### Selected files', margin=(-10, 0)))
         self._selector._unselected.insert(0, Markdown('### File Browser', margin=(-10, 0)))
+        self.link(self._selector, size='size')
 
         # Set up state
         self._stack = []
@@ -164,7 +166,7 @@ class FileSelector(CompositeWidget):
 
         paths = [p for p in sorted(dirs)+sorted(files)
                  if self.show_hidden or not os.path.basename(p).startswith('.')]
-        abbreviated = [os.path.relpath(f, self._cwd) for f in paths]
+        abbreviated = [('📁' if f in dirs else '')+os.path.relpath(f, self._cwd) for f in paths]
         options = OrderedDict(zip(abbreviated, paths))
         self._selector.options = options
         self._selector.value = selected
@@ -176,7 +178,7 @@ class FileSelector(CompositeWidget):
         from the blacklist.
         """
         dirs, files = scan_path(self._cwd, self.file_pattern)
-        paths = [p.split(os.path.sep)[-1] for p in dirs+files]
+        paths = [('📁' if p in dirs else '')+os.path.relpath(p, self._cwd) for p in dirs+files]
         blacklist = self._selector._lists[False]
         options = OrderedDict(self._selector._items)
         self._selector.options.clear()
