@@ -174,7 +174,7 @@ class Param(PaneBase):
                 params.append('%s=%s' % (p, abbreviated_repr(v)))
             except RuntimeError:
                 params.append('%s=%s' % (p, '...'))
-        obj = type(self.object).__name__
+        obj = 'None' if self.object is None else '%s' % type(self.object).__name__
         template = '{cls}({obj}, {params})' if params else '{cls}({obj})'
         return template.format(cls=cls, params=', '.join(params), obj=obj)
 
