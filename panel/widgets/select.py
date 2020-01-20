@@ -42,7 +42,7 @@ class SelectBase(Widget):
 
     @property
     def _items(self):
-        return dict(zip(self.labels, self.values))
+        return OrderedDict(zip(self.labels, self.values))
 
 
 class Select(SelectBase):
