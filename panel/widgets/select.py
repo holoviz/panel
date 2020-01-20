@@ -16,7 +16,7 @@ from bokeh.models.widgets import (
     RadioButtonGroup as _BkRadioButtonGroup, RadioGroup as _BkRadioBoxGroup,
     Select as _BkSelect)
 
-from ..layout import Column, Row, VSpacer
+from ..layout import Column, VSpacer
 from ..util import as_unicode, isIn, indexOf
 from ..viewable import Layoutable
 from .base import Widget, CompositeWidget
