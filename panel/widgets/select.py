@@ -390,8 +390,9 @@ class CrossSelector(CompositeWidget, MultiSelect):
         whitelist = Column(self._search[True], self._lists[True], **layout)
         buttons = Column(self._buttons[True], self._buttons[False])
 
-        self._composite = Row(blacklist, Column(VSpacer(), buttons, VSpacer()), whitelist,
-                              css_classes=self.css_classes, margin=self.margin, **layout)
+        self._composite[:] = [
+            blacklist, Column(VSpacer(), buttons, VSpacer()), whitelist
+        ]
 
         self._selected = {False: [], True: []}
         self._query = {False: '', True: ''}
