@@ -27,45 +27,6 @@ def tooltip() -> bool:
     return True
 
 
-# @pytest.fixture
-# def uk_accidents_deck() -> pdk.Deck:
-#     """The UK Accidents Deck
-
-#     See [PyDec Docs](https://deckgl.readthedocs.io/en/latest/layer.html)
-
-#     Returns:
-#         pdk.Deck: The UK Accidents Deck
-#     """
-#     # 2014 location of car accidents in the UK
-
-#     # Define a layer to display on a map
-#     layer = pdk.Layer(
-#         "HexagonLayer",
-#         UK_ACCIDENTS_DATA,
-#         get_position=["lng", "lat",],
-#         auto_highlight=True,
-#         elevation_scale=50,
-#         pickable=True,
-#         elevation_range=[0, 3000,],
-#         extruded=True,
-#         coverage=1,
-#     )
-
-#     # Set the viewport location
-#     view_state = pdk.ViewState(
-#         longitude=-1.415,
-#         latitude=52.2323,
-#         zoom=6,
-#         min_zoom=5,
-#         max_zoom=15,
-#         pitch=40.5,
-#         bearing=-27.36,
-#     )
-
-#     # Combined all of it and render a viewport
-#     return pdk.Deck(layers=[layer], initial_view_state=view_state, mapbox_key=MAPBOX_KEY,)
-
-
 def test_constructor(json_input, mapbox_api_key, tooltip):
     # When
     actual = PyDeckPlot(json_input=json_input, mapbox_api_key=mapbox_api_key, tooltip=tooltip,)
