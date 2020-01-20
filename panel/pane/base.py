@@ -315,6 +315,13 @@ class ReplacementPane(PaneBase):
         self._pane = Pane(None)
         self._internal = True
         self._inner_layout = Row(self._pane, **{k: v for k, v in params.items() if k in Row.param})
+        self.param.watch(self._update_inner_layout, list(Layoutable.param))
+
+    def _update_inner_layout(self, *events):
+        for event in events:
+            setattr(self._pane, event.name, event.new)
+            if event.name in ['sizing_mode', 'width_policy', 'height_policy']:
+                setattr(self._inner_layout, event.name, event.new)
 
     def _update_pane(self, *events):
         """
