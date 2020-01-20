@@ -186,6 +186,8 @@ class Layoutable(param.Parameterized):
     def __init__(self, **params):
         if (params.get('width', None) is not None and
             params.get('height', None) is not None and
+            params.get('width_policy') is None and
+            params.get('height_policy') is None and
             'sizing_mode' not in params):
             params['sizing_mode'] = 'fixed'
         elif not self.param.sizing_mode.constant and not self.param.sizing_mode.readonly:

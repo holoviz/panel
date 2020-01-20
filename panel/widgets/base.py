@@ -136,9 +136,14 @@ class CompositeWidget(Widget):
     def __init__(self, **params):
         super(CompositeWidget, self).__init__(**params)
         layout = {p: getattr(self, p) for p in Layoutable.param
-                  if p != 'name' and getattr(self, p) is not None}
+                  if getattr(self, p) is not None}
         self._composite = self._composite_type(**layout)
         self._models = self._composite._models
+        self.param.watch(self._update_layout_params, list(Layoutable.param))
+
+    def _update_layout_params(self, *events):
+        for event in events:
+            setattr(self._composite, event.name, event.new)
 
     def select(self, selector=None):
         """
@@ -169,3 +174,6 @@ class CompositeWidget(Widget):
 
     def __contains__(self, object):
         return object in self._composite.objects
+
+    def _synced_params(self):
+        return []

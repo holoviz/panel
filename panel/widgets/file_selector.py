@@ -59,6 +59,10 @@ class FileSelector(CompositeWidget):
     directory = param.String(default=os.getcwd(), doc="""
         The directory to explore.""")
 
+    height = param.Integer(default=300, doc="""
+       The number of options shown at once (note this is the
+       only way to control the height of this widget)""")
+
     file_pattern = param.String(default='*', doc="""
         A glob-like pattern to filter the files.""")
 
@@ -78,27 +82,27 @@ class FileSelector(CompositeWidget):
         from ..pane import Markdown
         if directory is not None:
             params['directory'] = os.path.abspath(os.path.expanduser(directory))
+        if params.get('width') and params.get('height') and 'sizing_mode' not in params:
+            params['sizing_mode'] = None
         super(FileSelector, self).__init__(**params)
 
         # Set up layout
         layout = {p: getattr(self, p) for p in Layoutable.param
-                  if p not in ('name', 'height') and getattr(self, p) is not None}
-        sel_layout = dict(layout)
-        if self.height:
-            sel_layout['height'] = self.height-100
+                  if p not in ('name', 'height', 'margin') and getattr(self, p) is not None}
+        sel_layout = dict(layout, sizing_mode='stretch_both', margin=0)
         self._selector = CrossSelector(filter_fn=lambda p, f: fnmatch(f, p), **sel_layout)
-        self._go = Button(name='⬇', disabled=True, width=25, margin=(5, 25, 0, 0))
-        self._directory = TextInput(value=self.directory, width_policy='max')
-        self._back = Button(name='◀', width=25, margin=(5, 10), disabled=True)
+        self._back = Button(name='◀', width=25, margin=(5, 10, 0, 0), disabled=True)
         self._forward = Button(name='▶', width=25, margin=(5, 10), disabled=True)
         self._up = Button(name='⬆', width=25, margin=(5, 10), disabled=True)
+        self._directory = TextInput(value=self.directory, margin=(5, 10), width_policy='max')
+        self._go = Button(name='⬇', disabled=True, width=25, margin=(5, 15, 0, 0))
         self._nav_bar = Row(
             self._back, self._forward, self._up, self._directory, self._go,
-            margin=(0, 10), width_policy='max'
+            **dict(layout, width=None, margin=0, width_policy='max')
         )
-        self._composite[:] = [self._nav_bar, Divider(margin=(0, 20)), self._selector]
-        self._selector._selected.insert(0, Markdown('### Selected files', margin=(-10, 10)))
-        self._selector._unselected.insert(0, Markdown('### File Browser', margin=(-10, 10)))
+        self._composite[:] = [self._nav_bar, Divider(margin=0), self._selector]
+        self._selector._selected.insert(0, Markdown('### Selected files', margin=(-10, 0)))
+        self._selector._unselected.insert(0, Markdown('### File Browser', margin=(-10, 0)))
 
         # Set up state
         self._stack = []
