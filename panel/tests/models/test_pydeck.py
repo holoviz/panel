@@ -69,7 +69,6 @@ def tooltip() -> bool:
 def test_constructor(json_input, mapbox_api_key, tooltip):
     # When
     actual = PyDeckPlot(json_input=json_input, mapbox_api_key=mapbox_api_key, tooltip=tooltip,)
-    breakpoint()
     # Then
     assert actual.json_input == json_input
     assert actual.mapbox_api_key == mapbox_api_key
