@@ -512,6 +512,7 @@ def link_axes(root_view, root_model):
         return
 
     from holoviews.core.options import Store
+    from holoviews.core.util import unique_iterator
     from holoviews.plotting.bokeh.element import ElementPlot
 
     ref = root_model.ref['id']
@@ -544,10 +545,14 @@ def link_axes(root_view, root_model):
             if  type(ax) is not type(pax):
                 continue
             if tag in fig.x_range.tags and not axis is fig.x_range:
+                if hasattr(axis, 'factors'):
+                    axis.factors = list(unique_iterator(axis.factors+fig.x_range.factors))
                 fig.x_range = axis
                 p.handles['x_range'] = axis
                 changed.append('x_range')
             if tag in fig.y_range.tags and not axis is fig.y_range:
+                if hasattr(axis, 'factors'):
+                    axis.factors = list(unique_iterator(axis.factors+fig.y_range.factors))
                 fig.y_range = axis
                 p.handles['y_range'] = axis
                 changed.append('y_range')
