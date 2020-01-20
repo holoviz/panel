@@ -14,7 +14,7 @@ import numpy as np
 
 from bokeh.models import (
     Box as BkBox, Column as BkColumn, Div as BkDiv, GridBox as BkGridBox,
-    Markup as BkMarkup, Row as BkRow, Spacer as BkSpacer
+    Row as BkRow, Spacer as BkSpacer
 )
 from bokeh.models.widgets import Tabs as BkTabs, Panel as BkPanel
 
