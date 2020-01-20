@@ -904,6 +904,10 @@ class GridSpec(Panel):
                 properties = {'width': w*width, 'height': h*height}
             else:
                 properties = {'sizing_mode': self.sizing_mode}
+                if 'width' in self.sizing_mode:
+                    properties['height'] = h*height
+                elif 'height' in self.sizing_mode:
+                    properties['width'] = w*width
             obj.set_param(**properties)
 
             if obj in old_objects:
@@ -913,17 +917,6 @@ class GridSpec(Panel):
                     child = obj._get_model(doc, root, model, comm)
                 except RerenderError:
                     return self._get_objects(model, current_objects[:i], doc, root, comm)
-
-            if isinstance(child, BkMarkup) and self.sizing_mode not in ['fixed', None]:
-                if child.style is None:
-                    child.style = {}
-                style = {}
-                if 'width' not in child.style:
-                    style['width'] = '100%'
-                if 'height' not in child.style:
-                    style['height'] = '100%'
-                if style:
-                    child.style.update(style)
 
             if isinstance(child, BkBox) and len(child.children) == 1:
                 child.children[0].update(**properties)
