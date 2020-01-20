@@ -18,7 +18,6 @@ from bokeh.models.widgets import (
 
 from ..layout import Column, VSpacer
 from ..util import as_unicode, isIn, indexOf
-from ..viewable import Layoutable
 from .base import Widget, CompositeWidget
 from .button import _ButtonBase, Button
 from .input import TextInput, TextAreaInput
