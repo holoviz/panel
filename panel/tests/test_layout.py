@@ -4,9 +4,12 @@ import pytest
 
 from bokeh.models import (Div, Row as BkRow, Tabs as BkTabs,
                           Column as BkColumn, Panel as BkPanel)
+
+from panel.depends import depends
 from panel.layout import Column, Row, Tabs, Spacer, GridSpec, GridBox, WidgetBox
 from panel.pane import Bokeh, Pane
 from panel.param import Param
+from panel.widgets import IntSlider
 from panel.tests.util import check_layoutable_properties
 
 
@@ -1029,9 +1032,7 @@ def test_gridspec_stretch_with_int_setitem(document, comm):
     model = gspec.get_root(document, comm=comm)
     assert model.children == [(div1, 0, 0, 1, 1), (div2, 1, 1, 1, 1)]
     assert div1.sizing_mode == 'stretch_both'
-    assert div1.style == {'width': '100%', 'height': '100%'}
     assert div2.sizing_mode == 'stretch_both'
-    assert div2.style == {'width': '100%', 'height': '100%'}
 
 
 def test_gridspec_stretch_with_slice_setitem(document, comm):
@@ -1045,10 +1046,60 @@ def test_gridspec_stretch_with_slice_setitem(document, comm):
     model = gspec.get_root(document, comm=comm)
     assert model.children == [(div1, 0, 0, 1, 2), (div2, 1, 2, 1, 1)]
     assert div1.sizing_mode == 'stretch_both'
-    assert div1.style == {'width': '100%', 'height': '100%'}
     assert div2.sizing_mode == 'stretch_both'
-    assert div2.style == {'width': '100%', 'height': '100%'}
 
+
+def test_gridspec_fixed_with_replacement_pane(document, comm):
+    slider = IntSlider(start=0, end=2)
+
+    @depends(slider)
+    def div(value):
+        return Div(text=str(value))
+
+    gspec = GridSpec()
+
+    gspec[0, 0:2] = Div()
+    gspec[1, 2] = div
+
+    model = gspec.get_root(document, comm=comm)
+    ((div1, _, _, _, _), (row, _, _, _, _)) = model.children
+    div2 = row.children[0]
+    assert div1.width == 400
+    assert div1.height == 300
+    assert div2.width == 200
+    assert div2.height == 300
+
+    slider.value = 1
+    assert row.children[0] is not div2
+    assert row.children[0].width == 200
+    assert row.children[0].height == 300
+
+
+def test_gridspec_stretch_with_replacement_pane(document, comm):
+    slider = IntSlider(start=0, end=2)
+
+    @depends(slider)
+    def div(value):
+        return Div(text=str(value))
+
+    gspec = GridSpec(sizing_mode='stretch_width')
+
+    gspec[0, 0:2] = Div()
+    gspec[1, 2] = div
+
+    model = gspec.get_root(document, comm=comm)
+    ((div1, _, _, _, _), (row, _, _, _, _)) = model.children
+    div2 = row.children[0]
+    assert div1.sizing_mode == 'stretch_width'
+    assert div1.height == 300
+    assert div2.sizing_mode == 'stretch_width'
+    assert div2.height == 300
+
+    slider.value = 1
+    assert row.children[0] is not div2
+    assert row.children[0].sizing_mode == 'stretch_width'
+    assert row.children[0].height == 300
+    
 
 def test_widgetbox(document, comm):
     widget_box = WidgetBox("WidgetBox")
