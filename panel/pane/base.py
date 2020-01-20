@@ -334,8 +334,8 @@ class ReplacementPane(PaneBase):
                 for awatchers in pwatchers.values() for w in awatchers
             ]
             custom_watchers = not all(
-                'Reactive._link_params' in wfn or 'PaneBase._update_pane' in wfn
-                for wfn in watch_fns
+                'Reactive._link_params' in wfn or '._update_pane' in wfn or
+                'param_change' in wfn for wfn in watch_fns
             )
 
         if type(self._pane) is pane_type and not links and not custom_watchers and self._internal:
