@@ -123,3 +123,4 @@ package-lock.json
 .vscode/
 .vscode/panel.code-workspace
 0.5.0
+discover/.generated_defaults/
