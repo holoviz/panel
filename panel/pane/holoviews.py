@@ -229,7 +229,8 @@ class HoloViews(PaneBase):
                 state = plot.state
 
             # Ensure rerender if content is responsive but layout is centered
-            if (self.center and state.sizing_mode not in ('fixed', None)
+            if (backend == 'bokeh' and self.center and
+                state.sizing_mode not in ('fixed', None)
                 and not self._responsive_content):
                 self._responsive_content = True
                 self._update_layout()
