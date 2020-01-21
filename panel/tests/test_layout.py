@@ -488,7 +488,7 @@ def test_tabs_close_tab_on_server(document, comm, tabs):
     model = tabs.get_root(document, comm=comm)
     _, div2 = tabs
 
-    tabs._server_change(document, 'tabs', model.tabs, model.tabs[1:], model.ref['id'])
+    tabs._server_change(document, model.ref['id'], 'tabs', model.tabs, model.tabs[1:])
 
     assert len(tabs.objects) == 1
     assert tabs.objects[0] is div2

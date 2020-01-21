@@ -682,7 +682,7 @@ class Reactive(Viewable):
             for p in properties:
                 if isinstance(p, tuple):
                     _, p = p
-                model.on_change(p, partial(self._server_change, doc, ref=ref))
+                model.on_change(p, partial(self._server_change, doc, ref))
         elif config.embed:
             pass
         else:
@@ -707,7 +707,7 @@ class Reactive(Viewable):
         finally:
             self._changing = {}
 
-    def _server_change(self, doc, attr, old, new, ref=None):
+    def _server_change(self, doc, ref, attr, old, new):
         self._events.update({attr: new})
         if not self._processing:
             self._processing = True

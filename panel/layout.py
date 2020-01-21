@@ -658,7 +658,7 @@ class Tabs(ListPanel):
                 msg['tabs'] = [self.objects[i] for i in inds]
         super(Tabs, self)._comm_change(msg)
 
-    def _server_change(self, doc, attr, old, new, ref=None):
+    def _server_change(self, doc, ref, attr, old, new):
         """
         Handle closed tabs.
         """
@@ -668,7 +668,7 @@ class Tabs(ListPanel):
                 inds = [i for i, t in enumerate(model.tabs) if t in new]
                 old = self.objects
                 new = [old[i] for i in inds]
-        super(Tabs, self)._server_change(doc, attr, old, new)
+        super(Tabs, self)._server_change(doc, ref, attr, old, new)
 
     def _update_names(self, event):
         if len(event.new) == len(self._names):
