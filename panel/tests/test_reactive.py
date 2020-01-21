@@ -74,5 +74,5 @@ def test_link_properties_server(document):
     # Assert callback is set up correctly
     cb = div._callbacks['text'][0]
     assert isinstance(cb, partial)
-    assert cb.args == (document,)
+    assert cb.args == (document, div.ref['id'])
     assert cb.func == obj._server_change

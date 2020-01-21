@@ -474,6 +474,26 @@ def test_empty_tabs_append(document, comm):
     assert model.tabs[0].title == 'test title'
 
 
+def test_tabs_close_tab_in_notebook(document, comm, tabs):
+    model = tabs.get_root(document, comm=comm)
+    _, div2 = tabs
+
+    tabs._comm_change({'tabs': [model.tabs[1].ref['id']]}, model.ref['id'])
+
+    assert len(tabs.objects) == 1
+    assert tabs.objects[0] is div2
+
+
+def test_tabs_close_tab_on_server(document, comm, tabs):
+    model = tabs.get_root(document, comm=comm)
+    _, div2 = tabs
+
+    tabs._server_change(document, model.ref['id'], 'tabs', model.tabs, model.tabs[1:])
+
+    assert len(tabs.objects) == 1
+    assert tabs.objects[0] is div2
+
+
 def test_tabs_append_uses_object_name(document, comm, tabs):
     model = tabs.get_root(document, comm=comm)
     tab1_before, tab2_before = model.tabs

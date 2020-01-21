@@ -59,10 +59,14 @@ if (receiver &&
     events = receiver._partial.content.events;
 }}
 
+var value = cb_obj['{change}'];
+
+{transform}
+
 for (var event of events) {{
   if ((event.kind === 'ModelChanged') && (event.attr === '{change}') &&
       (cb_obj.id === event.model.id) &&
-      (JSON.stringify(cb_obj['{change}']) === JSON.stringify(event.new))) {{
+      (JSON.stringify(value) === JSON.stringify(event.new))) {{
     events.pop(events.indexOf(event))
     return;
   }}
@@ -102,18 +106,18 @@ if ((comm_msg != null) && (Object.keys(comm_msg.content).length > 0)) {{
 }}
 """
 
-def get_comm_customjs(change, client_comm, plot_id, timeout=5000, debounce=50):
+def get_comm_customjs(change, client_comm, plot_id, transform=None,
+                      timeout=5000, debounce=50):
     """
     Returns a CustomJS callback that can be attached to send the
     model state across the notebook comms.
     """
     # Abort callback if value matches last received event
-    abort = ABORT_JS.format(plot_id=plot_id, change=change)
-    data_template = """\
-data = {{{change}: cb_obj['{change}'], 'id': cb_obj.id}};
-cb_obj.event_name = '{change}';"""
+    transform = transform or ''
+    abort = ABORT_JS.format(plot_id=plot_id, change=change, transform=transform)
+    data_template = """data = {{{change}: value, 'id': cb_obj.id}}; cb_obj.event_name = '{change}';"""
 
-    fetch_data = data_template.format(change=change)
+    fetch_data = data_template.format(change=change, transform=transform)
     self_callback = JS_CALLBACK.format(
         comm_id=client_comm.id, timeout=timeout, debounce=debounce,
         plot_id=plot_id)
