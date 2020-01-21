@@ -597,6 +597,10 @@ class Reactive(Viewable):
     # Mapping from parameter name to bokeh model property name
     _rename = {}
 
+    # Allows defining a mapping from model property name to a JS code
+    # snippet that transforms the object before serialization
+    _js_transforms = {}
+
     def __init__(self, **params):
         # temporary flag denotes panes created for temporary, internal
         # use which should be garbage collected once they have been used
@@ -673,24 +677,26 @@ class Reactive(Viewable):
             self._callbacks.append(watcher)
 
     def _link_props(self, model, properties, doc, root, comm=None):
+        ref = root.ref['id']
         if comm is None:
             for p in properties:
                 if isinstance(p, tuple):
                     _, p = p
-                model.on_change(p, partial(self._server_change, doc))
+                model.on_change(p, partial(self._server_change, doc, ref=ref))
         elif config.embed:
             pass
         else:
-            client_comm = state._comm_manager.get_client_comm(on_msg=self._comm_change)
+            on_msg = partial(self._comm_change, ref=ref)
+            client_comm = state._comm_manager.get_client_comm(on_msg=on_msg)
             for p in properties:
                 if isinstance(p, tuple):
                     p, attr = p
                 else:
                     p, attr = p, p
-                customjs = self._get_customjs(attr, client_comm, root.ref['id'])
+                customjs = self._get_customjs(attr, client_comm, ref)
                 model.js_on_change(p, customjs)
 
-    def _comm_change(self, msg):
+    def _comm_change(self, msg, ref=None):
         if not msg:
             return
         self._changing.update(msg)
@@ -701,7 +707,7 @@ class Reactive(Viewable):
         finally:
             self._changing = {}
 
-    def _server_change(self, doc, attr, old, new):
+    def _server_change(self, doc, attr, old, new, ref=None):
         self._events.update({attr: new})
         if not self._processing:
             self._processing = True
@@ -732,8 +738,10 @@ class Reactive(Viewable):
         Returns a CustomJS callback that can be attached to send the
         model state across the notebook comms.
         """
-        return get_comm_customjs(change, client_comm, plot_id,
-                                 self._timeout, self._debounce)
+        transform = self._js_transforms.get(change)
+        return get_comm_customjs(
+            change, client_comm, plot_id, transform, self._timeout, self._debounce
+        )
 
     #----------------------------------------------------------------
     # Model API

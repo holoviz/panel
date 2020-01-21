@@ -62,14 +62,27 @@ class Panel(Reactive):
     #----------------------------------------------------------------
 
     def _update_model(self, events, msg, root, model, doc, comm=None):
-        if self._rename['objects'] in msg:
+        filtered = {}
+        for k, v in msg.items():
+            try:
+                change = (
+                    k not in self._changing or self._changing[k] != v or
+                    self._changing['id'] != model.ref['id']
+                )
+            except:
+                change = True
+            if change:
+                filtered[k] = v
+
+        if self._rename['objects'] in filtered:
             old = events['objects'].old
-            msg[self._rename['objects']] = self._get_objects(model, old, doc, root, comm)
+            filtered[self._rename['objects']] = self._get_objects(model, old, doc, root, comm)
 
         held = doc._hold
         if comm is None and not held:
             doc.hold()
-        model.update(**msg)
+
+        model.update(**filtered)
 
         from .io import state
         ref = root.ref['id']
@@ -582,9 +595,15 @@ class Tabs(ListPanel):
 
     _bokeh_model = BkTabs
 
-    _rename = {'objects': 'tabs'}
+    _rename = {'name': None, 'objects': 'tabs'}
 
-    _linked_props = ['active']
+    _linked_props = ['active', 'tabs']
+
+    _js_transforms = {'tabs': """
+    var ids = [];
+    for (t of value) {{ ids.push(t.id) }};
+    value = ids;
+    """}
 
     def __init__(self, *items, **params):
         if 'objects' in params:
@@ -625,6 +644,31 @@ class Tabs(ListPanel):
     #----------------------------------------------------------------
     # Callback API
     #----------------------------------------------------------------
+
+    def _comm_change(self, msg, ref=None):
+        """
+        Handle closed tabs.
+        """
+        if 'tabs' in msg:
+            tab_refs = msg.pop('tabs')
+            model, _ = self._models.get(ref)
+            if model:
+                tabs = {t.ref['id']: i for i, t in enumerate(model.tabs)}
+                inds = [tabs[tref] for tref in tab_refs]
+                msg['tabs'] = [self.objects[i] for i in inds]
+        super(Tabs, self)._comm_change(msg)
+
+    def _server_change(self, doc, attr, old, new, ref=None):
+        """
+        Handle closed tabs.
+        """
+        if attr == 'tabs':
+            model, _ = self._models.get(ref)
+            if model:
+                inds = [i for i, t in enumerate(model.tabs) if t in new]
+                old = self.objects
+                new = [old[i] for i in inds]
+        super(Tabs, self)._server_change(doc, attr, old, new)
 
     def _update_names(self, event):
         if len(event.new) == len(self._names):
