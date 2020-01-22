@@ -80,11 +80,10 @@ export class VTKPlotView extends PanelHTMLBoxView {
   }
 
   render(): void {
-	super.render()
+    super.render()
     const container = div()
     set_size(container, this.model)
-	console.log(this.model, container.style.height)
-	this.el.appendChild(container)
+    this.el.appendChild(container)
     this._rendererEl = vtkns.FullScreenRenderWindow.newInstance({
       rootContainer: this.el,
       container: container
