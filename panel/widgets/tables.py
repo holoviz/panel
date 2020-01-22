@@ -156,7 +156,7 @@ class DataFrame(Widget):
             if updated:
                 self.param.trigger('value')
         if 'indices' in events:
-            self.selected = events.pop('indices')
+            self.selection = events.pop('indices')
         super(DataFrame, self)._process_events(events)
 
     @property
