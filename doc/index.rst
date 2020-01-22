@@ -116,8 +116,8 @@ examples. For a list of examples building on this set of tools
    Reference Gallery <reference/index>
    Developer Guide <developer_guide/index>
    Comparisons <Comparisons>
+   Releases <releases>
    Road Map <Roadmap>
    FAQ
    Github source <http://github.com/pyviz/panel>
    About <about>
-
