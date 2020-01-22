@@ -65,8 +65,8 @@ Installing Dependencies
 Panel requires many additional packages for development and
 testing. Many of these are on the main Anaconda default channel.
 
-Conda Environments
-~~~~~~~~~~~~~~~~~~
+Create a development environment
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Since Panel interfaces with a large range of different libraries the
 full test suite requires a wide range of dependencies. To make it
@@ -96,41 +96,37 @@ created you can activate it with:
 
     conda activate panel_dev
     
-Finally to install the dependencies required to run the full unit test
-suite:
-
-.. code-block:: sh
-
-    doit develop_install -c pyviz/label/dev -c conda-forge -c bokeh -o tests -o recommended
 
 .. _devguide_python_setup:
 
-Building and Installing
------------------------
+Install Panel in editable mode
+------------------------------
 
-Once you have all the required depencies installed, the simplest way
-to build and install Panel to use the ``setup.py`` script at the top
-level of the *source checkout* directory.
+To perform an editable install of Panel, including the dependencies
+required to run the full unit test suite, run the following:
 
-The ``setup.py`` script has two main modes of operation:
+.. code-block:: sh
 
-``python setup.py install``
+    doit develop_install -c pyviz/label/dev -c conda-forge -c bokeh -o build -o tests -o recommended
 
-    Panel will be installed in your Python ``site-packages`` directory.
-    In this mode, any changes to the python source code will not show up
-    until ``setup.py install`` is run again.
+The above command installs Panel's dependencies using conda, then
+performs a pip editable install.
 
-``python setup.py develop``
 
-    Panel will be installed to refer to the source directory. Any changes
-    you make to the python source code will be available immediately without
-    any additional steps.
+Developing custom models
+------------------------
+
+If you are adding or editing a bokeh model, you can use `panel build
+panel` to build the javascript. The `build` command is just an alias
+for `bokeh build`; see the `Bokeh developer guide`_ for more
+information about developing bokeh models.
 
 
 Next Steps
 ----------
 
-If you have any problems with the steps here, please `contact the developers`_.
+You will likely want to check out the :ref:`devguide_setup` guide. Meanwhile,
+if you have any problems with the steps here, please `contact the developers`_.
 
 .. _Anaconda: https://anaconda.com/downloads
 .. _contact the developers: https://gitter.im/pyviz/pyviz
@@ -141,6 +137,7 @@ If you have any problems with the steps here, please `contact the developers`_.
 .. _GitHub: https://github.com
 .. _Installing Git: https://git-scm.com/book/en/v2/Getting-Started-Installing-Git
 .. _Pro Git Book: https://git-scm.com/book/en/v2
+.. _Bokeh developer guide: https://docs.bokeh.org/en/latest/docs/dev_guide/setup.html
 
 
 .. toctree::
