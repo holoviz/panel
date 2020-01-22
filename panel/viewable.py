@@ -9,6 +9,8 @@ import logging
 import re
 import sys
 import threading
+import traceback
+import uuid
 
 from functools import partial
 
@@ -31,7 +33,7 @@ from .io.notebook import (
 from .io.save import save
 from .io.state import state
 from .io.server import StoppableThread, get_server, unlocked
-from .util import param_reprs
+from .util import escape, param_reprs
 
 
 class Layoutable(param.Parameterized):
@@ -186,6 +188,8 @@ class Layoutable(param.Parameterized):
     def __init__(self, **params):
         if (params.get('width', None) is not None and
             params.get('height', None) is not None and
+            params.get('width_policy') is None and
+            params.get('height_policy') is None and
             'sizing_mode' not in params):
             params['sizing_mode'] = 'fixed'
         elif not self.param.sizing_mode.constant and not self.param.sizing_mode.readonly:
@@ -193,7 +197,86 @@ class Layoutable(param.Parameterized):
         super(Layoutable, self).__init__(**params)
 
 
-class Viewable(Layoutable):
+class ServableMixin(object):
+
+    def _modify_doc(self, server_id, title, doc):
+        """
+        Callback to handle FunctionHandler document creation.
+        """
+        if server_id:
+            state._servers[server_id][2].append(doc)
+        return self.server_doc(doc, title)
+
+    def _get_server(self, port=0, websocket_origin=None, loop=None,
+                   show=False, start=False, **kwargs):
+        return get_server(self, port, websocket_origin, loop, show,
+                          start, **kwargs)
+
+    #----------------------------------------------------------------
+    # Public API
+    #----------------------------------------------------------------
+
+    def servable(self, title=None):
+        """
+        Serves the object if in a `panel serve` context and returns
+        the Panel object to allow it to display itself in a notebook
+        context.
+        Arguments
+        ---------
+        title : str
+          A string title to give the Document (if served as an app)
+        Returns
+        -------
+        The Panel object itself
+        """
+        if _curdoc().session_context:
+            logger = logging.getLogger('bokeh')
+            for handler in logger.handlers:
+                if isinstance(handler, logging.StreamHandler):
+                    handler.setLevel(logging.WARN)
+            self.server_doc(title=title)
+        return self
+
+    def show(self, port=0, websocket_origin=None, threaded=False, title=None, **kwargs):
+        """
+        Starts a Bokeh server and displays the Viewable in a new tab.
+
+        Arguments
+        ---------
+        port: int (optional, default=0)
+          Allows specifying a specific port
+        websocket_origin: str or list(str) (optional)
+          A list of hosts that can connect to the websocket.
+          This is typically required when embedding a server app in
+          an external web site.
+          If None, "localhost" is used.
+        threaded: boolean (optional, default=False)
+          Whether to launch the Server on a separate thread, allowing
+          interactive use.
+        title : str
+          A string title to give the Document (if served as an app)
+
+        Returns
+        -------
+        server: bokeh.server.Server or threading.Thread
+          Returns the Bokeh server instance or the thread the server
+          was launched on (if threaded=True)
+        """
+        if threaded:
+            from tornado.ioloop import IOLoop
+            loop = IOLoop()
+            server = StoppableThread(
+                target=self._get_server, io_loop=loop,
+                args=(port, websocket_origin, loop, True, True, title))
+            server.start()
+        else:
+            server = self._get_server(port, websocket_origin, show=True,
+                                      start=True, title=title, **kwargs)
+
+        return server
+
+
+class Viewable(Layoutable, ServableMixin):
     """
     Viewable is the baseclass all objects in the panel library are
     built on. It defines the interface for declaring any object that
@@ -242,15 +325,17 @@ class Viewable(Layoutable):
         """
         raise NotImplementedError
 
-    def _cleanup(self, model):
+    def _cleanup(self, root):
         """
         Clean up method which is called when a Viewable is destroyed.
 
         Arguments
         ---------
-        model: bokeh.model.Model
+        root: bokeh.model.Model
           Bokeh model for the view being cleaned up
         """
+        if root.ref['id'] in state._handles:
+            del state._handles[root.ref['id']]
 
     def _preprocess(self, root):
         """
@@ -303,13 +388,22 @@ class Viewable(Layoutable):
             return None
 
         try:
-            assert get_ipython().kernel is not None # noqa
+            from IPython import get_ipython
+            assert get_ipython().kernel is not None
             state._comm_manager = JupyterCommManager
         except:
             pass
+
+        from IPython.display import display
+
         comm = state._comm_manager.get_server_comm()
         doc = _Document()
         model = self._render_model(doc, comm)
+
+        if config.debug != 'disable':
+            handle = display(display_id=uuid.uuid4().hex)
+            state._handles[model.ref['id']] = (handle, [])
+
         if config.embed:
             return render_model(model)
         return render_mimebundle(model, doc, comm)
@@ -321,19 +415,6 @@ class Viewable(Layoutable):
         doc = session_context._document
         self._cleanup(self._documents[doc])
         del self._documents[doc]
-
-    def _modify_doc(self, server_id, doc):
-        """
-        Callback to handle FunctionHandler document creation.
-        """
-        if server_id:
-            state._servers[server_id][2].append(doc)
-        return self.server_doc(doc)
-
-    def _get_server(self, port=0, websocket_origin=None, loop=None,
-                   show=False, start=False, **kwargs):
-        return get_server(self, port, websocket_origin, loop, show,
-                          start, **kwargs)
 
     #----------------------------------------------------------------
     # Public API
@@ -495,75 +576,14 @@ class Viewable(Layoutable):
           The bokeh document the panel was attached to
         """
         doc = doc or _curdoc()
-        if title is not None:
-            doc.title = title
+        title = title or 'Panel Application'
+        doc.title = title
         model = self.get_root(doc)
         if hasattr(doc, 'on_session_destroyed'):
             doc.on_session_destroyed(self._server_destroy)
             self._documents[doc] = model
         add_to_doc(model, doc)
         return doc
-
-    def servable(self, title=None):
-        """
-        Serves the object if in a `panel serve` context and returns
-        the panel object to allow it to display itself in a notebook
-        context.
-
-        Arguments
-        ---------
-        title : str
-          A string title to give the Document (if served as an app)
-
-        Returns
-        -------
-        The Panel object itself
-        """
-        if _curdoc().session_context:
-            logger = logging.getLogger('bokeh')
-            for handler in logger.handlers:
-                if isinstance(handler, logging.StreamHandler):
-                    handler.setLevel(logging.WARN)
-            self.server_doc(title=title)
-        return self
-
-    def show(self, port=0, websocket_origin=None, threaded=False):
-        """
-        Starts a bokeh server and displays the Viewable in a new tab
-
-        Arguments
-        ---------
-        port: int (optional, default=0)
-          Allows specifying a specific port
-        websocket_origin: str or list(str) (optional)
-          A list of hosts that can connect to the websocket.
-
-          This is typically required when embedding a server app in
-          an external web site.
-
-          If None, "localhost" is used.
-        threaded: boolean (optional, default=False)
-          Whether to launch the Server on a separate thread, allowing
-          interactive use.
-
-        Returns
-        -------
-        server: bokeh.server.Server or threading.Thread
-          Returns the bokeh server instance or the thread the server
-          was launched on (if threaded=True)
-        """
-        if threaded:
-            from tornado.ioloop import IOLoop
-            loop = IOLoop()
-            server = StoppableThread(
-                target=self._get_server, io_loop=loop,
-                args=(port, websocket_origin, loop, True, True))
-            server.start()
-        else:
-            server = self._get_server(port, websocket_origin, show=True, start=True)
-
-        return server
-
 
 
 class Reactive(Viewable):
@@ -589,6 +609,10 @@ class Reactive(Viewable):
 
     # Mapping from parameter name to bokeh model property name
     _rename = {}
+
+    # Allows defining a mapping from model property name to a JS code
+    # snippet that transforms the object before serialization
+    _js_transforms = {}
 
     def __init__(self, **params):
         # temporary flag denotes panes created for temporary, internal
@@ -665,25 +689,54 @@ class Reactive(Viewable):
             watcher = self.param.watch(param_change, params)
             self._callbacks.append(watcher)
 
+    def _on_error(self, ref, error):
+        if ref not in state._handles or config.debug in [None, 'disable']:
+            return
+        handle, accumulator = state._handles[ref]
+        formatted = '\n<pre>'+escape(traceback.format_exc())+'</pre>\n'
+        if config.debug == 'accumulate':
+            accumulator.append(formatted)
+        elif config.debug == 'replace':
+            accumulator[:] = [formatted]
+        if accumulator:
+            handle.update({'text/html': '\n'.join(accumulator)}, raw=True)
+
+    def _on_stdout(self, ref, stdout):
+        if ref not in state._handles or config.debug is [None, 'disable']:
+            return
+        handle, accumulator = state._handles[ref]
+        formatted = ["%s</br>" % o for o in stdout]
+        if config.debug == 'accumulate':
+            accumulator.extend(formatted)
+        elif config.debug == 'replace':
+            accumulator[:] = formatted
+        if accumulator:
+            handle.update({'text/html': '\n'.join(accumulator)}, raw=True)
+
     def _link_props(self, model, properties, doc, root, comm=None):
+        ref = root.ref['id']
         if comm is None:
             for p in properties:
                 if isinstance(p, tuple):
                     _, p = p
-                model.on_change(p, partial(self._server_change, doc))
+                model.on_change(p, partial(self._server_change, doc, ref))
         elif config.embed:
             pass
         else:
-            client_comm = state._comm_manager.get_client_comm(on_msg=self._comm_change)
+            on_msg = partial(self._comm_change, ref=ref)
+            client_comm = state._comm_manager.get_client_comm(
+                on_msg=on_msg, on_error=partial(self._on_error, ref),
+                on_stdout=partial(self._on_stdout, ref)
+            )
             for p in properties:
                 if isinstance(p, tuple):
                     p, attr = p
                 else:
                     p, attr = p, p
-                customjs = self._get_customjs(attr, client_comm, root.ref['id'])
+                customjs = self._get_customjs(attr, client_comm, ref)
                 model.js_on_change(p, customjs)
 
-    def _comm_change(self, msg):
+    def _comm_change(self, msg, ref=None):
         if not msg:
             return
         self._changing.update(msg)
@@ -694,7 +747,7 @@ class Reactive(Viewable):
         finally:
             self._changing = {}
 
-    def _server_change(self, doc, attr, old, new):
+    def _server_change(self, doc, ref, attr, old, new):
         self._events.update({attr: new})
         if not self._processing:
             self._processing = True
@@ -725,8 +778,10 @@ class Reactive(Viewable):
         Returns a CustomJS callback that can be attached to send the
         model state across the notebook comms.
         """
-        return get_comm_customjs(change, client_comm, plot_id,
-                                 self._timeout, self._debounce)
+        transform = self._js_transforms.get(change)
+        return get_comm_customjs(
+            change, client_comm, plot_id, transform, self._timeout, self._debounce
+        )
 
     #----------------------------------------------------------------
     # Model API

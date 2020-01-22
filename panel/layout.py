@@ -14,7 +14,7 @@ import numpy as np
 
 from bokeh.models import (
     Box as BkBox, Column as BkColumn, Div as BkDiv, GridBox as BkGridBox,
-    Markup as BkMarkup, Row as BkRow, Spacer as BkSpacer
+    Row as BkRow, Spacer as BkSpacer
 )
 from bokeh.models.widgets import Tabs as BkTabs, Panel as BkPanel
 
@@ -62,14 +62,27 @@ class Panel(Reactive):
     #----------------------------------------------------------------
 
     def _update_model(self, events, msg, root, model, doc, comm=None):
-        if self._rename['objects'] in msg:
+        filtered = {}
+        for k, v in msg.items():
+            try:
+                change = (
+                    k not in self._changing or self._changing[k] != v or
+                    self._changing['id'] != model.ref['id']
+                )
+            except:
+                change = True
+            if change:
+                filtered[k] = v
+
+        if self._rename['objects'] in filtered:
             old = events['objects'].old
-            msg[self._rename['objects']] = self._get_objects(model, old, doc, root, comm)
+            filtered[self._rename['objects']] = self._get_objects(model, old, doc, root, comm)
 
         held = doc._hold
         if comm is None and not held:
             doc.hold()
-        model.update(**msg)
+
+        model.update(**filtered)
 
         from .io import state
         ref = root.ref['id']
@@ -94,7 +107,7 @@ class Panel(Reactive):
         Returns new child models for the layout while reusing unchanged
         models and cleaning up any dropped objects.
         """
-        from .pane import panel
+        from .pane.base import panel, RerenderError
         new_models = []
         for i, pane in enumerate(self.objects):
             pane = panel(pane)
@@ -104,11 +117,15 @@ class Panel(Reactive):
             if obj not in self.objects:
                 obj._cleanup(root)
 
+        current_objects = list(self.objects)
         for i, pane in enumerate(self.objects):
             if pane in old_objects:
                 child, _ = pane._models[root.ref['id']]
             else:
-                child = pane._get_model(doc, root, model, comm)
+                try:
+                    child = pane._get_model(doc, root, model, comm)
+                except RerenderError:
+                    return self._get_objects(model, current_objects[:i], doc, root, comm)
             new_models.append(child)
         return new_models
 
@@ -578,9 +595,15 @@ class Tabs(ListPanel):
 
     _bokeh_model = BkTabs
 
-    _rename = {'objects': 'tabs'}
+    _rename = {'name': None, 'objects': 'tabs'}
 
-    _linked_props = ['active']
+    _linked_props = ['active', 'tabs']
+
+    _js_transforms = {'tabs': """
+    var ids = [];
+    for (t of value) {{ ids.push(t.id) }};
+    value = ids;
+    """}
 
     def __init__(self, *items, **params):
         if 'objects' in params:
@@ -622,6 +645,31 @@ class Tabs(ListPanel):
     # Callback API
     #----------------------------------------------------------------
 
+    def _comm_change(self, msg, ref=None):
+        """
+        Handle closed tabs.
+        """
+        if 'tabs' in msg:
+            tab_refs = msg.pop('tabs')
+            model, _ = self._models.get(ref)
+            if model:
+                tabs = {t.ref['id']: i for i, t in enumerate(model.tabs)}
+                inds = [tabs[tref] for tref in tab_refs]
+                msg['tabs'] = [self.objects[i] for i in inds]
+        super(Tabs, self)._comm_change(msg)
+
+    def _server_change(self, doc, ref, attr, old, new):
+        """
+        Handle closed tabs.
+        """
+        if attr == 'tabs':
+            model, _ = self._models.get(ref)
+            if model:
+                inds = [i for i, t in enumerate(model.tabs) if t in new]
+                old = self.objects
+                new = [old[i] for i in inds]
+        super(Tabs, self)._server_change(doc, ref, attr, old, new)
+
     def _update_names(self, event):
         if len(event.new) == len(self._names):
             return
@@ -651,7 +699,7 @@ class Tabs(ListPanel):
         Returns new child models for the layout while reusing unchanged
         models and cleaning up any dropped objects.
         """
-        from .pane import panel
+        from .pane.base import RerenderError, panel
         new_models = []
         if len(self._names) != len(self):
             raise ValueError('Tab names do not match objects, ensure '
@@ -666,11 +714,15 @@ class Tabs(ListPanel):
             if obj not in self.objects:
                 obj._cleanup(root)
 
+        current_objects = list(self)
         for i, (name, pane) in enumerate(zip(self._names, self)):
             if pane in old_objects:
                 child, _ = pane._models[root.ref['id']]
             else:
-                child = pane._get_model(doc, root, model, comm)
+                try:
+                    child = pane._get_model(doc, root, model, comm)
+                except RerenderError:
+                    return self._get_objects(model, current_objects[:i], doc, root, comm)
             child = BkPanel(title=name, name=pane.name, child=child,
                             closable=self.closable)
             new_models.append(child)
@@ -864,6 +916,8 @@ class GridSpec(Panel):
         return properties
 
     def _get_objects(self, model, old_objects, doc, root, comm=None):
+        from .pane.base import RerenderError
+
         if self.ncols:
             width = int(float(self.width)/self.ncols)
         else:
@@ -874,8 +928,16 @@ class GridSpec(Panel):
         else:
             height = 0
 
+        current_objects = list(self.objects.values())
+        if isinstance(old_objects, dict):
+            old_objects = list(old_objects.values())
+
+        for old in old_objects:
+            if old not in current_objects:
+                old._cleanup(root)
+
         children = []
-        for (y0, x0, y1, x1), obj in self.objects.items():
+        for i, ((y0, x0, y1, x1), obj) in enumerate(self.objects.items()):
             x0 = 0 if x0 is None else x0
             x1 = (self.ncols) if x1 is None else x1
             y0 = 0 if y0 is None else y0
@@ -886,32 +948,25 @@ class GridSpec(Panel):
                 properties = {'width': w*width, 'height': h*height}
             else:
                 properties = {'sizing_mode': self.sizing_mode}
+                if 'width' in self.sizing_mode:
+                    properties['height'] = h*height
+                elif 'height' in self.sizing_mode:
+                    properties['width'] = w*width
             obj.set_param(**properties)
-            model = obj._get_model(doc, root, model, comm)
 
-            if isinstance(model, BkMarkup) and self.sizing_mode not in ['fixed', None]:
-                if model.style is None:
-                    model.style = {}
-                style = {}
-                if 'width' not in model.style:
-                    style['width'] = '100%'
-                if 'height' not in model.style:
-                    style['height'] = '100%'
-                if style:
-                    model.style.update(style)
-
-            if isinstance(model, BkBox) and len(model.children) == 1:
-                model.children[0].update(**properties)
+            if obj in old_objects:
+                child, _ = obj._models[root.ref['id']]
             else:
-                model.update(**properties)
-            children.append((model, r, c, h, w))
+                try:
+                    child = obj._get_model(doc, root, model, comm)
+                except RerenderError:
+                    return self._get_objects(model, current_objects[:i], doc, root, comm)
 
-        new_objects = list(self.objects.values())
-        if isinstance(old_objects, dict):
-            old_objects = list(old_objects.values())
-        for old in old_objects:
-            if old not in new_objects:
-                old._cleanup(root)
+            if isinstance(child, BkBox) and len(child.children) == 1:
+                child.children[0].update(**properties)
+            else:
+                child.update(**properties)
+            children.append((child, r, c, h, w))
         return children
 
     @property
@@ -1032,7 +1087,7 @@ class GridSpec(Panel):
             return list(subgrid)[0][1]
 
     def __setitem__(self, index, obj):
-        from .pane.base import Pane
+        from .pane.base import panel
         if not isinstance(index, tuple):
             raise IndexError('Must supply a 2D index for GridSpec assignment.')
 
@@ -1056,7 +1111,7 @@ class GridSpec(Panel):
         overlap = key in self.objects
         clone = self.clone(objects=OrderedDict(self.objects), mode='override')
         if not overlap:
-            clone.objects[key] = Pane(obj)
+            clone.objects[key] = panel(obj)
             grid = clone.grid
         else:
             grid = clone.grid
@@ -1091,7 +1146,7 @@ class GridSpec(Panel):
                 objects = [list(o)[0][0] for o in subgrid.flatten()]
             for dkey in objects:
                 del self.objects[dkey]
-        self.objects[key] = Pane(obj)
+        self.objects[key] = panel(obj)
         self.param.trigger('objects')
 
 

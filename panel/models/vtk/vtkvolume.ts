@@ -1,8 +1,9 @@
-
 import * as p from "@bokehjs/core/properties"
 import {ARRAY_TYPES, DType} from "@bokehjs/core/util/serialization"
-import {HTMLBox, HTMLBoxView} from "@bokehjs/models/layouts/html_box"
+import {HTMLBox} from "@bokehjs/models/layouts/html_box"
 import {div} from "@bokehjs/core/dom"
+
+import {PanelHTMLBoxView} from "../layout"
 
 const vtk = (window as any).vtk
 
@@ -24,7 +25,7 @@ function utf8ToAB(utf8_str: string): ArrayBuffer {
   return buf
 }
 
-export class VTKVolumePlotView extends HTMLBoxView {
+export class VTKVolumePlotView extends PanelHTMLBoxView {
   model: VTKVolumePlot
   protected _container: HTMLDivElement
   protected _rendererEl: any

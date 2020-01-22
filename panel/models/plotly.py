@@ -11,13 +11,10 @@ class PlotlyPlot(LayoutDOM):
     a bokeh plot.
     """
 
-    __javascript__ = ['https://cdn.plot.ly/plotly-latest.min.js',
-                      'https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.15/lodash.min.js']
+    __javascript__ = ['https://cdn.plot.ly/plotly-latest.min.js']
 
-    __js_require__ = {'paths': {'plotly': 'https://cdn.plot.ly/plotly-latest.min',
-                                'lodash': 'https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.15/lodash.min'},
-                      'exports': {'plotly': 'Plotly',
-                                  'lodash': '_'}}
+    __js_require__ = {'paths': {'plotly': 'https://cdn.plot.ly/plotly-latest.min'},
+                      'exports': {'plotly': 'Plotly'}}
 
     data = List(Any)
 

@@ -1,7 +1,8 @@
 import * as p from "@bokehjs/core/properties"
-import {Markup, MarkupView} from "@bokehjs/models/widgets/markup"
+import {Markup} from "@bokehjs/models/widgets/markup"
+import {PanelMarkupView} from "./layout"
 
-export class MathJaxView extends MarkupView {
+export class MathJaxView extends PanelMarkupView {
   model: MathJax
   private _hub: any
 

@@ -9,13 +9,20 @@ import inspect
 import numbers
 import datetime as dt
 
+
+from collections import defaultdict, OrderedDict
 from datetime import datetime
 from six import string_types
-from collections import defaultdict, OrderedDict
+
 try:  # python >= 3.3
     from collections.abc import MutableSequence, MutableMapping
 except ImportError:
     from collections import MutableSequence, MutableMapping
+
+try:
+    from html import escape # noqa
+except:
+    from cgi import escape # noqa
 
 import param
 import numpy as np
@@ -94,12 +101,30 @@ def unicode_repr(obj):
     return repr(obj)
 
 
+def recursive_parameterized(parameterized, objects=None):
+    """
+    Recursively searches a Parameterized object for other Parmeterized
+    objects.
+    """
+    objects = [] if objects is None else objects
+    objects.append(parameterized)
+    for _, p in parameterized.param.get_param_values():
+        if isinstance(p, param.Parameterized) and not any(p is o for o in objects):
+            recursive_parameterized(p, objects)
+    return objects
+
+
 def abbreviated_repr(value, max_length=25, natural_breaks=(',', ' ')):
     """
     Returns an abbreviated repr for the supplied object. Attempts to
     find a natural break point while adhering to the maximum length.
     """
-    vrepr = repr(value)
+    if isinstance(value, list):
+        vrepr = '[' + ', '.join([abbreviated_repr(v) for v in value]) + ']'
+    if isinstance(value, param.Parameterized):
+        vrepr = type(value).__name__
+    else:
+        vrepr = repr(value)
     if len(vrepr) > max_length:
         # Attempt to find natural cutoff point
         abbrev = vrepr[max_length//2:]
@@ -144,7 +169,8 @@ def param_reprs(parameterized, skip=None):
         elif isinstance(v, list) and v == []: continue
         elif isinstance(v, dict) and v == {}: continue
         elif (skip and p in skip) or (p == 'name' and v.startswith(cls)): continue
-        param_reprs.append('%s=%s' % (p, abbreviated_repr(v)))
+        else: v = abbreviated_repr(v)
+        param_reprs.append('%s=%s' % (p, v))
     return param_reprs
 
 

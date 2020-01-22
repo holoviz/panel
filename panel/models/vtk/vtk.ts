@@ -1,13 +1,13 @@
 import * as p from "@bokehjs/core/properties"
 import {clone} from "@bokehjs/core/util/object"
-import {HTMLBox, HTMLBoxView} from "@bokehjs/models/layouts/html_box"
+import {HTMLBox} from "@bokehjs/models/layouts/html_box"
 import {div, canvas} from "@bokehjs/core/dom"
 import {majorAxis, vtk, vtkns} from "./vtk_utils"
 import {VTKAxes} from "./vtkaxes"
+import {PanelHTMLBoxView} from "../layout"
 
 
-
-export class VTKPlotView extends HTMLBoxView {
+export class VTKPlotView extends PanelHTMLBoxView {
   model: VTKPlot
   protected _container: HTMLDivElement
   protected _rendererEl: any

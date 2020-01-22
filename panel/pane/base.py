@@ -24,7 +24,40 @@ def Pane(obj, **kwargs):
     """
     if isinstance(obj, Viewable):
         return obj
-    return PaneBase.get_pane_type(obj)(obj, **kwargs)
+    return PaneBase.get_pane_type(obj, **kwargs)(obj, **kwargs)
+
+
+def panel(obj, **kwargs):
+    """
+    Creates a panel from any supplied object by wrapping it in a pane
+    and returning a corresponding Panel.
+
+    Arguments
+    ---------
+    obj: object
+       Any object to be turned into a Panel
+    **kwargs: dict
+       Any keyword arguments to be passed to the applicable Pane
+
+    Returns
+    -------
+    layout: Viewable
+       A Viewable representation of the input object
+    """
+    if isinstance(obj, Viewable):
+        return obj
+    if kwargs.get('name', False) is None:
+        kwargs.pop('name')
+    pane = PaneBase.get_pane_type(obj, **kwargs)(obj, **kwargs)
+    if len(pane.layout) == 1 and pane._unpack:
+        return pane.layout[0]
+    return pane.layout
+
+
+class RerenderError(RuntimeError):
+    """
+    Error raised when a pane requests re-rendering during initial render.
+    """
 
 
 class PaneBase(Reactive):
@@ -64,10 +97,13 @@ class PaneBase(Reactive):
     # List of parameters that trigger a rerender of the Bokeh model
     _rerender_params = ['object']
 
+    # Whether applies requires full set of keywords
+    _applies_kw = False
+
     __abstract = True
 
     def __init__(self, object=None, **params):
-        applies = self.applies(object)
+        applies = self.applies(object, **(params if self._applies_kw else {}))
         if (isinstance(applies, bool) and not applies) and object is not None :
             self._type_error(object)
 
@@ -83,7 +119,7 @@ class PaneBase(Reactive):
     def __repr__(self, depth=0):
         cls = type(self).__name__
         params = param_reprs(self, ['object'])
-        obj = 'Empty' if self.object is None else type(self.object).__name__
+        obj = 'None' if self.object is None else type(self.object).__name__
         template = '{cls}({obj}, {params})' if params else '{cls}({obj})'
         return template.format(cls=cls, params=', '.join(params), obj=obj)
 
@@ -217,7 +253,7 @@ class PaneBase(Reactive):
         return root
 
     @classmethod
-    def get_pane_type(cls, obj):
+    def get_pane_type(cls, obj, **kwargs):
         """
         Returns the applicable Pane type given an object by resolving
         the precedence of all types whose applies method declares that
@@ -235,7 +271,12 @@ class PaneBase(Reactive):
             return type(obj)
         descendents = []
         for p in param.concrete_descendents(PaneBase).values():
-            priority = p.applies(obj) if p.priority is None else p.priority
+            if p.priority is None:
+                applies = True
+                priority = p.applies(obj, **(kwargs if p._applies_kw else {}))
+            else:
+                applies = None
+                priority = p.priority
             if isinstance(priority, bool) and priority:
                 raise ValueError('If a Pane declares no priority '
                                  'the applies method should return a '
@@ -244,11 +285,13 @@ class PaneBase(Reactive):
                                  'declares no priority.' % p.__name__)
             elif priority is None or priority is False:
                 continue
-            descendents.append((priority, p))
+            descendents.append((priority, applies, p))
         pane_types = reversed(sorted(descendents, key=lambda x: x[0]))
-        for _, pane_type in pane_types:
-            applies = pane_type.applies(obj)
-            if isinstance(applies, bool) and not applies: continue
+        for _, applies, pane_type in pane_types:
+            if applies is None:
+                applies = pane_type.applies(obj, **(kwargs if pane_type._applies_kw else {}))
+            if not applies:
+                continue
             return pane_type
         raise TypeError('%s type could not be rendered.' % type(obj).__name__)
 
@@ -270,7 +313,15 @@ class ReplacementPane(PaneBase):
                          if p not in self.param}
         super(ReplacementPane, self).__init__(object, **params)
         self._pane = Pane(None)
+        self._internal = True
         self._inner_layout = Row(self._pane, **{k: v for k, v in params.items() if k in Row.param})
+        self.param.watch(self._update_inner_layout, list(Layoutable.param))
+
+    def _update_inner_layout(self, *events):
+        for event in events:
+            setattr(self._pane, event.name, event.new)
+            if event.name in ['sizing_mode', 'width_policy', 'height_policy']:
+                setattr(self._inner_layout, event.name, event.new)
 
     def _update_pane(self, *events):
         """
@@ -283,7 +334,20 @@ class ReplacementPane(PaneBase):
             links = Link.registry.get(new_object)
         except TypeError:
             links = []
-        if type(self._pane) is pane_type and not links:
+        custom_watchers = False
+        if isinstance(new_object, Reactive):
+            watch_fns = [
+                str(w.fn) for pwatchers in new_object._param_watchers.values()
+                for awatchers in pwatchers.values() for w in awatchers
+            ]
+            custom_watchers = not all(
+                'Reactive._link_params' in wfn or '._update_pane' in wfn or
+                'param_change' in wfn for wfn in watch_fns
+            )
+
+        if type(self._pane) is pane_type and not links and not custom_watchers and self._internal:
+            # If the object has not external referrers we can update
+            # it inplace instead of replacing it
             if isinstance(new_object, Reactive):
                 pvals = dict(self._pane.get_param_values())
                 new_params = {k: v for k, v in new_object.get_param_values()
@@ -295,8 +359,20 @@ class ReplacementPane(PaneBase):
             # Replace pane entirely
             kwargs = dict(self.get_param_values(), **self._kwargs)
             del kwargs['object']
-            self._pane = Pane(new_object, **{k: v for k, v in kwargs.items()
-                                             if k in pane_type.param})
+            self._pane = panel(new_object, **{k: v for k, v in kwargs.items()
+                                              if k in pane_type.param})
+            if new_object is self._pane:
+                # If all watchers on the object are internal watchers
+                # we can make a clone of the object and update this
+                # clone going forward, otherwise we have replace the
+                # model entirely which is more expensive.
+                if not (custom_watchers or links):
+                    self._pane = self._pane.clone()
+                    self._internal = True
+                else:
+                    self._internal = False
+            else:
+                self._internal = new_object is not self._pane
             self._inner_layout[0] = self._pane
 
     def _get_model(self, doc, root=None, parent=None, comm=None):

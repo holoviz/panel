@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+  <!-- Basic Page Needs
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <meta charset="utf-8">
+  <title>Running Panel Applications</title>
+
+  <!-- Mobile Specific Metas
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- FONT
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,600&Lato|Work+Sans:400,700&display=swap" rel="stylesheet" type='text/css'>
+
+
+  <!-- CSS
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <link rel="stylesheet" href="https://static.bokeh.org/vendor/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="https://bokeh.org//css/main.css" />
+
+  <!-- Favicon
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <link rel="apple-touch-icon" sizes="180x180" href="https://static.bokeh.org/favicon/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="https://panel.holoviz.org/_static/favicon.ico">
+  <link rel="manifest" href="https://static.bokeh.org/favicon/site.webmanifest">
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="theme-color" content="#ffffff">
+
+</head>
+<body>
+
+  <!-- main menu -->
+  <div class="container py-3 py-lg-0">
+    <nav class="navbar navbar-expand-lg navbar-light bg-light" id="main-menu">
+      <a class="navbar-brand" href="//panel.pyviz.org" id="logo">
+        <img src="http://panel.pyviz.org/_static/logo_stacked.png" width="120" />
+      </a>
+    </nav>
+  </div>
+  <!-- end main menu -->
+
+  <!-- applications -->
+  <div class="container py-3 py-lg-0" style="min-height: 250px">
+    <br />
+
+	<br />
+    <h3>Running Applications</h3>
+
+      <p>The following applications are currently running on this server:</p>
+      <div class="list-group list-group-flush">
+        {% for item in items %}
+        <h4><a href={{ prefix }}{{ item }}>{{ item[1:] }}</a></h4>
+        {% end %}
+      </div>
+      <br />
+  </div>
+  <!-- end applications -->
+
+  <!-- footer -->
+  <footer class="container-fluid links">
+  </footer>
+  <!-- end footer -->
+
+  <script src="https://static.bokeh.org/vendor/js/jquery.min.js"></script>
+  <script src="https://static.bokeh.org/vendor/js/bootstrap.min.js"></script>
+
+</body>
+</html>

@@ -9,6 +9,7 @@ from functools import partial
 
 import param
 
+from ..layout import Row
 from ..io import push, state, unlocked
 from ..viewable import Reactive, Layoutable
 
@@ -55,22 +56,22 @@ class Widget(Reactive):
         super(Widget, self).__init__(**params)
         self.param.watch(self._update_widget, self._manual_params)
 
-    def _manual_update(self, event, model, doc, root, parent, comm):
+    def _manual_update(self, events, model, doc, root, parent, comm):
         """
         Method for handling any manual update events, i.e. events triggered
         by changes in the manual params.
         """
 
-    def _update_widget(self, event):
+    def _update_widget(self, *events):
         for ref, (model, parent) in self._models.items():
             viewable, root, doc, comm = state._views[ref]
             if comm or state._unblocked(doc):
                 with unlocked():
-                    self._manual_update(event, model, doc, root, parent, comm)
+                    self._manual_update(events, model, doc, root, parent, comm)
                 if comm and 'embedded' not in root.tags:
                     push(doc, comm)
             else:
-                cb = partial(self._manual_update, event, model, doc, root, parent, comm)
+                cb = partial(self._manual_update, events, model, doc, root, parent, comm)
                 if doc.session_context:
                     doc.add_next_tick_callback(cb)
                 else:
@@ -130,6 +131,20 @@ class CompositeWidget(Widget):
 
     __abstract = True
 
+    _composite_type = Row
+
+    def __init__(self, **params):
+        super(CompositeWidget, self).__init__(**params)
+        layout = {p: getattr(self, p) for p in Layoutable.param
+                  if getattr(self, p) is not None}
+        self._composite = self._composite_type(**layout)
+        self._models = self._composite._models
+        self.param.watch(self._update_layout_params, list(Layoutable.param))
+
+    def _update_layout_params(self, *events):
+        for event in events:
+            setattr(self._composite, event.name, event.new)
+
     def select(self, selector=None):
         """
         Iterates over the Viewable and any potential children in the
@@ -150,8 +165,15 @@ class CompositeWidget(Widget):
             objects += obj.select(selector)
         return objects
 
+    def _cleanup(self, root):
+        self._composite._cleanup(root)
+        super(CompositeWidget, self)._cleanup(root)
+
     def _get_model(self, doc, root=None, parent=None, comm=None):
         return self._composite._get_model(doc, root, parent, comm)
 
     def __contains__(self, object):
         return object in self._composite.objects
+
+    def _synced_params(self):
+        return []

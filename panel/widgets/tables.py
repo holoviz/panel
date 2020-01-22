@@ -117,23 +117,24 @@ class DataFrame(Widget):
         self._models[root.ref['id']] = (model, parent)
         return model
 
-    def _manual_update(self, event, model, doc, root, parent, comm):
-        if event.name == 'value':
-            cds = model.source
-            data = {k if isinstance(k, str) else str(k): v
-                    for k, v in ColumnDataSource.from_df(self.value).items()}
-            cds.data = data
-            model.columns = self._get_columns()
-        elif event.name == 'selection':
-            model.source.selected.indices = self.selection
-        else:
-            for col in model.columns:
-                if col.name in self.editors:
-                    col.editor = self.editors[col.name]
-                if col.name in self.formatters:
-                    col.formatter = self.formatters[col.name]
-                if col.name in self.widths:
-                    col.width = self.widths[col.name]
+    def _manual_update(self, events, model, doc, root, parent, comm):
+        for event in events:
+            if event.name == 'value':
+                cds = model.source
+                data = {k if isinstance(k, str) else str(k): v
+                        for k, v in ColumnDataSource.from_df(self.value).items()}
+                cds.data = data
+                model.columns = self._get_columns()
+            elif event.name == 'selection':
+                model.source.selected.indices = self.selection
+            else:
+                for col in model.columns:
+                    if col.name in self.editors:
+                        col.editor = self.editors[col.name]
+                    if col.name in self.formatters:
+                        col.formatter = self.formatters[col.name]
+                    if col.name in self.widths:
+                        col.width = self.widths[col.name]
 
     def _process_events(self, events):
         if 'data' in events:

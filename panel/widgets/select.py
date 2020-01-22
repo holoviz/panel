@@ -16,12 +16,11 @@ from bokeh.models.widgets import (
     RadioButtonGroup as _BkRadioButtonGroup, RadioGroup as _BkRadioBoxGroup,
     Select as _BkSelect)
 
-from ..layout import Column, Row, VSpacer
+from ..layout import Column, VSpacer
 from ..util import as_unicode, isIn, indexOf
-from ..viewable import Layoutable
 from .base import Widget, CompositeWidget
 from .button import _ButtonBase, Button
-from .input import TextInput
+from .input import TextInput, TextAreaInput
 
 
 class SelectBase(Widget):
@@ -43,7 +42,7 @@ class SelectBase(Widget):
 
     @property
     def _items(self):
-        return dict(zip(self.labels, self.values))
+        return OrderedDict(zip(self.labels, self.values))
 
 
 class Select(SelectBase):
@@ -340,6 +339,11 @@ class CrossSelector(CompositeWidget, MultiSelect):
        The number of options shown at once (note this is the
        only way to control the height of this widget)""")
 
+    filter_fn = param.Callable(default=re.search, doc="""
+       The filter function applied when querying using the text fields,
+       defaults to re.search. Function is two arguments, the query or
+       pattern and the item label.""")
+
     size = param.Integer(default=10, doc="""
        The number of options shown at once (note this is the
        only way to control the height of this widget)""")
@@ -356,16 +360,10 @@ class CrossSelector(CompositeWidget, MultiSelect):
         selected = [labels[indexOf(v, values)] for v in kwargs.get('value', [])
                     if isIn(v, values)]
         unselected = [k for k in labels if k not in selected]
-
-        # Define whitelist and blacklist
-        layout = dict(sizing_mode=self.sizing_mode, width_policy=self.width_policy,
-                      height_policy=self.height_policy, background=self.background)
-        width = int((self.width-50)/2)
+        layout = dict(sizing_mode='stretch_both', background=self.background, margin=0)
         self._lists = {
-            False: MultiSelect(options=unselected, size=self.size,
-                               height=self.height-50, width=width, **layout),
-            True: MultiSelect(options=selected, size=self.size,
-                              height=self.height-50, width=width, **layout)
+            False: MultiSelect(options=unselected, size=self.size, **layout),
+            True: MultiSelect(options=selected, size=self.size, **layout)
         }
         self._lists[False].param.watch(self._update_selection, 'value')
         self._lists[True].param.watch(self._update_selection, 'value')
@@ -379,42 +377,32 @@ class CrossSelector(CompositeWidget, MultiSelect):
 
         # Define search
         self._search = {
-            False: TextInput(placeholder='Filter available options', width=width),
-            True: TextInput(placeholder='Filter selected options', width=width)
+            False: TextInput(placeholder='Filter available options',
+                             margin=(0, 0, 10, 0), width_policy='max'),
+            True: TextInput(placeholder='Filter selected options',
+                            margin=(0, 0, 10, 0), width_policy='max')
         }
         self._search[False].param.watch(self._filter_options, 'value')
         self._search[True].param.watch(self._filter_options, 'value')
 
+        self._placeholder = TextAreaInput(
+            placeholder=("To select an item highlight it on the left "
+                         "and use the arrow button to move it to the right."),
+            disabled=True, **layout
+        )
+        right = self._lists[True] if self.value else self._placeholder
+
         # Define Layout
-        blacklist = Column(self._search[False], self._lists[False], **layout)
-        whitelist = Column(self._search[True], self._lists[True], **layout)
-        buttons = Column(self._buttons[True], self._buttons[False])
+        self._unselected = Column(self._search[False], self._lists[False], **layout)
+        self._selected = Column(self._search[True], right, **layout)
+        buttons = Column(self._buttons[True], self._buttons[False], margin=(0, 5))
 
-        self._composite = Row(blacklist, Column(VSpacer(), buttons, VSpacer()), whitelist,
-                              css_classes=self.css_classes, margin=self.margin, **layout)
+        self._composite[:] = [
+            self._unselected, Column(VSpacer(), buttons, VSpacer()), self._selected
+        ]
 
-        self._selected = {False: [], True: []}
+        self._selections = {False: [], True: []}
         self._query = {False: '', True: ''}
-        self.param.watch(self._update_layout_params, list(Layoutable.param))
-
-
-    def _update_layout_params(self, *events):
-        for event in events:
-            if event.name in ['css_classes']:
-                setattr(self._composite, event.name, event.new)
-            elif event.name in ['sizing_mode', 'width_policy', 'height_policy',
-                                'background', 'margin']:
-                setattr(self._composite, event.name, event.new)
-                setattr(self._lists[True], event.name, event.new)
-                setattr(self._lists[False], event.name, event.new)
-            elif event.name == 'height':
-                setattr(self._lists[True], event.name, event.new-50)
-                setattr(self._lists[False], event.name, event.new-50)
-            elif event.name == 'width':
-                width = int((event.new-50)/2)
-                setattr(self._lists[True], event.name, width)
-                setattr(self._lists[False], event.name, width)
-
 
     @param.depends('size', watch=True)
     def _update_size(self):
@@ -443,12 +431,9 @@ class CrossSelector(CompositeWidget, MultiSelect):
         Updates the options of each of the sublists after the options
         for the whole widget are updated.
         """
-        self._selected[False] = []
-        self._selected[True] = []
-        self._lists[True].options = []
-        self._lists[True].value = []
-        self._lists[False].options = self.labels
-        self._lists[False].value = []
+        self._selections[False] = []
+        self._selections[True] = []
+        self._update_value()
 
     def _apply_filters(self):
         self._apply_query(False)
@@ -475,10 +460,9 @@ class CrossSelector(CompositeWidget, MultiSelect):
             self._lists[selected].value = []
         else:
             try:
-                match = re.compile(query)
-                matches = list(filter(match.search, options))
+                matches = [o for o in options if self.filter_fn(query, o)]
             except:
-                matches = list(options)
+                matches = []
             self._lists[selected].options = options if options else []
             self._lists[selected].value = [m for m in matches]
 
@@ -487,7 +471,7 @@ class CrossSelector(CompositeWidget, MultiSelect):
         Updates the current selection in each list.
         """
         selected = event.obj is self._lists[True]
-        self._selected[selected] = [v for v in event.new if v != '']
+        self._selections[selected] = [v for v in event.new if v != '']
 
     def _apply_selection(self, event):
         """
@@ -496,7 +480,7 @@ class CrossSelector(CompositeWidget, MultiSelect):
         """
         selected = event.obj is self._buttons[True]
 
-        new = OrderedDict([(k, self._items[k]) for k in self._selected[not selected]])
+        new = OrderedDict([(k, self._items[k]) for k in self._selections[not selected]])
         old = self._lists[selected].options
         other = self._lists[not selected].options
 
@@ -504,6 +488,10 @@ class CrossSelector(CompositeWidget, MultiSelect):
         leftovers = OrderedDict([(k, k) for k in other if k not in new])
         self._lists[selected].options = merged if merged else {}
         self._lists[not selected].options = leftovers if leftovers else {}
+        if len(self._lists[True].options):
+            self._selected[-1] = self._lists[True]
+        else:
+            self._selected[-1] = self._placeholder
         self.value = [self._items[o] for o in self._lists[True].options if o != '']
         self._apply_filters()
 

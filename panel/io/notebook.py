@@ -5,7 +5,6 @@ inside the Jupyter notebook.
 from __future__ import absolute_import, division, unicode_literals
 
 import json
-import os
 import uuid
 
 from contextlib import contextmanager
@@ -27,7 +26,6 @@ from bokeh.models import CustomJS, LayoutDOM, Model
 from bokeh.resources import CDN, INLINE
 from bokeh.util.string import encode_utf8, escape
 from bokeh.util.serialization import make_id
-from jinja2 import Environment, Markup, FileSystemLoader
 from pyviz_comms import (
     JS_CALLBACK, PYVIZ_PROXY, Comm, JupyterCommManager as _JupyterCommManager,
     nb_mime_js)
@@ -35,6 +33,7 @@ from pyviz_comms import (
 from ..compiler import require_components
 from .embed import embed_state
 from .model import add_to_doc, diff
+from .resources import _env
 from .server import _server_url, _origin_url, get_server
 from .state import state
 
@@ -60,10 +59,14 @@ if (receiver &&
     events = receiver._partial.content.events;
 }}
 
+var value = cb_obj['{change}'];
+
+{transform}
+
 for (var event of events) {{
   if ((event.kind === 'ModelChanged') && (event.attr === '{change}') &&
       (cb_obj.id === event.model.id) &&
-      (JSON.stringify(cb_obj['{change}']) === JSON.stringify(event.new))) {{
+      (JSON.stringify(value) === JSON.stringify(event.new))) {{
     events.pop(events.indexOf(event))
     return;
   }}
@@ -103,18 +106,18 @@ if ((comm_msg != null) && (Object.keys(comm_msg.content).length > 0)) {{
 }}
 """
 
-def get_comm_customjs(change, client_comm, plot_id, timeout=5000, debounce=50):
+def get_comm_customjs(change, client_comm, plot_id, transform=None,
+                      timeout=5000, debounce=50):
     """
     Returns a CustomJS callback that can be attached to send the
     model state across the notebook comms.
     """
     # Abort callback if value matches last received event
-    abort = ABORT_JS.format(plot_id=plot_id, change=change)
-    data_template = """\
-data = {{{change}: cb_obj['{change}'], 'id': cb_obj.id}};
-cb_obj.event_name = '{change}';"""
+    transform = transform or ''
+    abort = ABORT_JS.format(plot_id=plot_id, change=change, transform=transform)
+    data_template = """data = {{{change}: value, 'id': cb_obj.id}}; cb_obj.event_name = '{change}';"""
 
-    fetch_data = data_template.format(change=change)
+    fetch_data = data_template.format(change=change, transform=transform)
     self_callback = JS_CALLBACK.format(
         comm_id=client_comm.id, timeout=timeout, debounce=debounce,
         plot_id=plot_id)
@@ -136,15 +139,6 @@ def push(doc, comm, binary=True):
         comm.send(json.dumps(header))
         comm.send(buffers=[payload])
 
-
-def get_env():
-    ''' Get the correct Jinja2 Environment, also for frozen scripts.
-    '''
-    local_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '_templates'))
-    return Environment(loader=FileSystemLoader(local_path))
-
-_env = get_env()
-_env.filters['json'] = lambda obj: Markup(json.dumps(obj))
 AUTOLOAD_NB_JS = _env.get_template("autoload_panel_js.js")
 NB_TEMPLATE_BASE = _env.get_template('nb_template.html')
 

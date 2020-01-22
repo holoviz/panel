@@ -33,7 +33,7 @@ def test_embed_discrete(document, comm):
         assert event['kind'] == 'ModelChanged'
         assert event['attr'] == 'text'
         assert event['model'] == model.children[1].ref
-        assert event['new'] == '<pre>%s</pre>' % k
+        assert event['new'] == '&lt;pre&gt;%s&lt;/pre&gt;' % k
 
 
 def test_embed_continuous(document, comm):
@@ -56,7 +56,7 @@ def test_embed_continuous(document, comm):
         assert event['kind'] == 'ModelChanged'
         assert event['attr'] == 'text'
         assert event['model'] == model.children[1].ref
-        assert event['new'] == '<pre>%.1f</pre>' % values[k]
+        assert event['new'] == '&lt;pre&gt;%.1f&lt;/pre&gt;' % values[k]
 
 
 def test_embed_checkbox(document, comm):
@@ -68,7 +68,7 @@ def test_embed_checkbox(document, comm):
         model = panel.get_root(document, comm)
     embed_state(panel, model, document)
     _, state = document.roots
-    assert set(state.state) == {True, False}
+    assert set(state.state) == {'false', 'true'}
     for k, v in state.state.items():
         content = json.loads(v['content'])
         assert 'events' in content
@@ -78,7 +78,7 @@ def test_embed_checkbox(document, comm):
         assert event['kind'] == 'ModelChanged'
         assert event['attr'] == 'text'
         assert event['model'] == model.children[1].ref
-        assert event['new'] == '<pre>%s</pre>' % k
+        assert event['new'] == '&lt;pre&gt;%s&lt;/pre&gt;' % k.title()
 
 
 def test_save_embed_bytesio():
@@ -90,8 +90,9 @@ def test_save_embed_bytesio():
     panel.save(stringio, embed=True)
     stringio.seek(0)
     utf = stringio.read()
-    assert "&lt;pre&gt;False&lt;" in utf
-    assert "&lt;pre&gt;True&lt;" in utf
+    print(utf)
+    assert "&amp;lt;pre&amp;gt;False&amp;lt;/pre&amp;gt;" in utf
+    assert "&amp;lt;pre&amp;gt;True&amp;lt;/pre&amp;gt;" in utf
 
 
 def test_save_embed(tmpdir):
@@ -129,7 +130,7 @@ def test_save_embed_json(tmpdir):
         event = events[0]
         assert event['kind'] == 'ModelChanged'
         assert event['attr'] == 'text'
-        assert event['new'] == '<pre>%s</pre>' % v
+        assert event['new'] == '&lt;pre&gt;%s&lt;/pre&gt;' % v
 
 
 @jb_available

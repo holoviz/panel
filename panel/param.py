@@ -24,7 +24,7 @@ from .layout import Row, Panel, Tabs, Column
 from .pane.base import PaneBase, ReplacementPane
 from .util import (
     abbreviated_repr, full_groupby, get_method_owner, is_parameterized,
-    param_name
+    param_name, recursive_parameterized
 )
 from .viewable import Layoutable
 from .widgets import (
@@ -174,7 +174,7 @@ class Param(PaneBase):
                 params.append('%s=%s' % (p, abbreviated_repr(v)))
             except RuntimeError:
                 params.append('%s=%s' % (p, '...'))
-        obj = type(self.object).__name__
+        obj = 'None' if self.object is None else '%s' % type(self.object).__name__
         template = '{cls}({obj}, {params})' if params else '{cls}({obj})'
         return template.format(cls=cls, params=', '.join(params), obj=obj)
 
@@ -237,12 +237,13 @@ class Param(PaneBase):
                 "Adds or removes subpanel from layout"
                 parameterized = getattr(self.object, parameter)
                 existing = [p for p in self._expand_layout.objects
-                            if isinstance(p, Param)
-                            and p.object is parameterized]
-                if existing:
-                    old_panel = existing[0]
-                    if not change.new:
-                        self._expand_layout.remove(old_panel)
+                            if isinstance(p, Param) and
+                            p.object in recursive_parameterized(parameterized)]
+                if not change.new:
+                    self._expand_layout[:] = [
+                        e for e in self._expand_layout.objects
+                        if e not in existing
+                    ]
                 elif change.new:
                     kwargs = {k: v for k, v in self.get_param_values()
                               if k not in ['name', 'object', 'parameters']}
@@ -419,8 +420,8 @@ class Param(PaneBase):
             widget.margin = (5, 0, 5, 10)
             toggle = Toggle(name='\u22EE', button_type='primary',
                             disabled=not is_parameterized(value), max_height=30,
-                            max_width=20, height_policy='fit', align='center',
-                            margin=(0, 0, 0, 10))
+                            max_width=20, height_policy='fit', align='end',
+                            margin=(0, 0, 5, 10))
             widget.width = self._widget_box.width-60
             return Row(widget, toggle, width_policy='max', margin=0)
         else:

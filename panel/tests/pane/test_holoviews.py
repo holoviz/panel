@@ -401,8 +401,6 @@ def test_holoviews_linked_axes(document, comm):
 
     row_model = layout.get_root(document, comm=comm)
 
-    print(row_model.children)
-
     p1, p2 = row_model.select({'type': Figure})
 
     assert p1.x_range is p2.x_range

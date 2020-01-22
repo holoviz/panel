@@ -18,7 +18,7 @@ from ..io import state, unlocked
 from ..layout import Column, WidgetBox, HSpacer, VSpacer, Row
 from ..viewable import Layoutable, Viewable
 from ..widgets import Player
-from .base import PaneBase, Pane
+from .base import PaneBase, Pane, RerenderError
 from .plot import Bokeh, Matplotlib
 from .plotly import Plotly
 
@@ -77,6 +77,8 @@ class HoloViews(PaneBase):
     def __init__(self, object=None, **params):
         super(HoloViews, self).__init__(object, **params)
         self._initialized = False
+        self._responsive_content = False
+        self._restore_plot = None
         self.widget_box = self.widget_layout()
         self._widget_container = []
         self._update_widgets()
@@ -86,9 +88,6 @@ class HoloViews(PaneBase):
 
     @param.depends('center', 'widget_location', watch=True)
     def _update_layout(self):
-        from holoviews.core import DynamicMap, Store
-        from holoviews.plotting.util import initialize_dynamic
-
         loc = self.widget_location
         if not len(self.widget_box):
             widgets = []
@@ -105,22 +104,7 @@ class HoloViews(PaneBase):
         elif loc in ('left_bottom', 'right_bottom'):
             widgets = Column(VSpacer(), self.widget_box)
 
-        # Do not center if content is responsive
-        backend = self.backend or Store.current_backend
-        if self.object is None:
-            opts = {}
-        else:
-            initialize_dynamic(self.object)
-            obj = self.object.last if isinstance(self.object, DynamicMap) else self.object
-            try:
-                opts = Store.lookup_options(backend, obj, 'plot').kwargs
-            except:
-                opts = {}
-        responsive_modes = ('stretch_width', 'stretch_both', 'scale_width', 'scale_both')
-        center = self.center
-        if ((opts.get('responsive') and not (opts.get('width') or opts.get('frame_width'))) or
-             opts.get('sizing_mode') in responsive_modes):
-            center = False
+        center = self.center and not self._responsive_content
 
         self._widget_container = widgets
         if not widgets:
@@ -229,7 +213,10 @@ class HoloViews(PaneBase):
         if self.object is None:
             model = _BkSpacer()
         else:
-            if isinstance(self.object, Plot):
+            if self._restore_plot is not None:
+                plot = self._restore_plot
+                self._restore_plot = None
+            elif isinstance(self.object, Plot):
                 plot = self.object
             else:
                 plot = self._render(doc, comm, root)
@@ -240,6 +227,18 @@ class HoloViews(PaneBase):
             else:
                 # Compatibility with holoviews<1.13.0
                 state = plot.state
+
+            # Ensure rerender if content is responsive but layout is centered
+            if (backend == 'bokeh' and self.center and
+                state.sizing_mode not in ('fixed', None)
+                and not self._responsive_content):
+                self._responsive_content = True
+                self._update_layout()
+                self._restore_plot = plot
+                raise RerenderError()
+            else:
+                self._responsive_content = False
+
             kwargs = {p: v for p, v in self.get_param_values()
                       if p in Layoutable.param and p != 'name'}
             child_pane = self._panes.get(backend, Pane)(state, **kwargs)
@@ -514,6 +513,7 @@ def link_axes(root_view, root_model):
         return
 
     from holoviews.core.options import Store
+    from holoviews.core.util import unique_iterator
     from holoviews.plotting.bokeh.element import ElementPlot
 
     ref = root_model.ref['id']
@@ -535,21 +535,25 @@ def link_axes(root_view, root_model):
 
             fig = p.state
             if fig.x_range.tags:
-                range_map[(fig.x_range.tags[0], plot.root.ref['id'])].append((fig, p, fig.xaxis[0], fig.x_range))
+                range_map[fig.x_range.tags[0]].append((fig, p, fig.xaxis[0], fig.x_range))
             if fig.y_range.tags:
-                range_map[(fig.y_range.tags[0], plot.root.ref['id'])].append((fig, p, fig.yaxis[0], fig.y_range))
+                range_map[fig.y_range.tags[0]].append((fig, p, fig.yaxis[0], fig.y_range))
 
-    for (tag, _), axes in range_map.items():
+    for (tag), axes in range_map.items():
         fig, p, ax, axis = axes[0]
         for fig, p, pax, _ in axes[1:]:
             changed = []
             if  type(ax) is not type(pax):
                 continue
             if tag in fig.x_range.tags and not axis is fig.x_range:
+                if hasattr(axis, 'factors'):
+                    axis.factors = list(unique_iterator(axis.factors+fig.x_range.factors))
                 fig.x_range = axis
                 p.handles['x_range'] = axis
                 changed.append('x_range')
             if tag in fig.y_range.tags and not axis is fig.y_range:
+                if hasattr(axis, 'factors'):
+                    axis.factors = list(unique_iterator(axis.factors+fig.y_range.factors))
                 fig.y_range = axis
                 p.handles['y_range'] = axis
                 changed.append('y_range')

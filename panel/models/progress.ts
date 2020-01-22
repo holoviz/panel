@@ -1,17 +1,24 @@
-import {VariadicBox} from "@bokehjs/core/layout"
 import * as p from "@bokehjs/core/properties"
-import {Widget, WidgetView} from "@bokehjs/models/widgets/widget"
+import {HTMLBox, HTMLBoxView} from "@bokehjs/models/layouts/html_box"
 
-export class ProgressView extends WidgetView {
+import {CachedVariadicBox, set_size} from "./layout"
+
+export class ProgressView extends HTMLBoxView {
   model: Progress
+  _prev_sizing_mode: string | null
   protected progressEl: HTMLProgressElement
 
   connect_signals(): void {
     super.connect_signals()
-    this.connect(this.model.change, () => {
+    const resize = () => {
       this.render()
       this.root.compute_layout() // XXX: invalidate_layout?
-    })
+    }
+    this.connect(this.model.properties.height.change, resize)
+    this.connect(this.model.properties.width.change, resize)
+    this.connect(this.model.properties.height_policy.change, resize)
+    this.connect(this.model.properties.width_policy.change, resize)
+    this.connect(this.model.properties.sizing_mode.change, resize)
     this.connect(this.model.properties.active.change, () => this.setCSS())
     this.connect(this.model.properties.bar_color.change, () => this.setCSS())
     this.connect(this.model.properties.css_classes.change, () => this.setCSS())
@@ -25,17 +32,9 @@ export class ProgressView extends WidgetView {
     this.progressEl = document.createElement('progress')
     this.setValue()
     this.setMax()
+    set_size(this.progressEl, this.model)
 
     // Set styling
-    if (!this.model.sizing_mode || this.model.sizing_mode === 'fixed') {
-      if (this.model.width)
-        this.progressEl.style.width = this.model.width + 'px';
-    } else if (this.model.sizing_mode == 'stretch_width' ||
-               this.model.sizing_mode == 'stretch_both' ||
-               this.model.width_policy == 'max' ||
-               this.model.width_policy == 'fit') {
-      this.progressEl.style.width = '100%'
-    }
     this.setCSS()
     for (const prop in style)
       this.progressEl.style.setProperty(prop, style[prop]);
@@ -43,11 +42,10 @@ export class ProgressView extends WidgetView {
   }
 
   setCSS(): void {
-    const css = this.model.css_classes.join(" ") + " " + this.model.bar_color;
+    let css = this.model.css_classes.join(" ") + " " + this.model.bar_color;
     if (this.model.active)
-      this.progressEl.className = css + " active";
-    else
-      this.progressEl.className = css;
+      css = css + " active";
+    this.progressEl.className = css;
   }
 
   setValue(): void {
@@ -59,9 +57,12 @@ export class ProgressView extends WidgetView {
     if (this.model.max != null)
       this.progressEl.max = this.model.max
   }
-
+  
   _update_layout(): void {
-    this.layout = new VariadicBox(this.el)
+    let changed = ((this._prev_sizing_mode !== undefined) &&
+                   (this._prev_sizing_mode !== this.model.sizing_mode))
+    this._prev_sizing_mode = this.model.sizing_mode;
+    this.layout = new CachedVariadicBox(this.el, this.model.sizing_mode, changed)
     this.layout.set_sizing(this.box_sizing())
   }
 }
@@ -69,7 +70,7 @@ export class ProgressView extends WidgetView {
 export namespace Progress {
   export type Attrs = p.AttrsOf<Props>
 
-  export type Props = Widget.Props & {
+  export type Props = HTMLBox.Props & {
     active: p.Property<boolean>
     bar_color: p.Property<string>
     style: p.Property<{[key: string]: string}>
@@ -80,7 +81,7 @@ export namespace Progress {
 
 export interface Progress extends Progress.Attrs {}
 
-export class Progress extends Widget {
+export class Progress extends HTMLBox {
   properties: Progress.Props
 
   constructor(attrs?: Partial<Progress.Attrs>) {

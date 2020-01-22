@@ -89,7 +89,7 @@ except:
 install_requires = [
     'bokeh >=1.4.0',
     'param >=1.9.0',
-    'pyviz_comms >=0.7.2',
+    'pyviz_comms >=0.7.3',
     'markdown',
     'pyct >=0.4.4'
 ]
@@ -109,7 +109,7 @@ extras_require = {
         'pytest',
         'scipy',
         'nbsmoke >=0.2.0',
-        'pytest-cov ==2.5.1',
+        'pytest-cov',
         'codecov',
         # For examples
         'hvplot',
@@ -117,10 +117,10 @@ extras_require = {
         'altair',
         'streamz',
         'vega_datasets',
-        'vtk ==8.1.1',
+        'vtk',
         'scikit-learn',
         'datashader',
-        'jupyter_bokeh'
+        'jupyter_bokeh',
     ],
     'recommended': _recommended,
     'doc': _recommended + [
@@ -153,16 +153,16 @@ extras_require['build'] = [
 setup_args = dict(
     name='panel',
     version=get_setup_version("panel"),
-    description='A high level dashboarding library for python visualization libraries.',
+    description='A high level app and dashboarding solution for Python.',
     long_description=open('README.md').read() if os.path.isfile('README.md') else 'Consult README.md',
     long_description_content_type="text/markdown",
-    author="PyViz developers",
-    author_email="developers@pyviz.org",
-    maintainer="PyViz",
-    maintainer_email="developers@pyviz.org",
+    author="HoloViz",
+    author_email="developers@holoviz.org",
+    maintainer="HoloViz",
+    maintainer_email="developers@holoviz.org",
     platforms=['Windows', 'Mac OS X', 'Linux'],
     license='BSD',
-    url='http://pyviz.org',
+    url='http://panel.holoviz.org',
     cmdclass=_COMMANDS,
     packages=find_packages(),
     include_package_data=True,

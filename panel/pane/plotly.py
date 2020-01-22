@@ -14,6 +14,8 @@ import param
 
 from .base import PaneBase
 from ..util import isdatetime
+from ..viewable import Layoutable
+
 
 
 class Plotly(PaneBase):
@@ -189,20 +191,27 @@ viewport_update_policy is "throttle"'''
         else:
             PlotlyPlot = getattr(sys.modules['panel.models.plotly'], 'PlotlyPlot')
 
+        viewport_params = [p for p in self.param if 'viewport' in p]
+        params = list(Layoutable.param)+viewport_params
+        properties = {p : getattr(self, p) for p in params
+                      if getattr(self, p) is not None}
+
         if self.object is None:
             json, sources = {}, []
         else:
             fig = self._to_figure(self.object)
             json = self._plotly_json_wrapper(fig)
             sources = Plotly._get_sources(json)
-        model = PlotlyPlot(data=json.get('data', []),
-                           layout=json.get('layout', {}),
-                           config=self.config,
-                           viewport=self.viewport,
-                           viewport_update_policy=self.viewport_update_policy,
-                           viewport_update_throttle=self.viewport_update_throttle,
-                           data_sources=sources,
-                           _render_count=self._render_count)
+
+        data = json.get('data', [])
+        layout = json.get('layout', {})
+        if layout.get('autosize') and self.sizing_mode is self.param.sizing_mode.default:
+            properties['sizing_mode'] = 'stretch_both'
+
+        model = PlotlyPlot(
+            data=data, layout=layout, config=self.config, data_sources=sources,
+            _render_count=self._render_count, **properties
+        )
 
         if root is None:
             root = model
@@ -231,6 +240,7 @@ viewport_update_policy is "throttle"'''
 
         fig = self._to_figure(self.object)
         json = self._plotly_json_wrapper(fig)
+        layout = json.get('layout')
 
         traces = json['data']
         new_sources = []
@@ -244,7 +254,7 @@ viewport_update_policy is "throttle"'''
 
             update_sources = self._update_data_sources(cds, trace) or update_sources
         try:
-            update_layout = model.layout != json.get('layout')
+            update_layout = model.layout != layout
         except:
             update_layout = True
 
@@ -263,6 +273,13 @@ viewport_update_policy is "throttle"'''
                 if update_data:
                     break
 
+        if self.sizing_mode is self.param.sizing_mode.default and 'autosize' in layout:
+            autosize = layout.get('autosize')
+            if autosize and model.sizing_mode != 'stretch_both':
+                model.sizing_mode = 'stretch_both'
+            elif not autosize and model.sizing_mode != 'fixed':
+                model.sizing_mode = 'fixed'
+
         if new_sources:
             model.data_sources += new_sources
 
@@ -270,7 +287,7 @@ viewport_update_policy is "throttle"'''
             model.data = json.get('data')
 
         if update_layout:
-            model.layout = json.get('layout')
+            model.layout = layout
 
         # Check if we should trigger rendering
         if new_sources or update_sources or update_data or update_layout:

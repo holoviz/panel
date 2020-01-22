@@ -59,10 +59,11 @@ def test_file_input(document, comm):
 
     assert isinstance(widget, BkFileInput)
 
-    file_input._comm_change({'mime_type': 'text/plain', 'value': 'U29tZSB0ZXh0Cg=='})
+    file_input._comm_change({'mime_type': 'text/plain', 'value': 'U29tZSB0ZXh0Cg==', 'filename': 'testfile'})
     assert file_input.value == b'Some text\n'
     assert file_input.mime_type == 'text/plain'
     assert file_input.accept == '.txt'
+    assert file_input.filename == 'testfile'
 
 
 def test_literal_input(document, comm):
@@ -106,6 +107,9 @@ def test_static_text(document, comm):
 
     text.value = 'CBA'
     assert widget.text == '<b>Text:</b>: CBA'
+
+    text.value = '<b>Text:</b>: ABC'
+    assert widget.text == '<b>Text:</b>: ABC'
 
 
 def test_text_input(document, comm):

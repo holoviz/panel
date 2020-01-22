@@ -72,7 +72,7 @@ class FileInput(Widget):
 
     def _filter_properties(self, properties):
         properties = super(FileInput, self)._filter_properties(properties)
-        return properties + ['value', 'mime_type']
+        return properties + ['value', 'mime_type', 'filename']
 
     def _process_property_change(self, msg):
         msg = super(FileInput, self)._process_property_change(msg)
@@ -113,8 +113,9 @@ class StaticText(Widget):
         msg.pop('title', None)
         if 'value' in msg:
             text = as_unicode(msg.pop('value'))
+            partial = self._format.replace('{value}', '').format(title=self.name)
             if self.name:
-                text = self._format.format(title=self.name, value=text)
+                text = self._format.format(title=self.name, value=text.replace(partial, ''))
             msg['text'] = text
         return msg
 
@@ -319,4 +320,4 @@ class Checkbox(Widget):
 
     def _get_embed_state(self, root, max_opts=3):
         return (self, self._models[root.ref['id']][0], [False, True],
-                lambda x: 0 in x.active, 'active', 'cb_obj.active.indexOf(0) >= 0')
+                lambda x: str(0 in x.active).lower(), 'active', 'String(cb_obj.active.indexOf(0) >= 0)')
