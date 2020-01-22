@@ -13,6 +13,7 @@ from six import string_types
 import param
 
 from .markup import escape, DivPaneBase
+from ..util import isfile, isurl
 
 
 class ImageBase(DivPaneBase):
@@ -42,22 +43,12 @@ class ImageBase(DivPaneBase):
         if hasattr(obj, '_repr_{}_'.format(imgtype)):
             return True
         if isinstance(obj, string_types):
-            if os.path.isfile(obj) and obj.endswith('.'+imgtype):
+            if isfile(obj) and obj.endswith('.'+imgtype):
                 return True
-            if cls._is_url(obj):
+            if isurl(obj, [cls.imgtype]):
                 return True
         if hasattr(obj, 'read'):  # Check for file like object
             return True
-        return False
-
-    @classmethod
-    def _is_url(cls, obj):
-        if isinstance(obj, string_types):
-            lower_string = obj.lower()
-            return (
-                lower_string.startswith('http://')
-                or lower_string.startswith('https://')
-            ) and lower_string.endswith('.'+cls.imgtype)
         return False
 
     def _type_error(self, object):
@@ -70,7 +61,7 @@ class ImageBase(DivPaneBase):
         if hasattr(self.object, '_repr_{}_'.format(self.imgtype)):
             return getattr(self.object, '_repr_' + self.imgtype + '_')()
         if isinstance(self.object, string_types):
-            if os.path.isfile(self.object):
+            if isfile(self.object):
                 with open(self.object, 'rb') as f:
                     return f.read()
         if hasattr(self.object, 'read'):

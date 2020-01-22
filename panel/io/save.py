@@ -83,10 +83,9 @@ def save(panel, filename, title=None, resources=None, template=None,
     """
     from ..pane import PaneBase
 
-    if isinstance(panel, PaneBase):
-        if len(panel.layout) >= 1:
-            panel = panel.layout
-    
+    if isinstance(panel, PaneBase) and len(panel.layout) > 1:
+        panel = panel.layout
+
     doc = Document()
     comm = Comm()
     with config.set(embed=embed):

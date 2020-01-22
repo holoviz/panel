@@ -21,6 +21,7 @@ import numpy as np
 from pyviz_comms import JupyterComm
 
 from ..base import PaneBase
+from ...util import isfile
 
 if sys.version_info >= (2, 7):
     base64encode = lambda x: base64.b64encode(x).decode('utf-8')
@@ -292,7 +293,7 @@ class VTK(PaneBase):
     def _get_vtkjs(self):
         if self._vtkjs is None and self.object is not None:
             if isinstance(self.object, string_types) and self.object.endswith('.vtkjs'):
-                if os.path.isfile(self.object):
+                if isfile(self.object):
                     with open(self.object, 'rb') as f:
                         vtkjs = f.read()
                 else:

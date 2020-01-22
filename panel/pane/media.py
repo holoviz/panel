@@ -13,6 +13,7 @@ import numpy as np
 import param
 
 from ..models import Audio as _BkAudio, Video as _BkVideo
+from ..util import isfile, isurl
 from .base import PaneBase
 
 
@@ -51,22 +52,12 @@ class _MediaBase(PaneBase):
     @classmethod
     def applies(cls, obj):
         if isinstance(obj, string_types):
-            if os.path.isfile(obj) and any(obj.endswith('.'+fmt) for fmt in cls._formats):
+            if isfile(obj) and any(obj.endswith('.'+fmt) for fmt in cls._formats):
                 return True
-            if cls._is_url(obj):
+            if isurl(obj, cls._formats):
                 return True
         if hasattr(obj, 'read'):  # Check for file like object
             return True
-        return False
-
-    @classmethod
-    def _is_url(cls, obj):
-        if isinstance(obj, string_types):
-            lower_string = obj.lower()
-            return (
-                lower_string.startswith('http://')
-                or lower_string.startswith('https://')
-            ) and any(lower_string.endswith('.'+fmt) for fmt in cls._formats)
         return False
 
     def _init_properties(self):
