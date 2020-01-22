@@ -4,7 +4,7 @@ import {HTMLBox} from "@bokehjs/models/layouts/html_box"
 import {div, canvas} from "@bokehjs/core/dom"
 import {majorAxis, vtk, vtkns} from "./vtk_utils"
 import {VTKAxes} from "./vtkaxes"
-import {PanelHTMLBoxView} from "../layout"
+import {PanelHTMLBoxView, set_size} from "../layout"
 
 
 export class VTKPlotView extends PanelHTMLBoxView {
@@ -79,48 +79,43 @@ export class VTKPlotView extends PanelHTMLBoxView {
     this._orientation_widget_visbility(this.model.orientation_widget)
   }
 
-  after_layout(): void {
-    if (!this._rendererEl) {
-      const container = div({
-        style: {
-          width: "100%",
-          height: "100%"
-        }
-      })
-      this.el.appendChild(container)
-      this._rendererEl = vtkns.FullScreenRenderWindow.newInstance({
-        rootContainer: this.el,
-        container: container
-      })
-      const canvas_list = container.getElementsByTagName('canvas')
-      if(canvas_list.length != 1)
-        throw Error('Error at initialization of the 3D scene, container should have one and only one canvas')
-      else
-        canvas_list[0].classList.add('scene3d-canvas')
-      const axes_canvas = canvas({
-        style: {
-          position: "absolute",
-          top: "0",
-          left: "0",
-          width: "100%",
-          height: "100%"
-        }
-      })
-      axes_canvas.classList.add('axes-canvas')
-      container.appendChild(axes_canvas)
-      this._rendererEl.setResizeCallback(() => {
-        const dims = container.getBoundingClientRect()
-        const width = Math.floor(dims.width * window.devicePixelRatio)
-        const height = Math.floor(dims.height * window.devicePixelRatio)
-        axes_canvas.setAttribute('width', width.toFixed())
-        axes_canvas.setAttribute('height', height.toFixed())
-      })
-      this._plot()
-      this._rendererEl.getRenderer().getActiveCamera().onModified(() => this._get_camera_state())
-      this._remove_default_key_binding()
-      this.model.renderer_el = this._rendererEl
-    }
-    super.after_layout()
+  render(): void {
+	super.render()
+    const container = div()
+    set_size(container, this.model)
+	console.log(this.model, container.style.height)
+	this.el.appendChild(container)
+    this._rendererEl = vtkns.FullScreenRenderWindow.newInstance({
+      rootContainer: this.el,
+      container: container
+    })
+    const canvas_list = container.getElementsByTagName('canvas')
+    if(canvas_list.length != 1)
+      throw Error('Error at initialization of the 3D scene, container should have one and only one canvas')
+    else
+      canvas_list[0].classList.add('scene3d-canvas')
+    const axes_canvas = canvas({
+      style: {
+        position: "absolute",
+        top: "0",
+        left: "0",
+        width: "100%",
+        height: "100%"
+      }
+    })
+    axes_canvas.classList.add('axes-canvas')
+    container.appendChild(axes_canvas)
+    this._rendererEl.setResizeCallback(() => {
+      const dims = container.getBoundingClientRect()
+      const width = Math.floor(dims.width * window.devicePixelRatio)
+      const height = Math.floor(dims.height * window.devicePixelRatio)
+      axes_canvas.setAttribute('width', width.toFixed())
+      axes_canvas.setAttribute('height', height.toFixed())
+    })
+    this._plot()
+    this._rendererEl.getRenderer().getActiveCamera().onModified(() => this._get_camera_state())
+    this._remove_default_key_binding()
+    this.model.renderer_el = this._rendererEl
   }
 
   _orientation_widget_visbility(visbility: boolean): void {
