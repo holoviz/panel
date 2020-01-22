@@ -689,24 +689,24 @@ class Reactive(Viewable):
             self._callbacks.append(watcher)
 
     def _on_error(self, ref, error):
-        if ref not in state._handles or config.log_output is None:
+        if ref not in state._handles or config.debug in [None, 'disable']:
             return
         handle, accumulator = state._handles[ref]
         formatted = '\n<PRE>'+escape(traceback.format_exc())+'</PRE>\n'
-        if config.log_output == 'accumulate':
+        if config.debug == 'accumulate':
             accumulator.append(formatted)
-        elif config.log_output == 'replace':
+        elif config.debug == 'replace':
             accumulator[:] = [formatted]
         handle.update({'text/html': '\n'.join(accumulator)}, raw=True)
 
     def _on_stdout(self, ref, stdout):
-        if ref not in state._handles or config.log_output is None:
+        if ref not in state._handles or config.debug is [None, 'disable']:
             return
         handle, accumulator = state._handles[ref]
         formatted = ["%s</br>" % o for o in stdout]
-        if config.log_output == 'accumulate':
+        if config.debug == 'accumulate':
             accumulator.extend(formatted)
-        elif config.log_output == 'replace':
+        elif config.debug == 'replace':
             accumulator[:] = formatted
         handle.update({'text/html': '\n'.join(accumulator)}, raw=True)
 

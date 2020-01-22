@@ -55,23 +55,29 @@ class _config(param.Parameterized):
     """
 
     css_files = param.List(default=_CSS_FILES, doc="""
-        External CSS files to load as part of the template.""")
-
-    log_output = param.ObjectSelector(default='accumulate', allow_None=True,
-                                      objects=['accumulate', 'replace'], doc="""
-        Whether to errors and stdout output in the notebook.""")
+        External CSS files to load.""")
 
     js_files = param.Dict(default={}, doc="""
-        External JS files to load as part of the template. Dictionary
-        should map from exported name to the URL of the JS file.""")
+        External JS files to load. Dictionary should map from exported
+        name to the URL of the JS file.""")
 
     raw_css = param.List(default=[], doc="""
-        List of raw CSS strings to add to the template.""")
+        List of raw CSS strings to add to load.""")
 
     sizing_mode = param.ObjectSelector(default=None, objects=[
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
         'scale_width', 'scale_height', 'scale_both', None], doc="""
         Specify the default sizing mode behavior of panels.""")
+
+    _comms = param.ObjectSelector(
+        default='default', objects=['default', 'ipywidgets'], doc="""
+        Whether to render output in Jupyter with the default Jupyter
+        extension or use the jupyter_bokeh ipywidget model.""")
+
+    _debug = param.ObjectSelector(default='accumulate', allow_None=True,
+                                 objects=['accumulate', 'replace', 'disable'], doc="""
+        How to log errors and stdout output triggered by callbacks
+        from Javascript in the notebook.""")
 
     _embed = param.Boolean(default=False, allow_None=True, doc="""
         Whether plot data will be embedded.""")
@@ -82,20 +88,15 @@ class _config(param.Parameterized):
     _embed_json_prefix = param.String(default='', doc="""
         Prefix for randomly generated json directories.""")
 
-    _embed_save_path = param.String(default='./', doc="""
-        Where to save json files for embedded state.""")
-
     _embed_load_path = param.String(default=None, doc="""
         Where to load json files for embedded state.""")
 
-    _comms = param.ObjectSelector(
-        default='default', objects=['default', 'ipywidgets'], doc="""
-        Whether to render output in Jupyter with the default Jupyter
-        extension or use the jupyter_bokeh ipywidget model.""") 
+    _embed_save_path = param.String(default='./', doc="""
+        Where to save json files for embedded state.""")
 
     _inline = param.Boolean(default=True, allow_None=True, doc="""
-        Whether to inline JS and CSS resources.
-        If disabled, resources are loaded from CDN if one is available.""")
+        Whether to inline JS and CSS resources. If disabled, resources
+        are loaded from CDN if one is available.""")
 
     _truthy = ['True', 'true', '1', True, 1]
 
@@ -117,6 +118,18 @@ class _config(param.Parameterized):
             self.set_param(**dict(values))
             for k, v in overrides:
                 setattr(self, k+'_', v)
+
+    @property
+    def debug(self):
+        if self._debug_ is not None:
+            return self._debug_
+        else:
+            return os.environ.get('PANEL_DEBUG', _config._debug)
+
+    @debug.setter
+    def debug(self, value):
+        validate_config(self, '_debug', value)
+        self._debug_ = value
 
     @property
     def embed(self):
@@ -210,7 +223,6 @@ else:
 
 config = _config(**{k: None if p.allow_None else getattr(_config, k)
                     for k, p in _params.items() if k != 'name'})
-config.log_output = 'accumulate'
 
 
 class panel_extension(_pyviz_extension):

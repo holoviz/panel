@@ -52,7 +52,9 @@ class _state(param.Parameterized):
             server_info.append("{}:{:d} - {!r}".format(
                 server.address or "localhost", server.port, panel)
             )
-        return "state(servers=\n  {}\n)".format(",\n  ".join(server_info))
+        if not server_info:
+            return "state(servers=[])"
+        return "state(servers=[\n  {}\n])".format(",\n  ".join(server_info))
 
     def kill_all_servers(self):
         """Stop all servers and clear them from the current state."""
