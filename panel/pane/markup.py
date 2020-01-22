@@ -7,16 +7,13 @@ from __future__ import absolute_import, division, unicode_literals
 import json
 import textwrap
 
-try:
-    from html import escape
-except:
-    from cgi import escape
 from six import string_types
 
 import param
 
-from ..viewable import Layoutable
 from ..models import HTML as _BkHTML, JSON as _BkJSON
+from ..util import escape
+from ..viewable import Layoutable
 from .base import PaneBase
 
 

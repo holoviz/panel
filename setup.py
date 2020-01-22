@@ -89,7 +89,7 @@ except:
 install_requires = [
     'bokeh >=1.4.0',
     'param >=1.9.0',
-    'pyviz_comms >=0.7.2',
+    'pyviz_comms >=0.7.3',
     'markdown',
     'pyct >=0.4.4'
 ]
