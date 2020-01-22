@@ -273,7 +273,10 @@ class PaneBase(Reactive):
         for p in param.concrete_descendents(PaneBase).values():
             if p.priority is None:
                 applies = True
-                priority = p.applies(obj, **(kwargs if p._applies_kw else {}))
+                try:
+                    priority = p.applies(obj, **(kwargs if p._applies_kw else {}))
+                except:
+                    priority = False
             else:
                 applies = None
                 priority = p.priority
@@ -289,7 +292,10 @@ class PaneBase(Reactive):
         pane_types = reversed(sorted(descendents, key=lambda x: x[0]))
         for _, applies, pane_type in pane_types:
             if applies is None:
-                applies = pane_type.applies(obj, **(kwargs if pane_type._applies_kw else {}))
+                try:
+                    applies = pane_type.applies(obj, **(kwargs if pane_type._applies_kw else {}))
+                except:
+                    applies = False
             if not applies:
                 continue
             return pane_type

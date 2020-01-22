@@ -3,12 +3,12 @@ Various general utilities used in the panel codebase.
 """
 from __future__ import absolute_import, division, unicode_literals
 
-import re
-import sys
+import datetime as dt
 import inspect
 import numbers
-import datetime as dt
-
+import os
+import re
+import sys
 
 from collections import defaultdict, OrderedDict
 from datetime import datetime
@@ -31,6 +31,24 @@ datetime_types = (np.datetime64, dt.datetime, dt.date)
 
 if sys.version_info.major > 2:
     unicode = str
+
+
+def isfile(path):
+    """Safe version of os.path.isfile robust to path length issues on Windows"""
+    try:
+        return os.path.isfile(path)
+    except ValueError: # path too long for Windows
+        return False
+
+
+def isurl(obj, formats):
+    if not isinstance(obj, string_types):
+        return False
+    lower_string = obj.lower()
+    return (
+        lower_string.startswith('http://')
+        or lower_string.startswith('https://')
+    ) and any(lower_string.endswith('.'+fmt) for fmt in formats)
 
 
 def hashable(x):
