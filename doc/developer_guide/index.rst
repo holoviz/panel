@@ -57,16 +57,9 @@ This will create a ``panel`` directory at your file system
 location. This ``panel`` directory is referred to as the *source
 checkout* for the remainder of this document.
 
-.. _dev_guide_installing_dependencies:
-
-Installing Dependencies
------------------------
-
-Panel requires many additional packages for development and
-testing. Many of these are on the main Anaconda default channel.
 
 Create a development environment
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------------
 
 Since Panel interfaces with a large range of different libraries the
 full test suite requires a wide range of dependencies. To make it
@@ -102,15 +95,16 @@ created you can activate it with:
 Install Panel in editable mode
 ------------------------------
 
-To perform an editable install of Panel, including the dependencies
-required to run the full unit test suite, run the following:
+To perform an editable install of Panel, including all the
+dependencies required to run the full unit test suite, run the
+following:
 
 .. code-block:: sh
 
     doit develop_install -c pyviz/label/dev -c conda-forge -c bokeh -o build -o tests -o recommended
 
 The above command installs Panel's dependencies using conda, then
-performs a pip editable install.
+performs a pip editable install of Panel.
 
 
 Developing custom models
@@ -125,7 +119,7 @@ information about developing bokeh models.
 Next Steps
 ----------
 
-You will likely want to check out the :ref:`devguide_setup` guide. Meanwhile,
+You will likely want to check out the :ref:`devguide_testing` guide. Meanwhile,
 if you have any problems with the steps here, please `contact the developers`_.
 
 .. _Anaconda: https://anaconda.com/downloads
