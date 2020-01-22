@@ -43,7 +43,7 @@ export function set_size(el: HTMLElement, model: HTMLBox): void {
     el.style.width = "100%";
 
   if (height_policy == "fixed" && model.height)
-    el.style.height = model.width + "px";
+    el.style.height = model.height + "px";
   else if (height_policy == "max")
     el.style.height = "100%";
 }

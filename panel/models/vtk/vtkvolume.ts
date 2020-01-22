@@ -3,7 +3,7 @@ import {ARRAY_TYPES, DType} from "@bokehjs/core/util/serialization"
 import {HTMLBox} from "@bokehjs/models/layouts/html_box"
 import {div} from "@bokehjs/core/dom"
 
-import {PanelHTMLBoxView} from "../layout"
+import {PanelHTMLBoxView, set_size} from "../layout"
 
 const vtk = (window as any).vtk
 
@@ -31,31 +31,25 @@ export class VTKVolumePlotView extends PanelHTMLBoxView {
   protected _rendererEl: any
   protected _controllerWidget: any
 
-  after_layout(): void{
-    if (!this._rendererEl) {
-      this._controllerWidget = vtk.Interaction.UI.vtkVolumeController.newInstance({
-        size: [400, 150],
-        rescaleColorMap: false,
-      })
-      this._controllerWidget.setContainer(this.el)
-      this._container = div({
-        style: {
-          width: "100%",
-          height: "100%"
-        }
-      })
-      this.el.appendChild(this._container)
-      this._rendererEl = vtk.Rendering.Misc.vtkFullScreenRenderWindow.newInstance({
-        rootContainer: this.el,
-        container: this._container
-      });
-      this._rendererEl.getRenderWindow().getInteractor()
-      this._rendererEl.getRenderWindow().getInteractor().setDesiredUpdateRate(45)
-      this._plot()
-      this._rendererEl.getRenderer().resetCamera()
-      this._rendererEl.getRenderWindow().render()
-    }
-    super.after_layout()
+  render(): void{
+    super.render()
+    this._controllerWidget = vtk.Interaction.UI.vtkVolumeController.newInstance({
+      size: [400, 150],
+      rescaleColorMap: false,
+    })
+    this._controllerWidget.setContainer(this.el)
+    this._container = div()
+    set_size(this._container, this.model)
+    this.el.appendChild(this._container)
+    this._rendererEl = vtk.Rendering.Misc.vtkFullScreenRenderWindow.newInstance({
+      rootContainer: this.el,
+      container: this._container
+    });
+    this._rendererEl.getRenderWindow().getInteractor()
+    this._rendererEl.getRenderWindow().getInteractor().setDesiredUpdateRate(45)
+    this._plot()
+    this._rendererEl.getRenderer().resetCamera()
+    this._rendererEl.getRenderWindow().render()
   }
 
   _create_source(): any{
@@ -75,13 +69,10 @@ export class VTKVolumePlotView extends PanelHTMLBoxView {
   }
 
   _plot(): void {
-
-
     //Create vtk volume and add it to the scene
     const source = this._create_source()
     const actor = vtk.Rendering.Core.vtkVolume.newInstance()
     const mapper = vtk.Rendering.Core.vtkVolumeMapper.newInstance()
-
 
     actor.setMapper(mapper)
     mapper.setInputData(source)
@@ -133,6 +124,13 @@ export class VTKVolumePlotView extends PanelHTMLBoxView {
 
     this._rendererEl.getRenderer().addVolume(actor)
     this._controllerWidget.setupContent(this._rendererEl.getRenderWindow(), actor, true)
+  }
+
+  connect_signals(): void {
+    super.connect_signals()
+    this.connect(this.model.properties.data.change, () => {
+      this._plot()
+    })
   }
 }
 
