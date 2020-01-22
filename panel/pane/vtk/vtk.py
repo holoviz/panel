@@ -5,7 +5,6 @@ Defines a VTKPane which renders a vtk plot using VTKPlot bokeh model.
 from __future__ import absolute_import, division, unicode_literals
 
 import sys
-import os
 import base64
 
 try:

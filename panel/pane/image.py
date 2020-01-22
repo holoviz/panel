@@ -5,7 +5,6 @@ file types.
 from __future__ import absolute_import, division, unicode_literals
 
 import base64
-import os
 
 from io import BytesIO
 from six import string_types
