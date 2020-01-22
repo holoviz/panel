@@ -9,13 +9,20 @@ import inspect
 import numbers
 import datetime as dt
 
+
+from collections import defaultdict, OrderedDict
 from datetime import datetime
 from six import string_types
-from collections import defaultdict, OrderedDict
+
 try:  # python >= 3.3
     from collections.abc import MutableSequence, MutableMapping
 except ImportError:
     from collections import MutableSequence, MutableMapping
+
+try:
+    from html import escape # noqa
+except:
+    from cgi import escape # noqa
 
 import param
 import numpy as np

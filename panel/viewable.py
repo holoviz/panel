@@ -9,6 +9,7 @@ import logging
 import re
 import sys
 import threading
+import traceback
 import uuid
 
 from functools import partial
@@ -19,7 +20,7 @@ from bokeh.document.document import Document as _Document, _combine_document_eve
 from bokeh.document.events import ModelChangedEvent
 from bokeh.io import curdoc as _curdoc
 from bokeh.models import CustomJS
-from pyviz_comms import JupyterCommManager, Comm
+from pyviz_comms import JupyterCommManager
 
 from .callbacks import PeriodicCallback
 from .config import config, panel_extension
@@ -32,7 +33,7 @@ from .io.notebook import (
 from .io.save import save
 from .io.state import state
 from .io.server import StoppableThread, get_server, unlocked
-from .util import param_reprs
+from .util import escape, param_reprs
 
 
 class Layoutable(param.Parameterized):
@@ -387,10 +388,14 @@ class Viewable(Layoutable, ServableMixin):
             return None
 
         try:
-            assert get_ipython().kernel is not None # noqa
+            from IPython import get_ipython
+            assert get_ipython().kernel is not None
             state._comm_manager = JupyterCommManager
         except:
             pass
+
+        from IPython.display import display
+
         comm = state._comm_manager.get_server_comm()
         doc = _Document()
         model = self._render_model(doc, comm)
@@ -684,11 +689,10 @@ class Reactive(Viewable):
             self._callbacks.append(watcher)
 
     def _on_error(self, ref, error):
-        import cgi, traceback
         if ref not in state._handles or config.log_output is None:
             return
         handle, accumulator = state._handles[ref]
-        formatted = '\n<PRE>'+cgi.escape(traceback.format_exc())+'</PRE>\n'
+        formatted = '\n<PRE>'+escape(traceback.format_exc())+'</PRE>\n'
         if config.log_output == 'accumulate':
             accumulator.append(formatted)
         elif config.log_output == 'replace':
