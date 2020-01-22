@@ -400,8 +400,9 @@ class Viewable(Layoutable, ServableMixin):
         doc = _Document()
         model = self._render_model(doc, comm)
 
-        handle = display(display_id=uuid.uuid4().hex)
-        state._handles[model.ref['id']] = (handle, [])
+        if config.debug != 'disable':
+            handle = display(display_id=uuid.uuid4().hex)
+            state._handles[model.ref['id']] = (handle, [])
 
         if config.embed:
             return render_model(model)

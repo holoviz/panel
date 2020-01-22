@@ -123,6 +123,8 @@ class _config(param.Parameterized):
     def debug(self):
         if self._debug_ is not None:
             return self._debug_
+        elif os.environ.get('PANEL_DOC_BUILD'):
+            return 'disable'
         else:
             return os.environ.get('PANEL_DEBUG', _config._debug)
 
