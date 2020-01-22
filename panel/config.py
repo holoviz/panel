@@ -57,6 +57,10 @@ class _config(param.Parameterized):
     css_files = param.List(default=_CSS_FILES, doc="""
         External CSS files to load as part of the template.""")
 
+    log_output = param.ObjectSelector(default='accumulate', allow_None=True,
+                                      objects=['accumulate', 'replace'], doc="""
+        Whether to errors and stdout output in the notebook.""")
+
     js_files = param.Dict(default={}, doc="""
         External JS files to load as part of the template. Dictionary
         should map from exported name to the URL of the JS file.""")
@@ -206,6 +210,7 @@ else:
 
 config = _config(**{k: None if p.allow_None else getattr(_config, k)
                     for k, p in _params.items() if k != 'name'})
+config.log_output = 'accumulate'
 
 
 class panel_extension(_pyviz_extension):

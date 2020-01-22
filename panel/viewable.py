@@ -9,6 +9,7 @@ import logging
 import re
 import sys
 import threading
+import uuid
 
 from functools import partial
 
@@ -18,7 +19,7 @@ from bokeh.document.document import Document as _Document, _combine_document_eve
 from bokeh.document.events import ModelChangedEvent
 from bokeh.io import curdoc as _curdoc
 from bokeh.models import CustomJS
-from pyviz_comms import JupyterCommManager
+from pyviz_comms import JupyterCommManager, Comm
 
 from .callbacks import PeriodicCallback
 from .config import config, panel_extension
@@ -323,15 +324,17 @@ class Viewable(Layoutable, ServableMixin):
         """
         raise NotImplementedError
 
-    def _cleanup(self, model):
+    def _cleanup(self, root):
         """
         Clean up method which is called when a Viewable is destroyed.
 
         Arguments
         ---------
-        model: bokeh.model.Model
+        root: bokeh.model.Model
           Bokeh model for the view being cleaned up
         """
+        if root.ref['id'] in state._handles:
+            del state._handles[root.ref['id']]
 
     def _preprocess(self, root):
         """
@@ -391,6 +394,10 @@ class Viewable(Layoutable, ServableMixin):
         comm = state._comm_manager.get_server_comm()
         doc = _Document()
         model = self._render_model(doc, comm)
+
+        handle = display(display_id=uuid.uuid4().hex)
+        state._handles[model.ref['id']] = (handle, [])
+
         if config.embed:
             return render_model(model)
         return render_mimebundle(model, doc, comm)
@@ -676,6 +683,29 @@ class Reactive(Viewable):
             watcher = self.param.watch(param_change, params)
             self._callbacks.append(watcher)
 
+    def _on_error(self, ref, error):
+        import cgi, traceback
+        if ref not in state._handles or config.log_output is None:
+            return
+        handle, accumulator = state._handles[ref]
+        formatted = '\n<PRE>'+cgi.escape(traceback.format_exc())+'</PRE>\n'
+        if config.log_output == 'accumulate':
+            accumulator.append(formatted)
+        elif config.log_output == 'replace':
+            accumulator[:] = [formatted]
+        handle.update({'text/html': '\n'.join(accumulator)}, raw=True)
+
+    def _on_stdout(self, ref, stdout):
+        if ref not in state._handles or config.log_output is None:
+            return
+        handle, accumulator = state._handles[ref]
+        formatted = ["%s</br>" % o for o in stdout]
+        if config.log_output == 'accumulate':
+            accumulator.extend(formatted)
+        elif config.log_output == 'replace':
+            accumulator[:] = formatted
+        handle.update({'text/html': '\n'.join(accumulator)}, raw=True)
+
     def _link_props(self, model, properties, doc, root, comm=None):
         ref = root.ref['id']
         if comm is None:
@@ -687,7 +717,10 @@ class Reactive(Viewable):
             pass
         else:
             on_msg = partial(self._comm_change, ref=ref)
-            client_comm = state._comm_manager.get_client_comm(on_msg=on_msg)
+            client_comm = state._comm_manager.get_client_comm(
+                on_msg=on_msg, on_error=partial(self._on_error, ref),
+                on_stdout=partial(self._on_stdout, ref)
+            )
             for p in properties:
                 if isinstance(p, tuple):
                     p, attr = p
