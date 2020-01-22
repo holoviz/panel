@@ -65,7 +65,7 @@ class ImageBase(DivPaneBase):
                     return f.read()
         if hasattr(self.object, 'read'):
             return self.object.read()
-        if self._is_url(self.object):
+        if isurl(self.object, [self.imgtype]):
             import requests
             r = requests.request(url=self.object, method='GET')
             return r.content
