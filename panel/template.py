@@ -19,7 +19,7 @@ from .io.model import add_to_doc
 from .io.notebook import render_template
 from .io.state import state
 from .layout import Column
-from .pane import panel as _panel, HTML, Str
+from .pane import panel as _panel, HTML, Str, HoloViews
 from .viewable import ServableMixin, Viewable
 from .widgets import Button
 
@@ -113,11 +113,13 @@ class Template(param.Parameterized, ServableMixin):
         ref = preprocess_root.ref['id']
         for name, (obj, tags) in self._render_items.items():
             model = obj.get_root(doc, comm)
+            doc.on_session_destroyed(obj._server_destroy)
             for sub in obj.select(Viewable):
                 sub._models[ref] = sub._models.get(model.ref['id'])
+                if isinstance(sub, HoloViews):
+                    sub._plots[ref] = sub._plots.get(model.ref['id'])
+            col.objects.append(obj)
             obj._documents[doc] = model
-            doc.on_session_destroyed(obj._server_destroy)
-            col.append(obj)
             model.name = name
             model.tags = tags
             add_to_doc(model, doc, hold=bool(comm))
