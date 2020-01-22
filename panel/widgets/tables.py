@@ -1,6 +1,6 @@
 from __future__ import absolute_import, division, unicode_literals
 
-
+import numpy as np
 import param
 
 from bokeh.models import ColumnDataSource
@@ -145,9 +145,9 @@ class DataFrame(Widget):
                     continue
                 k = self._renamed_cols.get(k, k)
                 if isinstance(v, dict):
-                    v = [v for k, v in sorted(v.items(), key=lambda k: int(k[0]))]
+                    v = [v for _, v in sorted(v.items(), key=lambda it: int(it[0]))]
                 try:
-                    isequal = (self.value[k].values == v).all()
+                    isequal = (self.value[k].values == np.asarray(v)).all()
                 except:
                     isequal = False
                 if not isequal:
