@@ -67,21 +67,21 @@ def main(args=None):
     for cls in bokeh_commands:
         subs.add_parser(cls.name, help=cls.help)
 
+    if len(sys.argv) == 1:
+        all_commands = sorted([c.name for c in bokeh_commands] + pyct_commands)
+        die("ERROR: Must specify subcommand, one of: %s" % nice_join(all_commands))
+
     if sys.argv[1] in ('--help', '-h'):
         args = parser.parse_args(sys.argv[1:])
         args.invoke(args)
         sys.exit()
-
-    if len(sys.argv) == 1:
-        all_commands = sorted([c.name for c in bokeh_commands] + pyct_commands)
-        die("ERROR: Must specify subcommand, one of: %s" % nice_join(all_commands))
 
     if len(sys.argv) > 1 and any(sys.argv[1] == c.name for c in bokeh_commands):
         if sys.argv[1] == 'serve' and not any(arg.startswith('--index') for arg in sys.argv):
             sys.argv = sys.argv + ['--index=%s' % INDEX_HTML]
         sys.argv = transform_cmds(sys.argv)
         bokeh_entry_point()
-    elif sys.argv[0]in pyct_commands:
+    elif sys.argv[1] in pyct_commands:
         try:
             import pyct.cmd
         except ImportError:
