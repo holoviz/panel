@@ -3,16 +3,20 @@ A module containing testing utilities and fixtures.
 """
 from __future__ import absolute_import, division, unicode_literals
 
+import os
 import re
 import shutil
 
 import pytest
+
+from contextlib import contextmanager
 
 from bokeh.document import Document
 from bokeh.client import pull_session
 from pyviz_comms import Comm
 
 from panel.pane import HTML, Markdown
+from panel.io import state
 
 
 @pytest.fixture
@@ -43,6 +47,20 @@ def hv_bokeh():
     hv.Store.current_backend = 'bokeh'
     yield
     hv.Store.current_backend = prev_backend
+
+
+@pytest.yield_fixture
+def get_display_handle():
+    cleanup = []
+    def display_handle(model):
+        cleanup.append(model.ref['id'])
+        handle = {}
+        state._handles[model.ref['id']] = (handle, [])
+        return handle
+    yield display_handle
+    for ref in cleanup:
+        if ref in state._handles:
+            del state._handles[ref]
 
 
 @pytest.yield_fixture
@@ -97,3 +115,15 @@ def markdown_server_session():
         server.stop()
     except AssertionError:
         pass  # tests may already close this
+
+
+@contextmanager
+def set_env_var(env_var, value):
+    old_value = os.environ.get(env_var)
+    os.environ[env_var] = value
+    yield
+    if old_value is None:
+        del os.environ[env_var]
+    else:
+        os.environ[env_var] = old_value
+
