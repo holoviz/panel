@@ -221,7 +221,7 @@ class _config(param.Parameterized):
 if hasattr(_config.param, 'objects'):
     _params = _config.param.objects()
 else:
-    _params = _config.params()
+    _params = _config.param.params()
 
 config = _config(**{k: None if p.allow_None else getattr(_config, k)
                     for k, p in _params.items() if k != 'name'})
