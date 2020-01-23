@@ -27,6 +27,13 @@ export class VTKVolumePlotView extends VTKHTMLBoxView {
   model: VTKVolumePlot
   protected _controllerWidget: any
 
+  connect_signals(): void {
+    super.connect_signals()
+    this.connect(this.model.properties.data.change, () => {
+      this._plot()
+    })
+  }
+
   after_layout(): void{
     if(!this._initialized){
       this._controllerWidget = vtk.Interaction.UI.vtkVolumeController.newInstance({
@@ -117,20 +124,13 @@ export class VTKVolumePlotView extends VTKHTMLBoxView {
     this._vtk_renwin.getRenderer().addVolume(actor)
     this._controllerWidget.setupContent(this._vtk_renwin.getRenderWindow(), actor, true)
   }
-
-  connect_signals(): void {
-    super.connect_signals()
-    this.connect(this.model.properties.data.change, () => {
-      this._plot()
-    })
-  }
 }
 
 export namespace VTKVolumePlot {
   export type Attrs = p.AttrsOf<Props>
   export type Props = HTMLBox.Props & {
-    data: p.Property<VolumeType>,
     actor: p.Property<any>
+    data: p.Property<VolumeType>,
   }
 }
 
@@ -149,8 +149,8 @@ export class VTKVolumePlot extends HTMLBox {
     this.prototype.default_view = VTKVolumePlotView
 
     this.define<VTKVolumePlot.Props>({
-      data:     [ p.Any ],
       actor:    [ p.Any ],
+      data:     [ p.Any ],
     })
 
     this.override({

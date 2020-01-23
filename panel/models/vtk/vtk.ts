@@ -14,6 +14,51 @@ export class VTKPlotView extends VTKHTMLBoxView {
   protected _widgetManager: any
   protected _axes: any
 
+  connect_signals(): void {
+    super.connect_signals()
+    this.connect(this.model.properties.data.change, () => {
+      this._plot()
+      this._set_axes()
+    })
+    this.connect(this.model.properties.camera.change, () => this._set_camera_state())
+    this.connect(this.model.properties.orientation_widget.change, () => {
+      this._orientation_widget_visbility(this.model.orientation_widget)
+    })
+    this.connect(this.model.properties.axes.change, () => {
+      this._delete_axes()
+      if(this.model.axes)
+        this._set_axes()
+      this._vtk_renwin.getRenderWindow().render()
+    })
+
+    this.el.addEventListener('mouseenter', () => {
+      const interactor = this._vtk_renwin.getInteractor()
+      if(this.model.enable_keybindings){
+        document.querySelector('body')!.addEventListener('keypress',interactor.handleKeyPress)
+        document.querySelector('body')!.addEventListener('keydown',interactor.handleKeyDown)
+        document.querySelector('body')!.addEventListener('keyup',interactor.handleKeyUp)
+      }
+    })
+    this.el.addEventListener('mouseleave', () => {
+      const interactor = this._vtk_renwin.getInteractor()
+      document.querySelector('body')!.removeEventListener('keypress',interactor.handleKeyPress)
+      document.querySelector('body')!.removeEventListener('keydown',interactor.handleKeyDown)
+      document.querySelector('body')!.removeEventListener('keyup',interactor.handleKeyUp)
+    })
+  }
+
+  after_layout(): void {
+    if(!this._initialized){
+      this._render_axes_canvas()
+      this._plot()
+      this._vtk_renwin.getRenderer().getActiveCamera().onModified(() => this._get_camera_state())
+      this._remove_default_key_binding()
+      this.model.renderer_el = this._vtk_renwin
+      this._initialized = true
+    }
+    super.after_layout()
+  }
+
   _create_orientation_widget(): void {
     const axes = vtkns.AxesActor.newInstance()
 
@@ -77,38 +122,30 @@ export class VTKPlotView extends VTKHTMLBoxView {
     this._orientation_widget_visbility(this.model.orientation_widget)
   }
 
-  after_layout(): void {
-    if(!this._initialized){
-      const canvas_list = this._vtk_container.getElementsByTagName('canvas')
-      if(canvas_list.length != 1)
-        throw Error('Error at initialization of the 3D scene, container should have one and only one canvas')
-      else
-        canvas_list[0].classList.add('scene3d-canvas')
-      const axes_canvas = canvas({
-        style: {
-          position: "absolute",
-          top: "0",
-          left: "0",
-          width: "100%",
-          height: "100%"
-        }
-      })
-      axes_canvas.classList.add('axes-canvas')
-      this._vtk_container.appendChild(axes_canvas)
-      this._vtk_renwin.setResizeCallback(() => {
-        const dims = this._vtk_container.getBoundingClientRect()
-        const width = Math.floor(dims.width * window.devicePixelRatio)
-        const height = Math.floor(dims.height * window.devicePixelRatio)
-        axes_canvas.setAttribute('width', width.toFixed())
-        axes_canvas.setAttribute('height', height.toFixed())
-      })
-      this._plot()
-      this._vtk_renwin.getRenderer().getActiveCamera().onModified(() => this._get_camera_state())
-      this._remove_default_key_binding()
-      this.model.renderer_el = this._vtk_renwin
-      this._initialized = true
-    }
-    super.after_layout()
+  _render_axes_canvas(): void {
+    const canvas_list = this._vtk_container.getElementsByTagName('canvas')
+    if(canvas_list.length != 1)
+      throw Error('Error at initialization of the 3D scene, container should have one and only one canvas')
+    else
+      canvas_list[0].classList.add('scene3d-canvas')
+    const axes_canvas = canvas({
+      style: {
+        position: "absolute",
+        top: "0",
+        left: "0",
+        width: "100%",
+        height: "100%"
+      }
+    })
+    axes_canvas.classList.add('axes-canvas')
+    this._vtk_container.appendChild(axes_canvas)
+    this._vtk_renwin.setResizeCallback(() => {
+      const dims = this._vtk_container.getBoundingClientRect()
+      const width = Math.floor(dims.width * window.devicePixelRatio)
+      const height = Math.floor(dims.height * window.devicePixelRatio)
+      axes_canvas.setAttribute('width', width.toFixed())
+      axes_canvas.setAttribute('height', height.toFixed())
+    })
   }
 
   _orientation_widget_visbility(visbility: boolean): void {
@@ -119,39 +156,6 @@ export class VTKPlotView extends VTKHTMLBoxView {
       this._widgetManager.disablePicking()
     this._orientationWidget.updateMarkerOrientation()
     this._vtk_renwin.getRenderWindow().render()
-  }
-
-  connect_signals(): void {
-    super.connect_signals()
-    this.connect(this.model.properties.data.change, () => {
-      this._plot()
-      this._set_axes()
-    })
-    this.connect(this.model.properties.camera.change, () => this._set_camera_state())
-    this.connect(this.model.properties.orientation_widget.change, () => {
-      this._orientation_widget_visbility(this.model.orientation_widget)
-    })
-    this.connect(this.model.properties.axes.change, () => {
-      this._delete_axes()
-      if(this.model.axes)
-        this._set_axes()
-      this._vtk_renwin.getRenderWindow().render()
-    })
-
-    this.el.addEventListener('mouseenter', () => {
-      const interactor = this._vtk_renwin.getInteractor()
-      if(this.model.enable_keybindings){
-        document.querySelector('body')!.addEventListener('keypress',interactor.handleKeyPress)
-        document.querySelector('body')!.addEventListener('keydown',interactor.handleKeyDown)
-        document.querySelector('body')!.addEventListener('keyup',interactor.handleKeyUp)
-      }
-    })
-    this.el.addEventListener('mouseleave', () => {
-      const interactor = this._vtk_renwin.getInteractor()
-      document.querySelector('body')!.removeEventListener('keypress',interactor.handleKeyPress)
-      document.querySelector('body')!.removeEventListener('keydown',interactor.handleKeyDown)
-      document.querySelector('body')!.removeEventListener('keyup',interactor.handleKeyUp)
-    })
   }
 
   _remove_default_key_binding(): void {
@@ -191,13 +195,15 @@ export class VTKPlotView extends VTKHTMLBoxView {
   }
 
   _delete_axes(): void{
-    if(this._axes != null)
-      Object.keys(this._axes).forEach((key) => this._vtk_renwin.getRenderer().removeActor(this._axes[key]))
-      const axesCanvas = this._vtk_renwin.getContainer().getElementsByClassName('axes-canvas')[0]
-      const textCtx = axesCanvas.getContext("2d");
-      if (textCtx)
-        textCtx.clearRect(0, 0, axesCanvas.clientWidth * window.devicePixelRatio, axesCanvas.clientHeight * window.devicePixelRatio)
-      this._axes = null
+    if(this._axes == null)
+      return
+
+    Object.keys(this._axes).forEach((key) => this._vtk_renwin.getRenderer().removeActor(this._axes[key]))
+    const axesCanvas = this._vtk_renwin.getContainer().getElementsByClassName('axes-canvas')[0]
+    const textCtx = axesCanvas.getContext("2d");
+    if (textCtx)
+      textCtx.clearRect(0, 0, axesCanvas.clientWidth * window.devicePixelRatio, axesCanvas.clientHeight * window.devicePixelRatio)
+    this._axes = null
   }
 
   _set_axes(): void{
@@ -245,9 +251,9 @@ export class VTKPlotView extends VTKHTMLBoxView {
 export namespace VTKPlot {
   export type Attrs = p.AttrsOf<Props>
   export type Props = HTMLBox.Props & {
-    data: p.Property<string>
-    camera: p.Property<any>
     axes: p.Property<VTKAxes>
+    camera: p.Property<any>
+    data: p.Property<string>
     enable_keybindings: p.Property<boolean>
     orientation_widget: p.Property<boolean>
   }
@@ -281,9 +287,9 @@ export class VTKPlot extends HTMLBox {
     this.prototype.default_view = VTKPlotView
 
     this.define<VTKPlot.Props>({
-      data:               [ p.String         ],
-      camera:             [ p.Any            ],
       axes:               [ p.Instance       ],
+      camera:             [ p.Any            ],
+      data:               [ p.String         ],
       enable_keybindings: [ p.Boolean, false ],
       orientation_widget: [ p.Boolean, false ],
     })
