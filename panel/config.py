@@ -275,23 +275,25 @@ class panel_extension(_pyviz_extension):
                                                 "hv-extension-comm")
             state._comm_manager = _JupyterCommManager
 
-        load_notebook(config.inline)
-        panel_extension._loaded = True
-
+        nb_load = False
         if 'holoviews' in sys.modules:
             import holoviews as hv
             if hv.extension._loaded:
                 return
             import holoviews.plotting.bokeh # noqa
 
-            if hasattr(ip, 'kernel'):
-                with param.logging_level('ERROR'):
-                    hv.plotting.Renderer.load_nb()
+            with param.logging_level('ERROR'):
+                hv.plotting.Renderer.load_nb(config.inline)
+                nb_load = True
 
             if hasattr(hv.Store, 'set_current_backend'):
                 hv.Store.set_current_backend('bokeh')
             else:
                 hv.Store.current_backend = 'bokeh'
+
+        if not nb_load and hasattr(ip, 'kernel'):
+            load_notebook(config.inline)
+        panel_extension._loaded = True
 
 
 #---------------------------------------------------------------------
