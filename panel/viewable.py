@@ -757,7 +757,7 @@ class Reactive(Viewable):
                 self._change_event(doc)
 
     def _process_events(self, events):
-        self.set_param(**self._process_property_change(events))
+        self.param.set_param(**self._process_property_change(events))
 
     def _change_event(self, doc=None):
         try:

@@ -311,10 +311,10 @@ class Param(PaneBase):
         else:
             label = p_obj.label
         kw = dict(value=value, disabled=p_obj.constant, name=label)
-        
+
         # Update kwargs
         kw.update(kw_widget)
-        
+
         if hasattr(p_obj, 'get_range'):
             options = p_obj.get_range()
             if not options and value is not None:
@@ -332,7 +332,7 @@ class Param(PaneBase):
                 kw['step'] = p_obj.step
 
         kwargs = {k: v for k, v in kw.items() if k in widget_class.param}
-        
+
         if isinstance(widget_class, Widget):
             widget = widget_class
         else:
@@ -347,7 +347,7 @@ class Param(PaneBase):
                     return
                 try:
                     self._updating.append(p_name)
-                    self.object.set_param(**{p_name: change.new})
+                    self.object.param.set_param(**{p_name: change.new})
                 finally:
                     self._updating.remove(p_name)
 
@@ -400,7 +400,7 @@ class Param(PaneBase):
 
                 try:
                     self._updating.append(p_name)
-                    widget.set_param(**updates)
+                    widget.param.set_param(**updates)
                 finally:
                     self._updating.remove(p_name)
 
@@ -694,6 +694,6 @@ class JSONInit(param.Parameterized):
 
         for name, value in params.items():
            try:
-               parameterized.set_param(**{name:value})
+               parameterized.param.set_param(**{name:value})
            except ValueError as e:
                warnobj.warning(str(e))

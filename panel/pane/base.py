@@ -358,7 +358,7 @@ class ReplacementPane(PaneBase):
                 pvals = dict(self._pane.get_param_values())
                 new_params = {k: v for k, v in new_object.get_param_values()
                               if k != 'name' and v is not pvals[k]}
-                self._pane.set_param(**new_params)
+                self._pane.param.set_param(**new_params)
             else:
                 self._pane.object = new_object
         else:

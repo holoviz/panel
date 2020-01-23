@@ -294,7 +294,7 @@ class Pipeline(param.Parameterized):
                                if k in stage.param and k != 'name' and k in params})
 
         if isinstance(stage, param.Parameterized):
-            stage.set_param(**kwargs)
+            stage.param.set_param(**kwargs)
             self._state = stage
         else:
             self._state = stage(**kwargs)
