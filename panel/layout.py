@@ -6,7 +6,7 @@ from __future__ import absolute_import, division, unicode_literals
 
 import math
 
-from collections import OrderedDict, namedtuple
+from collections import OrderedDict, defaultdict, namedtuple
 from functools import partial
 
 import param
@@ -19,7 +19,7 @@ from bokeh.models import (
 from bokeh.models.widgets import Tabs as BkTabs, Panel as BkPanel
 
 from .util import param_name, param_reprs
-from .viewable import Reactive
+from .viewable import Layoutable, Reactive
 
 _row = namedtuple("row", ["children"])
 _col = namedtuple("col", ["children"])
@@ -582,6 +582,9 @@ class Tabs(ListPanel):
     closable = param.Boolean(default=False, doc="""
         Whether it should be possible to close tabs.""")
 
+    dynamic = param.Boolean(default=False, doc="""
+        Dynamically populate only the active tab.""")
+
     objects = param.List(default=[], doc="""
         The list of child objects that make up the tabs.""")
 
@@ -595,7 +598,7 @@ class Tabs(ListPanel):
 
     _bokeh_model = BkTabs
 
-    _rename = {'name': None, 'objects': 'tabs'}
+    _rename = {'name': None, 'objects': 'tabs', 'dynamic': None}
 
     _linked_props = ['active', 'tabs']
 
@@ -614,7 +617,9 @@ class Tabs(ListPanel):
             items = params['objects']
         objects, self._names = self._to_objects_and_names(items)
         super(Tabs, self).__init__(*objects, **params)
+        self._panels = defaultdict(dict)
         self.param.watch(self._update_names, 'objects')
+        self.param.watch(self._update_active, ['dynamic', 'active'])
         # ALERT: Ensure that name update happens first, should be
         #        replaced by watch precedence support in param
         self._param_watchers['objects']['value'].reverse()
@@ -683,6 +688,13 @@ class Tabs(ListPanel):
             names.append(name)
         self._names = names
 
+    def _update_active(self, *events):
+        for event in events:
+            if ((event.name == 'dynamic' and not event.old and event.new)
+                or (self.dynamic and event.name == 'active')):
+                self.param.trigger('objects')
+                return
+        
     #----------------------------------------------------------------
     # Model API
     #----------------------------------------------------------------
@@ -715,18 +727,30 @@ class Tabs(ListPanel):
                 obj._cleanup(root)
 
         current_objects = list(self)
+        panels = self._panels[root.ref['id']]
         for i, (name, pane) in enumerate(zip(self._names, self)):
-            if pane in old_objects:
-                child, _ = pane._models[root.ref['id']]
+            if self.dynamic and i != self.active:
+                child = BkSpacer(**{k: v for k, v in pane.param.get_param_values()
+                                    if k in Layoutable.param})
+            elif pane in old_objects and id(pane) in pane._models:
+                panel = panels[id(pane)]
+                new_models.append(panel)
+                continue
             else:
                 try:
                     child = pane._get_model(doc, root, model, comm)
                 except RerenderError:
                     return self._get_objects(model, current_objects[:i], doc, root, comm)
-            child = BkPanel(title=name, name=pane.name, child=child,
-                            closable=self.closable)
-            new_models.append(child)
+            panel = panels[id(pane)] = BkPanel(
+                title=name, name=pane.name, child=child, closable=self.closable
+            )
+            new_models.append(panel)
         return new_models
+
+    def _cleanup(self, root):
+        super(Tabs, self)._cleanup(root)
+        if root.ref['id'] in self._panels:
+            del self._panels[root.ref['id']]
 
     #----------------------------------------------------------------
     # Public API
