@@ -172,7 +172,7 @@ def param_reprs(parameterized, skip=None):
     """
     cls = type(parameterized).__name__
     param_reprs = []
-    for p, v in sorted(parameterized.get_param_values()):
+    for p, v in sorted(parameterized.param.get_param_values()):
         default = parameterized.param[p].default
         equal = v is default
         if not equal:
