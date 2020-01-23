@@ -29,13 +29,13 @@ from .util import (
 from .viewable import Layoutable
 from .widgets import (
     Button, Checkbox, ColorPicker, DataFrame, DatetimeInput, DateRangeSlider,
-    FloatSlider, IntSlider, LiteralInput, MultiSelect, RangeSlider,
-    Select, StaticText, TextInput, Toggle, Widget
+    FileSelector, FloatSlider, IntSlider, LiteralInput, MultiSelect,
+    RangeSlider, Select, StaticText, TextInput, Toggle, Widget
 )
 from .widgets.button import _ButtonBase
 
 
-def FileSelector(pobj):
+def SingleFileSelector(pobj):
     """
     Determines whether to use a TextInput or Select widget for FileSelector
     """
@@ -104,22 +104,26 @@ class Param(PaneBase):
     _unpack = True
 
     _mapping = {
-        param.Action:         Button,
-        param.Boolean:        Checkbox,
-        param.Color:          ColorPicker,
-        param.Date:           DatetimeInput,
-        param.DateRange:      DateRangeSlider,
-        param.DataFrame:      DataFrame,
-        param.Dict:           LiteralInput,
-        param.FileSelector:   FileSelector,
-        param.Integer:        IntSlider,
-        param.ListSelector:   MultiSelect,
-        param.Number:         FloatSlider,
-        param.ObjectSelector: Select,
-        param.Parameter:      LiteralInput,
-        param.Range:          RangeSlider,
-        param.Selector:       Select,
-        param.String:         TextInput,
+        param.Action:            Button,
+        param.Boolean:           Checkbox,
+        param.Color:             ColorPicker,
+        param.Date:              DatetimeInput,
+        param.DateRange:         DateRangeSlider,
+        param.CalendarDateRange: DateRangeSlider,
+        param.DataFrame:         DataFrame,
+        param.Dict:              LiteralInput,
+        param.FileSelector:      SingleFileSelector,
+        param.Filename:          TextInput,
+        param.Foldername:        TextInput,
+        param.Integer:           IntSlider,
+        param.MultiFileSelector: FileSelector,
+        param.ListSelector:      MultiSelect,
+        param.Number:            FloatSlider,
+        param.ObjectSelector:    Select,
+        param.Parameter:         LiteralInput,
+        param.Range:             RangeSlider,
+        param.Selector:          Select,
+        param.String:            TextInput,
     }
 
     _rerender_params = []
