@@ -89,6 +89,7 @@ _NAV = (
 templates_path = ['_templates']
 
 html_context.update({
+    'js_includes': ['nbsite.js'],
     'PROJECT': project,
     'DESCRIPTION': description,
     'AUTHOR': authors,
