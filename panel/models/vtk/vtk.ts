@@ -1,11 +1,11 @@
+import {canvas} from "@bokehjs/core/dom"
 import * as p from "@bokehjs/core/properties"
 import {clone} from "@bokehjs/core/util/object"
 import {HTMLBox} from "@bokehjs/models/layouts/html_box"
-import {canvas} from "@bokehjs/core/dom"
-import {majorAxis, vtk, vtkns} from "./vtk_utils"
+
 import {VTKAxes} from "./vtkaxes"
 import {VTKHTMLBoxView} from "./vtk_layout"
-
+import {majorAxis, vtk, vtkns} from "./vtk_utils"
 
 export class VTKPlotView extends VTKHTMLBoxView {
   model: VTKPlot
