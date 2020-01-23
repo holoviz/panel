@@ -2,8 +2,10 @@ from __future__ import absolute_import
 
 import pytest
 
-from bokeh.models import (Div, Row as BkRow, Tabs as BkTabs,
-                          Column as BkColumn, Panel as BkPanel)
+from bokeh.models import (
+    Div, Row as BkRow, Tabs as BkTabs, Column as BkColumn, Panel as BkPanel,
+    Spacer as BkSpacer
+)
 
 from panel.depends import depends
 from panel.layout import Column, Row, Tabs, Spacer, GridSpec, GridBox, WidgetBox
@@ -408,6 +410,14 @@ def test_tabs_constructor_with_named_objects(document, comm):
     assert tab2.child is div2
 
 
+def test_tabs_cleanup_panels(document, comm, tabs):
+    model = tabs.get_root(document, comm=comm)
+
+    assert model.ref['id'] in tabs._panels
+    tabs._cleanup(model)
+    assert model.ref['id'] not in tabs._panels
+
+
 def test_tabs_set_panes(document, comm):
     div1, div2 = Div(), Div()
     p1 = Pane(div1, name='Div1')
@@ -492,6 +502,34 @@ def test_tabs_close_tab_on_server(document, comm, tabs):
 
     assert len(tabs.objects) == 1
     assert tabs.objects[0] is div2
+
+
+def test_dynamic_tabs(document, comm, tabs):
+    tabs.dynamic = True
+    model = tabs.get_root(document, comm=comm)
+    div1, div2 = tabs
+
+    tab1, tab2 = model.tabs
+    assert tab1.child is div1.object
+    assert isinstance(tab2.child, BkSpacer)
+
+    tabs.active = 1
+
+    tab1, tab2 = model.tabs
+    assert isinstance(tab1.child, BkSpacer)
+    assert tab2.child is div2.object
+
+    tabs.dynamic = False
+
+    tab1, tab2 = model.tabs
+    assert tab1.child is div1.object
+    assert tab2.child is div2.object
+
+    tabs.set_param(dynamic=True, active=0)
+
+    tab1, tab2 = model.tabs
+    assert tab1.child is div1.object
+    assert isinstance(tab2.child, BkSpacer)
 
 
 def test_tabs_append_uses_object_name(document, comm, tabs):

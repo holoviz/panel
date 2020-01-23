@@ -690,8 +690,7 @@ class Tabs(ListPanel):
 
     def _update_active(self, *events):
         for event in events:
-            if ((event.name == 'dynamic' and not event.old and event.new)
-                or (self.dynamic and event.name == 'active')):
+            if event.name == 'dynamic' or (self.dynamic and event.name == 'active'):
                 self.param.trigger('objects')
                 return
         
