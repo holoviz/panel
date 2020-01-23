@@ -239,7 +239,7 @@ class HoloViews(PaneBase):
             else:
                 self._responsive_content = False
 
-            kwargs = {p: v for p, v in self.get_param_values()
+            kwargs = {p: v for p, v in self.param.get_param_values()
                       if p in Layoutable.param and p != 'name'}
             child_pane = self._panes.get(backend, Pane)(state, **kwargs)
             self._update_plot(plot, child_pane)

@@ -55,10 +55,10 @@ class Callback(param.Parameterized):
         if self.source in self.registry:
             links = self.registry[self.source]
             params = {
-                k: v for k, v in self.get_param_values() if k != 'name'}
+                k: v for k, v in self.param.get_param_values() if k != 'name'}
             for link in links:
                 link_params = {
-                    k: v for k, v in link.get_param_values() if k != 'name'}
+                    k: v for k, v in link.param.get_param_values() if k != 'name'}
                 if not hasattr(link, 'target'):
                     pass
                 elif (type(link) is type(self) and link.source is self.source
@@ -171,10 +171,10 @@ class Link(Callback):
         if self.source in self.registry:
             links = self.registry[self.source]
             params = {
-                k: v for k, v in self.get_param_values() if k != 'name'}
+                k: v for k, v in self.param.get_param_values() if k != 'name'}
             for link in links:
                 link_params = {
-                    k: v for k, v in link.get_param_values() if k != 'name'}
+                    k: v for k, v in link.param.get_param_values() if k != 'name'}
                 if (type(link) is type(self) and link.source is self.source
                     and link.target is self.target and params == link_params):
                     return
@@ -250,7 +250,7 @@ class CallbackGenerator(object):
         return model
 
     def _init_callback(self, root_model, link, source, src_spec, target, tgt_spec, code):
-        references = {k: v for k, v in link.get_param_values()
+        references = {k: v for k, v in link.param.get_param_values()
                       if k not in ('source', 'target', 'name', 'code', 'args')}
 
         src_model = self._resolve_model(root_model, source, src_spec[0])
