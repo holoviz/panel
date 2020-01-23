@@ -102,8 +102,8 @@ class FileSelector(CompositeWidget):
             **dict(layout, width=None, margin=0, width_policy='max')
         )
         self._composite[:] = [self._nav_bar, Divider(margin=0), self._selector]
-        self._selector._selected.insert(0, Markdown('### Selected files', margin=(-10, 0)))
-        self._selector._unselected.insert(0, Markdown('### File Browser', margin=(-10, 0)))
+        self._selector._selected.insert(0, Markdown('### Selected files', margin=0))
+        self._selector._unselected.insert(0, Markdown('### File Browser', margin=0))
         self.link(self._selector, size='size')
 
         # Set up state
@@ -192,7 +192,8 @@ class FileSelector(CompositeWidget):
             self._directory.value = self._cwd
             return
 
-        sel = os.path.abspath(os.path.join(self._cwd, event.new[0]))
+        relpath = event.new[0].replace('📁', '')
+        sel = os.path.abspath(os.path.join(self._cwd, relpath))
         if os.path.isdir(sel):
             self._directory.value = sel
         else:
