@@ -82,7 +82,7 @@ class Widget(Reactive):
         if root is None:
             root = model
         # Link parameters and bokeh model
-        values = dict(self.get_param_values())
+        values = dict(self.param.get_param_values())
         properties = self._filter_properties(list(self._process_param_change(values)))
         self._models[root.ref['id']] = (model, parent)
         self._link_props(model, properties, doc, root, comm)

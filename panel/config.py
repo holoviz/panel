@@ -115,7 +115,7 @@ class _config(param.Parameterized):
         try:
             yield
         finally:
-            self.set_param(**dict(values))
+            self.param.set_param(**dict(values))
             for k, v in overrides:
                 setattr(self, k+'_', v)
 
