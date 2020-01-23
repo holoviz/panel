@@ -34,21 +34,17 @@ export class VTKVolumePlotView extends VTKHTMLBoxView {
     })
   }
 
-  after_layout(): void{
-    if(!this._initialized){
-      this._controllerWidget = vtk.Interaction.UI.vtkVolumeController.newInstance({
-        size: [400, 150],
-        rescaleColorMap: false,
-      })
-      this._controllerWidget.setContainer(this.el)
-      this._vtk_renwin.getRenderWindow().getInteractor()
-      this._vtk_renwin.getRenderWindow().getInteractor().setDesiredUpdateRate(45)
-      this._plot()
-      this._vtk_renwin.getRenderer().resetCamera()
-      this._vtk_renwin.getRenderWindow().render()
-      this._initialized = true
-    }
-    super.after_layout()
+  render(): void {
+    super.render()
+    this._controllerWidget = vtk.Interaction.UI.vtkVolumeController.newInstance({
+      size: [400, 150],
+      rescaleColorMap: false,
+    })
+    this._controllerWidget.setContainer(this.el)
+    this._vtk_renwin.getRenderWindow().getInteractor()
+    this._vtk_renwin.getRenderWindow().getInteractor().setDesiredUpdateRate(45)
+    this._plot()
+    this._vtk_renwin.getRenderer().resetCamera()
   }
 
   _create_source(): any{

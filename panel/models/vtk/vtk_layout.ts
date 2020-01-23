@@ -6,9 +6,8 @@ import  {vtkns} from "./vtk_utils"
 export class VTKHTMLBoxView extends PanelHTMLBoxView{
   protected _vtk_container: HTMLDivElement
   protected _vtk_renwin: any
-  protected _initialized: boolean = false
 
-  render(): void{
+  render(): void {
     super.render()
     this._vtk_container = div()
     set_size(this._vtk_container, this.model)
@@ -17,6 +16,13 @@ export class VTKHTMLBoxView extends PanelHTMLBoxView{
       rootContainer: this.el,
       container: this._vtk_container
     })
-    this._initialized = false
+  }
+
+  after_layout(): void {
+    super.after_layout()
+    const {width, height} = this._vtk_container.getBoundingClientRect()
+    const openGLRenderWindow = this._vtk_renwin.getOpenGLRenderWindow()
+    openGLRenderWindow.setSize(Math.floor(width), Math.floor(height))
+    this._vtk_renwin.getRenderWindow().render()
   }
 }

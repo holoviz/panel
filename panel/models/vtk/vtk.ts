@@ -13,6 +13,7 @@ export class VTKPlotView extends VTKHTMLBoxView {
   protected _orientationWidget: any
   protected _widgetManager: any
   protected _axes: any
+  protected _axes_initialized: boolean = false
 
   connect_signals(): void {
     super.connect_signals()
@@ -47,16 +48,20 @@ export class VTKPlotView extends VTKHTMLBoxView {
     })
   }
 
+  render(): void {
+    super.render()
+    this._axes_initialized = false
+    this._plot()
+    this._vtk_renwin.getRenderer().getActiveCamera().onModified(() => this._get_camera_state())
+    this._remove_default_key_binding()
+    this.model.renderer_el = this._vtk_renwin
+  }
+
   after_layout(): void {
-    if(!this._initialized){
+    if (!this._axes_initialized) {
       this._render_axes_canvas()
-      this._plot()
-      this._vtk_renwin.getRenderer().getActiveCamera().onModified(() => this._get_camera_state())
-      this._remove_default_key_binding()
-      this.model.renderer_el = this._vtk_renwin
-      this._initialized = true
+      this._axes_initialized = true
     }
-    super.after_layout()
   }
 
   _create_orientation_widget(): void {
@@ -235,7 +240,7 @@ export class VTKPlotView extends VTKHTMLBoxView {
             this._create_orientation_widget()
           if (this._axes == null && this.model.axes)
             this._set_axes()
-            this._set_camera_state()
+          this._set_camera_state()
         }, 100)
         sceneImporter.setUrl('index.json')
         sceneImporter.onReady(fn)
