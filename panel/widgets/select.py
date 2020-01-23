@@ -424,6 +424,10 @@ class CrossSelector(CompositeWidget, MultiSelect):
         self._lists[True].value = []
         self._lists[False].options = unselected
         self._lists[False].value = []
+        if len(self._lists[True].options) and self._selected[-1] is not self._lists[True]:
+            self._selected[-1] = self._lists[True]
+        elif self._selected[-1] is not self._placeholder:
+            self._selected[-1] = self._placeholder
 
     @param.depends('options', watch=True)
     def _update_options(self):
