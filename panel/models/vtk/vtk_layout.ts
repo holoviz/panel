@@ -16,5 +16,6 @@ export class VTKHTMLBoxView extends PanelHTMLBoxView{
       rootContainer: this.el,
       container: this._vtk_container
     })
+    this._initialized = false
   }
 }
