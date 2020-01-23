@@ -17,7 +17,7 @@ from bokeh.models.widgets import (
 
 from ..config import config
 from ..io import state
-from ..util import value_as_datetime, value_as_date
+from ..util import unicode_repr, value_as_datetime, value_as_date
 from ..viewable import Layoutable
 from .base import Widget, CompositeWidget
 from ..layout import Column
@@ -211,11 +211,14 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
         else:
             value = values.index(self.value)
 
-        self._slider = IntSlider(start=0, end=len(self.options)-1, value=value,
-                                 tooltips=False, show_value=False, margin=(0, 5, 5, 5),
-                                 _supports_embed=False)
+        self._slider = IntSlider(
+            start=0, end=len(self.options)-1, value=value, tooltips=False,
+            show_value=False, margin=(0, 5, 5, 5), _supports_embed=False
+        )
         self._update_style()
-        js_code = self._text_link.format(labels=repr(self.labels))
+        js_code = self._text_link.format(
+            labels='['+', '.join([unicode_repr(l) for l in labels])+']'
+        )
         self._jslink = self._slider.jslink(self._text, code={'value': js_code})
         self._slider.param.watch(self._sync_value, 'value')
         self._text.value = labels[value]
