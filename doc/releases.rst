@@ -30,7 +30,7 @@ Other enhancements:
 * Make Row/Column scrollable (`#760 <https://github.com/holoviz/panel/issues/760>`_)
 * Support file-like objects (not just paths) for images (`#686 <https://github.com/holoviz/panel/issues/686>`_)
 * Added isdatetime utility (`#687 <https://github.com/holoviz/panel/issues/687>`_)
-* Added repr, kill_all_servers, and cache to pn.state (`#697 <https://github.com/holoviz/panel/issues/697>`_,`#776 <https://github.com/holoviz/panel/issues/776>`_)
+* Added repr, kill_all_servers, and cache to pn.state (`#697 <https://github.com/holoviz/panel/issues/697>`_, `#776 <https://github.com/holoviz/panel/issues/776>`_)
 * Added Slider value_throttled parameter (`#777 <https://github.com/holoviz/panel/issues/777>`_)
 * Extended existing widgets and panes:
 
@@ -40,7 +40,7 @@ Other enhancements:
   * Added min_characters parameter to AutocompleteInput (`#721 <https://github.com/holoviz/panel/issues/721>`_)
   * Added accept parameter to FileInput (`#602 <https://github.com/holoviz/panel/issues/602>`_)
   * Added definition_order parameter to CrossSelector (`#570 <https://github.com/holoviz/panel/issues/570>`_)
-  * Misc widget fixes and improvements (`#703 <https://github.com/holoviz/panel/issues/703>`_, `#717 <https://github.com/holoviz/panel/issues/717>`_, `#724 <https://github.com/holoviz/panel/issues/724>`_, `#762 <https://github.com/holoviz/panel/issues/762>`_, ``#775 <https://github.com/holoviz/panel/issues/775>`_ <https://github.com/holoviz/panel/issues/775>`_)
+  * Misc widget fixes and improvements (`#703 <https://github.com/holoviz/panel/issues/703>`_, `#717 <https://github.com/holoviz/panel/issues/717>`_, `#724 <https://github.com/holoviz/panel/issues/724>`_, `#762 <https://github.com/holoviz/panel/issues/762>`_, `#775 <https://github.com/holoviz/panel/issues/775>`_)
 
 Bug fixes and minor improvements:
 
@@ -49,7 +49,7 @@ Bug fixes and minor improvements:
 * Improved fancy layout for scrubber (`#571 <https://github.com/holoviz/panel/issues/571>`_)
 * Improved plotly datetime handling (`#688 <https://github.com/holoviz/panel/issues/688>`_, `#698 <https://github.com/holoviz/panel/issues/698>`_)
 * Improved JSON embedding (`#589 <https://github.com/holoviz/panel/issues/589>`_)
-* Misc fixes and improvements (`#626 <https://github.com/holoviz/panel/issues/626>`_, `#631 <https://github.com/holoviz/panel/issues/631>`_, `#645 <https://github.com/holoviz/panel/issues/645>`_, `#662 <https://github.com/holoviz/panel/issues/662>`_, `#681 <https://github.com/holoviz/panel/issues/681>`_, `#689 <https://github.com/holoviz/panel/issues/689>`_, `#695 <https://github.com/holoviz/panel/issues/695>`_, `#723 <https://github.com/holoviz/panel/issues/723>`_, `#725 <https://github.com/holoviz/panel/issues/725>`_, `#738 <https://github.com/holoviz/panel/issues/738>`_, `#743 <https://github.com/holoviz/panel/issues/743>`_, `#744 <https://github.com/holoviz/panel/issues/744>`_, `#748 <https://github.com/holoviz/panel/issues/748>`_, `#749 <https://github.com/holoviz/panel/issues/749>`_, `#758 <https://github.com/holoviz/panel/issues/758>`_, `#768 <https://github.com/holoviz/panel/issues/768>`_, `#772 <https://github.com/holoviz/panel/issues/772>`_, `#774 <https://github.com/holoviz/panel/issues/774>`_, ``#775 <https://github.com/holoviz/panel/issues/775>`_ <https://github.com/holoviz/panel/issues/775>`_, `#779 <https://github.com/holoviz/panel/issues/779>`_, `#784 <https://github.com/holoviz/panel/issues/784>`_, `#785 <https://github.com/holoviz/panel/issues/785>`_, `#787 <https://github.com/holoviz/panel/issues/787>`_, `#788 <https://github.com/holoviz/panel/issues/788>`_, `#789 <https://github.com/holoviz/panel/issues/789>`_)
+* Misc fixes and improvements (`#626 <https://github.com/holoviz/panel/issues/626>`_, `#631 <https://github.com/holoviz/panel/issues/631>`_, `#645 <https://github.com/holoviz/panel/issues/645>`_, `#662 <https://github.com/holoviz/panel/issues/662>`_, `#681 <https://github.com/holoviz/panel/issues/681>`_, `#689 <https://github.com/holoviz/panel/issues/689>`_, `#695 <https://github.com/holoviz/panel/issues/695>`_, `#723 <https://github.com/holoviz/panel/issues/723>`_, `#725 <https://github.com/holoviz/panel/issues/725>`_, `#738 <https://github.com/holoviz/panel/issues/738>`_, `#743 <https://github.com/holoviz/panel/issues/743>`_, `#744 <https://github.com/holoviz/panel/issues/744>`_, `#748 <https://github.com/holoviz/panel/issues/748>`_, `#749 <https://github.com/holoviz/panel/issues/749>`_, `#758 <https://github.com/holoviz/panel/issues/758>`_, `#768 <https://github.com/holoviz/panel/issues/768>`_, `#772 <https://github.com/holoviz/panel/issues/772>`_, `#774 <https://github.com/holoviz/panel/issues/774>`_, `#775 <https://github.com/holoviz/panel/issues/775>`_, `#779 <https://github.com/holoviz/panel/issues/779>`_, `#784 <https://github.com/holoviz/panel/issues/784>`_, `#785 <https://github.com/holoviz/panel/issues/785>`_, `#787 <https://github.com/holoviz/panel/issues/787>`_, `#788 <https://github.com/holoviz/panel/issues/788>`_, `#789 <https://github.com/holoviz/panel/issues/789>`_)
 * Prepare support for python 3.8 (`#702 <https://github.com/holoviz/panel/issues/702>`_)
 
 Documentation:
@@ -174,11 +174,11 @@ Other new features:
 
 Bugfixes and minor improvements:
 
-* Combine HTML and JS in MIME bundle to improve browser compatibility (`#32 <https://github.com/holoviz/panel/issues/32>`_7)
-* Inlined subobject expand toggle button (`#32 <https://github.com/holoviz/panel/issues/32>`_9)
+* Combine HTML and JS in MIME bundle to improve browser compatibility (`#327 <https://github.com/holoviz/panel/issues/327>`_)
+* Inlined subobject expand toggle button (`#329 <https://github.com/holoviz/panel/issues/329>`_)
 * Use Select widget for ObjectSelector consistently to avoid issues with short lists and numeric lists (`#362 <https://github.com/holoviz/panel/issues/362>`_)
 * Various small improvements (`#238 <https://github.com/holoviz/panel/issues/238>`_, `#245 <https://github.com/holoviz/panel/issues/245>`_, `#257 <https://github.com/holoviz/panel/issues/257>`_, `#258 <https://github.com/holoviz/panel/issues/258>`_, `#259 <https://github.com/holoviz/panel/issues/259>`_, `#262 <https://github.com/holoviz/panel/issues/262>`_, `#264 <https://github.com/holoviz/panel/issues/264>`_, `#276 <https://github.com/holoviz/panel/issues/276>`_, `#289 <https://github.com/holoviz/panel/issues/289>`_, `#293 <https://github.com/holoviz/panel/issues/293>`_, `#307 <https://github.com/holoviz/panel/issues/307>`_, `#313 <https://github.com/holoviz/panel/issues/313>`_, `#343 <https://github.com/holoviz/panel/issues/343>`_, `#331 <https://github.com/holoviz/panel/issues/331>`_)
-* Various bugfixes (`#247 <https://github.com/holoviz/panel/issues/247>`_, `#261 <https://github.com/holoviz/panel/issues/261>`_, `#263 <https://github.com/holoviz/panel/issues/263>`_, `#282 <https://github.com/holoviz/panel/issues/282>`_, `#288 <https://github.com/holoviz/panel/issues/288>`_, `#291 <https://github.com/holoviz/panel/issues/291>`_, `#297 <https://github.com/holoviz/panel/issues/297>`_, `#295 <https://github.com/holoviz/panel/issues/295>`_, `#305 <https://github.com/holoviz/panel/issues/305>`_, `#309 <https://github.com/holoviz/panel/issues/309>`_, `#32 <https://github.com/holoviz/panel/issues/32>`_2, `#32 <https://github.com/holoviz/panel/issues/32>`_8, `#341 <https://github.com/holoviz/panel/issues/341>`_, `#345 <https://github.com/holoviz/panel/issues/345>`_, `#354 <https://github.com/holoviz/panel/issues/354>`_, `#364 <https://github.com/holoviz/panel/issues/364>`_)
+* Various bugfixes (`#247 <https://github.com/holoviz/panel/issues/247>`_, `#261 <https://github.com/holoviz/panel/issues/261>`_, `#263 <https://github.com/holoviz/panel/issues/263>`_, `#282 <https://github.com/holoviz/panel/issues/282>`_, `#288 <https://github.com/holoviz/panel/issues/288>`_, `#291 <https://github.com/holoviz/panel/issues/291>`_, `#297 <https://github.com/holoviz/panel/issues/297>`_, `#295 <https://github.com/holoviz/panel/issues/295>`_, `#305 <https://github.com/holoviz/panel/issues/305>`_, `#309 <https://github.com/holoviz/panel/issues/309>`_, `#322 <https://github.com/holoviz/panel/issues/322>`_, `#328 <https://github.com/holoviz/panel/issues/328>`_, `#341 <https://github.com/holoviz/panel/issues/341>`_, `#345 <https://github.com/holoviz/panel/issues/345>`_, `#354 <https://github.com/holoviz/panel/issues/354>`_, `#364 <https://github.com/holoviz/panel/issues/364>`_)
 
 Changes potentially affecting backwards compatibility:
 
@@ -232,7 +232,7 @@ Thanks to @xavArtley for several contributions, and to @lebedov for bugfixes.
 New features:
 
 * Now Python2 compatible (`#225 <https://github.com/holoviz/panel/issues/225>`_)
-* Audio player widget (`#215 <https://github.com/holoviz/panel/issues/215>`_,`#221 <https://github.com/holoviz/panel/issues/221>`_)
+* Audio player widget (`#215 <https://github.com/holoviz/panel/issues/215>`_, `#221 <https://github.com/holoviz/panel/issues/221>`_)
 * FileInput widget (`#207 <https://github.com/holoviz/panel/issues/207>`_)
 * General support for linking Panel objects, even in static exports (`#199 <https://github.com/holoviz/panel/issues/199>`_)
 * New user-guide notebooks: Introduction (`#178 <https://github.com/holoviz/panel/issues/178>`_), Links (`#195 <https://github.com/holoviz/panel/issues/195>`_).
