@@ -81,6 +81,7 @@ _NAV = (
     ('Gallery', 'gallery/index'),
     ('Reference Gallery', 'reference/index'),
     ('Developer Guide', 'developer_guide/index'),
+    ('Releases', 'releases'),
     ('FAQ', 'FAQ'),
     ('About', 'about')
 )
