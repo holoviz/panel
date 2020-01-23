@@ -20,9 +20,6 @@ export class VTKHTMLBoxView extends PanelHTMLBoxView{
 
   after_layout(): void {
     super.after_layout()
-    const {width, height} = this._vtk_container.getBoundingClientRect()
-    const openGLRenderWindow = this._vtk_renwin.getOpenGLRenderWindow()
-    openGLRenderWindow.setSize(Math.floor(width), Math.floor(height))
-    this._vtk_renwin.getRenderWindow().render()
+    this._vtk_renwin.resize()
   }
 }
