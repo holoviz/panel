@@ -1,9 +1,7 @@
 import * as p from "@bokehjs/core/properties"
 import {ARRAY_TYPES, DType} from "@bokehjs/core/util/serialization"
 import {HTMLBox} from "@bokehjs/models/layouts/html_box"
-import {div} from "@bokehjs/core/dom"
-
-import {PanelHTMLBoxView, set_size} from "../layout"
+import {VTKHTMLBoxView} from "./vtk_layout"
 
 const vtk = (window as any).vtk
 
@@ -25,31 +23,25 @@ function utf8ToAB(utf8_str: string): ArrayBuffer {
   return buf
 }
 
-export class VTKVolumePlotView extends PanelHTMLBoxView {
+export class VTKVolumePlotView extends VTKHTMLBoxView {
   model: VTKVolumePlot
-  protected _container: HTMLDivElement
-  protected _rendererEl: any
   protected _controllerWidget: any
 
-  render(): void{
-    super.render()
-    this._controllerWidget = vtk.Interaction.UI.vtkVolumeController.newInstance({
-      size: [400, 150],
-      rescaleColorMap: false,
-    })
-    this._controllerWidget.setContainer(this.el)
-    this._container = div()
-    set_size(this._container, this.model)
-    this.el.appendChild(this._container)
-    this._rendererEl = vtk.Rendering.Misc.vtkFullScreenRenderWindow.newInstance({
-      rootContainer: this.el,
-      container: this._container
-    });
-    this._rendererEl.getRenderWindow().getInteractor()
-    this._rendererEl.getRenderWindow().getInteractor().setDesiredUpdateRate(45)
-    this._plot()
-    this._rendererEl.getRenderer().resetCamera()
-    this._rendererEl.getRenderWindow().render()
+  after_layout(): void{
+    if(!this._initialized){
+      this._controllerWidget = vtk.Interaction.UI.vtkVolumeController.newInstance({
+        size: [400, 150],
+        rescaleColorMap: false,
+      })
+      this._controllerWidget.setContainer(this.el)
+      this._vtk_renwin.getRenderWindow().getInteractor()
+      this._vtk_renwin.getRenderWindow().getInteractor().setDesiredUpdateRate(45)
+      this._plot()
+      this._vtk_renwin.getRenderer().resetCamera()
+      this._vtk_renwin.getRenderWindow().render()
+      this._initialized = true
+    }
+    super.after_layout()
   }
 
   _create_source(): any{
@@ -122,8 +114,8 @@ export class VTKVolumePlotView extends PanelHTMLBoxView {
     actor.getProperty().setSpecular(0.3);
     actor.getProperty().setSpecularPower(8.0);
 
-    this._rendererEl.getRenderer().addVolume(actor)
-    this._controllerWidget.setupContent(this._rendererEl.getRenderWindow(), actor, true)
+    this._vtk_renwin.getRenderer().addVolume(actor)
+    this._controllerWidget.setupContent(this._vtk_renwin.getRenderWindow(), actor, true)
   }
 
   connect_signals(): void {
