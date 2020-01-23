@@ -525,7 +525,7 @@ def test_dynamic_tabs(document, comm, tabs):
     assert tab1.child is div1.object
     assert tab2.child is div2.object
 
-    tabs.set_param(dynamic=True, active=0)
+    tabs.param.set_param(dynamic=True, active=0)
 
     tab1, tab2 = model.tabs
     assert tab1.child is div1.object
