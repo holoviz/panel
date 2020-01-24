@@ -29,10 +29,22 @@ class ImageBase(DivPaneBase):
     provide their own way of obtaining or generating a PNG.
     """
 
+    alt_text = param.String(default=None, doc="""
+       alt text to add to the image tag. The alt text is shown when a
+       user cannot load or display the image.""")
+
+    link_url = param.String(default=None, doc="""
+       A link URL to make the image clickable and link to some other
+       website.""")
+
     embed = param.Boolean(default=True, doc="""
         Whether to embed the image as base64.""")
 
     imgtype = 'None'
+
+    _rerender_params = [
+        'alt_text', 'link_url', 'object', 'sizing_mode', 'style'
+    ]
 
     __abstract = True
 
@@ -111,8 +123,12 @@ class ImageBase(DivPaneBase):
         else:
             w, h = '100%', 'auto'
 
-        html = "<img src='{src}' width='{width}' height='{height}'></img>".format(
-            src=src, width=w, height=h)
+        html = '<img src="{src}" width="{width}" height="{height}" alt="{alt}"></img>'.format(
+            src=src, width=w, height=h, alt=self.alt_text or '')
+
+        if self.link_url:
+            html = '<a href="{url}" target="_blank">{html}</a>'.format(
+                url=self.link_url, html=html)
 
         return dict(p, width=width, height=height, text=escape(html))
 
@@ -170,7 +186,7 @@ class SVG(ImageBase):
 
     imgtype = 'svg'
 
-    _rerender_params = ['object', 'sizing_mode', 'encode', 'style']
+    _rerender_params = ImageBase._rerender_params + ['encode']
 
     @classmethod
     def applies(cls, obj):
