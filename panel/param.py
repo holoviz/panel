@@ -142,7 +142,7 @@ class Param(PaneBase):
         self._updating = []
 
         # Construct Layout
-        kwargs = {p: v for p, v in self.get_param_values() if p in Layoutable.param}
+        kwargs = {p: v for p, v in self.param.get_param_values() if p in Layoutable.param}
         self._widget_box = self.default_layout(**kwargs)
 
         layout = self.expand_layout
@@ -168,7 +168,7 @@ class Param(PaneBase):
         params = [] if self.object is None else list(self.object.param)
         parameters = [k for k in params if k != 'name']
         params = []
-        for p, v in sorted(self.get_param_values()):
+        for p, v in sorted(self.param.get_param_values()):
             if v is self.param[p].default: continue
             elif v is None: continue
             elif isinstance(v, string_types) and v == '': continue
@@ -249,7 +249,7 @@ class Param(PaneBase):
                         if e not in existing
                     ]
                 elif change.new:
-                    kwargs = {k: v for k, v in self.get_param_values()
+                    kwargs = {k: v for k, v in self.param.get_param_values()
                               if k not in ['name', 'object', 'parameters']}
                     pane = Param(parameterized, name=parameterized.name,
                                  **kwargs)
@@ -270,7 +270,7 @@ class Param(PaneBase):
                     return
                 elif is_parameterized(change.new):
                     parameterized = change.new
-                    kwargs = {k: v for k, v in self.get_param_values()
+                    kwargs = {k: v for k, v in self.param.get_param_values()
                               if k not in ['name', 'object', 'parameters']}
                     pane = Param(parameterized, name=parameterized.name,
                                  **kwargs)

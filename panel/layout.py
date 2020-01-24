@@ -1082,7 +1082,7 @@ class GridSpec(Panel):
 
         subgrid = self._object_grid[yidx, xidx]
         if isinstance(subgrid, np.ndarray):
-            params = dict(self.get_param_values())
+            params = dict(self.param.get_param_values())
             params['objects'] = OrderedDict([list(o)[0] for o in subgrid.flatten()])
             gspec = GridSpec(**params)
             xoff, yoff = gspec._xoffset, gspec._yoffset
