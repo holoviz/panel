@@ -110,7 +110,8 @@ class PaneBase(Reactive):
         super(PaneBase, self).__init__(object=object, **params)
         kwargs = {k: v for k, v in params.items() if k in Layoutable.param}
         self.layout = self.default_layout(self, **kwargs)
-        self.param.watch(self._update_pane, self._rerender_params)
+        watcher = self.param.watch(self._update_pane, self._rerender_params)
+        self._callbacks.append(watcher)
 
     def _type_error(self, object):
         raise ValueError("%s pane does not support objects of type '%s'." %
@@ -343,13 +344,10 @@ class ReplacementPane(PaneBase):
         custom_watchers = False
         if isinstance(new_object, Reactive):
             watch_fns = [
-                str(w.fn) for pwatchers in new_object._param_watchers.values()
+                w for pwatchers in new_object._param_watchers.values()
                 for awatchers in pwatchers.values() for w in awatchers
             ]
-            custom_watchers = not all(
-                'Reactive._link_params' in wfn or '._update_pane' in wfn or
-                'param_change' in wfn for wfn in watch_fns
-            )
+            custom_watchers = [wfn for wfn in watch_fns if wfn not in new_object._callbacks]
 
         if type(self._pane) is pane_type and not links and not custom_watchers and self._internal:
             # If the object has not external referrers we can update

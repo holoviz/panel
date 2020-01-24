@@ -231,4 +231,4 @@ def test_interact_replaces_model(document, comm):
     assert new_pane._models[column.ref['id']][0] is new_div
 
     interact_pane._cleanup(column)
-    assert len(interact_pane._callbacks) == 1
+    assert len(interact_pane._callbacks) == 2
