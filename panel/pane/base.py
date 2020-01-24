@@ -355,15 +355,15 @@ class ReplacementPane(PaneBase):
             # If the object has not external referrers we can update
             # it inplace instead of replacing it
             if isinstance(new_object, Reactive):
-                pvals = dict(self._pane.get_param_values())
-                new_params = {k: v for k, v in new_object.get_param_values()
+                pvals = dict(self._pane.param.get_param_values())
+                new_params = {k: v for k, v in new_object.param.get_param_values()
                               if k != 'name' and v is not pvals[k]}
                 self._pane.param.set_param(**new_params)
             else:
                 self._pane.object = new_object
         else:
             # Replace pane entirely
-            kwargs = dict(self.get_param_values(), **self._kwargs)
+            kwargs = dict(self.param.get_param_values(), **self._kwargs)
             del kwargs['object']
             self._pane = panel(new_object, **{k: v for k, v in kwargs.items()
                                               if k in pane_type.param})
