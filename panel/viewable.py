@@ -622,6 +622,7 @@ class Reactive(Viewable):
         self._events = {}
         self._changing = {}
         self._callbacks = []
+        self._links = []
         self._link_params()
 
     #----------------------------------------------------------------
@@ -890,7 +891,7 @@ class Reactive(Viewable):
                     _updating.pop(_updating.index(event.name))
         params = list(callbacks) if callbacks else list(links)
         cb = self.param.watch(link, params)
-        self._callbacks.append(cb)
+        self._links.append(cb)
         return cb
 
     def add_periodic_callback(self, callback, period=500, count=None,
