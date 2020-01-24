@@ -177,7 +177,7 @@ class Spinner(Widget):
 
     def __init__(self, **params):
         if params.get('value') is None:
-            params['value'] = params.get('start', self.start)
+            value = params.get('start', self.value)
         super(Spinner, self).__init__(**params)
 
 

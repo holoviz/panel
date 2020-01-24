@@ -300,6 +300,7 @@ class CallbackGenerator(object):
                     if isinstance(v, BkModel) and k not in references:
                         references[k] = v
 
+        print(source, src_model, target, tgt_model)
         self._initialize_models(link, source, src_model, src_spec[1], target, tgt_model, tgt_spec[1])
         self._process_references(references)
 
@@ -409,9 +410,13 @@ class JSLinkCallbackGenerator(JSCallbackGenerator):
 
     def _initialize_models(self, link, source, src_model, src_spec, target, tgt_model, tgt_spec):
         if tgt_model and src_spec and tgt_spec:
-            value = source._process_property_change({src_spec: getattr(src_model, src_spec)})
+            value = getattr(src_model, src_spec)
+            if hasattr(source, '_process_property_change'):
+                msg = source._process_property_change({src_spec: value})
+                if msg:
+                    value = list(msg.values())[0]
             if value:
-                setattr(tgt_model, tgt_spec, list(value.values())[0])
+                setattr(tgt_model, tgt_spec, value)
         if tgt_model is None and not link.code:
             raise ValueError('Model could not be resolved on target '
                              '%s and no custom code was specified.' %
