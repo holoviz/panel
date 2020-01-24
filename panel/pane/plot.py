@@ -73,7 +73,7 @@ class Matplotlib(PNG):
         Automatically adjust the figure size to fit the
         subplots and other artist elements.""")
 
-    _rerender_params = ['object', 'dpi']
+    _rerender_params = ['object', 'dpi', 'tight']
 
     @classmethod
     def applies(cls, obj):

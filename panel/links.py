@@ -409,7 +409,9 @@ class JSLinkCallbackGenerator(JSCallbackGenerator):
 
     def _initialize_models(self, link, source, src_model, src_spec, target, tgt_model, tgt_spec):
         if tgt_model and src_spec and tgt_spec:
-            setattr(tgt_model, tgt_spec, getattr(src_model, src_spec))
+            value = source._process_property_change({src_spec: getattr(src_model, src_spec)})
+            if value:
+                setattr(tgt_model, tgt_spec, list(value.values())[0])
         if tgt_model is None and not link.code:
             raise ValueError('Model could not be resolved on target '
                              '%s and no custom code was specified.' %

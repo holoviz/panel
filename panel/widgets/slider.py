@@ -345,6 +345,8 @@ class DateRangeSlider(_SliderBase):
 
     step = param.Number(default=1)
 
+    _embed_transforms = {'value': None}
+
     _widget_type = _BkDateRangeSlider
 
     def __init__(self, **params):

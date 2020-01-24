@@ -173,6 +173,8 @@ class _RadioGroupBase(Select):
 
     _supports_embed = False
 
+    _embed_transforms = {'value': None}
+
     __abstract = True
 
     def _process_param_change(self, msg):

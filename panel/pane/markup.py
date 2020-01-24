@@ -36,8 +36,6 @@ class DivPaneBase(PaneBase):
 
     _bokeh_model = _BkHTML
 
-    _rerender_params = ['object', 'sizing_mode', 'style']
-
     def _get_properties(self):
         return {p : getattr(self, p) for p in list(Layoutable.param) + ['style']
                 if getattr(self, p) is not None}
@@ -268,7 +266,7 @@ class Markdown(DivPaneBase):
     # Priority depends on the data type
     priority = None
 
-    _rerender_params = ['object', 'dedent', 'extensions', 'sizing_mode']
+    _rerender_params = ['object', 'dedent', 'extensions']
 
     @classmethod
     def applies(cls, obj):
@@ -321,8 +319,6 @@ class JSON(DivPaneBase):
     _applies_kw = True
 
     _bokeh_model = _BkJSON
-
-    _rerender_params = ['object', 'sizing_mode']
 
     _rename = {"name": None, "object": "text", "encoder": None}
 

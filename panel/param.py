@@ -30,7 +30,7 @@ from .viewable import Layoutable
 from .widgets import (
     Button, Checkbox, ColorPicker, DataFrame, DatetimeInput, DateRangeSlider,
     FileSelector, FloatSlider, IntSlider, LiteralInput, MultiSelect,
-    RangeSlider, Select, StaticText, TextInput, Toggle, Widget
+    RangeSlider, Select, Spinner, StaticText, TextInput, Toggle, Widget
 )
 from .widgets.button import _ButtonBase
 
@@ -326,8 +326,13 @@ class Param(PaneBase):
                 kw['start'] = bounds[0]
             if bounds[1] is not None:
                 kw['end'] = bounds[1]
-            if ('start' not in kw or 'end' not in kw) and not issubclass(widget_class, LiteralInput):
-                widget_class = LiteralInput
+            if ('start' not in kw or 'end' not in kw):
+                if isinstance(p_obj, param.Number):
+                    widget_class = Spinner
+                    if isinstance(p_obj, param.Integer):
+                        kw['step'] = 1
+                elif not issubclass(widget_class, LiteralInput):
+                    widget_class = LiteralInput
             if hasattr(widget_class, 'step') and getattr(p_obj, 'step', None):
                 kw['step'] = p_obj.step
 
@@ -337,6 +342,7 @@ class Param(PaneBase):
             widget = widget_class
         else:
             widget = widget_class(**kwargs)
+        widget._param_pane = self
 
         watchers = self._callbacks
         if isinstance(widget, Toggle):
@@ -357,6 +363,7 @@ class Param(PaneBase):
                 watcher = widget.param.watch(action, 'clicks')
             else:
                 watcher = widget.param.watch(link_widget, 'value')
+            watchers.append(watcher)
 
             def link(change, watchers=[watcher]):
                 updates = {}
@@ -390,10 +397,13 @@ class Param(PaneBase):
                 elif p_name in self._updating:
                     return
                 elif isinstance(p_obj, param.Action):
-                    widget.param.unwatch(watchers[0])
+                    prev_watcher = watchers[0]
+                    widget.param.unwatch(prev_watcher)
                     def action(event):
                         change.new(self.object)
                     watchers[0] = widget.param.watch(action, 'clicks')
+                    idx = self._callbacks.index(prev_watcher)
+                    self._callbacks[idx] = watchers[0]
                     return
                 else:
                     updates['value'] = change.new

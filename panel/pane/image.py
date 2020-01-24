@@ -42,9 +42,7 @@ class ImageBase(DivPaneBase):
 
     imgtype = 'None'
 
-    _rerender_params = [
-        'alt_text', 'link_url', 'object', 'sizing_mode', 'style'
-    ]
+    _rerender_params = ['alt_text', 'link_url', 'embed', 'object', 'style']
 
     __abstract = True
 

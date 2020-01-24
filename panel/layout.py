@@ -188,6 +188,8 @@ class ListPanel(Panel):
         Whether to add scrollbars if the content overflows the size
         of the container.""")
 
+    _embed_transforms = {'scroll': None}
+
     __abstract = True
 
     def __init__(self, *objects, **params):
@@ -402,7 +404,10 @@ class GridBox(ListPanel):
 
     _bokeh_model = BkGridBox
 
-    _rename = {'objects': 'children', 'col_sizing': 'cols', 'row_sizing': 'rows'}
+    _rename = {'objects': 'children'}
+
+    _embed_transforms = {'scroll': None, 'objects': None,
+                         'nrows': None, 'ncols': None}
 
     @classmethod
     def _flatten_grid(cls, layout, nrows=None, ncols=None):
@@ -539,25 +544,27 @@ class WidgetBox(ListPanel):
     Vertical layout of widgets.
     """
 
-    _rename = {'objects': 'children', 'horizontal': None}
+    css_classes = param.List(default=['widget-box'], doc="""
+        CSS classes to apply to the layout.""")
+
+    disabled = param.Boolean(default=False, doc="""
+       Whether the widget is disabled.""")
 
     horizontal = param.Boolean(default=False, doc="""Whether to lay out the
                     widgets in a Row layout as opposed to a Column layout.""")
-
-    @property
-    def _bokeh_model(self):
-        return BkRow if self.horizontal else BkColumn
-
-    css_classes = param.List(default=['widget-box'], doc="""
-        CSS classes to apply to the layout.""")
 
     margin = param.Parameter(default=5, doc="""
         Allows to create additional space around the component. May
         be specified as a two-tuple of the form (vertical, horizontal)
         or a four-tuple (top, right, bottom, left).""")
 
-    disabled = param.Boolean(default=False, doc="""
-       Whether the widget is disabled.""")
+    _embed_transforms = {'disabled': None, 'horizontal': None}
+
+    _rename = {'objects': 'children', 'horizontal': None}
+
+    @property
+    def _bokeh_model(self):
+        return BkRow if self.horizontal else BkColumn
 
     @param.depends('disabled', 'objects', watch=True)
     def _disable_widgets(self):
@@ -576,7 +583,7 @@ class Tabs(ListPanel):
     Panel of Viewables to be displayed in separate tabs.
     """
 
-    active = param.Integer(default=0, doc="""
+    active = param.Integer(default=0, bounds=(0, None), doc="""
         Number of the currently active tab.""")
 
     closable = param.Boolean(default=False, doc="""
@@ -597,6 +604,8 @@ class Tabs(ListPanel):
     width = param.Integer(default=None, bounds=(0, None))
 
     _bokeh_model = BkTabs
+
+    _embed_transforms = {'dynamic': None, 'objects': None}
 
     _rename = {'name': None, 'objects': 'tabs', 'dynamic': None}
 
@@ -620,6 +629,7 @@ class Tabs(ListPanel):
         self._panels = defaultdict(dict)
         self.param.watch(self._update_names, 'objects')
         self.param.watch(self._update_active, ['dynamic', 'active'])
+        self.param.active.bounds = (0, len(self)-1)
         # ALERT: Ensure that name update happens first, should be
         #        replaced by watch precedence support in param
         self._param_watchers['objects']['value'].reverse()
@@ -676,6 +686,7 @@ class Tabs(ListPanel):
         super(Tabs, self)._server_change(doc, ref, attr, old, new)
 
     def _update_names(self, event):
+        self.param.active.bounds = (0, len(event.new)-1)
         if len(event.new) == len(self._names):
             return
         names = []
@@ -693,7 +704,7 @@ class Tabs(ListPanel):
             if event.name == 'dynamic' or (self.dynamic and event.name == 'active'):
                 self.param.trigger('objects')
                 return
-        
+
     #----------------------------------------------------------------
     # Model API
     #----------------------------------------------------------------
@@ -921,6 +932,8 @@ class GridSpec(Panel):
     height = param.Integer(default=600)
 
     _bokeh_model = BkGridBox
+
+    _embed_transforms = {'objects': None, 'mode': None}
 
     _rename = {'objects': 'children', 'mode': None}
 

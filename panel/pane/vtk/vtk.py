@@ -29,12 +29,17 @@ else:
 
 
 class VTKVolume(PaneBase):
+
+    max_data_size = param.Number(default=(256 ** 3) * 2 / 1e6, doc="""
+        Maximum data size transfert allowed without subsampling""")
+
+    origin = param.Tuple(default=None, length=3, allow_None=True)
+
+    spacing = param.Tuple(default=(1, 1, 1), length=3, doc="""
+        Distance between voxel in each direction""")
+
     _updates = True
     _serializers = {}
-
-    spacing = param.Tuple(default=(1, 1, 1), length=3, doc="Distance between voxel in each direction")
-    max_data_size = param.Number(default=(256 ** 3) * 2 / 1e6, doc="Maximum data size transfert allowed without subsampling")
-    origin = param.Tuple(default=None, length=3, allow_None=True)
 
     def __init__(self, obj=None, **params):
         super(VTKVolume, self).__init__(obj, **params)
@@ -170,7 +175,7 @@ class VTK(PaneBase):
             of the coresponding axe ticks
             - ``labels`` (array of strings) - optional. Label displayed respectively to
             the `ticks` positions.
-            
+
             If `labels` are not defined they are infered from the `ticks` array.
         ``digits``: number of decimal digits when `ticks` are converted to `labels`.
         ``fontsize``: size in pts of the ticks labels.
@@ -191,6 +196,9 @@ class VTK(PaneBase):
     """)
 
     _updates = True
+
+    _rerender_params = ['axes', 'object', 'serialize_on_instantiation']
+
     _serializers = {}
 
     def __init__(self, obj=None, **params):
@@ -268,7 +276,7 @@ class VTK(PaneBase):
     def _init_properties(self):
         return {k: v for k, v in self.param.get_param_values()
                 if v is not None and k not in ['default_layout', 'object', 'infer_legend', 'serialize_on_instantiation']}
-    
+
 
     def _process_param_change(self, msg):
         msg = super(VTK, self)._process_param_change(msg)
@@ -277,7 +285,7 @@ class VTK(PaneBase):
             axes = msg['axes']
             msg['axes'] = VTKAxes(**axes)
         return msg
-        
+
 
     @classmethod
     def register_serializer(cls, class_type, serializer):
@@ -323,4 +331,3 @@ class VTK(PaneBase):
     def export_vtkjs(self, filename='vtk_panel.vtkjs'):
         with open(filename, 'wb') as f:
             f.write(self._get_vtkjs())
-

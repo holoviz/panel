@@ -70,13 +70,16 @@ class DiscretePlayer(PlayerBase, SelectBase):
     The DiscretePlayer provides controls to iterate through a list of
     discrete options.  The speed at which the widget plays is defined
     by the interval, but it is also possible to skip items using the
-    step parameter."""
+    step parameter.
+    """
 
     interval = param.Integer(default=500, doc="Interval between updates")
 
     value = param.Parameter()
 
     _rename = {'name': None, 'options': None}
+
+    _embed_transforms = {'value': None}
 
     def _process_param_change(self, msg):
         values = self.values

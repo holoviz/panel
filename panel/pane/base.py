@@ -134,6 +134,10 @@ class PaneBase(Reactive):
     # Callback API
     #----------------------------------------------------------------
 
+    @property
+    def _linkable_params(self):
+        return [p for p in self._synced_params() if self._rename.get(p, False) is not None]
+
     def _synced_params(self):
         ignored_params = ['name', 'default_layout']+self._rerender_params
         return [p for p in self.param if p not in ignored_params]
@@ -343,11 +347,11 @@ class ReplacementPane(PaneBase):
             links = []
         custom_watchers = False
         if isinstance(new_object, Reactive):
-            watch_fns = [
+            watchers = [
                 w for pwatchers in new_object._param_watchers.values()
                 for awatchers in pwatchers.values() for w in awatchers
             ]
-            custom_watchers = [wfn for wfn in watch_fns if wfn not in new_object._callbacks]
+            custom_watchers = [wfn for wfn in watchers if wfn not in new_object._callbacks]
 
         if type(self._pane) is pane_type and not links and not custom_watchers and self._internal:
             # If the object has not external referrers we can update

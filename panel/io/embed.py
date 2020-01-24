@@ -61,6 +61,42 @@ def save_dict(state, key=(), depth=0, max_depth=None, save_path='', load_path=No
             filename_dict[k] = refpath
     return filename_dict
 
+
+def param_to_jslink(model, widget):
+    """
+    Converts Param pane widget links into JS links if possible.
+    """
+    from ..links import Link, JSLinkCallbackGenerator
+    from ..viewable import Reactive
+
+    param_pane = widget._param_pane
+    pobj = param_pane.object
+    pname = [k for k, v in param_pane._widgets.items() if v is widget]
+    watchers = [
+        w for pwatchers in widget._param_watchers.values()
+        for awatchers in pwatchers.values() for w in awatchers
+        if w not in widget._callbacks and w not in param_pane._callbacks
+    ]
+    if (not pname or not isinstance(pobj, Reactive) or watchers or
+        pname[0] not in pobj._linkable_params):
+        return
+    pname = pname[0]
+    if 'value' in widget._embed_transforms:
+        properties = {}
+        code = {
+            'value': "value = source['{attr}']; target['{spec}'] = ({transform})".format(
+                attr=widget._rename.get('value', 'value'),
+                spec=pobj._rename.get(pname, pname),
+                transform=widget._embed_transforms['value']
+            )
+        }
+    else:
+        code = None
+        properties = dict(value=pobj._rename.get(pname, pname))
+    link = Link(widget, pobj, code=code, properties=properties)
+    JSLinkCallbackGenerator(model, link, widget, pobj)
+    return link
+
 #---------------------------------------------------------------------
 # Public API
 #---------------------------------------------------------------------
@@ -110,12 +146,21 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
     _, _, _, comm = state._views[target]
 
     model.tags.append('embedded')
-    widgets = [w for w in panel.select(Widget) if w._supports_embed
-               and w not in Link.registry]
+
+    widgets = [w for w in panel.select(Widget) if w not in Link.registry]
     state_model = State()
 
-    values = []
+    state_widgets, values = [], []
     for w in widgets:
+        if w._param_pane is not None:
+            link = param_to_jslink(model, w)
+            if link is not None:
+                continue
+        if w._links:
+            pass
+        if not w._supports_embed:
+            continue
+
         w, w_model, vals, getter, on_change, js_getter = w._get_embed_state(model, max_opts)
         if isinstance(w, DiscreteSlider):
             w_model = w._composite[1]._models[target][0].select_one({'type': w._widget_type})
@@ -174,7 +219,7 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
         save_path = os.path.join(save_path, random_dir)
         if load_path is not None:
             load_path = os.path.join(load_path, random_dir)
-        state_dict = save_dict(state_dict, max_depth=len(widgets)-1,
+        state_dict = save_dict(state_dict, max_depth=len(state_widgets)-1,
                                save_path=save_path, load_path=load_path)
 
     state_model.update(json=json, state=state_dict, values=init_vals,

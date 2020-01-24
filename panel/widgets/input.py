@@ -15,7 +15,7 @@ import param
 from bokeh.models.widgets import (
     CheckboxGroup as _BkCheckboxGroup, ColorPicker as _BkColorPicker,
     DatePicker as _BkDatePicker, Div as _BkDiv, TextInput as _BkTextInput,
-    PasswordInput as _BkPasswordInput, Spinner as _BkSpinner, 
+    PasswordInput as _BkPasswordInput, Spinner as _BkSpinner,
     FileInput as _BkFileInput, TextAreaInput as _BkTextAreaInput)
 
 from ..util import as_unicode
@@ -30,6 +30,7 @@ class TextInput(Widget):
 
     _widget_type = _BkTextInput
 
+
 class PasswordInput(Widget):
 
     value = param.String(default='', allow_None=True)
@@ -38,6 +39,7 @@ class PasswordInput(Widget):
 
     _widget_type = _BkPasswordInput
 
+
 class TextAreaInput(Widget):
 
     value = param.String(default='', allow_None=True)
@@ -45,8 +47,9 @@ class TextAreaInput(Widget):
     placeholder = param.String(default='')
 
     max_length = param.Integer(default=5000)
-        
+
     _widget_type = _BkTextAreaInput
+
 
 class FileInput(Widget):
 
@@ -108,6 +111,8 @@ class StaticText(Widget):
 
     _rename = {'name': 'title', 'value': 'text'}
 
+    _embed_transforms = {'value': '"<b>"+target.title+"</b>: "+value'}
+
     def _process_param_change(self, msg):
         msg = super(StaticText, self)._process_property_change(msg)
         msg.pop('title', None)
@@ -128,9 +133,11 @@ class DatePicker(Widget):
 
     end = param.Date(default=None)
 
-    _widget_type = _BkDatePicker
-
     _rename = {'start': 'min_date', 'end': 'max_date', 'name': 'title'}
+
+    _embed_transforms = {'value': None}
+
+    _widget_type = _BkDatePicker
 
     def _process_property_change(self, msg):
         msg = super(DatePicker, self)._process_property_change(msg)
@@ -168,6 +175,11 @@ class Spinner(Widget):
 
     _rename = {'name': 'title', 'start': 'low', 'end': 'high'}
 
+    def __init__(self, **params):
+        if params.get('value') is None:
+            params['value'] = params.get('start', self.start)
+        super(Spinner, self).__init__(**params)
+
 
 class LiteralInput(Widget):
     """
@@ -179,6 +191,8 @@ class LiteralInput(Widget):
                                is_instance=True)
 
     value = param.Parameter(default=None)
+
+    _embed_transforms = {'value': None}
 
     _widget_type = _BkTextInput
 
@@ -245,6 +259,8 @@ class DatetimeInput(LiteralInput):
 
     type = datetime
 
+    _embed_transforms = {'value': None}
+
     def __init__(self, **params):
         super(DatetimeInput, self).__init__(**params)
         self.param.watch(self._validate, 'value')
@@ -302,22 +318,27 @@ class Checkbox(Widget):
 
     _supports_embed = True
 
+    _rename = {'value': 'active', 'name': 'labels'}
+
+    _embed_transforms = {'value': "cb_obj.active.indexOf(0) >= 0", 'name': "cb_obj.labels[0]"}
+
     _widget_type = _BkCheckboxGroup
 
     def _process_property_change(self, msg):
         msg = super(Checkbox, self)._process_property_change(msg)
-        if 'active' in msg:
-            msg['value'] = 0 in msg.pop('active')
+        if 'value' in msg:
+            msg['value'] = 0 in msg.pop('value')
         return msg
 
     def _process_param_change(self, msg):
         msg = super(Checkbox, self)._process_param_change(msg)
-        if 'value' in msg:
-            msg['active'] = [0] if msg.pop('value', None) else []
-        if 'title' in msg:
-            msg['labels'] = [msg.pop('title')]
+        if 'active' in msg:
+            msg['active'] = [0] if msg.pop('active', None) else []
+        if 'labels' in msg:
+            msg['labels'] = [msg.pop('labels')]
         return msg
 
     def _get_embed_state(self, root, max_opts=3):
         return (self, self._models[root.ref['id']][0], [False, True],
-                lambda x: str(0 in x.active).lower(), 'active', 'String(cb_obj.active.indexOf(0) >= 0)')
+                lambda x: str(0 in x.active).lower(), 'active',
+                "String("+self._embed_transforms['value']+")")
