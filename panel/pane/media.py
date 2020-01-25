@@ -37,7 +37,7 @@ class _MediaBase(PaneBase):
     volume = param.Number(default=None, bounds=(0, 100), doc="""
         The volume of the media player.""")
 
-    _rename = {'name': None, 'sample_rate': None, 'object': 'value'}
+    __abstract = True
 
     _default_mime = None
 
@@ -45,7 +45,7 @@ class _MediaBase(PaneBase):
 
     _formats = []
 
-    __abstract = True
+    _rename = {'name': None, 'sample_rate': None, 'object': 'value'}
 
     _updates = True
 

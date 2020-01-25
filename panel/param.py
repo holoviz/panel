@@ -304,13 +304,16 @@ class Param(PaneBase):
             kw_widget = self.widgets[p_name]
         else:
             widget_class = self.widgets[p_name]
-        value = getattr(self.object, p_name)
 
         if not self.show_labels and not issubclass(widget_class, _ButtonBase):
             label = ''
         else:
             label = p_obj.label
-        kw = dict(value=value, disabled=p_obj.constant, name=label)
+        kw = dict(disabled=p_obj.constant, name=label)
+
+        value = getattr(self.object, p_name)
+        if value is not None:
+            kw['value'] = value
 
         # Update kwargs
         kw.update(kw_widget)

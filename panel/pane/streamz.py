@@ -18,6 +18,8 @@ class Streamz(ReplacementPane):
     rate_limit = param.Number(default=0.1, bounds=(0, None), doc="""
         The minimum interval between events.""")
 
+    _rename = {'rate_limit': None, 'always_watch': None}
+
     def __init__(self, object=None, **params):
         super(Streamz, self).__init__(object, **params)
         self._stream = None

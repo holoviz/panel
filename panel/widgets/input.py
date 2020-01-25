@@ -178,6 +178,8 @@ class Spinner(Widget):
     def __init__(self, **params):
         if params.get('value') is None:
             value = params.get('start', self.value)
+            if value is not None:
+                params['value'] = value
         super(Spinner, self).__init__(**params)
 
 
@@ -192,7 +194,9 @@ class LiteralInput(Widget):
 
     value = param.Parameter(default=None)
 
-    _embed_transforms = {'value': None}
+    _embed_transforms = {'value': """JSON.parse(cb_obj.value.replace(/'/g, '"'))"""}
+
+    _reverse_transforms = {'value': """JSON.stringify(value).replace(/,/g, ", ").replace(/:/g, ": ")"""}
 
     _widget_type = _BkTextInput
 
@@ -200,7 +204,7 @@ class LiteralInput(Widget):
         super(LiteralInput, self).__init__(**params)
         self._state = ''
         self._validate(None)
-        self.param.watch(self._validate, 'value')
+        self._callbacks.append(self.param.watch(self._validate, 'value'))
 
     def _validate(self, event):
         if self.type is None: return
@@ -321,6 +325,8 @@ class Checkbox(Widget):
     _rename = {'value': 'active', 'name': 'labels'}
 
     _embed_transforms = {'value': "cb_obj.active.indexOf(0) >= 0", 'name': "cb_obj.labels[0]"}
+
+    _reverse_transforms = {'value': "value ? [0] : []"}
 
     _widget_type = _BkCheckboxGroup
 

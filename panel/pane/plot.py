@@ -73,7 +73,7 @@ class Matplotlib(PNG):
         Automatically adjust the figure size to fit the
         subplots and other artist elements.""")
 
-    _rerender_params = ['object', 'dpi', 'tight']
+    _rerender_params = PNG._rerender_params + ['object', 'dpi', 'tight']
 
     @classmethod
     def applies(cls, obj):
@@ -116,7 +116,7 @@ class RGGPlot(PNG):
 
     dpi = param.Integer(default=144, bounds=(1, None))
 
-    _rerender_params = ['object', 'dpi', 'width', 'height']
+    _rerender_params = PNG._rerender_params + ['object', 'dpi', 'width', 'height']
 
     @classmethod
     def applies(cls, obj):

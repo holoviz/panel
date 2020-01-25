@@ -300,7 +300,6 @@ class CallbackGenerator(object):
                     if isinstance(v, BkModel) and k not in references:
                         references[k] = v
 
-        print(source, src_model, target, tgt_model)
         self._initialize_models(link, source, src_model, src_spec[1], target, tgt_model, tgt_spec[1])
         self._process_references(references)
 

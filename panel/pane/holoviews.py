@@ -72,7 +72,8 @@ class HoloViews(PaneBase):
     _panes = {'bokeh': Bokeh, 'matplotlib': Matplotlib, 'plotly': Plotly}
 
     _rename = {'backend': None, 'widget_type': None, 'widgets': None,
-               'widget_layout': None, 'widget_location': None, 'center': None}
+               'widget_layout': None, 'widget_location': None, 'center': None,
+               'linked_axes': None, 'renderer': None}
 
     def __init__(self, object=None, **params):
         super(HoloViews, self).__init__(object, **params)

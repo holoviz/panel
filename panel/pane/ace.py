@@ -13,19 +13,19 @@ class Ace(PaneBase):
     Ace panes allow rendering Ace editor.
     """
 
-    priority = 0
-
-    code = param.String(doc="State of the current code in the editor")
-
-    theme = param.String(default='chrome', doc="Theme of the editor")
+    annotations = param.List(default=[], doc="List of annotations to add to the editor")
 
     language = param.String(default='python', doc="Language of the editor")
 
-    annotations = param.List(default=[], doc="List of annotations to add to the editor")
+    theme = param.String(default='chrome', doc="Theme of the editor")
 
     readonly = param.Boolean(default=False, doc="Define if editor content can be modified")
 
+    _rename = {'object': 'code'}
+
     _updates = True
+
+    priority = 0
 
     @classmethod
     def applies(cls, obj):

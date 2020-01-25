@@ -62,6 +62,11 @@ def save_dict(state, key=(), depth=0, max_depth=None, save_path='', load_path=No
     return filename_dict
 
 
+def get_watchers(reactive):
+    return [w for pwatchers in reactive._param_watchers.values()
+            for awatchers in pwatchers.values() for w in awatchers]
+
+
 def param_to_jslink(model, widget):
     """
     Converts Param pane widget links into JS links if possible.
@@ -72,28 +77,31 @@ def param_to_jslink(model, widget):
     param_pane = widget._param_pane
     pobj = param_pane.object
     pname = [k for k, v in param_pane._widgets.items() if v is widget]
-    watchers = [
-        w for pwatchers in widget._param_watchers.values()
-        for awatchers in pwatchers.values() for w in awatchers
-        if w not in widget._callbacks and w not in param_pane._callbacks
-    ]
+    watchers = [w for w in get_watchers(widget) if w not in widget._callbacks
+                and w not in param_pane._callbacks]
+
     if (not pname or not isinstance(pobj, Reactive) or watchers or
         pname[0] not in pobj._linkable_params):
         return
     pname = pname[0]
+    kwargs = {}
     if 'value' in widget._embed_transforms:
-        properties = {}
-        code = {
-            'value': "value = source['{attr}']; target['{spec}'] = ({transform})".format(
-                attr=widget._rename.get('value', 'value'),
-                spec=pobj._rename.get(pname, pname),
-                transform=widget._embed_transforms['value']
-            )
-        }
+        src_attr = widget._rename.get('value', 'value')
+        tgt_attr = pobj._rename.get(pname, pname)
+        src_transform = "target['{spec}'] = ({transform})".format(
+            spec=tgt_attr, transform=widget._embed_transforms['value']
+        )
+        kwargs['code'] = {'value': src_transform}
+        tgt_transform = "value = source['{attr}']; target['{spec}'] = ({transform})".format(
+            attr=tgt_attr, spec=src_attr,
+            transform=widget._reverse_transforms['value']
+        )
+        link = Link(pobj, widget, code={pname: tgt_transform})
+        JSLinkCallbackGenerator(model, link, pobj, widget)
     else:
-        code = None
-        properties = dict(value=pobj._rename.get(pname, pname))
-    link = Link(widget, pobj, code=code, properties=properties)
+        kwargs['bidirectional'] = True
+        kwargs['properties'] = dict(value=pobj._rename.get(pname, pname))
+    link = Link(widget, pobj, **kwargs)
     JSLinkCallbackGenerator(model, link, widget, pobj)
     return link
 
@@ -150,29 +158,54 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
     widgets = [w for w in panel.select(Widget) if w not in Link.registry]
     state_model = State()
 
-    state_widgets, values = [], []
-    for w in widgets:
-        if w._param_pane is not None:
-            link = param_to_jslink(model, w)
+    widget_data, ignore = [], []
+    for widget in widgets:
+        if widget._param_pane is not None:
+            # Replace parameter links with JS links
+            link = param_to_jslink(model, widget)
             if link is not None:
-                continue
-        if w._links:
+                continue # Skip if we were able to attach JS link
+            pobj = widget._param_pane.object
+            if isinstance(pobj, Widget):
+                watchers = [w for w in get_watchers(pobj) if widget not in pobj._callbacks
+                            and widget not in widget._param_pane._callbacks]
+                if not watchers:
+                    # If underlying parameterized object is a widget
+                    # which has no other links ensure it is skipped later
+                    ignore.append(pobj) 
+
+        if widget._links:
+            # TODO: Implement JS linking for .link calls
             pass
-        if not w._supports_embed:
+
+        # If the widget does not support embedding or has no external callback skip it
+        if not widget._supports_embed or all(w in widget._callbacks for w in get_watchers(widget)):
             continue
 
-        w, w_model, vals, getter, on_change, js_getter = w._get_embed_state(model, max_opts)
-        if isinstance(w, DiscreteSlider):
-            w_model = w._composite[1]._models[target][0].select_one({'type': w._widget_type})
+        # Get data which will let us record the changes on widget events 
+        widget, w_model, vals, getter, on_change, js_getter = widget._get_embed_state(model, max_opts)
+        w_type = widget._widget_type
+        if isinstance(widget, DiscreteSlider):
+            w_model = widget._composite[1]._models[target][0].select_one({'type': w_type})
         else:
-            w_model = w._models[target][0].select_one({'type': w._widget_type})
+            w_model = widget._models[target][0].select_one({'type': w_type})
         js_callback = CustomJS(code=STATE_JS.format(
             id=state_model.ref['id'], js_getter=js_getter))
+        widget_data.append((widget, w_model, vals, getter, js_callback, on_change))
+
+    # Ensure we recording state for widgets which could be JS linked
+    values = []
+    for (w, w_model, vals, getter, js_callback, on_change) in values:
+        if w in ignore:
+            continue
         w_model.js_on_change(on_change, js_callback)
         values.append((w, w_model, vals, getter))
 
     add_to_doc(model, doc, True)
     doc._held_events = []
+
+    if not values:
+        return
 
     restore = [w.value for w, _, _, _ in values]
     init_vals = [g(m) for _, m, _, g in values]
@@ -187,6 +220,7 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
 
     nested_dict = lambda: defaultdict(nested_dict)
     state_dict = nested_dict()
+    changes = False
     for key in cross_product:
         sub_dict = state_dict
         skip = False
@@ -205,8 +239,12 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
         models = [v[1] for v in values]
         doc._held_events = [e for e in doc._held_events if e.model not in models]
         events = record_events(doc)
+        changes |= events['content'] == '{}'
         if events:
             sub_dict.update(events)
+
+    if not changes:
+        return
 
     for (w, _, _, _), v in zip(values, restore):
         try:
@@ -219,7 +257,7 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
         save_path = os.path.join(save_path, random_dir)
         if load_path is not None:
             load_path = os.path.join(load_path, random_dir)
-        state_dict = save_dict(state_dict, max_depth=len(state_widgets)-1,
+        state_dict = save_dict(state_dict, max_depth=len(values)-1,
                                save_path=save_path, load_path=load_path)
 
     state_model.update(json=json, state=state_dict, values=init_vals,
