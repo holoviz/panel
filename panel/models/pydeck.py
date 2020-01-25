@@ -8,12 +8,17 @@ And now PyDeck provides Python bindings. See
 - [PyDeck Docs](https://deckgl.readthedocs.io/en/latest/)
 - [PyDeck Repo](https://github.com/uber/deck.gl/tree/master/bindings/pydeck)
 """
-from bokeh.core.properties import Dict, String, List, Any, Instance, Enum, Int, Bool
+from bokeh.core.properties import Dict, String, List, Any, Instance, Enum, Int, Bool, JSON
 from bokeh.models import HTMLBox
 import pathlib
 
 PYDECK_TS = pathlib.Path(__file__).parent / "pydeck.ts"
 PYDECK_TS_STR = str(PYDECK_TS.resolve())
+
+DECK_GL_PANEL_EXPRESS_JS = (
+    "https://cdn.jsdelivr.net/npm/@deck.gl/jupyter-widget@^8.0.0/dist/index.js"
+)
+MAPBOX_GL_JS = "https://api.tiles.mapbox.com/mapbox-gl-js/v0.50.0/mapbox-gl.js"
 
 
 class PyDeckPlot(HTMLBox):
@@ -21,7 +26,9 @@ class PyDeckPlot(HTMLBox):
 
     __implementation__ = PYDECK_TS_STR
 
-    json_input = String()
+    __javascript__ = [DECK_GL_PANEL_EXPRESS_JS, MAPBOX_GL_JS]
+
+    json_input = JSON()
     mapbox_api_key = String()
     tooltip = Bool()  # Or Dict(String, Any)
 
