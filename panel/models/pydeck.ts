@@ -3,6 +3,8 @@ import { HTMLBox, HTMLBoxView } from "models/layouts/html_box"
 import { div } from "core/dom"
 import * as p from "core/properties"
 
+const createDeck = (window as any).createDeck;
+
 export class PyDeckPlotView extends HTMLBoxView {
     model: PyDeckPlot
 
@@ -26,13 +28,20 @@ export class PyDeckPlotView extends HTMLBoxView {
     render(): void {
         super.render()
 
-        this.el.appendChild(div({
-            style: {
-                padding: '2px',
-                color: '#b88d8e',
-                backgroundColor: '#2a3153',
-            },
-        }, `${this.model.json_input}: ${this.model.mapbox_api_key} ${this.model.tooltip}`))
+        if (!(window as any).createDeck) { return }
+
+        const container = this.el.appendChild(div({ class: "deck_gl", style: { height: "400px", width: "800px" } }));
+
+        const jsonInput = JSON.parse(this.model.json_input);
+        const MAPBOX_API_KEY = this.model.mapbox_api_key;
+        const tooltip = this.model.tooltip;
+
+        createDeck({
+            mapboxApiKey: MAPBOX_API_KEY,
+            container: container,
+            jsonInput,
+            tooltip
+        });
     }
 }
 
