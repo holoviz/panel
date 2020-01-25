@@ -181,6 +181,7 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
         # If the widget does not support embedding or has no external callback skip it
         if not widget._supports_embed or all(w in widget._callbacks for w in get_watchers(widget)):
             continue
+        
 
         # Get data which will let us record the changes on widget events 
         widget, w_model, vals, getter, on_change, js_getter = widget._get_embed_state(model, max_opts)
@@ -195,7 +196,7 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
 
     # Ensure we recording state for widgets which could be JS linked
     values = []
-    for (w, w_model, vals, getter, js_callback, on_change) in values:
+    for (w, w_model, vals, getter, js_callback, on_change) in widget_data:
         if w in ignore:
             continue
         w_model.js_on_change(on_change, js_callback)
@@ -239,10 +240,11 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
         models = [v[1] for v in values]
         doc._held_events = [e for e in doc._held_events if e.model not in models]
         events = record_events(doc)
-        changes |= events['content'] == '{}'
+        changes |= events['content'] != '{}'
         if events:
             sub_dict.update(events)
 
+    print(changes)
     if not changes:
         return
 
