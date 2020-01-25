@@ -88,17 +88,17 @@ class PaneBase(Reactive):
     # value for a specific object type.
     priority = 0.5
 
-    # Declares whether Pane supports updates to the Bokeh model
-    _updates = False
+    # Whether applies requires full set of keywords
+    _applies_kw = False
 
     # Whether the Pane layout can be safely unpacked
     _unpack = True
 
+    # Declares whether Pane supports updates to the Bokeh model
+    _updates = False
+
     # List of parameters that trigger a rerender of the Bokeh model
     _rerender_params = ['object']
-
-    # Whether applies requires full set of keywords
-    _applies_kw = False
 
     __abstract = True
 
@@ -315,9 +315,9 @@ class ReplacementPane(PaneBase):
     on.
     """
 
-    __abstract = True
-
     _updates = True
+
+    __abstract = True
 
     def __init__(self, object=None, **params):
         self._kwargs =  {p: params.pop(p) for p in list(params)

@@ -37,17 +37,17 @@ class _MediaBase(PaneBase):
     volume = param.Number(default=None, bounds=(0, 100), doc="""
         The volume of the media player.""")
 
-    __abstract = True
-
     _default_mime = None
 
-    _media_type = None
-
     _formats = []
+
+    _media_type = None
 
     _rename = {'name': None, 'sample_rate': None, 'object': 'value'}
 
     _updates = True
+
+    __abstract = True
 
     @classmethod
     def applies(cls, obj):
@@ -114,13 +114,13 @@ class Audio(_MediaBase):
     sample_rate = param.Integer(default=44100, doc="""
         The sample_rate of the audio when given a NumPy array.""")
 
-    _formats = ['mp3', 'wav', 'ogg']
-
-    _media_type = 'audio'
+    _bokeh_model = _BkAudio
 
     _default_mime = 'wav'
 
-    _bokeh_model = _BkAudio
+    _formats = ['mp3', 'wav', 'ogg']
+
+    _media_type = 'audio'
 
     @classmethod
     def applies(cls, obj):
@@ -130,10 +130,11 @@ class Audio(_MediaBase):
 
 class Video(_MediaBase):
 
+    _bokeh_model = _BkVideo
+
+    _default_mime = 'mp4'
+
     _formats = ['mp4', 'webm', 'ogg']
 
     _media_type = 'video'
 
-    _default_mime = 'mp4'
-
-    _bokeh_model = _BkVideo

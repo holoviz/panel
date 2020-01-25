@@ -105,13 +105,15 @@ class StaticText(Widget):
 
     value = param.Parameter(default=None)
 
-    _widget_type = _BkDiv
+    _embed_transforms = {'value': '"<b>"+target.title+"</b>: "+value'}
+
+    _reverse_transforms = {'value': 'value.split(": ")[1]'}
 
     _format = '<b>{title}</b>: {value}'
 
     _rename = {'name': 'title', 'value': 'text'}
 
-    _embed_transforms = {'value': '"<b>"+target.title+"</b>: "+value'}
+    _widget_type = _BkDiv
 
     def _process_param_change(self, msg):
         msg = super(StaticText, self)._process_property_change(msg)
@@ -133,9 +135,9 @@ class DatePicker(Widget):
 
     end = param.Date(default=None)
 
-    _rename = {'start': 'min_date', 'end': 'max_date', 'name': 'title'}
-
     _embed_transforms = {'value': None}
+
+    _rename = {'start': 'min_date', 'end': 'max_date', 'name': 'title'}
 
     _widget_type = _BkDatePicker
 
@@ -194,7 +196,7 @@ class LiteralInput(Widget):
 
     value = param.Parameter(default=None)
 
-    _embed_transforms = {'value': """JSON.parse(cb_obj.value.replace(/'/g, '"'))"""}
+    _embed_transforms = {'value': """JSON.parse(value.replace(/'/g, '"'))"""}
 
     _reverse_transforms = {'value': """JSON.stringify(value).replace(/,/g, ", ").replace(/:/g, ": ")"""}
 
@@ -263,7 +265,9 @@ class DatetimeInput(LiteralInput):
 
     type = datetime
 
-    _embed_transforms = {'value': None}
+    _embed_transforms = {'value': None, 'start': None, 'end': None}
+
+    _rename = {'format': None, 'type': None, 'name': 'title'}
 
     def __init__(self, **params):
         super(DatetimeInput, self).__init__(**params)
@@ -304,7 +308,7 @@ class DatetimeInput(LiteralInput):
         return msg
 
     def _process_param_change(self, msg):
-        msg = {k: v for k, v in msg.items() if k not in ('type', 'format', 'start', 'end')}
+        msg = Widget._process_param_change(self, msg)
         if 'value' in msg:
             value = msg['value']
             if value is None:
@@ -324,9 +328,9 @@ class Checkbox(Widget):
 
     _rename = {'value': 'active', 'name': 'labels'}
 
-    _embed_transforms = {'value': "cb_obj.active.indexOf(0) >= 0", 'name': "cb_obj.labels[0]"}
+    _embed_transforms = {'value': "value.indexOf(0) >= 0", 'name': "value[0]"}
 
-    _reverse_transforms = {'value': "value ? [0] : []"}
+    _reverse_transforms = {'value': "value ? [0] : []", 'name': "[value]"}
 
     _widget_type = _BkCheckboxGroup
 
@@ -347,4 +351,4 @@ class Checkbox(Widget):
     def _get_embed_state(self, root, max_opts=3):
         return (self, self._models[root.ref['id']][0], [False, True],
                 lambda x: str(0 in x.active).lower(), 'active',
-                "String("+self._embed_transforms['value']+")")
+                "String(cb_obj.active.indexOf(0) >= 0)")

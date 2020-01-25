@@ -27,37 +27,41 @@ class Plotly(PaneBase):
     the figure on bokeh server and via Comms.
     """
 
-    config = param.Dict(doc="""config data""")
-    relayout_data = param.Dict(doc="""relayout callback data""")
-    restyle_data = param.List(doc="""restyle callback data""")
-    click_data = param.Dict(doc="""click callback data""")
-    hover_data = param.Dict(doc="""hover callback data""")
-    clickannotation_data = param.Dict(doc="""clickannotation callback data""")
-    selected_data = param.Dict(doc="""selected callback data""")
-    viewport = param.Dict(doc="""current viewport state""")
-    viewport_update_policy = param.Selector(
-        objects=["mouseup", "continuous", "throttle"],
-        default="mouseup",
-        doc="""\
-Policy by which the viewport parameter is updated during user interactions:
- - "mouseup": updates are synchronized when mouse button is released after panning
- - "continuous": updates are synchronized continually while panning
- - "throttle": updates are synchronized while panning, at intervals determined by the
-               viewport_update_throttle parameter"""
-    )
-    viewport_update_throttle = param.Integer(
-        bounds=(0, None),
-        default=200,
-        doc='''\
-Time interval in milliseconds at which viewport updates are synchronized when
-viewport_update_policy is "throttle"'''
-    )
-    _render_count = param.Integer(
-        doc="""Number of renders, increment to trigger re-render""", default=0)
+    click_data = param.Dict(doc="Click callback data")
 
-    _updates = True
+    clickannotation_data = param.Dict(doc="Clickannotation callback data")
+
+    config = param.Dict(doc="Config data")
+
+    hover_data = param.Dict(doc="Hover callback data")
+
+    relayout_data = param.Dict(doc="Relayout callback data")
+
+    restyle_data = param.List(doc="Restyle callback data")
+
+    selected_data = param.Dict(doc="Selected callback data")
+
+    viewport = param.Dict(doc="Current viewport state")
+
+    viewport_update_policy = param.Selector(default="mouseup", doc="""
+        Policy by which the viewport parameter is updated during user interactions.
+          - "mouseup": updates are synchronized when mouse button is released after panning
+          - "continuous": updates are synchronized continually while panning
+          - "throttle": updates are synchronized while panning, at 
+                        intervals determined by the viewport_update_throttle
+                        parameter
+        """, objects=["mouseup", "continuous", "throttle"])
+
+    viewport_update_throttle = param.Integer(default=200, bounds=(0, None), doc="""
+        Time interval in milliseconds at which viewport updates are
+        synchronized when viewport_update_policy is "throttle".""")
+
+    _render_count = param.Integer(default=0, doc="""
+        Number of renders, increment to trigger re-render""")
 
     priority = 0.8
+
+    _updates = True
 
     @classmethod
     def applies(cls, obj):

@@ -38,8 +38,9 @@ class VTKVolume(PaneBase):
     spacing = param.Tuple(default=(1, 1, 1), length=3, doc="""
         Distance between voxel in each direction""")
 
-    _updates = True
     _serializers = {}
+
+    _updates = True
 
     def __init__(self, obj=None, **params):
         super(VTKVolume, self).__init__(obj, **params)
@@ -47,7 +48,6 @@ class VTKVolume(PaneBase):
 
     @classmethod
     def applies(cls, obj):
-
         if ((isinstance(obj, np.ndarray) and obj.ndim == 3) or
             any([isinstance(obj, k) for k in cls._serializers.keys()])):
             return True
@@ -159,13 +159,6 @@ class VTK(PaneBase):
     VTK panes allow rendering VTK objects.
     """
 
-    serialize_on_instantiation = param.Boolean(default=True, doc="""
-        Define if the object serialization occurs at panel instantiation
-        or when the panel is displayed.
-    """)
-
-    camera = param.Dict(doc="""State of the rendered VTK camera.""")
-
     axes = param.Dict(doc="""
         Parameters of the axes to construct in the 3d view.
 
@@ -184,6 +177,8 @@ class VTK(PaneBase):
         ``axes_opactity``: float between 0-1. Defines the axes lines opacity.
     """)
 
+    camera = param.Dict(doc="State of the rendered VTK camera.")
+
     enable_keybindings = param.Boolean(default=False, doc="""
         Activate/Deactivate keys binding.
 
@@ -193,6 +188,11 @@ class VTK(PaneBase):
 
     orientation_widget = param.Boolean(default=False, doc="""
         Activate/Deactivate the orientation widget display.
+    """)
+
+    serialize_on_instantiation = param.Boolean(default=True, doc="""
+        Define if the object serialization occurs at panel instantiation
+        or when the panel is displayed.
     """)
 
     _updates = True

@@ -21,11 +21,11 @@ class Ace(PaneBase):
 
     readonly = param.Boolean(default=False, doc="Define if editor content can be modified")
 
+    priority = 0
+
     _rename = {'object': 'code'}
 
     _updates = True
-
-    priority = 0
 
     @classmethod
     def applies(cls, obj):
