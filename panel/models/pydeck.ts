@@ -23,6 +23,8 @@ export class PyDeckPlotView extends HTMLBoxView {
         this.connect(this.model.properties.tooltip.change, () => {
             this.render();
         })
+
+        this.connect(this.model.properties._render_count.change, this.render);
     }
 
     render(): void {
@@ -30,7 +32,7 @@ export class PyDeckPlotView extends HTMLBoxView {
 
         if (!(window as any).createDeck) { return }
 
-        const container = this.el.appendChild(div({ class: "deck_gl", style: { height: "400px", width: "800px" } }));
+        const container = this.el.appendChild(div({ class: "deckgl", style: { height: "400px", width: "800px" } }));
 
         const jsonInput = JSON.parse(this.model.json_input);
         const MAPBOX_API_KEY = this.model.mapbox_api_key;
@@ -51,6 +53,7 @@ export namespace PyDeckPlot {
         json_input: p.Property<string>
         mapbox_api_key: p.Property<string>
         tooltip: p.Property<boolean>
+        _render_count: p.Property<number>
     }
 }
 
@@ -69,7 +72,8 @@ export class PyDeckPlot extends HTMLBox {
         this.define<PyDeckPlot.Props>({
             json_input: [p.String],
             mapbox_api_key: [p.String],
-            tooltip: [p.Boolean]
+            tooltip: [p.Boolean],
+            _render_count: [p.Number, 0],
         })
     }
 }

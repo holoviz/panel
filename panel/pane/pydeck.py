@@ -1,30 +1,93 @@
 """
 Defines a PyDeck Pane which renders a PyDeck plot using a PyDeckPlot
 bokeh model.
-
-For now I've just experimented a bit.
-
-There is a simple implementation of an app using PyDeck in the gallery at
-[awesome-streamlit.org](https://awesome-streamlit.org).
-
-See
-
-- [pydeck implementation](https://github.com/MarcSkovMadsen/awesome-panel/blob/master/package/awesome_panel/express/pane/pydeck.py)
-- [test_pydeck app](https://github.com/MarcSkovMadsen/awesome-panel/blob/master/src/pages/gallery/awesome_panel_express_tests/test_pydeck.py)
-- [test_pydeck test](https://github.com/MarcSkovMadsen/awesome-panel/blob/master/package/tests/test_pydeck.py)
-
-It's based on the following resources
-
-- [PyDeck Github](https://github.com/uber/deck.gl/tree/master/bindings/pydeck)
-- [PyDeck Docs](https://deckgl.readthedocs.io/en/latest/)
-- [PyDeck Deck Implementation](https://github.com/uber/deck.gl/blob/master/bindings/pydeck/pydeck/bindings/deck.py)
-- [PyDeck render_json_to_html Implementation](https://github.com/uber/deck.gl/blob/master/bindings/pydeck/pydeck/io/html.py)
-
-When I move on I believe I can find inspiration in
-
-- The Panel implementation of the Plotly Pane and Plotly Bokeh Model
-- [Extending Bokeh](https://docs.bokeh.org/en/latest/docs/user_guide/extensions.html)
-- [PyDeck Jupyter Implementation](https://github.com/uber/deck.gl/blob/master/bindings/pydeck/pydeck/widget/widget.py)
-
-There is a feature request for this at [Github 957](https://github.com/holoviz/panel/issues/957)
 """
+import sys
+
+import param
+from pyviz_comms import JupyterComm
+
+from .base import PaneBase
+
+# from panel.models.pydeck import PyDeckPlot as PyDeck
+
+
+class PyDeck(PaneBase):
+    """
+    PyDeck panes allow rendering Deck.Gl/ PyDeck plots in Panel.
+    """
+
+    _render_count = param.Integer(
+        doc="""Number of renders, increment to trigger re-render""", default=0
+    )
+
+    _updates = True
+
+    priority = 0.8
+
+    @classmethod
+    def applies(cls, obj):
+        return (
+            hasattr(obj, "to_json") and hasattr(obj, "mapbox_key") and hasattr(obj, "deck_widget")
+        )
+
+    def _get_model(self, doc, root=None, parent=None, comm=None):
+        """
+        Should return the bokeh model to be rendered.
+        """
+        if "panel.models.pydeck" not in sys.modules:
+            if isinstance(comm, JupyterComm):
+                self.param.warning(
+                    "PyDeckPlot was not imported on instantiation "
+                    "and may not render in a notebook. Restart "
+                    "the notebook kernel and ensure you load "
+                    "it as part of the extension using:"
+                    "\n\npn.extension('pydeck')\n"
+                )
+            from ..models.pydeck import PyDeckPlot
+        else:
+            PyDeckPlot = getattr(sys.modules["panel.models.pydeck"], "PyDeckPlot")
+
+        if self.object is None:
+            json_input, mapbox_api_key, tooltip = {}, "", False
+        else:
+            json_input = self.object.to_json()
+            mapbox_api_key = self.object.mapbox_key
+            tooltip = self.object.deck_widget.tooltip
+
+
+        model = PyDeckPlot(json_input=json_input, mapbox_api_key=mapbox_api_key, tooltip=tooltip, _render_count=0)
+
+        if root is None:
+            root = model
+
+        if root is None:
+            root = model
+        self._models[root.ref["id"]] = (model, parent)
+        return model
+
+    def _update(self, model):
+        if self.object is None:
+            model.update(
+                json_input={}, mapbox_api_key="", tooltip=False,
+            )
+            model._render_count += 1
+            return
+
+        json_input = self.object.to_json()
+        mapbox_api_key = self.object.mapbox_key
+        tooltip = self.object.deck_widget.tooltip
+
+        update_json_input = json_input != model.json_input
+        update_mapbox_api_key = mapbox_api_key != model.mapbox_api_key
+        update_tooltip = tooltip != model.tooltip
+
+        if update_json_input:
+            model.json_input = json_input
+        if update_mapbox_api_key:
+            model.mapbox_api_key = mapbox_api_key
+        if update_tooltip:
+            model.tooltip = tooltip
+
+        if update_json_input or update_mapbox_api_key or update_tooltip:
+            model._render_count += 1

@@ -87,7 +87,7 @@ class _config(param.Parameterized):
     _comms = param.ObjectSelector(
         default='default', objects=['default', 'ipywidgets'], doc="""
         Whether to render output in Jupyter with the default Jupyter
-        extension or use the jupyter_bokeh ipywidget model.""") 
+        extension or use the jupyter_bokeh ipywidget model.""")
 
     _inline = param.Boolean(default=True, allow_None=True, doc="""
         Whether to inline JS and CSS resources.
@@ -137,7 +137,7 @@ class _config(param.Parameterized):
     def comms(self, value):
         validate_config(self, '_comms', value)
         self._comms_ = value
-        
+
     @property
     def embed_json(self):
         if self._embed_json_ is not None:
@@ -219,6 +219,7 @@ class panel_extension(_pyviz_extension):
     _imports = {'katex': 'panel.models.katex',
                 'mathjax': 'panel.models.mathjax',
                 'plotly': 'panel.models.plotly',
+                'pydeck': 'panel.models.pydeck',
                 'vega': 'panel.models.vega',
                 'vtk': 'panel.models.vtk',
                 'ace': 'panel.models.ace'}

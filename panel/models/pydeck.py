@@ -31,6 +31,7 @@ class PyDeckPlot(HTMLBox):
     json_input = JSON()
     mapbox_api_key = String()
     tooltip = Bool()  # Or Dict(String, Any)
+    _render_count = Int()
 
     # description = String()
     # initial_view_state = Dict(String, Any)
