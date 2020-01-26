@@ -12,6 +12,7 @@ import threading
 import traceback
 import uuid
 
+from collections import namedtuple
 from functools import partial
 
 import param
@@ -34,6 +35,9 @@ from .io.save import save
 from .io.state import state
 from .io.server import StoppableThread, get_server, unlocked
 from .util import escape, param_reprs
+
+
+LinkWatcher = namedtuple("Watcher","inst cls fn mode onlychanged parameter_names what queued target links transformed")
 
 
 class Layoutable(param.Parameterized):
@@ -616,6 +620,7 @@ class Reactive(Viewable):
 
     # Transforms from input value to bokeh property value
     _embed_transforms = {}
+    _reverse_transforms = {}
 
     def __init__(self, **params):
         # temporary flag denotes panes created for temporary, internal
@@ -899,7 +904,8 @@ class Reactive(Viewable):
                     _updating.pop(_updating.index(event.name))
         params = list(callbacks) if callbacks else list(links)
         cb = self.param.watch(link, params)
-        self._links.append(cb)
+        link = LinkWatcher(*tuple(cb)+(target, links, callbacks is not None))
+        self._links.append(link)
         return cb
 
     def add_periodic_callback(self, callback, period=500, count=None,

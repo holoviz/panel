@@ -11,6 +11,7 @@ from collections import defaultdict
 from itertools import product
 
 from bokeh.models import CustomJS
+from param.parameterized import Watcher
 
 from .model import add_to_doc, diff
 from .state import state
@@ -71,7 +72,6 @@ def param_to_jslink(model, widget):
     """
     Converts Param pane widget links into JS links if possible.
     """
-    from ..links import Link, JSLinkCallbackGenerator
     from ..viewable import Reactive
 
     param_pane = widget._param_pane
@@ -83,27 +83,46 @@ def param_to_jslink(model, widget):
     if (not pname or not isinstance(pobj, Reactive) or watchers or
         pname[0] not in pobj._linkable_params):
         return
-    pname = pname[0]
-    kwargs = {}
-    if 'value' in widget._embed_transforms:
-        src_attr = widget._rename.get('value', 'value')
-        tgt_attr = pobj._rename.get(pname, pname)
-        src_transform = "target['{spec}'] = ({transform})".format(
-            spec=tgt_attr, transform=widget._embed_transforms['value']
-        )
-        kwargs['code'] = {'value': src_transform}
-        tgt_transform = "value = source['{attr}']; target['{spec}'] = ({transform})".format(
-            attr=tgt_attr, spec=src_attr,
-            transform=widget._reverse_transforms['value']
-        )
-        link = Link(pobj, widget, code={pname: tgt_transform})
-        JSLinkCallbackGenerator(model, link, pobj, widget)
-    else:
-        kwargs['bidirectional'] = True
-        kwargs['properties'] = dict(value=pobj._rename.get(pname, pname))
-    link = Link(widget, pobj, **kwargs)
-    JSLinkCallbackGenerator(model, link, widget, pobj)
+    return link_to_jslink(model, widget, 'value', pobj, pname[0])
+
+
+def link_to_jslink(model, source, src_spec, target, tgt_spec):
+    """
+    Converts links declared in Python into JS Links by using the
+    declared forward and reverse JS transforms on the source and target.
+    """
+    from ..links import Link, JSLinkCallbackGenerator
+    properties = dict(value=target._rename.get(tgt_spec, tgt_spec))
+    link = Link(source, target, bidirectional=True, properties=properties)
+    JSLinkCallbackGenerator(model, link, source, target)
     return link
+
+
+def links_to_jslinks(model, widget):
+    links = []
+    for link in widget._links:
+        if link.transformed:
+            return
+        mappings = []
+        for pname, tgt_spec in link.links.items():
+            if Watcher(*link[:-3]) in widget._param_watchers[pname]['value']:
+                mappings.append((pname, tgt_spec))
+        if mappings:
+            links.append((link, mappings))
+    jslinks = []
+    for link, mapping in links:
+        for src_spec, tgt_spec in mapping:
+            if ((widget._embed_transforms.get(src_spec, False) is None) or
+                (link.target._reverse_transforms.get(tgt_spec, False) is None)):
+                # We cannot jslink if either source or target declare
+                # that they apply Python transforms
+                return
+            jslink = link_to_jslink(model, widget, src_spec, link.target, tgt_spec)
+            widget.param.trigger(src_spec)
+            if jslink is None:
+                return
+            jslinks.append(jslink)
+    return jslinks
 
 #---------------------------------------------------------------------
 # Public API
@@ -175,13 +194,13 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
                     ignore.append(pobj) 
 
         if widget._links:
-            # TODO: Implement JS linking for .link calls
-            pass
+            jslinks = links_to_jslinks(model, widget)
+            if jslinks:
+                continue
 
         # If the widget does not support embedding or has no external callback skip it
         if not widget._supports_embed or all(w in widget._callbacks for w in get_watchers(widget)):
             continue
-        
 
         # Get data which will let us record the changes on widget events 
         widget, w_model, vals, getter, on_change, js_getter = widget._get_embed_state(model, max_opts)
@@ -244,7 +263,6 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
         if events:
             sub_dict.update(events)
 
-    print(changes)
     if not changes:
         return
 

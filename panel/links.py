@@ -259,7 +259,7 @@ class CallbackGenerator(object):
         if any(link_id in cb.tags for cbs in src_model.js_property_callbacks.values() for cb in cbs):
             # Skip registering callback if already registered
             return
-        references['source'] = references['cb_obj'] = src_model
+        references['source'] = src_model
 
         tgt_model = None
         if link._requires_target:
@@ -382,6 +382,20 @@ class JSCallbackGenerator(CallbackGenerator):
 
 class JSLinkCallbackGenerator(JSCallbackGenerator):
 
+    _link_template = """
+    value = source['{src_attr}'];
+    value = {src_transform};
+    value = {tgt_transform};
+    try {{
+      property = target.properties['{tgt_attr}'];
+      if (property !== undefined) {{ property.validate(value); }}
+    }} catch(err) {{
+      console.log('WARNING: Could not set {tgt_attr} on target, raised error: ' + err);
+      return;
+    }}
+    target['{tgt_attr}'] = value;
+    """
+
     def _get_specs(self, link, source, target):
         if link.code:
             return super(JSLinkCallbackGenerator, self)._get_specs(link, source, target)
@@ -431,14 +445,22 @@ class JSLinkCallbackGenerator(JSCallbackGenerator):
             references[k[7:]] = references.pop(k)
 
     def _get_code(self, link, source, src_spec, target, tgt_spec):
-        return ("value = source[{src_repr}];"
-                "try {{ property = target.properties[{tgt_repr}];"
-                "if (property !== undefined) {{ property.validate(value); }} }}"
-                "catch(err) {{ console.log('WARNING: Could not set {tgt} on target, raised error: ' + err); return; }}"
-                "target[{tgt_repr}] = value".format(
-                    tgt=tgt_spec, tgt_repr=unicode_repr(tgt_spec),
-                    src=src_spec, src_repr=unicode_repr(src_spec)))
-
+        if isinstance(source, Reactive):
+            src_reverse = {v: k for k, v in source._rename.items()}
+            src_param = src_reverse.get(src_spec, src_spec)
+            src_transform = source._embed_transforms.get(src_param, 'value')
+        else:
+            src_transform = 'value'
+        if isinstance(target, Reactive):
+            tgt_reverse = {v: k for k, v in target._rename.items()}
+            tgt_param = tgt_reverse.get(tgt_spec, tgt_spec)
+            tgt_transform = target._reverse_transforms.get(tgt_param, 'value')
+        else:
+            tgt_transform = 'value'
+        return self._link_template.format(
+            src_attr=src_spec, tgt_attr=tgt_spec,
+            src_transform=src_transform, tgt_transform=tgt_transform
+        )
 
 Callback.register_callback(callback=JSCallbackGenerator)
 Link.register_callback(callback=JSLinkCallbackGenerator)
