@@ -5,11 +5,13 @@ try:
 except ImportError:
     hv = None
 
+import pytest
+
 from bokeh.plotting import figure
 from panel.layout import Row
 from panel.links import Link
 from panel.pane import HoloViews
-from panel.widgets import FloatSlider, RangeSlider, ColorPicker, TextInput
+from panel.widgets import FloatSlider, RangeSlider, ColorPicker, TextInput, DatetimeInput
 from panel.tests.util import hv_available
 
 
@@ -34,6 +36,43 @@ def test_widget_link_bidirectional(document, comm):
     assert link2_customjs.args['target'] is tm1
 
 
+def test_widget_link_source_param_not_found():
+    t1 = TextInput()
+    t2 = TextInput()
+
+    with pytest.raises(ValueError) as excinfo:
+        t1.jslink(t2, value1='value')
+    assert "Could not jslink \'value1\' parameter" in str(excinfo)
+
+
+def test_widget_link_target_param_not_found():
+    t1 = TextInput()
+    t2 = TextInput()
+
+    with pytest.raises(ValueError) as excinfo:
+        t1.jslink(t2, value='value1')
+    assert "Could not jslink \'value1\' parameter" in str(excinfo)
+
+
+def test_widget_link_no_transform_error():
+    t1 = DatetimeInput()
+    t2 = TextInput()
+
+    with pytest.raises(ValueError) as excinfo:
+        t1.jslink(t2, value='value')
+    assert "Cannot jslink \'value\' parameter on DatetimeInput object" in str(excinfo)
+
+
+def test_widget_link_no_target_transform_error():
+    t1 = DatetimeInput()
+    t2 = TextInput()
+
+    with pytest.raises(ValueError) as excinfo:
+        t2.jslink(t1, value='value')
+    assert ("Cannot jslink \'value\' parameter on TextInput object "
+            "to \'value\' parameter on DatetimeInput object") in str(excinfo)
+    
+    
 @hv_available
 def test_pnwidget_hvplot_links(document, comm):
     size_widget = FloatSlider(value=5, start=1, end=10)

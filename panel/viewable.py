@@ -1075,7 +1075,7 @@ class Reactive(Viewable):
                                  "to have an effect." % (k, type(self).__name__))
 
         if isinstance(target, Reactive) and code is None:
-            for p in mapping.values():
+            for k, p in mapping.items():
                 if p not in target.param and p not in list(target._rename.values()):
                     matches = difflib.get_close_matches(p, list(target.param))
                     if matches:
@@ -1087,9 +1087,10 @@ class Reactive(Viewable):
                                     % (p, type(self).__name__, matches))
                 elif (target._source_transforms.get(p, False) is None or
                       target._rename.get(p, False) is None):
-                    raise ValueError("Cannot jslink %r parameter on %s object, "
-                                     "the parameter requires a live Python kernel"
-                                     "to have an effect." % (p, type(self).__name__))
+                    raise ValueError("Cannot jslink %r parameter on %s object "
+                                     "to %r parameter on %s object. It requires "
+                                     "a live Python kernel to have an effect."
+                                     % (k, type(self).__name__, p, type(target).__name__))
 
         from .links import Link
         return Link(self, target, properties=links, code=code, args=args,
