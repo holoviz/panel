@@ -47,13 +47,13 @@ def SingleFileSelector(pobj):
 
 def LiteralInputTyped(pobj):
     if isinstance(pobj, param.Tuple):
-        return type('TupleInput', (LiteralInput,), {'type': tuple})
+        return type(str('TupleInput'), (LiteralInput,), {'type': tuple})
     elif isinstance(pobj, param.Number):
-        return type('NumberInput', (LiteralInput,), {'type': (int, float)})
+        return type(str('NumberInput'), (LiteralInput,), {'type': (int, float)})
     elif isinstance(pobj, param.Dict):
-        return type('DictInput', (LiteralInput,), {'type': dict})
+        return type(str('DictInput'), (LiteralInput,), {'type': dict})
     elif isinstance(pobj, param.List):
-        return type('ListInput', (LiteralInput,), {'type': list})
+        return type(str('ListInput'), (LiteralInput,), {'type': list})
     return LiteralInput
 
 
