@@ -44,6 +44,8 @@ class ImageBase(DivPaneBase):
 
     _rerender_params = ['alt_text', 'link_url', 'embed', 'object', 'style']
 
+    _target_transforms = {'object': """'<img src="' + value + '"></img>'"""}
+
     __abstract = True
 
     @classmethod

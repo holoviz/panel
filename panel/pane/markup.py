@@ -232,7 +232,7 @@ class Str(DivPaneBase):
 
     priority = 0
 
-    _reverse_transforms = {'object': """JSON.stringify(value).replace(/,/g, ", ").replace(/:/g, ": ")"""}
+    _target_transforms = {'object': """JSON.stringify(value).replace(/,/g, ", ").replace(/:/g, ": ")"""}
 
     _bokeh_model = _BkHTML
 
@@ -267,7 +267,7 @@ class Markdown(DivPaneBase):
     # Priority depends on the data type
     priority = None
 
-    _reverse_transforms = {'object': None}
+    _target_transforms = {'object': None}
 
     _rerender_params = ['object', 'dedent', 'extensions']
 

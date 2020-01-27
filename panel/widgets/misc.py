@@ -47,7 +47,7 @@ class _MediaBase(Widget):
 
     _media_type = None
 
-    _embed_transforms = {'value': None}
+    _source_transforms = {'value': None}
 
     def __init__(self, **params):
         self.param.warning('%s widget is deprecated, use the equivalent '

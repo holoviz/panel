@@ -188,7 +188,7 @@ class ListPanel(Panel):
         Whether to add scrollbars if the content overflows the size
         of the container.""")
 
-    _embed_transforms = {'scroll': None}
+    _source_transforms = {'scroll': None}
 
     __abstract = True
 
@@ -406,7 +406,7 @@ class GridBox(ListPanel):
 
     _rename = {'objects': 'children'}
 
-    _embed_transforms = {'scroll': None, 'objects': None,
+    _source_transforms = {'scroll': None, 'objects': None,
                          'nrows': None, 'ncols': None}
 
     @classmethod
@@ -558,7 +558,7 @@ class WidgetBox(ListPanel):
         be specified as a two-tuple of the form (vertical, horizontal)
         or a four-tuple (top, right, bottom, left).""")
 
-    _embed_transforms = {'disabled': None, 'horizontal': None}
+    _source_transforms = {'disabled': None, 'horizontal': None}
 
     _rename = {'objects': 'children', 'horizontal': None}
 
@@ -605,7 +605,7 @@ class Tabs(ListPanel):
 
     _bokeh_model = BkTabs
 
-    _embed_transforms = {'dynamic': None, 'objects': None}
+    _source_transforms = {'dynamic': None, 'objects': None}
 
     _rename = {'name': None, 'objects': 'tabs', 'dynamic': None}
 
@@ -933,7 +933,7 @@ class GridSpec(Panel):
 
     _bokeh_model = BkGridBox
 
-    _embed_transforms = {'objects': None, 'mode': None}
+    _source_transforms = {'objects': None, 'mode': None}
 
     _rename = {'objects': 'children', 'mode': None}
 

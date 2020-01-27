@@ -619,8 +619,8 @@ class Reactive(Viewable):
     _js_transforms = {}
 
     # Transforms from input value to bokeh property value
-    _embed_transforms = {}
-    _reverse_transforms = {}
+    _source_transforms = {}
+    _target_transforms = {}
 
     def __init__(self, **params):
         # temporary flag denotes panes created for temporary, internal
@@ -803,7 +803,7 @@ class Reactive(Viewable):
     @property
     def _linkable_params(self):
         return [p for p in self._synced_params()
-                if self._embed_transforms.get(p, False) is not None]
+                if self._source_transforms.get(p, False) is not None]
 
     def _synced_params(self):
         return list(self.param)

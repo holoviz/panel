@@ -90,7 +90,6 @@ def test_save_embed_bytesio():
     panel.save(stringio, embed=True)
     stringio.seek(0)
     utf = stringio.read()
-    print(utf)
     assert "&amp;lt;pre&amp;gt;False&amp;lt;/pre&amp;gt;" in utf
     assert "&amp;lt;pre&amp;gt;True&amp;lt;/pre&amp;gt;" in utf
 

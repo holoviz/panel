@@ -91,6 +91,14 @@ def link_to_jslink(model, source, src_spec, target, tgt_spec):
     Converts links declared in Python into JS Links by using the
     declared forward and reverse JS transforms on the source and target.
     """
+    ref = model.ref['id']
+    if ((source._source_transforms.get(src_spec, False) is None) or
+        (target._target_transforms.get(tgt_spec, False) is None) or
+        ref not in source._models or ref not in target._models):
+        # We cannot jslink if either source or target declare
+        # that they apply Python transforms
+        return
+
     from ..links import Link, JSLinkCallbackGenerator
     properties = dict(value=target._rename.get(tgt_spec, tgt_spec))
     link = Link(source, target, bidirectional=True, properties=properties)
@@ -112,15 +120,10 @@ def links_to_jslinks(model, widget):
     jslinks = []
     for link, mapping in links:
         for src_spec, tgt_spec in mapping:
-            if ((widget._embed_transforms.get(src_spec, False) is None) or
-                (link.target._reverse_transforms.get(tgt_spec, False) is None)):
-                # We cannot jslink if either source or target declare
-                # that they apply Python transforms
-                return
             jslink = link_to_jslink(model, widget, src_spec, link.target, tgt_spec)
-            widget.param.trigger(src_spec)
             if jslink is None:
                 return
+            widget.param.trigger(src_spec)
             jslinks.append(jslink)
     return jslinks
 
@@ -208,7 +211,9 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
         if isinstance(widget, DiscreteSlider):
             w_model = widget._composite[1]._models[target][0].select_one({'type': w_type})
         else:
-            w_model = widget._models[target][0].select_one({'type': w_type})
+            w_model = widget._models[target][0]
+            if not isinstance(w_model, w_type):
+                w_model = w_model.select_one({'type': w_type})
         js_callback = CustomJS(code=STATE_JS.format(
             id=state_model.ref['id'], js_getter=js_getter))
         widget_data.append((widget, w_model, vals, getter, js_callback, on_change))

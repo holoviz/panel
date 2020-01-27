@@ -95,7 +95,7 @@ class Widget(Reactive):
     @property
     def _linkable_params(self):
         return [p for p in self._synced_params() if self._rename.get(p, False) is not None
-                and self._embed_transforms.get(p, False) is not None]
+                and self._source_transforms.get(p, False) is not None]
 
     def _synced_params(self):
         return [p for p in self.param if p not in self._manual_params]

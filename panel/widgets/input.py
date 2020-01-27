@@ -63,6 +63,8 @@ class FileInput(Widget):
 
     _widget_type = _BkFileInput
 
+    _source_transforms = {'value': "'data:' + source.mime_type + ';base64,' + value"}
+
     _rename = {'name': None, 'filename': None}
 
     def _process_param_change(self, msg):
@@ -105,19 +107,18 @@ class StaticText(Widget):
 
     value = param.Parameter(default=None)
 
-    _embed_transforms = {'value': '"<b>"+target.title+"</b>: "+value'}
-
-    _reverse_transforms = {'value': 'value.split(": ")[1]'}
-
     _format = '<b>{title}</b>: {value}'
 
-    _rename = {'name': 'title', 'value': 'text'}
+    _rename = {'name': None, 'value': 'text'}
+
+    _target_transforms = {'value': 'target.text.split(": ")[0]+": "+value'}
+
+    _source_transforms = {'value': 'value.split(": ")[1]'}
 
     _widget_type = _BkDiv
 
     def _process_param_change(self, msg):
         msg = super(StaticText, self)._process_property_change(msg)
-        msg.pop('title', None)
         if 'value' in msg:
             text = as_unicode(msg.pop('value'))
             partial = self._format.replace('{value}', '').format(title=self.name)
@@ -135,7 +136,7 @@ class DatePicker(Widget):
 
     end = param.Date(default=None)
 
-    _embed_transforms = {'value': None}
+    _source_transforms = {'value': None, 'start': None, 'end': None}
 
     _rename = {'start': 'min_date', 'end': 'max_date', 'name': 'title'}
 
@@ -196,9 +197,11 @@ class LiteralInput(Widget):
 
     value = param.Parameter(default=None)
 
-    _embed_transforms = {'value': """JSON.parse(value.replace(/'/g, '"'))"""}
+    _rename = {'name': 'title', 'type': None}
 
-    _reverse_transforms = {'value': """JSON.stringify(value).replace(/,/g, ", ").replace(/:/g, ": ")"""}
+    _source_transforms = {'value': """JSON.parse(value.replace(/'/g, '"'))"""}
+
+    _target_transforms = {'value': """JSON.stringify(value).replace(/,/g, ", ").replace(/:/g, ": ")"""}
 
     _widget_type = _BkTextInput
 
@@ -241,9 +244,9 @@ class LiteralInput(Widget):
 
     def _process_param_change(self, msg):
         msg = super(LiteralInput, self)._process_param_change(msg)
-        msg.pop('type', None)
         if 'value' in msg:
-            msg['value'] = '' if msg['value'] is None else as_unicode(msg['value'])
+            value = msg['value']
+            msg['value'] = '' if value is None else as_unicode(value)
         msg['title'] = self.name
         return msg
 
@@ -265,7 +268,7 @@ class DatetimeInput(LiteralInput):
 
     type = datetime
 
-    _embed_transforms = {'value': None, 'start': None, 'end': None}
+    _source_transforms = {'value': None, 'start': None, 'end': None}
 
     _rename = {'format': None, 'type': None, 'name': 'title'}
 
@@ -328,9 +331,9 @@ class Checkbox(Widget):
 
     _rename = {'value': 'active', 'name': 'labels'}
 
-    _embed_transforms = {'value': "value.indexOf(0) >= 0", 'name': "value[0]"}
+    _source_transforms = {'value': "value.indexOf(0) >= 0", 'name': "value[0]"}
 
-    _reverse_transforms = {'value': "value ? [0] : []", 'name': "[value]"}
+    _target_transforms = {'value': "value ? [0] : []", 'name': "[value]"}
 
     _widget_type = _BkCheckboxGroup
 
@@ -338,6 +341,8 @@ class Checkbox(Widget):
         msg = super(Checkbox, self)._process_property_change(msg)
         if 'value' in msg:
             msg['value'] = 0 in msg.pop('value')
+        if 'labels' in msg:
+            msg['labels'] = [msg['labels']]
         return msg
 
     def _process_param_change(self, msg):

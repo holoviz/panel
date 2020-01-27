@@ -79,7 +79,7 @@ class DiscretePlayer(PlayerBase, SelectBase):
 
     _rename = {'name': None, 'options': None}
 
-    _embed_transforms = {'value': None}
+    _source_transforms = {'value': None}
 
     def _process_param_change(self, msg):
         values = self.values

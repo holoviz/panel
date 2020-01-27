@@ -40,7 +40,10 @@ class DataFrame(Widget):
 
     value = param.Parameter(default=None)
 
-    _manual_params = ['value', 'editors', 'formatters', 'selection', 'width']
+    _rename = {'editors': None, 'formatters': None, 'widths': None,
+               'disabled': None}
+
+    _manual_params = ['value', 'editors', 'formatters', 'selection', 'widths']
 
     def __init__(self, value=None, **params):
         super(DataFrame, self).__init__(value=value, **params)

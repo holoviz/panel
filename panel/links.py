@@ -116,11 +116,13 @@ class Callback(param.Parameterized):
                         for tgt in hv_objs:
                             arg_overrides[id(link)][k] = tgt
 
+        ref = root_model.ref['id']
         callbacks = []
         for link, src, tgt in found:
             cb = cls._callbacks[type(link)]
-            if src is None or (getattr(link, '_requires_target', False)
-                               and tgt is None):
+            if ((src is None or ref not in src._models) or
+                (getattr(link, '_requires_target', False) and tgt is None) or
+                (tgt is not None and ref not in tgt._models)):
                 continue
             overrides = arg_overrides.get(id(link), {})
             callbacks.append(cb(root_model, link, src, tgt,
@@ -423,11 +425,20 @@ class JSLinkCallbackGenerator(JSCallbackGenerator):
 
     def _initialize_models(self, link, source, src_model, src_spec, target, tgt_model, tgt_spec):
         if tgt_model and src_spec and tgt_spec:
-            value = getattr(src_model, src_spec)
             if hasattr(source, '_process_property_change'):
-                msg = source._process_property_change({src_spec: value})
-                if msg:
-                    value = list(msg.values())[0]
+                src_reverse = {v: k for k, v in source._rename.items()}
+                src_param = src_reverse.get(src_spec, src_spec)
+                tgt_reverse = {v: k for k, v in target._rename.items()}
+                tgt_param = tgt_reverse.get(tgt_spec, tgt_spec)
+                value = getattr(source, src_param)
+                try:
+                    msg = target._process_param_change({tgt_param: value})
+                except:
+                    msg = {}
+                if tgt_spec in msg:
+                    value = msg[tgt_spec]
+            else:
+                value = getattr(src_model, src_spec)
             if value:
                 setattr(tgt_model, tgt_spec, value)
         if tgt_model is None and not link.code:
@@ -448,13 +459,13 @@ class JSLinkCallbackGenerator(JSCallbackGenerator):
         if isinstance(source, Reactive):
             src_reverse = {v: k for k, v in source._rename.items()}
             src_param = src_reverse.get(src_spec, src_spec)
-            src_transform = source._embed_transforms.get(src_param, 'value')
+            src_transform = source._source_transforms.get(src_param, 'value')
         else:
             src_transform = 'value'
         if isinstance(target, Reactive):
             tgt_reverse = {v: k for k, v in target._rename.items()}
             tgt_param = tgt_reverse.get(tgt_spec, tgt_spec)
-            tgt_transform = target._reverse_transforms.get(tgt_param, 'value')
+            tgt_transform = target._target_transforms.get(tgt_param, 'value')
         else:
             tgt_transform = 'value'
         return self._link_template.format(
