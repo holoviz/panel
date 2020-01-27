@@ -40,6 +40,8 @@ class VTKVolume(PaneBase):
 
     _serializers = {}
 
+    _rename = {'max_data_size': None, 'spacing': None, 'origin': None}
+
     _updates = True
 
     def __init__(self, obj=None, **params):
