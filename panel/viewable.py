@@ -886,18 +886,17 @@ class Reactive(Viewable):
         from .widgets import LiteralInput
 
         if parameters:
-            return Param(self.param, parameters=parameters, default_layout=WidgetBox,
-                         name='Controls').layout
-
-        if jslink:
+            linkable = parameters
+        elif jslink:
             linkable = self._linkable_params
         else:
             linkable = list(self.param)
+
         params = [p for p in linkable if p not in Layoutable.param]
         controls = Param(self.param, parameters=params, default_layout=WidgetBox,
                          name='Controls')
         layout_params = [p for p in linkable if p in Layoutable.param]
-        if 'name' not in layout_params and self._rename.get('name', False) is not None:
+        if 'name' not in layout_params and self._rename.get('name', False) is not None and not parameters:
             layout_params.insert(0, 'name')
         style = Param(self.param, parameters=layout_params, default_layout=WidgetBox,
                       name='Layout')
@@ -912,8 +911,11 @@ class Reactive(Viewable):
                 widget.jslink(self, value=p, bidirectional=True)
                 if isinstance(widget, LiteralInput):
                     widget.serializer = 'json'
-        if params:
+
+        if params and layout_params:
             return Tabs(controls.layout[0], style.layout[0])
+        elif params:
+            return controls.layout[0]
         return style.layout[0]
 
     def link(self, target, callbacks=None, **links):

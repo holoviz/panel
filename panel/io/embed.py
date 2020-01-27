@@ -73,7 +73,7 @@ def param_to_jslink(model, widget):
     Converts Param pane widget links into JS links if possible.
     """
     from ..viewable import Reactive
-    from ..widgets import LiteralInput
+    from ..widgets import Widget, LiteralInput
 
     param_pane = widget._param_pane
     pobj = param_pane.object
@@ -81,12 +81,20 @@ def param_to_jslink(model, widget):
     watchers = [w for w in get_watchers(widget) if w not in widget._callbacks
                 and w not in param_pane._callbacks]
 
+    if isinstance(pobj, Reactive):
+        tgt_links = [Watcher(*l[:-3]) for l in pobj._links]
+        tgt_watchers = [w for w in get_watchers(pobj) if w not in pobj._callbacks
+                        and w not in tgt_links and w not in param_pane._callbacks]
+    else:
+        tgt_watchers = []
+
     for widget in param_pane._widgets.values():
         if isinstance(widget, LiteralInput):
             widget.serializer = 'json'
 
     if (not pname or not isinstance(pobj, Reactive) or watchers or
-        pname[0] not in pobj._linkable_params):
+        pname[0] not in pobj._linkable_params or
+        (not isinstance(pobj, Widget) and tgt_watchers)):
         return
     return link_to_jslink(model, widget, 'value', pobj, pname[0])
 
@@ -97,13 +105,10 @@ def link_to_jslink(model, source, src_spec, target, tgt_spec):
     declared forward and reverse JS transforms on the source and target.
     """
     ref = model.ref['id']
-    tgt_links = [Watcher(*l[:-3]) for l in target._links]
-    tgt_watchers = [w for w in get_watchers(target) if w not in target._callbacks
-                    and w not in tgt_links]
 
     if ((source._source_transforms.get(src_spec, False) is None) or
         (target._target_transforms.get(tgt_spec, False) is None) or
-        ref not in source._models or ref not in target._models or tgt_watchers):
+        ref not in source._models or ref not in target._models):
         # We cannot jslink if either source or target declare
         # that they apply Python transforms
         return
@@ -116,18 +121,24 @@ def link_to_jslink(model, source, src_spec, target, tgt_spec):
 
 
 def links_to_jslinks(model, widget):
+    from ..widgets import Widget
+
     src_links = [Watcher(*l[:-3]) for l in widget._links]
     if any(w not in widget._callbacks and w not in src_links for w in get_watchers(widget)):
         return
 
     links = []
     for link in widget._links:
-        if link.transformed:
+        target = link.target
+        tgt_watchers = [w for w in get_watchers(target) if w not in target._callbacks]
+        if link.transformed or (tgt_watchers and not isinstance(target, Widget)):
             return
+
         mappings = []
         for pname, tgt_spec in link.links.items():
             if Watcher(*link[:-3]) in widget._param_watchers[pname]['value']:
                 mappings.append((pname, tgt_spec))
+
         if mappings:
             links.append((link, mappings))
     jslinks = []
@@ -199,15 +210,12 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
             # Replace parameter links with JS links
             link = param_to_jslink(model, widget)
             if link is not None:
+                pobj = widget._param_pane.object
+                if isinstance(pobj, Widget):
+                    if not any(w not in pobj._callbacks and w not in widget._param_pane._callbacks
+                               for w in get_watchers(pobj)):
+                        ignore.append(pobj)
                 continue # Skip if we were able to attach JS link
-            pobj = widget._param_pane.object
-            if isinstance(pobj, Widget):
-                watchers = [w for w in get_watchers(pobj) if widget not in pobj._callbacks
-                            and widget not in widget._param_pane._callbacks]
-                if not watchers:
-                    # If underlying parameterized object is a widget
-                    # which has no other links ensure it is skipped later
-                    ignore.append(pobj) 
 
         if widget._links:
             jslinks = links_to_jslinks(model, widget)
@@ -242,7 +250,7 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
     add_to_doc(model, doc, True)
     doc._held_events = []
 
-    if not values:
+    if not widget_data:
         return
 
     restore = [w.value for w, _, _, _ in values]
