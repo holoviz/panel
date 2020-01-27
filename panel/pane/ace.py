@@ -17,6 +17,9 @@ class Ace(PaneBase):
 
     language = param.String(default='python', doc="Language of the editor")
 
+    object = param.String(default='', allow_None=True, doc="""
+        The code to be displayed.""")
+
     theme = param.String(default='chrome', doc="Theme of the editor")
 
     readonly = param.Boolean(default=False, doc="Define if editor content can be modified")
@@ -49,9 +52,8 @@ class Ace(PaneBase):
         else:
             AcePlot = getattr(sys.modules['panel.models.ace'], 'AcePlot')
 
-        self.code = self.object if self.object else ''
         props = self._process_param_change(self._init_properties())
-        model = AcePlot(**props)
+        model = AcePlot(code=self.object or '', **props)
         if root is None:
             root = model
         self._link_props(model, ['code', 'language', 'theme', 'annotations', 'readonly'], doc, root, comm)

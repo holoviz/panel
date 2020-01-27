@@ -193,8 +193,8 @@ class _RadioGroupBase(Select):
                     self.value = None
                 msg['active'] = None
 
-        if 'options' in msg:
-            msg['labels'] = list(msg.pop('options'))
+        if 'labels' in msg:
+            msg['labels'] = list(msg['labels'])
             value = self.value
             if not isIn(value, values):
                 self.value = None
@@ -202,8 +202,8 @@ class _RadioGroupBase(Select):
 
     def _process_property_change(self, msg):
         msg = super(Select, self)._process_property_change(msg)
-        if 'active' in msg:
-            index = msg.pop('active')
+        if 'value' in msg:
+            index = msg['value']
             if index is None:
                 msg['value'] = None
             else:
@@ -256,8 +256,8 @@ class _CheckGroupBase(Select):
         if 'active' in msg:
             msg['active'] = [indexOf(v, values) for v in msg['active']
                              if isIn(v, values)]
-        if 'options' in msg:
-            msg['labels'] = list(msg.pop('options'))
+        if 'labels' in msg:
+            msg['labels'] = list(msg['labels'])
             if any(not isIn(v, values) for v in self.value):
                 self.value = [v for v in self.value if isIn(v, values)]
         msg.pop('title', None)
@@ -265,9 +265,9 @@ class _CheckGroupBase(Select):
 
     def _process_property_change(self, msg):
         msg = super(Select, self)._process_property_change(msg)
-        if 'active' in msg:
+        if 'value' in msg:
             values = self.values
-            msg['value'] = [values[a] for a in msg.pop('active')]
+            msg['value'] = [values[a] for a in msg['value']]
         return msg
 
 

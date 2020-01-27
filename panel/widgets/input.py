@@ -270,7 +270,8 @@ class DatetimeInput(LiteralInput):
 
     _source_transforms = {'value': None, 'start': None, 'end': None}
 
-    _rename = {'format': None, 'type': None, 'name': 'title'}
+    _rename = {'format': None, 'type': None, 'name': 'title',
+               'start': None, 'end': None}
 
     def __init__(self, **params):
         super(DatetimeInput, self).__init__(**params)
@@ -341,8 +342,8 @@ class Checkbox(Widget):
         msg = super(Checkbox, self)._process_property_change(msg)
         if 'value' in msg:
             msg['value'] = 0 in msg.pop('value')
-        if 'labels' in msg:
-            msg['labels'] = [msg['labels']]
+        if 'name' in msg:
+            msg['name'] = [msg['name']]
         return msg
 
     def _process_param_change(self, msg):

@@ -120,9 +120,9 @@ class Callback(param.Parameterized):
         callbacks = []
         for link, src, tgt in found:
             cb = cls._callbacks[type(link)]
-            if ((src is None or ref not in src._models) or
+            if ((src is None or ref not in getattr(src, '_models', [ref])) or
                 (getattr(link, '_requires_target', False) and tgt is None) or
-                (tgt is not None and ref not in tgt._models)):
+                (tgt is not None and ref not in getattr(tgt, '_models', [ref]))):
                 continue
             overrides = arg_overrides.get(id(link), {})
             callbacks.append(cb(root_model, link, src, tgt,
@@ -425,9 +425,10 @@ class JSLinkCallbackGenerator(JSCallbackGenerator):
 
     def _initialize_models(self, link, source, src_model, src_spec, target, tgt_model, tgt_spec):
         if tgt_model and src_spec and tgt_spec:
-            if hasattr(source, '_process_property_change'):
-                src_reverse = {v: k for k, v in source._rename.items()}
-                src_param = src_reverse.get(src_spec, src_spec)
+            src_reverse = {v: k for k, v in getattr(source, '_rename', {}).items()}
+            src_param = src_reverse.get(src_spec, src_spec)
+            if (hasattr(source, '_process_property_change') and
+                src_param in source.param and hasattr(target, '_process_param_change')):
                 tgt_reverse = {v: k for k, v in target._rename.items()}
                 tgt_param = tgt_reverse.get(tgt_spec, tgt_spec)
                 value = getattr(source, src_param)

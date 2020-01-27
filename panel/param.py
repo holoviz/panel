@@ -383,10 +383,10 @@ class Param(PaneBase):
                         widget in self._widget_box.objects):
                         self._widget_box.pop(widget)
                     elif change.new >= self.display_threshold:
-                        precedence = lambda k: self.object.param[k].precedence
+                        precedence = lambda k: self.object.param['name' if k == '_title' else k].precedence
                         params = self._ordered_params
                         if self.show_name:
-                            params.insert(0, 'name')
+                            params.insert(0, '_title')
                         widgets = []
                         for k in params:
                             if precedence(k) is None or precedence(k) >= self.display_threshold:
