@@ -144,9 +144,9 @@ class Layoutable(param.Parameterized):
           other factors.
     """)
 
-    sizing_mode = param.ObjectSelector(default=None, objects=[
+    sizing_mode = param.ObjectSelector(default='auto', objects=[
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
-        'scale_width', 'scale_height', 'scale_both', None], doc="""
+        'scale_width', 'scale_height', 'scale_both', 'auto', None], doc="""
 
         How the component should size itself.
 
