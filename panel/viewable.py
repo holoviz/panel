@@ -882,6 +882,7 @@ class Reactive(Viewable):
         """
         from .param import Param
         from .layout import Tabs, WidgetBox
+        from .widgets import LiteralInput
 
         if parameters:
             return Param(self.param, parameters=parameters, default_layout=WidgetBox,
@@ -901,9 +902,15 @@ class Reactive(Viewable):
                       name='Layout')
         if jslink:
             for p in params:
-                controls._widgets[p].jslink(self, value=p, bidirectional=True)
+                widget = controls._widgets[p]
+                widget.jslink(self, value=p, bidirectional=True)
+                if isinstance(widget, LiteralInput):
+                    widget.serializer = 'json'
             for p in layout_params:
-                style._widgets[p].jslink(self, value=p, bidirectional=True)
+                widget = style._widgets[p]
+                widget.jslink(self, value=p, bidirectional=True)
+                if isinstance(widget, LiteralInput):
+                    widget.serializer = 'json'
         if params:
             return Tabs(controls.layout[0], style.layout[0])
         return style.layout[0]

@@ -5,6 +5,7 @@ a text field or similar.
 from __future__ import absolute_import, division, unicode_literals
 
 import ast
+import json
 
 from base64 import b64decode
 from datetime import datetime
@@ -192,12 +193,17 @@ class LiteralInput(Widget):
     input widget. Optionally a type may be declared.
     """
 
+    serializer = param.ObjectSelector(default='ast', objects=['ast', 'json'], doc="""
+       The serialization (and deserialization) method to use. 'ast'
+       uses ast.literal_eval and 'json' uses json.loads and json.dumps.
+    """)
+
     type = param.ClassSelector(default=None, class_=(type, tuple),
                                is_instance=True)
 
     value = param.Parameter(default=None)
 
-    _rename = {'name': 'title', 'type': None}
+    _rename = {'name': 'title', 'type': None, 'serializer': None}
 
     _source_transforms = {'value': """JSON.parse(value.replace(/'/g, '"'))"""}
 
@@ -214,7 +220,7 @@ class LiteralInput(Widget):
     def _validate(self, event):
         if self.type is None: return
         new = self.value
-        if not isinstance(new, self.type):
+        if not isinstance(new, self.type) and new is not None:
             if event:
                 self.value = event.old
             types = repr(self.type) if isinstance(self.type, tuple) else self.type.__name__
@@ -228,14 +234,29 @@ class LiteralInput(Widget):
         if 'value' in msg:
             value = msg.pop('value')
             try:
-                value = ast.literal_eval(value)
-            except:
+                if self.serializer == 'json':
+                    value = json.loads(value)
+                else:
+                    value = ast.literal_eval(value)
+            except Exception as e:
                 new_state = ' (invalid)'
                 value = self.value
             else:
                 if self.type and not isinstance(value, self.type):
-                    new_state = ' (wrong type)'
-                    value = self.value
+                    vtypes = self.type if isinstance(self.type, tuple) else (self.type,)
+                    typed_value = None
+                    for vtype in vtypes:
+                        try:
+                            typed_value = vtype(value)
+                        except:
+                            pass
+                        else:
+                            break
+                    if typed_value is None and value is not None:
+                        new_state = ' (wrong type)'
+                        value = self.value
+                    else:
+                        value = typed_value
             msg['value'] = value
         msg['name'] = msg.get('title', self.name).replace(self._state, '') + new_state
         self._state = new_state
@@ -245,8 +266,13 @@ class LiteralInput(Widget):
     def _process_param_change(self, msg):
         msg = super(LiteralInput, self)._process_param_change(msg)
         if 'value' in msg:
-            value = msg['value']
-            msg['value'] = '' if value is None else as_unicode(value)
+            value = '' if msg['value'] is None else msg['value']
+            if self.serializer == 'json':
+                if not isinstance(value, string_types):
+                    value = json.dumps(value, sort_keys=True)
+            else:
+                value = as_unicode(value)
+            msg['value'] = value
         msg['title'] = self.name
         return msg
 

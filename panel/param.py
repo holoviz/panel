@@ -45,6 +45,18 @@ def SingleFileSelector(pobj):
         return TextInput
 
 
+def LiteralInputTyped(pobj):
+    if isinstance(pobj, param.Tuple):
+        return type('TupleInput', (LiteralInput,), {'type': tuple})
+    elif isinstance(pobj, param.Number):
+        return type('NumberInput', (LiteralInput,), {'type': (int, float)})
+    elif isinstance(pobj, param.Dict):
+        return type('DictInput', (LiteralInput,), {'type': dict})
+    elif isinstance(pobj, param.List):
+        return type('ListInput', (LiteralInput,), {'type': list})
+    return LiteralInput
+
+
 class Param(PaneBase):
     """
     Param panes render a Parameterized class to a set of widgets which
@@ -111,16 +123,17 @@ class Param(PaneBase):
         param.DateRange:         DateRangeSlider,
         param.CalendarDateRange: DateRangeSlider,
         param.DataFrame:         DataFrame,
-        param.Dict:              LiteralInput,
+        param.Dict:              LiteralInputTyped,
         param.FileSelector:      SingleFileSelector,
         param.Filename:          TextInput,
         param.Foldername:        TextInput,
         param.Integer:           IntSlider,
+        param.List:              LiteralInputTyped,
         param.MultiFileSelector: FileSelector,
         param.ListSelector:      MultiSelect,
         param.Number:            FloatSlider,
         param.ObjectSelector:    Select,
-        param.Parameter:         LiteralInput,
+        param.Parameter:         LiteralInputTyped,
         param.Range:             RangeSlider,
         param.Selector:          Select,
         param.String:            TextInput,

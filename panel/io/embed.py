@@ -73,12 +73,17 @@ def param_to_jslink(model, widget):
     Converts Param pane widget links into JS links if possible.
     """
     from ..viewable import Reactive
+    from ..widgets import LiteralInput
 
     param_pane = widget._param_pane
     pobj = param_pane.object
     pname = [k for k, v in param_pane._widgets.items() if v is widget]
     watchers = [w for w in get_watchers(widget) if w not in widget._callbacks
                 and w not in param_pane._callbacks]
+
+    for widget in param_pane._widgets.values():
+        if isinstance(widget, LiteralInput):
+            widget.serializer = 'json'
 
     if (not pname or not isinstance(pobj, Reactive) or watchers or
         pname[0] not in pobj._linkable_params):
