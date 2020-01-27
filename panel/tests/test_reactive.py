@@ -90,8 +90,12 @@ def test_text_input_controls():
     wb1, wb2 = controls
     assert isinstance(wb1, WidgetBox)
     assert len(wb1) == 4
-    name, disabled, value, placeholder = wb1
-    
+    name, disabled, text1, text2 = wb1
+    if text1.name == 'Placeholder':
+        placeholder, value = text1, text2
+    else:
+        placeholder, value = text2, text1
+
     assert isinstance(name, StaticText)
     assert isinstance(disabled, Checkbox)
     assert isinstance(value, TextInput)
