@@ -12,7 +12,8 @@ export class HTMLView extends PanelMarkupView {
 
   render(): void {
     super.render()
-    const html = htmlDecode(this.model.text);
+    const decoded = htmlDecode(this.model.text);
+    const html = decoded || this.model.text
     if (!html) {
       this.markup_el.innerHTML = '';
       return;

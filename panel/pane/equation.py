@@ -33,6 +33,8 @@ class LaTeX(DivPaneBase):
     # Priority is dependent on the data type
     priority = None
 
+    _rename = {"renderer": None}
+
     @classmethod
     def applies(cls, obj):
         if is_sympy_expr(obj) or hasattr(obj, '_repr_latex_'):

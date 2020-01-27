@@ -49,9 +49,9 @@ class Select(SelectBase):
 
     value = param.Parameter(default=None)
 
-    _widget_type = _BkSelect
-
     _supports_embed = True
+
+    _widget_type = _BkSelect
 
     def __init__(self, **params):
         super(Select, self).__init__(**params)
@@ -66,7 +66,7 @@ class Select(SelectBase):
         if 'value' in msg:
             val = msg['value']
             if isIn(val, values):
-                unicode_values = self.unicode_values if unique else labels 
+                unicode_values = self.unicode_values if unique else labels
                 msg['value'] = unicode_values[indexOf(val, values)]
             elif values:
                 self.value = self.values[0]
@@ -173,13 +173,19 @@ class _RadioGroupBase(Select):
 
     _supports_embed = False
 
+    _rename = {'name': None, 'options': 'labels', 'value': 'active'}
+
+    _source_transforms = {'value': "source.labels[value]"}
+
+    _target_transforms = {'value': "target.labels.indexOf(value)"}
+
     __abstract = True
 
     def _process_param_change(self, msg):
         msg = super(Select, self)._process_param_change(msg)
         values = self.values
-        if 'value' in msg:
-            value = msg.pop('value')
+        if 'active' in msg:
+            value = msg['active']
             if value in values:
                 msg['active'] = indexOf(value, values)
             else:
@@ -187,18 +193,17 @@ class _RadioGroupBase(Select):
                     self.value = None
                 msg['active'] = None
 
-        if 'options' in msg:
-            msg['labels'] = list(msg.pop('options'))
+        if 'labels' in msg:
+            msg['labels'] = list(msg['labels'])
             value = self.value
             if not isIn(value, values):
                 self.value = None
-        msg.pop('title', None)
         return msg
 
     def _process_property_change(self, msg):
         msg = super(Select, self)._process_property_change(msg)
-        if 'active' in msg:
-            index = msg.pop('active')
+        if 'value' in msg:
+            index = msg['value']
             if index is None:
                 msg['value'] = None
             else:
@@ -214,8 +219,6 @@ class _RadioGroupBase(Select):
 class RadioButtonGroup(_RadioGroupBase, _ButtonBase):
 
     _widget_type = _BkRadioButtonGroup
-
-    _rename = {'name': 'title'}
 
     _supports_embed = True
 
@@ -237,6 +240,12 @@ class _CheckGroupBase(Select):
 
     value = param.List(default=[])
 
+    _rename = {'name': None, 'options': 'labels', 'value': 'active'}
+
+    _source_transforms = {'value': "value.map((index) => source.labels[index])"}
+
+    _target_transforms = {'value': "value.map((label) => target.labels.indexOf(label))"}
+
     _supports_embed = False
 
     __abstract = True
@@ -244,11 +253,11 @@ class _CheckGroupBase(Select):
     def _process_param_change(self, msg):
         msg = super(Select, self)._process_param_change(msg)
         values = self.values
-        if 'value' in msg:
-            msg['active'] = [indexOf(v, values) for v in msg.pop('value')
+        if 'active' in msg:
+            msg['active'] = [indexOf(v, values) for v in msg['active']
                              if isIn(v, values)]
-        if 'options' in msg:
-            msg['labels'] = list(msg.pop('options'))
+        if 'labels' in msg:
+            msg['labels'] = list(msg['labels'])
             if any(not isIn(v, values) for v in self.value):
                 self.value = [v for v in self.value if isIn(v, values)]
         msg.pop('title', None)
@@ -256,9 +265,9 @@ class _CheckGroupBase(Select):
 
     def _process_property_change(self, msg):
         msg = super(Select, self)._process_property_change(msg)
-        if 'active' in msg:
+        if 'value' in msg:
             values = self.values
-            msg['value'] = [values[a] for a in msg.pop('active')]
+            msg['value'] = [values[a] for a in msg['value']]
         return msg
 
 
@@ -266,9 +275,6 @@ class _CheckGroupBase(Select):
 class CheckButtonGroup(_CheckGroupBase, _ButtonBase):
 
     _widget_type = _BkCheckboxButtonGroup
-
-    _rename = {'name': 'title'}
-
 
 
 class CheckBoxGroup(_CheckGroupBase):

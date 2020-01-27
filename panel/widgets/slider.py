@@ -147,6 +147,8 @@ class DateSlider(_SliderBase):
 
     end = param.Date(default=None)
 
+    _source_transforms = {'value': None, 'value_throttled': None, 'start': None, 'end': None}
+
     _widget_type = _BkDateSlider
 
     def __init__(self, **params):
@@ -172,6 +174,8 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
     value_throttled = param.Parameter()
 
     formatter = param.String(default='%.3g')
+
+    _source_transforms = {'value': None, 'value_throttled': None, 'options': None}
 
     _rename = {'formatter': None}
 
@@ -344,6 +348,9 @@ class DateRangeSlider(_SliderBase):
     end = param.Date(default=None)
 
     step = param.Number(default=1)
+
+    _source_transforms = {'value': None, 'value_throttled': None,
+                         'start': None, 'end': None, 'step': None}
 
     _widget_type = _BkDateRangeSlider
 

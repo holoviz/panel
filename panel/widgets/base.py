@@ -53,6 +53,10 @@ class Widget(Reactive):
             params['name'] = ''
         if '_supports_embed' in params:
             self._supports_embed = params.pop('_supports_embed')
+        if '_param_pane' in params:
+            self._param_pane = params.pop('_param_pane')
+        else:
+            self._param_pane = None
         super(Widget, self).__init__(**params)
         self.param.watch(self._update_widget, self._manual_params)
 
@@ -87,6 +91,11 @@ class Widget(Reactive):
         self._models[root.ref['id']] = (model, parent)
         self._link_props(model, properties, doc, root, comm)
         return model
+
+    @property
+    def _linkable_params(self):
+        return [p for p in self._synced_params() if self._rename.get(p, False) is not None
+                and self._source_transforms.get(p, False) is not None]
 
     def _synced_params(self):
         return [p for p in self.param if p not in self._manual_params]

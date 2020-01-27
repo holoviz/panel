@@ -30,7 +30,7 @@ from .viewable import Layoutable
 from .widgets import (
     Button, Checkbox, ColorPicker, DataFrame, DatetimeInput, DateRangeSlider,
     FileSelector, FloatSlider, IntSlider, LiteralInput, MultiSelect,
-    RangeSlider, Select, StaticText, TextInput, Toggle, Widget
+    RangeSlider, Select, Spinner, StaticText, TextInput, Toggle, Widget
 )
 from .widgets.button import _ButtonBase
 
@@ -43,6 +43,18 @@ def SingleFileSelector(pobj):
         return Select
     else:
         return TextInput
+
+
+def LiteralInputTyped(pobj):
+    if isinstance(pobj, param.Tuple):
+        return type(str('TupleInput'), (LiteralInput,), {'type': tuple})
+    elif isinstance(pobj, param.Number):
+        return type(str('NumberInput'), (LiteralInput,), {'type': (int, float)})
+    elif isinstance(pobj, param.Dict):
+        return type(str('DictInput'), (LiteralInput,), {'type': dict})
+    elif isinstance(pobj, param.List):
+        return type(str('ListInput'), (LiteralInput,), {'type': list})
+    return LiteralInput
 
 
 class Param(PaneBase):
@@ -111,16 +123,17 @@ class Param(PaneBase):
         param.DateRange:         DateRangeSlider,
         param.CalendarDateRange: DateRangeSlider,
         param.DataFrame:         DataFrame,
-        param.Dict:              LiteralInput,
+        param.Dict:              LiteralInputTyped,
         param.FileSelector:      SingleFileSelector,
         param.Filename:          TextInput,
         param.Foldername:        TextInput,
         param.Integer:           IntSlider,
+        param.List:              LiteralInputTyped,
         param.MultiFileSelector: FileSelector,
         param.ListSelector:      MultiSelect,
         param.Number:            FloatSlider,
         param.ObjectSelector:    Select,
-        param.Parameter:         LiteralInput,
+        param.Parameter:         LiteralInputTyped,
         param.Range:             RangeSlider,
         param.Selector:          Select,
         param.String:            TextInput,
@@ -142,7 +155,8 @@ class Param(PaneBase):
         self._updating = []
 
         # Construct Layout
-        kwargs = {p: v for p, v in self.param.get_param_values() if p in Layoutable.param}
+        kwargs = {p: v for p, v in self.param.get_param_values()
+                  if p in Layoutable.param and v is not None}
         self._widget_box = self.default_layout(**kwargs)
 
         layout = self.expand_layout
@@ -218,9 +232,11 @@ class Param(PaneBase):
             self._widgets = {}
         else:
             self._widgets = self._get_widgets()
+
+        alias = {'_title': 'name'}
         widgets = [widget for p, widget in self._widgets.items()
-                   if (self.object.param[p].precedence is None)
-                   or (self.object.param[p].precedence >= self.display_threshold)]
+                   if (self.object.param[alias.get(p, p)].precedence is None)
+                   or (self.object.param[alias.get(p, p)].precedence >= self.display_threshold)]
         self._widget_box.objects = widgets
         if not (self.expand_button == False and not self.expand):
             self._link_subobjects()
@@ -304,13 +320,17 @@ class Param(PaneBase):
             kw_widget = self.widgets[p_name]
         else:
             widget_class = self.widgets[p_name]
-        value = getattr(self.object, p_name)
+
 
         if not self.show_labels and not issubclass(widget_class, _ButtonBase):
             label = ''
         else:
             label = p_obj.label
-        kw = dict(value=value, disabled=p_obj.constant, name=label)
+        kw = dict(disabled=p_obj.constant, name=label)
+
+        value = getattr(self.object, p_name)
+        if value is not None:
+            kw['value'] = value
 
         # Update kwargs
         kw.update(kw_widget)
@@ -326,8 +346,13 @@ class Param(PaneBase):
                 kw['start'] = bounds[0]
             if bounds[1] is not None:
                 kw['end'] = bounds[1]
-            if ('start' not in kw or 'end' not in kw) and not issubclass(widget_class, LiteralInput):
-                widget_class = LiteralInput
+            if ('start' not in kw or 'end' not in kw):
+                if isinstance(p_obj, param.Number):
+                    widget_class = Spinner
+                    if isinstance(p_obj, param.Integer):
+                        kw['step'] = 1
+                elif not issubclass(widget_class, LiteralInput):
+                    widget_class = LiteralInput
             if hasattr(widget_class, 'step') and getattr(p_obj, 'step', None):
                 kw['step'] = p_obj.step
 
@@ -337,6 +362,7 @@ class Param(PaneBase):
             widget = widget_class
         else:
             widget = widget_class(**kwargs)
+        widget._param_pane = self
 
         watchers = self._callbacks
         if isinstance(widget, Toggle):
@@ -357,6 +383,7 @@ class Param(PaneBase):
                 watcher = widget.param.watch(action, 'clicks')
             else:
                 watcher = widget.param.watch(link_widget, 'value')
+            watchers.append(watcher)
 
             def link(change, watchers=[watcher]):
                 updates = {}
@@ -367,10 +394,10 @@ class Param(PaneBase):
                         widget in self._widget_box.objects):
                         self._widget_box.pop(widget)
                     elif change.new >= self.display_threshold:
-                        precedence = lambda k: self.object.param[k].precedence
+                        precedence = lambda k: self.object.param['name' if k == '_title' else k].precedence
                         params = self._ordered_params
                         if self.show_name:
-                            params.insert(0, 'name')
+                            params.insert(0, '_title')
                         widgets = []
                         for k in params:
                             if precedence(k) is None or precedence(k) >= self.display_threshold:
@@ -390,10 +417,13 @@ class Param(PaneBase):
                 elif p_name in self._updating:
                     return
                 elif isinstance(p_obj, param.Action):
-                    widget.param.unwatch(watchers[0])
+                    prev_watcher = watchers[0]
+                    widget.param.unwatch(prev_watcher)
                     def action(event):
                         change.new(self.object)
                     watchers[0] = widget.param.watch(action, 'clicks')
+                    idx = self._callbacks.index(prev_watcher)
+                    self._callbacks[idx] = watchers[0]
                     return
                 else:
                     updates['value'] = change.new
@@ -443,7 +473,8 @@ class Param(PaneBase):
         dict_ordered_py3 = (sys.version_info.major == 3 and sys.version_info.minor >= 6)
         dict_ordered = dict_ordered_py3 or (sys.version_info.major > 3)
         ordered_groups = [list(grp) if dict_ordered else sorted(grp) for (_, grp) in groups]
-        ordered_params = [el[0] for group in ordered_groups for el in group if el[0] != 'name']
+        ordered_params = [el[0] for group in ordered_groups for el in group
+                          if (el[0] != 'name' or el[0] in self.parameters)]
         return ordered_params
 
     #----------------------------------------------------------------
@@ -457,7 +488,7 @@ class Param(PaneBase):
             widgets = []
         elif self.show_name:
             name = param_name(self.object.name)
-            widgets = [('name', StaticText(value='<b>{0}</b>'.format(name)))]
+            widgets = [('_title', StaticText(value='<b>{0}</b>'.format(name)))]
         else:
             widgets = []
         widgets += [(pname, self.widget(pname)) for pname in self._ordered_params]

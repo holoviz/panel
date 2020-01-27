@@ -5,6 +5,7 @@ response to changes to parameters and the underlying bokeh models.
 """
 from __future__ import absolute_import, division, unicode_literals
 
+import difflib
 import logging
 import re
 import sys
@@ -12,6 +13,7 @@ import threading
 import traceback
 import uuid
 
+from collections import namedtuple
 from functools import partial
 
 import param
@@ -34,6 +36,9 @@ from .io.save import save
 from .io.state import state
 from .io.server import StoppableThread, get_server, unlocked
 from .util import escape, param_reprs
+
+
+LinkWatcher = namedtuple("Watcher","inst cls fn mode onlychanged parameter_names what queued target links transformed")
 
 
 class Layoutable(param.Parameterized):
@@ -614,6 +619,10 @@ class Reactive(Viewable):
     # snippet that transforms the object before serialization
     _js_transforms = {}
 
+    # Transforms from input value to bokeh property value
+    _source_transforms = {}
+    _target_transforms = {}
+
     def __init__(self, **params):
         # temporary flag denotes panes created for temporary, internal
         # use which should be garbage collected once they have been used
@@ -792,6 +801,11 @@ class Reactive(Viewable):
         return {k: v for k, v in self.param.get_param_values()
                 if v is not None}
 
+    @property
+    def _linkable_params(self):
+        return [p for p in self._synced_params()
+                if self._source_transforms.get(p, False) is not None]
+
     def _synced_params(self):
         return list(self.param)
 
@@ -848,6 +862,62 @@ class Reactive(Viewable):
     # Public API
     #----------------------------------------------------------------
 
+    def controls(self, parameters=[], jslink=True):
+        """
+        Creates a set of widgets which allow manipulating the parameters
+        on this instance. By default all parameters which support
+        linking are exposed, but an explicit list of parameters can
+        be provided.
+
+        Arguments
+        ---------
+        parameters: list(str)
+           An explicit list of parameters to return controls for.
+        jslink: bool
+           Whether to use jslinks instead of Python based links.
+           This does not allow using all types of parameters.
+
+        Returns
+        -------
+        A layout of the controls
+        """
+        from .param import Param
+        from .layout import Tabs, WidgetBox
+        from .widgets import LiteralInput
+
+        if parameters:
+            linkable = parameters
+        elif jslink:
+            linkable = self._linkable_params
+        else:
+            linkable = list(self.param)
+
+        params = [p for p in linkable if p not in Layoutable.param]
+        controls = Param(self.param, parameters=params, default_layout=WidgetBox,
+                         name='Controls')
+        layout_params = [p for p in linkable if p in Layoutable.param]
+        if 'name' not in layout_params and self._rename.get('name', False) is not None and not parameters:
+            layout_params.insert(0, 'name')
+        style = Param(self.param, parameters=layout_params, default_layout=WidgetBox,
+                      name='Layout')
+        if jslink:
+            for p in params:
+                widget = controls._widgets[p]
+                widget.jslink(self, value=p, bidirectional=True)
+                if isinstance(widget, LiteralInput):
+                    widget.serializer = 'json'
+            for p in layout_params:
+                widget = style._widgets[p]
+                widget.jslink(self, value=p, bidirectional=True)
+                if isinstance(widget, LiteralInput):
+                    widget.serializer = 'json'
+
+        if params and layout_params:
+            return Tabs(controls.layout[0], style.layout[0])
+        elif params:
+            return controls.layout[0]
+        return style.layout[0]
+
     def link(self, target, callbacks=None, **links):
         """
         Links the parameters on this object to attributes on another
@@ -891,7 +961,8 @@ class Reactive(Viewable):
                     _updating.pop(_updating.index(event.name))
         params = list(callbacks) if callbacks else list(links)
         cb = self.param.watch(link, params)
-        self._links.append(cb)
+        link = LinkWatcher(*tuple(cb)+(target, links, callbacks is not None))
+        self._links.append(link)
         return cb
 
     def add_periodic_callback(self, callback, period=500, count=None,
@@ -988,10 +1059,41 @@ class Reactive(Viewable):
         if args is None:
             args = {}
 
+        mapping = code or links
+        for k in mapping:
+            if k not in self.param and k not in list(self._rename.values()):
+                matches = difflib.get_close_matches(k, list(self.param))
+                if matches:
+                    matches = ' Similar parameters include: %r' % matches
+                else:
+                    matches = ''
+                raise ValueError("Could not jslink %r parameter (or property) "
+                                 "on %s object because it was not found.%s"
+                                 % (k, type(self).__name__, matches))
+            elif (self._source_transforms.get(k, False) is None or
+                  self._rename.get(k, False) is None):
+                raise ValueError("Cannot jslink %r parameter on %s object, "
+                                 "the parameter requires a live Python kernel "
+                                 "to have an effect." % (k, type(self).__name__))
+
+        if isinstance(target, Reactive) and code is None:
+            for k, p in mapping.items():
+                if p not in target.param and p not in list(target._rename.values()):
+                    matches = difflib.get_close_matches(p, list(target.param))
+                    if matches:
+                        matches = ' Similar parameters include: %r' % matches
+                    else:
+                        matches = ''
+                    raise ValueError("Could not jslink %r parameter (or property) "
+                                     "on %s object because it was not found.%s"
+                                    % (p, type(self).__name__, matches))
+                elif (target._source_transforms.get(p, False) is None or
+                      target._rename.get(p, False) is None):
+                    raise ValueError("Cannot jslink %r parameter on %s object "
+                                     "to %r parameter on %s object. It requires "
+                                     "a live Python kernel to have an effect."
+                                     % (k, type(self).__name__, p, type(target).__name__))
+
         from .links import Link
-        if isinstance(target, Reactive):
-            mapping = code or links
-            for k, v in list(mapping.items()):
-                mapping[k] = target._rename.get(v, v)
         return Link(self, target, properties=links, code=code, args=args,
                     bidirectional=bidirectional)

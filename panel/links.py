@@ -8,7 +8,6 @@ import weakref
 import sys
 
 from .viewable import Viewable, Reactive
-from .util import unicode_repr
 
 from bokeh.models import (CustomJS, Model as BkModel)
 
@@ -116,11 +115,13 @@ class Callback(param.Parameterized):
                         for tgt in hv_objs:
                             arg_overrides[id(link)][k] = tgt
 
+        ref = root_model.ref['id']
         callbacks = []
         for link, src, tgt in found:
             cb = cls._callbacks[type(link)]
-            if src is None or (getattr(link, '_requires_target', False)
-                               and tgt is None):
+            if ((src is None or ref not in getattr(src, '_models', [ref])) or
+                (getattr(link, '_requires_target', False) and tgt is None) or
+                (tgt is not None and ref not in getattr(tgt, '_models', [ref]))):
                 continue
             overrides = arg_overrides.get(id(link), {})
             callbacks.append(cb(root_model, link, src, tgt,
@@ -259,7 +260,7 @@ class CallbackGenerator(object):
         if any(link_id in cb.tags for cbs in src_model.js_property_callbacks.values() for cb in cbs):
             # Skip registering callback if already registered
             return
-        references['source'] = references['cb_obj'] = src_model
+        references['source'] = src_model
 
         tgt_model = None
         if link._requires_target:
@@ -382,6 +383,20 @@ class JSCallbackGenerator(CallbackGenerator):
 
 class JSLinkCallbackGenerator(JSCallbackGenerator):
 
+    _link_template = """
+    value = source['{src_attr}'];
+    value = {src_transform};
+    value = {tgt_transform};
+    try {{
+      property = target.properties['{tgt_attr}'];
+      if (property !== undefined) {{ property.validate(value); }}
+    }} catch(err) {{
+      console.log('WARNING: Could not set {tgt_attr} on target, raised error: ' + err);
+      return;
+    }}
+    target['{tgt_attr}'] = value;
+    """
+
     def _get_specs(self, link, source, target):
         if link.code:
             return super(JSLinkCallbackGenerator, self)._get_specs(link, source, target)
@@ -409,7 +424,23 @@ class JSLinkCallbackGenerator(JSCallbackGenerator):
 
     def _initialize_models(self, link, source, src_model, src_spec, target, tgt_model, tgt_spec):
         if tgt_model and src_spec and tgt_spec:
-            setattr(tgt_model, tgt_spec, getattr(src_model, src_spec))
+            src_reverse = {v: k for k, v in getattr(source, '_rename', {}).items()}
+            src_param = src_reverse.get(src_spec, src_spec)
+            if (hasattr(source, '_process_property_change') and
+                src_param in source.param and hasattr(target, '_process_param_change')):
+                tgt_reverse = {v: k for k, v in target._rename.items()}
+                tgt_param = tgt_reverse.get(tgt_spec, tgt_spec)
+                value = getattr(source, src_param)
+                try:
+                    msg = target._process_param_change({tgt_param: value})
+                except:
+                    msg = {}
+                if tgt_spec in msg:
+                    value = msg[tgt_spec]
+            else:
+                value = getattr(src_model, src_spec)
+            if value:
+                setattr(tgt_model, tgt_spec, value)
         if tgt_model is None and not link.code:
             raise ValueError('Model could not be resolved on target '
                              '%s and no custom code was specified.' %
@@ -425,14 +456,22 @@ class JSLinkCallbackGenerator(JSCallbackGenerator):
             references[k[7:]] = references.pop(k)
 
     def _get_code(self, link, source, src_spec, target, tgt_spec):
-        return ("value = source[{src_repr}];"
-                "try {{ property = target.properties[{tgt_repr}];"
-                "if (property !== undefined) {{ property.validate(value); }} }}"
-                "catch(err) {{ console.log('WARNING: Could not set {tgt} on target, raised error: ' + err); return; }}"
-                "target[{tgt_repr}] = value".format(
-                    tgt=tgt_spec, tgt_repr=unicode_repr(tgt_spec),
-                    src=src_spec, src_repr=unicode_repr(src_spec)))
-
+        if isinstance(source, Reactive):
+            src_reverse = {v: k for k, v in source._rename.items()}
+            src_param = src_reverse.get(src_spec, src_spec)
+            src_transform = source._source_transforms.get(src_param, 'value')
+        else:
+            src_transform = 'value'
+        if isinstance(target, Reactive):
+            tgt_reverse = {v: k for k, v in target._rename.items()}
+            tgt_param = tgt_reverse.get(tgt_spec, tgt_spec)
+            tgt_transform = target._target_transforms.get(tgt_param, 'value')
+        else:
+            tgt_transform = 'value'
+        return self._link_template.format(
+            src_attr=src_spec, tgt_attr=tgt_spec,
+            src_transform=src_transform, tgt_transform=tgt_transform
+        )
 
 Callback.register_callback(callback=JSCallbackGenerator)
 Link.register_callback(callback=JSLinkCallbackGenerator)

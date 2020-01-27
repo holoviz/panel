@@ -34,7 +34,7 @@ class _MediaBase(Widget):
 
     paused = param.Boolean(default=True, doc="""
         Whether the media is currently paused""")
-    
+
     value = param.String(default='', doc="""
         The media file either local or remote.""")
 
@@ -44,7 +44,7 @@ class _MediaBase(Widget):
     _rename = {'name': None, 'sample_rate': None}
 
     _default_mime = None
-    
+
     _media_type = None
 
     def __init__(self, **params):
@@ -93,7 +93,7 @@ class Audio(_MediaBase):
         The audio file either local or remote.""")
 
     _media_type = 'audio'
-    
+
     _default_mime = 'wav'
 
     _widget_type = _BkAudio

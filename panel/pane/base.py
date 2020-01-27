@@ -88,17 +88,17 @@ class PaneBase(Reactive):
     # value for a specific object type.
     priority = 0.5
 
-    # Declares whether Pane supports updates to the Bokeh model
-    _updates = False
+    # Whether applies requires full set of keywords
+    _applies_kw = False
 
     # Whether the Pane layout can be safely unpacked
     _unpack = True
 
+    # Declares whether Pane supports updates to the Bokeh model
+    _updates = False
+
     # List of parameters that trigger a rerender of the Bokeh model
     _rerender_params = ['object']
-
-    # Whether applies requires full set of keywords
-    _applies_kw = False
 
     __abstract = True
 
@@ -133,6 +133,10 @@ class PaneBase(Reactive):
     #----------------------------------------------------------------
     # Callback API
     #----------------------------------------------------------------
+
+    @property
+    def _linkable_params(self):
+        return [p for p in self._synced_params() if self._rename.get(p, False) is not None]
 
     def _synced_params(self):
         ignored_params = ['name', 'default_layout']+self._rerender_params
@@ -311,9 +315,9 @@ class ReplacementPane(PaneBase):
     on.
     """
 
-    __abstract = True
-
     _updates = True
+
+    __abstract = True
 
     def __init__(self, object=None, **params):
         self._kwargs =  {p: params.pop(p) for p in list(params)
@@ -343,11 +347,11 @@ class ReplacementPane(PaneBase):
             links = []
         custom_watchers = False
         if isinstance(new_object, Reactive):
-            watch_fns = [
+            watchers = [
                 w for pwatchers in new_object._param_watchers.values()
                 for awatchers in pwatchers.values() for w in awatchers
             ]
-            custom_watchers = [wfn for wfn in watch_fns if wfn not in new_object._callbacks]
+            custom_watchers = [wfn for wfn in watchers if wfn not in new_object._callbacks]
 
         if type(self._pane) is pane_type and not links and not custom_watchers and self._internal:
             # If the object has not external referrers we can update

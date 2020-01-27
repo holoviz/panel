@@ -11,6 +11,7 @@ from collections import defaultdict
 from itertools import product
 
 from bokeh.models import CustomJS
+from param.parameterized import Watcher
 
 from .model import add_to_doc, diff
 from .state import state
@@ -61,6 +62,95 @@ def save_dict(state, key=(), depth=0, max_depth=None, save_path='', load_path=No
             filename_dict[k] = refpath
     return filename_dict
 
+
+def get_watchers(reactive):
+    return [w for pwatchers in reactive._param_watchers.values()
+            for awatchers in pwatchers.values() for w in awatchers]
+
+
+def param_to_jslink(model, widget):
+    """
+    Converts Param pane widget links into JS links if possible.
+    """
+    from ..viewable import Reactive
+    from ..widgets import Widget, LiteralInput
+
+    param_pane = widget._param_pane
+    pobj = param_pane.object
+    pname = [k for k, v in param_pane._widgets.items() if v is widget]
+    watchers = [w for w in get_watchers(widget) if w not in widget._callbacks
+                and w not in param_pane._callbacks]
+
+    if isinstance(pobj, Reactive):
+        tgt_links = [Watcher(*l[:-3]) for l in pobj._links]
+        tgt_watchers = [w for w in get_watchers(pobj) if w not in pobj._callbacks
+                        and w not in tgt_links and w not in param_pane._callbacks]
+    else:
+        tgt_watchers = []
+
+    for widget in param_pane._widgets.values():
+        if isinstance(widget, LiteralInput):
+            widget.serializer = 'json'
+
+    if (not pname or not isinstance(pobj, Reactive) or watchers or
+        pname[0] not in pobj._linkable_params or
+        (not isinstance(pobj, Widget) and tgt_watchers)):
+        return
+    return link_to_jslink(model, widget, 'value', pobj, pname[0])
+
+
+def link_to_jslink(model, source, src_spec, target, tgt_spec):
+    """
+    Converts links declared in Python into JS Links by using the
+    declared forward and reverse JS transforms on the source and target.
+    """
+    ref = model.ref['id']
+
+    if ((source._source_transforms.get(src_spec, False) is None) or
+        (target._target_transforms.get(tgt_spec, False) is None) or
+        ref not in source._models or ref not in target._models):
+        # We cannot jslink if either source or target declare
+        # that they apply Python transforms
+        return
+
+    from ..links import Link, JSLinkCallbackGenerator
+    properties = dict(value=target._rename.get(tgt_spec, tgt_spec))
+    link = Link(source, target, bidirectional=True, properties=properties)
+    JSLinkCallbackGenerator(model, link, source, target)
+    return link
+
+
+def links_to_jslinks(model, widget):
+    from ..widgets import Widget
+
+    src_links = [Watcher(*l[:-3]) for l in widget._links]
+    if any(w not in widget._callbacks and w not in src_links for w in get_watchers(widget)):
+        return
+
+    links = []
+    for link in widget._links:
+        target = link.target
+        tgt_watchers = [w for w in get_watchers(target) if w not in target._callbacks]
+        if link.transformed or (tgt_watchers and not isinstance(target, Widget)):
+            return
+
+        mappings = []
+        for pname, tgt_spec in link.links.items():
+            if Watcher(*link[:-3]) in widget._param_watchers[pname]['value']:
+                mappings.append((pname, tgt_spec))
+
+        if mappings:
+            links.append((link, mappings))
+    jslinks = []
+    for link, mapping in links:
+        for src_spec, tgt_spec in mapping:
+            jslink = link_to_jslink(model, widget, src_spec, link.target, tgt_spec)
+            if jslink is None:
+                return
+            widget.param.trigger(src_spec)
+            jslinks.append(jslink)
+    return jslinks
+
 #---------------------------------------------------------------------
 # Public API
 #---------------------------------------------------------------------
@@ -110,24 +200,58 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
     _, _, _, comm = state._views[target]
 
     model.tags.append('embedded')
-    widgets = [w for w in panel.select(Widget) if w._supports_embed
-               and w not in Link.registry]
+
+    widgets = [w for w in panel.select(Widget) if w not in Link.registry]
     state_model = State()
 
-    values = []
-    for w in widgets:
-        w, w_model, vals, getter, on_change, js_getter = w._get_embed_state(model, max_opts)
-        if isinstance(w, DiscreteSlider):
-            w_model = w._composite[1]._models[target][0].select_one({'type': w._widget_type})
+    widget_data, ignore = [], []
+    for widget in widgets:
+        if widget._param_pane is not None:
+            # Replace parameter links with JS links
+            link = param_to_jslink(model, widget)
+            if link is not None:
+                pobj = widget._param_pane.object
+                if isinstance(pobj, Widget):
+                    if not any(w not in pobj._callbacks and w not in widget._param_pane._callbacks
+                               for w in get_watchers(pobj)):
+                        ignore.append(pobj)
+                continue # Skip if we were able to attach JS link
+
+        if widget._links:
+            jslinks = links_to_jslinks(model, widget)
+            if jslinks:
+                continue
+
+        # If the widget does not support embedding or has no external callback skip it
+        if not widget._supports_embed or all(w in widget._callbacks for w in get_watchers(widget)):
+            continue
+
+        # Get data which will let us record the changes on widget events 
+        widget, w_model, vals, getter, on_change, js_getter = widget._get_embed_state(model, max_opts)
+        w_type = widget._widget_type
+        if isinstance(widget, DiscreteSlider):
+            w_model = widget._composite[1]._models[target][0].select_one({'type': w_type})
         else:
-            w_model = w._models[target][0].select_one({'type': w._widget_type})
+            w_model = widget._models[target][0]
+            if not isinstance(w_model, w_type):
+                w_model = w_model.select_one({'type': w_type})
         js_callback = CustomJS(code=STATE_JS.format(
             id=state_model.ref['id'], js_getter=js_getter))
+        widget_data.append((widget, w_model, vals, getter, js_callback, on_change))
+
+    # Ensure we recording state for widgets which could be JS linked
+    values = []
+    for (w, w_model, vals, getter, js_callback, on_change) in widget_data:
+        if w in ignore:
+            continue
         w_model.js_on_change(on_change, js_callback)
         values.append((w, w_model, vals, getter))
 
     add_to_doc(model, doc, True)
     doc._held_events = []
+
+    if not widget_data:
+        return
 
     restore = [w.value for w, _, _, _ in values]
     init_vals = [g(m) for _, m, _, g in values]
@@ -142,6 +266,7 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
 
     nested_dict = lambda: defaultdict(nested_dict)
     state_dict = nested_dict()
+    changes = False
     for key in cross_product:
         sub_dict = state_dict
         skip = False
@@ -160,8 +285,12 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
         models = [v[1] for v in values]
         doc._held_events = [e for e in doc._held_events if e.model not in models]
         events = record_events(doc)
+        changes |= events['content'] != '{}'
         if events:
             sub_dict.update(events)
+
+    if not changes:
+        return
 
     for (w, _, _, _), v in zip(values, restore):
         try:
@@ -174,7 +303,7 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
         save_path = os.path.join(save_path, random_dir)
         if load_path is not None:
             load_path = os.path.join(load_path, random_dir)
-        state_dict = save_dict(state_dict, max_depth=len(widgets)-1,
+        state_dict = save_dict(state_dict, max_depth=len(values)-1,
                                save_path=save_path, load_path=load_path)
 
     state_model.update(json=json, state=state_dict, values=init_vals,

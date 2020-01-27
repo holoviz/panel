@@ -21,7 +21,7 @@ def test_ace_pane(document, comm):
     assert model.code == ''
 
     # Replace params
-    pane.code = "test"
+    pane.object = "test"
     pane.language = 'xml'
     pane.theme = 'monokai'
 
