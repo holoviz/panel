@@ -114,7 +114,6 @@ extras_require = {
         # For examples
         'hvplot',
         'plotly',
-        'pydeck',
         'altair',
         'streamz',
         'vega_datasets',
