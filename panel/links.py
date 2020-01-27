@@ -8,7 +8,6 @@ import weakref
 import sys
 
 from .viewable import Viewable, Reactive
-from .util import unicode_repr
 
 from bokeh.models import (CustomJS, Model as BkModel)
 

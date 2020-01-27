@@ -54,12 +54,20 @@ def test_pnwidget_hvplot_links(document, comm):
     link_customjs = slider.js_property_callbacks['change:value'][-1]
     assert link_customjs.args['source'] is slider
     assert link_customjs.args['target'] is scatter
-    
-    code = ("value = source['value'];"
-            "try { property = target.properties['size'];"
-            "if (property !== undefined) { property.validate(value); } }"
-            "catch(err) { console.log('WARNING: Could not set size on target, raised error: ' + err); return; }"
-            "target['size'] = value")
+
+    code = """
+    value = source['value'];
+    value = value;
+    value = value;
+    try {
+      property = target.properties['size'];
+      if (property !== undefined) { property.validate(value); }
+    } catch(err) {
+      console.log('WARNING: Could not set size on target, raised error: ' + err);
+      return;
+    }
+    target['size'] = value;
+    """
     assert link_customjs.code == code
 
 
@@ -83,11 +91,19 @@ def test_bkwidget_hvplot_links(document, comm):
     assert link_customjs.args['source'] is slider
     assert link_customjs.args['target'] is scatter
 
-    code = ("value = source['value'];"
-            "try { property = target.properties['size'];"
-            "if (property !== undefined) { property.validate(value); } }"
-            "catch(err) { console.log('WARNING: Could not set size on target, raised error: ' + err); return; }"
-            "target['size'] = value")
+    code = """
+    value = source['value'];
+    value = value;
+    value = value;
+    try {
+      property = target.properties['size'];
+      if (property !== undefined) { property.validate(value); }
+    } catch(err) {
+      console.log('WARNING: Could not set size on target, raised error: ' + err);
+      return;
+    }
+    target['size'] = value;
+    """
     assert link_customjs.code == code
 
 
@@ -107,11 +123,20 @@ def test_bkwidget_bkplot_links(document, comm):
     link_customjs = slider.js_property_callbacks['change:value'][-1]
     assert link_customjs.args['source'] is slider
     assert link_customjs.args['target'] is scatter.glyph
-    code = ("value = source['value'];"
-            "try { property = target.properties['size'];"
-            "if (property !== undefined) { property.validate(value); } }"
-            "catch(err) { console.log('WARNING: Could not set size on target, raised error: ' + err); return; }"
-            "target['size'] = value")
+
+    code = """
+    value = source['value'];
+    value = value;
+    value = value;
+    try {
+      property = target.properties['size'];
+      if (property !== undefined) { property.validate(value); }
+    } catch(err) {
+      console.log('WARNING: Could not set size on target, raised error: ' + err);
+      return;
+    }
+    target['size'] = value;
+    """
     assert link_customjs.code == code
 
 
@@ -129,11 +154,20 @@ def test_widget_bkplot_link(document, comm):
     assert link_customjs.args['source'] is model.children[1]
     assert link_customjs.args['target'] is scatter.glyph
     assert scatter.glyph.fill_color == '#ff00ff'
-    code = ("value = source['color'];"
-            "try { property = target.properties['fill_color'];"
-            "if (property !== undefined) { property.validate(value); } }"
-            "catch(err) { console.log('WARNING: Could not set fill_color on target, raised error: ' + err); return; }"
-            "target['fill_color'] = value")
+    
+    code = """
+    value = source['color'];
+    value = value;
+    value = value;
+    try {
+      property = target.properties['fill_color'];
+      if (property !== undefined) { property.validate(value); }
+    } catch(err) {
+      console.log('WARNING: Could not set fill_color on target, raised error: ' + err);
+      return;
+    }
+    target['fill_color'] = value;
+    """
     assert link_customjs.code == code
 
 
