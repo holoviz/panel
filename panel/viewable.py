@@ -861,7 +861,7 @@ class Reactive(Viewable):
     # Public API
     #----------------------------------------------------------------
 
-    def controls(self, parameters=[]):
+    def controls(self, parameters=[], jslink=True):
         """
         Creates a set of widgets which allow manipulating the parameters
         on this instance. By default all parameters which support
@@ -872,6 +872,9 @@ class Reactive(Viewable):
         ---------
         parameters: list(str)
            An explicit list of parameters to return controls for.
+        jslink: bool
+           Whether to use jslinks instead of Python based links.
+           This does not allow using all types of parameters.
 
         Returns
         -------
@@ -884,16 +887,26 @@ class Reactive(Viewable):
             return Param(self.param, parameters=parameters, default_layout=WidgetBox,
                          name='Controls').layout
 
-        linkable = self._linkable_params
+        if jslink:
+            linkable = self._linkable_params
+        else:
+            linkable = list(self.param)
         params = [p for p in linkable if p not in Layoutable.param]
         controls = Param(self.param, parameters=params, default_layout=WidgetBox,
-                         name='Controls').layout
-        params = ['name']+[p for p in linkable if p in Layoutable.param]
-        style = Param(self.param, parameters=params, default_layout=WidgetBox,
-                      name='Layout').layout
-        if len(controls) > 1:
-            return Tabs(controls, style)
-        return style
+                         name='Controls')
+        layout_params = [p for p in linkable if p in Layoutable.param]
+        if 'name' not in layout_params and self._rename.get('name', False) is not None:
+            layout_params.insert(0, 'name')
+        style = Param(self.param, parameters=layout_params, default_layout=WidgetBox,
+                      name='Layout')
+        if jslink:
+            for p in params:
+                controls._widgets[p].jslink(self, value=p, bidirectional=True)
+            for p in layout_params:
+                style._widgets[p].jslink(self, value=p, bidirectional=True)
+        if params:
+            return Tabs(controls.layout[0], style.layout[0])
+        return style.layout[0]
 
     def link(self, target, callbacks=None, **links):
         """
