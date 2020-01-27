@@ -97,9 +97,13 @@ def link_to_jslink(model, source, src_spec, target, tgt_spec):
     declared forward and reverse JS transforms on the source and target.
     """
     ref = model.ref['id']
+    tgt_links = [Watcher(*l[:-3]) for l in target._links]
+    tgt_watchers = [w for w in get_watchers(target) if w not in target._callbacks
+                    and w not in tgt_links]
+
     if ((source._source_transforms.get(src_spec, False) is None) or
         (target._target_transforms.get(tgt_spec, False) is None) or
-        ref not in source._models or ref not in target._models):
+        ref not in source._models or ref not in target._models or tgt_watchers):
         # We cannot jslink if either source or target declare
         # that they apply Python transforms
         return
@@ -112,6 +116,10 @@ def link_to_jslink(model, source, src_spec, target, tgt_spec):
 
 
 def links_to_jslinks(model, widget):
+    src_links = [Watcher(*l[:-3]) for l in widget._links]
+    if any(w not in widget._callbacks and w not in src_links for w in get_watchers(widget)):
+        return
+
     links = []
     for link in widget._links:
         if link.transformed:

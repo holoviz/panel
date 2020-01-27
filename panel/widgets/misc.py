@@ -47,8 +47,6 @@ class _MediaBase(Widget):
 
     _media_type = None
 
-    _source_transforms = {'value': None}
-
     def __init__(self, **params):
         self.param.warning('%s widget is deprecated, use the equivalent '
                            'Pane type instead.' % type(self).__name__)
