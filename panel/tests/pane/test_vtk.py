@@ -6,7 +6,7 @@ import pytest
 
 try:
     import vtk
-except:
+except Exception:
     vtk = None
 
 from six import string_types

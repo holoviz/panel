@@ -151,7 +151,7 @@ class Template(param.Parameterized, ServableMixin):
         try:
             assert get_ipython().kernel is not None # noqa
             state._comm_manager = _JupyterCommManager
-        except:
+        except Exception:
             pass
         doc = _Document()
         comm = state._comm_manager.get_server_comm()

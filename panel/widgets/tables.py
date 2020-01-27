@@ -151,7 +151,7 @@ class DataFrame(Widget):
                     v = [v for _, v in sorted(v.items(), key=lambda it: int(it[0]))]
                 try:
                     isequal = (self.value[k].values == np.asarray(v)).all()
-                except:
+                except Exception:
                     isequal = False
                 if not isequal:
                     self.value[k] = v

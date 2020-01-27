@@ -238,7 +238,7 @@ class LiteralInput(Widget):
                     value = json.loads(value)
                 else:
                     value = ast.literal_eval(value)
-            except:
+            except Exception:
                 new_state = ' (invalid)'
                 value = self.value
             else:
@@ -248,7 +248,7 @@ class LiteralInput(Widget):
                     for vtype in vtypes:
                         try:
                             typed_value = vtype(value)
-                        except:
+                        except Exception:
                             pass
                         else:
                             break
@@ -325,7 +325,7 @@ class DatetimeInput(LiteralInput):
             value = msg.pop('value')
             try:
                 value = datetime.strptime(value, self.format)
-            except:
+            except Exception:
                 new_state = ' (invalid)'
                 value = self.value
             else:

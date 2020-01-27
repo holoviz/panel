@@ -403,7 +403,7 @@ def ipywidget(obj, **kwargs):
                 if current:
                     try:
                         obj._cleanup(current[0])
-                    except:
+                    except Exception:
                         pass
                 new_model = obj.get_root()
                 widget.update_from_model(new_model)

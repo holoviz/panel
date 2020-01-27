@@ -151,7 +151,7 @@ class Plotly(PaneBase):
                     (type(old) != type(new)) or
                     (new.shape != old.shape) or
                     (new != old).any())
-            except:
+            except Exception:
                 update_array = True
 
             if update_array:
@@ -259,7 +259,7 @@ class Plotly(PaneBase):
             update_sources = self._update_data_sources(cds, trace) or update_sources
         try:
             update_layout = model.layout != layout
-        except:
+        except Exception:
             update_layout = True
 
         # Determine if model needs updates
@@ -272,7 +272,7 @@ class Plotly(PaneBase):
                     update_data = (
                         {k: v for k, v in new.items() if k != 'uid'} !=
                         {k: v for k, v in old.items() if k != 'uid'})
-                except:
+                except Exception:
                     update_data = True
                 if update_data:
                     break

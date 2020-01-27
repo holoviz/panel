@@ -471,7 +471,7 @@ def find_links(root_view, root_model):
     try:
         from holoviews.plotting.links import Link
         from holoviews.plotting.bokeh.callbacks import LinkCallback
-    except:
+    except Exception:
         return
 
     plots = [(plot, root_plot) for root_plot in root_plots

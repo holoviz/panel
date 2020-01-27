@@ -69,7 +69,7 @@ class Panel(Reactive):
                     k not in self._changing or self._changing[k] != v or
                     self._changing['id'] != model.ref['id']
                 )
-            except:
+            except Exception:
                 change = True
             if change:
                 filtered[k] = v
@@ -1160,7 +1160,7 @@ class GridSpec(Panel):
             for (yidx, xidx) in zip(*np.where(overlap_grid)):
                 try:
                     old_obj = self[yidx, xidx]
-                except:
+                except Exception:
                     continue
                 if old_obj not in objects:
                     objects.append(old_obj)
