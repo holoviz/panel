@@ -238,7 +238,7 @@ class LiteralInput(Widget):
                     value = json.loads(value)
                 else:
                     value = ast.literal_eval(value)
-            except Exception as e:
+            except:
                 new_state = ' (invalid)'
                 value = self.value
             else:
@@ -267,9 +267,10 @@ class LiteralInput(Widget):
         msg = super(LiteralInput, self)._process_param_change(msg)
         if 'value' in msg:
             value = '' if msg['value'] is None else msg['value']
-            if self.serializer == 'json':
-                if not isinstance(value, string_types):
-                    value = json.dumps(value, sort_keys=True)
+            if isinstance(value, string_types):
+                value = repr(value)
+            elif self.serializer == 'json':
+                value = json.dumps(value, sort_keys=True)
             else:
                 value = as_unicode(value)
             msg['value'] = value
@@ -297,7 +298,7 @@ class DatetimeInput(LiteralInput):
     _source_transforms = {'value': None, 'start': None, 'end': None}
 
     _rename = {'format': None, 'type': None, 'name': 'title',
-               'start': None, 'end': None}
+               'start': None, 'end': None, 'serializer': None}
 
     def __init__(self, **params):
         super(DatetimeInput, self).__init__(**params)

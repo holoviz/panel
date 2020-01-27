@@ -329,8 +329,6 @@ class Param(PaneBase):
         kw = dict(disabled=p_obj.constant, name=label)
 
         value = getattr(self.object, p_name)
-        if widget_class is LiteralInput and isinstance(value, str):
-            widget_class = TextInput
         if value is not None:
             kw['value'] = value
 
