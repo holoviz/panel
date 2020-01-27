@@ -1,7 +1,7 @@
 """In this module we test the DeckGL Bokeh Model"""
 
 import pytest
-from panel.models.pydeck import DeckGLPlot
+from panel.models.deckgl import DeckGLPlot
 
 # pylint: disable=line-too-long
 @pytest.fixture

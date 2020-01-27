@@ -6,7 +6,7 @@ except:
     pydeck = None
 pydeck_available = pytest.mark.skipif(pydeck is None, reason="requires pydeck")
 
-from panel.models.pydeck import DeckGLPlot
+from panel.models.deckgl import DeckGLPlot
 from panel.pane import Pane, PaneBase, DeckGL
 
 
