@@ -3,6 +3,7 @@ import * as p from "@bokehjs/core/properties"
 import {HTMLBox} from "@bokehjs/models/layouts/html_box"
 
 import {PanelHTMLBoxView, set_size} from "./layout"
+import {makeTooltip} from "./tooltips"
 
 import GL from '@luma.gl/constants';
 
@@ -22,14 +23,14 @@ function extractClasses() {
   return classesDict;
 }
 
-export class PyDeckPlotView extends PanelHTMLBoxView {
-  model: PyDeckPlot
+export class DeckGLPlotView extends PanelHTMLBoxView {
+  model: DeckGLPlot
   jsonConverter: any
 
   connect_signals(): void {
     super.connect_signals()
-    const {json_input, mapbox_api_key, tooltip, _render_count} = this.model.properties;
-    this.on_change([json_input, mapbox_api_key, tooltip, _render_count], () => { this.render() })
+    const {json_input, mapbox_api_key, tooltip} = this.model.properties;
+    this.on_change([json_input, mapbox_api_key, tooltip], () => { this.render() })
   }
 
   initialize(): void {
@@ -59,16 +60,18 @@ export class PyDeckPlotView extends PanelHTMLBoxView {
     deckgl.setProps(results);
   }
 
-  createDeck({mapboxApiKey, container, jsonInput, handleClick} : any): void {
+  createDeck({mapboxApiKey, container, jsonInput, tooltip, handleClick} : any): void {
     let deckgl;
     try {
       const props = this.jsonConverter.convert(jsonInput);
+	  const getTooltip = makeTooltip(tooltip);
       deckgl = new deck.DeckGL({
         ...props,
         map: mapboxgl,
         mapboxApiAccessToken: mapboxApiKey,
         onClick: handleClick,
-        container
+        container,
+		getTooltip
       });
     } catch (err) {
       // This will fail in node tests
@@ -86,6 +89,7 @@ export class PyDeckPlotView extends PanelHTMLBoxView {
     const jsonInput = JSON.parse(this.model.json_input);
     const MAPBOX_API_KEY = this.model.mapbox_api_key;
     const tooltip = this.model.tooltip;
+
     if (createDeck) {
       createDeck({
         mapboxApiKey: MAPBOX_API_KEY,
@@ -97,42 +101,41 @@ export class PyDeckPlotView extends PanelHTMLBoxView {
       this.createDeck({
         mapboxApiKey: MAPBOX_API_KEY,
         container: container,
-        jsonInput
+        jsonInput,
+		tooltip
       });
     }
     this.el.appendChild(container);
   }
 }
 
-export namespace PyDeckPlot {
+export namespace DeckGLPlot {
   export type Attrs = p.AttrsOf<Props>
   export type Props = HTMLBox.Props & {
     json_input: p.Property<string>
     mapbox_api_key: p.Property<string>
     tooltip: p.Property<boolean>
-    _render_count: p.Property<number>
   }
 }
 
-export interface PyDeckPlot extends PyDeckPlot.Attrs { }
+export interface DeckGLPlot extends DeckGLPlot.Attrs { }
 
-export class PyDeckPlot extends HTMLBox {
-  properties: PyDeckPlot.Props
+export class DeckGLPlot extends HTMLBox {
+  properties: DeckGLPlot.Props
 
-  constructor(attrs?: Partial<PyDeckPlot.Attrs>) {
+  constructor(attrs?: Partial<DeckGLPlot.Attrs>) {
     super(attrs)
   }
 
-  static __module__ = "panel.models.pydeck"
+  static __module__ = "panel.models.deckgl"
 
-  static init_PyDeckPlot(): void {
-    this.prototype.default_view = PyDeckPlotView;
+  static init_DeckGLPlot(): void {
+    this.prototype.default_view = DeckGLPlotView;
 
-    this.define<PyDeckPlot.Props>({
+    this.define<DeckGLPlot.Props>({
       json_input: [p.String],
       mapbox_api_key: [p.String],
       tooltip: [p.Boolean],
-      _render_count: [p.Number, 0],
     })
 
     this.override({

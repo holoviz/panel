@@ -238,7 +238,7 @@ class panel_extension(_pyviz_extension):
     _imports = {'katex': 'panel.models.katex',
                 'mathjax': 'panel.models.mathjax',
                 'plotly': 'panel.models.plotly',
-                'pydeck': 'panel.models.pydeck',
+                'deckgl': 'panel.models.deckgl',
                 'vega': 'panel.models.vega',
                 'vtk': 'panel.models.vtk',
                 'ace': 'panel.models.ace'}
