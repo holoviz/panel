@@ -156,7 +156,7 @@ class _config(param.Parameterized):
     def comms(self, value):
         validate_config(self, '_comms', value)
         self._comms_ = value
-        
+
     @property
     def embed_json(self):
         if self._embed_json_ is not None:
@@ -238,6 +238,7 @@ class panel_extension(_pyviz_extension):
     _imports = {'katex': 'panel.models.katex',
                 'mathjax': 'panel.models.mathjax',
                 'plotly': 'panel.models.plotly',
+                'pydeck': 'panel.models.pydeck',
                 'vega': 'panel.models.vega',
                 'vtk': 'panel.models.vtk',
                 'ace': 'panel.models.ace'}
