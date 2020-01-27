@@ -142,7 +142,8 @@ class Param(PaneBase):
         self._updating = []
 
         # Construct Layout
-        kwargs = {p: v for p, v in self.param.get_param_values() if p in Layoutable.param}
+        kwargs = {p: v for p, v in self.param.get_param_values()
+                  if p in Layoutable.param and v is not None}
         self._widget_box = self.default_layout(**kwargs)
 
         layout = self.expand_layout
@@ -218,9 +219,11 @@ class Param(PaneBase):
             self._widgets = {}
         else:
             self._widgets = self._get_widgets()
+
+        alias = {'_title': 'name'}
         widgets = [widget for p, widget in self._widgets.items()
-                   if (self.object.param[p].precedence is None)
-                   or (self.object.param[p].precedence >= self.display_threshold)]
+                   if (self.object.param[alias.get(p, p)].precedence is None)
+                   or (self.object.param[alias.get(p, p)].precedence >= self.display_threshold)]
         self._widget_box.objects = widgets
         if not (self.expand_button == False and not self.expand):
             self._link_subobjects()
@@ -305,6 +308,7 @@ class Param(PaneBase):
         else:
             widget_class = self.widgets[p_name]
 
+
         if not self.show_labels and not issubclass(widget_class, _ButtonBase):
             label = ''
         else:
@@ -312,6 +316,8 @@ class Param(PaneBase):
         kw = dict(disabled=p_obj.constant, name=label)
 
         value = getattr(self.object, p_name)
+        if widget_class is LiteralInput and isinstance(value, str):
+            widget_class = TextInput
         if value is not None:
             kw['value'] = value
 
@@ -456,7 +462,8 @@ class Param(PaneBase):
         dict_ordered_py3 = (sys.version_info.major == 3 and sys.version_info.minor >= 6)
         dict_ordered = dict_ordered_py3 or (sys.version_info.major > 3)
         ordered_groups = [list(grp) if dict_ordered else sorted(grp) for (_, grp) in groups]
-        ordered_params = [el[0] for group in ordered_groups for el in group if el[0] != 'name']
+        ordered_params = [el[0] for group in ordered_groups for el in group
+                          if (el[0] != 'name' or el[0] in self.parameters)]
         return ordered_params
 
     #----------------------------------------------------------------
@@ -470,7 +477,7 @@ class Param(PaneBase):
             widgets = []
         elif self.show_name:
             name = param_name(self.object.name)
-            widgets = [('name', StaticText(value='<b>{0}</b>'.format(name)))]
+            widgets = [('_title', StaticText(value='<b>{0}</b>'.format(name)))]
         else:
             widgets = []
         widgets += [(pname, self.widget(pname)) for pname in self._ordered_params]

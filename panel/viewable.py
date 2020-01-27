@@ -144,9 +144,9 @@ class Layoutable(param.Parameterized):
           other factors.
     """)
 
-    sizing_mode = param.ObjectSelector(default='auto', objects=[
+    sizing_mode = param.ObjectSelector(default=None, objects=[
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
-        'scale_width', 'scale_height', 'scale_both', 'auto', None], doc="""
+        'scale_width', 'scale_height', 'scale_both', None], doc="""
 
         How the component should size itself.
 
@@ -887,11 +887,13 @@ class Reactive(Viewable):
         linkable = self._linkable_params
         params = [p for p in linkable if p not in Layoutable.param]
         controls = Param(self.param, parameters=params, default_layout=WidgetBox,
-                         name='Controls')
-        params = [p for p in linkable if p in Layoutable.param]
+                         name='Controls').layout
+        params = ['name']+[p for p in linkable if p in Layoutable.param]
         style = Param(self.param, parameters=params, default_layout=WidgetBox,
-                      name='Layout')
-        return Tabs(controls.layout, style.layout)
+                      name='Layout').layout
+        if len(controls) > 1:
+            return Tabs(controls, style)
+        return style
 
     def link(self, target, callbacks=None, **links):
         """
