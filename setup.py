@@ -22,7 +22,7 @@ def get_setup_version(reponame):
     version_file_path = os.path.join(basepath, reponame, '.version')
     try:
         from param import version
-    except:
+    except Exception:
         version = None
     if version is not None:
         return version.Version.setup_version(basepath, reponame, archive_commit="$Format:%h$")
@@ -81,7 +81,7 @@ try:
             bdist_wheel.run(self)
 
     _COMMANDS['bdist_wheel'] = CustomBdistWheelCommand
-except:
+except Exception:
     pass
 
 ########## dependencies ##########

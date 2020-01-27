@@ -26,7 +26,7 @@ except ImportError:
     try:
         from IPython.utils.signatures import signature, Parameter
         empty = Parameter.empty
-    except:
+    except Exception:
         signature, Parameter, empty = None, None, None
 
 try:

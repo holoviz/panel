@@ -396,7 +396,7 @@ class Viewable(Layoutable, ServableMixin):
             from IPython import get_ipython
             assert get_ipython().kernel is not None
             state._comm_manager = JupyterCommManager
-        except:
+        except Exception:
             pass
 
         from IPython.display import display
@@ -646,7 +646,7 @@ class Reactive(Viewable):
                     change = (k not in self._changing or
                               self._changing[k] != v or
                               self._changing['id'] != model.ref['id'])
-                except:
+                except Exception:
                     change = True
                 if change:
                     filtered[k] = v
@@ -855,7 +855,7 @@ class Reactive(Viewable):
             if comm:
                 try:
                     comm.close()
-                except:
+                except Exception:
                     pass
 
     #----------------------------------------------------------------
@@ -955,7 +955,7 @@ class Reactive(Viewable):
                         callbacks[event.name](target, event)
                     else:
                         setattr(target, links[event.name], event.new)
-                except:
+                except Exception:
                     raise
                 finally:
                     _updating.pop(_updating.index(event.name))

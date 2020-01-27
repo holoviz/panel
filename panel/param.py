@@ -709,7 +709,7 @@ class JSONInit(param.Parameterized):
             try:
                 fname = self.json_file if self.json_file else env_var
                 spec = json.load(open(os.path.abspath(fname), 'r'))
-            except:
+            except Exception:
                 warnobj.warning('Could not load JSON file %r' % spec)
         else:
             spec = json.loads(env_var)

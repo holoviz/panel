@@ -280,7 +280,7 @@ class PaneBase(Reactive):
                 applies = True
                 try:
                     priority = p.applies(obj, **(kwargs if p._applies_kw else {}))
-                except:
+                except Exception:
                     priority = False
             else:
                 applies = None
@@ -299,7 +299,7 @@ class PaneBase(Reactive):
             if applies is None:
                 try:
                     applies = pane_type.applies(obj, **(kwargs if pane_type._applies_kw else {}))
-                except:
+                except Exception:
                     applies = False
             if not applies:
                 continue

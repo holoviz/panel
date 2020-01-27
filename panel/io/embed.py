@@ -274,7 +274,7 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
             w, m, _, g = values[i]
             try:
                 w.value = k
-            except:
+            except Exception:
                 skip = True
                 break
             sub_dict = sub_dict[g(m)]
@@ -295,7 +295,7 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
     for (w, _, _, _), v in zip(values, restore):
         try:
             w.param.set_param(value=v)
-        except:
+        except Exception:
             pass
 
     if json:
