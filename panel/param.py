@@ -724,7 +724,7 @@ class JSONInit(param.Parameterized):
             params = spec
 
         for name, value in params.items():
-           try:
-               parameterized.param.set_param(**{name:value})
-           except ValueError as e:
-               warnobj.warning(str(e))
+            try:
+                parameterized.param.set_param(**{name:value})
+            except ValueError as e:
+                warnobj.warning(str(e))
