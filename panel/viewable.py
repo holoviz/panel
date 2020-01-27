@@ -861,6 +861,38 @@ class Reactive(Viewable):
     # Public API
     #----------------------------------------------------------------
 
+    def controls(self, parameters=[]):
+        """
+        Creates a set of widgets which allow manipulating the parameters
+        on this instance. By default all parameters which support
+        linking are exposed, but an explicit list of parameters can
+        be provided.
+
+        Arguments
+        ---------
+        parameters: list(str)
+           An explicit list of parameters to return controls for.
+
+        Returns
+        -------
+        A layout of the controls
+        """
+        from .param import Param
+        from .layout import Tabs, WidgetBox
+
+        if parameters:
+            return Param(self.param, parameters=parameters, default_layout=WidgetBox,
+                         name='Controls').layout
+
+        linkable = self._linkable_params
+        params = [p for p in linkable if p not in Layoutable.param]
+        controls = Param(self.param, parameters=params, default_layout=WidgetBox,
+                         name='Controls')
+        params = [p for p in linkable if p in Layoutable.param]
+        style = Param(self.param, parameters=params, default_layout=WidgetBox,
+                      name='Layout')
+        return Tabs(controls.layout, style.layout)
+
     def link(self, target, callbacks=None, **links):
         """
         Links the parameters on this object to attributes on another
