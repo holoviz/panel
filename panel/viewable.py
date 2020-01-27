@@ -5,6 +5,7 @@ response to changes to parameters and the underlying bokeh models.
 """
 from __future__ import absolute_import, division, unicode_literals
 
+import difflib
 import logging
 import re
 import sys
@@ -1056,10 +1057,40 @@ class Reactive(Viewable):
         if args is None:
             args = {}
 
+        mapping = code or links
+        for k in mapping:
+            if k not in self.param and k not in list(self._rename.values()):
+                matches = difflib.get_close_matches(k, list(self.param))
+                if matches:
+                    matches = ' Similar parameters include: %r' % matches
+                else:
+                    matches = ''
+                raise ValueError("Could not jslink %r parameter (or property) "
+                                 "on %s object because it was not found.%s"
+                                 % (k, type(self).__name__, matches))
+            elif (self._source_transforms.get(k, False) is None or
+                  self._rename.get(k, False) is None):
+                raise ValueError("Cannot jslink %r parameter on %s object, "
+                                 "the parameter requires a live Python kernel "
+                                 "to have an effect." % (k, type(self).__name__))
+
+        if isinstance(target, Reactive) and code is None:
+            for p in mapping.values():
+                if p not in target.param and p not in list(target._rename.values()):
+                    matches = difflib.get_close_matches(p, list(target.param))
+                    if matches:
+                        matches = ' Similar parameters include: %r' % matches
+                    else:
+                        matches = ''
+                    raise ValueError("Could not jslink %r parameter (or property) "
+                                     "on %s object because it was not found.%s"
+                                    % (p, type(self).__name__, matches))
+                elif (target._source_transforms.get(p, False) is None or
+                      target._rename.get(p, False) is None):
+                    raise ValueError("Cannot jslink %r parameter on %s object, "
+                                     "the parameter requires a live Python kernel"
+                                     "to have an effect." % (p, type(self).__name__))
+
         from .links import Link
-        if isinstance(target, Reactive):
-            mapping = code or links
-            for k, v in list(mapping.items()):
-                mapping[k] = target._rename.get(v, v)
         return Link(self, target, properties=links, code=code, args=args,
                     bidirectional=bidirectional)
