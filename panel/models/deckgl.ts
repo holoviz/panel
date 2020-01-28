@@ -10,8 +10,6 @@ import GL from '@luma.gl/constants';
 const deck = (window as any).deck;
 const mapboxgl = (window as any).mapboxgl;
 const loaders = (window as any).loaders;
-const {CSVLoader, Tile3DLoader} = loaders;
-const createDeck = deck.createDeck;
 
 function extractClasses() {
   // Get classes for registration from standalone deck.gl
@@ -36,6 +34,7 @@ export class DeckGLPlotView extends PanelHTMLBoxView {
   initialize(): void {
     super.initialize()
     if (deck.JSONConverter) {
+	  const {CSVLoader, Tile3DLoader} = loaders
       loaders.registerLoaders([Tile3DLoader, CSVLoader]);
       const jsonConverterConfiguration: any = {
         classes: extractClasses(),
@@ -90,8 +89,8 @@ export class DeckGLPlotView extends PanelHTMLBoxView {
     const MAPBOX_API_KEY = this.model.mapbox_api_key;
     const tooltip = this.model.tooltip;
 
-    if (createDeck) {
-      createDeck({
+    if (deck.createDeck) {
+      deck.createDeck({
         mapboxApiKey: MAPBOX_API_KEY,
         container: container,
         jsonInput,
