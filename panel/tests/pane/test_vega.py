@@ -7,7 +7,7 @@ import pytest
 try:
     import altair as alt
     altair_version = LooseVersion(alt.__version__)
-except:
+except Exception:
     alt = None
 
 altair_available = pytest.mark.skipif(alt is None, reason="requires altair")

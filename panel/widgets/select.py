@@ -471,7 +471,7 @@ class CrossSelector(CompositeWidget, MultiSelect):
         else:
             try:
                 matches = [o for o in options if self.filter_fn(query, o)]
-            except:
+            except Exception:
                 matches = []
             self._lists[selected].options = options if options else []
             self._lists[selected].value = [m for m in matches]

@@ -21,7 +21,7 @@ except ImportError:
 
 try:
     from html import escape # noqa
-except:
+except Exception:
     from cgi import escape # noqa
 
 import param
@@ -70,7 +70,7 @@ def isIn(obj, objs):
         try:
             if o == obj:
                 return True
-        except:
+        except Exception:
             pass
     return False
 
@@ -87,7 +87,7 @@ def indexOf(obj, objs):
         try:
             if o == obj:
                 return i
-        except:
+        except Exception:
             pass
     raise ValueError('%s not in list' % obj)
 
@@ -178,7 +178,7 @@ def param_reprs(parameterized, skip=None):
         if not equal:
             try:
                 equal = bool(v==default)
-            except:
+            except Exception:
                 equal = False
 
         if equal: continue

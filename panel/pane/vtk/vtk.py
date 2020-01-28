@@ -255,7 +255,7 @@ class VTK(PaneBase):
             try:
                 from .vtkjs_serializer import construct_palettes
                 self._legend = construct_palettes(self.object)
-            except:
+            except Exception:
                 self._legend = {}
         if self._legend:
             from bokeh.models import Plot, LinearColorMapper, ColorBar, FixedTicker

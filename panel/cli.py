@@ -48,7 +48,7 @@ def main(args=None):
     try:
         import pyct.cmd
         pyct_commands = ['copy-examples', 'examples']
-    except:
+    except Exception:
         pass
 
     parser = argparse.ArgumentParser(

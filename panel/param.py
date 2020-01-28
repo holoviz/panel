@@ -709,7 +709,7 @@ class JSONInit(param.Parameterized):
             try:
                 fname = self.json_file if self.json_file else env_var
                 spec = json.load(open(os.path.abspath(fname), 'r'))
-            except:
+            except Exception:
                 warnobj.warning('Could not load JSON file %r' % spec)
         else:
             spec = json.loads(env_var)
@@ -724,7 +724,7 @@ class JSONInit(param.Parameterized):
             params = spec
 
         for name, value in params.items():
-           try:
-               parameterized.param.set_param(**{name:value})
-           except ValueError as e:
-               warnobj.warning(str(e))
+            try:
+                parameterized.param.set_param(**{name:value})
+            except ValueError as e:
+                warnobj.warning(str(e))

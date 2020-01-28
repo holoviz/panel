@@ -161,7 +161,7 @@ class Pipeline(param.Parameterized):
     def __init__(self, stages=[], graph={}, **params):
         try:
             import holoviews as hv
-        except:
+        except Exception:
             raise ImportError('Pipeline requires holoviews to be installed')
 
         super(Pipeline, self).__init__(**params)

@@ -110,7 +110,7 @@ class Callback(param.Parameterized):
                         # Not all args are hashable
                         try:
                             hv_objs = map_hve_bk.get(v, [])
-                        except:
+                        except Exception:
                             continue
                         for tgt in hv_objs:
                             arg_overrides[id(link)][k] = tgt
@@ -433,7 +433,7 @@ class JSLinkCallbackGenerator(JSCallbackGenerator):
                 value = getattr(source, src_param)
                 try:
                     msg = target._process_param_change({tgt_param: value})
-                except:
+                except Exception:
                     msg = {}
                 if tgt_spec in msg:
                     value = msg[tgt_spec]

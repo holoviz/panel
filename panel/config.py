@@ -266,7 +266,7 @@ class panel_extension(_pyviz_extension):
 
         try:
             ip = params.pop('ip', None) or get_ipython() # noqa (get_ipython)
-        except:
+        except Exception:
             return
 
         if hasattr(ip, 'kernel') and not self._loaded and not os.environ.get("PANEL_DOC_BUILD"):

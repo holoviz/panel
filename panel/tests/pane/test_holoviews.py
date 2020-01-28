@@ -8,7 +8,7 @@ import numpy as np
 
 try:
     import holoviews as hv
-except:
+except Exception:
     hv = None
 
 from bokeh.models import (Row as BkRow, Column as BkColumn, GlyphRenderer,
