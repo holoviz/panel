@@ -14,8 +14,21 @@ def test_env_var_debug():
         assert config.debug == 'disable'
     with set_env_var('PANEL_DEBUG', 'replace'):
         assert config.debug == 'replace'
-    with set_env_var('PANEL_DOC_BUILD', 'true'):
+    with config.set(debug='disable'):
+        with set_env_var('PANEL_DOC_BUILD', 'accumulate'):
+            assert config.debug == 'disable'
+
+
+def test_config_set_debug():
+    with config.set(debug=False):
         assert config.debug == 'disable'
+    with config.set(debug='disable'):
+        assert config.debug == 'disable'
+    with config.set(debug='replace'):
+        assert config.debug == 'replace'
+    with config.set(debug='disable'):
+        with config.set(debug='accumulate'):
+            assert config.debug == 'accumulate'
 
 
 def test_debug_replace_stdout(document, comm, get_display_handle):
