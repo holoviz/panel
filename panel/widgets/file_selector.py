@@ -65,6 +65,11 @@ class FileSelector(CompositeWidget):
     only_files = param.Boolean(default=False, doc="""
         Whether to only allow selecting files.""")
 
+    margin = param.Parameter(default=(5, 10, 20, 10), doc="""
+        Allows to create additional space around the component. May
+        be specified as a two-tuple of the form (vertical, horizontal)
+        or a four-tuple (top, right, bottom, left).""")
+
     show_hidden = param.Boolean(default=False, doc="""
         Whether to show hidden files and directories (starting with
         a period).""")
@@ -84,12 +89,13 @@ class FileSelector(CompositeWidget):
             params['directory'] = os.path.abspath(os.path.expanduser(directory))
         if params.get('width') and params.get('height') and 'sizing_mode' not in params:
             params['sizing_mode'] = None
+
         super(FileSelector, self).__init__(**params)
 
         # Set up layout
         layout = {p: getattr(self, p) for p in Layoutable.param
                   if p not in ('name', 'height', 'margin') and getattr(self, p) is not None}
-        sel_layout = dict(layout, sizing_mode='stretch_both', margin=0)
+        sel_layout = dict(layout, sizing_mode='stretch_both', height=None, margin=0)
         self._selector = CrossSelector(filter_fn=lambda p, f: fnmatch(f, p),
                                        size=self.size, **sel_layout)
         self._back = Button(name='◀', width=25, margin=(5, 10, 0, 0), disabled=True)

@@ -337,11 +337,11 @@ class CrossSelector(CompositeWidget, MultiSelect):
     name to select them in bulk.
     """
 
-    width = param.Integer(default=600, doc="""
+    width = param.Integer(default=600, allow_None=True, doc="""
        The number of options shown at once (note this is the
        only way to control the height of this widget)""")
 
-    height = param.Integer(default=200, doc="""
+    height = param.Integer(default=200, allow_None=True, doc="""
        The number of options shown at once (note this is the
        only way to control the height of this widget)""")
 
@@ -432,7 +432,7 @@ class CrossSelector(CompositeWidget, MultiSelect):
         self._lists[False].value = []
         if len(self._lists[True].options) and self._selected[-1] is not self._lists[True]:
             self._selected[-1] = self._lists[True]
-        elif self._selected[-1] is not self._placeholder:
+        elif not len(self._lists[True].options) and self._selected[-1] is not self._placeholder:
             self._selected[-1] = self._placeholder
 
     @param.depends('options', watch=True)
