@@ -1,6 +1,4 @@
 """Functionality to speed up developing tests of Panel apps"""
-from typing import Callable
-
 from panel.layout import Column
 from panel.pane import Markdown
 
@@ -10,7 +8,7 @@ class TestApp(Column):
 
     __test__ = False  # We don't wan't pytest to collect this
 
-    def __init__(self, test_func: Callable, *args, **kwargs):
+    def __init__(self, test_func, *args, **kwargs):
         """## Creates a Test App from the name and docstring of the test function
 
         Displays
