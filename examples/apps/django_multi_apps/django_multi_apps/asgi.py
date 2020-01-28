@@ -1,5 +1,5 @@
 """
-ASGI config for Django_Panel project.
+ASGI config for django_multi_apps project.
 
 It exposes the ASGI callable as a module-level variable named ``application``.
 
@@ -14,7 +14,7 @@ import os
 import django
 from channels.routing import get_default_application
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'Django_Panel_Multi.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'django_multi_apps.settings')
 django.setup()
 application = get_default_application()
 

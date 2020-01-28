@@ -1,4 +1,4 @@
-"""Django_Panel URL Configuration
+"""django_multi_apps URL Configuration
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/3.0/topics/http/urls/
@@ -23,6 +23,7 @@ from django.urls import path, include
 import sliders.pn_app as sliders_app
 import gbm.pn_app as gbm_app
 import stockscreener.pn_app as stockscreener_app
+
 from .themes import plot_themes
 
 pn_app_config = apps.get_app_config('bokeh.server.django')
