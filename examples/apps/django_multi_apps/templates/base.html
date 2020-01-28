@@ -1,0 +1,129 @@
+{% load static %}
+
+{% block doc %}
+    <!doctype html>
+    <html lang="en">
+    {% block html %}
+        <head>
+            {% block head %}
+                <title>{% block title %}Django Panel{% endblock title %}</title>
+                <!-- Required meta tags -->
+                {% block meta %}
+                    <meta charset="utf-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+                    <meta name="description" content="Testing Website of the ZGL limited company">
+                    <meta name="keywords" content="Prototype Website for Testing of new Technology, Keep out">
+                {% endblock meta %}
+
+                {% block styles %}
+                    <!-- Bootstrap CSS -->
+                    <link rel="stylesheet"
+                          href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
+                          integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"
+                          crossorigin="anonymous">
+                {% endblock styles %}
+                <link rel="shortcut icon" href="{% static 'icons/favicon32x32.png' %}" type="image/x-icon">
+                <link rel="icon" href="{% static 'icons/favicon32x32.png' %}" type="image/x-icon">
+            {% endblock head %}
+        </head>
+
+        <!-- BODY -->
+        <body id="home"{% block body_attributs %}{% endblock body_attributs %}>
+        {% block body %}
+            <!-- NAVBAR -->
+            {% block navbar %}
+                {% if user.is_authenticated %}
+                    <nav id="main-nav" class="navbar navbar-expand-md navbar-dark bg-blue fixed-top
+                            {% block navbar_class %}{% endblock navbar_class %}">
+                {% else %}
+                    <nav id="main-nav" class="navbar navbar-expand-md navbar-dark bg-dark navbar-fixed-top">
+                {% endif %}
+            <div class="container-fluid">
+                <!-- brand -->
+                <a class="navbar-brand d-none d-sm-block logo" href="/">
+                    [...@djangopanel ~]$<span class="blink_me">_</span></a>
+                <a class="navbar-brand d-block d-sm-none logo"
+                   href="/">[djangopanel ~]$<span
+                        class=" blink_me">_</span></a>
+                <!-- navigation button and toggler-icon -->
+                <button class="navbar-toggler" type="button" data-toggle="collapse"
+                        data-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false"
+                        aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <!-- navbar collect element -->
+                <div class="collapse navbar-collapse" id="navbarCollapse">
+                    <ul class="navbar-nav ml-auto mr-4">
+                        {% block navbar_item %}
+                            <li class="nav-item">
+                                <a href="{% url 'stockscreener:stockscreener' %}" class="nav-link">Stockscreener<span
+                                        class="sr-only">(current)</span></a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{% url 'sliders:sliders' %}" class="nav-link">Sliders<span
+                                        class="sr-only">(current)</span></a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{% url 'gbm:gbm' %}" class="nav-link">GBM<span
+                                        class="sr-only">(current)</span></a>
+                            </li>
+                        {% endblock navbar_item %}
+                    </ul>
+                </div>
+            </div>
+            </nav>
+            {% endblock navbar %}
+
+            <!-- MAIN-->
+
+            <!-- FLASH MESSAGES -->
+            <div class="container">
+                {% block messages %}
+                    <div class="col-md-8">
+                        {% if messages %}
+                            {% for message in messages %}
+                                <div class="alert alert-{{ message.tags }} alert-dismissible" role="alert">
+                                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                        <span aria-hidden="true">&times</span>
+                                    </button>
+                                    {{ message }}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                {% endblock messages %}
+            </div>
+            <!-- CONTENT -->
+            {% block content %}
+                {{ server_script|safe }}
+            {% endblock %}
+
+
+            <!-- FOOTER -->
+            {% if user.is_authenticated %}
+                <footer id="footer" class="container-fluid bg-blue text-center p-2 fixed-bottom">
+            {% else %}
+                <footer id="footer" class="container-fluid bg-dark text-white text-center p-2 fixed-bottom">
+            {% endif %}
+        {% block footer %}
+            Copyright &copy; <span class="year"></span> me
+        {% endblock footer %}
+        </footer>
+
+            {% block scripts %}
+                <script src="https://code.jquery.com/jquery-3.3.1.min.js"
+                        integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+                        crossorigin="anonymous"></script>
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js"
+                        integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49"
+                        crossorigin="anonymous"></script>
+                <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js"
+                        integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy"
+                        crossorigin="anonymous"></script>
+
+            {% endblock scripts %}
+        {% endblock body %}
+        </body>
+    {% endblock html %}
+    </html>
+{% endblock doc %}

@@ -2,7 +2,8 @@ from django.urls import path
 
 from . import views
 
-app_name = 'sliders'
+app_name = 'gbm'
 urlpatterns = [
-    path('', views.sliders, name='sliders'),
+    path('', views.gbm, name='gbm'),
 ]
+
