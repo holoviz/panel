@@ -76,7 +76,8 @@ def unlocked():
         for conn in connections:
             socket = conn._socket
             for event in curdoc._held_events:
-                if isinstance(event, ModelChangedEvent) and event not in old_events:
+                if (isinstance(event, ModelChangedEvent) and event not in old_events
+                    and hasattr(socket, 'write_message')):
                     msg = conn.protocol.create('PATCH-DOC', [event])
                     socket.write_message(msg.header_json, locked=False)
                     socket.write_message(msg.metadata_json, locked=False)
@@ -90,7 +91,7 @@ def unlocked():
     finally:
         if not hold:
             curdoc.unhold()
-            
+
 
 def serve(panels, port=0, websocket_origin=None, loop=None,
           show=True, start=True, title=None, **kwargs):
