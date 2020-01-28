@@ -2,8 +2,9 @@ import pytest
 
 try:
     import pydeck
-except:
+except Exception:
     pydeck = None
+
 pydeck_available = pytest.mark.skipif(pydeck is None, reason="requires pydeck")
 
 from panel.models.deckgl import DeckGLPlot

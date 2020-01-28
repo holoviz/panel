@@ -3,13 +3,17 @@
 import pytest
 from panel.models.deckgl import DeckGLPlot
 
-# pylint: disable=line-too-long
 @pytest.fixture
 def json_input():
-    return '{"initialViewState": {"bearing": -27.36, "latitude": 52.2323, "longitude": -1.415, "maxZoom": 15, "minZoom": 5, "pitch": 40.5, "zoom": 6}, "layers": [{"@@type": "HexagonLayer", "autoHighlight": true, "coverage": 1, "data": "https://raw.githubusercontent.com/uber-common/deck.gl-data/master/examples/3d-heatmap/heatmap-data.csv", "elevationRange": [0, 3000], "elevationScale": 50, "extruded": true, "getPosition": "@@=[lng, lat]", "id": "18a4e022-062c-428f-877f-c8c089472297", "pickable": true}], "mapStyle": "mapbox://styles/mapbox/dark-v9", "views": [{"@@type": "MapView", "controller": true}]}'
-
-
-# pylint: enable=line-too-long
+    return ('{"initialViewState": {"bearing": -27.36, "latitude": 52.2323, '
+            '"longitude": -1.415, "maxZoom": 15, "minZoom": 5, "pitch": 40.5, '
+            '"zoom": 6}, "layers": [{"@@type": "HexagonLayer", "autoHighlight": '
+            'true, "coverage": 1, "data": "https://raw.githubusercontent.com/'
+            'uber-common/deck.gl-data/master/examples/3d-heatmap/heatmap-data.csv", '
+            '"elevationRange": [0, 3000], "elevationScale": 50, "extruded": true, '
+            '"getPosition": "@@=[lng, lat]", "id": "18a4e022-062c-428f-877f-c8c089472297", '
+            '"pickable": true}], "mapStyle": "mapbox://styles/mapbox/dark-v9", '
+            '"views": [{"@@type": "MapView", "controller": true}]}')
 
 
 @pytest.fixture
