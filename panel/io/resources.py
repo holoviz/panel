@@ -6,6 +6,7 @@ from __future__ import absolute_import, division, unicode_literals
 
 import json
 import os
+from collections import OrderedDict
 
 from bokeh.resources import Resources
 from jinja2 import Environment, Markup, FileSystemLoader
@@ -41,9 +42,13 @@ def css_files(self):
         files.append(cssf)
     return files
 
+def conffilter(value):
+    return json.dumps(OrderedDict(value)).replace('"', '\'')
+
 Resources.css_raw = property(css_raw)
 Resources.js_files = property(js_files)
 Resources.css_files = property(css_files)
 
 _env = get_env()
 _env.filters['json'] = lambda obj: Markup(json.dumps(obj))
+_env.filters['conffilter'] = conffilter

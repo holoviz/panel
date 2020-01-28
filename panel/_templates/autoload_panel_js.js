@@ -83,7 +83,7 @@ calls it with the rendered model.
 
     if (window.requirejs) {
       {%- for conf in configs %}
-      window.requirejs.config({{ conf }});
+      window.requirejs.config({{ conf|conffilter }});
       {%- endfor %}
       require({{ requirements|json }}, function({%- for e in exports -%}{{ e }},{%- endfor -%}) {
         {%- for exp in exports %}
