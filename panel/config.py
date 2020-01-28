@@ -75,7 +75,8 @@ class _config(param.Parameterized):
         extension or use the jupyter_bokeh ipywidget model.""")
 
     _debug = param.ObjectSelector(default='accumulate', allow_None=True,
-                                 objects=['accumulate', 'replace', 'disable'], doc="""
+                                 objects=['accumulate', 'replace', 'disable',
+                                          False], doc="""
         How to log errors and stdout output triggered by callbacks
         from Javascript in the notebook.""")
 
@@ -122,7 +123,7 @@ class _config(param.Parameterized):
     @property
     def debug(self):
         if self._debug_ is not None:
-            return self._debug_
+            return 'disable' if not self._debug_ else self._debug_
         elif os.environ.get('PANEL_DOC_BUILD'):
             return 'disable'
         else:
