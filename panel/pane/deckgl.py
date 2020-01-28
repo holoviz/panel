@@ -10,6 +10,7 @@ import sys
 import param
 from pyviz_comms import JupyterComm
 
+from ..util import string_types
 from ..viewable import Layoutable
 from .base import PaneBase
 
@@ -34,15 +35,18 @@ class DeckGL(PaneBase):
         if (hasattr(obj, "to_json") and hasattr(obj, "mapbox_key")
             and hasattr(obj, "deck_widget")):
             return 0.8
-        elif isinstance(obj, dict):
+        elif isinstance(obj, (dict, string_types)):
             return 0
         return False
 
     def _get_properties(self, layout=True):
         if self.object is None:
-            json_input, mapbox_api_key, tooltip = {}, "", False
-        elif isinstance(self.object, dict):
-            json_input = json.dumps(self.object)
+            json_input, mapbox_api_key, tooltip = "{}", "", False
+        elif isinstance(self.object, (string_types, dict)):
+            if isinstance(self.object, string_types):
+                json_input = self.object
+            else:
+                json_input = json.dumps(self.object)
             mapbox_api_key = self.mapbox_api_key
             tooltip = self.tooltips
         else:
