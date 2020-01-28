@@ -6,6 +6,7 @@ from __future__ import absolute_import, division, unicode_literals
 import os
 import json
 import uuid
+import param
 
 from collections import defaultdict
 from itertools import product
@@ -15,6 +16,7 @@ from param.parameterized import Watcher
 
 from .model import add_to_doc, diff
 from .state import state
+from tqdm import tqdm
 
 
 #---------------------------------------------------------------------
@@ -176,7 +178,7 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
     max_states: int (default=1000)
       The maximum number of states to export
     max_opts: int (default=3)
-      The maximum number of options for a single widget
+      The max number of ticks sampled in a continuous widget like a slider
     json: boolean (default=True)
       Whether to export the data to json files
     save_path: str (default='./')
@@ -258,16 +260,17 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
     cross_product = list(product(*[vals[::-1] for _, _, vals, _ in values]))
 
     if len(cross_product) > max_states:
-        raise RuntimeError('The cross product of different application '
-                           'states is too large to explore (N=%d), either reduce '
-                           'the number of options on the widgets or increase '
-                           'the max_states specified on static export.' %
+        param.main.warning('The cross product of different application '
+                           'states is very large to explore (N=%d), consider '
+                           'reducing the number of options on the widgets or '
+                           'increase the max_states specified in the function '
+                           'to remove this warning' %
                            len(cross_product))
 
     nested_dict = lambda: defaultdict(nested_dict)
     state_dict = nested_dict()
     changes = False
-    for key in cross_product:
+    for key in tqdm(cross_product):
         sub_dict = state_dict
         skip = False
         for i, k in enumerate(key):
