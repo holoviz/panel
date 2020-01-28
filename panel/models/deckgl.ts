@@ -24,11 +24,13 @@ function extractClasses() {
 export class DeckGLPlotView extends PanelHTMLBoxView {
   model: DeckGLPlot
   jsonConverter: any
+  deckGL: any
 
   connect_signals(): void {
     super.connect_signals()
     const {json_input, mapbox_api_key, tooltip} = this.model.properties;
-    this.on_change([json_input, mapbox_api_key, tooltip], () => { this.render() })
+    this.on_change([mapbox_api_key, tooltip], () => { this.render() });
+    this.on_change([json_input], () => { this.updateDeck() });
   }
 
   initialize(): void {
@@ -54,9 +56,15 @@ export class DeckGLPlotView extends PanelHTMLBoxView {
     }
   }
 
-  updateDeck(inputJSON: any, deckgl: any): void {
-    const results = this.jsonConverter.convert(inputJSON);
-    deckgl.setProps(results);
+  updateDeck(): void {
+    if (!this.deckGL) { this.render(); return; }
+    const json_input = JSON.parse(this.model.json_input)
+    if (deck.updateDeck) {
+      deck.updateDeck(json_input, this.deckGL)
+    } else {
+      const results = this.jsonConverter.convert(json_input);
+      this.deckGL.setProps(results);
+    }
   }
 
   createDeck({mapboxApiKey, container, jsonInput, tooltip, handleClick} : any): void {
@@ -90,14 +98,14 @@ export class DeckGLPlotView extends PanelHTMLBoxView {
     const tooltip = this.model.tooltip;
 
     if (deck.createDeck) {
-      deck.createDeck({
+      this.deckGL = deck.createDeck({
         mapboxApiKey: MAPBOX_API_KEY,
         container: container,
         jsonInput,
         tooltip
       });
     } else {
-      this.createDeck({
+      this.deckGL = this.createDeck({
         mapboxApiKey: MAPBOX_API_KEY,
         container: container,
         jsonInput,
