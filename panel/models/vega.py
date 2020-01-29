@@ -15,6 +15,12 @@ class VegaPlot(LayoutDOM):
                       'https://cdn.jsdelivr.net/npm/vega-lite@4',
                       'https://cdn.jsdelivr.net/npm/vega-embed@6']
 
+    __js_skip__ = {
+        'vega': __javascript__[:1],
+        'vegaLite': __javascript__[1:2],
+        'vegaEmbed': __javascript__[2:]
+    }
+
     __js_require__ = {
         'baseUrl': 'https://cdn.jsdelivr.net/npm/',
         'paths': {

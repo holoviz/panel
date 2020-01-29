@@ -27,7 +27,11 @@ def require_components():
         conf = {'paths': {name: js[:-3]}, 'exports': {name: export}}
         js_requires.append(conf)
 
+    skip_import = {}
     for model in js_requires:
+        if hasattr(model, '__js_skip__'):
+            skip_import.update(model.__js_skip__)
+
         if not (hasattr(model, '__js_require__') or isinstance(model, dict)):
             continue
         if isinstance(model, dict):
@@ -46,4 +50,4 @@ def require_components():
             if e not in requirements:
                 requirements.append(e)
                 exports.append(value)
-    return configs, requirements, exports
+    return configs, requirements, exports, skip_import

@@ -20,6 +20,8 @@ class AcePlot(HTMLBox):
         'https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.3/ext-language_tools.js'
     ]
 
+    __js_skip__ = {'ace': __javascript__}
+
     __js_require__ = {
         'paths': {
             'ace': 'https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.3/ace',
