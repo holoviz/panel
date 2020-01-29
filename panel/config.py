@@ -57,7 +57,7 @@ class _config(param.Parameterized):
 
     apply_signatures = param.Boolean(default=True, doc="""
         Whether to set custom Signature which allows tab-completion
-        in some IDEs and environements.""")
+        in some IDEs and environments.""")
 
     css_files = param.List(default=_CSS_FILES, doc="""
         External CSS files to load.""")
@@ -318,10 +318,10 @@ class panel_extension(_pyviz_extension):
                 prefix = cls.__doc__.split('\n')[0]
                 cls.__doc__ = cls.__doc__.replace(prefix, '')
             sig = inspect.signature(cls.__init__)
-            sig_params = list(sig.parameters)
-            if not sig_params or 'params' != sig_params[-1]:
+            sig_params = list(sig.parameters.values())
+            if not sig_params or sig_params[-1] != Parameter('params', Parameter.VAR_KEYWORD):
                 continue
-            parameters = list(sig.parameters.values())[:-1]
+            parameters = sig_params[:-1]
 
             processed_kws, keyword_groups = set(), []
             for cls in reversed(cls.mro()):
@@ -336,7 +336,7 @@ class panel_extension(_pyviz_extension):
             parameters += [
                 Parameter(name, Parameter.KEYWORD_ONLY)
                 for kws in reversed(keyword_groups) for name in kws
-                if name not in sig_params
+                if name not in sig.parameters
             ]
             parameters.append(Parameter('kwargs', Parameter.VAR_KEYWORD))
             cls.__init__.__signature__ = Signature(
