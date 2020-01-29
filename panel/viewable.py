@@ -361,7 +361,8 @@ class Viewable(Layoutable, ServableMixin):
                         json=config.embed_json,
                         json_prefix=config.embed_json_prefix,
                         save_path=config.embed_save_path,
-                        load_path=config.embed_load_path)
+                        load_path=config.embed_load_path,
+                        progress=False)
         else:
             add_to_doc(model, doc)
         return model
@@ -481,7 +482,7 @@ class Viewable(Layoutable, ServableMixin):
         return show_server(self, notebook_url, port)
 
     def embed(self, max_states=1000, max_opts=3, json=False,
-              save_path='./', load_path=None):
+              save_path='./', load_path=None, progress=True):
         """
         Renders a static version of a panel in a notebook by evaluating
         the set of states defined by the widgets in the model. Note
@@ -500,8 +501,13 @@ class Viewable(Layoutable, ServableMixin):
           The path to save json files to
         load_path: str (default=None)
           The path or URL the json files will be loaded from.
+        progress: boolean (default=False)
+          Whether to report progress
         """
-        show_embed(self, max_states, max_opts, json, save_path, load_path)
+        show_embed(
+            self, max_states, max_opts, json, save_path,
+            load_path, progress
+        )
 
     def get_root(self, doc=None, comm=None):
         """
