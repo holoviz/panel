@@ -126,10 +126,14 @@ class _config(param.Parameterized):
                 setattr(self, k+'_', v)
 
     @property
+    def _doc_build(self):
+        return os.environ.get('PANEL_DOC_BUILD')
+
+    @property
     def debug(self):
         if self._debug_ is not None:
             return 'disable' if not self._debug_ else self._debug_
-        elif os.environ.get('PANEL_DOC_BUILD'):
+        elif self._doc_build:
             return 'disable'
         else:
             return os.environ.get('PANEL_DEBUG', _config._debug)
@@ -287,7 +291,7 @@ class panel_extension(_pyviz_extension):
         except Exception:
             return
 
-        if hasattr(ip, 'kernel') and not self._loaded and not os.environ.get("PANEL_DOC_BUILD"):
+        if hasattr(ip, 'kernel') and not self._loaded and not config._doc_build:
             # TODO: JLab extension and pyviz_comms should be changed
             #       to allow multiple cleanup comms to be registered
             _JupyterCommManager.get_client_comm(self._process_comm_msg,

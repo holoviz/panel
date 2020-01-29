@@ -185,6 +185,7 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
     load_path: str (default=None)
       The path or URL the json files will be loaded from.
     """
+    from ..config import config
     from ..layout import Panel
     from ..links import Link
     from ..models.state import State
@@ -259,6 +260,8 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
     cross_product = list(product(*[vals[::-1] for _, _, vals, _ in values]))
 
     if len(cross_product) > max_states:
+        if config._doc_build:
+            return
         param.main.warning('The cross product of different application '
                            'states is very large to explore (N=%d), consider '
                            'reducing the number of options on the widgets or '
@@ -266,11 +269,10 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
                            'to remove this warning' %
                            len(cross_product))
 
-
     nested_dict = lambda: defaultdict(nested_dict)
     state_dict = nested_dict()
     changes = False
-    for key in tqdm(cross_product):
+    for key in (cross_product if config._doc_build else tqdm(cross_product)):
         sub_dict = state_dict
         skip = False
         for i, k in enumerate(key):

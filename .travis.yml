@@ -116,7 +116,7 @@ jobs:
     - &doc_build
       <<: *conda_default
       stage: docs
-      env: DESC="docs" PANEL_DOC_BUILD='true'
+      env: DESC="docs" PANEL_DOC_BUILD='true' PANEL_EMBED="true" PANEL_EMBED_JSON="true" PANEL_EMBED_JSON_PREFIX="json"
       script:
         - doit develop_install $CHANS_DEV -o doc -o examples
         - pip install pydeck
