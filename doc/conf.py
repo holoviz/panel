@@ -96,12 +96,13 @@ html_context.update({
     'VERSION': version,
     'GOOGLE_SEARCH_ID': '017396756996884923145:moq4gmnf37j',
     'GOOGLE_ANALYTICS_UA': 'UA-154795830-2',
-    'WEBSITE_URL': 'https://panel.pyviz.org',
-    'WEBSITE_SERVER': 'https://panel.pyviz.org',
+    'WEBSITE_URL': 'https://panel.holoviz.org',
+    'WEBSITE_SERVER': 'https://panel.holoviz.org',
     'NAV': _NAV,
     'LINKS': _NAV,
     'SOCIAL': (
         ('Discourse', '//discourse.holoviz.org'),
+        ('Twitter', '//twitter.com/Panel_org'),
         ('Github', '//github.com/pyviz/panel'),
     )
 })
