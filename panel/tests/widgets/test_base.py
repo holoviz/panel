@@ -4,12 +4,20 @@ import param
 import pytest
 
 from panel.io import block_comm
-from panel.widgets import CompositeWidget, DataFrame, TextInput, Widget
-from panel.tests.util import check_layoutable_properties
+from panel.widgets import CompositeWidget, DataFrame, TextInput, ToggleGroup, Widget
+from panel.tests.util import check_layoutable_properties, py3_only
 
 all_widgets = [w for w in param.concrete_descendents(Widget).values()
                if not w.__name__.startswith('_') and
-               not issubclass(w, (CompositeWidget, DataFrame))]
+               not issubclass(w, (CompositeWidget, DataFrame, ToggleGroup))]
+
+
+@py3_only
+@pytest.mark.parametrize('widget', all_widgets)
+def test_widget_signature(widget):
+    from inspect import signature
+    parameters = signature(widget).parameters
+    assert len(parameters) == 1
 
 
 @pytest.mark.parametrize('widget', all_widgets)

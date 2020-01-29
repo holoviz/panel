@@ -44,8 +44,8 @@ class VTKVolume(PaneBase):
 
     _updates = True
 
-    def __init__(self, obj=None, **params):
-        super(VTKVolume, self).__init__(obj, **params)
+    def __init__(self, object=None, **params):
+        super(VTKVolume, self).__init__(object, **params)
         self._sub_spacing = self.spacing
 
     @classmethod
@@ -203,8 +203,8 @@ class VTK(PaneBase):
 
     _serializers = {}
 
-    def __init__(self, obj=None, **params):
-        super(VTK, self).__init__(obj, **params)
+    def __init__(self, object=None, **params):
+        super(VTK, self).__init__(object, **params)
         self._legend = None
         self._vtkjs = None
         if self.serialize_on_instantiation:
