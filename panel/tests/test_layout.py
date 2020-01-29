@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 
+import param
 import pytest
 
 from bokeh.models import (
@@ -8,11 +9,26 @@ from bokeh.models import (
 )
 
 from panel.depends import depends
-from panel.layout import Column, Row, Tabs, Spacer, GridSpec, GridBox, WidgetBox
+from panel.layout import (
+    Column, ListPanel, Row, Tabs, Spacer, GridSpec, GridBox, WidgetBox
+)
 from panel.pane import Bokeh, Pane
 from panel.param import Param
 from panel.widgets import IntSlider
-from panel.tests.util import check_layoutable_properties
+from panel.tests.util import check_layoutable_properties, py3_only
+
+
+all_panels = [w for w in param.concrete_descendents(ListPanel).values()
+               if not w.__name__.startswith('_') and w is not Tabs]
+
+
+@py3_only
+@pytest.mark.parametrize('panel', all_panels)
+def test_widget_signature(panel):
+    from inspect import signature
+    parameters = signature(panel).parameters
+    assert len(parameters) == 2
+    assert 'objects' in parameters
 
 
 @pytest.fixture

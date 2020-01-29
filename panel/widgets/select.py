@@ -358,12 +358,12 @@ class CrossSelector(CompositeWidget, MultiSelect):
        preserve definition order after filtering. Disable to allow the
        order of selection to define the order of the selected list.""")
 
-    def __init__(self, *args, **kwargs):
-        super(CrossSelector, self).__init__(**kwargs)
+    def __init__(self, **params):
+        super(CrossSelector, self).__init__(**params)
         # Compute selected and unselected values
 
         labels, values = self.labels, self.values
-        selected = [labels[indexOf(v, values)] for v in kwargs.get('value', [])
+        selected = [labels[indexOf(v, values)] for v in params.get('value', [])
                     if isIn(v, values)]
         unselected = [k for k in labels if k not in selected]
         layout = dict(sizing_mode='stretch_both', background=self.background, margin=0)

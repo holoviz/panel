@@ -1,5 +1,7 @@
 from __future__ import absolute_import, division, unicode_literals
 
+import sys
+
 import numpy as np
 import pytest
 
@@ -33,6 +35,8 @@ try:
 except Exception:
     jupyter_bokeh = None
 jb_available = pytest.mark.skipif(jupyter_bokeh is None, reason="requires jupyter_bokeh")
+
+py3_only = pytest.mark.skipif(sys.version_info.major < 3, reason="requires Python 3")
 
 
 def mpl_figure():

@@ -6,6 +6,7 @@ components.
 from __future__ import absolute_import, division, unicode_literals
 
 import glob
+import inspect
 import os
 import sys
 
@@ -53,6 +54,10 @@ class _config(param.Parameterized):
 
         os.environ['PANEL_EMBED'] = 'True'
     """
+
+    apply_signatures = param.Boolean(default=True, doc="""
+        Whether to set custom Signature which allows tab-completion
+        in some IDEs and environements.""")
 
     css_files = param.List(default=_CSS_FILES, doc="""
         External CSS files to load.""")
@@ -265,16 +270,17 @@ class panel_extension(_pyviz_extension):
             else:
                 setattr(config, k, v)
 
+        if config.apply_signatures and sys.version_info.major >= 3:
+            self._apply_signatures()
+
         if 'holoviews' in sys.modules:
             import holoviews as hv
-            if hv.extension._loaded:
-                return
             import holoviews.plotting.bokeh # noqa
-
-            if hasattr(hv.Store, 'set_current_backend'):
-                hv.Store.set_current_backend('bokeh')
-            else:
-                hv.Store.current_backend = 'bokeh'
+            if not hv.extension._loaded:
+                if hasattr(hv.Store, 'set_current_backend'):
+                    hv.Store.set_current_backend('bokeh')
+                else:
+                    hv.Store.current_backend = 'bokeh'
 
         try:
             ip = params.pop('ip', None) or get_ipython() # noqa (get_ipython)
@@ -294,11 +300,48 @@ class panel_extension(_pyviz_extension):
                 return
             with param.logging_level('ERROR'):
                 hv.plotting.Renderer.load_nb(config.inline)
-                nb_load = True
+                if hasattr(hv.plotting.Renderer, '_render_with_panel'):
+                    nb_load = True
 
         if not nb_load and hasattr(ip, 'kernel'):
             load_notebook(config.inline)
         panel_extension._loaded = True
+
+
+    def _apply_signatures(self):
+        from inspect import Parameter, Signature
+        from .viewable import Viewable
+
+        descendants = param.concrete_descendents(Viewable)
+        for cls in reversed(list(descendants.values())):
+            if cls.__doc__.startswith('params'):
+                prefix = cls.__doc__.split('\n')[0]
+                cls.__doc__ = cls.__doc__.replace(prefix, '')
+            sig = inspect.signature(cls.__init__)
+            sig_params = list(sig.parameters)
+            if not sig_params or 'params' != sig_params[-1]:
+                continue
+            parameters = list(sig.parameters.values())[:-1]
+
+            processed_kws, keyword_groups = set(), []
+            for cls in reversed(cls.mro()):
+                keyword_group = []
+                for (k, v) in sorted(cls.__dict__.items()):
+                    if (isinstance(v, param.Parameter) and k not in processed_kws
+                        and not v.readonly):
+                        keyword_group.append(k)
+                        processed_kws.add(k)
+                keyword_groups.append(keyword_group)
+
+            parameters += [
+                Parameter(name, Parameter.KEYWORD_ONLY)
+                for kws in reversed(keyword_groups) for name in kws
+                if name not in sig_params
+            ]
+            parameters.append(Parameter('kwargs', Parameter.VAR_KEYWORD))
+            cls.__init__.__signature__ = Signature(
+                parameters, return_annotation=sig.return_annotation
+            )
 
 
 #---------------------------------------------------------------------
