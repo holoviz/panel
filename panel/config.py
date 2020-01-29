@@ -69,6 +69,11 @@ class _config(param.Parameterized):
     raw_css = param.List(default=[], doc="""
         List of raw CSS strings to add to load.""")
 
+    safe_embed = param.Boolean(default=False, doc="""
+        Ensure all bokeh property changes trigger events which are
+        embedded. Useful when only partial updates are made in an
+        app, e.g. when working with HoloViews.""")
+
     sizing_mode = param.ObjectSelector(default=None, objects=[
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
         'scale_width', 'scale_height', 'scale_both', None], doc="""

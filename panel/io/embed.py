@@ -9,15 +9,16 @@ import uuid
 import param
 
 from collections import defaultdict
+from contextlib import contextmanager
 from itertools import product
+from tqdm import tqdm
 
+from bokeh.core.property.bases import Property
 from bokeh.models import CustomJS
 from param.parameterized import Watcher
 
 from .model import add_to_doc, diff
 from .state import state
-from tqdm import tqdm
-
 
 #---------------------------------------------------------------------
 # Private API
@@ -34,6 +35,21 @@ for (var root of cb_obj.document.roots()) {{
 if (!state) {{ return; }}
 state.set_state(cb_obj, {js_getter})
 """
+
+
+@contextmanager
+def always_changed(enable):
+    def matches(self, new, old):
+        return False
+    if enable:
+        backup = Property.matches
+        Property.matches = matches
+    try:
+        yield
+    finally:
+        if enable:
+            Property.matches = backup
+
 
 def record_events(doc):
     msg = diff(doc, False)
@@ -186,6 +202,7 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
     load_path: str (default=None)
       The path or URL the json files will be loaded from.
     """
+    from ..config import config
     from ..layout import Panel
     from ..links import Link
     from ..models.state import State
@@ -276,13 +293,15 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
         for i, k in enumerate(key):
             w, m, _, g = values[i]
             try:
-                w.value = k
+                with always_changed(config.safe_embed):
+                    w.value = k
             except Exception:
                 skip = True
                 break
             sub_dict = sub_dict[g(m)]
         if skip:
             doc._held_events = []
+            continue
 
         # Drop events originating from widgets being varied
         models = [v[1] for v in values]
