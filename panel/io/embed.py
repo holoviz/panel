@@ -13,10 +13,11 @@ from itertools import product
 
 from bokeh.models import CustomJS
 from param.parameterized import Watcher
-from tqdm import tqdm
 
 from .model import add_to_doc, diff
 from .state import state
+from tqdm import tqdm
+
 
 #---------------------------------------------------------------------
 # Private API
@@ -265,7 +266,6 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
                            'increase the max_states specified in the function '
                            'to remove this warning' %
                            len(cross_product))
-
 
     nested_dict = lambda: defaultdict(nested_dict)
     state_dict = nested_dict()

@@ -41,9 +41,6 @@ class HoloViews(PaneBase):
         Whether to use link the axes of bokeh plots inside this pane
         across a panel layout.""")
 
-    rerender = param.Boolean(default=False, doc="""
-        Whether to rerender the plot on each update.""")
-
     renderer = param.Parameter(default=None, doc="""
         Explicit renderer instance to use for rendering the HoloViews
         plot. Overrides the backend.""")
@@ -75,7 +72,7 @@ class HoloViews(PaneBase):
     _rename = {
         'backend': None, 'center': None, 'linked_axes': None,
         'renderer': None, 'widgets': None, 'widget_layout': None,
-        'widget_location': None, 'widget_type': None, 'rerender': None
+        'widget_location': None, 'widget_type': None
     }
 
     _rerender_params = ['object', 'backend']
@@ -168,7 +165,7 @@ class HoloViews(PaneBase):
             not self._initialized):
             self._update_layout()
 
-    def _update_plot(self, plot, pane, backup):
+    def _update_plot(self, plot, pane):
         from holoviews.core.util import cross_index, wrap_tuple_streams
 
         widgets = self.widget_box.objects
@@ -185,16 +182,7 @@ class HoloViews(PaneBase):
                 key = wrap_tuple_streams(tuple(key), plot.dimensions, plot.streams)
 
         if plot.backend == 'bokeh':
-            if self.rerender and backup:
-                fig1 = plot.renderer.get_plot_state(plot)
-                fig2 = backup.renderer.get_plot_state(backup)
-                if fig1 is pane.object:
-                    backup.update(key)
-                    pane.object = fig2
-                else:
-                    plot.update(key)
-                    pane.object = fig1
-            elif plot.comm or state._unblocked(plot.document):
+            if plot.comm or state._unblocked(plot.document):
                 with unlocked():
                     plot.update(key)
                 if plot.comm and 'embedded' not in plot.root.tags:
@@ -213,9 +201,8 @@ class HoloViews(PaneBase):
                 pane.object = plot.state
 
     def _widget_callback(self, event):
-        for ref, (plot, pane) in self._plots.items():
-            if not ref.endswith('backup'):
-                self._update_plot(plot, pane, self._plots.get(ref+'_backup', [None])[0])
+        for _, (plot, pane) in self._plots.items():
+            self._update_plot(plot, pane)
 
     #----------------------------------------------------------------
     # Model API
@@ -228,50 +215,43 @@ class HoloViews(PaneBase):
         ref = root.ref['id']
         if self.object is None:
             model = _BkSpacer()
-            self._models[ref] = (model, parent)
-            return model
-
-        if self._restore_plot is not None:
-            plot = self._restore_plot
-            self._restore_plot = None
-        elif isinstance(self.object, Plot):
-            plot = self.object
         else:
-            plot = self._render(doc, comm, root)
-        plot.pane = self
+            if self._restore_plot is not None:
+                plot = self._restore_plot
+                self._restore_plot = None
+            elif isinstance(self.object, Plot):
+                plot = self.object
+            else:
+                plot = self._render(doc, comm, root)
+            plot.pane = self
+            backend = plot.renderer.backend
+            if hasattr(plot.renderer, 'get_plot_state'):
+                state = plot.renderer.get_plot_state(plot)
+            else:
+                # Compatibility with holoviews<1.13.0
+                state = plot.state
 
-        if hasattr(plot.renderer, 'get_plot_state'):
-            state = plot.renderer.get_plot_state(plot)
-        else:
-            # Compatibility with holoviews<1.13.0
-            state = plot.state
+            # Ensure rerender if content is responsive but layout is centered
+            if (backend == 'bokeh' and self.center and
+                state.sizing_mode not in ('fixed', None)
+                and not self._responsive_content):
+                self._responsive_content = True
+                self._update_layout()
+                self._restore_plot = plot
+                raise RerenderError()
+            else:
+                self._responsive_content = False
 
-        # Ensure rerender if content is responsive but layout is centered
-        backend = plot.renderer.backend
-        if (backend == 'bokeh' and self.center and
-            state.sizing_mode not in ('fixed', None)
-            and not self._responsive_content):
-            self._responsive_content = True
-            self._update_layout()
-            self._restore_plot = plot
-            raise RerenderError()
-        else:
-            self._responsive_content = False
-
-        kwargs = {p: v for p, v in self.param.get_param_values()
-                  if p in Layoutable.param and p != 'name'}
-        child_pane = self._panes.get(backend, Pane)(state, **kwargs)
-        self._update_plot(plot, child_pane, None)
-        model = child_pane._get_model(doc, root, parent, comm)
-        if ref in self._plots:
-            for suffix in ('', '_backup'):
-                old_plot = self._plots.get(ref+suffix, (None,))[0]
-                if old_plot is not None:
-                    old_plot.comm = None # Ensures comm does not get cleaned up
-                    old_plot.cleanup()
-        self._plots[ref] = (plot, child_pane)
-        if self.rerender:
-            self._plots[ref+'_backup'] = (self._render(doc, comm, root), child_pane)
+            kwargs = {p: v for p, v in self.param.get_param_values()
+                      if p in Layoutable.param and p != 'name'}
+            child_pane = self._panes.get(backend, Pane)(state, **kwargs)
+            self._update_plot(plot, child_pane)
+            model = child_pane._get_model(doc, root, parent, comm)
+            if ref in self._plots:
+                old_plot, old_pane = self._plots[ref]
+                old_plot.comm = None # Ensures comm does not get cleaned up
+                old_plot.cleanup()
+            self._plots[ref] = (plot, child_pane)
         self._models[ref] = (model, parent)
         return model
 
@@ -299,6 +279,7 @@ class HoloViews(PaneBase):
                 kwargs['comm'] = comm
         else:
             kwargs = {}
+
         return renderer.get_plot(self.object, **kwargs)
 
     def _cleanup(self, root):
@@ -306,11 +287,11 @@ class HoloViews(PaneBase):
         Traverses HoloViews object to find and clean up any streams
         connected to existing plots.
         """
-        for suffix in ('', '_backup'):
-            ref = root.ref['id']+suffix
-            old_plot, old_pane = self._plots.pop(ref, (None, None))
-            if old_plot: old_plot.cleanup()
-            if old_pane: old_pane._cleanup(root)
+        old_plot, old_pane = self._plots.pop(root.ref['id'], (None, None))
+        if old_plot:
+            old_plot.cleanup()
+        if old_pane:
+            old_pane._cleanup(root)
         super(HoloViews, self)._cleanup(root)
 
     #----------------------------------------------------------------
