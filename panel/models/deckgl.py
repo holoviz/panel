@@ -18,14 +18,14 @@ from bokeh.models import HTMLBox
 class DeckGLPlot(HTMLBox):
     """A Bokeh model that wraps around a DeckGL plot and renders it inside a HTMLBox"""
 
-    __css__ = ["https://cdn.jsdelivr.net/npm/mapbox-gl@1.6.1/dist/mapbox-gl.css"]
+    __css__ = ["https://api.mapbox.com/mapbox-gl-js/v1.7.0/mapbox-gl.css"]
 
     __javascript__ = ["https://cdn.jsdelivr.net/npm/deck.gl@8.1.0-alpha.1/dist.min.js",
                       "https://cdn.jsdelivr.net/npm/@deck.gl/json@8.1.0-alpha.1/dist/dist.dev.js",
                       "https://cdn.jsdelivr.net/npm/@loaders.gl/csv@2.0.2/dist/dist.min.js",
                       "https://cdn.jsdelivr.net/npm/@loaders.gl/json@2.0.2/dist/dist.min.js",
                       "https://cdn.jsdelivr.net/npm/@loaders.gl/3d-tiles@2.0.2/dist/dist.min.js",
-                      "https://cdn.jsdelivr.net/npm/mapbox-gl@1.6.1",
+                      "https://api.mapbox.com/mapbox-gl-js/v1.7.0/mapbox-gl.js",
     ]
 
     __js_skip__ = {'deck': __javascript__[:-1], 'mapboxgl': __javascript__[-1:]}
