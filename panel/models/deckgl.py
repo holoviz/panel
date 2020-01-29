@@ -28,7 +28,7 @@ class DeckGLPlot(HTMLBox):
                       "https://cdn.jsdelivr.net/npm/mapbox-gl@1.6.1",
     ]
 
-    __js_skip__ = {'deck': __javascript__[:-1], 'mapboxgl': __javascript__[:-1:]}
+    __js_skip__ = {'deck': __javascript__[:-1], 'mapboxgl': __javascript__[-1:]}
 
     __js_require__ = {
         'paths': OrderedDict([
@@ -44,4 +44,3 @@ class DeckGLPlot(HTMLBox):
 
     height = Override(default=400)
     width = Override(default=600)
-
