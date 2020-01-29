@@ -151,6 +151,7 @@ def links_to_jslinks(model, widget):
             widget.param.trigger(src_spec)
             jslinks.append(jslink)
     return jslinks
+    
 
 #---------------------------------------------------------------------
 # Public API
@@ -195,18 +196,26 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
     from ..pane import PaneBase
     from ..widgets import Widget, DiscreteSlider
 
-    target = model.ref['id']
-    if isinstance(panel, PaneBase) and target in panel.layout._models:
+    ref = model.ref['id']
+    if isinstance(panel, PaneBase) and ref in panel.layout._models:
         panel = panel.layout
 
     if not isinstance(panel, Panel):
         add_to_doc(model, doc)
         return
-    _, _, _, comm = state._views[target]
+    _, _, _, comm = state._views[ref]
 
     model.tags.append('embedded')
 
-    widgets = [w for w in panel.select(Widget) if w not in Link.registry]
+    def is_embeddable(object):
+        if not isinstance(object, Widget):
+            return False
+        if isinstance(object, DiscreteSlider):
+            return ref in object._composite[1]._models
+        return ref in object._models
+
+    widgets = [w for w in panel.select(is_embeddable)
+               if w not in Link.registry]
     state_model = State()
 
     widget_data, ignore = [], []
@@ -235,9 +244,9 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
         widget, w_model, vals, getter, on_change, js_getter = widget._get_embed_state(model, max_opts)
         w_type = widget._widget_type
         if isinstance(widget, DiscreteSlider):
-            w_model = widget._composite[1]._models[target][0].select_one({'type': w_type})
+            w_model = widget._composite[1]._models[ref][0].select_one({'type': w_type})
         else:
-            w_model = widget._models[target][0]
+            w_model = widget._models[ref][0]
             if not isinstance(w_model, w_type):
                 w_model = w_model.select_one({'type': w_type})
         js_callback = CustomJS(code=STATE_JS.format(
