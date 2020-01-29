@@ -140,11 +140,6 @@ class Panel(Reactive):
         self._link_props(model, self._linked_props, doc, root, comm)
         return model
 
-    def _cleanup(self, root):
-        super(Panel, self)._cleanup(root)
-        for p in self.objects:
-            p._cleanup(root)
-
     #----------------------------------------------------------------
     # Public API
     #----------------------------------------------------------------
@@ -210,6 +205,11 @@ class ListPanel(Panel):
         elif scroll == False:
             params['css_classes'] = css_classes
         return super(ListPanel, self)._process_param_change(params)
+
+    def _cleanup(self, root):
+        super(ListPanel, self)._cleanup(root)
+        for p in self.objects:
+            p._cleanup(root)
 
     #----------------------------------------------------------------
     # Public API
@@ -1027,6 +1027,11 @@ class GridSpec(Panel):
                 for x in range(l, r):
                     grid[y, x] = {((y0, x0, y1, x1), obj)}
         return grid
+
+    def _cleanup(self, root):
+        super(GridSpec, self)._cleanup(root)
+        for p in self.objects.values():
+            p._cleanup(root)
 
     #----------------------------------------------------------------
     # Public API

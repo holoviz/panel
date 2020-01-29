@@ -953,6 +953,22 @@ def test_layout_with_param_setitem(document, comm):
     assert model.children[1].text == '&lt;pre&gt;1&lt;/pre&gt;'
 
 
+def test_gridspec_cleanup(document, comm):
+    spacer = Spacer()
+    gspec = GridSpec()
+    gspec[0, 0] = spacer
+
+    model = gspec.get_root(document, comm)
+
+    ref = model.ref['id']
+    assert ref in gspec._models
+    assert ref in spacer._models
+
+    gspec._cleanup(model)
+    assert ref not in gspec._models
+    assert ref not in spacer._models
+
+
 def test_gridspec_integer_setitem():
     div = Div()
     gspec = GridSpec()
