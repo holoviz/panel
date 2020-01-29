@@ -34,20 +34,34 @@ def require_components():
 
         if not (hasattr(model, '__js_require__') or isinstance(model, dict)):
             continue
+
         if isinstance(model, dict):
             model_require = model
         else:
             model_require = model.__js_require__
+
         model_exports = model_require.pop('exports', {})
-        configs.append(model_require)
-        for req in model_require.get('paths', []):
-            requirements.append(req)
-            if req not in model_exports:
+        if not any(model_require == config for config in configs):
+            configs.append(model_require)
+
+        for req in list(model_require.get('paths', [])):
+            if isinstance(req, tuple):
+                model_require['paths'][req[0]] = model_require['paths'].pop(req)
+
+            export = req[0] if isinstance(req, tuple) else req
+            if export not in model_exports:
                 continue
+
+            if isinstance(req, tuple):
+                for r in req[1]:
+                    if r not in requirements:
+                        requirements.append(r)
+                req = req[0]
+            elif req not in requirements:
+                requirements.append(req)
+
             export = model_exports[req]
-            exports.append(export)
-        for e, value in model_exports.items():
-            if e not in requirements:
-                requirements.append(e)
-                exports.append(value)
+            for e in (export if isinstance(export, list) else [export]):
+                if export not in exports and export is not None:
+                    exports.append(export)
     return configs, requirements, exports, skip_import

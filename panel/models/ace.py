@@ -16,17 +16,19 @@ class AcePlot(HTMLBox):
     """
 
     __javascript__ = [
-        'https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.3/ace.js',
-        'https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.3/ext-language_tools.js'
+        'https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.7/ace.js',
+        'https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.7/ext-language_tools.js'
     ]
 
     __js_skip__ = {'ace': __javascript__}
 
     __js_require__ = {
         'paths': {
-            'ace': 'https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.3/ace',
-            'ace_lang_tools': 'https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.3/ext-language_tools'},
-        'exports': {'ace': 'ace'}
+            ('ace', ('ace/ace', 'ace/ext-language_tools')): '//cdnjs.cloudflare.com/ajax/libs/ace/1.4.7'},
+        'exports': {'ace': 'ace'},
+        'shim': {
+            'ace/ext-language_tools': { 'deps': ["ace/ace"] }
+        }
     }
 
     code = String()

@@ -43,8 +43,13 @@ class VTKPlot(HTMLBox):
 
     __js_skip__ = {'vtk': [vtk_cdn]}
 
-    __js_require__ = {"paths": {"vtk": vtk_cdn[:-3]},
-                      "shim": {"vtk": {"exports": "vtk"}}}
+    __js_require__ = {
+        "paths": {"vtk": vtk_cdn[:-3]},
+        "exports": {"vtk": None},
+        "shim": {
+            "vtk": {"exports": "vtk"}
+        }
+    }
 
     append = Bool(default=False)
 
@@ -64,6 +69,7 @@ class VTKPlot(HTMLBox):
 
     width = Override(default=300)
 
+
 class VTKVolumePlot(HTMLBox):
     """
     A Bokeh model that wraps around a vtk-js library and renders it inside
@@ -74,8 +80,13 @@ class VTKVolumePlot(HTMLBox):
 
     __js_skip__ = {'vtk': [vtk_cdn]}
 
-    __js_require__ = {"paths": {"vtk": vtk_cdn[:-3]},
-                      "shim": {"vtk": {"exports": "vtk"}}}
+    __js_require__ = {
+        "paths": {"vtk": vtk_cdn[:-3]},
+        "exports": {"vtk": None},
+        "shim": {
+            "vtk": {"exports": "vtk"}
+        }
+    }
 
     actor = Any(readonly=True)
 
