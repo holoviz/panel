@@ -340,7 +340,7 @@ def show_server(panel, notebook_url, port):
 
 
 def show_embed(panel, max_states=1000, max_opts=3, json=False,
-              save_path='./', load_path=None):
+               save_path='./', load_path=None, progress=True):
     """
     Renders a static version of a panel in a notebook by evaluating
     the set of states defined by the widgets in the model. Note
@@ -359,6 +359,8 @@ def show_embed(panel, max_states=1000, max_opts=3, json=False,
       The path to save json files to
     load_path: str (default=None)
       The path or URL the json files will be loaded from.
+    progress: boolean (default=False)
+      Whether to report progress
     """
     from IPython.display import publish_display_data
     from ..config import config

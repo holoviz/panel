@@ -48,7 +48,7 @@ def save_png(model, filename):
 def save(panel, filename, title=None, resources=None, template=None,
          template_variables=None, embed=False, max_states=1000,
          max_opts=3, embed_json=False, json_prefix='', save_path='./',
-         load_path=None):
+         load_path=None, progress=True):
     """
     Saves Panel objects to file.
 
@@ -80,6 +80,8 @@ def save(panel, filename, title=None, resources=None, template=None,
       The path to save json files to
     load_path: str (default=None)
       The path or URL the json files will be loaded from.
+    progress: boolean (default=True)
+      Whether to report progress
     """
     from ..pane import PaneBase
 
@@ -91,8 +93,10 @@ def save(panel, filename, title=None, resources=None, template=None,
     with config.set(embed=embed):
         model = panel.get_root(doc, comm)
         if embed:
-            embed_state(panel, model, doc, max_states, max_opts,
-                        embed_json, json_prefix, save_path, load_path)
+            embed_state(
+                panel, model, doc, max_states, max_opts, embed_json,
+                json_prefix, save_path, load_path, progress
+            )
         else:
             add_to_doc(model, doc, True)
 

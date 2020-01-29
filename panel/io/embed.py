@@ -157,7 +157,8 @@ def links_to_jslinks(model, widget):
 #---------------------------------------------------------------------
 
 def embed_state(panel, model, doc, max_states=1000, max_opts=3,
-                json=False, json_prefix='', save_path='./', load_path=None):
+                json=False, json_prefix='', save_path='./',
+                load_path=None, progress=True):
     """
     Embeds the state of the application on a State model which allows
     exporting a static version of an app. This works by finding all
@@ -184,6 +185,8 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
       The path to save json files to
     load_path: str (default=None)
       The path or URL the json files will be loaded from.
+    progress: boolean (default=True)
+      Whether to report progress
     """
     from ..config import config
     from ..layout import Panel
@@ -272,7 +275,7 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
     nested_dict = lambda: defaultdict(nested_dict)
     state_dict = nested_dict()
     changes = False
-    for key in (cross_product if config._doc_build else tqdm(cross_product)):
+    for key in (tqdm(cross_product) if progress else cross_product):
         sub_dict = state_dict
         skip = False
         for i, k in enumerate(key):
@@ -285,6 +288,7 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
             sub_dict = sub_dict[g(m)]
         if skip:
             doc._held_events = []
+            continue
 
         # Drop events originating from widgets being varied
         models = [v[1] for v in values]
