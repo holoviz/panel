@@ -41,6 +41,8 @@ class VTKPlot(HTMLBox):
 
     __javascript__ = [vtk_cdn]
 
+    __js_skip__ = {'vtk': [vtk_cdn]}
+
     __js_require__ = {"paths": {"vtk": vtk_cdn[:-3]},
                       "shim": {"vtk": {"exports": "vtk"}}}
 
@@ -69,6 +71,8 @@ class VTKVolumePlot(HTMLBox):
     """
 
     __javascript__ = [vtk_cdn]
+
+    __js_skip__ = {'vtk': [vtk_cdn]}
 
     __js_require__ = {"paths": {"vtk": vtk_cdn[:-3]},
                       "shim": {"vtk": {"exports": "vtk"}}}

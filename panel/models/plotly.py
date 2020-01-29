@@ -13,6 +13,8 @@ class PlotlyPlot(LayoutDOM):
 
     __javascript__ = ['https://cdn.plot.ly/plotly-latest.min.js']
 
+    __js_skip__ = {'Plotly': __javascript__}
+
     __js_require__ = {'paths': {'plotly': 'https://cdn.plot.ly/plotly-latest.min'},
                       'exports': {'plotly': 'Plotly'}}
 
