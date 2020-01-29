@@ -22,10 +22,13 @@ class DeckGLPlot(HTMLBox):
 
     __javascript__ = ["https://cdn.jsdelivr.net/npm/deck.gl@8.1.0-alpha.1/dist.min.js",
                       "https://cdn.jsdelivr.net/npm/@deck.gl/json@8.1.0-alpha.1/dist/dist.dev.js",
-                      "https://cdn.jsdelivr.net/npm/mapbox-gl@1.6.1",
                       "https://cdn.jsdelivr.net/npm/@loaders.gl/csv@2.0.2/dist/dist.min.js",
                       "https://cdn.jsdelivr.net/npm/@loaders.gl/json@2.0.2/dist/dist.min.js",
-                      "https://cdn.jsdelivr.net/npm/@loaders.gl/3d-tiles@2.0.2/dist/dist.min.js"]
+                      "https://cdn.jsdelivr.net/npm/@loaders.gl/3d-tiles@2.0.2/dist/dist.min.js",
+                      "https://cdn.jsdelivr.net/npm/mapbox-gl@1.6.1",
+    ]
+
+    __js_skip__ = {'deck': __javascript__[:-1], 'mapboxgl': __javascript__[:-1:]}
 
     __js_require__ = {
         'paths': OrderedDict([

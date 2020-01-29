@@ -142,14 +142,15 @@ def push(doc, comm, binary=True):
 AUTOLOAD_NB_JS = _env.get_template("autoload_panel_js.js")
 NB_TEMPLATE_BASE = _env.get_template('nb_template.html')
 
-def _autoload_js(bundle, configs, requirements, exports, load_timeout=5000):
+def _autoload_js(bundle, configs, requirements, exports, skip_imports, load_timeout=5000):
     return AUTOLOAD_NB_JS.render(
         bundle    = bundle,
         force     = True,
         timeout   = load_timeout,
         configs   = configs,
         requirements = requirements,
-        exports   = exports
+        exports   = exports,
+        skip_imports = skip_imports
     )
 
 
@@ -279,9 +280,9 @@ def load_notebook(inline=True, load_timeout=5000):
 
     resources = INLINE if inline else CDN
     bundle = bundle_for_objs_and_resources(None, resources)
-    configs, requirements, exports = require_components()
+    configs, requirements, exports, skip_imports = require_components()
 
-    bokeh_js = _autoload_js(bundle, configs, requirements, exports, load_timeout)
+    bokeh_js = _autoload_js(bundle, configs, requirements, exports, skip_imports, load_timeout)
     publish_display_data({
         'application/javascript': bokeh_js,
         LOAD_MIME: bokeh_js,

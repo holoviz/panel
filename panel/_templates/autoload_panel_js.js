@@ -92,8 +92,18 @@ calls it with the rendered model.
         run_callbacks();
       })
     } else {
+      var skip = [];
+      {%- for lib, urls in skip_imports.items() %}
+      if (window['{{ lib }}'] !== undefined) {
+        var urls = {{ urls }};
+        for (var i = 0; i < urls.length; i++) {
+          skip.push(urls[i])
+        }
+      }
+      {%- endfor %}
       for (var i = 0; i < js_urls.length; i++) {
         var url = js_urls[i];
+        if (skip.indexOf(url) >= 0) { continue }
         var element = document.createElement('script');
         element.onload = on_load;
         element.onerror = on_error;
