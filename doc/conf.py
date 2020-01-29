@@ -107,4 +107,4 @@ html_context.update({
     )
 })
 
-nbbuild_patterns_to_take_along = ["simple.html"]
+nbbuild_patterns_to_take_along = ["simple.html", "*.json", "json_*"]
