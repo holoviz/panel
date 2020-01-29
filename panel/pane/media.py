@@ -88,8 +88,8 @@ class _MediaBase(PaneBase):
                 buffer = self._from_numpy(value)
                 data = b64encode(buffer.getvalue())
             elif os.path.isfile(value):
-                fmt = object.split('.')[-1]
-                with open(object, 'rb') as f:
+                fmt = value.split('.')[-1]
+                with open(value, 'rb') as f:
                     data = f.read()
                 data = b64encode(data)
             elif value.lower().startswith('http'):
