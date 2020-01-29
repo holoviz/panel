@@ -215,43 +215,46 @@ class HoloViews(PaneBase):
         ref = root.ref['id']
         if self.object is None:
             model = _BkSpacer()
+            self._models[ref] = (model, parent)
+            return model
+
+        if self._restore_plot is not None:
+            plot = self._restore_plot
+            self._restore_plot = None
+        elif isinstance(self.object, Plot):
+            plot = self.object
         else:
-            if self._restore_plot is not None:
-                plot = self._restore_plot
-                self._restore_plot = None
-            elif isinstance(self.object, Plot):
-                plot = self.object
-            else:
-                plot = self._render(doc, comm, root)
-            plot.pane = self
-            backend = plot.renderer.backend
-            if hasattr(plot.renderer, 'get_plot_state'):
-                state = plot.renderer.get_plot_state(plot)
-            else:
-                # Compatibility with holoviews<1.13.0
-                state = plot.state
+            plot = self._render(doc, comm, root)
 
-            # Ensure rerender if content is responsive but layout is centered
-            if (backend == 'bokeh' and self.center and
-                state.sizing_mode not in ('fixed', None)
-                and not self._responsive_content):
-                self._responsive_content = True
-                self._update_layout()
-                self._restore_plot = plot
-                raise RerenderError()
-            else:
-                self._responsive_content = False
+        plot.pane = self
+        backend = plot.renderer.backend
+        if hasattr(plot.renderer, 'get_plot_state'):
+            state = plot.renderer.get_plot_state(plot)
+        else:
+            # Compatibility with holoviews<1.13.0
+            state = plot.state
 
-            kwargs = {p: v for p, v in self.param.get_param_values()
-                      if p in Layoutable.param and p != 'name'}
-            child_pane = self._panes.get(backend, Pane)(state, **kwargs)
-            self._update_plot(plot, child_pane)
-            model = child_pane._get_model(doc, root, parent, comm)
-            if ref in self._plots:
-                old_plot, old_pane = self._plots[ref]
-                old_plot.comm = None # Ensures comm does not get cleaned up
-                old_plot.cleanup()
-            self._plots[ref] = (plot, child_pane)
+        # Ensure rerender if content is responsive but layout is centered
+        if (backend == 'bokeh' and self.center and
+            state.sizing_mode not in ('fixed', None)
+            and not self._responsive_content):
+            self._responsive_content = True
+            self._update_layout()
+            self._restore_plot = plot
+            raise RerenderError()
+        else:
+            self._responsive_content = False
+
+        kwargs = {p: v for p, v in self.param.get_param_values()
+                  if p in Layoutable.param and p != 'name'}
+        child_pane = self._panes.get(backend, Pane)(state, **kwargs)
+        self._update_plot(plot, child_pane)
+        model = child_pane._get_model(doc, root, parent, comm)
+        if ref in self._plots:
+            old_plot, old_pane = self._plots[ref]
+            old_plot.comm = None # Ensures comm does not get cleaned up
+            old_plot.cleanup()
+        self._plots[ref] = (plot, child_pane)
         self._models[ref] = (model, parent)
         return model
 
