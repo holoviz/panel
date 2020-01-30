@@ -200,7 +200,9 @@ class VTKVolume(PaneBase):
                 import scipy.ndimage as nd
                 sub_array = nd.interpolation.zoom(array, zoom=[1 / d_f for d_f in dowsnscale_factor], order=0)
             except ImportError:
-                sub_array = array[::int(np.ceil(dowsnscale_factor[0])), ::int(np.ceil(dowsnscale_factor[1])), ::int(np.ceil(dowsnscale_factor[2]))]
+                sub_array = array[::int(np.ceil(dowsnscale_factor[0])),
+                                  ::int(np.ceil(dowsnscale_factor[1])),
+                                  ::int(np.ceil(dowsnscale_factor[2]))]
             self._sub_spacing = tuple(e / (s - 1) for e, s in zip(extent, sub_array.shape))
         else:
             sub_array = array
@@ -315,9 +317,12 @@ class VTK(PaneBase):
                 cbs = []
                 for k, v in self._legend.items():
                     ticks = np.linspace(v['low'], v['high'], 5)
-                    cbs.append(ColorBar(color_mapper=LinearColorMapper(low=v['low'], high=v['high'], palette=v['palette']), title=k,
-                                        ticker=FixedTicker(ticks=ticks),
-                                        label_standoff=5, background_fill_alpha=0, orientation='horizontal', location=(0, 0)))
+                    cbs.append(ColorBar(
+                        color_mapper=LinearColorMapper(low=v['low'], high=v['high'], palette=v['palette']),
+                        title=k,
+                        ticker=FixedTicker(ticks=ticks),
+                        label_standoff=5, background_fill_alpha=0, orientation='horizontal', location=(0, 0)
+                    ))
                 plot = Plot(toolbar_location=None, frame_height=0, sizing_mode='stretch_width',
                             outline_line_width=0)
                 [plot.add_layout(cb, 'below') for cb in cbs]
@@ -329,8 +334,8 @@ class VTK(PaneBase):
 
     def _init_properties(self):
         return {k: v for k, v in self.param.get_param_values()
-                if v is not None and k not in ['default_layout', 'object', 'infer_legend', 'serialize_on_instantiation']}
-
+                if v is not None and k not in ['default_layout', 'object', 'infer_legend',
+                'serialize_on_instantiation']}
 
     def _process_param_change(self, msg):
         msg = super(VTK, self)._process_param_change(msg)
@@ -339,7 +344,6 @@ class VTK(PaneBase):
             axes = msg['axes']
             msg['axes'] = VTKAxes(**axes)
         return msg
-
 
     @classmethod
     def register_serializer(cls, class_type, serializer):
