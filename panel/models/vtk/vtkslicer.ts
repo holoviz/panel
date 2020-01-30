@@ -1,28 +1,8 @@
 import * as p from "@bokehjs/core/properties"
-import {ARRAY_TYPES, DType} from "@bokehjs/core/util/serialization"
 import {HTMLBox} from "@bokehjs/models/layouts/html_box"
-import {vtkns} from "./vtk_utils"
+import {VolumeType, vtkns, data2VTKImageData} from "./vtk_utils"
 import {VTKHTMLBoxView} from "./vtk_layout"
 
-
-
-type VolumeType = {
-  buffer: string
-  dims: number[]
-  dtype: DType
-  spacing: number[]
-  origin: number[] | null
-  extent: number[] | null
-}
-
-function utf8ToAB(utf8_str: string): ArrayBuffer {
-  var buf = new ArrayBuffer(utf8_str.length) // 2 bytes for each char
-  var bufView = new Uint8Array(buf)
-  for (var i=0, strLen=utf8_str.length; i<strLen; i++) {
-    bufView[i] = utf8_str.charCodeAt(i)
-  }
-  return buf
-}
 
 export class VTKSlicerPlotView extends VTKHTMLBoxView {
   model: VTKSlicerPlot
@@ -70,25 +50,9 @@ export class VTKSlicerPlotView extends VTKHTMLBoxView {
     this._plot()
   }
 
-  _create_source(): any{
-    const data = this.model.data
-    const source = vtkns.ImageData.newInstance({
-      spacing: data.spacing
-    })
-    source.setDimensions(data.dims)
-    source.setOrigin(data.origin != null ? data.origin : data.dims.map((v: number) => v/2))
-    const dataArray = vtkns.DataArray.newInstance({
-      name: "scalars",
-      numberOfComponents: 1,
-      values: new ARRAY_TYPES[data.dtype as DType](utf8ToAB(atob(data.buffer)))
-    })
-    source.getPointData().setScalars(dataArray)
-    return source
-  }
-
   _plot(): void {
     //Create convert data in vtkImageData and create the 3 slices
-    const source = this._create_source()
+    const source = data2VTKImageData(this.model.data)
     this.model.image_actor_I = vtkns.ImageSlice.newInstance()
     this.model.image_actor_J = vtkns.ImageSlice.newInstance()
     this.model.image_actor_K = vtkns.ImageSlice.newInstance()

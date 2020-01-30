@@ -1,27 +1,7 @@
 import * as p from "@bokehjs/core/properties"
-import {ARRAY_TYPES, DType} from "@bokehjs/core/util/serialization"
 import {HTMLBox} from "@bokehjs/models/layouts/html_box"
 import {VTKHTMLBoxView} from "./vtk_layout"
-
-const vtk = (window as any).vtk
-
-type VolumeType = {
-  buffer: string
-  dims: number[]
-  dtype: DType
-  spacing: number[]
-  origin: number[] | null
-  extent: number[] | null
-}
-
-function utf8ToAB(utf8_str: string): ArrayBuffer {
-  var buf = new ArrayBuffer(utf8_str.length) // 2 bytes for each char
-  var bufView = new Uint8Array(buf)
-  for (var i=0, strLen=utf8_str.length; i<strLen; i++) {
-    bufView[i] = utf8_str.charCodeAt(i)
-  }
-  return buf
-}
+import {VolumeType, vtkns, data2VTKImageData } from "./vtk_utils"
 
 export class VTKVolumePlotView extends VTKHTMLBoxView {
   model: VTKVolumePlot
@@ -36,7 +16,7 @@ export class VTKVolumePlotView extends VTKHTMLBoxView {
 
   render(): void {
     super.render()
-    this._controllerWidget = vtk.Interaction.UI.vtkVolumeController.newInstance({
+    this._controllerWidget = vtkns.VolumeController.newInstance({
       size: [400, 150],
       rescaleColorMap: false,
     })
@@ -47,27 +27,11 @@ export class VTKVolumePlotView extends VTKHTMLBoxView {
     this._vtk_renwin.getRenderer().resetCamera()
   }
 
-  _create_source(): any{
-    const data = this.model.data
-    const source = vtk.Common.DataModel.vtkImageData.newInstance({
-      spacing: data.spacing
-    })
-    source.setDimensions(data.dims)
-    source.setOrigin(data.origin != null ? data.origin : data.dims.map((v: number) => v/2))
-    const dataArray = vtk.Common.Core.vtkDataArray.newInstance({
-      name: "scalars",
-      numberOfComponents: 1,
-      values: new ARRAY_TYPES[data.dtype as DType](utf8ToAB(atob(data.buffer)))
-    })
-    source.getPointData().setScalars(dataArray)
-    return source
-  }
-
   _plot(): void {
     //Create vtk volume and add it to the scene
-    const source = this._create_source()
-    const actor = vtk.Rendering.Core.vtkVolume.newInstance()
-    const mapper = vtk.Rendering.Core.vtkVolumeMapper.newInstance()
+    const source = data2VTKImageData(this.model.data)
+    const actor = vtkns.Volume.newInstance()
+    const mapper = vtkns.VolumeMapper.newInstance()
 
     actor.setMapper(mapper)
     mapper.setInputData(source)
@@ -75,8 +39,8 @@ export class VTKVolumePlotView extends VTKHTMLBoxView {
     const dataArray = source.getPointData().getScalars() || source.getPointData().getArrays()[0]
     const dataRange = dataArray.getRange()
 
-    const lookupTable = vtk.Rendering.Core.vtkColorTransferFunction.newInstance()
-    const piecewiseFunction = vtk.Common.DataModel.vtkPiecewiseFunction.newInstance()
+    const lookupTable = vtkns.ColorTransferFunction.newInstance()
+    const piecewiseFunction =vtkns.PiecewiseFunction.newInstance()
     const sampleDistance = 0.7 * Math.sqrt(source.getSpacing()
                                                   .map((v: number) => v * v)
                                                   .reduce((a: number, b: number) => a + b, 0));
@@ -93,7 +57,7 @@ export class VTKVolumePlotView extends VTKHTMLBoxView {
       .getProperty()
       .setScalarOpacityUnitDistance(
         0,
-        vtk.Common.DataModel.vtkBoundingBox.getDiagonalLength(source.getBounds()) /
+        vtkns.BoundingBox.getDiagonalLength(source.getBounds()) /
           Math.max(...source.getDimensions())
       );
     // - control how we emphasize surface boundaries

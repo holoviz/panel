@@ -30,5 +30,4 @@ export class VTKHTMLBoxView extends PanelHTMLBoxView{
     document.querySelector('body')!.removeEventListener('keydown',interactor.handleKeyDown)
     document.querySelector('body')!.removeEventListener('keyup',interactor.handleKeyUp)
   }
-
 }

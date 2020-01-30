@@ -1,3 +1,5 @@
+import {ARRAY_TYPES, DType} from "@bokehjs/core/util/serialization"
+
 export const vtk = (window as any).vtk
 
 export const vtkns: any = {}
@@ -23,7 +25,47 @@ if (vtk) {
   vtkns['InteractiveOrientationWidget'] = vtk.Widgets.Widgets3D.vtkInteractiveOrientationWidget
   vtkns['PixelSpaceCallbackMapper'] = vtk.Rendering.Core.vtkPixelSpaceCallbackMapper
   vtkns['FullScreenRenderWindow'] = vtk.Rendering.Misc.vtkFullScreenRenderWindow
+  vtkns['VolumeController'] = vtk.Interaction.UI.vtkVolumeController
+  vtkns['Volume'] = vtk.Rendering.Core.vtkVolume
+  vtkns['VolumeMapper'] = vtk.Rendering.Core.vtkVolumeMapper
+  vtkns['ColorTransferFunction'] = vtk.Rendering.Core.vtkColorTransferFunction
+  vtkns['PiecewiseFunction'] = vtk.Common.DataModel.vtkPiecewiseFunction
+  vtkns['BoundingBox'] = vtk.Common.DataModel.vtkBoundingBox
 }
+
+export type VolumeType = {
+  buffer: string
+  dims: number[]
+  dtype: DType
+  spacing: number[]
+  origin: number[] | null
+  extent: number[] | null
+}
+
+function utf8ToAB(utf8_str: string): ArrayBuffer {
+  var buf = new ArrayBuffer(utf8_str.length) // 2 bytes for each char
+  var bufView = new Uint8Array(buf)
+  for (var i=0, strLen=utf8_str.length; i<strLen; i++) {
+    bufView[i] = utf8_str.charCodeAt(i)
+  }
+  return buf
+}
+
+export function data2VTKImageData(data: VolumeType): any{
+  const source = vtkns.ImageData.newInstance({
+    spacing: data.spacing
+  })
+  source.setDimensions(data.dims)
+  source.setOrigin(data.origin != null ? data.origin : data.dims.map((v: number) => v/2))
+  const dataArray = vtkns.DataArray.newInstance({
+    name: "scalars",
+    numberOfComponents: 1,
+    values: new ARRAY_TYPES[data.dtype as DType](utf8ToAB(atob(data.buffer)))
+  })
+  source.getPointData().setScalars(dataArray)
+  return source
+}
+
 
 export function majorAxis(vec3: number[], idxA: number, idxB: number): number[] {
   const axis = [0, 0, 0]
