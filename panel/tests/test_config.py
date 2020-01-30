@@ -9,31 +9,31 @@ from panel.pane import HTML
 from panel.tests.conftest import set_env_var
 
 
-def test_env_var_debug():
-    with set_env_var('PANEL_DEBUG', 'disable'):
-        assert config.debug == 'disable'
-    with set_env_var('PANEL_DEBUG', 'replace'):
-        assert config.debug == 'replace'
-    with config.set(debug='disable'):
+def test_env_var_console_output():
+    with set_env_var('PANEL_CONSOLE_OUTPUT', 'disable'):
+        assert config.console_output == 'disable'
+    with set_env_var('PANEL_CONSOLE_OUTPUT', 'replace'):
+        assert config.console_output == 'replace'
+    with config.set(console_output='disable'):
         with set_env_var('PANEL_DOC_BUILD', 'accumulate'):
-            assert config.debug == 'disable'
+            assert config.console_output == 'disable'
 
 
-def test_config_set_debug():
-    with config.set(debug=False):
-        assert config.debug == 'disable'
-    with config.set(debug='disable'):
-        assert config.debug == 'disable'
-    with config.set(debug='replace'):
-        assert config.debug == 'replace'
-    with config.set(debug='disable'):
-        with config.set(debug='accumulate'):
-            assert config.debug == 'accumulate'
+def test_config_set_console_output():
+    with config.set(console_output=False):
+        assert config.console_output == 'disable'
+    with config.set(console_output='disable'):
+        assert config.console_output == 'disable'
+    with config.set(console_output='replace'):
+        assert config.console_output == 'replace'
+    with config.set(console_output='disable'):
+        with config.set(console_output='accumulate'):
+            assert config.console_output == 'accumulate'
 
 
-def test_debug_replace_stdout(document, comm, get_display_handle):
+def test_console_output_replace_stdout(document, comm, get_display_handle):
     pane = HTML()
-    with set_env_var('PANEL_DEBUG', 'replace'):
+    with set_env_var('PANEL_CONSOLE_OUTPUT', 'replace'):
         model = pane.get_root(document, comm)
         handle = get_display_handle(model)
 
@@ -47,7 +47,7 @@ def test_debug_replace_stdout(document, comm, get_display_handle):
         assert model.ref['id'] not in state._handles
 
 
-def test_debug_accumulate_stdout(document, comm, get_display_handle):
+def test_console_output_accumulate_stdout(document, comm, get_display_handle):
     pane = HTML()
     model = pane.get_root(document, comm)
     handle = get_display_handle(model)
@@ -62,9 +62,9 @@ def test_debug_accumulate_stdout(document, comm, get_display_handle):
     assert model.ref['id'] not in state._handles
 
 
-def test_debug_disable_stdout(document, comm, get_display_handle):
+def test_console_output_disable_stdout(document, comm, get_display_handle):
     pane = HTML()
-    with set_env_var('PANEL_DEBUG', 'disable'):
+    with set_env_var('PANEL_CONSOLE_OUTPUT', 'disable'):
         model = pane.get_root(document, comm)
         handle = get_display_handle(model)
 
@@ -75,9 +75,9 @@ def test_debug_disable_stdout(document, comm, get_display_handle):
         assert model.ref['id'] not in state._handles
 
 
-def test_debug_replace_error(document, comm, get_display_handle):
+def test_console_output_replace_error(document, comm, get_display_handle):
     pane = HTML()
-    with set_env_var('PANEL_DEBUG', 'replace'):
+    with set_env_var('PANEL_CONSOLE_OUTPUT', 'replace'):
         model = pane.get_root(document, comm)
         handle = get_display_handle(model)
 
@@ -100,7 +100,7 @@ def test_debug_replace_error(document, comm, get_display_handle):
         assert model.ref['id'] not in state._handles
 
 
-def test_debug_accumulate_error(document, comm, get_display_handle):
+def test_console_output_accumulate_error(document, comm, get_display_handle):
     pane = HTML()
     model = pane.get_root(document, comm)
     handle = get_display_handle(model)
@@ -124,9 +124,9 @@ def test_debug_accumulate_error(document, comm, get_display_handle):
     assert model.ref['id'] not in state._handles
 
 
-def test_debug_disable_error(document, comm, get_display_handle):
+def test_console_output_disable_error(document, comm, get_display_handle):
     pane = HTML()
-    with set_env_var('PANEL_DEBUG', 'disable'):
+    with set_env_var('PANEL_CONSOLE_OUTPUT', 'disable'):
         model = pane.get_root(document, comm)
         handle = get_display_handle(model)
 

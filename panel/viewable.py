@@ -406,7 +406,7 @@ class Viewable(Layoutable, ServableMixin):
         doc = _Document()
         model = self._render_model(doc, comm)
 
-        if config.debug != 'disable':
+        if config.console_output != 'disable':
             handle = display(display_id=uuid.uuid4().hex)
             state._handles[model.ref['id']] = (handle, [])
 
@@ -706,25 +706,25 @@ class Reactive(Viewable):
             self._callbacks.append(watcher)
 
     def _on_error(self, ref, error):
-        if ref not in state._handles or config.debug in [None, 'disable']:
+        if ref not in state._handles or config.console_output in [None, 'disable']:
             return
         handle, accumulator = state._handles[ref]
         formatted = '\n<pre>'+escape(traceback.format_exc())+'</pre>\n'
-        if config.debug == 'accumulate':
+        if config.console_output == 'accumulate':
             accumulator.append(formatted)
-        elif config.debug == 'replace':
+        elif config.console_output == 'replace':
             accumulator[:] = [formatted]
         if accumulator:
             handle.update({'text/html': '\n'.join(accumulator)}, raw=True)
 
     def _on_stdout(self, ref, stdout):
-        if ref not in state._handles or config.debug is [None, 'disable']:
+        if ref not in state._handles or config.console_output is [None, 'disable']:
             return
         handle, accumulator = state._handles[ref]
         formatted = ["%s</br>" % o for o in stdout]
-        if config.debug == 'accumulate':
+        if config.console_output == 'accumulate':
             accumulator.extend(formatted)
-        elif config.debug == 'replace':
+        elif config.console_output == 'replace':
             accumulator[:] = formatted
         if accumulator:
             handle.update({'text/html': '\n'.join(accumulator)}, raw=True)
