@@ -459,13 +459,17 @@ class JSLinkCallbackGenerator(JSCallbackGenerator):
         if isinstance(source, Reactive):
             src_reverse = {v: k for k, v in source._rename.items()}
             src_param = src_reverse.get(src_spec, src_spec)
-            src_transform = source._source_transforms.get(src_param, 'value')
+            src_transform = source._source_transforms.get(src_param)
+            if src_transform is None:
+                src_transform = 'value'
         else:
             src_transform = 'value'
         if isinstance(target, Reactive):
             tgt_reverse = {v: k for k, v in target._rename.items()}
             tgt_param = tgt_reverse.get(tgt_spec, tgt_spec)
-            tgt_transform = target._target_transforms.get(tgt_param, 'value')
+            tgt_transform = target._target_transforms.get(tgt_param)
+            if tgt_transform is None:
+                tgt_transform = 'value'
         else:
             tgt_transform = 'value'
         return self._link_template.format(
