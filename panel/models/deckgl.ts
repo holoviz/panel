@@ -26,15 +26,23 @@ export class DeckGLPlotView extends PanelHTMLBoxView {
   jsonConverter: any
   deckGL: any
   _connected: any[]
+  _layer_map: any
 
   connect_signals(): void {
     super.connect_signals()
     const {data, mapbox_api_key, tooltip, layers, initialViewState, data_sources} = this.model.properties
     this.on_change([mapbox_api_key, tooltip], () => this.render())
     this.on_change([data, initialViewState], () => this.updateDeck())
-    this.on_change([layers, data_sources], () => this._connect_sources(true))
+    this.on_change([layers], () => this._update_layers())
+    this.on_change([data_sources], () => this._connect_sources(true))
+    this._layer_map = {}
     this._connected = []
     this._connect_sources()
+  }
+
+  _update_layers(): void {
+    this._layer_map = {}
+    this._update_data(true)
   }
 
   _connect_sources(render: boolean = false): void {
@@ -71,15 +79,28 @@ export class DeckGLPlotView extends PanelHTMLBoxView {
   }
 
   _update_data(render: boolean = true): void {
+    let n = 0;
     for (const layer of this.model.layers) {
-      if (typeof layer.data != "number") { continue }
-      const cds = this.model.data_sources[layer.data];
+      let cds;
+      n += 1;
+      if ((n-1) in this._layer_map) {
+        cds = this.model.data_sources[this._layer_map[n-1]]
+      } else if (typeof layer.data != "number")
+        continue
+      else {
+        this._layer_map[n-1] = layer.data
+        cds = this.model.data_sources[layer.data]
+      }
       const data: any = []
       const columns = cds.columns()
       for (let i = 0; i < cds.data[columns[0]].length; i++) {
         const item: any = {}
         for (const column of columns) {
-          item[column] = cds.data[column][i]
+          const shape = cds._shapes[column]
+          if ((shape.length > 1) && (typeof shape[0] == "number"))
+            item[column] = cds.data[column].slice(i*shape[1], i*shape[1]+shape[1])
+          else
+            item[column] = cds.data[column][i]
         }
         data.push(item)
       }
