@@ -42,6 +42,12 @@ export type VolumeType = {
   extent: number[] | null
 }
 
+export function hexToRGB(color: string): number[] {
+  return [parseInt(color.slice(1,3),16)/255,
+          parseInt(color.slice(3,5),16)/255,
+          parseInt(color.slice(5,7),16)/255]
+}
+
 function utf8ToAB(utf8_str: string): ArrayBuffer {
   var buf = new ArrayBuffer(utf8_str.length) // 2 bytes for each char
   var bufView = new Uint8Array(buf)

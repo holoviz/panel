@@ -118,6 +118,8 @@ class VTKVolumePlot(HTMLBox):
 
     display_slices = Bool(default=False)
 
+    render_background = String(default='#52576e')
+
     height = Override(default=300)
 
     width = Override(default=300)

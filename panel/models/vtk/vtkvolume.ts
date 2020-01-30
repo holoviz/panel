@@ -1,7 +1,7 @@
 import * as p from "@bokehjs/core/properties"
 import {HTMLBox} from "@bokehjs/models/layouts/html_box"
 import {VTKHTMLBoxView} from "./vtk_layout"
-import {VolumeType, vtkns, data2VTKImageData } from "./vtk_utils"
+import {VolumeType, vtkns, data2VTKImageData, hexToRGB} from "./vtk_utils"
 
 export class VTKVolumePlotView extends VTKHTMLBoxView {
   model: VTKVolumePlot
@@ -73,6 +73,10 @@ export class VTKVolumePlotView extends VTKHTMLBoxView {
       this.image_actor_k.getMapper().setKSlice(this.model.slice_k)
       this._vtk_renwin.getRenderWindow().render()
     })
+    this.connect(this.model.properties.render_background.change, () => {
+      this._vtk_renwin.getRenderer().setBackground(...hexToRGB(this.model.render_background))
+      this._vtk_renwin.getRenderWindow().render()
+    })
   }
 
   get volume(): any {
@@ -122,6 +126,7 @@ export class VTKVolumePlotView extends VTKHTMLBoxView {
     this._plot_slices()
     this._set_volume_visbility(this.model.display_volume)
     this._set_slices_visbility(this.model.display_slices)
+    this._vtk_renwin.getRenderer().setBackground(...hexToRGB(this.model.render_background))
     this._vtk_renwin.getRenderer().resetCamera()
   }
 
@@ -290,6 +295,7 @@ export namespace VTKVolumePlot {
     slice_k: p.Property<number>,
     display_volume: p.Property<boolean>,
     display_slices: p.Property<boolean>,
+    render_background: p.Property<string>
   }
 }
 
@@ -308,21 +314,22 @@ export class VTKVolumePlot extends HTMLBox {
     this.prototype.default_view = VTKVolumePlotView
 
     this.define<VTKVolumePlot.Props>({
-      data:             [ p.Instance       ],
-      shadow:           [ p.Boolean,  true ],
-      sampling:         [ p.Number,    0.4 ],
-      edge_gradient:    [ p.Number,    0.2 ],
-      colormap:         [ p.String         ],
-      rescale:          [ p.Boolean, false ],
-      ambient:          [ p.Number,    0.2 ],
-      diffuse:          [ p.Number,    0.7 ],
-      specular:         [ p.Number,    0.3 ],
-      specular_power:   [ p.Number,    8.0 ],
-      slice_i:          [ p.Int,       0   ],
-      slice_j:          [ p.Int,       0   ],
-      slice_k:          [ p.Int,       0   ],
-      display_volume:   [ p.Boolean,  true ],
-      display_slices:   [ p.Boolean, false ],
+      data:              [ p.Instance          ],
+      shadow:            [ p.Boolean,     true ],
+      sampling:          [ p.Number,       0.4 ],
+      edge_gradient:     [ p.Number,       0.2 ],
+      colormap:          [ p.String            ],
+      rescale:           [ p.Boolean,    false ],
+      ambient:           [ p.Number,       0.2 ],
+      diffuse:           [ p.Number,       0.7 ],
+      specular:          [ p.Number,       0.3 ],
+      specular_power:    [ p.Number,       8.0 ],
+      slice_i:           [ p.Int,          0   ],
+      slice_j:           [ p.Int,          0   ],
+      slice_k:           [ p.Int,          0   ],
+      display_volume:    [ p.Boolean,     true ],
+      display_slices:    [ p.Boolean,    false ],
+      render_background: [ p.String, '#52576e' ]
     })
 
     this.override({

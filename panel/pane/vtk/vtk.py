@@ -39,6 +39,8 @@ class VTKVolume(PaneBase):
     spacing = param.Tuple(default=(1, 1, 1), length=3, doc="""
         Distance between voxel in each direction""")
 
+    render_background = param.Color(default='#52576e')
+
     colormap = param.Selector(default='erdc_rainbow_bright', objects=PRESET_CMAPS, doc="""
         Name of the colormap used to transform pixel value in color
     """)
