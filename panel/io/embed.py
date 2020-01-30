@@ -7,6 +7,7 @@ import os
 import json
 import uuid
 import param
+import sys
 
 from collections import defaultdict
 from contextlib import contextmanager
@@ -301,7 +302,7 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
     nested_dict = lambda: defaultdict(nested_dict)
     state_dict = nested_dict()
     changes = False
-    for key in (tqdm(cross_product) if progress else cross_product):
+    for key in (tqdm(cross_product, leave=False, file=sys.stdout) if progress else cross_product):
         sub_dict = state_dict
         skip = False
         for i, k in enumerate(key):
