@@ -165,7 +165,6 @@ export namespace DeckGLPlot {
     layers: p.Property<any[]>
     mapbox_api_key: p.Property<string>
     tooltip: p.Property<boolean>
-    _render_count: p.Property<number>
   }
 }
 

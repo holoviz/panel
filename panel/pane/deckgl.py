@@ -131,35 +131,45 @@ class DeckGL(PaneBase):
     @classmethod
     def _update_sources(cls, json_data, sources):
         layers = json_data.get('layers', [])
-        indexes = [
-            layer['data'] for layer in layers
-            if isinstance(layer.get('data'), int)
-        ]
-        count = 0
-        updates = False
-        for i, layer in enumerate(layers):
+
+        # Create index of sources by columns
+        source_columns = defaultdict(list)
+        for i, source in enumerate(sources):
+            key = tuple(sorted(source.data.keys()))
+            source_columns[key].append((i, source))
+
+        # Process
+        unprocessed, unused = [], list(sources)
+        for layer in layers:
             if 'data' not in layer:
                 continue
             data = layer['data']
             if not isinstance(data, list) or not data or not isinstance(data[0], dict):
                 continue
             data = cls._process_data(data)
-            while count in indexes:
-                count += 1
-            if count >= len(sources):
-                sources.append(ColumnDataSource(data))
-            elif set(data) == set(sources[count].data):
+            key = tuple(sorted(data.keys()))
+            existing = source_columns.get(key)
+            if existing:
+                index, cds = existing.pop()
+                layer['data'] = index
                 updates = {}
-                cds = sources[count]
                 for col, values in data.items():
                     if not np.array_equal(data[col], cds.data[col]):
                         updates[col] = values
                 if updates:
-                    cds.data = updates
+                    cds.data.update(updates)
+                unused.remove(cds)
             else:
-                sources[count].data = data
-            layer['data'] = count
-            count += 1
+                unprocessed.append((layer, data))
+
+        for layer, data in unprocessed:
+            if unused:
+                cds = unused.pop()
+                cds.data = data
+            else:
+                cds = ColumnDataSource(data)
+                sources.append(cds)
+            layer['data'] = sources.index(cds)
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         if "panel.models.deckgl" not in sys.modules:
