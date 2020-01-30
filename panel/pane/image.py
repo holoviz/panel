@@ -114,7 +114,7 @@ class ImageBase(DivPaneBase):
             w, h = '%spx' % width, '%spx' % height
         elif smode == 'stretch_both':
             w, h = '100%', '100%'
-        elif smode == 'stretch_height':
+        elif smode == 'stretch_width':
             w, h = '%spx' % width, '100%'
         elif smode == 'stretch_height':
             w, h = '100%', '%spx' % height
