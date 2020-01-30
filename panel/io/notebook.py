@@ -13,7 +13,6 @@ from six import string_types
 import bokeh
 import bokeh.embed.notebook
 
-from bokeh.core.templates import DOC_NB_JS
 from bokeh.core.json_encoder import serialize_json
 from bokeh.core.templates import MACROS
 from bokeh.document import Document
@@ -28,7 +27,8 @@ from bokeh.util.string import encode_utf8, escape
 from bokeh.util.serialization import make_id
 from pyviz_comms import (
     JS_CALLBACK, PYVIZ_PROXY, Comm, JupyterCommManager as _JupyterCommManager,
-    nb_mime_js)
+    nb_mime_js
+)
 
 from ..compiler import require_components
 from .embed import embed_state
@@ -139,6 +139,7 @@ def push(doc, comm, binary=True):
         comm.send(json.dumps(header))
         comm.send(buffers=[payload])
 
+DOC_NB_JS = _env.get_template("doc_nb_js.js")
 AUTOLOAD_NB_JS = _env.get_template("autoload_panel_js.js")
 NB_TEMPLATE_BASE = _env.get_template('nb_template.html')
 
