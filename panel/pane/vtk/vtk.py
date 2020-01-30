@@ -82,12 +82,13 @@ class VTKVolume(PaneBase):
         super(VTKVolume, self).__init__(object, **params)
         self._sub_spacing = self.spacing
         self._volume_data = self._get_volume_data()
-        self.param.slice_i.bounds = (0, self._volume_data['dims'][0]-1)
-        self.slice_i = (self._volume_data['dims'][0]-1)//2
-        self.param.slice_j.bounds = (0, self._volume_data['dims'][1]-1)
-        self.slice_j = (self._volume_data['dims'][1]-1)//2
-        self.param.slice_k.bounds = (0, self._volume_data['dims'][2]-1)
-        self.slice_k = (self._volume_data['dims'][2]-1)//2
+        if self._volume_data:
+            self.param.slice_i.bounds = (0, self._volume_data['dims'][0]-1)
+            self.slice_i = (self._volume_data['dims'][0]-1)//2
+            self.param.slice_j.bounds = (0, self._volume_data['dims'][1]-1)
+            self.slice_j = (self._volume_data['dims'][1]-1)//2
+            self.param.slice_k.bounds = (0, self._volume_data['dims'][2]-1)
+            self.slice_k = (self._volume_data['dims'][2]-1)//2
 
     @classmethod
     def applies(cls, obj):
@@ -138,12 +139,13 @@ class VTKVolume(PaneBase):
 
     def _update(self, model):
         self._volume_data = self._get_volume_data()
-        self.param.slice_i.bounds = (0, self._volume_data['dims'][0]-1)
-        self.slice_i = (self._volume_data['dims'][0]-1)//2
-        self.param.slice_j.bounds = (0, self._volume_data['dims'][1]-1)
-        self.slice_j = (self._volume_data['dims'][1]-1)//2
-        self.param.slice_k.bounds = (0, self._volume_data['dims'][2]-1)
-        self.slice_k = (self._volume_data['dims'][2]-1)//2
+        if self._volume_data:
+            self.param.slice_i.bounds = (0, self._volume_data['dims'][0]-1)
+            self.slice_i = (self._volume_data['dims'][0]-1)//2
+            self.param.slice_j.bounds = (0, self._volume_data['dims'][1]-1)
+            self.slice_j = (self._volume_data['dims'][1]-1)//2
+            self.param.slice_k.bounds = (0, self._volume_data['dims'][2]-1)
+            self.slice_k = (self._volume_data['dims'][2]-1)//2
         model.data = self._volume_data
 
     @classmethod
