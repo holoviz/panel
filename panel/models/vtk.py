@@ -3,7 +3,8 @@
 Defines custom VTKPlot bokeh model to render VTK objects.
 """
 from bokeh.core.properties import (String, Bool, Dict, Any, Override,
-                                   Instance, Int, Float, PositiveInt)
+                                   Instance, Int, Float, PositiveInt, Enum)
+from bokeh.core.enums import enumeration
 from bokeh.models import HTMLBox, Model
 
 vtk_cdn = "https://unpkg.com/vtk.js"
@@ -119,6 +120,8 @@ class VTKVolumePlot(HTMLBox):
     display_slices = Bool(default=False)
 
     render_background = String(default='#52576e')
+
+    interpolation = Enum(enumeration('fast_linear','linear','nearest'))
 
     height = Override(default=300)
 

@@ -56,6 +56,8 @@ class VTKVolume(PaneBase):
 
     edge_gradient = param.Number(default=0.4, bounds=(0, 1), step=1e-2)
 
+    interpolation = param.Selector(default='fast_linear', objects=['fast_linear','linear','nearest'])
+
     ambient = param.Number(default=0.2, step=1e-2)
 
     diffuse = param.Number(default=0.7, step=1e-2)

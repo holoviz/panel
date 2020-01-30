@@ -3,6 +3,8 @@ import {HTMLBox} from "@bokehjs/models/layouts/html_box"
 import {VTKHTMLBoxView} from "./vtk_layout"
 import {VolumeType, vtkns, data2VTKImageData, hexToRGB} from "./vtk_utils"
 
+
+declare type InterpolationType = 'fast_linear' | 'linear' | 'nearest'
 export class VTKVolumePlotView extends VTKHTMLBoxView {
   model: VTKVolumePlot
   protected _controllerWidget: any
@@ -77,42 +79,60 @@ export class VTKVolumePlotView extends VTKHTMLBoxView {
       this._vtk_renwin.getRenderer().setBackground(...hexToRGB(this.model.render_background))
       this._vtk_renwin.getRenderWindow().render()
     })
+    this.connect(this.model.properties.interpolation.change, () => {
+      this._set_interpolation(this.model.interpolation)
+      this._vtk_renwin.getRenderWindow().render()
+    })
   }
 
   get volume(): any {
     return this._controllerWidget.getActor()
   }
 
-  get image_actor_i(): any{
+  get image_actor_i(): any {
     return this._vtk_renwin.getRenderer().getActors()[0]
   }
 
-  get image_actor_j(): any{
+  get image_actor_j(): any {
     return this._vtk_renwin.getRenderer().getActors()[1]
   }
 
-  get image_actor_k(): any{
+  get image_actor_k(): any {
     return this._vtk_renwin.getRenderer().getActors()[2]
   }
 
-  get shadow_selector(): HTMLSelectElement{
+  get shadow_selector(): HTMLSelectElement {
     return (this.el.querySelector('.js-shadow') as HTMLSelectElement)
   }
 
-  get edge_gradient_slider(): HTMLInputElement{
+  get edge_gradient_slider(): HTMLInputElement {
     return (this.el.querySelector('.js-edge') as HTMLInputElement)
   }
 
-  get sampling_slider(): HTMLInputElement{
+  get sampling_slider(): HTMLInputElement {
     return (this.el.querySelector('.js-spacing') as HTMLInputElement)
   }
 
-  get colormap_slector(): HTMLSelectElement{
+  get colormap_slector(): HTMLSelectElement {
     return (this.el.querySelector('.js-color-preset') as HTMLSelectElement)
+  }
+
+  _set_interpolation(interpolation: InterpolationType): void {
+    if (interpolation == 'fast_linear'){
+      this.volume.getProperty().setInterpolationTypeToFastLinear()
+      this.image_actor_i.getProperty().setInterpolationTypeToLinear()
+    } else if (interpolation == 'linear'){
+      this.volume.getProperty().setInterpolationTypeToLinear()
+      this.image_actor_i.getProperty().setInterpolationTypeToLinear()
+    } else { //nearest
+      this.volume.getProperty().setInterpolationTypeToNearest()
+      this.image_actor_i.getProperty().setInterpolationTypeToNearest()
+    }
   }
 
   render(): void {
     super.render()
+    this.model.render_el = this._vtk_renwin
     this._controllerWidget = vtkns.VolumeController.newInstance({
       size: [400, 150],
       rescaleColorMap: this.model.rescale,
@@ -127,6 +147,7 @@ export class VTKVolumePlotView extends VTKHTMLBoxView {
     this._set_volume_visbility(this.model.display_volume)
     this._set_slices_visbility(this.model.display_slices)
     this._vtk_renwin.getRenderer().setBackground(...hexToRGB(this.model.render_background))
+    this._set_interpolation(this.model.interpolation)
     this._vtk_renwin.getRenderer().resetCamera()
   }
 
@@ -296,6 +317,7 @@ export namespace VTKVolumePlot {
     display_volume: p.Property<boolean>,
     display_slices: p.Property<boolean>,
     render_background: p.Property<string>
+    interpolation: p.Property<InterpolationType>
   }
 }
 
@@ -303,6 +325,7 @@ export interface VTKVolumePlot extends VTKVolumePlot.Attrs {}
 
 export class VTKVolumePlot extends HTMLBox {
   properties: VTKVolumePlot.Props
+  render_el: any
 
   constructor(attrs?: Partial<VTKVolumePlot.Attrs>) {
     super(attrs)
@@ -314,22 +337,23 @@ export class VTKVolumePlot extends HTMLBox {
     this.prototype.default_view = VTKVolumePlotView
 
     this.define<VTKVolumePlot.Props>({
-      data:              [ p.Instance          ],
-      shadow:            [ p.Boolean,     true ],
-      sampling:          [ p.Number,       0.4 ],
-      edge_gradient:     [ p.Number,       0.2 ],
-      colormap:          [ p.String            ],
-      rescale:           [ p.Boolean,    false ],
-      ambient:           [ p.Number,       0.2 ],
-      diffuse:           [ p.Number,       0.7 ],
-      specular:          [ p.Number,       0.3 ],
-      specular_power:    [ p.Number,       8.0 ],
-      slice_i:           [ p.Int,          0   ],
-      slice_j:           [ p.Int,          0   ],
-      slice_k:           [ p.Int,          0   ],
-      display_volume:    [ p.Boolean,     true ],
-      display_slices:    [ p.Boolean,    false ],
-      render_background: [ p.String, '#52576e' ]
+      data:              [ p.Instance               ],
+      shadow:            [ p.Boolean,          true ],
+      sampling:          [ p.Number,            0.4 ],
+      edge_gradient:     [ p.Number,            0.2 ],
+      colormap:          [ p.String                 ],
+      rescale:           [ p.Boolean,         false ],
+      ambient:           [ p.Number,            0.2 ],
+      diffuse:           [ p.Number,            0.7 ],
+      specular:          [ p.Number,            0.3 ],
+      specular_power:    [ p.Number,            8.0 ],
+      slice_i:           [ p.Int,               0   ],
+      slice_j:           [ p.Int,               0   ],
+      slice_k:           [ p.Int,               0   ],
+      display_volume:    [ p.Boolean,          true ],
+      display_slices:    [ p.Boolean,         false ],
+      render_background: [ p.String,      '#52576e' ],
+      interpolation:     [ p.Any,      'fast_linear'],
     })
 
     this.override({
