@@ -3,7 +3,7 @@
 Defines custom VTKPlot bokeh model to render VTK objects.
 """
 from bokeh.core.properties import (String, Bool, Dict, Any, Override,
-                                   Instance, Int, Float, PositiveInt)
+                                   Instance, Int, Float, PositiveInt, Array)
 from bokeh.models import HTMLBox, Model
 
 vtk_cdn = "https://unpkg.com/vtk.js"
@@ -88,9 +88,13 @@ class VTKVolumePlot(HTMLBox):
         }
     }
 
-    actor = Any(readonly=True)
+    debug = Bool(default=False)
+
+    colormap = String(help="Colormap Name")
 
     data = Dict(String, Any)
+
+    rescale = Bool(default=False)
 
     height = Override(default=300)
 

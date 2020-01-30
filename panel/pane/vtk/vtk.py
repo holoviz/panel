@@ -19,6 +19,7 @@ import numpy as np
 
 from pyviz_comms import JupyterComm
 
+from .enums import PRESET_CMAPS
 from ..base import PaneBase
 from ...util import isfile
 
@@ -37,6 +38,17 @@ class VTKVolume(PaneBase):
 
     spacing = param.Tuple(default=(1, 1, 1), length=3, doc="""
         Distance between voxel in each direction""")
+
+    colormap = param.Selector(default='erdc_rainbow_bright', objects=PRESET_CMAPS, doc="""
+        Name of the colormap used to transform pixel value in color
+    """)
+
+    rescale = param.Boolean(default=False, doc="""
+        If set to True the colormap is rescale beween min and max value of the non transparent pixels
+        Else the full range of the pixel even with opacity nul is used
+    """)
+
+    debug = param.Boolean(default=False)
 
     _serializers = {}
 
@@ -81,6 +93,7 @@ class VTKVolume(PaneBase):
                               **props)
         if root is None:
             root = model
+        self._link_props(model, ['colormap'], doc, root, comm)
         self._models[root.ref['id']] = (model, parent)
         return model
 
@@ -90,7 +103,9 @@ class VTKVolume(PaneBase):
 
     def _init_properties(self):
         return {k: v for k, v in self.param.get_param_values()
-                if v is not None and k not in ['default_layout', 'object', 'max_data_size', 'spacing', 'origin']}
+                if v is not None and k not in [
+                    'default_layout', 'object', 'max_data_size', 'spacing', 'origin'
+                ]}
 
     def _update(self, model):
         model.data = self._get_volume_data()

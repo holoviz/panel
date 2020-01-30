@@ -12,18 +12,37 @@ export class VTKVolumePlotView extends VTKHTMLBoxView {
     this.connect(this.model.properties.data.change, () => {
       this.invalidate_render()
     })
+    this.connect(this.model.properties.colormap.change, () => {
+      this.colormap_slector.value = this.model.colormap
+      const event = new Event('change');
+      this.colormap_slector.dispatchEvent(event);
+    })
+    this.connect(this.model.properties.rescale.change, () => {
+      this._controllerWidget.setRescaleColorMap(this.model.rescale)
+    })
+  }
+
+  get colormap_slector(): HTMLSelectElement{
+    return (this.el.querySelector('.js-color-preset') as HTMLSelectElement)
   }
 
   render(): void {
     super.render()
     this._controllerWidget = vtkns.VolumeController.newInstance({
       size: [400, 150],
-      rescaleColorMap: false,
+      rescaleColorMap: this.model.rescale,
     })
     this._controllerWidget.setContainer(this.el)
     this._vtk_renwin.getRenderWindow().getInteractor()
     this._vtk_renwin.getRenderWindow().getInteractor().setDesiredUpdateRate(45)
     this._plot()
+    this.colormap_slector.addEventListener('change', () => {
+      this.model.colormap = this.colormap_slector.value
+    })
+    if (!this.model.colormap)
+      this.model.colormap = this.colormap_slector.value
+    else
+      this.model.properties.colormap.change.emit()
     this._vtk_renwin.getRenderer().resetCamera()
   }
 
@@ -48,8 +67,8 @@ export class VTKVolumePlotView extends VTKHTMLBoxView {
 
     actor.getProperty().setRGBTransferFunction(0, lookupTable);
     actor.getProperty().setScalarOpacity(0, piecewiseFunction);
-    // actor.getProperty().setInterpolationTypeToFastLinear();
-    actor.getProperty().setInterpolationTypeToLinear();
+    actor.getProperty().setInterpolationTypeToFastLinear();
+    // actor.getProperty().setInterpolationTypeToLinear();
 
     // For better looking volume rendering
     // - distance in world coordinates a scalar opacity of 1.0
@@ -90,6 +109,8 @@ export namespace VTKVolumePlot {
   export type Attrs = p.AttrsOf<Props>
   export type Props = HTMLBox.Props & {
     data: p.Property<VolumeType>,
+    colormap: p.Property<string>,
+    rescale: p.Property<boolean>
   }
 }
 
@@ -108,7 +129,9 @@ export class VTKVolumePlot extends HTMLBox {
     this.prototype.default_view = VTKVolumePlotView
 
     this.define<VTKVolumePlot.Props>({
-      data:     [ p.Any ],
+      data:      [ p.Instance ],
+      colormap:  [ p.String ],
+      rescale:   [ p.Boolean ],
     })
 
     this.override({
