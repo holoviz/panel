@@ -141,9 +141,8 @@ class DeckGL(PaneBase):
             if 'data' not in layer:
                 continue
             data = layer['data']
-            if not isinstance(data, list):
+            if not isinstance(data, list) or not data or not isinstance(data[0], dict):
                 continue
-            updates = True
             data = cls._process_data(data)
             while count in indexes:
                 count += 1
@@ -176,9 +175,11 @@ class DeckGL(PaneBase):
         else:
             DeckGLPlot = getattr(sys.modules["panel.models.deckgl"], "DeckGLPlot")
         data, properties = self._get_properties()
-        sources = []
+        properties['data_sources'] = sources = []
         self._update_sources(data, sources)
-        model = DeckGLPlot(data_sources=sources, data=data, **properties)
+        properties['layers'] = data.pop('layers', {})
+        properties['initialViewState'] = data.pop('initialViewState')
+        model = DeckGLPlot(data=data, **properties)
         root = root or model
         self._models[root.ref["id"]] = (model, parent)
         return model
@@ -187,4 +188,6 @@ class DeckGL(PaneBase):
         data, properties = self._get_properties(layout=False)
         self._update_sources(data, model.data_sources)
         properties['data'] = data
+        properties['layers'] = data.pop('layers', {})
+        properties['initialViewState'] = data.pop('initialViewState')
         model.update(**properties)

@@ -42,6 +42,10 @@ class DeckGLPlot(HTMLBox):
 
     data_sources = List(Instance(ColumnDataSource))
 
+    initialViewState = Dict(String, Any)
+
+    layers = List(Dict(String, Any))
+
     mapbox_api_key = String()
 
     tooltip = Bool()
