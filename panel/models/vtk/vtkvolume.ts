@@ -6,6 +6,7 @@ import {VolumeType, vtkns, data2VTKImageData } from "./vtk_utils"
 export class VTKVolumePlotView extends VTKHTMLBoxView {
   model: VTKVolumePlot
   protected _controllerWidget: any
+  protected _vtk_image_data: any
 
   connect_signals(): void {
     super.connect_signals()
@@ -52,10 +53,42 @@ export class VTKVolumePlotView extends VTKHTMLBoxView {
       this.volume.getProperty().setSpecularPower(this.model.specular_power)
       this._vtk_renwin.getRenderWindow().render()
     })
+    this.connect(this.model.properties.display_volume.change, () => {
+      this._set_volume_visbility(this.model.display_volume)
+      this._vtk_renwin.getRenderWindow().render()
+    })
+    this.connect(this.model.properties.display_slices.change, () => {
+      this._set_slices_visbility(this.model.display_slices)
+      this._vtk_renwin.getRenderWindow().render()
+    })
+    this.connect(this.model.properties.slice_i.change, () => {
+      this.image_actor_i.getMapper().setISlice(this.model.slice_i)
+      this._vtk_renwin.getRenderWindow().render()
+    })
+    this.connect(this.model.properties.slice_j.change, () => {
+      this.image_actor_j.getMapper().setJSlice(this.model.slice_j)
+      this._vtk_renwin.getRenderWindow().render()
+    })
+    this.connect(this.model.properties.slice_k.change, () => {
+      this.image_actor_k.getMapper().setKSlice(this.model.slice_k)
+      this._vtk_renwin.getRenderWindow().render()
+    })
   }
 
   get volume(): any {
     return this._controllerWidget.getActor()
+  }
+
+  get image_actor_i(): any{
+    return this._vtk_renwin.getRenderer().getActors()[0]
+  }
+
+  get image_actor_j(): any{
+    return this._vtk_renwin.getRenderer().getActors()[1]
+  }
+
+  get image_actor_k(): any{
+    return this._vtk_renwin.getRenderer().getActors()[2]
   }
 
   get shadow_selector(): HTMLSelectElement{
@@ -80,10 +113,19 @@ export class VTKVolumePlotView extends VTKHTMLBoxView {
       size: [400, 150],
       rescaleColorMap: this.model.rescale,
     })
+    this._vtk_image_data = data2VTKImageData(this.model.data)
     this._controllerWidget.setContainer(this.el)
     this._vtk_renwin.getRenderWindow().getInteractor()
     this._vtk_renwin.getRenderWindow().getInteractor().setDesiredUpdateRate(45)
-    this._plot()
+    this._plot_volume()
+    this._connect_controls()
+    this._plot_slices()
+    this._set_volume_visbility(this.model.display_volume)
+    this._set_slices_visbility(this.model.display_slices)
+    this._vtk_renwin.getRenderer().resetCamera()
+  }
+
+  _connect_controls(): void{
     // Colormap selector
     this.colormap_slector.addEventListener('change', () => {
       this.model.colormap = this.colormap_slector.value
@@ -118,13 +160,11 @@ export class VTKVolumePlotView extends VTKHTMLBoxView {
     })
     if (Math.abs(this.model.edge_gradient-Number(this.edge_gradient_slider.value)) >= 5e-3)
       this.model.properties.edge_gradient.change.emit()
-
-    this._vtk_renwin.getRenderer().resetCamera()
   }
 
-  _plot(): void {
+  _plot_volume(): void {
     //Create vtk volume and add it to the scene
-    const source = data2VTKImageData(this.model.data)
+    const source = this._vtk_image_data
     const actor = vtkns.Volume.newInstance()
     const mapper = vtkns.VolumeMapper.newInstance()
 
@@ -179,6 +219,57 @@ export class VTKVolumePlotView extends VTKHTMLBoxView {
     this._vtk_renwin.getRenderer().addVolume(actor)
     this._controllerWidget.setupContent(this._vtk_renwin.getRenderWindow(), actor, true)
   }
+
+  _plot_slices(): void {
+    const source = this._vtk_image_data
+    const image_actor_i = vtkns.ImageSlice.newInstance()
+    const image_actor_j = vtkns.ImageSlice.newInstance()
+    const image_actor_k = vtkns.ImageSlice.newInstance()
+
+    const image_mapper_i = vtkns.ImageMapper.newInstance()
+    const image_mapper_j = vtkns.ImageMapper.newInstance()
+    const image_mapper_k = vtkns.ImageMapper.newInstance()
+
+    image_mapper_i.setInputData(source)
+    image_mapper_i.setISlice(this.model.slice_i)
+    image_actor_i.setMapper(image_mapper_i)
+
+    image_mapper_j.setInputData(source)
+    image_mapper_j.setJSlice(this.model.slice_j)
+    image_actor_j.setMapper(image_mapper_j)
+
+    image_mapper_k.setInputData(source)
+    image_mapper_k.setKSlice(this.model.slice_k)
+    image_actor_k.setMapper(image_mapper_k)
+
+    // set_color and opacity
+    const piecewiseFunction = vtkns.PiecewiseFunction.newInstance()
+    piecewiseFunction.removeAllPoints()
+    piecewiseFunction.addPoint(0, 1)
+    const lookupTable = this.volume.getProperty().getRGBTransferFunction(0)
+    const property = image_actor_i.getProperty()
+    image_actor_j.setProperty(property)
+    image_actor_k.setProperty(property)
+
+    property.setRGBTransferFunction(lookupTable)
+    property.setScalarOpacity(piecewiseFunction)
+
+    const renderer = this._vtk_renwin.getRenderer()
+    renderer.addActor(image_actor_i)
+    renderer.addActor(image_actor_j)
+    renderer.addActor(image_actor_k)
+
+  }
+
+  _set_volume_visbility(visibility: boolean): void {
+    this.volume.setVisibility(visibility)
+  }
+
+  _set_slices_visbility(visibility: boolean): void {
+    this._vtk_renwin.getRenderer().getActors().map(
+      (actor: any) => actor.setVisibility(visibility)
+    )
+  }
 }
 
 export namespace VTKVolumePlot {
@@ -194,6 +285,11 @@ export namespace VTKVolumePlot {
     diffuse: p.Property<number>,
     specular: p.Property<number>,
     specular_power: p.Property<number>,
+    slice_i: p.Property<number>,
+    slice_j: p.Property<number>,
+    slice_k: p.Property<number>,
+    display_volume: p.Property<boolean>,
+    display_slices: p.Property<boolean>,
   }
 }
 
@@ -222,6 +318,11 @@ export class VTKVolumePlot extends HTMLBox {
       diffuse:          [ p.Number,    0.7 ],
       specular:         [ p.Number,    0.3 ],
       specular_power:   [ p.Number,    8.0 ],
+      slice_i:          [ p.Int,       0   ],
+      slice_j:          [ p.Int,       0   ],
+      slice_k:          [ p.Int,       0   ],
+      display_volume:   [ p.Boolean,  true ],
+      display_slices:   [ p.Boolean, false ],
     })
 
     this.override({
