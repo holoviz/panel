@@ -132,7 +132,6 @@ export class VTKVolumePlotView extends VTKHTMLBoxView {
 
   render(): void {
     super.render()
-    this.model.render_el = this._vtk_renwin
     this._controllerWidget = vtkns.VolumeController.newInstance({
       size: [400, 150],
       rescaleColorMap: this.model.rescale,
@@ -325,7 +324,6 @@ export interface VTKVolumePlot extends VTKVolumePlot.Attrs {}
 
 export class VTKVolumePlot extends HTMLBox {
   properties: VTKVolumePlot.Props
-  render_el: any
 
   constructor(attrs?: Partial<VTKVolumePlot.Attrs>) {
     super(attrs)

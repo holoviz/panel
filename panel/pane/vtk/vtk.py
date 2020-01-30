@@ -50,31 +50,67 @@ class VTKVolume(PaneBase):
         Else the full range of the pixel even with opacity nul is used
     """)
 
-    shadow = param.Boolean(default=True)
+    shadow = param.Boolean(default=True, doc="""
+        If set to False, then the mapper for the volume will not perform shading
+        computations, it is the same as setting ambient=1, diffuse=0, specular=0
+    """)
 
-    sampling = param.Number(default=0.4, bounds=(0, 1), step=1e-2)
+    sampling = param.Number(default=0.4, bounds=(0, 1), step=1e-2, doc="""
+        Parameter to adjust the distance between samples used for rendering. The lower the value is
+        the more precise is the representation but it is more computationnaly intensive
+    """)
 
-    edge_gradient = param.Number(default=0.4, bounds=(0, 1), step=1e-2)
+    edge_gradient = param.Number(default=0.4, bounds=(0, 1), step=1e-2, doc="""
+        Parameter to adjust the opacity of the volume based on the gradient between voxels
+    """)
 
-    interpolation = param.Selector(default='fast_linear', objects=['fast_linear','linear','nearest'])
+    interpolation = param.Selector(default='fast_linear', objects=['fast_linear','linear','nearest'], doc="""
+        interpolation type for sampling a volume. `nearest` interpolation will snap to the closest voxel,
+        `linear` will perform trilinear interpolation to compute a scalar value from surrounding voxels.
+        `fast_linear` under WebGL 1 will perform bilinear interpolation on X and Y but use nearest
+        for Z. This is slightly faster than full linear at the cost of no Z axis linear interpolation.
+    """)
 
-    ambient = param.Number(default=0.2, step=1e-2)
+    ambient = param.Number(default=0.2, step=1e-2, doc="""
+        Value to control the ambient lighting. It is the light an object gives even in the absence
+        of strong light. It is constant in all directions.
+    """)
 
-    diffuse = param.Number(default=0.7, step=1e-2)
+    diffuse = param.Number(default=0.7, step=1e-2, doc="""
+        Value to control the diffuse Lighting. It relies on both the light direction and the
+        object surface normal.
+    """)
 
-    specular = param.Number(default=0.3, step=1e-2)
+    specular = param.Number(default=0.3, step=1e-2, doc="""
+        Value to control specular lighting. It is the light reflects back toward the camera when hitting the
+        object
+    """)
 
-    specular_power = param.Number(default=8.)
+    specular_power = param.Number(default=8., doc="""
+        Specular power refers to how much light is reflected in a mirror like fashion,
+        rather than scattered randomly in a diffuse manner
+    """)
 
-    slice_i = param.Integer(per_instance=True)
+    slice_i = param.Integer(per_instance=True, doc="""
+        Integer parameter to control the position of the slice normal to the X direction
+    """)
 
-    slice_j = param.Integer(per_instance=True)
+    slice_j = param.Integer(per_instance=True, doc="""
+        Integer parameter to control the position of the slice normal to the Y direction
+    """)
 
-    slice_k = param.Integer(per_instance=True)
+    slice_k = param.Integer(per_instance=True, doc="""
+        Integer parameter to control the position of the slice normal to the Z direction
+    """)
 
-    display_volume = param.Boolean(default=True)
+    display_volume = param.Boolean(default=True, doc="""
+        If set to True, the 3D respresentation of the volume is displayed using ray casting
+    """)
 
-    display_slices = param.Boolean(default=False)
+    display_slices = param.Boolean(default=False, doc="""
+        If set to true, the orthgonal slices in the three (X, Y, Z) directions are displayed.
+        Postition of each slice can be controlled using slice_(i,j,k) parameters
+    """)
 
     _serializers = {}
 
