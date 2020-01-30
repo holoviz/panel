@@ -25,12 +25,26 @@ export class DeckGLPlotView extends PanelHTMLBoxView {
   model: DeckGLPlot
   jsonConverter: any
   deckGL: any
+  _connected: any[]
 
   connect_signals(): void {
     super.connect_signals()
-    const {json_input, mapbox_api_key, tooltip} = this.model.properties;
-    this.on_change([mapbox_api_key, tooltip], () => { this.render() });
-    this.on_change([json_input], () => { this.updateDeck() });
+    const {data, mapbox_api_key, tooltip, layers, initialViewState, data_sources} = this.model.properties
+    this.on_change([mapbox_api_key, tooltip], () => this.render())
+    this.on_change([data, initialViewState], () => this.updateDeck())
+    this.on_change([layers, data_sources], () => this._connect_sources(true))
+    this._connected = []
+    this._connect_sources()
+  }
+
+  _connect_sources(render: boolean = false): void {
+    for (const cds of this.model.data_sources) {
+      if (this._connected.indexOf(cds) < 0) {
+        this.connect(cds.properties.data.change, () => this._update_data(true))
+        this._connected.push(cds)
+      }
+    }
+    this._update_data(render)
   }
 
   initialize(): void {
@@ -56,13 +70,41 @@ export class DeckGLPlotView extends PanelHTMLBoxView {
     }
   }
 
+  _update_data(render: boolean = true): void {
+    for (const layer of this.model.layers) {
+      if (typeof layer.data != "number") { continue }
+      const cds = this.model.data_sources[layer.data];
+      const data: any = []
+      const columns = cds.columns()
+      for (let i = 0; i < cds.data[columns[0]].length; i++) {
+        const item: any = {}
+        for (const column of columns) {
+          item[column] = cds.data[column][i]
+        }
+        data.push(item)
+      }
+      layer.data = data;
+    }
+    if (render)
+      this.updateDeck()
+  }
+
+  getData(): any {
+    const data = {
+        ...this.model.data,
+        layers: this.model.layers,
+        initialViewState: this.model.initialViewState
+    }
+    return data
+  }
+
   updateDeck(): void {
     if (!this.deckGL) { this.render(); return; }
-    const json_input = JSON.parse(this.model.json_input)
+    const data = this.getData()
     if (deck.updateDeck) {
-      deck.updateDeck(json_input, this.deckGL)
+      deck.updateDeck(data, this.deckGL)
     } else {
-      const results = this.jsonConverter.convert(json_input);
+      const results = this.jsonConverter.convert(data);
       this.deckGL.setProps(results);
     }
   }
@@ -71,7 +113,7 @@ export class DeckGLPlotView extends PanelHTMLBoxView {
     let deckgl;
     try {
       const props = this.jsonConverter.convert(jsonInput);
-	  const getTooltip = makeTooltip(tooltip);
+      const getTooltip = makeTooltip(tooltip);
       deckgl = new deck.DeckGL({
         ...props,
         map: mapboxgl,
@@ -81,8 +123,6 @@ export class DeckGLPlotView extends PanelHTMLBoxView {
 		getTooltip
       });
     } catch (err) {
-      // This will fail in node tests
-      // eslint-disable-next-line
       console.error(err);
     }
     return deckgl;
@@ -93,22 +133,22 @@ export class DeckGLPlotView extends PanelHTMLBoxView {
     const container = div({class: "deckgl"});
     set_size(container, this.model)
 
-    const jsonInput = JSON.parse(this.model.json_input);
     const MAPBOX_API_KEY = this.model.mapbox_api_key;
     const tooltip = this.model.tooltip;
+    const data = this.getData();
 
     if (deck.createDeck) {
       this.deckGL = deck.createDeck({
         mapboxApiKey: MAPBOX_API_KEY,
         container: container,
-        jsonInput,
+        jsonInput: data,
         tooltip
       });
     } else {
       this.deckGL = this.createDeck({
         mapboxApiKey: MAPBOX_API_KEY,
         container: container,
-        jsonInput,
+        jsonInput: data,
 		tooltip
       });
     }
@@ -119,7 +159,10 @@ export class DeckGLPlotView extends PanelHTMLBoxView {
 export namespace DeckGLPlot {
   export type Attrs = p.AttrsOf<Props>
   export type Props = HTMLBox.Props & {
-    json_input: p.Property<string>
+    data: p.Property<any>
+    data_sources: p.Property<any[]>
+    initialViewState: p.Property<any>
+    layers: p.Property<any[]>
     mapbox_api_key: p.Property<string>
     tooltip: p.Property<boolean>
   }
@@ -137,10 +180,13 @@ export class DeckGLPlot extends HTMLBox {
   static __module__ = "panel.models.deckgl"
 
   static init_DeckGLPlot(): void {
-    this.prototype.default_view = DeckGLPlotView;
+    this.prototype.default_view = DeckGLPlotView;      
 
     this.define<DeckGLPlot.Props>({
-      json_input: [p.String],
+      data: [p.Any],
+      data_sources: [ p.Array, [] ],
+      initialViewState: [p.Any],
+      layers: [ p.Array, [] ],
       mapbox_api_key: [p.String],
       tooltip: [p.Boolean],
     })

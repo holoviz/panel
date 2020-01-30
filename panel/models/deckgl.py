@@ -11,8 +11,8 @@ And now DeckGL provides Python bindings. See
 
 from collections import OrderedDict
 
-from bokeh.core.properties import String, Bool, JSON, Override
-from bokeh.models import HTMLBox
+from bokeh.core.properties import String, Bool, Dict, Any, Override, Instance, List
+from bokeh.models import HTMLBox, ColumnDataSource
 
 
 class DeckGLPlot(HTMLBox):
@@ -20,12 +20,13 @@ class DeckGLPlot(HTMLBox):
 
     __css__ = ["https://api.mapbox.com/mapbox-gl-js/v1.7.0/mapbox-gl.css"]
 
-    __javascript__ = ["https://cdn.jsdelivr.net/npm/deck.gl@8.1.0-alpha.1/dist.min.js",
-                      "https://cdn.jsdelivr.net/npm/@deck.gl/json@8.1.0-alpha.1/dist/dist.dev.js",
-                      "https://cdn.jsdelivr.net/npm/@loaders.gl/csv@2.0.2/dist/dist.min.js",
-                      "https://cdn.jsdelivr.net/npm/@loaders.gl/json@2.0.2/dist/dist.min.js",
-                      "https://cdn.jsdelivr.net/npm/@loaders.gl/3d-tiles@2.0.2/dist/dist.min.js",
-                      "https://api.mapbox.com/mapbox-gl-js/v1.7.0/mapbox-gl.js",
+    __javascript__ = [
+        "https://cdn.jsdelivr.net/npm/deck.gl@8.1.0-alpha.1/dist.min.js",
+        "https://cdn.jsdelivr.net/npm/@deck.gl/json@8.1.0-alpha.1/dist/dist.dev.js",
+        "https://cdn.jsdelivr.net/npm/@loaders.gl/csv@2.0.2/dist/dist.min.js",
+        "https://cdn.jsdelivr.net/npm/@loaders.gl/json@2.0.2/dist/dist.min.js",
+        "https://cdn.jsdelivr.net/npm/@loaders.gl/3d-tiles@2.0.2/dist/dist.min.js",
+        "https://api.mapbox.com/mapbox-gl-js/v1.7.0/mapbox-gl.js",
     ]
 
     __js_skip__ = {'deck': __javascript__[:-1], 'mapboxgl': __javascript__[-1:]}
@@ -38,8 +39,16 @@ class DeckGLPlot(HTMLBox):
         'exports': {"deck.gl": "deck", "mapbox-gl": "mapboxgl"}
     }
 
-    json_input = JSON()
+    data = Dict(String, Any)
+
+    data_sources = List(Instance(ColumnDataSource))
+
+    initialViewState = Dict(String, Any)
+
+    layers = List(Dict(String, Any))
+
     mapbox_api_key = String()
+
     tooltip = Bool()
 
     height = Override(default=400)
