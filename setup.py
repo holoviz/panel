@@ -124,6 +124,7 @@ extras_require = {
         'scikit-learn',
         'datashader',
         'jupyter_bokeh',
+        'django',
     ],
     'recommended': _recommended,
     'doc': _recommended + [
