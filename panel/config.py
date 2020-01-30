@@ -84,7 +84,7 @@ class _config(param.Parameterized):
         Whether to render output in Jupyter with the default Jupyter
         extension or use the jupyter_bokeh ipywidget model.""")
 
-    _debug = param.ObjectSelector(default='accumulate', allow_None=True,
+    _console_output = param.ObjectSelector(default='accumulate', allow_None=True,
                                  objects=['accumulate', 'replace', 'disable',
                                           False], doc="""
         How to log errors and stdout output triggered by callbacks
@@ -135,18 +135,18 @@ class _config(param.Parameterized):
         return os.environ.get('PANEL_DOC_BUILD')
 
     @property
-    def debug(self):
-        if self._debug_ is not None:
-            return 'disable' if not self._debug_ else self._debug_
+    def console_output(self):
+        if self._console_output_ is not None:
+            return 'disable' if not self._console_output_ else self._console_output_
         elif self._doc_build:
             return 'disable'
         else:
-            return os.environ.get('PANEL_DEBUG', _config._debug)
+            return os.environ.get('PANEL_CONSOLE_OUTPUT', _config._console_output)
 
-    @debug.setter
-    def debug(self, value):
-        validate_config(self, '_debug', value)
-        self._debug_ = value
+    @console_output.setter
+    def console_output(self, value):
+        validate_config(self, '_console_output', value)
+        self._console_output_ = value
 
     @property
     def embed(self):

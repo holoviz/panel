@@ -30,7 +30,7 @@ Minor Enhancements:
 - Expose further bokeh CLI commands and added help (`#951 <https://github.com/holoviz/panel/issues/951>`_) [@philippjfr]
 - Enable responsive sizing for `Vega`/altair pane (`#949 <https://github.com/holoviz/panel/issues/949>`_) [@philippjfr]
 - Added encode parameter to `SVG` pane (`#913 <https://github.com/holoviz/panel/issues/913>`_) [@philippjfr]
-- Improve `Markdown` handling including syntax highlighting (`#881 <https://github.com/holoviz/panel/issues/881>`_) [@philippjfr]
+- Improve `Markdown` handling including syntax highlighting and indentation (`#881 <https://github.com/holoviz/panel/issues/881>`_) [@philippjfr]
 - Add ability to define Template variables (`#815 <https://github.com/holoviz/panel/issues/815>`_) [@philippjfr]
 - Allow configuring responsive behavior globally (`#851 <https://github.com/holoviz/panel/issues/951>`_) [@xavArtley]
 - Ensure that changes applied in callbacks are reflected on the frontend immediately (`#857 <https://github.com/holoviz/panel/issues/857>`_) [@philippjfr]
