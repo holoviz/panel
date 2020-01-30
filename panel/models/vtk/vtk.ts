@@ -18,8 +18,7 @@ export class VTKPlotView extends VTKHTMLBoxView {
   connect_signals(): void {
     super.connect_signals()
     this.connect(this.model.properties.data.change, () => {
-      this._plot()
-      this._set_axes()
+      this.invalidate_render()
     })
     this.connect(this.model.properties.camera.change, () => this._set_camera_state())
     this.connect(this.model.properties.orientation_widget.change, () => {
@@ -50,10 +49,12 @@ export class VTKPlotView extends VTKHTMLBoxView {
 
   render(): void {
     super.render()
+    this.model.renderer_el = this._vtk_renwin
+    this._orientationWidget = null
+    this._axes = null
     this._axes_initialized = false
     this._plot()
     this._vtk_renwin.getRenderer().getActiveCamera().onModified(() => this._get_camera_state())
-    this.model.renderer_el = this._vtk_renwin
   }
 
   after_layout(): void {
@@ -215,7 +216,6 @@ export class VTKPlotView extends VTKHTMLBoxView {
   }
 
   _plot(): void{
-    this._delete_all_actors()
     if (!this.model.data) {
       this._vtk_renwin.getRenderWindow().render()
       return
@@ -238,10 +238,6 @@ export class VTKPlotView extends VTKHTMLBoxView {
         sceneImporter.onReady(fn)
       }
     })
-  }
-
-  _delete_all_actors(): void{
-    this._vtk_renwin.getRenderer().getActors().map((actor: unknown) => this._vtk_renwin.getRenderer().removeActor(actor))
   }
 }
 

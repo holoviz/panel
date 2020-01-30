@@ -37,8 +37,7 @@ export class VTKSlicerPlotView extends VTKHTMLBoxView {
       this._vtk_renwin.getRenderWindow().render()
     })
     this.connect(this.model.properties.data.change, () => {
-      this._plot()
-      this._vtk_renwin.getRenderWindow().render()
+      this.invalidate_render()
     })
   }
 

@@ -10,7 +10,7 @@ export class VTKVolumePlotView extends VTKHTMLBoxView {
   connect_signals(): void {
     super.connect_signals()
     this.connect(this.model.properties.data.change, () => {
-      this._plot()
+      this.invalidate_render()
     })
   }
 
@@ -42,14 +42,14 @@ export class VTKVolumePlotView extends VTKHTMLBoxView {
     const lookupTable = vtkns.ColorTransferFunction.newInstance()
     const piecewiseFunction =vtkns.PiecewiseFunction.newInstance()
     const sampleDistance = 0.7 * Math.sqrt(source.getSpacing()
-                                                  .map((v: number) => v * v)
-                                                  .reduce((a: number, b: number) => a + b, 0));
+                                                 .map((v: number) => v * v)
+                                                 .reduce((a: number, b: number) => a + b, 0));
     mapper.setSampleDistance(sampleDistance);
 
     actor.getProperty().setRGBTransferFunction(0, lookupTable);
     actor.getProperty().setScalarOpacity(0, piecewiseFunction);
-    actor.getProperty().setInterpolationTypeToFastLinear();
-    //actor.getProperty().setInterpolationTypeToLinear();
+    // actor.getProperty().setInterpolationTypeToFastLinear();
+    actor.getProperty().setInterpolationTypeToLinear();
 
     // For better looking volume rendering
     // - distance in world coordinates a scalar opacity of 1.0
@@ -89,7 +89,6 @@ export class VTKVolumePlotView extends VTKHTMLBoxView {
 export namespace VTKVolumePlot {
   export type Attrs = p.AttrsOf<Props>
   export type Props = HTMLBox.Props & {
-    actor: p.Property<any>
     data: p.Property<VolumeType>,
   }
 }
@@ -109,7 +108,6 @@ export class VTKVolumePlot extends HTMLBox {
     this.prototype.default_view = VTKVolumePlotView
 
     this.define<VTKVolumePlot.Props>({
-      actor:    [ p.Any ],
       data:     [ p.Any ],
     })
 
