@@ -109,6 +109,7 @@ class VTKVolume(PaneBase):
                     dims=sub_array.shape if sub_array.flags['F_CONTIGUOUS'] else sub_array.shape[::-1],
                     spacing=self._sub_spacing if sub_array.flags['F_CONTIGUOUS'] else self._sub_spacing[::-1],
                     origin=self.origin,
+                    data_range=(sub_array.min(), sub_array.max()),
                     dtype=sub_array.dtype.name)
 
     def _get_volume_data(self):
@@ -117,8 +118,8 @@ class VTKVolume(PaneBase):
         elif isinstance(self.object, np.ndarray):
             return self._volume_from_array(self._subsample_array(self.object))
         else:
-            available_serializer = [v for k, v in VTKVolume._serializers.items() if isinstance(self.object, k)]
-            if len(available_serializer) == 0:
+            available_serializer = [v for k, v in self._serializers.items() if isinstance(self.object, k)]
+            if not available_serializer:
                 import vtk
                 from vtk.util import numpy_support
 
@@ -129,7 +130,7 @@ class VTKVolume(PaneBase):
                     self.origin = imageData.GetOrigin()
                     return self._volume_from_array(self._subsample_array(array.reshape(dims, order='C')))
 
-                VTKVolume.register_serializer(vtk.vtkImageData, volume_serializer)
+                self.register_serializer(vtk.vtkImageData, volume_serializer)
                 serializer = volume_serializer
             else:
                 serializer = available_serializer[0]
@@ -154,6 +155,68 @@ class VTKVolume(PaneBase):
             sub_array = array
             self._sub_spacing = self.spacing
         return sub_array
+
+
+class VTKSlicer(VTKVolume):
+
+    slice_I = param.Integer(per_instance=True)
+    slice_J = param.Integer(per_instance=True)
+    slice_K = param.Integer(per_instance=True)
+    color_window = param.Number(per_instance=True)
+    color_level = param.Number(per_instance=True)
+
+    def __init__(self, obj=None, **params):
+        super(VTKSlicer, self).__init__(obj, **params)
+        self._sub_spacing = self.spacing
+        self._volume_data = self._get_volume_data()
+        self.param.slice_I.bounds = (0, self._volume_data['dims'][0]-1)
+        self.slice_I = (self._volume_data['dims'][0]-1)//2
+        self.param.slice_J.bounds = (0, self._volume_data['dims'][1]-1)
+        self.slice_J = (self._volume_data['dims'][1]-1)//2
+        self.param.slice_K.bounds = (0, self._volume_data['dims'][2]-1)
+        self.slice_K = (self._volume_data['dims'][2]-1)//2
+        self.param.color_level.bounds = self._volume_data['data_range']
+        self.color_level = np.mean(self._volume_data['data_range'])
+        self.param.color_window.bounds = self._volume_data['data_range']
+        self.color_window = self._volume_data['data_range'][1]
+
+    def _get_model(self, doc, root=None, parent=None, comm=None):
+        """
+        Should return the bokeh model to be rendered.
+        """
+        if 'panel.models.vtk' not in sys.modules:
+            if isinstance(comm, JupyterComm):
+                self.param.warning('VTKSlicerPlot was not imported on instantiation '
+                                   'and may not render in a notebook. Restart '
+                                   'the notebook kernel and ensure you load '
+                                   'it as part of the extension using:'
+                                   '\n\npn.extension(\'vtk\')\n')
+            from ...models.vtk import VTKSlicerPlot
+        else:
+            VTKSlicerPlot = getattr(sys.modules['panel.models.vtk'], 'VTKSlicerPlot')
+
+
+        props = self._process_param_change(self._init_properties())
+        model = VTKSlicerPlot(data=self._volume_data,
+                              **props)
+        if root is None:
+            root = model
+        self._models[root.ref['id']] = (model, parent)
+        return model
+
+    def _update(self, model):
+        self._volume_data = self._get_volume_data()
+        self.param.slice_I.bounds = (0, self._volume_data['dims'][0]-1)
+        self.slice_I = (self._volume_data['dims'][0]-1)//2
+        self.param.slice_J.bounds = (0, self._volume_data['dims'][1]-1)
+        self.slice_J = (self._volume_data['dims'][1]-1)//2
+        self.param.slice_K.bounds = (0, self._volume_data['dims'][2]-1)
+        self.slice_K = (self._volume_data['dims'][2]-1)//2
+        self.param.color_level.bounds = self._volume_data['data_range']
+        self.color_level = np.mean(self._volume_data['data_range'])
+        self.param.color_window.bounds = self._volume_data['data_range']
+        self.color_window = self._volume_data['data_range'][1]
+        model.data = self._volume_data
 
 
 class VTK(PaneBase):

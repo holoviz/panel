@@ -53,7 +53,6 @@ export class VTKPlotView extends VTKHTMLBoxView {
     this._axes_initialized = false
     this._plot()
     this._vtk_renwin.getRenderer().getActiveCamera().onModified(() => this._get_camera_state())
-    this._remove_default_key_binding()
     this.model.renderer_el = this._vtk_renwin
   }
 
@@ -161,13 +160,6 @@ export class VTKPlotView extends VTKHTMLBoxView {
       this._widgetManager.disablePicking()
     this._orientationWidget.updateMarkerOrientation()
     this._vtk_renwin.getRenderWindow().render()
-  }
-
-  _remove_default_key_binding(): void {
-    const interactor = this._vtk_renwin.getInteractor()
-    document.querySelector('body')!.removeEventListener('keypress',interactor.handleKeyPress)
-    document.querySelector('body')!.removeEventListener('keydown',interactor.handleKeyDown)
-    document.querySelector('body')!.removeEventListener('keyup',interactor.handleKeyUp)
   }
 
   _get_camera_state(): void {

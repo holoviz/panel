@@ -3,20 +3,24 @@ export const vtk = (window as any).vtk
 export const vtkns: any = {}
 
 if (vtk) {
+  vtkns['DataArray'] = vtk.Common.Core.vtkDataArray
+  vtkns['ImageData'] = vtk.Common.DataModel.vtkImageData
+  vtkns['OutlineFilter'] = vtk.Filters.General.vtkOutlineFilter
+  vtkns['CubeSource'] = vtk.Filters.Sources.vtkCubeSource
   vtkns['LineSource'] = vtk.Filters.Sources.vtkLineSource
   vtkns['PlaneSource'] = vtk.Filters.Sources.vtkPlaneSource
   vtkns['PointSource'] = vtk.Filters.Sources.vtkPointSource
-  vtkns['SphereMapper'] = vtk.Rendering.Core.vtkSphereMapper
-  vtkns['CubeSource'] = vtk.Filters.Sources.vtkCubeSource
   vtkns['OrientationMarkerWidget'] = vtk.Interaction.Widgets.vtkOrientationMarkerWidget
-  vtkns['WidgetManager'] = vtk.Widgets.Core.vtkWidgetManager
-  vtkns['InteractiveOrientationWidget'] = vtk.Widgets.Widgets3D.vtkInteractiveOrientationWidget
-  vtkns['OutlineFilter'] = vtk.Filters.General.vtkOutlineFilter
   vtkns['DataAccessHelper'] = vtk.IO.Core.DataAccessHelper
   vtkns['HttpSceneLoader'] = vtk.IO.Core.vtkHttpSceneLoader
+  vtkns['ImageSlice'] = vtk.Rendering.Core.vtkImageSlice
+  vtkns['Actor'] = vtk.Rendering.Core.vtkActor
   vtkns['AxesActor'] = vtk.Rendering.Core.vtkAxesActor
   vtkns['Mapper'] = vtk.Rendering.Core.vtkMapper
-  vtkns['Actor'] = vtk.Rendering.Core.vtkActor
+  vtkns['ImageMapper'] = vtk.Rendering.Core.vtkImageMapper
+  vtkns['SphereMapper'] = vtk.Rendering.Core.vtkSphereMapper
+  vtkns['WidgetManager'] = vtk.Widgets.Core.vtkWidgetManager
+  vtkns['InteractiveOrientationWidget'] = vtk.Widgets.Widgets3D.vtkInteractiveOrientationWidget
   vtkns['PixelSpaceCallbackMapper'] = vtk.Rendering.Core.vtkPixelSpaceCallbackMapper
   vtkns['FullScreenRenderWindow'] = vtk.Rendering.Misc.vtkFullScreenRenderWindow
 }
