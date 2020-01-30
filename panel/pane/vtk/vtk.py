@@ -39,7 +39,10 @@ class VTKVolume(PaneBase):
     spacing = param.Tuple(default=(1, 1, 1), length=3, doc="""
         Distance between voxel in each direction""")
 
-    render_background = param.Color(default='#52576e')
+    render_background = param.Color(default='#52576e', doc="""
+        Allows to specify the background color of the 3D rendering. The value must be specified
+        as an hexadecimal color string
+    """)
 
     colormap = param.Selector(default='erdc_rainbow_bright', objects=PRESET_CMAPS, doc="""
         Name of the colormap used to transform pixel value in color
@@ -47,7 +50,7 @@ class VTKVolume(PaneBase):
 
     rescale = param.Boolean(default=False, doc="""
         If set to True the colormap is rescale beween min and max value of the non transparent pixels
-        Else the full range of the pixel even with opacity nul is used
+        Else the full range of the pixel values are used
     """)
 
     shadow = param.Boolean(default=True, doc="""
