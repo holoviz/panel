@@ -12,7 +12,7 @@ if (root.Bokeh !== undefined) {
       if (root.Bokeh !== undefined) {
         clearInterval(timer);
         embed_document(root);
-      } else if document.readyState == "complete" {
+      } else if (document.readyState == "complete") {
         attempts++;
         if (attempts > 100) {
           clearInterval(timer);
