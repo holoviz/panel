@@ -48,7 +48,19 @@ class VTKVolume(PaneBase):
         Else the full range of the pixel even with opacity nul is used
     """)
 
-    debug = param.Boolean(default=False)
+    shadow = param.Boolean(default=True)
+
+    sampling = param.Number(default=0.4, bounds=(0, 1), step=1e-2)
+
+    edge_gradient = param.Number(default=0.4, bounds=(0, 1), step=1e-2)
+
+    ambient = param.Number(default=0.2, step=1e-2)
+
+    diffuse = param.Number(default=0.7, step=1e-2)
+
+    specular = param.Number(default=0.3, step=1e-2)
+
+    specular_power = param.Number(default=8.)
 
     _serializers = {}
 

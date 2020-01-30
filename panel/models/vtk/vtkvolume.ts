@@ -17,9 +17,57 @@ export class VTKVolumePlotView extends VTKHTMLBoxView {
       const event = new Event('change');
       this.colormap_slector.dispatchEvent(event);
     })
+    this.connect(this.model.properties.shadow.change, () => {
+      this.shadow_selector.value = this.model.shadow? '1': '0'
+      const event = new Event('change');
+      this.shadow_selector.dispatchEvent(event);
+    })
+    this.connect(this.model.properties.sampling.change, () => {
+      this.sampling_slider.value = this.model.sampling.toFixed(2)
+      const event = new Event('input');
+      this.sampling_slider.dispatchEvent(event);
+    })
+    this.connect(this.model.properties.edge_gradient.change, () => {
+      this.edge_gradient_slider.value = this.model.edge_gradient.toFixed(2)
+      const event = new Event('input');
+      this.edge_gradient_slider.dispatchEvent(event);
+    })
     this.connect(this.model.properties.rescale.change, () => {
       this._controllerWidget.setRescaleColorMap(this.model.rescale)
+      this._vtk_renwin.getRenderWindow().render()
     })
+    this.connect(this.model.properties.ambient.change, () => {
+      this.volume.getProperty().setAmbient(this.model.ambient)
+      this._vtk_renwin.getRenderWindow().render()
+    })
+    this.connect(this.model.properties.diffuse.change, () => {
+      this.volume.getProperty().setDiffuse(this.model.diffuse)
+      this._vtk_renwin.getRenderWindow().render()
+    })
+    this.connect(this.model.properties.specular.change, () => {
+      this.volume.getProperty().setSpecular(this.model.specular)
+      this._vtk_renwin.getRenderWindow().render()
+    })
+    this.connect(this.model.properties.specular_power.change, () => {
+      this.volume.getProperty().setSpecularPower(this.model.specular_power)
+      this._vtk_renwin.getRenderWindow().render()
+    })
+  }
+
+  get volume(): any {
+    return this._controllerWidget.getActor()
+  }
+
+  get shadow_selector(): HTMLSelectElement{
+    return (this.el.querySelector('.js-shadow') as HTMLSelectElement)
+  }
+
+  get edge_gradient_slider(): HTMLInputElement{
+    return (this.el.querySelector('.js-edge') as HTMLInputElement)
+  }
+
+  get sampling_slider(): HTMLInputElement{
+    return (this.el.querySelector('.js-spacing') as HTMLInputElement)
   }
 
   get colormap_slector(): HTMLSelectElement{
@@ -90,15 +138,15 @@ export class VTKVolumePlotView extends VTKHTMLBoxView {
       .getProperty()
       .setGradientOpacityMaximumValue(0, (dataRange[1] - dataRange[0]) * 0.05);
     // - Use shading based on gradient
-    actor.getProperty().setShade(true);
+    actor.getProperty().setShade(this.model.shadow);
     actor.getProperty().setUseGradientOpacity(0, true);
     // - generic good default
     actor.getProperty().setGradientOpacityMinimumOpacity(0, 0.0);
     actor.getProperty().setGradientOpacityMaximumOpacity(0, 1.0);
-    actor.getProperty().setAmbient(0.2);
-    actor.getProperty().setDiffuse(0.7);
-    actor.getProperty().setSpecular(0.3);
-    actor.getProperty().setSpecularPower(8.0);
+    actor.getProperty().setAmbient(this.model.ambient);
+    actor.getProperty().setDiffuse(this.model.diffuse);
+    actor.getProperty().setSpecular(this.model.specular);
+    actor.getProperty().setSpecularPower(this.model.specular_power);
 
     this._vtk_renwin.getRenderer().addVolume(actor)
     this._controllerWidget.setupContent(this._vtk_renwin.getRenderWindow(), actor, true)
@@ -109,8 +157,15 @@ export namespace VTKVolumePlot {
   export type Attrs = p.AttrsOf<Props>
   export type Props = HTMLBox.Props & {
     data: p.Property<VolumeType>,
+    shadow: p.Property<boolean>,
+    sampling: p.Property<number>,
+    edge_gradient: p.Property<number>,
     colormap: p.Property<string>,
-    rescale: p.Property<boolean>
+    rescale: p.Property<boolean>,
+    ambient: p.Property<number>,
+    diffuse: p.Property<number>,
+    specular: p.Property<number>,
+    specular_power: p.Property<number>,
   }
 }
 
@@ -129,9 +184,16 @@ export class VTKVolumePlot extends HTMLBox {
     this.prototype.default_view = VTKVolumePlotView
 
     this.define<VTKVolumePlot.Props>({
-      data:      [ p.Instance ],
-      colormap:  [ p.String ],
-      rescale:   [ p.Boolean ],
+      data:             [ p.Instance       ],
+      shadow:           [ p.Boolean,  true ],
+      sampling:         [ p.Number,    0.4 ],
+      edge_gradient:    [ p.Number,    0.2 ],
+      colormap:         [ p.String         ],
+      rescale:          [ p.Boolean, false ],
+      ambient:          [ p.Number,    0.2 ],
+      diffuse:          [ p.Number,    0.7 ],
+      specular:         [ p.Number,    0.3 ],
+      specular_power:   [ p.Number,    8.0 ],
     })
 
     this.override({

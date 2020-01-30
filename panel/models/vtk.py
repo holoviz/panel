@@ -88,13 +88,25 @@ class VTKVolumePlot(HTMLBox):
         }
     }
 
-    debug = Bool(default=False)
+    data = Dict(String, Any)
 
     colormap = String(help="Colormap Name")
 
-    data = Dict(String, Any)
-
     rescale = Bool(default=False)
+
+    shadow = Bool(default=True)
+
+    sampling = Float(default=0.4)
+
+    edge_gradient = Float(default=0.2)
+
+    ambient = Float(default=0.2)
+
+    diffuse = Float(default=0.7)
+
+    specular = Float(default=0.3)
+
+    specular_power = Float(default=8.)
 
     height = Override(default=300)
 
