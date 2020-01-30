@@ -1,6 +1,71 @@
 Releases
 ========
 
+Version 0.8.0
+-------------
+
+Date: 2020-01-30
+
+This release focused primarily on solidifying existing functionality, improving performance and closing fixing a number of important bugs. Additionally this release contains a number of exciting new functionality and components. We want to thank the many contributors to this release (a full list is provided at the bottom), particularly `Marc Skov Madsen <https://github.com/MarcSkovMadsen>`_ (the author of `awesome-panel.org <http://awesome-panel.org/>`_) and `Xavier Artusi <https://github.com/xavArtley>`_, who has been hard at work at improving VTK support. We also want to thank the remaining contributors including @philippjfr, @ceball, @jbednar, @jlstevens, @Italirz, @mattpap, @Jacob-Barhak, @stefjunod and @kgullikson88. This release introduced only minimal changes in existing APIs and added a small number of new ones demonstrating that Panel is relatively stable and is progressing steadily towards a 1.0 release.
+
+Major Enhancements:
+
+- Added new `DeckGL` pane (`#1019 <https://github.com/holoviz/panel/issues/1019>`_, `#1027 <https://github.com/holoviz/panel/issues/1027>`_) [@MarcSkovMadsen & @philippjfr] 
+- Major improvements to support for JS linking (`#1007 <https://github.com/holoviz/panel/issues/1007>`_) [@philippjfr]
+- Huge performance improvements when nesting a lot of components deeply (`#867 <https://github.com/holoviz/panel/issues/867>`_, `#888 <https://github.com/holoviz/panel/issues/888>`_, `#895 <https://github.com/holoviz/panel/issues/895>`_, `#988 <https://github.com/holoviz/panel/issues/988>`_) [@philippjfr]
+- Add support for displaying callback errors and print output in the notebook simplifying debugging (`#977 <https://github.com/holoviz/panel/issues/977>`_) [@philippjfr]
+- Add support for dynamically populating `Tabs` (`#995 <https://github.com/holoviz/panel/issues/995>`_) [@philippjfr]
+- Added `FileSelector` widget to browse the servers file system and select files (`#909 <https://github.com/holoviz/panel/issues/909>`_) [@philippjfr]
+- Add `pn.serve` function to serve multiple apps at once on the same serve (`#963 <https://github.com/holoviz/panel/issues/963>`_) [@philippjfr]
+- Add a `JSON` pane to display json data in a tree format (`#953 <https://github.com/holoviz/panel/issues/953>`_) [@philippjfr]
+
+Minor Enhancements:
+
+- Updated Parameter mappings (`#999 <https://github.com/holoviz/panel/issues/999>`_) [@philippjfr]
+- Ensure that closed tabs update `Tabs.objects` (`#973 <https://github.com/holoviz/panel/issues/973>`_) [@philippjfr]
+- Fixed HoloViews axis linking across `Template` roots (`#980 <https://github.com/holoviz/panel/issues/980>`_) [@philippjfr]
+- Merge FactorRange when linking HoloViews axes (`#968 <https://github.com/holoviz/panel/issues/968>`_) [@philippjfr]
+- Expose title and other kwargs on `.show()` (`#962 <https://github.com/holoviz/panel/issues/962>`_) [@philippjfr]
+- Let `FileInput` widget set filename (`#956 <https://github.com/holoviz/panel/issues/956.`_) [Leopold Talirz]
+- Expose further bokeh CLI commands and added help (`#951 <https://github.com/holoviz/panel/issues/951>`_) [@philippjfr]
+- Enable responsive sizing for `Vega`/altair pane (`#949 <https://github.com/holoviz/panel/issues/949>`_) [@philippjfr]
+- Added encode parameter to `SVG` pane (`#913 <https://github.com/holoviz/panel/issues/913>`_) [@philippjfr]
+- Improve `Markdown` handling including syntax highlighting (`#881 <https://github.com/holoviz/panel/issues/881>`_) [@philippjfr]
+- Add ability to define Template variables (`#815 <https://github.com/holoviz/panel/issues/815>`_) [@philippjfr]
+- Allow configuring responsive behavior globally (`#851 <https://github.com/holoviz/panel/issues/951>`_) [@xavArtley]
+- Ensure that changes applied in callbacks are reflected on the frontend immediately (`#857 <https://github.com/holoviz/panel/issues/857>`_) [@philippjfr]
+- Add ability to add axes coordinates to `VTK` view (`#817 <https://github.com/holoviz/panel/issues/817>`_) [@xavArtley]
+- Add config option for `safe_embed` which ensures all state is recorded (`#1040  <https://github.com/holoviz/panel/issues/1040>`_) [@philippjfr]
+- Implemented `__signature__` for tab completion (`#1029 <https://github.com/holoviz/panel/issues/1029>`_) [@philippjfr]
+
+Bug fixes:
+
+- Fixed `DataFrame` widget selection parameter (`#989 <https://github.com/holoviz/panel/issues/989>`_) [@philippjfr]
+- Fixes for rendering long strings on Windows systems (`#986 <https://github.com/holoviz/panel/issues/986>`_)
+- Ensure that panel does not modify user objects (`#967 <https://github.com/holoviz/panel/issues/967>`_) [@philippjfr]
+- Fix multi-level expand `Param` subobject (`#965 <https://github.com/holoviz/panel/issues/965>`_) [@philippjfr]
+- Ensure `load_notebook` is executed only once (`#1000 <https://github.com/holoviz/panel/issues/1000>`_) [@philippjfr]
+- Fixed bug updating `StaticText` on server (`#964 <https://github.com/holoviz/panel/issues/964>`_) [@philippjfr]
+- Do not link `HoloViews` axes with different types (`#937 <https://github.com/holoviz/panel/issues/937>`_) [@philippjfr]
+- Ensure that integer sliders are actually integers (`#876 <https://github.com/holoviz/panel/issues/867>`_) [@philippjfr]
+- Ensure that `GridBox` contents maintain size (`#971 <https://github.com/holoviz/panel/issues/971>`_) [@philippjfr]
+
+Compatibility:
+
+- Compatibility for new Param API (`#992 <https://github.com/holoviz/panel/issues/992>`_, `#998 <https://github.com/holoviz/panel/issues/998>`_) [@jlstevens]
+- Changes for compatibility with Vega5 and altair 4 (`#873 <https://github.com/holoviz/panel/issues/873>`_, `#889 <https://github.com/holoviz/panel/issues/889>`_, `#892 <https://github.com/holoviz/panel/issues/892>`_, `#927 <https://github.com/holoviz/panel/issues/927>`_, `#933 <https://github.com/holoviz/panel/issues/933>`_) [@philippjfr]
+
+API Changes:
+
+- The Ace pane has been deprecated in favor of the Ace widget (`#908 <https://github.com/holoviz/panel/issues/908>`_) [@kgullikson88]
+
+Docs:
+
+- Updated Django multiple app example and user guide (`#928 <https://github.com/holoviz/panel/issues/928>`_) [@stefjunod]
+- Clarify developer installation instructions, and fix up some metadata. (`#952 <https://github.com/holoviz/panel/issues/952>`_, `#978 <https://github.com/holoviz/panel/issues/978>`_) [@ceball & @philippjfr]
+- Added `Param` reference notebook (`#944 <https://github.com/holoviz/panel/issues/994>`_) [@MarcSkovMadsen]
+- Added `Divider` reference notebook [@philippjfr]
+
 Version 0.7.0
 -------------
 
