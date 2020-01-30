@@ -11,8 +11,8 @@ And now DeckGL provides Python bindings. See
 
 from collections import OrderedDict
 
-from bokeh.core.properties import String, Bool, JSON, Override
-from bokeh.models import HTMLBox
+from bokeh.core.properties import String, Bool, Dict, Any, Override, Instance, List
+from bokeh.models import HTMLBox, ColumnDataSource
 
 
 class DeckGLPlot(HTMLBox):
@@ -38,8 +38,12 @@ class DeckGLPlot(HTMLBox):
         'exports': {"deck.gl": "deck", "mapbox-gl": "mapboxgl"}
     }
 
-    json_input = JSON()
+    data = Dict(String, Any)
+
+    data_sources = List(Instance(ColumnDataSource))
+
     mapbox_api_key = String()
+
     tooltip = Bool()
 
     height = Override(default=400)
