@@ -271,8 +271,10 @@ def block_comm():
     Context manager to temporarily block comm push
     """
     state._hold = True
-    yield
-    state._hold = False
+    try:
+        yield
+    finally:
+        state._hold = False
 
 
 def load_notebook(inline=True, load_timeout=5000):
