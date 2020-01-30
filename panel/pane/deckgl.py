@@ -178,7 +178,7 @@ class DeckGL(PaneBase):
         properties['data_sources'] = sources = []
         self._update_sources(data, sources)
         properties['layers'] = data.pop('layers', {})
-        properties['initialViewState'] = data.pop('initialViewState')
+        properties['initialViewState'] = data.pop('initialViewState', {})
         model = DeckGLPlot(data=data, **properties)
         root = root or model
         self._models[root.ref["id"]] = (model, parent)
@@ -189,5 +189,5 @@ class DeckGL(PaneBase):
         self._update_sources(data, model.data_sources)
         properties['data'] = data
         properties['layers'] = data.pop('layers', {})
-        properties['initialViewState'] = data.pop('initialViewState')
+        properties['initialViewState'] = data.pop('initialViewState', {})
         model.update(**properties)

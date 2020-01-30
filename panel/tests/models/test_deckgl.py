@@ -1,5 +1,7 @@
 """In this module we test the DeckGL Bokeh Model"""
 
+import json
+
 import pytest
 from panel.models.deckgl import DeckGLPlot
 
@@ -31,8 +33,14 @@ def tooltip():
 
 def test_constructor(json_input, mapbox_api_key, tooltip):
     # When
-    actual = DeckGLPlot(json_input=json_input, mapbox_api_key=mapbox_api_key, tooltip=tooltip,)
+    data = json.loads(json_input)
+    layers = data.pop('layers')
+    view_state = data.pop('initialViewState')
+    actual = DeckGLPlot(data=data, layers=layers, initialViewState=view_state,
+                        mapbox_api_key=mapbox_api_key, tooltip=tooltip,)
     # Then
-    assert actual.json_input == json_input
+    assert actual.data == data
+    assert actual.layers == layers
+    assert actual.initialViewState == view_state
     assert actual.mapbox_api_key == mapbox_api_key
     assert actual.tooltip == tooltip
