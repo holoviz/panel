@@ -84,6 +84,7 @@ export class VTKVolumePlotView extends VTKHTMLBoxView {
     this._vtk_renwin.getRenderWindow().getInteractor()
     this._vtk_renwin.getRenderWindow().getInteractor().setDesiredUpdateRate(45)
     this._plot()
+    // Colormap selector
     this.colormap_slector.addEventListener('change', () => {
       this.model.colormap = this.colormap_slector.value
     })
@@ -91,6 +92,33 @@ export class VTKVolumePlotView extends VTKHTMLBoxView {
       this.model.colormap = this.colormap_slector.value
     else
       this.model.properties.colormap.change.emit()
+
+      // Shadow selector
+    this.shadow_selector.addEventListener('change', () => {
+      this.model.shadow = !!Number(this.shadow_selector.value)
+    })
+    if (this.model.shadow = !!Number(this.shadow_selector.value))
+      this.model.properties.shadow.change.emit()
+
+
+    // Sampling slider
+    this.sampling_slider.addEventListener('input', () => {
+      const js_sampling_value = Number(this.sampling_slider.value)
+      if (Math.abs(this.model.sampling-js_sampling_value) >= 5e-3)
+        this.model.sampling = js_sampling_value
+    })
+    if (Math.abs(this.model.sampling-Number(this.shadow_selector.value)) >= 5e-3)
+      this.model.properties.sampling.change.emit()
+
+    // Edge Gradient slider
+    this.edge_gradient_slider.addEventListener('input', () => {
+      const js_edge_gradient_value = Number(this.edge_gradient_slider.value)
+      if (Math.abs(this.model.edge_gradient-js_edge_gradient_value) >= 5e-3)
+        this.model.edge_gradient = js_edge_gradient_value
+    })
+    if (Math.abs(this.model.edge_gradient-Number(this.edge_gradient_slider.value)) >= 5e-3)
+      this.model.properties.edge_gradient.change.emit()
+
     this._vtk_renwin.getRenderer().resetCamera()
   }
 
