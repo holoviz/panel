@@ -11,7 +11,7 @@ except Exception:
     vtk = None
 
 from six import string_types
-from panel.models.vtk import VTKPlot
+from panel.models.vtk import VTKPlot, VTKVolumePlot
 from panel.pane import Pane, PaneBase, VTK,VTKVolume
 
 vtk_available = pytest.mark.skipif(vtk is None, reason="requires vtk")
@@ -97,3 +97,41 @@ def test_vtk_volume_from_np_array():
 def test_vtk_volume_from_vtk_image():
     image_data = make_image_data()
     assert PaneBase.get_pane_type(image_data) is VTKVolume
+
+@vtk_available
+def test_vtk_pane_scene(document, comm):
+    renWin = make_render_window()
+    pane = VTK(renWin)
+
+    # Create pane
+    model = pane.get_root(document, comm=comm)
+    assert isinstance(model, VTKPlot)
+    assert pane._models[model.ref['id']][0] is model
+
+    import base64
+    from io import BytesIO
+    from zipfile import ZipFile
+
+    with BytesIO(base64.b64decode(model.data.encode())) as in_memory:
+        with ZipFile(in_memory) as zf:
+            filenames = zf.namelist()
+            assert len(filenames) == 4
+            assert 'index.json' in filenames
+    # Cleanup
+    pane._cleanup(model)
+    assert pane._models == {}
+
+@vtk_available
+def test_vtk_pane_volume(document, comm):
+    image_data = make_image_data()
+    pane = VTKVolume(image_data)
+    from operator import eq
+    # Create pane
+    model = pane.get_root(document, comm=comm)
+    assert isinstance(model, VTKVolumePlot)
+    assert pane._models[model.ref['id']][0] is model
+    assert all([eq(getattr(pane, k), getattr(model, k))
+                for k in ['slice_i', 'slice_j', 'slice_k']])
+    # Cleanup
+    pane._cleanup(model)
+    assert pane._models == {}
