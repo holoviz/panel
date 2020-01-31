@@ -79,8 +79,22 @@ class DeckGL(PaneBase):
     mapbox_api_key = param.String(default=None, doc="""
         The MapBox API key if not supplied by a PyDeck object.""")
 
-    tooltips = param.Boolean(default=True, doc="""
+    tooltips = param.ClassSelector(default=True, class_=(bool, dict), doc="""
         Whether to enable tooltips""")
+
+    click_state = param.Dict(default={}, doc="""
+        Contains the last click event on the DeckGL plot.""")
+
+    hover_state = param.Dict(default={}, doc="""
+        The current hover state of the DeckGL plot.""")
+
+    view_state = param.Dict(default={}, doc="""
+        The current view state of the DeckGL plot.""")
+
+    _rename = {
+        'click_state': 'clickState', 'hover_state': 'hoverState',
+        'view_state': 'viewState', 'tooltips': 'tooltip'
+    }
 
     _updates = True
 
@@ -191,6 +205,7 @@ class DeckGL(PaneBase):
         properties['initialViewState'] = data.pop('initialViewState', {})
         model = DeckGLPlot(data=data, **properties)
         root = root or model
+        self._link_props(model, ['clickState', 'hoverState', 'viewState'], doc, root, comm)
         self._models[root.ref["id"]] = (model, parent)
         return model
 
