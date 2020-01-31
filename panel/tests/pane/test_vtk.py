@@ -2,6 +2,10 @@
 
 from __future__ import absolute_import
 
+import base64
+from io import BytesIO
+from zipfile import ZipFile
+
 import pytest
 import numpy as np
 
@@ -10,11 +14,17 @@ try:
 except Exception:
     vtk = None
 
+try:
+    import pyvista as pv
+except Exception:
+    pv = None
+
 from six import string_types
 from panel.models.vtk import VTKPlot, VTKVolumePlot
 from panel.pane import Pane, PaneBase, VTK,VTKVolume
 
 vtk_available = pytest.mark.skipif(vtk is None, reason="requires vtk")
+pyvista_available = pytest.mark.skipif(pv is None, reason="requires pyvista")
 
 
 def make_render_window():
@@ -28,6 +38,20 @@ def make_render_window():
     renWin = vtk.vtkRenderWindow()
     renWin.AddRenderer(ren)
     return renWin
+
+def pyvista_render_window():
+    """
+    Allow to download and create a more complex example easily
+    """
+    from pyvista import examples
+    globe = examples.load_globe() #add texture
+    pl = pv.Plotter()
+    pl.add_mesh(globe)
+    sphere = pv.Sphere()
+    scalars=sphere.points[:, 2]
+    sphere._add_point_array(scalars, 'test', set_active=True) #allow to test scalars
+    pl.add_mesh(sphere)
+    return pl.ren_win
 
 def make_image_data():
     image_data = vtk.vtkImageData()
@@ -56,8 +80,17 @@ def test_get_vtk_pane_type_from_file():
 
 @vtk_available
 def test_get_vtk_pane_type_from_render_window():
-    renWin = make_render_window()
-    assert PaneBase.get_pane_type(renWin) is VTK
+    assert PaneBase.get_pane_type(vtk.vtkRenderWindow()) is VTK
+
+
+def test_vtk_volume_pane_type_from_np_array():
+    assert PaneBase.get_pane_type(np.array([]).reshape((0,0,0))) is VTKVolume
+
+
+@vtk_available
+def test_vtk_volume_pane_type_from_vtk_image():
+    image_data = make_image_data()
+    assert PaneBase.get_pane_type(image_data) is VTKVolume
 
 
 def test_vtk_pane_from_url(document, comm):
@@ -73,33 +106,7 @@ def test_vtk_pane_from_url(document, comm):
 
 
 @vtk_available
-def test_vtk_data_array_dump():
-    from panel.pane.vtk.vtkjs_serializer import _dump_data_array
-    root_keys = ['ref', 'vtkClass', 'name', 'dataType',
-                 'numberOfComponents', 'size', 'ranges']
-    renWin = make_render_window()
-    renderers = list(renWin.GetRenderers())
-    ren_props = list(renderers[0].GetViewProps())
-    mapper = ren_props[0].GetMapper()
-    mapper.Update() # create data
-    data = mapper.GetInput().GetPoints().GetData()
-    scDir = []
-    root = _dump_data_array(scDir, '', 'test', data)
-    assert len(set(root_keys) - set(root.keys())) == 0
-    assert len(scDir) == 1
-    assert isinstance(scDir[0][0], string_types)
-    assert isinstance(scDir[0][1], bytes)
-
-def test_vtk_volume_from_np_array():
-    assert PaneBase.get_pane_type(np.random.rand(10,10,10)) is VTKVolume
-
-@vtk_available
-def test_vtk_volume_from_vtk_image():
-    image_data = make_image_data()
-    assert PaneBase.get_pane_type(image_data) is VTKVolume
-
-@vtk_available
-def test_vtk_pane_scene(document, comm):
+def test_vtk_pane_from_renwin(document, comm):
     renWin = make_render_window()
     pane = VTK(renWin)
 
@@ -108,9 +115,6 @@ def test_vtk_pane_scene(document, comm):
     assert isinstance(model, VTKPlot)
     assert pane._models[model.ref['id']][0] is model
 
-    import base64
-    from io import BytesIO
-    from zipfile import ZipFile
 
     with BytesIO(base64.b64decode(model.data.encode())) as in_memory:
         with ZipFile(in_memory) as zf:
@@ -121,8 +125,52 @@ def test_vtk_pane_scene(document, comm):
     pane._cleanup(model)
     assert pane._models == {}
 
+
+@pyvista_available
+def test_vtk_pane_more_complex(document, comm):
+    renWin = pyvista_render_window()
+    pane = VTK(renWin)
+
+    # Create pane
+    model = pane.get_root(document, comm=comm)
+    assert isinstance(model, VTKPlot)
+    assert pane._models[model.ref['id']][0] is model
+
+    #test colorbar
+    colorbars_plot = pane.construct_colorbars()
+    cb_model = colorbars_plot.below[0]
+    cb_title = cb_model.title
+    assert cb_title == 'test'
+    assert cb_model.color_mapper.palette == pane._legend[cb_title]['palette']
+
+    with BytesIO(base64.b64decode(model.data.encode())) as in_memory:
+        with ZipFile(in_memory) as zf:
+            filenames = zf.namelist()
+            assert len(filenames) == 12
+            assert 'index.json' in filenames
+    # Cleanup
+    pane._cleanup(model)
+    assert pane._models == {}
+
+
 @vtk_available
-def test_vtk_pane_volume(document, comm):
+def test_vtk_pane_volume_from_np_array(document, comm):
+    pane = VTKVolume(np.ones((10,10,10)))
+    from operator import eq
+    # Create pane
+    model = pane.get_root(document, comm=comm)
+    assert isinstance(model, VTKVolumePlot)
+    assert pane._models[model.ref['id']][0] is model
+    assert np.all(np.frombuffer(base64.b64decode(model.data['buffer'].encode())) == 1)
+    assert all([eq(getattr(pane, k), getattr(model, k))
+                for k in ['slice_i', 'slice_j', 'slice_k']])
+    # Cleanup
+    pane._cleanup(model)
+    assert pane._models == {}
+
+
+@vtk_available
+def test_vtk_pane_volume_from_image_data(document, comm):
     image_data = make_image_data()
     pane = VTKVolume(image_data)
     from operator import eq
