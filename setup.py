@@ -125,6 +125,7 @@ extras_require = {
         'datashader',
         'jupyter_bokeh',
         'django',
+        'pyvista',
     ],
     'recommended': _recommended,
     'doc': _recommended + [
@@ -133,7 +134,6 @@ extras_require = {
         'selenium',
         'phantomjs',
         'lxml',
-        'pyvista'
     ]
 }
 
