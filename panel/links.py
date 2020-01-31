@@ -306,6 +306,8 @@ class CallbackGenerator(object):
 
         if code is None:
             code = self._get_code(link, source, src_spec[1], target, tgt_spec[1])
+        else:
+            code = "try {{ {code} }} catch(err) {{ console.log(err) }}".format(code=code)
 
         src_cb = CustomJS(args=references, code=code, tags=[link_id])
         changes, events = self._get_triggers(link, src_spec)
@@ -394,7 +396,11 @@ class JSLinkCallbackGenerator(JSCallbackGenerator):
       console.log('WARNING: Could not set {tgt_attr} on target, raised error: ' + err);
       return;
     }}
-    target['{tgt_attr}'] = value;
+    try {{
+      target['{tgt_attr}'] = value;
+    }} catch (err) {{
+      console.log(e)
+    }}
     """
 
     def _get_specs(self, link, source, target):
