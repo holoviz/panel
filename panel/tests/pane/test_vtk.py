@@ -2,6 +2,7 @@
 
 from __future__ import absolute_import
 
+import os
 import base64
 from io import BytesIO
 from zipfile import ZipFile
@@ -20,7 +21,7 @@ except Exception:
     pv = None
 
 from six import string_types
-from panel.models.vtk import VTKPlot, VTKVolumePlot
+from panel.models.vtk import VTKPlot, VTKVolumePlot, VTKAxes
 from panel.pane import Pane, PaneBase, VTK,VTKVolume
 
 vtk_available = pytest.mark.skipif(vtk is None, reason="requires vtk")
@@ -106,7 +107,7 @@ def test_vtk_pane_from_url(document, comm):
 
 
 @vtk_available
-def test_vtk_pane_from_renwin(document, comm):
+def test_vtk_pane_from_renwin(document, comm, tmp_path):
     renWin = make_render_window()
     pane = VTK(renWin)
 
@@ -115,12 +116,18 @@ def test_vtk_pane_from_renwin(document, comm):
     assert isinstance(model, VTKPlot)
     assert pane._models[model.ref['id']][0] is model
 
-
     with BytesIO(base64.b64decode(model.data.encode())) as in_memory:
         with ZipFile(in_memory) as zf:
             filenames = zf.namelist()
             assert len(filenames) == 4
             assert 'index.json' in filenames
+
+    # Export Update and Read
+    tmpfile = os.path.join(tmp_path, 'export.vtkjs')
+    pane.export_vtkjs(filename=tmpfile)
+    with open(tmpfile, 'rb') as  file_exported:
+        pane.object = file_exported
+
     # Cleanup
     pane._cleanup(model)
     assert pane._models == {}
@@ -148,6 +155,21 @@ def test_vtk_pane_more_complex(document, comm):
             filenames = zf.namelist()
             assert len(filenames) == 12
             assert 'index.json' in filenames
+
+    # add axes
+    pane.axes = dict(
+        origin = [-5, 5, -2],
+        xticker = {'ticks': np.linspace(-5,5,5)},
+        yticker = {'ticks': np.linspace(-5,5,5)},
+        zticker = {'ticks': np.linspace(-2,2,5),
+                   'labels': [''] + [str(int(item)) for item in np.linspace(-2,2,5)[1:]]},
+        fontsize = 12,
+        digits = 1,
+        grid_opacity = 0.5,
+        show_grid=True
+    )
+    assert isinstance(model.axes, VTKAxes)
+
     # Cleanup
     pane._cleanup(model)
     assert pane._models == {}
@@ -164,6 +186,11 @@ def test_vtk_pane_volume_from_np_array(document, comm):
     assert np.all(np.frombuffer(base64.b64decode(model.data['buffer'].encode())) == 1)
     assert all([eq(getattr(pane, k), getattr(model, k))
                 for k in ['slice_i', 'slice_j', 'slice_k']])
+
+    # Test update data
+    pane.object = 2*np.ones((10,10,10))
+    assert np.all(np.frombuffer(base64.b64decode(model.data['buffer'].encode())) == 2)
+
     # Cleanup
     pane._cleanup(model)
     assert pane._models == {}
