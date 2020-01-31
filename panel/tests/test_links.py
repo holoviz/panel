@@ -105,7 +105,11 @@ def test_pnwidget_hvplot_links(document, comm):
       console.log('WARNING: Could not set size on target, raised error: ' + err);
       return;
     }
-    target['size'] = value;
+    try {
+      target['size'] = value;
+    } catch(err) {
+      console.log(err)
+    }
     """
     assert link_customjs.code == code
 
@@ -141,7 +145,11 @@ def test_bkwidget_hvplot_links(document, comm):
       console.log('WARNING: Could not set size on target, raised error: ' + err);
       return;
     }
-    target['size'] = value;
+    try {
+      target['size'] = value;
+    } catch(err) {
+      console.log(err)
+    }
     """
     assert link_customjs.code == code
 
@@ -174,7 +182,11 @@ def test_bkwidget_bkplot_links(document, comm):
       console.log('WARNING: Could not set size on target, raised error: ' + err);
       return;
     }
-    target['size'] = value;
+    try {
+      target['size'] = value;
+    } catch(err) {
+      console.log(err)
+    }
     """
     assert link_customjs.code == code
 
@@ -205,7 +217,11 @@ def test_widget_bkplot_link(document, comm):
       console.log('WARNING: Could not set fill_color on target, raised error: ' + err);
       return;
     }
-    target['fill_color'] = value;
+    try {
+      target['fill_color'] = value;
+    } catch(err) {
+      console.log(err)
+    }
     """
     assert link_customjs.code == code
 
@@ -219,7 +235,7 @@ def test_widget_jscallback(document, comm):
 
     customjs = model.js_property_callbacks['change:color'][-1]
     assert customjs.args['source'] is model
-    assert customjs.code == "some_code"
+    assert customjs.code == "try { some_code } catch(err) { console.log(err) }"
 
 
 def test_widget_jscallback_args_scalar(document, comm):
@@ -244,7 +260,7 @@ def test_widget_jscallback_args_model(document, comm):
     customjs = model.children[0].js_property_callbacks['change:color'][-1]
     assert customjs.args['source'] is model.children[0]
     assert customjs.args['widget'] is model.children[1]
-    assert customjs.code == "some_code"
+    assert customjs.code == "try { some_code } catch(err) { console.log(err) }"
 
 
 @hv_available
@@ -260,7 +276,7 @@ def test_hvplot_jscallback(document, comm):
 
     customjs = x_range.js_property_callbacks['change:start'][-1]
     assert customjs.args['source'] is x_range
-    assert customjs.code == "some_code"
+    assert customjs.code == "try { some_code } catch(err) { console.log(err) }"
 
 
 @hv_available
@@ -268,8 +284,8 @@ def test_link_with_customcode(document, comm):
     range_widget = RangeSlider(start=0., end=1.)
     curve = hv.Curve([])
     code = """
-        x_range.start = source.value[0]
-        x_range.end = source.value[1]
+      x_range.start = source.value[0]
+      x_range.end = source.value[1]
     """
     range_widget.jslink(curve, code={'value': code})
     row = Row(curve, range_widget)
@@ -287,4 +303,4 @@ def test_link_with_customcode(document, comm):
     link_customjs = range_slider.js_property_callbacks['change:value'][-1]
     assert link_customjs.args['source'] is range_slider
     assert link_customjs.args['x_range'] is x_range
-    assert link_customjs.code == code
+    assert link_customjs.code == "try { %s } catch(err) { console.log(err) }" % code

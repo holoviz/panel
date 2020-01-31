@@ -44,7 +44,11 @@ def test_embed_param_jslink(document, comm):
       console.log('WARNING: Could not set disabled on target, raised error: ' + err);
       return;
     }
-    target['disabled'] = value;
+    try {
+      target['disabled'] = value;
+    } catch(err) {
+      console.log(err)
+    }
     """
 
     assert cb2.code == """
@@ -58,7 +62,11 @@ def test_embed_param_jslink(document, comm):
       console.log('WARNING: Could not set active on target, raised error: ' + err);
       return;
     }
-    target['active'] = value;
+    try {
+      target['active'] = value;
+    } catch(err) {
+      console.log(err)
+    }
     """
 
 
@@ -166,7 +174,11 @@ def test_embed_select_str_jslink(document, comm):
       console.log('WARNING: Could not set text on target, raised error: ' + err);
       return;
     }
-    target['text'] = value;
+    try {
+      target['text'] = value;
+    } catch(err) {
+      console.log(err)
+    }
     """
     
     assert cb2.code == """
@@ -180,7 +192,11 @@ def test_embed_select_str_jslink(document, comm):
       console.log('WARNING: Could not set value on target, raised error: ' + err);
       return;
     }
-    target['value'] = value;
+    try {
+      target['value'] = value;
+    } catch(err) {
+      console.log(err)
+    }
     """
 
 
@@ -235,7 +251,11 @@ def test_embed_checkbox_str_jslink(document, comm):
       console.log('WARNING: Could not set text on target, raised error: ' + err);
       return;
     }
-    target['text'] = value;
+    try {
+      target['text'] = value;
+    } catch(err) {
+      console.log(err)
+    }
     """
     
     assert cb2.code == """
@@ -249,7 +269,11 @@ def test_embed_checkbox_str_jslink(document, comm):
       console.log('WARNING: Could not set active on target, raised error: ' + err);
       return;
     }
-    target['active'] = value;
+    try {
+      target['active'] = value;
+    } catch(err) {
+      console.log(err)
+    }
     """
 
         
@@ -305,7 +329,11 @@ def test_embed_slider_str_jslink(document, comm):
       console.log('WARNING: Could not set text on target, raised error: ' + err);
       return;
     }
-    target['text'] = value;
+    try {
+      target['text'] = value;
+    } catch(err) {
+      console.log(err)
+    }
     """
     
     assert cb2.code == """
@@ -319,7 +347,11 @@ def test_embed_slider_str_jslink(document, comm):
       console.log('WARNING: Could not set value on target, raised error: ' + err);
       return;
     }
-    target['value'] = value;
+    try {
+      target['value'] = value;
+    } catch(err) {
+      console.log(err)
+    }
     """
 
         
