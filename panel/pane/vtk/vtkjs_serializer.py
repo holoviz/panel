@@ -8,10 +8,14 @@ Licence :
 https://github.com/Kitware/vtk-js/blob/master/LICENSE
 """
 
-import vtk
 import os, sys, json, hashlib, zipfile
-
 from io import BytesIO
+
+if sys.version_info < (3,):
+    import imp
+    vtk = imp.load_module('vtk', *imp.find_module('vtk'))
+else:
+    import vtk
 
 from .enums import SCALAR_MODE, ACCESS_MODE
 
