@@ -52,10 +52,6 @@ _js_mapping = {
 _writer_mapping = {}
 
 
-def _random_name():
-    return ''.join([random.choice(string.ascii_lowercase) for _ in range(16)])
-
-
 def _get_range_info(array, component):
     r = array.GetRange(component)
     compRange = {}
