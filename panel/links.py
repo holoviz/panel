@@ -398,8 +398,8 @@ class JSLinkCallbackGenerator(JSCallbackGenerator):
     }}
     try {{
       target['{tgt_attr}'] = value;
-    }} catch (err) {{
-      console.log(e)
+    }} catch(err) {{
+      console.log(err)
     }}
     """
 
