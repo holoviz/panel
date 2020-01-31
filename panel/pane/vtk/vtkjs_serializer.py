@@ -9,7 +9,7 @@ https://github.com/Kitware/vtk-js/blob/master/LICENSE
 """
 
 import vtk
-import os, sys, json, random, string, hashlib, zipfile
+import os, sys, json, hashlib, zipfile
 
 from io import BytesIO
 
