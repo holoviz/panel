@@ -11,16 +11,16 @@ from panel.widgets import FileSelector
 
 @pytest.yield_fixture
 def test_dir():
-    test_dir = os.path.expanduser('~/test_dir')
+    test_dir = os.path.expanduser(os.path.join('~','test_dir'))
     os.mkdir(test_dir)
-    os.mkdir(os.path.expanduser('~/test_dir/subdir1'))
-    with open(os.path.expanduser('~/test_dir/subdir1/a'), 'a'):
+    os.mkdir(os.path.expanduser(os.path.join('~','test_dir','subdir1')))
+    with open(os.path.expanduser(os.path.join('~','test_dir','subdir1','a')), 'a'):
         pass
-    with open(os.path.expanduser('~/test_dir/subdir1/b'), 'a'):
+    with open(os.path.expanduser(os.path.join('~','test_dir','subdir1','b')), 'a'):
         pass
-    os.mkdir(os.path.expanduser('~/test_dir/subdir2'))
+    os.mkdir(os.path.expanduser(os.path.join('~','test_dir','subdir2')))
     yield test_dir
-    shutil.rmtree(os.path.expanduser('~/test_dir'))
+    shutil.rmtree(os.path.expanduser(os.path.join('~','test_dir')))
 
 
 def test_file_selector_init(test_dir):
