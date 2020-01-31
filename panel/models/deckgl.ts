@@ -197,7 +197,6 @@ export class DeckGLPlotView extends PanelHTMLBoxView {
         tooltip
       });
     }
-    console.log(this.deckGL)
     this.el.appendChild(container);
   }
 }
