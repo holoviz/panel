@@ -123,7 +123,7 @@ def test_vtk_pane_from_renwin(document, comm, tmp_path):
             assert 'index.json' in filenames
 
     # Export Update and Read
-    tmpfile = os.path.join(tmp_path, 'export.vtkjs')
+    tmpfile = os.path.join(*tmp_path.joinpath('export.vtkjs').parts)
     pane.export_vtkjs(filename=tmpfile)
     with open(tmpfile, 'rb') as  file_exported:
         pane.object = file_exported
