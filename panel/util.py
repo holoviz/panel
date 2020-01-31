@@ -51,6 +51,13 @@ def isurl(obj, formats):
     ) and any(lower_string.endswith('.'+fmt) for fmt in formats)
 
 
+def is_dataframe(obj):
+    if 'pandas' not in sys.modules:
+        return False
+    import pandas as pd
+    return isinstance(obj, pd.DataFrame)
+
+
 def hashable(x):
     if isinstance(x, MutableSequence):
         return tuple(x)
