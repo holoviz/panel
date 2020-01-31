@@ -298,7 +298,7 @@ class VTK(PaneBase):
 
     _updates = True
 
-    _rerender_params = ['axes', 'object', 'serialize_on_instantiation']
+    _rerender_params = ['object', 'serialize_on_instantiation']
 
     _serializers = {}
 
