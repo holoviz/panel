@@ -58,7 +58,7 @@ export class DeckGLPlotView extends PanelHTMLBoxView {
   initialize(): void {
     super.initialize()
     if (deck.JSONConverter) {
-	  const {CSVLoader, Tile3DLoader} = loaders
+      const {CSVLoader, Tile3DLoader} = loaders
       loaders.registerLoaders([Tile3DLoader, CSVLoader]);
       const jsonConverterConfiguration: any = {
         classes: extractClasses(),
@@ -110,11 +110,36 @@ export class DeckGLPlotView extends PanelHTMLBoxView {
       this.updateDeck()
   }
 
+  _on_click_event(event: any): void {
+    const clickState = {
+      coordinate: event.coordinate,
+      lngLat: event.lngLat,
+      index: event.index
+    }
+    this.model.clickState = clickState
+  }
+
+  _on_hover_event(event: any): void {
+    const hoverState = {
+      coordinate: event.coordinate,
+      lngLat: event.lngLat,
+      index: event.index
+    }
+    this.model.hoverState = hoverState
+  }
+
+  _on_viewState_event(event: any): void {
+    this.model.viewState = event.viewState
+  }
+
   getData(): any {
     const data = {
-        ...this.model.data,
-        layers: this.model.layers,
-        initialViewState: this.model.initialViewState
+      ...this.model.data,
+      layers: this.model.layers,
+      initialViewState: this.model.initialViewState,
+      onViewStateChange: (event: any) => this._on_viewState_event(event),
+      onClick: (event: any) => this._on_click_event(event),
+      onHover: (event: any) => this._on_hover_event(event)
     }
     return data
   }
@@ -130,7 +155,7 @@ export class DeckGLPlotView extends PanelHTMLBoxView {
     }
   }
 
-  createDeck({mapboxApiKey, container, jsonInput, tooltip, handleClick} : any): void {
+  createDeck({mapboxApiKey, container, jsonInput, tooltip} : any): void {
     let deckgl;
     try {
       const props = this.jsonConverter.convert(jsonInput);
@@ -139,9 +164,8 @@ export class DeckGLPlotView extends PanelHTMLBoxView {
         ...props,
         map: mapboxgl,
         mapboxApiAccessToken: mapboxApiKey,
-        onClick: handleClick,
         container,
-		getTooltip
+        getTooltip
       });
     } catch (err) {
       console.error(err);
@@ -170,9 +194,10 @@ export class DeckGLPlotView extends PanelHTMLBoxView {
         mapboxApiKey: MAPBOX_API_KEY,
         container: container,
         jsonInput: data,
-		tooltip
+        tooltip
       });
     }
+    console.log(this.deckGL)
     this.el.appendChild(container);
   }
 }
@@ -185,7 +210,10 @@ export namespace DeckGLPlot {
     initialViewState: p.Property<any>
     layers: p.Property<any[]>
     mapbox_api_key: p.Property<string>
-    tooltip: p.Property<boolean>
+    tooltip: p.Property<any>
+    clickState: p.Property<any>
+    hoverState: p.Property<any>
+    viewState: p.Property<any>
   }
 }
 
@@ -206,10 +234,13 @@ export class DeckGLPlot extends HTMLBox {
     this.define<DeckGLPlot.Props>({
       data: [p.Any],
       data_sources: [ p.Array, [] ],
+      clickState: [ p.Any ],
+      hoverState: [ p.Any ],
       initialViewState: [p.Any],
       layers: [ p.Array, [] ],
       mapbox_api_key: [p.String],
-      tooltip: [p.Boolean],
+      tooltip: [ p.Any ],
+      viewState: [ p.Any ],
     })
 
     this.override({
