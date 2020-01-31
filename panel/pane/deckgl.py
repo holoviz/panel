@@ -15,7 +15,7 @@ import param
 from bokeh.models import ColumnDataSource
 from pyviz_comms import JupyterComm
 
-from ..util import string_types
+from ..util import is_dataframe, string_types
 from ..viewable import Layoutable
 from .base import PaneBase
 
@@ -155,12 +155,15 @@ class DeckGL(PaneBase):
         # Process
         unprocessed, unused = [], list(sources)
         for layer in layers:
-            if 'data' not in layer:
+            data = layer.get('data')
+            if is_dataframe(data):
+                data = ColumnDataSource.from_df(data)
+            elif (isinstance(data, list) and data
+                  and isinstance(data[0], dict)):
+                data = cls._process_data(data)
+            else:
                 continue
-            data = layer['data']
-            if not isinstance(data, list) or not data or not isinstance(data[0], dict):
-                continue
-            data = cls._process_data(data)
+
             key = tuple(sorted(data.keys()))
             existing = source_columns.get(key)
             if existing:
