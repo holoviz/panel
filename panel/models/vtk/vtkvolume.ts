@@ -325,8 +325,6 @@ export class VTKVolumePlot extends AbstractVTKPlot {
     super(attrs)
   }
 
-  static __module__ = "panel.models.vtk"
-
   static init_VTKVolumePlot(): void {
     this.prototype.default_view = VTKVolumePlotView
 
@@ -349,10 +347,5 @@ export class VTKVolumePlot extends AbstractVTKPlot {
       render_background: [ p.String,      '#52576e' ],
       interpolation:     [ p.Any,      'fast_linear'],
     })
-
-    this.override({
-      height: 300,
-      width: 300
-    });
   }
 }
