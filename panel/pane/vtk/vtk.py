@@ -115,6 +115,10 @@ class VTKVolume(PaneBase):
         Postition of each slice can be controlled using slice_(i,j,k) parameters
     """)
 
+    orientation_widget = param.Boolean(default=False, doc="""
+        Activate/Deactivate the orientation widget display.
+    """)
+
     _serializers = {}
 
     _rename = {'max_data_size': None, 'spacing': None, 'origin': None}
@@ -166,7 +170,7 @@ class VTKVolume(PaneBase):
                               **props)
         if root is None:
             root = model
-        self._link_props(model, ['colormap'], doc, root, comm)
+        self._link_props(model, ['colormap', 'orientation_widget'], doc, root, comm)
         self._models[root.ref['id']] = (model, parent)
         return model
 
