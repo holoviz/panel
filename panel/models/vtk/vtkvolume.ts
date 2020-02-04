@@ -9,6 +9,7 @@ export class VTKVolumePlotView extends AbstractVTKView {
   model: VTKVolumePlot
   protected _controllerWidget: any
   protected _vtk_image_data: any
+  protected _export_filters: any[]
 
   connect_signals(): void {
     super.connect_signals()
@@ -62,14 +63,17 @@ export class VTKVolumePlotView extends AbstractVTKView {
     })
     this.connect(this.model.properties.slice_i.change, () => {
       this.image_actor_i.getMapper().setISlice(this.model.slice_i)
+      this._export_filters[0].setSliceIndex(this.model.slice_i)
       this._vtk_renwin.getRenderWindow().render()
     })
     this.connect(this.model.properties.slice_j.change, () => {
       this.image_actor_j.getMapper().setJSlice(this.model.slice_j)
+      this._export_filters[1].setSliceIndex(this.model.slice_j)
       this._vtk_renwin.getRenderWindow().render()
     })
     this.connect(this.model.properties.slice_k.change, () => {
       this.image_actor_k.getMapper().setKSlice(this.model.slice_k)
+      this._export_filters[2].setSliceIndex(this.model.slice_k)
       this._vtk_renwin.getRenderWindow().render()
     })
     this.connect(this.model.properties.render_background.change, () => {
@@ -281,6 +285,28 @@ export class VTKVolumePlotView extends AbstractVTKView {
     renderer.addActor(image_actor_j)
     renderer.addActor(image_actor_k)
 
+
+    const export_slice_i = vtkns['CustomSliceFilter']({sliceMode: 'i', sliceIndex: this.model.slice_i})
+    export_slice_i.setLookupTable(lookupTable)
+    export_slice_i.setPiecewiseFunction(piecewiseFunction)
+    export_slice_i.setInputData(source)
+    lookupTable.onModified(() => export_slice_i.modified())
+
+    const export_slice_j = vtkns['CustomSliceFilter']({sliceMode: 'j', sliceIndex: this.model.slice_j})
+    export_slice_j.setLookupTable(lookupTable)
+    export_slice_j.setPiecewiseFunction(piecewiseFunction)
+    export_slice_j.setInputData(source)
+    lookupTable.onModified(() => export_slice_j.modified())
+
+    const export_slice_k = vtkns['CustomSliceFilter']({sliceMode: 'k', sliceIndex: this.model.slice_k})
+    export_slice_k.setLookupTable(lookupTable)
+    export_slice_k.setPiecewiseFunction(piecewiseFunction)
+    export_slice_k.setInputData(source)
+    lookupTable.onModified(() => export_slice_k.modified())
+
+    this._export_filters = [export_slice_i, export_slice_j, export_slice_k]
+    this.model.export_filters = this._export_filters
+
   }
 
   _set_volume_visbility(visibility: boolean): void {
@@ -288,7 +314,7 @@ export class VTKVolumePlotView extends AbstractVTKView {
   }
 
   _set_slices_visbility(visibility: boolean): void {
-    this._vtk_renwin.getRenderer().getActors().map(
+    this._vtk_renwin.getRenderer().getActors().slice(0,3).map(
       (actor: any) => actor.setVisibility(visibility)
     )
   }
@@ -320,6 +346,7 @@ export interface VTKVolumePlot extends VTKVolumePlot.Attrs {}
 
 export class VTKVolumePlot extends AbstractVTKPlot {
   properties: VTKVolumePlot.Props
+  export_filters: any[]
 
   constructor(attrs?: Partial<VTKVolumePlot.Attrs>) {
     super(attrs)
