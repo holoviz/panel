@@ -117,3 +117,7 @@ class VTKVolumePlot(AbstractVTKPlot):
     render_background = String(default='#52576e')
 
     interpolation = Enum(enumeration('fast_linear','linear','nearest'))
+
+    slices_data_i = Dict(String, Any)
+    slices_data_j = Dict(String, Any)
+    slices_data_k = Dict(String, Any)

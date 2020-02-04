@@ -149,6 +149,7 @@ export class VTKVolumePlotView extends AbstractVTKView {
     this._vtk_renwin.getRenderer().setBackground(...hexToRGB(this.model.render_background))
     this._set_interpolation(this.model.interpolation)
     this._vtk_renwin.getRenderer().resetCamera()
+    setInterval(() => this._update_slices_data(), 100) // all 100 ms
   }
 
   _connect_controls(): void{
@@ -157,35 +158,35 @@ export class VTKVolumePlotView extends AbstractVTKView {
       this.model.colormap = this.colormap_slector.value
     })
     if (!this.model.colormap)
-      this.model.colormap = this.colormap_slector.value
+    this.model.colormap = this.colormap_slector.value
     else
-      this.model.properties.colormap.change.emit()
+    this.model.properties.colormap.change.emit()
 
-      // Shadow selector
+    // Shadow selector
     this.shadow_selector.addEventListener('change', () => {
       this.model.shadow = !!Number(this.shadow_selector.value)
     })
     if (this.model.shadow = !!Number(this.shadow_selector.value))
-      this.model.properties.shadow.change.emit()
+    this.model.properties.shadow.change.emit()
 
 
     // Sampling slider
     this.sampling_slider.addEventListener('input', () => {
       const js_sampling_value = Number(this.sampling_slider.value)
       if (Math.abs(this.model.sampling-js_sampling_value) >= 5e-3)
-        this.model.sampling = js_sampling_value
+      this.model.sampling = js_sampling_value
     })
     if (Math.abs(this.model.sampling-Number(this.shadow_selector.value)) >= 5e-3)
-      this.model.properties.sampling.change.emit()
+    this.model.properties.sampling.change.emit()
 
     // Edge Gradient slider
     this.edge_gradient_slider.addEventListener('input', () => {
       const js_edge_gradient_value = Number(this.edge_gradient_slider.value)
       if (Math.abs(this.model.edge_gradient-js_edge_gradient_value) >= 5e-3)
-        this.model.edge_gradient = js_edge_gradient_value
+      this.model.edge_gradient = js_edge_gradient_value
     })
     if (Math.abs(this.model.edge_gradient-Number(this.edge_gradient_slider.value)) >= 5e-3)
-      this.model.properties.edge_gradient.change.emit()
+    this.model.properties.edge_gradient.change.emit()
   }
 
   _plot_volume(): void {
@@ -203,8 +204,8 @@ export class VTKVolumePlotView extends AbstractVTKView {
     const lookupTable = vtkns.ColorTransferFunction.newInstance()
     const piecewiseFunction =vtkns.PiecewiseFunction.newInstance()
     const sampleDistance = 0.7 * Math.sqrt(source.getSpacing()
-                                                 .map((v: number) => v * v)
-                                                 .reduce((a: number, b: number) => a + b, 0));
+    .map((v: number) => v * v)
+    .reduce((a: number, b: number) => a + b, 0));
     mapper.setSampleDistance(sampleDistance);
 
     actor.getProperty().setRGBTransferFunction(0, lookupTable);
@@ -215,164 +216,184 @@ export class VTKVolumePlotView extends AbstractVTKView {
     // For better looking volume rendering
     // - distance in world coordinates a scalar opacity of 1.0
     actor
-      .getProperty()
-      .setScalarOpacityUnitDistance(
-        0,
-        vtkns.BoundingBox.getDiagonalLength(source.getBounds()) /
-          Math.max(...source.getDimensions())
+    .getProperty()
+    .setScalarOpacityUnitDistance(
+      0,
+      vtkns.BoundingBox.getDiagonalLength(source.getBounds()) /
+      Math.max(...source.getDimensions())
       );
-    // - control how we emphasize surface boundaries
-    //  => max should be around the average gradient magnitude for the
-    //     volume or maybe average plus one std dev of the gradient magnitude
-    //     (adjusted for spacing, this is a world coordinate gradient, not a
-    //     pixel gradient)
-    //  => max hack: (dataRange[1] - dataRange[0]) * 0.05
-    actor.getProperty().setGradientOpacityMinimumValue(0, 0);
-    actor
+      // - control how we emphasize surface boundaries
+      //  => max should be around the average gradient magnitude for the
+      //     volume or maybe average plus one std dev of the gradient magnitude
+      //     (adjusted for spacing, this is a world coordinate gradient, not a
+      //     pixel gradient)
+      //  => max hack: (dataRange[1] - dataRange[0]) * 0.05
+      actor.getProperty().setGradientOpacityMinimumValue(0, 0);
+      actor
       .getProperty()
       .setGradientOpacityMaximumValue(0, (dataRange[1] - dataRange[0]) * 0.05);
-    // - Use shading based on gradient
-    actor.getProperty().setShade(this.model.shadow);
-    actor.getProperty().setUseGradientOpacity(0, true);
-    // - generic good default
-    actor.getProperty().setGradientOpacityMinimumOpacity(0, 0.0);
-    actor.getProperty().setGradientOpacityMaximumOpacity(0, 1.0);
-    actor.getProperty().setAmbient(this.model.ambient);
-    actor.getProperty().setDiffuse(this.model.diffuse);
-    actor.getProperty().setSpecular(this.model.specular);
-    actor.getProperty().setSpecularPower(this.model.specular_power);
+      // - Use shading based on gradient
+      actor.getProperty().setShade(this.model.shadow);
+      actor.getProperty().setUseGradientOpacity(0, true);
+      // - generic good default
+      actor.getProperty().setGradientOpacityMinimumOpacity(0, 0.0);
+      actor.getProperty().setGradientOpacityMaximumOpacity(0, 1.0);
+      actor.getProperty().setAmbient(this.model.ambient);
+      actor.getProperty().setDiffuse(this.model.diffuse);
+      actor.getProperty().setSpecular(this.model.specular);
+      actor.getProperty().setSpecularPower(this.model.specular_power);
 
-    this._vtk_renwin.getRenderer().addVolume(actor)
-    this._controllerWidget.setupContent(this._vtk_renwin.getRenderWindow(), actor, true)
-  }
+      this._vtk_renwin.getRenderer().addVolume(actor)
+      this._controllerWidget.setupContent(this._vtk_renwin.getRenderWindow(), actor, true)
+    }
 
-  _plot_slices(): void {
-    const source = this._vtk_image_data
-    const image_actor_i = vtkns.ImageSlice.newInstance()
-    const image_actor_j = vtkns.ImageSlice.newInstance()
-    const image_actor_k = vtkns.ImageSlice.newInstance()
+    _plot_slices(): void {
+      const source = this._vtk_image_data
+      const image_actor_i = vtkns.ImageSlice.newInstance()
+      const image_actor_j = vtkns.ImageSlice.newInstance()
+      const image_actor_k = vtkns.ImageSlice.newInstance()
 
-    const image_mapper_i = vtkns.ImageMapper.newInstance()
-    const image_mapper_j = vtkns.ImageMapper.newInstance()
-    const image_mapper_k = vtkns.ImageMapper.newInstance()
+      const image_mapper_i = vtkns.ImageMapper.newInstance()
+      const image_mapper_j = vtkns.ImageMapper.newInstance()
+      const image_mapper_k = vtkns.ImageMapper.newInstance()
 
-    image_mapper_i.setInputData(source)
-    image_mapper_i.setISlice(this.model.slice_i)
-    image_actor_i.setMapper(image_mapper_i)
+      image_mapper_i.setInputData(source)
+      image_mapper_i.setISlice(this.model.slice_i)
+      image_actor_i.setMapper(image_mapper_i)
 
-    image_mapper_j.setInputData(source)
-    image_mapper_j.setJSlice(this.model.slice_j)
-    image_actor_j.setMapper(image_mapper_j)
+      image_mapper_j.setInputData(source)
+      image_mapper_j.setJSlice(this.model.slice_j)
+      image_actor_j.setMapper(image_mapper_j)
 
-    image_mapper_k.setInputData(source)
-    image_mapper_k.setKSlice(this.model.slice_k)
-    image_actor_k.setMapper(image_mapper_k)
+      image_mapper_k.setInputData(source)
+      image_mapper_k.setKSlice(this.model.slice_k)
+      image_actor_k.setMapper(image_mapper_k)
 
-    // set_color and opacity
-    const piecewiseFunction = vtkns.PiecewiseFunction.newInstance()
-    piecewiseFunction.removeAllPoints()
-    piecewiseFunction.addPoint(0, 1)
-    const lookupTable = this.volume.getProperty().getRGBTransferFunction(0)
-    const property = image_actor_i.getProperty()
-    image_actor_j.setProperty(property)
-    image_actor_k.setProperty(property)
+      // set_color and opacity
+      const piecewiseFunction = vtkns.PiecewiseFunction.newInstance()
+      piecewiseFunction.removeAllPoints()
+      piecewiseFunction.addPoint(0, 1)
+      const lookupTable = this.volume.getProperty().getRGBTransferFunction(0)
+      const property = image_actor_i.getProperty()
+      image_actor_j.setProperty(property)
+      image_actor_k.setProperty(property)
 
-    property.setRGBTransferFunction(lookupTable)
-    property.setScalarOpacity(piecewiseFunction)
+      property.setRGBTransferFunction(lookupTable)
+      property.setScalarOpacity(piecewiseFunction)
 
-    const renderer = this._vtk_renwin.getRenderer()
-    renderer.addActor(image_actor_i)
-    renderer.addActor(image_actor_j)
-    renderer.addActor(image_actor_k)
+      const renderer = this._vtk_renwin.getRenderer()
+      renderer.addActor(image_actor_i)
+      renderer.addActor(image_actor_j)
+      renderer.addActor(image_actor_k)
 
 
-    const export_slice_i = vtkns['CustomSliceFilter']({sliceMode: 'i', sliceIndex: this.model.slice_i})
-    export_slice_i.setLookupTable(lookupTable)
-    export_slice_i.setPiecewiseFunction(piecewiseFunction)
-    export_slice_i.setInputData(source)
-    lookupTable.onModified(() => export_slice_i.modified())
+      const export_slice_i = vtkns['CustomSliceFilter']({sliceMode: 'i', sliceIndex: this.model.slice_i})
+      export_slice_i.setLookupTable(lookupTable)
+      export_slice_i.setPiecewiseFunction(piecewiseFunction)
+      export_slice_i.setInputData(source)
+      lookupTable.onModified(() => export_slice_i.modified())
 
-    const export_slice_j = vtkns['CustomSliceFilter']({sliceMode: 'j', sliceIndex: this.model.slice_j})
-    export_slice_j.setLookupTable(lookupTable)
-    export_slice_j.setPiecewiseFunction(piecewiseFunction)
-    export_slice_j.setInputData(source)
-    lookupTable.onModified(() => export_slice_j.modified())
+      const export_slice_j = vtkns['CustomSliceFilter']({sliceMode: 'j', sliceIndex: this.model.slice_j})
+      export_slice_j.setLookupTable(lookupTable)
+      export_slice_j.setPiecewiseFunction(piecewiseFunction)
+      export_slice_j.setInputData(source)
+      lookupTable.onModified(() => export_slice_j.modified())
 
-    const export_slice_k = vtkns['CustomSliceFilter']({sliceMode: 'k', sliceIndex: this.model.slice_k})
-    export_slice_k.setLookupTable(lookupTable)
-    export_slice_k.setPiecewiseFunction(piecewiseFunction)
-    export_slice_k.setInputData(source)
-    lookupTable.onModified(() => export_slice_k.modified())
+      const export_slice_k = vtkns['CustomSliceFilter']({sliceMode: 'k', sliceIndex: this.model.slice_k})
+      export_slice_k.setLookupTable(lookupTable)
+      export_slice_k.setPiecewiseFunction(piecewiseFunction)
+      export_slice_k.setInputData(source)
+      lookupTable.onModified(() => export_slice_k.modified())
 
-    this._export_filters = [export_slice_i, export_slice_j, export_slice_k]
-    this.model.export_filters = this._export_filters
+      this._export_filters = [export_slice_i, export_slice_j, export_slice_k]
+      this.model.export_filters = this._export_filters
+    }
 
-  }
+    _get_slice_data(name: string, data:any): any {
+      const {extent, spacing} = data.get('extent', 'spacing')
+      const values = data.getPointData().getScalars().getData()
+      return {name, extent, spacing, values}
+    }
 
-  _set_volume_visbility(visibility: boolean): void {
-    this.volume.setVisibility(visibility)
-  }
+    _update_slices_data(){
+      if (this._export_filters[0].shouldUpdate())
+      this.model.slices_data_i = this._get_slice_data('i', this._export_filters[0].getOutputData())
+      if (this._export_filters[1].shouldUpdate())
+      this.model.slices_data_j = this._get_slice_data('j', this._export_filters[1].getOutputData())
+      if (this._export_filters[2].shouldUpdate())
+      this.model.slices_data_k = this._get_slice_data('k', this._export_filters[2].getOutputData())
+    }
 
-  _set_slices_visbility(visibility: boolean): void {
-    this._vtk_renwin.getRenderer().getActors().slice(0,3).map(
-      (actor: any) => actor.setVisibility(visibility)
-    )
-  }
-}
+    _set_volume_visbility(visibility: boolean): void {
+      this.volume.setVisibility(visibility)
+    }
 
-export namespace VTKVolumePlot {
-  export type Attrs = p.AttrsOf<Props>
-  export type Props = AbstractVTKPlot.Props & {
-    shadow: p.Property<boolean>,
-    sampling: p.Property<number>,
-    edge_gradient: p.Property<number>,
-    colormap: p.Property<string>,
-    rescale: p.Property<boolean>,
-    ambient: p.Property<number>,
-    diffuse: p.Property<number>,
-    specular: p.Property<number>,
-    specular_power: p.Property<number>,
-    slice_i: p.Property<number>,
-    slice_j: p.Property<number>,
-    slice_k: p.Property<number>,
-    display_volume: p.Property<boolean>,
-    display_slices: p.Property<boolean>,
-    render_background: p.Property<string>
-    interpolation: p.Property<InterpolationType>
-  }
-}
+    _set_slices_visbility(visibility: boolean): void {
+      this._vtk_renwin.getRenderer().getActors().slice(0,3).map(
+        (actor: any) => actor.setVisibility(visibility)
+        )
+      }
+    }
 
-export interface VTKVolumePlot extends VTKVolumePlot.Attrs {}
+    export namespace VTKVolumePlot {
+      export type Attrs = p.AttrsOf<Props>
+      export type Props = AbstractVTKPlot.Props & {
+        shadow: p.Property<boolean>,
+        sampling: p.Property<number>,
+        edge_gradient: p.Property<number>,
+        colormap: p.Property<string>,
+        rescale: p.Property<boolean>,
+        ambient: p.Property<number>,
+        diffuse: p.Property<number>,
+        specular: p.Property<number>,
+        specular_power: p.Property<number>,
+        slice_i: p.Property<number>,
+        slice_j: p.Property<number>,
+        slice_k: p.Property<number>,
+        display_volume: p.Property<boolean>,
+        display_slices: p.Property<boolean>,
+        render_background: p.Property<string>,
+        interpolation: p.Property<InterpolationType>,
+        slices_data_i: p.Property<any>,
+        slices_data_j: p.Property<any>,
+        slices_data_k: p.Property<any>,
+      }
+    }
 
-export class VTKVolumePlot extends AbstractVTKPlot {
-  properties: VTKVolumePlot.Props
-  export_filters: any[]
+    export interface VTKVolumePlot extends VTKVolumePlot.Attrs {}
 
-  constructor(attrs?: Partial<VTKVolumePlot.Attrs>) {
-    super(attrs)
-  }
+    export class VTKVolumePlot extends AbstractVTKPlot {
+      properties: VTKVolumePlot.Props
+      export_filters: any[]
 
-  static init_VTKVolumePlot(): void {
-    this.prototype.default_view = VTKVolumePlotView
+      constructor(attrs?: Partial<VTKVolumePlot.Attrs>) {
+        super(attrs)
+      }
 
-    this.define<VTKVolumePlot.Props>({
-      data:              [ p.Instance               ],
-      shadow:            [ p.Boolean,          true ],
-      sampling:          [ p.Number,            0.4 ],
-      edge_gradient:     [ p.Number,            0.2 ],
-      colormap:          [ p.String                 ],
-      rescale:           [ p.Boolean,         false ],
-      ambient:           [ p.Number,            0.2 ],
-      diffuse:           [ p.Number,            0.7 ],
-      specular:          [ p.Number,            0.3 ],
-      specular_power:    [ p.Number,            8.0 ],
-      slice_i:           [ p.Int,               0   ],
-      slice_j:           [ p.Int,               0   ],
-      slice_k:           [ p.Int,               0   ],
-      display_volume:    [ p.Boolean,          true ],
-      display_slices:    [ p.Boolean,         false ],
-      render_background: [ p.String,      '#52576e' ],
-      interpolation:     [ p.Any,      'fast_linear'],
-    })
-  }
-}
+      static init_VTKVolumePlot(): void {
+        this.prototype.default_view = VTKVolumePlotView
+
+        this.define<VTKVolumePlot.Props>({
+          data:              [ p.Instance               ],
+          shadow:            [ p.Boolean,          true ],
+          sampling:          [ p.Number,            0.4 ],
+          edge_gradient:     [ p.Number,            0.2 ],
+          colormap:          [ p.String                 ],
+          rescale:           [ p.Boolean,         false ],
+          ambient:           [ p.Number,            0.2 ],
+          diffuse:           [ p.Number,            0.7 ],
+          specular:          [ p.Number,            0.3 ],
+          specular_power:    [ p.Number,            8.0 ],
+          slice_i:           [ p.Int,               0   ],
+          slice_j:           [ p.Int,               0   ],
+          slice_k:           [ p.Int,               0   ],
+          display_volume:    [ p.Boolean,          true ],
+          display_slices:    [ p.Boolean,         false ],
+          render_background: [ p.String,      '#52576e' ],
+          interpolation:     [ p.Any,      'fast_linear'],
+          slices_data_i:     [ p.Instance               ],
+          slices_data_j:     [ p.Instance               ],
+          slices_data_k:     [ p.Instance               ],
+        })
+      }
+    }
