@@ -31,6 +31,8 @@ class AbstractVTKPlot(HTMLBox):
 
     renderer_el = Any(readonly=True)
 
+    orientation_widget = Bool(default=False)
+
     height = Override(default=300)
 
     width = Override(default=300)
@@ -72,8 +74,6 @@ class VTKPlot(AbstractVTKPlot):
     camera = Dict(String, Any)
 
     axes = Instance(VTKAxes)
-
-    orientation_widget = Bool(default=False)
 
     enable_keybindings = Bool(default=False)
 
