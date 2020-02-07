@@ -136,10 +136,10 @@ class VTKVolume(PaneBase):
     def __init__(self, object=None, **params):
         super(VTKVolume, self).__init__(object, **params)
         self._sub_spacing = self.spacing
-        self._orginal_dimensions = self._get_object_dimensions()
         self._volume_data = self._get_volume_data()
-        self._subsample_dimensions = self._volume_data['dims']
         if self._volume_data:
+            self._orginal_dimensions = self._get_object_dimensions()
+            self._subsample_dimensions = self._volume_data['dims']
             self.param.slice_i.bounds = (0, self._orginal_dimensions[0]-1)
             self.slice_i = (self._orginal_dimensions[0]-1)//2
             self.param.slice_j.bounds = (0, self._orginal_dimensions[1]-1)
@@ -202,31 +202,33 @@ class VTKVolume(PaneBase):
 
     def _process_param_change(self, msg):
         msg = super(VTKVolume, self)._process_param_change(msg)
-        slice_params = {'slice_i':0, 'slice_j':1, 'slice_k':2}
-        for k, v in msg.items():
-            sub_dim = self._subsample_dimensions
-            ori_dim = self._orginal_dimensions
-            if k in slice_params:
-                index = slice_params[k]
-                msg[k] = int(np.round(v * sub_dim[index] / ori_dim[index]))
+        if self.object is not None:
+            slice_params = {'slice_i':0, 'slice_j':1, 'slice_k':2}
+            for k, v in msg.items():
+                sub_dim = self._subsample_dimensions
+                ori_dim = self._orginal_dimensions
+                if k in slice_params:
+                    index = slice_params[k]
+                    msg[k] = int(np.round(v * sub_dim[index] / ori_dim[index]))
         return msg
 
     def _process_property_change(self, msg):
         msg = super(VTKVolume, self)._process_property_change(msg)
-        slice_params = {'slice_i':0, 'slice_j':1, 'slice_k':2}
-        for k, v in msg.items():
-            sub_dim = self._subsample_dimensions
-            ori_dim = self._orginal_dimensions
-            if k in slice_params:
-                index = slice_params[k]
-                msg[k] = int(np.round(v * ori_dim[index] / sub_dim[index]))
+        if self.object is not None:
+            slice_params = {'slice_i':0, 'slice_j':1, 'slice_k':2}
+            for k, v in msg.items():
+                sub_dim = self._subsample_dimensions
+                ori_dim = self._orginal_dimensions
+                if k in slice_params:
+                    index = slice_params[k]
+                    msg[k] = int(np.round(v * ori_dim[index] / sub_dim[index]))
         return msg
 
     def _update(self, model):
-        self._orginal_dimensions = self._get_object_dimensions()
         self._volume_data = self._get_volume_data()
-        self._subsample_dimensions = self._volume_data['dims']
         if self._volume_data:
+            self._orginal_dimensions = self._get_object_dimensions()
+            self._subsample_dimensions = self._volume_data['dims']
             self.param.slice_i.bounds = (0, self._orginal_dimensions[0]-1)
             self.slice_i = (self._orginal_dimensions[0]-1)//2
             self.param.slice_j.bounds = (0, self._orginal_dimensions[1]-1)
