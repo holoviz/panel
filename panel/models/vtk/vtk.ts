@@ -1,29 +1,21 @@
-import {canvas} from "@bokehjs/core/dom"
 import * as p from "@bokehjs/core/properties"
+
+import {canvas} from "@bokehjs/core/dom"
 import {clone} from "@bokehjs/core/util/object"
-import {HTMLBox} from "@bokehjs/models/layouts/html_box"
 
 import {VTKAxes} from "./vtkaxes"
-import {VTKHTMLBoxView} from "./vtk_layout"
+import {AbstractVTKView, AbstractVTKPlot} from "./vtk_layout"
 import {majorAxis, vtk, vtkns} from "./vtk_utils"
 
-export class VTKPlotView extends VTKHTMLBoxView {
+export class VTKPlotView extends AbstractVTKView {
   model: VTKPlot
   protected _setting: boolean = false
-  protected _orientationWidget: any
-  protected _widgetManager: any
   protected _axes: any
   protected _axes_initialized: boolean = false
 
   connect_signals(): void {
     super.connect_signals()
-    this.connect(this.model.properties.data.change, () => {
-      this.invalidate_render()
-    })
     this.connect(this.model.properties.camera.change, () => this._set_camera_state())
-    this.connect(this.model.properties.orientation_widget.change, () => {
-      this._orientation_widget_visbility(this.model.orientation_widget)
-    })
     this.connect(this.model.properties.axes.change, () => {
       this._delete_axes()
       if(this.model.axes)
@@ -49,8 +41,6 @@ export class VTKPlotView extends VTKHTMLBoxView {
 
   render(): void {
     super.render()
-    this.model.renderer_el = this._vtk_renwin
-    this._orientationWidget = null
     this._axes = null
     this._axes_initialized = false
     this._plot()
@@ -221,15 +211,13 @@ export class VTKPlotView extends VTKHTMLBoxView {
       return
     }
     const dataAccessHelper = vtkns.DataAccessHelper.get('zip', {
-      zipContent: atob(this.model.data),
+      zipContent: atob((this.model.data as string)),
       callback: (_zip: unknown) => {
         const sceneImporter = vtkns.HttpSceneLoader.newInstance({
           renderer: this._vtk_renwin.getRenderer(),
           dataAccessHelper,
         })
         const fn = vtk.macro.debounce(() => {
-          if (this._orientationWidget == null)
-            this._create_orientation_widget()
           if (this._axes == null && this.model.axes)
             this._set_axes()
           this._set_camera_state()
@@ -243,18 +231,16 @@ export class VTKPlotView extends VTKHTMLBoxView {
 
 export namespace VTKPlot {
   export type Attrs = p.AttrsOf<Props>
-  export type Props = HTMLBox.Props & {
+  export type Props = AbstractVTKPlot.Props & {
     axes: p.Property<VTKAxes>
     camera: p.Property<any>
-    data: p.Property<string>
     enable_keybindings: p.Property<boolean>
-    orientation_widget: p.Property<boolean>
   }
 }
 
 export interface VTKPlot extends VTKPlot.Attrs {}
 
-export class VTKPlot extends HTMLBox {
+export class VTKPlot extends AbstractVTKPlot {
   properties: VTKPlot.Props
   renderer_el: any
   outline: any
@@ -284,7 +270,6 @@ export class VTKPlot extends HTMLBox {
       camera:             [ p.Any            ],
       data:               [ p.String         ],
       enable_keybindings: [ p.Boolean, false ],
-      orientation_widget: [ p.Boolean, false ],
     })
 
     this.override({

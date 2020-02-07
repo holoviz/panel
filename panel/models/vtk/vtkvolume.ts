@@ -1,20 +1,17 @@
 import * as p from "@bokehjs/core/properties"
-import {HTMLBox} from "@bokehjs/models/layouts/html_box"
-import {VTKHTMLBoxView} from "./vtk_layout"
+
+import {AbstractVTKPlot, AbstractVTKView} from "./vtk_layout"
 import {VolumeType, vtkns, data2VTKImageData, hexToRGB} from "./vtk_utils"
 
 
 declare type InterpolationType = 'fast_linear' | 'linear' | 'nearest'
-export class VTKVolumePlotView extends VTKHTMLBoxView {
+export class VTKVolumePlotView extends AbstractVTKView {
   model: VTKVolumePlot
   protected _controllerWidget: any
   protected _vtk_image_data: any
 
   connect_signals(): void {
     super.connect_signals()
-    this.connect(this.model.properties.data.change, () => {
-      this.invalidate_render()
-    })
     this.connect(this.model.properties.colormap.change, () => {
       this.colormap_slector.value = this.model.colormap
       const event = new Event('change');
@@ -136,7 +133,7 @@ export class VTKVolumePlotView extends VTKHTMLBoxView {
       size: [400, 150],
       rescaleColorMap: this.model.rescale,
     })
-    this._vtk_image_data = data2VTKImageData(this.model.data)
+    this._vtk_image_data = data2VTKImageData((this.model.data as VolumeType))
     this._controllerWidget.setContainer(this.el)
     this._vtk_renwin.getRenderWindow().getInteractor()
     this._vtk_renwin.getRenderWindow().getInteractor().setDesiredUpdateRate(45)
@@ -299,8 +296,7 @@ export class VTKVolumePlotView extends VTKHTMLBoxView {
 
 export namespace VTKVolumePlot {
   export type Attrs = p.AttrsOf<Props>
-  export type Props = HTMLBox.Props & {
-    data: p.Property<VolumeType>,
+  export type Props = AbstractVTKPlot.Props & {
     shadow: p.Property<boolean>,
     sampling: p.Property<number>,
     edge_gradient: p.Property<number>,
@@ -322,7 +318,7 @@ export namespace VTKVolumePlot {
 
 export interface VTKVolumePlot extends VTKVolumePlot.Attrs {}
 
-export class VTKVolumePlot extends HTMLBox {
+export class VTKVolumePlot extends AbstractVTKPlot {
   properties: VTKVolumePlot.Props
 
   constructor(attrs?: Partial<VTKVolumePlot.Attrs>) {
