@@ -116,12 +116,16 @@ class VTKVolume(PaneBase):
     """)
 
     orientation_widget = param.Boolean(default=False, doc="""
-        Activate/Deactivate the orientation widget display.
+        Activate/Deactivate the orientation widget display
     """)
 
-    camera = param.Dict(doc="State of the rendered VTK camera.")
+    camera = param.Dict(doc="""
+        State of the rendered VTK camera
+    """)
 
-    mapper = param.Dict(doc="Lookup Table in format \{low, high, palette\}")
+    mapper = param.Dict(doc="""
+        Lookup Table in format {low, high, palette}
+    """)
 
     _serializers = {}
 
