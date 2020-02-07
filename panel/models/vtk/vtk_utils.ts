@@ -1,4 +1,5 @@
 import {ARRAY_TYPES, DType} from "@bokehjs/core/util/serialization"
+import {linspace} from "@bokehjs/core/util/array"
 
 export const vtk = (window as any).vtk
 
@@ -47,6 +48,47 @@ export function hexToRGB(color: string): number[] {
           parseInt(color.slice(3,5),16)/255,
           parseInt(color.slice(5,7),16)/255]
 }
+
+function valToHex(val: number): string {
+  const hex = Math.min(Math.max(Math.round(val),0),255).toString(16)
+  return hex.length == 2 ? hex : "0" + hex
+}
+
+export function rgbToHex(r: number, g: number, b:number): string {
+  return '#' + valToHex(r) + valToHex(g) + valToHex(b)
+}
+
+declare type node = {
+  x: number,
+  r: number,
+  g: number,
+  b: number
+}
+
+export declare type Mapper = {
+  palette: string[],
+  low: number,
+  high: number,
+}
+
+export function vtkLutToMapper(vtk_lut: any):  Mapper {
+  //For the moment only linear colormapper are handle
+  const {scale, nodes} = vtk_lut.get('scale', 'nodes')
+  if (scale !== vtkns.ColorTransferFunction.Scale.LINEAR)
+    throw ('Error transfer function scale not handle')
+  const n_nodes = nodes.length
+  const x = (nodes as node[]).map((a: node) => a.x)
+  const low = Math.min(...x)
+  const high = Math.max(...x)
+  const vals = linspace(low, high, n_nodes)
+  const rgb = [0, 0, 0]
+  const palette = (vals).map((val) => {
+    vtk_lut.getColor(val, rgb)
+    return rgbToHex((rgb[0]*255), (rgb[1]*255), (rgb[2]*255))
+  })
+  return {low, high, palette}
+}
+
 
 function utf8ToAB(utf8_str: string): ArrayBuffer {
   var buf = new ArrayBuffer(utf8_str.length) // 2 bytes for each char

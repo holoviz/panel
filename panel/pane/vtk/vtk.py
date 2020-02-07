@@ -121,6 +121,8 @@ class VTKVolume(PaneBase):
 
     camera = param.Dict(doc="State of the rendered VTK camera.")
 
+    mapper = param.Dict(doc="Lookup Table in format \{low, high, palette\}")
+
     _serializers = {}
 
     _rename = {'max_data_size': None, 'spacing': None, 'origin': None}
@@ -172,7 +174,7 @@ class VTKVolume(PaneBase):
                               **props)
         if root is None:
             root = model
-        self._link_props(model, ['colormap', 'orientation_widget', 'camera'], doc, root, comm)
+        self._link_props(model, ['colormap', 'orientation_widget', 'camera', 'mapper'], doc, root, comm)
         self._models[root.ref['id']] = (model, parent)
         return model
 

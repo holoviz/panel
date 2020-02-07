@@ -1,7 +1,8 @@
 import * as p from "@bokehjs/core/properties"
 
+
 import {AbstractVTKPlot, AbstractVTKView} from "./vtk_layout"
-import {VolumeType, vtkns, data2VTKImageData, hexToRGB} from "./vtk_utils"
+import {VolumeType, vtkns, data2VTKImageData, hexToRGB, vtkLutToMapper, Mapper} from "./vtk_utils"
 
 
 declare type InterpolationType = 'fast_linear' | 'linear' | 'nearest'
@@ -197,6 +198,7 @@ export class VTKVolumePlotView extends AbstractVTKView {
     const dataRange = dataArray.getRange()
 
     const lookupTable = vtkns.ColorTransferFunction.newInstance()
+    lookupTable.onModified(() => this.model.mapper = vtkLutToMapper(lookupTable))
     const piecewiseFunction =vtkns.PiecewiseFunction.newInstance()
     const sampleDistance = 0.7 * Math.sqrt(source.getSpacing()
                                                  .map((v: number) => v * v)
@@ -313,6 +315,7 @@ export namespace VTKVolumePlot {
     display_slices: p.Property<boolean>,
     render_background: p.Property<string>
     interpolation: p.Property<InterpolationType>
+    mapper: p.Property<Mapper>
   }
 }
 
@@ -346,6 +349,7 @@ export class VTKVolumePlot extends AbstractVTKPlot {
       display_slices:    [ p.Boolean,         false ],
       render_background: [ p.String,      '#52576e' ],
       interpolation:     [ p.Any,      'fast_linear'],
+      mapper:            [ p.Instance               ],
     })
   }
 }
