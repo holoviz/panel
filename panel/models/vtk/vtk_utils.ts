@@ -76,11 +76,10 @@ export function vtkLutToMapper(vtk_lut: any):  Mapper {
   const {scale, nodes} = vtk_lut.get('scale', 'nodes')
   if (scale !== vtkns.ColorTransferFunction.Scale.LINEAR)
     throw ('Error transfer function scale not handle')
-  const n_nodes = nodes.length
   const x = (nodes as node[]).map((a: node) => a.x)
   const low = Math.min(...x)
   const high = Math.max(...x)
-  const vals = linspace(low, high, n_nodes)
+  const vals = linspace(low, high, 255)
   const rgb = [0, 0, 0]
   const palette = (vals).map((val) => {
     vtk_lut.getColor(val, rgb)
