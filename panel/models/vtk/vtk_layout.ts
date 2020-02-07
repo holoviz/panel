@@ -22,14 +22,14 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView{
       this.invalidate_render()
     })
     this.connect(this.model.properties.orientation_widget.change, () => {
-      this._orientation_widget_visbility(this.model.orientation_widget)
+      this._orientation_widget_visibility(this.model.orientation_widget)
     })
     this.connect(this.model.properties.camera.change, () => this._set_camera_state())
   }
 
-  _orientation_widget_visbility(visbility: boolean): void {
-    this._orientationWidget.setEnabled(visbility)
-    if(visbility)
+  _orientation_widget_visibility(visibility: boolean): void {
+    this._orientationWidget.setEnabled(visibility)
+    if(visibility)
       this._widgetManager.enablePicking()
     else
       this._widgetManager.disablePicking()
@@ -96,7 +96,7 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView{
       this._vtk_renwin.getRenderer().resetCameraClippingRange()
       this._vtk_renwin.getRenderWindow().render()
     })
-    this._orientation_widget_visbility(this.model.orientation_widget)
+    this._orientation_widget_visibility(this.model.orientation_widget)
   }
 
 

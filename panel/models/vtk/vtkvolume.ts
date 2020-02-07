@@ -54,11 +54,11 @@ export class VTKVolumePlotView extends AbstractVTKView {
       this._vtk_renwin.getRenderWindow().render()
     })
     this.connect(this.model.properties.display_volume.change, () => {
-      this._set_volume_visbility(this.model.display_volume)
+      this._set_volume_visibility(this.model.display_volume)
       this._vtk_renwin.getRenderWindow().render()
     })
     this.connect(this.model.properties.display_slices.change, () => {
-      this._set_slices_visbility(this.model.display_slices)
+      this._set_slices_visibility(this.model.display_slices)
       this._vtk_renwin.getRenderWindow().render()
     })
     this.connect(this.model.properties.slice_i.change, () => {
@@ -141,8 +141,8 @@ export class VTKVolumePlotView extends AbstractVTKView {
     this._plot_volume()
     this._connect_controls()
     this._plot_slices()
-    this._set_volume_visbility(this.model.display_volume)
-    this._set_slices_visbility(this.model.display_slices)
+    this._set_volume_visibility(this.model.display_volume)
+    this._set_slices_visibility(this.model.display_slices)
     this._vtk_renwin.getRenderer().setBackground(...hexToRGB(this.model.render_background))
     this._set_interpolation(this.model.interpolation)
     this._vtk_renwin.getRenderer().resetCamera()
@@ -285,11 +285,11 @@ export class VTKVolumePlotView extends AbstractVTKView {
 
   }
 
-  _set_volume_visbility(visibility: boolean): void {
+  _set_volume_visibility(visibility: boolean): void {
     this.volume.setVisibility(visibility)
   }
 
-  _set_slices_visbility(visibility: boolean): void {
+  _set_slices_visibility(visibility: boolean): void {
     this._vtk_renwin.getRenderer().getActors().map(
       (actor: any) => actor.setVisibility(visibility)
     )
