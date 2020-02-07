@@ -35,6 +35,9 @@ class _state(param.Parameterized):
     # Used to ensure that events are not scheduled from the wrong thread
     _thread_id = None
 
+    # Temporary flag to allow using Div model on static export
+    _html_escape = True
+
     _comm_manager = _CommManager
 
     # An index of all currently active views
