@@ -67,7 +67,6 @@ for (var event of events) {{
   if ((event.kind === 'ModelChanged') && (event.attr === '{change}') &&
       (cb_obj.id === event.model.id) &&
       (JSON.stringify(value) === JSON.stringify(event.new))) {{
-    events.pop(events.indexOf(event))
     return;
   }}
 }}
