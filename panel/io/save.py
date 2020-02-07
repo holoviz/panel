@@ -64,19 +64,19 @@ def swap_html_model(swap):
     for viewable in param.concrete_descendents(Viewable).values():
         model = getattr(viewable, '_bokeh_model', None)
         try:
-           swap_model = issubclass(model, HTML) and swap
-           assert swap_model
-        except:
+            swap_model = issubclass(model, HTML) and swap
+            assert swap_model
+        except Exception:
             continue
         else:
             viewable._bokeh_model = Div
             swapped.append(viewable)
     try:
-       yield
+        yield
     finally:
         state._html_escape = True
         for viewable in swapped:
-           viewable._bokeh_model = HTML
+            viewable._bokeh_model = HTML
 
 #---------------------------------------------------------------------
 # Public API
