@@ -207,7 +207,7 @@ class FileDownload(Widget):
         if self.embed:
             self._transfer()
 
-    @param.depends('clicks', watch=True)
+    @param.depends('_clicks', watch=True)
     def _transfer(self):
         if self.file is None:
             return
