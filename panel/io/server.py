@@ -126,8 +126,6 @@ def serve(panels, port=0, websocket_origin=None, loop=None,
     kwargs: dict
       Additional keyword arguments to pass to Server instance
     """
-    
-
     return get_server(panels, port, websocket_origin, loop, show, start, title,
                       **kwargs)
 

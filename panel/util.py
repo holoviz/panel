@@ -20,9 +20,9 @@ except ImportError:
     from collections import MutableSequence, MutableMapping
 
 try:
-    from html import escape # noqa
+    from html import escape as _escape # noqa
 except Exception:
-    from cgi import escape # noqa
+    from cgi import escape as _escape # noqa
 
 import param
 import numpy as np
@@ -31,6 +31,19 @@ datetime_types = (np.datetime64, dt.datetime, dt.date)
 
 if sys.version_info.major > 2:
     unicode = str
+
+
+def escape(string):
+    """
+    Temporary wrapper around HTML escaping to allow using Div model
+    during static png exports.
+    """
+    from .io import state
+
+    if state._html_escape:
+        return _escape(string)
+    else:
+        return string
 
 
 def isfile(path):
