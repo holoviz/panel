@@ -33,6 +33,8 @@ class AbstractVTKPlot(HTMLBox):
 
     orientation_widget = Bool(default=False)
 
+    camera = Dict(String, Any)
+
     height = Override(default=300)
 
     width = Override(default=300)
@@ -70,8 +72,6 @@ class VTKPlot(AbstractVTKPlot):
     """
 
     data = String(help="""The serialized vtk.js data""")
-
-    camera = Dict(String, Any)
 
     axes = Instance(VTKAxes)
 

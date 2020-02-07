@@ -188,7 +188,7 @@ export abstract class AbstractVTKPlot extends HTMLBox {
   static init_AbstractVTKPlot(): void{
     this.define<AbstractVTKPlot.Props>({
       orientation_widget: [ p.Boolean, false ],
-      camera:             [ p.Any            ],
+      camera:             [ p.Instance       ],
     })
 
     this.override({

@@ -119,6 +119,8 @@ class VTKVolume(PaneBase):
         Activate/Deactivate the orientation widget display.
     """)
 
+    camera = param.Dict(doc="State of the rendered VTK camera.")
+
     _serializers = {}
 
     _rename = {'max_data_size': None, 'spacing': None, 'origin': None}
@@ -170,7 +172,7 @@ class VTKVolume(PaneBase):
                               **props)
         if root is None:
             root = model
-        self._link_props(model, ['colormap', 'orientation_widget'], doc, root, comm)
+        self._link_props(model, ['colormap', 'orientation_widget', 'camera'], doc, root, comm)
         self._models[root.ref['id']] = (model, parent)
         return model
 
