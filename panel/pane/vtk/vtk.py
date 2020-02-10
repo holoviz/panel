@@ -136,16 +136,7 @@ class VTKVolume(PaneBase):
     def __init__(self, object=None, **params):
         super(VTKVolume, self).__init__(object, **params)
         self._sub_spacing = self.spacing
-        self._volume_data = self._get_volume_data()
-        if self._volume_data:
-            self._orginal_dimensions = self._get_object_dimensions()
-            self._subsample_dimensions = self._volume_data['dims']
-            self.param.slice_i.bounds = (0, self._orginal_dimensions[0]-1)
-            self.slice_i = (self._orginal_dimensions[0]-1)//2
-            self.param.slice_j.bounds = (0, self._orginal_dimensions[1]-1)
-            self.slice_j = (self._orginal_dimensions[1]-1)//2
-            self.param.slice_k.bounds = (0, self._orginal_dimensions[2]-1)
-            self.slice_k = (self._orginal_dimensions[2]-1)//2
+        self._update()
 
     @classmethod
     def applies(cls, obj):
@@ -224,7 +215,7 @@ class VTKVolume(PaneBase):
                     msg[k] = int(np.round(v * ori_dim[index] / sub_dim[index]))
         return msg
 
-    def _update(self, model):
+    def _update(self, model=None):
         self._volume_data = self._get_volume_data()
         if self._volume_data:
             self._orginal_dimensions = self._get_object_dimensions()
@@ -235,7 +226,8 @@ class VTKVolume(PaneBase):
             self.slice_j = (self._orginal_dimensions[1]-1)//2
             self.param.slice_k.bounds = (0, self._orginal_dimensions[2]-1)
             self.slice_k = (self._orginal_dimensions[2]-1)//2
-        model.data = self._volume_data
+        if model is not None:
+            model.data = self._volume_data
 
     @classmethod
     def register_serializer(cls, class_type, serializer):
