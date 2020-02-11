@@ -9,7 +9,7 @@ colorcet==2.0.2
 constantly==15.1.0
 cryptography==2.8
 daphne==2.4.1
-Django==3.0.2
+Django==3.0.3
 holoviews==1.12.7
 hvplot==0.5.2
 hyperlink==19.0.0
