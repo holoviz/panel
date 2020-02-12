@@ -49,7 +49,7 @@ def save_png(model, filename):
 
 
 @contextmanager
-def swap_html_model(swap):
+def swap_html_model():
     """
     Temporary fix to swap HTML model for Div model during png export
     to avoid issues with DOMParser compatibility in PhantomJS.
@@ -64,7 +64,7 @@ def swap_html_model(swap):
     for viewable in param.concrete_descendents(Viewable).values():
         model = getattr(viewable, '_bokeh_model', None)
         try:
-            swap_model = issubclass(model, HTML) and swap
+            swap_model = issubclass(model, HTML)
             assert swap_model
         except Exception:
             continue
@@ -130,7 +130,7 @@ def save(panel, filename, title=None, resources=None, template=None,
     doc = Document()
     comm = Comm()
     with config.set(embed=embed):
-        with swap_html_model(as_png):
+        with swap_html_model():
             model = panel.get_root(doc, comm)
         if embed:
             embed_state(
