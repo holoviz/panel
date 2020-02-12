@@ -272,7 +272,8 @@ class ServableMixin(object):
             loop = IOLoop()
             server = StoppableThread(
                 target=self._get_server, io_loop=loop,
-                args=(port, websocket_origin, loop, True, True, title))
+                args=(port, websocket_origin, loop, True, True),
+                kwargs={'title': title})
             server.start()
         else:
             server = self._get_server(port, websocket_origin, show=True,
