@@ -213,9 +213,10 @@ class ServableMixin(object):
         return self.server_doc(doc, title)
 
     def _get_server(self, port=0, websocket_origin=None, loop=None,
-                   show=False, start=False, **kwargs):
+                    show=False, start=False, title=None, verbose=False,
+                    **kwargs):
         return get_server(self, port, websocket_origin, loop, show,
-                          start, **kwargs)
+                          start, title, verbose, **kwargs)
 
     #----------------------------------------------------------------
     # Public API
@@ -242,7 +243,8 @@ class ServableMixin(object):
             self.server_doc(title=title)
         return self
 
-    def show(self, port=0, websocket_origin=None, threaded=False, title=None, **kwargs):
+    def show(self, port=0, websocket_origin=None, threaded=False,
+             title=None, verbose=True, **kwargs):
         """
         Starts a Bokeh server and displays the Viewable in a new tab.
 
@@ -260,6 +262,8 @@ class ServableMixin(object):
           interactive use.
         title : str
           A string title to give the Document (if served as an app)
+        verbose: boolean (optional, default=True)
+          Whether to print the address and port
 
         Returns
         -------
@@ -272,16 +276,17 @@ class ServableMixin(object):
             loop = IOLoop()
             server = StoppableThread(
                 target=self._get_server, io_loop=loop,
-                args=(port, websocket_origin, loop, True, True),
+                args=(port, websocket_origin, loop, True, True, title, verbose),
                 kwargs={'title': title})
             server.start()
         else:
-            server = self._get_server(port, websocket_origin, show=True,
-                                      start=True, title=title, **kwargs)
-
+            server = self._get_server(
+                port, websocket_origin, show=True, start=True,
+                title=title, verbose=verbose, **kwargs
+            )
         return server
 
-
+    
 class Viewable(Layoutable, ServableMixin):
     """
     Viewable is the baseclass all objects in the panel library are
