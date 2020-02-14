@@ -29,18 +29,6 @@ class _SliderBase(Widget):
     bar_color = param.Color(default="#e6e6e6", doc="""
         Color of the slider bar as a hexidecimal RGB value.""")
 
-    callback_policy = param.ObjectSelector(
-        default='continuous', objects=['continuous', 'throttle', 'mouseup'], doc="""
-        DEPRECATED: Policy to determine when slider events are triggered:
-
-        * "continuous": the callback will be executed immediately for each movement of the slider
-        * "throttle": the callback will be executed at most every ``callback_throttle`` milliseconds.
-        * "mouseup": the callback will be executed only once when the slider is released.
-        """)
-
-    callback_throttle = param.Integer(default=200, doc="""
-        Number of milliseconds to pause between callback calls as the slider is moved.""")
-
     direction = param.ObjectSelector(default='ltr', objects=['ltr', 'rtl'],
                                      doc="""
         Whether the slider should go from left-to-right ('ltr') or right-to-left ('rtl')""")

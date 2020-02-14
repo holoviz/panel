@@ -12,7 +12,8 @@ import param
 
 from bokeh.document.document import Document
 from bokeh.embed import file_html
-from bokeh.io.export import export_png, create_webdriver
+from bokeh.io.export import export_png
+from bokeh.io.webdriver import webdriver_control
 from bokeh.models import Div
 from bokeh.resources import CDN
 from pyviz_comms import Comm
@@ -46,7 +47,7 @@ def save_png(model, filename):
       Filename to save to
     """
     if not state.webdriver:
-        state.webdriver = create_webdriver()
+        state.webdriver = webdriver_control.create()
 
     webdriver = state.webdriver
     export_png(model, filename, webdriver=webdriver)
