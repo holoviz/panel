@@ -151,6 +151,6 @@ class Progress(Widget):
 
     _widget_type = _BkProgress
 
-    @depends('max')
+    @depends('max', watch=True)
     def _update_value_bounds(self):
         self.param.value.bounds = (0, self.max)
