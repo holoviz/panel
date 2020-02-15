@@ -115,6 +115,18 @@ class VTKVolume(PaneBase):
         Postition of each slice can be controlled using slice_(i,j,k) parameters
     """)
 
+    orientation_widget = param.Boolean(default=False, doc="""
+        Activate/Deactivate the orientation widget display
+    """)
+
+    camera = param.Dict(doc="""
+        State of the rendered VTK camera
+    """)
+
+    mapper = param.Dict(doc="""
+        Lookup Table in format {low, high, palette}
+    """)
+
     _serializers = {}
 
     _rename = {'max_data_size': None, 'spacing': None, 'origin': None}
@@ -124,14 +136,7 @@ class VTKVolume(PaneBase):
     def __init__(self, object=None, **params):
         super(VTKVolume, self).__init__(object, **params)
         self._sub_spacing = self.spacing
-        self._volume_data = self._get_volume_data()
-        if self._volume_data:
-            self.param.slice_i.bounds = (0, self._volume_data['dims'][0]-1)
-            self.slice_i = (self._volume_data['dims'][0]-1)//2
-            self.param.slice_j.bounds = (0, self._volume_data['dims'][1]-1)
-            self.slice_j = (self._volume_data['dims'][1]-1)//2
-            self.param.slice_k.bounds = (0, self._volume_data['dims'][2]-1)
-            self.slice_k = (self._volume_data['dims'][2]-1)//2
+        self._update()
 
     @classmethod
     def applies(cls, obj):
@@ -166,7 +171,7 @@ class VTKVolume(PaneBase):
                               **props)
         if root is None:
             root = model
-        self._link_props(model, ['colormap'], doc, root, comm)
+        self._link_props(model, ['colormap', 'orientation_widget', 'camera', 'mapper'], doc, root, comm)
         self._models[root.ref['id']] = (model, parent)
         return model
 
@@ -180,16 +185,49 @@ class VTKVolume(PaneBase):
                     'default_layout', 'object', 'max_data_size', 'spacing', 'origin'
                 ]}
 
-    def _update(self, model):
+    def _get_object_dimensions(self):
+        if isinstance(self.object, np.ndarray):
+            return self.object.shape
+        else:
+            return self.object.GetDimensions()
+
+    def _process_param_change(self, msg):
+        msg = super(VTKVolume, self)._process_param_change(msg)
+        if self.object is not None:
+            slice_params = {'slice_i':0, 'slice_j':1, 'slice_k':2}
+            for k, v in msg.items():
+                sub_dim = self._subsample_dimensions
+                ori_dim = self._orginal_dimensions
+                if k in slice_params:
+                    index = slice_params[k]
+                    msg[k] = int(np.round(v * sub_dim[index] / ori_dim[index]))
+        return msg
+
+    def _process_property_change(self, msg):
+        msg = super(VTKVolume, self)._process_property_change(msg)
+        if self.object is not None:
+            slice_params = {'slice_i':0, 'slice_j':1, 'slice_k':2}
+            for k, v in msg.items():
+                sub_dim = self._subsample_dimensions
+                ori_dim = self._orginal_dimensions
+                if k in slice_params:
+                    index = slice_params[k]
+                    msg[k] = int(np.round(v * ori_dim[index] / sub_dim[index]))
+        return msg
+
+    def _update(self, model=None):
         self._volume_data = self._get_volume_data()
         if self._volume_data:
-            self.param.slice_i.bounds = (0, self._volume_data['dims'][0]-1)
-            self.slice_i = (self._volume_data['dims'][0]-1)//2
-            self.param.slice_j.bounds = (0, self._volume_data['dims'][1]-1)
-            self.slice_j = (self._volume_data['dims'][1]-1)//2
-            self.param.slice_k.bounds = (0, self._volume_data['dims'][2]-1)
-            self.slice_k = (self._volume_data['dims'][2]-1)//2
-        model.data = self._volume_data
+            self._orginal_dimensions = self._get_object_dimensions()
+            self._subsample_dimensions = self._volume_data['dims']
+            self.param.slice_i.bounds = (0, self._orginal_dimensions[0]-1)
+            self.slice_i = (self._orginal_dimensions[0]-1)//2
+            self.param.slice_j.bounds = (0, self._orginal_dimensions[1]-1)
+            self.slice_j = (self._orginal_dimensions[1]-1)//2
+            self.param.slice_k.bounds = (0, self._orginal_dimensions[2]-1)
+            self.slice_k = (self._orginal_dimensions[2]-1)//2
+        if model is not None:
+            model.data = self._volume_data
 
     @classmethod
     def register_serializer(cls, class_type, serializer):
@@ -214,23 +252,24 @@ class VTKVolume(PaneBase):
         elif isinstance(self.object, np.ndarray):
             return self._volume_from_array(self._subsample_array(self.object))
         else:
-            available_serializer = [v for k, v in self._serializers.items() if isinstance(self.object, k)]
+            available_serializer = [v for k, v in VTKVolume._serializers.items() if isinstance(self.object, k)]
             if not available_serializer:
                 import vtk
                 from vtk.util import numpy_support
 
-                def volume_serializer(imageData):
+                def volume_serializer(inst):
+                    imageData = inst.object
                     array = numpy_support.vtk_to_numpy(imageData.GetPointData().GetScalars())
                     dims = imageData.GetDimensions()[::-1]
-                    self.spacing = imageData.GetSpacing()[::-1]
-                    self.origin = imageData.GetOrigin()
-                    return self._volume_from_array(self._subsample_array(array.reshape(dims, order='C')))
+                    inst.spacing = imageData.GetSpacing()[::-1]
+                    inst.origin = imageData.GetOrigin()
+                    return inst._volume_from_array(inst._subsample_array(array.reshape(dims, order='C')))
 
-                self.register_serializer(vtk.vtkImageData, volume_serializer)
+                VTKVolume.register_serializer(vtk.vtkImageData, volume_serializer)
                 serializer = volume_serializer
             else:
                 serializer = available_serializer[0]
-            return serializer(self.object)
+            return serializer(self)
 
     def _subsample_array(self, array):
         original_shape = array.shape
