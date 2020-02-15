@@ -6,7 +6,7 @@ from base64 import b64encode
 import numpy as np
 from scipy.io import wavfile
 
-from panel.widgets import Audio
+from panel.widgets import Audio, Progress
 
 def test_audio_array(document, comm):
     data = np.random.randint(-100,100, 100).astype('int16')
@@ -30,3 +30,10 @@ def test_audio_url(document, comm):
 
     assert audio_url == url_widget.value
 
+
+def test_progress_bounds():
+    progress = Progress()
+    progress.max = 200
+    assert progress.param.value.bounds == (0, 200)
+    progress.value = 120
+    assert progress.value == 120
