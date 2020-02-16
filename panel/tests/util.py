@@ -1,38 +1,42 @@
 from __future__ import absolute_import, division, unicode_literals
 
+import sys
+
 import numpy as np
 import pytest
 
 try:
     import holoviews as hv
-except:
+except Exception:
     hv = None
 hv_available = pytest.mark.skipif(hv is None, reason="requires holoviews")
 
 try:
     import matplotlib as mpl
     mpl.use('Agg')
-except:
+except Exception:
     mpl = None
 mpl_available = pytest.mark.skipif(mpl is None, reason="requires matplotlib")
 
 try:
     import pandas as pd
-except:
+except Exception:
     pd = None
 pd_available = pytest.mark.skipif(pd is None, reason="requires pandas")
 
 try:
     import streamz
-except:
+except Exception:
     streamz = None
 streamz_available = pytest.mark.skipif(streamz is None, reason="requires streamz")
 
 try:
     import jupyter_bokeh
-except:
+except Exception:
     jupyter_bokeh = None
 jb_available = pytest.mark.skipif(jupyter_bokeh is None, reason="requires jupyter_bokeh")
+
+py3_only = pytest.mark.skipif(sys.version_info.major < 3, reason="requires Python 3")
 
 
 def mpl_figure():

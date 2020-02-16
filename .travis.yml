@@ -63,7 +63,7 @@ jobs:
         - doit env_create $CHANS_DEV --python=$PYTHON_VERSION
         - source activate test-environment
         - conda install -c conda-forge mesalib
-        - doit develop_install -o recommended -o tests -o build $CHANS_DEV
+        - travis_wait 20 doit develop_install -o recommended -o tests -o build $CHANS_DEV
         - bokeh sampledata
         - doit env_capture
       before_script:
@@ -98,7 +98,6 @@ jobs:
         - source activate test-environment
         - doit develop_install $CHANS_DEV -o build && pip uninstall -y panel
         - doit pip_on_conda
-        - conda install $CHANS_DEV nodejs
         - doit ecosystem=pip package_build $PKG_TEST_PYTHON --test-group=unit_deploy
       script: doit ecosystem=pip package_upload -u $PYPIUSER -p $PYPIPASS --pypi ${PYPI}
 
@@ -117,9 +116,10 @@ jobs:
     - &doc_build
       <<: *conda_default
       stage: docs
-      env: DESC="docs" PANEL_DOC_BUILD='true'
+      env: DESC="docs" PANEL_DOC_BUILD='true' PANEL_EMBED="true" PANEL_EMBED_JSON="true" PANEL_EMBED_JSON_PREFIX="json"
       script:
         - doit develop_install $CHANS_DEV -o doc -o examples
+        - pip install pydeck
         # note: will vastly simplified in a future version of nbsite
         - nbsite generate-rst --org pyviz --project-name panel
         - nbsite build --what=html --output=builtdocs

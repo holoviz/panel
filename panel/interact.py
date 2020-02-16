@@ -26,7 +26,7 @@ except ImportError:
     try:
         from IPython.utils.signatures import signature, Parameter
         empty = Parameter.empty
-    except:
+    except Exception:
         signature, Parameter, empty = None, None, None
 
 try:
@@ -89,7 +89,8 @@ def _yield_abbreviations_for_parameter(parameter, kwargs):
         if name in kwargs:
             value = kwargs.pop(name)
         elif ann is not empty:
-            param.main.warning("Using function annotations to implicitly specify interactive controls is deprecated. Use an explicit keyword argument for the parameter instead.", DeprecationWarning)
+            param.main.warning("Using function annotations to implicitly specify interactive controls is deprecated. "
+                               "Use an explicit keyword argument for the parameter instead.", DeprecationWarning)
             value = ann
         elif default is not empty:
             value = default
@@ -182,8 +183,10 @@ class interactive(PaneBase):
                 pane_type = self.get_pane_type(new_object)
                 if type(self._pane) is pane_type:
                     if isinstance(new_object, (PaneBase, Panel)):
-                        new_params = {k: v for k, v in new_object.get_param_values()
-                                      if k != 'name'}
+                        new_params = {
+                            k: v for k, v in new_object.param.get_param_values()
+                            if k != 'name'
+                        }
                         self._pane.set_param(**new_params)
                     else:
                         self._pane.object = new_object

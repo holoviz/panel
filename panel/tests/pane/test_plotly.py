@@ -9,7 +9,7 @@ try:
     import plotly.graph_objs as go
     import plotly.io as pio
     pio.templates.default = None
-except:
+except Exception:
     plotly = None
 plotly_available = pytest.mark.skipif(plotly is None, reason="requires plotly")
 

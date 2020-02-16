@@ -35,6 +35,9 @@ class _state(param.Parameterized):
     # Used to ensure that events are not scheduled from the wrong thread
     _thread_id = None
 
+    # Temporary flag to allow using Div model on static export
+    _html_escape = True
+
     _comm_manager = _CommManager
 
     # An index of all currently active views
@@ -43,13 +46,18 @@ class _state(param.Parameterized):
     # An index of all currently active servers
     _servers = {}
 
+    # Jupyter display handles
+    _handles = {}
+
     def __repr__(self):
         server_info = []
         for server, panel, docs in self._servers.values():
             server_info.append("{}:{:d} - {!r}".format(
                 server.address or "localhost", server.port, panel)
             )
-        return "state(servers=\n  {}\n)".format(",\n  ".join(server_info))
+        if not server_info:
+            return "state(servers=[])"
+        return "state(servers=[\n  {}\n])".format(",\n  ".join(server_info))
 
     def kill_all_servers(self):
         """Stop all servers and clear them from the current state."""

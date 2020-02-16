@@ -5,11 +5,15 @@ response to changes to parameters and the underlying bokeh models.
 """
 from __future__ import absolute_import, division, unicode_literals
 
+import difflib
 import logging
 import re
 import sys
 import threading
+import traceback
+import uuid
 
+from collections import namedtuple
 from functools import partial
 
 import param
@@ -31,7 +35,10 @@ from .io.notebook import (
 from .io.save import save
 from .io.state import state
 from .io.server import StoppableThread, get_server, unlocked
-from .util import param_reprs
+from .util import escape, param_reprs
+
+
+LinkWatcher = namedtuple("Watcher","inst cls fn mode onlychanged parameter_names what queued target links transformed")
 
 
 class Layoutable(param.Parameterized):
@@ -186,6 +193,8 @@ class Layoutable(param.Parameterized):
     def __init__(self, **params):
         if (params.get('width', None) is not None and
             params.get('height', None) is not None and
+            params.get('width_policy') is None and
+            params.get('height_policy') is None and
             'sizing_mode' not in params):
             params['sizing_mode'] = 'fixed'
         elif not self.param.sizing_mode.constant and not self.param.sizing_mode.readonly:
@@ -204,9 +213,10 @@ class ServableMixin(object):
         return self.server_doc(doc, title)
 
     def _get_server(self, port=0, websocket_origin=None, loop=None,
-                   show=False, start=False, **kwargs):
+                    show=False, start=False, title=None, verbose=False,
+                    **kwargs):
         return get_server(self, port, websocket_origin, loop, show,
-                          start, **kwargs)
+                          start, title, verbose, **kwargs)
 
     #----------------------------------------------------------------
     # Public API
@@ -233,7 +243,8 @@ class ServableMixin(object):
             self.server_doc(title=title)
         return self
 
-    def show(self, port=0, websocket_origin=None, threaded=False, title=None, **kwargs):
+    def show(self, port=0, websocket_origin=None, threaded=False,
+             title=None, verbose=True, **kwargs):
         """
         Starts a Bokeh server and displays the Viewable in a new tab.
 
@@ -251,6 +262,8 @@ class ServableMixin(object):
           interactive use.
         title : str
           A string title to give the Document (if served as an app)
+        verbose: boolean (optional, default=True)
+          Whether to print the address and port
 
         Returns
         -------
@@ -263,15 +276,17 @@ class ServableMixin(object):
             loop = IOLoop()
             server = StoppableThread(
                 target=self._get_server, io_loop=loop,
-                args=(port, websocket_origin, loop, True, True, title))
+                args=(port, websocket_origin, loop, True, True, title, verbose),
+                kwargs={'title': title})
             server.start()
         else:
-            server = self._get_server(port, websocket_origin, show=True,
-                                      start=True, title=title, **kwargs)
-
+            server = self._get_server(
+                port, websocket_origin, show=True, start=True,
+                title=title, verbose=verbose, **kwargs
+            )
         return server
 
-
+    
 class Viewable(Layoutable, ServableMixin):
     """
     Viewable is the baseclass all objects in the panel library are
@@ -321,15 +336,17 @@ class Viewable(Layoutable, ServableMixin):
         """
         raise NotImplementedError
 
-    def _cleanup(self, model):
+    def _cleanup(self, root):
         """
         Clean up method which is called when a Viewable is destroyed.
 
         Arguments
         ---------
-        model: bokeh.model.Model
+        root: bokeh.model.Model
           Bokeh model for the view being cleaned up
         """
+        if root.ref['id'] in state._handles:
+            del state._handles[root.ref['id']]
 
     def _preprocess(self, root):
         """
@@ -350,7 +367,8 @@ class Viewable(Layoutable, ServableMixin):
                         json=config.embed_json,
                         json_prefix=config.embed_json_prefix,
                         save_path=config.embed_save_path,
-                        load_path=config.embed_load_path)
+                        load_path=config.embed_load_path,
+                        progress=False)
         else:
             add_to_doc(model, doc)
         return model
@@ -382,13 +400,22 @@ class Viewable(Layoutable, ServableMixin):
             return None
 
         try:
-            assert get_ipython().kernel is not None # noqa
+            from IPython import get_ipython
+            assert get_ipython().kernel is not None
             state._comm_manager = JupyterCommManager
-        except:
+        except Exception:
             pass
+
+        from IPython.display import display
+
         comm = state._comm_manager.get_server_comm()
         doc = _Document()
         model = self._render_model(doc, comm)
+
+        if config.console_output != 'disable':
+            handle = display(display_id=uuid.uuid4().hex)
+            state._handles[model.ref['id']] = (handle, [])
+
         if config.embed:
             return render_model(model)
         return render_mimebundle(model, doc, comm)
@@ -461,7 +488,7 @@ class Viewable(Layoutable, ServableMixin):
         return show_server(self, notebook_url, port)
 
     def embed(self, max_states=1000, max_opts=3, json=False,
-              save_path='./', load_path=None):
+              save_path='./', load_path=None, progress=True):
         """
         Renders a static version of a panel in a notebook by evaluating
         the set of states defined by the widgets in the model. Note
@@ -480,8 +507,13 @@ class Viewable(Layoutable, ServableMixin):
           The path to save json files to
         load_path: str (default=None)
           The path or URL the json files will be loaded from.
+        progress: boolean (default=False)
+          Whether to report progress
         """
-        show_embed(self, max_states, max_opts, json, save_path, load_path)
+        show_embed(
+            self, max_states, max_opts, json, save_path,
+            load_path, progress
+        )
 
     def get_root(self, doc=None, comm=None):
         """
@@ -595,6 +627,14 @@ class Reactive(Viewable):
     # Mapping from parameter name to bokeh model property name
     _rename = {}
 
+    # Allows defining a mapping from model property name to a JS code
+    # snippet that transforms the object before serialization
+    _js_transforms = {}
+
+    # Transforms from input value to bokeh property value
+    _source_transforms = {}
+    _target_transforms = {}
+
     def __init__(self, **params):
         # temporary flag denotes panes created for temporary, internal
         # use which should be garbage collected once they have been used
@@ -603,6 +643,7 @@ class Reactive(Viewable):
         self._events = {}
         self._changing = {}
         self._callbacks = []
+        self._links = []
         self._link_params()
 
     #----------------------------------------------------------------
@@ -617,7 +658,7 @@ class Reactive(Viewable):
                     change = (k not in self._changing or
                               self._changing[k] != v or
                               self._changing['id'] != model.ref['id'])
-                except:
+                except Exception:
                     change = True
                 if change:
                     filtered[k] = v
@@ -670,25 +711,54 @@ class Reactive(Viewable):
             watcher = self.param.watch(param_change, params)
             self._callbacks.append(watcher)
 
+    def _on_error(self, ref, error):
+        if ref not in state._handles or config.console_output in [None, 'disable']:
+            return
+        handle, accumulator = state._handles[ref]
+        formatted = '\n<pre>'+escape(traceback.format_exc())+'</pre>\n'
+        if config.console_output == 'accumulate':
+            accumulator.append(formatted)
+        elif config.console_output == 'replace':
+            accumulator[:] = [formatted]
+        if accumulator:
+            handle.update({'text/html': '\n'.join(accumulator)}, raw=True)
+
+    def _on_stdout(self, ref, stdout):
+        if ref not in state._handles or config.console_output is [None, 'disable']:
+            return
+        handle, accumulator = state._handles[ref]
+        formatted = ["%s</br>" % o for o in stdout]
+        if config.console_output == 'accumulate':
+            accumulator.extend(formatted)
+        elif config.console_output == 'replace':
+            accumulator[:] = formatted
+        if accumulator:
+            handle.update({'text/html': '\n'.join(accumulator)}, raw=True)
+
     def _link_props(self, model, properties, doc, root, comm=None):
+        ref = root.ref['id']
         if comm is None:
             for p in properties:
                 if isinstance(p, tuple):
                     _, p = p
-                model.on_change(p, partial(self._server_change, doc))
+                model.on_change(p, partial(self._server_change, doc, ref))
         elif config.embed:
             pass
         else:
-            client_comm = state._comm_manager.get_client_comm(on_msg=self._comm_change)
+            on_msg = partial(self._comm_change, ref=ref)
+            client_comm = state._comm_manager.get_client_comm(
+                on_msg=on_msg, on_error=partial(self._on_error, ref),
+                on_stdout=partial(self._on_stdout, ref)
+            )
             for p in properties:
                 if isinstance(p, tuple):
                     p, attr = p
                 else:
                     p, attr = p, p
-                customjs = self._get_customjs(attr, client_comm, root.ref['id'])
+                customjs = self._get_customjs(attr, client_comm, ref)
                 model.js_on_change(p, customjs)
 
-    def _comm_change(self, msg):
+    def _comm_change(self, msg, ref=None):
         if not msg:
             return
         self._changing.update(msg)
@@ -699,7 +769,7 @@ class Reactive(Viewable):
         finally:
             self._changing = {}
 
-    def _server_change(self, doc, attr, old, new):
+    def _server_change(self, doc, ref, attr, old, new):
         self._events.update({attr: new})
         if not self._processing:
             self._processing = True
@@ -709,7 +779,7 @@ class Reactive(Viewable):
                 self._change_event(doc)
 
     def _process_events(self, events):
-        self.set_param(**self._process_property_change(events))
+        self.param.set_param(**self._process_property_change(events))
 
     def _change_event(self, doc=None):
         try:
@@ -730,8 +800,10 @@ class Reactive(Viewable):
         Returns a CustomJS callback that can be attached to send the
         model state across the notebook comms.
         """
-        return get_comm_customjs(change, client_comm, plot_id,
-                                 self._timeout, self._debounce)
+        transform = self._js_transforms.get(change)
+        return get_comm_customjs(
+            change, client_comm, plot_id, transform, self._timeout, self._debounce
+        )
 
     #----------------------------------------------------------------
     # Model API
@@ -740,6 +812,11 @@ class Reactive(Viewable):
     def _init_properties(self):
         return {k: v for k, v in self.param.get_param_values()
                 if v is not None}
+
+    @property
+    def _linkable_params(self):
+        return [p for p in self._synced_params()
+                if self._source_transforms.get(p, False) is not None]
 
     def _synced_params(self):
         return list(self.param)
@@ -790,12 +867,68 @@ class Reactive(Viewable):
             if comm:
                 try:
                     comm.close()
-                except:
+                except Exception:
                     pass
 
     #----------------------------------------------------------------
     # Public API
     #----------------------------------------------------------------
+
+    def controls(self, parameters=[], jslink=True):
+        """
+        Creates a set of widgets which allow manipulating the parameters
+        on this instance. By default all parameters which support
+        linking are exposed, but an explicit list of parameters can
+        be provided.
+
+        Arguments
+        ---------
+        parameters: list(str)
+           An explicit list of parameters to return controls for.
+        jslink: bool
+           Whether to use jslinks instead of Python based links.
+           This does not allow using all types of parameters.
+
+        Returns
+        -------
+        A layout of the controls
+        """
+        from .param import Param
+        from .layout import Tabs, WidgetBox
+        from .widgets import LiteralInput
+
+        if parameters:
+            linkable = parameters
+        elif jslink:
+            linkable = self._linkable_params
+        else:
+            linkable = list(self.param)
+
+        params = [p for p in linkable if p not in Layoutable.param]
+        controls = Param(self.param, parameters=params, default_layout=WidgetBox,
+                         name='Controls')
+        layout_params = [p for p in linkable if p in Layoutable.param]
+        if 'name' not in layout_params and self._rename.get('name', False) is not None and not parameters:
+            layout_params.insert(0, 'name')
+        style = Param(self.param, parameters=layout_params, default_layout=WidgetBox,
+                      name='Layout')
+        if jslink:
+            for p in params:
+                widget = controls._widgets[p]
+                widget.jslink(self, value=p, bidirectional=True)
+                if isinstance(widget, LiteralInput):
+                    widget.serializer = 'json'
+            for p in layout_params:
+                widget = style._widgets[p]
+                widget.jslink(self, value=p, bidirectional=True)
+                if isinstance(widget, LiteralInput):
+                    widget.serializer = 'json'
+
+        if params and layout_params:
+            return Tabs(controls.layout[0], style.layout[0])
+        elif params:
+            return controls.layout[0]
+        return style.layout[0]
 
     def link(self, target, callbacks=None, **links):
         """
@@ -834,13 +967,14 @@ class Reactive(Viewable):
                         callbacks[event.name](target, event)
                     else:
                         setattr(target, links[event.name], event.new)
-                except:
+                except Exception:
                     raise
                 finally:
                     _updating.pop(_updating.index(event.name))
         params = list(callbacks) if callbacks else list(links)
         cb = self.param.watch(link, params)
-        self._callbacks.append(cb)
+        link = LinkWatcher(*tuple(cb)+(target, links, callbacks is not None))
+        self._links.append(link)
         return cb
 
     def add_periodic_callback(self, callback, period=500, count=None,
@@ -937,10 +1071,41 @@ class Reactive(Viewable):
         if args is None:
             args = {}
 
+        mapping = code or links
+        for k in mapping:
+            if k not in self.param and k not in list(self._rename.values()):
+                matches = difflib.get_close_matches(k, list(self.param))
+                if matches:
+                    matches = ' Similar parameters include: %r' % matches
+                else:
+                    matches = ''
+                raise ValueError("Could not jslink %r parameter (or property) "
+                                 "on %s object because it was not found.%s"
+                                 % (k, type(self).__name__, matches))
+            elif (self._source_transforms.get(k, False) is None or
+                  self._rename.get(k, False) is None):
+                raise ValueError("Cannot jslink %r parameter on %s object, "
+                                 "the parameter requires a live Python kernel "
+                                 "to have an effect." % (k, type(self).__name__))
+
+        if isinstance(target, Reactive) and code is None:
+            for k, p in mapping.items():
+                if p not in target.param and p not in list(target._rename.values()):
+                    matches = difflib.get_close_matches(p, list(target.param))
+                    if matches:
+                        matches = ' Similar parameters include: %r' % matches
+                    else:
+                        matches = ''
+                    raise ValueError("Could not jslink %r parameter (or property) "
+                                     "on %s object because it was not found.%s"
+                                    % (p, type(self).__name__, matches))
+                elif (target._source_transforms.get(p, False) is None or
+                      target._rename.get(p, False) is None):
+                    raise ValueError("Cannot jslink %r parameter on %s object "
+                                     "to %r parameter on %s object. It requires "
+                                     "a live Python kernel to have an effect."
+                                     % (k, type(self).__name__, p, type(target).__name__))
+
         from .links import Link
-        if isinstance(target, Reactive):
-            mapping = code or links
-            for k, v in list(mapping.items()):
-                mapping[k] = target._rename.get(v, v)
         return Link(self, target, properties=links, code=code, args=args,
                     bidirectional=bidirectional)

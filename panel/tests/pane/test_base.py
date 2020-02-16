@@ -7,7 +7,8 @@ import param
 from panel.interact import interactive
 from panel.pane import Pane, PaneBase, Bokeh, HoloViews
 from panel.param import ParamMethod
-from panel.tests.util import check_layoutable_properties
+from panel.tests.util import check_layoutable_properties, py3_only
+
 
 all_panes = [w for w in param.concrete_descendents(PaneBase).values()
              if not w.__name__.startswith('_') and not
@@ -41,3 +42,12 @@ def test_pane_clone(pane):
     assert ([(k, v) for k, v in sorted(p.param.get_param_values()) if k != 'name'] ==
             [(k, v) for k, v in sorted(clone.param.get_param_values()) if k != 'name'])
 
+
+@py3_only
+@pytest.mark.parametrize('pane', all_panes)
+def test_pane_signature(pane):
+    from inspect import Parameter, signature
+    parameters = signature(pane).parameters
+    assert len(parameters) == 2
+    assert 'object' in parameters
+    assert parameters['object'] == Parameter('object', Parameter.POSITIONAL_OR_KEYWORD, default=None)

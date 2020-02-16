@@ -88,17 +88,17 @@ class PaneBase(Reactive):
     # value for a specific object type.
     priority = 0.5
 
-    # Declares whether Pane supports updates to the Bokeh model
-    _updates = False
+    # Whether applies requires full set of keywords
+    _applies_kw = False
 
     # Whether the Pane layout can be safely unpacked
     _unpack = True
 
+    # Declares whether Pane supports updates to the Bokeh model
+    _updates = False
+
     # List of parameters that trigger a rerender of the Bokeh model
     _rerender_params = ['object']
-
-    # Whether applies requires full set of keywords
-    _applies_kw = False
 
     __abstract = True
 
@@ -110,7 +110,8 @@ class PaneBase(Reactive):
         super(PaneBase, self).__init__(object=object, **params)
         kwargs = {k: v for k, v in params.items() if k in Layoutable.param}
         self.layout = self.default_layout(self, **kwargs)
-        self.param.watch(self._update_pane, self._rerender_params)
+        watcher = self.param.watch(self._update_pane, self._rerender_params)
+        self._callbacks.append(watcher)
 
     def _type_error(self, object):
         raise ValueError("%s pane does not support objects of type '%s'." %
@@ -132,6 +133,10 @@ class PaneBase(Reactive):
     #----------------------------------------------------------------
     # Callback API
     #----------------------------------------------------------------
+
+    @property
+    def _linkable_params(self):
+        return [p for p in self._synced_params() if self._rename.get(p, False) is not None]
 
     def _synced_params(self):
         ignored_params = ['name', 'default_layout']+self._rerender_params
@@ -273,7 +278,10 @@ class PaneBase(Reactive):
         for p in param.concrete_descendents(PaneBase).values():
             if p.priority is None:
                 applies = True
-                priority = p.applies(obj, **(kwargs if p._applies_kw else {}))
+                try:
+                    priority = p.applies(obj, **(kwargs if p._applies_kw else {}))
+                except Exception:
+                    priority = False
             else:
                 applies = None
                 priority = p.priority
@@ -289,7 +297,10 @@ class PaneBase(Reactive):
         pane_types = reversed(sorted(descendents, key=lambda x: x[0]))
         for _, applies, pane_type in pane_types:
             if applies is None:
-                applies = pane_type.applies(obj, **(kwargs if pane_type._applies_kw else {}))
+                try:
+                    applies = pane_type.applies(obj, **(kwargs if pane_type._applies_kw else {}))
+                except Exception:
+                    applies = False
             if not applies:
                 continue
             return pane_type
@@ -304,9 +315,9 @@ class ReplacementPane(PaneBase):
     on.
     """
 
-    __abstract = True
-
     _updates = True
+
+    __abstract = True
 
     def __init__(self, object=None, **params):
         self._kwargs =  {p: params.pop(p) for p in list(params)
@@ -315,6 +326,13 @@ class ReplacementPane(PaneBase):
         self._pane = Pane(None)
         self._internal = True
         self._inner_layout = Row(self._pane, **{k: v for k, v in params.items() if k in Row.param})
+        self.param.watch(self._update_inner_layout, list(Layoutable.param))
+
+    def _update_inner_layout(self, *events):
+        for event in events:
+            setattr(self._pane, event.name, event.new)
+            if event.name in ['sizing_mode', 'width_policy', 'height_policy']:
+                setattr(self._inner_layout, event.name, event.new)
 
     def _update_pane(self, *events):
         """
@@ -329,28 +347,25 @@ class ReplacementPane(PaneBase):
             links = []
         custom_watchers = False
         if isinstance(new_object, Reactive):
-            watch_fns = [
-                str(w.fn) for pwatchers in new_object._param_watchers.values()
+            watchers = [
+                w for pwatchers in new_object._param_watchers.values()
                 for awatchers in pwatchers.values() for w in awatchers
             ]
-            custom_watchers = not all(
-                'Reactive._link_params' in wfn or '._update_pane' in wfn or
-                'param_change' in wfn for wfn in watch_fns
-            )
+            custom_watchers = [wfn for wfn in watchers if wfn not in new_object._callbacks]
 
         if type(self._pane) is pane_type and not links and not custom_watchers and self._internal:
             # If the object has not external referrers we can update
             # it inplace instead of replacing it
             if isinstance(new_object, Reactive):
-                pvals = dict(self._pane.get_param_values())
-                new_params = {k: v for k, v in new_object.get_param_values()
+                pvals = dict(self._pane.param.get_param_values())
+                new_params = {k: v for k, v in new_object.param.get_param_values()
                               if k != 'name' and v is not pvals[k]}
-                self._pane.set_param(**new_params)
+                self._pane.param.set_param(**new_params)
             else:
                 self._pane.object = new_object
         else:
             # Replace pane entirely
-            kwargs = dict(self.get_param_values(), **self._kwargs)
+            kwargs = dict(self.param.get_param_values(), **self._kwargs)
             del kwargs['object']
             self._pane = panel(new_object, **{k: v for k, v in kwargs.items()
                                               if k in pane_type.param})

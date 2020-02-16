@@ -7,8 +7,11 @@ from __future__ import absolute_import, division, unicode_literals
 import sys
 import param
 
-from .base import Widget
 from pyviz_comms import JupyterComm
+
+from ..models.enums import ace_themes
+from .base import Widget
+
 
 
 class Ace(Widget):
@@ -20,7 +23,7 @@ class Ace(Widget):
 
     annotations = param.List(default=[], doc="List of annotations to add to the editor")
 
-    theme = param.String(default="chrome", doc="Theme of the editor")
+    theme = param.ObjectSelector(default="chrome", objects=list(ace_themes), doc="Theme of the editor")
 
     language = param.String(default="python", doc="Language of the editor")
 
@@ -47,4 +50,5 @@ class Ace(Widget):
             self._widget_type = AcePlot
         else:
             self._widget_type = getattr(sys.modules["panel.models.ace"], "AcePlot")
+
         return super(Ace, self)._get_model(doc, root, parent, comm)

@@ -428,10 +428,10 @@ def test_param_precedence_ordering(document, comm):
     # Check changing precedence attribute hides and shows widget
     a_param = test.param['a']
     a_param.precedence = 2
-    assert test_pane._widget_box.objects == [test_pane._widgets[w] for w in ('name', 'b', 'a')]
+    assert test_pane._widget_box.objects == [test_pane._widgets[w] for w in ('_title', 'b', 'a')]
 
     a_param.precedence = 1
-    assert test_pane._widget_box.objects == [test_pane._widgets[w] for w in ('name', 'a', 'b')]
+    assert test_pane._widget_box.objects == [test_pane._widgets[w] for w in ('_title', 'a', 'b')]
 
 
 def test_param_step(document, comm):

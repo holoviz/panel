@@ -8,7 +8,7 @@ import numpy as np
 
 try:
     import holoviews as hv
-except:
+except Exception:
     hv = None
 
 from bokeh.models import (Row as BkRow, Column as BkColumn, GlyphRenderer,
@@ -264,7 +264,7 @@ def test_holoviews_layouts(document, comm):
 
     for center in (True, False):
         for loc in HoloViews.param.widget_location.objects:
-            hv_pane.set_param(center=center, widget_location=loc)
+            hv_pane.param.set_param(center=center, widget_location=loc)
             if center:
                 if loc.startswith('left'):
                     assert len(layout) == 4
@@ -400,8 +400,6 @@ def test_holoviews_linked_axes(document, comm):
     layout = Row(HoloViews(c1, backend='bokeh'), HoloViews(c2, backend='bokeh'))
 
     row_model = layout.get_root(document, comm=comm)
-
-    print(row_model.children)
 
     p1, p2 = row_model.select({'type': Figure})
 

@@ -3,19 +3,26 @@ Various general utilities used in the panel codebase.
 """
 from __future__ import absolute_import, division, unicode_literals
 
-import re
-import sys
+import datetime as dt
 import inspect
 import numbers
-import datetime as dt
+import os
+import re
+import sys
 
+from collections import defaultdict, OrderedDict
 from datetime import datetime
 from six import string_types
-from collections import defaultdict, OrderedDict
+
 try:  # python >= 3.3
     from collections.abc import MutableSequence, MutableMapping
 except ImportError:
     from collections import MutableSequence, MutableMapping
+
+try:
+    from html import escape as _escape # noqa
+except Exception:
+    from cgi import escape as _escape # noqa
 
 import param
 import numpy as np
@@ -24,6 +31,44 @@ datetime_types = (np.datetime64, dt.datetime, dt.date)
 
 if sys.version_info.major > 2:
     unicode = str
+
+
+def escape(string):
+    """
+    Temporary wrapper around HTML escaping to allow using Div model
+    during static png exports.
+    """
+    from .io import state
+
+    if state._html_escape:
+        return _escape(string)
+    else:
+        return string
+
+
+def isfile(path):
+    """Safe version of os.path.isfile robust to path length issues on Windows"""
+    try:
+        return os.path.isfile(path)
+    except ValueError: # path too long for Windows
+        return False
+
+
+def isurl(obj, formats):
+    if not isinstance(obj, string_types):
+        return False
+    lower_string = obj.lower()
+    return (
+        lower_string.startswith('http://')
+        or lower_string.startswith('https://')
+    ) and any(lower_string.endswith('.'+fmt) for fmt in formats)
+
+
+def is_dataframe(obj):
+    if 'pandas' not in sys.modules:
+        return False
+    import pandas as pd
+    return isinstance(obj, pd.DataFrame)
 
 
 def hashable(x):
@@ -45,7 +90,7 @@ def isIn(obj, objs):
         try:
             if o == obj:
                 return True
-        except:
+        except Exception:
             pass
     return False
 
@@ -62,7 +107,7 @@ def indexOf(obj, objs):
         try:
             if o == obj:
                 return i
-        except:
+        except Exception:
             pass
     raise ValueError('%s not in list' % obj)
 
@@ -147,13 +192,13 @@ def param_reprs(parameterized, skip=None):
     """
     cls = type(parameterized).__name__
     param_reprs = []
-    for p, v in sorted(parameterized.get_param_values()):
+    for p, v in sorted(parameterized.param.get_param_values()):
         default = parameterized.param[p].default
         equal = v is default
         if not equal:
             try:
                 equal = bool(v==default)
-            except:
+            except Exception:
                 equal = False
 
         if equal: continue

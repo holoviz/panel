@@ -13,17 +13,20 @@ class Ace(PaneBase):
     Ace panes allow rendering Ace editor.
     """
 
-    priority = 0
-
-    code = param.String(doc="State of the current code in the editor")
-
-    theme = param.String(default='chrome', doc="Theme of the editor")
+    annotations = param.List(default=[], doc="List of annotations to add to the editor")
 
     language = param.String(default='python', doc="Language of the editor")
 
-    annotations = param.List(default=[], doc="List of annotations to add to the editor")
+    object = param.String(default='', allow_None=True, doc="""
+        The code to be displayed.""")
+
+    theme = param.String(default='chrome', doc="Theme of the editor")
 
     readonly = param.Boolean(default=False, doc="Define if editor content can be modified")
+
+    priority = 0
+
+    _rename = {'object': 'code'}
 
     _updates = True
 
@@ -49,9 +52,8 @@ class Ace(PaneBase):
         else:
             AcePlot = getattr(sys.modules['panel.models.ace'], 'AcePlot')
 
-        self.code = self.object if self.object else ''
         props = self._process_param_change(self._init_properties())
-        model = AcePlot(**props)
+        model = AcePlot(code=self.object or '', **props)
         if root is None:
             root = model
         self._link_props(model, ['code', 'language', 'theme', 'annotations', 'readonly'], doc, root, comm)

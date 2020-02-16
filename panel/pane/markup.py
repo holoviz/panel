@@ -7,16 +7,13 @@ from __future__ import absolute_import, division, unicode_literals
 import json
 import textwrap
 
-try:
-    from html import escape
-except:
-    from cgi import escape
 from six import string_types
 
 import param
 
-from ..viewable import Layoutable
 from ..models import HTML as _BkHTML, JSON as _BkJSON
+from ..util import escape
+from ..viewable import Layoutable
 from .base import PaneBase
 
 
@@ -30,16 +27,13 @@ class DivPaneBase(PaneBase):
     style = param.Dict(default=None, doc="""
         Dictionary of CSS property:value pairs to apply to this Div.""")
 
-    # DivPane supports updates to the model
-    _updates = True
-
-    __abstract = True
+    _bokeh_model = _BkHTML
 
     _rename = {'object': 'text'}
 
-    _bokeh_model = _BkHTML
+    _updates = True
 
-    _rerender_params = ['object', 'sizing_mode', 'style']
+    __abstract = True
 
     def _get_properties(self):
         return {p : getattr(self, p) for p in list(Layoutable.param) + ['style']
@@ -156,6 +150,8 @@ class DataFrame(HTML):
 
     _object = param.Parameter(default=None, doc="""Hidden parameter.""")
 
+    _dask_params = ['max_rows']
+
     _rerender_params = [
         'object', '_object', 'bold_rows', 'border', 'classes',
         'col_space', 'decimal', 'float_format', 'formatters',
@@ -163,8 +159,6 @@ class DataFrame(HTML):
         'max_cols', 'na_rep', 'render_links', 'show_dimensions',
         'sparsify', 'sizing_mode'
     ]
-
-    _dask_params = ['max_rows']
 
     def __init__(self, object=None, **params):
         super(DataFrame, self).__init__(object, **params)
@@ -238,6 +232,8 @@ class Str(DivPaneBase):
 
     priority = 0
 
+    _target_transforms = {'object': """JSON.stringify(value).replace(/,/g, ", ").replace(/:/g, ": ")"""}
+
     _bokeh_model = _BkHTML
 
     @classmethod
@@ -271,7 +267,9 @@ class Markdown(DivPaneBase):
     # Priority depends on the data type
     priority = None
 
-    _rerender_params = ['object', 'dedent', 'extensions', 'sizing_mode']
+    _target_transforms = {'object': None}
+
+    _rerender_params = ['object', 'dedent', 'extensions']
 
     @classmethod
     def applies(cls, obj):
@@ -322,11 +320,7 @@ class JSON(DivPaneBase):
     priority = None
 
     _applies_kw = True
-
     _bokeh_model = _BkJSON
-
-    _rerender_params = ['object', 'sizing_mode']
-
     _rename = {"name": None, "object": "text", "encoder": None}
 
     @classmethod
@@ -334,7 +328,7 @@ class JSON(DivPaneBase):
         if isinstance(obj, (list, dict)):
             try:
                 json.dumps(obj, cls=params.get('encoder', cls.encoder))
-            except:
+            except Exception:
                 return False
             else:
                 return 0.1

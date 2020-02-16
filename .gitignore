@@ -119,5 +119,7 @@ builtdocs/
 panel/models/*.json
 node_modules
 package-lock.json
+
+# vscode settings
 .vscode/
 discover/

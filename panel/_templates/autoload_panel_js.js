@@ -83,7 +83,7 @@ calls it with the rendered model.
 
     if (window.requirejs) {
       {%- for conf in configs %}
-      window.requirejs.config({{ conf }});
+      window.requirejs.config({{ conf|conffilter }});
       {%- endfor %}
       require({{ requirements|json }}, function({%- for e in exports -%}{{ e }},{%- endfor -%}) {
         {%- for exp in exports %}
@@ -92,8 +92,18 @@ calls it with the rendered model.
         run_callbacks();
       })
     } else {
+      var skip = [];
+      {%- for lib, urls in skip_imports.items() %}
+      if ((window['{{ lib }}'] !== undefined) && (!(window['{{ lib }}'] instanceof HTMLElement))) {
+        var urls = {{ urls }};
+        for (var i = 0; i < urls.length; i++) {
+          skip.push(urls[i])
+        }
+      }
+      {%- endfor %}
       for (var i = 0; i < js_urls.length; i++) {
         var url = js_urls[i];
+        if (skip.indexOf(url) >= 0) { on_load(); continue; }
         var element = document.createElement('script');
         element.onload = on_load;
         element.onerror = on_error;

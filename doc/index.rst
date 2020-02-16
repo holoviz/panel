@@ -80,17 +80,6 @@ And then you can launch Jupyter to explore them yourself using either Jupyter No
   jupyter notebook
   jupyter lab
 
-
-HoloViz
--------
-
-Panel is part of the HoloViz family of tools.  The `HoloViz website
-<https://holoviz.org>`_ shows how to use Panel together with other
-libraries to solve complex problems, with detailed tutorials and
-examples. For a list of examples building on this set of tools
-(including Panel) see `examples.pyviz.org
-<https://examples.pyviz.org/>`_.
-
 .. |CondaPyViz| image:: https://img.shields.io/conda/v/pyviz/panel.svg
 .. _CondaPyViz: https://anaconda.org/pyviz/panel
 
@@ -116,8 +105,8 @@ examples. For a list of examples building on this set of tools
    Reference Gallery <reference/index>
    Developer Guide <developer_guide/index>
    Comparisons <Comparisons>
+   Releases <releases>
    Road Map <Roadmap>
    FAQ
    Github source <http://github.com/pyviz/panel>
    About <about>
-

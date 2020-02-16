@@ -5,11 +5,13 @@ try:
 except ImportError:
     hv = None
 
+import pytest
+
 from bokeh.plotting import figure
 from panel.layout import Row
 from panel.links import Link
 from panel.pane import HoloViews
-from panel.widgets import FloatSlider, RangeSlider, ColorPicker, TextInput
+from panel.widgets import FloatSlider, RangeSlider, ColorPicker, TextInput, DatetimeInput
 from panel.tests.util import hv_available
 
 
@@ -34,6 +36,43 @@ def test_widget_link_bidirectional(document, comm):
     assert link2_customjs.args['target'] is tm1
 
 
+def test_widget_link_source_param_not_found():
+    t1 = TextInput()
+    t2 = TextInput()
+
+    with pytest.raises(ValueError) as excinfo:
+        t1.jslink(t2, value1='value')
+    assert "Could not jslink \'value1\' parameter" in str(excinfo)
+
+
+def test_widget_link_target_param_not_found():
+    t1 = TextInput()
+    t2 = TextInput()
+
+    with pytest.raises(ValueError) as excinfo:
+        t1.jslink(t2, value='value1')
+    assert "Could not jslink \'value1\' parameter" in str(excinfo)
+
+
+def test_widget_link_no_transform_error():
+    t1 = DatetimeInput()
+    t2 = TextInput()
+
+    with pytest.raises(ValueError) as excinfo:
+        t1.jslink(t2, value='value')
+    assert "Cannot jslink \'value\' parameter on DatetimeInput object" in str(excinfo)
+
+
+def test_widget_link_no_target_transform_error():
+    t1 = DatetimeInput()
+    t2 = TextInput()
+
+    with pytest.raises(ValueError) as excinfo:
+        t2.jslink(t1, value='value')
+    assert ("Cannot jslink \'value\' parameter on TextInput object "
+            "to \'value\' parameter on DatetimeInput object") in str(excinfo)
+    
+    
 @hv_available
 def test_pnwidget_hvplot_links(document, comm):
     size_widget = FloatSlider(value=5, start=1, end=10)
@@ -54,12 +93,24 @@ def test_pnwidget_hvplot_links(document, comm):
     link_customjs = slider.js_property_callbacks['change:value'][-1]
     assert link_customjs.args['source'] is slider
     assert link_customjs.args['target'] is scatter
-    
-    code = ("value = source['value'];"
-            "try { property = target.properties['size'];"
-            "if (property !== undefined) { property.validate(value); } }"
-            "catch(err) { console.log('WARNING: Could not set size on target, raised error: ' + err); return; }"
-            "target['size'] = value")
+
+    code = """
+    value = source['value'];
+    value = value;
+    value = value;
+    try {
+      property = target.properties['size'];
+      if (property !== undefined) { property.validate(value); }
+    } catch(err) {
+      console.log('WARNING: Could not set size on target, raised error: ' + err);
+      return;
+    }
+    try {
+      target['size'] = value;
+    } catch(err) {
+      console.log(err)
+    }
+    """
     assert link_customjs.code == code
 
 
@@ -83,11 +134,23 @@ def test_bkwidget_hvplot_links(document, comm):
     assert link_customjs.args['source'] is slider
     assert link_customjs.args['target'] is scatter
 
-    code = ("value = source['value'];"
-            "try { property = target.properties['size'];"
-            "if (property !== undefined) { property.validate(value); } }"
-            "catch(err) { console.log('WARNING: Could not set size on target, raised error: ' + err); return; }"
-            "target['size'] = value")
+    code = """
+    value = source['value'];
+    value = value;
+    value = value;
+    try {
+      property = target.properties['size'];
+      if (property !== undefined) { property.validate(value); }
+    } catch(err) {
+      console.log('WARNING: Could not set size on target, raised error: ' + err);
+      return;
+    }
+    try {
+      target['size'] = value;
+    } catch(err) {
+      console.log(err)
+    }
+    """
     assert link_customjs.code == code
 
 
@@ -107,11 +170,24 @@ def test_bkwidget_bkplot_links(document, comm):
     link_customjs = slider.js_property_callbacks['change:value'][-1]
     assert link_customjs.args['source'] is slider
     assert link_customjs.args['target'] is scatter.glyph
-    code = ("value = source['value'];"
-            "try { property = target.properties['size'];"
-            "if (property !== undefined) { property.validate(value); } }"
-            "catch(err) { console.log('WARNING: Could not set size on target, raised error: ' + err); return; }"
-            "target['size'] = value")
+
+    code = """
+    value = source['value'];
+    value = value;
+    value = value;
+    try {
+      property = target.properties['size'];
+      if (property !== undefined) { property.validate(value); }
+    } catch(err) {
+      console.log('WARNING: Could not set size on target, raised error: ' + err);
+      return;
+    }
+    try {
+      target['size'] = value;
+    } catch(err) {
+      console.log(err)
+    }
+    """
     assert link_customjs.code == code
 
 
@@ -129,11 +205,24 @@ def test_widget_bkplot_link(document, comm):
     assert link_customjs.args['source'] is model.children[1]
     assert link_customjs.args['target'] is scatter.glyph
     assert scatter.glyph.fill_color == '#ff00ff'
-    code = ("value = source['color'];"
-            "try { property = target.properties['fill_color'];"
-            "if (property !== undefined) { property.validate(value); } }"
-            "catch(err) { console.log('WARNING: Could not set fill_color on target, raised error: ' + err); return; }"
-            "target['fill_color'] = value")
+    
+    code = """
+    value = source['color'];
+    value = value;
+    value = value;
+    try {
+      property = target.properties['fill_color'];
+      if (property !== undefined) { property.validate(value); }
+    } catch(err) {
+      console.log('WARNING: Could not set fill_color on target, raised error: ' + err);
+      return;
+    }
+    try {
+      target['fill_color'] = value;
+    } catch(err) {
+      console.log(err)
+    }
+    """
     assert link_customjs.code == code
 
 
@@ -146,7 +235,7 @@ def test_widget_jscallback(document, comm):
 
     customjs = model.js_property_callbacks['change:color'][-1]
     assert customjs.args['source'] is model
-    assert customjs.code == "some_code"
+    assert customjs.code == "try { some_code } catch(err) { console.log(err) }"
 
 
 def test_widget_jscallback_args_scalar(document, comm):
@@ -171,7 +260,7 @@ def test_widget_jscallback_args_model(document, comm):
     customjs = model.children[0].js_property_callbacks['change:color'][-1]
     assert customjs.args['source'] is model.children[0]
     assert customjs.args['widget'] is model.children[1]
-    assert customjs.code == "some_code"
+    assert customjs.code == "try { some_code } catch(err) { console.log(err) }"
 
 
 @hv_available
@@ -187,7 +276,7 @@ def test_hvplot_jscallback(document, comm):
 
     customjs = x_range.js_property_callbacks['change:start'][-1]
     assert customjs.args['source'] is x_range
-    assert customjs.code == "some_code"
+    assert customjs.code == "try { some_code } catch(err) { console.log(err) }"
 
 
 @hv_available
@@ -195,8 +284,8 @@ def test_link_with_customcode(document, comm):
     range_widget = RangeSlider(start=0., end=1.)
     curve = hv.Curve([])
     code = """
-        x_range.start = source.value[0]
-        x_range.end = source.value[1]
+      x_range.start = source.value[0]
+      x_range.end = source.value[1]
     """
     range_widget.jslink(curve, code={'value': code})
     row = Row(curve, range_widget)
@@ -214,4 +303,4 @@ def test_link_with_customcode(document, comm):
     link_customjs = range_slider.js_property_callbacks['change:value'][-1]
     assert link_customjs.args['source'] is range_slider
     assert link_customjs.args['x_range'] is x_range
-    assert link_customjs.code == code
+    assert link_customjs.code == "try { %s } catch(err) { console.log(err) }" % code

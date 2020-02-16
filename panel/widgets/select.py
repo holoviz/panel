@@ -18,10 +18,9 @@ from bokeh.models.widgets import (
 
 from ..layout import Column, VSpacer
 from ..util import as_unicode, isIn, indexOf
-from ..viewable import Layoutable
 from .base import Widget, CompositeWidget
 from .button import _ButtonBase, Button
-from .input import TextInput
+from .input import TextInput, TextAreaInput
 
 
 class SelectBase(Widget):
@@ -43,16 +42,16 @@ class SelectBase(Widget):
 
     @property
     def _items(self):
-        return dict(zip(self.labels, self.values))
+        return OrderedDict(zip(self.labels, self.values))
 
 
 class Select(SelectBase):
 
     value = param.Parameter(default=None)
 
-    _widget_type = _BkSelect
-
     _supports_embed = True
+
+    _widget_type = _BkSelect
 
     def __init__(self, **params):
         super(Select, self).__init__(**params)
@@ -67,7 +66,7 @@ class Select(SelectBase):
         if 'value' in msg:
             val = msg['value']
             if isIn(val, values):
-                unicode_values = self.unicode_values if unique else labels 
+                unicode_values = self.unicode_values if unique else labels
                 msg['value'] = unicode_values[indexOf(val, values)]
             elif values:
                 self.value = self.values[0]
@@ -174,13 +173,19 @@ class _RadioGroupBase(Select):
 
     _supports_embed = False
 
+    _rename = {'name': None, 'options': 'labels', 'value': 'active'}
+
+    _source_transforms = {'value': "source.labels[value]"}
+
+    _target_transforms = {'value': "target.labels.indexOf(value)"}
+
     __abstract = True
 
     def _process_param_change(self, msg):
         msg = super(Select, self)._process_param_change(msg)
         values = self.values
-        if 'value' in msg:
-            value = msg.pop('value')
+        if 'active' in msg:
+            value = msg['active']
             if value in values:
                 msg['active'] = indexOf(value, values)
             else:
@@ -188,18 +193,17 @@ class _RadioGroupBase(Select):
                     self.value = None
                 msg['active'] = None
 
-        if 'options' in msg:
-            msg['labels'] = list(msg.pop('options'))
+        if 'labels' in msg:
+            msg['labels'] = list(msg['labels'])
             value = self.value
             if not isIn(value, values):
                 self.value = None
-        msg.pop('title', None)
         return msg
 
     def _process_property_change(self, msg):
         msg = super(Select, self)._process_property_change(msg)
-        if 'active' in msg:
-            index = msg.pop('active')
+        if 'value' in msg:
+            index = msg['value']
             if index is None:
                 msg['value'] = None
             else:
@@ -215,8 +219,6 @@ class _RadioGroupBase(Select):
 class RadioButtonGroup(_RadioGroupBase, _ButtonBase):
 
     _widget_type = _BkRadioButtonGroup
-
-    _rename = {'name': 'title'}
 
     _supports_embed = True
 
@@ -238,6 +240,12 @@ class _CheckGroupBase(Select):
 
     value = param.List(default=[])
 
+    _rename = {'name': None, 'options': 'labels', 'value': 'active'}
+
+    _source_transforms = {'value': "value.map((index) => source.labels[index])"}
+
+    _target_transforms = {'value': "value.map((label) => target.labels.indexOf(label))"}
+
     _supports_embed = False
 
     __abstract = True
@@ -245,11 +253,11 @@ class _CheckGroupBase(Select):
     def _process_param_change(self, msg):
         msg = super(Select, self)._process_param_change(msg)
         values = self.values
-        if 'value' in msg:
-            msg['active'] = [indexOf(v, values) for v in msg.pop('value')
+        if 'active' in msg:
+            msg['active'] = [indexOf(v, values) for v in msg['active']
                              if isIn(v, values)]
-        if 'options' in msg:
-            msg['labels'] = list(msg.pop('options'))
+        if 'labels' in msg:
+            msg['labels'] = list(msg['labels'])
             if any(not isIn(v, values) for v in self.value):
                 self.value = [v for v in self.value if isIn(v, values)]
         msg.pop('title', None)
@@ -257,9 +265,9 @@ class _CheckGroupBase(Select):
 
     def _process_property_change(self, msg):
         msg = super(Select, self)._process_property_change(msg)
-        if 'active' in msg:
+        if 'value' in msg:
             values = self.values
-            msg['value'] = [values[a] for a in msg.pop('active')]
+            msg['value'] = [values[a] for a in msg['value']]
         return msg
 
 
@@ -267,9 +275,6 @@ class _CheckGroupBase(Select):
 class CheckButtonGroup(_CheckGroupBase, _ButtonBase):
 
     _widget_type = _BkCheckboxButtonGroup
-
-    _rename = {'name': 'title'}
-
 
 
 class CheckBoxGroup(_CheckGroupBase):
@@ -332,13 +337,18 @@ class CrossSelector(CompositeWidget, MultiSelect):
     name to select them in bulk.
     """
 
-    width = param.Integer(default=600, doc="""
+    width = param.Integer(default=600, allow_None=True, doc="""
        The number of options shown at once (note this is the
        only way to control the height of this widget)""")
 
-    height = param.Integer(default=200, doc="""
+    height = param.Integer(default=200, allow_None=True, doc="""
        The number of options shown at once (note this is the
        only way to control the height of this widget)""")
+
+    filter_fn = param.Callable(default=re.search, doc="""
+       The filter function applied when querying using the text fields,
+       defaults to re.search. Function is two arguments, the query or
+       pattern and the item label.""")
 
     size = param.Integer(default=10, doc="""
        The number of options shown at once (note this is the
@@ -348,24 +358,18 @@ class CrossSelector(CompositeWidget, MultiSelect):
        preserve definition order after filtering. Disable to allow the
        order of selection to define the order of the selected list.""")
 
-    def __init__(self, *args, **kwargs):
-        super(CrossSelector, self).__init__(**kwargs)
+    def __init__(self, **params):
+        super(CrossSelector, self).__init__(**params)
         # Compute selected and unselected values
 
         labels, values = self.labels, self.values
-        selected = [labels[indexOf(v, values)] for v in kwargs.get('value', [])
+        selected = [labels[indexOf(v, values)] for v in params.get('value', [])
                     if isIn(v, values)]
         unselected = [k for k in labels if k not in selected]
-
-        # Define whitelist and blacklist
-        layout = dict(sizing_mode=self.sizing_mode, width_policy=self.width_policy,
-                      height_policy=self.height_policy, background=self.background)
-        width = int((self.width-50)/2)
+        layout = dict(sizing_mode='stretch_both', background=self.background, margin=0)
         self._lists = {
-            False: MultiSelect(options=unselected, size=self.size,
-                               height=self.height-50, width=width, **layout),
-            True: MultiSelect(options=selected, size=self.size,
-                              height=self.height-50, width=width, **layout)
+            False: MultiSelect(options=unselected, size=self.size, **layout),
+            True: MultiSelect(options=selected, size=self.size, **layout)
         }
         self._lists[False].param.watch(self._update_selection, 'value')
         self._lists[True].param.watch(self._update_selection, 'value')
@@ -379,43 +383,32 @@ class CrossSelector(CompositeWidget, MultiSelect):
 
         # Define search
         self._search = {
-            False: TextInput(placeholder='Filter available options', width=width),
-            True: TextInput(placeholder='Filter selected options', width=width)
+            False: TextInput(placeholder='Filter available options',
+                             margin=(0, 0, 10, 0), width_policy='max'),
+            True: TextInput(placeholder='Filter selected options',
+                            margin=(0, 0, 10, 0), width_policy='max')
         }
         self._search[False].param.watch(self._filter_options, 'value')
         self._search[True].param.watch(self._filter_options, 'value')
 
+        self._placeholder = TextAreaInput(
+            placeholder=("To select an item highlight it on the left "
+                         "and use the arrow button to move it to the right."),
+            disabled=True, **layout
+        )
+        right = self._lists[True] if self.value else self._placeholder
+
         # Define Layout
-        blacklist = Column(self._search[False], self._lists[False], **layout)
-        whitelist = Column(self._search[True], self._lists[True], **layout)
-        buttons = Column(self._buttons[True], self._buttons[False])
+        self._unselected = Column(self._search[False], self._lists[False], **layout)
+        self._selected = Column(self._search[True], right, **layout)
+        buttons = Column(self._buttons[True], self._buttons[False], margin=(0, 5))
 
         self._composite[:] = [
-            blacklist, Column(VSpacer(), buttons, VSpacer()), whitelist
+            self._unselected, Column(VSpacer(), buttons, VSpacer()), self._selected
         ]
 
-        self._selected = {False: [], True: []}
+        self._selections = {False: [], True: []}
         self._query = {False: '', True: ''}
-        self.param.watch(self._update_layout_params, list(Layoutable.param))
-
-
-    def _update_layout_params(self, *events):
-        for event in events:
-            if event.name in ['css_classes']:
-                setattr(self._composite, event.name, event.new)
-            elif event.name in ['sizing_mode', 'width_policy', 'height_policy',
-                                'background', 'margin']:
-                setattr(self._composite, event.name, event.new)
-                setattr(self._lists[True], event.name, event.new)
-                setattr(self._lists[False], event.name, event.new)
-            elif event.name == 'height':
-                setattr(self._lists[True], event.name, event.new-50)
-                setattr(self._lists[False], event.name, event.new-50)
-            elif event.name == 'width':
-                width = int((event.new-50)/2)
-                setattr(self._lists[True], event.name, width)
-                setattr(self._lists[False], event.name, width)
-
 
     @param.depends('size', watch=True)
     def _update_size(self):
@@ -437,6 +430,10 @@ class CrossSelector(CompositeWidget, MultiSelect):
         self._lists[True].value = []
         self._lists[False].options = unselected
         self._lists[False].value = []
+        if len(self._lists[True].options) and self._selected[-1] is not self._lists[True]:
+            self._selected[-1] = self._lists[True]
+        elif not len(self._lists[True].options) and self._selected[-1] is not self._placeholder:
+            self._selected[-1] = self._placeholder
 
     @param.depends('options', watch=True)
     def _update_options(self):
@@ -444,12 +441,9 @@ class CrossSelector(CompositeWidget, MultiSelect):
         Updates the options of each of the sublists after the options
         for the whole widget are updated.
         """
-        self._selected[False] = []
-        self._selected[True] = []
-        self._lists[True].options = []
-        self._lists[True].value = []
-        self._lists[False].options = self.labels
-        self._lists[False].value = []
+        self._selections[False] = []
+        self._selections[True] = []
+        self._update_value()
 
     def _apply_filters(self):
         self._apply_query(False)
@@ -476,10 +470,9 @@ class CrossSelector(CompositeWidget, MultiSelect):
             self._lists[selected].value = []
         else:
             try:
-                match = re.compile(query)
-                matches = list(filter(match.search, options))
-            except:
-                matches = list(options)
+                matches = [o for o in options if self.filter_fn(query, o)]
+            except Exception:
+                matches = []
             self._lists[selected].options = options if options else []
             self._lists[selected].value = [m for m in matches]
 
@@ -488,7 +481,7 @@ class CrossSelector(CompositeWidget, MultiSelect):
         Updates the current selection in each list.
         """
         selected = event.obj is self._lists[True]
-        self._selected[selected] = [v for v in event.new if v != '']
+        self._selections[selected] = [v for v in event.new if v != '']
 
     def _apply_selection(self, event):
         """
@@ -497,7 +490,7 @@ class CrossSelector(CompositeWidget, MultiSelect):
         """
         selected = event.obj is self._buttons[True]
 
-        new = OrderedDict([(k, self._items[k]) for k in self._selected[not selected]])
+        new = OrderedDict([(k, self._items[k]) for k in self._selections[not selected]])
         old = self._lists[selected].options
         other = self._lists[not selected].options
 
@@ -505,6 +498,10 @@ class CrossSelector(CompositeWidget, MultiSelect):
         leftovers = OrderedDict([(k, k) for k in other if k not in new])
         self._lists[selected].options = merged if merged else {}
         self._lists[not selected].options = leftovers if leftovers else {}
+        if len(self._lists[True].options):
+            self._selected[-1] = self._lists[True]
+        else:
+            self._selected[-1] = self._placeholder
         self.value = [self._items[o] for o in self._lists[True].options if o != '']
         self._apply_filters()
 

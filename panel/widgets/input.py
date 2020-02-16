@@ -5,6 +5,7 @@ a text field or similar.
 from __future__ import absolute_import, division, unicode_literals
 
 import ast
+import json
 
 from base64 import b64decode
 from datetime import datetime
@@ -15,7 +16,7 @@ import param
 from bokeh.models.widgets import (
     CheckboxGroup as _BkCheckboxGroup, ColorPicker as _BkColorPicker,
     DatePicker as _BkDatePicker, Div as _BkDiv, TextInput as _BkTextInput,
-    PasswordInput as _BkPasswordInput, Spinner as _BkSpinner, 
+    PasswordInput as _BkPasswordInput, Spinner as _BkSpinner,
     FileInput as _BkFileInput, TextAreaInput as _BkTextAreaInput)
 
 from ..util import as_unicode
@@ -30,6 +31,7 @@ class TextInput(Widget):
 
     _widget_type = _BkTextInput
 
+
 class PasswordInput(Widget):
 
     value = param.String(default='', allow_None=True)
@@ -38,6 +40,7 @@ class PasswordInput(Widget):
 
     _widget_type = _BkPasswordInput
 
+
 class TextAreaInput(Widget):
 
     value = param.String(default='', allow_None=True)
@@ -45,8 +48,9 @@ class TextAreaInput(Widget):
     placeholder = param.String(default='')
 
     max_length = param.Integer(default=5000)
-        
+
     _widget_type = _BkTextAreaInput
+
 
 class FileInput(Widget):
 
@@ -59,6 +63,8 @@ class FileInput(Widget):
     value = param.Parameter(default=None)
 
     _widget_type = _BkFileInput
+
+    _source_transforms = {'value': "'data:' + source.mime_type + ';base64,' + value"}
 
     _rename = {'name': None, 'filename': None}
 
@@ -102,15 +108,18 @@ class StaticText(Widget):
 
     value = param.Parameter(default=None)
 
-    _widget_type = _BkDiv
-
     _format = '<b>{title}</b>: {value}'
 
-    _rename = {'name': 'title', 'value': 'text'}
+    _rename = {'name': None, 'value': 'text'}
+
+    _target_transforms = {'value': 'target.text.split(": ")[0]+": "+value'}
+
+    _source_transforms = {'value': 'value.split(": ")[1]'}
+
+    _widget_type = _BkDiv
 
     def _process_param_change(self, msg):
         msg = super(StaticText, self)._process_property_change(msg)
-        msg.pop('title', None)
         if 'value' in msg:
             text = as_unicode(msg.pop('value'))
             partial = self._format.replace('{value}', '').format(title=self.name)
@@ -128,9 +137,11 @@ class DatePicker(Widget):
 
     end = param.Date(default=None)
 
-    _widget_type = _BkDatePicker
+    _source_transforms = {'value': None, 'start': None, 'end': None}
 
     _rename = {'start': 'min_date', 'end': 'max_date', 'name': 'title'}
+
+    _widget_type = _BkDatePicker
 
     def _process_property_change(self, msg):
         msg = super(DatePicker, self)._process_property_change(msg)
@@ -168,6 +179,13 @@ class Spinner(Widget):
 
     _rename = {'name': 'title', 'start': 'low', 'end': 'high'}
 
+    def __init__(self, **params):
+        if params.get('value') is None:
+            value = params.get('start', self.value)
+            if value is not None:
+                params['value'] = value
+        super(Spinner, self).__init__(**params)
+
 
 class LiteralInput(Widget):
     """
@@ -175,10 +193,21 @@ class LiteralInput(Widget):
     input widget. Optionally a type may be declared.
     """
 
+    serializer = param.ObjectSelector(default='ast', objects=['ast', 'json'], doc="""
+       The serialization (and deserialization) method to use. 'ast'
+       uses ast.literal_eval and 'json' uses json.loads and json.dumps.
+    """)
+
     type = param.ClassSelector(default=None, class_=(type, tuple),
                                is_instance=True)
 
     value = param.Parameter(default=None)
+
+    _rename = {'name': 'title', 'type': None, 'serializer': None}
+
+    _source_transforms = {'value': """JSON.parse(value.replace(/'/g, '"'))"""}
+
+    _target_transforms = {'value': """JSON.stringify(value).replace(/,/g, ", ").replace(/:/g, ": ")"""}
 
     _widget_type = _BkTextInput
 
@@ -186,12 +215,12 @@ class LiteralInput(Widget):
         super(LiteralInput, self).__init__(**params)
         self._state = ''
         self._validate(None)
-        self.param.watch(self._validate, 'value')
+        self._callbacks.append(self.param.watch(self._validate, 'value'))
 
     def _validate(self, event):
         if self.type is None: return
         new = self.value
-        if not isinstance(new, self.type):
+        if not isinstance(new, self.type) and new is not None:
             if event:
                 self.value = event.old
             types = repr(self.type) if isinstance(self.type, tuple) else self.type.__name__
@@ -205,14 +234,29 @@ class LiteralInput(Widget):
         if 'value' in msg:
             value = msg.pop('value')
             try:
-                value = ast.literal_eval(value)
-            except:
+                if self.serializer == 'json':
+                    value = json.loads(value)
+                else:
+                    value = ast.literal_eval(value)
+            except Exception:
                 new_state = ' (invalid)'
                 value = self.value
             else:
                 if self.type and not isinstance(value, self.type):
-                    new_state = ' (wrong type)'
-                    value = self.value
+                    vtypes = self.type if isinstance(self.type, tuple) else (self.type,)
+                    typed_value = None
+                    for vtype in vtypes:
+                        try:
+                            typed_value = vtype(value)
+                        except Exception:
+                            pass
+                        else:
+                            break
+                    if typed_value is None and value is not None:
+                        new_state = ' (wrong type)'
+                        value = self.value
+                    else:
+                        value = typed_value
             msg['value'] = value
         msg['name'] = msg.get('title', self.name).replace(self._state, '') + new_state
         self._state = new_state
@@ -221,9 +265,15 @@ class LiteralInput(Widget):
 
     def _process_param_change(self, msg):
         msg = super(LiteralInput, self)._process_param_change(msg)
-        msg.pop('type', None)
         if 'value' in msg:
-            msg['value'] = '' if msg['value'] is None else as_unicode(msg['value'])
+            value = '' if msg['value'] is None else msg['value']
+            if isinstance(value, string_types):
+                value = repr(value)
+            elif self.serializer == 'json':
+                value = json.dumps(value, sort_keys=True)
+            else:
+                value = as_unicode(value)
+            msg['value'] = value
         msg['title'] = self.name
         return msg
 
@@ -244,6 +294,11 @@ class DatetimeInput(LiteralInput):
     end = param.Date(default=None)
 
     type = datetime
+
+    _source_transforms = {'value': None, 'start': None, 'end': None}
+
+    _rename = {'format': None, 'type': None, 'name': 'title',
+               'start': None, 'end': None, 'serializer': None}
 
     def __init__(self, **params):
         super(DatetimeInput, self).__init__(**params)
@@ -270,7 +325,7 @@ class DatetimeInput(LiteralInput):
             value = msg.pop('value')
             try:
                 value = datetime.strptime(value, self.format)
-            except:
+            except Exception:
                 new_state = ' (invalid)'
                 value = self.value
             else:
@@ -284,7 +339,7 @@ class DatetimeInput(LiteralInput):
         return msg
 
     def _process_param_change(self, msg):
-        msg = {k: v for k, v in msg.items() if k not in ('type', 'format', 'start', 'end')}
+        msg = Widget._process_param_change(self, msg)
         if 'value' in msg:
             value = msg['value']
             if value is None:
@@ -302,22 +357,31 @@ class Checkbox(Widget):
 
     _supports_embed = True
 
+    _rename = {'value': 'active', 'name': 'labels'}
+
+    _source_transforms = {'value': "value.indexOf(0) >= 0", 'name': "value[0]"}
+
+    _target_transforms = {'value': "value ? [0] : []", 'name': "[value]"}
+
     _widget_type = _BkCheckboxGroup
 
     def _process_property_change(self, msg):
         msg = super(Checkbox, self)._process_property_change(msg)
-        if 'active' in msg:
-            msg['value'] = 0 in msg.pop('active')
+        if 'value' in msg:
+            msg['value'] = 0 in msg.pop('value')
+        if 'name' in msg:
+            msg['name'] = [msg['name']]
         return msg
 
     def _process_param_change(self, msg):
         msg = super(Checkbox, self)._process_param_change(msg)
-        if 'value' in msg:
-            msg['active'] = [0] if msg.pop('value', None) else []
-        if 'title' in msg:
-            msg['labels'] = [msg.pop('title')]
+        if 'active' in msg:
+            msg['active'] = [0] if msg.pop('active', None) else []
+        if 'labels' in msg:
+            msg['labels'] = [msg.pop('labels')]
         return msg
 
     def _get_embed_state(self, root, max_opts=3):
         return (self, self._models[root.ref['id']][0], [False, True],
-                lambda x: str(0 in x.active).lower(), 'active', 'String(cb_obj.active.indexOf(0) >= 0)')
+                lambda x: str(0 in x.active).lower(), 'active',
+                "String(cb_obj.active.indexOf(0) >= 0)")

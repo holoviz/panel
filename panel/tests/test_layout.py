@@ -1,13 +1,34 @@
 from __future__ import absolute_import
 
+import param
 import pytest
 
-from bokeh.models import (Div, Row as BkRow, Tabs as BkTabs,
-                          Column as BkColumn, Panel as BkPanel)
-from panel.layout import Column, Row, Tabs, Spacer, GridSpec, GridBox, WidgetBox
+from bokeh.models import (
+    Div, Row as BkRow, Tabs as BkTabs, Column as BkColumn, Panel as BkPanel,
+    Spacer as BkSpacer
+)
+
+from panel.depends import depends
+from panel.layout import (
+    Column, ListPanel, Row, Tabs, Spacer, GridSpec, GridBox, WidgetBox
+)
 from panel.pane import Bokeh, Pane
 from panel.param import Param
-from panel.tests.util import check_layoutable_properties
+from panel.widgets import IntSlider
+from panel.tests.util import check_layoutable_properties, py3_only
+
+
+all_panels = [w for w in param.concrete_descendents(ListPanel).values()
+               if not w.__name__.startswith('_') and w is not Tabs]
+
+
+@py3_only
+@pytest.mark.parametrize('panel', all_panels)
+def test_widget_signature(panel):
+    from inspect import signature
+    parameters = signature(panel).parameters
+    assert len(parameters) == 2
+    assert 'objects' in parameters
 
 
 @pytest.fixture
@@ -405,6 +426,14 @@ def test_tabs_constructor_with_named_objects(document, comm):
     assert tab2.child is div2
 
 
+def test_tabs_cleanup_panels(document, comm, tabs):
+    model = tabs.get_root(document, comm=comm)
+
+    assert model.ref['id'] in tabs._panels
+    tabs._cleanup(model)
+    assert model.ref['id'] not in tabs._panels
+
+
 def test_tabs_set_panes(document, comm):
     div1, div2 = Div(), Div()
     p1 = Pane(div1, name='Div1')
@@ -469,6 +498,54 @@ def test_empty_tabs_append(document, comm):
     tabs.append(('test title', div1))
     assert len(model.tabs) == 1
     assert model.tabs[0].title == 'test title'
+
+
+def test_tabs_close_tab_in_notebook(document, comm, tabs):
+    model = tabs.get_root(document, comm=comm)
+    _, div2 = tabs
+
+    tabs._comm_change({'tabs': [model.tabs[1].ref['id']]}, model.ref['id'])
+
+    assert len(tabs.objects) == 1
+    assert tabs.objects[0] is div2
+
+
+def test_tabs_close_tab_on_server(document, comm, tabs):
+    model = tabs.get_root(document, comm=comm)
+    _, div2 = tabs
+
+    tabs._server_change(document, model.ref['id'], 'tabs', model.tabs, model.tabs[1:])
+
+    assert len(tabs.objects) == 1
+    assert tabs.objects[0] is div2
+
+
+def test_dynamic_tabs(document, comm, tabs):
+    tabs.dynamic = True
+    model = tabs.get_root(document, comm=comm)
+    div1, div2 = tabs
+
+    tab1, tab2 = model.tabs
+    assert tab1.child is div1.object
+    assert isinstance(tab2.child, BkSpacer)
+
+    tabs.active = 1
+
+    tab1, tab2 = model.tabs
+    assert isinstance(tab1.child, BkSpacer)
+    assert tab2.child is div2.object
+
+    tabs.dynamic = False
+
+    tab1, tab2 = model.tabs
+    assert tab1.child is div1.object
+    assert tab2.child is div2.object
+
+    tabs.param.set_param(dynamic=True, active=0)
+
+    tab1, tab2 = model.tabs
+    assert tab1.child is div1.object
+    assert isinstance(tab2.child, BkSpacer)
 
 
 def test_tabs_append_uses_object_name(document, comm, tabs):
@@ -876,6 +953,22 @@ def test_layout_with_param_setitem(document, comm):
     assert model.children[1].text == '&lt;pre&gt;1&lt;/pre&gt;'
 
 
+def test_gridspec_cleanup(document, comm):
+    spacer = Spacer()
+    gspec = GridSpec()
+    gspec[0, 0] = spacer
+
+    model = gspec.get_root(document, comm)
+
+    ref = model.ref['id']
+    assert ref in gspec._models
+    assert ref in spacer._models
+
+    gspec._cleanup(model)
+    assert ref not in gspec._models
+    assert ref not in spacer._models
+
+
 def test_gridspec_integer_setitem():
     div = Div()
     gspec = GridSpec()
@@ -1029,9 +1122,7 @@ def test_gridspec_stretch_with_int_setitem(document, comm):
     model = gspec.get_root(document, comm=comm)
     assert model.children == [(div1, 0, 0, 1, 1), (div2, 1, 1, 1, 1)]
     assert div1.sizing_mode == 'stretch_both'
-    assert div1.style == {'width': '100%', 'height': '100%'}
     assert div2.sizing_mode == 'stretch_both'
-    assert div2.style == {'width': '100%', 'height': '100%'}
 
 
 def test_gridspec_stretch_with_slice_setitem(document, comm):
@@ -1045,10 +1136,60 @@ def test_gridspec_stretch_with_slice_setitem(document, comm):
     model = gspec.get_root(document, comm=comm)
     assert model.children == [(div1, 0, 0, 1, 2), (div2, 1, 2, 1, 1)]
     assert div1.sizing_mode == 'stretch_both'
-    assert div1.style == {'width': '100%', 'height': '100%'}
     assert div2.sizing_mode == 'stretch_both'
-    assert div2.style == {'width': '100%', 'height': '100%'}
 
+
+def test_gridspec_fixed_with_replacement_pane(document, comm):
+    slider = IntSlider(start=0, end=2)
+
+    @depends(slider)
+    def div(value):
+        return Div(text=str(value))
+
+    gspec = GridSpec()
+
+    gspec[0, 0:2] = Div()
+    gspec[1, 2] = div
+
+    model = gspec.get_root(document, comm=comm)
+    ((div1, _, _, _, _), (row, _, _, _, _)) = model.children
+    div2 = row.children[0]
+    assert div1.width == 400
+    assert div1.height == 300
+    assert div2.width == 200
+    assert div2.height == 300
+
+    slider.value = 1
+    assert row.children[0] is not div2
+    assert row.children[0].width == 200
+    assert row.children[0].height == 300
+
+
+def test_gridspec_stretch_with_replacement_pane(document, comm):
+    slider = IntSlider(start=0, end=2)
+
+    @depends(slider)
+    def div(value):
+        return Div(text=str(value))
+
+    gspec = GridSpec(sizing_mode='stretch_width')
+
+    gspec[0, 0:2] = Div()
+    gspec[1, 2] = div
+
+    model = gspec.get_root(document, comm=comm)
+    ((div1, _, _, _, _), (row, _, _, _, _)) = model.children
+    div2 = row.children[0]
+    assert div1.sizing_mode == 'stretch_width'
+    assert div1.height == 300
+    assert div2.sizing_mode == 'stretch_width'
+    assert div2.height == 300
+
+    slider.value = 1
+    assert row.children[0] is not div2
+    assert row.children[0].sizing_mode == 'stretch_width'
+    assert row.children[0].height == 300
+    
 
 def test_widgetbox(document, comm):
     widget_box = WidgetBox("WidgetBox")

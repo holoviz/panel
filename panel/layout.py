@@ -6,7 +6,7 @@ from __future__ import absolute_import, division, unicode_literals
 
 import math
 
-from collections import OrderedDict, namedtuple
+from collections import OrderedDict, defaultdict, namedtuple
 from functools import partial
 
 import param
@@ -14,12 +14,12 @@ import numpy as np
 
 from bokeh.models import (
     Box as BkBox, Column as BkColumn, Div as BkDiv, GridBox as BkGridBox,
-    Markup as BkMarkup, Row as BkRow, Spacer as BkSpacer
+    Row as BkRow, Spacer as BkSpacer
 )
 from bokeh.models.widgets import Tabs as BkTabs, Panel as BkPanel
 
 from .util import param_name, param_reprs
-from .viewable import Reactive
+from .viewable import Layoutable, Reactive
 
 _row = namedtuple("row", ["children"])
 _col = namedtuple("col", ["children"])
@@ -62,14 +62,27 @@ class Panel(Reactive):
     #----------------------------------------------------------------
 
     def _update_model(self, events, msg, root, model, doc, comm=None):
-        if self._rename['objects'] in msg:
+        filtered = {}
+        for k, v in msg.items():
+            try:
+                change = (
+                    k not in self._changing or self._changing[k] != v or
+                    self._changing['id'] != model.ref['id']
+                )
+            except Exception:
+                change = True
+            if change:
+                filtered[k] = v
+
+        if self._rename['objects'] in filtered:
             old = events['objects'].old
-            msg[self._rename['objects']] = self._get_objects(model, old, doc, root, comm)
+            filtered[self._rename['objects']] = self._get_objects(model, old, doc, root, comm)
 
         held = doc._hold
         if comm is None and not held:
             doc.hold()
-        model.update(**msg)
+
+        model.update(**filtered)
 
         from .io import state
         ref = root.ref['id']
@@ -127,11 +140,6 @@ class Panel(Reactive):
         self._link_props(model, self._linked_props, doc, root, comm)
         return model
 
-    def _cleanup(self, root):
-        super(Panel, self)._cleanup(root)
-        for p in self.objects:
-            p._cleanup(root)
-
     #----------------------------------------------------------------
     # Public API
     #----------------------------------------------------------------
@@ -175,6 +183,8 @@ class ListPanel(Panel):
         Whether to add scrollbars if the content overflows the size
         of the container.""")
 
+    _source_transforms = {'scroll': None}
+
     __abstract = True
 
     def __init__(self, *objects, **params):
@@ -195,6 +205,11 @@ class ListPanel(Panel):
         elif scroll == False:
             params['css_classes'] = css_classes
         return super(ListPanel, self)._process_param_change(params)
+
+    def _cleanup(self, root):
+        super(ListPanel, self)._cleanup(root)
+        for p in self.objects:
+            p._cleanup(root)
 
     #----------------------------------------------------------------
     # Public API
@@ -389,7 +404,10 @@ class GridBox(ListPanel):
 
     _bokeh_model = BkGridBox
 
-    _rename = {'objects': 'children', 'col_sizing': 'cols', 'row_sizing': 'rows'}
+    _rename = {'objects': 'children'}
+
+    _source_transforms = {'scroll': None, 'objects': None,
+                         'nrows': None, 'ncols': None}
 
     @classmethod
     def _flatten_grid(cls, layout, nrows=None, ncols=None):
@@ -526,25 +544,27 @@ class WidgetBox(ListPanel):
     Vertical layout of widgets.
     """
 
-    _rename = {'objects': 'children', 'horizontal': None}
+    css_classes = param.List(default=['widget-box'], doc="""
+        CSS classes to apply to the layout.""")
+
+    disabled = param.Boolean(default=False, doc="""
+       Whether the widget is disabled.""")
 
     horizontal = param.Boolean(default=False, doc="""Whether to lay out the
                     widgets in a Row layout as opposed to a Column layout.""")
-
-    @property
-    def _bokeh_model(self):
-        return BkRow if self.horizontal else BkColumn
-
-    css_classes = param.List(default=['widget-box'], doc="""
-        CSS classes to apply to the layout.""")
 
     margin = param.Parameter(default=5, doc="""
         Allows to create additional space around the component. May
         be specified as a two-tuple of the form (vertical, horizontal)
         or a four-tuple (top, right, bottom, left).""")
 
-    disabled = param.Boolean(default=False, doc="""
-       Whether the widget is disabled.""")
+    _source_transforms = {'disabled': None, 'horizontal': None}
+
+    _rename = {'objects': 'children', 'horizontal': None}
+
+    @property
+    def _bokeh_model(self):
+        return BkRow if self.horizontal else BkColumn
 
     @param.depends('disabled', 'objects', watch=True)
     def _disable_widgets(self):
@@ -563,11 +583,14 @@ class Tabs(ListPanel):
     Panel of Viewables to be displayed in separate tabs.
     """
 
-    active = param.Integer(default=0, doc="""
+    active = param.Integer(default=0, bounds=(0, None), doc="""
         Number of the currently active tab.""")
 
     closable = param.Boolean(default=False, doc="""
         Whether it should be possible to close tabs.""")
+
+    dynamic = param.Boolean(default=False, doc="""
+        Dynamically populate only the active tab.""")
 
     objects = param.List(default=[], doc="""
         The list of child objects that make up the tabs.""")
@@ -582,9 +605,17 @@ class Tabs(ListPanel):
 
     _bokeh_model = BkTabs
 
-    _rename = {'objects': 'tabs'}
+    _source_transforms = {'dynamic': None, 'objects': None}
 
-    _linked_props = ['active']
+    _rename = {'name': None, 'objects': 'tabs', 'dynamic': None}
+
+    _linked_props = ['active', 'tabs']
+
+    _js_transforms = {'tabs': """
+    var ids = [];
+    for (t of value) {{ ids.push(t.id) }};
+    value = ids;
+    """}
 
     def __init__(self, *items, **params):
         if 'objects' in params:
@@ -595,7 +626,10 @@ class Tabs(ListPanel):
             items = params['objects']
         objects, self._names = self._to_objects_and_names(items)
         super(Tabs, self).__init__(*objects, **params)
+        self._panels = defaultdict(dict)
         self.param.watch(self._update_names, 'objects')
+        self.param.watch(self._update_active, ['dynamic', 'active'])
+        self.param.active.bounds = (0, len(self)-1)
         # ALERT: Ensure that name update happens first, should be
         #        replaced by watch precedence support in param
         self._param_watchers['objects']['value'].reverse()
@@ -626,7 +660,33 @@ class Tabs(ListPanel):
     # Callback API
     #----------------------------------------------------------------
 
+    def _comm_change(self, msg, ref=None):
+        """
+        Handle closed tabs.
+        """
+        if 'tabs' in msg:
+            tab_refs = msg.pop('tabs')
+            model, _ = self._models.get(ref)
+            if model:
+                tabs = {t.ref['id']: i for i, t in enumerate(model.tabs)}
+                inds = [tabs[tref] for tref in tab_refs]
+                msg['tabs'] = [self.objects[i] for i in inds]
+        super(Tabs, self)._comm_change(msg)
+
+    def _server_change(self, doc, ref, attr, old, new):
+        """
+        Handle closed tabs.
+        """
+        if attr == 'tabs':
+            model, _ = self._models.get(ref)
+            if model:
+                inds = [i for i, t in enumerate(model.tabs) if t in new]
+                old = self.objects
+                new = [old[i] for i in inds]
+        super(Tabs, self)._server_change(doc, ref, attr, old, new)
+
     def _update_names(self, event):
+        self.param.active.bounds = (0, len(event.new)-1)
         if len(event.new) == len(self._names):
             return
         names = []
@@ -638,6 +698,12 @@ class Tabs(ListPanel):
                 name = obj.name
             names.append(name)
         self._names = names
+
+    def _update_active(self, *events):
+        for event in events:
+            if event.name == 'dynamic' or (self.dynamic and event.name == 'active'):
+                self.param.trigger('objects')
+                return
 
     #----------------------------------------------------------------
     # Model API
@@ -671,18 +737,30 @@ class Tabs(ListPanel):
                 obj._cleanup(root)
 
         current_objects = list(self)
+        panels = self._panels[root.ref['id']]
         for i, (name, pane) in enumerate(zip(self._names, self)):
-            if pane in old_objects:
-                child, _ = pane._models[root.ref['id']]
+            if self.dynamic and i != self.active:
+                child = BkSpacer(**{k: v for k, v in pane.param.get_param_values()
+                                    if k in Layoutable.param})
+            elif pane in old_objects and id(pane) in pane._models:
+                panel = panels[id(pane)]
+                new_models.append(panel)
+                continue
             else:
                 try:
                     child = pane._get_model(doc, root, model, comm)
                 except RerenderError:
                     return self._get_objects(model, current_objects[:i], doc, root, comm)
-            child = BkPanel(title=name, name=pane.name, child=child,
-                            closable=self.closable)
-            new_models.append(child)
+            panel = panels[id(pane)] = BkPanel(
+                title=name, name=pane.name, child=child, closable=self.closable
+            )
+            new_models.append(panel)
         return new_models
+
+    def _cleanup(self, root):
+        super(Tabs, self)._cleanup(root)
+        if root.ref['id'] in self._panels:
+            del self._panels[root.ref['id']]
 
     #----------------------------------------------------------------
     # Public API
@@ -855,6 +933,8 @@ class GridSpec(Panel):
 
     _bokeh_model = BkGridBox
 
+    _source_transforms = {'objects': None, 'mode': None}
+
     _rename = {'objects': 'children', 'mode': None}
 
     def __init__(self, **params):
@@ -904,7 +984,11 @@ class GridSpec(Panel):
                 properties = {'width': w*width, 'height': h*height}
             else:
                 properties = {'sizing_mode': self.sizing_mode}
-            obj.set_param(**properties)
+                if 'width' in self.sizing_mode:
+                    properties['height'] = h*height
+                elif 'height' in self.sizing_mode:
+                    properties['width'] = w*width
+            obj.param.set_param(**properties)
 
             if obj in old_objects:
                 child, _ = obj._models[root.ref['id']]
@@ -913,17 +997,6 @@ class GridSpec(Panel):
                     child = obj._get_model(doc, root, model, comm)
                 except RerenderError:
                     return self._get_objects(model, current_objects[:i], doc, root, comm)
-
-            if isinstance(child, BkMarkup) and self.sizing_mode not in ['fixed', None]:
-                if child.style is None:
-                    child.style = {}
-                style = {}
-                if 'width' not in child.style:
-                    style['width'] = '100%'
-                if 'height' not in child.style:
-                    style['height'] = '100%'
-                if style:
-                    child.style.update(style)
 
             if isinstance(child, BkBox) and len(child.children) == 1:
                 child.children[0].update(**properties)
@@ -954,6 +1027,11 @@ class GridSpec(Panel):
                 for x in range(l, r):
                     grid[y, x] = {((y0, x0, y1, x1), obj)}
         return grid
+
+    def _cleanup(self, root):
+        super(GridSpec, self)._cleanup(root)
+        for p in self.objects.values():
+            p._cleanup(root)
 
     #----------------------------------------------------------------
     # Public API
@@ -1022,7 +1100,7 @@ class GridSpec(Panel):
 
         subgrid = self._object_grid[yidx, xidx]
         if isinstance(subgrid, np.ndarray):
-            params = dict(self.get_param_values())
+            params = dict(self.param.get_param_values())
             params['objects'] = OrderedDict([list(o)[0] for o in subgrid.flatten()])
             gspec = GridSpec(**params)
             xoff, yoff = gspec._xoffset, gspec._yoffset
@@ -1087,7 +1165,7 @@ class GridSpec(Panel):
             for (yidx, xidx) in zip(*np.where(overlap_grid)):
                 try:
                     old_obj = self[yidx, xidx]
-                except:
+                except Exception:
                     continue
                 if old_obj not in objects:
                     objects.append(old_obj)
@@ -1153,7 +1231,7 @@ class Divider(Reactive):
     def _get_model(self, doc, root=None, parent=None, comm=None):
         properties = self._process_param_change(self._init_properties())
         properties['style'] = {'width': '100%', 'height': '100%'}
-        model = self._bokeh_model(text='<hr></hr>', **properties)
+        model = self._bokeh_model(text='<hr style="margin: 0px">', **properties)
         if root is None:
             root = model
         self._models[root.ref['id']] = (model, parent)

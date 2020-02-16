@@ -13,6 +13,7 @@ import numpy as np
 import param
 
 from ..models import Audio as _BkAudio, Video as _BkVideo
+from ..util import isfile, isurl
 from .base import PaneBase
 
 
@@ -36,37 +37,27 @@ class _MediaBase(PaneBase):
     volume = param.Number(default=None, bounds=(0, 100), doc="""
         The volume of the media player.""")
 
-    _rename = {'name': None, 'sample_rate': None, 'object': 'value'}
-
     _default_mime = None
-
-    _media_type = None
 
     _formats = []
 
-    __abstract = True
+    _media_type = None
+
+    _rename = {'name': None, 'sample_rate': None, 'object': 'value'}
 
     _updates = True
+
+    __abstract = True
 
     @classmethod
     def applies(cls, obj):
         if isinstance(obj, string_types):
-            if os.path.isfile(obj) and any(obj.endswith('.'+fmt) for fmt in cls._formats):
+            if isfile(obj) and any(obj.endswith('.'+fmt) for fmt in cls._formats):
                 return True
-            if cls._is_url(obj):
+            if isurl(obj, cls._formats):
                 return True
         if hasattr(obj, 'read'):  # Check for file like object
             return True
-        return False
-
-    @classmethod
-    def _is_url(cls, obj):
-        if isinstance(obj, string_types):
-            lower_string = obj.lower()
-            return (
-                lower_string.startswith('http://')
-                or lower_string.startswith('https://')
-            ) and any(lower_string.endswith('.'+fmt) for fmt in cls._formats)
         return False
 
     def _init_properties(self):
@@ -97,8 +88,8 @@ class _MediaBase(PaneBase):
                 buffer = self._from_numpy(value)
                 data = b64encode(buffer.getvalue())
             elif os.path.isfile(value):
-                fmt = object.split('.')[-1]
-                with open(object, 'rb') as f:
+                fmt = value.split('.')[-1]
+                with open(value, 'rb') as f:
                     data = f.read()
                 data = b64encode(data)
             elif value.lower().startswith('http'):
@@ -123,13 +114,13 @@ class Audio(_MediaBase):
     sample_rate = param.Integer(default=44100, doc="""
         The sample_rate of the audio when given a NumPy array.""")
 
-    _formats = ['mp3', 'wav', 'ogg']
-
-    _media_type = 'audio'
+    _bokeh_model = _BkAudio
 
     _default_mime = 'wav'
 
-    _bokeh_model = _BkAudio
+    _formats = ['mp3', 'wav', 'ogg']
+
+    _media_type = 'audio'
 
     @classmethod
     def applies(cls, obj):
@@ -139,10 +130,11 @@ class Audio(_MediaBase):
 
 class Video(_MediaBase):
 
+    _bokeh_model = _BkVideo
+
+    _default_mime = 'mp4'
+
     _formats = ['mp4', 'webm', 'ogg']
 
     _media_type = 'video'
 
-    _default_mime = 'mp4'
-
-    _bokeh_model = _BkVideo

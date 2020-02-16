@@ -5,24 +5,30 @@ from __future__ import absolute_import, division, unicode_literals
 
 import io
 
+from contextlib import contextmanager
 from six import string_types
+
+import param
 
 from bokeh.document.document import Document
 from bokeh.embed import file_html
 from bokeh.io.export import export_png, create_webdriver
+from bokeh.models import Div
 from bokeh.resources import CDN
 from bokeh.util.string import decode_utf8
 from pyviz_comms import Comm
 
 from ..config import config
+from ..models import HTML
 from .embed import embed_state
 from .model import add_to_doc
 from .state import state
 
 
 #---------------------------------------------------------------------
-# Public API
+# Private API
 #---------------------------------------------------------------------
+
 
 def save_png(model, filename):
     """
@@ -41,6 +47,37 @@ def save_png(model, filename):
     webdriver = state.webdriver
     export_png(model, filename, webdriver=webdriver)
 
+
+@contextmanager
+def swap_html_model():
+    """
+    Temporary fix to swap HTML model for Div model during png export
+    to avoid issues with DOMParser compatibility in PhantomJS.
+
+    Can be removed when switching to chromedriver.
+    """
+
+    from ..viewable import Viewable
+
+    state._html_escape = False
+    swapped = []
+    for viewable in param.concrete_descendents(Viewable).values():
+        model = getattr(viewable, '_bokeh_model', None)
+        try:
+            swap_model = issubclass(model, HTML)
+            assert swap_model
+        except Exception:
+            continue
+        else:
+            viewable._bokeh_model = Div
+            swapped.append(viewable)
+    try:
+        yield
+    finally:
+        state._html_escape = True
+        for viewable in swapped:
+            viewable._bokeh_model = HTML
+
 #---------------------------------------------------------------------
 # Public API
 #---------------------------------------------------------------------
@@ -48,7 +85,7 @@ def save_png(model, filename):
 def save(panel, filename, title=None, resources=None, template=None,
          template_variables=None, embed=False, max_states=1000,
          max_opts=3, embed_json=False, json_prefix='', save_path='./',
-         load_path=None):
+         load_path=None, progress=True):
     """
     Saves Panel objects to file.
 
@@ -80,23 +117,34 @@ def save(panel, filename, title=None, resources=None, template=None,
       The path to save json files to
     load_path: str (default=None)
       The path or URL the json files will be loaded from.
+    progress: boolean (default=True)
+      Whether to report progress
     """
+    from ..pane import PaneBase
+
+    if isinstance(panel, PaneBase) and len(panel.layout) > 1:
+        panel = panel.layout
+
+    as_png = isinstance(filename, string_types) and filename.endswith('png')
+
     doc = Document()
     comm = Comm()
     with config.set(embed=embed):
-        model = panel.get_root(doc, comm)
+        with swap_html_model():
+            model = panel.get_root(doc, comm)
         if embed:
-            embed_state(panel, model, doc, max_states, max_opts,
-                        embed_json, json_prefix, save_path, load_path)
+            embed_state(
+                panel, model, doc, max_states, max_opts, embed_json,
+                json_prefix, save_path, load_path, progress
+            )
         else:
             add_to_doc(model, doc, True)
 
-    if isinstance(filename, string_types):
-        if filename.endswith('png'):
-            save_png(model, filename=filename)
-            return
-        if not filename.endswith('.html'):
-            filename = filename + '.html'
+    if as_png:
+        save_png(model, filename=filename)
+        return
+    elif isinstance(filename, string_types) and not filename.endswith('.html'):
+        filename = filename + '.html'
 
     kwargs = {}
     if title is None:

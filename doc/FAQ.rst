@@ -62,12 +62,7 @@ When using the pandas plotting API we create the figure and axes in the same way
 
 **Q: How do I debug error messages in a notebook?**
 
-**A**: When displaying a Panel object in a Jupyter notebook, any errors triggered by interacting with the app or dashboard will be logged to the browser's developer console instead of the usual python standard output on the commandline. How you access the developer console depends on your browser:
-
-- **Chrome**: Menu -> More tools -> Developer Tools
-- **Firefox**: Menu -> Web developer -> Browser console
-- **Safari**: Menu -> Develop -> Show error console
-
+**A**: When displaying a Panel object in a Jupyter notebook all errors and print output will be displayed at the top of the cell. This can be controlled using the `panel.config.console_output` option, which can be set to 'accumulate' (the default), 'replace' to replace the output each time and finally 'disable' which hides the output.
 
 **Q: Does Panel require a live Python process for deployment, or can I export to a static HTML document to email or put on a web server?**
 

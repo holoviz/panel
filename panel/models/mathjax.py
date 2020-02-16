@@ -11,6 +11,8 @@ class MathJax(Markup):
 
     __javascript__ = ["https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-MML-AM_CHTML"]
 
+    __js_skip__ = {'MathJax': __javascript__}
+
     __js_require__ = {
         'paths': {
             'mathjax': "//cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS_HTML"

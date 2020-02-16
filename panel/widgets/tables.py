@@ -1,6 +1,6 @@
 from __future__ import absolute_import, division, unicode_literals
 
-
+import numpy as np
 import param
 
 from bokeh.models import ColumnDataSource
@@ -40,7 +40,10 @@ class DataFrame(Widget):
 
     value = param.Parameter(default=None)
 
-    _manual_params = ['value', 'editors', 'formatters', 'selection', 'width']
+    _rename = {'editors': None, 'formatters': None, 'widths': None,
+               'disabled': None}
+
+    _manual_params = ['value', 'editors', 'formatters', 'selection', 'widths']
 
     def __init__(self, value=None, **params):
         super(DataFrame, self).__init__(value=value, **params)
@@ -145,10 +148,10 @@ class DataFrame(Widget):
                     continue
                 k = self._renamed_cols.get(k, k)
                 if isinstance(v, dict):
-                    v = [v for k, v in sorted(v.items(), key=lambda k: int(k[0]))]
+                    v = [v for _, v in sorted(v.items(), key=lambda it: int(it[0]))]
                 try:
-                    isequal = (self.value[k].values == v).all()
-                except:
+                    isequal = (self.value[k].values == np.asarray(v)).all()
+                except Exception:
                     isequal = False
                 if not isequal:
                     self.value[k] = v
@@ -156,7 +159,7 @@ class DataFrame(Widget):
             if updated:
                 self.param.trigger('value')
         if 'indices' in events:
-            self.selected = events.pop('indices')
+            self.selection = events.pop('indices')
         super(DataFrame, self)._process_events(events)
 
     @property

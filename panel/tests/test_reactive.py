@@ -3,7 +3,9 @@ from functools import partial
 import param
 
 from bokeh.models import Div
-from panel.viewable import Reactive
+from panel.layout import Tabs, WidgetBox
+from panel.viewable import Layoutable, Reactive
+from panel.widgets import Checkbox, StaticText, TextInput
 
 
 def test_link():
@@ -74,5 +76,60 @@ def test_link_properties_server(document):
     # Assert callback is set up correctly
     cb = div._callbacks['text'][0]
     assert isinstance(cb, partial)
-    assert cb.args == (document,)
+    assert cb.args == (document, div.ref['id'])
     assert cb.func == obj._server_change
+
+
+def test_text_input_controls():
+    text_input = TextInput()
+
+    controls = text_input.controls()
+
+    assert isinstance(controls, Tabs)
+    assert len(controls) == 2
+    wb1, wb2 = controls
+    assert isinstance(wb1, WidgetBox)
+    assert len(wb1) == 4
+    name, disabled, text1, text2 = wb1
+    if text1.name == 'Placeholder':
+        placeholder, value = text1, text2
+    else:
+        placeholder, value = text2, text1
+
+    assert isinstance(name, StaticText)
+    assert isinstance(disabled, Checkbox)
+    assert isinstance(value, TextInput)
+    assert isinstance(placeholder, TextInput)
+
+    text_input.disabled = True
+    assert disabled.value
+
+    text_input.placeholder = "Test placeholder..."
+    assert placeholder.value == "Test placeholder..."
+
+    text_input.value = "New value"
+    assert value.value == "New value"
+
+    assert isinstance(wb2, WidgetBox)
+    assert len(wb2) == len(list(Layoutable.param)) + 1
+
+
+
+def test_text_input_controls_explicit():
+    text_input = TextInput()
+
+    controls = text_input.controls(['placeholder', 'disabled'])
+
+    assert isinstance(controls, WidgetBox)
+    assert len(controls) == 3
+    name, disabled, placeholder = controls
+    
+    assert isinstance(name, StaticText)
+    assert isinstance(disabled, Checkbox)
+    assert isinstance(placeholder, TextInput)
+
+    text_input.disabled = True
+    assert disabled.value
+
+    text_input.placeholder = "Test placeholder..."
+    assert placeholder.value == "Test placeholder..."

@@ -53,6 +53,10 @@ class Widget(Reactive):
             params['name'] = ''
         if '_supports_embed' in params:
             self._supports_embed = params.pop('_supports_embed')
+        if '_param_pane' in params:
+            self._param_pane = params.pop('_param_pane')
+        else:
+            self._param_pane = None
         super(Widget, self).__init__(**params)
         self.param.watch(self._update_widget, self._manual_params)
 
@@ -82,11 +86,16 @@ class Widget(Reactive):
         if root is None:
             root = model
         # Link parameters and bokeh model
-        values = dict(self.get_param_values())
+        values = dict(self.param.get_param_values())
         properties = self._filter_properties(list(self._process_param_change(values)))
         self._models[root.ref['id']] = (model, parent)
         self._link_props(model, properties, doc, root, comm)
         return model
+
+    @property
+    def _linkable_params(self):
+        return [p for p in self._synced_params() if self._rename.get(p, False) is not None
+                and self._source_transforms.get(p, False) is not None]
 
     def _synced_params(self):
         return [p for p in self.param if p not in self._manual_params]
@@ -136,9 +145,14 @@ class CompositeWidget(Widget):
     def __init__(self, **params):
         super(CompositeWidget, self).__init__(**params)
         layout = {p: getattr(self, p) for p in Layoutable.param
-                  if p != 'name' and getattr(self, p) is not None}
+                  if getattr(self, p) is not None}
         self._composite = self._composite_type(**layout)
         self._models = self._composite._models
+        self.param.watch(self._update_layout_params, list(Layoutable.param))
+
+    def _update_layout_params(self, *events):
+        for event in events:
+            setattr(self._composite, event.name, event.new)
 
     def select(self, selector=None):
         """
@@ -169,3 +183,6 @@ class CompositeWidget(Widget):
 
     def __contains__(self, object):
         return object in self._composite.objects
+
+    def _synced_params(self):
+        return []

@@ -13,7 +13,6 @@ from six import string_types
 import bokeh
 import bokeh.embed.notebook
 
-from bokeh.core.templates import DOC_NB_JS
 from bokeh.core.json_encoder import serialize_json
 from bokeh.core.templates import MACROS
 from bokeh.document import Document
@@ -28,7 +27,8 @@ from bokeh.util.string import encode_utf8, escape
 from bokeh.util.serialization import make_id
 from pyviz_comms import (
     JS_CALLBACK, PYVIZ_PROXY, Comm, JupyterCommManager as _JupyterCommManager,
-    nb_mime_js)
+    nb_mime_js
+)
 
 from ..compiler import require_components
 from .embed import embed_state
@@ -59,11 +59,14 @@ if (receiver &&
     events = receiver._partial.content.events;
 }}
 
+var value = cb_obj['{change}'];
+
+{transform}
+
 for (var event of events) {{
   if ((event.kind === 'ModelChanged') && (event.attr === '{change}') &&
       (cb_obj.id === event.model.id) &&
-      (JSON.stringify(cb_obj['{change}']) === JSON.stringify(event.new))) {{
-    events.pop(events.indexOf(event))
+      (JSON.stringify(value) === JSON.stringify(event.new))) {{
     return;
   }}
 }}
@@ -102,18 +105,18 @@ if ((comm_msg != null) && (Object.keys(comm_msg.content).length > 0)) {{
 }}
 """
 
-def get_comm_customjs(change, client_comm, plot_id, timeout=5000, debounce=50):
+def get_comm_customjs(change, client_comm, plot_id, transform=None,
+                      timeout=5000, debounce=50):
     """
     Returns a CustomJS callback that can be attached to send the
     model state across the notebook comms.
     """
     # Abort callback if value matches last received event
-    abort = ABORT_JS.format(plot_id=plot_id, change=change)
-    data_template = """\
-data = {{{change}: cb_obj['{change}'], 'id': cb_obj.id}};
-cb_obj.event_name = '{change}';"""
+    transform = transform or ''
+    abort = ABORT_JS.format(plot_id=plot_id, change=change, transform=transform)
+    data_template = """data = {{{change}: value, 'id': cb_obj.id}}; cb_obj.event_name = '{change}';"""
 
-    fetch_data = data_template.format(change=change)
+    fetch_data = data_template.format(change=change, transform=transform)
     self_callback = JS_CALLBACK.format(
         comm_id=client_comm.id, timeout=timeout, debounce=debounce,
         plot_id=plot_id)
@@ -135,17 +138,19 @@ def push(doc, comm, binary=True):
         comm.send(json.dumps(header))
         comm.send(buffers=[payload])
 
+DOC_NB_JS = _env.get_template("doc_nb_js.js")
 AUTOLOAD_NB_JS = _env.get_template("autoload_panel_js.js")
 NB_TEMPLATE_BASE = _env.get_template('nb_template.html')
 
-def _autoload_js(bundle, configs, requirements, exports, load_timeout=5000):
+def _autoload_js(bundle, configs, requirements, exports, skip_imports, load_timeout=5000):
     return AUTOLOAD_NB_JS.render(
         bundle    = bundle,
         force     = True,
         timeout   = load_timeout,
         configs   = configs,
         requirements = requirements,
-        exports   = exports
+        exports   = exports,
+        skip_imports = skip_imports
     )
 
 
@@ -266,8 +271,10 @@ def block_comm():
     Context manager to temporarily block comm push
     """
     state._hold = True
-    yield
-    state._hold = False
+    try:
+        yield
+    finally:
+        state._hold = False
 
 
 def load_notebook(inline=True, load_timeout=5000):
@@ -275,9 +282,9 @@ def load_notebook(inline=True, load_timeout=5000):
 
     resources = INLINE if inline else CDN
     bundle = bundle_for_objs_and_resources(None, resources)
-    configs, requirements, exports = require_components()
+    configs, requirements, exports, skip_imports = require_components()
 
-    bokeh_js = _autoload_js(bundle, configs, requirements, exports, load_timeout)
+    bokeh_js = _autoload_js(bundle, configs, requirements, exports, skip_imports, load_timeout)
     publish_display_data({
         'application/javascript': bokeh_js,
         LOAD_MIME: bokeh_js,
@@ -335,7 +342,7 @@ def show_server(panel, notebook_url, port):
 
 
 def show_embed(panel, max_states=1000, max_opts=3, json=False,
-              save_path='./', load_path=None):
+               save_path='./', load_path=None, progress=True):
     """
     Renders a static version of a panel in a notebook by evaluating
     the set of states defined by the widgets in the model. Note
@@ -354,6 +361,8 @@ def show_embed(panel, max_states=1000, max_opts=3, json=False,
       The path to save json files to
     load_path: str (default=None)
       The path or URL the json files will be loaded from.
+    progress: boolean (default=False)
+      Whether to report progress
     """
     from IPython.display import publish_display_data
     from ..config import config
@@ -399,7 +408,7 @@ def ipywidget(obj, **kwargs):
                 if current:
                     try:
                         obj._cleanup(current[0])
-                    except:
+                    except Exception:
                         pass
                 new_model = obj.get_root()
                 widget.update_from_model(new_model)

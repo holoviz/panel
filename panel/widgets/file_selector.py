@@ -1,0 +1,224 @@
+# -*- coding: utf-8 -*-
+"""
+Defines a FileSelector widget which allows selecting files and
+directories on the server.
+"""
+from __future__ import absolute_import, division, unicode_literals
+
+import os
+
+from collections import OrderedDict
+from fnmatch import fnmatch
+
+import param
+
+from ..layout import Column, Divider, Row
+from ..viewable import Layoutable
+from .base import CompositeWidget
+from .button import Button
+from .input import TextInput
+from .select import CrossSelector
+
+
+def scan_path(path, file_pattern='*'):
+    """
+    Scans the supplied path for files and directories and optionally
+    filters the files with the file keyword, returning a list of sorted
+    paths of all directories and files.
+
+    Arguments
+    ---------
+    path: str
+        The path to search
+    file_pattern: str
+        A glob-like pattern to filter the files
+
+    Returns
+    -------
+    A sorted list of paths
+    """
+    paths = [os.path.join(path, p) for p in os.listdir(path)]
+    dirs = [p for p in paths if os.path.isdir(p)]
+    files = [p for p in paths if os.path.isfile(p) and
+             fnmatch(os.path.basename(p), file_pattern)]
+    for p in paths:
+        if not os.path.islink(p):
+            continue
+        path = os.path.realpath(p)
+        if os.path.isdir(path):
+            dirs.append(p)
+        elif os.path.isfile(path):
+            dirs.append(p)
+        else:
+            continue
+    return dirs, files
+
+
+class FileSelector(CompositeWidget):
+
+    directory = param.String(default=os.getcwd(), doc="""
+        The directory to explore.""")
+
+    file_pattern = param.String(default='*', doc="""
+        A glob-like pattern to filter the files.""")
+
+    only_files = param.Boolean(default=False, doc="""
+        Whether to only allow selecting files.""")
+
+    margin = param.Parameter(default=(5, 10, 20, 10), doc="""
+        Allows to create additional space around the component. May
+        be specified as a two-tuple of the form (vertical, horizontal)
+        or a four-tuple (top, right, bottom, left).""")
+
+    show_hidden = param.Boolean(default=False, doc="""
+        Whether to show hidden files and directories (starting with
+        a period).""")
+
+    size = param.Integer(default=10, doc="""
+       The number of options shown at once (note this is the
+       only way to control the height of this widget)""")
+
+    value = param.List(default=[], doc="""
+        List of selected files.""")
+
+    _composite_type = Column
+
+    def __init__(self, directory=None, **params):
+        from ..pane import Markdown
+        if directory is not None:
+            params['directory'] = os.path.abspath(os.path.expanduser(directory))
+        if params.get('width') and params.get('height') and 'sizing_mode' not in params:
+            params['sizing_mode'] = None
+
+        super(FileSelector, self).__init__(**params)
+
+        # Set up layout
+        layout = {p: getattr(self, p) for p in Layoutable.param
+                  if p not in ('name', 'height', 'margin') and getattr(self, p) is not None}
+        sel_layout = dict(layout, sizing_mode='stretch_both', height=None, margin=0)
+        self._selector = CrossSelector(filter_fn=lambda p, f: fnmatch(f, p),
+                                       size=self.size, **sel_layout)
+        self._back = Button(name='◀', width=25, margin=(5, 10, 0, 0), disabled=True)
+        self._forward = Button(name='▶', width=25, margin=(5, 10), disabled=True)
+        self._up = Button(name='⬆', width=25, margin=(5, 10), disabled=True)
+        self._directory = TextInput(value=self.directory, margin=(5, 10), width_policy='max')
+        self._go = Button(name='⬇', disabled=True, width=25, margin=(5, 15, 0, 0))
+        self._nav_bar = Row(
+            self._back, self._forward, self._up, self._directory, self._go,
+            **dict(layout, width=None, margin=0, width_policy='max')
+        )
+        self._composite[:] = [self._nav_bar, Divider(margin=0), self._selector]
+        self._selector._selected.insert(0, Markdown('### Selected files', margin=0))
+        self._selector._unselected.insert(0, Markdown('### File Browser', margin=0))
+        self.link(self._selector, size='size')
+
+        # Set up state
+        self._stack = []
+        self._cwd = None
+        self._position = -1
+        self._update_files(True)
+
+        # Set up callback
+        self.link(self._directory, directory='value')
+        self._selector.param.watch(self._update_value, 'value')
+        self._go.on_click(self._update_files)
+        self._up.on_click(self._go_up)
+        self._back.on_click(self._go_back)
+        self._forward.on_click(self._go_forward)
+        self._directory.param.watch(self._dir_change, 'value')
+        self._selector._lists[False].param.watch(self._select, 'value')
+        self._selector._lists[False].param.watch(self._filter_blacklist, 'options')
+
+    def _update_value(self, event):
+        value = [v for v in event.new if not self.only_files or os.path.isfile(v)]
+        self._selector.value = value
+        self.value = value
+
+    def _dir_change(self, event):
+        path = os.path.abspath(os.path.expanduser(self._directory.value))
+        if not path.startswith(self.directory):
+            self._directory.value = self.directory
+            return
+        elif path != self._directory.value:
+            self._directory.value = path
+        self._go.disabled = path == self._cwd
+
+    def _update_files(self, event=None):
+        path = os.path.abspath(self._directory.value)
+        if not os.path.isdir(path):
+            self._selector.options = ['Entered path is not valid']
+            self._selector.disabled = True
+            return
+        elif event is not None and (not self._stack or path != self._stack[-1]):
+            self._stack.append(path)
+            self._position += 1
+
+        self._cwd = path
+        self._go.disabled = True
+        self._up.disabled = path == self.directory
+        if self._position == len(self._stack)-1:
+            self._forward.disabled = True
+        if 0 <= self._position and len(self._stack) > 1:
+            self._back.disabled = False
+
+        selected = self.value
+        dirs, files = scan_path(path, self.file_pattern)
+        for s in selected:
+            check = os.path.realpath(s) if os.path.islink(s) else s
+            if os.path.isdir(check):
+                dirs.append(s)
+            elif os.path.isfile(check):
+                dirs.append(s)
+
+        paths = [p for p in sorted(dirs)+sorted(files)
+                 if self.show_hidden or not os.path.basename(p).startswith('.')]
+        abbreviated = [('📁' if f in dirs else '')+os.path.relpath(f, self._cwd) for f in paths]
+        options = OrderedDict(zip(abbreviated, paths))
+        self._selector.options = options
+        self._selector.value = selected
+
+    def _filter_blacklist(self, event):
+        """
+        Ensure that if unselecting a currently selected path and it
+        is not in the current working directory then it is removed
+        from the blacklist.
+        """
+        dirs, files = scan_path(self._cwd, self.file_pattern)
+        paths = [('📁' if p in dirs else '')+os.path.relpath(p, self._cwd) for p in dirs+files]
+        blacklist = self._selector._lists[False]
+        options = OrderedDict(self._selector._items)
+        self._selector.options.clear()
+        self._selector.options.update([
+            (k, v) for k, v in options.items() if k in paths or v in self.value
+        ])
+        blacklist.options = [o for o in blacklist.options if o in paths]
+
+    def _select(self, event):
+        if len(event.new) != 1:
+            self._directory.value = self._cwd
+            return
+
+        relpath = event.new[0].replace('📁', '')
+        sel = os.path.abspath(os.path.join(self._cwd, relpath))
+        if os.path.isdir(sel):
+            self._directory.value = sel
+        else:
+            self._directory.value = self._cwd
+
+    def _go_back(self, event):
+        self._position -= 1
+        self._directory.value = self._stack[self._position]
+        self._update_files()
+        self._forward.disabled = False
+        if self._position == 0:
+            self._back.disabled = True
+
+    def _go_forward(self, event):
+        self._position += 1
+        self._directory.value = self._stack[self._position]
+        self._update_files()
+
+    def _go_up(self, event=None):
+        path = self._cwd.split(os.path.sep)
+        self._directory.value = os.path.sep.join(path[:-1])
+        self._update_files(True)

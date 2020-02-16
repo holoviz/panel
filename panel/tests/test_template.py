@@ -5,7 +5,7 @@ from __future__ import absolute_import, division, unicode_literals
 
 try:
     import holoviews as hv
-except:
+except Exception:
     hv = None
 
 import param
@@ -44,8 +44,8 @@ def test_template_links_axes(document, comm):
     (_, (m1, _)) = list(p1._models.items())[0]
     (_, (m2, _)) = list(p2._models.items())[0]
     (_, (m3, _)) = list(p3._models.items())[0]
-    assert m1.x_range is not m2.x_range
-    assert m1.y_range is not m2.y_range
+    assert m1.x_range is m2.x_range
+    assert m1.y_range is m2.y_range
     assert m2.x_range is m3.x_range
     assert m2.y_range is m3.y_range
 

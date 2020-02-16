@@ -81,6 +81,7 @@ _NAV = (
     ('Gallery', 'gallery/index'),
     ('Reference Gallery', 'reference/index'),
     ('Developer Guide', 'developer_guide/index'),
+    ('Releases', 'releases'),
     ('FAQ', 'FAQ'),
     ('About', 'about')
 )
@@ -88,20 +89,22 @@ _NAV = (
 templates_path = ['_templates']
 
 html_context.update({
+    'js_includes': ['nbsite.js'],
     'PROJECT': project,
     'DESCRIPTION': description,
     'AUTHOR': authors,
     'VERSION': version,
     'GOOGLE_SEARCH_ID': '017396756996884923145:moq4gmnf37j',
     'GOOGLE_ANALYTICS_UA': 'UA-154795830-2',
-    'WEBSITE_URL': 'https://panel.pyviz.org',
-    'WEBSITE_SERVER': 'https://panel.pyviz.org',
+    'WEBSITE_URL': 'https://panel.holoviz.org',
+    'WEBSITE_SERVER': 'https://panel.holoviz.org',
     'NAV': _NAV,
     'LINKS': _NAV,
     'SOCIAL': (
         ('Discourse', '//discourse.holoviz.org'),
+        ('Twitter', '//twitter.com/Panel_org'),
         ('Github', '//github.com/pyviz/panel'),
     )
 })
 
-nbbuild_patterns_to_take_along = ["simple.html"]
+nbbuild_patterns_to_take_along = ["simple.html", "*.json", "json_*"]

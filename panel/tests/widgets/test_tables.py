@@ -79,4 +79,23 @@ def test_dataframe_does_not_trigger(dataframe):
 
 def test_dataframe_selected_dataframe(dataframe):
     table = DataFrame(dataframe, selection=[0, 2])
-    pd.testing.assert_frame_equal(dataframe.iloc[[0, 2]], table.selected_dataframe)
+    pd.testing.assert_frame_equal(table.selected_dataframe, dataframe.iloc[[0, 2]])
+
+
+def test_dataframe_process_selection_event(dataframe):
+    table = DataFrame(dataframe, selection=[0, 2])
+    table._process_events({'indices': [0, 2]})
+    pd.testing.assert_frame_equal(table.selected_dataframe, dataframe.iloc[[0, 2]])
+
+
+def test_dataframe_process_data_event(dataframe):
+    df = dataframe.copy()
+
+    table = DataFrame(dataframe, selection=[0, 2])
+    table._process_events({'data': {'int': [5, 7, 9]}})
+    df['int'] = [5, 7, 9]
+    pd.testing.assert_frame_equal(table.value, df)
+
+    table._process_events({'data': {'int': {1: 3, 2: 4, 0: 1}}})
+    df['int'] = [1, 3, 4]
+    pd.testing.assert_frame_equal(table.value, df)

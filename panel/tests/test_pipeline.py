@@ -14,7 +14,7 @@ if LooseVersion(param.__version__) < '1.8.2':
 
 try:
     import holoviews as hv
-except:
+except Exception:
     pytest.skip('Pipeline requires HoloViews.')
 
 

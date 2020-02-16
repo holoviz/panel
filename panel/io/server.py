@@ -37,9 +37,12 @@ def _server_url(url, port):
         return 'http://%s:%d%s' % (url.split(':')[0], port, "/")
 
 def _eval_panel(panel, server_id, title, doc):
+    from ..template import Template
     from ..pane import panel as as_panel
 
-    if isinstance(panel, FunctionType):
+    if isinstance(panel, Template):
+        return panel._modify_doc(server_id, title, doc)
+    elif isinstance(panel, FunctionType):
         panel = panel()
     return as_panel(panel)._modify_doc(server_id, title, doc)
     
@@ -73,7 +76,8 @@ def unlocked():
         for conn in connections:
             socket = conn._socket
             for event in curdoc._held_events:
-                if isinstance(event, ModelChangedEvent) and event not in old_events:
+                if (isinstance(event, ModelChangedEvent) and event not in old_events
+                    and hasattr(socket, 'write_message')):
                     msg = conn.protocol.create('PATCH-DOC', [event])
                     socket.write_message(msg.header_json, locked=False)
                     socket.write_message(msg.metadata_json, locked=False)
@@ -87,10 +91,10 @@ def unlocked():
     finally:
         if not hold:
             curdoc.unhold()
-            
 
-def serve(panels, port=0, websocket_origin=None, loop=None,
-          show=True, start=True, title=None, **kwargs):
+
+def serve(panels, port=0, websocket_origin=None, loop=None, show=True,
+          start=True, title=None, verbose=True, **kwargs):
     """
     Allows serving one or more panel objects on a single server.
     The panels argument should be either a Panel object or a function
@@ -119,17 +123,19 @@ def serve(panels, port=0, websocket_origin=None, loop=None,
       Whether to open the server in a new browser tab on start
     start : boolean(optional, default=False)
       Whether to start the Server
+    title: str (optional, default=None)
+      An HTML title for the application
+    verbose: boolean (optional, default=True)
+      Whether to print the address and port
     kwargs: dict
       Additional keyword arguments to pass to Server instance
     """
-    
-
-    return get_server(panels, port, websocket_origin, loop, show, start, title,
-                      **kwargs)
+    return get_server(panels, port, websocket_origin, loop, show, start,
+                      title, verbose, **kwargs)
 
 
 def get_server(panel, port=0, websocket_origin=None, loop=None,
-               show=False, start=False, title=None, **kwargs):
+               show=False, start=False, title=None, verbose=False, **kwargs):
     """
     Returns a Server instance with this panel attached as the root
     app.
@@ -154,6 +160,10 @@ def get_server(panel, port=0, websocket_origin=None, loop=None,
       Whether to open the server in a new browser tab on start
     start : boolean(optional, default=False)
       Whether to start the Server
+    title: str (optional, default=None)
+      An HTML title for the application
+    verbose: boolean (optional, default=False)
+      Whether to report the address and port
     kwargs: dict
       Additional keyword arguments to pass to Server instance
 
@@ -188,6 +198,10 @@ def get_server(panel, port=0, websocket_origin=None, loop=None,
         opts['allow_websocket_origin'] = websocket_origin
 
     server = Server(apps, port=port, **opts)
+    if verbose:
+        address = server.address or 'localhost'
+        print("Launching server at http://%s:%s" % (address, server.port))
+
     state._servers[server_id] = (server, panel, [])
 
     if show:
