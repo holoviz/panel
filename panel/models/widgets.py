@@ -5,7 +5,14 @@ from __future__ import absolute_import, division, unicode_literals
 
 from bokeh.core.properties import Int, Float, Override, Enum, Any, Bool, Dict, String
 from bokeh.models.layouts import HTMLBox
-from bokeh.models.widgets import Widget
+from bokeh.models.widgets import Widget, Slider
+
+class PnSlider(Slider):
+    """
+    A slider model allowing to add a suffix
+    """
+
+    suffix = String(default="", help="Suffix added to the slider formatter")
 
 
 class Player(Widget):

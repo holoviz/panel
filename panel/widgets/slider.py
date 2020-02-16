@@ -13,7 +13,8 @@ import numpy as np
 from bokeh.models import CustomJS
 from bokeh.models.widgets import (
     DateSlider as _BkDateSlider, DateRangeSlider as _BkDateRangeSlider,
-    RangeSlider as _BkRangeSlider, Slider as _BkSlider)
+    RangeSlider as _BkRangeSlider)
+from ..models.widgets import  PnSlider
 
 from ..config import config
 from ..io import state
@@ -55,7 +56,11 @@ class _SliderBase(Widget):
     tooltips = param.Boolean(default=True, doc="""
         Whether the slider handle should display tooltips""")
 
-    _widget_type = _BkSlider
+    suffix = param.String(default="", doc="""
+        Suffix added after the slider value
+    """)
+
+    _widget_type = PnSlider
 
     __abstract = True
 
