@@ -56,16 +56,16 @@ class _SliderBase(Widget):
     tooltips = param.Boolean(default=True, doc="""
         Whether the slider handle should display tooltips""")
 
-    suffix = param.String(default="", doc="""
-        Suffix added after the slider value
-    """)
-
     _widget_type = PnSlider
 
     __abstract = True
 
 
 class ContinuousSlider(_SliderBase):
+
+    suffix = param.String(default="", doc="""
+        Suffix added after the slider value
+    """)
 
     _supports_embed = True
 
