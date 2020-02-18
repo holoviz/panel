@@ -265,7 +265,7 @@ class ServableMixin(object):
         verbose: boolean (optional, default=True)
           Whether to print the address and port
         show : boolean (optional, default=True)
-          Whether to open the server in a new browser tab on start
+          Whether to open the server in a new browser tab
 
         Returns
         -------
