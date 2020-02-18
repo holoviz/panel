@@ -244,7 +244,7 @@ class ServableMixin(object):
         return self
 
     def show(self, port=0, websocket_origin=None, threaded=False,
-             title=None, verbose=True, **kwargs):
+             title=None, verbose=True, show=False, **kwargs):
         """
         Starts a Bokeh server and displays the Viewable in a new tab.
 
@@ -276,12 +276,12 @@ class ServableMixin(object):
             loop = IOLoop()
             server = StoppableThread(
                 target=self._get_server, io_loop=loop,
-                args=(port, websocket_origin, loop, True, True, title, verbose),
-                kwargs={'title': title})
+                args=(port, websocket_origin, loop, show, True, title, verbose),
+                kwargs=kwargs)
             server.start()
         else:
             server = self._get_server(
-                port, websocket_origin, show=True, start=True,
+                port, websocket_origin, show=show, start=True,
                 title=title, verbose=verbose, **kwargs
             )
         return server
