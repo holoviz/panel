@@ -26,11 +26,6 @@ class _Window(param.Parameterized):
         Provides access to selected functionality of the JS window.location api""",
     )
 
-    def __init__(self, **params):
-        if "default" not in params:
-            params["default"] = Location()
-        super().__init__(**params)
-
 
 class _state(param.Parameterized):
     """
