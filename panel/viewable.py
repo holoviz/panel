@@ -244,7 +244,7 @@ class ServableMixin(object):
         return self
 
     def show(self, port=0, websocket_origin=None, threaded=False,
-             title=None, verbose=True, **kwargs):
+             title=None, verbose=True, open=True, **kwargs):
         """
         Starts a Bokeh server and displays the Viewable in a new tab.
 
@@ -264,6 +264,8 @@ class ServableMixin(object):
           A string title to give the Document (if served as an app)
         verbose: boolean (optional, default=True)
           Whether to print the address and port
+        open : boolean (optional, default=True)
+          Whether to open the server in a new browser tab
 
         Returns
         -------
@@ -276,12 +278,12 @@ class ServableMixin(object):
             loop = IOLoop()
             server = StoppableThread(
                 target=self._get_server, io_loop=loop,
-                args=(port, websocket_origin, loop, True, True, title, verbose),
-                kwargs={'title': title})
+                args=(port, websocket_origin, loop, open, True, title, verbose),
+                kwargs=kwargs)
             server.start()
         else:
             server = self._get_server(
-                port, websocket_origin, show=True, start=True,
+                port, websocket_origin, show=open, start=True,
                 title=title, verbose=verbose, **kwargs
             )
         return server

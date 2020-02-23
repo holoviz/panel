@@ -119,14 +119,18 @@ export class PlotlyPlotView extends PanelHTMLBoxView {
     this.connect(this.model.properties.viewport_update_throttle.change,
         this._updateSetViewportFunction);
 
-    this.connect(this.model.properties._render_count.change, this.render);
+    this.connect(this.model.properties._render_count.change, this.plot);
     this.connect(this.model.properties.viewport.change, this._updateViewportFromProperty);
   }
 
   render(): void {
     super.render()
     if (!(window as any).Plotly) { return }
+    this.plot()
+  }
 
+  plot(): void {
+    if (!(window as any).Plotly) { return }
     const data = [];
     for (let i = 0; i < this.model.data.length; i++) {
       data.push(this._get_trace(i, false));
