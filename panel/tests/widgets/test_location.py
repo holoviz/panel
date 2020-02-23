@@ -34,5 +34,17 @@ def test_location(document, comm):
 
 
 if __name__.startswith("bk"):
-    location = Location._widget_type()
-    pn.pane.Bokeh(location).servable()
+    location = Location(refresh=False)
+    parameters = [
+        "href",
+        "hostname",
+        "pathname",
+        "protocol",
+        "port",
+        "search",
+        "hash_",
+        "refresh",
+    ]
+    pn.Column(
+        "test", location, pn.Param(location, parameters=parameters), sizing_mode="stretch_width"
+    ).servable()

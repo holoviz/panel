@@ -25,17 +25,17 @@ export class LocationView extends HTMLBoxView {
     update_href(): void {
         console.log("update_href")
         if (this.model.refresh) {
-            window.history.pushState({}, '', this.model.href);
-        } else {
             window.location.href = this.model.href;
+        } else {
+            window.history.pushState({}, '', this.model.href);
         }
 
-        this.model.hostname = window.location.hostname;
-        this.model.pathname = window.location.pathname;
-        this.model.protocol = window.location.protocol;
-        this.model.port = window.location.port;
-        this.model.search = window.location.search;
-        this.model.hash_ = window.location.hash;
+        // this.model.hostname = window.location.hostname;
+        // this.model.pathname = window.location.pathname;
+        // this.model.protocol = window.location.protocol;
+        // this.model.port = window.location.port;
+        // this.model.search = window.location.search;
+        // this.model.hash_ = window.location.hash;
     }
     update_part_by_part(): void {
         console.log("update_by_part")
