@@ -1,9 +1,8 @@
 """In this module we test the Bokeh Location Model"""
 
 import pytest
-from panel.widgets.location import Location
 import panel as pn
-from panel.models.location import Location as BKLocation
+from panel.models.location import Location
 
 
 def test_constructor():
@@ -39,25 +38,10 @@ def test_constructor_with_href():
 
 
 def test_manual():
-    location = Location()
-    parameters = [
-        "href",
-        "hostname",
-        "pathname",
-        "protocol",
-        "port",
-        "search",
-        "hash_",
-        "refresh",
-    ]
-    bkmodel = pn.pane.Bokeh(BKLocation())
-    app = pn.Column(bkmodel, pn.Param(location, parameters=parameters))
+    bkmodel = pn.pane.Bokeh(Location())
+    app = pn.Column(bkmodel)
     return app
 
 
 if __name__.startswith("bk"):
-    import ptvsd
-
-    ptvsd.enable_attach(address=("localhost", 5678))
-    ptvsd.wait_for_attach()  # Only include this line if you always wan't to attach the debugger
     test_manual().servable()
