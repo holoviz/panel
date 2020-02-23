@@ -32,7 +32,7 @@ class Location(Widget):
     _widget_type = _BkLocation  # type: ignore
 
     # Mapping from parameter name to bokeh model property name
-    _rename: Dict[str, str] = {}
+    _rename: Dict[str, str] = {"name": None}
 
     def update_search(
         self, param_class: param.Parameterized, parameters: Optional[List[str]] = None
