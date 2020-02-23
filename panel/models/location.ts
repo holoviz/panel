@@ -12,13 +12,53 @@ export class LocationView extends HTMLBoxView {
 
         this.render();
 
-        // this.connect(this.model.slider.change, () => {
-        //     console.info("slider change call back");
-        //     this.render();
-        // })
+        this.connect(this.model.properties.href.change, () => this.update_href());
+
+        this.connect(this.model.properties.hostname.change, () => this.update_part_by_part());
+        this.connect(this.model.properties.pathname.change, () => this.update_part_by_part());
+        this.connect(this.model.properties.protocol.change, () => this.update_part_by_part());
+        this.connect(this.model.properties.port.change, () => this.update_part_by_part());
+        this.connect(this.model.properties.search.change, () => this.update_part_by_part());
+        this.connect(this.model.properties.hash_.change, () => this.update_part_by_part());
+    }
+
+    update_href(): void {
+        console.log("update_href")
+        if (this.model.refresh) {
+            window.history.pushState({}, '', this.model.href);
+        } else {
+            window.location.href = this.model.href;
+        }
+
+        this.model.hostname = window.location.hostname;
+        this.model.pathname = window.location.pathname;
+        this.model.protocol = window.location.protocol;
+        this.model.port = window.location.port;
+        this.model.search = window.location.search;
+        this.model.hash_ = window.location.hash;
+    }
+    update_part_by_part(): void {
+        console.log("update_by_part")
+        if (this.model.refresh) {
+            window.history.pushState(
+                {},
+                '',
+                `${this.model.pathname}:${this.model.port}${this.model.search}${this.model.hash_}`
+            );
+        } else {
+            window.location.hostname = this.model.hostname;
+            window.location.pathname = this.model.pathname;
+            window.location.protocol = this.model.protocol;
+            window.location.port = this.model.port;
+            window.location.search = this.model.search;
+            window.location.hash = this.model.hash_;
+        }
+
+        this.model.href = window.location.href;
     }
 
     render(): void {
+        // Todo: remove content. Here for manual testing
         console.info("render");
         super.render()
 

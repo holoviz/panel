@@ -1,3 +1,4 @@
+import panel as pn
 from panel.widgets.location import Location
 
 HREF = "https://panel.holoviz.org/user_guide/Interact.html:80?color=blue#interact"
@@ -30,3 +31,8 @@ def test_location(document, comm):
 
     # slider.value = 0.3
     # assert widget.value == 0.3
+
+
+if __name__.startswith("bk"):
+    location = Location._widget_type()
+    pn.pane.Bokeh(location).servable()
