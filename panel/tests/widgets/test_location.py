@@ -103,7 +103,7 @@ def test_attributes_are_not_readonly(pathname, search, hash_, refresh):
 def test_pathname_raises_valueerror_if_string_invalid(invalid):
     "The pathname should be '' or (not start or end with '/')"
     with pytest.raises(ValueError):
-        Location(search="a=b")
+        Location(pathname=invalid)
 
 
 def test_search_raises_valueerror_if_string_invalid():
