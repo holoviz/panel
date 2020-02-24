@@ -25,7 +25,7 @@ class Location(Widget):
     )
     # Todo: Find the corect regex for pathname
     pathname = param.String(
-        regex="([^\/])(.*)([^\/])",
+        regex=r"^$|([^\/])(.*)([^\/])",
         doc="pathname in window.location e.g. 'user_guide/Interact.html'",
     )
     protocol = param.String(readonly=True, doc="protocol in window.location e.g. 'https:'")
