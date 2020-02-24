@@ -116,7 +116,7 @@ def test_hash_raises_valueerror_if_string_invalid():
     "The hash string should be '' or start with '#'"
     # When/ Then
     with pytest.raises(ValueError):
-        Location(hash="section2")
+        Location(hash_="section2")
 
 
 def test_location_comm(document, comm, pathname, search, hash_, refresh):
