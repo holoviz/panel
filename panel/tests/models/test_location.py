@@ -19,7 +19,7 @@ def test_constructor():
     assert actual.refresh == True
 
 
-def test_constructor_with_href():
+def test_constructor_with__href():
     # Given
     href = "https://panel.holoviz.org/user_guide/Interact.html:80?color=blue#interact"
     # When
