@@ -59,9 +59,9 @@ class Location(Widget):
     search = param.String(regex=r"^$|\?", doc="search in window.location e.g. '?color=blue'")
     hash_ = param.String(regex=r"^$|#", doc="hash in window.location e.g. '#interact'")
 
-    refresh = param.Boolean(
+    reload = param.Boolean(
         default=True,
-        doc="""Refresh the page when the location is updated. For multipage apps this should be \
+        doc="""Reload the page when the location is updated. For multipage apps this should be \
         set to True, For single page apps this should be set to False""",
     )
 

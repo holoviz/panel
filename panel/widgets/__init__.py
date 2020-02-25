@@ -5,22 +5,43 @@ communication between a rendered panel and the Widget parameters.
 from __future__ import absolute_import, division, unicode_literals
 
 from .ace import Ace  # noqa
-from .base import Widget, CompositeWidget # noqa
-from .button import Button, Toggle # noqa
-from .file_selector import FileSelector # noqa
-from .input import (# noqa
-    ColorPicker, Checkbox, DatetimeInput, DatePicker, FileInput,
-    LiteralInput, StaticText, TextInput, Spinner, PasswordInput,
-    TextAreaInput
+from .base import Widget, CompositeWidget  # noqa
+from .button import Button, Toggle  # noqa
+from .file_selector import FileSelector  # noqa
+from .input import (  # noqa
+    ColorPicker,
+    Checkbox,
+    DatetimeInput,
+    DatePicker,
+    FileInput,
+    LiteralInput,
+    StaticText,
+    TextInput,
+    Spinner,
+    PasswordInput,
+    TextAreaInput,
 )
-from .misc import Audio, Progress, VideoStream # noqa
-from .player import DiscretePlayer, Player # noqa
-from .slider import (# noqa
-    DateSlider, DateRangeSlider, DiscreteSlider, FloatSlider,
-    IntSlider, IntRangeSlider, RangeSlider
+from .location import Location
+from .misc import Audio, Progress, VideoStream  # noqa
+from .player import DiscretePlayer, Player  # noqa
+from .slider import (  # noqa
+    DateSlider,
+    DateRangeSlider,
+    DiscreteSlider,
+    FloatSlider,
+    IntSlider,
+    IntRangeSlider,
+    RangeSlider,
 )
-from .select import (# noqa
-    AutocompleteInput, CheckBoxGroup, CheckButtonGroup, CrossSelector,
-    MultiSelect, RadioButtonGroup, RadioBoxGroup, Select, ToggleGroup
+from .select import (  # noqa
+    AutocompleteInput,
+    CheckBoxGroup,
+    CheckButtonGroup,
+    CrossSelector,
+    MultiSelect,
+    RadioButtonGroup,
+    RadioBoxGroup,
+    Select,
+    ToggleGroup,
 )
-from .tables import DataFrame # noqa
+from .tables import DataFrame  # noqa

@@ -38,8 +38,8 @@ class Location(HTMLBox):
     search = String(default="", help="search in window.location e.g. '?color=blue'")
     hash_ = String(default="", help="hash in window.location e.g. '#interact'")
 
-    refresh = Bool(
+    reload = Bool(
         default=True,
-        help="""Refresh the page when the location is updated. For multipage apps this should be \
+        help="""Reload the page when the location is updated. For multipage apps this should be \
         set to True, For single page apps this should be set to False""",
     )
