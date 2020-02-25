@@ -4,7 +4,7 @@ import pytest
 
 HREF = "https://panel.holoviz.org/user_guide/Interact.html:80?color=blue#interact"
 HOSTNAME = "panel.holoviz.org"
-PATHNAME = "user_guide/Interact.html"
+PATHNAME = "/user_guide/Interact.html"
 PROTOCOL = "https"
 PORT = "80"
 SEARCH = "?color=blue"
@@ -23,7 +23,7 @@ def hostname():
 
 @pytest.fixture
 def pathname():
-    return "user_guide/Interact.html"
+    return "/user_guide/Interact.html"
 
 
 @pytest.fixture
@@ -99,7 +99,7 @@ def test_attributes_are_not_readonly(pathname, search, hash_, refresh):
     assert location.refresh == refresh
 
 
-@pytest.mark.parametrize(["invalid"], [("/",), ("/app",), ("/app/",), ("app/",),])
+@pytest.mark.parametrize(["invalid"], [("app",), ("app/",),])
 def test_pathname_raises_valueerror_if_string_invalid(invalid):
     "The pathname should be '' or (not start or end with '/')"
     with pytest.raises(ValueError):

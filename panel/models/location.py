@@ -29,8 +29,8 @@ class Location(HTMLBox):
             'https://panel.holoviz.org/user_guide/Interact.html:80?color=blue#interact'"""
     )
     hostname = String(help="hostname in window.location e.g. 'panel.holoviz.org'")
-    pathname = String(help="pathname in window.location e.g. 'user_guide/Interact.html'")
-    protocol = String(help="protocol in window.location e.g. 'https:'")
+    pathname = String(help="pathname in window.location e.g. '/user_guide/Interact.html'")
+    protocol = String(help="protocol in window.location e.g. 'https'")
     port = String(help="port in window.location e.g. 80")
     search = String(help="search in window.location e.g. '?color=blue'")
     hash_ = String(help="hash in window.location e.g. '#interact'")

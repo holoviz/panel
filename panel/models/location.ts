@@ -9,14 +9,15 @@ export class LocationView extends HTMLBoxView {
     initialize(): void {
         super.initialize();
 
-        this.model.href = window.location.href;
-        this.model.hostname = window.location.hostname;
         this.model.pathname = window.location.pathname;
-        this.model.protocol = window.location.protocol;
-        this.model.port = window.location.port;
         this.model.search = window.location.search;
         this.model.hash_ = window.location.hash;
-        this.model.refresh = true;
+
+        // Readonly parameters on python side
+        this.model.href = window.location.href;
+        this.model.hostname = window.location.hostname;
+        this.model.protocol = window.location.protocol;
+        this.model.port = window.location.port;
     }
 
     connect_signals(): void {
@@ -107,7 +108,7 @@ export class Location extends HTMLBox {
             port: [p.String, window.location.port],
             search: [p.String, window.location.search],
             hash_: [p.String, window.location.hash],
-            refresh: [p.Boolean, true],
+            refresh: [p.Boolean, false],
         })
     }
 }
