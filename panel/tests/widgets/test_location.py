@@ -39,7 +39,7 @@ def hash_():
 
 
 @pytest.fixture
-def refresh():
+def reload():
     return True
 
 
@@ -54,7 +54,7 @@ def test_constructor():
     assert actual.port == ""
     assert actual.search == ""
     assert actual.hash_ == ""
-    assert actual.refresh == True
+    assert actual.reload == True
 
 
 def test_href_is_readonly(href):
@@ -81,14 +81,14 @@ def test_port_is_readonly(port):
         Location(port=port)
 
 
-def test_attributes_are_not_readonly(pathname, search, hash_, refresh):
+def test_attributes_are_not_readonly(pathname, search, hash_, reload):
     # When
-    location = Location(pathname=pathname, search=search, hash_=hash_, refresh=refresh)
+    location = Location(pathname=pathname, search=search, hash_=hash_, reload=reload)
     # Then
     assert location.pathname == pathname
     assert location.search == search
     assert location.hash_ == hash_
-    assert location.refresh == refresh
+    assert location.reload == reload
 
 
 @pytest.mark.parametrize(["invalid"], [("app",), ("app/",),])
@@ -126,7 +126,7 @@ def test_readonly_workaround_works(href, hostname, protocol, port):
     location.port == port
 
 
-def test_location_comm(document, comm, pathname, search, hash_, refresh):
+def test_location_comm(document, comm, pathname, search, hash_, reload):
     # Given
     location = Location()
 
@@ -145,13 +145,13 @@ def test_location_comm(document, comm, pathname, search, hash_, refresh):
     location._comm_change({"hash_": hash_})
     assert location.hash_ == hash_
 
-    location._comm_change({"refresh": refresh})
-    assert location.refresh == refresh
+    location._comm_change({"reload": reload})
+    assert location.reload == reload
 
 
 if __name__.startswith("bk"):
     pn.config.sizing_mode = "stretch_width"
-    location = Location(refresh=False)
+    location = Location(reload=False)
     parameters = [
         "href",
         "hostname",
@@ -160,6 +160,6 @@ if __name__.startswith("bk"):
         "port",
         "search",
         "hash_",
-        "refresh",
+        "reload",
     ]
     pn.Column(location, pn.Param(location, parameters=parameters)).servable()

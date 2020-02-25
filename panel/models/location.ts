@@ -23,15 +23,13 @@ export class LocationView extends HTMLBoxView {
         console.info("connect_signals");
         super.connect_signals();
 
-        this.render();
-
         this.connect(this.model.properties.pathname.change, () => this.update());
         this.connect(this.model.properties.search.change, () => this.update());
         this.connect(this.model.properties.hash_.change, () => this.update());
     }
 
     update(): void {
-        if (!this.model.refresh) {
+        if (!this.model.reload) {
             window.history.pushState(
                 {},
                 '',
@@ -58,7 +56,7 @@ export namespace Location {
         port: p.Property<string>
         search: p.Property<string>
         hash_: p.Property<string>
-        refresh: p.Property<boolean>
+        reload: p.Property<boolean>
     }
 }
 
@@ -82,7 +80,7 @@ export class Location extends HTMLBox {
             port: [p.String, window.location.port],
             search: [p.String, window.location.search],
             hash_: [p.String, window.location.hash],
-            refresh: [p.Boolean, true],
+            reload: [p.Boolean, true],
         })
     }
 }
