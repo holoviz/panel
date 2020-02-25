@@ -1,6 +1,5 @@
 import { HTMLBox, HTMLBoxView } from "models/layouts/html_box"
 
-import { div } from "core/dom"
 import * as p from "core/properties"
 
 export class LocationView extends HTMLBoxView {
@@ -32,7 +31,7 @@ export class LocationView extends HTMLBoxView {
     }
 
     update(): void {
-        if (this.model.refresh) {
+        if (!this.model.refresh) {
             window.history.pushState(
                 {},
                 '',
@@ -45,33 +44,8 @@ export class LocationView extends HTMLBoxView {
         }
 
         this.model.href = window.location.href;
-        this.render();
     }
-
-    render(): void {
-        // Todo: remove content. Here for manual testing
-        console.info("render");
-        super.render()
-
-        var myString = `
-        ${this.model.href}
-        ${this.model.hostname}
-        ${this.model.pathname}
-        ${this.model.protocol}
-        ${this.model.port}
-        ${this.model.search}
-        ${this.model.hash_}
-        ${this.model.refresh}
-        `;
-
-        this.el.appendChild(div({
-            style: {
-                padding: '2px',
-                color: '#b88d8e',
-                backgroundColor: '#2a3153',
-            },
-        }, myString))
-    }
+    // render(): void { }
 }
 
 export namespace Location {
@@ -108,7 +82,7 @@ export class Location extends HTMLBox {
             port: [p.String, window.location.port],
             search: [p.String, window.location.search],
             hash_: [p.String, window.location.hash],
-            refresh: [p.Boolean, false],
+            refresh: [p.Boolean, true],
         })
     }
 }

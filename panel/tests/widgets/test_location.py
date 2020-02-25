@@ -2,14 +2,6 @@ import panel as pn
 from panel.widgets.location import Location
 import pytest
 
-HREF = "https://panel.holoviz.org/user_guide/Interact.html:80?color=blue#interact"
-HOSTNAME = "panel.holoviz.org"
-PATHNAME = "/user_guide/Interact.html"
-PROTOCOL = "https"
-PORT = "80"
-SEARCH = "?color=blue"
-HASH_ = "#interact"
-
 
 @pytest.fixture
 def href():
@@ -28,7 +20,7 @@ def pathname():
 
 @pytest.fixture
 def protocol():
-    return "https"
+    return "https:"
 
 
 @pytest.fixture
@@ -48,7 +40,7 @@ def hash_():
 
 @pytest.fixture
 def refresh():
-    return False
+    return True
 
 
 def test_constructor():
@@ -62,7 +54,7 @@ def test_constructor():
     assert actual.port == ""
     assert actual.search == ""
     assert actual.hash_ == ""
-    assert actual.refresh == False
+    assert actual.refresh == True
 
 
 def test_href_is_readonly(href):
@@ -117,6 +109,21 @@ def test_hash_raises_valueerror_if_string_invalid():
     # When/ Then
     with pytest.raises(ValueError):
         Location(hash_="section2")
+
+
+def test_readonly_workaround_works(href, hostname, protocol, port):
+    # Given
+    location = Location()
+    # When
+    location._href = href
+    location._hostname = hostname
+    location._protocol = protocol
+    location._port = port
+    # Then
+    location.href == href
+    location.hostname == hostname
+    location.protocol == protocol
+    location.port == port
 
 
 def test_location_comm(document, comm, pathname, search, hash_, refresh):
