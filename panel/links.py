@@ -393,11 +393,11 @@ class JSCallbackGenerator(CallbackGenerator):
 class JSLinkCallbackGenerator(JSCallbackGenerator):
 
     _link_template = """
-    value = source['{src_attr}'];
+    var value = source['{src_attr}'];
     value = {src_transform};
     value = {tgt_transform};
     try {{
-      property = target.properties['{tgt_attr}'];
+      var property = target.properties['{tgt_attr}'];
       if (property !== undefined) {{ property.validate(value); }}
     }} catch(err) {{
       console.log('WARNING: Could not set {tgt_attr} on target, raised error: ' + err);
