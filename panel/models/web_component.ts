@@ -1,7 +1,7 @@
-import { HTMLBox, HTMLBoxView } from "models/layouts/html_box"
+import { HTMLBox, HTMLBoxView } from "@bokehjs/models/layouts/html_box"
 
 // import { div } from "core/dom"
-import * as p from "core/properties"
+import * as p from "@bokehjs/core/properties"
 
 export class WebComponentView extends HTMLBoxView {
     model: WebComponent
@@ -63,6 +63,8 @@ export class WebComponent extends HTMLBox {
     constructor(attrs?: Partial<WebComponent.Attrs>) {
         super(attrs)
     }
+
+    static __module__ = "panel.models.web_component"
 
     static init_WebComponent(): void {
         this.prototype.default_view = WebComponentView;
