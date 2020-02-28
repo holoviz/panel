@@ -30,10 +30,9 @@ from pyviz_comms import (
 )
 
 try:
-    from bokeh.util.string import encode_utf8, escape
-except:
+    from bokeh.util.string import escape
+except Exception:
     from html import escape
-    encode_utf8 = lambda s: s
 
 from ..compiler import require_components
 from .embed import embed_state
@@ -189,7 +188,7 @@ def html_for_render_items(comm_js, docs_json, render_items, template=None, templ
         template = _env.from_string("{% extends base %}\n" + template)
 
     html = template.render(context)
-    return encode_utf8(html)
+    return html
 
 
 def render_template(document, comm=None):
@@ -223,7 +222,7 @@ def render_model(model, comm=None):
         docs_json=serialize_json(docs_json),
         render_items=serialize_json([render_item]),
     )
-    bokeh_script, bokeh_div = encode_utf8(script), encode_utf8(div)
+    bokeh_script, bokeh_div = script, div
     html = "<div id='{id}'>{html}</div>".format(id=target, html=bokeh_div)
 
     # Publish bokeh plot JS

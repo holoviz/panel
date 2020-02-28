@@ -18,11 +18,6 @@ from bokeh.models import Div
 from bokeh.resources import CDN
 from pyviz_comms import Comm
 
-try:
-    from bokeh.util.string import decode_utf8
-except:
-    decode_utf8 = lambda s: s
-
 from ..config import config
 from ..models import HTML
 from .embed import embed_state
@@ -163,10 +158,7 @@ def save(panel, filename, title=None, resources=None, template=None,
 
     html = file_html(doc, resources, title, **kwargs)
     if hasattr(filename, 'write'):
-        html = decode_utf8(html)
-        if isinstance(filename, io.BytesIO):
-            html = html.encode('utf-8')
         filename.write(html)
-        return
-    with io.open(filename, mode="w", encoding="utf-8") as f:
-        f.write(decode_utf8(html))
+    else:
+        with io.open(filename, mode="w", encoding="utf-8") as f:
+            f.write(html)
