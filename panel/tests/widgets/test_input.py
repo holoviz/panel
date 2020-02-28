@@ -27,29 +27,29 @@ def test_checkbox(document, comm):
 
 
 def test_date_picker(document, comm):
-    date_picker = DatePicker(name='DatePicker', value=datetime(2018, 9, 2),
-                             start=datetime(2018, 9, 1), end=datetime(2018, 9, 10))
+    date_picker = DatePicker(name='DatePicker', value=date(2018, 9, 2),
+                             start=date(2018, 9, 1), end=date(2018, 9, 10))
 
     widget = date_picker.get_root(document, comm=comm)
 
     assert isinstance(widget, date_picker._widget_type)
     assert widget.title == 'DatePicker'
-    assert widget.value == datetime(2018, 9, 2)
-    assert widget.min_date == datetime(2018, 9, 1)
-    assert widget.max_date == datetime(2018, 9, 10)
+    assert widget.value == '2018-09-02'
+    assert widget.min_date == '2018-09-01'
+    assert widget.max_date == '2018-09-10'
 
     widget.value = 'Mon Sep 03 2018'
     date_picker._comm_change({'value': 'Mon Sep 03 2018'})
-    assert date_picker.value == datetime(2018, 9, 3)
+    assert date_picker.value == date(2018, 9, 3)
 
     date_picker._comm_change({'value': date(2018, 9, 5)})
     assert date_picker.value == date(2018, 9, 5)
 
-    date_picker._comm_change({'value': datetime(2018, 9, 6)})
-    assert date_picker.value == datetime(2018, 9, 6)
+    date_picker._comm_change({'value': date(2018, 9, 6)})
+    assert date_picker.value == date(2018, 9, 6)
 
-    date_picker.value = datetime(2018, 9, 4)
-    assert widget.value == date_picker.value
+    date_picker.value = date(2018, 9, 4)
+    assert widget.value == '2018-09-04'
 
 
 def test_file_input(document, comm):
