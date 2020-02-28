@@ -126,7 +126,7 @@ if you have any problems with the steps here, please `contact the developers`_.
 .. _contact the developers: https://gitter.im/pyviz/pyviz
 .. _conda package manager: https://conda.io/docs/intro.html
 .. _conda documentation: https://conda.io/docs/index.html
-.. _Download conda: https://conda.io/docs/download.html
+.. _Download conda: https://docs.conda.io/projects/conda/en/latest/user-guide/install/download.html
 .. _Git: https://git-scm.com
 .. _GitHub: https://github.com
 .. _Installing Git: https://git-scm.com/book/en/v2/Getting-Started-Installing-Git
