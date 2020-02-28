@@ -18,6 +18,7 @@ except Exception:
     pytestmark = pytest.mark.skip('Pipeline requires HoloViews.')
 
 
+
 class Stage1(param.Parameterized):
 
     a = param.Number(default=5, bounds=(0, 10))
