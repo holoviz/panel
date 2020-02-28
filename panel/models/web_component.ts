@@ -3,31 +3,25 @@ import { HTMLBox, HTMLBoxView } from "models/layouts/html_box"
 // import { div } from "core/dom"
 import * as p from "core/properties"
 
-export class RadioButtonView extends HTMLBoxView {
-    model: RadioButton
+export class WebComponentView extends HTMLBoxView {
+    model: WebComponent
     webComponentElement: any
 
     initialize(): void {
         super.initialize()
-
-        // this.el.innerHTML = this.model.html
-        // this.webComponentElement = this.el.firstElementChild;
-        // console.log(this.webComponentElement);
-        // this.connect(this.webComponentElement.properties["checked"].change, () => this.watch())
     }
 
     connect_signals(): void {
         super.connect_signals()
-        this.connect(this.model.properties.html.change, () => this.render())
+        this.connect(this.model.properties.innerHTML.change, () => this.render())
     }
 
     render(): void {
         super.render()
 
-        if (this.el.innerHTML !== this.model.html) {
-            this.el.innerHTML = this.model.html; // Todo: Remove
+        if (this.el.innerHTML !== this.model.innerHTML) {
+            this.el.innerHTML = this.model.innerHTML; // Todo: Remove
             this.webComponentElement = this.el.firstElementChild;
-            console.log(this.webComponentElement);
 
             // Since far from all web components change the attribute when the corresponding property is changed
             // we need to watch the properties and not the attributes
@@ -38,6 +32,7 @@ export class RadioButtonView extends HTMLBoxView {
     }
 
     watch(ev: any): void {
+        // Todo: Should depend on attributesWatched list
         var change = ev.detail["checked"];
         if (change === true) {
             this.webComponentElement.setAttribute("checked", "")
@@ -47,33 +42,33 @@ export class RadioButtonView extends HTMLBoxView {
             this.webComponentElement.setAttribute("checked", change)
         }
 
-        if (this.model.html !== this.webComponentElement.outerHTML) {
-            this.model.html = this.webComponentElement.outerHTML;
+        if (this.model.innerHTML !== this.webComponentElement.outerHTML) {
+            this.model.innerHTML = this.webComponentElement.outerHTML;
         }
     }
 }
 
-export namespace RadioButton {
+export namespace WebComponent {
     export type Attrs = p.AttrsOf<Props>
     export type Props = HTMLBox.Props & {
-        html: p.Property<string>
+        innerHTML: p.Property<string>
     }
 }
 
-export interface RadioButton extends RadioButton.Attrs { }
+export interface WebComponent extends WebComponent.Attrs { }
 
-export class RadioButton extends HTMLBox {
-    properties: RadioButton.Props
+export class WebComponent extends HTMLBox {
+    properties: WebComponent.Props
 
-    constructor(attrs?: Partial<RadioButton.Attrs>) {
+    constructor(attrs?: Partial<WebComponent.Attrs>) {
         super(attrs)
     }
 
-    static init_RadioButton(): void {
-        this.prototype.default_view = RadioButtonView;
+    static init_WebComponent(): void {
+        this.prototype.default_view = WebComponentView;
 
-        this.define<RadioButton.Props>({
-            html: [p.String, '<wired-radio id="1" checked>Radio Two</wired-radio>'],
+        this.define<WebComponent.Props>({
+            innerHTML: [p.String, '<wired-radio id="1" checked>Radio Two</wired-radio>'],
         })
     }
 }
