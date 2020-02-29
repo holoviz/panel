@@ -10,3 +10,4 @@ class WebComponent(HTMLBox):
 
     See https://www.predix-ui.com/#/elements/px-app-nav"""
     innerHTML = properties.String('')
+    attributesToSync = properties.Dict(properties.String, properties.Any)

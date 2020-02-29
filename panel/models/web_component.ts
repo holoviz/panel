@@ -27,23 +27,25 @@ export class WebComponentView extends HTMLBoxView {
             // we need to watch the properties and not the attributes
             // An example is wired-radio from https://www.npmjs.com/package/wired-radio
             // When we click that, the checked property is changed but not the checked attribute
-            this.webComponentElement.onchange = (ev: any) => this.watch(ev);
+            this.webComponentElement.onchange = (ev: any) => this.synchronize(ev);
         }
     }
 
-    watch(ev: any): void {
+    synchronize(ev: any): void {
         // Todo: Should depend on attributesWatched list
-        var change = ev.detail["checked"];
-        if (change === true) {
-            this.webComponentElement.setAttribute("checked", "")
-        } else if (change === false) {
-            this.webComponentElement.removeAttribute("checked")
-        } else {
-            this.webComponentElement.setAttribute("checked", change)
-        }
+        for (let attribute in this.model.attributesToSync) {
+            var change = ev.detail[attribute];
+            if (change === true) {
+                this.webComponentElement.setAttribute(attribute, "")
+            } else if (change === false) {
+                this.webComponentElement.removeAttribute(attribute)
+            } else {
+                this.webComponentElement.setAttribute(attribute, change)
+            }
 
-        if (this.model.innerHTML !== this.webComponentElement.outerHTML) {
-            this.model.innerHTML = this.webComponentElement.outerHTML;
+            if (this.model.innerHTML !== this.webComponentElement.outerHTML) {
+                this.model.innerHTML = this.webComponentElement.outerHTML;
+            }
         }
     }
 }
@@ -51,7 +53,8 @@ export class WebComponentView extends HTMLBoxView {
 export namespace WebComponent {
     export type Attrs = p.AttrsOf<Props>
     export type Props = HTMLBox.Props & {
-        innerHTML: p.Property<string>
+        innerHTML: p.Property<string>,
+        attributesToSync: p.Property<any> // A dictionary
     }
 }
 
@@ -70,7 +73,8 @@ export class WebComponent extends HTMLBox {
         this.prototype.default_view = WebComponentView;
 
         this.define<WebComponent.Props>({
-            innerHTML: [p.String, '<wired-radio id="1" checked>Radio Two</wired-radio>'],
+            innerHTML: [p.String, ''],
+            attributesToSync: [p.Any] // A dictionary
         })
     }
 }
