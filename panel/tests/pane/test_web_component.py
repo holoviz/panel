@@ -4,7 +4,7 @@ import pytest
 
 @pytest.fixture
 def html():
-    return '<wired-radio boolean id="1">Radio Two</wired-radio>'
+    return '<wired-radio id="1" string="" integer="0" number="0.0">Radio Two</wired-radio>'
 
 @pytest.fixture
 def CustomWebComponent(html):
@@ -26,24 +26,39 @@ def attributes_to_watch():
     return {"boolean": "boolean"}
 
 
-def test_constructor(html, attributes_to_watch):
+def test_constructor(CustomWebComponent, html, attributes_to_watch):
     # When
-    web_component = WebComponent(html=html, attributes_to_watch=attributes_to_watch)
+    component = CustomWebComponent(html=html, attributes_to_watch=attributes_to_watch)
 
     # Then
-    web_component.html == html
-    web_component.attributes_to_watch == attributes_to_watch
+    assert component.html == html
+    assert component.attributes_to_watch == attributes_to_watch
 
-def test_web_component(document, comm, html, attributes_to_watch):
-    web_component = WebComponent(html=html, attributes_to_watch = attributes_to_watch)
+def test_constructor_with_parameter_values(CustomWebComponent):
+    """I think it most natural that the parameter values takes precedence over attribute values"""
+    # Given
+    html = '<a></a>'
+    boolean= True
+    string = "s"
+    integer = 1
+    number = 1.1
+
+    # When
+    component = CustomWebComponent(html=html, boolean=boolean, string=string, integer=integer, number=number)
+
+    # Then
+    assert component.string == string
+    assert component.html == '<a boolean="" string="s" integer="1" number="1.1"></a>'
+
+def test_web_component(document, comm, html):
+    web_component = WebComponent(html=html)
 
     # Create pane
     model = web_component.get_root(document, comm=comm)
     assert web_component._models[model.ref['id']][0] is model
     assert type(model).__name__ == 'WebComponent'
     assert model.innerHTML == html
-    assert model.attributesToWatch == attributes_to_watch
-
+    assert model.attributesToWatch == {}
     # Cleanup
     web_component._cleanup(model)
     assert web_component._models == {}
@@ -116,15 +131,43 @@ def test_update_parameters_integer(CustomWebComponent):
     custom_web_component.html = '<a></a>'
     assert custom_web_component.integer == custom_web_component.param.integer.default
 
+def test_update_parameters_number(CustomWebComponent):
+    # When/ Then
+    custom_web_component = CustomWebComponent(attributes_to_watch={"number": "number"})
+    custom_web_component.html = '<a></a>'
+    assert custom_web_component.number == custom_web_component.param.integer.default
+    custom_web_component.html = '<a number="4.1"></a>'
+    assert custom_web_component.number == 4.1
+    custom_web_component.html = '<a></a>'
+    assert custom_web_component.number == custom_web_component.param.integer.default
+    custom_web_component.html = '<a number="40.507407407407406"></a>'
+    assert custom_web_component.number == 40.507407407407406
+
 def test_update_not_supported_parameter_type():
-    """updating an unsupported type of parameter should raise an TypeError"""
+    """watching a type of parameter that is not supported should raise n TypeError"""
     class Component(WebComponent):
-        """Mockup used for testing"""
         html = param.String("<a></a>")
         attributes_to_watch = param.Dict({"attribute": "parameter"})
 
         parameter = param.Action()
 
-    component = Component()
     with pytest.raises(TypeError):
-        component.html = "<a attribute=""></a>"
+        Component()
+
+def test_parameter_change_triggers_attribute_change(CustomWebComponent):
+    component = CustomWebComponent()
+
+    component.boolean=True
+    assert component.boolean==True
+    assert component.html == '<wired-radio id="1" string="" integer="0" number="0.0" boolean="">Radio Two</wired-radio>'
+
+    component.boolean=False
+    assert component.boolean==False
+    assert component.html == '<wired-radio id="1" string="" integer="0" number="0.0">Radio Two</wired-radio>'
+
+    component.boolean=True
+    component.string="a"
+    component.integer=1
+    component.number=1.1
+    assert component.html == '<wired-radio id="1" string="a" integer="1" number="1.1" boolean="">Radio Two</wired-radio>'
+

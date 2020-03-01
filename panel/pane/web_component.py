@@ -6,6 +6,9 @@ from panel.widgets.base import Widget
 from typing import Set, Dict, Optional
 
 from html.parser import HTMLParser
+# Todo: For now i'm using lxml for . @Philipp should now if that is ok to add as a requirement
+# or if we need to find another solution like regex or BeautifulSoup
+import lxml.html as LH
 
 # Todo: Systematically go through this parameter types and update this dictionary
 PARAMETER_TYPE = {
@@ -42,7 +45,10 @@ class WebComponent(Widget):
     - A Boolean parameter set to True like `checked=True` is in included as `checked` or `checked=""` in the html
     - A Boolean parameter set to False is not included in the html
 
-    Please make sure the parameter and corresponding html attribute is in sync on construction
+    Please note
+
+    - The html attributes in attributes_to_watch will be set to the corresponding parameter value
+    on construction.
     """
 
     _rename = {"title": None, "html": "innerHTML", "attributes_to_watch": "attributesToWatch"}
@@ -81,6 +87,14 @@ class WebComponent(Widget):
 
         self.parser: HTMLParser = AttributeParser()
         self.param.watch(self._update_parameters, ['html',])
+
+        # Todo: Maybe setup watch of attributes_to_watch so that the below is updated if attributes_to_watch change
+        # after construction
+        if self.attributes_to_watch:
+            parameters_to_watch = [value for value in self.attributes_to_watch.values() if value]
+            self.param.watch(self._update_html, parameters_to_watch)
+
+        self._update_html()
 
     def _child_parameters(self) -> Set:
         """Returns a set of any new parameters added on self compared to WebComponent.
@@ -151,40 +165,39 @@ class WebComponent(Widget):
     def _update_parameter(self, attr_dict, attribute, parameter, parameter_type):
         parameter_value = getattr(self, parameter)
         if attribute in attr_dict:
-            new_parameter_value = parameter_type(attr_dict[attribute])
+            attr_value = attr_dict[attribute]
+            new_parameter_value = parameter_type(attr_value)
         else:
             new_parameter_value = self.param[parameter].default
 
         if new_parameter_value!=parameter_value:
             setattr(self, parameter, new_parameter_value)
 
+    def _update_html(self, event=None):
+        if not self.attributes_to_watch:
+            return
 
-    # def _update_string_parameter(self, attr_dict, attribute, parameter):
-    #     parameter_value = getattr(self, parameter)
-    #     if attribute in attr_dict:
-    #         attr_value = str(attr_dict[attribute])
-
-    #         if attr_value!=parameter_value:
-    #             setattr(self, parameter, attr_value)
-    #     elif parameter_value!=self.param[parameter].default:
-    #         setattr(self, parameter, self.param[parameter].default)
-
-    # def _update_integer_parameter(self, attr_dict, attribute, parameter):
-    #     parameter_value = getattr(self, parameter)
-    #     if attribute in attr_dict:
-    #         attr_value = int(attr_dict[attribute])
-
-    #         if attr_value!=parameter_value:
-    #             setattr(self, parameter, attr_value)
-    #     elif parameter_value!=self.param[parameter].default:
-    #         setattr(self, parameter, self.param[parameter].default)
-
-    # def _update_number_parameter(self, attr_dict, attribute, parameter):
-    #     parameter_value = getattr(self, parameter)
-    #     if attribute in attr_dict:
-    #         attr_value = float(attr_dict[attribute])
-
-    #         if attr_value!=parameter_value:
-    #             setattr(self, parameter, attr_value)
-    #     elif parameter_value!=self.param[parameter].default:
-    #         setattr(self, parameter, self.param[parameter].default)
+        html = self.html
+        root = LH.fromstring(html)
+        for attribute, parameter in self.attributes_to_watch.items():
+            if parameter:
+                if event and event.name!=parameter:
+                    next
+                # if event and event.new == False:
+                #     breakpoint()
+                parameter_value = getattr(self, parameter)
+                parameter_item = self.param[parameter]
+                if isinstance(parameter_item, param.Boolean):
+                    if parameter_value:
+                        attribute_value = ""
+                        root.set(attribute, attribute_value)
+                    elif attribute in root.attrib:
+                        del root.attrib[attribute]
+                else:
+                    attribute_value = str(parameter_value)
+                    root.set(attribute, attribute_value)
+        new_html = LH.tostring(root).decode("utf-8")
+        # Todo: Find out if I need to check. I'm just afraid that this will trigger parameter update
+        # and an infinite cycle will start
+        if new_html != self.html:
+            self.html = new_html
