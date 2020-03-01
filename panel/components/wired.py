@@ -3,6 +3,7 @@ import param
 
 from panel.pane import WebComponent
 
+JS_FILES = ["https://unpkg.com/wired-elements@latest/dist/wired-elements.bundled.js"]
 
 class RadioButton(WebComponent):
     """A Wired RadioButton"""

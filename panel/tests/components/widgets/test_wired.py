@@ -9,9 +9,14 @@ def test_slider(CustomWebComponent):
 
 def test_view():
     js = """
-<script src="https://unpkg.com/@webcomponents/webcomponentsjs@2.0.0/webcomponents-loader.js"></script>
-<script type="module" src="https://unpkg.com/wired-elements@0.6.4/dist/wired-elements.bundled.js"></script>
+<script src="https://unpkg.com/@webcomponents/webcomponentsjs@2.2.7/webcomponents-loader.js"></script>
+<script src="https://wiredjs.com/dist/showcase.min.js"></script>
 """
+    # <script src="https://unpkg.com/@webcomponents/webcomponentsjs@2.0.0/webcomponents-loader.js"></script>
+    # https://wiredjs.com/dist/showcase.min.js
+    # pn.config.js_files["webcomponents-loaded"]="https://unpkg.com/@webcomponents/webcomponentsjs@latest/webcomponents-loader.js"
+    # pn.config.js_files["wired-button"]="https://unpkg.com/wired-button@1.0.0/lib/wired-button.js"
+
     radio_button = RadioButton()
     check_box = CheckBox()
     check_box_checked = CheckBox(checked=True)
