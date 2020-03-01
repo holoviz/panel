@@ -3,23 +3,36 @@ import param
 
 from panel.pane import WebComponent
 
-JS_FILES = ["https://unpkg.com/wired-elements@latest/dist/wired-elements.bundled.js"]
+# Todo: Determine if the bundle should be loaded or only files for individual components
+# Todo: Determine if the webcomponents-loader should be included for older browsers
+JS_FILES = {
+    "webcomponents-loader": "https://unpkg.com/@webcomponents/webcomponentsjs@2.2.7/webcomponents-loader.js",
+    "wired-bundle": "https://wiredjs.com/dist/showcase.min.js"
+    }
+
 
 class RadioButton(WebComponent):
     """A Wired RadioButton"""
-    html = param.String('<wired-radio>Radio Two</wired-radio>')
+    # Todo: If the innerHTML/ label is not set the the elements is not really clickable
+    # I need to find out how to handle this. Guess it something about width, height etc.
+    # Todo: support setting label via parameter
+    html = param.String('<wired-radio>Radio Button Label</wired-radio>')
     attributes_to_watch= param.Dict({"checked": "checked"})
 
     checked = param.Boolean(default=False)
 
 class CheckBox(WebComponent):
-    html = param.String('<wired-checkbox id="strokeShape" class="wired-rendered">Stroke shape</wired-checkbox>')
+    # Todo: If the innerHTML/ label is not set the the elements is not really clickable
+    # I need to find out how to handle this. Guess it something about width, height etc.
+    # Todo: support setting label via parameter
+    html = param.String('<wired-checkbox>CheckBox Label</wired-checkbox>')
     attributes_to_watch= param.Dict({"checked": "checked"})
 
     checked = param.Boolean(default=False)
 
 class Slider(WebComponent):
-    html = param.String('<wired-slider id="slider" value="33.1" knobradius="15" class="wired-rendered" style="margin: 0px"></wired-slider>')
+    # Todo: The slider is not working due to https://github.com/wiredjs/wired-elements/issues/121#issue-573516963
+    html = param.String('<wired-slider></wired-slider>')
     attributes_to_watch= param.Dict({"value": "value"})
 
     def __init__(self, min_height=40, **params):
@@ -28,7 +41,9 @@ class Slider(WebComponent):
     value = param.Number(default=33.1)
 
 class ComboBox(WebComponent):
-    html = param.String("""<wired-combo id="colorCombo" selected="red" role="combobox" aria-haspopup="listbox" tabindex="0" class="wired-rendered" aria-expanded="false"><wired-item value="red" aria-selected="true" role="option" class="wired-rendered">Red</wired-item><wired-item value="green" role="option" class="wired-rendered">Green</wired-item><wired-item value="blue" role="option" class="wired-rendered">Blue</wired-item></wired-combo>""")
+    # Todo: Implement api for added wired-combo-items to the innerhtml
+    # Todo: The selected attribute/ parameter is not updated. Fix this
+    html = param.String("""<wired-combo></wired-combo>""")
     attributes_to_watch= param.Dict({"selected": "selected"})
 
     def __init__(self, min_height=40, **params):

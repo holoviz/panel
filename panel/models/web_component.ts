@@ -20,6 +20,9 @@ export class WebComponentView extends HTMLBoxView {
         super.render()
 
         if (this.el.innerHTML !== this.model.innerHTML) {
+            if (this.webComponentElement) {
+                this.webComponentElement.onchange = null;
+            }
             this.el.innerHTML = this.model.innerHTML; // Todo: Remove
             this.webComponentElement = this.el.firstElementChild;
 
@@ -30,6 +33,7 @@ export class WebComponentView extends HTMLBoxView {
             this.webComponentElement.onchange = (ev: any) => this.synchronize(ev);
         }
     }
+
 
     synchronize(ev: any): void {
         // Todo: Should depend on attributesWatched list
@@ -43,9 +47,10 @@ export class WebComponentView extends HTMLBoxView {
                 this.webComponentElement.setAttribute(attribute, change)
             }
 
-            if (this.model.innerHTML !== this.webComponentElement.outerHTML) {
-                this.model.innerHTML = this.webComponentElement.outerHTML;
-            }
+
+        }
+        if (this.model.innerHTML !== this.webComponentElement.outerHTML) {
+            this.model.innerHTML = this.webComponentElement.outerHTML;
         }
     }
 }
