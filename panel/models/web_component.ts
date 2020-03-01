@@ -33,7 +33,7 @@ export class WebComponentView extends HTMLBoxView {
 
     synchronize(ev: any): void {
         // Todo: Should depend on attributesWatched list
-        for (let attribute in this.model.attributesToSync) {
+        for (let attribute in this.model.attributesToWatch) {
             var change = ev.detail[attribute];
             if (change === true) {
                 this.webComponentElement.setAttribute(attribute, "")
@@ -54,7 +54,7 @@ export namespace WebComponent {
     export type Attrs = p.AttrsOf<Props>
     export type Props = HTMLBox.Props & {
         innerHTML: p.Property<string>,
-        attributesToSync: p.Property<any> // A dictionary
+        attributesToWatch: p.Property<any> // A dictionary
     }
 }
 
@@ -74,7 +74,7 @@ export class WebComponent extends HTMLBox {
 
         this.define<WebComponent.Props>({
             innerHTML: [p.String, ''],
-            attributesToSync: [p.Any] // A dictionary
+            attributesToWatch: [p.Any] // A dictionary
         })
     }
 }
