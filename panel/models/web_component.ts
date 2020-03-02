@@ -26,6 +26,7 @@ export class WebComponentView extends HTMLBoxView {
             }
             this.el.innerHTML = this.model.innerHTML; // Todo: Remove
             this.webComponentElement = this.el.firstElementChild;
+            this.handlePropertiesLastChangeChange(); // initializes to the correct properties
 
             // Since far from all web components change the attribute when the corresponding property is changed
             // we need to watch the properties and not the attributes
@@ -35,6 +36,7 @@ export class WebComponentView extends HTMLBoxView {
         }
     }
 
+    // Todo: Set this up
     // handle_innerHTML_change(ev: any): void {
     //     if (this.model.innerHTML !== this.webComponentElement.outerHTML) {
     //         this.model.innerHTML = this.webComponentElement.outerHTML;
@@ -44,7 +46,6 @@ export class WebComponentView extends HTMLBoxView {
 
     handlePropertiesChange(ev: any): void {
         // Todo: remove logging
-        console.log(ev);
         var properties_change: any = new Object();
         for (let property in this.model.propertiesToWatch) {
             if (property in ev.detail) {

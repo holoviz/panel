@@ -108,6 +108,7 @@ class WebComponent(Widget):
             self.param.watch(self._handle_parameter_property_change, parameters_to_watch)
 
         self._update_html()
+        self._update_properties()
 
     def _child_parameters(self) -> Set:
         """Returns a set of any new parameters added on self compared to WebComponent.
@@ -235,5 +236,15 @@ class WebComponent(Widget):
 
         change = {event.name: event.new}
         self.properties_last_change = change
+
+    def _update_properties(self):
+        if not self.properties_to_watch or not isinstance(self.properties_to_watch, dict):
+            return
+
+        change = {}
+        for property_, parameter in self.properties_to_watch.items():
+            value = getattr(self, parameter)
+            change[property_]=value
+        self.properties_last_change=change
 
 
