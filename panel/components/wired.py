@@ -51,5 +51,20 @@ class ComboBox(WebComponent):
 
     selected = param.String(default="red")
 
+class Input(WebComponent):
+    # Todo: Implement api for added wired-combo-items to the innerhtml
+    # Todo: The selected attribute/ parameter is not updated. Fix this
+    html = param.String("""<wired-input></wired-input>""")
+    properties_to_watch= param.Dict({"placeholder": "placeholder", "disabled": "disabled", "type": "type_", "value": "value"})
+
+    def __init__(self, min_height=40, **params):
+        super().__init__(min_height=min_height, **params)
+
+    placeholder = param.String(default="Enter Value")
+    disabled = param.Boolean(default=False)
+    type_ = param.String() # Todo: Change to ObjectSelect. Type can be password etc
+    value = param.String()
+
+
 class Video(WebComponent):
     html = param.String("""<wired-video autoplay="" playsinline="" muted="" loop="" style="height: 100%; margin: 0px" src="https://file-examples.com/wp-content/uploads/2017/04/file_example_MP4_480_1_5MG.mp4" class="wired-rendered"></wired-video>""")

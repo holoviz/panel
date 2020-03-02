@@ -21,12 +21,18 @@ export class WebComponentView extends HTMLBoxView {
         super.render()
 
         if (this.el.innerHTML !== this.model.innerHTML) {
+            var webComponentElementOld: any = null
             if (this.webComponentElement) {
                 this.webComponentElement.onchange = null;
+                webComponentElementOld = this.webComponentElement;
             }
             this.el.innerHTML = this.model.innerHTML; // Todo: Remove
             this.webComponentElement = this.el.firstElementChild;
-            this.handlePropertiesLastChangeChange(); // initializes to the correct properties
+            if (!webComponentElementOld) {
+                // initializes to the correct properties on first construction
+                this.handlePropertiesLastChangeChange();
+            }
+
 
             // Since far from all web components change the attribute when the corresponding property is changed
             // we need to watch the properties and not the attributes
