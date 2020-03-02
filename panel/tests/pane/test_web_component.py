@@ -25,7 +25,6 @@ def CustomWebComponent(html):
 def attributes_to_watch():
     return {"boolean": "boolean"}
 
-
 def test_constructor(CustomWebComponent, html, attributes_to_watch):
     # When
     component = CustomWebComponent(html=html, attributes_to_watch=attributes_to_watch)
@@ -170,4 +169,38 @@ def test_parameter_change_triggers_attribute_change(CustomWebComponent):
     component.integer=1
     component.number=1.1
     assert component.html == '<wired-radio id="1" string="a" integer="1" number="1.1" boolean="">Radio Two</wired-radio>'
+
+def test_property_change_triggers_parameter_change(CustomWebComponent):
+    # Given
+    component = CustomWebComponent(attributes_to_watch={}, properties_to_watch={"boolean": "boolean"})
+
+    # When/ Then
+    component.properties_last_change = {"boolean": True}
+    assert component.boolean == True
+    component.properties_last_change = {"boolean": False}
+    assert component.boolean == False
+    component.properties_last_change = {"boolean": True}
+    assert component.boolean == True
+
+def test_parameter_change_triggers_property_change(CustomWebComponent):
+    # Given
+    component = CustomWebComponent(
+        attributes_to_watch={},
+        properties_to_watch={"boolean": "boolean", "string": "string", "integer": "integer", "number": "number"})
+
+    # When/ Then
+    component.boolean = True
+    assert component.properties_last_change == {"boolean": True}
+    component.boolean = False
+    assert component.properties_last_change == {"boolean": False}
+    component.boolean = True
+    assert component.properties_last_change == {"boolean": True}
+    component.string = "a"
+    assert component.properties_last_change == {"string": "a"}
+    component.integer = 1
+    assert component.properties_last_change == {"integer": 1}
+    component.number = 1.1
+    assert component.properties_last_change == {"number": 1.1}
+
+
 

@@ -17,7 +17,7 @@ class RadioButton(WebComponent):
     # I need to find out how to handle this. Guess it something about width, height etc.
     # Todo: support setting label via parameter
     html = param.String('<wired-radio>Radio Button Label</wired-radio>')
-    attributes_to_watch= param.Dict({"checked": "checked"})
+    properties_to_watch= param.Dict({"checked": "checked"})
 
     checked = param.Boolean(default=False)
 
@@ -26,14 +26,14 @@ class CheckBox(WebComponent):
     # I need to find out how to handle this. Guess it something about width, height etc.
     # Todo: support setting label via parameter
     html = param.String('<wired-checkbox>CheckBox Label</wired-checkbox>')
-    attributes_to_watch= param.Dict({"checked": "checked"})
+    properties_to_watch= param.Dict({"checked": "checked"})
 
     checked = param.Boolean(default=False)
 
 class Slider(WebComponent):
     # Todo: The slider is not working due to https://github.com/wiredjs/wired-elements/issues/121#issue-573516963
     html = param.String('<wired-slider></wired-slider>')
-    attributes_to_watch= param.Dict({"value": "value"})
+    properties_to_watch= param.Dict({"value": "value"})
 
     def __init__(self, min_height=40, **params):
         super().__init__(min_height=min_height, **params)
@@ -44,7 +44,7 @@ class ComboBox(WebComponent):
     # Todo: Implement api for added wired-combo-items to the innerhtml
     # Todo: The selected attribute/ parameter is not updated. Fix this
     html = param.String("""<wired-combo></wired-combo>""")
-    attributes_to_watch= param.Dict({"selected": "selected"})
+    properties_to_watch= param.Dict({"selected": "selected"})
 
     def __init__(self, min_height=40, **params):
         super().__init__(min_height=min_height, **params)

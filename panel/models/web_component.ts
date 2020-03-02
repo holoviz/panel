@@ -14,6 +14,7 @@ export class WebComponentView extends HTMLBoxView {
     connect_signals(): void {
         super.connect_signals()
         this.connect(this.model.properties.innerHTML.change, () => this.render())
+        this.connect(this.model.properties.propertiesLastChange.change, () => this.handlePropertiesLastChangeChange())
     }
 
     render(): void {
@@ -30,28 +31,42 @@ export class WebComponentView extends HTMLBoxView {
             // we need to watch the properties and not the attributes
             // An example is wired-radio from https://www.npmjs.com/package/wired-radio
             // When we click that, the checked property is changed but not the checked attribute
-            this.webComponentElement.onchange = (ev: any) => this.synchronize(ev);
+            this.webComponentElement.onchange = (ev: any) => this.handlePropertiesChange(ev);
         }
     }
 
+    // handle_innerHTML_change(ev: any): void {
+    //     if (this.model.innerHTML !== this.webComponentElement.outerHTML) {
+    //         this.model.innerHTML = this.webComponentElement.outerHTML;
+    //     }
+    // }
 
-    synchronize(ev: any): void {
-        // Todo: Should depend on attributesWatched list
-        for (let attribute in this.model.attributesToWatch) {
-            var change = ev.detail[attribute];
-            if (change === true) {
-                this.webComponentElement.setAttribute(attribute, "")
-            } else if (change === false) {
-                this.webComponentElement.removeAttribute(attribute)
-            } else {
-                this.webComponentElement.setAttribute(attribute, change)
+
+    handlePropertiesChange(ev: any): void {
+        // Todo: remove logging
+        console.log(ev);
+        var properties_change: any = new Object();
+        for (let property in this.model.propertiesToWatch) {
+            if (property in ev.detail) {
+                properties_change[property] = ev.detail[property];
             }
-
-
         }
-        if (this.model.innerHTML !== this.webComponentElement.outerHTML) {
-            this.model.innerHTML = this.webComponentElement.outerHTML;
+        if (Object.keys(properties_change).length) {
+            this.model.propertiesLastChange = properties_change;
         }
+    }
+
+    handlePropertiesLastChangeChange(): void {
+        if (!this.webComponentElement) { return; }
+
+        var propertiesLastChange: any = this.model.propertiesLastChange;
+        for (let property in this.model.propertiesLastChange) {
+            if (property in this.model.propertiesToWatch) {
+                var value = propertiesLastChange[property]
+                this.webComponentElement[property] = value;
+            }
+        }
+
     }
 }
 
@@ -60,6 +75,8 @@ export namespace WebComponent {
     export type Props = HTMLBox.Props & {
         innerHTML: p.Property<string>,
         attributesToWatch: p.Property<any> // A dictionary
+        propertiesToWatch: p.Property<p.Any>, // A dictionary
+        propertiesLastChange: p.Property<p.Any>, // A dictionary
     }
 }
 
@@ -79,7 +96,9 @@ export class WebComponent extends HTMLBox {
 
         this.define<WebComponent.Props>({
             innerHTML: [p.String, ''],
-            attributesToWatch: [p.Any] // A dictionary
+            attributesToWatch: [p.Any], // A dictionary
+            propertiesToWatch: [p.Any], // A dictionary
+            propertiesLastChange: [p.Any], // A dictionary
         })
     }
 }
