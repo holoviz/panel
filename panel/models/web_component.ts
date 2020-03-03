@@ -5,8 +5,9 @@ import * as p from "@bokehjs/core/properties"
 
 export class WebComponentView extends HTMLBoxView {
     model: WebComponent
-    webComponentElement: any
-    eventsCount: any
+    webComponentElement: any // Element
+    eventsCount: any // Dict
+    propertyValues: any // Dict
 
     initialize(): void {
         super.initialize()
@@ -38,6 +39,7 @@ export class WebComponentView extends HTMLBoxView {
             }
             this.el.innerHTML = this.model.innerHTML; // Todo: Remove
             this.webComponentElement = this.el.firstElementChild;
+            this.initPropertyValues();
             if (!webComponentElementOld) {
                 // initializes to the correct properties on first construction
                 this.handlePropertiesLastChangeChange();
@@ -62,11 +64,32 @@ export class WebComponentView extends HTMLBoxView {
     //     }
     // }
     eventHandler(ev: Event): void {
+        console.log("eventHandler")
+        console.log(ev);
         var event = ev.type;
         this.eventsCount[event] += 1;
         var eventsCountLastChanged: any = {};
         eventsCountLastChanged[event] = this.eventsCount[event]
         this.model.eventsCountLastChange = eventsCountLastChanged;
+
+        this.checkIfPropertiesChanged()
+    }
+
+    checkIfPropertiesChanged(): void {
+        console.log("checkIfPropertiesChanged")
+        var propertiesChange: any = {};
+        for (let property in this.model.propertiesToWatch) {
+            var oldValue: any = this.propertyValues[property];
+            var newValue: any = this.webComponentElement[property];
+            if (oldValue != newValue) {
+                propertiesChange[property] = newValue;
+                this.propertyValues[property] = newValue;
+            }
+        }
+        if (Object.keys(propertiesChange).length) {
+            this.model.propertiesLastChange = propertiesChange;
+        }
+        console.log(this.propertyValues);
     }
 
     handlePropertiesChange(ev: any): void {
@@ -75,11 +98,27 @@ export class WebComponentView extends HTMLBoxView {
         for (let property in this.model.propertiesToWatch) {
             if (property in ev.detail) {
                 properties_change[property] = ev.detail[property];
+                this.propertyValues[property] = ev.detail[property];
             }
         }
         if (Object.keys(properties_change).length) {
             this.model.propertiesLastChange = properties_change;
         }
+    }
+
+    initPropertyValues(): void {
+        console.log("initPropertyValues");
+        this.propertyValues = new Object();
+        if (!this.webComponentElement) { return; }
+
+        for (let property in this.model.propertiesToWatch) {
+            var old_value = this.propertyValues[property];
+            var new_value = this.webComponentElement[property];
+            if (new_value !== old_value) {
+                this.propertyValues = new_value;
+            }
+        }
+        console.log(this.propertyValues);
     }
 
     handlePropertiesLastChangeChange(): void {
@@ -92,7 +131,6 @@ export class WebComponentView extends HTMLBoxView {
                 this.webComponentElement[property] = value;
             }
         }
-
     }
 }
 

@@ -54,12 +54,13 @@ class ComboBox(WebComponent):
     # Todo: The selected attribute/ parameter is not updated. Fix this
     html = param.String("""<wired-combo></wired-combo>""")
     properties_to_watch= param.Dict({"selected": "selected"})
-    events_to_watch = param.Dict(default={"select": None})
+    events_to_watch = param.Dict(default={"selected": "selects"})
 
     def __init__(self, min_height=40, **params):
         super().__init__(min_height=min_height, **params)
 
     selected = param.String(default="red")
+    selects = param.Integer()
 
 class Input(WebComponent):
     # Todo: Implement api for added wired-combo-items to the innerhtml

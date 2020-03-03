@@ -33,7 +33,7 @@ def test_view():
         check_box_checked, pn.Param(check_box_checked, parameters=["html", "checked"]),
         radio_button, pn.Param(radio_button, parameters=["html", "checked"]),
         slider, pn.Param(slider, parameters=["html", "value"]), "**The slider value attribute is not working**. See [Wired Issue](https://github.com/wiredjs/wired-elements/issues/121#issue-573516963)",
-        combobox, pn.Param(combobox, parameters=["html", "selected"]), "**The combobox attribute or onchange event is not working** See [Wired Issue](https://github.com/wiredjs/wired-elements/issues/122)",
+        combobox, pn.Param(combobox, parameters=["html", "selects", "selected"]), "**The combobox attribute or onchange event is not working** See [Wired Issue](https://github.com/wiredjs/wired-elements/issues/122)",
         wired_input, pn.Param(wired_input, parameters=["html", "placeholder", "disabled", "type", "value"]),
         # video, pn.Param(video.param.html),
     )
