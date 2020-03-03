@@ -13,3 +13,5 @@ class WebComponent(HTMLBox):
     attributesToWatch = properties.Dict(properties.String, properties.Any)
     propertiesToWatch = properties.Dict(properties.String, properties.Any)
     propertiesLastChange = properties.Dict(properties.String, properties.Any)
+    eventsToWatch = properties.Dict(properties.String, properties.Any)
+    eventsCountLastChange = properties.Dict(properties.String, properties.Int)

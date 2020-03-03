@@ -6,6 +6,7 @@ import * as p from "@bokehjs/core/properties"
 export class WebComponentView extends HTMLBoxView {
     model: WebComponent
     webComponentElement: any
+    eventsCount: any
 
     initialize(): void {
         super.initialize()
@@ -15,6 +16,15 @@ export class WebComponentView extends HTMLBoxView {
         super.connect_signals()
         this.connect(this.model.properties.innerHTML.change, () => this.render())
         this.connect(this.model.properties.propertiesLastChange.change, () => this.handlePropertiesLastChangeChange())
+        this.connect(this.model.properties.eventsToWatch.change, () => this.handleEventsToWatchChange())
+    }
+
+    handleEventsToWatchChange(): void {
+        console.log("handleEventsToWatchChange")
+        console.log(this.model.eventsToWatch);
+        // for (let event in this.model.eventsToWatch) {
+        //     this.webComponentElement.addEventListener(event, () => { console.log(this.webComponentElement) }, false)
+        // }
     }
 
     render(): void {
@@ -34,13 +44,16 @@ export class WebComponentView extends HTMLBoxView {
             }
 
 
-            // Since far from all web components change the attribute when the corresponding property is changed
-            // we need to watch the properties and not the attributes
-            // An example is wired-radio from https://www.npmjs.com/package/wired-radio
-            // When we click that, the checked property is changed but not the checked attribute
             this.webComponentElement.onchange = (ev: any) => this.handlePropertiesChange(ev);
+            this.eventsCount = {};
+            for (let event in this.model.eventsToWatch) {
+                this.eventsCount[event] = 0
+                this.webComponentElement.addEventListener(event, (ev: Event) => this.eventHandler(ev), false)
+            }
         }
     }
+
+    // Todo: Find out if onchange and event listeners should be removed "on destroy"
 
     // Todo: Set this up
     // handle_innerHTML_change(ev: any): void {
@@ -48,7 +61,13 @@ export class WebComponentView extends HTMLBoxView {
     //         this.model.innerHTML = this.webComponentElement.outerHTML;
     //     }
     // }
-
+    eventHandler(ev: Event): void {
+        var event = ev.type;
+        this.eventsCount[event] += 1;
+        var eventsCountLastChanged: any = {};
+        eventsCountLastChanged[event] = this.eventsCount[event]
+        this.model.eventsCountLastChange = eventsCountLastChanged;
+    }
 
     handlePropertiesChange(ev: any): void {
         // Todo: remove logging
@@ -79,11 +98,16 @@ export class WebComponentView extends HTMLBoxView {
 
 export namespace WebComponent {
     export type Attrs = p.AttrsOf<Props>
+    // Todo: make property types more specific
     export type Props = HTMLBox.Props & {
+        // Todo: should we just use object instead of innerHTML?
+        // Just like for the HTML element
         innerHTML: p.Property<string>,
         attributesToWatch: p.Property<any> // A dictionary
         propertiesToWatch: p.Property<p.Any>, // A dictionary
         propertiesLastChange: p.Property<p.Any>, // A dictionary
+        eventsToWatch: p.Property<p.Any> // A dictionary
+        eventsCountLastChange: p.Property<p.Any> // A Dictionary
     }
 }
 
@@ -106,6 +130,8 @@ export class WebComponent extends HTMLBox {
             attributesToWatch: [p.Any], // A dictionary
             propertiesToWatch: [p.Any], // A dictionary
             propertiesLastChange: [p.Any], // A dictionary
+            eventsToWatch: [p.Any], // A dictionary
+            eventsCountLastChange: [p.Any] // A list
         })
     }
 }

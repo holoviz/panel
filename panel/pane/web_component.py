@@ -6,6 +6,7 @@ from panel.widgets.base import Widget
 from typing import Set, Dict, Optional
 
 from html.parser import HTMLParser
+
 # Todo: For now i'm using lxml for . @Philipp should now if that is ok to add as a requirement
 # or if we need to find another solution like regex or BeautifulSoup
 import lxml.html as LH
@@ -51,7 +52,15 @@ class WebComponent(Widget):
     on construction.
     """
 
-    _rename = {"title": None, "html": "innerHTML", "attributes_to_watch": "attributesToWatch", "properties_to_watch": "propertiesToWatch", "properties_last_change": "propertiesLastChange"}
+    _rename = {
+        "title": None,
+        "html": "innerHTML",
+        "attributes_to_watch": "attributesToWatch",
+        "properties_to_watch": "propertiesToWatch",
+        "properties_last_change": "propertiesLastChange",
+        "events_to_watch": "eventsToWatch",
+        "events_count_last_change": "eventsCountLastChange",
+    }
     _widget_type = _BkWebComponent
 
     # Todo: Consider the right name: element, html, tag or ?
@@ -77,14 +86,32 @@ class WebComponent(Widget):
     attributes_to_watch = {"checked": "checked", "value": None, "ballSize": "ball_size"}
     """
     )
-    properties_to_watch = param.Dict(doc="""
+    properties_to_watch = param.Dict(
+        doc="""
     The key is the name of the js property. The value is the name of the python parameter
     """
     )
-    properties_last_change = param.Dict(doc="""
+    properties_last_change = param.Dict(
+        doc="""
 
     The key is the name of the property changed. The value is the new value of the property
-    """)
+    """
+    )
+    events_to_watch = param.Dict(
+        doc="""
+    The key is the name of the js event. The value is the name of a python parameter to increment or None
+
+    Use this if you want to support button clicks, mouseups etc.
+
+    When the event is fired on the js side any changes to the html or properties_to_change will
+    also be sent. Use this if you webcomponent don't fire the onchange event when your property changes
+    """
+    )
+    events_count_last_change = param.Dict(
+        doc="""
+        Key is the name of the event, Value is the number of times it has fired in total
+        """
+    )
 
     def __init__(self, **params):
         # Avoid AttributeError: unexpected attribute ...
@@ -94,8 +121,9 @@ class WebComponent(Widget):
         super().__init__(**params)
 
         self.parser: HTMLParser = AttributeParser()
-        self.param.watch(self._update_parameters, ['html',])
-        self.param.watch(self._handle_properties_last_change, ['properties_last_change',])
+        self.param.watch(self._update_parameters, ["html",])
+        self.param.watch(self._handle_properties_last_change, ["properties_last_change",])
+        self.param.watch(self._handle_events_count_last_change, ["events_count_last_change",])
 
         # Todo: Maybe setup watch of attributes_to_watch so that the below is updated if attributes_to_watch change
         # after construction
@@ -165,7 +193,7 @@ class WebComponent(Widget):
         if attribute in attr_dict:
             attr_value = attr_dict[attribute]
             # <a attribute=""></a> or <a attribute></a> is True
-            if (attr_value=="" or not attr_value):
+            if attr_value == "" or not attr_value:
                 new_parameter_value = True
             # <a></a> is False
             else:
@@ -173,7 +201,7 @@ class WebComponent(Widget):
         else:
             new_parameter_value = False
 
-        if new_parameter_value!=parameter_value:
+        if new_parameter_value != parameter_value:
             setattr(self, parameter, new_parameter_value)
 
     def _update_parameter(self, attr_dict, attribute, parameter, parameter_type):
@@ -184,7 +212,7 @@ class WebComponent(Widget):
         else:
             new_parameter_value = self.param[parameter].default
 
-        if new_parameter_value!=parameter_value:
+        if new_parameter_value != parameter_value:
             setattr(self, parameter, new_parameter_value)
 
     def _update_html(self, event=None):
@@ -195,7 +223,7 @@ class WebComponent(Widget):
         root = LH.fromstring(html)
         for attribute, parameter in self.attributes_to_watch.items():
             if parameter:
-                if event and event.name!=parameter:
+                if event and event.name != parameter:
                     next
                 # if event and event.new == False:
                 #     breakpoint()
@@ -217,7 +245,7 @@ class WebComponent(Widget):
             self.html = new_html
 
     def _handle_properties_last_change(self, event):
-        if not self.properties_to_watch or not event.new: # or not isinstance(event.new, dict):
+        if not self.properties_to_watch or not event.new:  # or not isinstance(event.new, dict):
             return
 
         # Todo: If we can skip the check below at all or just put in try/ catch to speed up
@@ -226,6 +254,23 @@ class WebComponent(Widget):
                 next
 
             parameter = self.properties_to_watch[property_]
+            old_value = getattr(self, parameter)
+            if old_value != new_value:
+                setattr(self, parameter, new_value)
+
+    def _handle_events_count_last_change(self, event):
+        if not self.events_to_watch or not event.new:  # or not isinstance(event.new, dict):
+            return
+
+        # Todo: If we can skip the check below at all or just put in try/ catch to speed up
+        for property_, new_value in event.new.items():
+            if not property_ in self.events_to_watch:
+                next
+
+            parameter = self.events_to_watch[property_]
+            if not parameter:
+                next
+
             old_value = getattr(self, parameter)
             if old_value != new_value:
                 setattr(self, parameter, new_value)
@@ -244,7 +289,5 @@ class WebComponent(Widget):
         change = {}
         for property_, parameter in self.properties_to_watch.items():
             value = getattr(self, parameter)
-            change[property_]=value
-        self.properties_last_change=change
-
-
+            change[property_] = value
+        self.properties_last_change = change

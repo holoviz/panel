@@ -1,4 +1,4 @@
-from panel.components.wired import RadioButton, CheckBox, Slider, ComboBox, Input
+from panel.components.wired import Button, RadioButton, CheckBox, Slider, ComboBox, Input
 import panel as pn
 
 def test_slider():
@@ -18,7 +18,7 @@ def test_view():
     # pn.config.js_files["webcomponents-loaded"]="https://unpkg.com/@webcomponents/webcomponentsjs@latest/webcomponents-loader.js"
     # pn.config.js_files["wired-button"]="https://unpkg.com/wired-button@1.0.0/lib/wired-button.js"
 
-
+    button = Button()
     radio_button = RadioButton()
     check_box = CheckBox()
     check_box_checked = CheckBox(checked=True)
@@ -28,6 +28,7 @@ def test_view():
     # video = Video(height=500)
     return pn.Column(
         pn.pane.HTML(js),
+        button, pn.Param(button, parameters=["html", "events_count_last_change", "clicks"]),
         check_box, pn.Param(check_box, parameters=["html", "checked"]),
         check_box_checked, pn.Param(check_box_checked, parameters=["html", "checked"]),
         radio_button, pn.Param(radio_button, parameters=["html", "checked"]),

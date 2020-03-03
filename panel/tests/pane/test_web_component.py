@@ -18,6 +18,7 @@ def CustomWebComponent(html):
         string = param.String()
         integer = param.Integer()
         number = param.Number()
+        clicks = param.Integer()
 
     return CustomWebComponent_
 
@@ -201,6 +202,15 @@ def test_parameter_change_triggers_property_change(CustomWebComponent):
     assert component.properties_last_change == {"integer": 1}
     component.number = 1.1
     assert component.properties_last_change == {"number": 1.1}
+
+def test_events_count_last_change_triggers_parameter_update(CustomWebComponent):
+    # Given
+    web_component = CustomWebComponent(events_to_watch={"click": "clicks"})
+    # When
+    web_component.events_count_last_change = {"click": 2}
+    # Then
+    assert web_component.clicks == 2
+
 
 
 

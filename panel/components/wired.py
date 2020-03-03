@@ -10,6 +10,15 @@ JS_FILES = {
     "wired-bundle": "https://wiredjs.com/dist/showcase.min.js"
     }
 
+class Button(WebComponent):
+    """A Wired RadioButton"""
+    # Todo: If the innerHTML/ label is not set the the elements is not really clickable
+    # I need to find out how to handle this. Guess it something about width, height etc.
+    # Todo: support setting label via parameter
+    html = param.String('<wired-button>Button</wired-radio>')
+    events_to_watch = param.Dict(default={"click": "clicks"})
+
+    clicks = param.Integer()
 
 class RadioButton(WebComponent):
     """A Wired RadioButton"""
@@ -45,6 +54,7 @@ class ComboBox(WebComponent):
     # Todo: The selected attribute/ parameter is not updated. Fix this
     html = param.String("""<wired-combo></wired-combo>""")
     properties_to_watch= param.Dict({"selected": "selected"})
+    events_to_watch = param.Dict(default={"select": None})
 
     def __init__(self, min_height=40, **params):
         super().__init__(min_height=min_height, **params)
