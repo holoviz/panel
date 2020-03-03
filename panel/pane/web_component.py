@@ -103,6 +103,7 @@ class WebComponent(Widget):
 
     Use this if you want to support button clicks, mouseups etc.
 
+    # Below is not implemented yet
     When the event is fired on the js side any changes to the html or properties_to_change will
     also be sent. Use this if you webcomponent don't fire the onchange event when your property changes
     """

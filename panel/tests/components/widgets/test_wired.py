@@ -28,7 +28,7 @@ def test_view():
     # video = Video(height=500)
     return pn.Column(
         pn.pane.HTML(js),
-        button, pn.Param(button, parameters=["html", "events_count_last_change", "clicks"]),
+        button, pn.Param(button, parameters=["html", "clicks"]),
         check_box, pn.Param(check_box, parameters=["html", "checked"]),
         check_box_checked, pn.Param(check_box_checked, parameters=["html", "checked"]),
         radio_button, pn.Param(radio_button, parameters=["html", "checked"]),
