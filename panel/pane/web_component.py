@@ -16,6 +16,7 @@ PARAMETER_TYPE = {
     param.String: str,
     param.Integer: int,
     param.Number: float,
+    param.ObjectSelector: str,
 }
 
 
