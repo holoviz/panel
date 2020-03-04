@@ -3,6 +3,8 @@ import { HTMLBox, HTMLBoxView } from "@bokehjs/models/layouts/html_box"
 // import { div } from "core/dom"
 import * as p from "@bokehjs/core/properties"
 
+// Todo: Remove console.log
+// Reight now they are helpfull
 export class WebComponentView extends HTMLBoxView {
     model: WebComponent
     webComponentElement: any // Element
@@ -10,25 +12,22 @@ export class WebComponentView extends HTMLBoxView {
     propertyValues: any // Dict
 
     initialize(): void {
+        console.log("initialize")
         super.initialize()
+        console.log("initialize - DONE")
     }
 
     connect_signals(): void {
+        console.log("connect signals")
         super.connect_signals()
         this.connect(this.model.properties.innerHTML.change, () => this.render())
         this.connect(this.model.properties.propertiesLastChange.change, () => this.handlePropertiesLastChangeChange())
         this.connect(this.model.properties.eventsToWatch.change, () => this.handleEventsToWatchChange())
-    }
-
-    handleEventsToWatchChange(): void {
-        console.log("handleEventsToWatchChange")
-        console.log(this.model.eventsToWatch);
-        // for (let event in this.model.eventsToWatch) {
-        //     this.webComponentElement.addEventListener(event, () => { console.log(this.webComponentElement) }, false)
-        // }
+        console.log("connect signals - DONE")
     }
 
     render(): void {
+        console.log("render")
         super.render()
 
         if (this.el.innerHTML !== this.model.innerHTML) {
@@ -53,6 +52,19 @@ export class WebComponentView extends HTMLBoxView {
                 this.webComponentElement.addEventListener(event, (ev: Event) => this.eventHandler(ev), false)
             }
         }
+        console.log("render - DONE")
+    }
+
+    handleEventsToWatchChange(): void {
+        // Todo: Implement this
+        // First old eventlisteners should be removed
+        // Then the new should be added
+        // This should be used in the render section
+
+        // console.log("handleEventsToWatchChange")
+        // for (let event in this.model.eventsToWatch) {
+        //     this.webComponentElement.addEventListener(event, () => { console.log(this.webComponentElement) }, false)
+        // }
     }
 
     // Todo: Find out if onchange and event listeners should be removed "on destroy"
@@ -73,6 +85,7 @@ export class WebComponentView extends HTMLBoxView {
         this.model.eventsCountLastChange = eventsCountLastChanged;
 
         this.checkIfPropertiesChanged()
+        console.log("eventHandler - Done")
     }
 
     checkIfPropertiesChanged(): void {
@@ -90,10 +103,11 @@ export class WebComponentView extends HTMLBoxView {
             this.model.propertiesLastChange = propertiesChange;
         }
         console.log(this.propertyValues);
+        console.log("checkIfPropertiesChanged - Done")
     }
 
     handlePropertiesChange(ev: any): void {
-        // Todo: remove logging
+        console.log("handlePropertiesChange")
         var properties_change: any = new Object();
         for (let property in this.model.propertiesToWatch) {
             if (property in ev.detail) {
@@ -104,6 +118,8 @@ export class WebComponentView extends HTMLBoxView {
         if (Object.keys(properties_change).length) {
             this.model.propertiesLastChange = properties_change;
         }
+        console.log(properties_change)
+        console.log("handlePropertiesChange - Done")
     }
 
     initPropertyValues(): void {
@@ -115,15 +131,18 @@ export class WebComponentView extends HTMLBoxView {
             var old_value = this.propertyValues[property];
             var new_value = this.webComponentElement[property];
             if (new_value !== old_value) {
-                this.propertyValues = new_value;
+                this.propertyValues[property] = new_value;
             }
         }
         console.log(this.propertyValues);
+        console.log("initPropertyValues - DONE");
     }
 
     handlePropertiesLastChangeChange(): void {
+        console.log("handlePropertiesLastChangeChange")
         if (!this.webComponentElement) { return; }
 
+        console.log(this.model.propertiesLastChange);
         var propertiesLastChange: any = this.model.propertiesLastChange;
         for (let property in this.model.propertiesLastChange) {
             if (property in this.model.propertiesToWatch) {
@@ -131,6 +150,7 @@ export class WebComponentView extends HTMLBoxView {
                 this.webComponentElement[property] = value;
             }
         }
+        console.log("handlePropertiesLastChangeChange - done")
     }
 }
 
