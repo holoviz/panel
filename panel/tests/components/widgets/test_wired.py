@@ -1,5 +1,18 @@
-from panel.components.wired import Button, RadioButton, CheckBox, Slider, ComboBox, Input
+from panel.components.wired import WiredBase, Button, Calendar, RadioButton, CheckBox, Slider, ComboBox, Input
 import panel as pn
+
+def test_wired_base():
+    base = WiredBase()
+
+    assert base.disabled == False
+    assert "disabled" in base._child_parameters()
+    assert "elevation" in base._child_parameters()
+
+def test_wired_child_of_base():
+    child = Button()
+    assert "disabled" in child.attributes_to_watch
+    assert "elevation" in child.attributes_to_watch
+
 
 def test_slider():
     # When/ Then
@@ -18,7 +31,17 @@ def test_view():
     # pn.config.js_files["webcomponents-loaded"]="https://unpkg.com/@webcomponents/webcomponentsjs@latest/webcomponents-loader.js"
     # pn.config.js_files["wired-button"]="https://unpkg.com/wired-button@1.0.0/lib/wired-button.js"
 
+    js_pane = pn.pane.HTML(js)
+
+    def section(component, message=None):
+        title = "## " + str(type(component)).split(".")[3][:-2]
+
+        if message:
+            return (title, component, pn.Param(component, parameters=["html"] + list(component._child_parameters())), pn.pane.Markdown(message), pn.layout.Divider())
+        return (title, component, pn.Param(component, parameters=["html"] + list(component._child_parameters())), pn.layout.Divider())
+
     button = Button()
+    calendar = Calendar()
     radio_button = RadioButton()
     check_box = CheckBox()
     check_box_checked = CheckBox(checked=True)
@@ -27,14 +50,15 @@ def test_view():
     combobox = ComboBox(html="""<wired-combo id="colorCombo" selected="red" role="combobox" aria-haspopup="listbox" tabindex="0" class="wired-rendered" aria-expanded="false"><wired-item value="red" aria-selected="true" role="option" class="wired-rendered">Red</wired-item><wired-item value="green" role="option" class="wired-rendered">Green</wired-item><wired-item value="blue" role="option" class="wired-rendered">Blue</wired-item></wired-combo>""")
     # video = Video(height=500)
     return pn.Column(
-        pn.pane.HTML(js),
-        button, pn.Param(button, parameters=["html", "clicks"]),
-        check_box, pn.Param(check_box, parameters=["html", "checked"]),
-        check_box_checked, pn.Param(check_box_checked, parameters=["html", "checked"]),
-        radio_button, pn.Param(radio_button, parameters=["html", "checked"]),
-        slider, pn.Param(slider, parameters=["html", "value"]), "**The slider value attribute is not working**. See [Wired Issue](https://github.com/wiredjs/wired-elements/issues/121#issue-573516963)",
-        combobox, pn.Param(combobox, parameters=["html", "selects", "selected"]), "**The combobox attribute or onchange event is not working** See [Wired Issue](https://github.com/wiredjs/wired-elements/issues/122)",
-        wired_input, pn.Param(wired_input, parameters=["html", "placeholder", "disabled", "type", "value"]),
+        js_pane,
+        *section(button),
+        *section(calendar),
+        *section(check_box),
+        *section(check_box_checked),
+        *section(radio_button),
+        *section(slider, "**The slider value cannot be set programmatically**. See [Wired Issue](https://github.com/wiredjs/wired-elements/issues/121#issue-573516963)"),
+        *section(combobox),
+        *section(wired_input),
         # video, pn.Param(video.param.html),
     )
 

@@ -2,6 +2,7 @@
 import param
 
 from panel.pane import WebComponent
+from typing import Set
 
 # Todo: Determine if the bundle should be loaded or only files for individual components
 # Todo: Determine if the webcomponents-loader should be included for older browsers
@@ -10,15 +11,56 @@ JS_FILES = {
     "wired-bundle": "https://wiredjs.com/dist/showcase.min.js"
     }
 
-class Button(WebComponent):
+class WiredBase(WebComponent):
+    """Inherit from this class"""
+    def __init__(self, **params):
+        if isinstance(self.attributes_to_watch, dict):
+            self.attributes_to_watch["disabled"]="disabled"
+
+        super().__init__(**params)
+
+    def _child_parameters(self):
+        parameters = super()._child_parameters()
+        parameters.add("disabled")
+        return parameters
+
+ELEVATION_DEFAULT = 0
+ELEVATION_BOUNDS = (0,10)
+
+class Button(WiredBase):
     """A Wired RadioButton"""
     # Todo: If the innerHTML/ label is not set the the elements is not really clickable
     # I need to find out how to handle this. Guess it something about width, height etc.
     # Todo: support setting label via parameter
     html = param.String('<wired-button>Button</wired-radio>')
+    attributes_to_watch = param.Dict({"elevation": "elevation"})
     events_to_watch = param.Dict(default={"click": "clicks"})
 
     clicks = param.Integer()
+    elevation = param.Integer(ELEVATION_DEFAULT, bounds=ELEVATION_BOUNDS)
+
+
+class Calendar(WiredBase):
+    html = param.String('<wired-calendar initials="" role="dialog tabindex="0">Button</wired-calendar>')
+    attributes_to_watch = param.Dict({"elevation": "elevation", "firstdate": "firstdate", "lastdate": "lastdate", "locale": "locale"})
+    properties_to_watch= param.Dict({"selected": "selected"})
+    events_to_watch = param.Dict(default={"selected": "selects"})
+
+    elevation = param.Integer(ELEVATION_DEFAULT, bounds=ELEVATION_BOUNDS)
+    # Todo: Support more advanced date handling
+    firstdate = param.String(doc="""
+    Example: firstdate="Apr 15, 2019"""
+    )
+    lastdate = param.String(doc="""
+    Example: lastdate="Jul 15, 2019"""
+    )
+    locale = param.ObjectSelector("en", objects=["en", "fr", "de"])
+    selected = param.String(doc="""
+    Example: selected="Jul 4, 2019""")
+    selects = param.Integer(bounds=(0,None))
+
+    def __init__(self, min_height=300, min_width=300, **params):
+        super().__init__(min_height=min_height, min_width=min_width, **params)
 
 class RadioButton(WebComponent):
     """A Wired RadioButton"""
@@ -30,7 +72,7 @@ class RadioButton(WebComponent):
 
     checked = param.Boolean(default=False)
 
-class CheckBox(WebComponent):
+class CheckBox(WiredBase):
     # Todo: If the innerHTML/ label is not set the the elements is not really clickable
     # I need to find out how to handle this. Guess it something about width, height etc.
     # Todo: support setting label via parameter
@@ -41,6 +83,8 @@ class CheckBox(WebComponent):
 
 class Slider(WebComponent):
     # Todo: The slider is not working due to https://github.com/wiredjs/wired-elements/issues/121#issue-573516963
+    # Todo: I need Philips help to understand how to avoid pn.Param(slider, parameters=["value"]) to turn red
+    # It seems the value needs to be rounded?
     html = param.String('<wired-slider></wired-slider>')
     properties_to_watch= param.Dict({"value": "value"})
 
