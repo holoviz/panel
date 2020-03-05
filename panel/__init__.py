@@ -21,6 +21,6 @@ from .template import Template # noqa
 try:
     __version__ = str(_param.version.Version(
         fpath=__file__, archive_commit="$Format:%h$", reponame="panel"))
-except:
+except Exception:
     __version__ = "0.0.0+unknown"
 
