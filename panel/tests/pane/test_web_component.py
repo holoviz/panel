@@ -26,6 +26,14 @@ def CustomWebComponent(html):
 def attributes_to_watch():
     return {"boolean": "boolean"}
 
+def test_constructor_base():
+    # When
+    component = WebComponent()
+    # Then
+    assert isinstance(component.attributes_to_watch, dict)
+    assert isinstance(component.properties_to_watch, dict)
+    assert isinstance(component.events_to_watch, dict)
+
 def test_constructor(CustomWebComponent, html, attributes_to_watch):
     # When
     component = CustomWebComponent(html=html, attributes_to_watch=attributes_to_watch)

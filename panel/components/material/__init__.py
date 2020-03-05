@@ -1,0 +1,1 @@
+from .config import MWC_ICONS

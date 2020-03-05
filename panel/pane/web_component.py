@@ -120,6 +120,15 @@ class WebComponent(Widget):
         for parameter in self._child_parameters():
             self._rename[parameter] = None
 
+        # Todo: Could not get instantiate=False, constant=False working on parameters.
+        # So I added the below
+        if not self.param.attributes_to_watch.default:
+            self.param.attributes_to_watch.default = {}
+        if not self.param.properties_to_watch.default:
+            self.param.properties_to_watch.default = {}
+        if not self.param.events_to_watch.default:
+            self.param.events_to_watch.default = {}
+
         super().__init__(**params)
 
         self.parser: HTMLParser = AttributeParser()
@@ -226,7 +235,7 @@ class WebComponent(Widget):
         for attribute, parameter in self.attributes_to_watch.items():
             if parameter:
                 if event and event.name != parameter:
-                    next
+                    continue
                 # if event and event.new == False:
                 #     breakpoint()
                 parameter_value = getattr(self, parameter)
@@ -247,15 +256,23 @@ class WebComponent(Widget):
             self.html = new_html
 
     def _handle_properties_last_change(self, event):
+        print("_handle_properties_last_change")
+        print(event)
         if not self.properties_to_watch or not event.new:  # or not isinstance(event.new, dict):
             return
 
         # Todo: If we can skip the check below at all or just put in try/ catch to speed up
         for property_, new_value in event.new.items():
             if not property_ in self.properties_to_watch:
-                next
+                continue
 
             parameter = self.properties_to_watch[property_]
+
+            parameter_item = self.param[parameter]
+            if type(parameter_item) in PARAMETER_TYPE:
+                parameter_type = PARAMETER_TYPE[type(parameter_item)]
+                new_value = parameter_type(new_value)
+
             old_value = getattr(self, parameter)
             if old_value != new_value:
                 setattr(self, parameter, new_value)
@@ -267,12 +284,13 @@ class WebComponent(Widget):
         # Todo: If we can skip the check below at all or just put in try/ catch to speed up
         for property_, new_value in event.new.items():
             if not property_ in self.events_to_watch:
-                next
+                continue
 
             parameter = self.events_to_watch[property_]
             if not parameter:
-                next
+                continue
 
+            print(parameter)
             old_value = getattr(self, parameter)
             if old_value != new_value:
                 setattr(self, parameter, new_value)
@@ -281,7 +299,10 @@ class WebComponent(Widget):
         if not self.properties_to_watch:
             return
 
-        change = {event.name: event.new}
+        parameters_to_properties = {v:k for k, v in self.properties_to_watch.items()}
+        property_name = parameters_to_properties[event.name]
+
+        change = {property_name: event.new}
         self.properties_last_change = change
 
     def _update_properties(self):

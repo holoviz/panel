@@ -55,6 +55,37 @@ export class WebComponentView extends HTMLBoxView {
         console.log("render - DONE")
     }
 
+    // See https://stackoverflow.com/questions/6491463/accessing-nested-javascript-objects-with-string-key
+    // example: reverse(element, "textInput.value") would return element.textInput.value
+    get_nested_property(element: any, property_: string): string {
+        property_ = property_.replace(/\[(\w+)\]/g, '.$1'); // convert indexes to properties
+        property_ = property_.replace(/^\./, '');           // strip a leading dot
+        var a = property_.split('.');
+        for (var i = 0, n = a.length; i < n; ++i) {
+            var k = a[i];
+            if (k in element) {
+                element = element[k];
+            } else {
+                return "";
+            }
+        }
+        return element;
+    }
+
+    set_nested_property(element: any, property_: string, value: any): void {
+        property_ = property_.replace(/\[(\w+)\]/g, '.$1'); // convert indexes to properties
+        property_ = property_.replace(/^\./, '');           // strip a leading dot
+        var a = property_.split('.');
+        for (var i = 0, n = a.length; i < n; ++i) {
+            var k = a[i];
+            if (k in element) {
+                element[k] = value;
+            } else {
+                return;
+            }
+        }
+    }
+
     handleEventsToWatchChange(): void {
         // Todo: Implement this
         // First old eventlisteners should be removed
@@ -93,7 +124,7 @@ export class WebComponentView extends HTMLBoxView {
         var propertiesChange: any = {};
         for (let property in this.model.propertiesToWatch) {
             var oldValue: any = this.propertyValues[property];
-            var newValue: any = this.webComponentElement[property];
+            var newValue: any = this.get_nested_property(this.webComponentElement, property);
             if (oldValue != newValue) {
                 propertiesChange[property] = newValue;
                 this.propertyValues[property] = newValue;
@@ -129,7 +160,7 @@ export class WebComponentView extends HTMLBoxView {
 
         for (let property in this.model.propertiesToWatch) {
             var old_value = this.propertyValues[property];
-            var new_value = this.webComponentElement[property];
+            var new_value = this.get_nested_property(this.webComponentElement, property);
             if (new_value !== old_value) {
                 this.propertyValues[property] = new_value;
             }
@@ -147,7 +178,7 @@ export class WebComponentView extends HTMLBoxView {
         for (let property in this.model.propertiesLastChange) {
             if (property in this.model.propertiesToWatch) {
                 var value = propertiesLastChange[property]
-                this.webComponentElement[property] = value;
+                this.set_nested_property(this.webComponentElement, property, value);
             }
         }
         console.log("handlePropertiesLastChangeChange - done")
