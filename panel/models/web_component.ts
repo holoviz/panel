@@ -31,7 +31,7 @@ export class WebComponentView extends HTMLBoxView {
         super.render()
 
         if (this.el.innerHTML !== this.model.innerHTML) {
-            var webComponentElementOld: any = null
+            let webComponentElementOld: any = null
             if (this.webComponentElement) {
                 this.webComponentElement.onchange = null;
                 webComponentElementOld = this.webComponentElement;
@@ -60,9 +60,9 @@ export class WebComponentView extends HTMLBoxView {
     get_nested_property(element: any, property_: string): string {
         property_ = property_.replace(/\[(\w+)\]/g, '.$1'); // convert indexes to properties
         property_ = property_.replace(/^\./, '');           // strip a leading dot
-        var a = property_.split('.');
-        for (var i = 0, n = a.length; i < n; ++i) {
-            var k = a[i];
+        let a = property_.split('.');
+        for (let i = 0, n = a.length; i < n; ++i) {
+            let k = a[i];
             if (k in element) {
                 element = element[k];
             } else {
@@ -75,9 +75,9 @@ export class WebComponentView extends HTMLBoxView {
     set_nested_property(element: any, property_: string, value: any): void {
         property_ = property_.replace(/\[(\w+)\]/g, '.$1'); // convert indexes to properties
         property_ = property_.replace(/^\./, '');           // strip a leading dot
-        var a = property_.split('.');
-        for (var i = 0, n = a.length; i < n; ++i) {
-            var k = a[i];
+        let a = property_.split('.');
+        for (let i = 0, n = a.length; i < n; ++i) {
+            let k = a[i];
             if (k in element) {
                 element[k] = value;
             } else {
@@ -109,9 +109,9 @@ export class WebComponentView extends HTMLBoxView {
     eventHandler(ev: Event): void {
         console.log("eventHandler")
         console.log(ev);
-        var event = ev.type;
+        let event = ev.type;
         this.eventsCount[event] += 1;
-        var eventsCountLastChanged: any = {};
+        let eventsCountLastChanged: any = {};
         eventsCountLastChanged[event] = this.eventsCount[event]
         this.model.eventsCountLastChange = eventsCountLastChanged;
 
@@ -121,10 +121,10 @@ export class WebComponentView extends HTMLBoxView {
 
     checkIfPropertiesChanged(): void {
         console.log("checkIfPropertiesChanged")
-        var propertiesChange: any = {};
+        let propertiesChange: any = {};
         for (let property in this.model.propertiesToWatch) {
-            var oldValue: any = this.propertyValues[property];
-            var newValue: any = this.get_nested_property(this.webComponentElement, property);
+            let oldValue: any = this.propertyValues[property];
+            let newValue: any = this.get_nested_property(this.webComponentElement, property);
             if (oldValue != newValue) {
                 propertiesChange[property] = newValue;
                 this.propertyValues[property] = newValue;
@@ -139,7 +139,7 @@ export class WebComponentView extends HTMLBoxView {
 
     handlePropertiesChange(ev: any): void {
         console.log("handlePropertiesChange")
-        var properties_change: any = new Object();
+        let properties_change: any = new Object();
         for (let property in this.model.propertiesToWatch) {
             if (property in ev.detail) {
                 properties_change[property] = ev.detail[property];
@@ -159,8 +159,8 @@ export class WebComponentView extends HTMLBoxView {
         if (!this.webComponentElement) { return; }
 
         for (let property in this.model.propertiesToWatch) {
-            var old_value = this.propertyValues[property];
-            var new_value = this.get_nested_property(this.webComponentElement, property);
+            let old_value = this.propertyValues[property];
+            let new_value = this.get_nested_property(this.webComponentElement, property);
             if (new_value !== old_value) {
                 this.propertyValues[property] = new_value;
             }
@@ -174,10 +174,10 @@ export class WebComponentView extends HTMLBoxView {
         if (!this.webComponentElement) { return; }
 
         console.log(this.model.propertiesLastChange);
-        var propertiesLastChange: any = this.model.propertiesLastChange;
+        let propertiesLastChange: any = this.model.propertiesLastChange;
         for (let property in this.model.propertiesLastChange) {
             if (property in this.model.propertiesToWatch) {
-                var value = propertiesLastChange[property]
+                let value = propertiesLastChange[property]
                 this.set_nested_property(this.webComponentElement, property, value);
             }
         }
