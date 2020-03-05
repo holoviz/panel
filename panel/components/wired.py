@@ -84,9 +84,18 @@ class Dialog(WebComponent):
     text = param.String()
 
 
+    def __init__(self, **params):
+        if "text" in params and not "html" in params:
+            params["html"] = f"<wired-dialog>{params['text']}</wired-dialog>"
+
+        super().__init__(**params)
+
     @param.depends("text", watch=True)
-    def _add_text_to_html(self):
-        self.html = f'<wired-dialog>{self.text}</wired-checkbox>'
+    def _update_html_text(self):
+        html = f"<wired-dialog>{self.text}</wired-dialog>"
+        html = self._update_attributes(html)
+        if html!=self.html:
+            self.html=html
 
 class Divider(WebComponent):
     html = param.String('<wired-divider></wired-divider>')
@@ -148,7 +157,29 @@ class Input(WiredBase):
     type_ = param.ObjectSelector("", objects=["", "password"])
     value = param.String()
 
+class Link(WebComponent):
+    html = param.String("<wired-link></wired-link>")
+    attributes_to_watch=param.Dict({"href": "href", "target": "target"})
 
+    # Todo: text is really the innerHTML and could be anything.
+    # How do we best support this?
+    text=param.String()
+    href=param.String()
+    target=param.ObjectSelector("_blank", objects=["_self", "_blank", "_parent", "_top"])
+
+    # Todo: Can we make some general functionality on WebComponentto set inner html on construction?
+    def __init__(self, **params):
+        if "text" in params and not "html" in params:
+            params["html"] = f"<wired-link>{params['text']}</wired-link>"
+
+        super().__init__(**params)
+
+    @param.depends("text", watch=True)
+    def _update_html_text(self):
+        html = f"<wired-link>{self.text}</wired-link>"
+        html = self._update_attributes(html)
+        if html!=self.html:
+            self.html=html
 
 class Spinner(WebComponent):
     html = param.String('<wired-spinner></wired-spinner>')

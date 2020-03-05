@@ -35,6 +35,17 @@ def test_wired_checkbox():
     checkbox.disabled=False
     assert "disabled" not in checkbox.html
 
+def test_dialog():
+    dialog = wired.Dialog(text="a")
+
+    # When/ Then
+    assert dialog.text == "a"
+    assert dialog.html == '<wired-dialog>a</wired-dialog>'
+
+    # When/ Then
+    dialog.text = "b"
+    assert dialog.html == '<wired-dialog>b</wired-dialog>'
+
 def test_slider():
     # When/ Then
     slider = wired.Slider(attributes_to_watch={"value": "value"})
@@ -54,8 +65,26 @@ def test_input():
 
     # When/ Then
     wired_input.type_ = "password"
-    assert wired_input.properties_last_change == {"type": "password"}
     assert "password" in wired_input.html
+
+def test_link():
+    # Given
+    wired_link = wired.Link(href="www.google.com", target="_blank", text="link")
+
+
+    # Then
+    assert wired_link.href == "www.google.com"
+    assert wired_link.target == "_blank"
+    assert wired_link.text == "link"
+    assert wired_link.html == '<wired-link href="www.google.com" target="_blank">link</wired-link>'
+
+    # When/ Then
+    wired_link.text = "another link"
+    assert wired_link.href == "www.google.com"
+    assert wired_link.target == "_blank"
+    assert wired_link.text == "another link"
+    assert wired_link.html == '<wired-link href="www.google.com" target="_blank">another link</wired-link>'
+
 
 def test_view():
     js = """
@@ -87,6 +116,7 @@ def test_view():
     fab = wired.Fab()
     icon_button = wired.IconButton()
     image = wired.Image(src="https://www.gstatic.com/webp/gallery/1.sm.jpg", height=200, width=300)
+    link = wired.Link(href="https://panel.holoviz.org/", target="_blank")
     wired_input = wired.Input()
     radio_button = wired.RadioButton()
     spinner = wired.Spinner()
@@ -105,6 +135,7 @@ def test_view():
         *section(icon_button),
         *section(image),
         *section(wired_input),
+        *section(link, "Normally you would just use the `<wired-link>` tag directly in your html or markdown text"),
         *section(radio_button),
         *section(spinner),
         *section(slider, "**The slider value cannot be set programmatically**. See [Wired Issue](https://github.com/wiredjs/wired-elements/issues/121#issue-573516963)"),

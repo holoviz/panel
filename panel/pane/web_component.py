@@ -226,8 +226,39 @@ class WebComponent(Widget):
         if new_parameter_value != parameter_value:
             setattr(self, parameter, new_parameter_value)
 
+    def _update_attributes(self, html: str) -> str:
+        """Returns a html string with the attributes updated
+
+        Parameters
+        ----------
+        html : str
+            A html string like `<wired-link>link</wired-link>`
+
+        Returns
+        -------
+        str
+            A html string like `<wired-link href="www.google.com" target="_blank">link</wired-link>`
+            based on the values of the attributes_to_watch
+        """
+        root = LH.fromstring(html)
+        for attribute, parameter in self.attributes_to_watch.items():
+            if parameter:
+                parameter_value = getattr(self, parameter)
+                parameter_item = self.param[parameter]
+                if isinstance(parameter_item, param.Boolean):
+                    if parameter_value:
+                        attribute_value = ""
+                        root.set(attribute, attribute_value)
+                    elif attribute in root.attrib:
+                        del root.attrib[attribute]
+                else:
+                    attribute_value = str(parameter_value)
+                    root.set(attribute, attribute_value)
+        html_update = LH.tostring(root).decode("utf-8")
+        return html_update
+
     def _update_html(self, event=None):
-        if not self.attributes_to_watch:
+        if not self.attributes_to_watch or not self.html:
             return
 
         html = self.html
