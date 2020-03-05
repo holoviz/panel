@@ -91,7 +91,7 @@ class Dialog(WebComponent):
         super().__init__(**params)
 
     @param.depends("text", watch=True)
-    def _update_html_text(self):
+    def _update_inner_html(self):
         html = f"<wired-dialog>{self.text}</wired-dialog>"
         html = self._update_attributes(html)
         if html!=self.html:
@@ -112,12 +112,18 @@ class Fab(WiredBase):
     icon = param.ObjectSelector("favorite", objects=MWC_ICONS, doc="""
     The name of an `mwc-icon <https://github.com/material-components/material-components-web-components/tree/master/packages/icon>`_
     """)
-    @param.depends("icon", watch=True)
-    def _set_html_icon(self):
-        self.html = f"<wired-fab><mwc-icon>{self.icon}</mwc-icon><wired-fab>"
+    def __init__(self, min_height=40, **params, ):
+        if "icon" in params and not "html" in params:
+            params["html"] = f"<wired-fab><mwc-icon>{params['icon']}</mwc-icon></wired-fab>"
 
-    def __init__(self, min_height=50, **params):
         super().__init__(min_height=min_height, **params)
+
+    @param.depends("icon", watch=True)
+    def _update_inner_html(self):
+        html = f"<wired-fab><mwc-icon>{self.icon}</mwc-icon></wired-fab>"
+        html = self._update_attributes(html)
+        if html!=self.html:
+            self.html=html
 
 class IconButton(WiredBase):
     html = param.String("<wired-icon-button><mwc-icon>favorite</mwc-icon><wired-icon-button>")
@@ -125,9 +131,18 @@ class IconButton(WiredBase):
     icon = param.ObjectSelector("favorite", objects=MWC_ICONS, doc="""
     The name of an `mwc-icon <https://github.com/material-components/material-components-web-components/tree/master/packages/icon>`_
     """)
+    def __init__(self, min_height=40, **params, ):
+        if "icon" in params and not "html" in params:
+            params["html"] = f"<wired-icon-button><mwc-icon>{params['icon']}</mwc-icon></wired-icon-button>"
+
+        super().__init__(min_height=min_height, **params)
+
     @param.depends("icon", watch=True)
-    def _set_html_icon(self):
-        self.html = f"<wired-icon-button><mwc-icon>{self.icon}</mwc-icon><wired-icon-button>"
+    def _update_inner_html(self):
+        html = f"<wired-icon-button><mwc-icon>{self.icon}</mwc-icon></wired-icon-button>"
+        html = self._update_attributes(html)
+        if html!=self.html:
+            self.html=html
 
 class Image(WebComponent):
     """The wired-image element"""
@@ -175,11 +190,34 @@ class Link(WebComponent):
         super().__init__(**params)
 
     @param.depends("text", watch=True)
-    def _update_html_text(self):
+    def _update_inner_html(self):
         html = f"<wired-link>{self.text}</wired-link>"
         html = self._update_attributes(html)
         if html!=self.html:
             self.html=html
+
+# Todo: Implement Wired wired-listbox
+
+class Progress(WebComponent):
+    html = param.String("<wired-progress></wired-progress>")
+    attributes_to_watch = param.Dict({"value": "value", "percentage": "percentage", "max": "max_"})
+
+    def __init__(self, min_height=40, **params):
+        super().__init__(min_height=min_height, **params)
+
+        if "max_" in params:
+            self._handle_max_changed()
+
+    value = param.Integer(0, bounds=(0,100))
+    max_ = param.Integer(100, bounds=(0,None))
+    percentage = param.Boolean()
+
+    @param.depends("max_", watch=True)
+    def _handle_max_changed(self):
+        self.param.value.bounds=(0, self.max_)
+
+
+
 
 class Spinner(WebComponent):
     html = param.String('<wired-spinner></wired-spinner>')

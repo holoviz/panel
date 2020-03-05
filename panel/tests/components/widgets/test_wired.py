@@ -46,6 +46,30 @@ def test_dialog():
     dialog.text = "b"
     assert dialog.html == '<wired-dialog>b</wired-dialog>'
 
+def test_fab():
+    fab = wired.Fab(icon="fast_rewind")
+
+    # When/ Then
+    assert fab.icon=="fast_rewind"
+    assert fab.html=='<wired-fab><mwc-icon>fast_rewind</mwc-icon></wired-fab>'
+
+    # When/ Then
+    fab.icon="favorite"
+    assert fab.html=='<wired-fab><mwc-icon>favorite</mwc-icon></wired-fab>'
+
+def test_icon_button():
+    icon = wired.IconButton(icon="fast_rewind")
+
+    # When/ Then
+    assert icon.icon=="fast_rewind"
+    assert icon.html=='<wired-icon-button><mwc-icon>fast_rewind</mwc-icon></wired-icon-button>'
+
+    # When/ Then
+    icon.icon="favorite"
+    assert icon.html=='<wired-icon-button><mwc-icon>favorite</mwc-icon></wired-icon-button>'
+
+
+
 def test_slider():
     # When/ Then
     slider = wired.Slider(attributes_to_watch={"value": "value"})
@@ -66,6 +90,21 @@ def test_input():
     # When/ Then
     wired_input.type_ = "password"
     assert "password" in wired_input.html
+
+def test_progress():
+    progress = wired.Progress(value=4, max_=9)
+
+    # Then
+    assert progress.value==4
+    assert progress.max_==9
+    assert progress.param.value.bounds==(0,9)
+
+    # # When/ Then
+    progress.max_=5
+    assert progress.value==4
+    assert progress.max_==5
+    assert progress.param.value.bounds==(0,5)
+
 
 def test_link():
     # Given
@@ -117,6 +156,7 @@ def test_view():
     icon_button = wired.IconButton()
     image = wired.Image(src="https://www.gstatic.com/webp/gallery/1.sm.jpg", height=200, width=300)
     link = wired.Link(href="https://panel.holoviz.org/", target="_blank")
+    progress = wired.Progress(value=50)
     wired_input = wired.Input()
     radio_button = wired.RadioButton()
     spinner = wired.Spinner()
@@ -136,6 +176,7 @@ def test_view():
         *section(image),
         *section(wired_input),
         *section(link, "Normally you would just use the `<wired-link>` tag directly in your html or markdown text"),
+        *section(progress),
         *section(radio_button),
         *section(spinner),
         *section(slider, "**The slider value cannot be set programmatically**. See [Wired Issue](https://github.com/wiredjs/wired-elements/issues/121#issue-573516963)"),
