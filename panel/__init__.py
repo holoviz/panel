@@ -18,6 +18,9 @@ from .pane import panel, Pane # noqa
 from .param import Param # noqa
 from .template import Template # noqa
 
-__version__ = str(_param.version.Version(
-    fpath=__file__, archive_commit="$Format:%h$", reponame="panel"))
+try:
+    __version__ = str(_param.version.Version(
+        fpath=__file__, archive_commit="$Format:%h$", reponame="panel"))
+except:
+    __version__ = "0.0.0+unknown"
 
