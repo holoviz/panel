@@ -280,7 +280,7 @@ class VTKVolume(PaneBase):
         original_shape = array.shape
         spacing = self.spacing
         extent = tuple((o_s - 1) * s for o_s, s in zip(original_shape, spacing))
-        dim_ratio = np.cbrt((np.prod(original_shape) / 1e6) / self.max_data_size)
+        dim_ratio = np.cbrt((array.nbytes / 1e6) / self.max_data_size)
         max_shape = tuple(int(o_s / dim_ratio) for o_s in original_shape)
         dowsnscale_factor = [max(o_s, m_s) / m_s for m_s, o_s in zip(max_shape, original_shape)]
 
