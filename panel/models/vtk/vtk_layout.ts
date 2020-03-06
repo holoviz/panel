@@ -3,10 +3,12 @@ import * as p from "@bokehjs/core/properties"
 import {div} from "@bokehjs/core/dom"
 import {clone} from "@bokehjs/core/util/object"
 import {HTMLBox} from "@bokehjs/models/layouts/html_box"
+import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source"
 
 import {PanelHTMLBoxView, set_size} from "../layout"
 
-import  {vtkns, VolumeType, majorAxis} from "./vtk_utils"
+import  {vtkns, majorAxis} from "./vtk_utils"
+
 
 export abstract class AbstractVTKView extends PanelHTMLBoxView{
   model: AbstractVTKPlot
@@ -15,6 +17,7 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView{
   protected _orientationWidget: any
   protected _widgetManager: any
   protected _setting_camera: boolean = false
+  private _isupdatable: boolean = true
 
   connect_signals(): void {
     super.connect_signals()
@@ -24,7 +27,15 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView{
     this.connect(this.model.properties.orientation_widget.change, () => {
       this._orientation_widget_visibility(this.model.orientation_widget)
     })
-    this.connect(this.model.properties.camera.change, () => this._set_camera_state())
+    this.connect(this.model.properties.camera.change, () => {
+      if (this._isupdatable) {
+        this._isupdatable = false
+        setTimeout(() => {
+          this._set_camera_state()
+          this._isupdatable = true
+        }, 100)
+      }
+    })
   }
 
   _orientation_widget_visibility(visibility: boolean): void {
@@ -163,7 +174,7 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView{
 export namespace AbstractVTKPlot {
   export type Attrs = p.AttrsOf<Props>
   export type Props = HTMLBox.Props & {
-    data: p.Property<string|VolumeType>
+    data: p.Property<string|ColumnDataSource>
     camera: p.Property<any>
     orientation_widget: p.Property<boolean>
   }

@@ -6,7 +6,7 @@ from bokeh.core.properties import (String, Bool, Dict, Any, Override,
                                    Instance, Int, Float, PositiveInt, Enum)
 from bokeh.core.has_props import abstract
 from bokeh.core.enums import enumeration
-from bokeh.models import HTMLBox, Model
+from bokeh.models import HTMLBox, Model, ColumnDataSource
 
 vtk_cdn = "https://unpkg.com/vtk.js"
 
@@ -84,7 +84,7 @@ class VTKVolumePlot(AbstractVTKPlot):
     (3D geometry objects are not suported)
     """
 
-    data = Dict(String, Any)
+    data = Instance(ColumnDataSource)
 
     colormap = String(help="Colormap Name")
 

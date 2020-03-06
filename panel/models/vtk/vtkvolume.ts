@@ -1,8 +1,9 @@
 import * as p from "@bokehjs/core/properties"
 
+import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source"
 
 import {AbstractVTKPlot, AbstractVTKView} from "./vtk_layout"
-import {VolumeType, vtkns, data2VTKImageData, hexToRGB, vtkLutToMapper, Mapper} from "./vtk_utils"
+import {vtkns, hexToRGB, vtkLutToMapper, Mapper, data2VTKImageData} from "./vtk_utils"
 
 
 declare type InterpolationType = 'fast_linear' | 'linear' | 'nearest'
@@ -134,7 +135,7 @@ export class VTKVolumePlotView extends AbstractVTKView {
       size: [400, 150],
       rescaleColorMap: this.model.rescale,
     })
-    this._vtk_image_data = data2VTKImageData((this.model.data as VolumeType))
+    this._vtk_image_data = data2VTKImageData((this.model.data as ColumnDataSource))
     this._controllerWidget.setContainer(this.el)
     this._vtk_renwin.getRenderWindow().getInteractor()
     this._vtk_renwin.getRenderWindow().getInteractor().setDesiredUpdateRate(45)

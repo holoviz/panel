@@ -6,6 +6,7 @@ from __future__ import absolute_import, division, unicode_literals
 
 import sys
 import base64
+from bokeh.models import ColumnDataSource
 
 try:
     from urllib.request import urlopen
@@ -217,9 +218,9 @@ class VTKVolume(PaneBase):
 
     def _update(self, model=None):
         self._volume_data = self._get_volume_data()
-        if self._volume_data:
+        if self._volume_data.data:
             self._orginal_dimensions = self._get_object_dimensions()
-            self._subsample_dimensions = self._volume_data['dims']
+            self._subsample_dimensions = self._volume_data.data['dims'][0]
             self.param.slice_i.bounds = (0, self._orginal_dimensions[0]-1)
             self.slice_i = (self._orginal_dimensions[0]-1)//2
             self.param.slice_j.bounds = (0, self._orginal_dimensions[1]-1)
@@ -239,18 +240,22 @@ class VTKVolume(PaneBase):
         cls._serializers.update({class_type:serializer})
 
     def _volume_from_array(self, sub_array):
-        return dict(buffer=base64encode(sub_array.ravel(order='F' if sub_array.flags['F_CONTIGUOUS'] else 'C')),
-                    dims=sub_array.shape if sub_array.flags['F_CONTIGUOUS'] else sub_array.shape[::-1],
-                    spacing=self._sub_spacing if sub_array.flags['F_CONTIGUOUS'] else self._sub_spacing[::-1],
-                    origin=self.origin,
-                    data_range=(sub_array.min(), sub_array.max()),
-                    dtype=sub_array.dtype.name)
+        return dict(
+            values = [sub_array.ravel(order='F' if sub_array.flags['F_CONTIGUOUS'] else 'C')],
+            dims = [sub_array.shape if sub_array.flags['F_CONTIGUOUS'] else sub_array.shape[::-1]],
+            spacing = [self._sub_spacing if sub_array.flags['F_CONTIGUOUS'] else self._sub_spacing[::-1]],
+            origin = [self.origin],
+            data_range = [(sub_array.min(), sub_array.max())],
+        )
 
     def _get_volume_data(self):
+        """
+        Must return a ColumnDataSource or None
+        """
         if self.object is None:
             return None
         elif isinstance(self.object, np.ndarray):
-            return self._volume_from_array(self._subsample_array(self.object))
+            return ColumnDataSource(self._volume_from_array(self._subsample_array(self.object)))
         else:
             available_serializer = [v for k, v in VTKVolume._serializers.items() if isinstance(self.object, k)]
             if not available_serializer:
@@ -269,7 +274,7 @@ class VTKVolume(PaneBase):
                 serializer = volume_serializer
             else:
                 serializer = available_serializer[0]
-            return serializer(self)
+            return ColumnDataSource(serializer(self))
 
     def _subsample_array(self, array):
         original_shape = array.shape

@@ -1,5 +1,5 @@
-import {ARRAY_TYPES, DType} from "@bokehjs/core/util/serialization"
 import {linspace} from "@bokehjs/core/util/array"
+import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source"
 
 export const vtk = (window as any).vtk
 
@@ -32,15 +32,6 @@ if (vtk) {
   vtkns['ColorTransferFunction'] = vtk.Rendering.Core.vtkColorTransferFunction
   vtkns['PiecewiseFunction'] = vtk.Common.DataModel.vtkPiecewiseFunction
   vtkns['BoundingBox'] = vtk.Common.DataModel.vtkBoundingBox
-}
-
-export type VolumeType = {
-  buffer: string
-  dims: number[]
-  dtype: DType
-  spacing: number[]
-  origin: number[] | null
-  extent: number[] | null
 }
 
 export function hexToRGB(color: string): number[] {
@@ -88,31 +79,22 @@ export function vtkLutToMapper(vtk_lut: any):  Mapper {
   return {low, high, palette}
 }
 
-
-function utf8ToAB(utf8_str: string): ArrayBuffer {
-  var buf = new ArrayBuffer(utf8_str.length) // 2 bytes for each char
-  var bufView = new Uint8Array(buf)
-  for (var i=0, strLen=utf8_str.length; i<strLen; i++) {
-    bufView[i] = utf8_str.charCodeAt(i)
-  }
-  return buf
-}
-
-export function data2VTKImageData(data: VolumeType): any{
-  const source = vtkns.ImageData.newInstance({
-    spacing: data.spacing
-  })
-  source.setDimensions(data.dims)
-  source.setOrigin(data.origin != null ? data.origin : data.dims.map((v: number) => v/2))
+export function data2VTKImageData(data: ColumnDataSource): any{
+  const spacing = (data.get_array('spacing')[0] as number[])
+  const origin = (data.get_array('origin')[0] as number[])
+  const dims = (data.get_array('dims')[0] as number[])
+  const values = data.get_array('values')[0]
+  const source = vtkns.ImageData.newInstance({ spacing })
+  source.setDimensions(dims)
+  source.setOrigin(origin != null ? origin : dims.map((v: number) => v/2))
   const dataArray = vtkns.DataArray.newInstance({
     name: "scalars",
     numberOfComponents: 1,
-    values: new ARRAY_TYPES[data.dtype as DType](utf8ToAB(atob(data.buffer)))
+    values
   })
   source.getPointData().setScalars(dataArray)
   return source
 }
-
 
 export function majorAxis(vec3: number[], idxA: number, idxB: number): number[] {
   const axis = [0, 0, 0]
