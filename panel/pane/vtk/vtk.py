@@ -218,7 +218,7 @@ class VTKVolume(PaneBase):
 
     def _update(self, model=None):
         self._volume_data = self._get_volume_data()
-        if self._volume_data.data:
+        if self._volume_data is not None:
             self._orginal_dimensions = self._get_object_dimensions()
             self._subsample_dimensions = self._volume_data.data['dims'][0]
             self.param.slice_i.bounds = (0, self._orginal_dimensions[0]-1)

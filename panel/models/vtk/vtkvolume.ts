@@ -63,16 +63,22 @@ export class VTKVolumePlotView extends AbstractVTKView {
       this._vtk_renwin.getRenderWindow().render()
     })
     this.connect(this.model.properties.slice_i.change, () => {
-      this.image_actor_i.getMapper().setISlice(this.model.slice_i)
-      this._vtk_renwin.getRenderWindow().render()
+      if(this.image_actor_i !== undefined){
+        this.image_actor_i.getMapper().setISlice(this.model.slice_i)
+        this._vtk_renwin.getRenderWindow().render()
+      }
     })
     this.connect(this.model.properties.slice_j.change, () => {
-      this.image_actor_j.getMapper().setJSlice(this.model.slice_j)
-      this._vtk_renwin.getRenderWindow().render()
+      if(this.image_actor_j !== undefined){
+        this.image_actor_j.getMapper().setJSlice(this.model.slice_j)
+        this._vtk_renwin.getRenderWindow().render()
+      }
     })
     this.connect(this.model.properties.slice_k.change, () => {
-      this.image_actor_k.getMapper().setKSlice(this.model.slice_k)
-      this._vtk_renwin.getRenderWindow().render()
+      if(this.image_actor_k !== undefined){
+        this.image_actor_k.getMapper().setKSlice(this.model.slice_k)
+        this._vtk_renwin.getRenderWindow().render()
+      }
     })
     this.connect(this.model.properties.render_background.change, () => {
       this._vtk_renwin.getRenderer().setBackground(...hexToRGB(this.model.render_background))
@@ -131,22 +137,23 @@ export class VTKVolumePlotView extends AbstractVTKView {
 
   render(): void {
     super.render()
-    this._controllerWidget = vtkns.VolumeController.newInstance({
-      size: [400, 150],
-      rescaleColorMap: this.model.rescale,
-    })
-    this._vtk_image_data = data2VTKImageData((this.model.data as ColumnDataSource))
-    this._controllerWidget.setContainer(this.el)
-    this._vtk_renwin.getRenderWindow().getInteractor()
-    this._vtk_renwin.getRenderWindow().getInteractor().setDesiredUpdateRate(45)
-    this._plot_volume()
-    this._connect_controls()
-    this._plot_slices()
-    this._set_volume_visibility(this.model.display_volume)
-    this._set_slices_visibility(this.model.display_slices)
-    this._vtk_renwin.getRenderer().setBackground(...hexToRGB(this.model.render_background))
-    this._set_interpolation(this.model.interpolation)
-    this._vtk_renwin.getRenderer().resetCamera()
+    if(this.model.data != null){
+      this._controllerWidget = vtkns.VolumeController.newInstance({
+        size: [400, 150],
+        rescaleColorMap: this.model.rescale,
+      })
+      this._controllerWidget.setContainer(this.el)
+      this._vtk_renwin.getRenderWindow().getInteractor().setDesiredUpdateRate(45)
+      this._vtk_image_data = data2VTKImageData((this.model.data as ColumnDataSource))
+      this._plot_volume()
+      this._plot_slices()
+      this._connect_controls()
+      this._set_volume_visibility(this.model.display_volume)
+      this._set_slices_visibility(this.model.display_slices)
+      this._set_interpolation(this.model.interpolation)
+      this._vtk_renwin.getRenderer().setBackground(...hexToRGB(this.model.render_background))
+      this._vtk_renwin.getRenderer().resetCamera()
+    }
   }
 
   _connect_controls(): void{
@@ -165,7 +172,6 @@ export class VTKVolumePlotView extends AbstractVTKView {
     })
     if (this.model.shadow = !!Number(this.shadow_selector.value))
       this.model.properties.shadow.change.emit()
-
 
     // Sampling slider
     this.sampling_slider.addEventListener('input', () => {
