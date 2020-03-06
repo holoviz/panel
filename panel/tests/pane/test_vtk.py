@@ -183,13 +183,13 @@ def test_vtk_pane_volume_from_np_array(document, comm):
     model = pane.get_root(document, comm=comm)
     assert isinstance(model, VTKVolumePlot)
     assert pane._models[model.ref['id']][0] is model
-    assert np.all(np.frombuffer(base64.b64decode(model.data['buffer'].encode())) == 1)
+    assert np.all(model.data.data['values'][0] == np.ones(10*10*10))
     assert all([eq(getattr(pane, k), getattr(model, k))
                 for k in ['slice_i', 'slice_j', 'slice_k']])
 
     # Test update data
     pane.object = 2*np.ones((10,10,10))
-    assert np.all(np.frombuffer(base64.b64decode(model.data['buffer'].encode())) == 2)
+    assert np.all(model.data.data['values'][0] == 2*np.ones(10*10*10))
 
     # Cleanup
     pane._cleanup(model)
