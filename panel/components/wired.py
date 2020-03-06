@@ -79,23 +79,17 @@ class Dialog(WebComponent):
     # Todo: Find a way to handle the innerHTML part
     html = param.String('<wired-dialog></wired-checkbox>')
     attributes_to_watch= param.Dict({"open": "is_open"})
+    parameters_to_watch = param.List(["text"])
 
     is_open = param.Boolean(default=False)
     text = param.String()
 
 
     def __init__(self, **params):
-        if "text" in params and not "html" in params:
-            params["html"] = f"<wired-dialog>{params['text']}</wired-dialog>"
-
         super().__init__(**params)
 
-    @param.depends("text", watch=True)
-    def _update_inner_html(self):
-        html = f"<wired-dialog>{self.text}</wired-dialog>"
-        html = self._update_attributes(html)
-        if html!=self.html:
-            self.html=html
+    def _get_html_from_parameters_to_watch(self, **params) -> str:
+        return f"<wired-dialog>{params['text']}</wired-dialog>"
 
 class Divider(WebComponent):
     html = param.String('<wired-divider></wired-divider>')
@@ -108,41 +102,29 @@ class Divider(WebComponent):
 
 class Fab(WiredBase):
     html = param.String('<wired-fab><mwc-icon>favorite</mwc-icon></wired-fab>')
+    parameters_to_watch = param.List(["icon"])
 
     icon = param.ObjectSelector("favorite", objects=MWC_ICONS, doc="""
     The name of an `mwc-icon <https://github.com/material-components/material-components-web-components/tree/master/packages/icon>`_
     """)
     def __init__(self, min_height=40, **params, ):
-        if "icon" in params and not "html" in params:
-            params["html"] = f"<wired-fab><mwc-icon>{params['icon']}</mwc-icon></wired-fab>"
-
         super().__init__(min_height=min_height, **params)
 
-    @param.depends("icon", watch=True)
-    def _update_inner_html(self):
-        html = f"<wired-fab><mwc-icon>{self.icon}</mwc-icon></wired-fab>"
-        html = self._update_attributes(html)
-        if html!=self.html:
-            self.html=html
+    def _get_html_from_parameters_to_watch(self, **params) -> str:
+        return f"<wired-fab><mwc-icon>{params['icon']}</mwc-icon></wired-fab>"
 
 class IconButton(WiredBase):
     html = param.String("<wired-icon-button><mwc-icon>favorite</mwc-icon><wired-icon-button>")
+    parameters_to_watch = param.List(["icon"])
 
     icon = param.ObjectSelector("favorite", objects=MWC_ICONS, doc="""
     The name of an `mwc-icon <https://github.com/material-components/material-components-web-components/tree/master/packages/icon>`_
     """)
     def __init__(self, min_height=40, **params, ):
-        if "icon" in params and not "html" in params:
-            params["html"] = f"<wired-icon-button><mwc-icon>{params['icon']}</mwc-icon></wired-icon-button>"
-
         super().__init__(min_height=min_height, **params)
 
-    @param.depends("icon", watch=True)
-    def _update_inner_html(self):
-        html = f"<wired-icon-button><mwc-icon>{self.icon}</mwc-icon></wired-icon-button>"
-        html = self._update_attributes(html)
-        if html!=self.html:
-            self.html=html
+    def _get_html_from_parameters_to_watch(self, **params) -> str:
+        return f"<wired-icon-button><mwc-icon>{params['icon']}</mwc-icon></wired-icon-button>"
 
 class Image(WebComponent):
     """The wired-image element"""
@@ -175,26 +157,18 @@ class Input(WiredBase):
 class Link(WebComponent):
     html = param.String("<wired-link></wired-link>")
     attributes_to_watch=param.Dict({"href": "href", "target": "target"})
+    parameters_to_watch=param.List(["text"])
 
-    # Todo: text is really the innerHTML and could be anything.
-    # How do we best support this?
-    text=param.String()
     href=param.String()
     target=param.ObjectSelector("_blank", objects=["_self", "_blank", "_parent", "_top"])
+    text=param.String()
 
     # Todo: Can we make some general functionality on WebComponentto set inner html on construction?
     def __init__(self, **params):
-        if "text" in params and not "html" in params:
-            params["html"] = f"<wired-link>{params['text']}</wired-link>"
-
         super().__init__(**params)
 
-    @param.depends("text", watch=True)
-    def _update_inner_html(self):
-        html = f"<wired-link>{self.text}</wired-link>"
-        html = self._update_attributes(html)
-        if html!=self.html:
-            self.html=html
+    def _get_html_from_parameters_to_watch(self, **params) -> str:
+        return f"<wired-link>{params['text']}</wired-link>"
 
 # Todo: Implement Wired wired-listbox
 

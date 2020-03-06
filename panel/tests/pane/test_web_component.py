@@ -219,6 +219,62 @@ def test_events_count_last_change_triggers_parameter_update(CustomWebComponent):
     # Then
     assert web_component.clicks == 2
 
+def test_parameters_to_watch():
+    # Given
+    class CustomComponent(WebComponent):
+        parameters_to_watch = param.List(["param1", "param2"])
+        param1 = param.String()
+        param2 = param.String()
+
+        def _get_html_from_parameters_to_watch(self, **params) -> str:
+            return f"<span>{params['param1']},{params['param2']}</span>"
+
+    # When/ Then
+    component = CustomComponent(param1="a", param2="b")
+    assert component.param1=="a"
+    assert component.param2=="b"
+    assert component.html=="<span>a,b</span>"
+
+    # When/ Then
+    component.param1 = "c"
+    assert component.html=="<span>c,b</span>"
+
+    # When/ Then
+    component = CustomComponent(param1="d")
+    assert component.html=="<span>d,</span>"
+
+def test_parameters_and_attributes_to_watch():
+    # Given
+    class CustomComponent(WebComponent):
+        attributes_to_watch = param.Dict({"attrib1": "attrib1"})
+        parameters_to_watch = param.List(["param1"])
+        attrib1 = param.String()
+        param1 = param.String()
+
+        def _get_html_from_parameters_to_watch(self, **params) -> str:
+            return f"<span>{params['param1']}</span>"
+
+    # When/ Then
+    component = CustomComponent(attrib1="a", param1="b")
+    assert component.attrib1=="a"
+    assert component.param1=="b"
+    assert component.html=='<span attrib1="a">b</span>'
+
+    # When/ Then
+    component.param1 = "c"
+    assert component.attrib1=="a"
+    assert component.param1=="c"
+    assert component.html=='<span attrib1="a">c</span>'
+
+    # When/ Then
+    component.attrib1 = "d"
+    assert component.attrib1=="d"
+    assert component.param1=="c"
+    assert component.html=='<span attrib1="d">c</span>'
+
+
+
+
 
 
 

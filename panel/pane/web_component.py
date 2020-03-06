@@ -61,6 +61,7 @@ class WebComponent(Widget):
         "properties_last_change": "propertiesLastChange",
         "events_to_watch": "eventsToWatch",
         "events_count_last_change": "eventsCountLastChange",
+        "parameters_to_watch": None,
     }
     _widget_type = _BkWebComponent
 
@@ -98,6 +99,20 @@ class WebComponent(Widget):
     The key is the name of the property changed. The value is the new value of the property
     """
     )
+    parameters_to_watch = param.List(
+        doc="""
+        A list of parameters that the value of `html` depends before the value of the attributes
+        specified in `attributes_to_watch` are applied.
+
+        Only relevant for custom implementations that inherit from WebComponent.
+
+        For example the wired.Fab has an `icon` parameter that defines the html of the web component as
+        `<wired-fab><mwc-icon>{self.icon}</mwc-icon></wired-fab>`
+
+        In order for this to work you need to define a custom implementation of
+        `_get_html_from_parameters_to_watch`.
+        """
+    )
     events_to_watch = param.Dict(
         doc="""
     The key is the name of the js event. The value is the name of a python parameter to increment or None
@@ -128,6 +143,10 @@ class WebComponent(Widget):
             self.param.properties_to_watch.default = {}
         if not self.param.events_to_watch.default:
             self.param.events_to_watch.default = {}
+        if not self.param.parameters_to_watch.default:
+            self.param.parameters_to_watch.default = {}
+        else:
+            params["html"]=self._get_initial_html_from_parameters_to_watch(**params)
 
         super().__init__(**params)
 
@@ -140,14 +159,68 @@ class WebComponent(Widget):
         # after construction
         if self.attributes_to_watch:
             parameters_to_watch = [value for value in self.attributes_to_watch.values() if value]
-            self.param.watch(self._update_html, parameters_to_watch)
+            self.param.watch(self._handle_attributes_to_watch_change, parameters_to_watch)
 
         if self.properties_to_watch:
             parameters_to_watch = list(self.properties_to_watch.values())
             self.param.watch(self._handle_parameter_property_change, parameters_to_watch)
 
-        self._update_html()
+        if self.parameters_to_watch:
+            self.param.watch(self._handle_parameters_to_watch_change, list(self.parameters_to_watch))
+
+        self._handle_attributes_to_watch_change()
         self._update_properties()
+
+    def _handle_parameters_to_watch_change(self, event):
+        params = {parameter: getattr(self, parameter) for parameter in self.parameters_to_watch}
+        html = self._get_html_from_parameters_to_watch(**params)
+        html = self._update_html_from_attributes_to_watch(html)
+        if html!=self.html:
+            self.html=html
+
+    def _get_initial_html_from_parameters_to_watch(self, **params) -> str:
+        """Returns the initial html value based on the specified params and
+        paramaters_to_watch.
+
+        Returns
+        -------
+        str
+            The initial html to use
+        """
+        if "html" in params:
+            return params["html"]
+        if not self.parameters_to_watch:
+            return self.param.html.default
+
+        init_params = {}
+        for parameter in self.parameters_to_watch:
+            if params and parameter in params:
+                init_params[parameter]=params[parameter]
+            else:
+                init_params[parameter]=self.param[parameter].default
+        return self._get_html_from_parameters_to_watch(**init_params)
+
+    def _get_html_from_parameters_to_watch(self, **params) -> str:
+        """Returns the html value to use based on values of the parameters_to_watch specified
+
+        This function should be overridden when implementing a child/ custom WebComponent class
+        with non-empty list of paramaters_to_watch.
+
+        For example the `wired.Fab` would
+        return f"<wired-fab><mwc-icon>{params['icon']}</mwc-icon></wired-fab>"
+
+        Returns
+        -------
+        str
+            A html string like "<wired-fab><mwc-icon>favorite</mwc-icon></wired-fab>"
+
+        Parameters
+        ----------
+            The parameter name is a parameter_to_watch and the value is its value
+            for example icon="favorite"
+
+        """
+        raise NotImplementedError("You need to do a custom implementation of this because the parameters_to_watch list is not empty")
 
     def _child_parameters(self) -> Set:
         """Returns a set of any new parameters added on self compared to WebComponent.
@@ -226,7 +299,7 @@ class WebComponent(Widget):
         if new_parameter_value != parameter_value:
             setattr(self, parameter, new_parameter_value)
 
-    def _update_attributes(self, html: str) -> str:
+    def _update_html_from_attributes_to_watch(self, html: str) -> str:
         """Returns a html string with the attributes updated
 
         Parameters
@@ -257,7 +330,7 @@ class WebComponent(Widget):
         html_update = LH.tostring(root).decode("utf-8")
         return html_update
 
-    def _update_html(self, event=None):
+    def _handle_attributes_to_watch_change(self, event=None):
         if not self.attributes_to_watch or not self.html:
             return
 
