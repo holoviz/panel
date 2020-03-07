@@ -51,8 +51,26 @@ export class WebComponentView extends HTMLBoxView {
                 this.eventsCount[event] = 0
                 this.webComponentElement.addEventListener(event, (ev: Event) => this.eventHandler(ev), false)
             }
+
+            this.activate_scripts(this.webComponentElement.parentNode)
         }
         console.log("render - DONE")
+    }
+
+    /**
+     * Activates or reruns all script tags in the element
+     * @param el An element containing script tags
+     */
+    private activate_scripts(el: Element) {
+        Array.from(el.querySelectorAll("script")).forEach((oldScript: Element) => {
+            const newScript = document.createElement("script")
+            Array.from(oldScript.attributes)
+                .forEach(attr => newScript.setAttribute(attr.name, attr.value))
+            newScript.appendChild(document.createTextNode(oldScript.innerHTML))
+            if (oldScript.parentNode) {
+                oldScript.parentNode.replaceChild(newScript, oldScript)
+            }
+        })
     }
 
     // See https://stackoverflow.com/questions/6491463/accessing-nested-javascript-objects-with-string-key
