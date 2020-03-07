@@ -340,8 +340,6 @@ class WebComponent(Widget):
             if parameter:
                 if event and event.name != parameter:
                     continue
-                # if event and event.new == False:
-                #     breakpoint()
                 parameter_value = getattr(self, parameter)
                 parameter_item = self.param[parameter]
                 if isinstance(parameter_item, param.Boolean):

@@ -193,16 +193,6 @@ class Progress(WebComponent):
 
 
 
-class Spinner(WebComponent):
-    html = param.String('<wired-spinner></wired-spinner>')
-    attributes_to_watch = param.Dict({"spinning": "spinning", "duration": "duration"})
-
-    spinning = param.Boolean(default=True)
-    duration = param.Integer(default=1000, bounds=(1, 10000))
-
-    def __init__(self, min_height=40, **params):
-        super().__init__(min_height=min_height, **params)
-
 class RadioButton(WebComponent):
     """A Wired RadioButton"""
     # Todo: If the innerHTML/ label is not set the the elements is not really clickable
@@ -212,6 +202,51 @@ class RadioButton(WebComponent):
     properties_to_watch= param.Dict({"checked": "checked"})
 
     checked = param.Boolean(default=False)
+
+class SearchInput(WiredBase):
+    html = param.String('<wired-search-input></wired-search-input>')
+    attributes_to_watch = param.Dict({"placeholder": "placeholder", "autocomplete": "autocomplete"})
+    properties_to_watch = param.Dict({"value": "value"})
+    events_to_watch=param.Dict({"input": None})
+
+    def __init__(self, min_height=40, **params):
+        super().__init__(min_height=min_height, **params)
+
+    placeholder=param.String("Search Here")
+    value = param.String()
+    autocomplete=param.ObjectSelector("off", objects=["on", "off"])
+
+# Todo: Implement Tabs. It's really a layout. Don't yet know how to support this.
+
+class TextArea(WiredBase):
+    html = param.String('<wired-textarea placeholder="Enter text"></wired-textarea>')
+    attributes_to_watch = param.Dict({"placeholder": "placeholder"})
+    properties_to_watch = param.Dict({"value": "value", "rows": "rows"})
+    events_to_watch=param.ObjectSelector({"change": None}, objects=[{"change": None}, {"input": None}],
+    doc="""
+    The event(s) to watch. When the event(s) are catched the js model properties are checked and
+    any changed values are sent to the python model. The event can be
+    - `change` (when done) or
+    - `input` (for every character change)
+    """)
+
+    placeholder = param.String("Enter Text")
+    value = param.String()
+    rows = param.Integer(2, bounds=(1,100))
+
+    def __init__(self, **params):
+        super().__init__(**params)
+
+        if not "min_height" in params:
+            self._set_height()
+
+    @param.depends("rows", "disabled", watch=True)
+    def _set_height(self):
+        height = 20+19*self.rows
+        if self.disabled:
+            height += 4
+        if height!=self.height:
+            self.height=height
 
 class Slider(WebComponent):
     # Todo: I need Philips help to understand how to avoid pn.Param(slider, parameters=["value"]) to turn red
@@ -226,6 +261,28 @@ class Slider(WebComponent):
 
     value = param.Number(default=33.1)
 
+class Spinner(WebComponent):
+    html = param.String('<wired-spinner></wired-spinner>')
+    attributes_to_watch = param.Dict({"spinning": "spinning", "duration": "duration"})
+
+    spinning = param.Boolean(default=True)
+    duration = param.Integer(default=1000, bounds=(1, 10000))
+
+    def __init__(self, min_height=40, **params):
+        super().__init__(min_height=min_height, **params)
+
+class Toggle(WiredBase):
+    html=param.String("<wired-toggle></wired-toggle>")
+    properties_to_watch = param.Dict({"checked": "checked"})
+    events_to_watch = param.Dict({"change": None})
+
+
+    def __init__(self, min_height=20, **params):
+        super().__init__(min_height=min_height, **params)
+
+    checked = param.Boolean(False)
+
+# Todo
 class ComboBox(WebComponent):
     # Todo: Implement api for added wired-combo-items to the innerhtml
     # Todo: The selected attribute/ parameter is not updated. Fix this
@@ -240,4 +297,14 @@ class ComboBox(WebComponent):
     selects = param.Integer()
 
 class Video(WebComponent):
-    html = param.String("""<wired-video autoplay="" playsinline="" muted="" loop="" style="height: 100%; margin: 0px" src="https://file-examples.com/wp-content/uploads/2017/04/file_example_MP4_480_1_5MG.mp4" class="wired-rendered"></wired-video>""")
+    html = param.String("""<wired-video autoplay="" playsinline="" muted="" loop="" style="height: 80%;" src="https://file-examples.com/wp-content/uploads/2017/04/file_example_MP4_480_1_5MG.mp4"></wired-video>""")
+    attributes_to_watch = param.Dict({"autoplay": "autoplay", "playsinline": "playsinline", "loop":"loop", "src": "src"})
+
+    def __init__(self, min_height=250, margin=50, **params):
+        super().__init__(min_height=min_height, **params)
+
+    src=param.String()
+    autoplay=param.Boolean()
+    playsinline=param.Boolean()
+    muted=param.Boolean()
+    loop=param.Boolean()

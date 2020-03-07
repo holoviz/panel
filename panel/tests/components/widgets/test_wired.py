@@ -105,6 +105,24 @@ def test_progress():
     assert progress.max_==5
     assert progress.param.value.bounds==(0,5)
 
+def test_searchinput():
+    # When
+    search = wired.SearchInput()
+    search.placeholder = "New Search"
+    search.disabled = True
+    search.autocomplete="on"
+
+    # Then
+    assert search.html == '<wired-search-input placeholder="New Search" autocomplete="on" disabled></wired-search-input>'
+
+def test_text_area():
+    # When/ Then
+    text_area = wired.TextArea(placeholder="a", rows=3)
+    assert text_area.html== '<wired-textarea placeholder="a"></wired-textarea>'
+
+    # When/ Then
+    text_area.placeholder="b"
+    assert text_area.html== '<wired-textarea placeholder="b"></wired-textarea>'
 
 def test_link():
     # Given
@@ -124,12 +142,20 @@ def test_link():
     assert wired_link.text == "another link"
     assert wired_link.html == '<wired-link href="www.google.com" target="_blank">another link</wired-link>'
 
+def test_toggle():
+    # When/ Then
+    toggle = wired.Toggle()
+    assert toggle.html == "<wired-toggle></wired-toggle>"
+    assert toggle.disabled == False
+
 
 def test_view():
     js = """
 <script src="https://unpkg.com/@webcomponents/webcomponentsjs@2.2.7/webcomponents-loader.js"></script>
 <script src="https://wiredjs.com/dist/showcase.min.js"></script>
 """
+    show_html=True
+
     # https://wiredjs.com/dist/showcase.min.js
     # <script src="https://unpkg.com/@webcomponents/webcomponentsjs@2.0.0/webcomponents-loader.js"></script>
     # https://wiredjs.com/dist/showcase.min.js
@@ -138,12 +164,16 @@ def test_view():
 
     js_pane = pn.pane.HTML(js)
 
-    def section(component, message=None):
+    def section(component, message=None, show_html=show_html):
         title = "## " + str(type(component)).split(".")[3][:-2]
 
+        parameters = list(component._child_parameters())
+        if show_html:
+            parameters = ["html"] + parameters
+
         if message:
-            return (title, component, pn.Param(component, parameters=["html"] + list(component._child_parameters())), pn.pane.Markdown(message), pn.layout.Divider())
-        return (title, component, pn.Param(component, parameters=["html"] + list(component._child_parameters())), pn.layout.Divider())
+            return (title, component, pn.Param(component, parameters=parameters), pn.pane.Markdown(message), pn.layout.Divider())
+        return (title, component, pn.Param(component, parameters=parameters), pn.layout.Divider())
 
     button = wired.Button()
     calendar = wired.Calendar()
@@ -159,9 +189,12 @@ def test_view():
     progress = wired.Progress(value=50)
     wired_input = wired.Input()
     radio_button = wired.RadioButton()
+    search_input = wired.SearchInput()
     spinner = wired.Spinner()
     slider = wired.Slider(html="""<wired-slider id="slider" value="33.1" knobradius="15" class="wired-rendered" style="margin: 0px">Slider Label</wired-slider>""")
-    # video = Video(height=500)
+    text_area = wired.TextArea()
+    toggle = wired.Toggle()
+    video = wired.Video(autoplay=True, loop=True, src="https://file-examples.com/wp-content/uploads/2017/04/file_example_MP4_480_1_5MG.mp4")
     return pn.Column(
         js_pane,
         *section(button),
@@ -178,9 +211,12 @@ def test_view():
         *section(link, "Normally you would just use the `<wired-link>` tag directly in your html or markdown text"),
         *section(progress),
         *section(radio_button),
+        *section(search_input),
         *section(spinner),
-        *section(slider, "**The slider value cannot be set programmatically**. See [Wired Issue](https://github.com/wiredjs/wired-elements/issues/121#issue-573516963)"),
-        # video, pn.Param(video.param.html),
+        *section(slider, "Todo: Currently an error is raised because the slider value is not rounded to 1 decimal"),
+        *section(text_area),
+        *section(toggle),
+        *section(video),
     )
 
 
