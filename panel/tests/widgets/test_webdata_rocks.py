@@ -26,6 +26,7 @@ class WebDataRocks(pn.pane.WebComponent):
     properties_to_watch = param.Dict({"toolbar": "toolbar"})
 
     datasource_filename = param.String()
-    toolbar = param.Boolean()
+    toolbar = param.Boolean(True)
+    filename = param.String("https://cdn.webdatarocks.com/data/data.csv")
 
 WebDataRocks().servable()
