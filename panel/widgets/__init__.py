@@ -14,6 +14,7 @@ from .input import (# noqa
     TextAreaInput
 )
 from .misc import Audio, Progress, VideoStream # noqa
+# from .perspective import Perspective # noqa
 from .player import DiscretePlayer, Player # noqa
 from .slider import (# noqa
     DateSlider, DateRangeSlider, DiscreteSlider, FloatSlider,

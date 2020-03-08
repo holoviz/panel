@@ -4,7 +4,7 @@ import param
 from panel.models import WebComponent as _BkWebComponent
 from panel.widgets.base import Widget
 from typing import Set, Dict, Optional
-
+import json
 from html.parser import HTMLParser
 
 # Todo: For now i'm using lxml for . @Philipp should now if that is ok to add as a requirement
@@ -17,6 +17,7 @@ PARAMETER_TYPE = {
     param.Integer: int,
     param.Number: float,
     param.ObjectSelector: str,
+    param.List: json.loads,
 }
 
 
@@ -292,11 +293,15 @@ class WebComponent(Widget):
         parameter_value = getattr(self, parameter)
         if attribute in attr_dict:
             attr_value = attr_dict[attribute]
+            print(parameter)
+            print(attr_value, type(attr_value))
             new_parameter_value = parameter_type(attr_value)
         else:
             new_parameter_value = self.param[parameter].default
 
         if new_parameter_value != parameter_value:
+            print(parameter, type(parameter))
+            print(new_parameter_value, type(new_parameter_value))
             setattr(self, parameter, new_parameter_value)
 
     def _update_html_from_attributes_to_watch(self, html: str) -> str:
@@ -313,7 +318,11 @@ class WebComponent(Widget):
             A html string like `<wired-link href="www.google.com" target="_blank">link</wired-link>`
             based on the values of the attributes_to_watch
         """
+        html = f"<span>{html}</span>" # Workaround to handle both single tags and multiple tags
         root = LH.fromstring(html)
+        iterchildren = [item for item in root.iterchildren()]
+        first_child = iterchildren[0]
+
         for attribute, parameter in self.attributes_to_watch.items():
             if parameter:
                 parameter_value = getattr(self, parameter)
@@ -321,39 +330,24 @@ class WebComponent(Widget):
                 if isinstance(parameter_item, param.Boolean):
                     if parameter_value:
                         attribute_value = ""
-                        root.set(attribute, attribute_value)
-                    elif attribute in root.attrib:
-                        del root.attrib[attribute]
+                        first_child.set(attribute, attribute_value)
+                    elif attribute in first_child.attrib:
+                        del first_child.attrib[attribute]
                 else:
                     attribute_value = str(parameter_value)
-                    root.set(attribute, attribute_value)
-        html_update = LH.tostring(root).decode("utf-8")
-        return html_update
+                    first_child.set(attribute, attribute_value)
+        new_html = LH.tostring(first_child).decode("utf-8")
+        if len(iterchildren)>1:
+            new_html = new_html + "".join(LH.tostring(item).decode("utf-8") for item in iterchildren[1:])
+        return new_html
 
     def _handle_attributes_to_watch_change(self, event=None):
         if not self.attributes_to_watch or not self.html:
             return
-
         html = self.html
-        root = LH.fromstring(html)
-        for attribute, parameter in self.attributes_to_watch.items():
-            if parameter:
-                if event and event.name != parameter:
-                    continue
-                parameter_value = getattr(self, parameter)
-                parameter_item = self.param[parameter]
-                if isinstance(parameter_item, param.Boolean):
-                    if parameter_value:
-                        attribute_value = ""
-                        root.set(attribute, attribute_value)
-                    elif attribute in root.attrib:
-                        del root.attrib[attribute]
-                else:
-                    attribute_value = str(parameter_value)
-                    root.set(attribute, attribute_value)
-        new_html = LH.tostring(root).decode("utf-8")
-        # Todo: Find out if I need to check. I'm just afraid that this will trigger parameter update
-        # and an infinite cycle will start
+
+        new_html = self._update_html_from_attributes_to_watch(html)
+
         if new_html != self.html:
             self.html = new_html
 

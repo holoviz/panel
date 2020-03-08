@@ -272,6 +272,50 @@ def test_parameters_and_attributes_to_watch():
     assert component.param1=="c"
     assert component.html=='<span attrib1="d">c</span>'
 
+def test_handle_attributes_to_watch_change_on_html_with_leading_new_line_and_spaces():
+    # Given
+    class Custom(WebComponent):
+        html = param.String(
+            """
+        <perspective-viewer id="view1" class='perspective-viewer-material-dark' style="height:100%;width:100%"></perspective-viewer>
+        <script>
+        var data = [
+            { x: 1, y: "a", z: true },
+            { x: 2, y: "b", z: false },
+            { x: 3, y: "c", z: true },
+            { x: 4, y: "d", z: false }
+        ];
+
+        console.log(document.currentScript);
+        var viewer = document.getElementById("view1");
+        viewer.load(data);
+
+        </script>
+        """
+        )
+        attributes_to_watch = param.Dict({"class": "theme"})
+
+        theme = param.String("perspective-viewer-material")
+    # When
+    component = Custom()
+    # Then
+    assert component.html.startswith("""<perspective-viewer id="view1" class="perspective-viewer-material" style="height:100%;width:100%"></perspective-viewer>""")
+
+def test_handle_attributes_to_watch_change_simple():
+    # Given
+    class Custom(WebComponent):
+        html = param.String(
+            """
+            <perspective-viewer id="view1" class="perspective-viewer-material-dark" style="height:100%;width:100%"></perspective-viewer>
+            """
+        )
+        attributes_to_watch = param.Dict({"class": "theme"})
+
+        theme = param.String("perspective-viewer-material")
+    # When
+    component = Custom()
+    # Then
+    assert component.html.startswith('<perspective-viewer id="view1" class="perspective-viewer-material" style="height:100%;width:100%"></perspective-viewer>')
 
 
 
