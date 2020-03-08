@@ -106,21 +106,21 @@ class Perspective(WebComponent):
     attributes_to_watch = param.Dict({
         "class": "theme",
         "plugin": "plugin",
-        "rows": "rows",
-        "row-pivots": "row_pivots",
-        "columns": "columns",
-        "column-pivots": "column_pivots",
-        "sort": "sort",
-        "aggregates": "aggregates",
-        "filters": "filters",
+        # "rows": "rows",
+        # "row-pivots": "row_pivots",
+        # "columns": "columns",
+        # "column-pivots": "column_pivots",
+        # "sort": "sort",
+        # "aggregates": "aggregates",
+        # "filters": "filters",
     })
 
     theme = param.ObjectSelector("perspective-viewer-material-dark", objects=THEMES)
     plugin = param.ObjectSelector(Plugin.GRID.value, objects=Plugin.options())
-    rows = param.List()
-    row_pivots = param.List()
-    column_pivots = param.List()
-    columns = param.List()
-    aggregates = param.List()
-    sort = param.List()
-    filters = param.List()
+    # rows = param.List()
+    # row_pivots = param.List()
+    # column_pivots = param.List()
+    # columns = param.List()
+    # aggregates = param.List()
+    # sort = param.List()
+    # filters = param.List()
