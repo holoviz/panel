@@ -4,6 +4,7 @@ See https://www.predix-ui.com/#/elements/px-app-nav"""
 
 from bokeh.core import properties
 from bokeh.models.layouts import HTMLBox
+from bokeh.models import ColumnDataSource
 
 class WebComponent(HTMLBox):
     """A Bokeh Model that enables easily creating new Panel components from web components
@@ -15,3 +16,4 @@ class WebComponent(HTMLBox):
     propertiesLastChange = properties.Dict(properties.String, properties.Any)
     eventsToWatch = properties.Dict(properties.String, properties.Any)
     eventsCountLastChange = properties.Dict(properties.String, properties.Int)
+    columnDataSource = properties.Instance(ColumnDataSource)

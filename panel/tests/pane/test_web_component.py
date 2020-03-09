@@ -1,6 +1,10 @@
-from panel.pane import WebComponent
+import pandas as pd
 import param
 import pytest
+from bokeh.models import ColumnDataSource
+
+from panel.pane import WebComponent
+
 
 @pytest.fixture
 def html():
@@ -317,8 +321,31 @@ def test_handle_attributes_to_watch_change_simple():
     # Then
     assert component.html.startswith('<perspective-viewer id="view1" class="perspective-viewer-material" style="height:100%;width:100%"></perspective-viewer>')
 
+def test_data():
+    # Given
+    data = [
+        { "x": 1, "y": "a", "z": True },
+        { "x": 2, "y": "b", "z": False },
+        { "x": 3, "y": "c", "z": True },
+        { "x": 4, "y": "d", "z": False }
+    ]
+    dataframe = pd.DataFrame(data)
+    cds = ColumnDataSource(dataframe)
+    # When
+    component = WebComponent(html="<div></div>", column_data_source=cds)
+    # Then
+    assert component.column_data_source == cds
 
 
-
-
-
+if __name__.startswith("bk"):
+    import pandas as pd
+    data = [
+        { "x": 1, "y": "a", "z": True },
+        { "x": 2, "y": "b", "z": False },
+        { "x": 3, "y": "c", "z": True },
+        { "x": 4, "y": "d", "z": False }
+    ]
+    dataframe = pd.DataFrame(data)
+    component = WebComponent(html="<span>Hello World</span>")
+    component.servable()
+    component.data = dataframe

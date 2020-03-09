@@ -3,6 +3,8 @@ import { HTMLBox, HTMLBoxView } from "@bokehjs/models/layouts/html_box"
 // import { div } from "core/dom"
 import * as p from "@bokehjs/core/properties"
 
+
+
 // Todo: Remove console.log
 // Reight now they are helpfull
 export class WebComponentView extends HTMLBoxView {
@@ -23,6 +25,7 @@ export class WebComponentView extends HTMLBoxView {
         this.connect(this.model.properties.innerHTML.change, () => this.render())
         this.connect(this.model.properties.propertiesLastChange.change, () => this.handlePropertiesLastChangeChange())
         this.connect(this.model.properties.eventsToWatch.change, () => this.handleEventsToWatchChange())
+        this.connect(this.model.properties.columnDataSource.change, () => this.handledataChange())
         console.log("connect signals - DONE")
     }
 
@@ -38,12 +41,13 @@ export class WebComponentView extends HTMLBoxView {
             }
             this.el.innerHTML = this.model.innerHTML; // Todo: Remove
             this.webComponentElement = this.el.firstElementChild;
+            console.log(this.webComponentElement);
+            console.log(this.model);
             this.initPropertyValues();
             if (!webComponentElementOld) {
                 // initializes to the correct properties on first construction
                 this.handlePropertiesLastChangeChange();
             }
-
 
             this.webComponentElement.onchange = (ev: any) => this.handlePropertiesChange(ev);
             this.eventsCount = {};
@@ -51,10 +55,42 @@ export class WebComponentView extends HTMLBoxView {
                 this.eventsCount[event] = 0
                 this.webComponentElement.addEventListener(event, (ev: Event) => this.eventHandler(ev), false)
             }
-
             this.activate_scripts(this.webComponentElement.parentNode)
+            this.handledataChange()
         }
         console.log("render - DONE")
+    }
+
+    transform_cds_to_list_of_rows(cds: any): any {
+        const data: any = []
+        const columns = cds.columns()
+
+        if (columns.length === 0) {
+            return [];
+        }
+        for (let i = 0; i < cds.data[columns[0]].length; i++) {
+            const item: any = {}
+            for (const column of columns) {
+                const shape = cds._shapes[column]
+                if ((shape !== undefined) && (shape.length > 1) && (typeof shape[0] == "number"))
+                    item[column] = cds.data[column].slice(i * shape[1], i * shape[1] + shape[1])
+                else
+                    item[column] = cds.data[column][i]
+            }
+            data.push(item)
+        }
+        return data
+    }
+
+    handledataChange(): void {
+        console.log("handledataChange");
+        console.log(this.model.columnDataSource);
+        if (this.model.columnDataSource) {
+            console.log(this.model.columnDataSource)
+            const data = this.transform_cds_to_list_of_rows(this.model.columnDataSource);
+            console.log(data);
+            this.webComponentElement.load(data);
+        }
     }
 
     /**
@@ -215,6 +251,7 @@ export namespace WebComponent {
         propertiesLastChange: p.Property<p.Any>, // A dictionary
         eventsToWatch: p.Property<p.Any> // A dictionary
         eventsCountLastChange: p.Property<p.Any> // A Dictionary
+        columnDataSource: p.Property<p.Any> // Coming from a DataFrame
     }
 }
 
@@ -238,7 +275,8 @@ export class WebComponent extends HTMLBox {
             propertiesToWatch: [p.Any], // A dictionary
             propertiesLastChange: [p.Any], // A dictionary
             eventsToWatch: [p.Any], // A dictionary
-            eventsCountLastChange: [p.Any] // A list
+            eventsCountLastChange: [p.Any], // A list
+            columnDataSource: [p.Any],
         })
     }
 }

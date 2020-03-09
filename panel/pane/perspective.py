@@ -8,6 +8,7 @@ import param
 
 import panel as pn
 from panel.pane.web_component import WebComponent
+from bokeh.models import ColumnDataSource
 
 JS_FILES = {
     "perspective": "https://unpkg.com/@finos/perspective@0.4.5/dist/umd/perspective.js",
@@ -86,20 +87,17 @@ class Perspective(WebComponent):
         """
     <perspective-viewer id="view1" class='perspective-viewer-material-dark' style="height:100%;width:100%"></perspective-viewer>
     <script>
-    console.log("start")
-
-    var data = [
-        { x: 1, y: "a", z: true },
-        { x: 2, y: "b", z: false },
-        { x: 3, y: "c", z: true },
-        { x: 4, y: "d", z: false }
-    ];
-
-    console.log(document.currentScript);
-    var viewer = document.getElementById("view1");
-    viewer.load(data);
-
-    console.log("end")
+    scriptElement = document.currentScript;
+    var viewer = scriptElement.parentElement.firstElementChild;
+    Object.defineProperty(viewer, "data", {
+    get: function () {
+        console.log('GET', "data");
+        viewer._data;
+    },
+    set: function (new_value) {
+        viewer._data = new_value;
+        viewer.load(new_value);
+    }})
     </script>
     """
     )
@@ -124,3 +122,20 @@ class Perspective(WebComponent):
     # aggregates = param.List()
     # sort = param.List()
     # filters = param.List()
+
+    # Todo: Find out if it is ok WebComponent is dependent on pandas or the should be a seperate
+    # DataWebComponent
+    data = param.DataFrame(doc="""
+    The data will be reloaded in full when ever it changes."""
+    )
+    def __init__(self, **params):
+        super().__init__(**params)
+        self._set_column_data_source()
+
+    @param.depends("data", watch=True)
+    def _set_column_data_source(self):
+        print(self.data)
+        if not self.data is None:
+            self.column_data_source = ColumnDataSource(ColumnDataSource.from_df(self.data))
+        else:
+            self.column_data_source = ColumnDataSource()

@@ -6,6 +6,7 @@ from panel.widgets.base import Widget
 from typing import Set, Dict, Optional
 import json
 from html.parser import HTMLParser
+from bokeh.models import ColumnDataSource
 
 # Todo: For now i'm using lxml for . @Philipp should now if that is ok to add as a requirement
 # or if we need to find another solution like regex or BeautifulSoup
@@ -63,6 +64,7 @@ class WebComponent(Widget):
         "events_to_watch": "eventsToWatch",
         "events_count_last_change": "eventsCountLastChange",
         "parameters_to_watch": None,
+        "column_data_source": "columnDataSource",
     }
     _widget_type = _BkWebComponent
 
@@ -130,6 +132,9 @@ class WebComponent(Widget):
         Key is the name of the event, Value is the number of times it has fired in total
         """
     )
+    column_data_source = param.Parameter(doc="""
+    The ColumnDataSource containing the DataFrame and used to efficiently transfer
+    it to the client""")
 
     def __init__(self, **params):
         # Avoid AttributeError: unexpected attribute ...
