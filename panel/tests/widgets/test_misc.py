@@ -8,7 +8,7 @@ import pytest
 
 try:
     from scipy.io import wavfile
-except:
+except Exception:
     wavfile = None
 
 from panel.widgets import Audio, Progress
