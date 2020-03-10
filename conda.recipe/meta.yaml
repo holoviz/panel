@@ -33,7 +33,7 @@ test:
   imports:
     - panel
   requires:	
-    {% for dep in sdata['extras_require']['tests_minimal'] %}	
+    {% for dep in sdata['extras_require']['tests'] %}	
     - {{ dep }}	
     {% endfor %}
 
