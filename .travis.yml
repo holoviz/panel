@@ -75,7 +75,7 @@ jobs:
       after_success: codecov
 
     - <<: *conda_default
-      env: DESC="py2 tests" PYTHON_VERSION=2.7
+      env: DESC="py2 tests" PYTHON_VERSION=2.7 CHANS_DEV="-c pyviz/label/dev -c bokeh"
       install:
         - doit env_create $CHANS_DEV --python=$PYTHON_VERSION
         - source activate test-environment
