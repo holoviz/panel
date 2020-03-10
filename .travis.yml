@@ -76,6 +76,13 @@ jobs:
 
     - <<: *conda_default
       env: DESC="py2 tests" PYTHON_VERSION=2.7
+      install:
+        - doit env_create $CHANS_DEV --python=$PYTHON_VERSION
+        - source activate test-environment
+        - conda install -c conda-forge mesalib
+        - travis_wait 20 doit develop_install -o recommended -o tests_minimal -o build $CHANS_DEV
+        - bokeh sampledata
+        - doit env_capture
 
     ########## END-USER PACKAGES ##########
 
