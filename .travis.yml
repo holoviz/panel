@@ -63,7 +63,7 @@ jobs:
         - doit env_create $CHANS_DEV --python=$PYTHON_VERSION
         - source activate test-environment
         - conda install -c conda-forge mesalib
-        - travis_wait 20 doit develop_install -o recommended -o tests -o build $CHANS_DEV
+        - travis_wait 20 doit develop_install -o examples -o recommended -o tests -o build $CHANS_DEV
         - bokeh sampledata
         - doit env_capture
       before_script:
@@ -75,7 +75,17 @@ jobs:
       after_success: codecov
 
     - <<: *conda_default
-      env: DESC="py2 tests" PYTHON_VERSION=2.7
+      env: DESC="py2 tests" PYTHON_VERSION=2.7 CHANS_DEV="-c pyviz/label/dev -c bokeh"
+      install:
+        - doit env_create $CHANS_DEV --python=$PYTHON_VERSION
+        - source activate test-environment
+        - conda install -c conda-forge mesalib
+        - travis_wait 20 doit develop_install -o recommended -o tests -o build $CHANS_DEV
+        - bokeh sampledata
+        - doit env_capture
+      script:
+        - doit test_flakes
+        - doit test_unit
 
     ########## END-USER PACKAGES ##########
 

@@ -10,12 +10,12 @@ from panel.pipeline import Pipeline, find_route
 from panel.widgets import Button, Select
 
 if LooseVersion(param.__version__) < '1.8.2':
-    pytest.skip("skipping if param version < 1.8.2", allow_module_level=True)
+    pytestmark = pytest.mark.skip("skipping if param version < 1.8.2", allow_module_level=True)
 
 try:
     import holoviews as hv
 except Exception:
-    pytest.skip('Pipeline requires HoloViews.')
+    pytestmark = pytest.mark.skip('Pipeline requires HoloViews.')
 
 
 class Stage1(param.Parameterized):

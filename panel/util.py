@@ -20,9 +20,9 @@ except ImportError:
     from collections import MutableSequence, MutableMapping
 
 try:
-    from html import escape as _escape # noqa
+    from html import escape as _escape
 except Exception:
-    from cgi import escape as _escape # noqa
+    from xml.sax.saxutils import quoteattr
 
 import param
 import numpy as np
@@ -33,6 +33,12 @@ if sys.version_info.major > 2:
     unicode = str
 
 
+html_escape_table = {
+    '"': "&quot;",
+    "'": "&#x27;"
+}
+
+
 def escape(string):
     """
     Temporary wrapper around HTML escaping to allow using Div model
@@ -41,7 +47,10 @@ def escape(string):
     from .io import state
 
     if state._html_escape:
-        return _escape(string)
+        if sys.version_info.major == 2:
+            return quoteattr(string, html_escape_table)[1:-1]
+        else:
+            return _escape(string)
     else:
         return string
 

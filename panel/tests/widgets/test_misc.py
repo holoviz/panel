@@ -4,10 +4,19 @@ from io import BytesIO
 from base64 import b64encode
 
 import numpy as np
-from scipy.io import wavfile
+import pytest
+
+try:
+    from scipy.io import wavfile
+except Exception:
+    wavfile = None
 
 from panel.widgets import Audio, Progress
 
+scipy_available = pytest.mark.skipif(wavfile is None, reason="requires scipy")
+
+
+@scipy_available
 def test_audio_array(document, comm):
     data = np.random.randint(-100,100, 100).astype('int16')
     sample_rate = 10

@@ -1,23 +1,14 @@
-from enum import Enum
+from __future__ import absolute_import
 
+from collections import namedtuple
 
-class SCALAR_MODE(Enum):
-    Default = 0
-    UsePointData = 1
-    UseCellData = 2
-    UsePointFieldData = 3
-    UseCellFieldData = 4
-    UseFieldData = 5
+SCALAR_MODE = namedtuple("SCALAR_MODE",
+    "Default UsePointData UseCellData UsePointFieldData UseCellFieldData UseFieldData"
+)(0, 1, 2, 3, 4, 5)
 
+COLOR_MODE = namedtuple("COLOR_MODE", "DirectScalars MapScalars")(0, 1)
 
-class COLOR_MODE(Enum):
-    DirectScalars = 0
-    MapScalars = 1
-
-
-class ACCESS_MODE(Enum):
-    ById = 0
-    ByName = 1
+ACCESS_MODE = namedtuple("ACCESS_MODE", "ById ByName")(0, 1)
 
 PRESET_CMAPS = [
     '2hot',
