@@ -63,7 +63,7 @@ jobs:
         - doit env_create $CHANS_DEV --python=$PYTHON_VERSION
         - source activate test-environment
         - conda install -c conda-forge mesalib
-        - travis_wait 20 doit develop_install -o recommended -o tests -o build $CHANS_DEV
+        - travis_wait 30 doit develop_install -o recommended -o tests -o build $CHANS_DEV
         - bokeh sampledata
         - doit env_capture
       before_script:
