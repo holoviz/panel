@@ -5,7 +5,7 @@
   "license": "BSD-3-Clause",
   "repository": {},
   "dependencies": {
-    "bokehjs": "^1.4.0",
+    "@bokeh/bokehjs": "^2.0.0",
     "@types/gl-matrix": "^2.4.5",
     "gl-matrix": "^3.1.0",
     "json-formatter-js": "^2.2.1",

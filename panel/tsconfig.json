@@ -14,7 +14,7 @@
     "noEmitOnError": false,
     "declaration": true,
     "sourceMap": true,
-    "importHelpers": true,
+    "importHelpers": false,
     "experimentalDecorators": true,
     "module": "esnext",
     "moduleResolution": "node",
@@ -22,13 +22,13 @@
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "target": "ES2017",
-    "lib": ["es2017", "dom"],
+    "lib": ["es2017", "dom", "dom.iterable"],
     "baseUrl": ".",
     "outDir": "./dist/lib",
     "paths": {
       "@bokehjs/*": [
-        "./node_modules/bokehjs/build/js/lib/*",
-        "./node_modules/bokehjs/build/js/types/*"
+        "./node_modules/@bokeh/bokehjs/build/js/lib/*",
+        "./node_modules/@bokeh/bokehjs/build/js/types/*"
       ]
     }
   },
