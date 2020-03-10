@@ -123,7 +123,7 @@ extras_require = {
         'vtk',
         'scikit-learn',
         'datashader',
-        'jupyter_bokeh',
+        'jupyter_bokeh<=1.1.1',
         'django',
         'pyvista',
     ],
@@ -148,7 +148,7 @@ extras_require['build'] = [
     'param >=1.9.2',
     'pyct >=0.4.4',
     'setuptools >=30.3.0',
-    'bokeh >=1.4.0',
+    'bokeh >=1.4.0,<2.0',
     'pyviz_comms >=0.6.0',
     # non-python dependency
     'nodejs >=9.11.1',
