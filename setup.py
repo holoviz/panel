@@ -105,15 +105,18 @@ _recommended = [
     'plotly'
 ]
 
+_tests = [
+    'flake8',
+    'parameterized',
+    'pytest',
+    'scipy',
+    'nbsmoke >=0.2.0',
+    'pytest-cov',
+    'codecov'
+]
+
 extras_require = {
-    'tests': [
-        'flake8',
-        'parameterized',
-        'pytest',
-        'scipy',
-        'nbsmoke >=0.2.0',
-        'pytest-cov',
-        'codecov',
+    'tests': _tests + [
         # For examples
         'hvplot',
         'plotly',
@@ -126,6 +129,15 @@ extras_require = {
         'jupyter_bokeh<=1.1.1',
         'django',
         'pyvista',
+    ],
+    'tests_minimal': _tests + [
+        'flake8',
+        'parameterized',
+        'pytest',
+        'scipy',
+        'nbsmoke >=0.2.0',
+        'pytest-cov',
+        'codecov'
     ],
     'recommended': _recommended,
     'doc': _recommended + [
