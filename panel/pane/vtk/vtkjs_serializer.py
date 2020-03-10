@@ -253,35 +253,35 @@ def _write_data_set(scDirs, dataset, colorArrayInfo, newDSName):
 
 def get_dataset_scalars(dataset, scalar_mode, array_access_mode, array_id, array_name):
 
-    if scalar_mode == SCALAR_MODE.Default.value:
+    if scalar_mode == SCALAR_MODE.Default:
         scalars = dataset.GetPointData().GetScalars()
         cell_flag = 'pointData'
         if not scalars:
             scalars = dataset.GetCellData().GetScalars()
             cell_flag = 'cellData'
-    elif scalar_mode == SCALAR_MODE.UsePointData.value:
+    elif scalar_mode == SCALAR_MODE.UsePointData:
         scalars = dataset.GetPointData().GetScalars()
         cell_flag = 'pointData'
-    elif scalar_mode == SCALAR_MODE.UseCellData.value:
+    elif scalar_mode == SCALAR_MODE.UseCellData:
         scalars = dataset.GetCellData().GetScalars()
         cell_flag = 'cellData'
-    elif scalar_mode == SCALAR_MODE.UsePointFieldData.value:
+    elif scalar_mode == SCALAR_MODE.UsePointFieldData:
         pd = dataset.GetPointData()
-        if array_access_mode == ACCESS_MODE.ById.value:
+        if array_access_mode == ACCESS_MODE.ById:
             scalars = pd.GetAbstractArray(array_id)
         else:
             scalars = pd.GetAbstractArray(array_name)
         cell_flag = 'pointData'
-    elif scalar_mode == SCALAR_MODE.UseCellFieldData.value:
+    elif scalar_mode == SCALAR_MODE.UseCellFieldData:
         cd = dataset.GetCellData()
-        if array_access_mode == ACCESS_MODE.ById.value:
+        if array_access_mode == ACCESS_MODE.ById:
             scalars = cd.GetAbstractArray(array_id)
         else:
             scalars = cd.GetAbstractArray(array_name)
         cell_flag = 'cellData'
-    elif scalar_mode == SCALAR_MODE.UseFieldData.value:
+    elif scalar_mode == SCALAR_MODE.UseFieldData:
         fd = dataset.GetFieldData()
-        if array_access_mode == ACCESS_MODE.ById.value:
+        if array_access_mode == ACCESS_MODE.ById:
             scalars = fd.GetAbstractArray(array_id)
         else:
             scalars = fd.GetAbstractArray(array_name)

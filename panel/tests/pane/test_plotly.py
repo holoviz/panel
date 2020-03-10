@@ -163,6 +163,7 @@ def test_plotly_pane_numpy_to_cds_traces(document, comm):
     assert pane._models == {}
 
 
+@plotly_available
 def test_plotly_autosize(document, comm):
     trace = go.Scatter(x=[0, 1], y=[2, 3])
     
