@@ -83,6 +83,9 @@ jobs:
         - travis_wait 20 doit develop_install -o recommended -o tests -o build $CHANS_DEV
         - bokeh sampledata
         - doit env_capture
+      script:
+        - doit test_flakes
+        - doit test_unit
 
     ########## END-USER PACKAGES ##########
 
