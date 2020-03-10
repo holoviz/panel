@@ -14,6 +14,7 @@ from types import FunctionType
 
 from bokeh.document.events import ModelChangedEvent
 from bokeh.server.server import Server
+from tornado.websocket import WebSocketHandler
 
 from .state import state
 
@@ -79,12 +80,12 @@ def unlocked():
                 if (isinstance(event, ModelChangedEvent) and event not in old_events
                     and hasattr(socket, 'write_message')):
                     msg = conn.protocol.create('PATCH-DOC', [event])
-                    socket.write_message(msg.header_json, locked=False)
-                    socket.write_message(msg.metadata_json, locked=False)
-                    socket.write_message(msg.content_json, locked=False)
+                    WebSocketHandler.write_message(socket, msg.header_json)
+                    WebSocketHandler.write_message(socket, msg.metadata_json)
+                    WebSocketHandler.write_message(socket, msg.content_json)
                     for header, payload in msg._buffers:
-                        socket.write_message(header, locked=False)
-                        socket.write_message(payload, binary=True, locked=False)
+                        WebSocketHandler.write_message(socket, header)
+                        WebSocketHandler.write_message(socket, payload, binary=True)
                 elif event not in events:
                     events.append(event)
         curdoc._held_events = events
