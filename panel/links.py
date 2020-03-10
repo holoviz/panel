@@ -204,8 +204,11 @@ class CallbackGenerator(object):
         self.validate()
         specs = self._get_specs(link, source, target)
         for src_spec, tgt_spec, code in specs:
-            self._init_callback(root_model, link, source, src_spec, target, tgt_spec, code)
-
+            try:
+                self._init_callback(root_model, link, source, src_spec, target, tgt_spec, code)
+            except Exception:
+                pass
+                
     @classmethod
     def _resolve_model(cls, root_model, obj, model_spec):
         """
