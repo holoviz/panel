@@ -17,3 +17,5 @@ class WebComponent(HTMLBox):
     eventsToWatch = properties.Dict(properties.String, properties.Any)
     eventsCountLastChange = properties.Dict(properties.String, properties.Int)
     columnDataSource = properties.Instance(ColumnDataSource)
+    columnDataSourceOrient = properties.String()
+    columnDataSourceLoadFunction = properties.String()

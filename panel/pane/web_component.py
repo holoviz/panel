@@ -65,6 +65,9 @@ class WebComponent(Widget):
         "events_count_last_change": "eventsCountLastChange",
         "parameters_to_watch": None,
         "column_data_source": "columnDataSource",
+        "column_data_source_orient": "columnDataSourceOrient",
+        "column_data_source_load_function": "columnDataSourceLoadFunction",
+
     }
     _widget_type = _BkWebComponent
 
@@ -132,9 +135,30 @@ class WebComponent(Widget):
         Key is the name of the event, Value is the number of times it has fired in total
         """
     )
-    column_data_source = param.Parameter(doc="""
+    column_data_source = param.Parameter(
+        doc="""
     The ColumnDataSource containing the DataFrame and used to efficiently transfer
-    it to the client""")
+    it to the client"""
+    )
+    column_data_source_orient = param.ObjectSelector(
+        "dict",
+        objects=["dict", "records"],
+        doc="""
+    The orientation of the data when provided to the web component.
+
+    - dict {"x": [1,2], "y": [3,4]}
+    - records [{"x": 1, "y": 3}, {"x": 2, "y": 4}]
+
+    For example the perspective-viewer's `load` function uses `records` as input
+    """,
+    )
+    column_data_source_load_function = param.String(doc="""
+    The name of the web component function or property used to load the data
+
+    For example the `perspective-viewer` component uses the `load` function to load data.
+    """)
+    # Todo: Find out if we can/ should support a column_data_source_update or ..append parameter
+    # The use case is for example perspective-viewers `update` function that appends new data efficiently
 
     def __init__(self, **params):
         # Avoid AttributeError: unexpected attribute ...
@@ -152,7 +176,7 @@ class WebComponent(Widget):
         if not self.param.parameters_to_watch.default:
             self.param.parameters_to_watch.default = {}
         else:
-            params["html"]=self._get_initial_html_from_parameters_to_watch(**params)
+            params["html"] = self._get_initial_html_from_parameters_to_watch(**params)
 
         super().__init__(**params)
 
@@ -172,7 +196,9 @@ class WebComponent(Widget):
             self.param.watch(self._handle_parameter_property_change, parameters_to_watch)
 
         if self.parameters_to_watch:
-            self.param.watch(self._handle_parameters_to_watch_change, list(self.parameters_to_watch))
+            self.param.watch(
+                self._handle_parameters_to_watch_change, list(self.parameters_to_watch)
+            )
 
         self._handle_attributes_to_watch_change()
         self._update_properties()
@@ -181,8 +207,8 @@ class WebComponent(Widget):
         params = {parameter: getattr(self, parameter) for parameter in self.parameters_to_watch}
         html = self._get_html_from_parameters_to_watch(**params)
         html = self._update_html_from_attributes_to_watch(html)
-        if html!=self.html:
-            self.html=html
+        if html != self.html:
+            self.html = html
 
     def _get_initial_html_from_parameters_to_watch(self, **params) -> str:
         """Returns the initial html value based on the specified params and
@@ -201,9 +227,9 @@ class WebComponent(Widget):
         init_params = {}
         for parameter in self.parameters_to_watch:
             if params and parameter in params:
-                init_params[parameter]=params[parameter]
+                init_params[parameter] = params[parameter]
             else:
-                init_params[parameter]=self.param[parameter].default
+                init_params[parameter] = self.param[parameter].default
         return self._get_html_from_parameters_to_watch(**init_params)
 
     def _get_html_from_parameters_to_watch(self, **params) -> str:
@@ -226,7 +252,9 @@ class WebComponent(Widget):
             for example icon="favorite"
 
         """
-        raise NotImplementedError("You need to do a custom implementation of this because the parameters_to_watch list is not empty")
+        raise NotImplementedError(
+            "You need to do a custom implementation of this because the parameters_to_watch list is not empty"
+        )
 
     def _child_parameters(self) -> Set:
         """Returns a set of any new parameters added on self compared to WebComponent.
@@ -323,7 +351,7 @@ class WebComponent(Widget):
             A html string like `<wired-link href="www.google.com" target="_blank">link</wired-link>`
             based on the values of the attributes_to_watch
         """
-        html = f"<span>{html}</span>" # Workaround to handle both single tags and multiple tags
+        html = f"<span>{html}</span>"  # Workaround to handle both single tags and multiple tags
         root = LH.fromstring(html)
         iterchildren = [item for item in root.iterchildren()]
         first_child = iterchildren[0]
@@ -342,8 +370,10 @@ class WebComponent(Widget):
                     attribute_value = str(parameter_value)
                     first_child.set(attribute, attribute_value)
         new_html = LH.tostring(first_child).decode("utf-8")
-        if len(iterchildren)>1:
-            new_html = new_html + "".join(LH.tostring(item).decode("utf-8") for item in iterchildren[1:])
+        if len(iterchildren) > 1:
+            new_html = new_html + "".join(
+                LH.tostring(item).decode("utf-8") for item in iterchildren[1:]
+            )
         return new_html
 
     def _handle_attributes_to_watch_change(self, event=None):
@@ -400,7 +430,7 @@ class WebComponent(Widget):
         if not self.properties_to_watch:
             return
 
-        parameters_to_properties = {v:k for k, v in self.properties_to_watch.items()}
+        parameters_to_properties = {v: k for k, v in self.properties_to_watch.items()}
         property_name = parameters_to_properties[event.name]
 
         change = {property_name: event.new}

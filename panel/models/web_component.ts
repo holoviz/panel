@@ -4,7 +4,6 @@ import { HTMLBox, HTMLBoxView } from "@bokehjs/models/layouts/html_box"
 import * as p from "@bokehjs/core/properties"
 
 
-
 // Todo: Remove console.log
 // Reight now they are helpfull
 export class WebComponentView extends HTMLBoxView {
@@ -25,7 +24,7 @@ export class WebComponentView extends HTMLBoxView {
         this.connect(this.model.properties.innerHTML.change, () => this.render())
         this.connect(this.model.properties.propertiesLastChange.change, () => this.handlePropertiesLastChangeChange())
         this.connect(this.model.properties.eventsToWatch.change, () => this.handleEventsToWatchChange())
-        this.connect(this.model.properties.columnDataSource.change, () => this.handledataChange())
+        this.connect(this.model.properties.columnDataSource.change, () => this.handleColumnDataSourceChange())
         console.log("connect signals - DONE")
     }
 
@@ -56,12 +55,12 @@ export class WebComponentView extends HTMLBoxView {
                 this.webComponentElement.addEventListener(event, (ev: Event) => this.eventHandler(ev), false)
             }
             this.activate_scripts(this.webComponentElement.parentNode)
-            this.handledataChange()
+            this.handleColumnDataSourceChange()
         }
         console.log("render - DONE")
     }
 
-    transform_cds_to_list_of_rows(cds: any): any {
+    transform_cds_to_records(cds: any): any {
         const data: any = []
         const columns = cds.columns()
 
@@ -82,15 +81,38 @@ export class WebComponentView extends HTMLBoxView {
         return data
     }
 
-    handledataChange(): void {
+    // https://stackoverflow.com/questions/5999998/check-if-a-variable-is-of-function-type
+    isFunction(functionToCheck: any) {
+        if (functionToCheck) {
+            const stringName = {}.toString.call(functionToCheck);
+            return stringName === '[object Function]' || stringName === '[object AsyncFunction]';
+        } else { return false }
+    }
+
+    handleColumnDataSourceChange(): void {
         console.log("handledataChange");
         console.log(this.model.columnDataSource);
         if (this.model.columnDataSource) {
             console.log(this.model.columnDataSource)
-            const data = this.transform_cds_to_list_of_rows(this.model.columnDataSource);
-            console.log(data);
-            this.webComponentElement.load(data);
+            let data: any // list
+            const columnDataSourceOrient: any = this.model.columnDataSourceOrient;
+            if (columnDataSourceOrient === "records") {
+                data = this.transform_cds_to_records(this.model.columnDataSource);
+            } else {
+                // Todo: Solve lint problem
+                // @ts-ignore
+                data = this.model.columnDataSource.data;
+            }
+            const loadFunctionName: string = this.model.columnDataSourceLoadFunction.toString();
+            const loadFunction = this.webComponentElement[loadFunctionName]
+            if (this.isFunction(loadFunction)) {
+                this.webComponentElement[loadFunctionName](data)
+            } else {
+                this.webComponentElement[loadFunctionName] = data
+            }
+
         }
+        // Todo: handle situation where this.model.columnDataSource is null
     }
 
     /**
@@ -251,7 +273,9 @@ export namespace WebComponent {
         propertiesLastChange: p.Property<p.Any>, // A dictionary
         eventsToWatch: p.Property<p.Any> // A dictionary
         eventsCountLastChange: p.Property<p.Any> // A Dictionary
-        columnDataSource: p.Property<p.Any> // Coming from a DataFrame
+        columnDataSource: p.Property<p.Any> // A ColumnDataSource
+        columnDataSourceOrient: p.Property<p.String>
+        columnDataSourceLoadFunction: p.Property<p.String>
     }
 }
 
@@ -276,7 +300,9 @@ export class WebComponent extends HTMLBox {
             propertiesLastChange: [p.Any], // A dictionary
             eventsToWatch: [p.Any], // A dictionary
             eventsCountLastChange: [p.Any], // A list
-            columnDataSource: [p.Any],
+            columnDataSource: [p.Any], // A ColumnDataSource
+            columnDataSourceOrient: [p.Any], // A string
+            columnDataSourceLoadFunction: [p.Any], // A string
         })
     }
 }

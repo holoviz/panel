@@ -16,14 +16,20 @@ def test_constructor(document, comm):
     ]
     dataframe = pd.DataFrame(data)
     component = pn.pane.Perspective(data=dataframe)
-    model = component.get_root(document, comm=comm)
 
     assert component.html.startswith(
         '<perspective-viewer id="view1" class="perspective-viewer-material-dark" style="height:100%;width:100%" plugin="hypergrid"></perspective-viewer>'
     )
+    assert component.data is dataframe
+    assert component.column_data_source_orient == "records"
+    assert component.column_data_source_load_function == "load"
+
+    model = component.get_root(document, comm=comm)
     assert component._models[model.ref["id"]][0] is model
     assert type(model).__name__ == "WebComponent"
     assert isinstance(model.columnDataSource, ColumnDataSource)
+    assert model.columnDataSourceOrient == "records"
+    assert model.columnDataSourceLoadFunction == "load"
 
 
 if __name__.startswith("bk"):

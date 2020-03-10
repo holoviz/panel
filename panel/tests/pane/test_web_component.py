@@ -38,6 +38,10 @@ def test_constructor_base():
     assert isinstance(component.properties_to_watch, dict)
     assert isinstance(component.events_to_watch, dict)
 
+    assert hasattr(component, "column_data_source")
+    assert component.column_data_source_orient == "dict"
+    assert hasattr(component, "column_data_source_load_function")
+
 def test_constructor(CustomWebComponent, html, attributes_to_watch):
     # When
     component = CustomWebComponent(html=html, attributes_to_watch=attributes_to_watch)
@@ -62,15 +66,21 @@ def test_constructor_with_parameter_values(CustomWebComponent):
     assert component.string == string
     assert component.html == '<a boolean="" string="s" integer="1" number="1.1"></a>'
 
-def test_web_component(document, comm, html):
-    web_component = WebComponent(html=html)
+def test_bokeh_model(document, comm, html):
+    # Given
+    web_component = WebComponent(html=html, column_data_source_load_function="load")
 
-    # Create pane
+    # When
     model = web_component.get_root(document, comm=comm)
+    # Then
     assert web_component._models[model.ref['id']][0] is model
     assert type(model).__name__ == 'WebComponent'
     assert model.innerHTML == html
     assert model.attributesToWatch == {}
+
+    assert hasattr(model, "columnDataSource")
+    assert model.columnDataSourceOrient == "dict"
+    assert model.columnDataSourceLoadFunction == "load"
     # Cleanup
     web_component._cleanup(model)
     assert web_component._models == {}

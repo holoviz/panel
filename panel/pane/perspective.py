@@ -86,19 +86,6 @@ class Perspective(WebComponent):
     html = param.String(
         """
     <perspective-viewer id="view1" class='perspective-viewer-material-dark' style="height:100%;width:100%"></perspective-viewer>
-    <script>
-    scriptElement = document.currentScript;
-    var viewer = scriptElement.parentElement.firstElementChild;
-    Object.defineProperty(viewer, "data", {
-    get: function () {
-        console.log('GET', "data");
-        viewer._data;
-    },
-    set: function (new_value) {
-        viewer._data = new_value;
-        viewer.load(new_value);
-    }})
-    </script>
     """
     )
     attributes_to_watch = param.Dict({
@@ -128,7 +115,13 @@ class Perspective(WebComponent):
     data = param.DataFrame(doc="""
     The data will be reloaded in full when ever it changes."""
     )
+
+
+
     def __init__(self, **params):
+        self.param.column_data_source_orient.default="records"
+        self.param.column_data_source_load_function.default="load"
+
         super().__init__(**params)
         self._set_column_data_source()
 
