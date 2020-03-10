@@ -4,6 +4,7 @@ import pytest
 from bokeh.models import ColumnDataSource
 
 from panel.pane import WebComponent
+from panel.pane.web_component import PARAMETER_TYPE
 
 
 @pytest.fixture
@@ -345,6 +346,9 @@ def test_data():
     component = WebComponent(html="<div></div>", column_data_source=cds)
     # Then
     assert component.column_data_source == cds
+def test_parameter_type_dict():
+    perspective_columns_attribute = "['x']"
+    assert ["x"]==PARAMETER_TYPE[param.List](perspective_columns_attribute)
 
 
 if __name__.startswith("bk"):

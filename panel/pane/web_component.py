@@ -11,6 +11,7 @@ from bokeh.models import ColumnDataSource
 # Todo: For now i'm using lxml for . @Philipp should now if that is ok to add as a requirement
 # or if we need to find another solution like regex or BeautifulSoup
 import lxml.html as LH
+import ast
 
 # Todo: Systematically go through this parameter types and update this dictionary
 PARAMETER_TYPE = {
@@ -18,7 +19,7 @@ PARAMETER_TYPE = {
     param.Integer: int,
     param.Number: float,
     param.ObjectSelector: str,
-    param.List: json.loads,
+    param.List: ast.literal_eval # json.loads, # ast.literal_eval
 }
 
 
@@ -323,9 +324,11 @@ class WebComponent(Widget):
             setattr(self, parameter, new_parameter_value)
 
     def _update_parameter(self, attr_dict, attribute, parameter, parameter_type):
+        print("_update_parameter")
         parameter_value = getattr(self, parameter)
         if attribute in attr_dict:
             attr_value = attr_dict[attribute]
+            print("log")
             print(parameter)
             print(attr_value, type(attr_value))
             new_parameter_value = parameter_type(attr_value)

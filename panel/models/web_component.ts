@@ -49,15 +49,49 @@ export class WebComponentView extends HTMLBoxView {
             }
 
             this.webComponentElement.onchange = (ev: any) => this.handlePropertiesChange(ev);
-            this.eventsCount = {};
-            for (let event in this.model.eventsToWatch) {
-                this.eventsCount[event] = 0
-                this.webComponentElement.addEventListener(event, (ev: Event) => this.eventHandler(ev), false)
-            }
-            this.activate_scripts(this.webComponentElement.parentNode)
-            this.handleColumnDataSourceChange()
+            this.addEventListeners();
+            this.addMutationObserver();
+            this.activate_scripts(this.webComponentElement.parentNode);
+            this.handleColumnDataSourceChange();
         }
         console.log("render - DONE")
+    }
+    addMutationObserver(): void {
+        let options = {
+            childList: false,
+            attributes: true,
+            characterData: false,
+            subtree: false,
+            attributeFilter: Object.keys(this.model.attributesToWatch),
+            attributeOldValue: false,
+            characterDataOldValue: false
+        };
+        console.log(options);
+
+        const this_ = this;
+        function mutationEventHandler(mutation: any): void {
+            console.log("mutation")
+            console.log(mutation)
+
+            const newHTML = mutation[mutation.length - 1].target.parentElement.innerHTML;
+            if (newHTML !== this_.model.innerHTML) {
+                console.log(newHTML)
+                // this_.model.innerHTML = newHTML;
+            }
+        }
+
+        let observer = new MutationObserver(mutationEventHandler);
+        // hack
+        observer.observe(this.webComponentElement, options)
+    }
+
+
+    private addEventListeners() {
+        this.eventsCount = {}
+        for (let event in this.model.eventsToWatch) {
+            this.eventsCount[event] = 0
+            this.webComponentElement.addEventListener(event, (ev: Event) => this.eventHandler(ev), false)
+        }
     }
 
     transform_cds_to_records(cds: any): any {

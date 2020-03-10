@@ -41,7 +41,7 @@ if __name__.startswith("bk"):
         {"x": 4, "y": "d", "z": False},
     ]
     dataframe = pd.DataFrame(data)
-    perspective = pn.pane.Perspective(height=500, data=dataframe, data_last_change=dataframe)
+    perspective = pn.pane.Perspective(height=500, data=dataframe)
 
     def section(component, message=None, show_html=show_html):
         title = "## " + str(type(component)).split(".")[3][:-2]
