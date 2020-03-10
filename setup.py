@@ -116,8 +116,7 @@ _tests = [
 ]
 
 extras_require = {
-    'tests': _tests + [
-        # For examples
+    'examples': [
         'hvplot',
         'plotly',
         'altair',
@@ -130,15 +129,7 @@ extras_require = {
         'django',
         'pyvista',
     ],
-    'tests_minimal': _tests + [
-        'flake8',
-        'parameterized',
-        'pytest',
-        'scipy',
-        'nbsmoke >=0.2.0',
-        'pytest-cov',
-        'codecov'
-    ],
+    'tests': _tests,
     'recommended': _recommended,
     'doc': _recommended + [
         'nbsite >=0.6.1',
