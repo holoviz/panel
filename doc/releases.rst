@@ -1,6 +1,26 @@
 Releases
 ========
 
+Version 0.8.1
+-------------
+
+Date: 2020-03-10
+
+This release is a minor release with a number of bug fixes and minor enhancements. Many thanks to the community of contributors including @bstadlbauer, @ltalirz @ceball and @gmoutsofor submitting the fixes and the maintainers, including @xavArtley, @jbednar and @philippjfr, for continued development.
+
+Minor enhancements:
+
+- Added verbose option to display server address (`#1098 <https://github.com/holoviz/panel/issues/1098>`_) [@philippjfr]
+
+Bug fixes:
+
+- Fix PNG export due to issue with PhantomJS (`#1081 <https://github.com/holoviz/panel/issues/1081>`_, `#1092 <https://github.com/holoviz/panel/issues/1092>`_) [@bstadlbauer, @philippjfr]
+- Fix for threaded server (`#1090 <https://github.com/holoviz/panel/issues/1090>`_) [@xavArtley]
+- Ensure Plotly Pane does not perform rerender on each property change (`#1109 <https://github.com/holoviz/panel/issues/1109>`_) [@philippjfr]
+- Fix issues with jslink and other callbacks in Template (`#1135 <https://github.com/holoviz/panel/issues/1135>`_) [@philippjfr]
+- Various fixes for VTK pane (`#1123 <https://github.com/holoviz/panel/issues/1123>`_) [@xavArtley]
+- Fixes for .show keyword arguments (`#1073 <https://github.com/holoviz/panel/issues/1073>`_, `#1106 <https://github.com/holoviz/panel/issues/1107>`_) [@gmoutso]
+
 Version 0.8.0
 -------------
 
