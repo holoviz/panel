@@ -153,6 +153,29 @@ def test_multi_select(document, comm):
     assert widget.value == ['C', 'A']
 
 
+def test_multi_choice(document, comm):
+    choice = MultiChoice(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
+                         value=[object, 1], name='MultiChoice')
+
+    widget = choice.get_root(document, comm=comm)
+
+    assert isinstance(widget, choice._widget_type)
+    assert widget.title == 'MultiChoice'
+    assert widget.value == ['C', '1']
+    assert widget.options == ['A', '1', 'C']
+
+    widget.value = ['1']
+    choice._comm_change({'value': ['1']})
+    assert choice.value == [1]
+
+    widget.value = ['A', 'C']
+    choice._comm_change({'value': ['A', 'C']})
+    assert choice.value == ['A', object]
+
+    choice.value = [object, 'A']
+    assert widget.value == ['C', 'A']
+
+
 def test_multi_select_change_options(document, comm):
     select = MultiSelect(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
                          value=[object, 1], name='Select')
