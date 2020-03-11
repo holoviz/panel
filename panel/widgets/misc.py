@@ -159,10 +159,12 @@ class Progress(Widget):
 
 class FileDownload(Widget):
 
-    file = param.Parameter(default=None, doc="""
-       The file, file-like object or file contents to transfer.
-       If the file is not pointing to a file on disk a filename must
-       also be provided.""")
+    auto = param.Boolean(default=True, doc="""
+       Whether to download on the initial click or allow for right-click
+       save as.""")
+
+    button_type = param.ObjectSelector(default='default', objects=[
+        'default', 'primary', 'success', 'warning', 'danger'])
 
     data = param.String(default=None, doc="""
         The data being transferred.""")
@@ -170,9 +172,17 @@ class FileDownload(Widget):
     embed = param.Boolean(default=False, doc="""
         Whether to embed the file on initialization.""")
 
+    file = param.Parameter(default=None, doc="""
+       The file, file-like object or file contents to transfer.
+       If the file is not pointing to a file on disk a filename must
+       also be provided.""")
+
     filename = param.String(default=None, doc="""
         A filename which will also be the default name when downloading
         the file.""")
+
+    label = param.String(default="Download file", doc="""
+        The label of the download button""")
 
     _clicks = param.Integer(default=0)
 
@@ -199,11 +209,35 @@ class FileDownload(Widget):
 
     _widget_type = _BkFileDownload
 
-    _rename = {'embed': None, 'file': None, 'name': 'title',
-               '_clicks': 'clicks'}
+    _rename = {'embed': None, 'file': None, '_clicks': 'clicks', 'name': 'title'}
 
     def __init__(self, file=None, **params):
+        self._default_label = 'label' not in params
+        self._synced = False
         super(FileDownload, self).__init__(file=file, **params)
+        if self.embed:
+            self._transfer()
+        self._update_label()
+
+    @param.depends('label', watch=True)
+    def _update_default(self):
+        self._default_label = False
+
+    @param.depends('auto', 'file', 'filename', watch=True)
+    def _update_label(self):
+        label='Download' if self._synced or self.auto else 'Transfer'
+        params = {}
+        if self._default_label:
+            if self.file is None:
+                label = 'No file set'
+            else:
+                filename = self.filename or os.path.basename(self.file) 
+                label = '%s %s' % (label, filename)
+            self.set_param(label=label)
+            self._default_label = True
+
+    @param.depends('embed', 'file', watch=True)
+    def _update_embed(self):
         if self.embed:
             self._transfer()
 
@@ -222,8 +256,12 @@ class FileDownload(Widget):
             return
         elif hasattr(self.file, 'read'):
             b64 = b64encode(self.file.read()).decode("utf-8")
+            if self.filename is None:
+                raise ValueError('Must provide filename if file-like '
+                                 'object is provided.')
         else:
-            b64 = b64encode(self.file).decode("utf-8")
+            raise ValueError('Cannot transfer unknown file type %s' %
+                             type(self.file).__name__)
 
         ext = filename.split('.')[-1]
         for mtype, subtypes in self._mime_types.items():
@@ -237,4 +275,6 @@ class FileDownload(Widget):
             mime = '{type}/{subtype}'.format(type=mtype, subtype=stype)
 
         data = "data:{mime};base64,{b64}".format(mime=mime, b64=b64)
+        self._synced = True
         self.set_param(data=data, filename=filename)
+        self._update_label()
