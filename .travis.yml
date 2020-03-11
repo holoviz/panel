@@ -23,9 +23,9 @@ env:
     - CHANS_REL="-c pyviz -c bokeh -c conda-forge"
     - LABELS_DEV="--label dev"
     - LABELS_REL="--label dev --label main"
-    - PKG_TEST_PYTHON="--test-python=py36"
+    - PKG_TEST_PYTHON="--test-python=py37"
     - DISPLAY=":99.0"
-    - PYTHON_VERSION=3.6
+    - PYTHON_VERSION=3.7
 
 stages:
   - test
