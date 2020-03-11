@@ -83,7 +83,6 @@ def test_find_route():
     assert find_route(graph, 'D', 'H') == ['F', 'H']
     
 
-@hv_available
 def test_pipeline_from_classes():
     pipeline = Pipeline([('Stage 1', Stage1), ('Stage 2', Stage2)])
 
@@ -124,7 +123,7 @@ def test_pipeline_from_classes():
     assert isinstance(stage[1], ParamMethod)
     assert stage[1].object() == '5 * 5 = 25'
 
-@hv_available
+
 def test_pipeline_from_instances():
     pipeline = Pipeline([('Stage 1', Stage1()), ('Stage 2', Stage2())])
 
@@ -165,7 +164,7 @@ def test_pipeline_from_instances():
     assert isinstance(stage[1], ParamMethod)
     assert stage[1].object() == '5 * 5 = 25'
 
-@hv_available
+
 def test_pipeline_from_add_stages():
 
     pipeline = Pipeline()
@@ -209,7 +208,7 @@ def test_pipeline_from_add_stages():
     assert isinstance(stage[1], ParamMethod)
     assert stage[1].object() == '5 * 5 = 25'
 
-@hv_available
+
 def test_pipeline_define_graph_missing_node():
     pipeline = Pipeline()
     pipeline.add_stage('Stage 1', Stage1)
@@ -218,7 +217,7 @@ def test_pipeline_define_graph_missing_node():
     with pytest.raises(ValueError):
         pipeline.define_graph({'Stage 1': ('Stage 2', 'Stage 2b')})
 
-@hv_available
+
 def test_pipeline_define_graph():
     pipeline = Pipeline()
     pipeline.add_stage('Stage 2', Stage2)
@@ -255,7 +254,7 @@ def test_pipeline_define_graph():
 
     assert isinstance(pipeline._state, Stage2b)
 
-@hv_available
+
 def test_pipeline_set_stage():
     pipeline = Pipeline()
     pipeline.add_stage('Stage 2', Stage2)
@@ -277,7 +276,7 @@ def test_pipeline_set_stage():
 
     assert pipeline._stage == 'Final'
 
-@hv_available
+
 def test_pipeline_define_next_parameter_respected():
     pipeline = Pipeline()
     pipeline.add_stage('Stage 2', Stage2)
@@ -292,7 +291,7 @@ def test_pipeline_define_next_parameter_respected():
 
     assert pipeline.next_selector.value == 'Stage 2'
 
-@hv_available
+
 def test_pipeline_error_condition():
     pipeline = Pipeline()
     stage2b = Stage2b(root='error')
@@ -313,7 +312,7 @@ def test_pipeline_error_condition():
 
     assert len(pipeline.error) == 0
 
-@hv_available
+
 def test_pipeline_previous_follows_initial_path():
     pipeline = Pipeline()
     pipeline.add_stage('Stage 1', Stage1)
@@ -343,7 +342,7 @@ def test_pipeline_previous_follows_initial_path():
     assert pipeline._stage == 'Stage 2b'
     assert pipeline._route == ['Stage 1', 'Stage 2b']
 
-@hv_available
+
 def test_pipeline_ready_respected():
     pipeline = Pipeline(ready_parameter='ready')
     pipeline.add_stage('Stage 1', Stage1)
@@ -355,7 +354,7 @@ def test_pipeline_ready_respected():
 
     assert not pipeline.next_button.disabled
 
-@hv_available
+
 def test_pipeline_auto_advance_respected():
     pipeline = Pipeline(ready_parameter='ready', auto_advance=True)
     pipeline.add_stage('Stage 1', Stage1)
@@ -367,7 +366,7 @@ def test_pipeline_auto_advance_respected():
 
     assert isinstance(pipeline._state, Stage2)
 
-@hv_available
+
 def test_pipeline_network_diagram_states():
     pipeline = Pipeline(ready_parameter='ready', auto_advance=True)
     pipeline.add_stage('Stage 1', Stage1)
@@ -399,26 +398,26 @@ def test_pipeline_network_diagram_states():
     assert s2 == 'inactive'
     assert s2b == 'next'
 
-@hv_available
+
 def test_pipeline_add_stage_validate_wrong_type():
     pipeline = Pipeline()
     with pytest.raises(ValueError):
         pipeline.add_stage('Stage 1', 1)
 
-@hv_available
+
 def test_pipeline_add_stage_validate_add_twice():
     pipeline = Pipeline()
     pipeline.add_stage('Stage 1', Stage1)
     with pytest.raises(ValueError):
         pipeline.add_stage('Stage 1', Stage1)
 
-@hv_available
+
 def test_pipeline_getitem():
     pipeline = Pipeline()
     pipeline.add_stage('Stage 1', Stage1)
     assert pipeline['Stage 1'] == Stage1
 
-@hv_available
+
 def test_pipeline_repr():
     pipeline = Pipeline()
     pipeline.add_stage('Stage 1', Stage1)
