@@ -125,7 +125,7 @@ extras_require = {
         'vtk',
         'scikit-learn',
         'datashader',
-        'jupyter_bokeh<=1.1.1',
+        'jupyter_bokeh',
         'django',
         'pyvista',
     ],
