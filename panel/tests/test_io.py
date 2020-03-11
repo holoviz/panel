@@ -34,11 +34,11 @@ def test_embed_param_jslink(document, comm):
     cb1, cb2 = cbs
     cb1, cb2 = (cb1, cb2) if select._models[ref][0] is cb1.args['target'] else (cb2, cb1)
     assert cb1.code == """
-    value = source['active'];
+    var value = source['active'];
     value = value.indexOf(0) >= 0;
     value = value;
     try {
-      property = target.properties['disabled'];
+      var property = target.properties['disabled'];
       if (property !== undefined) { property.validate(value); }
     } catch(err) {
       console.log('WARNING: Could not set disabled on target, raised error: ' + err);
@@ -52,11 +52,11 @@ def test_embed_param_jslink(document, comm):
     """
 
     assert cb2.code == """
-    value = source['disabled'];
+    var value = source['disabled'];
     value = value;
     value = value ? [0] : [];
     try {
-      property = target.properties['active'];
+      var property = target.properties['active'];
       if (property !== undefined) { property.validate(value); }
     } catch(err) {
       console.log('WARNING: Could not set active on target, raised error: ' + err);
@@ -164,11 +164,11 @@ def test_embed_select_str_jslink(document, comm):
     cb1, cb2 = cbs
     cb1, cb2 = (cb1, cb2) if select._models[ref][0] is cb1.args['source'] else (cb2, cb1)
     assert cb1.code == """
-    value = source['value'];
+    var value = source['value'];
     value = value;
     value = JSON.stringify(value).replace(/,/g, ", ").replace(/:/g, ": ");
     try {
-      property = target.properties['text'];
+      var property = target.properties['text'];
       if (property !== undefined) { property.validate(value); }
     } catch(err) {
       console.log('WARNING: Could not set text on target, raised error: ' + err);
@@ -182,11 +182,11 @@ def test_embed_select_str_jslink(document, comm):
     """
     
     assert cb2.code == """
-    value = source['text'];
+    var value = source['text'];
     value = value;
     value = value;
     try {
-      property = target.properties['value'];
+      var property = target.properties['value'];
       if (property !== undefined) { property.validate(value); }
     } catch(err) {
       console.log('WARNING: Could not set value on target, raised error: ' + err);
@@ -241,11 +241,11 @@ def test_embed_checkbox_str_jslink(document, comm):
     cb1, cb2 = cbs
     cb1, cb2 = (cb1, cb2) if checkbox._models[ref][0] is cb1.args['source'] else (cb2, cb1)
     assert cb1.code == """
-    value = source['active'];
+    var value = source['active'];
     value = value.indexOf(0) >= 0;
     value = JSON.stringify(value).replace(/,/g, ", ").replace(/:/g, ": ");
     try {
-      property = target.properties['text'];
+      var property = target.properties['text'];
       if (property !== undefined) { property.validate(value); }
     } catch(err) {
       console.log('WARNING: Could not set text on target, raised error: ' + err);
@@ -259,11 +259,11 @@ def test_embed_checkbox_str_jslink(document, comm):
     """
     
     assert cb2.code == """
-    value = source['text'];
+    var value = source['text'];
     value = value;
     value = value ? [0] : [];
     try {
-      property = target.properties['active'];
+      var property = target.properties['active'];
       if (property !== undefined) { property.validate(value); }
     } catch(err) {
       console.log('WARNING: Could not set active on target, raised error: ' + err);
@@ -319,11 +319,11 @@ def test_embed_slider_str_jslink(document, comm):
     cb1, cb2 = cbs
     cb1, cb2 = (cb1, cb2) if slider._models[ref][0] is cb1.args['source'] else (cb2, cb1)
     assert cb1.code == """
-    value = source['value'];
+    var value = source['value'];
     value = value;
     value = JSON.stringify(value).replace(/,/g, ", ").replace(/:/g, ": ");
     try {
-      property = target.properties['text'];
+      var property = target.properties['text'];
       if (property !== undefined) { property.validate(value); }
     } catch(err) {
       console.log('WARNING: Could not set text on target, raised error: ' + err);
@@ -337,11 +337,11 @@ def test_embed_slider_str_jslink(document, comm):
     """
     
     assert cb2.code == """
-    value = source['text'];
+    var value = source['text'];
     value = value;
     value = value;
     try {
-      property = target.properties['value'];
+      var property = target.properties['value'];
       if (property !== undefined) { property.validate(value); }
     } catch(err) {
       console.log('WARNING: Could not set value on target, raised error: ' + err);

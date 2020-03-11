@@ -395,7 +395,7 @@ class Pipeline(param.Parameterized):
             traceback = msg or "Undefined error, enable debug mode."
         button = Button(name='Error', button_type='danger', width=100,
                         align='center', margin=(0, 0, 0, 5))
-        button.jslink(button, code={'clicks': "alert(`{tb}`)".format(tb=traceback)})
+        button.js_on_click(code="alert(`{tb}`)".format(tb=traceback))
         return button
 
     @param.depends('next', watch=True)

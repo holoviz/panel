@@ -18,6 +18,7 @@ except Exception:
     pytestmark = pytest.mark.skip('Pipeline requires HoloViews.')
 
 
+
 class Stage1(param.Parameterized):
 
     a = param.Number(default=5, bounds=(0, 10))
@@ -311,7 +312,7 @@ def test_pipeline_error_condition():
 
     assert len(pipeline.error) == 0
 
-    
+
 def test_pipeline_previous_follows_initial_path():
     pipeline = Pipeline()
     pipeline.add_stage('Stage 1', Stage1)
@@ -341,7 +342,7 @@ def test_pipeline_previous_follows_initial_path():
     assert pipeline._stage == 'Stage 2b'
     assert pipeline._route == ['Stage 1', 'Stage 2b']
 
-    
+
 def test_pipeline_ready_respected():
     pipeline = Pipeline(ready_parameter='ready')
     pipeline.add_stage('Stage 1', Stage1)

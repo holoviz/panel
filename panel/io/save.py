@@ -12,10 +12,9 @@ import param
 
 from bokeh.document.document import Document
 from bokeh.embed import file_html
-from bokeh.io.export import export_png, create_webdriver
+from bokeh.io.export import export_png
 from bokeh.models import Div
 from bokeh.resources import CDN
-from bokeh.util.string import decode_utf8
 from pyviz_comms import Comm
 
 from ..config import config
@@ -41,8 +40,9 @@ def save_png(model, filename):
     filename: str
       Filename to save to
     """
+    from bokeh.io.webdriver import webdriver_control
     if not state.webdriver:
-        state.webdriver = create_webdriver()
+        state.webdriver = webdriver_control.create()
 
     webdriver = state.webdriver
     export_png(model, filename, webdriver=webdriver)
@@ -158,10 +158,9 @@ def save(panel, filename, title=None, resources=None, template=None,
 
     html = file_html(doc, resources, title, **kwargs)
     if hasattr(filename, 'write'):
-        html = decode_utf8(html)
         if isinstance(filename, io.BytesIO):
             html = html.encode('utf-8')
         filename.write(html)
-        return
-    with io.open(filename, mode="w", encoding="utf-8") as f:
-        f.write(decode_utf8(html))
+    else:
+        with io.open(filename, mode="w", encoding="utf-8") as f:
+            f.write(html)

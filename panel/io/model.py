@@ -33,7 +33,7 @@ def diff(doc, binary=True, events=None):
             and e.hint.cols is not None):
             e.hint.cols = None
         fixed_events.append(e)
-    msg = Protocol("1.0").create("PATCH-DOC", events, use_buffers=binary)
+    msg = Protocol().create("PATCH-DOC", events, use_buffers=binary)
     doc._held_events = [e for e in doc._held_events if e not in events]
     return msg
 

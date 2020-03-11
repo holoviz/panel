@@ -82,9 +82,9 @@ def test_date_slider(document, comm):
 
     assert isinstance(widget, date_slider._widget_type)
     assert widget.title == 'DateSlider'
-    assert widget.value == date(2018, 9, 4)
-    assert widget.start == date(2018, 9, 1)
-    assert widget.end == date(2018, 9, 10)
+    assert widget.value == 1536019200000
+    assert widget.start == 1535760000000.0
+    assert widget.end == 1536537600000.0
 
     epoch = datetime(1970, 1, 1)
     widget.value = (datetime(2018, 9, 3)-epoch).total_seconds()*1000
@@ -96,7 +96,7 @@ def test_date_slider(document, comm):
     assert date_slider.value == date(2018, 9, 4)
 
     date_slider.value = date(2018, 9, 6)
-    assert widget.value == date_slider.value
+    assert widget.value == 1536192000000
 
 
 def test_date_range_slider(document, comm):
@@ -108,9 +108,9 @@ def test_date_range_slider(document, comm):
 
     assert isinstance(widget, date_slider._widget_type)
     assert widget.title == 'DateRangeSlider'
-    assert widget.value == (datetime(2018, 9, 2), datetime(2018, 9, 4))
-    assert widget.start == datetime(2018, 9, 1)
-    assert widget.end == datetime(2018, 9, 10)
+    assert widget.value == (1535846400000, 1536019200000)
+    assert widget.start == 1535760000000
+    assert widget.end == 1536537600000
 
     epoch = datetime(1970, 1, 1)
     widget.value = ((datetime(2018, 9, 3)-epoch).total_seconds()*1000,
@@ -119,7 +119,7 @@ def test_date_range_slider(document, comm):
     assert date_slider.value == (datetime(2018, 9, 3), datetime(2018, 9, 6))
 
     date_slider.value = (datetime(2018, 9, 4), datetime(2018, 9, 6))
-    assert widget.value == date_slider.value
+    assert widget.value == (1536019200000, 1536192000000)
 
 
 

@@ -23,12 +23,16 @@ from bokeh.embed.util import standalone_docs_json_and_render_items
 from bokeh.embed.wrappers import wrap_in_script_tag
 from bokeh.models import CustomJS, LayoutDOM, Model
 from bokeh.resources import CDN, INLINE
-from bokeh.util.string import encode_utf8, escape
 from bokeh.util.serialization import make_id
 from pyviz_comms import (
     JS_CALLBACK, PYVIZ_PROXY, Comm, JupyterCommManager as _JupyterCommManager,
     nb_mime_js
 )
+
+try:
+    from bokeh.util.string import escape
+except Exception:
+    from html import escape
 
 from ..compiler import require_components
 from .embed import embed_state
@@ -114,7 +118,7 @@ def get_comm_customjs(change, client_comm, plot_id, transform=None,
     # Abort callback if value matches last received event
     transform = transform or ''
     abort = ABORT_JS.format(plot_id=plot_id, change=change, transform=transform)
-    data_template = """data = {{{change}: value, 'id': cb_obj.id}}; cb_obj.event_name = '{change}';"""
+    data_template = """var data = {{{change}: value, 'id': cb_obj.id}}; cb_obj.event_name = '{change}';"""
 
     fetch_data = data_template.format(change=change, transform=transform)
     self_callback = JS_CALLBACK.format(
@@ -184,7 +188,7 @@ def html_for_render_items(comm_js, docs_json, render_items, template=None, templ
         template = _env.from_string("{% extends base %}\n" + template)
 
     html = template.render(context)
-    return encode_utf8(html)
+    return html
 
 
 def render_template(document, comm=None):
@@ -218,7 +222,7 @@ def render_model(model, comm=None):
         docs_json=serialize_json(docs_json),
         render_items=serialize_json([render_item]),
     )
-    bokeh_script, bokeh_div = encode_utf8(script), encode_utf8(div)
+    bokeh_script, bokeh_div = script, div
     html = "<div id='{id}'>{html}</div>".format(id=target, html=bokeh_div)
 
     # Publish bokeh plot JS

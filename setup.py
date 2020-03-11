@@ -89,7 +89,7 @@ except Exception:
 ########## dependencies ##########
 
 install_requires = [
-    'bokeh >=1.4.0,<2.0',
+    'bokeh >=2.0.0',
     'param >=1.9.2',
     'pyviz_comms >=0.7.3',
     'markdown',
@@ -99,7 +99,7 @@ install_requires = [
 
 _recommended = [
     'notebook >=5.4',
-    'holoviews >=1.12.0',
+    'holoviews >=1.13.0b2',
     'matplotlib',
     'pillow',
     'plotly'
@@ -125,7 +125,7 @@ extras_require = {
         'vtk',
         'scikit-learn',
         'datashader',
-        'jupyter_bokeh<=1.1.1',
+        'jupyter_bokeh',
         'django',
         'pyvista',
     ],
@@ -151,7 +151,7 @@ extras_require['build'] = [
     'param >=1.9.2',
     'pyct >=0.4.4',
     'setuptools >=30.3.0',
-    'bokeh >=1.4.0,<2.0',
+    'bokeh >=2.0.0',
     'pyviz_comms >=0.6.0',
     # non-python dependency
     'nodejs >=9.11.1',

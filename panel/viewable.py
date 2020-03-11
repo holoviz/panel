@@ -1075,7 +1075,9 @@ class Reactive(Viewable):
 
         mapping = code or links
         for k in mapping:
-            if k not in self.param and k not in list(self._rename.values()):
+            if k.startswith('event:'):
+                continue
+            elif k not in self.param and k not in list(self._rename.values()):
                 matches = difflib.get_close_matches(k, list(self.param))
                 if matches:
                     matches = ' Similar parameters include: %r' % matches
@@ -1092,7 +1094,9 @@ class Reactive(Viewable):
 
         if isinstance(target, Reactive) and code is None:
             for k, p in mapping.items():
-                if p not in target.param and p not in list(target._rename.values()):
+                if k.startswith('event:'):
+                    continue
+                elif p not in target.param and p not in list(target._rename.values()):
                     matches = difflib.get_close_matches(p, list(target.param))
                     if matches:
                         matches = ' Similar parameters include: %r' % matches
