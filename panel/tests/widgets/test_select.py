@@ -5,7 +5,9 @@ from collections import OrderedDict
 import numpy as np
 import pytest
 
-from panel.widgets import Select, MultiSelect, CrossSelector, ToggleGroup
+from panel.widgets import (
+    CrossSelector, MultiChoice, MultiSelect, Select, ToggleGroup
+)
 from panel.util import as_unicode
 
 
@@ -150,6 +152,29 @@ def test_multi_select(document, comm):
     assert select.value == ['A', object]
 
     select.value = [object, 'A']
+    assert widget.value == ['C', 'A']
+
+
+def test_multi_choice(document, comm):
+    choice = MultiChoice(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
+                         value=[object, 1], name='MultiChoice')
+
+    widget = choice.get_root(document, comm=comm)
+
+    assert isinstance(widget, choice._widget_type)
+    assert widget.title == 'MultiChoice'
+    assert widget.value == ['C', '1']
+    assert widget.options == ['A', '1', 'C']
+
+    widget.value = ['1']
+    choice._comm_change({'value': ['1']})
+    assert choice.value == [1]
+
+    widget.value = ['A', 'C']
+    choice._comm_change({'value': ['A', 'C']})
+    assert choice.value == ['A', object]
+
+    choice.value = [object, 'A']
     assert widget.value == ['C', 'A']
 
 

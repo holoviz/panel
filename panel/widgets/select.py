@@ -14,7 +14,7 @@ from bokeh.models.widgets import (
     AutocompleteInput as _BkAutocompleteInput, CheckboxGroup as _BkCheckboxGroup,
     CheckboxButtonGroup as _BkCheckboxButtonGroup, MultiSelect as _BkMultiSelect,
     RadioButtonGroup as _BkRadioButtonGroup, RadioGroup as _BkRadioBoxGroup,
-    Select as _BkSelect)
+    Select as _BkSelect, MultiChoice as _BkMultiChoice)
 
 from ..layout import Column, VSpacer
 from ..util import as_unicode, isIn, indexOf
@@ -115,15 +115,9 @@ class Select(SelectBase):
                 lambda x: x.value, 'value', 'cb_obj.value')
 
 
-class MultiSelect(Select):
-
-    size = param.Integer(default=4, doc="""
-        The number of items displayed at once (i.e. determines the
-        widget height).""")
+class _MultiSelectBase(Select):
 
     value = param.List(default=[])
-
-    _widget_type = _BkMultiSelect
 
     _supports_embed = False
 
@@ -150,6 +144,34 @@ class MultiSelect(Select):
         return msg
 
 
+class MultiSelect(_MultiSelectBase):
+
+    size = param.Integer(default=4, doc="""
+        The number of items displayed at once (i.e. determines the
+        widget height).""")
+
+    _widget_type = _BkMultiSelect
+
+
+class MultiChoice(_MultiSelectBase):
+
+    delete_button = param.Boolean(default=True, doc="""
+        Whether to display a button to delete a selected option.""")
+
+    max_items = param.Integer(default=None, bounds=(1, None), doc="""
+        Maximum number of options that can be selected.""")
+
+    option_limit = param.Integer(default=None, bounds=(1, None), doc="""
+        Maximum number of options to display at once.""")
+
+    placeholder = param.String(default='', doc="""
+        String displayed when no selection has been made.""")
+
+    solid = param.Boolean(default=True, doc="""
+        Whether to display widget with solid or light style.""")
+
+    _widget_type = _BkMultiChoice
+
 
 class AutocompleteInput(Widget):
 
@@ -166,7 +188,6 @@ class AutocompleteInput(Widget):
     _widget_type = _BkAutocompleteInput
 
     _rename = {'name': 'title', 'options': 'completions'}
-
 
 
 class _RadioGroupBase(Select):
