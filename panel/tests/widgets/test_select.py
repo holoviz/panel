@@ -5,7 +5,9 @@ from collections import OrderedDict
 import numpy as np
 import pytest
 
-from panel.widgets import Select, MultiSelect, CrossSelector, ToggleGroup
+from panel.widgets import (
+    CrossSelector, MultiChoice, MultiSelect, Select, ToggleGroup
+)
 from panel.util import as_unicode
 
 
