@@ -167,7 +167,7 @@ class FileDownload(Widget):
         'default', 'primary', 'success', 'warning', 'danger'])
 
     callback = param.Callable(default=None, doc="""
-        A callable that return the file path or file-like object.""")
+        A callable that returns the file path or file-like object.""")
 
     data = param.String(default=None, doc="""
         The data being transferred.""")
