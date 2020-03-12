@@ -11,6 +11,7 @@ import param
 import numpy as np
 
 from bokeh.models import CustomJS
+from bokeh.models.formatters import TickFormatter
 from bokeh.models.widgets import (
     DateSlider as _BkDateSlider, DateRangeSlider as _BkDateRangeSlider,
     RangeSlider as _BkRangeSlider, Slider as _BkSlider)
@@ -22,6 +23,7 @@ from ..viewable import Layoutable
 from .base import Widget, CompositeWidget
 from ..layout import Column
 from .input import StaticText
+
 
 
 class _SliderBase(Widget):
@@ -49,6 +51,9 @@ class _SliderBase(Widget):
 
 
 class ContinuousSlider(_SliderBase):
+
+    format = param.ClassSelector(class_=string_types+(TickFormatter,), doc="""
+        Allows defining a custom format string or bokeh TickFormatter.""")
 
     _supports_embed = True
 
@@ -274,6 +279,9 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
 
 
 class RangeSlider(_SliderBase):
+
+    format = param.ClassSelector(class_=string_types+(TickFormatter,), doc="""
+        Allows defining a custom format string or bokeh TickFormatter.""")
 
     value = param.NumericTuple(default=(0, 1), length=2)
 
