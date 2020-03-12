@@ -201,7 +201,9 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
 
         self._text = StaticText(margin=(5, 0, 0, 5), style={'white-space': 'nowrap'})
         self._slider = None
-        self._composite = Column(self._text, self._slider)
+        layout = {p: getattr(self, p) for p in Layoutable.param
+                  if getattr(self, p) is not None}
+        self._composite = Column(self._text, self._slider, **layout)
         self._update_options()
         self.param.watch(self._update_options, ['options', 'formatter'])
         self.param.watch(self._update_value, ['value'])
