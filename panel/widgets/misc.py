@@ -166,6 +166,9 @@ class FileDownload(Widget):
     button_type = param.ObjectSelector(default='default', objects=[
         'default', 'primary', 'success', 'warning', 'danger'])
 
+    callback = param.Callable(default=None, doc="""
+        A callable that returns the file path or file-like object.""")
+
     data = param.String(default=None, doc="""
         The data being transferred.""")
 
@@ -209,7 +212,10 @@ class FileDownload(Widget):
 
     _widget_type = _BkFileDownload
 
-    _rename = {'embed': None, 'file': None, '_clicks': 'clicks', 'name': 'title'}
+    _rename = {
+        'callback': None, 'embed': None, 'file': None,
+        '_clicks': 'clicks', 'name': 'title'
+    }
 
     def __init__(self, file=None, **params):
         self._default_label = 'label' not in params
@@ -227,7 +233,7 @@ class FileDownload(Widget):
     def _update_label(self):
         label = 'Download' if self._synced or self.auto else 'Transfer'
         if self._default_label:
-            if self.file is None:
+            if self.file is None and self.callback is None:
                 label = 'No file set'
             else:
                 try:
@@ -239,33 +245,38 @@ class FileDownload(Widget):
             self.set_param(label=label)
             self._default_label = True
 
-    @param.depends('embed', 'file', watch=True)
+    @param.depends('embed', 'file', 'callback', watch=True)
     def _update_embed(self):
         if self.embed:
             self._transfer()
 
     @param.depends('_clicks', watch=True)
     def _transfer(self):
-        if self.file is None:
+        if self.file is None and self.callback is None:
             return
 
+        from ..param import ParamFunction
         filename = self.filename
-        if isinstance(self.file, str) and os.path.isfile(self.file):
-            with open(self.file, 'rb') as f:
+        if self.callback is None:
+            fileobj = self.file
+        else:
+            fileobj = ParamFunction.eval(self.callback)
+        if isinstance(fileobj, str) and os.path.isfile(fileobj):
+            with open(fileobj, 'rb') as f:
                 b64 = b64encode(f.read()).decode("utf-8")
             if filename is None:
-                filename = os.path.basename(self.file)
-        elif hasattr(self.file, 'read'):
-            bdata = self.file.read()
+                filename = os.path.basename(fileobj)
+        elif hasattr(fileobj, 'read'):
+            bdata = fileobj.read()
             if not isinstance(bdata, bytes):
                 bdata = bdata.encode("utf-8")
             b64 = b64encode(bdata).decode("utf-8")
-            if self.filename is None:
+            if filename is None:
                 raise ValueError('Must provide filename if file-like '
                                  'object is provided.')
         else:
             raise ValueError('Cannot transfer unknown file type %s' %
-                             type(self.file).__name__)
+                             type(fileobj).__name__)
 
         ext = filename.split('.')[-1]
         for mtype, subtypes in self._mime_types.items():

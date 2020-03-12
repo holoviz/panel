@@ -559,14 +559,14 @@ class ParamMethod(ReplacementPane):
         super(ParamMethod, self).__init__(object, **params)
         self._link_object_params()
         if object is not None:
-            self._update_inner(self._eval_function(object))
+            self._update_inner(self.eval(object))
 
     #----------------------------------------------------------------
     # Callback API
     #----------------------------------------------------------------
 
     @classmethod
-    def _eval_function(self, function):
+    def eval(self, function):
         args, kwargs = (), {}
         if hasattr(function, '_dinfo'):
             arg_deps = function._dinfo['dependencies']
@@ -587,7 +587,7 @@ class ParamMethod(ReplacementPane):
         self._callbacks = callbacks
         self._link_object_params()
         if object is not None:
-            self._update_inner(self._eval_function(self.object))
+            self._update_inner(self.eval(self.object))
 
     def _link_object_params(self):
         parameterized = get_method_owner(self.object)
@@ -618,7 +618,7 @@ class ParamMethod(ReplacementPane):
                     self._callbacks.append(watcher)
                     for p in params:
                         deps.append(p)
-            new_object = self._eval_function(self.object)
+            new_object = self.eval(self.object)
             self._update_inner(new_object)
 
         for _, params in full_groupby(params, lambda x: (x.inst or x.cls, x.what)):
@@ -650,7 +650,7 @@ class ParamFunction(ParamMethod):
     priority = 0.6
 
     def _replace_pane(self, *args):
-        new_object = self._eval_function(self.object)
+        new_object = self.eval(self.object)
         self._update_inner(new_object)
 
     def _link_object_params(self):
