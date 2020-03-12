@@ -225,7 +225,7 @@ class FileDownload(Widget):
 
     @param.depends('auto', 'file', 'filename', watch=True)
     def _update_label(self):
-        label='Download' if self._synced or self.auto else 'Transfer'
+        label = 'Download' if self._synced or self.auto else 'Transfer'
         if self._default_label:
             if self.file is None:
                 label = 'No file set'
@@ -251,8 +251,6 @@ class FileDownload(Widget):
                 b64 = b64encode(f.read()).decode("utf-8")
             if filename is None:
                 filename = os.path.basename(self.file)
-        elif filename is None:
-            return
         elif hasattr(self.file, 'read'):
             b64 = b64encode(self.file.read()).decode("utf-8")
             if self.filename is None:
@@ -275,5 +273,6 @@ class FileDownload(Widget):
 
         data = "data:{mime};base64,{b64}".format(mime=mime, b64=b64)
         self._synced = True
+
         self.set_param(data=data, filename=filename)
         self._update_label()
