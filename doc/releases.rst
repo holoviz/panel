@@ -13,7 +13,7 @@ Features:
 - Added a MultiChoice widget (`#1140 <https://github.com/holoviz/panel/pull/1140>`_)
 - Add FileDownload widget (`#915 <https://github.com/holoviz/panel/pull/915>`_, `#1146 <https://github.com/holoviz/panel/pull/1146>`_)
 - Add ability to define Slider format option (`#1142 <https://github.com/holoviz/panel/pull/1142>`_)
-- Expose `pn.state.cookies` and `pn.state.headers` (`#1143 <https://github.com/holoviz/panel/pull/1143>`_)
+- Expose `pn.state.cookies` and `pn.state.headers` to allow accessing HTTP headers and requests from inside an app (`#1143 <https://github.com/holoviz/panel/pull/1143>`_)
 
 Bug fixes:
 
@@ -21,7 +21,7 @@ Bug fixes:
 
 Removals:
 
-- Slider no longer support `callback_policy` and `callback_throttle`
+- Slider no longer support `callback_policy` and `callback_throttle` as they have been replaced by the `value_throttled` property in bokeh
 
 
 Version 0.8.1
