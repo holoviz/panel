@@ -16,7 +16,8 @@ from ..depends import depends
 from ..io.notebook import push
 from ..io.state import state
 from ..models import (
-    Audio as _BkAudio, VideoStream as _BkVideoStream, Progress as _BkProgress
+    Audio as _BkAudio, VideoStream as _BkVideoStream, Progress as _BkProgress,
+    FileDownload as _BkFileDownload
 )
 from .base import Widget
 
@@ -154,3 +155,131 @@ class Progress(Widget):
     @depends('max', watch=True)
     def _update_value_bounds(self):
         self.param.value.bounds = (0, self.max)
+
+
+class FileDownload(Widget):
+
+    auto = param.Boolean(default=True, doc="""
+       Whether to download on the initial click or allow for right-click
+       save as.""")
+
+    button_type = param.ObjectSelector(default='default', objects=[
+        'default', 'primary', 'success', 'warning', 'danger'])
+
+    data = param.String(default=None, doc="""
+        The data being transferred.""")
+
+    embed = param.Boolean(default=False, doc="""
+        Whether to embed the file on initialization.""")
+
+    file = param.Parameter(default=None, doc="""
+       The file, file-like object or file contents to transfer.
+       If the file is not pointing to a file on disk a filename must
+       also be provided.""")
+
+    filename = param.String(default=None, doc="""
+        A filename which will also be the default name when downloading
+        the file.""")
+
+    label = param.String(default="Download file", doc="""
+        The label of the download button""")
+
+    _clicks = param.Integer(default=0)
+
+    _mime_types = {
+        'application': {
+            'pdf': 'pdf', 'zip': 'zip'
+        },
+        'audio': {
+            'mp3': 'mp3', 'ogg': 'ogg', 'wav': 'wav', 'webm': 'webm'
+        },
+        'image': {
+            'apng': 'apng', 'bmp': 'bmp', 'gif': 'gif', 'ico': 'x-icon',
+            'cur': 'x-icon', 'jpg': 'jpeg', 'jpeg': 'jpeg',  'png': 'png',
+            'svg': 'svg+xml', 'tif': 'tiff', 'tiff': 'tiff', 'webp': 'webp'
+        },
+        'text': {
+            'css': 'css', 'csv': 'plain;charset=UTF-8', 'js': 'javascript',
+            'html': 'html', 'txt': 'plain;charset=UTF-8'
+        },
+        'video': {
+            'mp4': 'mp4', 'ogg': 'ogg', 'webm': 'webm'
+        }
+    }
+
+    _widget_type = _BkFileDownload
+
+    _rename = {'embed': None, 'file': None, '_clicks': 'clicks', 'name': 'title'}
+
+    def __init__(self, file=None, **params):
+        self._default_label = 'label' not in params
+        self._synced = False
+        super(FileDownload, self).__init__(file=file, **params)
+        if self.embed:
+            self._transfer()
+        self._update_label()
+
+    @param.depends('label', watch=True)
+    def _update_default(self):
+        self._default_label = False
+
+    @param.depends('auto', 'file', 'filename', watch=True)
+    def _update_label(self):
+        label = 'Download' if self._synced or self.auto else 'Transfer'
+        if self._default_label:
+            if self.file is None:
+                label = 'No file set'
+            else:
+                try:
+                    filename = self.filename or os.path.basename(self.file)
+                except TypeError:
+                    raise ValueError('Must provide filename if file-like '
+                                     'object is provided.')
+                label = '%s %s' % (label, filename)
+            self.set_param(label=label)
+            self._default_label = True
+
+    @param.depends('embed', 'file', watch=True)
+    def _update_embed(self):
+        if self.embed:
+            self._transfer()
+
+    @param.depends('_clicks', watch=True)
+    def _transfer(self):
+        if self.file is None:
+            return
+
+        filename = self.filename
+        if isinstance(self.file, str) and os.path.isfile(self.file):
+            with open(self.file, 'rb') as f:
+                b64 = b64encode(f.read()).decode("utf-8")
+            if filename is None:
+                filename = os.path.basename(self.file)
+        elif hasattr(self.file, 'read'):
+            bdata = self.file.read()
+            if not isinstance(bdata, bytes):
+                bdata = bdata.encode("utf-8")
+            b64 = b64encode(bdata).decode("utf-8")
+            if self.filename is None:
+                raise ValueError('Must provide filename if file-like '
+                                 'object is provided.')
+        else:
+            raise ValueError('Cannot transfer unknown file type %s' %
+                             type(self.file).__name__)
+
+        ext = filename.split('.')[-1]
+        for mtype, subtypes in self._mime_types.items():
+            stype = None
+            if ext in subtypes:
+                stype = subtypes[ext]
+                break
+        if stype is None:
+            mime = 'application/octet-stream'
+        else:
+            mime = '{type}/{subtype}'.format(type=mtype, subtype=stype)
+
+        data = "data:{mime};base64,{b64}".format(mime=mime, b64=b64)
+        self._synced = True
+
+        self.set_param(data=data, filename=filename)
+        self._update_label()
