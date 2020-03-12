@@ -5,15 +5,12 @@ from typing import List, Optional
 import param
 from bokeh.core.properties import Bool, Instance, Int, String
 from bokeh.layouts import column
-from bokeh.models import HTMLBox, Model, Slider
+from bokeh.models import Model
 
 import panel as pn
 
-LOCATION_TS = pathlib.Path(__file__).parent / "location.ts"
-LOCATION_TS_STR = str(LOCATION_TS.resolve())
 
-
-class Location(HTMLBox):
+class Location(Model):
     """A python wrapper around the JS `window.location` api. See
     https://www.w3schools.com/js/js_window_location.asp and
     https://www.w3.org/TR/html52/browsers.html#the-location-interface
@@ -21,8 +18,6 @@ class Location(HTMLBox):
     You can use this model to provide (parts of) the app state to the user as a bookmarkable and
     shareable link.
     """
-
-    __implementation__ = LOCATION_TS_STR
 
     href = String(
         default="",
