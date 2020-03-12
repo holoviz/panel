@@ -230,7 +230,11 @@ class FileDownload(Widget):
             if self.file is None:
                 label = 'No file set'
             else:
-                filename = self.filename or os.path.basename(self.file) 
+                try:
+                    filename = self.filename or os.path.basename(self.file)
+                except TypeError:
+                    raise ValueError('Must provide filename if file-like '
+                                     'object is provided.')
                 label = '%s %s' % (label, filename)
             self.set_param(label=label)
             self._default_label = True
@@ -252,7 +256,10 @@ class FileDownload(Widget):
             if filename is None:
                 filename = os.path.basename(self.file)
         elif hasattr(self.file, 'read'):
-            b64 = b64encode(self.file.read()).decode("utf-8")
+            bdata = self.file.read()
+            if not isinstance(bdata, bytes):
+                bdata = bdata.encode("utf-8")
+            b64 = b64encode(bdata).decode("utf-8")
             if self.filename is None:
                 raise ValueError('Must provide filename if file-like '
                                  'object is provided.')
