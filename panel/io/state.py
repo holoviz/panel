@@ -85,6 +85,14 @@ class _state(param.Parameterized):
         self._curdoc = doc
 
     @property
+    def cookies(self):
+        return self.curdoc.session_context.request.cookies if self.curdoc else {}
+
+    @property
+    def headers(self):
+        return self.curdoc.session_context.request.headers if self.curdoc else {}
+
+    @property
     def session_args(self):
         return self.curdoc.session_context.request.arguments if self.curdoc else {}
 
