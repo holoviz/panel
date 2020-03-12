@@ -17,12 +17,13 @@ def CustomWebComponent(html):
     class CustomWebComponent_(WebComponent):
         """Mockup used for testing"""
         html = param.String(html_value)
-        attributes_to_watch = param.Dict({"boolean": "boolean", "string": "string", "integer": "integer", "number": "number"})
+        attributes_to_watch = param.Dict({"boolean": "boolean", "string": "string", "integer": "integer", "number": "number", "list": "list_"})
 
         boolean = param.Boolean()
         string = param.String()
         integer = param.Integer()
         number = param.Number()
+        list_ = param.List(default=None)
         clicks = param.Integer()
 
     return CustomWebComponent_
@@ -35,10 +36,12 @@ def test_constructor_base():
     # When
     component = WebComponent()
     # Then
+    assert hasattr(component, "html")
     assert isinstance(component.attributes_to_watch, dict)
+    assert hasattr(component, "attributes_last_change")
     assert isinstance(component.properties_to_watch, dict)
+    assert hasattr(component, "properties_last_change")
     assert isinstance(component.events_to_watch, dict)
-
     assert hasattr(component, "column_data_source")
     assert component.column_data_source_orient == "dict"
     assert hasattr(component, "column_data_source_load_function")
@@ -100,6 +103,118 @@ def test_custom_web_component(document, comm, html, CustomWebComponent):
     # Cleanup
     web_component._cleanup(model)
     assert web_component._models == {}
+
+def test_web_component_parameter_attribute_change(document, comm, CustomWebComponent):
+    # Given
+    component = CustomWebComponent(
+        html = "<div></div>",
+        attributes_to_watch = {"boolean": "boolean", "string": "string", "integer": "integer", "number": "number", "list": "list_"},
+    )
+
+    # When/ Then
+    model = component.get_root(document, comm=comm)
+    assert component._models[model.ref['id']][0] is model
+    assert type(model).__name__ == 'WebComponent'
+    assert model.innerHTML == '<div></div>'
+    assert model.attributesToWatch == {"boolean": "boolean", "string": "string", "integer": "integer", "number": "number", "list": "list_"}
+    assert model.attributesLastChange == {}
+
+    # When/ Then
+    component.boolean = True
+    assert model.attributesLastChange == {"boolean": ""}
+    assert component.boolean == True
+
+    component.boolean = False
+    assert model.attributesLastChange == {"boolean": None}
+    assert component.boolean == False
+
+    component.string = "a"
+    assert model.attributesLastChange == {"string": "a"}
+    assert component.string == "a"
+
+    component.integer = 1
+    assert model.attributesLastChange == {"integer": "1"}
+    assert component.integer == 1
+
+    component.number = 2.1
+    assert model.attributesLastChange == {"number": "2.1"}
+    assert component.number == 2.1
+
+    component.list_ = ["x", "y"]
+    assert model.attributesLastChange == {"list": '["x","y"]'} # Note compact json dump
+    assert component.list_ == ["x", "y"]
+
+    component.list_ = []
+    assert model.attributesLastChange == {"list": "[]"}
+    assert component.list_ == []
+
+    component.list_ = None
+    assert model.attributesLastChange == {"list": None}
+    assert component.list_ == None
+
+    # Cleanup
+    component._cleanup(model)
+    assert component._models == {}
+
+def test_custom_web_component_attributes_comm(document, comm):
+    # Given
+    class Component(WebComponent):
+        """Mockup used for testing"""
+        html = param.String("<div></div>")
+        attributes_to_watch = param.Dict({"baram1": "param1"})
+
+        param1 = param.String()
+    component = Component()
+
+    # When/ Then
+    model = component.get_root(document, comm=comm)
+    assert component._models[model.ref['id']][0] is model
+    assert type(model).__name__ == 'WebComponent'
+    assert model.innerHTML == '<div baram1=""></div>'
+    assert model.attributesToWatch == {"baram1": "param1"}
+    assert model.attributesLastChange == {}
+
+    # When/ Then
+    component.attributes_last_change = {"param1": "a"}
+    assert model.attributesLastChange == {"param1": "a"}
+
+    # When/ Then
+    model.attributesLastChange = {"param1": "a"}
+    assert component.attributes_last_change == {"param1": "a"}
+
+    # Cleanup
+    component._cleanup(model)
+    assert component._models == {}
+
+def test_custom_web_component_properties_comm(document, comm):
+    # Given
+    class Component(WebComponent):
+        """Mockup used for testing"""
+        html = param.String("<div></div>")
+        properties_to_watch = param.Dict({"baram1": "param1"})
+
+        param1 = param.String()
+    component = Component()
+
+    # When/ Then
+    model = component.get_root(document, comm=comm)
+    assert component._models[model.ref['id']][0] is model
+    assert type(model).__name__ == 'WebComponent'
+    assert model.innerHTML == '<div></div>'
+    assert model.propertiesToWatch == {"baram1": "param1"}
+    assert model.propertiesLastChange == {"baram1": ""}
+
+    # When/ Then
+    component.properties_last_change = {"param1": "a"}
+    assert model.propertiesLastChange == {"param1": "a"}
+
+    # When/ Then
+    model.propertiesLastChange = {"param1": "a"}
+    assert component.properties_last_change == {"param1": "a"}
+
+    # Cleanup
+    component._cleanup(model)
+    assert component._models == {}
 
 @pytest.mark.parametrize(["html", "expected"], [
     ('<wired-radio boolean id="1">Radio Two</wired-radio>', {"boolean": None, "id": "1"}),
@@ -166,6 +281,25 @@ def test_update_parameters_number(CustomWebComponent):
     custom_web_component.html = '<a number="40.507407407407406"></a>'
     assert custom_web_component.number == 40.507407407407406
 
+def test_update_parameters_list():
+    class Component(WebComponent):
+        html = param.String("<a></a>")
+        attributes_to_watch = param.Dict({"attrib1": "param1"})
+
+        param1 = param.List()
+
+    # When/ Then
+    component = Component()
+    assert component.param1 ==[]
+    assert component.html == "<a></a>"
+
+    component.param1 = ["x"]
+    assert component.html == '<a></a>' # We don't update the html because it would send it to client
+
+    component.param1 = []
+    assert component.html == '<a></a>' # We don't update the html because it would send it to client
+
+
 def test_update_not_supported_parameter_type():
     """watching a type of parameter that is not supported should raise n TypeError"""
     class Component(WebComponent):
@@ -177,22 +311,34 @@ def test_update_not_supported_parameter_type():
     with pytest.raises(TypeError):
         Component()
 
-def test_parameter_change_triggers_attribute_change(CustomWebComponent):
+def test_parameter_change_to_attribute_change(CustomWebComponent):
     component = CustomWebComponent()
+    html = component.html
 
     component.boolean=True
-    assert component.boolean==True
-    assert component.html == '<wired-radio id="1" string="" integer="0" number="0.0" boolean="">Radio Two</wired-radio>'
+    assert component.html == html
+    assert component.attributes_last_change == {"boolean": True}
+    component.update_html_from_attributes_to_watch()
+    html = '<wired-radio id="1" string="" integer="0" number="0.0" boolean="">Radio Two</wired-radio>'
+    assert component.html == html
+
 
     component.boolean=False
-    assert component.boolean==False
-    assert component.html == '<wired-radio id="1" string="" integer="0" number="0.0">Radio Two</wired-radio>'
+    assert component.html == html
+    assert component.attributes_last_change == {"boolean": False}
+    component.update_html_from_attributes_to_watch()
+    html = '<wired-radio id="1" string="" integer="0" number="0.0">Radio Two</wired-radio>'
+    assert component.html == html
 
     component.boolean=True
     component.string="a"
     component.integer=1
     component.number=1.1
-    assert component.html == '<wired-radio id="1" string="a" integer="1" number="1.1" boolean="">Radio Two</wired-radio>'
+    assert component.html == html
+    assert component.attributes_last_change == {"number": 1.1}
+    component.update_html_from_attributes_to_watch()
+    html = '<wired-radio id="1" string="a" integer="1" number="1.1" boolean="">Radio Two</wired-radio>'
+    assert component.html == html
 
 def test_property_change_triggers_parameter_change(CustomWebComponent):
     # Given
@@ -284,7 +430,9 @@ def test_parameters_and_attributes_to_watch():
     # When/ Then
     component.attrib1 = "d"
     assert component.attrib1=="d"
-    assert component.param1=="c"
+    assert component.attributes_last_change == {"attrib1": "d"}
+    assert component.html=='<span attrib1="a">c</span>'
+    component.update_html_from_attributes_to_watch()
     assert component.html=='<span attrib1="d">c</span>'
 
 def test_handle_attributes_to_watch_change_on_html_with_leading_new_line_and_spaces():
@@ -352,14 +500,35 @@ def test_parameter_type_dict():
 
 
 if __name__.startswith("bk"):
-    import pandas as pd
-    data = [
-        { "x": 1, "y": "a", "z": True },
-        { "x": 2, "y": "b", "z": False },
-        { "x": 3, "y": "c", "z": True },
-        { "x": 4, "y": "d", "z": False }
-    ]
-    dataframe = pd.DataFrame(data)
-    component = WebComponent(html="<span>Hello World</span>")
-    component.servable()
-    component.data = dataframe
+    import panel as pn
+    class Component_(WebComponent):
+        """Mockup used for testing"""
+        html = param.String("<span>My Component</span>")
+        attributes_to_watch = param.Dict({"boolean": "boolean", "string": "string", "integer": "integer", "number": "number", "list": "list_"})
+
+        boolean = param.Boolean()
+        string = param.String()
+        integer = param.Integer()
+        number = param.Number()
+        list_ = param.List()
+
+    def section(component, message=None, show_html=True):
+        title = "## " + str(type(component))
+
+        parameters = list(component._child_parameters())
+        if show_html:
+            parameters = ["html"] + parameters
+
+        if message:
+            return (
+                title,
+                component,
+                pn.Param(component, parameters=parameters),
+                pn.pane.Markdown(message),
+                pn.layout.Divider(),
+            )
+        return (title, component, pn.Param(component, parameters=parameters), pn.layout.Divider())
+
+    component=Component_()
+    pn.Column(*section(component)).servable()
+

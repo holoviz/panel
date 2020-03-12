@@ -60,6 +60,7 @@ class WebComponent(Widget):
         "title": None,
         "html": "innerHTML",
         "attributes_to_watch": "attributesToWatch",
+        "attributes_last_change": "attributesLastChange",
         "properties_to_watch": "propertiesToWatch",
         "properties_last_change": "propertiesLastChange",
         "events_to_watch": "eventsToWatch",
@@ -93,6 +94,12 @@ class WebComponent(Widget):
     Example:
 
     attributes_to_watch = {"checked": "checked", "value": None, "ballSize": "ball_size"}
+    """
+    )
+    attributes_last_change = param.Dict(
+        doc="""
+
+    The key is the name of the attribute changed. The value is the new value of the attribute
     """
     )
     properties_to_watch = param.Dict(
@@ -183,6 +190,7 @@ class WebComponent(Widget):
 
         self.parser: HTMLParser = AttributeParser()
         self.param.watch(self._update_parameters, ["html",])
+        self.param.watch(self._handle_attributes_last_change, ["attributes_last_change",])
         self.param.watch(self._handle_properties_last_change, ["properties_last_change",])
         self.param.watch(self._handle_events_count_last_change, ["events_count_last_change",])
 
@@ -190,7 +198,7 @@ class WebComponent(Widget):
         # after construction
         if self.attributes_to_watch:
             parameters_to_watch = [value for value in self.attributes_to_watch.values() if value]
-            self.param.watch(self._handle_attributes_to_watch_change, parameters_to_watch)
+            self.param.watch(self._handle_parameter_attribute_change, parameters_to_watch)
 
         if self.properties_to_watch:
             parameters_to_watch = list(self.properties_to_watch.values())
@@ -201,7 +209,7 @@ class WebComponent(Widget):
                 self._handle_parameters_to_watch_change, list(self.parameters_to_watch)
             )
 
-        self._handle_attributes_to_watch_change()
+        self.update_html_from_attributes_to_watch()
         self._update_properties()
 
     def _handle_parameters_to_watch_change(self, event):
@@ -274,8 +282,10 @@ class WebComponent(Widget):
             return
         attr_dict = self.parse_html_to_dict(self.html)
 
+        print("_update_parameters", attr_dict)
         for attribute, parameter in self.attributes_to_watch.items():
             if parameter:
+                print("update", parameter)
                 self.update_parameter(parameter, attribute, attr_dict)
 
     def update_parameter(self, parameter: str, attribute: str, attr_dict: Dict):
@@ -340,6 +350,16 @@ class WebComponent(Widget):
             print(new_parameter_value, type(new_parameter_value))
             setattr(self, parameter, new_parameter_value)
 
+    def update_html_from_attributes_to_watch(self):
+        if not self.attributes_to_watch or not self.html:
+            return
+        html = self.html
+
+        new_html = self._update_html_from_attributes_to_watch(html)
+
+        if new_html != self.html:
+            self.html = new_html
+
     def _update_html_from_attributes_to_watch(self, html: str) -> str:
         """Returns a html string with the attributes updated
 
@@ -370,8 +390,12 @@ class WebComponent(Widget):
                     elif attribute in first_child.attrib:
                         del first_child.attrib[attribute]
                 else:
-                    attribute_value = str(parameter_value)
-                    first_child.set(attribute, attribute_value)
+                    if parameter_value:
+                        attribute_value = str(parameter_value)
+                        first_child.set(attribute, attribute_value)
+                    else:
+                        if attribute in first_child.attrib:
+                            first_child.attrib.pop(attribute)
         new_html = LH.tostring(first_child).decode("utf-8")
         if len(iterchildren) > 1:
             new_html = new_html + "".join(
@@ -379,15 +403,95 @@ class WebComponent(Widget):
             )
         return new_html
 
-    def _handle_attributes_to_watch_change(self, event=None):
-        if not self.attributes_to_watch or not self.html:
+    def _handle_parameter_attribute_change(self, event=None):
+        print("_handle_parameter_attribute_change")
+        print(event)
+        if not self.attributes_to_watch:
+            print("_handle_parameter_attribute_change - skipped")
             return
-        html = self.html
 
-        new_html = self._update_html_from_attributes_to_watch(html)
+        parameters_to_attributes = {v: k for k, v in self.attributes_to_watch.items()}
+        parameter_name= event.name
+        value = event.new
 
-        if new_html != self.html:
-            self.html = new_html
+        value = self.parse_parameter_value_to_attribute_value(parameter_name, value)
+
+        attribute_name = parameters_to_attributes[parameter_name]
+        change = {attribute_name: value}
+        if self.attributes_last_change != change:
+            self.attributes_last_change = change
+            print("_handle_parameter_attribute_change - changed to:", change)
+        print("_handle_parameter_attribute_change - Done")
+
+    def parse_parameter_value_to_attribute_value(self, parameter: str, value) -> Optional[str]:
+        """Returns the value to input to the setAttribute method of a JS HTML Element
+
+        Parameters
+        ----------
+        parameter : str
+            The name of the parameter. For example "columns"
+        value : [type]
+            The value of the parameter. For example None, [] or ["x","y"]
+
+        Returns
+        -------
+        Optional[str]
+            The attribute value. For example None, "[]" or '["x", "y"]'
+        """
+        parameter_item = self.param[parameter]
+
+        if value is None:
+            return value
+        if isinstance(parameter_item, param.Boolean):
+            if value == True:
+                return ""
+            else:
+                return None
+        elif isinstance(parameter_item, (param.String, param.Integer, param.ObjectSelector)):
+            if value:
+                return str(value)
+        else:
+            return json.dumps(value, separators=(',',':'))
+        return value
+
+    def _handle_attributes_last_change(self, event):
+        print("_handle_attributes_last_change")
+        print(event)
+        print(event.old)
+        print(event.new)
+        if not self.attributes_to_watch or not event.new or event.old == event.new:
+            print("skipped")
+            return
+
+        # Todo: If we can skip the check below at all or just put in try/ catch to speed up
+        for attribute_, new_value in event.new.items():
+            if not attribute_ in self.attributes_to_watch:
+                continue
+
+            parameter_name = self.attributes_to_watch[attribute_]
+            parameter_item = self.param[parameter_name]
+
+            if isinstance(parameter_item, param.Boolean):
+                if new_value == "":
+                    new_value = True
+                else:
+                    new_value = False
+            elif isinstance(parameter_item, param.Integer):
+                if not new_value is None:
+                    new_value = int(new_value)
+            elif isinstance(parameter_item, param.Number):
+                if not new_value is None:
+                    new_value = float(new_value)
+            elif isinstance(parameter_item, (param.String, param.ObjectSelector)):
+                if not new_value is None:
+                    new_value = str(new_value)
+            elif isinstance(parameter_item, (param.List, param.Dict)):
+                if not new_value is None:
+                    new_value = json.loads(new_value)
+
+            old_value = getattr(self, parameter_name)
+            if old_value != new_value:
+                setattr(self, parameter_name, new_value)
 
     def _handle_properties_last_change(self, event):
         print("_handle_properties_last_change")

@@ -15,10 +15,14 @@ def test_wired_button():
 
     # When/Then
     button.disabled=True
+    assert button.attributes_last_change=={"disabled": True}
+    button.update_html_from_attributes_to_watch()
     assert "disabled" in button.html
 
     # When/Then
     button.disabled=False
+    assert button.attributes_last_change=={"disabled": False}
+    button.update_html_from_attributes_to_watch()
     assert "disabled" not in button.html
 
 def test_wired_checkbox():
@@ -29,10 +33,14 @@ def test_wired_checkbox():
 
     # When/Then
     checkbox.disabled=True
+    assert checkbox.attributes_last_change=={"disabled": True}
+    checkbox.update_html_from_attributes_to_watch()
     assert "disabled" in checkbox.html
 
     # When/Then
     checkbox.disabled=False
+    assert checkbox.attributes_last_change=={"disabled": False}
+    checkbox.update_html_from_attributes_to_watch()
     assert "disabled" not in checkbox.html
 
 def test_dialog():
@@ -89,6 +97,8 @@ def test_input():
 
     # When/ Then
     wired_input.type_ = "password"
+    assert wired_input.attributes_last_change == {"type": "password"}
+    wired_input.update_html_from_attributes_to_watch()
     assert "password" in wired_input.html
 
 def test_progress():
@@ -106,13 +116,16 @@ def test_progress():
     assert progress.param.value.bounds==(0,5)
 
 def test_searchinput():
-    # When
+    # Given
     search = wired.SearchInput()
+    # When/ Then
     search.placeholder = "New Search"
+    assert search.attributes_last_change=={"placeholder": "New Search"}
     search.disabled = True
+    assert search.attributes_last_change=={"disabled": True}
     search.autocomplete="on"
-
-    # Then
+    assert search.attributes_last_change=={"autocomplete": "on"}
+    search.update_html_from_attributes_to_watch()
     assert search.html == '<wired-search-input placeholder="New Search" autocomplete="on" disabled></wired-search-input>'
 
 def test_text_area():
@@ -122,7 +135,7 @@ def test_text_area():
 
     # When/ Then
     text_area.placeholder="b"
-    assert text_area.html== '<wired-textarea placeholder="b"></wired-textarea>'
+    assert text_area.attributes_last_change == {"placeholder": "b"}
 
 def test_link():
     # Given

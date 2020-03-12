@@ -12,6 +12,7 @@ class WebComponent(HTMLBox):
     See https://www.predix-ui.com/#/elements/px-app-nav"""
     innerHTML = properties.String('')
     attributesToWatch = properties.Dict(properties.String, properties.Any)
+    attributesLastChange = properties.Dict(properties.String, properties.Any)
     propertiesToWatch = properties.Dict(properties.String, properties.Any)
     propertiesLastChange = properties.Dict(properties.String, properties.Any)
     eventsToWatch = properties.Dict(properties.String, properties.Any)

@@ -22,6 +22,7 @@ export class WebComponentView extends HTMLBoxView {
         console.log("connect signals")
         super.connect_signals()
         this.connect(this.model.properties.innerHTML.change, () => this.render())
+        this.connect(this.model.properties.attributesLastChange.change, () => this.handleAttributesLastChangeChange())
         this.connect(this.model.properties.propertiesLastChange.change, () => this.handlePropertiesLastChangeChange())
         this.connect(this.model.properties.eventsToWatch.change, () => this.handleEventsToWatchChange())
         this.connect(this.model.properties.columnDataSource.change, () => this.handleColumnDataSourceChange())
@@ -69,15 +70,24 @@ export class WebComponentView extends HTMLBoxView {
         console.log(options);
 
         const this_ = this;
-        function mutationEventHandler(mutation: any): void {
+        function mutationEventHandler(mutation: Array<MutationRecord>): void {
             console.log("mutation")
             console.log(mutation)
 
-            const newHTML = mutation[mutation.length - 1].target.parentElement.innerHTML;
-            if (newHTML !== this_.model.innerHTML) {
-                console.log(newHTML)
-                // this_.model.innerHTML = newHTML;
+            let attributesLastChange: any = new Object();
+            mutation.forEach((record: MutationRecord) => {
+                const attribute: any = record.attributeName;
+                const el: any = record.target;
+                const value = el.getAttribute(attribute)
+                attributesLastChange[attribute] = value;
+            })
+
+            if (this_.model.attributesLastChange !== attributesLastChange) {
+                this_.model.attributesLastChange = attributesLastChange;
+                console.log(attributesLastChange);
+                console.log("mutatation - attributesLastChange changed")
             }
+            console.log("mutation - Done")
         }
 
         let observer = new MutationObserver(mutationEventHandler);
@@ -166,7 +176,7 @@ export class WebComponentView extends HTMLBoxView {
     }
 
     // See https://stackoverflow.com/questions/6491463/accessing-nested-javascript-objects-with-string-key
-    // example: reverse(element, "textInput.value") would return element.textInput.value
+    // example: get_nested_property(element, "textInput.value") would return element.textInput.value
     get_nested_property(element: any, property_: string): string {
         property_ = property_.replace(/\[(\w+)\]/g, '.$1'); // convert indexes to properties
         property_ = property_.replace(/^\./, '');           // strip a leading dot
@@ -278,6 +288,25 @@ export class WebComponentView extends HTMLBoxView {
         console.log(this.propertyValues);
         console.log("initPropertyValues - DONE");
     }
+    handleAttributesLastChangeChange(): void {
+        console.log("handleAttributesLastChangeChange")
+        if (!this.webComponentElement) { return; }
+
+        let attributesLastChange: any = this.model.attributesLastChange;
+        for (let attribute in this.model.attributesLastChange) {
+            if (attribute in this.model.attributesToWatch) {
+                let old_value = this.webComponentElement.getAttribute(attribute);
+                let new_value = attributesLastChange[attribute]
+                if (Array.isArray(new_value)) { new_value = JSON.stringify(new_value) } // Example: value = ["x","y"]
+                if (old_value !== new_value) {
+                    this.webComponentElement.setAttribute(attribute, new_value)
+                    console.log(new_value)
+                    console.log("handleAttributesLastChangeChange - changed")
+                }
+            }
+        }
+        console.log("handleAttributesLastChangeChange - done")
+    }
 
     handlePropertiesLastChangeChange(): void {
         console.log("handlePropertiesLastChangeChange")
@@ -303,6 +332,7 @@ export namespace WebComponent {
         // Just like for the HTML element
         innerHTML: p.Property<string>,
         attributesToWatch: p.Property<any> // A dictionary
+        attributesLastChange: p.Property<p.Any>, // A dictionary
         propertiesToWatch: p.Property<p.Any>, // A dictionary
         propertiesLastChange: p.Property<p.Any>, // A dictionary
         eventsToWatch: p.Property<p.Any> // A dictionary
@@ -330,6 +360,7 @@ export class WebComponent extends HTMLBox {
         this.define<WebComponent.Props>({
             innerHTML: [p.String, ''],
             attributesToWatch: [p.Any], // A dictionary
+            attributesLastChange: [p.Any], // A dictionary
             propertiesToWatch: [p.Any], // A dictionary
             propertiesLastChange: [p.Any], // A dictionary
             eventsToWatch: [p.Any], // A dictionary

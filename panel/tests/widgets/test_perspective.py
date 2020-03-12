@@ -18,7 +18,7 @@ def test_constructor(document, comm):
     component = pn.pane.Perspective(data=dataframe)
 
     assert component.html.startswith(
-        '<perspective-viewer id="view1" class="perspective-viewer-material-dark" style="height:100%;width:100%" plugin="hypergrid"></perspective-viewer>'
+        '<perspective-viewer id="view1" class="perspective-viewer-material-dark" style="height:100%;width:100%" plugin="hypergrid" rows="[]" row-pivots="[]" columns="[]" column-pivots="[]"></perspective-viewer>'
     )
     assert component.data is dataframe
     assert component.column_data_source_orient == "records"

@@ -33,6 +33,9 @@ THEMES = {
     "material-dense-dark": "perspective-viewer-material-dense-dark",
     "vaporwave": "perspective-viewer-vaporwave",
 }
+#Hack; When the user drags some of the columns, then the class attribute contains "dragging" also.
+THEMES_DRAGGING = {key + " dragging": value + " dragging" for key, value in THEMES.items()}
+THEMES = {**THEMES, **THEMES_DRAGGING}
 
 from enum import Enum
 
@@ -95,23 +98,23 @@ class Perspective(WebComponent):
         "row-pivots": "row_pivots",
         "columns": "columns",
         "column-pivots": "column_pivots",
-        # "sort": "sort",
-        # "aggregates": "aggregates",
-        # "filters": "filters",
+        "sort": "sort",
+        "aggregates": "aggregates", # Have not been able to manually test this one
+        "filters": "filters",
     })
 
     theme = param.ObjectSelector("perspective-viewer-material-dark", objects=THEMES)
     plugin = param.ObjectSelector(Plugin.GRID.value, objects=Plugin.options())
-    rows = param.List()
-    row_pivots = param.List()
-    column_pivots = param.List()
-    columns = param.List()
-    # aggregates = param.List()
-    # sort = param.List()
-    # filters = param.List()
+    rows = param.List(None)
+    row_pivots = param.List(None)
+    column_pivots = param.List(None)
+    columns = param.List(None)
+    aggregates = param.List(None)
+    sort = param.List(None)
+    filters = param.List(None)
 
-    # Todo: Find out if it is ok WebComponent is dependent on pandas or the should be a seperate
-    # DataWebComponent
+    # Todo: Find out if it is ok WebComponent is dependent on pandas if we users should just use
+    # ColumnsDataSource
     data = param.DataFrame(doc="""
     The data will be reloaded in full when ever it changes."""
     )
