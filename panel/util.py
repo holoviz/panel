@@ -11,6 +11,7 @@ import re
 import sys
 
 from collections import defaultdict, OrderedDict
+from contextlib import contextmanager
 from datetime import datetime
 from six import string_types
 
@@ -254,3 +255,28 @@ def value_as_date(value):
     elif isinstance(value, datetime):
         value = value.date()
     return value
+
+
+# This functionality should be contributed to param
+# See https://github.com/holoviz/param/issues/379
+@contextmanager
+def edit_readonly(parameterized):
+    """
+    Temporarily set parameters on Parameterized object to readonly=False
+    to allow editing them.
+    """
+    params = parameterized.param.objects("existing").values()
+    readonlys = [p.readonly for p in params]
+    constants = [p.constant for p in params]
+    for p in params:
+        p.readonly = False
+        p.constant = False
+    try:
+        yield
+    except:
+        raise
+    finally:
+        for (p, readonly) in zip(params, readonlys):
+            p.readonly = readonly
+        for (p, constant) in zip(params, constants):
+            p.constant = constant

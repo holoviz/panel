@@ -32,7 +32,7 @@ from .io.notebook import (
 from .io.save import save
 from .io.state import state
 from .io.server import StoppableThread, get_server, unlocked
-from .util import escape, param_reprs
+from .util import edit_readonly, escape, param_reprs
 
 
 LinkWatcher = namedtuple("Watcher","inst cls fn mode onlychanged parameter_names what queued target links transformed")
@@ -216,17 +216,17 @@ class Layoutable(param.Parameterized):
 
 class ServableMixin(object):
 
-    def _modify_doc(self, server_id, title, doc):
+    def _modify_doc(self, server_id, title, doc, location):
         """
         Callback to handle FunctionHandler document creation.
         """
         if server_id:
             state._servers[server_id][2].append(doc)
-        return self.server_doc(doc, title)
+        return self.server_doc(doc, title, location)
 
     def _get_server(self, port=0, websocket_origin=None, loop=None,
                     show=False, start=False, title=None, verbose=False,
-                    **kwargs):
+                    location=True, **kwargs):
         return get_server(self, port, websocket_origin, loop, show,
                           start, title, verbose, **kwargs)
 
@@ -271,17 +271,19 @@ class ServableMixin(object):
     # Public API
     #----------------------------------------------------------------
 
-    def servable(self, title=None):
+    def servable(self, title=None, location=True):
         """
         Serves the object if in a `panel serve` context and returns
         the Panel object to allow it to display itself in a notebook
         context.
-    
         Arguments
         ---------
         title : str
           A string title to give the Document (if served as an app)
-        
+        location : boolean or panel.io.location.Location
+          Whether to create a Location component to observe and
+          set the URL location.
+
         Returns
         -------
         The Panel object itself
@@ -291,11 +293,11 @@ class ServableMixin(object):
             for handler in logger.handlers:
                 if isinstance(handler, logging.StreamHandler):
                     handler.setLevel(logging.WARN)
-            self.server_doc(title=title)
+            self.server_doc(title=title, location=True)
         return self
 
     def show(self, title=None, port=0, websocket_origin=None, threaded=False,
-             verbose=True, open=True, **kwargs):
+             verbose=True, open=True, location=True, **kwargs):
         """
         Starts a Bokeh server and displays the Viewable in a new tab.
 
@@ -317,6 +319,9 @@ class ServableMixin(object):
           Whether to print the address and port
         open : boolean (optional, default=True)
           Whether to open the server in a new browser tab
+        location : boolean or panel.io.location.Location
+          Whether to create a Location component to observe and
+          set the URL location.
 
         Returns
         -------
@@ -329,44 +334,25 @@ class ServableMixin(object):
             loop = IOLoop()
             server = StoppableThread(
                 target=self._get_server, io_loop=loop,
-                args=(port, websocket_origin, loop, open, True, title, verbose),
+                args=(port, websocket_origin, loop, open, True, title, verbose, location),
                 kwargs=kwargs)
             server.start()
         else:
             server = self._get_server(
                 port, websocket_origin, show=open, start=True,
-                title=title, verbose=verbose, **kwargs
+                title=title, verbose=verbose, location=location, **kwargs
             )
         return server
 
-    
-class Viewable(Layoutable, ServableMixin):
-    """
-    Viewable is the baseclass all objects in the panel library are
-    built on. It defines the interface for declaring any object that
-    displays itself by transforming the object(s) being wrapped into
-    models that can be served using bokeh's layout engine. The class
-    also defines various methods that allow Viewable objects to be
-    displayed in the notebook and on bokeh server.
-    """
 
-    __abstract = True
-
-    _preprocessing_hooks = []
+class Renderable(param.Parameterized):
 
     def __init__(self, **params):
-        super(Viewable, self).__init__(**params)
+        super(Renderable, self).__init__(**params)
         self._documents = {}
         self._models = {}
         self._comms = {}
         self._found_links = set()
-
-    def __repr__(self, depth=0):
-        return '{cls}({params})'.format(cls=type(self).__name__,
-                                        params=', '.join(param_reprs(self)))
-
-    def __str__(self):
-        return self.__repr__()
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         """
@@ -426,6 +412,72 @@ class Viewable(Layoutable, ServableMixin):
         else:
             add_to_doc(model, doc)
         return model
+
+    def get_root(self, doc=None, comm=None):
+        """
+        Returns the root model and applies pre-processing hooks
+
+        Arguments
+        ---------
+        doc: bokeh.Document
+          Bokeh document the bokeh model will be attached to.
+        comm: pyviz_comms.Comm
+          Optional pyviz_comms when working in notebook
+
+        Returns
+        -------
+        Returns the bokeh model corresponding to this panel object
+        """
+        doc = doc or _curdoc()
+        root = self._get_model(doc, comm=comm)
+        self._preprocess(root)
+        ref = root.ref['id']
+        state._views[ref] = (self, root, doc, comm)
+        return root
+
+    #----------------------------------------------------------------
+    # Public API
+    #----------------------------------------------------------------
+
+    def clone(self, **params):
+        """
+        Makes a copy of the object sharing the same parameters.
+
+        Arguments
+        ---------
+        params: Keyword arguments override the parameters on the clone.
+
+        Returns
+        -------
+        Cloned Viewable object
+        """
+        return type(self)(**dict(self.param.get_param_values(), **params))
+
+    def pprint(self):
+        """
+        Prints a compositional repr of the class.
+        """
+        print(self)
+
+
+class Viewable(Renderable, Layoutable, ServableMixin):
+    """
+    Viewable is the baseclass all objects in the panel library are
+    built on. It defines the interface for declaring any object that
+    displays itself by transforming the object(s) being wrapped into
+    models that can be served using bokeh's layout engine. The class
+    also defines various methods that allow Viewable objects to be
+    displayed in the notebook and on bokeh server.
+    """
+
+    _preprocessing_hooks = []
+
+    def __repr__(self, depth=0):
+        return '{cls}({params})'.format(cls=type(self).__name__,
+                                        params=', '.join(param_reprs(self)))
+
+    def __str__(self):
+        return self.__repr__()
 
     def _repr_mimebundle_(self, include=None, exclude=None):
         loaded = panel_extension._loaded
@@ -540,26 +592,6 @@ class Viewable(Layoutable, ServableMixin):
     # Public API
     #----------------------------------------------------------------
 
-    def clone(self, **params):
-        """
-        Makes a copy of the object sharing the same parameters.
-
-        Arguments
-        ---------
-        params: Keyword arguments override the parameters on the clone.
-
-        Returns
-        -------
-        Cloned Viewable object
-        """
-        return type(self)(**dict(self.param.get_param_values(), **params))
-
-    def pprint(self):
-        """
-        Prints a compositional repr of the class.
-        """
-        print(self)
-
     def select(self, selector=None):
         """
         Iterates over the Viewable and any potential children in the
@@ -623,28 +655,6 @@ class Viewable(Layoutable, ServableMixin):
             load_path, progress
         )
 
-    def get_root(self, doc=None, comm=None):
-        """
-        Returns the root model and applies pre-processing hooks
-
-        Arguments
-        ---------
-        doc: bokeh.Document
-          Bokeh document the bokeh model will be attached to.
-        comm: pyviz_comms.Comm
-          Optional pyviz_comms when working in notebook
-
-        Returns
-        -------
-        Returns the bokeh model corresponding to this panel object
-        """
-        doc = doc or _curdoc()
-        root = self._get_model(doc, comm=comm)
-        self._preprocess(root)
-        ref = root.ref['id']
-        state._views[ref] = (self, root, doc, comm)
-        return root
-
     def save(self, filename, title=None, resources=None, template=None,
              template_variables=None, embed=False, max_states=1000,
              max_opts=3, embed_json=False, json_prefix='', save_path='./',
@@ -683,7 +693,7 @@ class Viewable(Layoutable, ServableMixin):
                     template_variables, embed, max_states, max_opts,
                     embed_json, json_prefix, save_path, load_path)
 
-    def server_doc(self, doc=None, title=None):
+    def server_doc(self, doc=None, title=None, location=True):
         """
         Returns a serveable bokeh Document with the panel attached
 
@@ -692,6 +702,9 @@ class Viewable(Layoutable, ServableMixin):
         doc : bokeh.Document (optional)
           The bokeh Document to attach the panel to as a root,
           defaults to bokeh.io.curdoc()
+        location : boolean or panel.io.location.Location
+          Whether to create a Location component to observe and
+          set the URL location.
         title : str
           A string title to give the Document
 
@@ -700,6 +713,7 @@ class Viewable(Layoutable, ServableMixin):
         doc : bokeh.Document
           The bokeh document the panel was attached to
         """
+        from .io.location import Location
         doc = doc or _curdoc()
         title = title or 'Panel Application'
         doc.title = title
@@ -708,23 +722,18 @@ class Viewable(Layoutable, ServableMixin):
             doc.on_session_destroyed(self._server_destroy)
             self._documents[doc] = model
         add_to_doc(model, doc)
+        if location:
+            if isinstance(location, Location):
+                loc = location
+            else:
+                loc = Location()
+            state._locations[doc] = loc
+            loc_model = loc._get_model(doc, model)
+            doc.add_root(loc_model)
         return doc
 
 
-class Reactive(Viewable):
-    """
-    Reactive is a Viewable object that also supports syncing between
-    the objects parameters and the underlying bokeh model either via
-    the defined pyviz_comms.Comm type or when using bokeh server.
-
-    In order to bi-directionally link parameters with bokeh model
-    instances the _link_params and _link_props methods define
-    callbacks triggered when either the parameter or bokeh property
-    values change. Since there may not be a 1-to-1 mapping between
-    parameter and the model property the _process_property_change and
-    _process_param_change may be overridden to apply any necessary
-    transformations.
-    """
+class Syncable(Renderable):
 
     # Timeout if a notebook comm message is swallowed
     _timeout = 20000
@@ -735,6 +744,19 @@ class Reactive(Viewable):
     # Mapping from parameter name to bokeh model property name
     _rename = {}
 
+    __abstract = True
+
+    events = []
+
+    def __init__(self, **params):
+        super(Syncable, self).__init__(**params)
+        self._processing = False
+        self._events = {}
+        self._callbacks = []
+        self._links = []
+        self._link_params()
+        self._changing = {}
+
     # Allows defining a mapping from model property name to a JS code
     # snippet that transforms the object before serialization
     _js_transforms = {}
@@ -742,17 +764,6 @@ class Reactive(Viewable):
     # Transforms from input value to bokeh property value
     _source_transforms = {}
     _target_transforms = {}
-
-    def __init__(self, **params):
-        # temporary flag denotes panes created for temporary, internal
-        # use which should be garbage collected once they have been used
-        super(Reactive, self).__init__(**params)
-        self._processing = False
-        self._events = {}
-        self._callbacks = []
-        self._links = []
-        self._link_params()
-        self._changing = {}
 
     #----------------------------------------------------------------
     # Callback API
@@ -812,13 +823,9 @@ class Reactive(Viewable):
             else:
                 model.on_change(p, partial(self._server_change, doc, ref))
 
-    #----------------------------------------------------------------
-    # Model API
-    #----------------------------------------------------------------
-
-    def _init_properties(self):
-        return {k: v for k, v in self.param.get_param_values()
-                if v is not None}
+    def _process_events(self, events):
+        with edit_readonly(self):
+            self.param.set_param(**self._process_property_change(events))
 
     @property
     def _linkable_params(self):
@@ -855,8 +862,17 @@ class Reactive(Viewable):
             properties['min_height'] = properties['height']
         return properties
 
+    #----------------------------------------------------------------
+    # Model API
+    #----------------------------------------------------------------
+
+    def _init_properties(self):
+        return {k: v for k, v in self.param.get_param_values()
+                if v is not None}
+
+
     def _cleanup(self, root):
-        super(Reactive, self)._cleanup(root)
+        super(Syncable, self)._cleanup(root)
         ref = root.ref['id']
         self._models.pop(ref, None)
         comm, client_comm = self._comms.pop(ref, (None, None))
@@ -874,6 +890,53 @@ class Reactive(Viewable):
     #----------------------------------------------------------------
     # Public API
     #----------------------------------------------------------------
+
+    def link(self, target, callbacks=None, **links):
+        """
+        Links the parameters on this object to attributes on another
+        object in Python. Supports two modes, either specify a mapping
+        between the source and target object parameters as keywords or
+        provide a dictionary of callbacks which maps from the source
+        parameter to a callback which is triggered when the parameter
+        changes.
+
+        Arguments
+        ---------
+        target: object
+          The target object of the link.
+        callbacks: dict
+          Maps from a parameter in the source object to a callback.
+        **links: dict
+          Maps between parameters on this object to the parameters
+          on the supplied object.
+        """
+        if links and callbacks:
+            raise ValueError('Either supply a set of parameters to '
+                             'link as keywords or a set of callbacks, '
+                             'not both.')
+        elif not links and not callbacks:
+            raise ValueError('Declare parameters to link or a set of '
+                             'callbacks, neither was defined.')
+
+        _updating = []
+        def link(*events):
+            for event in events:
+                if event.name in _updating: continue
+                _updating.append(event.name)
+                try:
+                    if callbacks:
+                        callbacks[event.name](target, event)
+                    else:
+                        setattr(target, links[event.name], event.new)
+                except Exception:
+                    raise
+                finally:
+                    _updating.pop(_updating.index(event.name))
+        params = list(callbacks) if callbacks else list(links)
+        cb = self.param.watch(link, params)
+        link = LinkWatcher(*tuple(cb)+(target, links, callbacks is not None))
+        self._links.append(link)
+        return cb
 
     def controls(self, parameters=[], jslink=True):
         """
@@ -930,83 +993,6 @@ class Reactive(Viewable):
         elif params:
             return controls.layout[0]
         return style.layout[0]
-
-    def link(self, target, callbacks=None, **links):
-        """
-        Links the parameters on this object to attributes on another
-        object in Python. Supports two modes, either specify a mapping
-        between the source and target object parameters as keywords or
-        provide a dictionary of callbacks which maps from the source
-        parameter to a callback which is triggered when the parameter
-        changes.
-
-        Arguments
-        ---------
-        target: object
-          The target object of the link.
-        callbacks: dict
-          Maps from a parameter in the source object to a callback.
-        **links: dict
-          Maps between parameters on this object to the parameters
-          on the supplied object.
-        """
-        if links and callbacks:
-            raise ValueError('Either supply a set of parameters to '
-                             'link as keywords or a set of callbacks, '
-                             'not both.')
-        elif not links and not callbacks:
-            raise ValueError('Declare parameters to link or a set of '
-                             'callbacks, neither was defined.')
-
-        _updating = []
-        def link(*events):
-            for event in events:
-                if event.name in _updating: continue
-                _updating.append(event.name)
-                try:
-                    if callbacks:
-                        callbacks[event.name](target, event)
-                    else:
-                        setattr(target, links[event.name], event.new)
-                except Exception:
-                    raise
-                finally:
-                    _updating.pop(_updating.index(event.name))
-        params = list(callbacks) if callbacks else list(links)
-        cb = self.param.watch(link, params)
-        link = LinkWatcher(*tuple(cb)+(target, links, callbacks is not None))
-        self._links.append(link)
-        return cb
-
-    def add_periodic_callback(self, callback, period=500, count=None,
-                              timeout=None, start=True):
-        """
-        Schedules a periodic callback to be run at an interval set by
-        the period. Returns a PeriodicCallback object with the option
-        to stop and start the callback.
-
-        Arguments
-        ---------
-        callback: callable
-          Callable function to be executed at periodic interval.
-        period: int
-          Interval in milliseconds at which callback will be executed.
-        count: int
-          Maximum number of times callback will be invoked.
-        timeout: int
-          Timeout in seconds when the callback should be stopped.
-        start: boolean (default=True)
-          Whether to start callback immediately.
-
-        Returns
-        -------
-        Return a PeriodicCallback object with start and stop methods.
-        """
-        cb = PeriodicCallback(callback=callback, period=period,
-                              count=count, timeout=timeout)
-        if start:
-            cb.start()
-        return cb
 
     def jscallback(self, args={}, **callbacks):
         """
@@ -1091,7 +1077,7 @@ class Reactive(Viewable):
                                  "the parameter requires a live Python kernel "
                                  "to have an effect." % (k, type(self).__name__))
 
-        if isinstance(target, Reactive) and code is None:
+        if isinstance(target, Syncable) and code is None:
             for k, p in mapping.items():
                 if k.startswith('event:'):
                     continue
@@ -1114,3 +1100,53 @@ class Reactive(Viewable):
         from .links import Link
         return Link(self, target, properties=links, code=code, args=args,
                     bidirectional=bidirectional)
+
+
+class Reactive(Syncable, Viewable):
+    """
+    Reactive is a Viewable object that also supports syncing between
+    the objects parameters and the underlying bokeh model either via
+    the defined pyviz_comms.Comm type or when using bokeh server.
+
+    In order to bi-directionally link parameters with bokeh model
+    instances the _link_params and _link_props methods define
+    callbacks triggered when either the parameter or bokeh property
+    values change. Since there may not be a 1-to-1 mapping between
+    parameter and the model property the _process_property_change and
+    _process_param_change may be overridden to apply any necessary
+    transformations.
+    """
+
+    #----------------------------------------------------------------
+    # Public API
+    #----------------------------------------------------------------
+
+    def add_periodic_callback(self, callback, period=500, count=None,
+                              timeout=None, start=True):
+        """
+        Schedules a periodic callback to be run at an interval set by
+        the period. Returns a PeriodicCallback object with the option
+        to stop and start the callback.
+
+        Arguments
+        ---------
+        callback: callable
+          Callable function to be executed at periodic interval.
+        period: int
+          Interval in milliseconds at which callback will be executed.
+        count: int
+          Maximum number of times callback will be invoked.
+        timeout: int
+          Timeout in seconds when the callback should be stopped.
+        start: boolean (default=True)
+          Whether to start callback immediately.
+
+        Returns
+        -------
+        Return a PeriodicCallback object with start and stop methods.
+        """
+        cb = PeriodicCallback(callback=callback, period=period,
+                              count=count, timeout=timeout)
+        if start:
+            cb.start()
+        return cb

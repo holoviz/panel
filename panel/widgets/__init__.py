@@ -21,7 +21,6 @@ from .input import (  # noqa
     PasswordInput,
     TextAreaInput,
 )
-from .location import Location
 from .misc import Audio, FileDownload, Progress, VideoStream # noqa
 from .player import DiscretePlayer, Player # noqa
 from .slider import (# noqa

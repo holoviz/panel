@@ -22,25 +22,27 @@ export class LocationView extends View {
   connect_signals(): void {
     super.connect_signals();
 
-    this.connect(this.model.properties.pathname.change, () => this.update());
-    this.connect(this.model.properties.search.change, () => this.update());
-    this.connect(this.model.properties.hash_.change, () => this.update());
+    this.connect(this.model.properties.pathname.change, () => this.update('pathname'));
+    this.connect(this.model.properties.search.change, () => this.update('search'));
+    this.connect(this.model.properties.hash_.change, () => this.update('hash'));
   }
 
-  update(): void {
+  update(change: string): void {
     if (!this.model.reload) {
       window.history.pushState(
         {},
         '',
         `${this.model.pathname}${this.model.search}${this.model.hash_}`
       );
+      this.model.href = window.location.href;
     } else {
-      window.location.pathname = (this.model.pathname as string);
-      window.location.search = (this.model.search as string);
-      window.location.hash = (this.model.hash_ as string);
+      if (change == 'pathname')
+        window.location.pathname = (this.model.pathname as string);
+      if (change == 'search')
+	    window.location.search = (this.model.search as string);
+      if (change == 'hash')
+        window.location.hash = (this.model.hash_ as string);
     }
-
-    this.model.href = window.location.href;
   }
 }
 
@@ -63,7 +65,7 @@ export interface Location extends Location.Attrs { }
 export class Location extends Model {
   properties: Location.Props
 
-  static __module__ = "panel.models.widgets"
+  static __module__ = "panel.models.location"
 
   constructor(attrs?: Partial<Location.Attrs>) {
     super(attrs)

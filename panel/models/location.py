@@ -1,13 +1,13 @@
 """This module provides a Bokeh Location Model as a wrapper around the JS window.location api"""
 import pathlib
+
 from typing import List, Optional
 
 import param
+
 from bokeh.core.properties import Bool, Instance, Int, String
 from bokeh.layouts import column
 from bokeh.models import Model
-
-import panel as pn
 
 
 class Location(Model):
@@ -19,15 +19,12 @@ class Location(Model):
     shareable link.
     """
 
-    href = String(
-        default="",
-        help="""The full url, e.g. \
-            'https://panel.holoviz.org/user_guide/Interact.html:80?color=blue#interact'""",
-    )
+    href = String(default="", help="The full url, e.g. 'https://localhost:80?color=blue#interact'")
+
     hostname = String(default="", help="hostname in window.location e.g. 'panel.holoviz.org'")
-    pathname = String(
-        default="", help="pathname in window.location e.g. '/user_guide/Interact.html'"
-    )
+
+    pathname = String(default="", help="pathname in window.location e.g. '/user_guide/Interact.html'")
+
     protocol = String(default="", help="protocol in window.location e.g. 'https'")
     port = String(default="", help="port in window.location e.g. 80")
     search = String(default="", help="search in window.location e.g. '?color=blue'")
