@@ -91,7 +91,7 @@ except Exception:
 install_requires = [
     'bokeh >=2.0.0',
     'param >=1.9.2',
-    'pyviz_comms >=0.7.3',
+    'pyviz_comms >=0.7.4',
     'markdown',
     'tqdm',
     'pyct >=0.4.4'
