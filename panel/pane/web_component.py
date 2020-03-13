@@ -19,7 +19,8 @@ PARAMETER_TYPE = {
     param.Integer: int,
     param.Number: float,
     param.ObjectSelector: str,
-    param.List: ast.literal_eval # json.loads, # ast.literal_eval
+    param.List: ast.literal_eval, # json.loads, # ast.literal_eval
+    param.Dict: ast.literal_eval, # json.loads, # ast.literal_eval
 }
 
 
@@ -96,10 +97,13 @@ class WebComponent(Widget):
     attributes_to_watch = {"checked": "checked", "value": None, "ballSize": "ball_size"}
     """
     )
+    # Todo: Can we enforce that this is Dict[str, Optional[str]]?
     attributes_last_change = param.Dict(
         doc="""
 
-    The key is the name of the attribute changed. The value is the new value of the attribute
+    The key is the name of the attribute changed. The value is the new value of the attribute.
+
+    Please note that the value is a string or None
     """
     )
     properties_to_watch = param.Dict(
@@ -390,7 +394,7 @@ class WebComponent(Widget):
                     elif attribute in first_child.attrib:
                         del first_child.attrib[attribute]
                 else:
-                    if parameter_value:
+                    if parameter_value is not None:
                         attribute_value = str(parameter_value)
                         first_child.set(attribute, attribute_value)
                     else:
@@ -479,15 +483,31 @@ class WebComponent(Widget):
             elif isinstance(parameter_item, param.Integer):
                 if not new_value is None:
                     new_value = int(new_value)
+                elif parameter_item.allow_None:
+                    new_value = None
+                else:
+                    new_value = parameter_item.default
             elif isinstance(parameter_item, param.Number):
                 if not new_value is None:
                     new_value = float(new_value)
+                elif parameter_item.allow_None:
+                    new_value = None
+                else:
+                    new_value = parameter_item.default
             elif isinstance(parameter_item, (param.String, param.ObjectSelector)):
                 if not new_value is None:
                     new_value = str(new_value)
+                elif parameter_item.allow_None:
+                    new_value = None
+                else:
+                    new_value = parameter_item.default
             elif isinstance(parameter_item, (param.List, param.Dict)):
                 if not new_value is None:
                     new_value = json.loads(new_value)
+                elif parameter_item.allow_None:
+                    new_value = None
+                else:
+                    new_value = parameter_item.default
 
             old_value = getattr(self, parameter_name)
             if old_value != new_value:

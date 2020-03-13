@@ -300,14 +300,20 @@ export class WebComponentView extends HTMLBoxView {
         if (!this.webComponentElement) { return; }
 
         let attributesLastChange: any = this.model.attributesLastChange;
+        console.log(attributesLastChange)
         for (let attribute in this.model.attributesLastChange) {
             if (attribute in this.model.attributesToWatch) {
                 let old_value = this.webComponentElement.getAttribute(attribute);
                 let new_value = attributesLastChange[attribute]
-                if (Array.isArray(new_value)) { new_value = JSON.stringify(new_value) } // Example: value = ["x","y"]
+                console.log(old_value)
+                console.log(new_value)
                 if (old_value !== new_value) {
-                    this.webComponentElement.setAttribute(attribute, new_value)
-                    console.log(new_value)
+                    if (new_value === null) {
+                        this.webComponentElement.removeAttribute(attribute)
+                    } else {
+                        this.webComponentElement.setAttribute(attribute, new_value)
+                    }
+
                     console.log("handleAttributesLastChangeChange - changed")
                 }
             }
