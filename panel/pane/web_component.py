@@ -1,17 +1,19 @@
 """Implementation of the wired WebComponent"""
-import param
-
-from panel.models import WebComponent as _BkWebComponent
-from panel.widgets.base import Widget
-from typing import Set, Dict, Optional
+import ast
 import json
 from html.parser import HTMLParser
-from bokeh.models import ColumnDataSource
+from typing import Dict, Optional, Set
 
 # @philippjfr?: For now i'm using lxml for . Is it ok to add as a requirement?
 # Or shoudl we find another solution like regex or similar?
 import lxml.html as LH
-import ast
+import param
+
+from panel.models import WebComponent as _BkWebComponent
+from panel.widgets.base import Widget
+
+# from bokeh.models import ColumnDataSource
+
 
 # Defines how to convert from attribute string value to parameter value
 PARAMETER_TYPE = {
@@ -221,6 +223,7 @@ class WebComponent(Widget):
         events_count_last_change = {"click": 2}
         """
     )
+    # @philpfr which param.X should this be?
     column_data_source = param.Parameter(
         doc="""
     The ColumnDataSource containing is used to efficiently transfer columnar data to the client
@@ -488,7 +491,6 @@ class WebComponent(Widget):
         parameters_to_attributes = {v: k for k, v in self.attributes_to_watch.items()}
         parameter_name = event.name
         value = event.new
-
         value = self.parse_parameter_value_to_attribute_value(parameter_name, value)
 
         attribute_name = parameters_to_attributes[parameter_name]
@@ -513,18 +515,15 @@ class WebComponent(Widget):
         """
         parameter_item = self.param[parameter]
 
-        if value is None:
+        if value is None or value=="":
             return value
         if isinstance(parameter_item, param.Boolean):
             if value == True:
                 return ""
             return None
         elif isinstance(parameter_item, (param.String, param.Integer, param.ObjectSelector)):
-            if value:
-                return str(value)
-        else:
-            return json.dumps(value, separators=(",", ":"))
-        return value
+            return str(value)
+        return json.dumps(value, separators=(",", ":"))
 
     def _handle_attributes_last_change(self, event):
         if not self.attributes_to_watch or not event.new or event.old == event.new:

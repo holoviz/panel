@@ -1,9 +1,11 @@
-# Todo: Move to panel.widgets. But I get below error when I do
+# @Philippfr: I would like to move this to file to panel.widgets.
+# But I get below error when I do
 # File "C:\repos\private\panel\panel\widgets\select.py", line 19, in <module>
 # from ..layout import Column, VSpacer
 # ImportError: attempted relative import with no known parent package
+# Can you help?
 
-# There is an issue with Perspective. See https://github.com/finos/perspective/issues/964
+# FYI. There is an issue with Perspective. See https://github.com/finos/perspective/issues/964
 import param
 
 import panel as pn
@@ -113,8 +115,10 @@ class Perspective(WebComponent):
     sort = param.List(None)
     filters = param.List(None)
 
-    # Todo: Find out if it is ok WebComponent is dependent on pandas if we users should just use
-    # ColumnsDataSource
+    # @Philipfr: Is it ok WebComponent is dependent on pandas or should the users just use
+    # ColumnDataSource?
+    # And in general the datatransfer might be improved using some kind of functionality like Arrow
+    # from the Perspective python package. Should we look into this?
     data = param.DataFrame(doc="""
     The data will be reloaded in full when ever it changes."""
     )

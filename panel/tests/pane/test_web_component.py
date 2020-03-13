@@ -180,9 +180,10 @@ def test_custom_web_component_attributes_comm(document, comm):
     assert model.attributesLastChange == {"param1": "a"}
 
     # When/ Then
-    # Todo: Find out how to test this
-    # model.attributesLastChange = {"param1": "b"}
-    # assert component.attributes_last_change == {"param1": "b"}
+    # @Philippfr: I would like to test communication from Bokeh model to Panel model
+    # How do I do that? An example test is the below that fails.
+    model.attributesLastChange = {"param1": "b"}
+    assert component.attributes_last_change == {"param1": "b"}
 
     # Cleanup
     component._cleanup(model)

@@ -5,8 +5,9 @@ import param
 from panel.pane import WebComponent
 from typing import Set
 
-# Todo: Determine if the bundle should be loaded or only files for individual components
-# Todo: Determine if the webcomponents-loader should be included for older browsers
+# @Philippfr. Should we load the full bundle or individual bundles?
+# @Philippfr. How should users load the js pn.extions("wired") or?
+# @Philippfr. Should we include the webcomponents-loader for older browsers?
 JS_FILES = {
     "webcomponents-loader": "https://unpkg.com/@webcomponents/webcomponentsjs@2.2.7/webcomponents-loader.js",
     "wired-bundle": "https://wiredjs.com/dist/showcase.min.js"
@@ -29,8 +30,6 @@ class WiredBase(WebComponent):
 ELEVATION_DEFAULT = 0
 ELEVATION_BOUNDS = (0,10)
 
-# Todo: If the innerHTML/ label is not set the the elements is not really clickable
-# I need to find out how to handle this. Guess it something about width, height etc.
 # Todo: support setting label via parameter
 class Button(WiredBase):
     """A Wired RadioButton"""
@@ -48,7 +47,7 @@ class Calendar(WiredBase):
     events_to_watch = param.Dict(default={"selected": "selects"})
 
     elevation = param.Integer(ELEVATION_DEFAULT, bounds=ELEVATION_BOUNDS)
-    # Todo: Support more advanced date handling
+    # Todo: Support more datatime datahandling instead of strings if possible.
     firstdate = param.String(doc="""
     Example: firstdate="Apr 15, 2019"""
     )
@@ -72,11 +71,11 @@ class CheckBox(WiredBase):
 
     checked = param.Boolean()
 
-# Todo: The Dialog is really a layout
-# Find a way to add a close button
-# Find a way to let the user include panes and widgets in the Dialog
+# @Philppfr: The Dialog is really a layout
+# I would like to support WebComponent layouts in general.
+# The user should be able to include panes and widgets like buttons in the Dialog.
+# How would I do that?
 class Dialog(WebComponent):
-    # Todo: Find a way to handle the innerHTML part
     html = param.String('<wired-dialog></wired-checkbox>')
     attributes_to_watch= param.Dict({"open": "is_open"})
     parameters_to_watch = param.List(["text"])
@@ -131,7 +130,7 @@ class Image(WebComponent):
     html = param.String('<wired-image style="width:100%;height:100%"></wired-image>')
     attributes_to_watch = param.Dict({"elevation": "elevation", "src": "src"})
 
-    # Todo: Find out how to handle height and width in general
+    # @Philippfr: How do I handle height and width in general in the .ts model?
     def __init__(self, height=100, **params):
         super().__init__(height=height, **params)
 
@@ -163,7 +162,6 @@ class Link(WebComponent):
     target=param.ObjectSelector("_blank", objects=["_self", "_blank", "_parent", "_top"])
     text=param.String()
 
-    # Todo: Can we make some general functionality on WebComponentto set inner html on construction?
     def __init__(self, **params):
         super().__init__(**params)
 
@@ -249,8 +247,6 @@ class TextArea(WiredBase):
             self.height=height
 
 class Slider(WebComponent):
-    # Todo: I need Philips help to understand how to avoid pn.Param(slider, parameters=["value"]) to turn red
-    # It seems the value needs to be rounded?
     html = param.String('<wired-slider></wired-slider>')
     properties_to_watch= param.Dict({"input.value": "value"})
     events_to_watch=param.Dict({"change": None})
@@ -282,7 +278,6 @@ class Toggle(WiredBase):
 
     checked = param.Boolean(False)
 
-# Todo
 class ComboBox(WebComponent):
     # Todo: Implement api for added wired-combo-items to the innerhtml
     # Todo: The selected attribute/ parameter is not updated. Fix this

@@ -36,6 +36,10 @@ export class WebComponentView extends HTMLBoxView {
             webComponentElementOld = this.webComponentElement
         }
 
+        // @Philippfr: How do we make sure the component is automatically sized according to the
+        // parameters of the WebComponent like width, height, sizing_mode etc?
+        // Should we set height and width to 100% or similar?
+        // For now I've set min_height as a part of __init__ for some of the Wired components?
         this.el.innerHTML = this.model.innerHTML
         this.webComponentElement = this.el.firstElementChild
         this.activate_scripts(this.webComponentElement.parentNode)
@@ -127,6 +131,9 @@ export class WebComponentView extends HTMLBoxView {
      * using the function or property specifed in `this.model.columnDataSourceLoadFunction`
      */
     handleColumnDataSourceChange(): void {
+        // @Philippfr: Right now we just reload all the data
+        // For example Perspective has an `update` function to append data
+        // Is this something we could/ should support?
         if (this.model.columnDataSource) {
             let data: any // list
             const columnDataSourceOrient: any = this.model.columnDataSourceOrient;
@@ -311,10 +318,8 @@ export class WebComponentView extends HTMLBoxView {
 
 export namespace WebComponent {
     export type Attrs = p.AttrsOf<Props>
-    // Todo: make property types more specific
+    // @Philipfr: How do I make property types more specific
     export type Props = HTMLBox.Props & {
-        // Todo: should we just use object instead of innerHTML?
-        // Just like for the HTML element
         innerHTML: p.Property<string>,
         attributesToWatch: p.Property<any> // A dictionary
         attributesLastChange: p.Property<p.Any>, // A dictionary
@@ -343,6 +348,7 @@ export class WebComponent extends HTMLBox {
         this.prototype.default_view = WebComponentView;
 
         this.define<WebComponent.Props>({
+            // @Philipfr: How do I make property types more specific
             innerHTML: [p.String, ''],
             attributesToWatch: [p.Any], // A dictionary
             attributesLastChange: [p.Any], // A dictionary
