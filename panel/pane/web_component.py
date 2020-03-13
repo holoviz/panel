@@ -9,18 +9,17 @@ from html.parser import HTMLParser
 from bokeh.models import ColumnDataSource
 
 # Todo: For now i'm using lxml for . @Philipp should now if that is ok to add as a requirement
-# or if we need to find another solution like regex or BeautifulSoup
+# or if we need to find another solution like regex or similar
 import lxml.html as LH
 import ast
 
-# Todo: Systematically go through this parameter types and update this dictionary
 PARAMETER_TYPE = {
     param.String: str,
     param.Integer: int,
     param.Number: float,
     param.ObjectSelector: str,
-    param.List: ast.literal_eval, # json.loads, # ast.literal_eval
-    param.Dict: ast.literal_eval, # json.loads, # ast.literal_eval
+    param.List: ast.literal_eval,
+    param.Dict: ast.literal_eval,
 }
 
 
@@ -286,23 +285,21 @@ class WebComponent(Widget):
             return
         attr_dict = self.parse_html_to_dict(self.html)
 
-        print("_update_parameters", attr_dict)
         for attribute, parameter in self.attributes_to_watch.items():
             if parameter:
-                print("update", parameter)
                 self.update_parameter(parameter, attribute, attr_dict)
 
     def update_parameter(self, parameter: str, attribute: str, attr_dict: Dict):
-        """Updates the parameter with the value of the html attribute
+        """Updates the parameter with the value of a html attribute
 
         Parameters
         ----------
         parameter : str
-            A parameter name like 'checked' or 'ball_size'
+            A parameter name like 'checked' or 'ball_size' to update
         attribute : str
-            An attribute name like 'checked' or 'ballSize'
+            An attribute name like 'checked' or 'ballSize' to update from
         attr_dict : Dict
-            A dictionary contained the parse attributes and attribute values of the html string
+            A dictionary containing attribute keys and their values
 
         Raises
         ------
@@ -338,20 +335,14 @@ class WebComponent(Widget):
             setattr(self, parameter, new_parameter_value)
 
     def _update_parameter(self, attr_dict, attribute, parameter, parameter_type):
-        print("_update_parameter")
         parameter_value = getattr(self, parameter)
         if attribute in attr_dict:
             attr_value = attr_dict[attribute]
-            print("log")
-            print(parameter)
-            print(attr_value, type(attr_value))
             new_parameter_value = parameter_type(attr_value)
         else:
             new_parameter_value = self.param[parameter].default
 
         if new_parameter_value != parameter_value:
-            print(parameter, type(parameter))
-            print(new_parameter_value, type(new_parameter_value))
             setattr(self, parameter, new_parameter_value)
 
     def update_html_from_attributes_to_watch(self):
@@ -408,10 +399,7 @@ class WebComponent(Widget):
         return new_html
 
     def _handle_parameter_attribute_change(self, event=None):
-        print("_handle_parameter_attribute_change")
-        print(event)
         if not self.attributes_to_watch:
-            print("_handle_parameter_attribute_change - skipped")
             return
 
         parameters_to_attributes = {v: k for k, v in self.attributes_to_watch.items()}
@@ -424,8 +412,6 @@ class WebComponent(Widget):
         change = {attribute_name: value}
         if self.attributes_last_change != change:
             self.attributes_last_change = change
-            print("_handle_parameter_attribute_change - changed to:", change)
-        print("_handle_parameter_attribute_change - Done")
 
     def parse_parameter_value_to_attribute_value(self, parameter: str, value) -> Optional[str]:
         """Returns the value to input to the setAttribute method of a JS HTML Element
@@ -459,12 +445,7 @@ class WebComponent(Widget):
         return value
 
     def _handle_attributes_last_change(self, event):
-        print("_handle_attributes_last_change")
-        print(event)
-        print(event.old)
-        print(event.new)
         if not self.attributes_to_watch or not event.new or event.old == event.new:
-            print("skipped")
             return
 
         # Todo: If we can skip the check below at all or just put in try/ catch to speed up
@@ -514,8 +495,6 @@ class WebComponent(Widget):
                 setattr(self, parameter_name, new_value)
 
     def _handle_properties_last_change(self, event):
-        print("_handle_properties_last_change")
-        print(event)
         if not self.properties_to_watch or not event.new:  # or not isinstance(event.new, dict):
             return
 
@@ -548,7 +527,6 @@ class WebComponent(Widget):
             if not parameter:
                 continue
 
-            print(parameter)
             old_value = getattr(self, parameter)
             if old_value != new_value:
                 setattr(self, parameter, new_value)
