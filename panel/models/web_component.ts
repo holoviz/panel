@@ -65,7 +65,7 @@ export class WebComponentView extends HTMLBoxView {
         };
 
         const this_ = this; // hack
-        function mutationEventHandler(_: Array<MutationRecord>): void {
+        function handleAttributesChange(_: Array<MutationRecord>): void {
             let attributesLastChange: any = new Object();
 
             for (let attribute in this_.model.attributesToWatch) {
@@ -78,7 +78,7 @@ export class WebComponentView extends HTMLBoxView {
             }
         }
 
-        let observer = new MutationObserver(mutationEventHandler);
+        let observer = new MutationObserver(handleAttributesChange);
         observer.observe(this.webComponentElement, options)
     }
 
@@ -120,6 +120,12 @@ export class WebComponentView extends HTMLBoxView {
         } else { return false }
     }
 
+    /**
+     * Handles changes to `this.model.columnDataSource`
+     * by
+     * updating the data source of `this.webComponentElement`
+     * using the function or property specifed in `this.model.columnDataSourceLoadFunction`
+     */
     handleColumnDataSourceChange(): void {
         if (this.model.columnDataSource) {
             let data: any // list
@@ -142,10 +148,6 @@ export class WebComponentView extends HTMLBoxView {
         // Todo: handle situation where this.model.columnDataSource is null
     }
 
-    /**
-     * Activates or reruns all script tags in the element
-     * @param el An element containing script tags
-     */
     private activate_scripts(el: Element) {
         Array.from(el.querySelectorAll("script")).forEach((oldScript: Element) => {
             const newScript = document.createElement("script")
@@ -196,6 +198,14 @@ export class WebComponentView extends HTMLBoxView {
         }
     }
 
+    /**
+     * Handles events from `eventsToWatch` by
+     *
+     * - Incrementing the count of the event
+     * - Checking if any properties have changed
+     *
+     * @param ev The Event Fired
+     */
     eventHandler(ev: Event): void {
         let event = ev.type;
         this.eventsCount[event] += 1;
@@ -206,6 +216,11 @@ export class WebComponentView extends HTMLBoxView {
         this.checkIfPropertiesChanged()
     }
 
+    /** Checks if any properties have changed. In case this is communicated to the server.
+     *
+     * For example the Wired `DropDown` does not run the `onchange` event handler when the selection changes.
+     * Insted the `select` event is fired. Thus we can subscribe to this event and manually check for property changes.
+     */
     checkIfPropertiesChanged(): void {
         let propertiesChange: any = {};
         for (let property in this.model.propertiesToWatch) {
@@ -221,6 +236,12 @@ export class WebComponentView extends HTMLBoxView {
         }
     }
 
+    /** Handles the `WebComponentElement` `(on)change` event
+     *
+     * Communicates any changed properties in `propertiesToWatch` to the server
+     * by updating `this.model.propertiesLastChange`.
+     * @param ev
+     */
     handlePropertiesChange(ev: any): void {
         let properties_change: any = new Object();
         for (let property in this.model.propertiesToWatch) {
@@ -246,6 +267,11 @@ export class WebComponentView extends HTMLBoxView {
             }
         }
     }
+    /**
+     * Handles changes to `this.model.attributesLastChange`
+     * by
+     * updating the attributes of `this.webComponentElement` accordingly
+     */
     handleAttributesLastChangeChange(): void {
         if (!this.webComponentElement) { return; }
 
@@ -265,7 +291,11 @@ export class WebComponentView extends HTMLBoxView {
             }
         }
     }
-
+    /**
+    * Handles changes to `this.model.propertiesLastChange`
+    * by
+    * updating the properties of `this.webComponentElement` accordingly
+    */
     handlePropertiesLastChangeChange(): void {
         if (!this.webComponentElement) { return; }
 
