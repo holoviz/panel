@@ -30,7 +30,7 @@ class Button(_ButtonBase):
 
     clicks = param.Integer(default=0)
 
-    _rename = {'clicks': None}
+    _rename = {'clicks': None, 'name': 'label'}
 
     _widget_type = _BkButton
 
