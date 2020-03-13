@@ -8,8 +8,8 @@ import json
 from html.parser import HTMLParser
 from bokeh.models import ColumnDataSource
 
-# Todo: For now i'm using lxml for . @Philipp should now if that is ok to add as a requirement
-# or if we need to find another solution like regex or similar
+# @philippjfr?: For now i'm using lxml for . Is it ok to add as a requirement?
+# Or shoudl we find another solution like regex or similar?
 import lxml.html as LH
 import ast
 
@@ -27,6 +27,7 @@ PARAMETER_TYPE = {
 class AttributeParser(HTMLParser):
     """Used to parse a the WebComponent html string to a dictionary of attribute keys and
     their values"""
+
     first_tag: bool = True
     attr_dict: Optional[Dict] = None
 
@@ -90,13 +91,12 @@ class WebComponent(Widget):
         "column_data_source": "columnDataSource",
         "column_data_source_orient": "columnDataSourceOrient",
         "column_data_source_load_function": "columnDataSourceLoadFunction",
-
     }
     _widget_type = _BkWebComponent
 
-    # Todo: Consider adding a regex
+    # @philippjfr: Would it be an idea to add a regex?
     html = param.String()
-    # Todo: Can we enforce that this is Dict[str, Optional[str]]?
+    # @philippjfr: Can we enforce that this is Dict[str, Optional[str]]?
     attributes_to_watch = param.Dict(
         doc="""
     A dictionary of attributes and parameters
@@ -117,7 +117,7 @@ class WebComponent(Widget):
     `attributes_to_watch = {"checked": "checked", "value": None, "ballSize": "ball_size"}`
     """
     )
-    # Todo: Can we enforce that this is Dict[str, Optional[str]]?
+    # @philippjfr: Can we enforce that this is Dict[str, Optional[str]]?
     attributes_last_change = param.Dict(
         doc="""
 
@@ -135,7 +135,7 @@ class WebComponent(Widget):
     ```
     """
     )
-    # Todo: Can we enforce that this is Dict[str, Optional[anything]?
+    # @philippjfr: Can we enforce that this is Dict[str, Optional[anything]?
     properties_to_watch = param.Dict(
         doc="""
     The key is the name of the js property. The value is the name of the python parameter
@@ -148,7 +148,7 @@ class WebComponent(Widget):
     `properties_to_watch = {"checked": "checked", "value": None, "ballSize": "ball_size"}`
     """
     )
-    # Todo: Can we enforce that this is Dict[str, Optional[anything]?
+    # @philippjfr: Can we enforce that this is Dict[str, Optional[anything]?
     properties_last_change = param.Dict(
         doc="""
 
@@ -246,14 +246,16 @@ class WebComponent(Widget):
     The `perspective-viewer`'s `load`s data in the `records` format.
     """,
     )
-    column_data_source_load_function = param.String(doc="""
+    column_data_source_load_function = param.String(
+        doc="""
     The name of the web component function or property used to load the data
 
     Example
     ~~~~~~
 
     The `perspective-viewer` component uses the `load` function to load data.
-    """)
+    """
+    )
 
     def __init__(self, **params):
         # Avoid AttributeError: unexpected attribute ...
@@ -345,7 +347,8 @@ class WebComponent(Widget):
 
         """
         raise NotImplementedError(
-            "You need to do a custom implementation of this because the parameters_to_watch list is not empty"
+            """You need to do a custom implementation of this because the parameters_to_watch list
+            is not empty"""
         )
 
     def _child_parameters(self) -> Set:
@@ -395,7 +398,7 @@ class WebComponent(Widget):
             parameter_type = PARAMETER_TYPE[type(parameter_item)]
             self._update_parameter(attr_dict, attribute, parameter, parameter_type)
         else:
-            # Todo: Find out if f strings are allowed in Panel
+            # @philippjfr: Are f strings allowed in Panel?
             raise TypeError(f"Parameter of type {type(parameter_item)} is not supported")
 
     def _update_boolean_parameter(self, attr_dict, attribute, parameter):
@@ -403,7 +406,7 @@ class WebComponent(Widget):
         if attribute in attr_dict:
             attr_value = attr_dict[attribute]
             # <a attribute=""></a> or <a attribute></a> is True
-            if attr_value == "" or not attr_value:
+            if attr_value == "" or attr_value is None:
                 new_parameter_value = True
             # <a></a> is False
             else:
@@ -483,7 +486,7 @@ class WebComponent(Widget):
             return
 
         parameters_to_attributes = {v: k for k, v in self.attributes_to_watch.items()}
-        parameter_name= event.name
+        parameter_name = event.name
         value = event.new
 
         value = self.parse_parameter_value_to_attribute_value(parameter_name, value)
@@ -515,20 +518,18 @@ class WebComponent(Widget):
         if isinstance(parameter_item, param.Boolean):
             if value == True:
                 return ""
-            else:
-                return None
+            return None
         elif isinstance(parameter_item, (param.String, param.Integer, param.ObjectSelector)):
             if value:
                 return str(value)
         else:
-            return json.dumps(value, separators=(',',':'))
+            return json.dumps(value, separators=(",", ":"))
         return value
 
     def _handle_attributes_last_change(self, event):
         if not self.attributes_to_watch or not event.new or event.old == event.new:
             return
 
-        # Todo: If we can skip the check below at all or just put in try/ catch to speed up
         for attribute_, new_value in event.new.items():
             if not attribute_ in self.attributes_to_watch:
                 continue
@@ -541,44 +542,28 @@ class WebComponent(Widget):
                     new_value = True
                 else:
                     new_value = False
+            elif new_value is None:
+                if parameter_item.allow_None:
+                    new_value = None
+                else:
+                    new_value = parameter_item.default
             elif isinstance(parameter_item, param.Integer):
-                if not new_value is None:
-                    new_value = int(new_value)
-                elif parameter_item.allow_None:
-                    new_value = None
-                else:
-                    new_value = parameter_item.default
+                new_value = int(new_value)
             elif isinstance(parameter_item, param.Number):
-                if not new_value is None:
-                    new_value = float(new_value)
-                elif parameter_item.allow_None:
-                    new_value = None
-                else:
-                    new_value = parameter_item.default
+                new_value = float(new_value)
             elif isinstance(parameter_item, (param.String, param.ObjectSelector)):
-                if not new_value is None:
-                    new_value = str(new_value)
-                elif parameter_item.allow_None:
-                    new_value = None
-                else:
-                    new_value = parameter_item.default
+                new_value = str(new_value)
             elif isinstance(parameter_item, (param.List, param.Dict)):
-                if not new_value is None:
-                    new_value = json.loads(new_value)
-                elif parameter_item.allow_None:
-                    new_value = None
-                else:
-                    new_value = parameter_item.default
+                new_value = json.loads(new_value)
 
             old_value = getattr(self, parameter_name)
             if old_value != new_value:
                 setattr(self, parameter_name, new_value)
 
     def _handle_properties_last_change(self, event):
-        if not self.properties_to_watch or not event.new:  # or not isinstance(event.new, dict):
+        if not self.properties_to_watch or not event.new:
             return
 
-        # Todo: If we can skip the check below at all or just put in try/ catch to speed up
         for property_, new_value in event.new.items():
             if not property_ in self.properties_to_watch:
                 continue
@@ -595,10 +580,9 @@ class WebComponent(Widget):
                 setattr(self, parameter, new_value)
 
     def _handle_events_count_last_change(self, event):
-        if not self.events_to_watch or not event.new:  # or not isinstance(event.new, dict):
+        if not self.events_to_watch or not event.new:
             return
 
-        # Todo: If we can skip the check below at all or just put in try/ catch to speed up
         for property_, new_value in event.new.items():
             if not property_ in self.events_to_watch:
                 continue
