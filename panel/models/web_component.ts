@@ -4,8 +4,6 @@ import { HTMLBox, HTMLBoxView } from "@bokehjs/models/layouts/html_box"
 import * as p from "@bokehjs/core/properties"
 
 
-// Todo: Remove console.log
-// Reight now they are helpfull
 export class WebComponentView extends HTMLBoxView {
     model: WebComponent
     webComponentElement: any // Element
@@ -13,24 +11,18 @@ export class WebComponentView extends HTMLBoxView {
     propertyValues: any // Dict
 
     initialize(): void {
-        console.log("initialize")
         super.initialize()
-        console.log("initialize - DONE")
     }
 
     connect_signals(): void {
-        console.log("connect signals")
         super.connect_signals()
         this.connect(this.model.properties.innerHTML.change, () => this.render())
         this.connect(this.model.properties.attributesLastChange.change, () => this.handleAttributesLastChangeChange())
         this.connect(this.model.properties.propertiesLastChange.change, () => this.handlePropertiesLastChangeChange())
-        this.connect(this.model.properties.eventsToWatch.change, () => this.handleEventsToWatchChange())
         this.connect(this.model.properties.columnDataSource.change, () => this.handleColumnDataSourceChange())
-        console.log("connect signals - DONE")
     }
 
     render(): void {
-        console.log("render")
         super.render()
 
         if (this.el.innerHTML !== this.model.innerHTML) {
@@ -41,8 +33,6 @@ export class WebComponentView extends HTMLBoxView {
             }
             this.el.innerHTML = this.model.innerHTML; // Todo: Remove
             this.webComponentElement = this.el.firstElementChild;
-            console.log(this.webComponentElement);
-            console.log(this.model);
             this.initPropertyValues();
             if (!webComponentElementOld) {
                 // initializes to the correct properties on first construction
@@ -55,7 +45,6 @@ export class WebComponentView extends HTMLBoxView {
             this.activate_scripts(this.webComponentElement.parentNode);
             this.handleColumnDataSourceChange();
         }
-        console.log("render - DONE")
     }
     addMutationObserver(): void {
         let options = {
@@ -67,11 +56,9 @@ export class WebComponentView extends HTMLBoxView {
             attributeOldValue: false,
             characterDataOldValue: false
         };
-        console.log(options);
 
         const this_ = this;
         function mutationEventHandler(mutation: Array<MutationRecord>): void {
-            console.log(mutation);
             let attributesLastChange: any = new Object();
             // For the perspective component sending only the changed values in the mutation does not seem to work Well
             // If I Drag a dimension to the Split By field then the mutationEventHandler is triggered twice
@@ -91,10 +78,7 @@ export class WebComponentView extends HTMLBoxView {
 
             if (this_.model.attributesLastChange !== attributesLastChange) {
                 this_.model.attributesLastChange = attributesLastChange;
-                console.log(attributesLastChange);
-                console.log("mutatation - attributesLastChange changed")
             }
-            console.log("mutation - Done")
         }
 
         let observer = new MutationObserver(mutationEventHandler);
@@ -141,10 +125,7 @@ export class WebComponentView extends HTMLBoxView {
     }
 
     handleColumnDataSourceChange(): void {
-        console.log("handledataChange");
-        console.log(this.model.columnDataSource);
         if (this.model.columnDataSource) {
-            console.log(this.model.columnDataSource)
             let data: any // list
             const columnDataSourceOrient: any = this.model.columnDataSourceOrient;
             if (columnDataSourceOrient === "records") {
@@ -213,18 +194,6 @@ export class WebComponentView extends HTMLBoxView {
         }
     }
 
-    handleEventsToWatchChange(): void {
-        // Todo: Implement this
-        // First old eventlisteners should be removed
-        // Then the new should be added
-        // This should be used in the render section
-
-        // console.log("handleEventsToWatchChange")
-        // for (let event in this.model.eventsToWatch) {
-        //     this.webComponentElement.addEventListener(event, () => { console.log(this.webComponentElement) }, false)
-        // }
-    }
-
     // Todo: Find out if onchange and event listeners should be removed "on destroy"
 
     // Todo: Set this up
@@ -234,8 +203,6 @@ export class WebComponentView extends HTMLBoxView {
     //     }
     // }
     eventHandler(ev: Event): void {
-        console.log("eventHandler")
-        console.log(ev);
         let event = ev.type;
         this.eventsCount[event] += 1;
         let eventsCountLastChanged: any = {};
@@ -243,11 +210,9 @@ export class WebComponentView extends HTMLBoxView {
         this.model.eventsCountLastChange = eventsCountLastChanged;
 
         this.checkIfPropertiesChanged()
-        console.log("eventHandler - Done")
     }
 
     checkIfPropertiesChanged(): void {
-        console.log("checkIfPropertiesChanged")
         let propertiesChange: any = {};
         for (let property in this.model.propertiesToWatch) {
             let oldValue: any = this.propertyValues[property];
@@ -260,12 +225,9 @@ export class WebComponentView extends HTMLBoxView {
         if (Object.keys(propertiesChange).length) {
             this.model.propertiesLastChange = propertiesChange;
         }
-        console.log(this.propertyValues);
-        console.log("checkIfPropertiesChanged - Done")
     }
 
     handlePropertiesChange(ev: any): void {
-        console.log("handlePropertiesChange")
         let properties_change: any = new Object();
         for (let property in this.model.propertiesToWatch) {
             if (property in ev.detail) {
@@ -276,12 +238,9 @@ export class WebComponentView extends HTMLBoxView {
         if (Object.keys(properties_change).length) {
             this.model.propertiesLastChange = properties_change;
         }
-        console.log(properties_change)
-        console.log("handlePropertiesChange - Done")
     }
 
     initPropertyValues(): void {
-        console.log("initPropertyValues");
         this.propertyValues = new Object();
         if (!this.webComponentElement) { return; }
 
@@ -292,21 +251,15 @@ export class WebComponentView extends HTMLBoxView {
                 this.propertyValues[property] = new_value;
             }
         }
-        console.log(this.propertyValues);
-        console.log("initPropertyValues - DONE");
     }
     handleAttributesLastChangeChange(): void {
-        console.log("handleAttributesLastChangeChange")
         if (!this.webComponentElement) { return; }
 
         let attributesLastChange: any = this.model.attributesLastChange;
-        console.log(attributesLastChange)
         for (let attribute in this.model.attributesLastChange) {
             if (attribute in this.model.attributesToWatch) {
                 let old_value = this.webComponentElement.getAttribute(attribute);
                 let new_value = attributesLastChange[attribute]
-                console.log(old_value)
-                console.log(new_value)
                 if (old_value !== new_value) {
                     if (new_value === null) {
                         this.webComponentElement.removeAttribute(attribute)
@@ -314,18 +267,14 @@ export class WebComponentView extends HTMLBoxView {
                         this.webComponentElement.setAttribute(attribute, new_value)
                     }
 
-                    console.log("handleAttributesLastChangeChange - changed")
                 }
             }
         }
-        console.log("handleAttributesLastChangeChange - done")
     }
 
     handlePropertiesLastChangeChange(): void {
-        console.log("handlePropertiesLastChangeChange")
         if (!this.webComponentElement) { return; }
 
-        console.log(this.model.propertiesLastChange);
         let propertiesLastChange: any = this.model.propertiesLastChange;
         for (let property in this.model.propertiesLastChange) {
             if (property in this.model.propertiesToWatch) {
@@ -333,7 +282,6 @@ export class WebComponentView extends HTMLBoxView {
                 this.set_nested_property(this.webComponentElement, property, value);
             }
         }
-        console.log("handlePropertiesLastChangeChange - done")
     }
 }
 
