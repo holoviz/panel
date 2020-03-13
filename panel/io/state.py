@@ -12,19 +12,6 @@ import param
 from bokeh.document import Document
 from bokeh.io import curdoc as _curdoc
 from pyviz_comms import CommManager as _CommManager
-from panel.models.location import Location
-
-
-class _Window(param.Parameterized):
-    """
-    Provides selected functionality of the JS window api
-    """
-
-    location = param.Parameter(
-        default=Location(),
-        doc="""
-        Provides access to selected functionality of the JS window.location api""",
-    )
 
 
 class _state(param.Parameterized):
@@ -33,27 +20,8 @@ class _state(param.Parameterized):
     apps to indicate their state to a user.
     """
 
-    cache = param.Dict(
-        default={},
-        doc="""
-       Global location you can use to cache large datasets or expensive computation results
-       across multiple client sessions for a given server.""",
-    )
-
-    webdriver = param.Parameter(
-        default=None,
-        doc="""
-        Selenium webdriver used to export bokeh models to pngs.""",
-    )
-
-    window = param.Parameter(default=_Window())
-
-    _curdoc = param.ClassSelector(
-        class_=Document,
-        doc="""
-        The bokeh Document for which a server event is currently being
-        processed.""",
-    )
+    webdriver = param.Parameter(default=None, doc="""
+      Selenium webdriver used to export bokeh models to pngs.""")
 
     # Whether to hold comm events
     _hold = False
