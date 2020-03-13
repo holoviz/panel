@@ -26,27 +26,34 @@ export class WebComponentView extends HTMLBoxView {
         super.render()
 
         if (this.el.innerHTML !== this.model.innerHTML) {
-            let webComponentElementOld: any = null
-            if (this.webComponentElement) {
-                this.webComponentElement.onchange = null;
-                webComponentElementOld = this.webComponentElement;
-            }
-            this.el.innerHTML = this.model.innerHTML; // Todo: Remove
-            this.webComponentElement = this.el.firstElementChild;
-            this.initPropertyValues();
-            if (!webComponentElementOld) {
-                // initializes to the correct properties on first construction
-                this.handlePropertiesLastChangeChange();
-            }
-
-            this.webComponentElement.onchange = (ev: any) => this.handlePropertiesChange(ev);
-            this.addEventListeners();
-            this.addMutationObserver();
-            this.activate_scripts(this.webComponentElement.parentNode);
-            this.handleColumnDataSourceChange();
+            this.createOrUpdateWebComponentElement()
         }
     }
-    addMutationObserver(): void {
+    private createOrUpdateWebComponentElement() {
+        let webComponentElementOld: any = null
+        if (this.webComponentElement) {
+            this.webComponentElement.onchange = null
+            webComponentElementOld = this.webComponentElement
+        }
+
+        this.el.innerHTML = this.model.innerHTML
+        this.webComponentElement = this.el.firstElementChild
+        this.activate_scripts(this.webComponentElement.parentNode)
+
+        // Initialize properties
+        this.initPropertyValues()
+        if (!webComponentElementOld) {
+            this.handlePropertiesLastChangeChange()
+        }
+        this.handleColumnDataSourceChange()
+
+        // Subscribe to events
+        this.webComponentElement.onchange = (ev: any) => this.handlePropertiesChange(ev)
+        this.addEventListeners()
+        this.addAttributesMutationObserver()
+    }
+
+    addAttributesMutationObserver(): void {
         let options = {
             childList: false,
             attributes: true,
@@ -57,19 +64,9 @@ export class WebComponentView extends HTMLBoxView {
             characterDataOldValue: false
         };
 
-        const this_ = this;
-        function mutationEventHandler(mutation: Array<MutationRecord>): void {
+        const this_ = this; // hack
+        function mutationEventHandler(_: Array<MutationRecord>): void {
             let attributesLastChange: any = new Object();
-            // For the perspective component sending only the changed values in the mutation does not seem to work Well
-            // If I Drag a dimension to the Split By field then the mutationEventHandler is triggered twice
-            // short after each other. But only the last round seems to send the attributesLastChange to the
-            // server.
-            // mutation.forEach((record: MutationRecord) => {
-            //     const attribute: any = record.attributeName;
-            //     const el: any = record.target;
-            //     const value = el.getAttribute(attribute)
-            //     attributesLastChange[attribute] = value;
-            // })
 
             for (let attribute in this_.model.attributesToWatch) {
                 const value = this_.webComponentElement.getAttribute(attribute)
@@ -82,7 +79,6 @@ export class WebComponentView extends HTMLBoxView {
         }
 
         let observer = new MutationObserver(mutationEventHandler);
-        // hack
         observer.observe(this.webComponentElement, options)
     }
 
@@ -131,7 +127,6 @@ export class WebComponentView extends HTMLBoxView {
             if (columnDataSourceOrient === "records") {
                 data = this.transform_cds_to_records(this.model.columnDataSource);
             } else {
-                // Todo: Solve lint problem
                 // @ts-ignore
                 data = this.model.columnDataSource.data;
             }
@@ -164,7 +159,14 @@ export class WebComponentView extends HTMLBoxView {
     }
 
     // See https://stackoverflow.com/questions/6491463/accessing-nested-javascript-objects-with-string-key
-    // example: get_nested_property(element, "textInput.value") would return element.textInput.value
+    /**
+     * Example:
+     *
+     * `get_nested_property(element, "textInput.value")` returns `element.textInput.value`
+     *
+     * @param element
+     * @param property_
+     */
     get_nested_property(element: any, property_: string): string {
         property_ = property_.replace(/\[(\w+)\]/g, '.$1'); // convert indexes to properties
         property_ = property_.replace(/^\./, '');           // strip a leading dot
@@ -194,14 +196,6 @@ export class WebComponentView extends HTMLBoxView {
         }
     }
 
-    // Todo: Find out if onchange and event listeners should be removed "on destroy"
-
-    // Todo: Set this up
-    // handle_innerHTML_change(ev: any): void {
-    //     if (this.model.innerHTML !== this.webComponentElement.outerHTML) {
-    //         this.model.innerHTML = this.webComponentElement.outerHTML;
-    //     }
-    // }
     eventHandler(ev: Event): void {
         let event = ev.type;
         this.eventsCount[event] += 1;
