@@ -71,16 +71,23 @@ export class WebComponentView extends HTMLBoxView {
 
         const this_ = this;
         function mutationEventHandler(mutation: Array<MutationRecord>): void {
-            console.log("mutation")
-            console.log(mutation)
-
+            console.log(mutation);
             let attributesLastChange: any = new Object();
-            mutation.forEach((record: MutationRecord) => {
-                const attribute: any = record.attributeName;
-                const el: any = record.target;
-                const value = el.getAttribute(attribute)
+            // For the perspective component sending only the changed values in the mutation does not seem to work Well
+            // If I Drag a dimension to the Split By field then the mutationEventHandler is triggered twice
+            // short after each other. But only the last round seems to send the attributesLastChange to the
+            // server.
+            // mutation.forEach((record: MutationRecord) => {
+            //     const attribute: any = record.attributeName;
+            //     const el: any = record.target;
+            //     const value = el.getAttribute(attribute)
+            //     attributesLastChange[attribute] = value;
+            // })
+
+            for (let attribute in this_.model.attributesToWatch) {
+                const value = this_.webComponentElement.getAttribute(attribute)
                 attributesLastChange[attribute] = value;
-            })
+            }
 
             if (this_.model.attributesLastChange !== attributesLastChange) {
                 this_.model.attributesLastChange = attributesLastChange;
