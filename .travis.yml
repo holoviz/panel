@@ -126,7 +126,7 @@ jobs:
           skip_cleanup: true
           github_token: $GITHUB_TOKEN
           local_dir: ./builtdocs
-          fqdn: panel.pyviz.org
+          fqdn: panel.holoviz.org
           on:
             tags: true
             all_branches: true
