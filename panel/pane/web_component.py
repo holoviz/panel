@@ -13,6 +13,7 @@ from bokeh.models import ColumnDataSource
 import lxml.html as LH
 import ast
 
+# Defines how to convert from attribute string value to parameter value
 PARAMETER_TYPE = {
     param.String: str,
     param.Integer: int,
@@ -24,6 +25,8 @@ PARAMETER_TYPE = {
 
 
 class AttributeParser(HTMLParser):
+    """Used to parse a the WebComponent html string to a dictionary of attribute keys and
+    their values"""
     first_tag: bool = True
     attr_dict: Optional[Dict] = None
 
@@ -35,25 +38,43 @@ class AttributeParser(HTMLParser):
 
 
 class WebComponent(Widget):
-    """A Wired WebComponent
+    """
+    WebComponent
+    ============
 
-    Use the WebComponent by inheriting from it. An example would be
+    Use the WebComponent to quickly plugin webcomponents and/ or Javascript libraries not already
+    supported in Panel.
+
+    You can use it by instantiating an instance or inheriting from it.
+
+    Parameters
+    ----------
+
+    - The parameters listed in `attributes_to_watch` will be used to set the corresponding
+    `html` element attributes on construction.
+    - The parameters listed in `properties_to_watch` will be used to set the corresponding
+    `html` element properties on construction.
+
+    Example
+    -------
 
     ```
     class RadioButton(WebComponent):
-    html = param.String('<wired-radio>Radio Two</wired-radio>')
-    attributes_to_watch = param.Dict({"checked": "checked})
+        html = param.String('<wired-radio>Radio Two</wired-radio>')
+        attributes_to_watch = param.Dict({"checked": "checked})
 
-    checked = param.Boolean(default=False)
+        checked = param.Boolean(default=False)
     ```
 
-    - A Boolean parameter set to True like `checked=True` is in included as `checked` or `checked=""` in the html
+    - A Boolean parameter set to True like `checked=True` is in included as `checked=""` in the html
     - A Boolean parameter set to False is not included in the html
 
-    Please note
+    Additional Resources
+    --------------------
 
-    - The html attributes in attributes_to_watch will be set to the corresponding parameter value
-    on construction.
+    - Examples in the Panel Reference Gallery
+    - Source code for Wired widgets
+    - Source code for Perspective widgets
     """
 
     _rename = {
@@ -73,12 +94,9 @@ class WebComponent(Widget):
     }
     _widget_type = _BkWebComponent
 
-    # Todo: Consider the right name: element, html, tag or ?
-    # Todo: Right now a complex element like `<a><b></b></a><c></c>` is allowed and <a></a> is the component we observe changes to
-    # consider if we should allow only simple/ single elements like `<a href="abcd"></a>`
     # Todo: Consider adding a regex
     html = param.String()
-    # Todo: Consider the right name: attributes, attributes_to_watch, attributes_and_parameters
+    # Todo: Can we enforce that this is Dict[str, Optional[str]]?
     attributes_to_watch = param.Dict(
         doc="""
     A dictionary of attributes and parameters
@@ -91,9 +109,12 @@ class WebComponent(Widget):
     If an attribute key has a parameter value of None then the attribute is still observed and changes
     are update in the html parameter. But it is not synchronized to a parameter.
 
-    Example:
+    DO NOT CHANGE AFTER CONSTRUCTION OF THE OBJECT!
 
-    attributes_to_watch = {"checked": "checked", "value": None, "ballSize": "ball_size"}
+    Example
+    ~~~~~~~
+
+    `attributes_to_watch = {"checked": "checked", "value": None, "ballSize": "ball_size"}`
     """
     )
     # Todo: Can we enforce that this is Dict[str, Optional[str]]?
@@ -103,53 +124,112 @@ class WebComponent(Widget):
     The key is the name of the attribute changed. The value is the new value of the attribute.
 
     Please note that the value is a string or None
+
+    Examples
+    ~~~~~~~~
+
+    ```
+    attributes_last_change = {"checked": ""}
+    attributes_last_change = {"value": None}
+    attributes_last_change = {"ballSize": "2"}
+    ```
     """
     )
+    # Todo: Can we enforce that this is Dict[str, Optional[anything]?
     properties_to_watch = param.Dict(
         doc="""
     The key is the name of the js property. The value is the name of the python parameter
+
+    DO NOT CHANGE AFTER CONSTRUCTION OF THE OBJECT!
+
+    Example
+    ~~~~~~~
+
+    `properties_to_watch = {"checked": "checked", "value": None, "ballSize": "ball_size"}`
     """
     )
+    # Todo: Can we enforce that this is Dict[str, Optional[anything]?
     properties_last_change = param.Dict(
         doc="""
 
     The key is the name of the property changed. The value is the new value of the property
+
+     Examples
+    ~~~~~~~~
+
+    ```
+    properties_last_change = {"checked": True}
+    properties_last_change = {"value": None}
+    properties_last_change = {"ballSize": 2}
+    ```
     """
     )
     parameters_to_watch = param.List(
         doc="""
-        A list of parameters that the value of `html` depends before the value of the attributes
-        specified in `attributes_to_watch` are applied.
+        A list of parameters that do not correspond to attributes but that the value of `html`
+        depends on. For example parameters that define the `innerHTML` of the `html` string.
 
-        Only relevant for custom implementations that inherit from WebComponent.
-
-        For example the wired.Fab has an `icon` parameter that defines the html of the web component as
-        `<wired-fab><mwc-icon>{self.icon}</mwc-icon></wired-fab>`
-
-        In order for this to work you need to define a custom implementation of
+        In order for this to take effect you also need to do a custom implementation of
         `_get_html_from_parameters_to_watch`.
+
+        DO NOT CHANGE AFTER CONSTRUCTION OF THE OBJECT!
+
+        Example
+        ~~~~~~~
+
+        The Wired `Fab` has an `icon` parameter that defines the `html` of the web component
+        as `<wired-fab><mwc-icon>{self.icon}</mwc-icon></wired-fab>`.
         """
     )
     events_to_watch = param.Dict(
         doc="""
-    The key is the name of the js event. The value is the name of a python parameter to increment or None
+    The key is the name of the js event. The value is the name of a python parameter to increment
+    or None.
 
     Use this if you want to support button clicks, mouseups etc.
 
-    # Below is not implemented yet
-    When the event is fired on the js side any changes to the html or properties_to_change will
-    also be sent. Use this if you webcomponent don't fire the onchange event when your property changes
+    Example Button
+    ~~~~~~~~~~~~~~
+
+    class Button(WebComponent):
+        html = param.String('<wired-button>Button</wired-radio>')
+        events_to_watch = param.Dict(default={"click": "clicks"})
+
+        clicks = param.Integer()
+
+
+    Example Combobox
+    ~~~~~~~~~~~~~~~~
+
+    The Wired `ComboBox` does not run the `onchange` event handler when the selection changes. I.e.
+    adding "selected" to the `parameters_to_watch` does not work as expected.
+
+    But the `select` event is fired by the `ComboBox`. So if we also add `select`to
+    `events_to_watch` list, then the synchronization from js `selection` property to python
+    `selection` property works
     """
     )
     events_count_last_change = param.Dict(
         doc="""
         Key is the name of the event, Value is the number of times it has fired in total
+
+        Please note that the communication goes from client to server and not the other way around.
+
+        Example
+        ~~~~~~~
+
+        events_count_last_change = {"click": 2}
         """
     )
     column_data_source = param.Parameter(
         doc="""
-    The ColumnDataSource containing the DataFrame and used to efficiently transfer
-    it to the client"""
+    The ColumnDataSource containing is used to efficiently transfer columnar data to the client
+
+    Example
+    ~~~~~~~
+
+    PerspectiveWidget
+    """
     )
     column_data_source_orient = param.ObjectSelector(
         "dict",
@@ -157,27 +237,29 @@ class WebComponent(Widget):
         doc="""
     The orientation of the data when provided to the web component.
 
-    - dict {"x": [1,2], "y": [3,4]}
-    - records [{"x": 1, "y": 3}, {"x": 2, "y": 4}]
+    - dict: {"x": [1,2], "y": [3,4]}
+    - records: [{"x": 1, "y": 3}, {"x": 2, "y": 4}]
 
-    For example the perspective-viewer's `load` function uses `records` as input
+    Example
+    ~~~~~~~
+
+    The `perspective-viewer`'s `load`s data in the `records` format.
     """,
     )
     column_data_source_load_function = param.String(doc="""
     The name of the web component function or property used to load the data
 
-    For example the `perspective-viewer` component uses the `load` function to load data.
+    Example
+    ~~~~~~
+
+    The `perspective-viewer` component uses the `load` function to load data.
     """)
-    # Todo: Find out if we can/ should support a column_data_source_update or ..append parameter
-    # The use case is for example perspective-viewers `update` function that appends new data efficiently
 
     def __init__(self, **params):
         # Avoid AttributeError: unexpected attribute ...
         for parameter in self._child_parameters():
             self._rename[parameter] = None
 
-        # Todo: Could not get instantiate=False, constant=False working on parameters.
-        # So I added the below
         if not self.param.attributes_to_watch.default:
             self.param.attributes_to_watch.default = {}
         if not self.param.properties_to_watch.default:
@@ -197,8 +279,6 @@ class WebComponent(Widget):
         self.param.watch(self._handle_properties_last_change, ["properties_last_change",])
         self.param.watch(self._handle_events_count_last_change, ["events_count_last_change",])
 
-        # Todo: Maybe setup watch of attributes_to_watch so that the below is updated if attributes_to_watch change
-        # after construction
         if self.attributes_to_watch:
             parameters_to_watch = [value for value in self.attributes_to_watch.values() if value]
             self.param.watch(self._handle_parameter_attribute_change, parameters_to_watch)

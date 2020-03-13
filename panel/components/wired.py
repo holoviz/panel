@@ -29,11 +29,11 @@ class WiredBase(WebComponent):
 ELEVATION_DEFAULT = 0
 ELEVATION_BOUNDS = (0,10)
 
+# Todo: If the innerHTML/ label is not set the the elements is not really clickable
+# I need to find out how to handle this. Guess it something about width, height etc.
+# Todo: support setting label via parameter
 class Button(WiredBase):
     """A Wired RadioButton"""
-    # Todo: If the innerHTML/ label is not set the the elements is not really clickable
-    # I need to find out how to handle this. Guess it something about width, height etc.
-    # Todo: support setting label via parameter
     html = param.String('<wired-button>Button</wired-radio>')
     attributes_to_watch = param.Dict({"elevation": "elevation"})
     events_to_watch = param.Dict(default={"click": "clicks"})
