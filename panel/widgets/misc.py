@@ -242,7 +242,7 @@ class FileDownload(Widget):
                     raise ValueError('Must provide filename if file-like '
                                      'object is provided.')
                 label = '%s %s' % (label, filename)
-            self.set_param(label=label)
+            self.label = label
             self._default_label = True
 
     @param.depends('embed', 'file', 'callback', watch=True)
@@ -292,5 +292,5 @@ class FileDownload(Widget):
         data = "data:{mime};base64,{b64}".format(mime=mime, b64=b64)
         self._synced = True
 
-        self.set_param(data=data, filename=filename)
+        self.param.set_param(data=data, filename=filename)
         self._update_label()
