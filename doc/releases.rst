@@ -1,6 +1,18 @@
 Releases
 ========
 
+Version 0.9.1
+-------------
+
+Date: 2020-03-13
+
+This is very minor releases fixing small regressions in the 0.9.0 release:
+
+Bug fixes
+
+- Fix issue with Button label not being applied (`#1152 <https://github.com/holoviz/panel/pull/1152>`_)
+- Pin pyviz_comms 0.7.4 to avoid issues with undefined vars (`#1153 <https://github.com/holoviz/panel/pull/1153>`_)
+
 Version 0.9.0
 -------------
 
