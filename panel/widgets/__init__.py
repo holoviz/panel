@@ -14,6 +14,9 @@ from .input import (# noqa
     TextAreaInput
 )
 from .misc import Audio, Progress, VideoStream # noqa
+#@Philppfr: I would like to import these here but get errors
+#How do I fix this?
+# from .model_viewer import ModelViewer
 # from .perspective import Perspective # noqa
 from .player import DiscretePlayer, Player # noqa
 from .slider import (# noqa
