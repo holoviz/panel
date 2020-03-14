@@ -1,5 +1,10 @@
-from panel.components import wired
+import datetime as dt
+
+import pandas as pd
+import param
+
 import panel as pn
+from panel.components import wired
 
 
 def test_wired_base():
@@ -19,7 +24,8 @@ def test_wired_button_constructor():
     assert button.html.startswith("<wired-button")
     assert button.html.endswith("</wired-button>")
     assert 'elevation="0"' in button.html
-    assert 'disabled' not in button.html
+    assert "disabled" not in button.html
+
 
 def test_wired_button_disabled():
     button = wired.Button()
@@ -36,16 +42,18 @@ def test_wired_button_disabled():
     button.update_html_from_attributes_to_watch()
     assert "disabled" not in button.html
 
+
 def test_wired_button_elevation():
     button = wired.Button()
     # When/Then: Elevation
     button.elevation = 1
     assert button.attributes_last_change == {"elevation": "1"}
 
+
 def test_wired_button_name():
     button = wired.Button()
     # When/ Then
-    button.name= "Click Test"
+    button.name = "Click Test"
     assert ">Click Test</wired-button" in button.html
 
 
@@ -68,14 +76,16 @@ def test_wired_checkbox():
     checkbox.update_html_from_attributes_to_watch()
     assert "disabled" not in checkbox.html
 
+
 def test_wired_checkbox_constructor_checked():
     checkbox = wired.CheckBox(checked=True)
     assert checkbox.properties_last_change == {"checked": True}
 
+
 def test_wired_checkbox_name():
     checkbox = wired.CheckBox()
 
-    checkbox.name="Testing"
+    checkbox.name = "Testing"
     assert ">Testing<" in checkbox.html
 
 
@@ -132,7 +142,7 @@ def test_slider_properties_last_change():
 
 def test_input():
     # Given
-    wired_input = wired.Input()
+    wired_input = wired.TextInput()
 
     # When/ Then
     wired_input.type_ = "password"
@@ -210,6 +220,22 @@ def test_toggle():
     assert toggle.html == "<wired-toggle></wired-toggle>"
     assert toggle.disabled == False
 
+def test_literal_input_value_from_client():
+    # Given
+    literal_input = wired.LiteralInput()
+    # When
+    literal_input.properties_last_change = {"textInput.value": "{'2': 2, 'b': 18}"}
+    # Then
+    assert literal_input.value == {'2': 2, 'b': 18}
+
+def test_literal_input_value_to_client():
+    # Given
+    literal_input = wired.LiteralInput()
+    # When
+    literal_input.value = {'2': 2, 'b': 18}
+    # Then
+    assert literal_input.properties_last_change == {"textInput.value": "{'2': 2, 'b': 18}"}
+
 
 def test_view():
     js = """
@@ -260,7 +286,7 @@ def test_view():
     image = wired.Image(src="https://www.gstatic.com/webp/gallery/1.sm.jpg", height=200, width=300)
     link = wired.Link(href="https://panel.holoviz.org/", text="HoloViz", target="_blank")
     progress = wired.Progress(value=50)
-    wired_input = wired.Input()
+    wired_input = wired.TextInput()
     radio_button = wired.RadioButton()
     search_input = wired.SearchInput()
     spinner = wired.Spinner()
@@ -307,6 +333,88 @@ def test_view():
     )
 
 
+def test_param_view():
+    js = """
+<script src="https://unpkg.com/@webcomponents/webcomponentsjs@2.2.7/webcomponents-loader.js"></script>
+<script src="https://wiredjs.com/dist/showcase.min.js"></script>
+"""
+    js_pane = pn.pane.HTML(js)
+
+    class BaseClass(param.Parameterized):
+        x = param.Parameter(default=3.14, doc="X position")
+        y = param.Parameter(default="Not editable", constant=True)
+        string_value = param.String(default="str", doc="A string")
+        num_int = param.Integer(50000, bounds=(-200, 100000))
+        unbounded_int = param.Integer(23)
+        float_with_hard_bounds = param.Number(8.2, bounds=(7.5, 10))
+        float_with_soft_bounds = param.Number(0.5, bounds=(0, None), softbounds=(0, 2))
+        unbounded_float = param.Number(30.01, precedence=0)
+        hidden_parameter = param.Number(2.718, precedence=-1)
+        integer_range = param.Range(default=(3, 7), bounds=(0, 10))
+        float_range = param.Range(default=(0, 1.57), bounds=(0, 3.145))
+        dictionary = param.Dict(default={"a": 2, "b": 9})
+
+    class Example(BaseClass):
+        """An example Parameterized class"""
+
+        timestamps = []
+
+        boolean = param.Boolean(True, doc="A sample Boolean parameter")
+        color = param.Color(default="#FFFFFF")
+        date = param.Date(
+            dt.datetime(2017, 1, 1), bounds=(dt.datetime(2017, 1, 1), dt.datetime(2017, 2, 1))
+        )
+        dataframe = param.DataFrame(pd.util.testing.makeDataFrame().iloc[:3])
+        select_string = param.ObjectSelector(default="yellow", objects=["red", "yellow", "green"])
+        select_fn = param.ObjectSelector(default=list, objects=[list, set, dict])
+        int_list = param.ListSelector(default=[3, 5], objects=[1, 3, 5, 7, 9], precedence=0.5)
+        single_file = param.FileSelector(path="../../*/*.py*", precedence=0.5)
+        multiple_files = param.MultiFileSelector(path="../../*/*.py?", precedence=0.5)
+        record_timestamp = param.Action(
+            lambda x: x.timestamps.append(dt.datetime.utcnow()),
+            doc="""Record timestamp.""",
+            precedence=0.7,
+        )
+
+    base = BaseClass()
+    parameters = [
+        "x",
+        "y",
+        "string_value",
+        "num_int",
+        "unbounded_int",
+        "float_with_hard_bounds",
+        "float_with_soft_bounds",
+        "unbounded_float",
+        "hidden_parameter",
+        # "integer_range",  # Todo: Add Feature Request for Integer Range to Wired
+        # "float_range",  # Todo: Add Feature Request for Float Range to Wired
+        "dictionary",
+        "timestamps",
+    ]
+    widgets = {
+        "x": wired.TextInput,  # Todo: Find out why value is not shown on construction
+        "y": wired.TextInput,  # Todo: Find out why value is not shown on construction
+        "string_value": wired.TextInput,  # Todo: Find out why value is not shown on construction
+        "num_int": wired.IntSlider,  # Todo: Add value to label
+        "unbounded_int": wired.TextInput,  # Todo: Find out why unbounded_int does not use TextInput
+        "float_with_hard_bounds": wired.FloatSlider,  # Todo: Add value to label
+        "float_with_soft_bounds": wired.FloatSlider,  # Todo: Add value to label
+        "unbounded_float": wired.TextInput,  # Todo: Find out why unbounded_int does not use TextInput
+        "dictionary": wired.LiteralInput,
+    }
+    pn.Param(base, parameters=parameters, widgets=widgets),
+    # @Philippfr: how do I get wired widgets to stretch_width automatically?
+    return pn.Column(
+        js_pane,
+        pn.Row(
+            pn.Param(base, parameters=parameters),
+            pn.Param(base, parameters=parameters, widgets=widgets),
+        ),
+    )
+
+
 if __name__.startswith("bk"):
     pn.config.sizing_mode = "stretch_width"
-    test_view().servable()
+    view = test_param_view()
+    view.servable()

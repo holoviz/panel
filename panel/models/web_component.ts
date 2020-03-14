@@ -1,8 +1,9 @@
 import { HTMLBox, HTMLBoxView } from "@bokehjs/models/layouts/html_box"
 
 // import { div } from "core/dom"
+import { div, label } from "@bokehjs/core/dom"
 import * as p from "@bokehjs/core/properties"
-
+import { bk_input_group } from "@bokehjs/styles/widgets/inputs"
 
 export class WebComponentView extends HTMLBoxView {
     model: WebComponent
@@ -10,16 +11,26 @@ export class WebComponentView extends HTMLBoxView {
     eventsCount: any // Dict
     propertyValues: any // Dict
 
+    protected label_el: HTMLLabelElement
+    protected group_el: HTMLElement
+
     initialize(): void {
         super.initialize()
     }
 
     connect_signals(): void {
         super.connect_signals()
+        this.connect(this.model.properties.name.change, () => { this.handleNameChange() })
         this.connect(this.model.properties.innerHTML.change, () => this.render())
         this.connect(this.model.properties.attributesLastChange.change, () => this.handleAttributesLastChangeChange())
         this.connect(this.model.properties.propertiesLastChange.change, () => this.handlePropertiesLastChangeChange())
         this.connect(this.model.properties.columnDataSource.change, () => this.handleColumnDataSourceChange())
+    }
+
+    private handleNameChange() {
+        if (this.label_el) {
+            this.label_el.textContent = this.model.name
+        }
     }
 
     render(): void {
@@ -38,8 +49,20 @@ export class WebComponentView extends HTMLBoxView {
         // parameters of the WebComponent like width, height, sizing_mode etc?
         // Should we set height and width to 100% or similar?
         // For now I've set min_height as a part of .py __init__ for some of the Wired components?
-        this.el.innerHTML = this.model.innerHTML
-        this.webComponentElement = this.el.firstElementChild
+        const title = this.model.name
+        if (this.model.componentType === "inputgroup" && title) {
+            this.group_el = div({ class: bk_input_group }, this.label_el)
+            this.group_el.innerHTML = this.model.innerHTML
+            this.webComponentElement = this.group_el.firstElementChild
+            this.label_el = label({ style: { display: title.length == 0 ? "none" : "" } }, title)
+            this.group_el.insertBefore(this.label_el, this.webComponentElement)
+            this.el.appendChild(this.group_el)
+        } else {
+            this.el.innerHTML = this.model.innerHTML
+            this.webComponentElement = this.el.firstElementChild
+        }
+
+
         this.activate_scripts(this.webComponentElement.parentNode)
 
         // Initialize properties
@@ -323,6 +346,7 @@ export namespace WebComponent {
     export type Attrs = p.AttrsOf<Props>
     // @Philipfr: How do I make property types more specific
     export type Props = HTMLBox.Props & {
+        componentType: p.Property<string>,
         innerHTML: p.Property<string>,
         attributesToWatch: p.Property<any> // A dictionary
         attributesLastChange: p.Property<p.Any>, // A dictionary
@@ -352,6 +376,7 @@ export class WebComponent extends HTMLBox {
 
         this.define<WebComponent.Props>({
             // @Philipfr: How do I make property types more specific
+            componentType: [p.String, 'htmlbox'],
             innerHTML: [p.String, ''],
             attributesToWatch: [p.Any], // A dictionary
             attributesLastChange: [p.Any], // A dictionary

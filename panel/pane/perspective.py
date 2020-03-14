@@ -134,7 +134,6 @@ class Perspective(WebComponent):
 
     @param.depends("data", watch=True)
     def _set_column_data_source(self):
-        print(self.data)
         if not self.data is None:
             self.column_data_source = ColumnDataSource(ColumnDataSource.from_df(self.data))
         else:

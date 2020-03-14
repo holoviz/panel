@@ -21,6 +21,7 @@ PARAMETER_TYPE = {
     param.Integer: int,
     param.Number: float,
     param.ObjectSelector: str,
+    param.Parameter: str,
     param.List: ast.literal_eval,
     param.Dict: ast.literal_eval,
 }
@@ -82,6 +83,7 @@ class WebComponent(Widget):
 
     _rename = {
         "title": None,
+        "component_type": "componentType",
         "html": "innerHTML",
         "attributes_to_watch": "attributesToWatch",
         "attributes_last_change": "attributesLastChange",
@@ -95,7 +97,8 @@ class WebComponent(Widget):
         "column_data_source_load_function": "columnDataSourceLoadFunction",
     }
     _widget_type = _BkWebComponent
-
+    # @Philippfr. Should we seperate this into different classes?
+    component_type = param.ObjectSelector("htmlbox", objects=["htmlbox", "inputgroup"])
     # @philippjfr: Would it be an idea to add a regex?
     html = param.String()
     # @philippjfr: Can we enforce that this is Dict[str, Optional[str]]?
@@ -577,6 +580,7 @@ class WebComponent(Widget):
             old_value = getattr(self, parameter)
             if old_value != new_value:
                 setattr(self, parameter, new_value)
+
 
     def _handle_events_count_last_change(self, event):
         if not self.events_to_watch or not event.new:
