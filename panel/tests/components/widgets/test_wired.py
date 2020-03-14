@@ -9,11 +9,20 @@ def test_wired_base():
     assert "disabled" in base._child_parameters()
 
 
-def test_wired_button():
+def test_wired_button_constructor():
     button = wired.Button()
 
     assert "disabled" in button.attributes_to_watch
     assert "elevation" in button.attributes_to_watch
+    assert "name" in button.parameters_to_watch
+
+    assert button.html.startswith("<wired-button")
+    assert button.html.endswith("</wired-button>")
+    assert 'elevation="0"' in button.html
+    assert 'disabled' not in button.html
+
+def test_wired_button_disabled():
+    button = wired.Button()
 
     # When/Then
     button.disabled = True
@@ -27,12 +36,25 @@ def test_wired_button():
     button.update_html_from_attributes_to_watch()
     assert "disabled" not in button.html
 
+def test_wired_button_elevation():
+    button = wired.Button()
+    # When/Then: Elevation
+    button.elevation = 1
+    assert button.attributes_last_change == {"elevation": "1"}
+
+def test_wired_button_name():
+    button = wired.Button()
+    # When/ Then
+    button.name= "Click Test"
+    assert ">Click Test</wired-button" in button.html
+
 
 def test_wired_checkbox():
-    checkbox = wired.Button()
+    checkbox = wired.CheckBox(name="Test CheckBox")
 
     assert "disabled" in checkbox.attributes_to_watch
-    assert "elevation" in checkbox.attributes_to_watch
+    assert checkbox.html.startswith("<wired-checkbox")
+    assert checkbox.html.endswith("</wired-checkbox>")
 
     # When/Then
     checkbox.disabled = True
@@ -45,6 +67,16 @@ def test_wired_checkbox():
     assert checkbox.attributes_last_change == {"disabled": None}
     checkbox.update_html_from_attributes_to_watch()
     assert "disabled" not in checkbox.html
+
+def test_wired_checkbox_constructor_checked():
+    checkbox = wired.CheckBox(checked=True)
+    assert checkbox.properties_last_change == {"checked": True}
+
+def test_wired_checkbox_name():
+    checkbox = wired.CheckBox()
+
+    checkbox.name="Testing"
+    assert ">Testing<" in checkbox.html
 
 
 def test_dialog():
@@ -197,10 +229,13 @@ def test_view():
     def section(component, message=None, show_html=show_html):
         title = "## " + str(type(component)).split(".")[3][:-2]
 
-        parameters = list(component._child_parameters())
+        parameterset = set(component._child_parameters())
         if show_html:
-            parameters = ["html"] + parameters
+            parameterset.add("html")
+        for parameter in component.parameters_to_watch:
+            parameterset.add(parameter)
 
+        parameters = list(parameterset)
         if message:
             return (
                 title,
@@ -214,7 +249,6 @@ def test_view():
     button = wired.Button()
     calendar = wired.Calendar()
     check_box = wired.CheckBox()
-    # Todo: Fix this example. The Checkbox is not checked in the client.
     check_box_checked = wired.CheckBox(checked=True)
     combobox = wired.ComboBox(
         html="""<wired-combo id="colorCombo" selected="red" role="combobox" aria-haspopup="listbox" tabindex="0" class="wired-rendered" aria-expanded="false"><wired-item value="red" aria-selected="true" role="option" class="wired-rendered">Red</wired-item><wired-item value="green" role="option" class="wired-rendered">Green</wired-item><wired-item value="blue" role="option" class="wired-rendered">Blue</wired-item></wired-combo>"""

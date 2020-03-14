@@ -30,25 +30,21 @@ export class WebComponentView extends HTMLBoxView {
         }
     }
     private createOrUpdateWebComponentElement() {
-        let webComponentElementOld: any = null
         if (this.webComponentElement) {
             this.webComponentElement.onchange = null
-            webComponentElementOld = this.webComponentElement
         }
 
         // @Philippfr: How do we make sure the component is automatically sized according to the
         // parameters of the WebComponent like width, height, sizing_mode etc?
         // Should we set height and width to 100% or similar?
-        // For now I've set min_height as a part of __init__ for some of the Wired components?
+        // For now I've set min_height as a part of .py __init__ for some of the Wired components?
         this.el.innerHTML = this.model.innerHTML
         this.webComponentElement = this.el.firstElementChild
         this.activate_scripts(this.webComponentElement.parentNode)
 
         // Initialize properties
         this.initPropertyValues()
-        if (!webComponentElementOld) {
-            this.handlePropertiesLastChangeChange()
-        }
+        this.handlePropertiesLastChangeChange()
         this.handleColumnDataSourceChange()
 
         // Subscribe to events
@@ -195,12 +191,20 @@ export class WebComponentView extends HTMLBoxView {
         property_ = property_.replace(/\[(\w+)\]/g, '.$1'); // convert indexes to properties
         property_ = property_.replace(/^\./, '');           // strip a leading dot
         let a = property_.split('.');
-        for (let i = 0, n = a.length; i < n; ++i) {
-            let k = a[i];
-            if (k in element) {
-                element[k] = value;
-            } else {
-                return;
+        if (a.length == 1) {
+            // Hack:
+            // for some reason the wired-checkbox checked property is not in the element on construction
+            // So the `k in element` test below fails.
+            // I've added this line to handle that.
+            element[a[0]] = value
+        } else {
+            for (let i = 0, n = a.length; i < n; ++i) {
+                let k = a[i];
+                if (k in element) {
+                    element[k] = value;
+                } else {
+                    return;
+                }
             }
         }
     }
@@ -305,7 +309,6 @@ export class WebComponentView extends HTMLBoxView {
     */
     handlePropertiesLastChangeChange(): void {
         if (!this.webComponentElement) { return; }
-
         let propertiesLastChange: any = this.model.propertiesLastChange;
         for (let property in this.model.propertiesLastChange) {
             if (property in this.model.propertiesToWatch) {

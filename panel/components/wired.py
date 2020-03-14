@@ -30,15 +30,21 @@ class WiredBase(WebComponent):
 ELEVATION_DEFAULT = 0
 ELEVATION_BOUNDS = (0,10)
 
-# Todo: support setting label via parameter
 class Button(WiredBase):
-    """A Wired RadioButton"""
-    html = param.String('<wired-button>Button</wired-radio>')
+    """A Wired RadioButton
+
+    - You can set the `text` shown via the `name` parameter.
+    """
+    html = param.String('<wired-button></wired-button>')
     attributes_to_watch = param.Dict({"elevation": "elevation"})
     events_to_watch = param.Dict(default={"click": "clicks"})
+    parameters_to_watch = param.List(["name"])
 
     clicks = param.Integer()
     elevation = param.Integer(ELEVATION_DEFAULT, bounds=ELEVATION_BOUNDS)
+
+    def _get_html_from_parameters_to_watch(self, **params) -> str:
+        return f"<wired-button>{params['name']}</wired-button>"
 
 class Calendar(WiredBase):
     html = param.String('<wired-calendar initials="" role="dialog tabindex="0">Button</wired-calendar>')
@@ -63,13 +69,14 @@ class Calendar(WiredBase):
         super().__init__(min_height=min_height, min_width=min_width, **params)
 
 class CheckBox(WiredBase):
-    # Todo: If the innerHTML/ label is not set the the elements is not really clickable
-    # I need to find out how to handle this. Guess it something about width, height etc.
-    # Todo: support setting label via parameter
-    html = param.String('<wired-checkbox>CheckBox Label</wired-checkbox>')
+    html = param.String('<wired-checkbox></wired-checkbox>')
     properties_to_watch= param.Dict({"checked": "checked"})
+    parameters_to_watch= param.List(["name"])
 
     checked = param.Boolean()
+
+    def _get_html_from_parameters_to_watch(self, **params) -> str:
+        return f"<wired-checkbox>{params['name']}</wired-checkbox>"
 
 # @Philppfr: The Dialog is really a layout
 # I would like to support WebComponent layouts in general.
@@ -193,13 +200,14 @@ class Progress(WebComponent):
 
 class RadioButton(WebComponent):
     """A Wired RadioButton"""
-    # Todo: If the innerHTML/ label is not set the the elements is not really clickable
-    # I need to find out how to handle this. Guess it something about width, height etc.
-    # Todo: support setting label via parameter
-    html = param.String('<wired-radio>Radio Button Label</wired-radio>')
+    html = param.String('<wired-radio>Radio Button</wired-radio>')
     properties_to_watch= param.Dict({"checked": "checked"})
+    parameters_to_watch= param.List(["name"])
 
     checked = param.Boolean(default=False)
+
+    def _get_html_from_parameters_to_watch(self, **params) -> str:
+        return f"<wired-radio>{params['name']}</wired-radio>"
 
 class SearchInput(WiredBase):
     html = param.String('<wired-search-input></wired-search-input>')
