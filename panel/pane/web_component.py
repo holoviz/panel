@@ -572,10 +572,11 @@ class WebComponent(Widget):
 
             parameter = self.properties_to_watch[property_]
 
-            parameter_item = self.param[parameter]
-            if type(parameter_item) in PARAMETER_TYPE:
-                parameter_type = PARAMETER_TYPE[type(parameter_item)]
-                new_value = parameter_type(new_value)
+            if isinstance(new_value, str):
+                parameter_item = self.param[parameter]
+                if type(parameter_item) in PARAMETER_TYPE:
+                    parameter_type = PARAMETER_TYPE[type(parameter_item)]
+                    new_value = parameter_type(new_value)
 
             old_value = getattr(self, parameter)
             if old_value != new_value:

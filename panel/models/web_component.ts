@@ -77,6 +77,7 @@ export class WebComponentView extends HTMLBoxView {
     }
 
     addAttributesMutationObserver(): void {
+        if (!this.model.attributesToWatch) { return; }
         let options = {
             childList: false,
             attributes: true,
