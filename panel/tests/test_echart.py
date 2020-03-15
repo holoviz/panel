@@ -103,8 +103,8 @@ if __name__.startswith("bk"):
     # @Philippfr: How to I automatically resize? When I increment the resizes parameter it resizes
     # But I cannot find a way to do it automatically?
     app = pn.Column(
-        chart, chart.param.option, chart.param.resizes,
-        chart_pie, chart_pie.param.option, chart_pie.param.resizes,
-        chart_pyechart_bar, chart_pyechart_bar.param.option, chart_pyechart_bar.param.resizes,
+        chart, chart.param.option,
+        chart_pie, chart_pie.param.option,
+        chart_pyechart_bar, chart_pyechart_bar.param.option,
     )
     app.servable()

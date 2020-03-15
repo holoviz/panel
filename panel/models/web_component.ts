@@ -40,6 +40,12 @@ export class WebComponentView extends HTMLBoxView {
             this.createOrUpdateWebComponentElement()
         }
     }
+    after_layout(): void {
+        if ("after_layout" in this.webComponentElement) {
+            this.webComponentElement.after_layout();
+        }
+    }
+
     private createOrUpdateWebComponentElement() {
         if (this.webComponentElement) {
             this.webComponentElement.onchange = null

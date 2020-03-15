@@ -13,15 +13,6 @@ import json
 # pn.extension("echarts")
 JS_FILES = {"echart": "https://cdn.bootcss.com/echarts/3.7.2/echarts.min.js"}
 
-OBJECT = {
-    "title": {"text": "ECharts entry example"},
-    "tooltip": {},
-    "legend": {"data": ["Sales"]},
-    "xAxis": {"data": ["shirt", "cardign", "chiffon shirt", "pants", "heels", "socks"]},
-    "yAxis": {},
-    "series": [{"name": "Sales", "type": "bar", "data": [5, 20, 36, 10, 10, 20]}],
-}
-
 HTML = """
     <div class="echart" style="width:100%;height:100%;"></div>
     <script type="text/javascript">
@@ -33,20 +24,36 @@ HTML = """
            get: function() { return null; },
            set: function(val) { this.eChart.setOption(val); this.eChart.resize();}
         });
-        Object.defineProperty(myDiv, 'resizes', {
-           get: function() { return null; },
-           set: function(val) { this.eChart.resize();}
-        });
+        myDiv.after_layout = myChart.resize;
     </script>"""
 
+# @Philippfr. For now I've assumed a convention that if the web component has an after_layout
+# function it will be run in the .ts after_layout function. Is that a good convertion?
+
 class EChart(pn.pane.WebComponent):
+    """Echarts/ Pyecharts pane
+
+    [ECharts]((https://www.echartsjs.com/en/index.html)) is an open-sourced JavaScript
+    visualization tool, which can run fluently on PC and mobile devices.
+    It is compatible with most modern Web Browsers
+
+    ECharts depends on ZRender, a graphic rendering engine, to
+    create intuitive, interactive, and highly-customizable charts.
+
+    [Pyecharts](https://pyecharts.org/#/en-us/) is a Python api for using ECharts in Python
+    including Standalone, Flask, Django and Jupyter Notebooks.
+    """
+
+
+
     html = param.String(HTML)
-    properties_to_watch = param.Dict({"option": "option", "resizes": "resizes"})
+    properties_to_watch = param.Dict({"option": "option"})
 
-    echart = param.Parameter()
+    # @Philippfr. Is this a good name? Is it better with object?
+    echart = param.Parameter(doc="""
+    A echart dictionary or pyechart object.
+    """)
     option = param.Dict()
-    resizes = param.Integer()
-
 
     def __init__(self, **params):
         if "echart" in params:
@@ -66,4 +73,5 @@ class EChart(pn.pane.WebComponent):
 
     @param.depends("echart", watch=True)
     def update(self):
+        """Run this to pudate the plot"""
         self.option = self._to_echart_dict(self.echart)

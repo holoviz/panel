@@ -54,10 +54,27 @@ class WebComponent(Widget):
     Parameters
     ----------
 
-    - The parameters listed in `attributes_to_watch` will be used to set the corresponding
-    `html` element attributes on construction.
-    - The parameters listed in `properties_to_watch` will be used to set the corresponding
-    `html` element properties on construction.
+    - The parameter values listed in `attributes_to_watch` will be used to set the `html` parameter
+    attributes on construction. Further more the the key attributes of the Javascript
+    WebComponent and the value parameters of the Python WebComponent will be kept in sync.
+    - The value parameters listed in `properties_to_watch` will be used to set the Javascript Web
+    Component key properties on construction and kept in sync after construction.
+    - The parameters listed in `parameters_to_watch` will be used to set the `html` parameter on
+    construction and when changed.
+    - The event keys listed in `events_to_watch` will be watched on the JavaScript side. When fired
+    the javascript code will check whether any properties_to_watch have changed and if yes then they
+    will be synced to Python. If a Python value parameter is specified it will be
+    incremented by +1 for each event.
+
+    Other
+    -----
+
+    - If the JavaScript WebComponent contains an `after_layout` function this can be used to
+    resize the JS WebComponent. An example is the ECharts web component.
+    - You can specify nested JS properties as values in properties_to_watch
+    - Please note that you will propably have to experiment a bit in order to determine which
+    javascript files to import and what combination of attributes, properties, events and/ or
+    parameters to watch.
 
     Example
     -------
@@ -229,7 +246,7 @@ class WebComponent(Widget):
     # @philpfr which param.X should this be?
     column_data_source = param.Parameter(
         doc="""
-    The ColumnDataSource containing is used to efficiently transfer columnar data to the client
+    The ColumnDataSource is used to efficiently transfer columnar data to the client
 
     Example
     ~~~~~~~
