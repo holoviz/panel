@@ -1,0 +1,31 @@
+<!-- This template is inspired by
+- Bokeh Template. See https://panel.pyviz.org/user_guide/Templates.html
+-->
+{% extends base %}
+
+<!-- goes in head -->
+{% block postamble %}
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<link
+  href="data:image/x-icon;base64,AAABAAEAEBAQAAEABAAoAQAAFgAAACgAAAAQAAAAIAAAAAEABAAAAAAAgAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAA////AL12KgAWi/IAKrUoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAiIiIiAAAAAAIiIiAAAAAAACIiAAAAAiIiIiIiIiACERERERERIAISITMUQREgAhIhMxRBESACEiEzFEERIAISITMUQREgAhERMxRBESACEREzFEERIAIREREUQREgAhERERRBESACERERERERIAIiIiIiIiIgAAAAAAAAAADwDwAA+B8AAPw/AACAAQAAgAEAAIABAACAAQAAgAEAAIABAACAAQAAgAEAAIABAACAAQAAgAEAAIABAAD//wAA"
+  rel="icon" type="image/x-icon" />
+{% endblock %}
+
+<!-- goes in body -->
+{% block contents %}
+
+<section id="page">
+  <header>
+    {{ embed(roots.header) }}
+  </header>
+
+  <nav>
+    {{ embed(roots.sidebar) }}
+  </nav>
+
+  <main>
+    {{ embed(roots.main) }}
+  </main>
+</section>
+
+{% endblock %}

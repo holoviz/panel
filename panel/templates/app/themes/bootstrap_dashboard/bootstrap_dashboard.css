@@ -1,0 +1,132 @@
+/* Source https://github.com/MarcSkovMadsen/awesome-panel/blob/master/package/awesome_panel/express/assets/css/bootstrap_panel_express.css */
+body{
+    margin: 0px;  /*removes default style*/
+
+    font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";
+}
+
+.bk.alert {
+    padding: 0.75rem 1.25rem;
+    border: 1px solid transparent;
+    border-radius: 0.25rem;
+    /* Don't set margin because that will not render correctly! */
+    /* margin-bottom: 1rem; */
+    margin-top: 15px;
+    margin-bottom: 15px;
+}
+.bk.alert a {
+    color: #002752;
+    font-weight: 700;
+  }
+.bk.alert a:hover {
+    color: #002752;
+    font-weight: 700;
+    text-decoration: underline;
+}
+.bk.alert-info {
+    color: #0c5460;
+    background-color: #d1ecf1;
+    border-color: #bee5eb;
+}
+.bk.alert-info hr {
+    border-top-color: #abdde5;
+}
+.bk.alert-warning {
+    color: #856404;
+    background-color: #fff3cd;
+    border-color: #ffeeba;
+}
+.bk.alert-warning hr {
+    border-top-color: #ffe8a1;
+}
+.bk.alert-error {
+    color: #721c24;
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+}
+.bk.alert-error hr {
+    border-top-color: #f1b0b7;
+}
+
+.bk.card {
+    border: 1px solid rgba(0,0,0,.125);
+    border-radius: 0.25rem;
+}
+.bk.card-header {
+    padding: 0.75rem 1.25rem;
+    background-color: rgba(0, 0, 0, 0.03);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+    border-radius: 0.25rem;
+}
+.bk.card-body-hidden {
+  display: none;
+}
+h5.card-header {
+    margin: 0px;
+}
+.bk.card-panel-first {
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+}
+.bk.card-panel {
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.125);
+}
+.bk.flat button.bk.bk-btn, .bk.flat button.bk.bk-btn:hover {
+  border: none;
+  background-color: transparent;
+  font-weight: 500;
+  font-size: 1.25rem;;
+}
+.bk a {
+    color: #007bff;
+    text-decoration: none;
+    background-color: transparent;
+
+
+  }
+.bk.card img{
+    border: 0.5px solid rgba(0,0,0,.125);
+    padding: 1px;
+}
+.bk a:hover {
+    color: #007bff;
+    text-decoration: none;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+  }
+
+  h1, h2, h3, h4, h5, h6,
+  .h1, .h2, .h3, .h4, .h5, .h6 {
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    line-height: 1.2;
+  }
+
+  h1, .h1 {
+    font-size: 2.5rem;
+  }
+
+  h2, .h2 {
+    font-size: 2rem;
+  }
+
+  h3, .h3 {
+    font-size: 1.75rem;
+  }
+
+  h4, .h4 {
+    font-size: 1.5rem;
+  }
+
+  h5, .h5 {
+    font-size: 1.25rem;
+  }
+
+  h6, .h6 {
+    font-size: 1rem;
+  }
