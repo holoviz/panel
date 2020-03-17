@@ -44,7 +44,7 @@ Panel can also be used with the separate `Param <http://param.pyviz.org>`__ proj
 
 The `Getting Started <getting_started>`_ will provide a quick introduction to the panel API and get you started while the `User Guide <user_guide>`_ provides a more detailed guide on how to use Panel.
 
-If you have any `issues <https://github.com/pyviz/panel/issues>`_ or wish to `contribute code <https://help.github.com/articles/about-pull-requests>`_, you can visit our `GitHub site <https://github.com/pyviz/panel>`_ or chat with the developers on `gitter <https://gitter.im/pyviz/pyviz>`_.
+For usage questions or technical assistance, please head over to `Discourse <https://discourse.holoviz.org/>`_. If you have any `issues <https://github.com/pyviz/panel/issues>`_ or wish to `contribute code <https://help.github.com/articles/about-pull-requests>`_, you can visit our `GitHub site <https://github.com/pyviz/panel>`_.
 
 
 Installation
