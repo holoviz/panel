@@ -1,0 +1,42 @@
+table.panel-df {
+    margin-left: auto;
+    margin-right: auto;
+    border: none;
+    border-collapse: collapse;
+    border-spacing: 0;
+    color: rgb(236,236,236);
+    font-size: 12px;
+    table-layout: fixed;
+    width: 100%;
+}
+
+.panel-df tr, th, td {
+    text-align: right;
+    vertical-align: middle;
+    padding: 0.5em 0.5em !important;
+    line-height: normal;
+    white-space: normal;
+    max-width: none;
+    border: none;
+}
+
+.panel-df tbody {
+    display: table-row-group;
+    vertical-align: middle;
+    border-color: inherit;
+}
+
+.panel-df tbody tr:nth-child(odd) {
+    background: rgb(66,66,66);
+}
+
+.panel-df thead {
+    border-bottom: 1px solid rgb(100,76,118);
+    vertical-align: bottom;
+}
+
+.panel-df tr:hover {
+    background: rgb(142, 205, 200) !important;
+    color: rgb(48,48,48);
+    cursor: pointer;
+}

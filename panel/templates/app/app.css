@@ -1,6 +1,7 @@
 body{
   overflow-x: hidden;
   overflow-y: hidden;
+  margin: 0px;
 }
 img {
     /* we wan't no overflow. Will make it easier to include images in markdown */

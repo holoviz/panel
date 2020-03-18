@@ -1,0 +1,113 @@
+body{
+    overflow-x: hidden;
+    overflow-y: hidden;
+    margin: 0px;
+    background-color: rgb(48,48,48);
+    color: rgb(236,236,236);
+  }
+
+.bk-root .bk {
+  font-family: OrstedSansRegular, sans-serif, Verdana;
+}
+/* Grid */
+
+#page {
+  display: grid;
+  width: 100%;
+  height: 100vh;
+  grid-template: [header-left] "head head" 60px [header-right]
+                 [main-left]   "nav  main" 1fr  [main-right] / 200px 1fr;
+}
+
+header {
+grid-area: head;
+color: rgb(236,236,236);
+background-color: rgb(100,76,118);
+
+box-shadow: 3px 3px 5px rgb(77,77,77);
+
+z-index: 1000;
+
+text-align: center;
+font-size: 1rem;
+}
+
+nav {
+  grid-area: nav;
+  background-color: rgb(57,57,57);
+  border-right-color: rgb(66,66,66);
+  border-right-width: 0.1px;
+  border-right-style: solid;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+
+main {
+color: rgb(236,236,236);
+background-color: rgb(48,48,48);
+grid-area: main;
+overflow-x: hidden;
+overflow-y: scroll;
+}
+
+
+
+/* Custom Scrollbar.
+See https://www.w3schools.com/howto/howto_css_custom_scrollbar.asp */
+::-webkit-scrollbar {
+    width: 10px;
+  }
+
+::-webkit-sc
+
+/* Track */
+::-webkit-scrollbar-track {
+  box-shadow: inset 0 0 1px grey;
+  border-radius: 1px;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: darkgrey;
+  border-radius: 1px;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: lightgrey;
+}
+
+header a:link {
+  color: white;
+  text-decoration: none;
+}
+header a:visited {
+  color: white;
+}
+header a:hover{
+  color: white;
+}
+.bk.app-title a{
+  color: rgb(236,236,236);
+  background-color: inherit;
+  text-align: center;
+  font-size: 1rem;
+}
+.bk.app-title a:link {
+  text-decoration: none;
+}
+.bk.app-title a:hover{
+  color: white;
+}
+div.bk.navigation div.bk button {
+  text-align: left !important;
+}
+.bk.app-title{
+  text-align: left;
+  margin-left: 50px;
+}
+
+option:checked {
+  background: rgb(142, 205, 200) linear-gradient(0deg, rgb(142, 205, 200) 0%, rgb(142, 205, 200) 100%) !important;
+}

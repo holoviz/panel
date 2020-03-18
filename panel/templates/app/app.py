@@ -13,11 +13,8 @@ ROOT_PATH = pathlib.Path(__file__).parent
 TEMPLATE = "app.html"
 TEMPLATE_PATH = ROOT_PATH / TEMPLATE
 
+# @Philippfr. Should the app.css file go into the _styles folder?
 APP_CSS_PATH = ROOT_PATH / "app.css"
-
-THEMES = ["default", "angular_material_green_purple", "bootstrap_dashboard"]
-THEME = "default"
-THEME_PATH = ROOT_PATH / THEME
 
 SIDEBAR_TOP_SPACING = 15
 MAIN_MARGIN = (
@@ -35,7 +32,6 @@ class AppTemplate(pn.Template):
     title = param.String("App Title")
     url = param.String("https://panel.holoviz.org/index.html")
     template_name = param.Parameter(TEMPLATE)
-    theme_name = param.ObjectSelector(THEME, objects=THEMES)
     sidebar_width = SIDEBAR_WIDTH
     header_height = HEADER_HEIGHT
     sidebar_top_spacing = 15
@@ -44,16 +40,7 @@ class AppTemplate(pn.Template):
     def __init__(
         self, **params,
     ):
-        if "theme_name" in params:
-            theme_name = params["theme_name"]
-        else:
-            theme_name = self.param.theme_name.default
-
         pn.config.css_files.append(APP_CSS_PATH)
-        theme_path = ROOT_PATH / "themes" / theme_name / "*.css"
-        glob_str = str(theme_path)
-        for css_file in glob.glob(glob_str):
-            pn.config.css_files.append(css_file)
 
         # @Philipfr: Maybe even more of this should be put in the app template
         title = pn.Row(

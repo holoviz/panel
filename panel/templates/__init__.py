@@ -1,0 +1,1 @@
+from .app.app import AppTemplate
