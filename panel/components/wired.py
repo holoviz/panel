@@ -188,7 +188,6 @@ class Image(WebComponent):
 
 
 class TextInput(WiredBase):
-    # Todo: To be used as a param we need to set a "label" just above <wired-input> tag
     component_type = param.String("inputgroup")
     html = param.String("""<wired-input style="width:100%;height:100%"></wired-input>""")
     attributes_to_watch = param.Dict(
@@ -200,15 +199,19 @@ class TextInput(WiredBase):
             "step": "step",
         }
     )
-    # The wired-base value property does not update.
-    # Insted the wired-base change event fires and the textInput.value property updates
-    # See https://github.com/wiredjs/wired-elements/issues/123
-    # @Philipfr any ideas?: The value is not set on the .ts side on construction due to nested property not existing.
     properties_to_watch = param.Dict({"textInput.value": "value"})
     events_to_watch = param.Dict({"change": None})
 
     # @Philippff. I sthis the right place to define height? And what about width?
     def __init__(self, min_height=50, **params):
+        # Hack: To solve https://github.com/wiredjs/wired-elements/issues/123
+        if "value" in params:
+            html = f'<wired-input value="{params["value"]}" style="width:100%;height:100%"></wired-input>'
+        elif self.param.value.default:
+            html = f'<wired-input value="{self.param.value.default}" style="width:100%;height:100%"></wired-input>'
+        if html:
+            self.param.html.default = html
+
         super().__init__(min_height=min_height, **params)
 
     placeholder = param.String(default="Enter Value")
@@ -218,8 +221,8 @@ class TextInput(WiredBase):
     end = param.Integer(None)
     step = param.Parameter(None)
 
+
 class LiteralInput(WiredBase):
-    # Todo: To be used as a param we need to set a "label" just above <wired-input> tag
     component_type = param.String("inputgroup")
     html = param.String("""<wired-input style="width:100%"></wired-input>""")
     attributes_to_watch = param.Dict(
@@ -227,15 +230,19 @@ class LiteralInput(WiredBase):
             "placeholder": "placeholder",
         }
     )
-    # The wired-base value property does not update.
-    # Insted the wired-base change event fires and the textInput.value property updates
-    # See https://github.com/wiredjs/wired-elements/issues/123
-    # @Philipfr any ideas?: The value is not set on the .ts side on construction due to nested property not existing.
     properties_to_watch = param.Dict({"textInput.value": "value"})
     events_to_watch = param.Dict({"change": None})
 
     # @Philippff. I sthis the right place to define height? And what about width?
     def __init__(self, min_height=60, **params):
+        # Hack: To solve https://github.com/wiredjs/wired-elements/issues/123
+        if "value" in params:
+            html = f'<wired-input value="{params["value"]}" style="width:100%;height:100%"></wired-input>'
+        elif self.param.value.default:
+            html = f'<wired-input value="{self.param.value.default}" style="width:100%;height:100%"></wired-input>'
+        if html:
+            self.param.html.default = html
+
         super().__init__(min_height=min_height, **params)
 
     placeholder = param.String(default="Enter Value")
