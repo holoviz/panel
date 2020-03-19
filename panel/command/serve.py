@@ -3,16 +3,32 @@ Subclasses the bokeh serve commandline handler to extend it in various
 ways.
 """
 
+import argparse
 import ast
 import base64
+import logging # isort:skip
 import os
 
+from fnmatch import fnmatch
+from glob import glob
+from typing import List
+
+from bokeh.application import Application
 from bokeh.command.subcommands.serve import Serve as _BkServe
+from bokeh.command.util import build_single_handler_applications, die, report_server_init_errors
+from bokeh.server.auth_provider import AuthModule, NullAuth
+from bokeh.settings import settings
+from bokeh.util.logconfig import basicConfig
+from tornado.autoreload import watch
+from tornado.wsgi import WSGIContainer
+from tornado.web import FallbackHandler
 
 from ..auth import OAuthProvider
 from ..config import config
-from ..io.server import INDEX_HTML, get_static_routes
-from ..io.state import state
+from ..io.server import INDEX_HTML
+from ..io.state import state, get_static_routes
+
+log = logging.getLogger(__name__)
 
 
 def parse_var(s):
@@ -83,6 +99,10 @@ class Serve(_BkServe):
             action = 'store',
             type    = str,
             help    = "A random string used to encode the user information."
+        )),
+        ('--tranquilize', dict(
+            action = 'store_true',
+            help   = "Discover and serve tranquilized functions",
         ))
     )
 
@@ -102,6 +122,13 @@ class Serve(_BkServe):
             static_dirs = parse_vars(args.static_dirs)
             static_dirs['panel_dist'] = os.path.join(os.path.dirname(os.path.split(__file__)[0]), 'dist')
             patterns += get_static_routes(static_dirs)
+
+        # Handle tranquilized functions in the supplied functions
+        if args.tranquilize:
+            from ..io.tranquilize import build_single_handler_application
+            app = build_single_handler_application(files, args)
+            tr = WSGIContainer(app)
+            patterns.append((r".*", FallbackHandler, dict(fallback=tr)))
 
         if args.oauth_provider:
             config.oauth_provider = args.oauth_provider
