@@ -70,7 +70,7 @@ Support for classic Jupyter Notebook is included with Panel. If you want to work
 Getting Started
 ---------------
 
-Once you've installed Panel, you can get your own copy of all the notebooks used to make this website::
+Once you've installed Panel, you can get your own copy of all the notebooks used to make this website by running the following commands on the commandline in your conda or pip environment::
 
   panel examples
   cd panel-examples
