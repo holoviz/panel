@@ -45,7 +45,7 @@ def save_png(model, filename):
         state.webdriver = webdriver_control.create()
 
     webdriver = state.webdriver
-    export_png(model, filename, webdriver=webdriver)
+    export_png(model, filename=filename, webdriver=webdriver)
 
 
 @contextmanager
