@@ -1,6 +1,20 @@
 Releases
 ========
 
+Version 0.9.2
+-------------
+
+Date: 2020-03-19
+
+This is a minor release with a number of bug fixes. Many thanks to @ceball, @Guillemdb and @philippjfr for contributing these fixes.
+
+Bug fixes:
+
+- Fix regression in DiscreteSlider layout (#1163)
+- Fix for saving as PNG which regressed due to changs in bokeh 2.0 (#1165)
+- Allow pn.serve to resolve Template instances returned by a function (#1167)
+- Ensure Template can render empty HoloViews pane (#1168)
+
 Version 0.9.1
 -------------
 
