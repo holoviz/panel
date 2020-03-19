@@ -337,7 +337,8 @@ class HoloViews(PaneBase):
 
         dynamic, bounded = get_dynamic_mode(object)
         dims, keys = unique_dimkeys(object)
-        if dims == [Dimension('Frame')] and keys == [(0,)]:
+        if ((dims == [Dimension('Frame')] and keys == [(0,)]) or
+            (not dynamic and len(keys) == 1)):
             return [], {}
 
         nframes = 1

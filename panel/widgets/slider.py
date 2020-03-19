@@ -201,9 +201,7 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
 
         self._text = StaticText(margin=(5, 0, 0, 5), style={'white-space': 'nowrap'})
         self._slider = None
-        layout = {p: getattr(self, p) for p in Layoutable.param
-                  if getattr(self, p) is not None}
-        self._composite = Column(self._text, self._slider, **layout)
+        self._composite = Column(self._text, self._slider)
         self._update_options()
         self.param.watch(self._update_options, ['options', 'formatter'])
         self.param.watch(self._update_value, ['value'])
@@ -260,6 +258,9 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
         self._text.param.set_param(
             margin=text_margin, **{k: v for k, v in style.items() if k != 'style'})
         self._slider.param.set_param(margin=slider_margin, **style)
+        if self.width:
+            style['width'] = self.width + l + r
+        self._composite.param.set_param(**style)
 
     def _sync_value(self, event):
         if self._syncing:
