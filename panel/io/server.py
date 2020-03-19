@@ -41,10 +41,10 @@ def _eval_panel(panel, server_id, title, doc):
     from ..template import Template
     from ..pane import panel as as_panel
 
+    if isinstance(panel, FunctionType):
+        panel = panel()
     if isinstance(panel, Template):
         return panel._modify_doc(server_id, title, doc)
-    elif isinstance(panel, FunctionType):
-        panel = panel()
     return as_panel(panel)._modify_doc(server_id, title, doc)
     
 #---------------------------------------------------------------------
