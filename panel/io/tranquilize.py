@@ -1,5 +1,5 @@
 from tranquilizer.handler import ScriptHandler, NotebookHandler
-from tranquilizer.main import make_app
+from tranquilizer.main import make_app, UnsupportedFileType
 
 
 def build_single_handler_application(files, argv):
@@ -10,11 +10,11 @@ def build_single_handler_application(files, argv):
             source = ScriptHandler(filename)
         elif extension == 'ipynb':
             try:
-                import nbconvert
+                import nbconvert # noqa
             except ImportError as e: # pragma no cover
                 raise ImportError("Please install nbconvert to serve Jupyter Notebooks.") from e
 
-            source = NotebookHandler(args.filename)
+            source = NotebookHandler(filename)
         else:
             raise UnsupportedFileType('{} is not a script (.py) or notebook (.ipynb)'.format(filename))
         functions.extend(source.tranquilized_functions)
