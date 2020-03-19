@@ -18,4 +18,4 @@ def build_single_handler_application(files, argv):
         else:
             raise UnsupportedFileType('{} is not a script (.py) or notebook (.ipynb)'.format(filename))
         functions.extend(source.tranquilized_functions)
-    return make_app(functions, 'Panel REST API')
+    return make_app(functions, 'Panel REST API', prefix='rest/')

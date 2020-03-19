@@ -128,7 +128,7 @@ class Serve(_BkServe):
             from ..io.tranquilize import build_single_handler_application
             app = build_single_handler_application(files, args)
             tr = WSGIContainer(app)
-            patterns.append((r".*", FallbackHandler, dict(fallback=tr)))
+            patterns.append((r"^/rest/.*", FallbackHandler, dict(fallback=tr)))
 
         if args.oauth_provider:
             config.oauth_provider = args.oauth_provider
