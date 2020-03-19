@@ -113,11 +113,12 @@ class Template(param.Parameterized, ServableMixin):
         ref = preprocess_root.ref['id']
         for name, (obj, tags) in self._render_items.items():
             model = obj.get_root(doc, comm)
+            mref = model.ref['id']
             doc.on_session_destroyed(obj._server_destroy)
             for sub in obj.select(Viewable):
-                sub._models[ref] = sub._models.get(model.ref['id'])
-                if isinstance(sub, HoloViews):
-                    sub._plots[ref] = sub._plots.get(model.ref['id'])
+                sub._models[ref] = sub._models.get(mref)
+                if isinstance(sub, HoloViews) and mref in sub._plots:
+                    sub._plots[ref] = sub._plots.get(mref)
             col.objects.append(obj)
             obj._documents[doc] = model
             model.name = name
