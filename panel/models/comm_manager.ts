@@ -59,17 +59,17 @@ export class CommManager extends Model {
     if (((window as any).PyViz == undefined) || ((window as any).PyViz.comm_manager == undefined))
       return
 
-	const receiver = (this._receiver as any)
-	let events = [];
-	if (receiver._partial && receiver._partial.content && receiver._partial.content.events)
-	  events = receiver._partial.content.events;
+    const receiver = (this._receiver as any)
+    let events = [];
+    if (receiver._partial && receiver._partial.content && receiver._partial.content.events)
+      events = receiver._partial.content.events;
 
-	for (const event of events) {
-	  if ((event.kind === 'ModelChanged') && (event.attr === event_name) &&
-		  (data.id === event.model.id) &&
-		  (JSON.stringify(data[(event_name as string)]) === JSON.stringify(event.new)))
-		return
-	}
+    for (const event of events) {
+      if ((event.kind === 'ModelChanged') && (event.attr === event_name) &&
+          (data.id === event.model.id) &&
+          (JSON.stringify(data[(event_name as string)]) === JSON.stringify(event.new)))
+        return
+    }
 
     if (!(comm_id in this._comms)) {
       const comm = (window as any).PyViz.comm_manager.get_client_comm(this.plot_id, comm_id, (msg: any) => this.on_ack(msg));
@@ -79,7 +79,7 @@ export class CommManager extends Model {
       this._comm_status[comm_id] = {event_buffer: [], blocked: false, time: Date.now()}
     }
 
-	const comm_status = this._comm_status[comm_id]
+    const comm_status = this._comm_status[comm_id]
     if (event_name === undefined)
       event_name = Object.keys(data).join(',') // we are a widget not an event... fake a key.
     data['comm_id'] = comm_id;
@@ -90,19 +90,19 @@ export class CommManager extends Model {
       setTimeout(() => this.process_events(comm_id), 50);
       comm_status.blocked = true;
       comm_status.time = Date.now()+50;
-	}
-	}
+    }
+  }
 
   process_events(comm_id: string) {
-	const comm = this._comms[comm_id]
+    const comm = this._comms[comm_id]
     const comm_status = this._comm_status[comm_id]
-	// Iterates over event queue and sends events via Comm
-	const events = unique_events(comm_status.event_buffer);
-	for (let i=0; i<events.length; i++) {
+    // Iterates over event queue and sends events via Comm
+    const events = unique_events(comm_status.event_buffer);
+    for (let i=0; i<events.length; i++) {
       const data = events[i];
       comm.send(data);
-	}
-	comm_status.event_buffer = [];
+    }
+    comm_status.event_buffer = [];
   }
 
   on_ack(msg: any) {
@@ -123,7 +123,6 @@ export class CommManager extends Model {
     else if (metadata.msg_type == "Error")
       console.log("Python failed with the following traceback:", metadata.traceback)
   }
-
 
   msg_handler(msg: any) {
     const metadata = msg.metadata

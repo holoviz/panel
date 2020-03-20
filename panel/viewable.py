@@ -307,6 +307,7 @@ class Viewable(Layoutable, ServableMixin):
         super(Viewable, self).__init__(**params)
         self._documents = {}
         self._models = {}
+        self._comms = {}
         self._found_links = set()
 
     def __repr__(self, depth=0):
@@ -416,6 +417,7 @@ class Viewable(Layoutable, ServableMixin):
         state._managers[comm.id] = manager = CommManager(comm_id=comm.id)
         model = self._render_model(doc, comm)
         ref = model.ref['id']
+        self._comms[ref] = comm
         manager.plot_id = ref
 
         if config.console_output != 'disable':
@@ -858,9 +860,17 @@ class Reactive(Viewable):
         super(Reactive, self)._cleanup(root)
 
         # Clean up comms
-        model, _ = self._models.pop(root.ref['id'], (None, None))
+        ref = root.ref['id']
+        model, _ = self._models.pop(ref, (None, None))
         if model is None:
             return
+        comm = self._comms.get(ref]
+        if comm:
+            state._managers.pop(comm.id, None)
+            try:
+                comm.close()
+            except Exception:
+                pass
 
         customjs = model.select({'type': CustomJS})
         pattern = r"data\['comm_id'\] = \"(.*)\""
