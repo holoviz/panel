@@ -1,7 +1,8 @@
 """Implementation of the wired WebComponents"""
 import ast
+import datetime
 import json
-from typing import Set
+from typing import Set, Optional
 
 import param
 
@@ -55,7 +56,7 @@ class Button(WiredBase):
         return f"<wired-button>{params['name']}</wired-button>"
 
 
-class Calendar(WiredBase):
+class DatePicker(WiredBase):
     html = param.String(
         '<wired-calendar initials="" role="dialog tabindex="0">Button</wired-calendar>'
     )
@@ -86,17 +87,84 @@ class Calendar(WiredBase):
     Example: selected="Jul 4, 2019"""
     )
     selects = param.Integer(bounds=(0, None))
+    value = param.Date(default=None)
+    start = param.Date(default=None)
+    end = param.Date(default=None)
 
     def __init__(self, min_height=300, min_width=300, **params):
         super().__init__(min_height=min_height, min_width=min_width, **params)
 
+    @staticmethod
+    def _to_date(value: Optional[str]) -> Optional[datetime.date]:
+        """Converts a date string to a date
 
-class CheckBox(WiredBase):
+        Parameters
+        ----------
+        value : str
+            The str date value
+        """
+        if value:
+            return datetime.datetime.strptime(value, "%b %d, %Y").date()
+        return None
+
+    @staticmethod
+    def _to_string(value: datetime.date) -> str:
+        """Converts a date to a string
+
+        Parameters
+        ----------
+        value : date
+            The date value to convert
+        """
+        if value:
+            return value.strftime("%b %e, %Y").replace("  ", " ")
+        return None
+
+    @param.depends("selected", watch=True)
+    def _set_value(self):
+        value = self._to_date(self.selected)
+        if value != self.value:
+            self.value = value
+
+    @param.depends("value", watch=True)
+    def _set_selected(self):
+        selected = self._to_string(self.value)
+        if selected != self.selected:
+            self.selected = selected
+
+    @param.depends("firstdate", watch=True)
+    def _set_start(self):
+        start = self._to_date(self.firstdate)
+        if start != self.start:
+            self.start = start
+
+    @param.depends("start", watch=True)
+    def _set_firstdate(self):
+        firstdate = self._to_string(self.start)
+        if firstdate != self.firstdate:
+            self.firstdate = firstdate
+
+    @param.depends("lastdate", watch=True)
+    def _set_end(self):
+        end = self._to_date(self.lastdate)
+        if end != self.end:
+            self.end = end
+
+    @param.depends("end", watch=True)
+    def _set_lastdate(self):
+        lastdate = self._to_string(self.end)
+        if lastdate != self.lastdate:
+            self.lastdate = lastdate
+
+
+
+
+class Checkbox(WiredBase):
     html = param.String("<wired-checkbox></wired-checkbox>")
-    properties_to_watch = param.Dict({"checked": "checked"})
+    properties_to_watch = param.Dict({"checked": "value"})
     parameters_to_watch = param.List(["name"])
 
-    checked = param.Boolean()
+    value = param.Boolean()
 
     def _get_html_from_parameters_to_watch(self, **params) -> str:
         return f"<wired-checkbox>{params['name']}</wired-checkbox>"
@@ -188,15 +256,15 @@ class Image(WebComponent):
 
 
 class TextInput(WiredBase):
-    component_type = param.String("inputgroup")
+    # component_type = param.String("inputgroup")
     html = param.String("""<wired-input style="width:100%;height:100%"></wired-input>""")
     attributes_to_watch = param.Dict(
         {
             "placeholder": "placeholder",
             "type": "type_",
-            "min": "start",
-            "max": "end",
-            "step": "step",
+            # "min": "start",
+            # "max": "end",
+            # "step": "step",
         }
     )
     properties_to_watch = param.Dict({"textInput.value": "value"})
@@ -214,12 +282,12 @@ class TextInput(WiredBase):
 
         super().__init__(min_height=min_height, **params)
 
-    placeholder = param.String(default="Enter Value")
+    placeholder = param.String(default="")
     type_ = param.ObjectSelector("", objects=["", "number", "password"])
-    value = param.Parameter()
-    start = param.Integer(None)
-    end = param.Integer(None)
-    step = param.Parameter(None)
+    value = param.String()
+    # start = param.Integer(None)
+    # end = param.Integer(None)
+    # step = param.Parameter(None)
 
 
 class LiteralInput(WiredBase):
@@ -403,6 +471,7 @@ class FloatSlider(WebComponent):
     end = param.Number(100)
     step = param.Number(0.1)
     value = param.Number(default=33.1)
+    orientation = param.String()
 
 
 # Issue: Value is not set on construction. See
@@ -441,18 +510,37 @@ class Toggle(WiredBase):
     checked = param.Boolean(False)
 
 
-class ComboBox(WebComponent):
+class Select(WebComponent):
     # Todo: Implement api for added wired-combo-items to the innerhtml
     # Todo: The selected attribute/ parameter is not updated. Fix this
     html = param.String("""<wired-combo></wired-combo>""")
-    properties_to_watch = param.Dict({"selected": "selected"})
+    properties_to_watch = param.Dict({"selected": "value"})
     events_to_watch = param.Dict(default={"selected": "selects"})
+    parameters_to_watch = param.List(["options"])
 
     def __init__(self, min_height=40, **params):
         super().__init__(min_height=min_height, **params)
 
-    selected = param.String(default="red")
+    value = param.Parameter()
     selects = param.Integer()
+    options = param.ClassSelector(default=[], class_=(dict, list))
+
+    def _get_html_from_parameters_to_watch(self, **params) -> str:
+        options = params["options"]
+        if not options:
+            return """<wired-combo></wired-combo>"""
+
+        innerhtml = []
+        if isinstance(options, list):
+            for obj in options:
+                item = f'<wired-item value"{str(obj)}" role="option">{str(obj)}</wired-item>'
+                innerhtml.append(item)
+        if isinstance(options, dict):
+            for key, value in options:
+                item = f'<wired-item value"{str(key)}" role="option">{str(value)}</wired-item>'
+                innerhtml.append(item)
+
+        return f"""<wired-combo>{"".join(innerhtml)}</wired-combo>"""
 
 
 class Video(WebComponent):

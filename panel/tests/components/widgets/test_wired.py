@@ -2,19 +2,20 @@ import datetime as dt
 
 import pandas as pd
 import param
+import pytest
 
 import panel as pn
 from panel.components import wired
 
 
-def test_wired_base():
+def test_base():
     base = wired.WiredBase()
 
     assert base.disabled == False
     assert "disabled" in base._child_parameters()
 
 
-def test_wired_button_constructor():
+def test_button_constructor():
     button = wired.Button()
 
     assert "disabled" in button.attributes_to_watch
@@ -27,7 +28,7 @@ def test_wired_button_constructor():
     assert "disabled" not in button.html
 
 
-def test_wired_button_disabled():
+def test_button_disabled():
     button = wired.Button()
 
     # When/Then
@@ -43,22 +44,50 @@ def test_wired_button_disabled():
     assert "disabled" not in button.html
 
 
-def test_wired_button_elevation():
+def test_button_elevation():
     button = wired.Button()
     # When/Then: Elevation
     button.elevation = 1
     assert button.attributes_last_change == {"elevation": "1"}
 
 
-def test_wired_button_name():
+def test_button_name():
     button = wired.Button()
     # When/ Then
     button.name = "Click Test"
     assert ">Click Test</wired-button" in button.html
 
+@pytest.mark.parametrize(["value", "expected"], [
+    (dt.date(2020,5,3), "May 3, 2020"),
+    (dt.date(2020,5,13), "May 13, 2020"),
+])
+def test_calendar_to_string(value, expected):
+    assert wired.Calendar._to_string(value) == expected
 
-def test_wired_checkbox():
-    checkbox = wired.CheckBox(name="Test CheckBox")
+def test_calendar():
+    calendar = wired.DatePicker()
+
+    calendar.selected = "Jul 4, 2019"
+    assert calendar.value == dt.date(2019,7,4)
+
+    calendar.value = dt.date(2020,5,3)
+    assert calendar.selected == "May 3, 2020"
+
+    calendar.firstdate = "Jul 14, 2019"
+    assert calendar.start == dt.date(2019,7,14)
+
+    calendar.start = dt.date(2020,5,13)
+    assert calendar.firstdate == "May 13, 2020"
+
+    calendar.lastdate = "May 31, 2021"
+    assert calendar.end == dt.date(2021,5,31)
+
+    calendar.end = dt.date(2021,10,28)
+    assert calendar.lastdate == "Oct 28, 2021"
+
+
+def test_checkbox():
+    checkbox = wired.Checkbox(name="Test CheckBox")
 
     assert "disabled" in checkbox.attributes_to_watch
     assert checkbox.html.startswith("<wired-checkbox")
@@ -77,13 +106,13 @@ def test_wired_checkbox():
     assert "disabled" not in checkbox.html
 
 
-def test_wired_checkbox_constructor_checked():
-    checkbox = wired.CheckBox(checked=True)
+def test_checkbox_constructor_checked():
+    checkbox = wired.Checkbox(checked=True)
     assert checkbox.properties_last_change == {"checked": True}
 
 
-def test_wired_checkbox_name():
-    checkbox = wired.CheckBox()
+def test_checkbox_name():
+    checkbox = wired.Checkbox()
 
     checkbox.name = "Testing"
     assert ">Testing<" in checkbox.html
@@ -273,10 +302,10 @@ def test_view():
         return (title, component, pn.Param(component, parameters=parameters), pn.layout.Divider())
 
     button = wired.Button()
-    calendar = wired.Calendar()
-    check_box = wired.CheckBox()
-    check_box_checked = wired.CheckBox(checked=True)
-    combobox = wired.ComboBox(
+    calendar = wired.DatePicker()
+    check_box = wired.Checkbox()
+    check_box_checked = wired.Checkbox(checked=True)
+    combobox = wired.Select(
         html="""<wired-combo id="colorCombo" selected="red" role="combobox" aria-haspopup="listbox" tabindex="0" class="wired-rendered" aria-expanded="false"><wired-item value="red" aria-selected="true" role="option" class="wired-rendered">Red</wired-item><wired-item value="green" role="option" class="wired-rendered">Green</wired-item><wired-item value="blue" role="option" class="wired-rendered">Blue</wired-item></wired-combo>"""
     )
     dialog = wired.Dialog(text="Lorum Ipsum. Panel is awesome!")
@@ -376,21 +405,25 @@ def test_param_view():
             precedence=0.7,
         )
 
-    base = BaseClass()
+    base = Example()
     parameters = [
         "x",
         "y",
         "string_value",
         "num_int",
-        "unbounded_int",
+        # "unbounded_int", # Todo: Add Feature Request for unbounded int to Wired
         "float_with_hard_bounds",
         "float_with_soft_bounds",
-        "unbounded_float",
+        # "unbounded_float", # Todo: Add Feature Request for unbounded int to
         "hidden_parameter",
         # "integer_range",  # Todo: Add Feature Request for Integer Range to Wired
         # "float_range",  # Todo: Add Feature Request for Float Range to Wired
         "dictionary",
-        "timestamps",
+        "boolean",
+        # "color", # Todo: Add Feature Request for Color Picker to Wired
+        "date",
+        # "dataframe", # Todo: Add Feature Request for Table to Wired
+        "select_string",
     ]
     widgets = {
         "x": wired.TextInput,  # Todo: Find out why value is not shown on construction
@@ -402,6 +435,9 @@ def test_param_view():
         "float_with_soft_bounds": wired.FloatSlider,  # Todo: Add value to label
         "unbounded_float": wired.TextInput,  # Todo: Find out why unbounded_int does not use TextInput
         "dictionary": wired.LiteralInput,
+        "boolean": wired.Checkbox,
+        "date": wired.DatePicker,
+        "select_string": wired.Select,
     }
     pn.Param(base, parameters=parameters, widgets=widgets),
     # @Philippfr: how do I get wired widgets to stretch_width automatically?
