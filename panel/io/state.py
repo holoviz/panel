@@ -5,6 +5,8 @@ from __future__ import absolute_import, division, unicode_literals
 
 import threading
 
+from weakref import WeakSet
+
 import param
 
 from bokeh.document import Document
@@ -49,9 +51,8 @@ class _state(param.Parameterized):
     # Jupyter display handles
     _handles = {}
 
-    # Stores list of Websocket socket ids which are locked
-    # Reset after every event
-    _locks = []
+    # Stores a set of locked Websockets, reset after every change event
+    _locks = WeakSet()
 
     def __repr__(self):
         server_info = []

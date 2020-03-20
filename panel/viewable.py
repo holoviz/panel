@@ -772,7 +772,7 @@ class Reactive(Viewable):
             self._changing = {}
 
     def _server_change(self, doc, ref, attr, old, new):
-        state._locks = []
+        state._locks.clear()
         self._events.update({attr: new})
         if not self._processing:
             self._processing = True
