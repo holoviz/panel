@@ -409,18 +409,22 @@ class Viewable(Layoutable, ServableMixin):
             pass
 
         from IPython.display import display
+        from .models.comm_manager import CommManager
 
         comm = state._comm_manager.get_server_comm()
         doc = _Document()
+        state._managers[comm.id] = manager = CommManager(comm_id=comm.id)
         model = self._render_model(doc, comm)
+        ref = model.ref['id']
+        manager.plot_id = ref
 
         if config.console_output != 'disable':
             handle = display(display_id=uuid.uuid4().hex)
-            state._handles[model.ref['id']] = (handle, [])
+            state._handles[ref] = (handle, [])
 
         if config.embed:
             return render_model(model)
-        return render_mimebundle(model, doc, comm)
+        return render_mimebundle(model, doc, comm, manager)
 
     def _server_destroy(self, session_context):
         """
@@ -757,7 +761,7 @@ class Reactive(Viewable):
                     p, attr = p
                 else:
                     p, attr = p, p
-                customjs = self._get_customjs(attr, client_comm, ref)
+                customjs = self._get_customjs(attr, comm, client_comm)
                 model.js_on_change(p, customjs)
 
     def _comm_change(self, msg, ref=None):
@@ -798,15 +802,14 @@ class Reactive(Viewable):
             state.curdoc = None
             state._thread_id = None
 
-    def _get_customjs(self, change, client_comm, plot_id):
+    def _get_customjs(self, change, comm, client_comm):
         """
         Returns a CustomJS callback that can be attached to send the
         model state across the notebook comms.
         """
         transform = self._js_transforms.get(change)
-        return get_comm_customjs(
-            change, client_comm, plot_id, transform, self._timeout, self._debounce
-        )
+        manager = state._managers[comm.id]
+        return get_comm_customjs(change, client_comm, transform, manager)
 
     #----------------------------------------------------------------
     # Model API

@@ -42,6 +42,9 @@ class _state(param.Parameterized):
 
     _comm_manager = _CommManager
 
+    # CommManager models
+    _managers = {}
+
     # An index of all currently active views
     _views = {}
 

@@ -51,49 +51,25 @@ LOAD_MIME = 'application/vnd.holoviews_load.v0+json'
 EXEC_MIME = 'application/vnd.holoviews_exec.v0+json'
 HTML_MIME = 'text/html'
 
-ABORT_JS = """
-if (!window.PyViz) {{
-  return;
-}}
-var events = [];
-var receiver = window.PyViz.receivers['{plot_id}'];
-if (receiver &&
-        receiver._partial &&
-        receiver._partial.content &&
-        receiver._partial.content.events) {{
-    events = receiver._partial.content.events;
-}}
 
-var value = cb_obj['{change}'];
-
+JS_CALLBACK = """
+const value = cb_obj['{change}']
+const data = {{{change}: value, 'id': cb_obj.id}};
 {transform}
-
-for (var event of events) {{
-  if ((event.kind === 'ModelChanged') && (event.attr === '{change}') &&
-      (cb_obj.id === event.model.id) &&
-      (JSON.stringify(value) === JSON.stringify(event.new))) {{
-    return;
-  }}
-}}
+comm_manager.send('{comm_id}', data, '{change}')
 """
 
-def get_comm_customjs(change, client_comm, plot_id, transform=None,
-                      timeout=5000, debounce=50):
+def get_comm_customjs(change, client_comm, transform=None, manager=None):
     """
     Returns a CustomJS callback that can be attached to send the
     model state across the notebook comms.
     """
     # Abort callback if value matches last received event
     transform = transform or ''
-    abort = ABORT_JS.format(plot_id=plot_id, change=change, transform=transform)
-    data_template = """var data = {{{change}: value, 'id': cb_obj.id}}; cb_obj.event_name = '{change}';"""
-
-    fetch_data = data_template.format(change=change, transform=transform)
-    self_callback = JS_CALLBACK.format(
-        comm_id=client_comm.id, timeout=timeout, debounce=debounce,
-        plot_id=plot_id)
-    return CustomJS(code='\n'.join([abort, fetch_data, self_callback]))
-
+    callback = JS_CALLBACK.format(
+        comm_id=client_comm.id, change=change, transform=transform
+    )
+    return CustomJS(code=callback, args={'comm_manager': manager})
 
 
 def push(doc, comm, binary=True):
@@ -193,21 +169,12 @@ def render_model(model, comm=None):
     bokeh_script, bokeh_div = script, div
     html = "<div id='{id}'>{html}</div>".format(id=target, html=bokeh_div)
 
-    # Publish bokeh plot JS
-    msg_handler = bokeh_msg_handler.format(plot_id=target)
-
-    if comm:
-        comm_js = comm.js_template.format(plot_id=target, comm_id=comm.id, msg_handler=msg_handler)
-        bokeh_js = '\n'.join([comm_js, bokeh_script])
-    else:
-        bokeh_js = bokeh_script
-
-    data = {'text/html': html, 'application/javascript': bokeh_js}
+    data = {'text/html': html, 'application/javascript': bokeh_script}
     return ({'text/html': mimebundle_to_html(data), EXEC_MIME: ''},
             {EXEC_MIME: {'id': target}})
 
 
-def render_mimebundle(model, doc, comm):
+def render_mimebundle(model, doc, comm, manager=None):
     """
     Displays bokeh output inside a notebook using the PyViz display
     and comms machinery.
@@ -215,8 +182,9 @@ def render_mimebundle(model, doc, comm):
     if not isinstance(model, LayoutDOM):
         raise ValueError('Can only render bokeh LayoutDOM models')
     add_to_doc(model, doc, True)
-    comm_manager = CommManager(plot_id=model.ref['id'], comm_id=comm.id)
-    doc.add_root(comm_manager)
+    if manager is None:
+        manager = CommManager(plot_id=model.ref['id'], comm_id=comm.id)
+    doc.add_root(manager)
     return render_model(model, comm)
 
 
