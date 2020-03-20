@@ -49,6 +49,10 @@ class _state(param.Parameterized):
     # Jupyter display handles
     _handles = {}
 
+    # Stores list of Websocket socket ids which are locked
+    # Reset after every event
+    _locks = []
+
     def __repr__(self):
         server_info = []
         for server, panel, docs in self._servers.values():

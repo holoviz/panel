@@ -76,9 +76,12 @@ def unlocked():
         events = []
         for conn in connections:
             socket = conn._socket
+            if hasattr(socket, 'write_lock') and socket.write_lock._block._value == 0:
+                state._locks.append(id(socket))
+            locked = id(socket) in state._locks
             for event in curdoc._held_events:
                 if (isinstance(event, ModelChangedEvent) and event not in old_events
-                    and hasattr(socket, 'write_message')):
+                    and hasattr(socket, 'write_message') and not locked):
                     msg = conn.protocol.create('PATCH-DOC', [event])
                     WebSocketHandler.write_message(socket, msg.header_json)
                     WebSocketHandler.write_message(socket, msg.metadata_json)
