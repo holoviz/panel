@@ -35,6 +35,7 @@ except Exception:
     from html import escape
 
 from ..compiler import require_components
+from ..models.comm_manager import CommManager
 from .embed import embed_state
 from .model import add_to_doc, diff
 from .resources import _env
@@ -73,39 +74,6 @@ for (var event of events) {{
       (JSON.stringify(value) === JSON.stringify(event.new))) {{
     return;
   }}
-}}
-"""
-
-# Following JS block becomes body of the message handler callback
-bokeh_msg_handler = """
-var plot_id = "{plot_id}";
-
-if ((plot_id in window.PyViz.plot_index) && (window.PyViz.plot_index[plot_id] != null)) {{
-  var plot = window.PyViz.plot_index[plot_id];
-}} else if ((Bokeh !== undefined) && (plot_id in Bokeh.index)) {{
-  var plot = Bokeh.index[plot_id];
-}}
-
-if (plot == null) {{
-  return
-}}
-
-if (plot_id in window.PyViz.receivers) {{
-  var receiver = window.PyViz.receivers[plot_id];
-}} else {{
-  var receiver = new Bokeh.protocol.Receiver();
-  window.PyViz.receivers[plot_id] = receiver;
-}}
-
-if ((buffers != undefined) && (buffers.length > 0)) {{
-  receiver.consume(buffers[0].buffer)
-}} else {{
-  receiver.consume(msg)
-}}
-
-const comm_msg = receiver.message;
-if ((comm_msg != null) && (Object.keys(comm_msg.content).length > 0)) {{
-  plot.model.document.apply_json_patch(comm_msg.content, comm_msg.buffers)
 }}
 """
 
@@ -247,6 +215,8 @@ def render_mimebundle(model, doc, comm):
     if not isinstance(model, LayoutDOM):
         raise ValueError('Can only render bokeh LayoutDOM models')
     add_to_doc(model, doc, True)
+    comm_manager = CommManager(plot_id=model.ref['id'], comm_id=comm.id)
+    doc.add_root(comm_manager)
     return render_model(model, comm)
 
 
