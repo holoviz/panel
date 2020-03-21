@@ -8,6 +8,7 @@ import json
 import uuid
 
 from contextlib import contextmanager
+from collections import OrderedDict
 from six import string_types
 
 import bokeh
@@ -21,12 +22,11 @@ from bokeh.embed.bundle import bundle_for_objs_and_resources
 from bokeh.embed.elements import div_for_render_item, script_for_render_items
 from bokeh.embed.util import standalone_docs_json_and_render_items
 from bokeh.embed.wrappers import wrap_in_script_tag
-from bokeh.models import CustomJS, LayoutDOM, Model
+from bokeh.models import LayoutDOM, Model
 from bokeh.resources import CDN, INLINE
 from bokeh.util.serialization import make_id
 from pyviz_comms import (
-    JS_CALLBACK, PYVIZ_PROXY, Comm, JupyterCommManager as _JupyterCommManager,
-    nb_mime_js
+    PYVIZ_PROXY, Comm, JupyterCommManager as _JupyterCommManager, nb_mime_js
 )
 
 try:
@@ -50,27 +50,6 @@ from .state import state
 LOAD_MIME = 'application/vnd.holoviews_load.v0+json'
 EXEC_MIME = 'application/vnd.holoviews_exec.v0+json'
 HTML_MIME = 'text/html'
-
-
-JS_CALLBACK = """
-const value = cb_obj['{change}']
-const data = {{{change}: value, 'id': cb_obj.id}};
-{transform}
-comm_manager.send('{comm_id}', data, '{change}')
-"""
-
-def get_comm_customjs(change, client_comm, transform=None, manager=None):
-    """
-    Returns a CustomJS callback that can be attached to send the
-    model state across the notebook comms.
-    """
-    # Abort callback if value matches last received event
-    transform = transform or ''
-    callback = JS_CALLBACK.format(
-        comm_id=client_comm.id, change=change, transform=transform
-    )
-    return CustomJS(code=callback, args={'comm_manager': manager})
-
 
 def push(doc, comm, binary=True):
     """
@@ -102,9 +81,7 @@ def _autoload_js(bundle, configs, requirements, exports, skip_imports, load_time
     )
 
 
-def html_for_render_items(comm_js, docs_json, render_items, template=None, template_variables={}):
-    comm_js = wrap_in_script_tag(comm_js)
-
+def html_for_render_items(docs_json, render_items, template=None, template_variables={}):
     json_id = make_id()
     json = escape(serialize_json(docs_json), quote=False)
     json = wrap_in_script_tag(json, "application/json", json_id)
@@ -115,7 +92,6 @@ def html_for_render_items(comm_js, docs_json, render_items, template=None, templ
 
     context.update(dict(
         title = '',
-        bokeh_js = comm_js,
         plot_script = json + script,
         docs = render_items,
         base = NB_TEMPLATE_BASE,
@@ -135,22 +111,21 @@ def html_for_render_items(comm_js, docs_json, render_items, template=None, templ
     return html
 
 
-def render_template(document, comm=None):
-    plot_id = document.roots[0].ref['id']
-    (docs_json, render_items) = standalone_docs_json_and_render_items(document)
+def render_template(document, comm=None, manager=None):
+    ref = document.roots[0].ref['id']
+    (docs_json, render_items) = standalone_docs_json_and_render_items(document, True)
 
-    if comm:
-        msg_handler = bokeh_msg_handler.format(plot_id=plot_id)
-        comm_js = comm.js_template.format(plot_id=plot_id, comm_id=comm.id, msg_handler=msg_handler)
-    else:
-        comm_js = ''
+    # We do not want the CommManager to appear in the roots because
+    # the custom template may not reference it
+    if manager:
+        item = render_items[0]
+        item.roots._roots = OrderedDict(list(item.roots._roots.items())[:-1])
 
     html = html_for_render_items(
-        comm_js, docs_json, render_items, template=document.template,
-        template_variables=document.template_variables)
-
-    return ({'text/html': html, EXEC_MIME: ''},
-            {EXEC_MIME: {'id': plot_id}})
+        docs_json, render_items, template=document.template,
+        template_variables=document.template_variables
+    )
+    return ({'text/html': html, EXEC_MIME: ''}, {EXEC_MIME: {'id': ref}})
 
 
 def render_model(model, comm=None):
@@ -159,7 +134,7 @@ def render_model(model, comm=None):
 
     target = model.ref['id']
 
-    (docs_json, [render_item]) = standalone_docs_json_and_render_items([model])
+    (docs_json, [render_item]) = standalone_docs_json_and_render_items([model], True)
     div = div_for_render_item(render_item)
     render_item = render_item.to_json()
     script = DOC_NB_JS.render(
