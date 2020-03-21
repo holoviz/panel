@@ -7,7 +7,6 @@ from __future__ import absolute_import, division, unicode_literals
 
 import difflib
 import logging
-import re
 import sys
 import threading
 import traceback
@@ -20,7 +19,6 @@ import param
 
 from bokeh.document.document import Document as _Document
 from bokeh.io import curdoc as _curdoc
-from bokeh.models import CustomJS
 from pyviz_comms import JupyterCommManager
 
 from .callbacks import PeriodicCallback
@@ -753,6 +751,7 @@ class Reactive(Viewable):
                 if comm and 'embedded' not in root.tags:
                     push(doc, comm)
             else:
+                cb = partial(self._update_model, events, msg, root, model, doc, comm)
                 doc.add_next_tick_callback(cb)
 
     def _link_params(self):

@@ -35,7 +35,6 @@ except Exception:
     from html import escape
 
 from ..compiler import require_components
-from ..models.comm_manager import CommManager
 from .embed import embed_state
 from .model import add_to_doc, diff
 from .resources import _env
@@ -107,8 +106,7 @@ def html_for_render_items(docs_json, render_items, template=None, template_varia
     elif isinstance(template, string_types):
         template = _env.from_string("{% extends base %}\n" + template)
 
-    html = template.render(context)
-    return html
+    return template.render(context)
 
 
 def render_template(document, comm=None, manager=None):
@@ -157,9 +155,8 @@ def render_mimebundle(model, doc, comm, manager=None):
     if not isinstance(model, LayoutDOM):
         raise ValueError('Can only render bokeh LayoutDOM models')
     add_to_doc(model, doc, True)
-    if manager is None:
-        manager = CommManager(plot_id=model.ref['id'], comm_id=comm.id)
-    doc.add_root(manager)
+    if manager is not None:
+        doc.add_root(manager)
     return render_model(model, comm)
 
 

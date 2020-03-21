@@ -18,6 +18,7 @@ from bokeh.models import (
 )
 from bokeh.models.widgets import Tabs as BkTabs, Panel as BkPanel
 
+from .io.model import hold
 from .util import param_name, param_reprs
 from .viewable import Layoutable, Reactive
 
