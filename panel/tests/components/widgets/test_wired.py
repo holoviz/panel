@@ -1,3 +1,5 @@
+"""Test of the wired components"""
+# pylint: disable=protected-access
 import datetime as dt
 
 import pandas as pd
@@ -6,12 +8,13 @@ import pytest
 
 import panel as pn
 from panel.components import wired
+from collections import OrderedDict
 
 
 def test_base():
     base = wired.WiredBase()
 
-    assert base.disabled == False
+    assert not base.disabled
     assert "disabled" in base._child_parameters()
 
 
@@ -57,32 +60,34 @@ def test_button_name():
     button.name = "Click Test"
     assert ">Click Test</wired-button" in button.html
 
-@pytest.mark.parametrize(["value", "expected"], [
-    (dt.date(2020,5,3), "May 3, 2020"),
-    (dt.date(2020,5,13), "May 13, 2020"),
-])
-def test_calendar_to_string(value, expected):
-    assert wired.Calendar._to_string(value) == expected
+
+@pytest.mark.parametrize(
+    ["value", "expected"],
+    [(dt.date(2020, 5, 3), "May 3, 2020"), (dt.date(2020, 5, 13), "May 13, 2020"),],
+)
+def test_date_picker_to_string(value, expected):
+    assert wired.DatePicker._to_string(value) == expected
+
 
 def test_calendar():
     calendar = wired.DatePicker()
 
     calendar.selected = "Jul 4, 2019"
-    assert calendar.value == dt.date(2019,7,4)
+    assert calendar.value == dt.date(2019, 7, 4)
 
-    calendar.value = dt.date(2020,5,3)
+    calendar.value = dt.date(2020, 5, 3)
     assert calendar.selected == "May 3, 2020"
 
     calendar.firstdate = "Jul 14, 2019"
-    assert calendar.start == dt.date(2019,7,14)
+    assert calendar.start == dt.date(2019, 7, 14)
 
-    calendar.start = dt.date(2020,5,13)
+    calendar.start = dt.date(2020, 5, 13)
     assert calendar.firstdate == "May 13, 2020"
 
     calendar.lastdate = "May 31, 2021"
-    assert calendar.end == dt.date(2021,5,31)
+    assert calendar.end == dt.date(2021, 5, 31)
 
-    calendar.end = dt.date(2021,10,28)
+    calendar.end = dt.date(2021, 10, 28)
     assert calendar.lastdate == "Oct 28, 2021"
 
 
@@ -107,7 +112,7 @@ def test_checkbox():
 
 
 def test_checkbox_constructor_checked():
-    checkbox = wired.Checkbox(checked=True)
+    checkbox = wired.Checkbox(value=True)
     assert checkbox.properties_last_change == {"checked": True}
 
 
@@ -154,19 +159,32 @@ def test_icon_button():
     assert icon.html == "<wired-icon-button><mwc-icon>favorite</mwc-icon></wired-icon-button>"
 
 
-def test_slider():
+def test_float_slider():
     # When/ Then
-    slider = wired.Slider(attributes_to_watch={"value": "value"})
+    slider = wired.FloatSlider(attributes_to_watch={"value": "value"})
     slider.html = '<wired-slider id="slider" value="40.507407407407406" knobradius="15" class="wired-rendered" style="margin: 0px"></wired-slider>'
     assert slider.value == 40.507407407407406
 
+def test_int_slider():
+    # When/ Then
+    slider = wired.IntSlider(attributes_to_watch={"value": "value"})
+    slider.html = '<wired-slider id="slider" value="2" knobradius="15" class="wired-rendered" style="margin: 0px"></wired-slider>'
+    assert slider.value == 2
 
-def test_slider_properties_last_change():
-    slider = wired.Slider()
+
+def test_int_slider_properties_last_change():
+    slider = wired.IntSlider()
 
     # When/ Then
     slider.properties_last_change = {"input.value": "13"}
     assert slider.value == 13
+
+def test_float_slider_properties_last_change():
+    slider = wired.FloatSlider()
+
+    # When/ Then
+    slider.properties_last_change = {"input.value": "13.7"}
+    assert slider.value == 13.7
 
 
 def test_input():
@@ -181,17 +199,17 @@ def test_input():
 
 
 def test_progress():
-    progress = wired.Progress(value=4, max_=9)
+    progress = wired.Progress(value=4, max=9)
 
     # Then
     assert progress.value == 4
-    assert progress.max_ == 9
+    assert progress.max == 9
     assert progress.param.value.bounds == (0, 9)
 
     # # When/ Then
-    progress.max_ = 5
+    progress.max = 5
     assert progress.value == 4
-    assert progress.max_ == 5
+    assert progress.max == 5
     assert progress.param.value.bounds == (0, 5)
 
 
@@ -211,10 +229,19 @@ def test_searchinput():
         == '<wired-search-input placeholder="New Search" autocomplete="on" disabled></wired-search-input>'
     )
 
+def test_select():
+    """Supports dict."""
+    options = OrderedDict([('red', 'red'), ('yellow', 'yellow'), ('green', 'green')])
+    wired.Select(options=options)
+
+def test_select_something():
+    component = wired.Select(value="a", options=['a'])
+    pn.Param(component, parameters=['options'])
+
 
 def test_text_area():
     # When/ Then
-    text_area = wired.TextArea(placeholder="a", rows=3)
+    text_area = wired.TextAreaInput(placeholder="a", rows=3)
     assert text_area.html == '<wired-textarea placeholder="a"></wired-textarea>'
 
     # When/ Then
@@ -249,19 +276,21 @@ def test_toggle():
     assert toggle.html == "<wired-toggle></wired-toggle>"
     assert toggle.disabled == False
 
+
 def test_literal_input_value_from_client():
     # Given
     literal_input = wired.LiteralInput()
     # When
     literal_input.properties_last_change = {"textInput.value": "{'2': 2, 'b': 18}"}
     # Then
-    assert literal_input.value == {'2': 2, 'b': 18}
+    assert literal_input.value == {"2": 2, "b": 18}
+
 
 def test_literal_input_value_to_client():
     # Given
     literal_input = wired.LiteralInput()
     # When
-    literal_input.value = {'2': 2, 'b': 18}
+    literal_input.value = {"2": 2, "b": 18}
     # Then
     assert literal_input.properties_last_change == {"textInput.value": "{'2': 2, 'b': 18}"}
 
@@ -304,7 +333,7 @@ def test_view():
     button = wired.Button()
     calendar = wired.DatePicker()
     check_box = wired.Checkbox()
-    check_box_checked = wired.Checkbox(checked=True)
+    check_box_checked = wired.Checkbox(value=True)
     combobox = wired.Select(
         html="""<wired-combo id="colorCombo" selected="red" role="combobox" aria-haspopup="listbox" tabindex="0" class="wired-rendered" aria-expanded="false"><wired-item value="red" aria-selected="true" role="option" class="wired-rendered">Red</wired-item><wired-item value="green" role="option" class="wired-rendered">Green</wired-item><wired-item value="blue" role="option" class="wired-rendered">Blue</wired-item></wired-combo>"""
     )
@@ -312,25 +341,28 @@ def test_view():
     divider = wired.Divider()
     fab = wired.Fab()
     icon_button = wired.IconButton()
-    image = wired.Image(src="https://www.gstatic.com/webp/gallery/1.sm.jpg", height=200, width=300)
+    image = wired.Image(
+        object="https://www.gstatic.com/webp/gallery/1.sm.jpg", height=200, width=300
+    )
     link = wired.Link(href="https://panel.holoviz.org/", text="HoloViz", target="_blank")
     progress = wired.Progress(value=50)
     wired_input = wired.TextInput()
     radio_button = wired.RadioButton()
     search_input = wired.SearchInput()
-    spinner = wired.Spinner()
+    spinner = wired.ProgressSpinner()
     # @Philippfr: How do I avoid the the pn.Param(slider, parameters=["value"]) to turn red when
     # using the slider? It seems the value needs to be rounded?
-    slider = wired.Slider(
+    float_slider = wired.FloatSlider(
         html="""<wired-slider id="slider" value="33.1" knobradius="15" class="wired-rendered" style="margin: 0px">Slider Label</wired-slider>"""
     )
-    text_area = wired.TextArea()
+    text_area = wired.TextAreaInput()
     toggle = wired.Toggle()
     video = wired.Video(
         autoplay=True,
         loop=True,
-        src="https://file-examples.com/wp-content/uploads/2017/04/file_example_MP4_480_1_5MG.mp4",
+        object="https://file-examples.com/wp-content/uploads/2017/04/file_example_MP4_480_1_5MG.mp4",
     )
+    section(combobox)
     return pn.Column(
         js_pane,
         *section(button),
@@ -353,7 +385,7 @@ def test_view():
         *section(search_input),
         *section(spinner),
         *section(
-            slider,
+            float_slider,
             "@Philippfr: Currently an error is raised because the slider value is not rounded to 1 decimal",
         ),
         *section(text_area),
@@ -426,7 +458,8 @@ def test_param_view():
         "select_string",
     ]
     widgets = {
-        "x": wired.TextInput,  # Todo: Find out why value is not shown on construction
+        # Todo: Implement spinner to support Numbers
+        # "x": wired.TextInput,  # Todo: Find out why value is not shown on construction
         "y": wired.TextInput,  # Todo: Find out why value is not shown on construction
         "string_value": wired.TextInput,  # Todo: Find out why value is not shown on construction
         "num_int": wired.IntSlider,  # Todo: Add value to label
@@ -439,7 +472,7 @@ def test_param_view():
         "date": wired.DatePicker,
         "select_string": wired.Select,
     }
-    pn.Param(base, parameters=parameters, widgets=widgets),
+    pn.Param(base, parameters=parameters, widgets=widgets)
     # @Philippfr: how do I get wired widgets to stretch_width automatically?
     return pn.Column(
         js_pane,

@@ -55,6 +55,15 @@ class Button(WiredBase):
     def _get_html_from_parameters_to_watch(self, **params) -> str:
         return f"<wired-button>{params['name']}</wired-button>"
 
+class Checkbox(WiredBase):
+    html = param.String("<wired-checkbox></wired-checkbox>")
+    properties_to_watch = param.Dict({"checked": "value"})
+    parameters_to_watch = param.List(["name"])
+
+    value = param.Boolean()
+
+    def _get_html_from_parameters_to_watch(self, **params) -> str:
+        return f"<wired-checkbox>{params['name']}</wired-checkbox>"
 
 class DatePicker(WiredBase):
     html = param.String(
@@ -157,19 +166,6 @@ class DatePicker(WiredBase):
             self.lastdate = lastdate
 
 
-
-
-class Checkbox(WiredBase):
-    html = param.String("<wired-checkbox></wired-checkbox>")
-    properties_to_watch = param.Dict({"checked": "value"})
-    parameters_to_watch = param.List(["name"])
-
-    value = param.Boolean()
-
-    def _get_html_from_parameters_to_watch(self, **params) -> str:
-        return f"<wired-checkbox>{params['name']}</wired-checkbox>"
-
-
 # @Philppfr: The Dialog is really a layout
 # I would like to support WebComponent layouts in general.
 # The user should be able to include panes and widgets like buttons in the Dialog.
@@ -219,10 +215,29 @@ class Fab(WiredBase):
     def _get_html_from_parameters_to_watch(self, **params) -> str:
         return f"<wired-fab><mwc-icon>{params['icon']}</mwc-icon></wired-fab>"
 
+# Issue: Value is not set on construction. See
+# https://github.com/wiredjs/wired-elements/issues/121#issue-573516963
+# Todo: Add slider value to label
+class FloatSlider(WebComponent):
+    component_type = param.String("inputgroup")
+    html = param.String("<wired-slider style='width: 100%;height:100%'></wired-slider>")
+    attributes_to_watch = param.Dict({"min": "start", "max": "end", "step": "step"})
+    properties_to_watch = param.Dict({"input.value": "value"})
+    events_to_watch = param.Dict({"change": None})
+
+    def __init__(self, min_height=40, **params):
+        super().__init__(min_height=min_height, **params)
+
+    start = param.Number(0.0)
+    end = param.Number(1.0)
+    step = param.Number(0.1)
+    value = param.Number(default=0.0)
+    orientation = param.String()
 
 class IconButton(WiredBase):
     html = param.String("<wired-icon-button><mwc-icon>favorite</mwc-icon><wired-icon-button>")
     parameters_to_watch = param.List(["icon"])
+    events_to_watch = param.Dict(default={"click": "clicks"})
 
     icon = param.ObjectSelector(
         "favorite",
@@ -231,6 +246,7 @@ class IconButton(WiredBase):
     The name of an `mwc-icon <https://github.com/material-components/material-components-web-components/tree/master/packages/icon>`_
     """,
     )
+    clicks = param.Integer()
 
     def __init__(
         self, min_height=40, **params,
@@ -245,50 +261,43 @@ class Image(WebComponent):
     """The wired-image element"""
 
     html = param.String('<wired-image style="width:100%;height:100%"></wired-image>')
-    attributes_to_watch = param.Dict({"elevation": "elevation", "src": "src"})
+    attributes_to_watch = param.Dict({"elevation": "elevation", "src": "object", "alt": "alt_text"})
 
     # @Philippfr: How do I handle height and width in general in the .ts model?
     def __init__(self, height=100, **params):
         super().__init__(height=height, **params)
 
-    src = param.String()
+    object = param.String(default=None, doc="""Currently only an url is supported""")
+    alt_text = param.String(default=None)
     elevation = param.Integer(ELEVATION_DEFAULT, bounds=ELEVATION_BOUNDS)
 
+# Issue: Value is not set on construction. See
+# https://github.com/wiredjs/wired-elements/issues/121#issue-573516963
+# Todo: Add slider value to label
+class IntSlider(FloatSlider):
 
-class TextInput(WiredBase):
-    # component_type = param.String("inputgroup")
-    html = param.String("""<wired-input style="width:100%;height:100%"></wired-input>""")
-    attributes_to_watch = param.Dict(
-        {
-            "placeholder": "placeholder",
-            "type": "type_",
-            # "min": "start",
-            # "max": "end",
-            # "step": "step",
-        }
-    )
-    properties_to_watch = param.Dict({"textInput.value": "value"})
-    events_to_watch = param.Dict({"change": None})
-
-    # @Philippff. I sthis the right place to define height? And what about width?
-    def __init__(self, min_height=50, **params):
-        # Hack: To solve https://github.com/wiredjs/wired-elements/issues/123
-        if "value" in params:
-            html = f'<wired-input value="{params["value"]}" style="width:100%;height:100%"></wired-input>'
-        elif self.param.value.default:
-            html = f'<wired-input value="{self.param.value.default}" style="width:100%;height:100%"></wired-input>'
-        if html:
-            self.param.html.default = html
-
+    def __init__(self, min_height=40, **params):
         super().__init__(min_height=min_height, **params)
 
-    placeholder = param.String(default="")
-    type_ = param.ObjectSelector("", objects=["", "number", "password"])
-    value = param.String()
-    # start = param.Integer(None)
-    # end = param.Integer(None)
-    # step = param.Parameter(None)
+    start = param.Integer(0)
+    end = param.Integer(1)
+    step = param.Integer(1)
+    value = param.Integer(0)
 
+class Link(WebComponent):
+    html = param.String("<wired-link></wired-link>")
+    attributes_to_watch = param.Dict({"href": "href", "target": "target"})
+    parameters_to_watch = param.List(["text"])
+
+    href = param.String()
+    target = param.ObjectSelector("_blank", objects=["_self", "_blank", "_parent", "_top"])
+    text = param.String()
+
+    def __init__(self, **params):
+        super().__init__(**params)
+
+    def _get_html_from_parameters_to_watch(self, **params) -> str:
+        return f"<wired-link>{params['text']}</wired-link>"
 
 class LiteralInput(WiredBase):
     component_type = param.String("inputgroup")
@@ -305,18 +314,22 @@ class LiteralInput(WiredBase):
     def __init__(self, min_height=60, **params):
         # Hack: To solve https://github.com/wiredjs/wired-elements/issues/123
         if "value" in params:
-            html = f'<wired-input value="{params["value"]}" style="width:100%;height:100%"></wired-input>'
+            self.param.html.default = f'<wired-input value="{params["value"]}" style="width:100%;height:100%"></wired-input>'
         elif self.param.value.default:
-            html = f'<wired-input value="{self.param.value.default}" style="width:100%;height:100%"></wired-input>'
-        if html:
-            self.param.html.default = html
+            self.param.html.default = f'<wired-input value="{self.param.value.default}" style="width:100%;height:100%"></wired-input>'
 
         super().__init__(min_height=min_height, **params)
 
     placeholder = param.String(default="Enter Value")
     value = param.Parameter()
-    type = param.Parameter()
-    serializer = param.ObjectSelector('ast', objects=['ast', 'json'])
+    type = param.ClassSelector(default=None, class_=(type, tuple),
+                               is_instance=True)
+    serializer = param.ObjectSelector(default='ast', objects=['ast', 'json'], doc="""
+       The serialization (and deserialization) method to use. 'ast'
+       uses ast.literal_eval and 'json' uses json.loads and json.dumps.
+    """)
+
+
 
     def _handle_properties_last_change(self, event):
         if "textInput.value" in event.new:
@@ -352,55 +365,42 @@ class LiteralInput(WiredBase):
             super()._handle_parameter_property_change(event)
 
 
-class Link(WebComponent):
-    html = param.String("<wired-link></wired-link>")
-    attributes_to_watch = param.Dict({"href": "href", "target": "target"})
-    parameters_to_watch = param.List(["text"])
-
-    href = param.String()
-    target = param.ObjectSelector("_blank", objects=["_self", "_blank", "_parent", "_top"])
-    text = param.String()
-
-    def __init__(self, **params):
-        super().__init__(**params)
-
-    def _get_html_from_parameters_to_watch(self, **params) -> str:
-        return f"<wired-link>{params['text']}</wired-link>"
-
-
 # Todo: Implement Wired wired-listbox
 
 
 class Progress(WebComponent):
     html = param.String("<wired-progress></wired-progress>")
-    attributes_to_watch = param.Dict({"value": "value", "percentage": "percentage", "max": "max_"})
+    attributes_to_watch = param.Dict({"value": "value", "percentage": "percentage", "max": "max"})
 
     def __init__(self, min_height=40, **params):
         super().__init__(min_height=min_height, **params)
 
-        if "max_" in params:
+        if "max" in params:
             self._handle_max_changed()
 
-    value = param.Integer(0, bounds=(0, 100))
-    max_ = param.Integer(100, bounds=(0, None))
+    value = param.Integer(None, bounds=(0, 100))
+    max = param.Integer(100, bounds=(0, None))
     percentage = param.Boolean()
 
-    @param.depends("max_", watch=True)
+    @param.depends("max", watch=True)
     def _handle_max_changed(self):
-        self.param.value.bounds = (0, self.max_)
+        self.param.value.bounds = (0, self.max)
 
 
 class RadioButton(WebComponent):
     """A Wired RadioButton"""
 
     html = param.String("<wired-radio>Radio Button</wired-radio>")
-    properties_to_watch = param.Dict({"checked": "checked"})
+    properties_to_watch = param.Dict({"checked": "value"})
     parameters_to_watch = param.List(["name"])
 
-    checked = param.Boolean(default=False)
+    value = param.Boolean(default=False)
 
     def _get_html_from_parameters_to_watch(self, **params) -> str:
         return f"<wired-radio>{params['name']}</wired-radio>"
+
+# Todo: Implement RadioBoxGroup
+# Todo: Implement PasswordInput
 
 
 class SearchInput(WiredBase):
@@ -412,18 +412,29 @@ class SearchInput(WiredBase):
     def __init__(self, min_height=40, **params):
         super().__init__(min_height=min_height, **params)
 
-    placeholder = param.String("Search Here")
+    placeholder = param.String("")
     value = param.String()
     autocomplete = param.ObjectSelector("off", objects=["on", "off"])
 
 
 # Todo: Implement Tabs. It's really a layout. Don't yet know how to support this.
 
+# @Philippfr: Should we merge the wired Progress and wired ProgressSpinner into one with
+# functionality similar to the Panel Progress?
+class ProgressSpinner(WebComponent):
+    html = param.String("<wired-spinner></wired-spinner>")
+    attributes_to_watch = param.Dict({"spinning": "active", "duration": "duration"})
 
-class TextArea(WiredBase):
+    active = param.Boolean(default=True)
+    duration = param.Integer(default=1000, bounds=(1, 10000))
+
+    def __init__(self, min_height=40, **params):
+        super().__init__(min_height=min_height, **params)
+
+class TextAreaInput(WiredBase):
     html = param.String('<wired-textarea placeholder="Enter text"></wired-textarea>')
     attributes_to_watch = param.Dict({"placeholder": "placeholder"})
-    properties_to_watch = param.Dict({"value": "value", "rows": "rows"})
+    properties_to_watch = param.Dict({"value": "value", "rows": "rows", "maxlength": "max_length"})
     events_to_watch = param.ObjectSelector(
         {"change": None},
         objects=[{"change": None}, {"input": None}],
@@ -435,9 +446,10 @@ class TextArea(WiredBase):
     """,
     )
 
-    placeholder = param.String("Enter Text")
+    placeholder = param.String("")
     value = param.String()
     rows = param.Integer(2, bounds=(1, 100))
+    max_length = param.Integer(default=5000)
 
     def __init__(self, **params):
         super().__init__(**params)
@@ -454,60 +466,47 @@ class TextArea(WiredBase):
             self.height = height
 
 
-# Issue: Value is not set on construction. See
-# https://github.com/wiredjs/wired-elements/issues/121#issue-573516963
-# Todo: Add slider value to label
-class FloatSlider(WebComponent):
-    component_type = param.String("inputgroup")
-    html = param.String("<wired-slider style='width: 100%;height:100%'></wired-slider>")
-    attributes_to_watch = param.Dict({"min": "start", "max": "end", "step": "step"})
-    properties_to_watch = param.Dict({"input.value": "value"})
+class TextInput(WiredBase):
+    # component_type = param.String("inputgroup")
+    html = param.String("""<wired-input style="width:100%;height:100%"></wired-input>""")
+    attributes_to_watch = param.Dict(
+        {
+            "placeholder": "placeholder",
+            "type": "type_",
+            # "min": "start",
+            # "max": "end",
+            # "step": "step",
+        }
+    )
+    properties_to_watch = param.Dict({"textInput.value": "value"})
     events_to_watch = param.Dict({"change": None})
 
-    def __init__(self, min_height=40, **params):
+    # @Philippff. I sthis the right place to define height? And what about width?
+    def __init__(self, min_height=50, **params):
+        # Hack: To solve https://github.com/wiredjs/wired-elements/issues/123
+        if "value" in params:
+            self.param.html.default = f'<wired-input value="{params["value"]}" style="width:100%;height:100%"></wired-input>'
+        elif self.param.value.default:
+            self.param.html.default = f'<wired-input value="{self.param.value.default}" style="width:100%;height:100%"></wired-input>'
+
         super().__init__(min_height=min_height, **params)
 
-    start = param.Number(0)
-    end = param.Number(100)
-    step = param.Number(0.1)
-    value = param.Number(default=33.1)
-    orientation = param.String()
-
-
-# Issue: Value is not set on construction. See
-# https://github.com/wiredjs/wired-elements/issues/121#issue-573516963
-# Todo: Add slider value to label
-class IntSlider(FloatSlider):
-
-    def __init__(self, min_height=40, **params):
-        super().__init__(min_height=min_height, **params)
-
-    start = param.Integer(0)
-    end = param.Integer(100)
-    step = param.Integer(1)
-    value = param.Integer(0)
-
-
-class Spinner(WebComponent):
-    html = param.String("<wired-spinner></wired-spinner>")
-    attributes_to_watch = param.Dict({"spinning": "spinning", "duration": "duration"})
-
-    spinning = param.Boolean(default=True)
-    duration = param.Integer(default=1000, bounds=(1, 10000))
-
-    def __init__(self, min_height=40, **params):
-        super().__init__(min_height=min_height, **params)
-
+    placeholder = param.String(default="")
+    type_ = param.ObjectSelector("", objects=["", "number", "password"])
+    value = param.String()
+    # start = param.Integer(None)
+    # end = param.Integer(None)
+    # step = param.Parameter(None)
 
 class Toggle(WiredBase):
     html = param.String("<wired-toggle></wired-toggle>")
-    properties_to_watch = param.Dict({"checked": "checked"})
+    properties_to_watch = param.Dict({"checked": "value"})
     events_to_watch = param.Dict({"change": None})
 
     def __init__(self, min_height=20, **params):
         super().__init__(min_height=min_height, **params)
 
-    checked = param.Boolean(False)
+    value = param.Boolean(False)
 
 
 class Select(WebComponent):
@@ -520,6 +519,8 @@ class Select(WebComponent):
 
     def __init__(self, min_height=40, **params):
         super().__init__(min_height=min_height, **params)
+
+        self._set_class_()
 
     value = param.Parameter()
     selects = param.Integer()
@@ -536,11 +537,19 @@ class Select(WebComponent):
                 item = f'<wired-item value"{str(obj)}" role="option">{str(obj)}</wired-item>'
                 innerhtml.append(item)
         if isinstance(options, dict):
-            for key, value in options:
+            for key, value in options.items():
                 item = f'<wired-item value"{str(key)}" role="option">{str(value)}</wired-item>'
                 innerhtml.append(item)
 
         return f"""<wired-combo>{"".join(innerhtml)}</wired-combo>"""
+
+    # @Phillipfr: Don't understand why this is nescessary. But get error if I don't do it.
+    @param.depends("options", watch=True)
+    def _set_class_(self):
+        if isinstance(self.options, list):
+            self.param.options.class_ = list
+        if isinstance(self.options, dict):
+            self.param.options.class_ = dict
 
 
 class Video(WebComponent):
@@ -548,13 +557,13 @@ class Video(WebComponent):
         """<wired-video autoplay="" playsinline="" muted="" loop="" style="height: 80%;" src="https://file-examples.com/wp-content/uploads/2017/04/file_example_MP4_480_1_5MG.mp4"></wired-video>"""
     )
     attributes_to_watch = param.Dict(
-        {"autoplay": "autoplay", "playsinline": "playsinline", "loop": "loop", "src": "src"}
+        {"autoplay": "autoplay", "playsinline": "playsinline", "loop": "loop", "src": "object"}
     )
 
     def __init__(self, min_height=250, margin=50, **params):
         super().__init__(min_height=min_height, **params)
 
-    src = param.String()
+    object = param.String(doc="""Currently only an url is supported""")
     autoplay = param.Boolean()
     playsinline = param.Boolean()
     muted = param.Boolean()
