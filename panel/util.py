@@ -19,11 +19,6 @@ try:  # python >= 3.3
 except ImportError:
     from collections import MutableSequence, MutableMapping
 
-try:
-    from html import escape as _escape
-except Exception:
-    from xml.sax.saxutils import quoteattr
-
 import param
 import numpy as np
 
@@ -31,6 +26,9 @@ datetime_types = (np.datetime64, dt.datetime, dt.date)
 
 if sys.version_info.major > 2:
     unicode = str
+    from html import escape as _escape
+else:
+    from xml.sax.saxutils import quoteattr
 
 
 html_escape_table = {
