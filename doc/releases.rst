@@ -1,6 +1,16 @@
 Releases
 ========
 
+
+Version 0.9.2
+-------------
+
+Date: 2020-03-21
+
+This is a minor release fixing an issue with recent versions of Tornado. It also fixes issue with the packages built on the PyViz conda channel.
+
+- Respect write-locks on synchronous Websocket events (`#1170 <https://github.com/holoviz/panel/pull/1170>`_)
+
 Version 0.9.2
 -------------
 
@@ -10,10 +20,10 @@ This is a minor release with a number of bug fixes. Many thanks to @ceball, @Gui
 
 Bug fixes:
 
-- Fix regression in DiscreteSlider layout (#1163)
-- Fix for saving as PNG which regressed due to changes in bokeh 2.0 (#1165)
-- Allow pn.serve to resolve Template instances returned by a function (#1167)
-- Ensure Template can render empty HoloViews pane (#1168)
+- Fix regression in DiscreteSlider layout (`#1163 <https://github.com/holoviz/panel/pull/1163>`_)
+- Fix for saving as PNG which regressed due to changes in bokeh 2.0 (`#1165 <https://github.com/holoviz/panel/pull/1165>`_)
+- Allow pn.serve to resolve Template instances returned by a function (`#1167 <https://github.com/holoviz/panel/pull/1167>`_)
+- Ensure Template can render empty HoloViews pane (`#1168 <https://github.com/holoviz/panel/pull/1168>`_)
 
 Version 0.9.1
 -------------
