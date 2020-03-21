@@ -72,7 +72,10 @@ def hold(doc, policy='combine'):
             doc.hold(policy)
         yield
     finally:
-        doc._hold = held
+        if held:
+            doc._hold = held
+        else:
+            doc.unhold()
 
 
 _DEFAULT_IGNORED_REPR = frozenset(['children', 'text', 'name', 'toolbar', 'renderers', 'below', 'center', 'left', 'right'])

@@ -720,7 +720,6 @@ class Reactive(Viewable):
         super(Reactive, self).__init__(**params)
         self._processing = False
         self._events = {}
-        self._changing = {}
         self._callbacks = []
         self._links = []
         self._link_params()
@@ -729,42 +728,37 @@ class Reactive(Viewable):
     # Callback API
     #----------------------------------------------------------------
 
-    def _update_model(self, model, msg):
+    def _update_model(self, events, msg, root, model, doc, comm):
         model.update(**msg)
 
+    def param_change(self, *events):
+        msgs = []
+        for event in events:
+            msg = self._process_param_change({event.name: event.new})
+            if msg:
+                msgs.append(msg)
+
+        events = {event.name: event for event in events}
+        msg = {k: v for msg in msgs for k, v in msg.items()}
+        if not msg:
+            return
+
+        for ref, (model, parent) in self._models.items():
+            if ref not in state._views:
+                continue
+            viewable, root, doc, comm = state._views[ref]
+            if comm or not doc.session_context or state._unblocked(doc):
+                with unlocked():
+                    self._update_model(events, msg, root, model, doc, comm)
+                if comm and 'embedded' not in root.tags:
+                    push(doc, comm)
+            else:
+                doc.add_next_tick_callback(cb)
+
     def _link_params(self):
-        def param_change(*events):
-            msgs = []
-            for event in events:
-                msg = self._process_param_change({event.name: event.new})
-                if msg:
-                    msgs.append(msg)
-
-            events = {event.name: event for event in events}
-            msg = {k: v for msg in msgs for k, v in msg.items()}
-            if not msg:
-                return
-
-            for ref, (model, parent) in self._models.items():
-                if ref not in state._views:
-                    continue
-                viewable, root, doc, comm = state._views[ref]
-
-                if comm or state._unblocked(doc):
-                    with unlocked():
-                        model.update(**msg)
-                    if comm and 'embedded' not in root.tags:
-                        push(doc, comm)
-                else:
-                    cb = lambda: model.update(msg)
-                    if doc.session_context:
-                        doc.add_next_tick_callback(cb)
-                    else:
-                        cb()
-
         params = self._synced_params()
         if params:
-            watcher = self.param.watch(param_change, params)
+            watcher = self.param.watch(self.param_change, params)
             self._callbacks.append(watcher)
 
     def _link_props(self, model, properties, doc, root, comm=None):
@@ -825,13 +819,9 @@ class Reactive(Viewable):
 
     def _cleanup(self, root):
         super(Reactive, self)._cleanup(root)
-
-        # Clean up comms
         ref = root.ref['id']
-        model, _ = self._models.pop(ref, (None, None))
-        if model is None:
-            return
-        comm, client_comm = self._comms.get(ref)
+        self._models.pop(ref, None)
+        comm, client_comm = self._comms.pop(ref, (None, None))
         if comm:
             try:
                 comm.close()
@@ -842,20 +832,6 @@ class Reactive(Viewable):
                 client_comm.close()
             except Exception:
                 pass
-
-        customjs = model.select({'type': CustomJS})
-        pattern = r"data\['comm_id'\] = \"(.*)\""
-        for js in customjs:
-            comm_ids = list(re.findall(pattern, js.code))
-            if not comm_ids:
-                continue
-            comm_id = comm_ids[0]
-            comm = state._comm_manager._comms.pop(comm_id, None)
-            if comm:
-                try:
-                    comm.close()
-                except Exception:
-                    pass
 
     #----------------------------------------------------------------
     # Public API

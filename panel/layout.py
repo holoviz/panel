@@ -62,35 +62,17 @@ class Panel(Reactive):
     #----------------------------------------------------------------
 
     def _update_model(self, events, msg, root, model, doc, comm=None):
-        filtered = {}
-        for k, v in msg.items():
-            try:
-                change = (
-                    k not in self._changing or self._changing[k] != v or
-                    self._changing['id'] != model.ref['id']
-                )
-            except Exception:
-                change = True
-            if change:
-                filtered[k] = v
-
-        if self._rename['objects'] in filtered:
+        msg = dict(msg)
+        if self._rename['objects'] in msg:
             old = events['objects'].old
-            filtered[self._rename['objects']] = self._get_objects(model, old, doc, root, comm)
+            msg[self._rename['objects']] = self._get_objects(model, old, doc, root, comm)
 
-        held = doc._hold
-        if comm is None and not held:
-            doc.hold()
-
-        model.update(**filtered)
-
-        from .io import state
-        ref = root.ref['id']
-        if ref in state._views:
-            state._views[ref][0]._preprocess(root)
-
-        if comm is None and not held:
-            doc.unhold()
+        with hold(doc):
+            model.update(**msg)
+            from .io import state
+            ref = root.ref['id']
+            if ref in state._views:
+                state._views[ref][0]._preprocess(root)
 
     #----------------------------------------------------------------
     # Model API
@@ -515,6 +497,9 @@ class GridBox(ListPanel):
         return model
 
     def _update_model(self, events, msg, root, model, doc, comm=None):
+        from .io import state
+
+        msg = dict(msg)
         if self._rename['objects'] in msg or 'ncols' in msg or 'nrows' in msg:
             if 'objects' in events:
                 old = events['objects'].old
@@ -524,18 +509,11 @@ class GridBox(ListPanel):
             children = self._get_children(objects, self.nrows, self.ncols)
             msg[self._rename['objects']] = children
 
-        held = doc._hold
-        if comm is None and not held:
-            doc.hold()
-        model.update(**{k: v for k, v in msg.items() if k not in ('nrows', 'ncols')})
-
-        from .io import state
-        ref = root.ref['id']
-        if ref in state._views:
-            state._views[ref][0]._preprocess(root)
-
-        if comm is None and not held:
-            doc.unhold()
+        with hold(doc):
+            model.update(**{k: v for k, v in msg.items() if k not in ('nrows', 'ncols')})
+            ref = root.ref['id']
+            if ref in state._views:
+                state._views[ref][0]._preprocess(root)
 
 
 
@@ -710,6 +688,7 @@ class Tabs(ListPanel):
     #----------------------------------------------------------------
 
     def _update_model(self, events, msg, root, model, doc, comm=None):
+        msg = dict(msg)
         if 'closable' in msg:
             closable = msg.pop('closable')
             for child in model.tabs:
