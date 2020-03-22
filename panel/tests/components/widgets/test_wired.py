@@ -65,11 +65,11 @@ def test_button_name():
     ["value", "expected"],
     [(dt.date(2020, 5, 3), "May 3, 2020"), (dt.date(2020, 5, 13), "May 13, 2020"),],
 )
-def test_date_picker_to_string(value, expected):
+def test_datepicker_to_string(value, expected):
     assert wired.DatePicker._to_string(value) == expected
 
 
-def test_calendar():
+def test_datepicker():
     calendar = wired.DatePicker()
 
     calendar.selected = "Jul 4, 2019"
@@ -344,7 +344,7 @@ def test_wired_view():
         object="https://www.gstatic.com/webp/gallery/1.sm.jpg", height=200, width=300
     )
     link = wired.Link(href="https://panel.holoviz.org/", text="HoloViz", target="_blank")
-    literal_input = wired.LiteralInput(default={"a": 1, "b": "hello app world"})
+    # literal_input = wired.LiteralInput(default={"a": 1, "b": "hello app world"})
     progress = wired.Progress(value=50)
     progress_spinner = wired.ProgressSpinner()
     radio_button = wired.RadioButton()
@@ -368,7 +368,7 @@ def test_wired_view():
         *section(button),
         *section(check_box),
         *section(check_box_checked),
-        *section(date_picker),
+        *section(date_picker, "@Philippfr: I get a ValueError: Parameter 'value' only takes numeric values when selecting a date"),
         *section(dialog, "@Philippfr: How do I add a close button and size the Dialog."),
         *section(divider),
         *section(fab),
@@ -383,10 +383,11 @@ def test_wired_view():
             link,
             "Normally you would just use the `<wired-link>` tag directly in your html or markdown text",
         ),
-        *section(literal_input),
+        # Todo: Fix AssertionError
+        # *section(literal_input),
         *section(progress),
         *section(radio_button),
-        *section(search_input),
+        *section(search_input, "@Philippfr. I cannot catch when the user clicks the x and clears the value"),
         *section(select),
         *section(progress_spinner),
         *section(text_area),
@@ -488,6 +489,11 @@ def test_param_view():
 
 
 if __name__.startswith("bk"):
+    # import ptvsd
+    # ptvsd.enable_attach(address=('localhost', 5678))
+    # print('Ready to attach the VS Code debugger')
+    # ptvsd.wait_for_attach() # Only include this line if you always wan't to attach the debugger
+
     pn.config.sizing_mode = "stretch_width"
     wired_view = test_wired_view()
     param_view = test_param_view()

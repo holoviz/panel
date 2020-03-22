@@ -233,7 +233,6 @@ class FloatSlider(WebComponent):
     end = param.Number(1.0)
     step = param.Number(0.1)
     value = param.Number(default=0.0)
-    orientation = param.String()
 
 class IconButton(WiredBase):
     html = param.String("<wired-icon-button><mwc-icon>favorite</mwc-icon><wired-icon-button>")
@@ -330,6 +329,10 @@ class LiteralInput(WiredBase):
        uses ast.literal_eval and 'json' uses json.loads and json.dumps.
     """)
 
+    def _set_type(self):
+        if not self.value:
+            class_ = (type,tuple)
+
 
 
     def _handle_properties_last_change(self, event):
@@ -407,10 +410,15 @@ class RadioButton(WebComponent):
 class SearchInput(WiredBase):
     html = param.String("<wired-search-input></wired-search-input>")
     attributes_to_watch = param.Dict({"placeholder": "placeholder", "autocomplete": "autocomplete"})
-    properties_to_watch = param.Dict({"value": "value"})
+    properties_to_watch = param.Dict({"textInput.value": "value"})
     events_to_watch = param.Dict({"input": None})
 
     def __init__(self, min_height=40, **params):
+        if "value" in params:
+            self.param.html.default = f'<wired-search-input value="{params["value"]}" style="width:100%;height:100%"></wired-search-input>'
+        elif self.param.value.default:
+            self.param.html.default = f'<wired-search-input value="{self.param.value.default}" style="width:100%;height:100%"></wired-search-input>'
+
         super().__init__(min_height=min_height, **params)
 
     placeholder = param.String("")
@@ -433,9 +441,10 @@ class ProgressSpinner(WebComponent):
         super().__init__(min_height=min_height, **params)
 
 class TextAreaInput(WiredBase):
+    component_type = param.String("inputgroup")
     html = param.String('<wired-textarea placeholder="Enter text"></wired-textarea>')
     attributes_to_watch = param.Dict({"placeholder": "placeholder"})
-    properties_to_watch = param.Dict({"value": "value", "rows": "rows", "maxlength": "max_length"})
+    properties_to_watch = param.Dict({"textareaInput.value": "value", "rows": "rows", "maxlength": "max_length"})
     events_to_watch = param.ObjectSelector(
         {"change": None},
         objects=[{"change": None}, {"input": None}],
@@ -453,6 +462,11 @@ class TextAreaInput(WiredBase):
     max_length = param.Integer(default=5000)
 
     def __init__(self, **params):
+        # if "value" in params:
+        #     self.param.html.default = f'<wired-textarea value="{params["value"]}"></wired-textarea>'
+        # elif self.param.value.default:
+        #     self.param.html.default = f'<wired-textarea value="{self.param.value.default}"></wired-textarea>'
+
         super().__init__(**params)
 
         if not "min_height" in params:
@@ -493,7 +507,7 @@ class TextInput(WiredBase):
         super().__init__(min_height=min_height, **params)
 
     placeholder = param.String(default="")
-    type_ = param.ObjectSelector("", objects=["", "number", "password"])
+    type_ = param.ObjectSelector("", objects=["", "password"])
     value = param.String()
     # start = param.Integer(None)
     # end = param.Integer(None)
