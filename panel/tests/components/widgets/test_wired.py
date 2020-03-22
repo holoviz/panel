@@ -295,7 +295,7 @@ def test_literal_input_value_to_client():
     assert literal_input.properties_last_change == {"textInput.value": "{'2': 2, 'b': 18}"}
 
 
-def test_view():
+def test_wired_view():
     js = """
 <script src="https://unpkg.com/@webcomponents/webcomponentsjs@2.2.7/webcomponents-loader.js"></script>
 <script src="https://wiredjs.com/dist/showcase.min.js"></script>
@@ -331,66 +331,69 @@ def test_view():
         return (title, component, pn.Param(component, parameters=parameters), pn.layout.Divider())
 
     button = wired.Button()
-    calendar = wired.DatePicker()
     check_box = wired.Checkbox()
     check_box_checked = wired.Checkbox(value=True)
-    combobox = wired.Select(
-        html="""<wired-combo id="colorCombo" selected="red" role="combobox" aria-haspopup="listbox" tabindex="0" class="wired-rendered" aria-expanded="false"><wired-item value="red" aria-selected="true" role="option" class="wired-rendered">Red</wired-item><wired-item value="green" role="option" class="wired-rendered">Green</wired-item><wired-item value="blue" role="option" class="wired-rendered">Blue</wired-item></wired-combo>"""
-    )
+    date_picker = wired.DatePicker()
     dialog = wired.Dialog(text="Lorum Ipsum. Panel is awesome!")
     divider = wired.Divider()
     fab = wired.Fab()
+    float_slider = wired.FloatSlider()
     icon_button = wired.IconButton()
+    int_slider = wired.IntSlider()
     image = wired.Image(
         object="https://www.gstatic.com/webp/gallery/1.sm.jpg", height=200, width=300
     )
     link = wired.Link(href="https://panel.holoviz.org/", text="HoloViz", target="_blank")
+    literal_input = wired.LiteralInput(default={"a": 1, "b": "hello app world"})
     progress = wired.Progress(value=50)
-    wired_input = wired.TextInput()
+    progress_spinner = wired.ProgressSpinner()
     radio_button = wired.RadioButton()
     search_input = wired.SearchInput()
-    spinner = wired.ProgressSpinner()
+    select = wired.Select(
+        html="""<wired-combo id="colorCombo" selected="red" role="combobox" aria-haspopup="listbox" tabindex="0" class="wired-rendered" aria-expanded="false"><wired-item value="red" aria-selected="true" role="option" class="wired-rendered">Red</wired-item><wired-item value="green" role="option" class="wired-rendered">Green</wired-item><wired-item value="blue" role="option" class="wired-rendered">Blue</wired-item></wired-combo>"""
+    )
     # @Philippfr: How do I avoid the the pn.Param(slider, parameters=["value"]) to turn red when
     # using the slider? It seems the value needs to be rounded?
-    float_slider = wired.FloatSlider(
-        html="""<wired-slider id="slider" value="33.1" knobradius="15" class="wired-rendered" style="margin: 0px">Slider Label</wired-slider>"""
-    )
     text_area = wired.TextAreaInput()
+    text_input = wired.TextInput()
     toggle = wired.Toggle()
     video = wired.Video(
         autoplay=True,
         loop=True,
         object="https://file-examples.com/wp-content/uploads/2017/04/file_example_MP4_480_1_5MG.mp4",
     )
-    section(combobox)
+    section(select)
     return pn.Column(
         js_pane,
         *section(button),
-        *section(calendar),
         *section(check_box),
         *section(check_box_checked),
-        *section(combobox),
+        *section(date_picker),
         *section(dialog, "@Philippfr: How do I add a close button and size the Dialog."),
         *section(divider),
         *section(fab),
-        *section(icon_button),
-        *section(image),
-        *section(wired_input),
-        *section(
-            link,
-            "Normally you would just use the `<wired-link>` tag directly in your html or markdown text",
-        ),
-        *section(progress),
-        *section(radio_button),
-        *section(search_input),
-        *section(spinner),
         *section(
             float_slider,
             "@Philippfr: Currently an error is raised because the slider value is not rounded to 1 decimal",
         ),
+        *section(icon_button),
+        *section(image),
+        *section(int_slider,),
+        *section(
+            link,
+            "Normally you would just use the `<wired-link>` tag directly in your html or markdown text",
+        ),
+        *section(literal_input),
+        *section(progress),
+        *section(radio_button),
+        *section(search_input),
+        *section(select),
+        *section(progress_spinner),
         *section(text_area),
+        *section(text_input),
         *section(toggle),
         *section(video),
+        name = "Wired View",
     )
 
 
@@ -443,10 +446,10 @@ def test_param_view():
         "y",
         "string_value",
         "num_int",
-        # "unbounded_int", # Todo: Add Feature Request for unbounded int to Wired
+        "unbounded_int", # Todo: Add Feature Request for unbounded int to Wired
         "float_with_hard_bounds",
         "float_with_soft_bounds",
-        # "unbounded_float", # Todo: Add Feature Request for unbounded int to
+        "unbounded_float", # Todo: Add Feature Request for unbounded int to
         "hidden_parameter",
         # "integer_range",  # Todo: Add Feature Request for Integer Range to Wired
         # "float_range",  # Todo: Add Feature Request for Float Range to Wired
@@ -480,10 +483,16 @@ def test_param_view():
             pn.Param(base, parameters=parameters),
             pn.Param(base, parameters=parameters, widgets=widgets),
         ),
+        name = "Param View",
     )
 
 
 if __name__.startswith("bk"):
     pn.config.sizing_mode = "stretch_width"
-    view = test_param_view()
-    view.servable()
+    wired_view = test_wired_view()
+    param_view = test_param_view()
+    app = pn.layout.Tabs(
+        wired_view,
+        param_view
+        )
+    app.servable()

@@ -66,6 +66,7 @@ class Checkbox(WiredBase):
         return f"<wired-checkbox>{params['name']}</wired-checkbox>"
 
 class DatePicker(WiredBase):
+    component_type = param.String("inputgroup")
     html = param.String(
         '<wired-calendar initials="" role="dialog tabindex="0">Button</wired-calendar>'
     )
@@ -100,7 +101,7 @@ class DatePicker(WiredBase):
     start = param.Date(default=None)
     end = param.Date(default=None)
 
-    def __init__(self, min_height=300, min_width=300, **params):
+    def __init__(self, min_height=340, min_width=300, **params):
         super().__init__(min_height=min_height, min_width=min_width, **params)
 
     @staticmethod
@@ -467,7 +468,7 @@ class TextAreaInput(WiredBase):
 
 
 class TextInput(WiredBase):
-    # component_type = param.String("inputgroup")
+    component_type = param.String("inputgroup")
     html = param.String("""<wired-input style="width:100%;height:100%"></wired-input>""")
     attributes_to_watch = param.Dict(
         {
@@ -512,6 +513,7 @@ class Toggle(WiredBase):
 class Select(WebComponent):
     # Todo: Implement api for added wired-combo-items to the innerhtml
     # Todo: The selected attribute/ parameter is not updated. Fix this
+    component_type = param.String("inputgroup")
     html = param.String("""<wired-combo></wired-combo>""")
     properties_to_watch = param.Dict({"selected": "value"})
     events_to_watch = param.Dict(default={"selected": "selects"})

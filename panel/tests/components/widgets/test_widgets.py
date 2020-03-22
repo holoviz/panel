@@ -21,9 +21,9 @@ PARAMETERS_NOT_TO_TEST = {
 
 ORIGINAL_NEW_LIST = [
     (pn.widgets.Button, wired.Button),
-    (pn.layout.Divider, wired.Divider),
     (pn.widgets.Checkbox, wired.Checkbox),
     (pn.widgets.DatePicker, wired.DatePicker),
+    (pn.layout.Divider, wired.Divider),
     (pn.widgets.FloatSlider, wired.FloatSlider),
     (pn.widgets.Button, wired.IconButton),
     (pn.pane.image.ImageBase, wired.Image),
