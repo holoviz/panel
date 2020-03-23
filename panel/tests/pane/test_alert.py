@@ -22,6 +22,14 @@ def test_alert_type_change(alert_type):
     alert.alert_type = alert_type
     assert set(alert.css_classes) == {"alert", f"alert-{alert_type}"}
 
+def test_existing_css_classes():
+    """Test that an alert can change alert_type"""
+    alert = Alert(text="This is some text", css_classes=["important"])
+    assert set(alert.css_classes) == {"alert", f"alert-{Alert.param.alert_type.default}", "important"}
+
+    alert.alert_type="info"
+    assert set(alert.css_classes) == {"alert", f"alert-info", "important"}
+
 
 def test_all_view():
     """Test that we can construct and view all Alerts"""
