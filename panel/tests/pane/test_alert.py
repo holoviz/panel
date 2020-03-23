@@ -36,7 +36,7 @@ def test_all_view():
         assert "alert" in alert.css_classes
         assert f"alert-{alert_type}" in alert.css_classes
 
-    return pn.Column(*alerts, sizing_mode="stretch_width", max_width=800,)
+    return pn.Column(*alerts, sizing_mode="stretch_width")
 
 
 if __name__.startswith("bk"):
