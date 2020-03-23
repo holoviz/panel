@@ -1,0 +1,35 @@
+.bk.card {
+    border: 1px solid rgba(0,0,0,.125);
+    border-radius: 0.25rem;
+}
+.bk.card-header {
+    padding: 0.75rem 1.25rem;
+    background-color: rgba(0, 0, 0, 0.03);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+    border-radius: 0.25rem;
+}
+.bk.card-body-hidden {
+  display: none;
+}
+h5.card-header {
+    margin: 0px;
+}
+.bk.card-panel-first {
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+}
+.bk.card-panel {
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.125);
+}
+.bk.flat button.bk.bk-btn, .bk.flat button.bk.bk-btn:hover {
+  border: none;
+  background-color: transparent;
+  font-weight: 500;
+  font-size: 1.25rem;;
+}
+.bk.card img{
+    border: 0.5px solid rgba(0,0,0,.125);
+    padding: 1px;
+}
