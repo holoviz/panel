@@ -8,6 +8,7 @@ images, equations etc.
 from __future__ import absolute_import, division, unicode_literals
 
 from .ace import Ace # noqa
+from .alert import Alert
 from .base import PaneBase, Pane, panel # noqa
 from .equation import LaTeX # noqa
 from .deckgl import DeckGL # noqa
