@@ -147,7 +147,7 @@ class DatePicker(Widget):
         msg = super(DatePicker, self)._process_property_change(msg)
         if 'value' in msg:
             if isinstance(msg['value'], string_types):
-                msg['value'] = datetime.date(datetime.strptime(msg['value'][4:], '%b %d %Y'))
+                msg['value'] = datetime.date(datetime.strptime(msg['value'], '%Y-%m-%d'))
         return msg
 
 
