@@ -61,31 +61,6 @@ class TestApp(Column):
 
         super().__init__(text, *args, **kwargs)
 
-def test_card():
-    """We test that we can create a card with
-
-    - A header with lightgray background
-    - A Body
-
-    And the card it self is full width responsive by default.
-    """
-
-    card = Card(header="Card - Header and Body", body=[TEXT], sizing_mode="stretch_width")
-    return TestApp(test_card, card, width=600, background="ghostwhite",)
-
-
-def test_card_fixed_width():
-    """We test that we can create a card with
-
-    - A header with lightgray background
-    - A Body
-
-    And the card it self is fixed to 300px
-    """
-    card = Card(header="Card - Fixed Width", body=[TEXT], width=300, sizing_mode="fixed",)
-    return TestApp(test_card_fixed_width, card, background="ghostwhite",)
-
-
 def _get_chart_data() -> pd.DataFrame:
     """## Chart Data
 
@@ -124,6 +99,30 @@ def _holoviews_chart():
     )
     return fig
 
+def test_card():
+    """We test that we can create a card with
+
+    - A header with lightgray background
+    - A Body
+    - A fixed width of 300px.
+
+    """
+
+    card = Card(header="Card - Header and Body", width=300, body=[TEXT])
+    return TestApp(test_card, card, width=600, background="ghostwhite",)
+
+
+def test_card_stretch_width():
+    """We test that we can create a card with
+
+    - A header with lightgray background
+    - A Body
+    - A sizing_mode of `stretch_width`
+    """
+    card = Card(header="Card - Fixed Width", body=[TEXT], sizing_mode="stretch_width",)
+    return TestApp(test_card_stretch_width, card, width=600, background="ghostwhite",)
+
+
 
 def test_card_with_plot():
     """We test that we can create a card with
@@ -131,7 +130,7 @@ def test_card_with_plot():
     - A header with lightgray background
     - A Plot Body
 
-    And the card it self is has a fixed width
+    And the card it self is has a fixed width or 600px
     """
     card = Card(header="Card With Plot", body=[_holoviews_chart()], width=600,)
     return TestApp(test_card_with_plot, card,)
@@ -205,7 +204,7 @@ def view() -> pn.Column:
         pn.layout.Divider(),
         test_card(),
         pn.layout.Divider(),
-        test_card_fixed_width(),
+        test_card_stretch_width(),
         pn.layout.Divider(),
         test_card_with_plot(),
         pn.layout.Divider(),
