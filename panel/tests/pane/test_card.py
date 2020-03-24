@@ -119,7 +119,7 @@ def test_card_stretch_width():
     - A Body
     - A sizing_mode of `stretch_width`
     """
-    card = Card(header="Card - Fixed Width", body=[TEXT], sizing_mode="stretch_width",)
+    card = Card(header="Card - Stretch Width", body=[TEXT], sizing_mode="stretch_width",)
     return TestApp(test_card_stretch_width, card, width=600, background="ghostwhite",)
 
 
@@ -192,6 +192,17 @@ def test_card_with_code():
     card = Card(header="Code", body=[pn.pane.Markdown(code)])
     return TestApp(test_card_with_code, card, width=600)
 
+def test_card_dynamic():
+    """We test that we can create a dynamic card, i.e.
+
+    - change header
+    - change body
+    - change collapsable
+
+    """
+    card = Card(header="Header", body=["World"])
+    return TestApp(test_card_dynamic, pn.Param(card, parameters=["header", "body", "collapsable"]), card, width=600)
+
 
 def view() -> pn.Column:
     """Wraps all tests in a Column that can be included in the Gallery or served independently
@@ -213,6 +224,8 @@ def view() -> pn.Column:
         test_card_collapsable(),
         pn.layout.Divider(),
         test_card_with_code(),
+        pn.layout.Divider(),
+        test_card_dynamic(),
         sizing_mode="stretch_width",
     )
 
