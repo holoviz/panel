@@ -4,7 +4,7 @@
 - https://disjfa.github.io/bootstrap-tricks/card-collapse-tricks/"""
 # @Philippfr. I'm not sure this is the way you would like a new layout/ a card implemented
 # Is there some better way to implement this? Custom Bokeh Model?
-# Maybe the layouts should be refactored into a layout folder and seperate files?
+# Maybe the layout.py file should be refactored into a layout folder and seperate files?
 from typing import List
 
 import param
@@ -45,8 +45,8 @@ class Card(Column):
             panels = params.pop("body")
         else:
             panels = self.param.body.default
-        if "collabsable" in params:
-            collapsable = params.pop("collabsable")
+        if "collapsable" in params:
+            collapsable = params.pop("collapsable")
         else:
             collapsable = self.param.collapsable.default
         if "header" in params:
