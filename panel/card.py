@@ -30,61 +30,29 @@ class Card(Column):
 
     _rename = {**Column._rename, "header": None, "body": None, "collapsable": None}
 
-    def __init__(
-        self,
-        **params,
-    ):
-        if "css_classes" not in params:
-            params["css_classes"] = []
-        if "card" not in params["css_classes"]:
-            params["css_classes"].append("card")
+    def __init__(self,**params,):
+        super().__init__(**params,)
 
-        if "body" in params:
-            panels = params.pop("body")
-        else:
-            panels = self.param.body.default
-        if "collapsable" in params:
-            collapsable = params.pop("collapsable")
-        else:
-            collapsable = self.param.collapsable.default
-        if "header" in params:
-            header = params.pop("header")
-        else:
-            header = self.param.header.default
+        self._update()
+        self.param.watch(self._update, ["header", "body", "collapsable"])
 
-        print(params)
-        # Due to https://github.com/holoviz/panel/issues/903 we have to insert the content into a
-        # column with relevant margin
+    def _update(self, event=None):
+        if not isinstance(self.css_classes, list):
+            self.css_classes = []
+        if not "card" in self.css_classes:
+            self.css_classes.append("card")
+
+        header = self.header
+        panels = self.body
+        collapsable = self.collapsable
         content = self._get_card_content(panels)
+
         if not collapsable:
-            header_pane = self.get_card_header(header)
-            super().__init__(
-                header_pane, content, **params,
-            )
-            return
+            header_row = self.get_card_header(header)
+        else:
+            header_row = self.get_collapsable_card_header(header, content)
+        self[:]=[header_row, content]
 
-        collapse_button = Button(
-            name="-", width=30, sizing_mode="stretch_height", css_classes=["flat"],
-        )
-
-        def click_callback(event,):
-            if event.new % 2 == 1:
-                self.remove(content)
-                collapse_button.name = "+"
-            elif event.new > 0:
-                self.append(content)
-                collapse_button.name = "-"
-
-        collapse_button.on_click(click_callback)
-        header_row = Row(
-            f'<h5 class="card-header"">{header}</h5>',
-            HSpacer(),
-            collapse_button,
-            css_classes=["card-header"],
-        )
-        super().__init__(
-            header_row, content, **params,
-        )
 
     def clone(self, *objects, **params):
         # Hack. See https://github.com/holoviz/panel/issues/1060
@@ -121,7 +89,7 @@ class Card(Column):
         return content
 
     @staticmethod
-    def get_card_header(text: str, **params,) -> HTML:
+    def get_card_header(text: str) -> HTML:
         """[summary]
 
         Arguments:
@@ -131,17 +99,36 @@ class Card(Column):
         Returns:
             HTML -- The header text as a HTML Pane
         """
-        if "css_classes" not in params:
-            params["css_classes"] = []
-        if "card-header" not in params["css_classes"]:
-            params["css_classes"].append("card-header")
-        if "sizing_mode" not in params and "width" not in params:
-            params["sizing_mode"] = "stretch_width"
-        if "margin" not in params:
-            params["margin"] = 0
+        params = {
+            "css_classes": ["card-header"],
+            "sizing_mode": "stretch_width",
+            "margin": 0,
+        }
         object_ = f'<h5 class="card-header"">{text}</h5>'
 
         return HTML(object_, **params,)
+
+    def get_collapsable_card_header(self, text: str, content: Viewable) -> Row:
+        collapse_button = Button(
+            name="-", width=30, sizing_mode="stretch_height", css_classes=["flat"],
+        )
+
+        def click_callback(event,):
+            if event.new % 2 == 1:
+                self.remove(content)
+                collapse_button.name = "+"
+            elif event.new > 0:
+                self.append(content)
+                collapse_button.name = "-"
+
+        collapse_button.on_click(click_callback)
+        header_row = Row(
+            f'<h5 class="card-header"">{text}</h5>',
+            HSpacer(),
+            collapse_button,
+            css_classes=["card-header"],
+        )
+        return header_row
 
     @staticmethod
     def get_card_panel(obj, **params,) -> Viewable:
