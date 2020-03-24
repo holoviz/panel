@@ -38,8 +38,6 @@ class Card(Column):
             params["css_classes"] = []
         if "card" not in params["css_classes"]:
             params["css_classes"].append("card")
-        if "sizing_mode" not in params and "width" not in params:
-            params["sizing_mode"] = "stretch_width"
 
         if "body" in params:
             panels = params.pop("body")
