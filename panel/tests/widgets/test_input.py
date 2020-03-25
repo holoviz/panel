@@ -38,8 +38,8 @@ def test_date_picker(document, comm):
     assert widget.min_date == '2018-09-01'
     assert widget.max_date == '2018-09-10'
 
-    widget.value = '2018-09-10'
-    date_picker._comm_change({'value': '2018-09-10'})
+    widget.value = '2018-09-03'
+    date_picker._comm_change({'value': '2018-09-03'})
     assert date_picker.value == date(2018, 9, 3)
 
     date_picker._comm_change({'value': date(2018, 9, 5)})
