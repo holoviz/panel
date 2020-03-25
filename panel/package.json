@@ -1,9 +1,12 @@
 {
-  "name": "panel",
-  "version": "0.0.1",
+  "name": "@holoviz/panel",
+  "version": "0.9.3",
   "description": "A high level dashboarding library for python visualization libraries.",
   "license": "BSD-3-Clause",
-  "repository": {},
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/holoviz/panel.git"
+  },
   "dependencies": {
     "@bokeh/bokehjs": "^2.0.0",
     "@types/gl-matrix": "^2.4.5",
@@ -13,5 +16,9 @@
     "@types/debounce": "^1.2.0",
     "@luma.gl/constants": "^8.0.3"
   },
-  "devDependencies": {}
+  "devDependencies": {},
+  "files": [
+    "dist/**/*.{js,js.map,d.ts,json}"
+  ],
+  "main": "dist/panel.min.js"
 }
