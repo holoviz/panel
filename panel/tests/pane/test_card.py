@@ -203,6 +203,28 @@ def test_card_dynamic():
     card = Card(header="Header", body=["World"])
     return TestApp(test_card_dynamic, pn.Param(card, parameters=["header", "body", "collapsable"]), card, width=600)
 
+def test_card_no_header():
+    """We test that when `header=None` then an empty header is shown.
+    and not a header with the text **None**."""
+    card = Card(
+        body = [
+                pn.Spacer(background='red',   sizing_mode='stretch_both'),
+                pn.Spacer(background='green', sizing_mode='stretch_both'),
+                pn.Spacer(background='blue',  sizing_mode='stretch_both'),
+        ],
+        height=300, width=200
+    )
+    card_collapsable = Card(
+        body = [
+                pn.Spacer(background='red',   sizing_mode='stretch_both'),
+                pn.Spacer(background='green', sizing_mode='stretch_both'),
+                pn.Spacer(background='blue',  sizing_mode='stretch_both'),
+        ],
+        collapsable=True,
+        height=300, width=200
+    )
+    return TestApp(test_card_no_header, card, card_collapsable, width=600)
+
 
 def view() -> pn.Column:
     """Wraps all tests in a Column that can be included in the Gallery or served independently
@@ -226,6 +248,8 @@ def view() -> pn.Column:
         test_card_with_code(),
         pn.layout.Divider(),
         test_card_dynamic(),
+        pn.layout.Divider(),
+        test_card_no_header(),
         sizing_mode="stretch_width",
     )
 
