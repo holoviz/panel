@@ -8,6 +8,7 @@ from . import pane # noqa
 from . import param # noqa
 from . import pipeline # noqa
 from . import widgets # noqa
+from . import card # noqa
 
 from .config import config, panel_extension as extension # noqa
 from .depends import depends # noqa

@@ -5,16 +5,15 @@
 # @Philippfr. I'm not sure this is the way you would like a new layout/ a card implemented
 # Is there some better way to implement this? Custom Bokeh Model?
 # Maybe the layout.py file should be refactored into a layout folder and seperate files?
-from typing import List
+from typing import List, Optional
 
 import param
 
+from panel.pane.base import panel
 from panel.layout import Column, HSpacer, Row
 from panel.pane import Markdown, HTML
 from panel.viewable import Viewable
 from panel.widgets.button import Button
-from panel import panel
-
 
 class Card(Column):
     """A Card inspired by the Bootstrap Card
@@ -89,7 +88,7 @@ class Card(Column):
         return content
 
     @staticmethod
-    def get_card_header(text: str) -> HTML:
+    def get_card_header(text: Optional[str]) -> HTML:
         """[summary]
 
         Arguments:
@@ -104,11 +103,13 @@ class Card(Column):
             "sizing_mode": "stretch_width",
             "margin": 0,
         }
+        if text is None:
+            text = ""
         object_ = f'<h5 class="card-header"">{text}</h5>'
 
         return HTML(object_, **params,)
 
-    def get_collapsable_card_header(self, text: str, content: Viewable) -> Row:
+    def get_collapsable_card_header(self, text: Optional[str], content: Viewable) -> Row:
         collapse_button = Button(
             name="-", width=30, sizing_mode="stretch_height", css_classes=["flat"],
         )
@@ -122,6 +123,8 @@ class Card(Column):
                 collapse_button.name = "-"
 
         collapse_button.on_click(click_callback)
+        if text is None:
+            text = ""
         header_row = Row(
             f'<h5 class="card-header"">{text}</h5>',
             HSpacer(),
