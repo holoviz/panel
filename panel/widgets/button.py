@@ -10,9 +10,6 @@ import param
 
 from bokeh.models import Button as _BkButton, Toggle as _BkToggle
 
-from ..config import config
-from ..io.notebook import get_comm_customjs
-from ..io.state import state
 from .base import Widget
 
 
@@ -34,27 +31,10 @@ class Button(_ButtonBase):
 
     _widget_type = _BkButton
 
-    def _link_clicks(self, model, doc, root, comm=None):
-        ref = root.ref['id']
-        if comm is None:
-            model.on_click(partial(self._server_click, doc, ref))
-        elif config.embed:
-            pass
-        else:
-            on_msg = partial(self._comm_change, ref=ref)
-            client_comm = state._comm_manager.get_client_comm(
-                on_msg=on_msg, on_error=partial(self._on_error, ref),
-                on_stdout=partial(self._on_stdout, ref)
-            )
-            customjs = get_comm_customjs(
-                'clicks', client_comm, ref, "value = 1;",
-                self._timeout, self._debounce
-            )
-            model.js_on_click(customjs)
-
     def _get_model(self, doc, root=None, parent=None, comm=None):
         model = super(Button, self)._get_model(doc, root, parent, comm)
-        self._link_clicks(model, doc, root or model, comm)
+        ref = (root or model).ref['id']
+        model.on_click(partial(self._server_click, doc, ref))
         return model
 
     def _server_click(self, doc, ref, event):

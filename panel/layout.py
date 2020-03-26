@@ -18,6 +18,7 @@ from bokeh.models import (
 )
 from bokeh.models.widgets import Tabs as BkTabs, Panel as BkPanel
 
+from .io.model import hold
 from .util import param_name, param_reprs
 from .viewable import Layoutable, Reactive
 
@@ -62,35 +63,17 @@ class Panel(Reactive):
     #----------------------------------------------------------------
 
     def _update_model(self, events, msg, root, model, doc, comm=None):
-        filtered = {}
-        for k, v in msg.items():
-            try:
-                change = (
-                    k not in self._changing or self._changing[k] != v or
-                    self._changing['id'] != model.ref['id']
-                )
-            except Exception:
-                change = True
-            if change:
-                filtered[k] = v
-
-        if self._rename['objects'] in filtered:
+        msg = dict(msg)
+        if self._rename['objects'] in msg:
             old = events['objects'].old
-            filtered[self._rename['objects']] = self._get_objects(model, old, doc, root, comm)
+            msg[self._rename['objects']] = self._get_objects(model, old, doc, root, comm)
 
-        held = doc._hold
-        if comm is None and not held:
-            doc.hold()
-
-        model.update(**filtered)
-
-        from .io import state
-        ref = root.ref['id']
-        if ref in state._views:
-            state._views[ref][0]._preprocess(root)
-
-        if comm is None and not held:
-            doc.unhold()
+        with hold(doc):
+            super(Panel, self)._update_model(events, msg, root, model, doc, comm)
+            from .io import state
+            ref = root.ref['id']
+            if ref in state._views:
+                state._views[ref][0]._preprocess(root)
 
     #----------------------------------------------------------------
     # Model API
@@ -515,6 +498,9 @@ class GridBox(ListPanel):
         return model
 
     def _update_model(self, events, msg, root, model, doc, comm=None):
+        from .io import state
+
+        msg = dict(msg)
         if self._rename['objects'] in msg or 'ncols' in msg or 'nrows' in msg:
             if 'objects' in events:
                 old = events['objects'].old
@@ -524,18 +510,12 @@ class GridBox(ListPanel):
             children = self._get_children(objects, self.nrows, self.ncols)
             msg[self._rename['objects']] = children
 
-        held = doc._hold
-        if comm is None and not held:
-            doc.hold()
-        model.update(**{k: v for k, v in msg.items() if k not in ('nrows', 'ncols')})
-
-        from .io import state
-        ref = root.ref['id']
-        if ref in state._views:
-            state._views[ref][0]._preprocess(root)
-
-        if comm is None and not held:
-            doc.unhold()
+        with hold(doc):
+            msg = {k: v for k, v in msg.items() if k not in ('nrows', 'ncols')}
+            super(Panel, self)._update_model(events, msg, root, model, doc, comm)
+            ref = root.ref['id']
+            if ref in state._views:
+                state._views[ref][0]._preprocess(root)
 
 
 
@@ -660,29 +640,25 @@ class Tabs(ListPanel):
     # Callback API
     #----------------------------------------------------------------
 
-    def _comm_change(self, msg, ref=None):
+    def _process_close(self, ref, attr, old, new):
         """
         Handle closed tabs.
         """
-        if 'tabs' in msg:
-            tab_refs = msg.pop('tabs')
-            model, _ = self._models.get(ref)
-            if model:
-                tabs = {t.ref['id']: i for i, t in enumerate(model.tabs)}
-                inds = [tabs[tref] for tref in tab_refs]
-                msg['tabs'] = [self.objects[i] for i in inds]
-        super(Tabs, self)._comm_change(msg)
+        model, _ = self._models.get(ref)
+        if model:
+            inds = [i for i, t in enumerate(model.tabs) if t in new]
+            old = self.objects
+            new = [old[i] for i in inds]
+        return old, new
+
+    def _comm_change(self, doc, ref, attr, old, new):
+        if attr == 'tabs':
+            old, new = self._process_close(ref, attr, old, new)
+        super(Tabs, self)._comm_change(doc, ref, attr, old, new)
 
     def _server_change(self, doc, ref, attr, old, new):
-        """
-        Handle closed tabs.
-        """
         if attr == 'tabs':
-            model, _ = self._models.get(ref)
-            if model:
-                inds = [i for i, t in enumerate(model.tabs) if t in new]
-                old = self.objects
-                new = [old[i] for i in inds]
+            old, new = self._process_close(ref, attr, old, new)
         super(Tabs, self)._server_change(doc, ref, attr, old, new)
 
     def _update_names(self, event):
@@ -710,6 +686,7 @@ class Tabs(ListPanel):
     #----------------------------------------------------------------
 
     def _update_model(self, events, msg, root, model, doc, comm=None):
+        msg = dict(msg)
         if 'closable' in msg:
             closable = msg.pop('closable')
             for child in model.tabs:
@@ -739,13 +716,16 @@ class Tabs(ListPanel):
         current_objects = list(self)
         panels = self._panels[root.ref['id']]
         for i, (name, pane) in enumerate(zip(self._names, self)):
-            if self.dynamic and i != self.active:
-                child = BkSpacer(**{k: v for k, v in pane.param.get_param_values()
-                                    if k in Layoutable.param})
-            elif pane in old_objects and id(pane) in pane._models:
+            hidden = self.dynamic and i != self.active
+            if (pane in old_objects and id(pane) in panels and
+                ((hidden and isinstance(panels[id(pane)].child, BkSpacer)) or
+                 (not hidden and not isinstance(panels[id(pane)].child, BkSpacer)))):
                 panel = panels[id(pane)]
                 new_models.append(panel)
                 continue
+            elif self.dynamic and i != self.active:
+                child = BkSpacer(**{k: v for k, v in pane.param.get_param_values()
+                                    if k in Layoutable.param})
             else:
                 try:
                     child = pane._get_model(doc, root, model, comm)

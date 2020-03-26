@@ -53,11 +53,13 @@ def test_link_properties_nb(document, comm):
 
     # Link property and check bokeh js property callback is defined
     obj._link_props(div, ['text'], document, div, comm)
-    assert 'change:text' in div.js_property_callbacks
+    assert 'text' in div._callbacks
 
-    # Assert CustomJS callback contains root id
-    customjs = div.js_property_callbacks['change:text'][0]
-    assert div.ref['id'] in customjs.code
+    # Assert callback is set up correctly
+    cb = div._callbacks['text'][0]
+    assert isinstance(cb, partial)
+    assert cb.args == (document, div.ref['id'])
+    assert cb.func == obj._comm_change
 
 
 def test_link_properties_server(document):

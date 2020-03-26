@@ -5,6 +5,9 @@ documents.
 from __future__ import absolute_import, division, unicode_literals
 
 import sys
+import uuid
+
+from functools import partial
 
 import param
 
@@ -14,11 +17,12 @@ from jinja2.environment import Template as _Template
 from six import string_types
 from pyviz_comms import JupyterCommManager as _JupyterCommManager
 
-from .config import panel_extension
+from .config import config, panel_extension
 from .io.model import add_to_doc
 from .io.notebook import render_template
 from .io.state import state
 from .layout import Column
+from .models.comm_manager import CommManager
 from .pane import panel as _panel, HTML, Str, HoloViews
 from .viewable import ServableMixin, Viewable
 from .widgets import Button
@@ -154,10 +158,29 @@ class Template(param.Parameterized, ServableMixin):
             state._comm_manager = _JupyterCommManager
         except Exception:
             pass
+
+        from IPython.display import display
+
         doc = _Document()
         comm = state._comm_manager.get_server_comm()
         self._init_doc(doc, comm, notebook=True)
-        return render_template(doc, comm)
+        ref = doc.roots[0].ref['id']
+        manager = CommManager(
+            comm_id=comm.id, plot_id=ref, name='comm_manager'
+        )
+        client_comm = state._comm_manager.get_client_comm(
+            on_msg=partial(self._on_msg, ref, manager),
+            on_error=partial(self._on_error, ref),
+            on_stdout=partial(self._on_stdout, ref)
+        )
+        manager.client_comm_id = client_comm.id
+        doc.add_root(manager)
+
+        if config.console_output != 'disable':
+            handle = display(display_id=uuid.uuid4().hex)
+            state._handles[ref] = (handle, [])
+
+        return render_template(doc, comm, manager)
 
     #----------------------------------------------------------------
     # Public API

@@ -12,5 +12,5 @@ def test_ace(document, comm):
     assert ace.language == "python"
 
     # Try changes
-    ace._comm_change({"value": "Hi there!"})
+    ace._process_events({"value": "Hi there!"})
     assert ace.value == "Hi there!"

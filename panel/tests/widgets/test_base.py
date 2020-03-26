@@ -84,7 +84,6 @@ def test_widget_triggers_events(document, comm):
     document.hold()
 
     # Simulate client side change
-    widget.value = '123'
     document._held_events = document._held_events[:-1]
 
     # Set new value

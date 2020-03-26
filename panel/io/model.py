@@ -4,6 +4,7 @@ Utilities for manipulating bokeh models.
 from __future__ import absolute_import, division, unicode_literals
 
 import textwrap
+from contextlib import contextmanager
 
 from bokeh.document import Document
 from bokeh.document.events import ColumnDataChangedEvent
@@ -60,6 +61,21 @@ def add_to_doc(obj, doc, hold=False):
     doc.add_root(obj)
     if doc._hold is None and hold:
         doc.hold()
+
+@contextmanager
+def hold(doc, policy='combine'):
+    held = doc._hold
+    try:
+        if policy is None:
+            doc.unhold()
+        else:
+            doc.hold(policy)
+        yield
+    finally:
+        if held:
+            doc._hold = held
+        else:
+            doc.unhold()
 
 
 _DEFAULT_IGNORED_REPR = frozenset(['children', 'text', 'name', 'toolbar', 'renderers', 'below', 'center', 'left', 'right'])
