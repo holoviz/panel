@@ -22,7 +22,7 @@ def test_float_slider(document, comm):
     assert widget.end == 0.5
     assert widget.value == 0.4
 
-    slider._comm_change({'value': 0.2})
+    slider._process_events({'value': 0.2})
     assert slider.value == 0.2
 
     slider.value = 0.3
@@ -41,7 +41,7 @@ def test_int_slider(document, comm):
     assert widget.end == 3
     assert widget.value == 1
 
-    slider._comm_change({'value': 2})
+    slider._process_events({'value': 2})
     assert slider.value == 2
 
     slider.value = 0
@@ -66,7 +66,7 @@ def test_range_slider(document, comm):
     assert widget.end == 3
     assert widget.value == (0, 3)
 
-    slider._comm_change({'value': (0, 2)})
+    slider._process_events({'value': (0, 2)})
     assert slider.value == (0, 2)
 
     slider.value = (0, 1)
@@ -88,11 +88,11 @@ def test_date_slider(document, comm):
 
     epoch = datetime(1970, 1, 1)
     widget.value = (datetime(2018, 9, 3)-epoch).total_seconds()*1000
-    date_slider._comm_change({'value': widget.value})
+    date_slider._process_events({'value': widget.value})
     assert date_slider.value == date(2018, 9, 3)
 
     # Test raw timestamp value:
-    date_slider._comm_change({'value': (datetime(2018, 9, 4)-epoch).total_seconds()*1000.0})
+    date_slider._process_events({'value': (datetime(2018, 9, 4)-epoch).total_seconds()*1000.0})
     assert date_slider.value == date(2018, 9, 4)
 
     date_slider.value = date(2018, 9, 6)
@@ -115,7 +115,7 @@ def test_date_range_slider(document, comm):
     epoch = datetime(1970, 1, 1)
     widget.value = ((datetime(2018, 9, 3)-epoch).total_seconds()*1000,
                     (datetime(2018, 9, 6)-epoch).total_seconds()*1000)
-    date_slider._comm_change({'value': widget.value})
+    date_slider._process_events({'value': widget.value})
     assert date_slider.value == (datetime(2018, 9, 3), datetime(2018, 9, 6))
 
     date_slider.value = (datetime(2018, 9, 4), datetime(2018, 9, 6))
@@ -140,7 +140,7 @@ def test_discrete_slider(document, comm):
     assert label.text == 'DiscreteSlider: <b>1</b>'
 
     widget.value = 2
-    discrete_slider._slider._comm_change({'value': 2})
+    discrete_slider._slider._process_events({'value': 2})
     assert discrete_slider.value == 10
 
     discrete_slider.value = 100
@@ -167,7 +167,7 @@ def test_discrete_date_slider(document, comm):
     assert label.text == 'DiscreteSlider: <b>2016-01-02</b>'
 
     widget.value = 2
-    discrete_slider._slider._comm_change({'value': 2})
+    discrete_slider._slider._process_events({'value': 2})
     assert discrete_slider.value == dates['2016-01-03']
 
     discrete_slider.value = dates['2016-01-01']
@@ -192,7 +192,7 @@ def test_discrete_slider_options_dict(document, comm):
     assert label.text == 'DiscreteSlider: <b>1</b>'
 
     widget.value = 2
-    discrete_slider._slider._comm_change({'value': 2})
+    discrete_slider._slider._process_events({'value': 2})
     assert discrete_slider.value == 10
 
     discrete_slider.value = 100

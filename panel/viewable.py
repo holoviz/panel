@@ -20,6 +20,7 @@ import param
 from bokeh.document.document import Document as _Document
 from bokeh.io import curdoc as _curdoc
 from pyviz_comms import JupyterCommManager
+from tornado import gen
 
 from .callbacks import PeriodicCallback
 from .config import config, panel_extension
@@ -467,21 +468,33 @@ class Viewable(Layoutable, ServableMixin):
         return render_mimebundle(model, doc, comm, manager)
 
     def _comm_change(self, doc, ref, attr, old, new):
+        if attr in self._changing:
+            self._changing.remove(attr)
+            return
+
         with hold(doc):
             self._process_events({attr: new})
 
     def _server_change(self, doc, ref, attr, old, new):
+        if attr in self._changing:
+            self._changing.remove(attr)
+            return
+
         state._locks.clear()
         self._events.update({attr: new})
         if not self._processing:
             self._processing = True
             if doc.session_context:
-                doc.add_timeout_callback(partial(self._change_event, doc), self._debounce)
+                doc.add_timeout_callback(partial(self._change_coroutine, doc), self._debounce)
             else:
                 self._change_event(doc)
 
     def _process_events(self, events):
         self.param.set_param(**self._process_property_change(events))
+
+    @gen.coroutine
+    def _change_coroutine(self, doc=None):
+        self._change_event(doc)
 
     def _change_event(self, doc=None):
         try:
@@ -721,13 +734,21 @@ class Reactive(Viewable):
         self._callbacks = []
         self._links = []
         self._link_params()
+        self._changing = []
 
     #----------------------------------------------------------------
     # Callback API
     #----------------------------------------------------------------
 
     def _update_model(self, events, msg, root, model, doc, comm):
-        model.update(**msg)
+        self._changing = [
+            attr for attr, value in msg.items()
+            if not model.lookup(attr).property.matches(getattr(model, attr), value)
+        ]
+        try:
+            model.update(**msg)
+        finally:
+            self._changing = []
 
     def param_change(self, *events):
         msgs = []

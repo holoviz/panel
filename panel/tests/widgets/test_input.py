@@ -19,7 +19,7 @@ def test_checkbox(document, comm):
     assert widget.active == [0]
 
     widget.active = []
-    checkbox._comm_change({'active': []})
+    checkbox._process_events({'active': []})
     assert checkbox.value == False
 
     checkbox.value = True
@@ -39,13 +39,13 @@ def test_date_picker(document, comm):
     assert widget.max_date == '2018-09-10'
 
     widget.value = '2018-09-03'
-    date_picker._comm_change({'value': '2018-09-03'})
+    date_picker._process_events({'value': '2018-09-03'})
     assert date_picker.value == date(2018, 9, 3)
 
-    date_picker._comm_change({'value': date(2018, 9, 5)})
+    date_picker._process_events({'value': date(2018, 9, 5)})
     assert date_picker.value == date(2018, 9, 5)
 
-    date_picker._comm_change({'value': date(2018, 9, 6)})
+    date_picker._process_events({'value': date(2018, 9, 6)})
     assert date_picker.value == date(2018, 9, 6)
 
     date_picker.value = date(2018, 9, 4)
@@ -59,7 +59,7 @@ def test_file_input(document, comm):
 
     assert isinstance(widget, BkFileInput)
 
-    file_input._comm_change({'mime_type': 'text/plain', 'value': 'U29tZSB0ZXh0Cg==', 'filename': 'testfile'})
+    file_input._process_events({'mime_type': 'text/plain', 'value': 'U29tZSB0ZXh0Cg==', 'filename': 'testfile'})
     assert file_input.value == b'Some text\n'
     assert file_input.mime_type == 'text/plain'
     assert file_input.accept == '.txt'
@@ -76,19 +76,19 @@ def test_literal_input(document, comm):
     assert widget.title == 'Literal'
     assert widget.value == '{}'
 
-    literal._comm_change({'value': "{'key': (0, 2)}"})
+    literal._process_events({'value': "{'key': (0, 2)}"})
     assert literal.value == {'key': (0, 2)}
     assert widget.title == 'Literal'
 
-    literal._comm_change({'value': "(0, 2)"})
+    literal._process_events({'value': "(0, 2)"})
     assert literal.value == {'key': (0, 2)}
     assert widget.title == 'Literal (wrong type)'
 
-    literal._comm_change({'value': "invalid"})
+    literal._process_events({'value': "invalid"})
     assert literal.value == {'key': (0, 2)}
     assert widget.title == 'Literal (invalid)'
 
-    literal._comm_change({'value': "{'key': (0, 3)}"})
+    literal._process_events({'value': "{'key': (0, 3)}"})
     assert literal.value == {'key': (0, 3)}
     assert widget.title == 'Literal'
 
@@ -122,7 +122,7 @@ def test_text_input(document, comm):
     assert widget.value == 'ABC'
     assert widget.title == 'Text:'
 
-    text._comm_change({'value': 'CBA'})
+    text._process_events({'value': 'CBA'})
     assert text.value == 'CBA'
 
     text.value = 'A'
@@ -140,19 +140,19 @@ def test_datetime_input(document, comm):
     assert widget.title == 'Datetime'
     assert widget.value == '2018-01-01 00:00:00'
 
-    dt_input._comm_change({'value': '2018-01-01 00:00:01'})
+    dt_input._process_events({'value': '2018-01-01 00:00:01'})
     assert dt_input.value == datetime(2018, 1, 1, 0, 0, 1)
     assert widget.title == 'Datetime'
 
-    dt_input._comm_change({'value': '2018-01-01 00:00:01a'})
+    dt_input._process_events({'value': '2018-01-01 00:00:01a'})
     assert dt_input.value == datetime(2018, 1, 1, 0, 0, 1)
     assert widget.title == 'Datetime (invalid)'
 
-    dt_input._comm_change({'value': '2018-01-11 00:00:00'})
+    dt_input._process_events({'value': '2018-01-11 00:00:00'})
     assert dt_input.value == datetime(2018, 1, 1, 0, 0, 1)
     assert widget.title == 'Datetime (out of bounds)'
 
-    dt_input._comm_change({'value': '2018-01-02 00:00:01'})
+    dt_input._process_events({'value': '2018-01-02 00:00:01'})
     assert dt_input.value == datetime(2018, 1, 2, 0, 0, 1)
     assert widget.title == 'Datetime'
 
