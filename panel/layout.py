@@ -512,7 +512,7 @@ class GridBox(ListPanel):
 
         with hold(doc):
             msg = {k: v for k, v in msg.items() if k not in ('nrows', 'ncols')}
-            super(GridBox, self)._update_model(events, msg, root, model, doc, comm)
+            super(Panel, self)._update_model(events, msg, root, model, doc, comm)
             ref = root.ref['id']
             if ref in state._views:
                 state._views[ref][0]._preprocess(root)
