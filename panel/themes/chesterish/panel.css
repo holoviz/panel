@@ -1,0 +1,36 @@
+/* Chesterish Theme*/
+body {
+    background-color: #323a48;
+    color: #b4bcde;
+}
+
+h1, h2, h3, h4, h5 {
+ color: #428bca !important;
+}
+
+.bk-root {
+    font-family: sans-serif;
+}
+
+.bk-root .bk-btn-default {
+    color: inherit;
+    background-color: inherit;
+    border-color: #b4bcde;
+  }
+  .bk-root .bk-btn-default:hover {
+    /* color: #1a2028; */
+    background-color: #373f4e; /* #27313d; */
+    /* border-color: #1a2028; */
+  }
+  .bk-root .bk-btn-default.bk-active {
+    background-color: #ebebeb;
+    border-color: #adadad;
+  }
+  .bk-root .bk-btn-default[disabled],
+  .bk-root .bk-btn-default[disabled]:hover,
+  .bk-root .bk-btn-default[disabled]:focus,
+  .bk-root .bk-btn-default[disabled]:active,
+  .bk-root .bk-btn-default[disabled].bk-active {
+    background-color: #e6e6e6;
+    border-color: #ccc;
+  }

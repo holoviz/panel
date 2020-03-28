@@ -1,0 +1,30 @@
+table.panel-df {
+    color: rgb(236,236,236);
+}
+.panel-df tbody tr:nth-child(odd) {
+    background: #3f495a;
+}
+.panel-df tbody tr {
+    background: #394251;
+   }
+.panel-df thead {
+    background: #27313d;
+    color: #bbc2e1;
+    border-bottom: 1px solid #27313d;
+    /* vertical-align: bottom; */
+}
+.panel-df tr:hover:nth-child(odd) {
+    background: #3d4757 !important;
+    /* cursor: pointer; */
+}
+.panel-df tr:hover {
+    background: #373f4e !important;
+    /* cursor: pointer; */
+}
+.panel-df thead tr:hover:nth-child(1) {
+    background-color: inherit !important;
+}
+
+.panel-df thead:hover {
+    background: #27313d !important;
+}

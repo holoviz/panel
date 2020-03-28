@@ -1,0 +1,25 @@
+/* Source https://github.com/MarcSkovMadsen/awesome-panel/blob/master/package/awesome_panel/express/assets/css/scrollbar_panel_express.css */
+/* Custom Scrollbar. See https://www.w3schools.com/howto/howto_css_custom_scrollbar.asp */
+/* width */
+::-webkit-scrollbar {
+    width: 10px;
+  }
+
+::-webkit-sc
+
+/* Track */
+::-webkit-scrollbar-track {
+  box-shadow: inset 0 0 1px grey;
+  border-radius: 1px;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: darkgrey;
+  border-radius: 1px;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: lightgrey;
+}

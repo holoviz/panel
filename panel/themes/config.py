@@ -13,7 +13,7 @@ import importlib
 import holoviews as hv
 
 ROOT_PATH = pathlib.Path(__file__).parent
-THEMES = ["default", "bootstrap", "angular_dark"]
+THEMES = ["default", "bootstrap", "angular_dark", "chesterish"]
 THEME = "default"
 
 class Theme(param.Parameterized):
