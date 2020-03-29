@@ -29,6 +29,5 @@ This is text
             self.button_danger,
             self.dataframe_pane,
             self.dataframe_widget,
-            height=800,
-            sizing_mode="stretch_width",
+            min_height=800,
         )
