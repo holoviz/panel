@@ -19,9 +19,7 @@ class Alert(Markdown):
 
     alert_type = param.ObjectSelector("primary", objects=ALERT_TYPES)
 
-    def __init__(
-        self, text: str, **kwargs,
-    ):
+    def __init__(self, text: str, **kwargs):
         """An Primary Alert that renders Markdown
 
         - CSS Styling is done via the classes `alert` and `alert-primary`.
@@ -35,9 +33,7 @@ class Alert(Markdown):
         if "sizing_mode" not in kwargs:
             kwargs["sizing_mode"] = "stretch_width"
 
-        super().__init__(
-            text, **kwargs,
-        )
+        super().__init__(text, **kwargs)
 
         self._set_css_classes()
 
