@@ -73,7 +73,11 @@ class _state(param.Parameterized):
     # Stores a set of locked Websockets, reset after every change event
     _locks = WeakSet()
 
+    # Indicators listening to the busy state
     _indicators = []
+
+    # Endpoints
+    _rest_endpoints = {}
 
     def __repr__(self):
         server_info = []
@@ -168,6 +172,11 @@ class _state(param.Parameterized):
     #----------------------------------------------------------------
     # Public Properties
     #----------------------------------------------------------------
+
+    def publish(self, endpoint, parameterized, input=None, output=None):
+        if output is None:
+            output = list(parameterized.param)
+        self._rest_endpoints[(self.curdoc, endpoint)] = (parameterized, input, output)
 
     @property
     def access_token(self):
