@@ -49,6 +49,8 @@ class _state(param.Parameterized):
     # Stores a set of locked Websockets, reset after every change event
     _locks = WeakSet()
 
+    _curdoc = None
+
     def __repr__(self):
         server_info = []
         for server, panel, docs in self._servers.values():

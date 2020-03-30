@@ -273,7 +273,7 @@ def edit_readonly(parameterized):
         p.constant = False
     try:
         yield
-    except:
+    except Exception:
         raise
     finally:
         for (p, readonly) in zip(params, readonlys):

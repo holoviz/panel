@@ -1,7 +1,5 @@
-"""In this module we test the Bokeh Location Model"""
-
-import pytest
 import panel as pn
+
 from panel.models.location import Location
 
 
@@ -35,13 +33,3 @@ def test_constructor_with__href():
     assert actual.search == ""
     assert actual.hash_ == ""
     assert actual.reload == True
-
-
-def test_manual():
-    bkmodel = pn.pane.Bokeh(Location())
-    app = pn.Column(bkmodel)
-    return app
-
-
-if __name__.startswith("bk"):
-    test_manual().servable()
