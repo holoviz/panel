@@ -3,23 +3,14 @@ Subclasses the bokeh serve commandline handler to extend it in various
 ways.
 """
 
-import argparse
 import ast
 import base64
 import logging # isort:skip
 import os
 
-from fnmatch import fnmatch
 from glob import glob
-from typing import List
 
-from bokeh.application import Application
 from bokeh.command.subcommands.serve import Serve as _BkServe
-from bokeh.command.util import build_single_handler_applications, die, report_server_init_errors
-from bokeh.server.auth_provider import AuthModule, NullAuth
-from bokeh.settings import settings
-from bokeh.util.logconfig import basicConfig
-from tornado.autoreload import watch
 from tornado.wsgi import WSGIContainer
 from tornado.web import FallbackHandler
 
@@ -100,12 +91,20 @@ class Serve(_BkServe):
             type    = str,
             help    = "A random string used to encode the user information."
         )),
-        ('--tranquilize', dict(
-            action = 'store_true',
-            help   = "Discover and serve tranquilized functions",
+        ('--rest-provider', dict(
+            action = 'store',
+            type   = str,
+            help   = "The interface to use to serve REST API"
+        )),
+        ('--rest-endpoint', dict(
+            action  = 'store',
+            type    = str,
+            help    = "Endpoint to store REST API on.",
+            default = 'rest'
         ))
     )
-
+    
+    
     def customize_kwargs(self, args, server_kwargs):
         '''Allows subclasses to customize ``server_kwargs``.
 
@@ -123,12 +122,21 @@ class Serve(_BkServe):
             static_dirs['panel_dist'] = os.path.join(os.path.dirname(os.path.split(__file__)[0]), 'dist')
             patterns += get_static_routes(static_dirs)
 
+        files = []
+        for f in args.files:
+            if args.glob:
+                files.extend(glob(f))
+            else:
+                files.append(f)
+
         # Handle tranquilized functions in the supplied functions
-        if args.tranquilize:
-            from ..io.tranquilize import build_single_handler_application
-            app = build_single_handler_application(files, args)
+        if args.rest_provider == 'tranquilizer':
+            from ..io.rest import build_tranquilize_application
+            app = build_tranquilize_application(files, args)
             tr = WSGIContainer(app)
-            patterns.append((r"^/rest/.*", FallbackHandler, dict(fallback=tr)))
+            patterns.append((r"^/%s/.*" % args.rest_endpoint, FallbackHandler, dict(fallback=tr)))
+        elif args.rest_provider is not None:
+            raise ValueError("rest-provider %r not recognized." % args.rest_provider)
 
         if args.oauth_provider:
             config.oauth_provider = args.oauth_provider
