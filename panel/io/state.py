@@ -20,8 +20,16 @@ class _state(param.Parameterized):
     apps to indicate their state to a user.
     """
 
+    cache = param.Dict(default={}, doc="""
+       Global location you can use to cache large datasets or expensive computation results
+       across multiple client sessions for a given server.""") 
+
     webdriver = param.Parameter(default=None, doc="""
       Selenium webdriver used to export bokeh models to pngs.""")
+
+    _curdoc = param.ClassSelector(class_=Document, doc="""
+        The bokeh Document for which a server event is currently being
+        processed.""")
 
     # Whether to hold comm events
     _hold = False
@@ -48,8 +56,6 @@ class _state(param.Parameterized):
 
     # Stores a set of locked Websockets, reset after every change event
     _locks = WeakSet()
-
-    _curdoc = None
 
     def __repr__(self):
         server_info = []

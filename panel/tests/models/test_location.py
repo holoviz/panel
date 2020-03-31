@@ -1,7 +1,4 @@
-import panel as pn
-
 from panel.models.location import Location
-
 
 def test_constructor():
     # When
