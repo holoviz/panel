@@ -44,6 +44,14 @@ Panel objects are reactive, immediately updating to reflect changes to their sta
 
 Panel can also be used with the separate [Param](https://param.pyviz.org) project to create interactively configurable objects with or without associated visualizations, in a fully declarative way. With this approach, you declare your configurable object using the pure-Python, zero-dependency `param` library, annotating your code with parameter ranges, documentation, and dependencies between parameters and your code.  Using this information, you can make all of your domain-specific code be optionally configurable in a GUI, with optional visual displays and debugging information if you like, all with just a few lines of declarations. With this approach, you don't ever have to commit to whether your code will be used in a notebook, in a GUI app, or completely behind the scenes in batch processing or reports -- the same code can support all of these cases equally well, once you declare the associated parameters and constraints. This approach lets you completely separate your domain-specific code from anything to do with web browsers, GUI toolkits, or other volatile technologies that would otherwise make your hard work become obsolete as they change over time.
 
+## Requirements
+
+Panel requires the pyviz labextension installed to be working in Jupyter Lab:
+
+```bash
+jupyter labextension install @pyviz/jupyterlab_pyviz
+```
+
 ## About HoloViz
 
 Panel is part of the HoloViz family of tools.  The [HoloViz website](https://holoviz.org) shows how to use Panel together with other libraries to solve complex problems, with detailed tutorials and examples. For a list of examples building on this set of tools (including Panel) see [examples.pyviz.org](https://examples.pyviz.org/)
