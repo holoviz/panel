@@ -19,6 +19,7 @@ from bokeh.models import (
 from bokeh.models.widgets import Tabs as BkTabs, Panel as BkPanel
 
 from .io.model import hold
+from .io.state import state
 from .util import param_name, param_reprs
 from .viewable import Layoutable, Reactive
 
@@ -190,6 +191,8 @@ class ListPanel(Panel):
         return super(ListPanel, self)._process_param_change(params)
 
     def _cleanup(self, root):
+        if root.ref['id'] in state._fake_roots:
+            state._fake_roots.remove(root.ref['id'])
         super(ListPanel, self)._cleanup(root)
         for p in self.objects:
             p._cleanup(root)
@@ -652,14 +655,17 @@ class Tabs(ListPanel):
         return old, new
 
     def _comm_change(self, doc, ref, attr, old, new):
-        if attr in self._changing:
-            self._changing.remove(attr)
+        if attr in self._changing.get(ref, []):
+            self._changing[ref].remove(attr)
             return
         if attr == 'tabs':
             old, new = self._process_close(ref, attr, old, new)
         super(Tabs, self)._comm_change(doc, ref, attr, old, new)
 
     def _server_change(self, doc, ref, attr, old, new):
+        if attr in self._changing.get(ref, []):
+            self._changing[ref].remove(attr)
+            return
         if attr == 'tabs':
             old, new = self._process_close(ref, attr, old, new)
         super(Tabs, self)._server_change(doc, ref, attr, old, new)

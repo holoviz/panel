@@ -469,16 +469,16 @@ class Viewable(Layoutable, ServableMixin):
         return render_mimebundle(model, doc, comm, manager)
 
     def _comm_change(self, doc, ref, attr, old, new):
-        if attr in self._changing:
-            self._changing.remove(attr)
+        if attr in self._changing.get(ref, []):
+            self._changing[ref].remove(attr)
             return
 
         with hold(doc):
             self._process_events({attr: new})
 
     def _server_change(self, doc, ref, attr, old, new):
-        if attr in self._changing:
-            self._changing.remove(attr)
+        if attr in self._changing.get(ref, []):
+            self._changing[ref].remove(attr)
             return
 
         state._locks.clear()
@@ -735,21 +735,21 @@ class Reactive(Viewable):
         self._callbacks = []
         self._links = []
         self._link_params()
-        self._changing = []
+        self._changing = {}
 
     #----------------------------------------------------------------
     # Callback API
     #----------------------------------------------------------------
 
     def _update_model(self, events, msg, root, model, doc, comm):
-        self._changing = [
+        self._changing[root.ref['id']] = [
             attr for attr, value in msg.items()
             if not model.lookup(attr).property.matches(getattr(model, attr), value)
         ]
         try:
             model.update(**msg)
         finally:
-            self._changing = []
+            del self._changing[root.ref['id']]
 
     def param_change(self, *events):
         msgs = []
@@ -764,7 +764,7 @@ class Reactive(Viewable):
             return
 
         for ref, (model, parent) in self._models.items():
-            if ref not in state._views:
+            if ref not in state._views or ref in state._fake_roots:
                 continue
             viewable, root, doc, comm = state._views[ref]
             if comm or not doc.session_context or state._unblocked(doc):
