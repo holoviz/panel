@@ -4,13 +4,13 @@ from panel.themes.theme_builder import (
     ColorScheme,
     CssGenerator,
     ThemeBuilder,
+    ComponentViewer,
     COLOR_SCHEMES,
     DEFAULT_CSS_GENERATOR,
     DARK_CSS_GENERATOR,
     PANEL_COLOR_SCHEME,
     ANGULAR_DARK_COLOR_SCHEME,
 )
-from panel.tests.themes.theme_test_app import ThemeTestApp
 
 
 def test_can_construct_with_css_generator():
@@ -70,5 +70,5 @@ if __name__.startswith("bokeh"):
     app = pn.Row(
             ThemeBuilder().view(max_width=400),
             pn.layout.VSpacer(width=25),
-            ThemeTestApp().view(),
+            ComponentViewer().view(),
         ).servable()

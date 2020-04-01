@@ -1,9 +1,13 @@
+"""In this module we provide a component to test template/ layout changes on all relevent layouts,
+panes and widgets"""
 import panel as pn
 import param
 
 import pandas as pd
 
-class ThemeTestApp(param.Parameterized):
+class ComponentViewer(param.Parameterized):
+    """a component to test template/ layout changes on all relevent layouts,
+panes and widgets"""
     def __init__(self, **params):
         super().__init__(**params)
 
@@ -17,6 +21,7 @@ class ThemeTestApp(param.Parameterized):
         self.dataframe_widget = pn.widgets.DataFrame(pd.DataFrame({"x": [1]*4, "y": ['y']*4}))
 
     def view(self):
+        """Returns the component view"""
         return pn.Column(
             """# Test App
 

@@ -1,4 +1,5 @@
-from panel.themes.utils import (
+"""In this module we test the functionality of the theme_builder module"""
+from panel.themes.theme_builder.color_utils import (
     rgb_to_hex,
     hex_to_rgb,
     rgb_to_hsl,

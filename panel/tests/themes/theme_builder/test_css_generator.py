@@ -3,13 +3,8 @@ import panel as pn
 from panel.themes.theme_builder import (
     CssGenerator,
     DarkCssGenerator,
-    DEFAULT_CSS_GENERATOR,
-    DARK_CSS_GENERATOR,
-    PANEL_COLOR_SCHEME,
     CHESTERISH_COLOR_SCHEME,
 )
-from panel.tests.themes.theme_test_app import ThemeTestApp
-
 
 def test_can_construct():
     """Can construct CssGenerator"""
@@ -42,6 +37,7 @@ def test_changing_color_updates_css():
     assert panel_css != generator.panel_css
 
 def test_can_change_color_scheme():
+    """Can change the color scheme"""
     # Given
     generator = DarkCssGenerator()
     panel_css = generator.panel_css
@@ -62,4 +58,6 @@ def test_can_change_color_scheme():
 
 if __name__.startswith("bokeh"):
     pn.config.sizing_mode = "stretch_width"
-    DarkCssGenerator(color_scheme=CHESTERISH_COLOR_SCHEME).view().servable()
+    app = DarkCssGenerator()
+    app.color_scheme.update(CHESTERISH_COLOR_SCHEME)
+    app.view().servable()
