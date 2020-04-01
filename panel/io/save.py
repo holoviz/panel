@@ -5,20 +5,15 @@ from __future__ import absolute_import, division, unicode_literals
 
 import io
 
-from contextlib import contextmanager
 from six import string_types
-
-import param
 
 from bokeh.document.document import Document
 from bokeh.embed import file_html
 from bokeh.io.export import export_png
-from bokeh.models import Div
 from bokeh.resources import CDN
 from pyviz_comms import Comm
 
 from ..config import config
-from ..models import HTML
 from .embed import embed_state
 from .model import add_to_doc
 from .state import state
