@@ -652,6 +652,9 @@ class Tabs(ListPanel):
         return old, new
 
     def _comm_change(self, doc, ref, attr, old, new):
+        if attr in self._changing:
+            self._changing.remove(attr)
+            return
         if attr == 'tabs':
             old, new = self._process_close(ref, attr, old, new)
         super(Tabs, self)._comm_change(doc, ref, attr, old, new)
