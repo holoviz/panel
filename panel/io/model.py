@@ -8,7 +8,7 @@ from contextlib import contextmanager
 
 from bokeh.document import Document
 from bokeh.document.events import ColumnDataChangedEvent
-from bokeh.models import Model, Box
+from bokeh.models import Box, ColumnDataSource, Model
 from bokeh.protocol import Protocol
 
 from .state import state
@@ -76,6 +76,22 @@ def hold(doc, policy='combine'):
             doc._hold = held
         else:
             doc.unhold()
+
+
+def patch_cds_msg(model, msg):
+    """
+    Required for handling messages containing JSON serialized typed
+    array from the frontend.
+    """
+    for event in msg.get('content', {}).get('events', []):
+        if event.get('kind') != 'ModelChanged' or event.get('attr') != 'data':
+            continue
+        cds = model.select_one({'id': event.get('model').get('id')})
+        if not isinstance(cds, ColumnDataSource):
+            continue
+        for col, values in event.get('new', {}).items():
+            if isinstance(values, dict):
+                event['new'][col] = [v for _, v in sorted(values.items())]
 
 
 _DEFAULT_IGNORED_REPR = frozenset(['children', 'text', 'name', 'toolbar', 'renderers', 'below', 'center', 'left', 'right'])
