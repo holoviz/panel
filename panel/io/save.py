@@ -10,7 +10,7 @@ from six import string_types
 from bokeh.document.document import Document
 from bokeh.embed import file_html
 from bokeh.io.export import export_png
-from bokeh.resources import CDN
+from bokeh.resources import CDN, INLINE
 from pyviz_comms import Comm
 
 from ..config import config
@@ -115,6 +115,15 @@ def save(panel, filename, title=None, resources=None, template=None,
         title = 'Panel'
     if resources is None:
         resources = CDN
+    elif isinstance(resources, str):
+        if resources.lower() == 'cdn':
+            resources = CDN
+        elif resources.lower() == 'inline':
+            resources = INLINE
+        else:
+            raise ValueError("Resources %r not recognized, specify one "
+                             "of 'CDN' or 'INLINE'." % resources)
+        
     if template:
         kwargs['template'] = template
     if template_variables:
