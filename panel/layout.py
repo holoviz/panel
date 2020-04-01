@@ -646,7 +646,7 @@ class Tabs(ListPanel):
         """
         model, _ = self._models.get(ref)
         if model:
-            inds = [i for i, t in enumerate(model.tabs) if t in new]
+            inds = [old.index(tab) for tab in new]
             old = self.objects
             new = [old[i] for i in inds]
         return old, new
