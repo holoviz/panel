@@ -6,11 +6,12 @@ Version 0.9.4
 
 Date: 2020-04-01
 
-This is a minor release fixing an issue with recent versions of Tornado. It also fixes issue with the packages built on the PyViz conda channel.
+This is a minor release fixing a number of regressions and compatibility issues which continue to crop up due to the upgrade to Bokeh 2.0 Additionally this release completely overhauls how communication in notebook environments are handled, eliminating the need to register custom callbacks with inlined JS callbacks to sync properties. Many thanks to the contributors to this release including @hyamanieu, @maximlt, @mattpap and the maintainer @philippjfr.
 
 Enhancements:
 
 - Switch to using CommManager in notebook hugely simplifying comms in notebooks and reducing the amount of inlined Javascript (`#1171 <https://github.com/holoviz/panel/pull/1171>`_)
+- Add ability to serve Flask apps directly using pn.serve (`#1215 <https://github.com/holoviz/panel/pull/1215>`_) 
 
 Bug fixes:
 
