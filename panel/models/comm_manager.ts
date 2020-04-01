@@ -77,7 +77,7 @@ export class CommManager extends Model {
 
   process_events() {
     // Iterates over event queue and sends events via Comm
-    if (this.document == null)
+    if ((this.document == null) || (this._client_comm == null))
       return
 	const message = Message.create('PATCH-DOC', {}, this.document.create_json_patch(this._event_buffer))
     this._client_comm.send(message)
