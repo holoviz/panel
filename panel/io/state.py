@@ -42,6 +42,9 @@ class _state(param.Parameterized):
     # An index of all currently active views
     _views = {}
 
+    # For templates to keep reference to their main root
+    _fake_roots = []
+
     # An index of all currently active servers
     _servers = {}
 

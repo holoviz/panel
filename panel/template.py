@@ -128,6 +128,7 @@ class Template(param.Parameterized, ServableMixin):
             model.name = name
             model.tags = tags
             add_to_doc(model, doc, hold=bool(comm))
+        state._fake_roots.append(ref)
         state._views[ref] = (col, preprocess_root, doc, comm)
 
         col._preprocess(preprocess_root)

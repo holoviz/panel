@@ -179,6 +179,8 @@ class PaneBase(Reactive):
 
     def _update_pane(self, *events):
         for ref, (_, parent) in self._models.items():
+            if ref not in state._views or ref in state._fake_roots:
+                continue
             viewable, root, doc, comm = state._views[ref]
             if comm or state._unblocked(doc):
                 with unlocked():
