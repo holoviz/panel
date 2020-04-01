@@ -5,20 +5,15 @@ from __future__ import absolute_import, division, unicode_literals
 
 import io
 
-from contextlib import contextmanager
 from six import string_types
-
-import param
 
 from bokeh.document.document import Document
 from bokeh.embed import file_html
 from bokeh.io.export import export_png
-from bokeh.models import Div
 from bokeh.resources import CDN
 from pyviz_comms import Comm
 
 from ..config import config
-from ..models import HTML
 from .embed import embed_state
 from .model import add_to_doc
 from .state import state
@@ -47,36 +42,6 @@ def save_png(model, filename):
     webdriver = state.webdriver
     export_png(model, filename=filename, webdriver=webdriver)
 
-
-@contextmanager
-def swap_html_model():
-    """
-    Temporary fix to swap HTML model for Div model during png export
-    to avoid issues with DOMParser compatibility in PhantomJS.
-
-    Can be removed when switching to chromedriver.
-    """
-
-    from ..viewable import Viewable
-
-    state._html_escape = False
-    swapped = []
-    for viewable in param.concrete_descendents(Viewable).values():
-        model = getattr(viewable, '_bokeh_model', None)
-        try:
-            swap_model = issubclass(model, HTML)
-            assert swap_model
-        except Exception:
-            continue
-        else:
-            viewable._bokeh_model = Div
-            swapped.append(viewable)
-    try:
-        yield
-    finally:
-        state._html_escape = True
-        for viewable in swapped:
-            viewable._bokeh_model = HTML
 
 #---------------------------------------------------------------------
 # Public API
@@ -130,8 +95,7 @@ def save(panel, filename, title=None, resources=None, template=None,
     doc = Document()
     comm = Comm()
     with config.set(embed=embed):
-        with swap_html_model():
-            model = panel.get_root(doc, comm)
+        model = panel.get_root(doc, comm)
         if embed:
             embed_state(
                 panel, model, doc, max_states, max_opts, embed_json,
