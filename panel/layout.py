@@ -646,12 +646,15 @@ class Tabs(ListPanel):
         """
         model, _ = self._models.get(ref)
         if model:
-            inds = [i for i, t in enumerate(model.tabs) if t in new]
+            inds = [old.index(tab) for tab in new]
             old = self.objects
             new = [old[i] for i in inds]
         return old, new
 
     def _comm_change(self, doc, ref, attr, old, new):
+        if attr in self._changing:
+            self._changing.remove(attr)
+            return
         if attr == 'tabs':
             old, new = self._process_close(ref, attr, old, new)
         super(Tabs, self)._comm_change(doc, ref, attr, old, new)
