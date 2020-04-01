@@ -25,7 +25,7 @@ from tornado import gen
 from .callbacks import PeriodicCallback
 from .config import config, panel_extension
 from .io.embed import embed_state
-from .io.model import add_to_doc, hold
+from .io.model import add_to_doc, hold, patch_cds_msg
 from .io.notebook import (
     ipywidget, push, render_mimebundle, render_model, show_embed, show_server
 )
@@ -219,7 +219,8 @@ class ServableMixin(object):
         """
         Handles Protocol messages arriving from the client comm.
         """
-        doc, comm = state._views[ref][2:]
+        root, doc, comm = state._views[ref][1:]
+        patch_cds_msg(root, msg)
         patch = manager.assemble(msg)
         held = doc._hold
         patch.apply_to_document(doc, comm.id)
