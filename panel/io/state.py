@@ -173,10 +173,45 @@ class _state(param.Parameterized):
     # Public Properties
     #----------------------------------------------------------------
 
-    def publish(self, endpoint, parameterized, input=None, output=None):
-        if output is None:
-            output = list(parameterized.param)
-        self._rest_endpoints[(self.curdoc, endpoint)] = (parameterized, input, output)
+    def _get_callback(self, endpoint):
+        _updating = {}
+        def link(*events):
+            event = events[0]
+            obj = event.cls if event.obj is None else event.obj
+            parameterizeds = self._rest_endpoints[endpoint][0]
+            if obj not in parameterizeds:
+                return
+            updating = _updating.get(id(obj), [])
+            values = {event.name: event.new for event in events
+                      if event.name not in updating}
+            if not values:
+                return
+            _updating[id(obj)] = list(values)
+            for parameterized in parameterizeds:
+                if parameterized in _updating:
+                    continue
+                try:
+                    parameterized.set_param(**values)
+                except Exception:
+                    raise
+                finally:
+                    if id(obj) in _updating:
+                        not_updated = [p for p in _updating[id(obj)] if p not in values]
+                        _updating[id(obj)] = not_updated
+        return link
+
+    def publish(self, endpoint, parameterized, parameters=None):
+        if parameters is None:
+            parameters = list(parameterized.param)
+        if endpoint in self._rest_endpoints:
+            parameterizeds, old_parameters, cb = self._rest_endpoints[endpoint]
+            if set(parameters) != set(old_parameters):
+                raise ValueError("Param REST API output parameters must match across sessions.")
+            parameterizeds.append(parameterized)
+        else:
+            cb = self._get_callback(endpoint)
+            self._rest_endpoints[endpoint] = ([parameterized], parameters, cb)
+        parameterized.param.watch(cb, parameters)
 
     @property
     def access_token(self):

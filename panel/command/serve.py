@@ -134,8 +134,8 @@ class Serve(_BkServe):
             app = build_tranquilize_application(files, args)
             tr = WSGIContainer(app)
             patterns.append((r"^/%s/.*" % args.rest_endpoint, FallbackHandler, dict(fallback=tr)))
-        elif arg.rest_provider == 'param':
-            extra_patterns.append((r"^/rest/.*", ParamHandler))
+        elif args.rest_provider == 'param':
+            patterns.append((r"^.*", ParamHandler))
         elif args.rest_provider is not None:
             raise ValueError("rest-provider %r not recognized." % args.rest_provider)
 
