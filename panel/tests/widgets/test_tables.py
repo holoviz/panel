@@ -4,12 +4,13 @@ import pytest
 
 try:
     import pandas as pd
+    from pandas.util.testing import makeTimeDataFrame
 except ImportError:
     pytestmark = pytest.mark.skip('pandas not available')
 
 from bokeh.models.widgets.tables import (
     NumberFormatter, IntEditor, NumberEditor, StringFormatter,
-    SelectEditor
+    SelectEditor, DateFormatter, DateEditor
 )
 
 from panel.widgets import DataFrame
@@ -38,6 +39,19 @@ def test_dataframe_widget(dataframe, document, comm):
     assert str_col.title == 'str'
     assert isinstance(float_col.formatter, StringFormatter)
     assert isinstance(float_col.editor, NumberEditor)
+
+
+def test_dataframe_widget_datetimes(document, comm):
+
+    table = DataFrame(makeTimeDataFrame())
+
+    model = table.get_root(document, comm)
+
+    dt_col, _, _, _, _ = model.columns
+
+    assert dt_col.title == 'index'
+    assert isinstance(dt_col.formatter, DateFormatter)
+    assert isinstance(dt_col.editor, DateEditor)
 
 
 def test_dataframe_editors(dataframe, document, comm):
