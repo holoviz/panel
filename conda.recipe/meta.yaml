@@ -28,6 +28,8 @@ requirements:
     {% for dep in sdata.get('install_requires',{}) %}
     - {{ dep }}
     {% endfor %}
+  run_constrained:
+    - holoviews >=1.13.2
 
 about:
   home: {{ sdata['url'] }}
