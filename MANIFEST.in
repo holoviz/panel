@@ -4,6 +4,7 @@ include panel/.version
 include panel/*.json
 include panel/assets/*.gif
 include panel/models/*.ts
+include panel/models/vtk/*.ts
 include panel/_templates/*.js
 include panel/_templates/*.html
 include panel/_styles/*.css
