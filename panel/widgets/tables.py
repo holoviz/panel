@@ -68,12 +68,13 @@ class DataFrame(Widget):
             elif kind == 'f':
                 formatter = NumberFormatter(format='0,0.0[00000]')
                 editor = NumberEditor()
-            elif isdatetime(data):
+            elif isdatetime(data) or kind == 'M':
                 formatter = DateFormatter(format='%Y-%m-%d %H:%M:%S')
                 editor = DateEditor()
             else:
                 formatter = StringFormatter()
                 editor = StringEditor()
+
             if col in self.editors:
                 editor = self.editors[col]
             if col in self.formatters:
