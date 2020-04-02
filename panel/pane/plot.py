@@ -166,3 +166,20 @@ class YT(HTML):
         if self.height is None: p["height"] = height
 
         return p
+
+
+class Folium(HTML):
+    """
+    The Folium pane wraps Folium map components.
+    """
+
+    sizing_mode = param.ObjectSelector(default='stretch_width', objects=[
+        'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
+        'scale_width', 'scale_height', 'scale_both', None])
+
+    priority = 0.6
+
+    @classmethod
+    def applies(cls, obj):
+        return (getattr(obj, '__module__', '').startswith('folium.') and
+                hasattr(obj, "_repr_html_"))
