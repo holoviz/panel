@@ -11,11 +11,11 @@ panes and widgets"""
     def __init__(self, **params):
         super().__init__(**params)
 
-        self.button_default = pn.widgets.Button(name="Click me")
-        self.button_primary = pn.widgets.Button(name="Click me", button_type="primary")
-        self.button_success = pn.widgets.Button(name="Click me", button_type="success")
-        self.button_warning = pn.widgets.Button(name="Click me", button_type="warning")
-        self.button_danger = pn.widgets.Button(name="Click me", button_type="danger")
+        self.button_default = pn.widgets.Button(name="DEFAULT")
+        self.button_primary = pn.widgets.Button(name="PRIMARY", button_type="primary")
+        self.button_success = pn.widgets.Button(name="SUCCESS", button_type="success")
+        self.button_warning = pn.widgets.Button(name="WARNING", button_type="warning")
+        self.button_danger = pn.widgets.Button(name="DANGER", button_type="danger")
 
         self.dataframe_pane = pn.pane.DataFrame(pd.DataFrame({"x": [1]*4, "y": ['y']*4}))
         self.dataframe_widget = pn.widgets.DataFrame(pd.DataFrame({"x": [1]*4, "y": ['y']*4}))

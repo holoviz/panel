@@ -5,14 +5,14 @@ import panel as pn
 EDITABLE_COLORS = [
     "primary",
     "secondary",
-    "success",
-    "info",
+    # "success",
+    # "info",
     "warning",
-    "danger",
-    "white",
+    # "danger",
+    # "white",
     "light",
     "dark",
-    "black",
+    # "black",
 ]
 READ_ONLY_COLORS = [
     "gray_100",
@@ -29,24 +29,31 @@ READ_ONLY_COLORS = [
 class ColorScheme(param.Parameterized):
     primary = param.Color(default="#0d6efd")
     secondary = param.Color(default="#6c757d")
-    success = param.Color(default="#28a745")
-    info = param.Color(default="#17a2b8")
+    # success = param.Color(default="#28a745")
+    # info = param.Color(default="#17a2b8")
     warning = param.Color(default="#ffc107")
-    danger = param.Color(default="#dc3545")
-    white = param.Color(default="#ffffff")
+    # danger = param.Color(default="#dc3545")
+    white = param.Color(default="#ffffff", constant=True)
     light = param.Color(default="#f8f9fa")
     dark = param.Color(default="#212529")
-    black = param.Color(default="#000000")
+    black = param.Color(default="#000000", constant=True)
 
-    gray_100 = param.Color(default="#f8f9fa", readonly=True)
-    gray_200 = param.Color(default="#e9ecef", readonly=True)
-    gray_300 = param.Color(default="#dee2e6", readonly=True)
-    gray_400 = param.Color(default="#ced4da", readonly=True)
-    gray_500 = param.Color(default="#adb5bd", readonly=True)
-    gray_600 = param.Color(default="#6c757d", readonly=True)
-    gray_700 = param.Color(default="#495057", readonly=True)
-    gray_800 = param.Color(default="#343a40", readonly=True)
-    gray_900 = param.Color(default="#212529", readonly=True)
+    text_primary = param.String("rgba(255,255,255, 1.0)")
+    secondary_text = param.String("rgba(255,255,255, 0.7)")
+    disabled_text = param.String("rgba(255,255,255, 0.5)")
+    dividers = param.String("rgba(255,255,255, 0.12)")
+    focused = param.String("rgba(255,255,255, 0.12)")
+
+    gray_50 = param.Color(default="#fafafa", readonly=True)
+    gray_100 = param.Color(default="#f5f5f5", readonly=True)
+    gray_200 = param.Color(default="#eeeeee", readonly=True)
+    gray_300 = param.Color(default="#e0e0e0", readonly=True)
+    gray_400 = param.Color(default="#bdbdbd", readonly=True)
+    gray_500 = param.Color(default="#9e9e9e", readonly=True)
+    gray_600 = param.Color(default="#757575", readonly=True)
+    gray_700 = param.Color(default="#616161", readonly=True)
+    gray_800 = param.Color(default="#424242", readonly=True)
+    gray_900 = param.Color(default="#212121", readonly=True)
 
     def view(self):
         return pn.Column(
@@ -60,10 +67,10 @@ class ColorScheme(param.Parameterized):
     def update(self, color_scheme):
         self.primary = color_scheme.primary
         self.secondary = color_scheme.secondary
-        self.success = color_scheme.success
-        self.info = color_scheme.info
+        # self.success = color_scheme.success
+        # self.info = color_scheme.info
         self.warning = color_scheme.warning
-        self.danger = color_scheme.danger
+        # self.danger = color_scheme.danger
         self.light = color_scheme.light
         self.dark = color_scheme.dark
 
@@ -74,7 +81,7 @@ CHESTERISH_COLOR_SCHEME = ColorScheme(
     primary="#B5C2D9",
     secondary="#8ecdc8",
     warning="#B00020",
-    danger="#B00020",
+    # danger="#B00020",
     light="#ececec",
     dark="#323a48",  # "#27313d",
 )
@@ -84,6 +91,7 @@ ANGULAR_DARK_COLOR_SCHEME = ColorScheme(
     name="Angular Dark",
     primary="#9c27b0",
     secondary="#69f0ae",
+    warning="#f44336",
     light="#ececec",
     dark="#303030",
 )
