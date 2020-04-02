@@ -110,10 +110,19 @@ performs a pip editable install of Panel.
 Developing custom models
 ------------------------
 
-If you are adding or editing a bokeh model, you can use `panel build
-panel` to build the javascript. The `build` command is just an alias
-for `bokeh build`; see the `Bokeh developer guide`_ for more
-information about developing bokeh models.
+Panel ships with a number of custom Bokeh models, which have both
+Python and Javascript components. When developing Panel these custom
+models have to be compiled. This happens automatically with `pip
+install -e .` or `python setup.py develop`, however when runnning
+actively developing you can rebuild the extension with `panel build
+panel`. The `build` command is just an alias for `bokeh build`; see
+the `Bokeh developer guide`_ for more information about developing
+bokeh models.
+
+Just like any other Javascript (or Typescript) library Panel defines a
+`package.json` and `package-lock.json` files. When adding, updating or
+removing a dependency in the package.json file ensure you commit the
+changes to the `package-lock.json` after running `npm install`.
 
 
 Next Steps
