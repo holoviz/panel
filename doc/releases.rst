@@ -1,6 +1,29 @@
 Releases
 ========
 
+Version 0.9.5
+-------------
+
+Date: 2020-04-03
+
+This release primarily focuses on improvements and additions to the documentation.
+
+Enhancements:
+
+- Add `Template.save` with ability to save to HTML and PNG but not embed (#1224)
+
+Bug fixes:
+
+- Fixed formatting of datetimes in `DataFrame` widget (#1221)
+- Add `panel/models/vtk/` subpackage to MANIFEST to ensure it is shipped with packages 
+
+Documentation:
+
+- Add guidance about developing custom models (#1220)
+- Add Folium example to gallery (#1189)
+- Add `FileDownload` and `FileInput` example to gallery (#1193)
+
+
 Version 0.9.4
 -------------
 
