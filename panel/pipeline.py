@@ -113,16 +113,18 @@ class Pipeline(param.Parameterized):
     The Pipeline layout consists of a number of sub-components:
 
     * header:
-      - title: The name of the current stage.
-      - error: A field to display the error state.
-      - network: A network diagram representing the pipeline.
-      - buttons: All navigation buttons and selectors.
-      - prev_button: The button to go to the previous stage.
-      - prev_selector: The selector widget to select between previous
-                       branching stages.
-      - next_button:   The button to go to the previous stage
-      - next_selector: The selector widget to select the next
-                       branching stages.
+
+      * title: The name of the current stage.
+      * error: A field to display the error state.
+      * network: A network diagram representing the pipeline.
+      * buttons: All navigation buttons and selectors.
+      * prev_button: The button to go to the previous stage.
+      * prev_selector: The selector widget to select between
+        previous branching stages.
+      * next_button: The button to go to the previous stage
+      * next_selector: The selector widget to select the next
+        branching stages.
+
     * stage: The contents of the current pipeline stage.
 
     By default any outputs of one stage annotated with the
@@ -140,19 +142,23 @@ class Pipeline(param.Parameterized):
         Whether to automatically advance if the ready parameter is True.""")
 
     debug = param.Boolean(default=False, doc="""
-        Whether to raise errors, useful for debugging while building an application.""")
+        Whether to raise errors, useful for debugging while building
+        an application.""")
 
     inherit_params = param.Boolean(default=True, doc="""
-        Whether parameters should be inherited between pipeline stages""")
+        Whether parameters should be inherited between pipeline
+        stages.""")
 
     next_parameter = param.String(default=None, doc="""
-        Parameter name to watch to switch between different branching stages""")
+        Parameter name to watch to switch between different branching
+        stages""")
 
     ready_parameter = param.String(default=None, doc="""
         Parameter name to watch to check whether a stage is ready.""")
 
     show_header = param.Boolean(default=True, doc="""
-        Whether to show the header with the title, network diagram, and buttons.""")
+        Whether to show the header with the title, network diagram,
+        and buttons.""")
 
     next = param.Action(default=lambda x: x.param.trigger('next'))
 

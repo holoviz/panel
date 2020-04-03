@@ -6,22 +6,22 @@ Version 0.9.5
 
 Date: 2020-04-03
 
-This release primarily focuses on improvements and additions to the documentation.
+This release primarily focuses on improvements and additions to the documentation. Many thanks to @MarcSkovMadsen, @philippjfr and @michaelaye for contributing to this release.
 
 Enhancements:
 
-- Add `Template.save` with ability to save to HTML and PNG but not embed (#1224)
+- Add `Template.save` with ability to save to HTML and PNG but not embed (`#1224 <https://github.com/holoviz/panel/pull/1224>`_)
 
 Bug fixes:
 
-- Fixed formatting of datetimes in `DataFrame` widget (#1221)
+- Fixed formatting of datetimes in `DataFrame` widget (`#1221 <https://github.com/holoviz/panel/pull/1221>`_)
 - Add `panel/models/vtk/` subpackage to MANIFEST to ensure it is shipped with packages 
 
 Documentation:
 
-- Add guidance about developing custom models (#1220)
-- Add Folium example to gallery (#1189)
-- Add `FileDownload` and `FileInput` example to gallery (#1193)
+- Add guidance about developing custom models (`#1220 <https://github.com/holoviz/panel/pull/1220>`_)
+- Add Folium example to gallery (`#1189 <https://github.com/holoviz/panel/pull/1189>`_))
+- Add `FileDownload` and `FileInput` example to gallery (`#1193 <https://github.com/holoviz/panel/pull/1193>`_))
 
 
 Version 0.9.4
@@ -153,7 +153,7 @@ Minor Enhancements:
 - Fixed HoloViews axis linking across `Template` roots (`#980 <https://github.com/holoviz/panel/issues/980>`_) [@philippjfr]
 - Merge FactorRange when linking HoloViews axes (`#968 <https://github.com/holoviz/panel/issues/968>`_) [@philippjfr]
 - Expose title and other kwargs on `.show()` (`#962 <https://github.com/holoviz/panel/issues/962>`_) [@philippjfr]
-- Let `FileInput` widget set filename (`#956 <https://github.com/holoviz/panel/issues/956.`_) [Leopold Talirz]
+- Let `FileInput` widget set filename (`#956 <https://github.com/holoviz/panel/issues/956>`_) [Leopold Talirz]
 - Expose further bokeh CLI commands and added help (`#951 <https://github.com/holoviz/panel/issues/951>`_) [@philippjfr]
 - Enable responsive sizing for `Vega`/altair pane (`#949 <https://github.com/holoviz/panel/issues/949>`_) [@philippjfr]
 - Added encode parameter to `SVG` pane (`#913 <https://github.com/holoviz/panel/issues/913>`_) [@philippjfr]
@@ -348,7 +348,7 @@ Major new features:
 * Added VTK 3D object pane (`#312 <https://github.com/holoviz/panel/issues/312>`_, `#337 <https://github.com/holoviz/panel/issues/337>`_, `#349 <https://github.com/holoviz/panel/issues/349>`_, `#355 <https://github.com/holoviz/panel/issues/355>`_, `#363 <https://github.com/holoviz/panel/issues/363>`_)
 * Added Ace code editor pane (`#359 <https://github.com/holoviz/panel/issues/359>`_)
 * Allow defining external JS and CSS resources via config, making it easier to extend Panel (`#330 <https://github.com/holoviz/panel/issues/330>`_)
-* Add HTML model capable of executing JS code, allowing more complex embedded items (`#32 <https://github.com/holoviz/panel/issues/32>`_6)
+* Add HTML model capable of executing JS code, allowing more complex embedded items (`#32 <https://github.com/holoviz/panel/issues/32>`_)
 * Add a KaTeX and MathJax based LaTeX pane, replacing the previous limited matplotlib/PNG-based support (`#311 <https://github.com/holoviz/panel/issues/311>`_)
 
 Other new features:

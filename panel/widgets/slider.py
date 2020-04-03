@@ -33,17 +33,19 @@ class _SliderBase(Widget):
 
     direction = param.ObjectSelector(default='ltr', objects=['ltr', 'rtl'],
                                      doc="""
-        Whether the slider should go from left-to-right ('ltr') or right-to-left ('rtl')""")
+        Whether the slider should go from left-to-right ('ltr') or
+        right-to-left ('rtl')""")
 
     orientation = param.ObjectSelector(default='horizontal',
                                        objects=['horizontal', 'vertical'], doc="""
-        Whether the slider should be oriented horizontally or vertically.""")
+        Whether the slider should be oriented horizontally or
+        vertically.""")
 
     show_value = param.Boolean(default=True, doc="""
-        Whether to show the widget value""")
+        Whether to show the widget value.""")
 
     tooltips = param.Boolean(default=True, doc="""
-        Whether the slider handle should display tooltips""")
+        Whether the slider handle should display tooltips.""")
 
     _widget_type = _BkSlider
 

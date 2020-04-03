@@ -95,8 +95,8 @@ class Param(PaneBase):
         underlying parameterized object.""")
 
     parameters = param.List(default=[], doc="""
-        If set this serves as a whitelist of parameters to display on the supplied
-        Parameterized object.""")
+        If set this serves as a whitelist of parameters to display on
+        the supplied Parameterized object.""")
 
     show_labels = param.Boolean(default=True, doc="""
         Whether to show labels for each widget""")

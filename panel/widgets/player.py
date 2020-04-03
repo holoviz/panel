@@ -17,10 +17,10 @@ class PlayerBase(Widget):
 
     loop_policy = param.ObjectSelector(default='once',
                                        objects=['once', 'loop', 'reflect'], doc="""
-       Policy used when player hits last frame""")
+        Policy used when player hits last frame""")
 
     step = param.Integer(default=1, doc="""
-       Number of frames to step forward and back by on each event.""")
+        Number of frames to step forward and back by on each event.""")
 
     height = param.Integer(default=80)
 

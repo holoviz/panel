@@ -31,7 +31,8 @@ class _MediaBase(Widget):
         The current timestamp""")
 
     throttle = param.Integer(default=250, doc="""
-        How frequently to sample the current playback time in milliseconds""")
+        How frequently to sample the current playback time in
+        milliseconds""")
 
     paused = param.Boolean(default=True, doc="""
         Whether the media is currently paused""")
@@ -160,8 +161,8 @@ class Progress(Widget):
 class FileDownload(Widget):
 
     auto = param.Boolean(default=True, doc="""
-       Whether to download on the initial click or allow for right-click
-       save as.""")
+        Whether to download on the initial click or allow for
+        right-click save as.""")
 
     button_type = param.ObjectSelector(default='default', objects=[
         'default', 'primary', 'success', 'warning', 'danger'])
@@ -176,9 +177,9 @@ class FileDownload(Widget):
         Whether to embed the file on initialization.""")
 
     file = param.Parameter(default=None, doc="""
-       The file, file-like object or file contents to transfer.
-       If the file is not pointing to a file on disk a filename must
-       also be provided.""")
+        The file, file-like object or file contents to transfer.  If
+        the file is not pointing to a file on disk a filename must
+        also be provided.""")
 
     filename = param.String(default=None, doc="""
         A filename which will also be the default name when downloading

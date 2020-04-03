@@ -80,7 +80,8 @@ class PaneBase(Reactive):
         be placed in.""")
 
     object = param.Parameter(default=None, doc="""
-        The object being wrapped, which will be converted to a Bokeh model.""")
+        The object being wrapped, which will be converted to a
+        Bokeh model.""")
 
     # When multiple Panes apply to an object, the one with the highest
     # numerical priority is selected. The default is an intermediate value.

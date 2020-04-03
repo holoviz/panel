@@ -137,6 +137,7 @@ extras_require = {
         'sphinx_holoviz_theme',
         'selenium',
         'phantomjs',
+        'graphviz',
         'lxml',
     ]
 }

@@ -531,10 +531,11 @@ class WidgetBox(ListPanel):
         CSS classes to apply to the layout.""")
 
     disabled = param.Boolean(default=False, doc="""
-       Whether the widget is disabled.""")
+        Whether the widget is disabled.""")
 
-    horizontal = param.Boolean(default=False, doc="""Whether to lay out the
-                    widgets in a Row layout as opposed to a Column layout.""")
+    horizontal = param.Boolean(default=False, doc="""
+        Whether to lay out the widgets in a Row layout as opposed 
+        to a Column layout.""")
 
     margin = param.Parameter(default=5, doc="""
         Allows to create additional space around the component. May
@@ -596,8 +597,8 @@ class Tabs(ListPanel):
 
     _js_transforms = {'tabs': """
     var ids = [];
-    for (t of value) {{ ids.push(t.id) }};
-    value = ids;
+    for (var t of value) {{ ids.push(t.id) }};
+    var value = ids;
     """}
 
     def __init__(self, *items, **params):
@@ -912,8 +913,7 @@ class GridSpec(Panel):
     objects = param.Dict(default={}, doc="""
         The dictionary of child objects that make up the grid.""")
 
-    mode = param.ObjectSelector(
-        default='warn', objects=['warn', 'error', 'override'], doc="""
+    mode = param.ObjectSelector(default='warn', objects=['warn', 'error', 'override'], doc="""
         Whether to warn, error or simply override on overlapping assignment.""")
 
     width = param.Integer(default=600)
