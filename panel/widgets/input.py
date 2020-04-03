@@ -164,16 +164,16 @@ class ColorPicker(Widget):
 class Spinner(Widget):
 
     start = param.Number(default=None, doc="""
-        Optional minimum allowable value""")
+        Optional minimum allowable value.""")
 
     end = param.Number(default=None, doc="""
-        Optional maximum allowable value""")
+        Optional maximum allowable value.""")
 
     value = param.Number(default=0, doc="""
-        The initial value of the spinner""")
+        The initial value of the spinner.""")
 
     step = param.Number(default=1, doc="""
-        The step added or subtracted to the current value""")
+        The step added or subtracted to the current value.""")
 
     _widget_type = _BkSpinner
 

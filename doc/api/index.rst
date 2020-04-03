@@ -19,7 +19,7 @@ Panel subpackages
  Panel layout components
 `pane`_
  Panel layout components
-`pane`_
+`param`_
  Components for integration with the param library
 `pipeline`_
  Panel Pipeline component

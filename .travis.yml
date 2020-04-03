@@ -119,7 +119,7 @@ jobs:
         - pip install pydeck sphinxcontrib-napoleon
         # note: will vastly simplified in a future version of nbsite
         - nbsite generate-rst --org pyviz --project-name panel
-        - python ./doc/generate_modules.py panel -d ./doc/api -n panel -e tests -e depends -e command -e compiler -e links -e interact -e config -e callbacks -e cli
+        - python ./doc/generate_modules.py panel -d ./doc/api -n panel -e tests
         - nbsite build --what=html --output=builtdocs
         - touch ./builtdocs/.nojekyll
       deploy:

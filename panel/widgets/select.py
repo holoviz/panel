@@ -314,13 +314,16 @@ class ToggleGroup(Select):
     A ToggleGroup is a group of widgets which can be switched 'on' or 'off'.
 
     Two types of widgets are available through the widget_type argument :
-        - 'button' (default)
-        - 'box'
+        * `'button'` (default)
+        * `'box'`
 
     Two different behaviors are available through behavior argument:
-        - 'check' (default) : Any number of widgets can be selected. In this case value is a 'list' of objects
-        - 'radio' : One and only one widget is switched on. In this case value is an 'object'
-
+        * 'check' (default) : boolean
+           Any number of widgets can be selected. In this case value
+           is a 'list' of objects.
+        * 'radio' : boolean
+           One and only one widget is switched on. In this case value
+           is an 'object'.
     """
 
     _widgets_type = ['button', 'box']
@@ -359,25 +362,26 @@ class CrossSelector(CompositeWidget, MultiSelect):
     """
 
     width = param.Integer(default=600, allow_None=True, doc="""
-       The number of options shown at once (note this is the
-       only way to control the height of this widget)""")
+        The number of options shown at once (note this is the
+        only way to control the height of this widget)""")
 
     height = param.Integer(default=200, allow_None=True, doc="""
-       The number of options shown at once (note this is the
-       only way to control the height of this widget)""")
+        The number of options shown at once (note this is the
+        only way to control the height of this widget)""")
 
     filter_fn = param.Callable(default=re.search, doc="""
-       The filter function applied when querying using the text fields,
-       defaults to re.search. Function is two arguments, the query or
-       pattern and the item label.""")
+        The filter function applied when querying using the text
+        fields, defaults to re.search. Function is two arguments, the
+        query or pattern and the item label.""")
 
     size = param.Integer(default=10, doc="""
-       The number of options shown at once (note this is the
-       only way to control the height of this widget)""")
+        The number of options shown at once (note this is the only way
+        to control the height of this widget)""")
 
-    definition_order = param.Integer(default=True, doc=""" Whether to
-       preserve definition order after filtering. Disable to allow the
-       order of selection to define the order of the selected list.""")
+    definition_order = param.Integer(default=True, doc="""
+       Whether to preserve definition order after filtering. Disable
+       to allow the order of selection to define the order of the
+       selected list.""")
 
     def __init__(self, **params):
         super(CrossSelector, self).__init__(**params)

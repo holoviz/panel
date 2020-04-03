@@ -75,8 +75,8 @@ class FileSelector(CompositeWidget):
         a period).""")
 
     size = param.Integer(default=10, doc="""
-       The number of options shown at once (note this is the
-       only way to control the height of this widget)""")
+        The number of options shown at once (note this is the only
+        way to control the height of this widget)""")
 
     value = param.List(default=[], doc="""
         List of selected files.""")

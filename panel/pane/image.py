@@ -30,12 +30,12 @@ class ImageBase(DivPaneBase):
     """
 
     alt_text = param.String(default=None, doc="""
-       alt text to add to the image tag. The alt text is shown when a
-       user cannot load or display the image.""")
+        alt text to add to the image tag. The alt text is shown when a
+        user cannot load or display the image.""")
 
     link_url = param.String(default=None, doc="""
-       A link URL to make the image clickable and link to some other
-       website.""")
+        A link URL to make the image clickable and link to some other
+        website.""")
 
     embed = param.Boolean(default=True, doc="""
         Whether to embed the image as base64.""")
