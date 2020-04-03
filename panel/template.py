@@ -20,6 +20,7 @@ from pyviz_comms import JupyterCommManager as _JupyterCommManager
 from .config import config, panel_extension
 from .io.model import add_to_doc
 from .io.notebook import render_template
+from .io.save import save
 from .io.state import state
 from .layout import Column
 from .models.comm_manager import CommManager
@@ -67,7 +68,10 @@ class Template(param.Parameterized, ServableMixin):
     def __init__(self, template=None, items=None, nb_template=None, **params):
         super(Template, self).__init__(**params)
         if isinstance(template, string_types):
+            self._code = template
             template = _Template(template)
+        else:
+            self._code = None
         self.template = template
         if isinstance(nb_template, string_types):
             nb_template = _Template(nb_template)
@@ -244,3 +248,58 @@ class Template(param.Parameterized, ServableMixin):
           The Bokeh document the panel was attached to
         """
         return self._init_doc(doc, title=title)
+
+    def save(self, filename, title=None, resources=None, embed=False,
+             max_states=1000, max_opts=3, embed_json=False,
+             json_prefix='', save_path='./', load_path=None):
+        """
+        Saves Panel objects to file.
+
+        Arguments
+        ---------
+        filename: string or file-like object
+           Filename to save the plot to
+        title: string
+           Optional title for the plot
+        resources: bokeh resources
+           One of the valid bokeh.resources (e.g. CDN or INLINE)
+        embed: bool
+           Whether the state space should be embedded in the saved file.
+        max_states: int
+           The maximum number of states to embed
+        max_opts: int
+           The maximum number of states for a single widget
+        embed_json: boolean (default=True)
+           Whether to export the data to json files
+        json_prefix: str (default='')
+           Prefix for the auto-generated json directory
+        save_path: str (default='./')
+           The path to save json files to
+        load_path: str (default=None)
+           The path or URL the json files will be loaded from.
+        """
+        if embed:
+            raise ValueError("Embedding is not yet supported on Template.")
+        return save(self, filename, title, resources, self.template,
+                    self._render_variables, embed, max_states, max_opts,
+                    embed_json, json_prefix, save_path, load_path)
+
+    def select(self, selector=None):
+        """
+        Iterates over the Template and any potential children in the
+        applying the Selector.
+
+        Arguments
+        ---------
+        selector: type or callable or None
+          The selector allows selecting a subset of Viewables by
+          declaring a type or callable function to filter by.
+
+        Returns
+        -------
+        viewables: list(Viewable)
+        """
+        objects = []
+        for obj, _ in self._render_items.values():
+            objects += obj.select(selector)
+        return objects

@@ -4,8 +4,12 @@ Defines utilities to save panel objects to files as HTML or PNG.
 from __future__ import absolute_import, division, unicode_literals
 
 import io
+import os
 
 from six import string_types
+from tempfile import NamedTemporaryFile
+
+import bokeh
 
 from bokeh.document.document import Document
 from bokeh.embed import file_html
@@ -23,8 +27,7 @@ from .state import state
 # Private API
 #---------------------------------------------------------------------
 
-
-def save_png(model, filename):
+def save_png(model, filename, template=None, template_variables=None):
     """
     Saves a bokeh model to png
 
@@ -34,13 +37,33 @@ def save_png(model, filename):
       Model to save to png
     filename: str
       Filename to save to
+    template:
+      template file, as used by bokeh.file_html. If None will use bokeh defaults
+    template_variables:
+      template_variables file dict, as used by bokeh.file_html
     """
     from bokeh.io.webdriver import webdriver_control
     if not state.webdriver:
         state.webdriver = webdriver_control.create()
 
     webdriver = state.webdriver
-    export_png(model, filename=filename, webdriver=webdriver)
+
+    try:
+        if template:
+            def get_layout_html(obj, resources, width, height):
+                return file_html(
+                    obj, resources, title="", template=template,
+                    template_variables=template_variables,
+                    suppress_callback_warning=True, _always_new=True
+                )
+            old_layout_fn = bokeh.io.export.get_layout_html
+            bokeh.io.export.get_layout_html = get_layout_html
+        export_png(model, filename=filename, webdriver=webdriver)
+    except:
+        raise
+    finally:
+        if template:
+            bokeh.io.export.get_layout_html = old_layout_fn
 
 
 #---------------------------------------------------------------------
@@ -86,27 +109,38 @@ def save(panel, filename, title=None, resources=None, template=None,
       Whether to report progress
     """
     from ..pane import PaneBase
+    from ..template import Template
 
     if isinstance(panel, PaneBase) and len(panel.layout) > 1:
         panel = panel.layout
 
     as_png = isinstance(filename, string_types) and filename.endswith('png')
 
-    doc = Document()
+    if isinstance(panel, Document):
+        doc = panel
+    else:
+        doc = Document()
+
     comm = Comm()
     with config.set(embed=embed):
-        model = panel.get_root(doc, comm)
-        if embed:
-            embed_state(
-                panel, model, doc, max_states, max_opts, embed_json,
-                json_prefix, save_path, load_path, progress
-            )
+        if isinstance(panel, Document):
+            model = panel
+        elif isinstance(panel, Template):
+            panel._init_doc(doc, title=title)
+            model = doc
         else:
-            add_to_doc(model, doc, True)
+            model = panel.get_root(doc, comm)
+            if embed:
+                embed_state(
+                    panel, model, doc, max_states, max_opts, embed_json,
+                    json_prefix, save_path, load_path, progress
+                )
+            else:
+                add_to_doc(model, doc, True)
 
     if as_png:
-        save_png(model, filename=filename)
-        return
+        return save_png(model, filename=filename, template=template,
+                        template_variables=template_variables)
     elif isinstance(filename, string_types) and not filename.endswith('.html'):
         filename = filename + '.html'
 
