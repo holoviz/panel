@@ -4,10 +4,8 @@ Defines utilities to save panel objects to files as HTML or PNG.
 from __future__ import absolute_import, division, unicode_literals
 
 import io
-import os
 
 from six import string_types
-from tempfile import NamedTemporaryFile
 
 import bokeh
 
@@ -59,7 +57,7 @@ def save_png(model, filename, template=None, template_variables=None):
             old_layout_fn = bokeh.io.export.get_layout_html
             bokeh.io.export.get_layout_html = get_layout_html
         export_png(model, filename=filename, webdriver=webdriver)
-    except:
+    except Exception:
         raise
     finally:
         if template:
