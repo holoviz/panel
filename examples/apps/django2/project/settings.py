@@ -12,11 +12,10 @@ https://docs.djangoproject.com/en/2.0/ref/settings/
 
 import os
 
-from bokeh.settings import bokehjsdir
+from bokeh.settings import bokehjsdir, settings
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.0/howto/deployment/checklist/
@@ -123,3 +122,7 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 STATICFILES_DIRS = [bokehjsdir()]
+
+# Ensure that bokeh resources are loaded from CDN
+# (loading from server broken as of Bokeh 2.0.1 so only CDN and INLINE will work)
+settings.resources = 'cdn'
