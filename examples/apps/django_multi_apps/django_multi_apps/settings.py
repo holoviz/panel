@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/3.0/ref/settings/
 
 import os
 from pathlib import Path
-from bokeh.settings import bokehjsdir
+from bokeh.settings import bokehjsdir, settings
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -27,7 +27,6 @@ SECRET_KEY = 'r#=#8anah*p(_6j)&b+_5()2gq+*u2c1-6&8yaay)n!y*e%5hx'
 DEBUG = True
 
 ALLOWED_HOSTS = []
-
 
 # Application definition
 
@@ -130,3 +129,7 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [bokehjsdir()]
 
 COLOR_MAP = 'Paired'
+
+# Ensure that bokeh resources are loaded from CDN
+# (loading from server broken as of Bokeh 2.0.1 so only CDN and INLINE will work)
+settings.resources = 'cdn'
