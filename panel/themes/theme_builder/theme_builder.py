@@ -8,7 +8,7 @@ from .css_generator import CSS_GENERATORS
 
 class ThemeBuilder(param.Parameterized):
     css_generator = param.ObjectSelector(default=CSS_GENERATORS[1], objects=CSS_GENERATORS, precedence=0.1)
-    color_scheme = param.ObjectSelector(default=COLOR_SCHEMES[0], objects=COLOR_SCHEMES, precedence=0.2)
+    color_scheme = param.ObjectSelector(default=COLOR_SCHEMES[2], objects=COLOR_SCHEMES, precedence=0.2)
 
     def __init__(self, **params):
         super().__init__(**params)
@@ -19,6 +19,7 @@ class ThemeBuilder(param.Parameterized):
         self._panel_css_pane = pn.pane.HTML(height=0, width=0)
         self._dataframe_css_pane = pn.pane.HTML(height=0, width=0)
 
+        self.css_generator.color_scheme.update(self.color_scheme)
         self._set_panel_css_pane()
         self._set_dataframe_css_pane()
 

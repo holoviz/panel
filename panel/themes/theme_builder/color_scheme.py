@@ -26,18 +26,19 @@ READ_ONLY_COLORS = [
     "gray_900",
 ]
 
+
+
+
 class ColorScheme(param.Parameterized):
     primary = param.Color(default="#0d6efd")
     secondary = param.Color(default="#6c757d")
-    # success = param.Color(default="#28a745")
-    # info = param.Color(default="#17a2b8")
     warning = param.Color(default="#ffc107")
-    # danger = param.Color(default="#dc3545")
+
     white = param.Color(default="#ffffff", constant=True)
-    light = param.Color(default="#f8f9fa")
-    dark = param.Color(default="#212529")
     black = param.Color(default="#000000", constant=True)
 
+    light = param.Color(default="#f8f9fa")
+    dark = param.Color(default="#212529")
     text_primary = param.String("rgba(255,255,255, 1.0)")
     secondary_text = param.String("rgba(255,255,255, 0.7)")
     disabled_text = param.String("rgba(255,255,255, 0.5)")
@@ -60,7 +61,7 @@ class ColorScheme(param.Parameterized):
             "## Color Scheme",
             pn.Tabs(
                 pn.Param(self, parameters=EDITABLE_COLORS, name="Editable", show_name=False),
-                pn.Param(self, parameters=READ_ONLY_COLORS, name="Read Only", show_name=False),
+                pn.Param(self, parameters=READ_ONLY_COLORS, name="Gray Palette", show_name=False),
             ),
         )
 

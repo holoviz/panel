@@ -75,13 +75,20 @@ h1, h2, h3, h4, h5 {{
 color: {self.color_scheme.primary} !important;
 }}
 
+.bk-root .bk-tabs-header .bk-tab.bk-active {{
+    background:  {self.color_scheme.primary};
+    color:  {self.color_scheme.white};
+    border-color:  {self.color_scheme.primary};
+}}
 """
         panel_css += self._get_panel_button_outlined_css(button_type="default", color=self.color_scheme.text_primary, border_color=self.color_scheme.disabled_text)
-        panel_css += self._get_panel_button_contained_css(button_type="primary", background_color=self.color_scheme.primary)
-        panel_css += self._get_panel_button_contained_css(button_type="success", background_color=self.color_scheme.secondary)
-        # panel_css += self._get_panel_button_css(button_type="info", background_color=self.color_scheme.secondary)
-        panel_css += self._get_panel_button_contained_css(button_type="warning", background_color=self.color_scheme.warning)
-        panel_css += self._get_panel_button_contained_css(button_type="danger", background_color=self.color_scheme.warning)
+        panel_css += self._get_panel_button_contained_css(button_type="primary", background_color=self.color_scheme.primary, color=self.color_scheme.white)
+        panel_css += self._get_panel_button_contained_css(button_type="success", background_color=self.color_scheme.secondary, color=self.color_scheme.black)
+        panel_css += self._get_panel_button_contained_css(button_type="warning", background_color=self.color_scheme.warning, color=self.color_scheme.white)
+        panel_css += self._get_panel_button_contained_css(button_type="danger", background_color=self.color_scheme.warning, color=self.color_scheme.white)
+
+        panel_css += self._get_panel_input_css()
+        panel_css += self._get_slick_grid_css()
 
         return panel_css
 
@@ -115,12 +122,62 @@ color: {self.color_scheme.primary} !important;
   border-color: {border_color};
 }}"""
 
+    def _get_panel_input_css(self):
+        return f"""\
+.bk-root .bk-input {{
+    background: {self.color_scheme.gray_700};
+    color: {self.color_scheme.white};
+    border: 1px solid rgb(216,209,202);
+    border-radius: 4px;
+}}
 
+.bk-root .bk-input:focus {{
+    background: {self.color_scheme.gray_700};
+    color: {self.color_scheme.white};
+    border-color: {self.color_scheme.secondary};
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 8px rgba(102, 175, 233, 0.6);
+}}
 
-    def _get_panel_button_contained_css(self, button_type="default", background_color="black"):
+.bk-root .bk-input::placeholder,
+.bk-root .bk-input:-ms-input-placeholder,
+.bk-root .bk-input::-moz-placeholder,
+.bk-root .bk-input::-webkit-input-placeholder {{
+    color: #999;
+    opacity: 1;
+}}
+
+.bk-root .bk-input[disabled],
+.bk-root .bk-input[readonly] {{
+    cursor: not-allowed;
+    background-color: #eee;
+    opacity: 1;
+}}
+
+.bk-root select[multiple].bk-input,
+.bk-root select[size].bk-input,
+.bk-root textarea.bk-input {{
+    height: auto;
+}}
+
+.bk-root .bk-input-group {{
+    width: 100%;
+    height: 100%;
+    display: inline-flex;
+    display: -webkit-inline-flex;
+    flex-wrap: nowrap;
+    -webkit-flex-wrap: nowrap;
+    align-items: start;
+    -webkit-align-items: start;
+    flex-direction: column;
+    -webkit-flex-direction: column;
+    white-space: nowrap;
+}}
+        """
+
+    def _get_panel_button_contained_css(self, button_type="default", background_color="black", color="white"):
         return f"""\
 .bk-root .bk-btn-{button_type} {{
-    color: inherit;
+    color: {color};
     background-color: {background_color};
     border: 0px;
     border-radius: 4px;
@@ -178,6 +235,200 @@ table.panel-df {{
     background: {background} !important;
 }}"""
 
+
+    def _get_slick_grid_css(self):
+        return f"""\
+.bk-root .slick-header-column.ui-state-default {{
+    border-right: 1px solid silver;
+}}
+
+.bk-root .slick-sort-indicator-numbered {{
+    color: #6190CD;
+}}
+
+.bk-root .slick-sortable-placeholder {{
+    background: silver;
+}}
+
+.bk-root .slick-cell,
+.bk-root .slick-headerrow-column,
+.bk-root .slick-footerrow-column {{
+    border: 1px solid transparent;
+    border-right: 1px dotted silver;
+    border-bottom-color: silver;
+}}
+
+.bk-root .slick-cell,
+.bk-root .slick-headerrow-column {{
+    border-bottom-color: silver;
+}}
+
+.bk-root .slick-footerrow-column {{
+    border-top-color: silver;
+}}
+
+.bk-root .slick-cell.highlighted {{
+    background: lightskyblue;
+    background: rgba(0, 0, 255, 0.2);
+}}
+
+.bk-root .slick-cell.flashing {{
+    border: 1px solid red !important;
+}}
+
+.bk-root .slick-cell.editable {{
+    background: white;
+    border-color: black;
+    border-style: solid;
+}}
+
+.bk-root .slick-reorder-proxy {{
+    background: blue;
+    opacity: 0.15;
+}}
+
+.bk-root .slick-reorder-guide {{
+    background: blue;
+    opacity: 0.7;
+}}
+
+.bk-root .slick-selection {{
+    border: 2px dashed black;
+}}
+
+.bk-root .slick-header-columns {{
+    border-bottom: 1px solid silver;
+}}
+
+.bk-root .slick-header-column {{
+    border-right: 1px solid silver;
+    background: {self.color_scheme.gray_800};
+    font-weight: 500px;
+}}
+
+.bk-root .slick-header-column:hover,
+.bk-root .slick-header-column-active {{
+    background: {self.color_scheme.gray_800} url('images/header-columns-over-bg.gif') repeat-x center bottom;
+}}
+
+.bk-root .slick-headerrow {{
+    background: #fafafa;
+}}
+
+.bk-root .slick-headerrow-column {{
+    background: #fafafa;
+}}
+
+.bk-root .slick-row.ui-state-active {{
+    background: #F5F7D7;
+}}
+
+.bk-root .slick-row {{
+    background: {self.color_scheme.gray_800};
+}}
+
+.bk-root .slick-row.selected {{
+    background: #DFE8F6;
+}}
+
+.bk-root .slick-group {{
+    border-bottom: 2px solid silver;
+}}
+
+.bk-root .slick-group-totals {{
+    color: gray;
+    background: white;
+}}
+
+.bk-root .slick-cell.selected {{
+    background-color: {self.color_scheme.secondary};
+    color: {self.color_scheme.black};
+}}
+
+.bk-root .slick-cell.active {{
+    border-color: gray;
+    border-style: solid;
+}}
+
+.bk-root .slick-sortable-placeholder {{
+    background: silver !important;
+}}
+
+.bk-root .slick-row.odd {{
+    background: {self.color_scheme.gray_800};
+}}
+
+.bk-root .slick-row.ui-state-active {{
+    background: #F5F7D7;
+}}
+
+.bk-root .slick-row.loading {{
+    opacity: 0.5;
+}}
+
+.bk-root .slick-cell.invalid {{
+    border-color: red;
+}}
+
+@-moz-keyframes slickgrid-invalid-hilite {{
+    from {{
+        box-shadow: 0 0 6px red;
+    }}
+    to {{
+        box-shadow: none;
+    }}
+}}
+
+@-webkit-keyframes slickgrid-invalid-hilite {{
+    from {{
+        box-shadow: 0 0 6px red;
+    }}
+    to {{
+        box-shadow: none;
+    }}
+}}
+
+.bk-root .slick-header-button {{
+.bk-root .slick-header-menuitem-disabled {{
+    color: silver;
+}}
+
+.bk-root .slick-columnpicker {{
+    background: #f0f0f0;
+}}
+
+.bk-root .slick-columnpicker li {{
+    background: none;
+}}
+
+.bk-root .slick-columnpicker li a:hover {{
+    background: white;
+}}
+
+.bk-root .slick-pager .ui-icon-container {{
+    border-color: gray;
+}}
+
+.bk-root .bk-cell-special-defaults {{
+    border-right-color: silver;
+    border-right-style: solid;
+    background: #f5f5f5;
+}}
+
+.bk-root .bk-cell-select {{
+    border-right-color: silver;
+    border-right-style: solid;
+    background: #f5f5f5;
+}}
+
+.bk-root .bk-cell-index {{
+    border-right-color: silver;
+    border-right-style: solid;
+    background: #f5f5f5;
+    color: gray;
+}}
+
+"""
 
 DEFAULT_CSS_GENERATOR = CssGenerator(name="Default")
 DARK_CSS_GENERATOR = DarkCssGenerator(name="Dark")
