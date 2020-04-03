@@ -112,7 +112,8 @@ _tests = [
     'scipy',
     'nbsmoke >=0.2.0',
     'pytest-cov',
-    'codecov'
+    'codecov',
+    'folium',
 ]
 
 extras_require = {
