@@ -104,6 +104,7 @@ And then you can launch Jupyter to explore them yourself using either Jupyter No
    Gallery <gallery/index>
    Reference Gallery <reference/index>
    Developer Guide <developer_guide/index>
+   API <api/index>
    Comparisons <Comparisons>
    Releases <releases>
    Road Map <Roadmap>

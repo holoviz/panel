@@ -7,6 +7,11 @@ authors = u'Panel contributors'
 copyright = u'2019 ' + authors
 description = 'High-level dashboarding for python visualization libraries'
 
+import param
+
+param.parameterized.docstring_signature = False
+param.parameterized.docstring_describe_params = False
+
 import panel
 version = release = str(panel.__version__)
 
@@ -24,44 +29,15 @@ html_theme_options = {
     'footer': False,
 }
 
-extensions += ['nbsite.gallery']
+extensions += ['sphinx.ext.napoleon', 'nbsite.gallery']
+napoleon_numpy_docstring = True
+
+extensions += []
 
 nbsite_gallery_conf = {
     'github_org': 'pyviz',
     'github_project': 'panel',
     'galleries': {
-        'gallery': {
-            'title': 'Gallery',
-            'sections': [
-                {'path': 'demos',
-                 'title': 'Demos',
-                 'description': 'A set of sophisticated apps built to demonstrate the features of Panel.'},
-                {'path': 'simple',
-                 'title': 'Simple Apps',
-                 'description': 'Simple example apps meant to provide a quick introduction to Panel.'},
-                {'path': 'apis',
-                 'title': 'APIs',
-                 'description': ('Examples meant to demonstrate the usage of different Panel APIs '
-                                 'such as interact and reactive functions.')},
-                {'path': 'layout',
-                 'title': 'Layouts',
-                 'description': 'How to leverage Panel layout components to achieve complex layouts.'},
-                {'path': 'dynamic',
-                 'title': 'Dynamic UIs',
-                 'description': ('Examples demonstrating how to build dynamic UIs with components that'
-                                 'are added or removed interactively.')},
-                {'path': 'param',
-                 'title': 'Param based apps',
-                 'description': 'Using the Param library to express UIs independently of Panel.'},
-                {'path': 'links',
-                 'title': 'Linking',
-                 'description': ('Using Javascript based links to define interactivity without '
-                                 'without requiring a live kernel.')},
-                {'path': 'external',
-                 'title': 'External libraries',
-                 'description': 'Wrapping external libraries with Panel.'}
-            ]
-        },
         'reference': {
             'title': 'Reference Gallery',
             'sections': [
@@ -82,6 +58,7 @@ _NAV = (
     ('Reference Gallery', 'reference/index'),
     ('Developer Guide', 'developer_guide/index'),
     ('Releases', 'releases'),
+    ('API', 'api/index'),
     ('FAQ', 'FAQ'),
     ('About', 'about')
 )
@@ -108,3 +85,10 @@ html_context.update({
 })
 
 nbbuild_patterns_to_take_along = ["simple.html", "*.json", "json_*"]
+
+
+html_context['js_includes'].remove('nbsite.js')
+html_context = {
+    'js_includes': ['nbsite.js', 'require.js'],
+    'css_includes': ['nbsite.css'] 
+}

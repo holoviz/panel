@@ -116,9 +116,10 @@ jobs:
       env: DESC="docs" PANEL_DOC_BUILD='true' PANEL_EMBED="true" PANEL_EMBED_JSON="true" PANEL_EMBED_JSON_PREFIX="json"
       script:
         - doit develop_install $CHANS_DEV -o doc -o examples
-        - pip install pydeck
+        - pip install pydeck sphinxcontrib-napoleon
         # note: will vastly simplified in a future version of nbsite
         - nbsite generate-rst --org pyviz --project-name panel
+        - python ./doc/generate_modules.py panel -d ./doc/api -n panel -e tests -e depends -e command -e compiler -e links -e interact -e config -e callbacks -e cli
         - nbsite build --what=html --output=builtdocs
         - touch ./builtdocs/.nojekyll
       deploy:
