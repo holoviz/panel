@@ -2,24 +2,14 @@
 import panel as pn
 from panel.themes.theme_builder import (
     CssGenerator,
-    DarkCssGenerator,
     CHESTERISH_COLOR_SCHEME,
 )
+from panel.themes.theme_builder import color_palette
 
 def test_can_construct():
     """Can construct CssGenerator"""
     # When:
     generator = CssGenerator()
-
-    # Then
-    assert generator.panel_css == ""
-    assert generator.dataframe_css == ""
-
-
-def test_dark_css_constructor():
-    """Can construct DarkCssGenerator"""
-    # When
-    generator = DarkCssGenerator()
 
     # Then
     assert generator.panel_css != ""
@@ -29,17 +19,18 @@ def test_dark_css_constructor():
 def test_changing_color_updates_css():
     """When a user changes a color the css updates accordingly"""
     # Given
-    generator = DarkCssGenerator()
+    generator = CssGenerator()
+    assert generator.color_scheme.primary != color_palette.YELLOW
     panel_css = generator.panel_css
     # When
-    generator.color_scheme.primary = "#000000"
+    generator.color_scheme.primary = color_palette.YELLOW
     # Then
     assert panel_css != generator.panel_css
 
-def test_can_change_color_scheme():
+def test_can_update_color_scheme():
     """Can change the color scheme"""
     # Given
-    generator = DarkCssGenerator()
+    generator = CssGenerator()
     panel_css = generator.panel_css
     # When
     # @Philipfr: I would have liked to havee
@@ -51,13 +42,13 @@ def test_can_change_color_scheme():
 
     # When
     panel_css = generator.panel_css
-    generator.color_scheme.primary = "#000000"
+    generator.color_scheme.primary = color_palette.DEEP_ORANGE
     # Then
     assert panel_css != generator.panel_css
 
 
 if __name__.startswith("bokeh"):
     pn.config.sizing_mode = "stretch_width"
-    app = DarkCssGenerator()
+    app = CssGenerator()
     app.color_scheme.update(CHESTERISH_COLOR_SCHEME)
     app.view().servable()

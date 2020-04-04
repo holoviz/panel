@@ -35,6 +35,7 @@ class ColorScheme(param.Parameterized):
         self.primary = color_scheme.primary
         self.secondary = color_scheme.secondary
         self.warning = color_scheme.warning
+        self.theme = color_scheme.theme
 
 
 PANEL_COLOR_SCHEME = ColorScheme(

@@ -6,8 +6,13 @@ import panel as pn
 from .color_scheme import COLOR_SCHEME_EDITABLE_COLORS, ColorScheme
 from .color_palette import GREY
 
+# Inspiration:
+# https://github.com/angular/components/blob/master/src/material/button/_button-theme.scss
+# https://material-ui.com/components/buttons/
+# https://material.io/resources/color/#!/?view.left=0&view.right=0&primary.color=9C27B0&secondary.color=F44336
+
 class CssGenerator(param.Parameterized):
-    color_scheme = param.ClassSelector(class_=ColorScheme, readonly=True)
+    color_scheme = param.ClassSelector(class_=ColorScheme)
     panel_css = param.String()
     dataframe_css = param.String()
 
@@ -16,28 +21,14 @@ class CssGenerator(param.Parameterized):
 
         super().__init__(**params)
 
-        self._set_panel_css()
-        self._set_dataframe_css()
-
-    def _get_panel_css(self):
-        return ""
-
-    def _get_dataframe_css(self):
-        return ""
+        self._update_css()
 
     @param.depends("color_scheme", *COLOR_SCHEME_EDITABLE_COLORS, watch=True)
-    def _set_panel_css(self):
+    def _update_css(self):
         self.panel_css = self._get_panel_css()
-
-    @param.depends("color_scheme", *COLOR_SCHEME_EDITABLE_COLORS, watch=True)
-    def _set_dataframe_css(self):
         self.dataframe_css = self._get_dataframe_css()
 
-    @param.depends("color_scheme")
-    def _color_scheme_view(self):
-        return self.color_scheme.view()
-
-    def _css_view(self):
+    def css_view(self):
         return pn.Column(
             "## CSS",
             pn.Tabs(
@@ -54,16 +45,12 @@ class CssGenerator(param.Parameterized):
             ),
         )
 
-    @param.depends("color_scheme")
     def view(self):
-        return pn.Column(self._color_scheme_view, pn.layout.HSpacer(width=10), self._css_view,)
+        return pn.Column(
+            self.color_scheme.view,
+            self.css_view,
+        )
 
-# Inspiration:
-# https://github.com/angular/components/blob/master/src/material/button/_button-theme.scss
-# https://material-ui.com/components/buttons/
-# https://material.io/resources/color/#!/?view.left=0&view.right=0&primary.color=9C27B0&secondary.color=F44336
-
-class DarkCssGenerator(CssGenerator):
     def _get_panel_css(self):
         panel_css = f"""\
 body {{
@@ -429,8 +416,3 @@ table.panel-df {{
 }}
 
 """
-
-DEFAULT_CSS_GENERATOR = CssGenerator(name="Default")
-DARK_CSS_GENERATOR = DarkCssGenerator(name="Dark")
-
-CSS_GENERATORS = [DEFAULT_CSS_GENERATOR, DARK_CSS_GENERATOR]

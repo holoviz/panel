@@ -6,8 +6,6 @@ from panel.themes.theme_builder import (
     ThemeBuilder,
     ComponentViewer,
     COLOR_SCHEMES,
-    DEFAULT_CSS_GENERATOR,
-    DARK_CSS_GENERATOR,
     PANEL_COLOR_SCHEME,
     ANGULAR_DARK_COLOR_SCHEME,
 )
@@ -16,22 +14,10 @@ from panel.themes.theme_builder import (
 def test_can_construct_with_css_generator():
     """Can constructor ThemeBuilder with custom css_generator"""
     # When
-    theme = ThemeBuilder(css_generator=DARK_CSS_GENERATOR)
+    css_generator = CssGenerator()
+    theme = ThemeBuilder(css_generator=css_generator)
     # Then
-    assert theme.css_generator == DARK_CSS_GENERATOR
-    assert theme.css_generator.panel_css != ""
-    assert theme.css_generator.dataframe_css != ""
-
-
-def test_can_change_css_generator():
-    """Can change css_generator of ThemeBuilder"""
-    # Given
-    theme = ThemeBuilder(css_generator=DEFAULT_CSS_GENERATOR)
-    assert theme.css_generator.panel_css == ""
-    assert theme.css_generator.dataframe_css == ""
-    # When
-    theme.css_generator = DARK_CSS_GENERATOR
-    # Then
+    assert theme.css_generator == css_generator
     assert theme.css_generator.panel_css != ""
     assert theme.css_generator.dataframe_css != ""
 
@@ -40,11 +26,10 @@ def test_changing_color_changes_scheme():
     """If a user change a color then the css scheme changes accordingly"""
     # Given
     theme = ThemeBuilder()
-    theme.css_generator = DARK_CSS_GENERATOR
     panel_css = theme.css_generator.panel_css
 
     # When
-    theme.css_generator.color_scheme.primary = "#000000"
+    theme.css_generator.color_scheme.primary = "green"
     # Then
     assert theme.css_generator.color_scheme.primary == "#000000"
     assert panel_css != theme.css_generator._get_panel_css()
@@ -56,7 +41,7 @@ def test_can_change_css_generator_and_color_scheme():
     # Given
     theme = ThemeBuilder()
     # When
-    theme.css_generator = DARK_CSS_GENERATOR
+    theme.css_generator = CssGenerator()
     theme.color_scheme = ANGULAR_DARK_COLOR_SCHEME
     # Then
     assert theme.css_generator.color_scheme.primary == ANGULAR_DARK_COLOR_SCHEME.primary

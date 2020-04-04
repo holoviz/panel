@@ -3,11 +3,12 @@ import param
 import panel as pn
 
 from .color_scheme import COLOR_SCHEMES
-from .css_generator import CSS_GENERATORS
+from .css_generator import CssGenerator
 
+CSS_GENERATOR = CssGenerator()
 
 class ThemeBuilder(param.Parameterized):
-    css_generator = param.ObjectSelector(default=CSS_GENERATORS[1], objects=CSS_GENERATORS, precedence=0.1)
+    css_generator = param.ClassSelector(class_=CssGenerator, default=CSS_GENERATOR)
     color_scheme = param.ObjectSelector(default=COLOR_SCHEMES[2], objects=COLOR_SCHEMES, precedence=0.2)
 
     def __init__(self, **params):
@@ -36,11 +37,9 @@ class ThemeBuilder(param.Parameterized):
     def _set_dataframe_css_pane(self):
         # print("_set_dataframe_css_pane")
         self._dataframe_css_pane.object = "<style>" + self.css_generator.dataframe_css + "</style>"
-
     @param.depends("css_generator")
     def _css_generator_view(self):
         return self.css_generator.view()
-
     def view(self, **params):
         return pn.Column(
             self._panel_css_pane,
