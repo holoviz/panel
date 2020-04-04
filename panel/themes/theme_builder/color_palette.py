@@ -201,6 +201,9 @@ class ColorPalette(param.Parameterized):
     def readonly_view(self):
         return pn.Column("## Color Palette", pn.pane.HTML(self.to_html_table()))
 
+    def __eq__(self, other):
+        return self.name == other.name
+
 
 RED = ColorPalette(
     name="red",

@@ -20,7 +20,7 @@ class ColorScheme(param.Parameterized):
     theme = param.ObjectSelector(default=theme.LIGHT_THEME, objects=theme.THEMES)
 
     def view(self):
-        return pn.Param(self, name="Selections")
+        return pn.Param(self)
         # return pn.Column(
         #     "## Color Scheme",
         #     pn.Tabs(
@@ -49,12 +49,14 @@ CHESTERISH_COLOR_SCHEME = ColorScheme(
     primary=color_palette.BLUE_GREY,
     secondary=color_palette.CYAN,
     warning=color_palette.RED,
+    theme=theme.DARK_THEME,
 )
 ANGULAR_DARK_COLOR_SCHEME = ColorScheme(
     name="Purple-Green",
     primary=color_palette.PURPLE,
     secondary=color_palette.GREEN,
     warning=color_palette.RED,
+    theme=theme.DARK_THEME,
 )
 
 COLOR_SCHEMES = [

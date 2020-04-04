@@ -29,6 +29,9 @@ class ThemeForeground(param.Parameterized):
     slider_off = param.String("rgba(0,0,0 , 0.26)")
     slider_off_active = param.String("rgba(0,0,0 , 0.38)")
 
+    def __eq__(self, other):
+        return self.name == other.name
+
 
 class ThemeBackground(param.Parameterized):
     """Material Design Theme Background settings"""
@@ -47,6 +50,9 @@ class ThemeBackground(param.Parameterized):
     unselected_chip = param.String(GREY.color_300)
     disabled_list_option = param.String(GREY.color_200)
     tooltip = param.String(GREY.color_700)
+
+    def __eq__(self, other):
+        return self.name == other.name
 
 
 LIGHT_THEME_FOREGROUND = ThemeForeground(name="Light Theme Foreground")
@@ -96,6 +102,9 @@ BACKGROUNDS = [LIGHT_THEME_BACKGROUND, DARK_THEME_BACKGRUND]
 class Theme(param.Parameterized):
     foreground = param.ObjectSelector(LIGHT_THEME_FOREGROUND, objects=FOREGROUNDS)
     background = param.ObjectSelector(LIGHT_THEME_BACKGROUND, objects=BACKGROUNDS)
+
+    def __eq__(self, other):
+        return self.name == other.name
 
 LIGHT_THEME = Theme(name="White Theme")
 DARK_THEME = Theme(

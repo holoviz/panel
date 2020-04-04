@@ -46,6 +46,8 @@ def test_can_change_css_generator_and_color_scheme():
     # Then
     assert theme.css_generator.color_scheme.primary == ANGULAR_DARK_COLOR_SCHEME.primary
 
+def test_can_view():
+    ThemeBuilder().view()
 
 if __name__.startswith("bokeh"):
     pn.config.sizing_mode = "stretch_width"
