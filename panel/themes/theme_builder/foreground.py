@@ -1,0 +1,33 @@
+class ThemeForeground():
+    status-bar: map_get($mat-grey, 300),
+    app-bar:    map_get($mat-grey, 100),
+    background: map_get($mat-grey, 50),
+    hover:      rgba(black, 0.04), // TODO(kara): check style with Material Design UX
+    card:       white,
+    dialog:     white,
+    disabled-button: rgba(black, 0.12),
+    raised-button: white,
+    focused-button: $dark-focused,
+    selected-button: map_get($mat-grey, 300),
+    selected-disabled-button: map_get($mat-grey, 400),
+    disabled-button-toggle: map_get($mat-grey, 200),
+    unselected-chip: map_get($mat-grey, 300),
+    disabled-list-option: map_get($mat-grey, 200),
+    tooltip: map_get($mat-grey, 700)
+
+class ThemeBackground():
+    base:              black,
+    divider:           $dark-dividers,
+    dividers:          $dark-dividers,
+    disabled:          $dark-disabled-text,
+    disabled-button:   rgba(black, 0.26),
+    disabled-text:     $dark-disabled-text,
+    elevation:         black,
+    hint-text:         $dark-disabled-text,
+    secondary-text:    $dark-secondary-text,
+    icon:              rgba(black, 0.54),
+    icons:             rgba(black, 0.54),
+    text:              rgba(black, 0.87),
+    slider-min:        rgba(black, 0.87),
+    slider-off:        rgba(black, 0.26),
+    slider-off-active: rgba(black, 0.38),

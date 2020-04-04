@@ -68,11 +68,11 @@ class DarkCssGenerator(CssGenerator):
         panel_css = f"""\
 body {{
     background-color: {self.color_scheme.dark};
-    color: {self.color_scheme.light};
+    color: {self.color_scheme.white};
 }}
 
 h1, h2, h3, h4, h5 {{
-color: {self.color_scheme.primary} !important;
+color: {self.color_scheme.white} !important;
 }}
 
 .bk-root .bk-tabs-header .bk-tab.bk-active {{
