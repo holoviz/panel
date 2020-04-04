@@ -4,7 +4,7 @@ import param
 import panel as pn
 
 from .color_scheme import COLOR_SCHEME_EDITABLE_COLORS, ColorScheme
-
+from .color_palette import GREY
 
 class CssGenerator(param.Parameterized):
     color_scheme = param.ClassSelector(class_=ColorScheme, readonly=True)
@@ -67,25 +67,25 @@ class DarkCssGenerator(CssGenerator):
     def _get_panel_css(self):
         panel_css = f"""\
 body {{
-    background-color: {self.color_scheme.dark};
-    color: {self.color_scheme.white};
+    background-color: {self.color_scheme.theme.background.background};
+    color: {self.color_scheme.theme.foreground.base};
 }}
 
 h1, h2, h3, h4, h5 {{
-color: {self.color_scheme.white} !important;
+color: {self.color_scheme.theme.foreground.base} !important;
 }}
 
 .bk-root .bk-tabs-header .bk-tab.bk-active {{
-    background:  {self.color_scheme.primary};
-    color:  {self.color_scheme.white};
-    border-color:  {self.color_scheme.primary};
+    background:  {self.color_scheme.primary.color_500};
+    color:  {self.color_scheme.primary.contrast_500};
+    border-color:  {self.color_scheme.primary.color_500};
 }}
 """
-        panel_css += self._get_panel_button_outlined_css(button_type="default", color=self.color_scheme.text_primary, border_color=self.color_scheme.disabled_text)
-        panel_css += self._get_panel_button_contained_css(button_type="primary", background_color=self.color_scheme.primary, color=self.color_scheme.white)
-        panel_css += self._get_panel_button_contained_css(button_type="success", background_color=self.color_scheme.secondary, color=self.color_scheme.black)
-        panel_css += self._get_panel_button_contained_css(button_type="warning", background_color=self.color_scheme.warning, color=self.color_scheme.white)
-        panel_css += self._get_panel_button_contained_css(button_type="danger", background_color=self.color_scheme.warning, color=self.color_scheme.white)
+        panel_css += self._get_panel_button_outlined_css(button_type="default", color=self.color_scheme.primary.contrast_500, border_color=self.color_scheme.theme.foreground.disabled_text)
+        panel_css += self._get_panel_button_contained_css(button_type="primary", background_color=self.color_scheme.primary.color_500, color=self.color_scheme.primary.contrast_500)
+        panel_css += self._get_panel_button_contained_css(button_type="success", background_color=self.color_scheme.secondary.color_500, color=self.color_scheme.secondary.contrast_500)
+        panel_css += self._get_panel_button_contained_css(button_type="warning", background_color=self.color_scheme.warning.color_500, color=self.color_scheme.warning.contrast_500)
+        panel_css += self._get_panel_button_contained_css(button_type="danger", background_color=self.color_scheme.warning.color_500, color=self.color_scheme.warning.contrast_500)
 
         panel_css += self._get_panel_input_css()
         panel_css += self._get_slick_grid_css()
@@ -125,16 +125,16 @@ color: {self.color_scheme.white} !important;
     def _get_panel_input_css(self):
         return f"""\
 .bk-root .bk-input {{
-    background: {self.color_scheme.gray_700};
-    color: {self.color_scheme.white};
+    background: {self.color_scheme.theme.background.dialog};
+    color: {self.color_scheme.theme.foreground.text};
     border: 1px solid rgb(216,209,202);
     border-radius: 4px;
 }}
 
 .bk-root .bk-input:focus {{
-    background: {self.color_scheme.gray_700};
-    color: {self.color_scheme.white};
-    border-color: {self.color_scheme.secondary};
+    background: {self.color_scheme.theme.background.dialog};
+    color: {self.color_scheme.theme.foreground.text};
+    border-color: {self.color_scheme.secondary.color_500};
     box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 8px rgba(102, 175, 233, 0.6);
 }}
 
@@ -302,13 +302,13 @@ table.panel-df {{
 
 .bk-root .slick-header-column {{
     border-right: 1px solid silver;
-    background: {self.color_scheme.gray_800};
+    background: {self.color_scheme.theme.background.dialog};
     font-weight: 500px;
 }}
 
 .bk-root .slick-header-column:hover,
 .bk-root .slick-header-column-active {{
-    background: {self.color_scheme.gray_800} url('images/header-columns-over-bg.gif') repeat-x center bottom;
+    background: {self.color_scheme.theme.background.dialog} url('images/header-columns-over-bg.gif') repeat-x center bottom;
 }}
 
 .bk-root .slick-headerrow {{
@@ -324,7 +324,7 @@ table.panel-df {{
 }}
 
 .bk-root .slick-row {{
-    background: {self.color_scheme.gray_800};
+    background: {self.color_scheme.theme.background.dialog};
 }}
 
 .bk-root .slick-row.selected {{
@@ -341,8 +341,8 @@ table.panel-df {{
 }}
 
 .bk-root .slick-cell.selected {{
-    background-color: {self.color_scheme.secondary};
-    color: {self.color_scheme.black};
+    background-color: {self.color_scheme.secondary.color_a200};
+    color: {self.color_scheme.secondary.contrast_a200};
 }}
 
 .bk-root .slick-cell.active {{
@@ -355,7 +355,7 @@ table.panel-df {{
 }}
 
 .bk-root .slick-row.odd {{
-    background: {self.color_scheme.gray_800};
+    background: {self.color_scheme.theme.background.dialog};
 }}
 
 .bk-root .slick-row.ui-state-active {{

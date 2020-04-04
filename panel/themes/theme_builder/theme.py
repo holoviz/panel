@@ -20,6 +20,7 @@ class ThemeForeground(param.Parameterized):
     disabled_text = param.String(color.DARK_DISABLED_TEXT)
     elevation = param.String(color.BLACK)
     hint_text = param.String(color.DARK_DISABLED_TEXT)
+    primary_text = param.String(color.DARK_PRIMARY_TEXT)
     secondary_text = param.String(color.DARK_SECONDARY_TEXT)
     icon = param.String("rgba(0,0,0 , 0.54)")
     icons = param.String("rgba(0,0,0 , 0.54)")
@@ -61,6 +62,7 @@ DARK_THEME_FOREGROUND = ThemeForeground(
     disabled_text=color.LIGHT_DISABLED_TEXT,
     elevation=color.BLACK,
     hint_text=color.LIGHT_DISABLED_TEXT,
+    primary_text = color.LIGHT_PRIMARY_TEXT,
     secondary_text=color.LIGHT_SECONDARY_TEXT,
     icon=color.WHITE,
     icons=color.WHITE,
@@ -88,8 +90,18 @@ DARK_THEME_BACKGRUND = ThemeBackground(
     disabled_list_option=color.BLACK,
     tooltip=GREY.color_700,
 )
+FOREGROUNDS = [LIGHT_THEME_FOREGROUND, DARK_THEME_FOREGROUND]
+BACKGROUNDS = [LIGHT_THEME_BACKGROUND, DARK_THEME_BACKGRUND]
 
-THEMES = {
-    "Light": (LIGHT_THEME_FOREGROUND, LIGHT_THEME_BACKGROUND),
-    "Dark": (DARK_THEME_FOREGROUND, DARK_THEME_BACKGRUND),
-}
+class Theme(param.Parameterized):
+    foreground = param.ObjectSelector(LIGHT_THEME_FOREGROUND, objects=FOREGROUNDS)
+    background = param.ObjectSelector(LIGHT_THEME_BACKGROUND, objects=BACKGROUNDS)
+
+LIGHT_THEME = Theme(name="White Theme")
+DARK_THEME = Theme(
+    name = "Dark Theme",
+    foreground = DARK_THEME_FOREGROUND,
+    background = DARK_THEME_BACKGRUND,
+)
+
+THEMES = [LIGHT_THEME, DARK_THEME]
