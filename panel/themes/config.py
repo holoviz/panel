@@ -64,7 +64,5 @@ class Theme(param.Parameterized):
 
     def _append_css_files(self):
         glob_str = str(self.path / "*.css")
-        print(glob_str)
         for css_file in glob.glob(glob_str):
-            print(css_file)
             pn.config.css_files.append(css_file)

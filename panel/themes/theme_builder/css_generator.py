@@ -26,17 +26,10 @@ class CssGenerator(param.Parameterized):
     @param.depends("color_scheme", *COLOR_SCHEME_EDITABLE_COLORS, watch=True)
     def _update_css(self):
         panel_css = self.panel_css
-        print("update_css")
         self.panel_css = self._get_panel_css()
         self.dataframe_css = self._get_dataframe_css()
-        print("changed: " + panel_css!=self.panel_css)
-
-    @param.depends("panel_css", watch=True)
-    def _print(self):
-        print("self")
 
     def css_view(self):
-        print("css_view")
         return pn.Column(
             "## CSS",
             pn.Tabs(

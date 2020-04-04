@@ -31,14 +31,12 @@ class ThemeBuilder(param.Parameterized):
 
     @param.depends("css_generator", "css_generator.panel_css", watch=True)
     def _set_panel_css_pane(self):
-        print("_set_panel_css_pane", self.css_generator.color_scheme.primary.name)
-        print("diff", self._panel_css_pane.object!=self.css_generator.panel_css)
         self._panel_css_pane.object = "<style>.a {width: 100%}" + self.css_generator.panel_css + "</style>"
 
     @param.depends("css_generator", "css_generator.dataframe_css", watch=True)
     def _set_dataframe_css_pane(self):
-        # print("_set_dataframe_css_pane")
         self._dataframe_css_pane.object = "<style>" + self.css_generator.dataframe_css + "</style>"
+
     @param.depends("css_generator")
     def _css_generator_view(self):
         return self.css_generator.view()

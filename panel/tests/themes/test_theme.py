@@ -35,7 +35,6 @@ def test_app_with_template(theme="bootstrap"):
 if __name__.startswith("bk"):
     theme = random.choice(THEMES)
     theme="angular_dark"
-    print(theme)
     test_app_with_template(theme=theme).servable()
 
 
