@@ -213,38 +213,38 @@ color: {self.color_scheme.theme.foreground.base} !important;
 }}"""
 
 # border-bottom: 1px solid {self.color_scheme.primary};
-    def _get_dataframe_css(self, background="#424242", border_color="rgba(255,255,255, 0.5)", color="#ffffff"):
+    def _get_dataframe_css(self):
         return f"""\
 table.panel-df {{
-    color: {color};
+    color: {self.color_scheme.theme.foreground.base};
     border-radius: 4px;
 }}
 .panel-df tbody tr:nth-child(odd) {{
-    background: {background};
+    background: {self.color_scheme.theme.background.card};
 }}
 .panel-df tbody tr {{
-    background: {background};
+    background: {self.color_scheme.theme.background.card};
     border-top-style: solid;
     border-top-width: 1px;
-    border-top-color: {border_color};
+    border-top-color: {self.color_scheme.theme.foreground.disabled_text};
    }}
 .panel-df thead {{
-    background: {background};
-    color: {color};
+    background: {self.color_scheme.theme.background.card};
+    color: {self.color_scheme.theme.foreground.base};
     font-weight: 500px;
 }}
 .panel-df tr:hover:nth-child(odd) {{
-    background: {background} !important;
+    background: {self.color_scheme.theme.background.card} !important;
 }}
 .panel-df tr:hover {{
-    background: {background} !important;
+    background: {self.color_scheme.theme.background.card} !important;
 }}
 .panel-df thead tr:hover:nth-child(1) {{
     background-color: inherit !important;
 }}
 
 .panel-df thead:hover {{
-    background: {background} !important;
+    background: {self.color_scheme.theme.background.card} !important;
 }}"""
 
 

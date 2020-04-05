@@ -13,16 +13,6 @@ panes and widgets"""
     def __init__(self, **params):
         super().__init__(**params)
 
-        self.dataframe_pane = pn.pane.DataFrame(pd.DataFrame({"x": [1] * 4, "y": ["y"] * 4}))
-        self.dataframe_widget = pn.widgets.DataFrame(pd.DataFrame({"x": [1] * 4, "y": ["y"] * 4}))
-
-        self.select_widget = pn.widgets.Select(
-            name="Select", options=["Biology", "Chemistry", "Physics"]
-        )
-        self.select_widget_disabled = pn.widgets.Select(
-            name="Select", options=["Biology", "Chemistry", "Physics"], disabled=True
-        )
-
     def button_view(self):
         button_default = pn.widgets.Button(name="DEFAULT")
         button_primary = pn.widgets.Button(name="PRIMARY", button_type="primary")
@@ -51,8 +41,33 @@ panes and widgets"""
                 button_danger_disabled,
             )
         return pn.Column(
-            "### Buttons",
+            "### Button",
             buttons, buttons_disabled
+        )
+
+    def select_view(self):
+        select_widget = pn.widgets.Select(
+            name="Select", options=["Biology", "Chemistry", "Physics"]
+        )
+        select_widget_disabled = pn.widgets.Select(
+            name="Select", options=["Biology", "Chemistry", "Physics"], disabled=True
+        )
+        return pn.Column(
+            "### Select",
+            pn.Row(
+                select_widget, select_widget_disabled
+            )
+        )
+
+    def dataframe_view(self):
+        dataframe_pane = pn.pane.DataFrame(pd.DataFrame({"x": [1] * 4, "y": ["y"] * 4}))
+        dataframe_widget = pn.widgets.DataFrame(pd.DataFrame({"x": [1] * 4, "y": ["y"] * 4}))
+        return pn.Column(
+            "### DataFrame",
+            "#### Pane",
+            dataframe_pane,
+            "#### Widget",
+            dataframe_widget,
         )
 
     def view(self):
@@ -85,9 +100,7 @@ print("Hello Panel World")
 ```
             """,
             self.button_view(),
-            self.select_widget,
-            self.select_widget_disabled,
-            self.dataframe_pane,
-            self.dataframe_widget,
+            self.select_view(),
+            self.dataframe_view(),
             min_height=800,
         )
