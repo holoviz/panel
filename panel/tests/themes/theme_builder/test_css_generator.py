@@ -27,6 +27,19 @@ def test_changing_color_updates_css():
     # Then
     assert panel_css != generator.panel_css
 
+def test_changing_secondary_color_updates_css():
+    """When a user changes the secondary color the css updates accordingly"""
+    # Given
+    generator = CssGenerator()
+    assert generator.color_scheme.secondary != color_palette.YELLOW
+    # panel_css = generator.panel_css
+    markdown_css = generator.markdown_css
+
+    # When
+    generator.color_scheme.secondary = color_palette.YELLOW
+    # Then
+    assert markdown_css != generator.markdown_css
+
 def test_can_update_color_scheme():
     """Can change the color scheme"""
     # Given

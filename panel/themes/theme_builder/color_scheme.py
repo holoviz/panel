@@ -20,16 +20,14 @@ class ColorScheme(param.Parameterized):
     theme = param.ObjectSelector(default=theme.LIGHT_THEME, objects=theme.THEMES)
 
     def view(self):
-        return pn.Param(self)
-        # return pn.Column(
-        #     "## Color Scheme",
-        #     pn.Tabs(
-        #         pn.Param(self, name="Selections", show_name=False),
-        #         self.primary.readonly_view,
-        #         self.secondary.readonly_view,
-        #         self.warning.readonly_view,
-        #     ),
-        # )
+        return pn.Row(
+            pn.Param(
+                self,
+                parameters=["primary", "secondary", "warning", "theme"],
+                expand_button=False,
+                sizing_mode="stretch_width",
+            ),
+        )
 
     def update(self, color_scheme):
         self.primary = color_scheme.primary

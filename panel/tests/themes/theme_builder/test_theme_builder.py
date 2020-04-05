@@ -54,8 +54,15 @@ if __name__.startswith("bokeh"):
 
     # @Philippfr: The app does not seem to stretch_width
     # Neither the Row or the ThemeTestApp
-    app = pn.Row(
-            ThemeBuilder().view(max_width=400),
-            pn.layout.VSpacer(width=25),
-            ComponentViewer().view(),
-        ).servable()
+    theme_builder = ThemeBuilder()
+
+    app = pn.Column(
+        pn.Row("# Theme Builder"),
+        pn.layout.Divider(),
+        pn.Row(
+                theme_builder.view(width=400, sizing_mode="stretch_height"),
+                pn.layout.VSpacer(width=25),
+                ComponentViewer().view(),
+                pn.layout.VSpacer(width=25),
+            )
+    ).servable()

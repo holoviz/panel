@@ -10,10 +10,11 @@ from .color_palette import GREY
 # https://github.com/angular/components/blob/master/src/material/button/_button-theme.scss
 # https://material-ui.com/components/buttons/
 # https://material.io/resources/color/#!/?view.left=0&view.right=0&primary.color=9C27B0&secondary.color=F44336
-
+# See https://github.com/angular/components/blob/master/src/material/
 class CssGenerator(param.Parameterized):
     color_scheme = param.ClassSelector(class_=ColorScheme)
     panel_css = param.String()
+    markdown_css = param.String()
     dataframe_css = param.String()
 
     def __init__(self, **params):
@@ -25,18 +26,23 @@ class CssGenerator(param.Parameterized):
 
     @param.depends("color_scheme", *COLOR_SCHEME_EDITABLE_COLORS, watch=True)
     def _update_css(self):
-        panel_css = self.panel_css
         self.panel_css = self._get_panel_css()
+        self.markdown_css = self._get_markdown_css()
         self.dataframe_css = self._get_dataframe_css()
 
     def css_view(self):
         return pn.Column(
-            "## CSS",
+            "#### CSS",
             pn.Tabs(
                 pn.Param(
                     self.param.panel_css,
                     name="Panel",
                     widgets={"panel_css": {"type": pn.widgets.TextAreaInput, "height": 600}},
+                ),
+                pn.Param(
+                    self.param.markdown_css,
+                    name="Markdown",
+                    widgets={"markdown_css": {"type": pn.widgets.TextAreaInput, "height": 600}},
                 ),
                 pn.Param(
                     self.param.dataframe_css,
@@ -48,10 +54,21 @@ class CssGenerator(param.Parameterized):
 
     def view(self):
         return pn.Column(
-            "# Color Scheme",
-            self.color_scheme.view,
+            self.color_scheme.view(),
             self.css_view,
         )
+
+    def _get_markdown_css(self):
+        return f"""\
+.markdown a {{
+    color: {self.color_scheme.secondary.color_a400};
+    text-decoration: none currentcolor solid;
+}}
+.markdown a:hover {{
+    text-decoration: underline currentcolor solid;
+}}
+
+"""
 
     def _get_panel_css(self):
         panel_css = f"""\
@@ -417,3 +434,4 @@ table.panel-df {{
 }}
 
 """
+
