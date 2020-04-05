@@ -28,14 +28,8 @@ requirements:
     {% for dep in sdata.get('install_requires',{}) %}
     - {{ dep }}
     {% endfor %}
-
-test:
-  imports:
-    - panel
-  requires:	
-    {% for dep in sdata['extras_require']['tests'] %}	
-    - {{ dep }}	
-    {% endfor %}
+  run_constrained:
+    - holoviews >=1.13.2
 
 about:
   home: {{ sdata['url'] }}

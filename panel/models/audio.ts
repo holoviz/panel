@@ -118,7 +118,7 @@ export namespace Audio {
 
 export interface Audio extends Audio.Attrs {}
 
-export abstract class Audio extends HTMLBox {
+export class Audio extends HTMLBox {
   properties: Audio.Props
 
   constructor(attrs?: Partial<Audio.Attrs>) {

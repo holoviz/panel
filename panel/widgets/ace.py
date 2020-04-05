@@ -21,15 +21,16 @@ class Ace(Widget):
 
     value = param.String(doc="State of the current code in the editor")
 
-    annotations = param.List(default=[], doc="List of annotations to add to the editor")
+    annotations = param.List(default=[], doc="""
+        List of annotations to add to the editor.""")
 
-    theme = param.ObjectSelector(default="chrome", objects=list(ace_themes), doc="Theme of the editor")
+    theme = param.ObjectSelector(default="chrome", objects=list(ace_themes),
+                                 doc="Theme of the editor")
 
     language = param.String(default="python", doc="Language of the editor")
 
-    readonly = param.Boolean(
-        default=False, doc="Define if editor content can be modified"
-    )
+    readonly = param.Boolean(default=False, doc="""
+        Define if editor content can be modified""")
 
     _rename = {"value": "code", "name": None}
 

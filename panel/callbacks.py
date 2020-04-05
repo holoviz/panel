@@ -22,7 +22,7 @@ class PeriodicCallback(param.Parameterized):
     """
 
     callback = param.Callable(doc="""
-       The callback to execute periodically.""")
+        The callback to execute periodically.""")
 
     count = param.Integer(default=None, doc="""
         Number of times the callback will be executed, by default

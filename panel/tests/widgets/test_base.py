@@ -4,12 +4,14 @@ import param
 import pytest
 
 from panel.io import block_comm
-from panel.widgets import CompositeWidget, DataFrame, TextInput, ToggleGroup, Widget
+from panel.widgets import (
+    CompositeWidget, DataFrame, FileDownload, TextInput, ToggleGroup, Widget
+)
 from panel.tests.util import check_layoutable_properties, py3_only
 
 all_widgets = [w for w in param.concrete_descendents(Widget).values()
                if not w.__name__.startswith('_') and
-               not issubclass(w, (CompositeWidget, DataFrame, ToggleGroup))]
+               not issubclass(w, (CompositeWidget, DataFrame, FileDownload, ToggleGroup))]
 
 
 @py3_only
@@ -82,7 +84,6 @@ def test_widget_triggers_events(document, comm):
     document.hold()
 
     # Simulate client side change
-    widget.value = '123'
     document._held_events = document._held_events[:-1]
 
     # Set new value

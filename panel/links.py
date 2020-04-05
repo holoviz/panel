@@ -204,8 +204,11 @@ class CallbackGenerator(object):
         self.validate()
         specs = self._get_specs(link, source, target)
         for src_spec, tgt_spec, code in specs:
-            self._init_callback(root_model, link, source, src_spec, target, tgt_spec, code)
-
+            try:
+                self._init_callback(root_model, link, source, src_spec, target, tgt_spec, code)
+            except Exception:
+                pass
+                
     @classmethod
     def _resolve_model(cls, root_model, obj, model_spec):
         """
@@ -367,12 +370,16 @@ class CallbackGenerator(object):
 class JSCallbackGenerator(CallbackGenerator):
 
     def _get_triggers(self, link, src_spec):
+        if src_spec[1].startswith('event:'):
+            return [], [src_spec[1].split(':')[1]]
         return [src_spec[1]], []
 
     def _get_specs(self, link, source, target):
         for src_spec, code in link.code.items():
             src_specs = src_spec.split('.')
-            if len(src_specs) > 1:
+            if src_spec.startswith('event:'):
+                src_spec = (None, src_spec)
+            elif len(src_specs) > 1:
                 src_spec = ('.'.join(src_specs[:-1]), src_specs[-1])
             else:
                 src_prop = src_specs[0]
@@ -386,11 +393,11 @@ class JSCallbackGenerator(CallbackGenerator):
 class JSLinkCallbackGenerator(JSCallbackGenerator):
 
     _link_template = """
-    value = source['{src_attr}'];
+    var value = source['{src_attr}'];
     value = {src_transform};
     value = {tgt_transform};
     try {{
-      property = target.properties['{tgt_attr}'];
+      var property = target.properties['{tgt_attr}'];
       if (property !== undefined) {{ property.validate(value); }}
     }} catch(err) {{
       console.log('WARNING: Could not set {tgt_attr} on target, raised error: ' + err);

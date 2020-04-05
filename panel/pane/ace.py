@@ -13,16 +13,19 @@ class Ace(PaneBase):
     Ace panes allow rendering Ace editor.
     """
 
-    annotations = param.List(default=[], doc="List of annotations to add to the editor")
+    annotations = param.List(default=[], doc="""
+        List of annotations to add to the editor.""")
 
-    language = param.String(default='python', doc="Language of the editor")
+    language = param.String(default='python', doc="""
+        Language of the editor.""")
 
     object = param.String(default='', allow_None=True, doc="""
         The code to be displayed.""")
 
-    theme = param.String(default='chrome', doc="Theme of the editor")
+    theme = param.String(default='chrome', doc="Theme of the editor.")
 
-    readonly = param.Boolean(default=False, doc="Define if editor content can be modified")
+    readonly = param.Boolean(default=False, doc="""
+        Define if editor content can be modified.""")
 
     priority = 0
 

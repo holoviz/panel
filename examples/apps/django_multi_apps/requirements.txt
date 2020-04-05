@@ -10,7 +10,7 @@ constantly==15.1.0
 cryptography==2.8
 daphne==2.4.1
 Django==3.0.3
-holoviews==1.12.7
+holoviews==1.13.2
 hvplot==0.5.2
 hyperlink==19.0.0
 idna==2.8
@@ -21,7 +21,7 @@ MarkupSafe==1.1.1
 numpy==1.18.0
 packaging==20.0
 pandas==0.25.3
-panel==0.7.0
+panel==0.9.3
 param==1.9.2
 Pillow==7.0.0
 pyasn1==0.4.8
@@ -33,12 +33,12 @@ pyOpenSSL==19.1.0
 pyparsing==2.4.6
 python-dateutil==2.8.1
 pytz==2019.3
-pyviz-comms==0.7.2
+pyviz-comms==0.7.4
 PyYAML==5.2
 service-identity==18.1.0
 six==1.13.0
 sqlparse==0.3.0
 tornado==6.0.3
-Twisted==19.10.0
+Twisted==20.3.0
 txaio==18.8.1
 zope.interface==4.7.1

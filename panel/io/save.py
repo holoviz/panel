@@ -5,21 +5,17 @@ from __future__ import absolute_import, division, unicode_literals
 
 import io
 
-from contextlib import contextmanager
 from six import string_types
 
-import param
+import bokeh
 
 from bokeh.document.document import Document
 from bokeh.embed import file_html
-from bokeh.io.export import export_png, create_webdriver
-from bokeh.models import Div
-from bokeh.resources import CDN
-from bokeh.util.string import decode_utf8
+from bokeh.io.export import export_png
+from bokeh.resources import CDN, INLINE
 from pyviz_comms import Comm
 
 from ..config import config
-from ..models import HTML
 from .embed import embed_state
 from .model import add_to_doc
 from .state import state
@@ -29,8 +25,7 @@ from .state import state
 # Private API
 #---------------------------------------------------------------------
 
-
-def save_png(model, filename):
+def save_png(model, filename, template=None, template_variables=None):
     """
     Saves a bokeh model to png
 
@@ -40,43 +35,34 @@ def save_png(model, filename):
       Model to save to png
     filename: str
       Filename to save to
+    template:
+      template file, as used by bokeh.file_html. If None will use bokeh defaults
+    template_variables:
+      template_variables file dict, as used by bokeh.file_html
     """
+    from bokeh.io.webdriver import webdriver_control
     if not state.webdriver:
-        state.webdriver = create_webdriver()
+        state.webdriver = webdriver_control.create()
 
     webdriver = state.webdriver
-    export_png(model, filename, webdriver=webdriver)
 
-
-@contextmanager
-def swap_html_model():
-    """
-    Temporary fix to swap HTML model for Div model during png export
-    to avoid issues with DOMParser compatibility in PhantomJS.
-
-    Can be removed when switching to chromedriver.
-    """
-
-    from ..viewable import Viewable
-
-    state._html_escape = False
-    swapped = []
-    for viewable in param.concrete_descendents(Viewable).values():
-        model = getattr(viewable, '_bokeh_model', None)
-        try:
-            swap_model = issubclass(model, HTML)
-            assert swap_model
-        except Exception:
-            continue
-        else:
-            viewable._bokeh_model = Div
-            swapped.append(viewable)
     try:
-        yield
+        if template:
+            def get_layout_html(obj, resources, width, height):
+                return file_html(
+                    obj, resources, title="", template=template,
+                    template_variables=template_variables,
+                    suppress_callback_warning=True, _always_new=True
+                )
+            old_layout_fn = bokeh.io.export.get_layout_html
+            bokeh.io.export.get_layout_html = get_layout_html
+        export_png(model, filename=filename, webdriver=webdriver)
+    except Exception:
+        raise
     finally:
-        state._html_escape = True
-        for viewable in swapped:
-            viewable._bokeh_model = HTML
+        if template:
+            bokeh.io.export.get_layout_html = old_layout_fn
+
 
 #---------------------------------------------------------------------
 # Public API
@@ -121,28 +107,38 @@ def save(panel, filename, title=None, resources=None, template=None,
       Whether to report progress
     """
     from ..pane import PaneBase
+    from ..template import Template
 
     if isinstance(panel, PaneBase) and len(panel.layout) > 1:
         panel = panel.layout
 
     as_png = isinstance(filename, string_types) and filename.endswith('png')
 
-    doc = Document()
+    if isinstance(panel, Document):
+        doc = panel
+    else:
+        doc = Document()
+
     comm = Comm()
     with config.set(embed=embed):
-        with swap_html_model():
-            model = panel.get_root(doc, comm)
-        if embed:
-            embed_state(
-                panel, model, doc, max_states, max_opts, embed_json,
-                json_prefix, save_path, load_path, progress
-            )
+        if isinstance(panel, Document):
+            model = panel
+        elif isinstance(panel, Template):
+            panel._init_doc(doc, title=title)
+            model = doc
         else:
-            add_to_doc(model, doc, True)
+            model = panel.get_root(doc, comm)
+            if embed:
+                embed_state(
+                    panel, model, doc, max_states, max_opts, embed_json,
+                    json_prefix, save_path, load_path, progress
+                )
+            else:
+                add_to_doc(model, doc, True)
 
     if as_png:
-        save_png(model, filename=filename)
-        return
+        return save_png(model, filename=filename, template=template,
+                        template_variables=template_variables)
     elif isinstance(filename, string_types) and not filename.endswith('.html'):
         filename = filename + '.html'
 
@@ -151,6 +147,15 @@ def save(panel, filename, title=None, resources=None, template=None,
         title = 'Panel'
     if resources is None:
         resources = CDN
+    elif isinstance(resources, str):
+        if resources.lower() == 'cdn':
+            resources = CDN
+        elif resources.lower() == 'inline':
+            resources = INLINE
+        else:
+            raise ValueError("Resources %r not recognized, specify one "
+                             "of 'CDN' or 'INLINE'." % resources)
+        
     if template:
         kwargs['template'] = template
     if template_variables:
@@ -158,10 +163,9 @@ def save(panel, filename, title=None, resources=None, template=None,
 
     html = file_html(doc, resources, title, **kwargs)
     if hasattr(filename, 'write'):
-        html = decode_utf8(html)
         if isinstance(filename, io.BytesIO):
             html = html.encode('utf-8')
         filename.write(html)
-        return
-    with io.open(filename, mode="w", encoding="utf-8") as f:
-        f.write(decode_utf8(html))
+    else:
+        with io.open(filename, mode="w", encoding="utf-8") as f:
+            f.write(html)

@@ -5,6 +5,7 @@ from __future__ import absolute_import, division, unicode_literals
 
 import os
 import signal
+import sys
 import threading
 import uuid
 
@@ -14,6 +15,9 @@ from types import FunctionType
 
 from bokeh.document.events import ModelChangedEvent
 from bokeh.server.server import Server
+from tornado.websocket import WebSocketHandler
+from tornado.web import RequestHandler
+from tornado.wsgi import WSGIContainer
 
 from .state import state
 
@@ -40,12 +44,12 @@ def _eval_panel(panel, server_id, title, doc):
     from ..template import Template
     from ..pane import panel as as_panel
 
+    if isinstance(panel, FunctionType):
+        panel = panel()
     if isinstance(panel, Template):
         return panel._modify_doc(server_id, title, doc)
-    elif isinstance(panel, FunctionType):
-        panel = panel()
     return as_panel(panel)._modify_doc(server_id, title, doc)
-    
+
 #---------------------------------------------------------------------
 # Public API
 #---------------------------------------------------------------------
@@ -75,16 +79,19 @@ def unlocked():
         events = []
         for conn in connections:
             socket = conn._socket
+            if hasattr(socket, 'write_lock') and socket.write_lock._block._value == 0:
+                state._locks.add(socket)
+            locked = socket in state._locks
             for event in curdoc._held_events:
                 if (isinstance(event, ModelChangedEvent) and event not in old_events
-                    and hasattr(socket, 'write_message')):
+                    and hasattr(socket, 'write_message') and not locked):
                     msg = conn.protocol.create('PATCH-DOC', [event])
-                    socket.write_message(msg.header_json, locked=False)
-                    socket.write_message(msg.metadata_json, locked=False)
-                    socket.write_message(msg.content_json, locked=False)
+                    WebSocketHandler.write_message(socket, msg.header_json)
+                    WebSocketHandler.write_message(socket, msg.metadata_json)
+                    WebSocketHandler.write_message(socket, msg.content_json)
                     for header, payload in msg._buffers:
-                        socket.write_message(header, locked=False)
-                        socket.write_message(payload, binary=True, locked=False)
+                        WebSocketHandler.write_message(socket, header)
+                        WebSocketHandler.write_message(socket, payload, binary=True)
                 elif event not in events:
                     events.append(event)
         curdoc._held_events = events
@@ -134,6 +141,23 @@ def serve(panels, port=0, websocket_origin=None, loop=None, show=True,
                       title, verbose, **kwargs)
 
 
+class ProxyFallbackHandler(RequestHandler):
+    """A `RequestHandler` that wraps another HTTP server callback and
+    proxies the subpath.
+    """
+
+    def initialize(self, fallback, proxy=None):
+        self.fallback = fallback
+        self.proxy = proxy
+
+    def prepare(self):
+        if self.proxy:
+            self.request.path = self.request.path.replace(self.proxy, '')
+        self.fallback(self.request)
+        self._finished = True
+        self.on_finish()
+
+
 def get_server(panel, port=0, websocket_origin=None, loop=None,
                show=False, start=False, title=None, verbose=False, **kwargs):
     """
@@ -175,10 +199,23 @@ def get_server(panel, port=0, websocket_origin=None, loop=None,
     from tornado.ioloop import IOLoop
 
     server_id = kwargs.pop('server_id', uuid.uuid4().hex)
+    kwargs['extra_patterns'] = extra_patterns = kwargs.get('extra_patterns', [])
     if isinstance(panel, dict):
-        apps = {slug if slug.startswith('/') else '/'+slug:
-                partial(_eval_panel, p, server_id, title)
-                for slug, p in panel.items()}
+        apps = {}
+        for slug, app in panel.items():
+            slug = slug if slug.startswith('/') else '/'+slug
+            if 'flask' in sys.modules:
+                from flask import Flask
+                if isinstance(app, Flask):
+                    wsgi = WSGIContainer(app)
+                    if slug == '/':
+                        raise ValueError('Flask apps must be served on a subpath.')
+                    if not slug.endswith('/'):
+                        slug += '/'
+                    extra_patterns.append(('^'+slug+'.*', ProxyFallbackHandler,
+                                           dict(fallback=wsgi, proxy=slug)))
+                    continue
+            apps[slug] = partial(_eval_panel, app, server_id, title)
     else:
         apps = {'/': partial(_eval_panel, panel, server_id, title)}
 

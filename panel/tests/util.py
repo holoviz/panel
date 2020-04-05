@@ -2,14 +2,17 @@ from __future__ import absolute_import, division, unicode_literals
 
 import sys
 
+from distutils.version import LooseVersion
+
 import numpy as np
 import pytest
 
 try:
     import holoviews as hv
+    hv_version = LooseVersion(hv.__version__)
 except Exception:
-    hv = None
-hv_available = pytest.mark.skipif(hv is None, reason="requires holoviews")
+    hv, hv_version = None, None
+hv_available = pytest.mark.skipif(hv is None or hv_version < '1.13.0a23', reason="requires holoviews")
 
 try:
     import matplotlib as mpl

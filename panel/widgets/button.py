@@ -4,6 +4,8 @@ or merely toggling between on-off states.
 """
 from __future__ import absolute_import, division, unicode_literals
 
+from functools import partial
+
 import param
 
 from bokeh.models import Button as _BkButton, Toggle as _BkToggle
@@ -25,7 +27,30 @@ class Button(_ButtonBase):
 
     clicks = param.Integer(default=0)
 
+    _rename = {'clicks': None, 'name': 'label'}
+
     _widget_type = _BkButton
+
+    def _get_model(self, doc, root=None, parent=None, comm=None):
+        model = super(Button, self)._get_model(doc, root, parent, comm)
+        ref = (root or model).ref['id']
+        model.on_click(partial(self._server_click, doc, ref))
+        return model
+
+    def _server_click(self, doc, ref, event):
+        self._events.update({"clicks": 1})
+        if not self._processing:
+            self._processing = True
+            if doc.session_context:
+                doc.add_timeout_callback(partial(self._change_event, doc), self._debounce)
+            else:
+                self._change_event(doc)
+
+    def _process_property_change(self, msg):
+        msg = super(Button, self)._process_property_change(msg)
+        if 'clicks' in msg:
+            msg['clicks'] = self.clicks + 1
+        return msg
 
     def on_click(self, callback):
         self.param.watch(callback, 'clicks')
@@ -48,7 +73,7 @@ class Button(_ButtonBase):
           The Callback which can be used to disable the callback.
         """
         from ..links import Callback
-        return Callback(self, code={'clicks': code}, args=args)
+        return Callback(self, code={'event:button_click': code}, args=args)
 
 
 

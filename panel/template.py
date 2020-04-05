@@ -5,6 +5,9 @@ documents.
 from __future__ import absolute_import, division, unicode_literals
 
 import sys
+import uuid
+
+from functools import partial
 
 import param
 
@@ -14,11 +17,13 @@ from jinja2.environment import Template as _Template
 from six import string_types
 from pyviz_comms import JupyterCommManager as _JupyterCommManager
 
-from .config import panel_extension
+from .config import config, panel_extension
 from .io.model import add_to_doc
 from .io.notebook import render_template
+from .io.save import save
 from .io.state import state
 from .layout import Column
+from .models.comm_manager import CommManager
 from .pane import panel as _panel, HTML, Str, HoloViews
 from .viewable import ServableMixin, Viewable
 from .widgets import Button
@@ -63,7 +68,10 @@ class Template(param.Parameterized, ServableMixin):
     def __init__(self, template=None, items=None, nb_template=None, **params):
         super(Template, self).__init__(**params)
         if isinstance(template, string_types):
+            self._code = template
             template = _Template(template)
+        else:
+            self._code = None
         self.template = template
         if isinstance(nb_template, string_types):
             nb_template = _Template(nb_template)
@@ -113,16 +121,18 @@ class Template(param.Parameterized, ServableMixin):
         ref = preprocess_root.ref['id']
         for name, (obj, tags) in self._render_items.items():
             model = obj.get_root(doc, comm)
+            mref = model.ref['id']
             doc.on_session_destroyed(obj._server_destroy)
             for sub in obj.select(Viewable):
-                sub._models[ref] = sub._models.get(model.ref['id'])
-                if isinstance(sub, HoloViews):
-                    sub._plots[ref] = sub._plots.get(model.ref['id'])
+                sub._models[ref] = sub._models.get(mref)
+                if isinstance(sub, HoloViews) and mref in sub._plots:
+                    sub._plots[ref] = sub._plots.get(mref)
             col.objects.append(obj)
             obj._documents[doc] = model
             model.name = name
             model.tags = tags
             add_to_doc(model, doc, hold=bool(comm))
+        state._fake_roots.append(ref)
         state._views[ref] = (col, preprocess_root, doc, comm)
 
         col._preprocess(preprocess_root)
@@ -153,10 +163,29 @@ class Template(param.Parameterized, ServableMixin):
             state._comm_manager = _JupyterCommManager
         except Exception:
             pass
+
+        from IPython.display import display
+
         doc = _Document()
         comm = state._comm_manager.get_server_comm()
         self._init_doc(doc, comm, notebook=True)
-        return render_template(doc, comm)
+        ref = doc.roots[0].ref['id']
+        manager = CommManager(
+            comm_id=comm.id, plot_id=ref, name='comm_manager'
+        )
+        client_comm = state._comm_manager.get_client_comm(
+            on_msg=partial(self._on_msg, ref, manager),
+            on_error=partial(self._on_error, ref),
+            on_stdout=partial(self._on_stdout, ref)
+        )
+        manager.client_comm_id = client_comm.id
+        doc.add_root(manager)
+
+        if config.console_output != 'disable':
+            handle = display(display_id=uuid.uuid4().hex)
+            state._handles[ref] = (handle, [])
+
+        return render_template(doc, comm, manager)
 
     #----------------------------------------------------------------
     # Public API
@@ -219,3 +248,58 @@ class Template(param.Parameterized, ServableMixin):
           The Bokeh document the panel was attached to
         """
         return self._init_doc(doc, title=title)
+
+    def save(self, filename, title=None, resources=None, embed=False,
+             max_states=1000, max_opts=3, embed_json=False,
+             json_prefix='', save_path='./', load_path=None):
+        """
+        Saves Panel objects to file.
+
+        Arguments
+        ---------
+        filename: string or file-like object
+           Filename to save the plot to
+        title: string
+           Optional title for the plot
+        resources: bokeh resources
+           One of the valid bokeh.resources (e.g. CDN or INLINE)
+        embed: bool
+           Whether the state space should be embedded in the saved file.
+        max_states: int
+           The maximum number of states to embed
+        max_opts: int
+           The maximum number of states for a single widget
+        embed_json: boolean (default=True)
+           Whether to export the data to json files
+        json_prefix: str (default='')
+           Prefix for the auto-generated json directory
+        save_path: str (default='./')
+           The path to save json files to
+        load_path: str (default=None)
+           The path or URL the json files will be loaded from.
+        """
+        if embed:
+            raise ValueError("Embedding is not yet supported on Template.")
+        return save(self, filename, title, resources, self.template,
+                    self._render_variables, embed, max_states, max_opts,
+                    embed_json, json_prefix, save_path, load_path)
+
+    def select(self, selector=None):
+        """
+        Iterates over the Template and any potential children in the
+        applying the Selector.
+
+        Arguments
+        ---------
+        selector: type or callable or None
+          The selector allows selecting a subset of Viewables by
+          declaring a type or callable function to filter by.
+
+        Returns
+        -------
+        viewables: list(Viewable)
+        """
+        objects = []
+        for obj, _ in self._render_items.values():
+            objects += obj.select(selector)
+        return objects

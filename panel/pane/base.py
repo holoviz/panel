@@ -80,7 +80,8 @@ class PaneBase(Reactive):
         be placed in.""")
 
     object = param.Parameter(default=None, doc="""
-        The object being wrapped, which will be converted to a Bokeh model.""")
+        The object being wrapped, which will be converted to a
+        Bokeh model.""")
 
     # When multiple Panes apply to an object, the one with the highest
     # numerical priority is selected. The default is an intermediate value.
@@ -179,6 +180,8 @@ class PaneBase(Reactive):
 
     def _update_pane(self, *events):
         for ref, (_, parent) in self._models.items():
+            if ref not in state._views or ref in state._fake_roots:
+                continue
             viewable, root, doc, comm = state._views[ref]
             if comm or state._unblocked(doc):
                 with unlocked():

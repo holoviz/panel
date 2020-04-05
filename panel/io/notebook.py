@@ -8,6 +8,7 @@ import json
 import uuid
 
 from contextlib import contextmanager
+from collections import OrderedDict
 from six import string_types
 
 import bokeh
@@ -21,14 +22,17 @@ from bokeh.embed.bundle import bundle_for_objs_and_resources
 from bokeh.embed.elements import div_for_render_item, script_for_render_items
 from bokeh.embed.util import standalone_docs_json_and_render_items
 from bokeh.embed.wrappers import wrap_in_script_tag
-from bokeh.models import CustomJS, LayoutDOM, Model
+from bokeh.models import LayoutDOM, Model
 from bokeh.resources import CDN, INLINE
-from bokeh.util.string import encode_utf8, escape
 from bokeh.util.serialization import make_id
 from pyviz_comms import (
-    JS_CALLBACK, PYVIZ_PROXY, Comm, JupyterCommManager as _JupyterCommManager,
-    nb_mime_js
+    PYVIZ_PROXY, Comm, JupyterCommManager as _JupyterCommManager, nb_mime_js
 )
+
+try:
+    from bokeh.util.string import escape
+except Exception:
+    from html import escape
 
 from ..compiler import require_components
 from .embed import embed_state
@@ -45,84 +49,6 @@ from .state import state
 LOAD_MIME = 'application/vnd.holoviews_load.v0+json'
 EXEC_MIME = 'application/vnd.holoviews_exec.v0+json'
 HTML_MIME = 'text/html'
-
-ABORT_JS = """
-if (!window.PyViz) {{
-  return;
-}}
-var events = [];
-var receiver = window.PyViz.receivers['{plot_id}'];
-if (receiver &&
-        receiver._partial &&
-        receiver._partial.content &&
-        receiver._partial.content.events) {{
-    events = receiver._partial.content.events;
-}}
-
-var value = cb_obj['{change}'];
-
-{transform}
-
-for (var event of events) {{
-  if ((event.kind === 'ModelChanged') && (event.attr === '{change}') &&
-      (cb_obj.id === event.model.id) &&
-      (JSON.stringify(value) === JSON.stringify(event.new))) {{
-    return;
-  }}
-}}
-"""
-
-# Following JS block becomes body of the message handler callback
-bokeh_msg_handler = """
-var plot_id = "{plot_id}";
-
-if ((plot_id in window.PyViz.plot_index) && (window.PyViz.plot_index[plot_id] != null)) {{
-  var plot = window.PyViz.plot_index[plot_id];
-}} else if ((Bokeh !== undefined) && (plot_id in Bokeh.index)) {{
-  var plot = Bokeh.index[plot_id];
-}}
-
-if (plot == null) {{
-  return
-}}
-
-if (plot_id in window.PyViz.receivers) {{
-  var receiver = window.PyViz.receivers[plot_id];
-}} else {{
-  var receiver = new Bokeh.protocol.Receiver();
-  window.PyViz.receivers[plot_id] = receiver;
-}}
-
-if ((buffers != undefined) && (buffers.length > 0)) {{
-  receiver.consume(buffers[0].buffer)
-}} else {{
-  receiver.consume(msg)
-}}
-
-const comm_msg = receiver.message;
-if ((comm_msg != null) && (Object.keys(comm_msg.content).length > 0)) {{
-  plot.model.document.apply_json_patch(comm_msg.content, comm_msg.buffers)
-}}
-"""
-
-def get_comm_customjs(change, client_comm, plot_id, transform=None,
-                      timeout=5000, debounce=50):
-    """
-    Returns a CustomJS callback that can be attached to send the
-    model state across the notebook comms.
-    """
-    # Abort callback if value matches last received event
-    transform = transform or ''
-    abort = ABORT_JS.format(plot_id=plot_id, change=change, transform=transform)
-    data_template = """data = {{{change}: value, 'id': cb_obj.id}}; cb_obj.event_name = '{change}';"""
-
-    fetch_data = data_template.format(change=change, transform=transform)
-    self_callback = JS_CALLBACK.format(
-        comm_id=client_comm.id, timeout=timeout, debounce=debounce,
-        plot_id=plot_id)
-    return CustomJS(code='\n'.join([abort, fetch_data, self_callback]))
-
-
 
 def push(doc, comm, binary=True):
     """
@@ -154,9 +80,7 @@ def _autoload_js(bundle, configs, requirements, exports, skip_imports, load_time
     )
 
 
-def html_for_render_items(comm_js, docs_json, render_items, template=None, template_variables={}):
-    comm_js = wrap_in_script_tag(comm_js)
-
+def html_for_render_items(docs_json, render_items, template=None, template_variables={}):
     json_id = make_id()
     json = escape(serialize_json(docs_json), quote=False)
     json = wrap_in_script_tag(json, "application/json", json_id)
@@ -167,7 +91,6 @@ def html_for_render_items(comm_js, docs_json, render_items, template=None, templ
 
     context.update(dict(
         title = '',
-        bokeh_js = comm_js,
         plot_script = json + script,
         docs = render_items,
         base = NB_TEMPLATE_BASE,
@@ -183,26 +106,24 @@ def html_for_render_items(comm_js, docs_json, render_items, template=None, templ
     elif isinstance(template, string_types):
         template = _env.from_string("{% extends base %}\n" + template)
 
-    html = template.render(context)
-    return encode_utf8(html)
+    return template.render(context)
 
 
-def render_template(document, comm=None):
-    plot_id = document.roots[0].ref['id']
-    (docs_json, render_items) = standalone_docs_json_and_render_items(document)
+def render_template(document, comm=None, manager=None):
+    ref = document.roots[0].ref['id']
+    (docs_json, render_items) = standalone_docs_json_and_render_items(document, True)
 
-    if comm:
-        msg_handler = bokeh_msg_handler.format(plot_id=plot_id)
-        comm_js = comm.js_template.format(plot_id=plot_id, comm_id=comm.id, msg_handler=msg_handler)
-    else:
-        comm_js = ''
+    # We do not want the CommManager to appear in the roots because
+    # the custom template may not reference it
+    if manager:
+        item = render_items[0]
+        item.roots._roots = OrderedDict(list(item.roots._roots.items())[:-1])
 
     html = html_for_render_items(
-        comm_js, docs_json, render_items, template=document.template,
-        template_variables=document.template_variables)
-
-    return ({'text/html': html, EXEC_MIME: ''},
-            {EXEC_MIME: {'id': plot_id}})
+        docs_json, render_items, template=document.template,
+        template_variables=document.template_variables
+    )
+    return ({'text/html': html, EXEC_MIME: ''}, {EXEC_MIME: {'id': ref}})
 
 
 def render_model(model, comm=None):
@@ -211,31 +132,22 @@ def render_model(model, comm=None):
 
     target = model.ref['id']
 
-    (docs_json, [render_item]) = standalone_docs_json_and_render_items([model])
+    (docs_json, [render_item]) = standalone_docs_json_and_render_items([model], True)
     div = div_for_render_item(render_item)
     render_item = render_item.to_json()
     script = DOC_NB_JS.render(
         docs_json=serialize_json(docs_json),
         render_items=serialize_json([render_item]),
     )
-    bokeh_script, bokeh_div = encode_utf8(script), encode_utf8(div)
+    bokeh_script, bokeh_div = script, div
     html = "<div id='{id}'>{html}</div>".format(id=target, html=bokeh_div)
 
-    # Publish bokeh plot JS
-    msg_handler = bokeh_msg_handler.format(plot_id=target)
-
-    if comm:
-        comm_js = comm.js_template.format(plot_id=target, comm_id=comm.id, msg_handler=msg_handler)
-        bokeh_js = '\n'.join([comm_js, bokeh_script])
-    else:
-        bokeh_js = bokeh_script
-
-    data = {'text/html': html, 'application/javascript': bokeh_js}
+    data = {'text/html': html, 'application/javascript': bokeh_script}
     return ({'text/html': mimebundle_to_html(data), EXEC_MIME: ''},
             {EXEC_MIME: {'id': target}})
 
 
-def render_mimebundle(model, doc, comm):
+def render_mimebundle(model, doc, comm, manager=None):
     """
     Displays bokeh output inside a notebook using the PyViz display
     and comms machinery.
@@ -243,6 +155,8 @@ def render_mimebundle(model, doc, comm):
     if not isinstance(model, LayoutDOM):
         raise ValueError('Can only render bokeh LayoutDOM models')
     add_to_doc(model, doc, True)
+    if manager is not None:
+        doc.add_root(manager)
     return render_model(model, comm)
 
 

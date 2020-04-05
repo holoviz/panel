@@ -1,4 +1,5 @@
 import * as p from "@bokehjs/core/properties"
+import {isArray} from "@bokehjs/core/util/types"
 import {HTMLBox, HTMLBoxView} from "@bokehjs/models/layouts/html_box"
 
 export class VegaPlotView extends HTMLBoxView {
@@ -47,16 +48,18 @@ export class VegaPlotView extends HTMLBoxView {
   }
 
   _plot(): void {
-    if (!this.model.data || !(window as any).vegaEmbed)
+    const data = this.model.data
+    if ((data == null) || !(window as any).vegaEmbed)
       return
     if (this.model.data_sources && (Object.keys(this.model.data_sources).length > 0)) {
       const datasets = this._fetch_datasets()
       if ('data' in datasets) {
-        this.model.data.data['values'] = datasets['data']
+        data.data['values'] = datasets['data']
         delete datasets['data']
       }
-      if (this.model.data.data !== undefined) {
-        for (const d of this.model.data.data) {
+      if (data.data != null) {
+        const data_objs = isArray(data.data) ? data.data : [data.data]
+        for (const d of data_objs) {
           if (d.name in datasets) {
             d['values'] = datasets[d.name]
             delete datasets[d.name]

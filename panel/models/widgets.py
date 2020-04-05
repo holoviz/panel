@@ -3,9 +3,10 @@ Custom bokeh Widget models.
 """
 from __future__ import absolute_import, division, unicode_literals
 
+from bokeh.core.enums import ButtonType
 from bokeh.core.properties import Int, Float, Override, Enum, Any, Bool, Dict, String
 from bokeh.models.layouts import HTMLBox
-from bokeh.models.widgets import Widget
+from bokeh.models.widgets import InputWidget, Widget
 
 
 class Player(Widget):
@@ -101,3 +102,24 @@ class Progress(HTMLBox):
     style = Dict(String, Any, default={}, help="""
     Raw CSS style declaration. Note this may be web browser dependent.
     """)
+
+
+class FileDownload(InputWidget):
+
+    auto = Bool(False, help="""Whether to download on click""")
+
+    button_type = Enum(ButtonType, help="""
+    A style for the button, signifying it's role.
+    """)
+
+    clicks = Int(0, help="""
+    A private property that used to trigger ``on_click`` event handler.
+    """)
+
+    data = String(help="""Encoded URI data.""")
+
+    label = String("", help="""The text label for the button to display.""")
+
+    filename = String(help="""Filename to use on download""")
+
+    title = Override(default='')

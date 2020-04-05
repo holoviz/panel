@@ -17,26 +17,26 @@ from .base import Widget
 class DataFrame(Widget):
 
     editors = param.Dict(default={}, doc="""
-      Bokeh CellEditor to use for a particular column
-      (overrides the default chosen based on the type).""")
+        Bokeh CellEditor to use for a particular column
+        (overrides the default chosen based on the type).""")
 
     formatters = param.Dict(default={}, doc="""
-      Bokeh CellFormatter to use for a particular column
-      (overrides the default chosen based on the type).""")
+        Bokeh CellFormatter to use for a particular column
+        (overrides the default chosen based on the type).""")
 
     fit_columns = param.Boolean(default=True, doc="""
-      Whether columns should expand to the available width.
-      This results in no horizontal scrollbar showing up, but data
-      can get unreadable if there is no enough space available.""")
+        Whether columns should expand to the available width. This
+        results in no horizontal scrollbar showing up, but data can
+        get unreadable if there is no enough space available.""")
 
     selection = param.List(default=[], doc="""
-      The currently selected rows of the table.""")
+        The currently selected rows of the table.""")
 
     row_height = param.Integer(default=25, doc="""
-      The height of each table row.""")
+        The height of each table row.""")
 
     widths = param.Dict(default={}, doc="""
-      A mapping from column name to column width.""")
+        A mapping from column name to column width.""")
 
     value = param.Parameter(default=None)
 
@@ -68,12 +68,13 @@ class DataFrame(Widget):
             elif kind == 'f':
                 formatter = NumberFormatter(format='0,0.0[00000]')
                 editor = NumberEditor()
-            elif isdatetime(data):
+            elif isdatetime(data) or kind == 'M':
                 formatter = DateFormatter(format='%Y-%m-%d %H:%M:%S')
                 editor = DateEditor()
             else:
                 formatter = StringFormatter()
                 editor = StringEditor()
+
             if col in self.editors:
                 editor = self.editors[col]
             if col in self.formatters:

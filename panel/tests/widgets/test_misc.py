@@ -4,10 +4,19 @@ from io import BytesIO
 from base64 import b64encode
 
 import numpy as np
-from scipy.io import wavfile
+import pytest
 
-from panel.widgets import Audio, Progress
+try:
+    from scipy.io import wavfile
+except Exception:
+    wavfile = None
 
+from panel.widgets import __file__ as wfile, Audio, FileDownload, Progress
+
+scipy_available = pytest.mark.skipif(wavfile is None, reason="requires scipy")
+
+
+@scipy_available
 def test_audio_array(document, comm):
     data = np.random.randint(-100,100, 100).astype('int16')
     sample_rate = 10
@@ -37,3 +46,40 @@ def test_progress_bounds():
     assert progress.param.value.bounds == (0, 200)
     progress.value = 120
     assert progress.value == 120
+
+
+def test_file_download_label():
+    file_download = FileDownload(__file__)
+
+    assert file_download.label == 'Download test_misc.py'
+
+    file_download.auto = False
+
+    assert file_download.label == 'Transfer test_misc.py'
+
+    file_download.embed = True
+
+    assert file_download.label == 'Download test_misc.py'
+
+    file_download.filename = 'abc.py'
+
+    assert file_download.label == 'Download abc.py'
+
+
+def test_file_download_data():
+    file_download = FileDownload(__file__, embed=True)
+
+    tfile_data = file_download.data
+    assert tfile_data is not None
+
+    file_download.file = wfile
+    assert tfile_data != file_download.data
+
+    file_download.data = None
+    file_download.embed = False
+    file_download.embed = True
+    assert file_download.data is not None
+
+    file_download.data = None
+    file_download._clicks += 1
+    assert file_download.data is not None

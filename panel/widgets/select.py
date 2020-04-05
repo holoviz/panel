@@ -14,7 +14,7 @@ from bokeh.models.widgets import (
     AutocompleteInput as _BkAutocompleteInput, CheckboxGroup as _BkCheckboxGroup,
     CheckboxButtonGroup as _BkCheckboxButtonGroup, MultiSelect as _BkMultiSelect,
     RadioButtonGroup as _BkRadioButtonGroup, RadioGroup as _BkRadioBoxGroup,
-    Select as _BkSelect)
+    Select as _BkSelect, MultiChoice as _BkMultiChoice)
 
 from ..layout import Column, VSpacer
 from ..util import as_unicode, isIn, indexOf
@@ -115,15 +115,9 @@ class Select(SelectBase):
                 lambda x: x.value, 'value', 'cb_obj.value')
 
 
-class MultiSelect(Select):
-
-    size = param.Integer(default=4, doc="""
-        The number of items displayed at once (i.e. determines the
-        widget height).""")
+class _MultiSelectBase(Select):
 
     value = param.List(default=[])
-
-    _widget_type = _BkMultiSelect
 
     _supports_embed = False
 
@@ -150,6 +144,34 @@ class MultiSelect(Select):
         return msg
 
 
+class MultiSelect(_MultiSelectBase):
+
+    size = param.Integer(default=4, doc="""
+        The number of items displayed at once (i.e. determines the
+        widget height).""")
+
+    _widget_type = _BkMultiSelect
+
+
+class MultiChoice(_MultiSelectBase):
+
+    delete_button = param.Boolean(default=True, doc="""
+        Whether to display a button to delete a selected option.""")
+
+    max_items = param.Integer(default=None, bounds=(1, None), doc="""
+        Maximum number of options that can be selected.""")
+
+    option_limit = param.Integer(default=None, bounds=(1, None), doc="""
+        Maximum number of options to display at once.""")
+
+    placeholder = param.String(default='', doc="""
+        String displayed when no selection has been made.""")
+
+    solid = param.Boolean(default=True, doc="""
+        Whether to display widget with solid or light style.""")
+
+    _widget_type = _BkMultiChoice
+
 
 class AutocompleteInput(Widget):
 
@@ -166,7 +188,6 @@ class AutocompleteInput(Widget):
     _widget_type = _BkAutocompleteInput
 
     _rename = {'name': 'title', 'options': 'completions'}
-
 
 
 class _RadioGroupBase(Select):
@@ -293,13 +314,16 @@ class ToggleGroup(Select):
     A ToggleGroup is a group of widgets which can be switched 'on' or 'off'.
 
     Two types of widgets are available through the widget_type argument :
-        - 'button' (default)
-        - 'box'
+        * `'button'` (default)
+        * `'box'`
 
     Two different behaviors are available through behavior argument:
-        - 'check' (default) : Any number of widgets can be selected. In this case value is a 'list' of objects
-        - 'radio' : One and only one widget is switched on. In this case value is an 'object'
-
+        * 'check' (default) : boolean
+           Any number of widgets can be selected. In this case value
+           is a 'list' of objects.
+        * 'radio' : boolean
+           One and only one widget is switched on. In this case value
+           is an 'object'.
     """
 
     _widgets_type = ['button', 'box']
@@ -338,25 +362,26 @@ class CrossSelector(CompositeWidget, MultiSelect):
     """
 
     width = param.Integer(default=600, allow_None=True, doc="""
-       The number of options shown at once (note this is the
-       only way to control the height of this widget)""")
+        The number of options shown at once (note this is the
+        only way to control the height of this widget)""")
 
     height = param.Integer(default=200, allow_None=True, doc="""
-       The number of options shown at once (note this is the
-       only way to control the height of this widget)""")
+        The number of options shown at once (note this is the
+        only way to control the height of this widget)""")
 
     filter_fn = param.Callable(default=re.search, doc="""
-       The filter function applied when querying using the text fields,
-       defaults to re.search. Function is two arguments, the query or
-       pattern and the item label.""")
+        The filter function applied when querying using the text
+        fields, defaults to re.search. Function is two arguments, the
+        query or pattern and the item label.""")
 
     size = param.Integer(default=10, doc="""
-       The number of options shown at once (note this is the
-       only way to control the height of this widget)""")
+        The number of options shown at once (note this is the only way
+        to control the height of this widget)""")
 
-    definition_order = param.Integer(default=True, doc=""" Whether to
-       preserve definition order after filtering. Disable to allow the
-       order of selection to define the order of the selected list.""")
+    definition_order = param.Integer(default=True, doc="""
+       Whether to preserve definition order after filtering. Disable
+       to allow the order of selection to define the order of the
+       selected list.""")
 
     def __init__(self, **params):
         super(CrossSelector, self).__init__(**params)

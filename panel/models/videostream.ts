@@ -105,7 +105,7 @@ export namespace VideoStream {
 
 export interface VideoStream extends VideoStream.Attrs {}
 
-export abstract class VideoStream extends HTMLBox {
+export class VideoStream extends HTMLBox {
   properties: VideoStream.Props
 
   constructor(attrs?: Partial<VideoStream.Attrs>) {

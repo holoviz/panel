@@ -89,9 +89,9 @@ except Exception:
 ########## dependencies ##########
 
 install_requires = [
-    'bokeh >=1.4.0,<2.0',
-    'param >=1.9.2',
-    'pyviz_comms >=0.7.3',
+    'bokeh >=2.0.0',
+    'param >=1.9.3',
+    'pyviz_comms >=0.7.4',
     'markdown',
     'tqdm',
     'pyct >=0.4.4'
@@ -99,22 +99,25 @@ install_requires = [
 
 _recommended = [
     'notebook >=5.4',
-    'holoviews >=1.12.0',
+    'holoviews >=1.13.2',
     'matplotlib',
     'pillow',
     'plotly'
 ]
 
+_tests = [
+    'flake8',
+    'parameterized',
+    'pytest',
+    'scipy',
+    'nbsmoke >=0.2.0',
+    'pytest-cov',
+    'codecov',
+    'folium',
+]
+
 extras_require = {
-    'tests': [
-        'flake8',
-        'parameterized',
-        'pytest',
-        'scipy',
-        'nbsmoke >=0.2.0',
-        'pytest-cov',
-        'codecov',
-        # For examples
+    'examples': [
         'hvplot',
         'plotly',
         'altair',
@@ -127,12 +130,14 @@ extras_require = {
         'django',
         'pyvista',
     ],
+    'tests': _tests,
     'recommended': _recommended,
     'doc': _recommended + [
         'nbsite >=0.6.1',
         'sphinx_holoviz_theme',
         'selenium',
         'phantomjs',
+        'graphviz',
         'lxml',
     ]
 }
@@ -148,7 +153,7 @@ extras_require['build'] = [
     'param >=1.9.2',
     'pyct >=0.4.4',
     'setuptools >=30.3.0',
-    'bokeh >=1.4.0',
+    'bokeh >=2.0.0',
     'pyviz_comms >=0.6.0',
     # non-python dependency
     'nodejs >=9.11.1',
@@ -173,10 +178,10 @@ setup_args = dict(
     classifiers=[
         "License :: OSI Approved :: BSD License",
         "Development Status :: 5 - Production/Stable",
-        "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
         "Operating System :: OS Independent",
         "Intended Audience :: Developers",
         "Intended Audience :: Science/Research",
@@ -193,7 +198,7 @@ setup_args = dict(
         "Topic :: Office/Business",
         "Topic :: Office/Business :: Financial",
         "Topic :: Software Development :: Libraries"],
-    python_requires=">=2.7",
+    python_requires=">=3.6",
     entry_points={
         'console_scripts': [
             'panel = panel.cli:main'

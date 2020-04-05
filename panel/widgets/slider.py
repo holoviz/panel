@@ -11,6 +11,7 @@ import param
 import numpy as np
 
 from bokeh.models import CustomJS
+from bokeh.models.formatters import TickFormatter
 from bokeh.models.widgets import (
     DateSlider as _BkDateSlider, DateRangeSlider as _BkDateRangeSlider,
     RangeSlider as _BkRangeSlider, Slider as _BkSlider)
@@ -24,36 +25,27 @@ from ..layout import Column
 from .input import StaticText
 
 
+
 class _SliderBase(Widget):
 
     bar_color = param.Color(default="#e6e6e6", doc="""
         Color of the slider bar as a hexidecimal RGB value.""")
 
-    callback_policy = param.ObjectSelector(
-        default='continuous', objects=['continuous', 'throttle', 'mouseup'], doc="""
-        DEPRECATED: Policy to determine when slider events are triggered:
-
-        * "continuous": the callback will be executed immediately for each movement of the slider
-        * "throttle": the callback will be executed at most every ``callback_throttle`` milliseconds.
-        * "mouseup": the callback will be executed only once when the slider is released.
-        """)
-
-    callback_throttle = param.Integer(default=200, doc="""
-        Number of milliseconds to pause between callback calls as the slider is moved.""")
-
     direction = param.ObjectSelector(default='ltr', objects=['ltr', 'rtl'],
                                      doc="""
-        Whether the slider should go from left-to-right ('ltr') or right-to-left ('rtl')""")
+        Whether the slider should go from left-to-right ('ltr') or
+        right-to-left ('rtl')""")
 
     orientation = param.ObjectSelector(default='horizontal',
                                        objects=['horizontal', 'vertical'], doc="""
-        Whether the slider should be oriented horizontally or vertically.""")
+        Whether the slider should be oriented horizontally or
+        vertically.""")
 
     show_value = param.Boolean(default=True, doc="""
-        Whether to show the widget value""")
+        Whether to show the widget value.""")
 
     tooltips = param.Boolean(default=True, doc="""
-        Whether the slider handle should display tooltips""")
+        Whether the slider handle should display tooltips.""")
 
     _widget_type = _BkSlider
 
@@ -61,6 +53,9 @@ class _SliderBase(Widget):
 
 
 class ContinuousSlider(_SliderBase):
+
+    format = param.ClassSelector(class_=string_types+(TickFormatter,), doc="""
+        Allows defining a custom format string or bokeh TickFormatter.""")
 
     _supports_embed = True
 
@@ -258,6 +253,9 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
         self._text.param.set_param(
             margin=text_margin, **{k: v for k, v in style.items() if k != 'style'})
         self._slider.param.set_param(margin=slider_margin, **style)
+        if self.width:
+            style['width'] = self.width + l + r
+        self._composite.param.set_param(**style)
 
     def _sync_value(self, event):
         if self._syncing:
@@ -286,6 +284,9 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
 
 
 class RangeSlider(_SliderBase):
+
+    format = param.ClassSelector(class_=string_types+(TickFormatter,), doc="""
+        Allows defining a custom format string or bokeh TickFormatter.""")
 
     value = param.NumericTuple(default=(0, 1), length=2)
 

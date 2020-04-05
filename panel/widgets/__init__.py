@@ -13,7 +13,7 @@ from .input import (# noqa
     LiteralInput, StaticText, TextInput, Spinner, PasswordInput,
     TextAreaInput
 )
-from .misc import Audio, Progress, VideoStream # noqa
+from .misc import Audio, FileDownload, Progress, VideoStream # noqa
 #@Philppfr: I would like to import these here but get errors
 #How do I fix this?
 # from .model_viewer import ModelViewer
@@ -25,6 +25,7 @@ from .slider import (# noqa
 )
 from .select import (# noqa
     AutocompleteInput, CheckBoxGroup, CheckButtonGroup, CrossSelector,
-    MultiSelect, RadioButtonGroup, RadioBoxGroup, Select, ToggleGroup
+    MultiChoice, MultiSelect, RadioButtonGroup, RadioBoxGroup, Select,
+    ToggleGroup
 )
 from .tables import DataFrame # noqa

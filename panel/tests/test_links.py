@@ -95,11 +95,11 @@ def test_pnwidget_hvplot_links(document, comm):
     assert link_customjs.args['target'] is scatter
 
     code = """
-    value = source['value'];
+    var value = source['value'];
     value = value;
     value = value;
     try {
-      property = target.properties['size'];
+      var property = target.properties['size'];
       if (property !== undefined) { property.validate(value); }
     } catch(err) {
       console.log('WARNING: Could not set size on target, raised error: ' + err);
@@ -135,11 +135,11 @@ def test_bkwidget_hvplot_links(document, comm):
     assert link_customjs.args['target'] is scatter
 
     code = """
-    value = source['value'];
+    var value = source['value'];
     value = value;
     value = value;
     try {
-      property = target.properties['size'];
+      var property = target.properties['size'];
       if (property !== undefined) { property.validate(value); }
     } catch(err) {
       console.log('WARNING: Could not set size on target, raised error: ' + err);
@@ -172,11 +172,11 @@ def test_bkwidget_bkplot_links(document, comm):
     assert link_customjs.args['target'] is scatter.glyph
 
     code = """
-    value = source['value'];
+    var value = source['value'];
     value = value;
     value = value;
     try {
-      property = target.properties['size'];
+      var property = target.properties['size'];
       if (property !== undefined) { property.validate(value); }
     } catch(err) {
       console.log('WARNING: Could not set size on target, raised error: ' + err);
@@ -207,11 +207,11 @@ def test_widget_bkplot_link(document, comm):
     assert scatter.glyph.fill_color == '#ff00ff'
     
     code = """
-    value = source['color'];
+    var value = source['color'];
     value = value;
     value = value;
     try {
-      property = target.properties['fill_color'];
+      var property = target.properties['fill_color'];
       if (property !== undefined) { property.validate(value); }
     } catch(err) {
       console.log('WARNING: Could not set fill_color on target, raised error: ' + err);

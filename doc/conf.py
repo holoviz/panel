@@ -7,6 +7,11 @@ authors = u'Panel contributors'
 copyright = u'2019 ' + authors
 description = 'High-level dashboarding for python visualization libraries'
 
+import param
+
+param.parameterized.docstring_signature = False
+param.parameterized.docstring_describe_params = False
+
 import panel
 version = release = str(panel.__version__)
 
@@ -24,7 +29,8 @@ html_theme_options = {
     'footer': False,
 }
 
-extensions += ['nbsite.gallery']
+extensions += ['sphinx.ext.napoleon', 'nbsite.gallery']
+napoleon_numpy_docstring = True
 
 nbsite_gallery_conf = {
     'github_org': 'pyviz',
@@ -82,6 +88,7 @@ _NAV = (
     ('Reference Gallery', 'reference/index'),
     ('Developer Guide', 'developer_guide/index'),
     ('Releases', 'releases'),
+    ('API', 'api/index'),
     ('FAQ', 'FAQ'),
     ('About', 'about')
 )
@@ -89,7 +96,7 @@ _NAV = (
 templates_path = ['_templates']
 
 html_context.update({
-    'js_includes': ['nbsite.js'],
+    'js_includes': [],
     'PROJECT': project,
     'DESCRIPTION': description,
     'AUTHOR': authors,

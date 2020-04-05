@@ -5,7 +5,9 @@ from collections import OrderedDict
 import numpy as np
 import pytest
 
-from panel.widgets import Select, MultiSelect, CrossSelector, ToggleGroup
+from panel.widgets import (
+    CrossSelector, MultiChoice, MultiSelect, Select, ToggleGroup
+)
 from panel.util import as_unicode
 
 
@@ -49,7 +51,7 @@ def test_select(document, comm):
     assert widget.value == as_unicode(opts['1'])
     assert widget.options == [(as_unicode(v),k) for k,v in opts.items()]
 
-    select._comm_change({'value': as_unicode(opts['A'])})
+    select._process_events({'value': as_unicode(opts['A'])})
     assert select.value == opts['A']
 
     widget.value = as_unicode(opts['1'])
@@ -103,11 +105,11 @@ def test_select_mutables(document, comm):
     assert widget.options == [(as_unicode(v),k) for k,v in opts.items()]
 
     widget.value = as_unicode(opts['B'])
-    select._comm_change({'value': as_unicode(opts['A'])})
+    select._process_events({'value': as_unicode(opts['A'])})
     assert select.value == opts['A']
 
     widget.value = as_unicode(opts['B'])
-    select._comm_change({'value': as_unicode(opts['B'])})
+    select._process_events({'value': as_unicode(opts['B'])})
     assert select.value == opts['B']
 
     select.value = opts['A']
@@ -142,14 +144,37 @@ def test_multi_select(document, comm):
     assert widget.options == ['A', '1', 'C']
 
     widget.value = ['1']
-    select._comm_change({'value': ['1']})
+    select._process_events({'value': ['1']})
     assert select.value == [1]
 
     widget.value = ['A', 'C']
-    select._comm_change({'value': ['A', 'C']})
+    select._process_events({'value': ['A', 'C']})
     assert select.value == ['A', object]
 
     select.value = [object, 'A']
+    assert widget.value == ['C', 'A']
+
+
+def test_multi_choice(document, comm):
+    choice = MultiChoice(options=OrderedDict([('A', 'A'), ('1', 1), ('C', object)]),
+                         value=[object, 1], name='MultiChoice')
+
+    widget = choice.get_root(document, comm=comm)
+
+    assert isinstance(widget, choice._widget_type)
+    assert widget.title == 'MultiChoice'
+    assert widget.value == ['C', '1']
+    assert widget.options == ['A', '1', 'C']
+
+    widget.value = ['1']
+    choice._process_events({'value': ['1']})
+    assert choice.value == [1]
+
+    widget.value = ['A', 'C']
+    choice._process_events({'value': ['A', 'C']})
+    assert choice.value == ['A', object]
+
+    choice.value = [object, 'A']
     assert widget.value == ['C', 'A']
 
 
@@ -205,18 +230,18 @@ def test_toggle_group_check(document, comm):
         assert widget.labels == ['A', '1', 'C']
 
         widget.active = [2]
-        select._comm_change({'active': [2]})
+        select._process_events({'active': [2]})
         assert select.value == [object]
 
         widget.active = [0, 2]
-        select._comm_change({'active': [0, 2]})
+        select._process_events({'active': [0, 2]})
         assert select.value == ['A', object]
 
         select.value = [object, 'A']
         assert widget.active == [2, 0]
 
         widget.active = []
-        select._comm_change({'active': []})
+        select._process_events({'active': []})
         assert select.value == []
 
 
@@ -234,7 +259,7 @@ def test_toggle_group_radio(document, comm):
         assert widget.labels == ['A', '1', 'C']
 
         widget.active = 2
-        select._comm_change({'active': 2})
+        select._process_events({'active': 2})
         assert select.value == object
 
         select.value = 'A'

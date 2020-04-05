@@ -277,7 +277,7 @@ export namespace Player {
 
 export interface Player extends Player.Attrs {}
 
-export abstract class Player extends Widget {
+export class Player extends Widget {
 
   properties: Player.Props
 

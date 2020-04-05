@@ -6,12 +6,13 @@ import glob
 
 from io import StringIO
 
-from bokeh.models import CustomJS
+from bokeh.models import ColumnDataSource, CustomJS
 
 from panel import Row
 from panel.io.notebook import ipywidget
 from panel.config import config
 from panel.io.embed import embed_state
+from panel.io.model import patch_cds_msg
 from panel.pane import Str
 from panel.param import Param
 from panel.widgets import Select, FloatSlider, Checkbox
@@ -34,11 +35,11 @@ def test_embed_param_jslink(document, comm):
     cb1, cb2 = cbs
     cb1, cb2 = (cb1, cb2) if select._models[ref][0] is cb1.args['target'] else (cb2, cb1)
     assert cb1.code == """
-    value = source['active'];
+    var value = source['active'];
     value = value.indexOf(0) >= 0;
     value = value;
     try {
-      property = target.properties['disabled'];
+      var property = target.properties['disabled'];
       if (property !== undefined) { property.validate(value); }
     } catch(err) {
       console.log('WARNING: Could not set disabled on target, raised error: ' + err);
@@ -52,11 +53,11 @@ def test_embed_param_jslink(document, comm):
     """
 
     assert cb2.code == """
-    value = source['disabled'];
+    var value = source['disabled'];
     value = value;
     value = value ? [0] : [];
     try {
-      property = target.properties['active'];
+      var property = target.properties['active'];
       if (property !== undefined) { property.validate(value); }
     } catch(err) {
       console.log('WARNING: Could not set active on target, raised error: ' + err);
@@ -164,11 +165,11 @@ def test_embed_select_str_jslink(document, comm):
     cb1, cb2 = cbs
     cb1, cb2 = (cb1, cb2) if select._models[ref][0] is cb1.args['source'] else (cb2, cb1)
     assert cb1.code == """
-    value = source['value'];
+    var value = source['value'];
     value = value;
     value = JSON.stringify(value).replace(/,/g, ", ").replace(/:/g, ": ");
     try {
-      property = target.properties['text'];
+      var property = target.properties['text'];
       if (property !== undefined) { property.validate(value); }
     } catch(err) {
       console.log('WARNING: Could not set text on target, raised error: ' + err);
@@ -182,11 +183,11 @@ def test_embed_select_str_jslink(document, comm):
     """
     
     assert cb2.code == """
-    value = source['text'];
+    var value = source['text'];
     value = value;
     value = value;
     try {
-      property = target.properties['value'];
+      var property = target.properties['value'];
       if (property !== undefined) { property.validate(value); }
     } catch(err) {
       console.log('WARNING: Could not set value on target, raised error: ' + err);
@@ -241,11 +242,11 @@ def test_embed_checkbox_str_jslink(document, comm):
     cb1, cb2 = cbs
     cb1, cb2 = (cb1, cb2) if checkbox._models[ref][0] is cb1.args['source'] else (cb2, cb1)
     assert cb1.code == """
-    value = source['active'];
+    var value = source['active'];
     value = value.indexOf(0) >= 0;
     value = JSON.stringify(value).replace(/,/g, ", ").replace(/:/g, ": ");
     try {
-      property = target.properties['text'];
+      var property = target.properties['text'];
       if (property !== undefined) { property.validate(value); }
     } catch(err) {
       console.log('WARNING: Could not set text on target, raised error: ' + err);
@@ -259,11 +260,11 @@ def test_embed_checkbox_str_jslink(document, comm):
     """
     
     assert cb2.code == """
-    value = source['text'];
+    var value = source['text'];
     value = value;
     value = value ? [0] : [];
     try {
-      property = target.properties['active'];
+      var property = target.properties['active'];
       if (property !== undefined) { property.validate(value); }
     } catch(err) {
       console.log('WARNING: Could not set active on target, raised error: ' + err);
@@ -319,11 +320,11 @@ def test_embed_slider_str_jslink(document, comm):
     cb1, cb2 = cbs
     cb1, cb2 = (cb1, cb2) if slider._models[ref][0] is cb1.args['source'] else (cb2, cb1)
     assert cb1.code == """
-    value = source['value'];
+    var value = source['value'];
     value = value;
     value = JSON.stringify(value).replace(/,/g, ", ").replace(/:/g, ": ");
     try {
-      property = target.properties['text'];
+      var property = target.properties['text'];
       if (property !== undefined) { property.validate(value); }
     } catch(err) {
       console.log('WARNING: Could not set text on target, raised error: ' + err);
@@ -337,11 +338,11 @@ def test_embed_slider_str_jslink(document, comm):
     """
     
     assert cb2.code == """
-    value = source['text'];
+    var value = source['text'];
     value = value;
     value = value;
     try {
-      property = target.properties['value'];
+      var property = target.properties['value'];
       if (property !== undefined) { property.validate(value); }
     } catch(err) {
       console.log('WARNING: Could not set value on target, raised error: ' + err);
@@ -443,3 +444,43 @@ def test_ipywidget():
 
     assert prev_id in pane._models
     assert len(pane._models) == 1
+
+
+def test_patch_cds_typed_array():
+    cds = ColumnDataSource()
+    msg = {
+        'header': {'msgid': 'TEST', 'msgtype': 'PATCH-DOC'},
+        'metadata': {},
+        'content': {
+            'events': [{
+                'kind': 'ModelChanged',
+                'model': {'id': cds.ref['id']},
+                'attr': 'data',
+                'new': {
+                    'a': {'2': 2, '0': 0, '1': 1},
+                    'b': {'0': 'a', '2': 'c', '1': 'b'}
+                }
+            }],
+            'references': []
+        },
+        'buffers': []
+    }
+    expected = {
+        'header': {'msgid': 'TEST', 'msgtype': 'PATCH-DOC'},
+        'metadata': {},
+        'content': {
+            'events': [{
+                'kind': 'ModelChanged',
+                'model': {'id': cds.ref['id']},
+                'attr': 'data',
+                'new': {
+                    'a': [0, 1, 2],
+                    'b': ['a', 'b', 'c']
+                }
+            }],
+            'references': []
+        },
+        'buffers': []
+    }
+    patch_cds_msg(cds, msg)
+    assert msg == expected

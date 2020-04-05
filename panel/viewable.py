@@ -7,7 +7,6 @@ from __future__ import absolute_import, division, unicode_literals
 
 import difflib
 import logging
-import re
 import sys
 import threading
 import traceback
@@ -18,19 +17,17 @@ from functools import partial
 
 import param
 
-from bokeh.document.document import Document as _Document, _combine_document_events
-from bokeh.document.events import ModelChangedEvent
+from bokeh.document.document import Document as _Document
 from bokeh.io import curdoc as _curdoc
-from bokeh.models import CustomJS
 from pyviz_comms import JupyterCommManager
+from tornado import gen
 
 from .callbacks import PeriodicCallback
 from .config import config, panel_extension
 from .io.embed import embed_state
-from .io.model import add_to_doc
+from .io.model import add_to_doc, hold, patch_cds_msg
 from .io.notebook import (
-    get_comm_customjs, ipywidget, push, render_mimebundle,
-    render_model, show_embed, show_server
+    ipywidget, push, render_mimebundle, render_model, show_embed, show_server
 )
 from .io.save import save
 from .io.state import state
@@ -55,8 +52,7 @@ class Layoutable(param.Parameterized):
         aspect_ratio`` relationship will be maintained.  Otherwise, if
         set to ``"auto"``, component's preferred width and height will
         be used to determine the aspect (if not set, no aspect will be
-        preserved).
-    """)
+        preserved).""")
 
     background = param.Parameter(default=None, doc="""
         Background color of the component.""")
@@ -93,56 +89,64 @@ class Layoutable(param.Parameterized):
         default="auto", objects=['auto', 'fixed', 'fit', 'min', 'max'], doc="""
         Describes how the component should maintain its width.
 
-        * "auto"
-          Use component's preferred sizing policy.
-        * "fixed"
-          Use exactly ``width`` pixels. Component will overflow if it
-          can't fit in the available horizontal space.
-        * "fit"
-          Use component's preferred width (if set) and allow it to fit
-          into the available horizontal space within the minimum and
-          maximum width bounds (if set). Component's width neither
-          will be aggressively minimized nor maximized.
-        * "min"
-          Use as little horizontal space as possible, not less than
-          the minimum width (if set).  The starting point is the
-          preferred width (if set). The width of the component may
-          shrink or grow depending on the parent layout, aspect
-          management and other factors.
-        * "max"
-          Use as much horizontal space as possible, not more than the
-          maximum width (if set).  The starting point is the preferred
-          width (if set). The width of the component may shrink or
-          grow depending on the parent layout, aspect management and
-          other factors.
+        ``"auto"``
+            Use component's preferred sizing policy.
+
+        ``"fixed"``
+            Use exactly ``width`` pixels. Component will overflow if
+            it can't fit in the available horizontal space.
+
+        ``"fit"``
+            Use component's preferred width (if set) and allow it to
+            fit into the available horizontal space within the minimum
+            and maximum width bounds (if set). Component's width
+            neither will be aggressively minimized nor maximized.
+
+        ``"min"``
+            Use as little horizontal space as possible, not less than
+            the minimum width (if set).  The starting point is the
+            preferred width (if set). The width of the component may
+            shrink or grow depending on the parent layout, aspect
+            management and other factors.
+
+        ``"max"``
+            Use as much horizontal space as possible, not more than
+            the maximum width (if set).  The starting point is the
+            preferred width (if set). The width of the component may
+            shrink or grow depending on the parent layout, aspect
+            management and other factors.
     """)
 
     height_policy = param.ObjectSelector(
         default="auto", objects=['auto', 'fixed', 'fit', 'min', 'max'], doc="""
         Describes how the component should maintain its height.
 
-        * "auto"
-          Use component's preferred sizing policy.
-        * "fixed"
-          Use exactly ``width`` pixels. Component will overflow if it
-          can't fit in the available horizontal space.
-        * "fit"
-          Use component's preferred width (if set) and allow it to fit
-          into the available horizontal space within the minimum and
-          maximum width bounds (if set). Component's width neither
-          will be aggressively minimized nor maximized.
-        * "min"
-          Use as little horizontal space as possible, not less than
-          the minimum width (if set).  The starting point is the
-          preferred width (if set). The width of the component may
-          shrink or grow depending on the parent layout, aspect
-          management and other factors.
-        * "max"
-          Use as much horizontal space as possible, not more than the
-          maximum width (if set).  The starting point is the preferred
-          width (if set). The width of the component may shrink or
-          grow depending on the parent layout, aspect management and
-          other factors.
+        ``"auto"``
+            Use component's preferred sizing policy.
+
+        ``"fixed"``
+            Use exactly ``height`` pixels. Component will overflow if
+            it can't fit in the available vertical space.
+
+        ``"fit"``
+            Use component's preferred height (if set) and allow to fit
+            into the available vertical space within the minimum and
+            maximum height bounds (if set). Component's height neither
+            will be aggressively minimized nor maximized.
+
+        ``"min"``
+            Use as little vertical space as possible, not less than
+            the minimum height (if set).  The starting point is the
+            preferred height (if set). The height of the component may
+            shrink or grow depending on the parent layout, aspect
+            management and other factors.
+
+        ``"max"``
+            Use as much vertical space as possible, not more than the
+            maximum height (if set).  The starting point is the
+            preferred height (if set). The height of the component may
+            shrink or grow depending on the parent layout, aspect
+            management and other factors.
     """)
 
     sizing_mode = param.ObjectSelector(default=None, objects=[
@@ -157,37 +161,44 @@ class Layoutable(param.Parameterized):
         ``aspect_ratio`` instead (those take precedence over
         ``sizing_mode``).
 
-        * "fixed"
-          Component is not responsive. It will retain its original
-          width and height regardless of any subsequent browser window
-          resize events.
-        * "stretch_width"
-          Component will responsively resize to stretch to the
-          available width, without maintaining any aspect ratio. The
-          height of the component depends on the type of the component
-          and may be fixed or fit to component's contents.
-        * "stretch_height"
-          Component will responsively resize to stretch to the
-          available height, without maintaining any aspect ratio. The
-          width of the component depends on the type of the component
-          and may be fixed or fit to component's contents.
-        * "stretch_both"
-          Component is completely responsive, independently in width
-          and height, and will occupy all the available horizontal and
-          vertical space, even if this changes the aspect ratio of the
-          component.
-        * "scale_width"
-          Component will responsively resize to stretch to the
-          available width, while maintaining the original or provided
-          aspect ratio.
-        * "scale_height"
-          Component will responsively resize to stretch to the
-          available height, while maintaining the original or provided
-          aspect ratio.
-        * "scale_both"
-          Component will responsively resize to both the available
-          width and height, while maintaining the original or provided
-          aspect ratio.
+        ``"fixed"``
+            Component is not responsive. It will retain its original
+            width and height regardless of any subsequent browser
+            window resize events.
+
+        ``"stretch_width"``
+            Component will responsively resize to stretch to the
+            available width, without maintaining any aspect ratio. The
+            height of the component depends on the type of the
+            component and may be fixed or fit to component's contents.
+
+        ``"stretch_height"``
+            Component will responsively resize to stretch to the
+            available height, without maintaining any aspect
+            ratio. The width of the component depends on the type of
+            the component and may be fixed or fit to component's
+            contents.
+
+        ``"stretch_both"``
+            Component is completely responsive, independently in width
+            and height, and will occupy all the available horizontal
+            and vertical space, even if this changes the aspect ratio
+            of the component.
+
+        ``"scale_width"``
+            Component will responsively resize to stretch to the
+            available width, while maintaining the original or
+            provided aspect ratio.
+
+        ``"scale_height"``
+            Component will responsively resize to stretch to the
+            available height, while maintaining the original or
+            provided aspect ratio.
+
+        ``"scale_both"``
+            Component will responsively resize to both the available
+            width and height, while maintaining the original or
+            provided aspect ratio.
     """)
 
     def __init__(self, **params):
@@ -197,7 +208,8 @@ class Layoutable(param.Parameterized):
             params.get('height_policy') is None and
             'sizing_mode' not in params):
             params['sizing_mode'] = 'fixed'
-        elif not self.param.sizing_mode.constant and not self.param.sizing_mode.readonly:
+        elif (not (self.param.sizing_mode.constant or self.param.sizing_mode.readonly) and
+              type(self).sizing_mode is None):
             params['sizing_mode'] = params.get('sizing_mode', config.sizing_mode)
         super(Layoutable, self).__init__(**params)
 
@@ -218,6 +230,43 @@ class ServableMixin(object):
         return get_server(self, port, websocket_origin, loop, show,
                           start, title, verbose, **kwargs)
 
+    def _on_msg(self, ref, manager, msg):
+        """
+        Handles Protocol messages arriving from the client comm.
+        """
+        root, doc, comm = state._views[ref][1:]
+        patch_cds_msg(root, msg)
+        patch = manager.assemble(msg)
+        held = doc._hold
+        patch.apply_to_document(doc, comm.id)
+        doc.unhold()
+        if held:
+            doc.hold(held)
+
+    def _on_error(self, ref, error):
+        if ref not in state._handles or config.console_output in [None, 'disable']:
+            return
+        handle, accumulator = state._handles[ref]
+        formatted = '\n<pre>'+escape(traceback.format_exc())+'</pre>\n'
+        if config.console_output == 'accumulate':
+            accumulator.append(formatted)
+        elif config.console_output == 'replace':
+            accumulator[:] = [formatted]
+        if accumulator:
+            handle.update({'text/html': '\n'.join(accumulator)}, raw=True)
+
+    def _on_stdout(self, ref, stdout):
+        if ref not in state._handles or config.console_output is [None, 'disable']:
+            return
+        handle, accumulator = state._handles[ref]
+        formatted = ["%s</br>" % o for o in stdout]
+        if config.console_output == 'accumulate':
+            accumulator.extend(formatted)
+        elif config.console_output == 'replace':
+            accumulator[:] = formatted
+        if accumulator:
+            handle.update({'text/html': '\n'.join(accumulator)}, raw=True)
+
     #----------------------------------------------------------------
     # Public API
     #----------------------------------------------------------------
@@ -227,10 +276,12 @@ class ServableMixin(object):
         Serves the object if in a `panel serve` context and returns
         the Panel object to allow it to display itself in a notebook
         context.
+    
         Arguments
         ---------
         title : str
           A string title to give the Document (if served as an app)
+        
         Returns
         -------
         The Panel object itself
@@ -243,8 +294,8 @@ class ServableMixin(object):
             self.server_doc(title=title)
         return self
 
-    def show(self, port=0, websocket_origin=None, threaded=False,
-             title=None, verbose=True, open=True, **kwargs):
+    def show(self, title=None, port=0, websocket_origin=None, threaded=False,
+             verbose=True, open=True, **kwargs):
         """
         Starts a Bokeh server and displays the Viewable in a new tab.
 
@@ -307,6 +358,7 @@ class Viewable(Layoutable, ServableMixin):
         super(Viewable, self).__init__(**params)
         self._documents = {}
         self._models = {}
+        self._comms = {}
         self._found_links = set()
 
     def __repr__(self, depth=0):
@@ -409,18 +461,72 @@ class Viewable(Layoutable, ServableMixin):
             pass
 
         from IPython.display import display
+        from .models.comm_manager import CommManager
 
         comm = state._comm_manager.get_server_comm()
+
         doc = _Document()
         model = self._render_model(doc, comm)
+        ref = model.ref['id']
+        manager = CommManager(comm_id=comm.id, plot_id=ref)
+        client_comm = state._comm_manager.get_client_comm(
+            on_msg=partial(self._on_msg, ref, manager),
+            on_error=partial(self._on_error, ref),
+            on_stdout=partial(self._on_stdout, ref)
+        )
+        self._comms[ref] = (comm, client_comm)
+        manager.client_comm_id = client_comm.id
 
         if config.console_output != 'disable':
             handle = display(display_id=uuid.uuid4().hex)
-            state._handles[model.ref['id']] = (handle, [])
+            state._handles[ref] = (handle, [])
 
         if config.embed:
             return render_model(model)
-        return render_mimebundle(model, doc, comm)
+        return render_mimebundle(model, doc, comm, manager)
+
+    def _comm_change(self, doc, ref, attr, old, new):
+        if attr in self._changing.get(ref, []):
+            self._changing[ref].remove(attr)
+            return
+
+        with hold(doc):
+            self._process_events({attr: new})
+
+    def _server_change(self, doc, ref, attr, old, new):
+        if attr in self._changing.get(ref, []):
+            self._changing[ref].remove(attr)
+            return
+
+        state._locks.clear()
+        self._events.update({attr: new})
+        if not self._processing:
+            self._processing = True
+            if doc.session_context:
+                doc.add_timeout_callback(partial(self._change_coroutine, doc), self._debounce)
+            else:
+                self._change_event(doc)
+
+    def _process_events(self, events):
+        self.param.set_param(**self._process_property_change(events))
+
+    @gen.coroutine
+    def _change_coroutine(self, doc=None):
+        self._change_event(doc)
+
+    def _change_event(self, doc=None):
+        try:
+            state.curdoc = doc
+            thread = threading.current_thread()
+            thread_id = thread.ident if thread else None
+            state._thread_id = thread_id
+            events = self._events
+            self._events = {}
+            self._process_events(events)
+        finally:
+            self._processing = False
+            state.curdoc = None
+            state._thread_id = None
 
     def _server_destroy(self, session_context):
         """
@@ -554,9 +660,9 @@ class Viewable(Layoutable, ServableMixin):
            Optional title for the plot
         resources: bokeh resources
            One of the valid bokeh.resources (e.g. CDN or INLINE)
-       template:
+        template:
            passed to underlying io.save
-       template_variables:
+        template_variables:
            passed to underlying io.save
         embed: bool
            Whether the state space should be embedded in the saved file.
@@ -643,169 +749,68 @@ class Reactive(Viewable):
         super(Reactive, self).__init__(**params)
         self._processing = False
         self._events = {}
-        self._changing = {}
         self._callbacks = []
         self._links = []
         self._link_params()
+        self._changing = {}
 
     #----------------------------------------------------------------
     # Callback API
     #----------------------------------------------------------------
 
-    def _update_model(self, events, msg, root, model, doc, comm=None):
-        if comm:
-            filtered = {}
-            for k, v in msg.items():
-                try:
-                    change = (k not in self._changing or
-                              self._changing[k] != v or
-                              self._changing['id'] != model.ref['id'])
-                except Exception:
-                    change = True
-                if change:
-                    filtered[k] = v
-            for attr, new in filtered.items():
-                setattr(model, attr, new)
-                event = doc._held_events[-1] if doc._held_events else None
-                if (event and event.model is model and event.attr == attr and
-                    event.new is new):
-                    continue
-                # If change did not trigger event trigger it manually
-                old = getattr(model, attr)
-                serializable_new = model.lookup(attr).serializable_value(model)
-                event = ModelChangedEvent(doc, model, attr, old, new, serializable_new)
-                _combine_document_events(event, doc._held_events)
-        else:
+    def _update_model(self, events, msg, root, model, doc, comm):
+        self._changing[root.ref['id']] = [
+            attr for attr, value in msg.items()
+            if not model.lookup(attr).property.matches(getattr(model, attr), value)
+        ]
+        try:
             model.update(**msg)
+        finally:
+            del self._changing[root.ref['id']]
+
+    def param_change(self, *events):
+        msgs = []
+        for event in events:
+            msg = self._process_param_change({event.name: event.new})
+            if msg:
+                msgs.append(msg)
+
+        events = {event.name: event for event in events}
+        msg = {k: v for msg in msgs for k, v in msg.items()}
+        if not msg:
+            return
+
+        for ref, (model, parent) in self._models.items():
+            if ref not in state._views or ref in state._fake_roots:
+                continue
+            viewable, root, doc, comm = state._views[ref]
+            if comm or not doc.session_context or state._unblocked(doc):
+                with unlocked():
+                    self._update_model(events, msg, root, model, doc, comm)
+                if comm and 'embedded' not in root.tags:
+                    push(doc, comm)
+            else:
+                cb = partial(self._update_model, events, msg, root, model, doc, comm)
+                doc.add_next_tick_callback(cb)
 
     def _link_params(self):
-        def param_change(*events):
-            msgs = []
-            for event in events:
-                msg = self._process_param_change({event.name: event.new})
-                if msg:
-                    msgs.append(msg)
-
-            events = {event.name: event for event in events}
-            msg = {k: v for msg in msgs for k, v in msg.items()}
-            if not msg:
-                return
-
-            for ref, (model, parent) in self._models.items():
-                if ref not in state._views:
-                    continue
-                viewable, root, doc, comm = state._views[ref]
-
-                if comm or state._unblocked(doc):
-                    with unlocked():
-                        self._update_model(events, msg, root, model, doc, comm)
-                    if comm and 'embedded' not in root.tags:
-                        push(doc, comm)
-                else:
-                    cb = partial(self._update_model, events, msg, root, model, doc, comm)
-                    if doc.session_context:
-                        doc.add_next_tick_callback(cb)
-                    else:
-                        cb()
-
         params = self._synced_params()
         if params:
-            watcher = self.param.watch(param_change, params)
+            watcher = self.param.watch(self.param_change, params)
             self._callbacks.append(watcher)
-
-    def _on_error(self, ref, error):
-        if ref not in state._handles or config.console_output in [None, 'disable']:
-            return
-        handle, accumulator = state._handles[ref]
-        formatted = '\n<pre>'+escape(traceback.format_exc())+'</pre>\n'
-        if config.console_output == 'accumulate':
-            accumulator.append(formatted)
-        elif config.console_output == 'replace':
-            accumulator[:] = [formatted]
-        if accumulator:
-            handle.update({'text/html': '\n'.join(accumulator)}, raw=True)
-
-    def _on_stdout(self, ref, stdout):
-        if ref not in state._handles or config.console_output is [None, 'disable']:
-            return
-        handle, accumulator = state._handles[ref]
-        formatted = ["%s</br>" % o for o in stdout]
-        if config.console_output == 'accumulate':
-            accumulator.extend(formatted)
-        elif config.console_output == 'replace':
-            accumulator[:] = formatted
-        if accumulator:
-            handle.update({'text/html': '\n'.join(accumulator)}, raw=True)
 
     def _link_props(self, model, properties, doc, root, comm=None):
         ref = root.ref['id']
-        if comm is None:
-            for p in properties:
-                if isinstance(p, tuple):
-                    _, p = p
-                model.on_change(p, partial(self._server_change, doc, ref))
-        elif config.embed:
-            pass
-        else:
-            on_msg = partial(self._comm_change, ref=ref)
-            client_comm = state._comm_manager.get_client_comm(
-                on_msg=on_msg, on_error=partial(self._on_error, ref),
-                on_stdout=partial(self._on_stdout, ref)
-            )
-            for p in properties:
-                if isinstance(p, tuple):
-                    p, attr = p
-                else:
-                    p, attr = p, p
-                customjs = self._get_customjs(attr, client_comm, ref)
-                model.js_on_change(p, customjs)
-
-    def _comm_change(self, msg, ref=None):
-        if not msg:
+        if config.embed:
             return
-        self._changing.update(msg)
-        msg.pop('id', None)
-        self._events.update(msg)
-        try:
-            self._change_event()
-        finally:
-            self._changing = {}
 
-    def _server_change(self, doc, ref, attr, old, new):
-        self._events.update({attr: new})
-        if not self._processing:
-            self._processing = True
-            if doc.session_context:
-                doc.add_timeout_callback(partial(self._change_event, doc), self._debounce)
+        for p in properties:
+            if isinstance(p, tuple):
+                _, p = p
+            if comm:
+                model.on_change(p, partial(self._comm_change, doc, ref))
             else:
-                self._change_event(doc)
-
-    def _process_events(self, events):
-        self.param.set_param(**self._process_property_change(events))
-
-    def _change_event(self, doc=None):
-        try:
-            state.curdoc = doc
-            thread = threading.current_thread()
-            thread_id = thread.ident if thread else None
-            state._thread_id = thread_id
-            events = self._events
-            self._events = {}
-            self._process_events(events)
-        finally:
-            self._processing = False
-            state.curdoc = None
-            state._thread_id = None
-
-    def _get_customjs(self, change, client_comm, plot_id):
-        """
-        Returns a CustomJS callback that can be attached to send the
-        model state across the notebook comms.
-        """
-        transform = self._js_transforms.get(change)
-        return get_comm_customjs(
-            change, client_comm, plot_id, transform, self._timeout, self._debounce
-        )
+                model.on_change(p, partial(self._server_change, doc, ref))
 
     #----------------------------------------------------------------
     # Model API
@@ -852,25 +857,19 @@ class Reactive(Viewable):
 
     def _cleanup(self, root):
         super(Reactive, self)._cleanup(root)
-
-        # Clean up comms
-        model, _ = self._models.pop(root.ref['id'], (None, None))
-        if model is None:
-            return
-
-        customjs = model.select({'type': CustomJS})
-        pattern = r"data\['comm_id'\] = \"(.*)\""
-        for js in customjs:
-            comm_ids = list(re.findall(pattern, js.code))
-            if not comm_ids:
-                continue
-            comm_id = comm_ids[0]
-            comm = state._comm_manager._comms.pop(comm_id, None)
-            if comm:
-                try:
-                    comm.close()
-                except Exception:
-                    pass
+        ref = root.ref['id']
+        self._models.pop(ref, None)
+        comm, client_comm = self._comms.pop(ref, (None, None))
+        if comm:
+            try:
+                comm.close()
+            except Exception:
+                pass
+        if client_comm:
+            try:
+                client_comm.close()
+            except Exception:
+                pass
 
     #----------------------------------------------------------------
     # Public API
@@ -1075,7 +1074,9 @@ class Reactive(Viewable):
 
         mapping = code or links
         for k in mapping:
-            if k not in self.param and k not in list(self._rename.values()):
+            if k.startswith('event:'):
+                continue
+            elif k not in self.param and k not in list(self._rename.values()):
                 matches = difflib.get_close_matches(k, list(self.param))
                 if matches:
                     matches = ' Similar parameters include: %r' % matches
@@ -1092,7 +1093,9 @@ class Reactive(Viewable):
 
         if isinstance(target, Reactive) and code is None:
             for k, p in mapping.items():
-                if p not in target.param and p not in list(target._rename.values()):
+                if k.startswith('event:'):
+                    continue
+                elif p not in target.param and p not in list(target._rename.values()):
                     matches = difflib.get_close_matches(p, list(target.param))
                     if matches:
                         matches = ' Similar parameters include: %r' % matches
