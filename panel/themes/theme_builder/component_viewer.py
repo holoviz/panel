@@ -2,16 +2,26 @@
 panes and widgets"""
 import panel as pn
 import param
-
+import hvplot.pandas
+import holoviews as hv
 import pandas as pd
+import numpy as np
 
 
 class ComponentViewer(param.Parameterized):
     """a component to test template/ layout changes on all relevent layouts,
 panes and widgets"""
+    plot_hv = param.Parameter()
 
     def __init__(self, **params):
+        if not "plot_hv" in params:
+            params["plot_hv"] = hv.Div("Loading ...")
+
         super().__init__(**params)
+
+        self.sine_df = self._get_sine_df()
+        self.plot_hv_pane = pn.pane.HoloViews(self.plot_hv)
+        self.update_plots()
 
     def button_view(self):
         button_default = pn.widgets.Button(name="DEFAULT")
@@ -70,6 +80,35 @@ panes and widgets"""
             dataframe_widget,
         )
 
+    def _get_sine_df(self):
+        data = {
+            "phase": [],
+            "frequency": [],
+            "x": [],
+            "y": [],
+        }
+
+        for phase in [0, np.pi/2]:
+            for frequency in [0.5, 0.75, 1.0, 1.25]:
+                for x in range(100):
+                    data["phase"].append(phase)
+                    data["frequency"].append(frequency)
+                    data["x"].append(x)
+                    data["y"].append(np.sin(phase+frequency*x))
+
+        return pd.DataFrame(data)
+
+
+    def update_plots(self):
+        self.plot_hv = self.sine_df.hvplot(x="x", y="y", by=["phase", "frequency"])
+        self.plot_hv_pane.object = self.plot_hv
+
+    def plot_view(self):
+        return pn.Column(
+            "### Plots",
+            "#### Holoviews", self.plot_hv_pane,
+        )
+
     def view(self):
         """Returns the component view"""
 
@@ -105,5 +144,6 @@ print("Hello Panel World")
             self.button_view(),
             self.select_view(),
             self.dataframe_view(),
+            self.plot_view(),
             min_height=800,
         )

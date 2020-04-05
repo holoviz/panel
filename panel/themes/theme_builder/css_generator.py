@@ -5,6 +5,8 @@ import panel as pn
 
 from .color_scheme import COLOR_SCHEME_EDITABLE_COLORS, ColorScheme
 from .color_palette import GREY
+from .bokeh_theme import get_theme
+import json
 
 # Inspiration:
 # https://github.com/angular/components/blob/master/src/material/button/_button-theme.scss
@@ -16,6 +18,8 @@ class CssGenerator(param.Parameterized):
     panel_css = param.String()
     markdown_css = param.String()
     dataframe_css = param.String()
+    bokeh_theme = param.Dict()
+    bokeh_theme_str = param.String()
 
     def __init__(self, **params):
         self.param.color_scheme.default = ColorScheme()
@@ -23,12 +27,18 @@ class CssGenerator(param.Parameterized):
         super().__init__(**params)
 
         self._update_css()
+        self._update_bokeh_theme()
 
     @param.depends("color_scheme", *COLOR_SCHEME_EDITABLE_COLORS, watch=True)
     def _update_css(self):
         self.panel_css = self._get_panel_css()
         self.markdown_css = self._get_markdown_css()
         self.dataframe_css = self._get_dataframe_css()
+
+    @param.depends("color_scheme", "color_scheme.theme", watch=True)
+    def _update_bokeh_theme(self):
+        self.bokeh_theme = get_theme(self.color_scheme.theme)
+        self.bokeh_theme_str = json.dumps(self.bokeh_theme, indent=2)
 
     def css_view(self):
         return pn.Column(
@@ -48,6 +58,11 @@ class CssGenerator(param.Parameterized):
                     self.param.dataframe_css,
                     name="Dataframe",
                     widgets={"dataframe_css": {"type": pn.widgets.TextAreaInput, "height": 600}},
+                ),
+                pn.Param(
+                    self.param.bokeh_theme_str,
+                    name="Bokeh Theme",
+                    widgets={"bokeh_theme_str": {"type": pn.widgets.TextAreaInput, "height": 600}},
                 ),
             ),
         )
