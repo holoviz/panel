@@ -487,8 +487,9 @@ def test_param_view():
         name = "Param View",
     )
 
-
-if __name__.startswith("bk"):
+print(__name__)
+if __name__.startswith("bokeh"):
+    print("start")
     # import ptvsd
     # ptvsd.enable_attach(address=('localhost', 5678))
     # print('Ready to attach the VS Code debugger')
@@ -501,4 +502,5 @@ if __name__.startswith("bk"):
         wired_view,
         param_view
         )
+    app= pn.Column("# Hello World")
     app.servable()
