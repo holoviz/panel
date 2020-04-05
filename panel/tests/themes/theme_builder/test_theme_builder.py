@@ -58,7 +58,7 @@ if __name__.startswith("bokeh"):
 
     logo = """\
 <a class="logo" href="https://panel.holoviz.org/">
-    <img alt="Logo" style="width:100%;" src="https://panel.holoviz.org/_static/logo_horizontal.png">
+    <img alt="Logo" style="height:100%;" src="https://panel.holoviz.org/_static/logo_horizontal.png">
 </a>"""
 
     app = pn.Column(

@@ -76,7 +76,7 @@ panes and widgets"""
 
 
         return pn.Column(
-            """### Text
+            """### Markdown
 
 [Panel](https://panel.holoviz.org/) is an open-source Python library that lets you create custom
 interactive web apps and dashboards by connecting user-defined widgets to plots, images, tables, or
@@ -91,7 +91,10 @@ Compared to other approaches, Panel is novel in that it
 - and can be used to develop rich interactive applications without tying your domain-specific code
 to any particular GUI or web tools.
 
-You can **use the Theme Builder to design your Panel app**.
+You can **use the Theme Builder to design your Panel app**. The Theme builder is inspired by
+
+- [material.io](https://material.io/design/)
+- [material-ui.com](https://material-ui.com/)
 
 You can also write `code` here
 
