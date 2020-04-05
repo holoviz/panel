@@ -56,8 +56,13 @@ if __name__.startswith("bokeh"):
     # Neither the Row or the ThemeTestApp
     theme_builder = ThemeBuilder()
 
+    logo = """\
+<a class="logo" href="https://panel.holoviz.org/">
+    <img alt="Logo" style="width:100%;" src="https://panel.holoviz.org/_static/logo_horizontal.png">
+</a>"""
+
     app = pn.Column(
-        pn.Row("# Theme Builder"),
+        pn.Row("# Theme Builder", pn.layout.VSpacer(), pn.pane.HTML(logo, height=55, width=225, margin=(10,25,0,25))),
         pn.layout.Divider(),
         pn.Row(
                 theme_builder.view(width=400, sizing_mode="stretch_height"),
