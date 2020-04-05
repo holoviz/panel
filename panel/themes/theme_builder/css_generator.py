@@ -5,7 +5,7 @@ import panel as pn
 
 from .color_scheme import COLOR_SCHEME_EDITABLE_COLORS, ColorScheme
 from .color_palette import GREY
-from .bokeh_theme import get_theme
+from .holoviews_theme import get_theme
 import json
 
 # Inspiration:

@@ -204,7 +204,6 @@ class ColorPalette(param.Parameterized):
     def __eq__(self, other):
         return self.name == other.name
 
-
 RED = ColorPalette(
     name="red",
     color_50="#ffebee",

@@ -6,6 +6,7 @@ import hvplot.pandas
 import holoviews as hv
 import pandas as pd
 import numpy as np
+from .holoviews_theme import get_dark_theme
 
 
 class ComponentViewer(param.Parameterized):
@@ -89,7 +90,7 @@ panes and widgets"""
         }
 
         for phase in [0, np.pi/2]:
-            for frequency in [0.5, 0.75, 1.0, 1.25]:
+            for frequency in [0.5, 0.75, 1.0]:
                 for x in range(100):
                     data["phase"].append(phase)
                     data["frequency"].append(frequency)
@@ -100,7 +101,15 @@ panes and widgets"""
 
 
     def update_plots(self):
-        self.plot_hv = self.sine_df.hvplot(x="x", y="y", by=["phase", "frequency"])
+        from bokeh.themes.theme import Theme
+        from panel.themes.theme_builder.holoviews_theme import get_dark_theme
+        from panel.themes.theme_builder.theme import DARK_THEME
+        from panel.themes.theme_builder.color_scheme import ANGULAR_DARK_COLOR_SCHEME
+        hv.renderer('bokeh').theme = Theme(json=get_dark_theme(DARK_THEME))
+        cycle = hv.Cycle(ANGULAR_DARK_COLOR_SCHEME.get_colors_category())
+        options = {'Curve': dict(color=cycle, line_width=4)}
+        self.plot_hv = self.sine_df.hvplot(x="x", y="y", by=["phase", "frequency"], height=400).options(options)
+        print(self.plot_hv)
         self.plot_hv_pane.object = self.plot_hv
 
     def plot_view(self):

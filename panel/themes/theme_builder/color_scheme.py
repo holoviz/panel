@@ -35,6 +35,47 @@ class ColorScheme(param.Parameterized):
         self.warning = color_scheme.warning
         self.theme = color_scheme.theme
 
+    def get_colors_accent(self):
+        primary = self.primary
+        return [
+            primary.color_50,
+            primary.color_100,
+            primary.color_200,
+            primary.color_300,
+            primary.color_400,
+            primary.color_500,
+            primary.color_600,
+            primary.color_700,
+            primary.color_800,
+            primary.color_900,
+            primary.color_a100,
+            primary.color_a200,
+            primary.color_a400,
+            primary.color_a700,
+        ]
+
+    def get_colors_category(self):
+        colors = [
+            self.primary.color_500,
+            self.secondary.color_500,
+            self.warning.color_500,
+        ]
+        for palette in color_palette.PALETTES:
+            color = palette.color_500
+            if color not in colors:
+                colors.append(color)
+
+        colors.append(self.primary.color_a100)
+        colors.append(self.secondary.color_a100)
+        colors.append(self.warning.color_a100)
+
+        for palette in color_palette.PALETTES:
+            color = palette.color_a100
+            if color not in colors:
+                colors.append(color)
+
+        return colors
+
 
 PANEL_COLOR_SCHEME = ColorScheme(
     name="Panel",

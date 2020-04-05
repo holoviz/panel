@@ -10,16 +10,16 @@ def get_light_theme(theme):
 
 def get_dark_theme(theme):
     text = theme.foreground.text
-    dark50 = theme.background.background
-    dark100 = theme.background.dialog
-    dark75 = theme.background.app_bar
+    inner_plot_color = theme.background.dialog
+    outer_plot_color = theme.background.background
+    legend_color = theme.background.app_bar
 
     return {
         "attrs": {
             "Figure": {
-                "background_fill_color": dark50,
-                "border_fill_color": dark100,
-                "outline_line_color": dark75,
+                "background_fill_color": inner_plot_color,
+                "border_fill_color": outer_plot_color,
+                "outline_line_color": legend_color,
                 "outline_line_alpha": 0.25,
             },
             "Grid": {"grid_line_color": text, "grid_line_alpha": 0.25},
@@ -48,7 +48,7 @@ def get_dark_theme(theme):
                 "label_text_font_size": "1.025em",
                 "border_line_alpha": 0,
                 "background_fill_alpha": 0.25,
-                "background_fill_color": dark75,
+                "background_fill_color": legend_color,
             },
             "ColorBar": {
                 "title_text_color": text,
@@ -58,7 +58,7 @@ def get_dark_theme(theme):
                 "major_label_text_color": text,
                 "major_label_text_font": "OrstedSansRegular, sans-serif, Verdana",
                 "major_label_text_font_size": "1.025em",
-                "background_fill_color": dark75,
+                "background_fill_color": legend_color,
                 "major_tick_line_alpha": 0,
                 "bar_line_alpha": 0,
             },

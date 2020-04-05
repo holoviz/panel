@@ -62,6 +62,8 @@ def test_can_update_color_scheme():
 
 if __name__.startswith("bokeh"):
     pn.config.sizing_mode = "stretch_width"
+
+
     app = CssGenerator()
     app.color_scheme.update(CHESTERISH_COLOR_SCHEME)
     app.view().servable()
