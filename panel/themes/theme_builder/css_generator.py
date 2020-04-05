@@ -60,6 +60,11 @@ class CssGenerator(param.Parameterized):
 
     def _get_markdown_css(self):
         return f"""\
+.codehilite  {{
+    background: {self.color_scheme.theme.background.card};
+    border-radius: 4px;
+    padding: 1px;
+}}
 .markdown a {{
     color: {self.color_scheme.secondary.color_a400};
     text-decoration: none currentcolor solid;
@@ -87,9 +92,9 @@ color: {self.color_scheme.theme.foreground.base} !important;
     border-color:  {self.color_scheme.primary.color_500};
 }}
 """
-        panel_css += self._get_panel_button_outlined_css(button_type="default", color=self.color_scheme.primary.contrast_500, border_color=self.color_scheme.theme.foreground.disabled_text)
+        panel_css += self._get_panel_button_outlined_css(button_type="default", color=self.color_scheme.theme.foreground.base, border_color=self.color_scheme.theme.foreground.disabled_text)
         panel_css += self._get_panel_button_contained_css(button_type="primary", background_color=self.color_scheme.primary.color_500, color=self.color_scheme.primary.contrast_500)
-        panel_css += self._get_panel_button_contained_css(button_type="success", background_color=self.color_scheme.secondary.color_500, color=self.color_scheme.secondary.contrast_500)
+        panel_css += self._get_panel_button_contained_css(button_type="success", background_color=self.color_scheme.secondary.color_a400, color=self.color_scheme.secondary.contrast_a400)
         panel_css += self._get_panel_button_contained_css(button_type="warning", background_color=self.color_scheme.warning.color_500, color=self.color_scheme.warning.contrast_500)
         panel_css += self._get_panel_button_contained_css(button_type="danger", background_color=self.color_scheme.warning.color_500, color=self.color_scheme.warning.contrast_500)
 
@@ -123,23 +128,23 @@ color: {self.color_scheme.theme.foreground.base} !important;
 .bk-root .bk-btn-{button_type}[disabled]:focus,
 .bk-root .bk-btn-{button_type}[disabled]:active,
 .bk-root .bk-btn-{button_type}[disabled].bk-active {{
-  background-color: transparent;
-  border-color: {border_color};
+    color: {self.color_scheme.theme.foreground.disabled_button};
+    background-color: transparent;
+    border-color: {self.color_scheme.theme.background.disabled_button};
 }}"""
 
     def _get_panel_input_css(self):
         return f"""\
 .bk-root .bk-input {{
-    background: {self.color_scheme.theme.background.dialog};
+    background: {self.color_scheme.theme.background.background};
     color: {self.color_scheme.theme.foreground.text};
-    border: 1px solid rgb(216,209,202);
+    border: 1px solid {self.color_scheme.theme.foreground.disabled_text};
     border-radius: 4px;
 }}
-
 .bk-root .bk-input:focus {{
     background: {self.color_scheme.theme.background.dialog};
     color: {self.color_scheme.theme.foreground.text};
-    border-color: {self.color_scheme.secondary.color_500};
+    border-color: {self.color_scheme.primary.color_500};
     box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 8px rgba(102, 175, 233, 0.6);
 }}
 
@@ -154,8 +159,10 @@ color: {self.color_scheme.theme.foreground.base} !important;
 .bk-root .bk-input[disabled],
 .bk-root .bk-input[readonly] {{
     cursor: not-allowed;
-    background-color: #eee;
     opacity: 1;
+    color: {self.color_scheme.theme.foreground.disabled_button};
+    background-color: transparent;
+    border-color: {self.color_scheme.theme.background.disabled_button};
 }}
 
 .bk-root select[multiple].bk-input,
@@ -201,8 +208,8 @@ color: {self.color_scheme.theme.foreground.base} !important;
 .bk-root .bk-btn-{button_type}[disabled]:focus,
 .bk-root .bk-btn-{button_type}[disabled]:active,
 .bk-root .bk-btn-{button_type}[disabled].bk-active {{
-  background-color: transparent;
-  border-color: #ccc;
+  color: {self.color_scheme.theme.foreground.disabled_button};
+  background-color: {self.color_scheme.theme.background.disabled_button};
 }}"""
 
 # border-bottom: 1px solid {self.color_scheme.primary};

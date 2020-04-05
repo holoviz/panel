@@ -77,6 +77,12 @@ Compared to other approaches, Panel is novel in that it
 to any particular GUI or web tools.
 
 You can **use the Theme Builder to design your Panel app**.
+
+You can also write `code` here
+
+```python
+print("Hello Panel World")
+```
             """,
             self.button_view(),
             self.select_widget,
