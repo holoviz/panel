@@ -51,7 +51,3 @@ Panel requires the pyviz labextension installed to be working in Jupyter Lab:
 ```bash
 jupyter labextension install @pyviz/jupyterlab_pyviz
 ```
-
-## About HoloViz
-
-Panel is part of the HoloViz family of tools.  The [HoloViz website](https://holoviz.org) shows how to use Panel together with other libraries to solve complex problems, with detailed tutorials and examples. For a list of examples building on this set of tools (including Panel) see [examples.pyviz.org](https://examples.pyviz.org/)
