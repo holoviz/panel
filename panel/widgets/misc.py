@@ -260,11 +260,11 @@ class FileDownload(Widget):
             return
 
         from ..param import ParamFunction
-        filename = self.filename
         if self.callback is None:
             fileobj = self.file
         else:
             fileobj = ParamFunction.eval(self.callback)
+        filename = self.filename
         if isinstance(fileobj, str):
             if not os.path.isfile(fileobj):
                 raise FileNotFoundError('File "%s" not found.' % fileobj)

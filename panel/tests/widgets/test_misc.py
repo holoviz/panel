@@ -105,6 +105,18 @@ def test_file_download_callback():
     file_download._clicks += 1
     assert file_download.data is not None
 
+    file_download.data = None
+
+    def cb():
+        file_download.filename = "cba.py"
+        return StringIO("data")
+
+    file_download.callback = cb
+    file_download._clicks += 1
+
+    assert file_download.data is not None
+    assert file_download.filename == "cba.py"
+    assert file_download.label == "Download cba.py"
 
 def test_file_download_data():
     file_download = FileDownload(__file__, embed=True)
