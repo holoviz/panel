@@ -1,0 +1,409 @@
+"""
+Defines Layout classes which may be used to arrange panes and widgets
+in flexible ways to build complex dashboards.
+"""
+from __future__ import absolute_import, division, unicode_literals
+
+from collections import namedtuple
+
+import param
+
+from bokeh.models import Column as BkColumn, Row as BkRow
+
+from .io.model import hold
+from .io.state import state
+from .util import param_reprs
+from .viewable import Reactive
+
+_row = namedtuple("row", ["children"])
+_col = namedtuple("col", ["children"])
+
+
+class Panel(Reactive):
+    """
+    Abstract baseclass for a layout of Viewables.
+    """
+
+    _bokeh_model = None
+
+    __abstract = True
+
+    _rename = {'objects': 'children'}
+
+    _linked_props = []
+
+    def __repr__(self, depth=0, max_depth=10):
+        if depth > max_depth:
+            return '...'
+        spacer = '\n' + ('    ' * (depth+1))
+        cls = type(self).__name__
+        params = param_reprs(self, ['objects'])
+        objs = ['[%d] %s' % (i, obj.__repr__(depth+1)) for i, obj in enumerate(self)]
+        if not params and not objs:
+            return super(Panel, self).__repr__(depth+1)
+        elif not params:
+            template = '{cls}{spacer}{objs}'
+        elif not objs:
+            template = '{cls}({params})'
+        else:
+            template = '{cls}({params}){spacer}{objs}'
+        return template.format(
+            cls=cls, params=', '.join(params),
+            objs=('%s' % spacer).join(objs), spacer=spacer)
+
+    #----------------------------------------------------------------
+    # Callback API
+    #----------------------------------------------------------------
+
+    def _update_model(self, events, msg, root, model, doc, comm=None):
+        msg = dict(msg)
+        if self._rename['objects'] in msg:
+            old = events['objects'].old
+            msg[self._rename['objects']] = self._get_objects(model, old, doc, root, comm)
+
+        with hold(doc):
+            super(Panel, self)._update_model(events, msg, root, model, doc, comm)
+            from .io import state
+            ref = root.ref['id']
+            if ref in state._views:
+                state._views[ref][0]._preprocess(root)
+
+    #----------------------------------------------------------------
+    # Model API
+    #----------------------------------------------------------------
+
+    def _init_properties(self):
+        properties = {k: v for k, v in self.param.get_param_values()
+                      if v is not None}
+        del properties['objects']
+        return self._process_param_change(properties)
+
+    def _get_objects(self, model, old_objects, doc, root, comm=None):
+        """
+        Returns new child models for the layout while reusing unchanged
+        models and cleaning up any dropped objects.
+        """
+        from .pane.base import panel, RerenderError
+        new_models = []
+        for i, pane in enumerate(self.objects):
+            pane = panel(pane)
+            self.objects[i] = pane
+
+        for obj in old_objects:
+            if obj not in self.objects:
+                obj._cleanup(root)
+
+        current_objects = list(self.objects)
+        for i, pane in enumerate(self.objects):
+            if pane in old_objects:
+                child, _ = pane._models[root.ref['id']]
+            else:
+                try:
+                    child = pane._get_model(doc, root, model, comm)
+                except RerenderError:
+                    return self._get_objects(model, current_objects[:i], doc, root, comm)
+            new_models.append(child)
+        return new_models
+
+    def _get_model(self, doc, root=None, parent=None, comm=None):
+        model = self._bokeh_model()
+        if root is None:
+            root = model
+        objects = self._get_objects(model, [], doc, root, comm)
+        props = dict(self._init_properties(), objects=objects)
+        model.update(**self._process_param_change(props))
+        self._models[root.ref['id']] = (model, parent)
+        self._link_props(model, self._linked_props, doc, root, comm)
+        return model
+
+    #----------------------------------------------------------------
+    # Public API
+    #----------------------------------------------------------------
+
+    def select(self, selector=None):
+        """
+        Iterates over the Viewable and any potential children in the
+        applying the Selector.
+
+        Arguments
+        ---------
+        selector: type or callable or None
+          The selector allows selecting a subset of Viewables by
+          declaring a type or callable function to filter by.
+
+        Returns
+        -------
+        viewables: list(Viewable)
+        """
+        objects = super(Panel, self).select(selector)
+        for obj in self:
+            objects += obj.select(selector)
+        return objects
+
+
+
+class ListPanel(Panel):
+    """
+    An abstract baseclass for Panel objects with list-like children.
+    """
+
+    margin = param.Parameter(default=0, doc="""
+        Allows to create additional space around the component. May
+        be specified as a two-tuple of the form (vertical, horizontal)
+        or a four-tuple (top, right, bottom, left).""")
+
+    objects = param.List(default=[], doc="""
+        The list of child objects that make up the layout.""")
+
+    scroll = param.Boolean(default=False, doc="""
+        Whether to add scrollbars if the content overflows the size
+        of the container.""")
+
+    _source_transforms = {'scroll': None}
+
+    __abstract = True
+
+    def __init__(self, *objects, **params):
+        from .pane import panel
+        if objects:
+            if 'objects' in params:
+                raise ValueError("A %s's objects should be supplied either "
+                                 "as positional arguments or as a keyword, "
+                                 "not both." % type(self).__name__)
+            params['objects'] = [panel(pane) for pane in objects]
+        super(Panel, self).__init__(**params)
+
+    def _process_param_change(self, params):
+        scroll = params.pop('scroll', None)
+        css_classes = self.css_classes or []
+        if scroll:
+            params['css_classes'] = css_classes + ['scrollable']
+        elif scroll == False:
+            params['css_classes'] = css_classes
+        return super(ListPanel, self)._process_param_change(params)
+
+    def _cleanup(self, root):
+        if root.ref['id'] in state._fake_roots:
+            state._fake_roots.remove(root.ref['id'])
+        super(ListPanel, self)._cleanup(root)
+        for p in self.objects:
+            p._cleanup(root)
+
+    #----------------------------------------------------------------
+    # Public API
+    #----------------------------------------------------------------
+
+    def __getitem__(self, index):
+        return self.objects[index]
+
+    def __len__(self):
+        return len(self.objects)
+
+    def __iter__(self):
+        for obj in self.objects:
+            yield obj
+
+    def __contains__(self, obj):
+        return obj in self.objects
+
+    def __setitem__(self, index, panes):
+        from .pane import panel
+        new_objects = list(self)
+        if not isinstance(index, slice):
+            start, end = index, index+1
+            if start > len(self.objects):
+                raise IndexError('Index %d out of bounds on %s '
+                                 'containing %d objects.' %
+                                 (end, type(self).__name__, len(self.objects)))
+            panes = [panes]
+        else:
+            start = index.start or 0
+            end = len(self) if index.stop is None else index.stop
+            if index.start is None and index.stop is None:
+                if not isinstance(panes, list):
+                    raise IndexError('Expected a list of objects to '
+                                     'replace the objects in the %s, '
+                                     'got a %s type.' %
+                                     (type(self).__name__, type(panes).__name__))
+                expected = len(panes)
+                new_objects = [None]*expected
+                end = expected
+            elif end > len(self.objects):
+                raise IndexError('Index %d out of bounds on %s '
+                                 'containing %d objects.' %
+                                 (end, type(self).__name__, len(self.objects)))
+            else:
+                expected = end-start
+            if not isinstance(panes, list) or len(panes) != expected:
+                raise IndexError('Expected a list of %d objects to set '
+                                 'on the %s to match the supplied slice.' %
+                                 (expected, type(self).__name__))
+        for i, pane in zip(range(start, end), panes):
+            new_objects[i] = panel(pane)
+
+        self.objects = new_objects
+
+    def clone(self, *objects, **params):
+        """
+        Makes a copy of the layout sharing the same parameters.
+
+        Arguments
+        ---------
+        objects: Objects to add to the cloned layout.
+        params: Keyword arguments override the parameters on the clone.
+
+        Returns
+        -------
+        Cloned layout object
+        """
+        if not objects:
+            if 'objects' in params:
+                objects = params.pop('objects')
+            else:
+                objects = self.objects
+        elif 'objects' in params:
+            raise ValueError("A %s's objects should be supplied either "
+                             "as arguments or as a keyword, not both."
+                             % type(self).__name__)
+        p = dict(self.param.get_param_values(), **params)
+        del p['objects']
+        return type(self)(*objects, **params)
+
+    def append(self, obj):
+        """
+        Appends an object to the layout.
+
+        Arguments
+        ---------
+        obj (object): Panel component to add to the layout.
+        """
+        from .pane import panel
+        new_objects = list(self)
+        new_objects.append(panel(obj))
+        self.objects = new_objects
+
+    def clear(self):
+        """
+        Clears the objects on this layout.
+        """
+        self.objects = []
+
+    def extend(self, objects):
+        """
+        Extends the objects on this layout with a list.
+
+        Arguments
+        ---------
+        objects (list): List of panel components to add to the layout.
+        """
+        from .pane import panel
+        new_objects = list(self)
+        new_objects.extend(list(map(panel, objects)))
+        self.objects = new_objects
+
+    def insert(self, index, obj):
+        """
+        Inserts an object in the layout at the specified index.
+
+        Arguments
+        ---------
+        index (int): Index at which to insert the object.
+        object (object): Panel components to insert in the layout.
+        """
+        from .pane import panel
+        new_objects = list(self)
+        new_objects.insert(index, panel(obj))
+        self.objects = new_objects
+
+    def pop(self, index):
+        """
+        Pops an item from the layout by index.
+
+        Arguments
+        ---------
+        index (int): The index of the item to pop from the layout.
+        """
+        new_objects = list(self)
+        if index in new_objects:
+            index = new_objects.index(index)
+        obj = new_objects.pop(index)
+        self.objects = new_objects
+        return obj
+
+    def remove(self, obj):
+        """
+        Removes an object from the layout.
+
+        Arguments
+        ---------
+        obj (object): The object to remove from the layout.
+        """
+        new_objects = list(self)
+        new_objects.remove(obj)
+        self.objects = new_objects
+
+    def reverse(self):
+        """
+        Reverses the objects in the layout.
+        """
+        new_objects = list(self)
+        new_objects.reverse()
+        self.objects = new_objects
+
+
+class Row(ListPanel):
+    """
+    Horizontal layout of Viewables.
+    """
+
+    _bokeh_model = BkRow
+
+
+class Column(ListPanel):
+    """
+    Vertical layout of Viewables.
+    """
+
+    _bokeh_model = BkColumn
+
+
+
+
+class WidgetBox(ListPanel):
+    """
+    Vertical layout of widgets.
+    """
+
+    css_classes = param.List(default=['widget-box'], doc="""
+        CSS classes to apply to the layout.""")
+
+    disabled = param.Boolean(default=False, doc="""
+        Whether the widget is disabled.""")
+
+    horizontal = param.Boolean(default=False, doc="""
+        Whether to lay out the widgets in a Row layout as opposed 
+        to a Column layout.""")
+
+    margin = param.Parameter(default=5, doc="""
+        Allows to create additional space around the component. May
+        be specified as a two-tuple of the form (vertical, horizontal)
+        or a four-tuple (top, right, bottom, left).""")
+
+    _source_transforms = {'disabled': None, 'horizontal': None}
+
+    _rename = {'objects': 'children', 'horizontal': None}
+
+    @property
+    def _bokeh_model(self):
+        return BkRow if self.horizontal else BkColumn
+
+    @param.depends('disabled', 'objects', watch=True)
+    def _disable_widgets(self):
+        for obj in self:
+            if hasattr(obj, 'disabled'):
+                obj.disabled = self.disabled
+
+    def __init__(self, *objects, **params):
+        super(WidgetBox, self).__init__(*objects, **params)
+        if self.disabled:
+            self._disable_widgets()
