@@ -7,12 +7,18 @@ from .base import Column
 
 
 class Card(Column):
-    
+
     collapsed = param.Boolean(default=False)
-    
+
     title = param.String()
     
     margin = param.Parameter(default=5)
+
+    css_classes = param.List(['card'])
+
+    button_css_classes = param.List(['card-button'])
+
+    header_css_classes = param.List(['card-header'])
     
     _bokeh_model = BkCard
     
@@ -23,12 +29,3 @@ class Card(Column):
         header = BkDiv(text='<h3>%s</h3>' % self.title, margin=(0, 10))
         objects = super(Card, self)._get_objects(model, old_objects, doc, root)
         return [header]+objects
-
-    def _get_model(self, doc, root=None, parent=None, comm=None):
-        model = super(Card, self)._get_model(doc, root, parent, comm)
-        model.update(
-            button_css_classes=['card-button'],
-            css_classes=['card'],
-            header_css_classes=['card-header']
-        )
-        return model
