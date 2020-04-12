@@ -142,57 +142,11 @@ class Panel(Reactive):
 
 
 
-class ListPanel(Panel):
-    """
-    An abstract baseclass for Panel objects with list-like children.
-    """
-
-    margin = param.Parameter(default=0, doc="""
-        Allows to create additional space around the component. May
-        be specified as a two-tuple of the form (vertical, horizontal)
-        or a four-tuple (top, right, bottom, left).""")
+class ListLike(param.Parameterized):
 
     objects = param.List(default=[], doc="""
         The list of child objects that make up the layout.""")
-
-    scroll = param.Boolean(default=False, doc="""
-        Whether to add scrollbars if the content overflows the size
-        of the container.""")
-
-    _source_transforms = {'scroll': None}
-
-    __abstract = True
-
-    def __init__(self, *objects, **params):
-        from ..pane import panel
-        if objects:
-            if 'objects' in params:
-                raise ValueError("A %s's objects should be supplied either "
-                                 "as positional arguments or as a keyword, "
-                                 "not both." % type(self).__name__)
-            params['objects'] = [panel(pane) for pane in objects]
-        super(Panel, self).__init__(**params)
-
-    def _process_param_change(self, params):
-        scroll = params.pop('scroll', None)
-        css_classes = self.css_classes or []
-        if scroll:
-            params['css_classes'] = css_classes + ['scrollable']
-        elif scroll == False:
-            params['css_classes'] = css_classes
-        return super(ListPanel, self)._process_param_change(params)
-
-    def _cleanup(self, root):
-        if root.ref['id'] in state._fake_roots:
-            state._fake_roots.remove(root.ref['id'])
-        super(ListPanel, self)._cleanup(root)
-        for p in self.objects:
-            p._cleanup(root)
-
-    #----------------------------------------------------------------
-    # Public API
-    #----------------------------------------------------------------
-
+    
     def __getitem__(self, index):
         return self.objects[index]
 
@@ -349,6 +303,53 @@ class ListPanel(Panel):
         new_objects = list(self)
         new_objects.reverse()
         self.objects = new_objects
+
+    
+
+class ListPanel(ListLike, Panel):
+    """
+    An abstract baseclass for Panel objects with list-like children.
+    """
+
+    margin = param.Parameter(default=0, doc="""
+        Allows to create additional space around the component. May
+        be specified as a two-tuple of the form (vertical, horizontal)
+        or a four-tuple (top, right, bottom, left).""")
+
+    scroll = param.Boolean(default=False, doc="""
+        Whether to add scrollbars if the content overflows the size
+        of the container.""")
+
+    _source_transforms = {'scroll': None}
+
+    __abstract = True
+
+    def __init__(self, *objects, **params):
+        from ..pane import panel
+        if objects:
+            if 'objects' in params:
+                raise ValueError("A %s's objects should be supplied either "
+                                 "as positional arguments or as a keyword, "
+                                 "not both." % type(self).__name__)
+            params['objects'] = [panel(pane) for pane in objects]
+        super(Panel, self).__init__(**params)
+
+    def _process_param_change(self, params):
+        scroll = params.pop('scroll', None)
+        css_classes = self.css_classes or []
+        if scroll:
+            params['css_classes'] = css_classes + ['scrollable']
+        elif scroll == False:
+            params['css_classes'] = css_classes
+        return super(ListPanel, self)._process_param_change(params)
+
+    def _cleanup(self, root):
+        if root.ref['id'] in state._fake_roots:
+            state._fake_roots.remove(root.ref['id'])
+        super(ListPanel, self)._cleanup(root)
+        for p in self.objects:
+            p._cleanup(root)
+
 
 
 class Row(ListPanel):
