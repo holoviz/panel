@@ -8,41 +8,11 @@
     border-bottom: 1px solid rgba(0, 0, 0, 0.125);
     border-radius: 0.25rem;
 }
-.bk.card-body-hidden {
-  display: none;
-}
-h5.card-header {
-    margin: 0px;
-    font-size: 1.33rem;
-    font-weight: 700;
-    line-height: 1.2;
-    margin-bottom: 0.5rem;
-}
-.card-header .markdown h5 {
-  margin: 0px;
-  font-size: 1.33rem;
-  font-weight: 700;
-  line-height: 1.2;
-  margin-left: 0.5rem;
-  margin-top: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-.bk.card-panel-first {
-  padding-left: 1.25rem;
-  padding-right: 1.25rem;
-}
-.bk.card-panel {
-    padding-left: 1.25rem;
-    padding-right: 1.25rem;
-    border-top: 1px solid rgba(0, 0, 0, 0.125);
-}
-.bk.flat button.bk.bk-btn, .bk.flat button.bk.bk-btn:hover {
+.bk.card-button {
   border: none;
   background-color: transparent;
   font-weight: 700;
-  font-size: 1.25rem;;
-}
-.bk.card img{
-    border: 0.5px solid rgba(0,0,0,.125);
-    padding: 1px;
+  font-size: 1.25rem;
+  margin-left: auto;
+  display: block;
 }

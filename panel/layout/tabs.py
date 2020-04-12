@@ -3,8 +3,8 @@ Layout component to lay out objects in a set of tabs.
 """
 import param
 
-from bokeh.models.widgets import (
-    Spacer import BkSpacer, Panel as BkPanel, Tabs as BkTabs
+from bokeh.models import (
+    Spacer as BkSpacer, Panel as BkPanel, Tabs as BkTabs
 )
 
 from .base import ListPanel
@@ -67,7 +67,7 @@ class Tabs(ListPanel):
         self._param_watchers['objects']['value'].reverse()
 
     def _to_object_and_name(self, item):
-        from .pane import panel
+        from ..pane import panel
         if isinstance(item, tuple):
             name, item = item
         else:
@@ -156,7 +156,7 @@ class Tabs(ListPanel):
         Returns new child models for the layout while reusing unchanged
         models and cleaning up any dropped objects.
         """
-        from .pane.base import RerenderError, panel
+        from ..pane.base import RerenderError, panel
         new_models = []
         if len(self._names) != len(self):
             raise ValueError('Tab names do not match objects, ensure '

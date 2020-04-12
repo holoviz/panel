@@ -1,5 +1,6 @@
 export {AcePlot} from "./ace"
 export {Audio} from "./audio"
+export {Card} from "./card"
 export {CommManager} from "./comm_manager"
 export {DeckGLPlot} from "./deckgl"
 export {HTML} from "./html"

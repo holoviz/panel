@@ -10,10 +10,10 @@ import param
 
 from bokeh.models import Column as BkColumn, Row as BkRow
 
-from .io.model import hold
-from .io.state import state
-from .util import param_reprs
-from .viewable import Reactive
+from ..io.model import hold
+from ..io.state import state
+from ..util import param_reprs
+from ..viewable import Reactive
 
 _row = namedtuple("row", ["children"])
 _col = namedtuple("col", ["children"])
@@ -63,7 +63,7 @@ class Panel(Reactive):
 
         with hold(doc):
             super(Panel, self)._update_model(events, msg, root, model, doc, comm)
-            from .io import state
+            from ..io import state
             ref = root.ref['id']
             if ref in state._views:
                 state._views[ref][0]._preprocess(root)
@@ -83,7 +83,7 @@ class Panel(Reactive):
         Returns new child models for the layout while reusing unchanged
         models and cleaning up any dropped objects.
         """
-        from .pane.base import panel, RerenderError
+        from ..pane.base import panel, RerenderError
         new_models = []
         for i, pane in enumerate(self.objects):
             pane = panel(pane)
@@ -164,7 +164,7 @@ class ListPanel(Panel):
     __abstract = True
 
     def __init__(self, *objects, **params):
-        from .pane import panel
+        from ..pane import panel
         if objects:
             if 'objects' in params:
                 raise ValueError("A %s's objects should be supplied either "
@@ -207,7 +207,7 @@ class ListPanel(Panel):
         return obj in self.objects
 
     def __setitem__(self, index, panes):
-        from .pane import panel
+        from ..pane import panel
         new_objects = list(self)
         if not isinstance(index, slice):
             start, end = index, index+1
@@ -277,7 +277,7 @@ class ListPanel(Panel):
         ---------
         obj (object): Panel component to add to the layout.
         """
-        from .pane import panel
+        from ..pane import panel
         new_objects = list(self)
         new_objects.append(panel(obj))
         self.objects = new_objects
@@ -296,7 +296,7 @@ class ListPanel(Panel):
         ---------
         objects (list): List of panel components to add to the layout.
         """
-        from .pane import panel
+        from ..pane import panel
         new_objects = list(self)
         new_objects.extend(list(map(panel, objects)))
         self.objects = new_objects
@@ -310,7 +310,7 @@ class ListPanel(Panel):
         index (int): Index at which to insert the object.
         object (object): Panel components to insert in the layout.
         """
-        from .pane import panel
+        from ..pane import panel
         new_objects = list(self)
         new_objects.insert(index, panel(obj))
         self.objects = new_objects
@@ -356,7 +356,11 @@ class Row(ListPanel):
     Horizontal layout of Viewables.
     """
 
+    col_sizing = param.Parameter()
+
     _bokeh_model = BkRow
+
+    _rename = dict(ListPanel._rename, col_sizing='cols')
 
 
 class Column(ListPanel):
@@ -364,9 +368,11 @@ class Column(ListPanel):
     Vertical layout of Viewables.
     """
 
+    row_sizing = param.ObjectSelector
+
     _bokeh_model = BkColumn
 
-
+    _rename = dict(ListPanel._rename, row_sizing='rows')
 
 
 class WidgetBox(ListPanel):

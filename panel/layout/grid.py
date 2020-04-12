@@ -141,7 +141,7 @@ class GridBox(ListPanel):
         return model
 
     def _update_model(self, events, msg, root, model, doc, comm=None):
-        from .io import state
+        from ..io import state
 
         msg = dict(msg)
         if self._rename['objects'] in msg or 'ncols' in msg or 'nrows' in msg:
@@ -194,7 +194,7 @@ class GridSpec(Panel):
         return properties
 
     def _get_objects(self, model, old_objects, doc, root, comm=None):
-        from .pane.base import RerenderError
+        from ..pane.base import RerenderError
 
         if self.ncols:
             width = int(float(self.width)/self.ncols)
@@ -370,7 +370,7 @@ class GridSpec(Panel):
             return list(subgrid)[0][1]
 
     def __setitem__(self, index, obj):
-        from .pane.base import panel
+        from ..pane.base import panel
         if not isinstance(index, tuple):
             raise IndexError('Must supply a 2D index for GridSpec assignment.')
 
