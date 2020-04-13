@@ -39,5 +39,7 @@ p.bk.card-button {
   padding: 0.25em;
   font-size: 1.5em;
   font-weight: bold;
-  display: flex;
+  display: flex !important;
+  align-items: center;
+  position: relative !important;
 }
