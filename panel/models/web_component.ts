@@ -218,26 +218,59 @@ export class WebComponentView extends HTMLBoxView {
     }
 
     set_nested_property(element: any, property_: string, value: any): void {
-        property_ = property_.replace(/\[(\w+)\]/g, '.$1'); // convert indexes to properties
-        property_ = property_.replace(/^\./, '');           // strip a leading dot
-        let a = property_.split('.');
-        if (a.length == 1) {
-            // Hack:
-            // for some reason the wired-checkbox checked property is not in the element on construction
-            // So the `k in element` test below fails.
-            // I've added this line to handle that.
-            element[a[0]] = value
+        // @Phillipfr: I need your help to understand and solve this
+        // hack: Setting the value of the WIRED-SLIDER before its ready
+        // will destroy the setter.
+        // I don't yet understand this.
+        if (["WIRED-SLIDER"].indexOf(element.tagName)>=0){
+            var setter = element.__lookupSetter__(property_);
+            if (!setter){return}
+        }
+
+        var pList = property_.split('.');
+        if (pList.length === 1){
+            element[property_] = value;
         } else {
-            for (let i = 0, n = a.length; i < n; ++i) {
-                let k = a[i];
-                if (k in element) {
-                    element[k] = value;
-                } else {
-                    return;
-                }
+            var len = pList.length;
+            for(var i = 0; i < len-1; i++) {
+                var elem = pList[i];
+                if( !element[elem] ) element[elem] = {}
+                element = element[elem];
             }
+
+            element[pList[len-1]] = value;
         }
     }
+
+    // set_nested_property(element: any, property_: string, value: any): void {
+    //     console.log(element);
+    //     console.log(property_);
+    //     console.log(value);
+    //     property_ = property_.replace(/\[(\w+)\]/g, '.$1'); // convert indexes to properties
+    //     property_ = property_.replace(/^\./, '');           // strip a leading dot
+    //     let a = property_.split('.');
+    //     console.log(a)
+    //     if (a.length == 1) {
+    //         // Hack:
+    //         // for some reason the wired-checkbox checked property is not in the element on construction
+    //         // So the `k in element` test below fails.
+    //         // I've added this line to handle that.
+    //         console.log("length 1", element, a[0])
+    //         element[a[0]] = value
+    //     } else {
+    //         for (let i = 0, n = a.length; i < n; ++i) {
+    //             let k = a[i];
+    //             if (k in element) {
+    //                 console.log("nested")
+    //                 console.log(k);
+    //                 console.log(element[k]);
+    //                 element[k] = value;
+    //             } else {
+    //                 return;
+    //             }
+    //         }
+    //     }
+    // }
 
     /**
      * Handles events from `eventsToWatch` by
@@ -272,6 +305,7 @@ export class WebComponentView extends HTMLBoxView {
                 this.propertyValues[property] = newValue;
             }
         }
+        console.log("checkIfPropertiesChanged propertiesChange=", propertiesChange);
         if (Object.keys(propertiesChange).length) {
             this.model.propertiesLastChange = propertiesChange;
         }
@@ -284,6 +318,7 @@ export class WebComponentView extends HTMLBoxView {
      * @param ev
      */
     handlePropertiesChange(ev: any): void {
+        console.log("handlePropertiesChange event=", event);
         let properties_change: any = new Object();
         for (let property in this.model.propertiesToWatch) {
             if (property in ev.detail) {
@@ -291,6 +326,7 @@ export class WebComponentView extends HTMLBoxView {
                 this.propertyValues[property] = ev.detail[property];
             }
         }
+        console.log("handlePropertiesChange properties_change=", properties_change);
         if (Object.keys(properties_change).length) {
             this.model.propertiesLastChange = properties_change;
         }
@@ -340,6 +376,7 @@ export class WebComponentView extends HTMLBoxView {
     handlePropertiesLastChangeChange(): void {
         if (!this.webComponentElement) { return; }
         let propertiesLastChange: any = this.model.propertiesLastChange;
+        console.log("handlePropertiesLastChangeChange propertiesLastChange=", propertiesLastChange);
         for (let property in this.model.propertiesLastChange) {
             if (property in this.model.propertiesToWatch) {
                 let value = propertiesLastChange[property]
