@@ -64,6 +64,9 @@ class ContinuousSlider(_SliderBase):
     def __init__(self, **params):
         if 'value' not in params:
             params['value'] = params.get('start', self.start)
+        if 'value_throttled' not in params:
+            params['value_throttled'] = params.get('value', self.value)
+
         super(ContinuousSlider, self).__init__(**params)
 
     def _get_embed_state(self, root, values=None, max_opts=3):
@@ -153,6 +156,9 @@ class DateSlider(_SliderBase):
     def __init__(self, **params):
         if 'value' not in params:
             params['value'] = params.get('start', self.start)
+        if 'value_throttled' not in params:
+            params['value_throttled'] = params.get('value', self.value)
+
         super(DateSlider, self).__init__(**params)
 
     def _process_property_change(self, msg):
@@ -197,6 +203,8 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
                              'ensure that the supplied value '
                              'is one of the declared options.'
                              % self.value)
+        if self.value_throttled is None:
+            self.value_throttled = self.value
 
         self._text = StaticText(margin=(5, 0, 0, 5), style={'white-space': 'nowrap'})
         self._slider = None
@@ -313,6 +321,9 @@ class RangeSlider(_SliderBase):
         if 'value' not in params:
             params['value'] = (params.get('start', self.start),
                                params.get('end', self.end))
+        if 'value_throttled' not in params:
+            params['value_throttled'] = params.get('value', self.value)
+
         super(RangeSlider, self).__init__(**params)
         values = [self.value[0], self.value[1], self.start, self.end]
         if (all(v is None or isinstance(v, int) for v in values) and
@@ -368,6 +379,9 @@ class DateRangeSlider(_SliderBase):
         if 'value' not in params:
             params['value'] = (params.get('start', self.start),
                                params.get('end', self.end))
+        if 'value_throttled' not in params:
+            params['value_throttled'] = params.get('value', self.value)
+
         super(DateRangeSlider, self).__init__(**params)
 
     def _process_property_change(self, msg):
