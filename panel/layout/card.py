@@ -1,7 +1,7 @@
 import param
 
 from ..models import Card as BkCard
-from .base import Column, Row
+from .base import Column, Row, ListPanel
 
 
 class Card(Column):
@@ -10,7 +10,7 @@ class Card(Column):
     collapsible, vertical container with a header bar.
     """
 
-    active_header_background = param.String(doc="""
+    active_header_background = param.String(default=None, doc="""
         A valid CSS color for the header background when not collapsed.""")
 
     button_color = param.String(doc="""
@@ -18,6 +18,9 @@ class Card(Column):
 
     button_css_classes = param.List(['card-button'], doc="""
         CSS classes to apply to the button element.""")
+
+    collapsible = param.Boolean(default=True, doc="""
+        Whether the Card should be expandable and collapseable.""")
 
     collapsed = param.Boolean(default=False, doc="""
         Whether the contents of the Card are collapsed.""")
@@ -29,7 +32,7 @@ class Card(Column):
         A Panel component to display in the header bar of the Card.
         Will override the given title if defined.""")
 
-    header_background = param.String(doc="""
+    header_background = param.String(default=None, doc="""
         A valid CSS color for the header background.""")
 
     header_css_classes = param.List(['card-header'], doc="""
@@ -55,11 +58,19 @@ class Card(Column):
         super(Card, self)._cleanup(root)
         self._header_layout._cleanup(root)
 
+    def _process_param_change(self, params):
+        scroll = params.pop('scroll', None)
+        css_classes = self.css_classes or []
+        if scroll:
+            params['css_classes'] = css_classes + ['scrollable']
+        elif scroll == False:
+            params['css_classes'] = css_classes
+        return super(ListPanel, self)._process_param_change(params)
+
     def _update_header(self, *events):
         from ..pane import HTML, panel
         if self.header is None:
-            item = HTML('%s' % (self.title or "&#8203;"),
-                        margin=(0, 10), css_classes=['card-title'])
+            item = HTML('%s' % (self.title or "&#8203;"), css_classes=['card-title'])
         else:
             item = panel(self.header)
         self._header_layout[:] = [item]

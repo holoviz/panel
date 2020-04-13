@@ -354,10 +354,7 @@ class ListPanel(ListLike, Panel):
 class NamedListPanel(ListPanel):
 
     active = param.Integer(default=0, bounds=(0, None), doc="""
-        Number of the currently active tab.""")
-
-    dynamic = param.Boolean(default=False, doc="""
-        Dynamically populate only the active tab.""")
+        Index of the currently displayed objects.""")
 
     objects = param.List(default=[], doc="""
         The list of child objects that make up the tabs.""")
@@ -373,7 +370,6 @@ class NamedListPanel(ListPanel):
         super(NamedListPanel, self).__init__(*objects, **params)
         self._panels = defaultdict(dict)
         self.param.watch(self._update_names, 'objects')
-        self.param.watch(self._update_active, ['dynamic', 'active'])
         self.param.active.bounds = (0, len(self)-1)
         # ALERT: Ensure that name update happens first, should be
         #        replaced by watch precedence support in param
@@ -588,7 +584,7 @@ class Column(ListPanel):
     Vertical layout of Viewables.
     """
 
-    row_sizing = param.ObjectSelector
+    row_sizing = param.Parameter()
 
     _bokeh_model = BkColumn
 

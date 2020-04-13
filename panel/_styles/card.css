@@ -4,37 +4,37 @@
 }
 .bk.accordion {
   border: 1px solid rgba(0,0,0,.125);
-}
-.accordion-header:hover {
-  background-color: #ccc;
+  width: 100% !important;
 }
 .bk.card-header {
-  padding: 0 1.25rem;
+  padding: 0 1.25rem 0 0;
   background-color: rgba(0, 0, 0, 0.03);
   border-bottom: 1px solid rgba(0, 0, 0, 0.125);
   border-radius: 0.25rem;
   display: flex;
+  width: 100%;
+  align-items: center;
 }
 .bk.accordion-header {
-  padding: 0 1.25rem;
   background-color: rgba(0, 0, 0, 0.03);
+  padding: 0 1.25rem 0 0;
   display: flex;
+  width: 100%;
+  align-items: center;
+  border-radius: 0;
+  align-items: center;
 }
 .bk.card-button {
-  border: none;
   background-color: transparent;
-  font-weight: 700;
   font-size: 1.25rem;
-  margin-left: auto;
-  display: block;
+  font-weight: 700;
 }
 .bk.card-header-row {
   position: inherit !important;
 }
 .bk.card-title {
-  padding-top: 0.4em;
-  padding-bottom: 0.4em;
+  padding: 0.25em;
   font-size: 1.5em;
   font-weight: bold;
-  position: inherit !important;
+  display: flex;
 }

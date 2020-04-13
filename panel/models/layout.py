@@ -12,7 +12,7 @@ class Card(Column):
 
     collapsed = Bool(True, help="Whether the Card is collapsed.")
 
-    collapsible = Bool(True, help="Whether the Card should have a button to collapse it.")
+    collapseble = Bool(True, help="Whether the Card should have a button to collapse it.")
 
     header_background = String(help="Background color of the Card header.")
 

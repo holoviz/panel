@@ -1,13 +1,10 @@
 import {Column, ColumnView} from "@bokehjs/models/layouts/column"
 import * as DOM from "@bokehjs/core/dom"
 import {classes, empty} from "@bokehjs/core/dom"
-import * as p from "@bokehjs/core/properties"
-
-import {Column as ColumnLayout} from "@bokehjs/core/layout/grid"
 import {Layoutable} from "@bokehjs/core/layout/layoutable"
-
+import {Column as ColumnLayout} from "@bokehjs/core/layout/grid"
 import {Size} from "@bokehjs/core/layout/types"
-
+import * as p from "@bokehjs/core/properties"
 
 export class CollapseableColumnLayout extends ColumnLayout {
   collapsed: boolean
@@ -34,6 +31,8 @@ export class CardView extends ColumnView {
   connect_signals(): void {
     super.connect_signals()
     this.connect(this.model.properties.collapsed.change, () => this._collapse())
+    const {active_header_background, header_background, button_color} = this.model.properties
+    this.on_change([active_header_background, header_background, button_color], () => this.render())
   }
 
   _update_layout(): void {
@@ -41,7 +40,10 @@ export class CardView extends ColumnView {
     this.layout = new CollapseableColumnLayout(items, this.model.collapsed)
     this.layout.rows = this.model.rows
     this.layout.spacing = [this.model.spacing, 0]
-    this.layout.set_sizing(this.box_sizing())
+    const sizing = this.box_sizing()
+    if (this.model.collapsed)
+      sizing.height = undefined
+    this.layout.set_sizing(sizing)
   }
 
   render(): void {
@@ -52,21 +54,26 @@ export class CardView extends ColumnView {
     this.el.style.backgroundColor = background != null ? background : ""
     classes(this.el).clear().add(...this.css_classes())
 
-	let header_background = this.model.header_background
-	if (!this.model.collapsed && this.model.active_header_background != null)
+    let header_background = this.model.header_background
+    if (!this.model.collapsed && this.model.active_header_background != null)
       header_background = this.model.active_header_background
-
-    const header_el = DOM.createElement((header_tag as any), {class: header_css_classes})
-    header_el.style.backgroundColor = header_background != null ? header_background : ""
     const header = this.child_views[0]
-    header_el.appendChild(header.el)
 
+    let header_el
     if (this.model.collapsible) {
-      this.button_el = DOM.createElement("button", {class: button_css_classes, type: "button"})
-      this.button_el.innerHTML = this.model.collapsed ? "+" : "-"
-      this.button_el.style.color = button_color != null ? button_color : ""
+      this.button_el = DOM.createElement("button", {type: "button", class: header_css_classes})
+      this.button_el.style.backgroundColor = header_background != null ? header_background : ""
+      this.button_el.appendChild(header.el)
+      const icon = DOM.createElement("p", {class: button_css_classes})
+      icon.innerHTML = this.model.collapsed ? "+" : "-"
+      icon.style.color = button_color != null ? button_color : ""
+      this.button_el.appendChild(icon)
       this.button_el.onclick = () => this._toggle_button()
-      header_el.appendChild(this.button_el)
+      header_el = this.button_el
+    } else {
+      header_el = DOM.createElement((header_tag as any), {class: header_css_classes})
+      header_el.style.backgroundColor = header_background != null ? header_background : ""
+      header_el.appendChild(header.el)
     }
 
     this.el.appendChild(header_el)
@@ -81,12 +88,10 @@ export class CardView extends ColumnView {
 
   _toggle_button(): void {
     this.model.collapsed = !this.model.collapsed
-    this._collapse()
   }
 
   _collapse(): void {
-    this.button_el.innerHTML = this.model.collapsed ? '+': '-'
-    this.rebuild()
+    this.invalidate_render()
     this.resize_layout()
   }
 

@@ -21,6 +21,9 @@ class Tabs(NamedListPanel):
     closable = param.Boolean(default=False, doc="""
         Whether it should be possible to close tabs.""")
 
+    dynamic = param.Boolean(default=False, doc="""
+        Dynamically populate only the active tab.""")
+
     tabs_location = param.ObjectSelector(
         default='above', objects=['above', 'below', 'left', 'right'], doc="""
         The location of the tabs relative to the tab contents.""")
@@ -44,21 +47,8 @@ class Tabs(NamedListPanel):
     """}
 
     def __init__(self, *items, **params):
-        if 'objects' in params:
-            if items:
-                raise ValueError('Tabs objects should be supplied either '
-                                 'as positional arguments or as a keyword, '
-                                 'not both.')
-            items = params['objects']
-        objects, self._names = self._to_objects_and_names(items)
         super(Tabs, self).__init__(*objects, **params)
-        self._panels = defaultdict(dict)
-        self.param.watch(self._update_names, 'objects')
         self.param.watch(self._update_active, ['dynamic', 'active'])
-        self.param.active.bounds = (0, len(self)-1)
-        # ALERT: Ensure that name update happens first, should be
-        #        replaced by watch precedence support in param
-        self._param_watchers['objects']['value'].reverse()
 
     def _init_properties(self):
         return {k: v for k, v in self.param.get_param_values()
