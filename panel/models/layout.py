@@ -4,6 +4,8 @@ from bokeh.models import Column
 
 class Card(Column):
 
+    active_header_background = String(help="Background color of active Card header.")
+
     button_color = String(help="Color of the collapse button.")
 
     button_css_classes = List(String, help="CSS classes to add to the Card collapse button.")

@@ -1,3 +1,4 @@
+from .accordion import Accordion # noqa
 from .base import Column, ListLike, ListPanel, Panel, Row, WidgetBox # noqa
 from .card import Card # noqa
 from .grid import GridBox, GridSpec # noqa

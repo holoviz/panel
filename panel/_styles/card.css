@@ -2,11 +2,22 @@
   border: 1px solid rgba(0,0,0,.125);
   border-radius: 0.25rem;
 }
+.bk.accordion {
+  border: 1px solid rgba(0,0,0,.125);
+}
+.accordion-header:hover {
+  background-color: #ccc;
+}
 .bk.card-header {
   padding: 0 1.25rem;
   background-color: rgba(0, 0, 0, 0.03);
   border-bottom: 1px solid rgba(0, 0, 0, 0.125);
   border-radius: 0.25rem;
+  display: flex;
+}
+.bk.accordion-header {
+  padding: 0 1.25rem;
+  background-color: rgba(0, 0, 0, 0.03);
   display: flex;
 }
 .bk.card-button {
@@ -21,8 +32,8 @@
   position: inherit !important;
 }
 .bk.card-title {
-  padding-top: 0.5em;
-  padding-bottom: 0.5em;
+  padding-top: 0.4em;
+  padding-bottom: 0.4em;
   font-size: 1.5em;
   font-weight: bold;
   position: inherit !important;

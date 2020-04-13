@@ -4,7 +4,7 @@ in flexible ways to build complex dashboards.
 """
 from __future__ import absolute_import, division, unicode_literals
 
-from collections import namedtuple
+from collections import defaultdict, namedtuple
 
 import param
 
@@ -12,7 +12,7 @@ from bokeh.models import Column as BkColumn, Row as BkRow
 
 from ..io.model import hold
 from ..io.state import state
-from ..util import param_reprs
+from ..util import param_name, param_reprs
 from ..viewable import Reactive
 
 _row = namedtuple("row", ["children"])
@@ -349,6 +349,225 @@ class ListPanel(ListLike, Panel):
         super(ListPanel, self)._cleanup(root)
         for p in self.objects:
             p._cleanup(root)
+
+
+class NamedListPanel(ListPanel):
+
+    active = param.Integer(default=0, bounds=(0, None), doc="""
+        Number of the currently active tab.""")
+
+    dynamic = param.Boolean(default=False, doc="""
+        Dynamically populate only the active tab.""")
+
+    objects = param.List(default=[], doc="""
+        The list of child objects that make up the tabs.""")
+
+    def __init__(self, *items, **params):
+        if 'objects' in params:
+            if items:
+                raise ValueError('%s objects should be supplied either '
+                                 'as positional arguments or as a keyword, '
+                                 'not both.' % type(self).__name__)
+            items = params['objects']
+        objects, self._names = self._to_objects_and_names(items)
+        super(NamedListPanel, self).__init__(*objects, **params)
+        self._panels = defaultdict(dict)
+        self.param.watch(self._update_names, 'objects')
+        self.param.watch(self._update_active, ['dynamic', 'active'])
+        self.param.active.bounds = (0, len(self)-1)
+        # ALERT: Ensure that name update happens first, should be
+        #        replaced by watch precedence support in param
+        self._param_watchers['objects']['value'].reverse()
+
+    def _to_object_and_name(self, item):
+        from ..pane import panel
+        if isinstance(item, tuple):
+            name, item = item
+        else:
+            name = getattr(item, 'name', None)
+        pane = panel(item, name=name)
+        name = param_name(pane.name) if name is None else name
+        return pane, name
+
+    def _to_objects_and_names(self, items):
+        objects, names = [], []
+        for item in items:
+            pane, name = self._to_object_and_name(item)
+            objects.append(pane)
+            names.append(name)
+        return objects, names
+
+    def _update_names(self, event):
+        self.param.active.bounds = (0, len(event.new)-1)
+        if len(event.new) == len(self._names):
+            return
+        names = []
+        for obj in event.new:
+            if obj in event.old:
+                index = event.old.index(obj)
+                name = self._names[index]
+            else:
+                name = obj.name
+            names.append(name)
+        self._names = names
+
+    def _update_active(self, *events):
+        pass
+
+    #----------------------------------------------------------------
+    # Public API
+    #----------------------------------------------------------------
+
+    def __setitem__(self, index, panes):
+        new_objects = list(self)
+        if not isinstance(index, slice):
+            if index > len(self.objects):
+                raise IndexError('Index %d out of bounds on %s '
+                                 'containing %d objects.' %
+                                 (index, type(self).__name__, len(self.objects)))
+            start, end = index, index+1
+            panes = [panes]
+        else:
+            start = index.start or 0
+            end = len(self.objects) if index.stop is None else index.stop
+            if index.start is None and index.stop is None:
+                if not isinstance(panes, list):
+                    raise IndexError('Expected a list of objects to '
+                                     'replace the objects in the %s, '
+                                     'got a %s type.' %
+                                     (type(self).__name__, type(panes).__name__))
+                expected = len(panes)
+                new_objects = [None]*expected
+                self._names = [None]*len(panes)
+                end = expected
+            else:
+                expected = end-start
+                if end > len(self.objects):
+                    raise IndexError('Index %d out of bounds on %s '
+                                     'containing %d objects.' %
+                                     (end, type(self).__name__, len(self.objects)))
+            if not isinstance(panes, list) or len(panes) != expected:
+                raise IndexError('Expected a list of %d objects to set '
+                                 'on the %s to match the supplied slice.' %
+                                 (expected, type(self).__name__))
+        for i, pane in zip(range(start, end), panes):
+            new_objects[i], self._names[i] = self._to_object_and_name(pane)
+        self.objects = new_objects
+
+    def clone(self, *objects, **params):
+        """
+        Makes a copy of the Tabs sharing the same parameters.
+
+        Arguments
+        ---------
+        objects: Objects to add to the cloned Tabs object.
+        params: Keyword arguments override the parameters on the clone.
+
+        Returns
+        -------
+        Cloned Tabs object
+        """
+        if not objects:
+            if 'objects' in params:
+                objects = params.pop('objects')
+            else:
+                objects = zip(self._names, self.objects)
+        elif 'objects' in params:
+            raise ValueError('Tabs objects should be supplied either '
+                             'as positional arguments or as a keyword, '
+                             'not both.')
+        p = dict(self.param.get_param_values(), **params)
+        del p['objects']
+        return type(self)(*objects, **params)
+
+    def append(self, pane):
+        """
+        Appends an object to the tabs.
+
+        Arguments
+        ---------
+        obj (object): Panel component to add as a tab.
+        """
+        new_object, new_name = self._to_object_and_name(pane)
+        new_objects = list(self)
+        new_objects.append(new_object)
+        self._names.append(new_name)
+        self.objects = new_objects
+
+    def clear(self):
+        """
+        Clears the tabs.
+        """
+        self._names = []
+        self.objects = []
+
+    def extend(self, panes):
+        """
+        Extends the the tabs with a list.
+
+        Arguments
+        ---------
+        objects (list): List of panel components to add as tabs.
+        """
+        new_objects, new_names = self._to_objects_and_names(panes)
+        objects = list(self)
+        objects.extend(new_objects)
+        self._names.extend(new_names)
+        self.objects = objects
+
+    def insert(self, index, pane):
+        """
+        Inserts an object in the tabs at the specified index.
+
+        Arguments
+        ---------
+        index (int): Index at which to insert the object.
+        object (object): Panel components to insert as tabs.
+        """
+        new_object, new_name = self._to_object_and_name(pane)
+        new_objects = list(self.objects)
+        new_objects.insert(index, new_object)
+        self._names.insert(index, new_name)
+        self.objects = new_objects
+
+    def pop(self, index):
+        """
+        Pops an item from the tabs by index.
+
+        Arguments
+        ---------
+        index (int): The index of the item to pop from the tabs.
+        """
+        new_objects = list(self)
+        if index in new_objects:
+            index = new_objects.index(index)
+        new_objects.pop(index)
+        self._names.pop(index)
+        self.objects = new_objects
+
+    def remove(self, pane):
+        """
+        Removes an object from the tabs.
+
+        Arguments
+        ---------
+        obj (object): The object to remove from the tabs.
+        """
+        new_objects = list(self)
+        if pane in new_objects:
+            index = new_objects.index(pane)
+        new_objects.remove(pane)
+        self._names.pop(index)
+        self.objects = new_objects
+
+    def reverse(self):
+        """
+        Reverses the tabs.
+        """
+        new_objects = list(self)
+        new_objects.reverse()
+        self._names.reverse()
+        self.objects = new_objects
 
 
 

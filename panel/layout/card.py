@@ -10,6 +10,9 @@ class Card(Column):
     collapsible, vertical container with a header bar.
     """
 
+    active_header_background = param.String(doc="""
+        A valid CSS color for the header background when not collapsed.""")
+
     button_color = param.String(doc="""
         A valid CSS color to apply to the button.""")
 
@@ -27,7 +30,7 @@ class Card(Column):
         Will override the given title if defined.""")
 
     header_background = param.String(doc="""
-        A valid CSS color to the header background.""")
+        A valid CSS color for the header background.""")
 
     header_css_classes = param.List(['card-header'], doc="""
         CSS claasses to apply to the heaader element.""")

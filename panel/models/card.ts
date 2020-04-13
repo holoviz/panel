@@ -47,10 +47,14 @@ export class CardView extends ColumnView {
   render(): void {
     empty(this.el)
 
-    const {background, button_color, header_background, button_css_classes, header_tag, header_css_classes} = this.model
+    const {background, button_color, button_css_classes, header_tag, header_css_classes} = this.model
 
     this.el.style.backgroundColor = background != null ? background : ""
     classes(this.el).clear().add(...this.css_classes())
+
+	let header_background = this.model.header_background
+	if (!this.model.collapsed && this.model.active_header_background != null)
+      header_background = this.model.active_header_background
 
     const header_el = DOM.createElement((header_tag as any), {class: header_css_classes})
     header_el.style.backgroundColor = header_background != null ? header_background : ""
@@ -95,6 +99,7 @@ export namespace Card {
   export type Attrs = p.AttrsOf<Props>
 
   export type Props = Column.Props & {
+    active_header_background: p.Property<string | null>
     button_color: p.Property<string | null>
     button_css_classes: p.Property<string[]>
     collapsed: p.Property<boolean>
@@ -121,6 +126,7 @@ export class Card extends Column {
     this.prototype.default_view = CardView
 
     this.define<Card.Props>({
+      active_header_background:  [ p.String,  null  ],
       button_color:       [ p.String,  null  ],
       button_css_classes: [ p.Array,   []    ],
       collapsed:          [ p.Boolean, true  ],

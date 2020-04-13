@@ -13,7 +13,10 @@ from .config import config, panel_extension as extension # noqa
 from .depends import depends # noqa
 from .interact import interact # noqa
 from .io import ipywidget, serve, state # noqa
-from .layout import Card, Row, Column, WidgetBox, Tabs, Spacer, GridSpec, GridBox # noqa
+from .layout import (
+    Accordion, Card, Row, Column, WidgetBox, Tabs, Spacer, # noqa
+    GridSpec, GridBox
+)
 from .pane import panel, Pane # noqa
 from .param import Param # noqa
 from .template import Template # noqa
