@@ -5,26 +5,27 @@ import param
 from bokeh.models import Column as BkColumn, Div, Row as BkRow
 
 from panel.layout import (
-    Card, Column, ListPanel, Row, Tabs, Spacer, WidgetBox
+    Accordion, Card, Column, Row, Tabs, Spacer, WidgetBox
 )
+from panel.layout.base import ListPanel, NamedListPanel
 from panel.param import Param
 from panel.pane import Bokeh
 from panel.tests.util import check_layoutable_properties, py3_only
 
 
 all_panels = [w for w in param.concrete_descendents(ListPanel).values()
-               if not w.__name__.startswith('_') and w is not Tabs]
+               if not w.__name__.startswith('_') and w is not NamedListPanel]
 
 @py3_only
 @pytest.mark.parametrize('panel', all_panels)
 def test_layout_signature(panel):
     from inspect import signature
     parameters = signature(panel).parameters
-    assert len(parameters) == 2, 'Found following parameters %r' % parameters
+    assert len(parameters) == 2, 'Found following parameters %r on %s' % (parameters, panel)
     assert 'objects' in parameters
 
 
-@pytest.mark.parametrize('layout', [Column, Row, Tabs, Spacer, Card])
+@pytest.mark.parametrize('layout', [Column, Row, Tabs, Spacer, Card, Accordion])
 def test_layout_properties(layout, document, comm):
     l = layout()
     model = l.get_root(document, comm)

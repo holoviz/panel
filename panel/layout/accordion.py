@@ -1,12 +1,9 @@
-from collections import defaultdict
-
 import param
 
 from bokeh.models import Column as BkColumn, CustomJS
 
 from .base import NamedListPanel
 from .card import Card
-from .spacer import Spacer
 
 
 class Accordion(NamedListPanel):
@@ -81,8 +78,8 @@ class Accordion(NamedListPanel):
                 card = self._panels[id(pane)]
             else:
                 card = Card(
-							pane, title=name, css_classes=['accordion'],
-								  header_css_classes=['accordion-header'],
+                    pane, title=name, css_classes=['accordion'],
+                    header_css_classes=['accordion-header']
                 )
                 self._panels[id(pane)] = card
             card.param.set_param(**params)

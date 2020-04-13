@@ -20,7 +20,7 @@ class Card(Column):
         CSS classes to apply to the button element.""")
 
     collapsible = param.Boolean(default=True, doc="""
-        Whether the Card should be expandable and collapseable.""")
+        Whether the Card should be expandable and collapsible.""")
 
     collapsed = param.Boolean(default=False, doc="""
         Whether the contents of the Card are collapsed.""")

@@ -3,8 +3,6 @@ Layout component to lay out objects in a set of tabs.
 """
 import param
 
-from collections import defaultdict
-
 from bokeh.models import (
     Spacer as BkSpacer, Panel as BkPanel, Tabs as BkTabs
 )
@@ -46,13 +44,19 @@ class Tabs(NamedListPanel):
     var value = ids;
     """}
 
-    def __init__(self, *items, **params):
+    def __init__(self, *objects, **params):
         super(Tabs, self).__init__(*objects, **params)
+        self.param.active.bounds = (0, len(self)-1)
         self.param.watch(self._update_active, ['dynamic', 'active'])
 
     def _init_properties(self):
         return {k: v for k, v in self.param.get_param_values()
                 if v is not None and k != 'closable'}
+
+
+    def _update_names(self, event):
+        self.param.active.bounds = (0, len(event.new)-1)
+        super(Tabs, self)._update_names(event)
 
     def _cleanup(self, root):
         super(Tabs, self)._cleanup(root)

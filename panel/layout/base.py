@@ -370,7 +370,6 @@ class NamedListPanel(ListPanel):
         super(NamedListPanel, self).__init__(*objects, **params)
         self._panels = defaultdict(dict)
         self.param.watch(self._update_names, 'objects')
-        self.param.active.bounds = (0, len(self)-1)
         # ALERT: Ensure that name update happens first, should be
         #        replaced by watch precedence support in param
         self._param_watchers['objects']['value'].reverse()
@@ -394,7 +393,6 @@ class NamedListPanel(ListPanel):
         return objects, names
 
     def _update_names(self, event):
-        self.param.active.bounds = (0, len(event.new)-1)
         if len(event.new) == len(self._names):
             return
         names = []
