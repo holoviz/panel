@@ -193,6 +193,7 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
 
     def __init__(self, **params):
         self._syncing = False
+        self._syncing_throttled = False
         super(DiscreteSlider, self).__init__(**params)
         if 'formatter' not in params and all(isinstance(v, (int, np.int_)) for v in self.values):
             self.formatter = '%d'
@@ -212,6 +213,7 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
         self._update_options()
         self.param.watch(self._update_options, ['options', 'formatter'])
         self.param.watch(self._update_value, ['value'])
+        self.param.watch(self._update_value_throttled, ['value_throttled'])
         self.param.watch(self._update_style, [p for p in Layoutable.param if p !='name'])
 
     def _update_options(self, *events):
@@ -222,9 +224,15 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
         else:
             value = values.index(self.value)
 
+        if self.value_throttled not in values:
+            value_throttled = 0
+            self.value_throttled = values[0]
+        else:
+            value_throttled = values.index(self.value_throttled)
+
         self._slider = IntSlider(
-            start=0, end=len(self.options)-1, value=value, tooltips=False,
-            show_value=False, margin=(0, 5, 5, 5), _supports_embed=False
+            start=0, end=len(self.options)-1, value=value, value_throttled=value_throttled,
+            tooltips=False, show_value=False, margin=(0, 5, 5, 5), _supports_embed=False
         )
         self._update_style()
         js_code = self._text_link.format(
@@ -232,6 +240,7 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
         )
         self._jslink = self._slider.jslink(self._text, code={'value': js_code})
         self._slider.param.watch(self._sync_value, 'value')
+        self._slider.param.watch(self._sync_value_throttled, 'value_throttled')
         self._text.value = labels[value]
         self._composite[1] = self._slider
 
@@ -248,6 +257,20 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
             self._slider.value = index
         finally:
             self._syncing = False
+
+    def _update_value_throttled(self, event):
+        values = self.values
+        if self.value_throttled not in values:
+            self.value_throttled = values[0]
+            return
+        index = self.values.index(self.value_throttled)
+        if self._syncing_throttled:
+            return
+        try:
+            self._syncing_throttled = True
+            self._slider.value = index
+        finally:
+            self._syncing_throttled = False
 
     def _update_style(self, *events):
         style = {p: getattr(self, p) for p in Layoutable.param if p != 'name'}
@@ -277,6 +300,15 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
             self.value = self.values[event.new]
         finally:
             self._syncing = False
+
+    def _sync_value_throttled(self, event):
+        if self._syncing_throttled:
+            return
+        try:
+            self._syncing_throttled = True
+            self.value_throttled = self.values[event.new]
+        finally:
+            self._syncing_throttled = False
 
     def _get_embed_state(self, root, values=None, max_opts=3):
         model = self._composite[1]._models[root.ref['id']][0]
