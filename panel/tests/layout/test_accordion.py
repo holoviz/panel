@@ -1,8 +1,6 @@
 import pytest
 
-from bokeh.models import (
-    Column as BkColumn, Div, Spacer as BkSpacer
-)
+from bokeh.models import Column as BkColumn, Div
 
 from panel.layout import Accordion
 from panel.models import Card
