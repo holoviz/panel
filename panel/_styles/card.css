@@ -26,11 +26,11 @@
   align-items: center;
   justify-content: space-between;
 }
-.bk.card-button {
+p.bk.card-button {
   background-color: transparent;
   font-size: 1.25rem;
   font-weight: 700;
-  margin: 0.25em 0;
+  margin: 0;
 }
 .bk.card-header-row {
   position: relative !important;
