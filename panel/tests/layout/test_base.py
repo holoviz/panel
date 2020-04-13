@@ -5,7 +5,7 @@ import param
 from bokeh.models import Column as BkColumn, Div, Row as BkRow
 
 from panel.layout import (
-    Column, ListPanel, Row, Tabs, Spacer, WidgetBox
+    Card, Column, ListPanel, Row, Tabs, Spacer, WidgetBox
 )
 from panel.param import Param
 from panel.pane import Bokeh
@@ -20,18 +20,18 @@ all_panels = [w for w in param.concrete_descendents(ListPanel).values()
 def test_layout_signature(panel):
     from inspect import signature
     parameters = signature(panel).parameters
-    assert len(parameters) == 2
+    assert len(parameters) == 2, 'Found following parameters %r' % parameters
     assert 'objects' in parameters
 
 
-@pytest.mark.parametrize('layout', [Column, Row, Tabs, Spacer])
+@pytest.mark.parametrize('layout', [Column, Row, Tabs, Spacer, Card])
 def test_layout_properties(layout, document, comm):
     l = layout()
     model = l.get_root(document, comm)
     check_layoutable_properties(l, model)
 
 
-@pytest.mark.parametrize('layout', [Column, Row, Tabs, Spacer])
+@pytest.mark.parametrize('layout', [Card, Column, Row, Tabs, Spacer])
 def test_layout_model_cache_cleanup(layout, document, comm):
     l = layout()
 
@@ -44,7 +44,7 @@ def test_layout_model_cache_cleanup(layout, document, comm):
     assert l._models == {}
 
 
-@pytest.mark.parametrize('panel', [Column, Row])
+@pytest.mark.parametrize('panel', [Card, Column, Row])
 def test_layout_constructor(panel):
     div1 = Div()
     div2 = Div()
@@ -53,7 +53,7 @@ def test_layout_constructor(panel):
     assert all(isinstance(p, Bokeh) for p in layout.objects)
 
 
-@pytest.mark.parametrize('panel', [Column, Row])
+@pytest.mark.parametrize('panel', [Card, Column, Row])
 def test_layout_getitem(panel):
     div1 = Div()
     div2 = Div()
@@ -63,7 +63,7 @@ def test_layout_getitem(panel):
     assert layout[1].object is div2
 
 
-@pytest.mark.parametrize('panel', [Column, Row])
+@pytest.mark.parametrize('panel', [Card, Column, Row])
 def test_layout_repr(panel):
     div1 = Div()
     div2 = Div()
@@ -73,7 +73,7 @@ def test_layout_repr(panel):
     assert repr(layout) == '%s\n    [0] Bokeh(Div)\n    [1] Bokeh(Div)' % name
 
 
-@pytest.mark.parametrize('panel', [Column, Row])
+@pytest.mark.parametrize('panel', [Card, Column, Row])
 def test_layout_select_by_type(panel):
     div1 = Div()
     div2 = Div()
@@ -86,7 +86,7 @@ def test_layout_select_by_type(panel):
     assert panes[1].object is div2
 
 
-@pytest.mark.parametrize('panel', [Column, Row])
+@pytest.mark.parametrize('panel', [Card, Column, Row])
 def test_layout_select_by_function(panel):
     div1 = Div()
     div2 = Div()
@@ -98,7 +98,7 @@ def test_layout_select_by_function(panel):
 
 
 @pytest.mark.parametrize(['panel', 'model_type'], [(Column, BkColumn), (Row, BkRow)])
-def test_layoutget_root(panel, model_type, document, comm):
+def test_layout_get_root(panel, model_type, document, comm):
     div1 = Div()
     div2 = Div()
     layout = panel(div1, div2)

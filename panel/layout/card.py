@@ -48,6 +48,10 @@ class Card(Column):
         self.param.watch(self._update_header, ['title', 'header'])
         self._update_header()
 
+    def _cleanup(self, root):
+        super(Card, self)._cleanup(root)
+        self._header_layout._cleanup(root)
+
     def _update_header(self, *events):
         from ..pane import HTML, panel
         if self.header is None:
