@@ -42,7 +42,7 @@ stages:
   - name: docs_dev
     if: tag =~ ^v(\d+|\.)+([a-z]|rc)\d+$
   - name: docs_daily
-    if: ((type = cron OR commit_message =~ /\[doc-build\]/) and branch = master)
+    if: ((type = cron and branch = master) OR (commit_message =~ /\[doc-build\]/))
 
 jobs:
   include:
