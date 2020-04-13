@@ -131,6 +131,7 @@ class interactive(PaneBase):
 
         super(interactive, self).__init__(object, **params)
 
+        self.throttled = kwargs.pop('throttled', False)
         new_kwargs = self.find_abbreviations(kwargs)
         # Before we proceed, let's make sure that the user has passed a set of args+kwargs
         # that will lead to a valid call of the function. This protects against unspecified
@@ -196,7 +197,13 @@ class interactive(PaneBase):
                 self._pane = panel(new_object)
                 self._inner_layout[0] = self._pane
 
-            pname = 'clicks' if name == 'manual' else 'value'
+            if self.throttled is True and hasattr(widget, 'value_throttled'):
+                widget.value = widget.value_throttled
+                v = 'value_throttled'
+            else:
+                v = 'value'
+
+            pname = 'clicks' if name == 'manual' else v
             watcher = widget.param.watch(update_pane, pname)
             self._callbacks.append(watcher)
 
@@ -460,6 +467,9 @@ class _InteractFactory(object):
             self = type(self)(self.cls, opts, kw)
 
         f = __interact_f
+        if 'throttled' in check_argspec(f).args:
+            raise ValueError('A function cannot have "throttled" as an argument')
+
         if f is None:
             # This branch handles the case 3
             # @interact(a=30, b=40)
