@@ -7,9 +7,13 @@ from .widgets import Widget
 ipywidget_classes = {}
 
 
-def param_value_if_widget(arg):
+def param_value_if_widget(arg, throttled):
     if isinstance(arg, Widget):
-        return arg.param.value
+        if throttled is True and hasattr(arg, 'value_throttled'):
+            arg.value = arg.value_throttled
+            return arg.param.value_throttled
+        else:
+            return arg.param.value
 
     from .pane.ipywidget import IPyWidget
     if IPyWidget.applies(arg) and hasattr(arg, 'value'):
@@ -25,7 +29,7 @@ def param_value_if_widget(arg):
     return arg
 
 
-def depends(*args, **kwargs):
+def depends(*args, throttled=False, **kwargs):
     """
     Python decorator annotating a function or Parameterized method to
     express its dependencies on a set of Parameters. This declaration
@@ -41,7 +45,7 @@ def depends(*args, **kwargs):
     synonym for the underlying parameter. Apart from that extension,
     this decorator otherwise behaves the same as the underlying Param
     depends decorator.
-    
+
     For the Panel version of the decorator, the specified dependencies
     can either be Parameter instances, Panel or ipywidgets widgets,
     or, if a Parameterized method is supplied rather than a function,
@@ -51,8 +55,9 @@ def depends(*args, **kwargs):
     Parameters). See the docs for the corresponding param.depends
     decorator for further details.
     """
-    updated_args = [param_value_if_widget(a) for a in  args]
-    updated_kwargs = {k: param_value_if_widget(v) for k, v in kwargs.items()}
+    updated_args = [param_value_if_widget(a, throttled) for a in args]
+    updated_kwargs = {k: param_value_if_widget(v, throttled) for k, v in kwargs.items()}
+
     return param.depends(*updated_args, **updated_kwargs)
 
 
@@ -70,7 +75,7 @@ def bind(function, *args, **kwargs):
     allowing the widget to be passed in as a synonym for the
     underlying parameter. Apart from that extension, this function
     otherwise behaves the same as the corresponding Param function.
-    
+
     This function allows dynamically recomputing the output of the
     provided function whenever one of the bound parameters
     changes. For Panel, the parameters are typically values of
@@ -106,7 +111,7 @@ def _param_bind(function, *args, **kwargs):
     whenever the underlying values change and the output will reflect
     those updated values.
 
-    As for functools.partial, arguments can also be bound to constants, 
+    As for functools.partial, arguments can also be bound to constants,
     which allows all of the arguments to be bound, leaving a simple
     callable object.
 
