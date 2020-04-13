@@ -1,9 +1,6 @@
 import param
 
-from bokeh.models import Div as BkDiv
-
 from ..models import Card as BkCard
-from ..viewable import Viewable
 from .base import Column, Row
 
 

@@ -3,10 +3,14 @@ Layout component to lay out objects in a set of tabs.
 """
 import param
 
+from collections import defaultdict
+
 from bokeh.models import (
     Spacer as BkSpacer, Panel as BkPanel, Tabs as BkTabs
 )
 
+from ..util import param_name
+from ..viewable import Layoutable
 from .base import ListPanel
 
 
