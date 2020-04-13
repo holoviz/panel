@@ -1,12 +1,13 @@
 .bk.card {
-    border: 1px solid rgba(0,0,0,.125);
-    border-radius: 0.25rem;
+  border: 1px solid rgba(0,0,0,.125);
+  border-radius: 0.25rem;
 }
 .bk.card-header {
-    padding: 0.75rem 1.25rem;
-    background-color: rgba(0, 0, 0, 0.03);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.125);
-    border-radius: 0.25rem;
+  padding: 0 1.25rem;
+  background-color: rgba(0, 0, 0, 0.03);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+  border-radius: 0.25rem;
+  display: flex;
 }
 .bk.card-button {
   border: none;
@@ -15,4 +16,14 @@
   font-size: 1.25rem;
   margin-left: auto;
   display: block;
+}
+.bk.card-header-row {
+  position: inherit !important;
+}
+.bk.card-title {
+  padding-top: 0.5em;
+  padding-bottom: 0.5em;
+  font-size: 1.5em;
+  font-weight: bold;
+  position: inherit !important;
 }
