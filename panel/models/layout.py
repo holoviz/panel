@@ -6,8 +6,6 @@ class Card(Column):
 
     active_header_background = String(help="Background color of active Card header.")
 
-    button_color = String(help="Color of the collapse button.")
-
     button_css_classes = List(String, help="CSS classes to add to the Card collapse button.")
 
     collapsed = Bool(True, help="Whether the Card is collapsed.")
@@ -15,6 +13,8 @@ class Card(Column):
     collapsible = Bool(True, help="Whether the Card should have a button to collapse it.")
 
     header_background = String(help="Background color of the Card header.")
+
+    header_color = String(help="Color of the header text and butotn.")
 
     header_css_classes = List(String, help="CSS classes to add to the Card header.")
 
