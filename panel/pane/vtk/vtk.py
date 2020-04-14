@@ -331,6 +331,10 @@ class VTK(PaneBase):
         Define if the object serialization occurs at panel instantiation
         or when the panel is displayed.""")
 
+    color_mappers = param.List(doc="""
+        List of color_mapper which will be display with colorbars in the
+        panel.""")
+
     _updates = True
 
     _rerender_params = ['object', 'serialize_on_instantiation']
@@ -343,6 +347,7 @@ class VTK(PaneBase):
         self._vtkjs = None
         if self.serialize_on_instantiation:
             self._vtkjs = self._get_vtkjs()
+            self.color_mappers = self._construct_color_mappers()
 
     @classmethod
     def applies(cls, obj):
@@ -384,7 +389,7 @@ class VTK(PaneBase):
         self._legend = None
         super(VTK, self)._update_object(ref, doc, root, parent, comm)
 
-    def construct_colorbars(self, orientation='horizontal'):
+    def _construct_color_mappers(self):
         if self._legend is None:
             try:
                 from .vtkjs_serializer import construct_palettes
@@ -392,14 +397,23 @@ class VTK(PaneBase):
             except Exception:
                 self._legend = {}
         if self._legend:
-            from bokeh.models import Plot, LinearColorMapper, ColorBar, FixedTicker
+            from bokeh.models import LinearColorMapper
+            return [LinearColorMapper(name=k, low=v['low'], high=v['high'], palette=v['palette']) 
+                        for k, v in self._legend.items()]
+        else:
+            return []
+
+    def construct_colorbars(self, orientation='horizontal'):
+        color_mappers = self._construct_color_mappers()
+        if len(color_mappers)>0:
+            from bokeh.models import Plot, ColorBar, FixedTicker
             if orientation == 'horizontal':
                 cbs = []
-                for k, v in self._legend.items():
-                    ticks = np.linspace(v['low'], v['high'], 5)
+                for color_mapper in color_mappers:
+                    ticks = np.linspace(color_mapper.low, color_mapper.high, 5)
                     cbs.append(ColorBar(
-                        color_mapper=LinearColorMapper(low=v['low'], high=v['high'], palette=v['palette']),
-                        title=k,
+                        color_mapper=color_mapper,
+                        title=color_mapper.name,
                         ticker=FixedTicker(ticks=ticks),
                         label_standoff=5, background_fill_alpha=0, orientation='horizontal', location=(0, 0)
                     ))
@@ -463,8 +477,9 @@ class VTK(PaneBase):
 
     def _update(self, model):
         self._vtkjs = None
-        vtkjs = self._get_vtkjs()
+        vtkjs = self._get_vtkjs()        
         model.data = base64encode(vtkjs) if vtkjs is not None else vtkjs
+        self.color_mappers = self._construct_color_mappers()
 
     def export_vtkjs(self, filename='vtk_panel.vtkjs'):
         with open(filename, 'wb') as f:
