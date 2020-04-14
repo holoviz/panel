@@ -9,7 +9,6 @@
 .bk.card-header {
   padding: 0 1.25rem 0 0;
   background-color: rgba(0, 0, 0, 0.03);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.125);
   border-radius: 0.25rem;
   display: flex;
   width: 100%;
