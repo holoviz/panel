@@ -114,16 +114,5 @@ export class VTKColorBar {
       this.ctx.fillText(`${this.ticks[idx]}`, xpos, 2*(font_height+1))
     })
     this.ctx.restore()
-    
   }
 }
-
-// .wrapper {
-//     display: table-cell;
-//     vertical-align: bottom;
-//     height: 200px;
-//   }
-//   .content {
-//     max-height: 200px;
-//     overflow: auto;
-//   }

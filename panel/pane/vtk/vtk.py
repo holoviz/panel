@@ -42,7 +42,7 @@ class VTKVolume(PaneBase):
         Name of the colormap used to transform pixel value in color.""")
 
     diffuse = param.Number(default=0.7, step=1e-2, doc="""
-        Value to control the diffuse Lighting. It relies on both the 
+        Value to control the diffuse Lighting. It relies on both the
         light direction and the object surface normal.""")
 
     display_volume = param.Boolean(default=True, doc="""
@@ -51,11 +51,11 @@ class VTKVolume(PaneBase):
 
     display_slices = param.Boolean(default=False, doc="""
         If set to true, the orthgonal slices in the three (X, Y, Z)
-        directions are displayed. Position of each slice can be 
+        directions are displayed. Position of each slice can be
         controlled using slice_(i,j,k) parameters.""")
 
     edge_gradient = param.Number(default=0.4, bounds=(0, 1), step=1e-2, doc="""
-        Parameter to adjust the opacity of the volume based on the 
+        Parameter to adjust the opacity of the volume based on the
         gradient between voxels.""")
 
     interpolation = param.Selector(default='fast_linear', objects=['fast_linear','linear','nearest'], doc="""
@@ -82,18 +82,18 @@ class VTKVolume(PaneBase):
         The value must be specified as an hexadecimal color string.""")
 
     rescale = param.Boolean(default=False, doc="""
-        If set to True the colormap is rescaled beween min and max 
+        If set to True the colormap is rescaled beween min and max
         value of the non-transparent pixel, otherwise  the full range
         of the pixel values are used.""")
 
     shadow = param.Boolean(default=True, doc="""
-        If set to False, then the mapper for the volume will not 
-        perform shading computations, it is the same as setting 
+        If set to False, then the mapper for the volume will not
+        perform shading computations, it is the same as setting
         ambient=1, diffuse=0, specular=0.""")
 
     sampling = param.Number(default=0.4, bounds=(0, 1), step=1e-2, doc="""
-        Parameter to adjust the distance between samples used for 
-        rendering. The lower the value is the more precise is the 
+        Parameter to adjust the distance between samples used for
+        rendering. The lower the value is the more precise is the
         representation but it is more computationally intensive.""")
 
     spacing = param.Tuple(default=(1, 1, 1), length=3, doc="""
@@ -317,6 +317,10 @@ class VTK(PaneBase):
 
     camera = param.Dict(doc="State of the rendered VTK camera.")
 
+    color_mappers = param.List(doc="""
+        List of color_mapper which will be display with colorbars in the
+        panel.""")
+
     enable_keybindings = param.Boolean(default=False, doc="""
         Activate/Deactivate keys binding.
 
@@ -330,10 +334,6 @@ class VTK(PaneBase):
     serialize_on_instantiation = param.Boolean(default=True, doc="""
         Define if the object serialization occurs at panel instantiation
         or when the panel is displayed.""")
-
-    color_mappers = param.List(doc="""
-        List of color_mapper which will be display with colorbars in the
-        panel.""")
 
     _updates = True
 
@@ -398,7 +398,7 @@ class VTK(PaneBase):
                 self._legend = {}
         if self._legend:
             from bokeh.models import LinearColorMapper
-            return [LinearColorMapper(name=k, low=v['low'], high=v['high'], palette=v['palette']) 
+            return [LinearColorMapper(name=k, low=v['low'], high=v['high'], palette=v['palette'])
                         for k, v in self._legend.items()]
         else:
             return []
@@ -477,7 +477,7 @@ class VTK(PaneBase):
 
     def _update(self, model):
         self._vtkjs = None
-        vtkjs = self._get_vtkjs()        
+        vtkjs = self._get_vtkjs()
         model.data = base64encode(vtkjs) if vtkjs is not None else vtkjs
         self.color_mappers = self._construct_color_mappers()
 

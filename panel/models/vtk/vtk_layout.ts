@@ -56,7 +56,7 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView{
     dots.style.textAlign = "center"
     dots.style.fontSize = "20px"
     dots.innerText = "..."
-    
+
     info_div.addEventListener('click', () => {
       if(info_div.style.width === collapsed_width){
         info_div.removeChild(dots)
@@ -85,6 +85,7 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView{
     this.connect(this.model.properties.camera.change, () => this._set_camera_state())
     this.connect(this.model.properties.color_mappers.change, () => this._add_colorbars())
   }
+
   _orientation_widget_visibility(visibility: boolean): void {
     this._orientationWidget.setEnabled(visibility)
     if(visibility)
