@@ -65,7 +65,7 @@ export class CardView extends ColumnView {
       this.button_el.style.backgroundColor = header_background != null ? header_background : ""
       this.button_el.appendChild(header.el)
       const icon = DOM.createElement("p", {class: button_css_classes})
-      icon.innerHTML = this.model.collapsed ? "+" : "-"
+      icon.innerHTML = this.model.collapsed ? "\u2212" : "+"
       this.button_el.appendChild(icon)
       this.button_el.onclick = () => this._toggle_button()
       header_el = this.button_el
