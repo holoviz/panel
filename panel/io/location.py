@@ -65,14 +65,23 @@ class Location(Syncable):
         if self._syncing:
             return
         query_params = self.query_params
-        for p in self._synced:
-            p.param.set_param(**{k: v for k, v in query_params.items()
-                                 if k in p.param})
+        for p, parameters in self._synced:
+            mapping = {v: k for k, v in parameters.items()}
+            p.param.set_param(**{mapping[k]: v for k, v in query_params.items()
+                                 if k in mapping})
 
     def _update_query(self, *events):
+        if self._syncing:
+            return
+        query = {}
+        for e in events:
+            matches = [ps for o, ps in self._synced if o in (e.cls, e.obj)]
+            if not matches:
+                continue
+            query[matches[0][e.name]] = e.new
         self._syncing = True
         try:
-            self.update_query(**{e.name: e.new for e in events})
+            self.update_query(**query)
         finally:
             self._syncing = False
 
@@ -86,6 +95,22 @@ class Location(Syncable):
         self.search = '?' + urlparse.urlencode(query)
 
     def sync(self, parameterized, parameters=None):
-        self._synced.append(parameterized)
+        """
+        Syncs the parameters of a Parameterized object with the query
+        parameters in the URL.
+        
+        Arguments
+        ---------
+        parameterized (param.Parameterized):
+          The Paramterized object to sync query parameters with
+        parameters (list or dict):
+          A list or dictionary specifying parameters to sync. 
+          If a dictionary is supplied it should define a mapping from
+          the Parameterized's parameteres to the names of the query
+          parameters.
+        """
         parameters = parameters or [p for p in parameterized.param if p != 'name']
-        parameterized.param.watch(self._update_query, parameters)
+        if not isinstance(parameters, dict):
+            parameters = dict(zip(parameters, parameters))
+        self._synced.append((parameterized, parameters))
+        parameterized.param.watch(self._update_query, list(parameters))
