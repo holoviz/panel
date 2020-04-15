@@ -208,7 +208,6 @@ def get_server(panel, port=0, websocket_origin=None, loop=None,
     server_id = kwargs.pop('server_id', uuid.uuid4().hex)
     kwargs['extra_patterns'] = extra_patterns = kwargs.get('extra_patterns', [])
     if isinstance(panel, dict):
-<<<<<<< HEAD
         apps = {}
         for slug, app in panel.items():
             slug = slug if slug.startswith('/') else '/'+slug
@@ -223,12 +222,7 @@ def get_server(panel, port=0, websocket_origin=None, loop=None,
                     extra_patterns.append(('^'+slug+'.*', ProxyFallbackHandler,
                                            dict(fallback=wsgi, proxy=slug)))
                     continue
-            apps[slug] = partial(_eval_panel, app, server_id, title)
-=======
-        apps = {slug if slug.startswith('/') else '/'+slug:
-                partial(_eval_panel, p, server_id, title, location)
-                for slug, p in panel.items()}
->>>>>>> Refactored Location component
+            apps[slug] = partial(_eval_panel, app, server_id, title, location)
     else:
         apps = {'/': partial(_eval_panel, panel, server_id, title, location)}
 
