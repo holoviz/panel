@@ -59,7 +59,7 @@ class Syncable(Renderable):
         self._callbacks = []
         self._links = []
         self._link_params()
-        self._changing = []
+        self._changing = {}
 
     # Allows defining a mapping from model property name to a JS code
     # snippet that transforms the object before serialization
@@ -118,7 +118,7 @@ class Syncable(Renderable):
                 model.on_change(p, partial(self._comm_change, doc, ref))
             else:
                 model.on_change(p, partial(self._server_change, doc, ref))
-    
+
     @property
     def _linkable_params(self):
         return [p for p in self._synced_params()
@@ -128,14 +128,14 @@ class Syncable(Renderable):
         return list(self.param)
 
     def _update_model(self, events, msg, root, model, doc, comm):
-        self._changing = [
+        self._changing[root.ref['id']] = [
             attr for attr, value in msg.items()
             if not model.lookup(attr).property.matches(getattr(model, attr), value)
         ]
         try:
             model.update(**msg)
         finally:
-            self._changing = []
+            del self._changing[root.ref['id']]
 
     def _cleanup(self, root):
         super(Syncable, self)._cleanup(root)
@@ -166,7 +166,7 @@ class Syncable(Renderable):
             return
 
         for ref, (model, parent) in self._models.items():
-            if ref not in state._views:
+            if ref not in state._views or ref in state._fake_roots:
                 continue
             viewable, root, doc, comm = state._views[ref]
             if comm or not doc.session_context or state._unblocked(doc):
@@ -201,18 +201,18 @@ class Syncable(Renderable):
             state._thread_id = None
 
     def _comm_change(self, doc, ref, attr, old, new):
-        if attr in self._changing:
-            self._changing.remove(attr)
+        if attr in self._changing.get(ref, []):
+            self._changing[ref].remove(attr)
             return
 
         with hold(doc):
             self._process_events({attr: new})
 
     def _server_change(self, doc, ref, attr, old, new):
-        if attr in self._changing:
-            self._changing.remove(attr)
+        if attr in self._changing.get(ref, []):
+            self._changing[ref].remove(attr)
             return
- 
+
         state._locks.clear()
         self._events.update({attr: new})
         if not self._processing:
