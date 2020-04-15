@@ -53,15 +53,16 @@ class Location(Syncable):
         self._syncing = False
         self.param.watch(self._update_synced, ['search'])
 
-    def _get_model(self, doc, root, parent=None, comm=None):
+    def _get_model(self, doc, root=None, parent=None, comm=None):
         model = _BkLocation(**self._process_param_change(self._init_properties()))
+        root = root or model
         values = dict(self.param.get_param_values())
         properties = list(self._process_param_change(values))
         self._models[root.ref['id']] = (model, parent)
         self._link_props(model, properties, doc, root, comm)
         return model
 
-    def _update_synced(self, event):
+    def _update_synced(self, event=None):
         if self._syncing:
             return
         query_params = self.query_params
@@ -70,10 +71,10 @@ class Location(Syncable):
             p.param.set_param(**{mapping[k]: v for k, v in query_params.items()
                                  if k in mapping})
 
-    def _update_query(self, *events):
+    def _update_query(self, *events, query=None):
         if self._syncing:
             return
-        query = {}
+        query = query or {}
         for e in events:
             matches = [ps for o, ps in self._synced if o in (e.cls, e.obj)]
             if not matches:
@@ -81,7 +82,7 @@ class Location(Syncable):
             query[matches[0][e.name]] = e.new
         self._syncing = True
         try:
-            self.update_query(**query)
+            self.update_query(**{k: v for k, v in query.items() if v is not None})
         finally:
             self._syncing = False
 
@@ -114,3 +115,6 @@ class Location(Syncable):
             parameters = dict(zip(parameters, parameters))
         self._synced.append((parameterized, parameters))
         parameterized.param.watch(self._update_query, list(parameters))
+        self._update_synced()
+        self._update_query(query={v: getattr(parameterized, k)
+                                  for k, v in parameters.items()})

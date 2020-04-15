@@ -147,7 +147,7 @@ def render_model(model, comm=None):
             {EXEC_MIME: {'id': target}})
 
 
-def render_mimebundle(model, doc, comm, manager=None):
+def render_mimebundle(model, doc, comm, manager=None, location=None):
     """
     Displays bokeh output inside a notebook using the PyViz display
     and comms machinery.
@@ -157,6 +157,9 @@ def render_mimebundle(model, doc, comm, manager=None):
     add_to_doc(model, doc, True)
     if manager is not None:
         doc.add_root(manager)
+    if location is not None:
+        loc = location._get_model(doc, model, model, comm)
+        doc.add_root(loc)
     return render_model(model, comm)
 
 

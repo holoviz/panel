@@ -40,7 +40,8 @@ class _state(param.Parameterized):
     _comm_manager = _CommManager
 
     # Locations
-    _locations = WeakKeyDictionary()
+    _location = None # Global location, e.g. for notebook context
+    _locations = WeakKeyDictionary() # Server locations indexed by document
 
     # An index of all currently active views
     _views = {}
@@ -110,6 +111,8 @@ class _state(param.Parameterized):
             from .location import Location
             self._locations[self.curdoc] = loc = Location()
             return loc
+        elif self.curdoc is None:
+            return self._location
         else:
             return self._locations.get(self.curdoc) if self.curdoc else None
 

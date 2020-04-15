@@ -504,6 +504,11 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         except Exception:
             pass
 
+        if not state._views:
+            # Initialize the global Location
+            from .io.location import Location
+            state._location = location = Location()
+
         from IPython.display import display
         from .models.comm_manager import CommManager
 
@@ -527,7 +532,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
 
         if config.embed:
             return render_model(model)
-        return render_mimebundle(model, doc, comm, manager)
+        return render_mimebundle(model, doc, comm, manager, location)
 
     def _server_destroy(self, session_context):
         """
