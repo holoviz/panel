@@ -55,9 +55,8 @@ export class VTKColorBar {
         actualBoundingBoxDescent,
       } = this.ctx.measureText(`${val}`)
       const height = actualBoundingBoxAscent + actualBoundingBoxDescent
-      if (font_height < height) {
+      if (font_height < height)
         font_height = height
-      }
     })
     return font_height
   }
