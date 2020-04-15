@@ -85,7 +85,6 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView{
     this.connect(this.model.properties.camera.change, () => this._set_camera_state())
     this.connect(this.model.properties.color_mappers.change, () => this._add_colorbars())
   }
-  
   _orientation_widget_visibility(visibility: boolean): void {
     this._orientationWidget.setEnabled(visibility)
     if(visibility)
