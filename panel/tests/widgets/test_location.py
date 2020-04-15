@@ -53,7 +53,7 @@ def test_constructor():
     assert actual.protocol == ""
     assert actual.port == ""
     assert actual.search == ""
-    assert actual.hash_ == ""
+    assert actual.hash == ""
     assert actual.reload == True
 
 
@@ -83,11 +83,11 @@ def test_port_is_readonly(port):
 
 def test_attributes_are_not_readonly(pathname, search, hash_, reload):
     # When
-    location = Location(pathname=pathname, search=search, hash_=hash_, reload=reload)
+    location = Location(pathname=pathname, search=search, hash=hash_, reload=reload)
     # Then
     assert location.pathname == pathname
     assert location.search == search
-    assert location.hash_ == hash_
+    assert location.hash == hash_
     assert location.reload == reload
 
 
@@ -108,7 +108,7 @@ def test_hash_raises_valueerror_if_string_invalid():
     "The hash string should be '' or start with '#'"
     # When/ Then
     with pytest.raises(ValueError):
-        Location(hash_="section2")
+        Location(hash="section2")
 
 
 def test_readonly_workaround_works(href, hostname, protocol, port):
@@ -142,8 +142,8 @@ def test_location_comm(document, comm, pathname, search, hash_, reload):
     location._comm_change({"search": search})
     assert location.search == search
 
-    location._comm_change({"hash_": hash_})
-    assert location.hash_ == hash_
+    location._comm_change({"hash": hash_})
+    assert location.hash == hash_
 
     location._comm_change({"reload": reload})
     assert location.reload == reload
@@ -159,7 +159,7 @@ if __name__.startswith("bk"):
         "protocol",
         "port",
         "search",
-        "hash_",
+        "hash",
         "reload",
     ]
     pn.Column(location, pn.Param(location, parameters=parameters)).servable()

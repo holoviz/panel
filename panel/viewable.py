@@ -698,6 +698,8 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         if location:
             if isinstance(location, Location):
                 loc = location
+            elif doc in state._locations:
+                loc = state.location
             else:
                 loc = Location()
             state._locations[doc] = loc

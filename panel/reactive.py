@@ -1,7 +1,7 @@
-x"""
-Viewable and Reactive baseclasses allow all panel objects to display
-themselves, communicate with a Python process and react in response to
-changes to parameters and the underlying bokeh models.
+"""
+Declares Syncable and Reactive classes which provides baseclasses
+for Panel components which sync their state with one or more bokeh
+models rendered on the frontend. 
 """
 
 import difflib
@@ -12,6 +12,7 @@ from functools import partial
 from tornado import gen
 
 from .callbacks import PeriodicCallback
+from .config import config
 from .io.model import hold
 from .io.notebook import push
 from .io.server import unlocked

@@ -32,7 +32,7 @@ class Location(Model):
     search = String(default="", help="""
       search in window.location e.g. '?color=blue'""")
 
-    hash_ = String(default="", help="""
+    hash = String(default="", help="""
       hash in window.location e.g. '#interact'""")
 
     reload = Bool(default=True, help="""

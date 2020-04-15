@@ -10,7 +10,7 @@ export class LocationView extends View {
 
     this.model.pathname = window.location.pathname;
     this.model.search = window.location.search;
-    this.model.hash_ = window.location.hash;
+    this.model.hash = window.location.hash;
 
     // Readonly parameters on python side
     this.model.href = window.location.href;
@@ -24,24 +24,27 @@ export class LocationView extends View {
 
     this.connect(this.model.properties.pathname.change, () => this.update('pathname'));
     this.connect(this.model.properties.search.change, () => this.update('search'));
-    this.connect(this.model.properties.hash_.change, () => this.update('hash'));
+    this.connect(this.model.properties.hash.change, () => this.update('hash'));
+    this.connect(this.model.properties.reload.change, () => this.update('reload'));
   }
 
   update(change: string): void {
-    if (!this.model.reload) {
+    if (!this.model.reload || (change === 'reload')) {
       window.history.pushState(
         {},
         '',
-        `${this.model.pathname}${this.model.search}${this.model.hash_}`
+        `${this.model.pathname}${this.model.search}${this.model.hash}`
       );
       this.model.href = window.location.href;
+      if (change === 'reload')
+        window.location.reload()
     } else {
       if (change == 'pathname')
         window.location.pathname = (this.model.pathname as string);
       if (change == 'search')
 	    window.location.search = (this.model.search as string);
       if (change == 'hash')
-        window.location.hash = (this.model.hash_ as string);
+        window.location.hash = (this.model.hash as string);
     }
   }
 }
@@ -55,7 +58,7 @@ export namespace Location {
     protocol: p.Property<string>
     port: p.Property<string>
     search: p.Property<string>
-    hash_: p.Property<string>
+    hash: p.Property<string>
     reload: p.Property<boolean>
   }
 }
@@ -75,14 +78,14 @@ export class Location extends Model {
     this.prototype.default_view = LocationView;
 
     this.define<Location.Props>({
-      href: [p.String, window.location.href],
-      hostname: [p.String, window.location.hostname],
-      pathname: [p.String, window.location.pathname],
-      protocol: [p.String, window.location.protocol],
-      port: [p.String, window.location.port],
-      search: [p.String, window.location.search],
-      hash_: [p.String, window.location.hash],
-      reload: [p.Boolean, true],
+      href: [p.String, ''],
+      hostname: [p.String, ''],
+      pathname: [p.String, ''],
+      protocol: [p.String, ''],
+      port: [p.String, ''],
+      search: [p.String, ''],
+      hash: [p.String, ''],
+      reload: [p.Boolean, false],
     })
   }
 }

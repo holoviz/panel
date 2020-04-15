@@ -5,7 +5,7 @@ from __future__ import absolute_import, division, unicode_literals
 
 import threading
 
-from weakref import WeakSet
+from weakref import WeakKeyDictionary, WeakSet
 
 import param
 
@@ -40,7 +40,7 @@ class _state(param.Parameterized):
     _comm_manager = _CommManager
 
     # Locations
-    _locations = {}
+    _locations = WeakKeyDictionary()
 
     # An index of all currently active views
     _views = {}
@@ -106,7 +106,12 @@ class _state(param.Parameterized):
 
     @property
     def location(self):
-        return self._locations.get(self.curdoc) if self.curdoc else None
+        if self.curdoc and self.curdoc not in self._locations:
+            from .location import Location
+            self._locations[self.curdoc] = loc = Location()
+            return loc
+        else:
+            return self._locations.get(self.curdoc) if self.curdoc else None
 
 
 state = _state()
