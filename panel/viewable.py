@@ -508,6 +508,8 @@ class Viewable(Renderable, Layoutable, ServableMixin):
             # Initialize the global Location
             from .io.location import Location
             state._location = location = Location()
+        else:
+            location = None
 
         from IPython.display import display
         from .models.comm_manager import CommManager
