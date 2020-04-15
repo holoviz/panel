@@ -5,12 +5,15 @@ from __future__ import absolute_import, division, unicode_literals
 
 import datetime as dt
 import inspect
+import json
 import numbers
 import os
 import re
 import sys
+import urllib.parse as urlparse
 
 from collections import defaultdict, OrderedDict
+from contextlib import contextmanager
 from datetime import datetime
 from six import string_types
 
@@ -254,3 +257,51 @@ def value_as_date(value):
     elif isinstance(value, datetime):
         value = value.date()
     return value
+
+
+def is_number(s):
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False
+
+
+def parse_query(query):
+    """
+    Parses a url query string, e.g. ?a=1&b=2.1&c=string, converting
+    numeric strings to int or float types.
+    """
+    query = dict(urlparse.parse_qsl(query[1:]))
+    for k, v in list(query.items()):
+        if v.isdigit():
+            query[k] = int(v)
+        elif is_number(v):
+            query[k] = float(v)
+        elif v.startswith('[') or v.startswith('{'):
+            query[k] = json.loads(v)
+    return query
+
+# This functionality should be contributed to param
+# See https://github.com/holoviz/param/issues/379
+@contextmanager
+def edit_readonly(parameterized):
+    """
+    Temporarily set parameters on Parameterized object to readonly=False
+    to allow editing them.
+    """
+    params = parameterized.param.objects("existing").values()
+    readonlys = [p.readonly for p in params]
+    constants = [p.constant for p in params]
+    for p in params:
+        p.readonly = False
+        p.constant = False
+    try:
+        yield
+    except Exception:
+        raise
+    finally:
+        for (p, readonly) in zip(params, readonlys):
+            p.readonly = readonly
+        for (p, constant) in zip(params, constants):
+            p.constant = constant

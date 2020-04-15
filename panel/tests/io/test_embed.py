@@ -6,18 +6,14 @@ import glob
 
 from io import StringIO
 
-from bokeh.models import ColumnDataSource, CustomJS
+from bokeh.models import CustomJS
 
 from panel import Row
-from panel.io.notebook import ipywidget
 from panel.config import config
 from panel.io.embed import embed_state
-from panel.io.model import patch_cds_msg
 from panel.pane import Str
 from panel.param import Param
 from panel.widgets import Select, FloatSlider, Checkbox
-
-from .util import jb_available
 
 
 def test_embed_param_jslink(document, comm):
@@ -409,78 +405,3 @@ def test_save_embed_json(tmpdir):
         assert event['kind'] == 'ModelChanged'
         assert event['attr'] == 'text'
         assert event['new'] == '&lt;pre&gt;%s&lt;/pre&gt;' % v
-
-
-@jb_available
-def test_ipywidget():
-    pane = Str('A')
-    widget = ipywidget(pane)
-
-    assert widget._view_count == 0
-    assert len(pane._models) == 1
-
-    init_id = list(pane._models)[0]
-
-    widget._view_count = 1
-
-    assert widget._view_count == 1
-    assert init_id in pane._models
-
-    widget._view_count = 0
-
-    assert len(pane._models) == 0
-
-    widget._view_count = 1
-
-    assert len(pane._models) == 1
-    prev_id = list(pane._models)[0]
-
-    widget.notify_change({'new': 1, 'old': 1, 'name': '_view_count',
-                          'type': 'change', 'model': widget})
-    assert prev_id in pane._models
-    assert len(pane._models) == 1
-
-    widget._view_count = 2
-
-    assert prev_id in pane._models
-    assert len(pane._models) == 1
-
-
-def test_patch_cds_typed_array():
-    cds = ColumnDataSource()
-    msg = {
-        'header': {'msgid': 'TEST', 'msgtype': 'PATCH-DOC'},
-        'metadata': {},
-        'content': {
-            'events': [{
-                'kind': 'ModelChanged',
-                'model': {'id': cds.ref['id']},
-                'attr': 'data',
-                'new': {
-                    'a': {'2': 2, '0': 0, '1': 1},
-                    'b': {'0': 'a', '2': 'c', '1': 'b'}
-                }
-            }],
-            'references': []
-        },
-        'buffers': []
-    }
-    expected = {
-        'header': {'msgid': 'TEST', 'msgtype': 'PATCH-DOC'},
-        'metadata': {},
-        'content': {
-            'events': [{
-                'kind': 'ModelChanged',
-                'model': {'id': cds.ref['id']},
-                'attr': 'data',
-                'new': {
-                    'a': [0, 1, 2],
-                    'b': ['a', 'b', 'c']
-                }
-            }],
-            'references': []
-        },
-        'buffers': []
-    }
-    patch_cds_msg(cds, msg)
-    assert msg == expected

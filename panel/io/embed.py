@@ -91,7 +91,7 @@ def param_to_jslink(model, widget):
     """
     Converts Param pane widget links into JS links if possible.
     """
-    from ..viewable import Reactive
+    from ..reactive import Reactive
     from ..widgets import Widget, LiteralInput
 
     param_pane = widget._param_pane
@@ -188,7 +188,7 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
 
     Arguments
     ---------
-    panel: panel.viewable.Reactive
+    panel: panel.reactive.Reactive
       The Reactive component being exported
     model: bokeh.model.Model
       The bokeh model being exported

@@ -6,6 +6,7 @@ files.
 """
 
 from .layout import Card # noqa
+from .location import Location # noqa
 from .markup import JSON, HTML # noqa
 from .state import State # noqa
 from .widgets import Audio, FileDownload, Player, Progress, Video, VideoStream # noqa
