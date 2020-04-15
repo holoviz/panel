@@ -12,8 +12,8 @@ from bokeh.models import Column as BkColumn, Row as BkRow
 
 from ..io.model import hold
 from ..io.state import state
+from ..reactive import Reactive
 from ..util import param_name, param_reprs
-from ..viewable import Reactive
 
 _row = namedtuple("row", ["children"])
 _col = namedtuple("col", ["children"])

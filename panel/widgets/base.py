@@ -11,8 +11,8 @@ import param
 
 from ..layout import Row
 from ..io import push, state, unlocked
-from ..viewable import Reactive, Layoutable
-
+from ..reactive import Reactive
+from ..viewable import Layoutable
 
 
 class Widget(Reactive):
