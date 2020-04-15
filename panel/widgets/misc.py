@@ -256,7 +256,7 @@ class FileDownload(Widget):
         if self.file is None and self.callback is None:
             if self.embed:
                 raise ValueError('Must provide a file or a callback '
-                                  'if it is to be embeded')
+                                 'if it is to be embedded.')
             return
 
         from ..param import ParamFunction
