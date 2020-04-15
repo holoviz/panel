@@ -13,7 +13,6 @@ import sys
 import traceback
 import uuid
 
-from collections import namedtuple
 from functools import partial
 
 import param
@@ -32,9 +31,6 @@ from .io.save import save
 from .io.state import state
 from .io.server import StoppableThread, get_server
 from .util import escape, param_reprs
-
-
-LinkWatcher = namedtuple("Watcher","inst cls fn mode onlychanged parameter_names what queued target links transformed")
 
 
 class Layoutable(param.Parameterized):

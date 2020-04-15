@@ -7,6 +7,7 @@ models rendered on the frontend.
 import difflib
 import threading
 
+from collections import namedtuple
 from functools import partial
 
 from tornado import gen
@@ -19,6 +20,8 @@ from .io.server import unlocked
 from .io.state import state
 from .util import edit_readonly
 from .viewable import Layoutable, Renderable, Viewable
+
+LinkWatcher = namedtuple("Watcher","inst cls fn mode onlychanged parameter_names what queued target links transformed")
 
 
 class Syncable(Renderable):
