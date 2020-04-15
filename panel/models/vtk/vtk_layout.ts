@@ -21,9 +21,8 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView{
   _add_colorbars(): void {
     //construct colorbars
     const old_info_div = this.el.querySelector(".vtk_info")
-    if (old_info_div){
+    if (old_info_div)
       this.el.removeChild(old_info_div)
-    }
     if (this.model.color_mappers.length < 1) return
 
     const info_div = document.createElement("div")
