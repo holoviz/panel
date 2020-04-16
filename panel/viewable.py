@@ -688,11 +688,11 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         doc : bokeh.Document (optional)
           The bokeh Document to attach the panel to as a root,
           defaults to bokeh.io.curdoc()
+        title : str
+          A string title to give the Document
         location : boolean or panel.io.location.Location
           Whether to create a Location component to observe and
           set the URL location.
-        title : str
-          A string title to give the Document
 
         Returns
         -------

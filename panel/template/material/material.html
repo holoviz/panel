@@ -1,0 +1,82 @@
+{% extends base %}
+
+<!-- goes in body -->
+{% block postamble %}
+<link href="https://unpkg.com/material-components-web@v4.0.0/dist/material-components-web.min.css" rel="stylesheet">
+<script src="https://unpkg.com/material-components-web@v4.0.0/dist/material-components-web.min.js"></script>
+<link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Material+Icons&display=block" rel="stylesheet">
+{% endblock %}
+
+<!-- goes in body -->
+{% block contents %}
+<header class="mdc-top-app-bar app-bar" id="app-bar">
+  <div class="mdc-top-app-bar__row">
+    <section class="mdc-top-app-bar__section mdc-top-app-bar__section--align-start">
+      {% if nav %}
+      <button class="material-icons mdc-top-app-bar__navigation-icon mdc-icon-button">menu</button>
+      {% endif %}
+      <span class="mdc-top-app-bar__title">{{ app_title }}</span>
+	  {% for doc in docs %}
+      {% for root in doc.roots %}
+      {% if "header" in root.tags %}
+      {{ embed(root) | indent(8) }}
+      {% endif %}
+      {% endfor %}
+      {% endfor %}
+    </section>
+  </div>
+</header>
+
+{% if nav %}
+<aside class="mdc-drawer mdc-top-app-bar--fixed-adjust mdc-drawer--dismissible mdc-drawer--open">
+  <div class="mdc-drawer__content">
+    <div class="mdc-list">
+	  {% for doc in docs %}
+	  {% for root in doc.roots %}
+	  {% if "nav" in root.tags %}
+      {{ embed(root) | indent(8) }}
+	  {% endif %}
+	  {% endfor %}
+	  {% endfor %}
+    </div>
+  </div>
+</aside>
+{% endif %}
+
+<div class="mdc-drawer-app-content mdc-top-app-bar--fixed-adjust">
+<main class="main-content" id="main-content">
+  {% for doc in docs %}
+  {% for root in doc.roots %}
+  {% if "main" in root.tags %}
+  {{ embed(root) | indent(4) }}
+  {% endif %}
+  {% endfor %}
+  {% endfor %}
+</main>
+</div>
+
+<div class="mdc-snackbar">
+  <div class="mdc-snackbar__surface">
+    <div class="mdc-snackbar__label" role="status" aria-live="polite">
+    </div>
+  </div>
+  {{ embed(roots.snackbar_trigger) }}
+</div>
+
+<script>
+  var drawer = mdc.drawer.MDCDrawer.attachTo(document.querySelector('.mdc-drawer'));
+  var topAppBar = mdc.topAppBar.MDCTopAppBar.attachTo(document.getElementById('app-bar'));
+  topAppBar.setScrollTarget(document.getElementById('main-content'));
+  topAppBar.listen('MDCTopAppBar:nav', () => {
+  drawer.open = !drawer.open;
+
+    // Ensure bokeh layout recomputes layout
+    window.dispatchEvent(new Event('resize'));
+
+   });
+   drawer.open = true
+</script>
+
+
+{% endblock %}

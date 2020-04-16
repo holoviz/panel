@@ -36,7 +36,10 @@ class Card(Column):
         A valid CSS color to apply to the header text.""")
 
     header_css_classes = param.List(['card-header'], doc="""
-        CSS claasses to apply to the heaader element.""")
+        CSS classes to apply to the header element.""")
+
+    title_css_classes = param.List(['card-title'], doc="""
+        CSS classes to apply to the header title.""")
 
     margin = param.Parameter(default=5)
 
@@ -46,12 +49,12 @@ class Card(Column):
 
     _bokeh_model = BkCard
     
-    _rename = dict(Column._rename, title=None, header=None)
+    _rename = dict(Column._rename, title=None, header=None, title_css_classes=None)
 
     def __init__(self, *objects, **params):
         self._header_layout = Row(css_classes=['card-header-row'])
         super(Card, self).__init__(*objects, **params)
-        self.param.watch(self._update_header, ['title', 'header'])
+        self.param.watch(self._update_header, ['title', 'header', 'title_css_classes'])
         self._update_header()
 
     def _cleanup(self, root):
@@ -70,7 +73,7 @@ class Card(Column):
     def _update_header(self, *events):
         from ..pane import HTML, panel
         if self.header is None:
-            item = HTML('%s' % (self.title or "&#8203;"), css_classes=['card-title'])
+            item = HTML('%s' % (self.title or "&#8203;"), css_classes=self.title_css_classes)
         else:
             item = panel(self.header)
         self._header_layout[:] = [item]
