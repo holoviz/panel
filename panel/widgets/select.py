@@ -159,17 +159,6 @@ class MultiSelect(_MultiSelectBase):
     _widget_type = _BkMultiSelect
 
 
-
-class MultiSelect(_MultiSelectBase):
-
-    size = param.Integer(default=4, doc="""
-        The number of items displayed at once (i.e. determines the
-        widget height).""")
-
-    _widget_type = _BkMultiSelect
-
-
-
 class MultiChoice(_MultiSelectBase):
 
     delete_button = param.Boolean(default=True, doc="""
