@@ -603,8 +603,8 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         """
         return show_server(self, notebook_url, port)
 
-    def embed(self, max_states=1000, max_opts=3, json=False,
-              save_path='./', load_path=None, progress=True):
+    def embed(self, max_states=1000, max_opts=3, json=False, json_prefix='',
+              save_path='./', load_path=None, progress=False, states={}):
         """
         Renders a static version of a panel in a notebook by evaluating
         the set of states defined by the widgets in the model. Note
@@ -619,22 +619,26 @@ class Viewable(Renderable, Layoutable, ServableMixin):
           The maximum number of states for a single widget
         json: boolean (default=True)
           Whether to export the data to json files
+        json_prefix: str (default='')
+          Prefix for JSON filename
         save_path: str (default='./')
           The path to save json files to
         load_path: str (default=None)
           The path or URL the json files will be loaded from.
         progress: boolean (default=False)
           Whether to report progress
+        states: dict (default={})
+          A dictionary specifying the widget values to embed for each widget
         """
         show_embed(
-            self, max_states, max_opts, json, save_path,
-            load_path, progress
+            self, max_states, max_opts, json, json_prefix, save_path,
+            load_path, progress, states
         )
 
     def save(self, filename, title=None, resources=None, template=None,
              template_variables=None, embed=False, max_states=1000,
              max_opts=3, embed_json=False, json_prefix='', save_path='./',
-             load_path=None):
+             load_path=None, embed_states={}):
         """
         Saves Panel objects to file.
 
@@ -664,10 +668,13 @@ class Viewable(Renderable, Layoutable, ServableMixin):
            The path to save json files to
         load_path: str (default=None)
            The path or URL the json files will be loaded from.
+        embed_states: dict (default={})
+          A dictionary specifying the widget values to embed for each widget
         """
         return save(self, filename, title, resources, template,
                     template_variables, embed, max_states, max_opts,
-                    embed_json, json_prefix, save_path, load_path)
+                    embed_json, json_prefix, save_path, load_path,
+                    embed_states)
 
     def server_doc(self, doc=None, title=None, location=True):
         """

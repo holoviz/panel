@@ -259,7 +259,8 @@ def show_server(panel, notebook_url, port):
 
 
 def show_embed(panel, max_states=1000, max_opts=3, json=False,
-               save_path='./', load_path=None, progress=True):
+               json_prefix='', save_path='./', load_path=None,
+               progress=True, states={}):
     """
     Renders a static version of a panel in a notebook by evaluating
     the set of states defined by the widgets in the model. Note
@@ -274,12 +275,16 @@ def show_embed(panel, max_states=1000, max_opts=3, json=False,
       The maximum number of states for a single widget
     json: boolean (default=True)
       Whether to export the data to json files
+    json_prefix: str (default='')
+      Prefix for JSON filename
     save_path: str (default='./')
       The path to save json files to
     load_path: str (default=None)
       The path or URL the json files will be loaded from.
     progress: boolean (default=False)
       Whether to report progress
+    states: dict (default={})
+      A dictionary specifying the widget values to embed for each widget
     """
     from IPython.display import publish_display_data
     from ..config import config
@@ -289,7 +294,8 @@ def show_embed(panel, max_states=1000, max_opts=3, json=False,
     with config.set(embed=True):
         model = panel.get_root(doc, comm)
         embed_state(panel, model, doc, max_states, max_opts,
-                    json, save_path, load_path)
+                    json, json_prefix, save_path, load_path, progress,
+                    states)
     publish_display_data(*render_model(model))
 
 

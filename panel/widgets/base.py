@@ -105,7 +105,7 @@ class Widget(Reactive):
     def _filter_properties(self, properties):
         return [p for p in properties if p not in Layoutable.param]
 
-    def _get_embed_state(self, root, max_opts=3):
+    def _get_embed_state(self, root, values=None, max_opts=3):
         """
         Returns the bokeh model and a discrete set of value states
         for the widget.
@@ -114,6 +114,8 @@ class Widget(Reactive):
         ---------
         root: bokeh.model.Model
           The root model of the widget
+        values: list (optional)
+          An explicit list of value states to embed
         max_opts: int
           The maximum number of states the widget should return
 
