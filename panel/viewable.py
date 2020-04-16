@@ -604,7 +604,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         return show_server(self, notebook_url, port)
 
     def embed(self, max_states=1000, max_opts=3, json=False, json_prefix='',
-              save_path='./', load_path=None, progress=True, states={}):
+              save_path='./', load_path=None, progress=False, states={}):
         """
         Renders a static version of a panel in a notebook by evaluating
         the set of states defined by the widgets in the model. Note
