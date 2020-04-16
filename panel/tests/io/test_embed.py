@@ -3,6 +3,7 @@ from __future__ import absolute_import, division, unicode_literals, print_functi
 import os
 import json
 import glob
+import pytest
 
 from io import StringIO
 
@@ -89,6 +90,81 @@ def test_embed_select_str_link(document, comm):
         assert event['attr'] == 'text'
         assert event['model'] == model.children[1].ref
         assert event['new'] == '&lt;pre&gt;%s&lt;/pre&gt;' % k
+
+
+def test_embed_float_slider_explicit_values(document, comm):
+    select = FloatSlider()
+    string = Str()
+    def link(target, event):
+        target.object = event.new
+    select.link(string, callbacks={'value': link})
+    panel = Row(select, string)
+    with config.set(embed=True):
+        model = panel.get_root(document, comm)
+    embed_state(panel, model, document, states={select: [0.1, 0.7, 1]})
+    _, state = document.roots
+    assert set(state.state) == {0, 1, 2}
+    states = {0: 0.1, 1: 0.7, 2: 1}
+    for (k, v) in state.state.items():
+        content = json.loads(v['content'])
+        assert 'events' in content
+        events = content['events']
+        assert len(events) == 1
+        event = events[0]
+        assert event['kind'] == 'ModelChanged'
+        assert event['attr'] == 'text'
+        assert event['model'] == model.children[1].ref
+        assert event['new'] == '&lt;pre&gt;%s&lt;/pre&gt;' % states[k]
+
+
+def test_embed_select_str_link(document, comm):
+    select = Select(options=['A', 'B', 'C'])
+    string = Str()
+    def link(target, event):
+        target.object = event.new
+    select.link(string, callbacks={'value': link})
+    panel = Row(select, string)
+    with config.set(embed=True):
+        model = panel.get_root(document, comm)
+    embed_state(panel, model, document, states={select: ['A', 'B']})
+    _, state = document.roots
+    assert set(state.state) == {'A', 'B'}
+    for k, v in state.state.items():
+        content = json.loads(v['content'])
+        assert 'events' in content
+        events = content['events']
+        assert len(events) == 1
+        event = events[0]
+        assert event['kind'] == 'ModelChanged'
+        assert event['attr'] == 'text'
+        assert event['model'] == model.children[1].ref
+        assert event['new'] == '&lt;pre&gt;%s&lt;/pre&gt;' % k
+
+
+def test_embed_select_str_explicit_values_not_found(document, comm):
+    select = Select(options=['A', 'B', 'C'])
+    string = Str()
+    def link(target, event):
+        target.object = event.new
+    select.link(string, callbacks={'value': link})
+    panel = Row(select, string)
+    with config.set(embed=True):
+        model = panel.get_root(document, comm)
+    with pytest.raises(ValueError):
+        embed_state(panel, model, document, states={select: ['A', 'D']})
+
+
+def test_embed_float_slider_explicit_values_out_of_bounds(document, comm):
+    select = FloatSlider()
+    string = Str()
+    def link(target, event):
+        target.object = event.new
+    select.link(string, callbacks={'value': link})
+    panel = Row(select, string)
+    with config.set(embed=True):
+        model = panel.get_root(document, comm)
+    with pytest.raises(ValueError):
+        embed_state(panel, model, document, states={select: [0.1, 0.7, 2]})
 
 
 def test_embed_select_str_link_two_steps(document, comm):
