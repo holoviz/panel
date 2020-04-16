@@ -254,15 +254,20 @@ class FileDownload(Widget):
     @param.depends('_clicks', watch=True)
     def _transfer(self):
         if self.file is None and self.callback is None:
+            if self.embed:
+                raise ValueError('Must provide a file or a callback '
+                                 'if it is to be embedded.')
             return
 
         from ..param import ParamFunction
-        filename = self.filename
         if self.callback is None:
             fileobj = self.file
         else:
             fileobj = ParamFunction.eval(self.callback)
-        if isinstance(fileobj, str) and os.path.isfile(fileobj):
+        filename = self.filename
+        if isinstance(fileobj, str):
+            if not os.path.isfile(fileobj):
+                raise FileNotFoundError('File "%s" not found.' % fileobj)
             with open(fileobj, 'rb') as f:
                 b64 = b64encode(f.read()).decode("utf-8")
             if filename is None:
@@ -276,7 +281,7 @@ class FileDownload(Widget):
                 raise ValueError('Must provide filename if file-like '
                                  'object is provided.')
         else:
-            raise ValueError('Cannot transfer unknown file type %s' %
+            raise ValueError('Cannot transfer unknown object of type %s' %
                              type(fileobj).__name__)
 
         ext = filename.split('.')[-1]
