@@ -117,7 +117,7 @@ def test_embed_float_slider_explicit_values(document, comm):
         assert event['new'] == '&lt;pre&gt;%s&lt;/pre&gt;' % states[k]
 
 
-def test_embed_select_str_link(document, comm):
+def test_embed_select_explicit_values(document, comm):
     select = Select(options=['A', 'B', 'C'])
     string = Str()
     def link(target, event):
