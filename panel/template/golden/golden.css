@@ -1,0 +1,40 @@
+body {
+  display: flex;
+  height: 100vh;
+  font-family: roboto;
+  margin: 0px;
+}
+
+.main-area {
+  flex: auto;
+  overflow: auto;
+  position: relative;
+}
+
+.main-content {
+  height: 100%;
+}
+
+#app-bar {
+  position: absolute;
+  height: 64px;
+  z-index: 7;
+  background-color: black;
+  width: 100%;
+  color: white;
+  display: flex;
+  align-items: center;
+}
+
+.header-adjust {
+  padding-top: 64px;
+}
+
+.header-title {
+  font-size: 1.5em;
+  padding-left: 1.5em;
+}
+
+p.bk.golden-card-button {
+  display: none;
+}

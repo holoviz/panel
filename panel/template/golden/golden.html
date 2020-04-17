@@ -1,0 +1,79 @@
+{% extends base %}
+
+<!-- goes in body -->
+{% block postamble %}
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
+<script type="text/javascript" src="https://golden-layout.com/files/latest/js/goldenlayout.js"></script>
+<link type="text/css" rel="stylesheet" href="https://golden-layout.com/files/latest/css/goldenlayout-base.css" />
+<link type="text/css" rel="stylesheet" href="https://golden-layout.com/files/latest/css/goldenlayout-light-theme.css" />
+<link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Material+Icons&display=block" rel="stylesheet">
+{% endblock %}
+
+<!-- goes in body -->
+{% block contents %}
+<header class="app-bar" id="app-bar">
+  <div class="">
+    <section class="">
+      <span class="header-title">{{ app_title }}</span>
+	  {% for doc in docs %}
+      {% for root in doc.roots %}
+      {% if "header" in root.tags %}
+      {{ embed(root) | indent(8) }}
+      {% endif %}
+      {% endfor %}
+      {% endfor %}
+    </section>
+  </div>
+</header>
+
+{% if nav %}
+<aside class="header-adjust">
+  <div class="nav-content">
+    <div class="nav-list">
+	  {% for doc in docs %}
+	  {% for root in doc.roots %}
+	  {% if "nav" in root.tags %}
+      {{ embed(root) | indent(8) }}
+	  {% endif %}
+	  {% endfor %}
+	  {% endfor %}
+    </div>
+  </div>
+</aside>
+{% endif %}
+
+<div class="main-area header-adjust">
+  <main class="main-content" id="main-content"></main>
+</div>
+
+<script>
+  var config = {
+    content: [{type: 'column', content: [
+    {% for doc in docs %}
+    {% for root in doc.roots %}
+    {% if "main" in root.tags %}
+      {'type': 'component', 'componentName': 'view', componentState: {model: '{{ embed(root) }}', title: '{{ root.name}}' }},
+    {% endif %}
+    {% endfor %}
+    {% endfor %}
+    ]}]
+  };
+
+  var myLayout = new GoldenLayout(config, $('#main-content'));
+  myLayout.registerComponent('view', function( container, componentState ){
+    const {width, css_classes} = componentState
+    if(width)
+      container.on('open', () => container.setSize(width, container.height))
+    if (css_classes)
+      css_classes.map((item) => container.getElement().addClass(item))
+    container.setTitle(componentState.title)
+    container.getElement().html(componentState.model);
+    container.on('resize', () => window.dispatchEvent(new Event('resize')))
+    window.dispatchEvent(new Event('resize'));
+  });
+  myLayout.init()
+</script>
+
+
+{% endblock %}
