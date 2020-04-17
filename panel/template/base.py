@@ -314,11 +314,11 @@ class BasicTemplate(BaseTemplate):
         elif event.obj is self.header:
             tag = 'header'
         for obj in event.old:
-            ref = str(id(obj))
+            ref = obj.name
             if obj not in event.new and ref in self._render_items:
                 del self._render_items[ref]
         for obj in event.new:
-            ref = str(id(obj))
+            ref = obj.name
             if ref not in self._render_items:
                 self._render_items[ref] = (obj, [tag])
         tags = [tags for _, tags in self._render_items.values()]
