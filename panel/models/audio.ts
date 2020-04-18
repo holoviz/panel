@@ -1,22 +1,25 @@
-import * as p from "core/properties"
-import {Widget, WidgetView} from "models/widgets/widget"
+import * as p from "@bokehjs/core/properties"
+import {HTMLBox} from "@bokehjs/models/layouts/html_box"
 
-export class AudioView extends WidgetView {
+import {PanelHTMLBoxView} from "./layout"
+
+export class AudioView extends PanelHTMLBoxView {
   model: Audio
   protected audioEl: HTMLAudioElement
   protected dialogEl: HTMLElement
   private _blocked: boolean
   private _time: any
+  private _setting: boolean
 
   initialize(): void {
     super.initialize()
     this._blocked = false
+    this._setting = false
     this._time = Date.now()
   }
 
   connect_signals(): void {
     super.connect_signals()
-    this.connect(this.model.change, () => this.render())
     this.connect(this.model.properties.loop.change, () => this.set_loop())
     this.connect(this.model.properties.paused.change, () => this.set_paused())
     this.connect(this.model.properties.time.change, () => this.set_time())
@@ -25,9 +28,7 @@ export class AudioView extends WidgetView {
   }
 
   render(): void {
-    if (this.audioEl) {
-      return
-    }
+    super.render()
     this.audioEl = document.createElement('audio')
     this.audioEl.controls = true
     this.audioEl.src = this.model.value
@@ -47,15 +48,22 @@ export class AudioView extends WidgetView {
   }
 
   update_time(view: AudioView): void {
-	if ((Date.now() - view._time) < view.model.throttle) {
+    if (view._setting) {
+      view._setting = false
       return
-	}
+    }
+    if ((Date.now() - view._time) < view.model.throttle)
+      return
     view._blocked = true
     view.model.time = view.audioEl.currentTime
-	view._time = Date.now()
+    view._time = Date.now()
   }
 
   update_volume(view: AudioView): void {
+    if (view._setting) {
+      view._setting = false
+      return
+    }
     view._blocked = true
     view.model.volume = view.audioEl.volume*100
   }
@@ -72,17 +80,22 @@ export class AudioView extends WidgetView {
   }
 
   set_volume(): void {
-    if (this._blocked)
+    if (this._blocked) {
       this._blocked = false
       return
-    if (this.model.volume != null)
-	  this.audioEl.volume = (this.model.volume as number)/100
+    }
+    this._setting = true;
+    if (this.model.volume != null) {
+      this.audioEl.volume = (this.model.volume as number)/100
+    }
   }
 
   set_time(): void {
-    if (this._blocked)
+    if (this._blocked) {
       this._blocked = false
       return
+    }
+    this._setting = true;
     this.audioEl.currentTime = this.model.time
   }
 
@@ -93,7 +106,7 @@ export class AudioView extends WidgetView {
 
 export namespace Audio {
   export type Attrs = p.AttrsOf<Props>
-  export type Props = Widget.Props & {
+  export type Props = HTMLBox.Props & {
     loop: p.Property<boolean>
     paused: p.Property<boolean>
     time: p.Property<number>
@@ -105,26 +118,25 @@ export namespace Audio {
 
 export interface Audio extends Audio.Attrs {}
 
-export abstract class Audio extends Widget {
+export class Audio extends HTMLBox {
   properties: Audio.Props
 
   constructor(attrs?: Partial<Audio.Attrs>) {
     super(attrs)
   }
 
-  static initClass(): void {
-    this.prototype.type = "Audio"
+  static __module__ = "panel.models.widgets"
+
+  static init_Audio(): void {
     this.prototype.default_view = AudioView
 
     this.define<Audio.Props>({
       loop:     [ p.Boolean,   false ],
       paused:   [ p.Boolean,   true  ],
       time:     [ p.Number, 0     ],
-	  throttle: [ p.Number, 250   ],
+      throttle: [ p.Number, 250   ],
       value:    [ p.Any,    ''    ],
       volume:   [ p.Number, null  ],
     })
   }
 }
-
-Audio.initClass()

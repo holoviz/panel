@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+
+    <div class="jumbotron jumbotron-fluid bg-warning text-center">
+        <h1>StockScreener</h1>
+        <p class="lead">A look at the market</p>
+    </div>
+
+    <div class="container text-center">
+        <div class="row">
+            {{ script | safe }}
+        </div>
+    </div>
+
+{% endblock content %}

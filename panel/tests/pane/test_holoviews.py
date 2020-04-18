@@ -5,7 +5,11 @@ from collections import OrderedDict
 
 import pytest
 import numpy as np
-import holoviews as hv
+
+try:
+    import holoviews as hv
+except Exception:
+    hv = None
 
 from bokeh.models import (Row as BkRow, Column as BkColumn, GlyphRenderer,
                           Scatter, Line, GridBox, Select as BkSelect,
@@ -16,7 +20,7 @@ from bokeh.plotting import Figure
 from panel.layout import Column, Row
 from panel.pane import Pane, PaneBase, HoloViews
 from panel.widgets import FloatSlider, DiscreteSlider, Select
-from panel._testing.util import hv_available, mpl_available
+from panel.tests.util import hv_available, mpl_available
 
 
 @hv_available
@@ -38,7 +42,7 @@ def test_holoviews_pane_mpl_renderer(document, comm):
     assert len(row.children) == 1
     model = row.children[0]
     assert pane._models[row.ref['id']][0] is model
-    assert '<img' in model.text
+    assert model.text.startswith('&lt;img src=')
 
     # Replace Pane.object
     scatter = hv.Scatter([1, 2, 3])
@@ -65,7 +69,7 @@ def test_holoviews_pane_switch_backend(document, comm):
     assert len(row.children) == 1
     model = row.children[0]
     assert pane._models[row.ref['id']][0] is model
-    assert '<img' in model.text
+    assert model.text.startswith('&lt;img src=')
 
     # Replace Pane.object
     pane.backend = 'bokeh'
@@ -260,7 +264,7 @@ def test_holoviews_layouts(document, comm):
 
     for center in (True, False):
         for loc in HoloViews.param.widget_location.objects:
-            hv_pane.set_param(center=center, widget_location=loc)
+            hv_pane.param.set_param(center=center, widget_location=loc)
             if center:
                 if loc.startswith('left'):
                     assert len(layout) == 4
@@ -396,8 +400,6 @@ def test_holoviews_linked_axes(document, comm):
     layout = Row(HoloViews(c1, backend='bokeh'), HoloViews(c2, backend='bokeh'))
 
     row_model = layout.get_root(document, comm=comm)
-
-    print(row_model.children)
 
     p1, p2 = row_model.select({'type': Figure})
 
@@ -548,3 +550,15 @@ def test_holoviews_link_within_pane(document, comm):
     range_tool = subsubcolumn.select_one({'type': RangeTool})
     assert isinstance(range_tool, RangeTool)
     assert range_tool.x_range == p2.x_range
+
+
+@hv_available
+def test_holoviews_property_override(document, comm):
+    c1 = hv.Curve([])
+
+    pane = Pane(c1, backend='bokeh', background='red',
+                css_classes=['test_class'])
+    model = pane.get_root(document, comm=comm)
+
+    assert model.background == 'red'
+    assert model.css_classes == ['test_class']

@@ -13,11 +13,24 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+
+from bokeh.server.django import autoload
+from django.apps import apps
 from django.contrib import admin
 from django.urls import path, include
+from django.contrib.staticfiles.urls import staticfiles_urlpatterns
+
+import sliders.pn_app as sliders_app
+
+pn_app_config = apps.get_app_config('bokeh.server.django')
 
 urlpatterns = [
     path('sliders/', include('sliders.urls')),
-#    path('polls/', include('polls.urls')),    
     path('admin/', admin.site.urls),
 ]
+
+bokeh_apps = [
+    autoload("sliders", sliders_app.app),
+]
+
+urlpatterns += staticfiles_urlpatterns()

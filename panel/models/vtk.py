@@ -2,69 +2,123 @@
 """
 Defines custom VTKPlot bokeh model to render VTK objects.
 """
-import os
-
-from bokeh.core.properties import String, Bool, Dict, Any, Override
-from bokeh.models import HTMLBox
-
-from ..compiler import CUSTOM_MODELS
+from bokeh.core.properties import (String, Bool, Dict, Any, Override,
+                                   Instance, Int, Float, PositiveInt, Enum,
+                                   List)
+from bokeh.core.has_props import abstract
+from bokeh.core.enums import enumeration
+from bokeh.models import HTMLBox, Model, ColorMapper
 
 vtk_cdn = "https://unpkg.com/vtk.js"
 
-
-class VTKPlot(HTMLBox):
+@abstract
+class AbstractVTKPlot(HTMLBox):
     """
-    A Bokeh model that wraps around a vtk-js library and renders it inside
-    a Bokeh plot.
+    Abstract Bokeh model for vtk plots that wraps around a vtk-js library and
+    renders it inside a Bokeh plot.
     """
 
     __javascript__ = [vtk_cdn]
 
-    __js_require__ = {"paths": {"vtk": vtk_cdn[:-3]},
-                      "shim": {"vtk": {"exports": "vtk"}}}
+    __js_skip__ = {'vtk': [vtk_cdn]}
 
-    __implementation__ = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'vtk.ts')
-
-    append = Bool(default=False)
-
-    data = String(help="""The serialized vtk.js data""")
-
-    camera = Dict(String, Any)
-
-    enable_keybindings = Bool(default=False)
-
-    orientation_widget = Bool(default=False)
+    __js_require__ = {
+        "paths": {"vtk": vtk_cdn[:-3]},
+        "exports": {"vtk": None},
+        "shim": {
+            "vtk": {"exports": "vtk"}
+        }
+    }
 
     renderer_el = Any(readonly=True)
 
+    orientation_widget = Bool(default=False)
+
+    camera = Dict(String, Any)
+
     height = Override(default=300)
 
     width = Override(default=300)
 
+    color_mappers = List(Instance(ColorMapper))
 
-CUSTOM_MODELS['panel.models.plots.VTKPlot'] = VTKPlot
 
-
-class VTKVolumePlot(HTMLBox):
+class VTKAxes(Model):
     """
-    A Bokeh model that wraps around a vtk-js library and renders it inside
-    a Bokeh plot.
+    A Bokeh model for axes
     """
 
-    __javascript__ = [vtk_cdn]
+    xticker = Dict(String, Any)
 
-    __js_require__ = {"paths": {"vtk": vtk_cdn[:-3]},
-                      "shim": {"vtk": {"exports": "vtk"}}}
+    yticker = Dict(String, Any)
 
-    __implementation__ = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'vtkvolume.ts')
+    zticker = Dict(String, Any)
 
-    actor = Any(readonly=True)
+    origin = Any()
+
+    digits = Int(default=1)
+
+    show_grid = Bool(default=True)
+
+    grid_opacity = Float(default=0.1)
+
+    axes_opacity = Float(default=1)
+
+    fontsize = PositiveInt(default=12)
+
+
+
+class VTKPlot(AbstractVTKPlot):
+    """
+    Bokeh model dedicated to plot a vtk render window with only 3D geometry objects
+    (Volumes are not suported)
+    """
+
+    data = String(help="""The serialized vtk.js data""")
+
+    axes = Instance(VTKAxes)
+
+    enable_keybindings = Bool(default=False)
+
+
+class VTKVolumePlot(AbstractVTKPlot):
+    """
+    Bokeh model dedicated to plot a volumetric object with the help of vtk-js
+    (3D geometry objects are not suported)
+    """
 
     data = Dict(String, Any)
 
-    height = Override(default=300)
+    colormap = String(help="Colormap Name")
 
-    width = Override(default=300)
+    rescale = Bool(default=False)
 
+    shadow = Bool(default=True)
 
-CUSTOM_MODELS['panel.models.plots.VTKVolumePlot'] = VTKVolumePlot
+    sampling = Float(default=0.4)
+
+    edge_gradient = Float(default=0.2)
+
+    ambient = Float(default=0.2)
+
+    diffuse = Float(default=0.7)
+
+    specular = Float(default=0.3)
+
+    specular_power = Float(default=8.)
+
+    slice_i = Int(default=0)
+
+    slice_j = Int(default=0)
+
+    slice_k = Int(default=0)
+
+    display_volume = Bool(default=True)
+
+    display_slices = Bool(default=False)
+
+    render_background = String(default='#52576e')
+
+    interpolation = Enum(enumeration('fast_linear','linear','nearest'))
+
+    mapper = Dict(String, Any)

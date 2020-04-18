@@ -5,14 +5,14 @@ file types.
 from __future__ import absolute_import, division, unicode_literals
 
 import base64
-import os
 
 from io import BytesIO
 from six import string_types
 
 import param
 
-from .markup import DivPaneBase
+from .markup import escape, DivPaneBase
+from ..util import isfile, isurl
 
 
 class ImageBase(DivPaneBase):
@@ -29,34 +29,55 @@ class ImageBase(DivPaneBase):
     provide their own way of obtaining or generating a PNG.
     """
 
+    alt_text = param.String(default=None, doc="""
+        alt text to add to the image tag. The alt text is shown when a
+        user cannot load or display the image.""")
+
+    link_url = param.String(default=None, doc="""
+        A link URL to make the image clickable and link to some other
+        website.""")
+
     embed = param.Boolean(default=True, doc="""
         Whether to embed the image as base64.""")
 
     imgtype = 'None'
+
+    _rerender_params = ['alt_text', 'link_url', 'embed', 'object', 'style']
+
+    _target_transforms = {'object': """'<img src="' + value + '"></img>'"""}
 
     __abstract = True
 
     @classmethod
     def applies(cls, obj):
         imgtype = cls.imgtype
-        return (hasattr(obj, '_repr_'+imgtype+'_') or
-                (isinstance(obj, string_types) and
-                 ((os.path.isfile(obj) and obj.endswith('.'+imgtype)) or
-                  cls._is_url(obj))))
+        if hasattr(obj, '_repr_{}_'.format(imgtype)):
+            return True
+        if isinstance(obj, string_types):
+            if isfile(obj) and obj.endswith('.'+imgtype):
+                return True
+            if isurl(obj, [cls.imgtype]):
+                return True
+        if hasattr(obj, 'read'):  # Check for file like object
+            return True
+        return False
 
-    @classmethod
-    def _is_url(cls, obj):
-        return (isinstance(obj, string_types) and
-                (obj.startswith('http://') or obj.startswith('https://'))
-                and obj.endswith('.'+cls.imgtype))
+    def _type_error(self, object):
+        if isinstance(object, string_types):
+            raise ValueError("%s pane cannot parse string that is not a filename "
+                             "or URL." % type(self).__name__)
+        super(ImageBase, self)._type_error(object)
 
     def _img(self):
-        if not isinstance(self.object, string_types):
-            return getattr(self.object, '_repr_'+self.imgtype+'_')()
-        elif os.path.isfile(self.object):
-            with open(self.object, 'rb') as f:
-                return f.read()
-        else:
+        if hasattr(self.object, '_repr_{}_'.format(self.imgtype)):
+            return getattr(self.object, '_repr_' + self.imgtype + '_')()
+        if isinstance(self.object, string_types):
+            if isfile(self.object):
+                with open(self.object, 'rb') as f:
+                    return f.read()
+        if hasattr(self.object, 'read'):
+            return self.object.read()
+        if isurl(self.object, [self.imgtype]):
             import requests
             r = requests.request(url=self.object, method='GET')
             return r.content
@@ -93,7 +114,7 @@ class ImageBase(DivPaneBase):
             w, h = '%spx' % width, '%spx' % height
         elif smode == 'stretch_both':
             w, h = '100%', '100%'
-        elif smode == 'stretch_height':
+        elif smode == 'stretch_width':
             w, h = '%spx' % width, '100%'
         elif smode == 'stretch_height':
             w, h = '100%', '%spx' % height
@@ -102,10 +123,14 @@ class ImageBase(DivPaneBase):
         else:
             w, h = '100%', 'auto'
 
-        html = "<img src='{src}' width='{width}' height='{height}'></img>".format(
-            src=src, width=w, height=h)
+        html = '<img src="{src}" width="{width}" height="{height}" alt="{alt}"></img>'.format(
+            src=src, width=w, height=h, alt=self.alt_text or '')
 
-        return dict(p, width=width, height=height, text=html)
+        if self.link_url:
+            html = '<a href="{url}" target="_blank">{html}</a>'.format(
+                url=self.link_url, html=html)
+
+        return dict(p, width=width, height=height, text=escape(html))
 
 
 class PNG(ImageBase):
@@ -155,12 +180,24 @@ class JPG(ImageBase):
 
 class SVG(ImageBase):
 
+    encode = param.Boolean(default=False, doc="""
+        Whether to enable base64 encoding of the SVG, base64 encoded
+        SVGs do not support links.""")
+
     imgtype = 'svg'
+
+    _rerender_params = ImageBase._rerender_params + ['encode']
 
     @classmethod
     def applies(cls, obj):
         return (super(SVG, cls).applies(obj) or
                 (isinstance(obj, string_types) and obj.lstrip().startswith('<svg')))
+
+    def _type_error(self, object):
+        if isinstance(object, string_types):
+            raise ValueError("%s pane cannot parse string that is not a filename, "
+                             "URL or a SVG XML contents." % type(self).__name__)
+        super(SVG, self)._type_error(object)
 
     def _img(self):
         if (isinstance(self.object, string_types) and
@@ -179,9 +216,13 @@ class SVG(ImageBase):
         width, height = self._imgshape(data)
         if not isinstance(data, bytes):
             data = data.encode('utf-8')
-        b64 = base64.b64encode(data).decode("utf-8")
-        src = "data:image/svg+xml;base64,{b64}".format(b64=b64)
-        html = "<img src='{src}' width={width} height={height}></img>".format(
-            src=src, width=width, height=height
-        )
-        return dict(p, width=width, height=height, text=html)
+
+        if self.encode:
+            b64 = base64.b64encode(data).decode("utf-8")
+            src = "data:image/svg+xml;base64,{b64}".format(b64=b64)
+            html = "<img src='{src}' width={width} height={height}></img>".format(
+                src=src, width=width, height=height
+            )
+        else:
+            html = data.decode("utf-8")
+        return dict(p, width=width, height=height, text=escape(html))

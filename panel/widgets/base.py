@@ -5,9 +5,14 @@ parameters.
 """
 from __future__ import absolute_import, division, unicode_literals
 
+from functools import partial
+
 import param
 
-from ..viewable import Reactive, Layoutable
+from ..layout import Row
+from ..io import push, state, unlocked
+from ..reactive import Reactive
+from ..viewable import Layoutable
 
 
 class Widget(Reactive):
@@ -34,7 +39,12 @@ class Widget(Reactive):
 
     _widget_type = None
 
+    # Whether the widget supports embedding
     _supports_embed = False
+
+    # Any parameters that require manual updates handling for the models
+    # e.g. parameters which affect some sub-model
+    _manual_params = []
 
     _rename = {'name': 'title'}
 
@@ -43,23 +53,59 @@ class Widget(Reactive):
             params['name'] = ''
         if '_supports_embed' in params:
             self._supports_embed = params.pop('_supports_embed')
+        if '_param_pane' in params:
+            self._param_pane = params.pop('_param_pane')
+        else:
+            self._param_pane = None
         super(Widget, self).__init__(**params)
+        self.param.watch(self._update_widget, self._manual_params)
+
+    def _manual_update(self, events, model, doc, root, parent, comm):
+        """
+        Method for handling any manual update events, i.e. events triggered
+        by changes in the manual params.
+        """
+
+    def _update_widget(self, *events):
+        for ref, (model, parent) in self._models.items():
+            if ref not in state._views or ref in state._fake_roots:
+                continue
+            viewable, root, doc, comm = state._views[ref]
+            if comm or state._unblocked(doc):
+                with unlocked():
+                    self._manual_update(events, model, doc, root, parent, comm)
+                if comm and 'embedded' not in root.tags:
+                    push(doc, comm)
+            else:
+                cb = partial(self._manual_update, events, model, doc, root, parent, comm)
+                if doc.session_context:
+                    doc.add_next_tick_callback(cb)
+                else:
+                    cb()
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         model = self._widget_type(**self._process_param_change(self._init_properties()))
         if root is None:
             root = model
         # Link parameters and bokeh model
-        values = dict(self.get_param_values())
+        values = dict(self.param.get_param_values())
         properties = self._filter_properties(list(self._process_param_change(values)))
         self._models[root.ref['id']] = (model, parent)
         self._link_props(model, properties, doc, root, comm)
         return model
 
+    @property
+    def _linkable_params(self):
+        return [p for p in self._synced_params() if self._rename.get(p, False) is not None
+                and self._source_transforms.get(p, False) is not None]
+
+    def _synced_params(self):
+        return [p for p in self.param if p not in self._manual_params]
+
     def _filter_properties(self, properties):
         return [p for p in properties if p not in Layoutable.param]
 
-    def _get_embed_state(self, root, max_opts=3):
+    def _get_embed_state(self, root, values=None, max_opts=3):
         """
         Returns the bokeh model and a discrete set of value states
         for the widget.
@@ -68,6 +114,8 @@ class Widget(Reactive):
         ---------
         root: bokeh.model.Model
           The root model of the widget
+        values: list (optional)
+          An explicit list of value states to embed
         max_opts: int
           The maximum number of states the widget should return
 
@@ -96,6 +144,20 @@ class CompositeWidget(Widget):
 
     __abstract = True
 
+    _composite_type = Row
+
+    def __init__(self, **params):
+        super(CompositeWidget, self).__init__(**params)
+        layout = {p: getattr(self, p) for p in Layoutable.param
+                  if getattr(self, p) is not None}
+        self._composite = self._composite_type(**layout)
+        self._models = self._composite._models
+        self.param.watch(self._update_layout_params, list(Layoutable.param))
+
+    def _update_layout_params(self, *events):
+        for event in events:
+            setattr(self._composite, event.name, event.new)
+
     def select(self, selector=None):
         """
         Iterates over the Viewable and any potential children in the
@@ -116,8 +178,15 @@ class CompositeWidget(Widget):
             objects += obj.select(selector)
         return objects
 
+    def _cleanup(self, root):
+        self._composite._cleanup(root)
+        super(CompositeWidget, self)._cleanup(root)
+
     def _get_model(self, doc, root=None, parent=None, comm=None):
         return self._composite._get_model(doc, root, parent, comm)
 
     def __contains__(self, object):
         return object in self._composite.objects
+
+    def _synced_params(self):
+        return []

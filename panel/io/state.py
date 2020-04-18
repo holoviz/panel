@@ -5,6 +5,8 @@ from __future__ import absolute_import, division, unicode_literals
 
 import threading
 
+from weakref import WeakKeyDictionary, WeakSet
+
 import param
 
 from bokeh.document import Document
@@ -18,12 +20,16 @@ class _state(param.Parameterized):
     apps to indicate their state to a user.
     """
 
+    cache = param.Dict(default={}, doc="""
+       Global location you can use to cache large datasets or expensive computation results
+       across multiple client sessions for a given server.""") 
+
+    webdriver = param.Parameter(default=None, doc="""
+      Selenium webdriver used to export bokeh models to pngs.""")
+
     _curdoc = param.ClassSelector(class_=Document, doc="""
         The bokeh Document for which a server event is currently being
         processed.""")
-
-    webdriver = param.Parameter(default=None, doc="""
-        Selenium webdriver used to export bokeh models to pngs.""")
 
     # Whether to hold comm events
     _hold = False
@@ -33,16 +39,48 @@ class _state(param.Parameterized):
 
     _comm_manager = _CommManager
 
+    # Locations
+    _location = None # Global location, e.g. for notebook context
+    _locations = WeakKeyDictionary() # Server locations indexed by document
+
     # An index of all currently active views
     _views = {}
 
-    # An index of all curently active servers
+    # For templates to keep reference to their main root
+    _fake_roots = []
+
+    # An index of all currently active servers
     _servers = {}
+
+    # Jupyter display handles
+    _handles = {}
+
+    # Stores a set of locked Websockets, reset after every change event
+    _locks = WeakSet()
+
+    def __repr__(self):
+        server_info = []
+        for server, panel, docs in self._servers.values():
+            server_info.append(
+                "{}:{:d} - {!r}".format(server.address or "localhost", server.port, panel)
+            )
+        if not server_info:
+            return "state(servers=[])"
+        return "state(servers=[\n  {}\n])".format(",\n  ".join(server_info))
+
+    def kill_all_servers(self):
+        """Stop all servers and clear them from the current state."""
+        for server_id in self._servers:
+            try:
+                self._servers[server_id][0].stop()
+            except AssertionError:  # can't stop a server twice
+                pass
+        self._servers = {}
 
     def _unblocked(self, doc):
         thread = threading.current_thread()
         thread_id = thread.ident if thread else None
-        return (doc is self.curdoc and self._thread_id == thread_id)
+        return doc is self.curdoc and self._thread_id == thread_id
 
     @property
     def curdoc(self):
@@ -56,8 +94,27 @@ class _state(param.Parameterized):
         self._curdoc = doc
 
     @property
+    def cookies(self):
+        return self.curdoc.session_context.request.cookies if self.curdoc else {}
+
+    @property
+    def headers(self):
+        return self.curdoc.session_context.request.headers if self.curdoc else {}
+
+    @property
     def session_args(self):
         return self.curdoc.session_context.request.arguments if self.curdoc else {}
+
+    @property
+    def location(self):
+        if self.curdoc and self.curdoc not in self._locations:
+            from .location import Location
+            self._locations[self.curdoc] = loc = Location()
+            return loc
+        elif self.curdoc is None:
+            return self._location
+        else:
+            return self._locations.get(self.curdoc) if self.curdoc else None
 
 
 state = _state()

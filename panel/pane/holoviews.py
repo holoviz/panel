@@ -14,11 +14,11 @@ import param
 
 from bokeh.models import Spacer as _BkSpacer
 
-from ..io import state
-from ..layout import Panel, Column, WidgetBox, HSpacer, VSpacer, Row
-from ..viewable import Viewable
+from ..io import state, unlocked
+from ..layout import Column, WidgetBox, HSpacer, VSpacer, Row
+from ..viewable import Layoutable, Viewable
 from ..widgets import Player
-from .base import PaneBase, Pane
+from .base import PaneBase, Pane, RerenderError
 from .plot import Bokeh, Matplotlib
 from .plotly import Plotly
 
@@ -67,23 +67,27 @@ class HoloViews(PaneBase):
 
     priority = 0.8
 
-    _rerender_params = ['object', 'backend']
-
     _panes = {'bokeh': Bokeh, 'matplotlib': Matplotlib, 'plotly': Plotly}
 
-    _rename = {'backend': None, 'widget_type': None, 'widgets': None,
-               'widget_layout': None, 'widget_location': None, 'center': None}
+    _rename = {
+        'backend': None, 'center': None, 'linked_axes': None,
+        'renderer': None, 'widgets': None, 'widget_layout': None,
+        'widget_location': None, 'widget_type': None
+    }
+
+    _rerender_params = ['object', 'backend']
 
     def __init__(self, object=None, **params):
         super(HoloViews, self).__init__(object, **params)
         self._initialized = False
+        self._responsive_content = False
+        self._restore_plot = None
         self.widget_box = self.widget_layout()
         self._widget_container = []
         self._update_widgets()
         self._plots = {}
         self.param.watch(self._update_widgets, self._rerender_params)
         self._initialized = True
-
 
     @param.depends('center', 'widget_location', watch=True)
     def _update_layout(self):
@@ -103,13 +107,15 @@ class HoloViews(PaneBase):
         elif loc in ('left_bottom', 'right_bottom'):
             widgets = Column(VSpacer(), self.widget_box)
 
+        center = self.center and not self._responsive_content
+
         self._widget_container = widgets
         if not widgets:
-            if self.center:
+            if center:
                 components = [HSpacer(), self, HSpacer()]
             else:
                 components = [self]
-        elif self.center:
+        elif center:
             if loc.startswith('left'):
                 components = [widgets, HSpacer(), self, HSpacer()]
             elif loc.startswith('right'):
@@ -177,11 +183,15 @@ class HoloViews(PaneBase):
 
         if plot.backend == 'bokeh':
             if plot.comm or state._unblocked(plot.document):
-                plot.update(key)
+                with unlocked():
+                    plot.update(key)
                 if plot.comm and 'embedded' not in plot.root.tags:
                     plot.push()
             else:
-                plot.document.add_next_tick_callback(partial(plot.update, key))
+                if plot.document.session_context:
+                    plot.document.add_next_tick_callback(partial(plot.update, key))
+                else:
+                    plot.update(key)
         else:
             plot.update(key)
             if hasattr(plot.renderer, 'get_plot_state'):
@@ -205,26 +215,46 @@ class HoloViews(PaneBase):
         ref = root.ref['id']
         if self.object is None:
             model = _BkSpacer()
+            self._models[ref] = (model, parent)
+            return model
+
+        if self._restore_plot is not None:
+            plot = self._restore_plot
+            self._restore_plot = None
+        elif isinstance(self.object, Plot):
+            plot = self.object
         else:
-            if isinstance(self.object, Plot):
-                plot = self.object
-            else:
-                plot = self._render(doc, comm, root)
-            plot.pane = self
-            backend = plot.renderer.backend
-            if hasattr(plot.renderer, 'get_plot_state'):
-                state = plot.renderer.get_plot_state(plot)
-            else:
-                # Compatibility with holoviews<1.13.0
-                state = plot.state
-            child_pane = self._panes.get(backend, Pane)(state)
-            self._update_plot(plot, child_pane)
-            model = child_pane._get_model(doc, root, parent, comm)
-            if ref in self._plots:
-                old_plot, old_pane = self._plots[ref]
-                old_plot.comm = None # Ensures comm does not get cleaned up
-                old_plot.cleanup()
-            self._plots[ref] = (plot, child_pane)
+            plot = self._render(doc, comm, root)
+
+        plot.pane = self
+        backend = plot.renderer.backend
+        if hasattr(plot.renderer, 'get_plot_state'):
+            state = plot.renderer.get_plot_state(plot)
+        else:
+            # Compatibility with holoviews<1.13.0
+            state = plot.state
+
+        # Ensure rerender if content is responsive but layout is centered
+        if (backend == 'bokeh' and self.center and
+            state.sizing_mode not in ('fixed', None)
+            and not self._responsive_content):
+            self._responsive_content = True
+            self._update_layout()
+            self._restore_plot = plot
+            raise RerenderError()
+        else:
+            self._responsive_content = False
+
+        kwargs = {p: v for p, v in self.param.get_param_values()
+                  if p in Layoutable.param and p != 'name'}
+        child_pane = self._panes.get(backend, Pane)(state, **kwargs)
+        self._update_plot(plot, child_pane)
+        model = child_pane._get_model(doc, root, parent, comm)
+        if ref in self._plots:
+            old_plot, old_pane = self._plots[ref]
+            old_plot.comm = None # Ensures comm does not get cleaned up
+            old_plot.cleanup()
+        self._plots[ref] = (plot, child_pane)
         self._models[ref] = (model, parent)
         return model
 
@@ -280,7 +310,7 @@ class HoloViews(PaneBase):
         return isinstance(obj, Dimensioned) or isinstance(obj, Plot)
 
     @classmethod
-    def widgets_from_dimensions(cls, object, widget_types={}, widgets_type='individual'):
+    def widgets_from_dimensions(cls, object, widget_types=None, widgets_type='individual'):
         from holoviews.core import Dimension, DynamicMap
         from holoviews.core.options import SkipRendering
         from holoviews.core.util import isnumeric, unicode, datetime_types, unique_iterator
@@ -288,6 +318,9 @@ class HoloViews(PaneBase):
         from holoviews.plotting.plot import Plot, GenericCompositePlot
         from holoviews.plotting.util import get_dynamic_mode
         from ..widgets import Widget, DiscreteSlider, Select, FloatSlider, DatetimeInput, IntSlider
+
+        if widget_types is None:
+            widget_types = {}
 
         if isinstance(object, GenericCompositePlot):
             object = object.layout
@@ -304,7 +337,8 @@ class HoloViews(PaneBase):
 
         dynamic, bounded = get_dynamic_mode(object)
         dims, keys = unique_dimkeys(object)
-        if dims == [Dimension('Frame')] and keys == [(0,)]:
+        if ((dims == [Dimension('Frame')] and keys == [(0,)]) or
+            (not dynamic and len(keys) == 1)):
             return [], {}
 
         nframes = 1
@@ -341,6 +375,9 @@ class HoloViews(PaneBase):
             elif dim.name in widget_types:
                 widget = widget_types[dim.name]
                 if isinstance(widget, Widget):
+                    widget.param.set_param(**kwargs)
+                    if not widget.name:
+                        widget.name = dim.label
                     widgets.append(widget)
                     continue
                 elif isinstance(widget, dict):
@@ -428,20 +465,17 @@ def find_links(root_view, root_model):
     Traverses the supplied Viewable searching for Links between any
     HoloViews based panes.
     """
-    if not isinstance(root_view, Panel):
-        return
-
     hv_views = root_view.select(HoloViews)
     root_plots = [plot for view in hv_views for plot, _ in view._plots.values()
                   if getattr(plot, 'root', None) is root_model]
 
-    if not root_plots:
+    if not len(root_plots) > 1:
         return
 
     try:
         from holoviews.plotting.links import Link
         from holoviews.plotting.bokeh.callbacks import LinkCallback
-    except:
+    except Exception:
         return
 
     plots = [(plot, root_plot) for root_plot in root_plots
@@ -486,6 +520,7 @@ def link_axes(root_view, root_model):
         return
 
     from holoviews.core.options import Store
+    from holoviews.core.util import unique_iterator
     from holoviews.plotting.bokeh.element import ElementPlot
 
     ref = root_model.ref['id']
@@ -494,7 +529,8 @@ def link_axes(root_view, root_model):
         if ref not in pane._plots:
             continue
         plot = pane._plots[ref][0]
-        if not pane.linked_axes or plot.renderer.backend != 'bokeh':
+        if (not pane.linked_axes or plot.renderer.backend != 'bokeh'
+            or not getattr(plot, 'shared_axes', False)):
             continue
         for p in plot.traverse(specs=[ElementPlot]):
             if p.current_frame is None:
@@ -506,19 +542,47 @@ def link_axes(root_view, root_model):
 
             fig = p.state
             if fig.x_range.tags:
-                range_map[fig.x_range.tags[0]].append((fig, p, fig.x_range))
+                range_map[fig.x_range.tags[0]].append((fig, p, fig.xaxis[0], fig.x_range))
             if fig.y_range.tags:
-                range_map[fig.y_range.tags[0]].append((fig, p, fig.y_range))
+                range_map[fig.y_range.tags[0]].append((fig, p, fig.yaxis[0], fig.y_range))
 
-    for tag, axes in range_map.items():
-        fig, p, axis = axes[0]
-        for fig, p, _ in axes[1:]:
+    for (tag), axes in range_map.items():
+        fig, p, ax, axis = axes[0]
+        for fig, p, pax, _ in axes[1:]:
+            changed = []
+            if  type(ax) is not type(pax):
+                continue
             if tag in fig.x_range.tags and not axis is fig.x_range:
+                if hasattr(axis, 'factors'):
+                    axis.factors = list(unique_iterator(axis.factors+fig.x_range.factors))
                 fig.x_range = axis
                 p.handles['x_range'] = axis
+                changed.append('x_range')
             if tag in fig.y_range.tags and not axis is fig.y_range:
+                if hasattr(axis, 'factors'):
+                    axis.factors = list(unique_iterator(axis.factors+fig.y_range.factors))
                 fig.y_range = axis
                 p.handles['y_range'] = axis
+                changed.append('y_range')
+
+            # Reinitialize callbacks linked to replaced axes
+            subplots = getattr(p, 'subplots')
+            if subplots:
+                plots = subplots.values()
+            else:
+                plots = [p]
+
+            for sp in plots:
+                for callback in sp.callbacks:
+                    if not any(c in callback.models or c in callback.extra_models for c in changed):
+                        continue
+                    if 'x_range' in changed:
+                        sp.handles['x_range'] = p.handles['x_range']
+                    if 'y_range' in changed:
+                        sp.handles['y_range'] = p.handles['y_range']
+                    callback.reset()
+                    callback.initialize(plot_id=p.id) 
+
 
 Viewable._preprocessing_hooks.append(link_axes)
 Viewable._preprocessing_hooks.append(find_links)

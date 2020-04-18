@@ -17,7 +17,7 @@ def test_discrete_player(document, comm):
     assert widget.step == 1
 
     widget.value = 2
-    discrete_player._comm_change({'value': 2})
+    discrete_player._process_events({'value': 2})
     assert discrete_player.value == 10
 
     discrete_player.value = 100

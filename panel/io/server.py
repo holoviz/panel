@@ -3,12 +3,21 @@ Utilities for creating bokeh Server instances.
 """
 from __future__ import absolute_import, division, unicode_literals
 
+import os
 import signal
+import sys
 import threading
+import uuid
 
+from contextlib import contextmanager
 from functools import partial
+from types import FunctionType
 
+from bokeh.document.events import ModelChangedEvent
 from bokeh.server.server import Server
+from tornado.websocket import WebSocketHandler
+from tornado.web import RequestHandler
+from tornado.wsgi import WSGIContainer
 
 from .state import state
 
@@ -16,6 +25,8 @@ from .state import state
 #---------------------------------------------------------------------
 # Private API
 #---------------------------------------------------------------------
+
+INDEX_HTML = os.path.join(os.path.dirname(__file__), '..', '_templates', "index.html")
 
 def _origin_url(url):
     if url.startswith("http"):
@@ -29,18 +40,81 @@ def _server_url(url, port):
     else:
         return 'http://%s:%d%s' % (url.split(':')[0], port, "/")
 
+def _eval_panel(panel, server_id, title, location, doc):
+    from ..template import Template
+    from ..pane import panel as as_panel
+
+    if isinstance(panel, FunctionType):
+        panel = panel()
+    if isinstance(panel, Template):
+        return panel._modify_doc(server_id, title, doc, location)
+    return as_panel(panel)._modify_doc(server_id, title, doc, location)
+
 #---------------------------------------------------------------------
 # Public API
 #---------------------------------------------------------------------
 
-def get_server(panel, port=0, websocket_origin=None, loop=None,
-               show=False, start=False, **kwargs):
+
+@contextmanager
+def unlocked():
     """
-    Returns a Server instance with this panel attached as the root
-    app.
+    Context manager which unlocks a Document and dispatches
+    ModelChangedEvents triggered in the context body to all sockets
+    on current sessions.
+    """
+    curdoc = state.curdoc
+    if curdoc is None or curdoc.session_context is None:
+        yield
+        return
+    connections = curdoc.session_context.session._subscribed_connections
+
+    hold = curdoc._hold
+    if hold:
+        old_events = list(curdoc._held_events)
+    else:
+        old_events = []
+        curdoc.hold()
+    try:
+        yield
+        events = []
+        for conn in connections:
+            socket = conn._socket
+            if hasattr(socket, 'write_lock') and socket.write_lock._block._value == 0:
+                state._locks.add(socket)
+            locked = socket in state._locks
+            for event in curdoc._held_events:
+                if (isinstance(event, ModelChangedEvent) and event not in old_events
+                    and hasattr(socket, 'write_message') and not locked):
+                    msg = conn.protocol.create('PATCH-DOC', [event])
+                    WebSocketHandler.write_message(socket, msg.header_json)
+                    WebSocketHandler.write_message(socket, msg.metadata_json)
+                    WebSocketHandler.write_message(socket, msg.content_json)
+                    for header, payload in msg._buffers:
+                        WebSocketHandler.write_message(socket, header)
+                        WebSocketHandler.write_message(socket, payload, binary=True)
+                elif event not in events:
+                    events.append(event)
+        curdoc._held_events = events
+    finally:
+        if not hold:
+            curdoc.unhold()
+
+
+def serve(panels, port=0, websocket_origin=None, loop=None, show=True,
+          start=True, title=None, verbose=True, location=True, **kwargs):
+    """
+    Allows serving one or more panel objects on a single server.
+    The panels argument should be either a Panel object or a function
+    returning a Panel object or a dictionary of these two. If a 
+    dictionary is supplied the keys represent the slugs at which
+    each app is served, e.g. `serve({'app': panel1, 'app2': panel2})`
+    will serve apps at /app and /app2 on the server.
 
     Arguments
     ---------
+    panel: Viewable, function or {str: Viewable}
+      A Panel object, a function returning a Panel object or a
+      dictionary mapping from the URL slug to either.
     port: int (optional, default=0)
       Allows specifying a specific port
     websocket_origin: str or list(str) (optional)
@@ -56,6 +130,71 @@ def get_server(panel, port=0, websocket_origin=None, loop=None,
       Whether to open the server in a new browser tab on start
     start : boolean(optional, default=False)
       Whether to start the Server
+    title: str (optional, default=None)
+      An HTML title for the application
+    verbose: boolean (optional, default=True)
+      Whether to print the address and port
+    location : boolean or panel.io.location.Location
+      Whether to create a Location component to observe and
+      set the URL location.
+    kwargs: dict
+      Additional keyword arguments to pass to Server instance
+    """
+    return get_server(panels, port, websocket_origin, loop, show, start,
+                      title, verbose, location, **kwargs)
+
+
+class ProxyFallbackHandler(RequestHandler):
+    """A `RequestHandler` that wraps another HTTP server callback and
+    proxies the subpath.
+    """
+
+    def initialize(self, fallback, proxy=None):
+        self.fallback = fallback
+        self.proxy = proxy
+
+    def prepare(self):
+        if self.proxy:
+            self.request.path = self.request.path.replace(self.proxy, '')
+        self.fallback(self.request)
+        self._finished = True
+        self.on_finish()
+
+
+def get_server(panel, port=0, websocket_origin=None, loop=None,
+               show=False, start=False, title=None, verbose=False,
+               location=True, **kwargs):
+    """
+    Returns a Server instance with this panel attached as the root
+    app.
+
+    Arguments
+    ---------
+    panel: Viewable, function or {str: Viewable}
+      A Panel object, a function returning a Panel object or a
+      dictionary mapping from the URL slug to either.
+    port: int (optional, default=0)
+      Allows specifying a specific port
+    websocket_origin: str or list(str) (optional)
+      A list of hosts that can connect to the websocket.
+
+      This is typically required when embedding a server app in
+      an external web site.
+
+      If None, "localhost" is used.
+    loop : tornado.ioloop.IOLoop (optional, default=IOLoop.current())
+      The tornado IOLoop to run the Server on
+    show : boolean (optional, default=False)
+      Whether to open the server in a new browser tab on start
+    start : boolean(optional, default=False)
+      Whether to start the Server
+    title: str (optional, default=None)
+      An HTML title for the application
+    verbose: boolean (optional, default=False)
+      Whether to report the address and port
+    location : boolean or panel.io.location.Location
+      Whether to create a Location component to observe and
+      set the URL location.
     kwargs: dict
       Additional keyword arguments to pass to Server instance
 
@@ -65,6 +204,28 @@ def get_server(panel, port=0, websocket_origin=None, loop=None,
       Bokeh Server instance running this panel
     """
     from tornado.ioloop import IOLoop
+
+    server_id = kwargs.pop('server_id', uuid.uuid4().hex)
+    kwargs['extra_patterns'] = extra_patterns = kwargs.get('extra_patterns', [])
+    if isinstance(panel, dict):
+        apps = {}
+        for slug, app in panel.items():
+            slug = slug if slug.startswith('/') else '/'+slug
+            if 'flask' in sys.modules:
+                from flask import Flask
+                if isinstance(app, Flask):
+                    wsgi = WSGIContainer(app)
+                    if slug == '/':
+                        raise ValueError('Flask apps must be served on a subpath.')
+                    if not slug.endswith('/'):
+                        slug += '/'
+                    extra_patterns.append(('^'+slug+'.*', ProxyFallbackHandler,
+                                           dict(fallback=wsgi, proxy=slug)))
+                    continue
+            apps[slug] = partial(_eval_panel, app, server_id, title, location)
+    else:
+        apps = {'/': partial(_eval_panel, panel, server_id, title, location)}
+
     opts = dict(kwargs)
     if loop:
         loop.make_current()
@@ -72,15 +233,20 @@ def get_server(panel, port=0, websocket_origin=None, loop=None,
     else:
         opts['io_loop'] = IOLoop.current()
 
+    if 'index' not in opts:
+        opts['index'] = INDEX_HTML
+
     if websocket_origin:
         if not isinstance(websocket_origin, list):
             websocket_origin = [websocket_origin]
         opts['allow_websocket_origin'] = websocket_origin
 
-    server_id = kwargs.pop('server_id', None)
-    server = Server({'/': partial(panel._modify_doc, server_id)}, port=port, **opts)
-    if server_id:
-        state._servers[server_id] = (server, panel, [])
+    server = Server(apps, port=port, **opts)
+    if verbose:
+        address = server.address or 'localhost'
+        print("Launching server at http://%s:%s" % (address, server.port))
+
+    state._servers[server_id] = (server, panel, [])
 
     if show:
         def show_callback():

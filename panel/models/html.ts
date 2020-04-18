@@ -1,17 +1,19 @@
-import * as p from "core/properties"
-import {Markup, MarkupView} from "models/widgets/markup"
+import * as p from "@bokehjs/core/properties"
+import {Markup} from "@bokehjs/models/widgets/markup"
+import {PanelMarkupView} from "./layout"
 
 function htmlDecode(input: string): string | null {
   var doc = new DOMParser().parseFromString(input, "text/html");
   return doc.documentElement.textContent;
 }
 
-export class HTMLView extends MarkupView {
+export class HTMLView extends PanelMarkupView {
   model: HTML
 
   render(): void {
     super.render()
-    const html = htmlDecode(this.model.text);
+    const decoded = htmlDecode(this.model.text);
+    const html = decoded || this.model.text
     if (!html) {
       this.markup_el.innerHTML = '';
       return;
@@ -43,9 +45,9 @@ export class HTML extends Markup {
     super(attrs)
   }
 
-  static initClass(): void {
-    this.prototype.type = "HTML"
+  static __module__ = "panel.models.markup"
+
+  static init_HTML(): void {
     this.prototype.default_view = HTMLView
   }
 }
-HTML.initClass()

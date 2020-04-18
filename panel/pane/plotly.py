@@ -13,6 +13,9 @@ from pyviz_comms import JupyterComm
 import param
 
 from .base import PaneBase
+from ..util import isdatetime
+from ..viewable import Layoutable
+
 
 
 class Plotly(PaneBase):
@@ -24,37 +27,42 @@ class Plotly(PaneBase):
     the figure on bokeh server and via Comms.
     """
 
-    config = param.Dict(doc="""config data""")
-    relayout_data = param.Dict(doc="""relayout callback data""")
-    restyle_data = param.List(doc="""restyle callback data""")
-    click_data = param.Dict(doc="""click callback data""")
-    hover_data = param.Dict(doc="""hover callback data""")
-    clickannotation_data = param.Dict(doc="""clickannotation callback data""")
-    selected_data = param.Dict(doc="""selected callback data""")
-    viewport = param.Dict(doc="""current viewport state""")
-    viewport_update_policy = param.Selector(
-        objects=["mouseup", "continuous", "throttle"],
-        default="mouseup",
-        doc="""\
-Policy by which the viewport parameter is updated during user interactions:
- - "mouseup": updates are synchronized when mouse button is released after panning
- - "continuous": updates are synchronized continually while panning
- - "throttle": updates are synchronized while panning, at intervals determined by the
-               viewport_update_throttle parameter"""
-    )
-    viewport_update_throttle = param.Integer(
-        bounds=(0, None),
-        default=200,
-        doc='''\
-Time interval in milliseconds at which viewport updates are synchronized when
-viewport_update_policy is "throttle"'''
-    )
-    _render_count = param.Integer(
-        doc="""Number of renders, increment to trigger re-render""", default=0)
+    click_data = param.Dict(doc="Click callback data")
 
-    _updates = True
+    clickannotation_data = param.Dict(doc="Clickannotation callback data")
+
+    config = param.Dict(doc="Config data")
+
+    hover_data = param.Dict(doc="Hover callback data")
+
+    relayout_data = param.Dict(doc="Relayout callback data")
+
+    restyle_data = param.List(doc="Restyle callback data")
+
+    selected_data = param.Dict(doc="Selected callback data")
+
+    viewport = param.Dict(doc="Current viewport state")
+
+    viewport_update_policy = param.Selector(default="mouseup", doc="""
+        Policy by which the viewport parameter is updated during user interactions.
+
+        * "mouseup": updates are synchronized when mouse button is
+          released after panning
+        * "continuous": updates are synchronized continually while panning
+        * "throttle": updates are synchronized while panning, at 
+          intervals determined by the viewport_update_throttle parameter
+        """, objects=["mouseup", "continuous", "throttle"])
+
+    viewport_update_throttle = param.Integer(default=200, bounds=(0, None), doc="""
+        Time interval in milliseconds at which viewport updates are
+        synchronized when viewport_update_policy is "throttle".""")
+
+    _render_count = param.Integer(default=0, doc="""
+        Number of renders, increment to trigger re-render""")
 
     priority = 0.8
+
+    _updates = True
 
     @classmethod
     def applies(cls, obj):
@@ -144,7 +152,7 @@ viewport_update_policy is "throttle"'''
                     (type(old) != type(new)) or
                     (new.shape != old.shape) or
                     (new != old).any())
-            except:
+            except Exception:
                 update_array = True
 
             if update_array:
@@ -152,6 +160,26 @@ viewport_update_policy is "throttle"'''
                 cds.data[key] = [new]
 
         return update_sources
+
+    @staticmethod
+    def _plotly_json_wrapper(fig):
+        """Wraps around to_plotly_json and applies necessary fixes.
+
+        For #382: Map datetime elements to strings.
+        """
+        json = fig.to_plotly_json()
+        data = json['data']
+
+        for idx in range(len(data)):
+            for key in data[idx]:
+                if isdatetime(data[idx][key]):
+                    arr = data[idx][key]
+                    if isinstance(arr, np.ndarray):
+                        arr = arr.astype(str) 
+                    else:
+                        arr = [str(v) for v in arr]
+                    data[idx][key] = arr
+        return json
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         """
@@ -168,20 +196,27 @@ viewport_update_policy is "throttle"'''
         else:
             PlotlyPlot = getattr(sys.modules['panel.models.plotly'], 'PlotlyPlot')
 
+        viewport_params = [p for p in self.param if 'viewport' in p]
+        params = list(Layoutable.param)+viewport_params
+        properties = {p : getattr(self, p) for p in params
+                      if getattr(self, p) is not None}
+
         if self.object is None:
             json, sources = {}, []
         else:
             fig = self._to_figure(self.object)
-            json = fig.to_plotly_json()
+            json = self._plotly_json_wrapper(fig)
             sources = Plotly._get_sources(json)
-        model = PlotlyPlot(data=json.get('data', []),
-                           layout=json.get('layout', {}),
-                           config=self.config,
-                           viewport=self.viewport,
-                           viewport_update_policy=self.viewport_update_policy,
-                           viewport_update_throttle=self.viewport_update_throttle,
-                           data_sources=sources,
-                           _render_count=self._render_count)
+
+        data = json.get('data', [])
+        layout = json.get('layout', {})
+        if layout.get('autosize') and self.sizing_mode is self.param.sizing_mode.default:
+            properties['sizing_mode'] = 'stretch_both'
+
+        model = PlotlyPlot(
+            data=data, layout=layout, config=self.config, data_sources=sources,
+            _render_count=self._render_count, **properties
+        )
 
         if root is None:
             root = model
@@ -209,7 +244,8 @@ viewport_update_policy is "throttle"'''
             return
 
         fig = self._to_figure(self.object)
-        json = fig.to_plotly_json()
+        json = self._plotly_json_wrapper(fig)
+        layout = json.get('layout')
 
         traces = json['data']
         new_sources = []
@@ -223,8 +259,8 @@ viewport_update_policy is "throttle"'''
 
             update_sources = self._update_data_sources(cds, trace) or update_sources
         try:
-            update_layout = model.layout != json.get('layout')
-        except:
+            update_layout = model.layout != layout
+        except Exception:
             update_layout = True
 
         # Determine if model needs updates
@@ -237,10 +273,17 @@ viewport_update_policy is "throttle"'''
                     update_data = (
                         {k: v for k, v in new.items() if k != 'uid'} !=
                         {k: v for k, v in old.items() if k != 'uid'})
-                except:
+                except Exception:
                     update_data = True
                 if update_data:
                     break
+
+        if self.sizing_mode is self.param.sizing_mode.default and 'autosize' in layout:
+            autosize = layout.get('autosize')
+            if autosize and model.sizing_mode != 'stretch_both':
+                model.sizing_mode = 'stretch_both'
+            elif not autosize and model.sizing_mode != 'fixed':
+                model.sizing_mode = 'fixed'
 
         if new_sources:
             model.data_sources += new_sources
@@ -249,7 +292,7 @@ viewport_update_policy is "throttle"'''
             model.data = json.get('data')
 
         if update_layout:
-            model.layout = json.get('layout')
+            model.layout = layout
 
         # Check if we should trigger rendering
         if new_sources or update_sources or update_data or update_layout:

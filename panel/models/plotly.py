@@ -1,12 +1,10 @@
 """
-Defines a custom PlotlyPlot bokeh model to render Plotly plots. 
+Defines a custom PlotlyPlot bokeh model to render Plotly plots.
 """
-import os
-
-from bokeh.core.properties import Dict, String, List, Any, Instance, Enum, Int
+from bokeh.core.properties import (
+    Any, Dict, Enum, Int, Instance, List, String
+)
 from bokeh.models import LayoutDOM, ColumnDataSource
-
-from ..compiler import CUSTOM_MODELS
 
 
 class PlotlyPlot(LayoutDOM):
@@ -15,15 +13,19 @@ class PlotlyPlot(LayoutDOM):
     a bokeh plot.
     """
 
-    __javascript__ = ['https://cdn.plot.ly/plotly-latest.min.js',
-                      'https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.15/lodash.min.js']
+    __javascript__ = [
+        'https://code.jquery.com/jquery-3.4.1.min.js',
+        'https://cdn.plot.ly/plotly-latest.min.js'
+    ]
 
-    __js_require__ = {'paths': {'plotly': 'https://cdn.plot.ly/plotly-latest.min',
-                                'lodash': 'https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.15/lodash.min'},
-                      'exports': {'plotly': 'Plotly',
-                                  'lodash': '_'}}
+    __js_skip__ = {'Plotly': __javascript__[1:]}
 
-    __implementation__ = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'plotly.ts')
+    __js_require__ = {
+        'paths': {
+            'plotly': 'https://cdn.plot.ly/plotly-latest.min'
+        },
+        'exports': {'plotly': 'Plotly'}
+    }
 
     data = List(Any)
 
@@ -44,6 +46,3 @@ class PlotlyPlot(LayoutDOM):
     viewport_update_policy = Enum( "mouseup", "continuous", "throttle")
     viewport_update_throttle = Int()
     _render_count = Int()
-
-
-CUSTOM_MODELS['panel.models.plotly.PlotlyPlot'] = PlotlyPlot

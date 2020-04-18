@@ -1,0 +1,44 @@
+.bk.card {
+  border: 1px solid rgba(0,0,0,.125);
+  border-radius: 0.25rem;
+}
+.bk.accordion {
+  border: 1px solid rgba(0,0,0,.125);
+  width: 100% !important;
+}
+.bk.card-header {
+  padding: 0 1.25rem 0 0;
+  background-color: rgba(0, 0, 0, 0.03);
+  border-radius: 0.25rem;
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+}
+.bk.accordion-header {
+  background-color: rgba(0, 0, 0, 0.03);
+  padding: 0 1.25rem 0 0;
+  display: flex;
+  width: 100%;
+  align-items: center;
+  border-radius: 0;
+  align-items: center;
+  justify-content: space-between;
+}
+p.bk.card-button {
+  background-color: transparent;
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0;
+}
+.bk.card-header-row {
+  position: relative !important;
+}
+.bk.card-title {
+  padding: 0.25em;
+  font-size: 1.5em;
+  font-weight: bold;
+  display: flex !important;
+  align-items: center;
+  position: relative !important;
+}

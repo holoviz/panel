@@ -26,7 +26,7 @@ except ImportError:
     try:
         from IPython.utils.signatures import signature, Parameter
         empty = Parameter.empty
-    except:
+    except Exception:
         signature, Parameter, empty = None, None, None
 
 try:
@@ -37,7 +37,7 @@ except ImportError:
 import param
 
 from .layout import Panel, Column, Row
-from .pane import PaneBase, Pane, HTML
+from .pane import PaneBase, HTML, panel
 from .util import as_unicode
 from .widgets import (Checkbox, TextInput, Widget, IntSlider, FloatSlider,
                       Select, DiscreteSlider, Button)
@@ -89,7 +89,8 @@ def _yield_abbreviations_for_parameter(parameter, kwargs):
         if name in kwargs:
             value = kwargs.pop(name)
         elif ann is not empty:
-            param.main.warning("Using function annotations to implicitly specify interactive controls is deprecated. Use an explicit keyword argument for the parameter instead.", DeprecationWarning)
+            param.main.warning("Using function annotations to implicitly specify interactive controls is deprecated. "
+                               "Use an explicit keyword argument for the parameter instead.", DeprecationWarning)
             value = ann
         elif default is not empty:
             value = default
@@ -146,7 +147,7 @@ class interactive(PaneBase):
         if self.manual_update:
             widgets.append(('manual', Button(name=self.manual_name)))
         self._widgets = OrderedDict(widgets)
-        self._pane = Pane(self.object(**self.kwargs), name=self.name)
+        self._pane = panel(self.object(**self.kwargs), name=self.name)
         self._inner_layout = Row(self._pane)
         widgets = [widget for _, widget in widgets if isinstance(widget, Widget)]
         if 'name' in params:
@@ -182,15 +183,17 @@ class interactive(PaneBase):
                 pane_type = self.get_pane_type(new_object)
                 if type(self._pane) is pane_type:
                     if isinstance(new_object, (PaneBase, Panel)):
-                        new_params = {k: v for k, v in new_object.get_param_values()
-                                      if k != 'name'}
+                        new_params = {
+                            k: v for k, v in new_object.param.get_param_values()
+                            if k != 'name'
+                        }
                         self._pane.set_param(**new_params)
                     else:
                         self._pane.object = new_object
                     return
 
                 # Replace pane entirely
-                self._pane = Pane(new_object)
+                self._pane = panel(new_object)
                 self._inner_layout[0] = self._pane
 
             pname = 'clicks' if name == 'manual' else 'value'
@@ -379,10 +382,10 @@ class _InteractFactory(object):
     kwargs: dict
       A dict of **kwargs to use for widgets.
     """
-    def __init__(self, cls, options, kwargs={}):
+    def __init__(self, cls, options, kwargs=None):
         self.cls = cls
         self.opts = options
-        self.kwargs = kwargs
+        self.kwargs = kwargs or {}
 
     def widget(self, f):
         """

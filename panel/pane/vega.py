@@ -8,8 +8,9 @@ import numpy as np
 from bokeh.models import ColumnDataSource
 from pyviz_comms import JupyterComm
 
+from ..viewable import Layoutable
+from ..util import string_types
 from .base import PaneBase
-
 
 def ds_as_cds(dataset):
     """
@@ -61,7 +62,11 @@ class Vega(PaneBase):
         if isinstance(obj, dict):
             json = dict(obj)
             if 'data' in json:
-                json['data'] = dict(json['data'])
+                data = json['data']
+                if isinstance(data, dict):
+                    json['data'] = dict(data)
+                elif isinstance(data, list):
+                    json['data'] = [dict(d) for d in data]
             return json
         return obj.to_dict()
 
@@ -74,7 +79,7 @@ class Vega(PaneBase):
             columns = set(data[0]) if data else []
             if self.is_altair(self.object):
                 import altair as alt
-                if (not isinstance(self.object.data, alt.Data) and
+                if (not isinstance(self.object.data, (alt.Data, alt.UrlData, type(alt.Undefined))) and
                     columns == set(self.object.data)):
                     data = ColumnDataSource.from_df(self.object.data)
                 else:
@@ -82,9 +87,50 @@ class Vega(PaneBase):
                 sources[name] = ColumnDataSource(data=data)
             else:
                 sources[name] = ColumnDataSource(data=ds_as_cds(data))
-        data = json.get('data', {}).pop('values', {})
-        if data:
-            sources['data'] = ColumnDataSource(data=ds_as_cds(data))
+        data = json.get('data', {})
+        if isinstance(data, dict):
+            data = data.pop('values', {})
+            if data:
+                sources['data'] = ColumnDataSource(data=ds_as_cds(data))
+        elif isinstance(data, list):
+            for d in data:
+                if 'values' in d:
+                    sources[d['name']] = ColumnDataSource(data=ds_as_cds(d.pop('values')))
+
+
+    @classmethod
+    def _get_dimensions(cls, json, props):
+        if json is None:
+            return
+
+        if 'config' in json and 'view' in json['config']:
+            size_config = json['config']['view']
+        else:
+            size_config = json
+
+        view = {}
+        for w in ('width', 'continuousWidth'):
+            if w in size_config:
+                view['width'] = size_config[w]
+        for h in ('height', 'continuousHeight'):
+            if h in size_config:
+                view['height'] = size_config[h]
+
+        for p in ('width', 'height'):
+            if p not in view or isinstance(view[p], string_types):
+                continue
+            if props.get(p) is None or p in view and props.get(p) < view[p]:
+                v = view[p]
+                props[p] = v+22 if isinstance(v, int) else v
+
+        responsive_height = json.get('height') == 'container'
+        responsive_width = json.get('width') == 'container'
+        if responsive_height and responsive_width:
+            props['sizing_mode'] = 'stretch_both'
+        elif responsive_width:
+            props['sizing_mode'] = 'stretch_width'
+        elif responsive_height:
+            props['sizing_mode'] = 'stretch_height'
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         if 'panel.models.vega' not in sys.modules:
@@ -105,6 +151,7 @@ class Vega(PaneBase):
             json = self._to_json(self.object)
             self._get_sources(json, sources)
         props = self._process_param_change(self._init_properties())
+        self._get_dimensions(json, props)
         model = VegaPlot(data=json, data_sources=sources, **props)
         if root is None:
             root = model
@@ -117,4 +164,8 @@ class Vega(PaneBase):
         else:
             json = self._to_json(self.object)
             self._get_sources(json, model.data_sources)
-        model.data = json
+        props = {p : getattr(self, p) for p in list(Layoutable.param)
+                 if getattr(self, p) is not None}
+        self._get_dimensions(json, props)
+        props['data'] = json
+        model.update(**props)

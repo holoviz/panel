@@ -5,32 +5,39 @@ inside the Jupyter notebook.
 from __future__ import absolute_import, division, unicode_literals
 
 import json
-import os
 import uuid
 
 from contextlib import contextmanager
+from collections import OrderedDict
+from six import string_types
 
 import bokeh
 import bokeh.embed.notebook
 
-from bokeh.core.templates import DOC_NB_JS
 from bokeh.core.json_encoder import serialize_json
+from bokeh.core.templates import MACROS
 from bokeh.document import Document
 from bokeh.embed import server_document
-from bokeh.embed.elements import div_for_render_item
+from bokeh.embed.bundle import bundle_for_objs_and_resources
+from bokeh.embed.elements import div_for_render_item, script_for_render_items
 from bokeh.embed.util import standalone_docs_json_and_render_items
-from bokeh.models import CustomJS, LayoutDOM, Model
+from bokeh.embed.wrappers import wrap_in_script_tag
+from bokeh.models import LayoutDOM, Model
 from bokeh.resources import CDN, INLINE
-from bokeh.util.compiler import bundle_all_models
-from bokeh.util.string import encode_utf8
-from jinja2 import Environment, Markup, FileSystemLoader
+from bokeh.util.serialization import make_id
 from pyviz_comms import (
-    JS_CALLBACK, PYVIZ_PROXY, Comm, JupyterCommManager as _JupyterCommManager,
-    bokeh_msg_handler, nb_mime_js)
+    PYVIZ_PROXY, Comm, JupyterCommManager as _JupyterCommManager, nb_mime_js
+)
+
+try:
+    from bokeh.util.string import escape
+except Exception:
+    from html import escape
 
 from ..compiler import require_components
 from .embed import embed_state
 from .model import add_to_doc, diff
+from .resources import _env
 from .server import _server_url, _origin_url, get_server
 from .state import state
 
@@ -42,48 +49,6 @@ from .state import state
 LOAD_MIME = 'application/vnd.holoviews_load.v0+json'
 EXEC_MIME = 'application/vnd.holoviews_exec.v0+json'
 HTML_MIME = 'text/html'
-
-ABORT_JS = """
-if (!window.PyViz) {{
-  return;
-}}
-var events = [];
-var receiver = window.PyViz.receivers['{plot_id}'];
-if (receiver &&
-        receiver._partial &&
-        receiver._partial.content &&
-        receiver._partial.content.events) {{
-    events = receiver._partial.content.events;
-}}
-
-for (var event of events) {{
-  if ((event.kind === 'ModelChanged') && (event.attr === '{change}') &&
-      (cb_obj.id === event.model.id) &&
-      (JSON.stringify(cb_obj['{change}']) === JSON.stringify(event.new))) {{
-    events.pop(events.indexOf(event))
-    return;
-  }}
-}}
-"""
-
-def get_comm_customjs(change, client_comm, plot_id, timeout=5000, debounce=50):
-    """
-    Returns a CustomJS callback that can be attached to send the
-    model state across the notebook comms.
-    """
-    # Abort callback if value matches last received event
-    abort = ABORT_JS.format(plot_id=plot_id, change=change)
-    data_template = """\
-data = {{{change}: cb_obj['{change}'], 'id': cb_obj.id}};
-cb_obj.event_name = '{change}';"""
-
-    fetch_data = data_template.format(change=change)
-    self_callback = JS_CALLBACK.format(
-        comm_id=client_comm.id, timeout=timeout, debounce=debounce,
-        plot_id=plot_id)
-    return CustomJS(code='\n'.join([abort, fetch_data, self_callback]))
-
-
 
 def push(doc, comm, binary=True):
     """
@@ -99,30 +64,66 @@ def push(doc, comm, binary=True):
         comm.send(json.dumps(header))
         comm.send(buffers=[payload])
 
-
-def get_env():
-    ''' Get the correct Jinja2 Environment, also for frozen scripts.
-    '''
-    local_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '_templates'))
-    return Environment(loader=FileSystemLoader(local_path))
-
-_env = get_env()
-_env.filters['json'] = lambda obj: Markup(json.dumps(obj))
+DOC_NB_JS = _env.get_template("doc_nb_js.js")
 AUTOLOAD_NB_JS = _env.get_template("autoload_panel_js.js")
+NB_TEMPLATE_BASE = _env.get_template('nb_template.html')
 
-
-def _autoload_js(resources, custom_models_js, configs, requirements, exports, load_timeout=5000):
+def _autoload_js(bundle, configs, requirements, exports, skip_imports, load_timeout=5000):
     return AUTOLOAD_NB_JS.render(
-        js_urls   = resources.js_files,
-        css_urls  = resources.css_files,
-        js_raw    = resources.js_raw + [custom_models_js],
-        css_raw   = resources.css_raw_str,
+        bundle    = bundle,
         force     = True,
         timeout   = load_timeout,
         configs   = configs,
         requirements = requirements,
-        exports   = exports
+        exports   = exports,
+        skip_imports = skip_imports
     )
+
+
+def html_for_render_items(docs_json, render_items, template=None, template_variables={}):
+    json_id = make_id()
+    json = escape(serialize_json(docs_json), quote=False)
+    json = wrap_in_script_tag(json, "application/json", json_id)
+
+    script = wrap_in_script_tag(script_for_render_items(json_id, render_items))
+
+    context = template_variables.copy()
+
+    context.update(dict(
+        title = '',
+        plot_script = json + script,
+        docs = render_items,
+        base = NB_TEMPLATE_BASE,
+        macros = MACROS,
+    ))
+
+    if len(render_items) == 1:
+        context["doc"] = context["docs"][0]
+        context["roots"] = context["doc"].roots
+
+    if template is None:
+        template = NB_TEMPLATE_BASE
+    elif isinstance(template, string_types):
+        template = _env.from_string("{% extends base %}\n" + template)
+
+    return template.render(context)
+
+
+def render_template(document, comm=None, manager=None):
+    ref = document.roots[0].ref['id']
+    (docs_json, render_items) = standalone_docs_json_and_render_items(document, True)
+
+    # We do not want the CommManager to appear in the roots because
+    # the custom template may not reference it
+    if manager:
+        item = render_items[0]
+        item.roots._roots = OrderedDict(list(item.roots._roots.items())[:-1])
+
+    html = html_for_render_items(
+        docs_json, render_items, template=document.template,
+        template_variables=document.template_variables
+    )
+    return ({'text/html': html, EXEC_MIME: ''}, {EXEC_MIME: {'id': ref}})
 
 
 def render_model(model, comm=None):
@@ -131,31 +132,22 @@ def render_model(model, comm=None):
 
     target = model.ref['id']
 
-    (docs_json, [render_item]) = standalone_docs_json_and_render_items([model])
+    (docs_json, [render_item]) = standalone_docs_json_and_render_items([model], True)
     div = div_for_render_item(render_item)
     render_item = render_item.to_json()
     script = DOC_NB_JS.render(
         docs_json=serialize_json(docs_json),
         render_items=serialize_json([render_item]),
     )
-    bokeh_script, bokeh_div = encode_utf8(script), encode_utf8(div)
+    bokeh_script, bokeh_div = script, div
     html = "<div id='{id}'>{html}</div>".format(id=target, html=bokeh_div)
 
-    # Publish bokeh plot JS
-    msg_handler = bokeh_msg_handler.format(plot_id=target)
-
-    if comm:
-        comm_js = comm.js_template.format(plot_id=target, comm_id=comm.id, msg_handler=msg_handler)
-        bokeh_js = '\n'.join([comm_js, bokeh_script])
-    else:
-        bokeh_js = bokeh_script
-
-    data = {'text/html': html, 'application/javascript': bokeh_js}
+    data = {'text/html': html, 'application/javascript': bokeh_script}
     return ({'text/html': mimebundle_to_html(data), EXEC_MIME: ''},
             {EXEC_MIME: {'id': target}})
 
 
-def render_mimebundle(model, doc, comm):
+def render_mimebundle(model, doc, comm, manager=None, location=None):
     """
     Displays bokeh output inside a notebook using the PyViz display
     and comms machinery.
@@ -163,6 +155,11 @@ def render_mimebundle(model, doc, comm):
     if not isinstance(model, LayoutDOM):
         raise ValueError('Can only render bokeh LayoutDOM models')
     add_to_doc(model, doc, True)
+    if manager is not None:
+        doc.add_root(manager)
+    if location is not None:
+        loc = location._get_model(doc, model, model, comm)
+        doc.add_root(loc)
     return render_model(model, comm)
 
 
@@ -191,22 +188,23 @@ def block_comm():
     Context manager to temporarily block comm push
     """
     state._hold = True
-    yield
-    state._hold = False
+    try:
+        yield
+    finally:
+        state._hold = False
 
 
 def load_notebook(inline=True, load_timeout=5000):
     from IPython.display import publish_display_data
 
     resources = INLINE if inline else CDN
-    custom_models_js = bundle_all_models() or ""
+    bundle = bundle_for_objs_and_resources(None, resources)
+    configs, requirements, exports, skip_imports = require_components()
 
-    configs, requirements, exports = require_components()
-    bokeh_js = _autoload_js(resources, custom_models_js, configs,
-                            requirements, exports, load_timeout)
+    bokeh_js = _autoload_js(bundle, configs, requirements, exports, skip_imports, load_timeout)
     publish_display_data({
         'application/javascript': bokeh_js,
-        LOAD_MIME : bokeh_js
+        LOAD_MIME: bokeh_js,
     })
     bokeh.io.notebook.curstate().output_notebook()
 
@@ -261,7 +259,8 @@ def show_server(panel, notebook_url, port):
 
 
 def show_embed(panel, max_states=1000, max_opts=3, json=False,
-              save_path='./', load_path=None):
+               json_prefix='', save_path='./', load_path=None,
+               progress=True, states={}):
     """
     Renders a static version of a panel in a notebook by evaluating
     the set of states defined by the widgets in the model. Note
@@ -276,10 +275,16 @@ def show_embed(panel, max_states=1000, max_opts=3, json=False,
       The maximum number of states for a single widget
     json: boolean (default=True)
       Whether to export the data to json files
+    json_prefix: str (default='')
+      Prefix for JSON filename
     save_path: str (default='./')
       The path to save json files to
     load_path: str (default=None)
       The path or URL the json files will be loaded from.
+    progress: boolean (default=False)
+      Whether to report progress
+    states: dict (default={})
+      A dictionary specifying the widget values to embed for each widget
     """
     from IPython.display import publish_display_data
     from ..config import config
@@ -289,5 +294,47 @@ def show_embed(panel, max_states=1000, max_opts=3, json=False,
     with config.set(embed=True):
         model = panel.get_root(doc, comm)
         embed_state(panel, model, doc, max_states, max_opts,
-                    json, save_path, load_path)
+                    json, json_prefix, save_path, load_path, progress,
+                    states)
     publish_display_data(*render_model(model))
+
+
+def ipywidget(obj, **kwargs):
+    """
+    Creates a root model from the Panel object and wraps it in
+    a jupyter_bokeh ipywidget BokehModel.
+
+    Arguments
+    ---------
+    obj: object
+      Any Panel object or object which can be rendered with Panel
+    **kwargs: dict
+      Keyword arguments passed to the pn.panel utility function
+
+    Returns
+    -------
+    Returns an ipywidget model which renders the Panel object.
+    """
+    from jupyter_bokeh import BokehModel
+    from ..pane import panel
+    model = panel(obj, **kwargs).get_root()
+    widget = BokehModel(model)
+    if hasattr(widget, '_view_count'):
+        widget._view_count = 0
+        def view_count_changed(change, current=[model]):
+            new_model = None
+            if change['old'] > 0 and change['new'] == 0 and current:
+                obj._cleanup(current[0])
+                current[:] = []
+            elif (change['old'] == 0 and change['new'] > 0 and
+                  (not current or current[0] is not model)):
+                if current:
+                    try:
+                        obj._cleanup(current[0])
+                    except Exception:
+                        pass
+                new_model = obj.get_root()
+                widget.update_from_model(new_model)
+                current[:] = [new_model]
+        widget.observe(view_count_changed, '_view_count')
+    return widget

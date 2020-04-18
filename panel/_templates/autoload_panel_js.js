@@ -83,7 +83,7 @@ calls it with the rendered model.
 
     if (window.requirejs) {
       {%- for conf in configs %}
-      window.requirejs.config({{ conf }});
+      window.requirejs.config({{ conf|conffilter }});
       {%- endfor %}
       require({{ requirements|json }}, function({%- for e in exports -%}{{ e }},{%- endfor -%}) {
         {%- for exp in exports %}
@@ -92,8 +92,18 @@ calls it with the rendered model.
         run_callbacks();
       })
     } else {
+      var skip = [];
+      {%- for lib, urls in skip_imports.items() %}
+      if ((window['{{ lib }}'] !== undefined) && (!(window['{{ lib }}'] instanceof HTMLElement))) {
+        var urls = {{ urls }};
+        for (var i = 0; i < urls.length; i++) {
+          skip.push(urls[i])
+        }
+      }
+      {%- endfor %}
       for (var i = 0; i < js_urls.length; i++) {
         var url = js_urls[i];
+        if (skip.indexOf(url) >= 0) { on_load(); continue; }
         var element = document.createElement('script');
         element.onload = on_load;
         element.onerror = on_error;
@@ -111,16 +121,16 @@ calls it with the rendered model.
     document.body.appendChild(element);
   }
 
-  var js_urls = {{ js_urls|json }};
-  var css_urls = {{ css_urls|json }};
+  var js_urls = {{ bundle.js_urls|json }};
+  var css_urls = {{ bundle.css_urls|json }};
 
   var inline_js = [
-    {%- for css in css_raw %}
+    {%- for css in bundle.css_raw %}
     function(Bokeh) {
-      inject_raw_css({{ css }});
+      inject_raw_css({{ css|json }});
     },
     {%- endfor %}
-    {%- for js in js_raw %}
+    {%- for js in bundle.js_raw %}
     function(Bokeh) {
       {{ js|indent(6) }}
     },

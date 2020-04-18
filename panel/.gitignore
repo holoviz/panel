@@ -1,0 +1,4 @@
+/node_modules/
+/dist/
+/.bokeh
+/holoviz-panel*.tgz

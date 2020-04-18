@@ -17,12 +17,14 @@ class PlayerBase(Widget):
 
     loop_policy = param.ObjectSelector(default='once',
                                        objects=['once', 'loop', 'reflect'], doc="""
-       Policy used when player hits last frame""")
+        Policy used when player hits last frame""")
 
     step = param.Integer(default=1, doc="""
-       Number of frames to step forward and back by on each event.""")
+        Number of frames to step forward and back by on each event.""")
 
     height = param.Integer(default=80)
+
+    width = param.Integer(default=510)
 
     _widget_type = _BkPlayer
 
@@ -57,8 +59,10 @@ class Player(PlayerBase):
             params['value'] = params['start']
         super(Player, self).__init__(**params)
 
-    def _get_embed_state(self, root, max_opts=3):
-        return (self, self._models[root.ref['id']][0], range(self.start, self.end, self.step),
+    def _get_embed_state(self, root, values=None, max_opts=3):
+        if values is None:
+            values = list(range(self.start, self.end, self.step))
+        return (self, self._models[root.ref['id']][0], values,
                 lambda x: x.value, 'value', 'cb_obj.value')
 
 
@@ -68,13 +72,16 @@ class DiscretePlayer(PlayerBase, SelectBase):
     The DiscretePlayer provides controls to iterate through a list of
     discrete options.  The speed at which the widget plays is defined
     by the interval, but it is also possible to skip items using the
-    step parameter."""
+    step parameter.
+    """
 
     interval = param.Integer(default=500, doc="Interval between updates")
 
     value = param.Parameter()
 
     _rename = {'name': None, 'options': None}
+
+    _source_transforms = {'value': None}
 
     def _process_param_change(self, msg):
         values = self.values

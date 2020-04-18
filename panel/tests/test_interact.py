@@ -1,6 +1,7 @@
 from bokeh.models import Div as BkDiv, Column as BkColumn
 
 from panel.interact import interactive
+from panel.models import HTML as BkHTML
 from panel.pane import HTML
 from panel import widgets
 
@@ -181,10 +182,10 @@ def test_interact_updates_panel(document, comm):
     column = interact_pane.layout.get_root(document, comm=comm)
     assert isinstance(column, BkColumn)
     div = column.children[1].children[0]
-    assert div.text == '<pre>False</pre>'
+    assert div.text == '&lt;pre&gt;False&lt;/pre&gt;'
 
     widget.value = True
-    assert div.text == '<pre>True</pre>'
+    assert div.text == '&lt;pre&gt;True&lt;/pre&gt;'
 
 def test_interact_replaces_panel(document, comm):
     def test(a):
@@ -202,7 +203,7 @@ def test_interact_replaces_panel(document, comm):
 
     widget.value = True
     div = column.children[1].children[0]
-    assert div.text == '<pre>True</pre>'
+    assert div.text == '&lt;pre&gt;True&lt;/pre&gt;'
 
 def test_interact_replaces_model(document, comm):
     def test(a):
@@ -225,9 +226,9 @@ def test_interact_replaces_model(document, comm):
     new_pane = interact_pane._pane
     assert new_pane is not pane
     new_div = column.children[1].children[0]
-    assert isinstance(new_div, BkDiv)
-    assert new_div.text.endswith('<p>ABC</p>')
+    assert isinstance(new_div, BkHTML)
+    assert new_div.text.endswith('&lt;p&gt;ABC&lt;/p&gt;')
     assert new_pane._models[column.ref['id']][0] is new_div
 
     interact_pane._cleanup(column)
-    assert len(interact_pane._callbacks) == 1
+    assert len(interact_pane._callbacks) == 2

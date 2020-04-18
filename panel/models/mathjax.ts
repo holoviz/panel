@@ -1,7 +1,8 @@
-import * as p from "core/properties"
-import {Markup, MarkupView} from "models/widgets/markup"
+import * as p from "@bokehjs/core/properties"
+import {Markup} from "@bokehjs/models/widgets/markup"
+import {PanelMarkupView} from "./layout"
 
-export class MathJaxView extends MarkupView {
+export class MathJaxView extends PanelMarkupView {
   model: MathJax
   private _hub: any
 
@@ -12,7 +13,7 @@ export class MathJaxView extends MarkupView {
       tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
     });
   }
-  
+
   render(): void {
     super.render();
     if (!this._hub) { return }
@@ -37,9 +38,9 @@ export class MathJax extends Markup {
     super(attrs)
   }
 
-  static initClass(): void {
-    this.prototype.type = "MathJax"
+  static __module__ = "panel.models.mathjax"
+
+  static init_MathJax(): void {
     this.prototype.default_view = MathJaxView
   }
 }
-MathJax.initClass()

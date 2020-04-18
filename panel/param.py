@@ -21,20 +21,21 @@ from param.parameterized import classlist
 
 from .io import state
 from .layout import Row, Panel, Tabs, Column
-from .links import Link
-from .pane.base import Pane, PaneBase
+from .pane.base import PaneBase, ReplacementPane
 from .util import (
-    abbreviated_repr, full_groupby,
-    get_method_owner, is_parameterized, param_name)
-from .viewable import Layoutable, Reactive
+    abbreviated_repr, full_groupby, get_method_owner, is_parameterized,
+    param_name, recursive_parameterized
+)
+from .viewable import Layoutable
 from .widgets import (
-    LiteralInput, Select, Checkbox, FloatSlider, IntSlider, RangeSlider,
-    MultiSelect, StaticText, Button, Toggle, TextInput, DatetimeInput,
-    DateRangeSlider, ColorPicker, Widget)
+    Button, Checkbox, ColorPicker, DataFrame, DatetimeInput, DateRangeSlider,
+    FileSelector, FloatSlider, IntSlider, LiteralInput, MultiSelect,
+    RangeSlider, Select, Spinner, StaticText, TextInput, Toggle, Widget
+)
 from .widgets.button import _ButtonBase
 
 
-def FileSelector(pobj):
+def SingleFileSelector(pobj):
     """
     Determines whether to use a TextInput or Select widget for FileSelector
     """
@@ -42,6 +43,18 @@ def FileSelector(pobj):
         return Select
     else:
         return TextInput
+
+
+def LiteralInputTyped(pobj):
+    if isinstance(pobj, param.Tuple):
+        return type(str('TupleInput'), (LiteralInput,), {'type': tuple})
+    elif isinstance(pobj, param.Number):
+        return type(str('NumberInput'), (LiteralInput,), {'type': (int, float)})
+    elif isinstance(pobj, param.Dict):
+        return type(str('DictInput'), (LiteralInput,), {'type': dict})
+    elif isinstance(pobj, param.List):
+        return type(str('ListInput'), (LiteralInput,), {'type': list})
+    return LiteralInput
 
 
 class Param(PaneBase):
@@ -82,8 +95,8 @@ class Param(PaneBase):
         underlying parameterized object.""")
 
     parameters = param.List(default=[], doc="""
-        If set this serves as a whitelist of parameters to display on the supplied
-        Parameterized object.""")
+        If set this serves as a whitelist of parameters to display on
+        the supplied Parameterized object.""")
 
     show_labels = param.Boolean(default=True, doc="""
         Whether to show labels for each widget""")
@@ -91,7 +104,7 @@ class Param(PaneBase):
     show_name = param.Boolean(default=True, doc="""
         Whether to show the parameterized object's name""")
 
-    width = param.Integer(default=300, bounds=(0, None), doc="""
+    width = param.Integer(default=300, allow_None=True, bounds=(0, None), doc="""
         Width of widgetbox the parameter widgets are displayed in.""")
 
     widgets = param.Dict(doc="""
@@ -103,21 +116,27 @@ class Param(PaneBase):
     _unpack = True
 
     _mapping = {
-        param.Action:         Button,
-        param.Parameter:      LiteralInput,
-        param.Color:          ColorPicker,
-        param.Dict:           LiteralInput,
-        param.Selector:       Select,
-        param.ObjectSelector: Select,
-        param.FileSelector:   FileSelector,
-        param.Boolean:        Checkbox,
-        param.Number:         FloatSlider,
-        param.Integer:        IntSlider,
-        param.Range:          RangeSlider,
-        param.String:         TextInput,
-        param.ListSelector:   MultiSelect,
-        param.Date:           DatetimeInput,
-        param.DateRange:      DateRangeSlider
+        param.Action:            Button,
+        param.Boolean:           Checkbox,
+        param.Color:             ColorPicker,
+        param.Date:              DatetimeInput,
+        param.DateRange:         DateRangeSlider,
+        param.CalendarDateRange: DateRangeSlider,
+        param.DataFrame:         DataFrame,
+        param.Dict:              LiteralInputTyped,
+        param.FileSelector:      SingleFileSelector,
+        param.Filename:          TextInput,
+        param.Foldername:        TextInput,
+        param.Integer:           IntSlider,
+        param.List:              LiteralInputTyped,
+        param.MultiFileSelector: FileSelector,
+        param.ListSelector:      MultiSelect,
+        param.Number:            FloatSlider,
+        param.ObjectSelector:    Select,
+        param.Parameter:         LiteralInputTyped,
+        param.Range:             RangeSlider,
+        param.Selector:          Select,
+        param.String:            TextInput,
     }
 
     _rerender_params = []
@@ -133,10 +152,11 @@ class Param(PaneBase):
         if 'parameters' not in params and object is not None:
             params['parameters'] = [p for p in object.param if p != 'name']
         super(Param, self).__init__(object, **params)
-        self._updating = False
+        self._updating = []
 
         # Construct Layout
-        kwargs = {p: v for p, v in self.get_param_values() if p in Layoutable.param}
+        kwargs = {p: v for p, v in self.param.get_param_values()
+                  if p in Layoutable.param and v is not None}
         self._widget_box = self.default_layout(**kwargs)
 
         layout = self.expand_layout
@@ -162,7 +182,7 @@ class Param(PaneBase):
         params = [] if self.object is None else list(self.object.param)
         parameters = [k for k in params if k != 'name']
         params = []
-        for p, v in sorted(self.get_param_values()):
+        for p, v in sorted(self.param.get_param_values()):
             if v is self.param[p].default: continue
             elif v is None: continue
             elif isinstance(v, string_types) and v == '': continue
@@ -172,7 +192,7 @@ class Param(PaneBase):
                 params.append('%s=%s' % (p, abbreviated_repr(v)))
             except RuntimeError:
                 params.append('%s=%s' % (p, '...'))
-        obj = type(self.object).__name__
+        obj = 'None' if self.object is None else '%s' % type(self.object).__name__
         template = '{cls}({obj}, {params})' if params else '{cls}({obj})'
         return template.format(cls=cls, params=', '.join(params), obj=obj)
 
@@ -212,9 +232,11 @@ class Param(PaneBase):
             self._widgets = {}
         else:
             self._widgets = self._get_widgets()
+
+        alias = {'_title': 'name'}
         widgets = [widget for p, widget in self._widgets.items()
-                   if (self.object.param[p].precedence is None)
-                   or (self.object.param[p].precedence >= self.display_threshold)]
+                   if (self.object.param[alias.get(p, p)].precedence is None)
+                   or (self.object.param[alias.get(p, p)].precedence >= self.display_threshold)]
         self._widget_box.objects = widgets
         if not (self.expand_button == False and not self.expand):
             self._link_subobjects()
@@ -235,14 +257,15 @@ class Param(PaneBase):
                 "Adds or removes subpanel from layout"
                 parameterized = getattr(self.object, parameter)
                 existing = [p for p in self._expand_layout.objects
-                            if isinstance(p, Param)
-                            and p.object is parameterized]
-                if existing:
-                    old_panel = existing[0]
-                    if not change.new:
-                        self._expand_layout.remove(old_panel)
+                            if isinstance(p, Param) and
+                            p.object in recursive_parameterized(parameterized)]
+                if not change.new:
+                    self._expand_layout[:] = [
+                        e for e in self._expand_layout.objects
+                        if e not in existing
+                    ]
                 elif change.new:
-                    kwargs = {k: v for k, v in self.get_param_values()
+                    kwargs = {k: v for k, v in self.param.get_param_values()
                               if k not in ['name', 'object', 'parameters']}
                     pane = Param(parameterized, name=parameterized.name,
                                  **kwargs)
@@ -263,7 +286,7 @@ class Param(PaneBase):
                     return
                 elif is_parameterized(change.new):
                     parameterized = change.new
-                    kwargs = {k: v for k, v in self.get_param_values()
+                    kwargs = {k: v for k, v in self.param.get_param_values()
                               if k not in ['name', 'object', 'parameters']}
                     pane = Param(parameterized, name=parameterized.name,
                                  **kwargs)
@@ -297,17 +320,21 @@ class Param(PaneBase):
             kw_widget = self.widgets[p_name]
         else:
             widget_class = self.widgets[p_name]
-        value = getattr(self.object, p_name)
+
 
         if not self.show_labels and not issubclass(widget_class, _ButtonBase):
             label = ''
         else:
             label = p_obj.label
-        kw = dict(value=value, disabled=p_obj.constant, name=label)
-        
+        kw = dict(disabled=p_obj.constant, name=label)
+
+        value = getattr(self.object, p_name)
+        if value is not None:
+            kw['value'] = value
+
         # Update kwargs
         kw.update(kw_widget)
-        
+
         if hasattr(p_obj, 'get_range'):
             options = p_obj.get_range()
             if not options and value is not None:
@@ -319,30 +346,36 @@ class Param(PaneBase):
                 kw['start'] = bounds[0]
             if bounds[1] is not None:
                 kw['end'] = bounds[1]
-            if ('start' not in kw or 'end' not in kw) and not issubclass(widget_class, LiteralInput):
-                widget_class = LiteralInput
+            if ('start' not in kw or 'end' not in kw):
+                if isinstance(p_obj, param.Number):
+                    widget_class = Spinner
+                    if isinstance(p_obj, param.Integer):
+                        kw['step'] = 1
+                elif not issubclass(widget_class, LiteralInput):
+                    widget_class = LiteralInput
             if hasattr(widget_class, 'step') and getattr(p_obj, 'step', None):
                 kw['step'] = p_obj.step
 
         kwargs = {k: v for k, v in kw.items() if k in widget_class.param}
-        
+
         if isinstance(widget_class, Widget):
             widget = widget_class
         else:
             widget = widget_class(**kwargs)
+        widget._param_pane = self
 
         watchers = self._callbacks
         if isinstance(widget, Toggle):
             pass
         else:
             def link_widget(change):
-                if self._updating:
+                if p_name in self._updating:
                     return
                 try:
-                    self._updating = True
-                    self.object.set_param(**{p_name: change.new})
+                    self._updating.append(p_name)
+                    self.object.param.set_param(**{p_name: change.new})
                 finally:
-                    self._updating = False
+                    self._updating.remove(p_name)
 
             if isinstance(p_obj, param.Action):
                 def action(change):
@@ -350,6 +383,7 @@ class Param(PaneBase):
                 watcher = widget.param.watch(action, 'clicks')
             else:
                 watcher = widget.param.watch(link_widget, 'value')
+            watchers.append(watcher)
 
             def link(change, watchers=[watcher]):
                 updates = {}
@@ -360,10 +394,10 @@ class Param(PaneBase):
                         widget in self._widget_box.objects):
                         self._widget_box.pop(widget)
                     elif change.new >= self.display_threshold:
-                        precedence = lambda k: self.object.param[k].precedence
+                        precedence = lambda k: self.object.param['name' if k == '_title' else k].precedence
                         params = self._ordered_params
                         if self.show_name:
-                            params.insert(0, 'name')
+                            params.insert(0, '_title')
                         widgets = []
                         for k in params:
                             if precedence(k) is None or precedence(k) >= self.display_threshold:
@@ -380,22 +414,25 @@ class Param(PaneBase):
                     updates['step'] = p_obj.step
                 elif change.what == 'label':
                     updates['name'] = p_obj.label
-                elif self._updating:
+                elif p_name in self._updating:
                     return
                 elif isinstance(p_obj, param.Action):
-                    widget.param.unwatch(watchers[0])
+                    prev_watcher = watchers[0]
+                    widget.param.unwatch(prev_watcher)
                     def action(event):
                         change.new(self.object)
                     watchers[0] = widget.param.watch(action, 'clicks')
+                    idx = self._callbacks.index(prev_watcher)
+                    self._callbacks[idx] = watchers[0]
                     return
                 else:
                     updates['value'] = change.new
 
                 try:
-                    self._updating = True
-                    widget.set_param(**updates)
+                    self._updating.append(p_name)
+                    widget.param.set_param(**updates)
                 finally:
-                    self._updating = False
+                    self._updating.remove(p_name)
 
             # Set up links to parameterized object
             watchers.append(self.object.param.watch(link, p_name, 'constant'))
@@ -417,8 +454,8 @@ class Param(PaneBase):
             widget.margin = (5, 0, 5, 10)
             toggle = Toggle(name='\u22EE', button_type='primary',
                             disabled=not is_parameterized(value), max_height=30,
-                            max_width=20, height_policy='fit', align='center',
-                            margin=(0, 0, 0, 10))
+                            max_width=20, height_policy='fit', align='end',
+                            margin=(0, 0, 5, 10))
             widget.width = self._widget_box.width-60
             return Row(widget, toggle, width_policy='max', margin=0)
         else:
@@ -436,7 +473,8 @@ class Param(PaneBase):
         dict_ordered_py3 = (sys.version_info.major == 3 and sys.version_info.minor >= 6)
         dict_ordered = dict_ordered_py3 or (sys.version_info.major > 3)
         ordered_groups = [list(grp) if dict_ordered else sorted(grp) for (_, grp) in groups]
-        ordered_params = [el[0] for group in ordered_groups for el in group if el[0] != 'name']
+        ordered_params = [el[0] for group in ordered_groups for el in group
+                          if (el[0] != 'name' or el[0] in self.parameters)]
         return ordered_params
 
     #----------------------------------------------------------------
@@ -450,7 +488,7 @@ class Param(PaneBase):
             widgets = []
         elif self.show_name:
             name = param_name(self.object.name)
-            widgets = [('name', StaticText(value='<b>{0}</b>'.format(name)))]
+            widgets = [('_title', StaticText(value='<b>{0}</b>'.format(name)))]
         else:
             widgets = []
         widgets += [(pname, self.widget(pname)) for pname in self._ordered_params]
@@ -507,7 +545,7 @@ class Param(PaneBase):
         return root
 
 
-class ParamMethod(PaneBase):
+class ParamMethod(ReplacementPane):
     """
     ParamMethod panes wrap methods on parameterized classes and
     rerenders the plot when any of the method's parameters change. By
@@ -517,22 +555,18 @@ class ParamMethod(PaneBase):
     return any object which itself can be rendered as a Pane.
     """
 
-    def __init__(self, object, **params):
-        self._kwargs =  {p: params.pop(p) for p in list(params)
-                         if p not in self.param}
+    def __init__(self, object=None, **params):
         super(ParamMethod, self).__init__(object, **params)
-        kwargs = dict(self.get_param_values(), **self._kwargs)
-        del kwargs['object']
-        self._pane = Pane(self._eval_function(self.object), **kwargs)
-        self._inner_layout = Row(self._pane, **{k: v for k, v in params.items() if k in Row.param})
         self._link_object_params()
+        if object is not None:
+            self._update_inner(self.eval(object))
 
     #----------------------------------------------------------------
     # Callback API
     #----------------------------------------------------------------
 
     @classmethod
-    def _eval_function(self, function):
+    def eval(self, function):
         args, kwargs = (), {}
         if hasattr(function, '_dinfo'):
             arg_deps = function._dinfo['dependencies']
@@ -542,27 +576,18 @@ class ParamMethod(PaneBase):
                 kwargs = {n: getattr(dep.owner, dep.name) for n, dep in kw_deps.items()}
         return function(*args, **kwargs)
 
-    def _update_pane(self, *args):
-        new_object = self._eval_function(self.object)
-        pane_type = self.get_pane_type(new_object)
-        try:
-            links = Link.registry.get(new_object)
-        except TypeError:
-            links = []
-        if type(self._pane) is pane_type and not links:
-            if isinstance(new_object, Reactive):
-                pvals = dict(self._pane.get_param_values())
-                new_params = {k: v for k, v in new_object.get_param_values()
-                              if k != 'name' and v is not pvals[k]}
-                self._pane.set_param(**new_params)
-            else:
-                self._pane.object = new_object
-        else:
-            # Replace pane entirely
-            kwargs = dict(self.get_param_values(), **self._kwargs)
-            del kwargs['object']
-            self._pane = Pane(new_object, **kwargs)
-            self._inner_layout[0] = self._pane
+    def _update_pane(self, *events):
+        callbacks = []
+        for watcher in self._callbacks:
+            obj = watcher.inst if watcher.inst is None else watcher.cls
+            if obj is self:
+                callbacks.append(watcher)
+                continue
+            obj.param.unwatch(watcher)
+        self._callbacks = callbacks
+        self._link_object_params()
+        if object is not None:
+            self._update_inner(self.eval(self.object))
 
     def _link_object_params(self):
         parameterized = get_method_owner(self.object)
@@ -593,7 +618,8 @@ class ParamMethod(PaneBase):
                     self._callbacks.append(watcher)
                     for p in params:
                         deps.append(p)
-            self._update_pane()
+            new_object = self.eval(self.object)
+            self._update_inner(new_object)
 
         for _, params in full_groupby(params, lambda x: (x.inst or x.cls, x.what)):
             p = params[0]
@@ -603,50 +629,13 @@ class ParamMethod(PaneBase):
             self._callbacks.append(watcher)
 
     #----------------------------------------------------------------
-    # Model API
-    #----------------------------------------------------------------
-
-    def _get_model(self, doc, root=None, parent=None, comm=None):
-        if root is None:
-            return self.get_root(doc, comm)
-
-        ref = root.ref['id']
-        if ref in self._models:
-            self._cleanup(root)
-        model = self._inner_layout._get_model(doc, root, parent, comm)
-        self._models[ref] = (model, parent)
-        return model
-
-    def select(self, selector=None):
-        """
-        Iterates over the Viewable and any potential children in the
-        applying the Selector.
-
-        Arguments
-        ---------
-        selector: type or callable or None
-          The selector allows selecting a subset of Viewables by
-          declaring a type or callable function to filter by.
-
-        Returns
-        -------
-        viewables: list(Viewable)
-        """
-        selected = super(ParamMethod, self).select(selector)
-        selected += self._pane.select(selector)
-        return selected
-
-    def _cleanup(self, root=None):
-        self._inner_layout._cleanup(root)
-        super(ParamMethod, self)._cleanup(root)
-
-    #----------------------------------------------------------------
     # Public API
     #----------------------------------------------------------------
 
     @classmethod
     def applies(cls, obj):
         return inspect.ismethod(obj) and isinstance(get_method_owner(obj), param.Parameterized)
+
 
 
 class ParamFunction(ParamMethod):
@@ -660,11 +649,15 @@ class ParamFunction(ParamMethod):
 
     priority = 0.6
 
+    def _replace_pane(self, *args):
+        new_object = self.eval(self.object)
+        self._update_inner(new_object)
+
     def _link_object_params(self):
         deps = self.object._dinfo
         dep_params = list(deps['dependencies']) + list(deps.get('kw', {}).values())
         for p in dep_params:
-            watcher = p.owner.param.watch(self._update_pane, p.name)
+            watcher = p.owner.param.watch(self._replace_pane, p.name)
             self._callbacks.append(watcher)
 
     #----------------------------------------------------------------
@@ -716,7 +709,7 @@ class JSONInit(param.Parameterized):
             try:
                 fname = self.json_file if self.json_file else env_var
                 spec = json.load(open(os.path.abspath(fname), 'r'))
-            except:
+            except Exception:
                 warnobj.warning('Could not load JSON file %r' % spec)
         else:
             spec = json.loads(env_var)
@@ -731,7 +724,7 @@ class JSONInit(param.Parameterized):
             params = spec
 
         for name, value in params.items():
-           try:
-               parameterized.set_param(**{name:value})
-           except ValueError as e:
-               warnobj.warning(str(e))
+            try:
+                parameterized.param.set_param(**{name:value})
+            except ValueError as e:
+                warnobj.warning(str(e))

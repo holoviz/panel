@@ -12,6 +12,7 @@ import param
 from bokeh.models import LayoutDOM, CustomJS, Spacer as BkSpacer
 
 from ..io import remove_root
+from ..viewable import Layoutable
 from .base import PaneBase
 from .markup import HTML
 from .image import PNG
@@ -36,6 +37,15 @@ class Bokeh(PaneBase):
             model = BkSpacer()
         else:
             model = self.object
+
+        properties = {}
+        for p, value in self.param.get_param_values():
+            if (p not in Layoutable.param or p == 'name' or
+                value is self.param[p].default):
+                continue
+            properties[p] = value
+        model.update(**properties)
+
         ref = root.ref['id']
         for js in model.select({'type': CustomJS}):
             js.code = js.code.replace(model.ref['id'], ref)
@@ -63,7 +73,7 @@ class Matplotlib(PNG):
         Automatically adjust the figure size to fit the
         subplots and other artist elements.""")
 
-    _rerender_params = ['object', 'dpi']
+    _rerender_params = PNG._rerender_params + ['object', 'dpi', 'tight']
 
     @classmethod
     def applies(cls, obj):
@@ -106,7 +116,7 @@ class RGGPlot(PNG):
 
     dpi = param.Integer(default=144, bounds=(1, None))
 
-    _rerender_params = ['object', 'dpi', 'width', 'height']
+    _rerender_params = PNG._rerender_params + ['object', 'dpi', 'width', 'height']
 
     @classmethod
     def applies(cls, obj):
@@ -156,3 +166,20 @@ class YT(HTML):
         if self.height is None: p["height"] = height
 
         return p
+
+
+class Folium(HTML):
+    """
+    The Folium pane wraps Folium map components.
+    """
+
+    sizing_mode = param.ObjectSelector(default='stretch_width', objects=[
+        'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
+        'scale_width', 'scale_height', 'scale_both', None])
+
+    priority = 0.6
+
+    @classmethod
+    def applies(cls, obj):
+        return (getattr(obj, '__module__', '').startswith('folium.') and
+                hasattr(obj, "_repr_html_"))

@@ -4,14 +4,14 @@ Utilities for manipulating bokeh models.
 from __future__ import absolute_import, division, unicode_literals
 
 import textwrap
+from contextlib import contextmanager
 
 from bokeh.document import Document
 from bokeh.document.events import ColumnDataChangedEvent
-from bokeh.models import Model, Box
+from bokeh.models import Box, ColumnDataSource, Model
 from bokeh.protocol import Protocol
 
 from .state import state
-
 
 #---------------------------------------------------------------------
 # Public API
@@ -30,10 +30,11 @@ def diff(doc, binary=True, events=None):
     # columns, later event will include the changes
     fixed_events = []
     for e in events:
-        if isinstance(e.hint, ColumnDataChangedEvent) and e.hint.cols is not None:
+        if (hasattr(e, 'hint') and isinstance(e.hint, ColumnDataChangedEvent)
+            and e.hint.cols is not None):
             e.hint.cols = None
         fixed_events.append(e)
-    msg = Protocol("1.0").create("PATCH-DOC", events, use_buffers=binary)
+    msg = Protocol().create("PATCH-DOC", events, use_buffers=binary)
     doc._held_events = [e for e in doc._held_events if e not in events]
     return msg
 
@@ -61,12 +62,48 @@ def add_to_doc(obj, doc, hold=False):
     if doc._hold is None and hold:
         doc.hold()
 
+@contextmanager
+def hold(doc, policy='combine'):
+    held = doc._hold
+    try:
+        if policy is None:
+            doc.unhold()
+        else:
+            doc.hold(policy)
+        yield
+    finally:
+        if held:
+            doc._hold = held
+        else:
+            doc.unhold()
 
-def bokeh_repr(obj, depth=0, ignored=['children', 'text', 'name', 'toolbar', 'renderers', 'below', 'center', 'left', 'right']):
+
+def patch_cds_msg(model, msg):
+    """
+    Required for handling messages containing JSON serialized typed
+    array from the frontend.
+    """
+    for event in msg.get('content', {}).get('events', []):
+        if event.get('kind') != 'ModelChanged' or event.get('attr') != 'data':
+            continue
+        cds = model.select_one({'id': event.get('model').get('id')})
+        if not isinstance(cds, ColumnDataSource):
+            continue
+        for col, values in event.get('new', {}).items():
+            if isinstance(values, dict):
+                event['new'][col] = [v for _, v in sorted(values.items())]
+
+
+_DEFAULT_IGNORED_REPR = frozenset(['children', 'text', 'name', 'toolbar', 'renderers', 'below', 'center', 'left', 'right'])
+
+def bokeh_repr(obj, depth=0, ignored=None):
     """
     Returns a string repr for a bokeh model, useful for recreating
     panel objects using pure bokeh.
     """
+    if ignored is None:
+        ignored = _DEFAULT_IGNORED_REPR
+
     from ..viewable import Viewable
     if isinstance(obj, Viewable):
         obj = obj.get_root(Document())

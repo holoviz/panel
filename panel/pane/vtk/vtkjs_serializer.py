@@ -8,10 +8,14 @@ Licence :
 https://github.com/Kitware/vtk-js/blob/master/LICENSE
 """
 
-import vtk
-import os, sys, json, random, string, hashlib, zipfile
-
+import os, sys, json, hashlib, zipfile
 from io import BytesIO
+
+if sys.version_info < (3,):
+    import imp
+    vtk = imp.load_module('vtk', *imp.find_module('vtk'))
+else:
+    import vtk
 
 from .enums import SCALAR_MODE, ACCESS_MODE
 
@@ -50,10 +54,6 @@ _js_mapping = {
 }
 
 _writer_mapping = {}
-
-
-def _random_name():
-    return ''.join([random.choice(string.ascii_lowercase) for _ in range(16)])
 
 
 def _get_range_info(array, component):
@@ -253,35 +253,35 @@ def _write_data_set(scDirs, dataset, colorArrayInfo, newDSName):
 
 def get_dataset_scalars(dataset, scalar_mode, array_access_mode, array_id, array_name):
 
-    if scalar_mode == SCALAR_MODE.Default.value:
+    if scalar_mode == SCALAR_MODE.Default:
         scalars = dataset.GetPointData().GetScalars()
         cell_flag = 'pointData'
         if not scalars:
             scalars = dataset.GetCellData().GetScalars()
             cell_flag = 'cellData'
-    elif scalar_mode == SCALAR_MODE.UsePointData.value:
+    elif scalar_mode == SCALAR_MODE.UsePointData:
         scalars = dataset.GetPointData().GetScalars()
         cell_flag = 'pointData'
-    elif scalar_mode == SCALAR_MODE.UseCellData.value:
+    elif scalar_mode == SCALAR_MODE.UseCellData:
         scalars = dataset.GetCellData().GetScalars()
         cell_flag = 'cellData'
-    elif scalar_mode == SCALAR_MODE.UsePointFieldData.value:
+    elif scalar_mode == SCALAR_MODE.UsePointFieldData:
         pd = dataset.GetPointData()
-        if array_access_mode == ACCESS_MODE.ById.value:
+        if array_access_mode == ACCESS_MODE.ById:
             scalars = pd.GetAbstractArray(array_id)
         else:
             scalars = pd.GetAbstractArray(array_name)
         cell_flag = 'pointData'
-    elif scalar_mode == SCALAR_MODE.UseCellFieldData.value:
+    elif scalar_mode == SCALAR_MODE.UseCellFieldData:
         cd = dataset.GetCellData()
-        if array_access_mode == ACCESS_MODE.ById.value:
+        if array_access_mode == ACCESS_MODE.ById:
             scalars = cd.GetAbstractArray(array_id)
         else:
             scalars = cd.GetAbstractArray(array_name)
         cell_flag = 'cellData'
-    elif scalar_mode == SCALAR_MODE.UseFieldData.value:
+    elif scalar_mode == SCALAR_MODE.UseFieldData:
         fd = dataset.GetFieldData()
-        if array_access_mode == ACCESS_MODE.ById.value:
+        if array_access_mode == ACCESS_MODE.ById:
             scalars = fd.GetAbstractArray(array_id)
         else:
             scalars = fd.GetAbstractArray(array_name)
@@ -475,6 +475,8 @@ def render_window_serializer(render_window):
                             "url": componentName
                         },
                         "actor": {
+                            # customProp
+                            "id": renProp.__this__,
                             # vtkProp
                             "visibility": renProp.GetVisibility() if renProp.IsA('vtkProp') else 0,
                             "pickable": renProp.GetPickable()  if renProp.IsA('vtkProp') else 0,

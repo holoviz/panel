@@ -1,8 +1,14 @@
 from __future__ import absolute_import, division, unicode_literals
 
+import os
+import sys
+import pytest
+
 from base64 import b64decode, b64encode
 
 from panel.pane import GIF, JPG, PNG, SVG
+from panel.pane.markup import escape
+from io import BytesIO, StringIO
 
 
 def test_svg_pane(document, comm):
@@ -11,12 +17,12 @@ def test_svg_pane(document, comm):
       <rect x="10" y="10" height="100" width="100"/>
     </svg>
     """
-    pane = SVG(rect)
+    pane = SVG(rect, encode=True)
 
     # Create pane
     model = pane.get_root(document, comm=comm)
     assert pane._models[model.ref['id']][0] is model
-    assert model.text.startswith('<img')
+    assert model.text.startswith('&lt;img src=&#x27;data:image/svg+xml;base64')
     assert b64encode(rect.encode('utf-8')).decode('utf-8') in model.text
 
     # Replace Pane.object
@@ -27,8 +33,11 @@ def test_svg_pane(document, comm):
     """
     pane.object = circle
     assert pane._models[model.ref['id']][0] is model
-    assert model.text.startswith('<img')
+    assert model.text.startswith('&lt;img src=&#x27;data:image/svg+xml;base64')
     assert b64encode(circle.encode('utf-8')).decode('utf-8') in model.text
+
+    pane.encode = False
+    assert model.text == escape(circle)
 
     # Cleanup
     pane._cleanup(model)
@@ -53,3 +62,59 @@ def test_imgshape():
         w,h = t._imgshape(b64decode(twopixel[t.name.lower()]))
         assert w == 2
         assert h == 1
+
+def test_load_from_byteio():
+    """Testing a loading a image from a ByteIo"""
+    memory = BytesIO()
+
+    path = os.path.dirname(__file__)
+    with open(os.path.join(path, '../test_data/logo.png'), 'rb') as image_file:
+        memory.write(image_file.read())
+    memory.seek(0)
+    image_pane = PNG(memory)
+    image_data = image_pane._img()
+    assert b'PNG' in image_data
+
+@pytest.mark.skipif(sys.version_info.major <= 2, reason="Doesn't work with python 2")
+def test_load_from_stringio():
+    """Testing a loading a image from a StringIO"""
+    memory = StringIO()
+    
+    path = os.path.dirname(__file__)
+    with open(os.path.join(path, '../test_data/logo.png'), 'rb') as image_file:
+        memory.write(str(image_file.read()))
+    memory.seek(0)
+    image_pane = PNG(memory)
+    image_data = image_pane._img()
+    assert 'PNG' in image_data
+
+def test_loading_a_image_from_url():
+    """Tests the loading of a image from a url"""
+    url = 'https://upload.wikimedia.org/wikipedia/commons/7/71/' \
+          '1700_CE_world_map.PNG'
+
+    image_pane = PNG(url)
+    image_data = image_pane._img()
+    assert b'PNG' in image_data
+
+
+def test_image_alt_text(document, comm):
+    """Tests the loading of a image from a url"""
+    url = 'https://upload.wikimedia.org/wikipedia/commons/7/71/' \
+          '1700_CE_world_map.PNG'
+
+    image_pane = PNG(url, embed=False, alt_text="Some alt text")
+    model = image_pane.get_root(document, comm)
+
+    assert 'alt=&quot;Some alt text&quot;' in model.text
+
+
+def test_image_link_url(document, comm):
+    """Tests the loading of a image from a url"""
+    url = 'https://upload.wikimedia.org/wikipedia/commons/7/71/' \
+          '1700_CE_world_map.PNG'
+
+    image_pane = PNG(url, embed=False, link_url="http://anaconda.org")
+    model = image_pane.get_root(document, comm)
+
+    assert model.text.startswith('&lt;a href=&quot;http://anaconda.org&quot;')

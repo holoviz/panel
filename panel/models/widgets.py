@@ -3,20 +3,16 @@ Custom bokeh Widget models.
 """
 from __future__ import absolute_import, division, unicode_literals
 
-import os
-
-from bokeh.core.properties import Int, Float, Override, Enum, Any, Bool
-from bokeh.models import Widget
-
-from ..compiler import CUSTOM_MODELS
+from bokeh.core.enums import ButtonType
+from bokeh.core.properties import Int, Float, Override, Enum, Any, Bool, Dict, String
+from bokeh.models.layouts import HTMLBox
+from bokeh.models.widgets import InputWidget, Widget
 
 
 class Player(Widget):
     """
     The Player widget provides controls to play through a number of frames.
     """
-
-    __implementation__ = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'player.ts')
 
     start = Int(help="Lower bound of the Player slider")
 
@@ -39,9 +35,7 @@ class Player(Widget):
     height = Override(default=250)
 
 
-class Audio(Widget):
-
-    __implementation__ = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'audio.ts')
+class Audio(HTMLBox):
 
     loop = Bool(False, help="""Whether the audio should loop""")
 
@@ -58,9 +52,24 @@ class Audio(Widget):
     volume = Int(0, help="""The volume of the audio player.""")
 
 
-class VideoStream(Widget):
+class Video(HTMLBox):
 
-    __implementation__ = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'videostream.ts')
+    loop = Bool(False, help="""Whether the video should loop""")
+
+    paused = Bool(False, help="""Whether the video is paused""")
+
+    time = Float(0, help="""
+        The current time stamp of the video playback""")
+
+    throttle = Int(250, help="""
+        The frequency at which the time value is updated in milliseconds.""")
+
+    value = Any(help="Encoded file data")
+
+    volume = Int(0, help="""The volume of the video player.""")
+
+
+class VideoStream(HTMLBox):
 
     format = Enum('png', 'jpeg', default='png')
 
@@ -79,7 +88,38 @@ class VideoStream(Widget):
     width = Override(default=320)
 
 
+class Progress(HTMLBox):
 
-CUSTOM_MODELS['panel.models.widgets.Player'] = Player
-CUSTOM_MODELS['panel.models.widgets.Audio'] = Audio
-CUSTOM_MODELS['panel.models.widgets.VideoStream'] = VideoStream
+    active = Bool(True, help="""Whether to animate the bar""")
+
+    bar_color = Enum('primary', 'secondary', 'success', 'info',
+                     'danger', 'warning', 'light', 'dark', default='primary')
+
+    max = Int(100, help="""Maximum value""")
+
+    value = Int(help="""Current value""")
+
+    style = Dict(String, Any, default={}, help="""
+    Raw CSS style declaration. Note this may be web browser dependent.
+    """)
+
+
+class FileDownload(InputWidget):
+
+    auto = Bool(False, help="""Whether to download on click""")
+
+    button_type = Enum(ButtonType, help="""
+    A style for the button, signifying it's role.
+    """)
+
+    clicks = Int(0, help="""
+    A private property that used to trigger ``on_click`` event handler.
+    """)
+
+    data = String(help="""Encoded URI data.""")
+
+    label = String("", help="""The text label for the button to display.""")
+
+    filename = String(help="""Filename to use on download""")
+
+    title = Override(default='')

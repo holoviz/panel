@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import os
 
 import param
@@ -6,11 +8,11 @@ from bokeh.models import (
     Div, Slider, Select, RangeSlider, MultiSelect, Row as BkRow,
     CheckboxGroup, Toggle, Button, TextInput as BkTextInput,
     Tabs as BkTabs, Column as BkColumn, TextInput)
-from panel.pane import Pane, PaneBase, Matplotlib, Bokeh
+from panel.pane import Pane, PaneBase, Matplotlib, Bokeh, HTML
 from panel.layout import Tabs, Row
 from panel.param import Param, ParamMethod, ParamFunction, JSONInit
 from panel.widgets import LiteralInput
-from panel._testing.util import mpl_available, mpl_figure
+from panel.tests.util import mpl_available, mpl_figure
 
 
 def test_instantiate_from_class():
@@ -291,32 +293,32 @@ def test_object_selector_param(document, comm):
     test_pane = Pane(test)
     model = test_pane.get_root(document, comm=comm)
 
-    slider = model.children[1]
-    assert isinstance(slider, Select)
-    assert slider.options == ['1', 'b', 'c']
-    assert slider.value == 'b'
-    assert slider.disabled == False
+    select = model.children[1]
+    assert isinstance(select, Select)
+    assert select.options == [('1','1'), ('b','b'), ('c','c')]
+    assert select.value == 'b'
+    assert select.disabled == False
 
     # Check changing param value updates widget
     test.a = 1
-    assert slider.value == '1'
+    assert select.value == '1'
 
     # Check changing param attribute updates widget
     a_param = test.param['a']
     a_param.objects = ['c', 'd', 1]
-    assert slider.options == ['c', 'd', '1']
+    assert select.options == [('c','c'), ('d','d'), ('1','1')]
 
     a_param.constant = True
-    assert slider.disabled == True
+    assert select.disabled == True
 
     # Ensure cleanup works
     test_pane._cleanup(model)
     a_param.constant = False
     a_param.objects = [1, 'c', 'd']
     test.a = 'd'
-    assert slider.value == '1'
-    assert slider.options == ['c', 'd', '1']
-    assert slider.disabled == True
+    assert select.value == '1'
+    assert select.options == [('c','c'), ('d','d'), ('1','1')]
+    assert select.disabled == True
 
 
 def test_list_selector_param(document, comm):
@@ -426,10 +428,10 @@ def test_param_precedence_ordering(document, comm):
     # Check changing precedence attribute hides and shows widget
     a_param = test.param['a']
     a_param.precedence = 2
-    assert test_pane._widget_box.objects == [test_pane._widgets[w] for w in ('name', 'b', 'a')]
+    assert test_pane._widget_box.objects == [test_pane._widgets[w] for w in ('_title', 'b', 'a')]
 
     a_param.precedence = 1
-    assert test_pane._widget_box.objects == [test_pane._widgets[w] for w in ('name', 'a', 'b')]
+    assert test_pane._widget_box.objects == [test_pane._widgets[w] for w in ('_title', 'a', 'b')]
 
 
 def test_param_step(document, comm):
@@ -824,23 +826,53 @@ def test_param_function_pane(document, comm):
     row = pane.get_root(document, comm=comm)
     assert isinstance(row, BkRow)
     assert len(row.children) == 1
-    inner_row = row.children[0]
-    model = inner_row.children[0]
-    assert pane._models[row.ref['id']][0] is inner_row
+    model = row.children[0]
+    assert pane._models[row.ref['id']][0] is row
     assert isinstance(model, Div)
     assert model.text == '0'
 
     # Update pane
     test.a = 5
-    new_model = inner_row.children[0]
+    new_model = row.children[0]
     assert inner_pane is pane._pane
     assert new_model.text == '5'
-    assert pane._models[row.ref['id']][0] is inner_row
+    assert pane._models[row.ref['id']][0] is row
 
     # Cleanup pane
     pane._cleanup(row)
     assert pane._models == {}
     assert inner_pane._models == {}
+
+
+def test_param_function_pane_update(document, comm):
+    test = View()
+
+    objs = {
+        0: HTML("012"),
+        1: HTML("123")
+    }
+
+    @param.depends(test.param.a)
+    def view(a):
+        return objs[a]
+
+    pane = Pane(view)
+    inner_pane = pane._pane
+    assert inner_pane is not objs[0]
+    assert inner_pane.object is objs[0].object
+    assert pane._internal
+
+    test.a = 1
+
+    assert pane._pane is inner_pane
+    assert pane._internal
+
+    objs[0].param.watch(print, ['object'])
+
+    test.a = 0
+
+    assert pane._pane is not inner_pane
+    assert not pane._internal
 
 
 def test_get_param_method_pane_type():
@@ -857,18 +889,17 @@ def test_param_method_pane(document, comm):
     row = pane.get_root(document, comm=comm)
     assert isinstance(row, BkRow)
     assert len(row.children) == 1
-    inner_row = row.children[0]
-    model = inner_row.children[0]
-    assert pane._models[row.ref['id']][0] is inner_row
+    model = row.children[0]
+    assert pane._models[row.ref['id']][0] is row
     assert isinstance(model, Div)
     assert model.text == '0'
 
     # Update pane
     test.a = 5
-    new_model = inner_row.children[0]
+    new_model = row.children[0]
     assert inner_pane is pane._pane
     assert new_model.text == '5'
-    assert pane._models[row.ref['id']][0] is inner_row
+    assert pane._models[row.ref['id']][0] is row
 
     # Cleanup pane
     pane._cleanup(row)
@@ -887,20 +918,19 @@ def test_param_method_pane_subobject(document, comm):
     row = pane.get_root(document, comm=comm)
     assert isinstance(row, BkRow)
     assert len(row.children) == 1
-    inner_row = row.children[0]
-    model = inner_row.children[0]
+    model = row.children[0]
     assert isinstance(model, Div)
     assert model.text == '42'
 
     # Ensure that subobject is being watched
     watchers = pane._callbacks
     assert any(w.inst is subobject for w in watchers)
-    assert pane._models[row.ref['id']][0] is inner_row
+    assert pane._models[row.ref['id']][0] is row
 
     # Ensure that switching the subobject triggers update in watchers
     new_subobject = View(name='Nested', a=42)
     test.b = new_subobject
-    assert pane._models[row.ref['id']][0] is inner_row
+    assert pane._models[row.ref['id']][0] is row
     watchers = pane._callbacks
     assert not any(w.inst is subobject for w in watchers)
     assert any(w.inst is new_subobject for w in watchers)
@@ -922,18 +952,17 @@ def test_param_method_pane_mpl(document, comm):
     row = pane.get_root(document, comm=comm)
     assert isinstance(row, BkRow)
     assert len(row.children) == 1
-    inner_row = row.children[0]
-    model = inner_row.children[0]
-    assert pane._models[row.ref['id']][0] is inner_row
+    model = row.children[0]
+    assert pane._models[row.ref['id']][0] is row
     text = model.text
 
     # Update pane
     test.a = 5
-    new_model = inner_row.children[0]
+    new_model = row.children[0]
     assert inner_pane is pane._pane
     assert new_model is model
     assert new_model.text != text
-    assert pane._models[row.ref['id']][0] is inner_row
+    assert pane._models[row.ref['id']][0] is row
 
     # Cleanup pane
     pane._cleanup(row)
@@ -952,14 +981,13 @@ def test_param_method_pane_changing_type(document, comm):
     row = pane.get_root(document, comm=comm)
     assert isinstance(row, BkRow)
     assert len(row.children) == 1
-    inner_row = row.children[0]
-    model = inner_row.children[0]
+    model = row.children[0]
     text = model.text
-    assert text.startswith('<img src')
+    assert text.startswith('&lt;img src=')
 
     # Update pane
     test.a = 5
-    new_model = inner_row.children[0]
+    new_model = row.children[0]
     new_pane = pane._pane
     assert isinstance(new_pane, Bokeh)
     assert isinstance(new_model, Div)

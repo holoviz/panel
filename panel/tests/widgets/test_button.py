@@ -9,11 +9,9 @@ def test_button(document, comm):
     widget = button.get_root(document, comm=comm)
 
     assert isinstance(widget, button._widget_type)
-    assert widget.clicks == 0
     assert widget.label == 'Button'
 
-    widget.clicks = 1
-    button._comm_change({'clicks': widget.clicks})
+    button._process_events({'clicks': 1})
     assert button.clicks == 1
 
 
@@ -27,7 +25,7 @@ def test_toggle(document, comm):
     assert widget.label == 'Toggle'
 
     widget.active = False
-    toggle._comm_change({'active': widget.active})
+    toggle._process_events({'active': widget.active})
     assert toggle.value == False
 
     toggle.value = True
