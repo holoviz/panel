@@ -9,10 +9,10 @@ from typing import Dict, Optional, Set
 import lxml.html as LH
 import param
 
-from panel.models import WebComponent as _BkWebComponent
-from panel.widgets.base import Widget
+from ..models import WebComponent as _BkWebComponent
+from ..util import escape
+from ..widgets.base import Widget
 
-# from bokeh.models import ColumnDataSource
 
 
 # Defines how to convert from attribute string value to parameter value
@@ -319,6 +319,12 @@ class WebComponent(Widget):
 
         self.update_html_from_attributes_to_watch()
         self._update_properties()
+
+    def _process_param_change(self, msg):
+        msg = super(WebComponent, self)._process_param_change(msg)
+        if 'innerHTML' in msg:
+            msg['innerHTML'] = escape(msg['innerHTML'])
+        return msg
 
     def _handle_parameters_to_watch_change(self, event):
         params = {parameter: getattr(self, parameter) for parameter in self.parameters_to_watch}
