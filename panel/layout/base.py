@@ -166,8 +166,8 @@ class ListLike(param.Parameterized):
             other = other.objects
         if not isinstance(other, list):
             stype = type(self).__name__
-            stype = type(other).__name__
-            raise ValueError("Cannot add items of type %s and %s, can only"
+            otype = type(other).__name__
+            raise ValueError("Cannot add items of type %s and %s, can only "
                              "combine %s.objects with list or ListLike object."
                              % (stype, otype, stype))
         return self.clone(*(self.objects+other))
@@ -428,14 +428,14 @@ class NamedListPanel(ListPanel):
     #----------------------------------------------------------------
 
     def __add__(self, other):
-        if isinstance(other, NamedListLike):
+        if isinstance(other, NamedListPanel):
             other = list(zip(other._names, other.objects))
         elif isinstance(other, ListLike):
             other = other.objects
         if not isinstance(other, list):
             stype = type(self).__name__
-            stype = type(other).__name__
-            raise ValueError("Cannot add items of type %s and %s, can only"
+            otype = type(other).__name__
+            raise ValueError("Cannot add items of type %s and %s, can only "
                              "combine %s.objects with list or ListLike object."
                              % (stype, otype, stype))
         objects = list(zip(self._names, self.objects))

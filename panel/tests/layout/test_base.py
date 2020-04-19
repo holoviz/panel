@@ -54,6 +54,47 @@ def test_layout_constructor(panel):
     assert all(isinstance(p, Bokeh) for p in layout.objects)
 
 
+@pytest.mark.parametrize('panel', [Column, Row])
+def test_layout_add(panel, document, comm):
+    div1 = Div()
+    div2 = Div()
+    layout1 = panel(div1, div2)
+    div3 = Div()
+    div4 = Div()
+    layout2 = panel(div3, div4)
+
+    combined = layout1 + layout2
+
+    model = combined.get_root(document, comm=comm)
+
+    assert model.children == [div1, div2, div3, div4]
+
+
+@pytest.mark.parametrize('panel', [Column, Row])
+def test_layout_add_list(panel, document, comm):
+    div1 = Div()
+    div2 = Div()
+    layout1 = panel(div1, div2)
+    div3 = Div()
+    div4 = Div()
+
+    combined = layout1 + [div3, div4]
+
+    model = combined.get_root(document, comm=comm)
+
+    assert model.children == [div1, div2, div3, div4]
+
+
+@pytest.mark.parametrize('panel', [Column, Row])
+def test_layout_add_error(panel, document, comm):
+    div1 = Div()
+    div2 = Div()
+    layout = panel(div1, div2)
+
+    with pytest.raises(ValueError):
+        layout + 1
+
+
 @pytest.mark.parametrize('panel', [Card, Column, Row])
 def test_layout_getitem(panel):
     div1 = Div()
@@ -150,7 +191,7 @@ def test_layout_extend(panel, document, comm):
 
 
 @pytest.mark.parametrize('panel', [Column, Row])
-def test_layout_extend(panel, document, comm):
+def test_layout_iadd(panel, document, comm):
     div1 = Div()
     div2 = Div()
     layout = panel(div1, div2)
