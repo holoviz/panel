@@ -212,10 +212,10 @@ export class WebComponentView extends HTMLBoxView {
     // hack: Setting the value of the WIRED-SLIDER before its ready
     // will destroy the setter.
     // I don't yet understand this.
-    if (["WIRED-SLIDER"].indexOf(element.tagName)>=0){
-      const setter = element.__lookupSetter__(property_);
-      if (!setter){return}
-    }
+    // if (["WIRED-SLIDER"].indexOf(element.tagName)>=0){
+    //   const setter = element.__lookupSetter__(property_);
+    //   if (!setter){return}
+    // }
 
     const pList = property_.split('.');
     if (pList.length === 1)
