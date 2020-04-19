@@ -64,13 +64,13 @@ class AbstractVTKPlot(HTMLBox):
 
     camera = Dict(String, Any)
 
+    color_mappers = List(Instance(ColorMapper))
+
     height = Override(default=300)
 
     orientation_widget = Bool(default=False)
 
     width = Override(default=300)
-
-    color_mappers = List(Instance(ColorMapper))
 
     axes = Instance(VTKAxes)
 

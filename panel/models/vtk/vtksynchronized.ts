@@ -69,6 +69,7 @@ export class VTKSynchronizedPlotView extends AbstractVTKView {
       this._set_camera_state()
       this._create_orientation_widget()
       this._set_axes()
+      this._add_colorbars()
       this.model.renderer_el = this._vtk_renwin
     } else {
       set_size(this._vtk_container, this.model)
