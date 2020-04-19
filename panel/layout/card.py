@@ -13,9 +13,6 @@ class Card(Column):
     active_header_background = param.String(default=None, doc="""
         A valid CSS color for the header background when not collapsed.""")
 
-    button_color = param.String(doc="""
-        A valid CSS color to apply to the button.""")
-
     button_css_classes = param.List(['card-button'], doc="""
         CSS classes to apply to the button element.""")
 
@@ -34,6 +31,9 @@ class Card(Column):
 
     header_background = param.String(default=None, doc="""
         A valid CSS color for the header background.""")
+
+    header_color = param.String(doc="""
+        A valid CSS color to apply to the header text.""")
 
     header_css_classes = param.List(['card-header'], doc="""
         CSS claasses to apply to the heaader element.""")

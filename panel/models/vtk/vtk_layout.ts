@@ -3,10 +3,12 @@ import * as p from "@bokehjs/core/properties"
 import {div} from "@bokehjs/core/dom"
 import {clone} from "@bokehjs/core/util/object"
 import {HTMLBox} from "@bokehjs/models/layouts/html_box"
+import {ColorMapper} from "@bokehjs/models/mappers/color_mapper"
 
 import {PanelHTMLBoxView, set_size} from "../layout"
 
-import  {vtkns, VolumeType, majorAxis} from "./vtk_utils"
+import {vtkns, VolumeType, majorAxis} from "./vtk_utils"
+import {VTKColorBar} from "./vtk_colorbar"
 
 export abstract class AbstractVTKView extends PanelHTMLBoxView{
   model: AbstractVTKPlot
@@ -15,6 +17,62 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView{
   protected _orientationWidget: any
   protected _widgetManager: any
   protected _setting_camera: boolean = false
+
+  _add_colorbars(): void {
+    //construct colorbars
+    const old_info_div = this.el.querySelector(".vtk_info")
+    if (old_info_div)
+      this.el.removeChild(old_info_div)
+    if (this.model.color_mappers.length < 1) return
+
+    const info_div = document.createElement("div")
+    const expand_width = "350px"
+    const collapsed_width = "30px"
+    info_div.classList.add('vtk_info')
+    info_div.style.width = expand_width
+    info_div.style.padding = "0px 2px 0px 2px"
+    info_div.style.maxHeight = "150px"
+    info_div.style.height = "auto"
+    info_div.style.backgroundColor = "rgba(255, 255, 255, 0.4)"
+    info_div.style.borderRadius = "10px"
+    info_div.style.margin = "2px"
+    info_div.style.boxSizing = "border-box"
+    info_div.style.overflow = "hidden"
+    info_div.style.overflowY = "auto"
+    info_div.style.transition = "width 0.1s linear"
+    info_div.style.bottom = "0px"
+    info_div.style.position = "absolute"
+    this.el.appendChild(info_div)
+
+    //construct colorbars
+    const colorbars: VTKColorBar[] = []
+    this.model.color_mappers.forEach((mapper) => {
+      const cb = new VTKColorBar(info_div, mapper)
+      colorbars.push(cb)
+    })
+
+    //content when collapsed
+    const dots = document.createElement('div');
+    dots.style.textAlign = "center"
+    dots.style.fontSize = "20px"
+    dots.innerText = "..."
+
+    info_div.addEventListener('click', () => {
+      if(info_div.style.width === collapsed_width){
+        info_div.removeChild(dots)
+        info_div.style.height = "auto"
+        info_div.style.width = expand_width
+        colorbars.forEach((cb) => info_div.appendChild(cb.canvas))
+      } else {
+        colorbars.forEach((cb) => info_div.removeChild(cb.canvas))
+        info_div.style.height = collapsed_width
+        info_div.style.width = collapsed_width
+        info_div.appendChild(dots)
+      }
+    })
+
+    info_div.click()
+  }
 
   connect_signals(): void {
     super.connect_signals()
@@ -25,6 +83,7 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView{
       this._orientation_widget_visibility(this.model.orientation_widget)
     })
     this.connect(this.model.properties.camera.change, () => this._set_camera_state())
+    this.connect(this.model.properties.color_mappers.change, () => this._add_colorbars())
   }
 
   _orientation_widget_visibility(visibility: boolean): void {
@@ -145,6 +204,7 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView{
     )
     this._set_camera_state()
     this.model.renderer_el = this._vtk_renwin
+    this._add_colorbars()
   }
 
   after_layout(): void {
@@ -166,6 +226,7 @@ export namespace AbstractVTKPlot {
     data: p.Property<string|VolumeType>
     camera: p.Property<any>
     orientation_widget: p.Property<boolean>
+    color_mappers: p.Property<ColorMapper[]>
   }
 }
 
@@ -189,6 +250,7 @@ export abstract class AbstractVTKPlot extends HTMLBox {
     this.define<AbstractVTKPlot.Props>({
       orientation_widget: [ p.Boolean, false ],
       camera:             [ p.Instance       ],
+      color_mappers:      [ p.Array,      [] ],
     })
 
     this.override({

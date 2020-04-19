@@ -59,8 +59,10 @@ class Player(PlayerBase):
             params['value'] = params['start']
         super(Player, self).__init__(**params)
 
-    def _get_embed_state(self, root, max_opts=3):
-        return (self, self._models[root.ref['id']][0], range(self.start, self.end, self.step),
+    def _get_embed_state(self, root, values=None, max_opts=3):
+        if values is None:
+            values = list(range(self.start, self.end, self.step))
+        return (self, self._models[root.ref['id']][0], values,
                 lambda x: x.value, 'value', 'cb_obj.value')
 
 

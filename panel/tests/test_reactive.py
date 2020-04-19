@@ -4,7 +4,8 @@ import param
 
 from bokeh.models import Div
 from panel.layout import Tabs, WidgetBox
-from panel.viewable import Layoutable, Reactive
+from panel.reactive import Reactive
+from panel.viewable import Layoutable
 from panel.widgets import Checkbox, StaticText, TextInput
 
 

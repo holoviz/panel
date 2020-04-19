@@ -6,7 +6,7 @@ import param
 
 from bokeh.models import Div as BkDiv, Spacer as BkSpacer
 
-from ..viewable import Reactive
+from ..reactive import Reactive
 
 
 class Spacer(Reactive):
