@@ -26,7 +26,6 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
     this._camera_callbacks = []
   }
 
-
   _add_colorbars(): void {
     //construct colorbars
     const old_info_div = this.el.querySelector(".vtk_info")
@@ -368,6 +367,8 @@ export namespace AbstractVTKPlot {
   export type Props = HTMLBox.Props & {
     axes: p.Property<VTKAxes>
     camera: p.Property<any>
+    data: p.Property<string | VolumeType>
+    enable_keybindings: p.Property<boolean>
     orientation_widget: p.Property<boolean>
     color_mappers: p.Property<ColorMapper[]>
   }

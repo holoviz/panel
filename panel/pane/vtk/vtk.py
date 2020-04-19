@@ -27,9 +27,11 @@ else:
     base64encode = lambda x: x.encode('base64')
 
 from bokeh.util.serialization import make_globally_unique_id
-
+from abc import abstractmethod
 
 class AbstractVTK(PaneBase):
+
+    __abstract = True
     
     axes = param.Dict(doc="""
         Parameters of the axes to construct in the 3d view.
@@ -77,8 +79,78 @@ class AbstractVTK(PaneBase):
                 msg['axes'] = VTKAxes(**axes.properties_with_values())
         super(AbstractVTK, self)._update_model(events, msg, root, model, doc, comm)
 
+class SyncHelpers:
+    """
+    Class containing helpers functions to update vtkRenderingWindow
+    """
 
-class VTKSynchronized(AbstractVTK):
+    def make_ren_win(self):
+        import vtk
+        ren = vtk.vtkRenderer()
+        ren_win = vtk.vtkRenderWindow()
+        ren_win.AddRenderer(ren)
+        return ren_win
+    
+    def set_background(self, r, g, b):
+        self.get_renderer().SetBackground(r, g, b)
+        self.synchronize()
+    
+    def add_actors(self, actors, reset_camera=True):
+        """
+        Add a list of `actors` to the VTK renderer
+        if `reset_camera` is True, the current camera and it's clipping
+        will be reset.
+        """
+        for actor in actors:
+            self.get_renderer().AddActor(actor)
+        if reset_camera: self.reset_camera()
+        self.synchronize()
+
+    def remove_actors(self, actors, reset_camera=True):
+        """
+        Add a list of `actors` to the VTK renderer
+        if `reset_camera` is True, the current camera and it's clipping
+        will be reset.
+        """
+        for actor in actors:
+            self.get_renderer().RemoveActor(actor)
+        if reset_camera: self.reset_camera()
+        self.synchronize()
+    
+    def remove_all_actors(self, reset_camera=True):
+        self.remove_actors(self.actors, reset_camera=reset_camera)
+
+    @property
+    def vtk_camera(self):
+        return self.get_renderer().GetActiveCamera()
+
+    @vtk_camera.setter
+    def vtk_camera(self, camera):
+        self.get_renderer().SetActiveCamera(camera)
+
+    @property
+    def actors(self):
+        return list(self.get_renderer().GetActors())
+
+    @abstractmethod
+    def get_renderer(self):
+        """
+        get the active renderer
+        """
+    
+    @abstractmethod
+    def synchronize(self):
+        """
+        function to synchronize the renderer with the view
+        """
+
+    @abstractmethod
+    def reset_camera(self):
+        """
+        Reset the camera
+        """
+
+class VTKSynchronized(AbstractVTK, SyncHelpers):
     """
     VTK panes allow rendering VTK objects.
     Synchronize a vtkRenderWindow constructs on python side
@@ -110,18 +182,11 @@ class VTKSynchronized(AbstractVTK):
     
     def __init__(self, object=None, **params):
         if object is None:
-            object = self._make_ren_win()
+            object = self.make_ren_win()
         super(VTKSynchronized, self).__init__(object, **params)
         self._contexts = {}
         import panel.pane.vtk.synchronizable_serializer as rws
         rws.initializeSerializers()
-
-    def _make_ren_win(self):
-        import vtk
-        ren = vtk.vtkRenderer()
-        ren_win = vtk.vtkRenderWindow()
-        ren_win.AddRenderer(ren)
-        return ren_win
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         """
@@ -159,9 +224,33 @@ class VTKSynchronized(AbstractVTK):
         ref = root.ref['id']
         self._contexts.pop(ref, None)
         super(VTKSynchronized, self)._cleanup(root)
-    
-    def set_background(self, r, g, b):
-        self.get_renderer().SetBackground(r, g, b)
+
+    def _serialize_ren_win(self, ren_win, context):
+        import panel.pane.vtk.synchronizable_serializer as rws
+        ren_win.OffScreenRenderingOn() # to not pop a vtk windows
+        ren_win.Modified()
+        ren_win.Render()
+        scene = rws.serializeInstance(None, ren_win, context.getReferenceId(ren_win), context, 0)
+        arrays = {name: context.getCachedDataArray(name, compression=True)
+                    for name in context.dataArrayCache.keys()}
+        return scene, arrays
+
+    def _update(self, model):
+        context = self._contexts[model.id]
+        scene, arrays = self._serialize_ren_win(self.object, context)
+        arrays_not_processed = {k:val for k,val in arrays.items() 
+                                if k not in model.arrays_processed}
+        model.update(arrays=arrays_not_processed)
+        model.update(scene=scene)
+
+    def get_renderer(self):
+        """
+        Get the vtk Renderer associated to this pane
+        """
+        return list(self.object.GetRenderers())[0]
+
+    def synchronize(self):
+        self.param.trigger('object')
 
     def link_camera(self, other):
         """
@@ -170,31 +259,10 @@ class VTKSynchronized(AbstractVTK):
         if not isinstance(other, VTKSynchronized):
             raise TypeError('Only instance of VTKSynchronized class can be linked')
         else:
-            other_camera = other.get_renderer().GetActiveCamera()
-            self.get_renderer().SetActiveCamera(other_camera)
-            self.param.trigger('object')
-    
-    def add_actors(self, actors, reset_camera=True):
-        """
-        Add a list of `actors` to the VTK renderer
-        if `reset_camera` is True, the current camera and it's clipping
-        will be reset.
-        """
-        for actor in actors:
-            self.get_renderer().AddActor(actor)
-        if reset_camera: self.reset_camera()
-        self.param.trigger('object')
-
-    def get_renderer(self):
-        """
-        Get the vtk Renderer associated to this pane
-        """
-        return list(self.object.GetRenderers())[0]
+            self.vtk_camera = other.vtk_camera
+            self.synchronize()
 
     def reset_camera(self):
-        """
-        Reset the camera
-        """
         self.get_renderer().ResetCamera()
         self._one_time_reset = not self._one_time_reset #trigger event
 
@@ -214,25 +282,7 @@ class VTKSynchronized(AbstractVTK):
                     getattr(new_camera, 'Set' + k[0].capitalize() + k[1:])(v)
         else:
             new_camera.DeepCopy(old_camera)
-        self.param.trigger('object')
-
-    def _serialize_ren_win(self, ren_win, context):
-        import panel.pane.vtk.synchronizable_serializer as rws
-        ren_win.OffScreenRenderingOn() # to not pop a vtk windows
-        ren_win.Modified()
-        ren_win.Render()
-        scene = rws.serializeInstance(None, ren_win, context.getReferenceId(ren_win), context, 0)
-        arrays = {name: context.getCachedDataArray(name, compression=True)
-                    for name in context.dataArrayCache.keys()}
-        return scene, arrays
-
-    def _update(self, model):
-        context = self._contexts[model.id]
-        scene, arrays = self._serialize_ren_win(self.object, context)
-        arrays_not_processed = {k:val for k,val in arrays.items() 
-                                if k not in model.arrays_processed}
-        model.update(arrays=arrays_not_processed)
-        model.update(scene=scene)
+        self.synchronize()
 
 
 class VTKVolume(AbstractVTK):

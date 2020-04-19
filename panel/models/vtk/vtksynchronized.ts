@@ -159,7 +159,6 @@ export interface VTKSynchronizedPlot extends VTKSynchronizedPlot.Attrs {}
 
 export class VTKSynchronizedPlot extends AbstractVTKPlot {
   properties: VTKSynchronizedPlot.Props
-  renderer_el: any
   outline: any
   outline_actor: any
 
