@@ -231,36 +231,6 @@ export class WebComponentView extends HTMLBoxView {
     }
   }
 
-  // set_nested_property(element: any, property_: string, value: any): void {
-  //   console.log(element);
-  //   console.log(property_);
-  //   console.log(value);
-  //   property_ = property_.replace(/\[(\w+)\]/g, '.$1'); // convert indexes to properties
-  //   property_ = property_.replace(/^\./, '');       // strip a leading dot
-  //   let a = property_.split('.');
-  //   console.log(a)
-  //   if (a.length == 1) {
-  //     // Hack:
-  //     // for some reason the wired-checkbox checked property is not in the element on construction
-  //     // So the `k in element` test below fails.
-  //     // I've added this line to handle that.
-  //     console.log("length 1", element, a[0])
-  //     element[a[0]] = value
-  //   } else {
-  //     for (let i = 0, n = a.length; i < n; ++i) {
-  //       let k = a[i];
-  //       if (k in element) {
-  //         console.log("nested")
-  //         console.log(k);
-  //         console.log(element[k]);
-  //         element[k] = value;
-  //       } else {
-  //         return;
-  //       }
-  //     }
-  //   }
-  // }
-
   /**
    * Handles events from `eventsToWatch` by
    *
@@ -359,7 +329,6 @@ export class WebComponentView extends HTMLBoxView {
   handlePropertiesLastChangeChange(): void {
     if (!this.webComponentElement) { return; }
     let propertiesLastChange: any = this.model.propertiesLastChange;
-    console.log("handlePropertiesLastChangeChange propertiesLastChange=", propertiesLastChange);
     for (let property in this.model.propertiesLastChange) {
       if (property in this.model.propertiesToWatch) {
         let value = propertiesLastChange[property]
