@@ -150,6 +150,20 @@ def test_layout_extend(panel, document, comm):
 
 
 @pytest.mark.parametrize('panel', [Column, Row])
+def test_layout_extend(panel, document, comm):
+    div1 = Div()
+    div2 = Div()
+    layout = panel(div1, div2)
+
+    model = layout.get_root(document, comm=comm)
+
+    div3 = Div()
+    div4 = Div()
+    layout += [div4, div3]
+    assert model.children == [div1, div2, div4, div3]
+
+
+@pytest.mark.parametrize('panel', [Column, Row])
 def test_layout_insert(panel, document, comm):
     div1 = Div()
     div2 = Div()
