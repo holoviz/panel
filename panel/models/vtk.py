@@ -3,13 +3,39 @@
 Defines custom VTKPlot bokeh model to render VTK objects.
 """
 from bokeh.core.properties import (String, Bool, Dict, Any, Override,
-                                   Instance, Int, Float, PositiveInt, Enum,
-                                   List)
+                                   Instance, Int, Float, PositiveInt,
+                                   Enum, List)
 from bokeh.core.has_props import abstract
 from bokeh.core.enums import enumeration
 from bokeh.models import HTMLBox, Model, ColorMapper
 
+jszip_cdn = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.js"
 vtk_cdn = "https://unpkg.com/vtk.js"
+
+
+class VTKAxes(Model):
+    """
+    A Bokeh model for axes
+    """
+
+    axes_opacity = Float(default=1)
+
+    digits = Int(default=1)
+
+    fontsize = PositiveInt(default=12)
+
+    grid_opacity = Float(default=0.1)
+
+    origin = Any()
+
+    show_grid = Bool(default=True)
+
+    xticker = Dict(String, Any)
+
+    yticker = Dict(String, Any)
+
+    zticker = Dict(String, Any)
+
 
 @abstract
 class AbstractVTKPlot(HTMLBox):
@@ -32,40 +58,49 @@ class AbstractVTKPlot(HTMLBox):
 
     renderer_el = Any(readonly=True)
 
-    orientation_widget = Bool(default=False)
+    axes = Instance(VTKAxes)
 
     camera = Dict(String, Any)
 
     height = Override(default=300)
 
+    orientation_widget = Bool(default=False)
+
     width = Override(default=300)
 
     color_mappers = List(Instance(ColorMapper))
 
+    axes = Instance(VTKAxes)
 
-class VTKAxes(Model):
+
+class VTKSynchronizedPlot(AbstractVTKPlot):
     """
-    A Bokeh model for axes
+    TODO
     """
 
-    xticker = Dict(String, Any)
+    __javascript__ = [vtk_cdn, jszip_cdn]
 
-    yticker = Dict(String, Any)
+    __js_skip__ = {'vtk': [vtk_cdn, jszip_cdn]}
 
-    zticker = Dict(String, Any)
+    __js_require__ = {
+        "paths": {"vtk": vtk_cdn[:-3],
+                  "jszip": jszip_cdn[:-3]},
+        "exports": {"vtk": None, "jszip": None},
+        "shim": {
+            "vtk": {"exports": "vtk"},
+            "jszip": {"exports": "jszip"}
+        }
+    }
 
-    origin = Any()
+    arrays = Dict(String, Any)
 
-    digits = Int(default=1)
+    arrays_processed = List(String)
 
-    show_grid = Bool(default=True)
+    enable_keybindings = Bool(default=False)
 
-    grid_opacity = Float(default=0.1)
+    one_time_reset = Bool(default=False)
 
-    axes_opacity = Float(default=1)
-
-    fontsize = PositiveInt(default=12)
-
+    scene = Dict(String, Any, help="""The serialized vtk.js scene on json format""")
 
 
 class VTKPlot(AbstractVTKPlot):
@@ -76,8 +111,6 @@ class VTKPlot(AbstractVTKPlot):
 
     data = String(help="""The serialized vtk.js data""")
 
-    axes = Instance(VTKAxes)
-
     enable_keybindings = Bool(default=False)
 
 
@@ -87,25 +120,31 @@ class VTKVolumePlot(AbstractVTKPlot):
     (3D geometry objects are not suported)
     """
 
-    data = Dict(String, Any)
+    ambient = Float(default=0.2)
 
     colormap = String(help="Colormap Name")
 
-    rescale = Bool(default=False)
-
-    shadow = Bool(default=True)
-
-    sampling = Float(default=0.4)
-
-    edge_gradient = Float(default=0.2)
-
-    ambient = Float(default=0.2)
+    data = Dict(String, Any)
 
     diffuse = Float(default=0.7)
 
-    specular = Float(default=0.3)
+    display_slices = Bool(default=False)
 
-    specular_power = Float(default=8.)
+    display_volume = Bool(default=True)
+
+    edge_gradient = Float(default=0.2)
+
+    interpolation = Enum(enumeration('fast_linear','linear','nearest'))
+
+    mapper = Dict(String, Any)
+
+    render_background = String(default='#52576e')
+
+    rescale = Bool(default=False)
+
+    sampling = Float(default=0.4)
+
+    shadow = Bool(default=True)
 
     slice_i = Int(default=0)
 
@@ -113,12 +152,6 @@ class VTKVolumePlot(AbstractVTKPlot):
 
     slice_k = Int(default=0)
 
-    display_volume = Bool(default=True)
+    specular = Float(default=0.3)
 
-    display_slices = Bool(default=False)
-
-    render_background = String(default='#52576e')
-
-    interpolation = Enum(enumeration('fast_linear','linear','nearest'))
-
-    mapper = Dict(String, Any)
+    specular_power = Float(default=8.)
