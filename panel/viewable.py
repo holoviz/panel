@@ -19,7 +19,6 @@ from functools import partial
 import param
 
 from bokeh.document.document import Document as _Document
-from bokeh.document.events import MessageSentEvent
 from bokeh.io.doc import curdoc as _curdoc
 from pyviz_comms import JupyterCommManager
 
@@ -27,7 +26,8 @@ from .config import config, panel_extension
 from .io.embed import embed_state
 from .io.model import add_to_doc, patch_cds_msg
 from .io.notebook import (
-    ipywidget, render_mimebundle, render_model, show_embed, show_server
+    ipywidget, render_mimebundle, render_model, show_embed, show_server,
+    push
 )
 from .io.save import save
 from .io.state import state
@@ -236,13 +236,18 @@ class ServableMixin(object):
         return get_server(self, port, websocket_origin, loop, show,
                           start, title, verbose, **kwargs)
 
-    def _handle_kernel_msg(self, event):
+    def _handle_kernel_msg(self, doc, event, comm=None):
+        if doc not in self._kernels:
+            raise RuntimeError("Could not process ipywidgets_event "
+                               "no kernel found.")
+
         from ipywidgets_bokeh.kernel import BytesWrap, StreamWrapper
         from ipykernel.kernelbase import Kernel
 
-        kernel = Kernel._instance
+        kernel = self._kernels[doc]
+        jupyter_kernel = Kernel._instance
         stream = StreamWrapper('shell')
-        session = self._kernel.session
+        session = kernel.session
         if 'msg_data' not in event:
             return
         data = event['msg_data']
@@ -251,10 +256,12 @@ class ServableMixin(object):
         idents, msg = session.feed_identities(msg_serialized)
         msg_list = [BytesWrap(k) for k in msg ]
         msg = session.deserialize(msg_list, content=True, copy=False)
-        self._kernel.set_parent(idents, msg)
-        self._kernel._publish_status('busy')
-        h = kernel.shell_handlers['comm_msg'](stream, idents, msg)
-        self._kernel._publish_status('idle')
+        kernel.set_parent(idents, msg)
+        kernel._publish_status('busy')
+        jupyter_kernel.shell_handlers['comm_msg'](stream, idents, msg)
+        kernel._publish_status('idle')
+        if comm:
+            push(doc, comm)
 
     def _on_msg(self, ref, manager, msg):
         """
@@ -267,10 +274,8 @@ class ServableMixin(object):
         ipywidget_events = [
             event for event in events if event.get('msg_type', 'ipywidgets_bokeh')
         ]
-        if self._kernel and ipywidget_events:
-            from .io.notebook import push
-            self._handle_kernel_msg(ipywidget_events[0])
-            push(doc, comm)
+        if ipywidget_events:            
+            self._handle_kernel_msg(doc, ipywidget_events[0], comm)
             return
         patch = manager.assemble(msg)
         doc.hold()
@@ -396,6 +401,7 @@ class Renderable(param.Parameterized):
         self._documents = {}
         self._models = {}
         self._comms = {}
+        self._kernels = {}
         self._found_links = set()
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
@@ -573,7 +579,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
             for w in widgets:
                 w._widget.comm.kernel = kernel
 
-            self._kernel = kernel
+            self._kernels[doc] = kernel
 
         if config.console_output != 'disable':
             handle = display(display_id=uuid.uuid4().hex)
