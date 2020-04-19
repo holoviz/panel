@@ -157,6 +157,10 @@ class ListLike(param.Parameterized):
         for obj in self.objects:
             yield obj
 
+    def __iadd__(self, other):
+        self.extend(other)
+        return self
+
     def __contains__(self, obj):
         return obj in self.objects
 
