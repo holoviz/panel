@@ -3,8 +3,8 @@ import * as p from "@bokehjs/core/properties"
 import {AbstractVTKView, AbstractVTKPlot} from "./vtk_layout"
 import {vtk, vtkns} from "./vtk_utils"
 
-export class VTKPlotView extends AbstractVTKView {
-  model: VTKPlot
+export class VTKJSPlotView extends AbstractVTKView {
+  model: VTKJSPlot
 
   connect_signals(): void {
     super.connect_signals()
@@ -47,20 +47,20 @@ export class VTKPlotView extends AbstractVTKView {
   }
 }
 
-export namespace VTKPlot {
+export namespace VTKJSPlot {
   export type Attrs = p.AttrsOf<Props>
   export type Props = AbstractVTKPlot.Props
 }
 
-export interface VTKPlot extends VTKPlot.Attrs {}
+export interface VTKJSPlot extends VTKJSPlot.Attrs {}
 
-export class VTKPlot extends AbstractVTKPlot {
-  properties: VTKPlot.Props
+export class VTKJSPlot extends AbstractVTKPlot {
+  properties: VTKJSPlot.Props
   renderer_el: any
   outline: any
   outline_actor: any
 
-  constructor(attrs?: Partial<VTKPlot.Attrs>) {
+  constructor(attrs?: Partial<VTKJSPlot.Attrs>) {
     super(attrs)
     this.outline = vtkns.OutlineFilter.newInstance() //use to display bouding box of a selected actor
     const mapper = vtkns.Mapper.newInstance()
@@ -69,10 +69,10 @@ export class VTKPlot extends AbstractVTKPlot {
     this.outline_actor.setMapper(mapper)
   }
 
-  static init_VTKPlot(): void {
-    this.prototype.default_view = VTKPlotView
+  static init_VTKJSPlot(): void {
+    this.prototype.default_view = VTKJSPlotView
 
-    this.define<VTKPlot.Props>({
+    this.define<VTKJSPlot.Props>({
       data:               [ p.String         ],
       enable_keybindings: [ p.Boolean, false ],
     })

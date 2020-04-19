@@ -44,15 +44,17 @@ class AbstractVTKPlot(HTMLBox):
     renders it inside a Bokeh plot.
     """
 
-    __javascript__ = [vtk_cdn]
+    __javascript__ = [vtk_cdn, jszip_cdn]
 
-    __js_skip__ = {'vtk': [vtk_cdn]}
+    __js_skip__ = {'vtk': [vtk_cdn, jszip_cdn]}
 
     __js_require__ = {
-        "paths": {"vtk": vtk_cdn[:-3]},
-        "exports": {"vtk": None},
+        "paths": {"vtk": vtk_cdn[:-3],
+                  "jszip": jszip_cdn[:-3]},
+        "exports": {"vtk": None, "jszip": None},
         "shim": {
-            "vtk": {"exports": "vtk"}
+            "vtk": {"exports": "vtk"},
+            "jszip": {"exports": "jszip"}
         }
     }
 
@@ -78,20 +80,6 @@ class VTKSynchronizedPlot(AbstractVTKPlot):
     TODO
     """
 
-    __javascript__ = [vtk_cdn, jszip_cdn]
-
-    __js_skip__ = {'vtk': [vtk_cdn, jszip_cdn]}
-
-    __js_require__ = {
-        "paths": {"vtk": vtk_cdn[:-3],
-                  "jszip": jszip_cdn[:-3]},
-        "exports": {"vtk": None, "jszip": None},
-        "shim": {
-            "vtk": {"exports": "vtk"},
-            "jszip": {"exports": "jszip"}
-        }
-    }
-
     arrays = Dict(String, Any)
 
     arrays_processed = List(String)
@@ -103,7 +91,7 @@ class VTKSynchronizedPlot(AbstractVTKPlot):
     scene = Dict(String, Any, help="""The serialized vtk.js scene on json format""")
 
 
-class VTKPlot(AbstractVTKPlot):
+class VTKJSPlot(AbstractVTKPlot):
     """
     Bokeh model dedicated to plot a vtk render window with only 3D geometry objects
     (Volumes are not suported)

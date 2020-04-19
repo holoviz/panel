@@ -21,8 +21,8 @@ except Exception:
     pv = None
 
 from six import string_types
-from panel.models.vtk import VTKPlot, VTKVolumePlot, VTKAxes
-from panel.pane import Pane, PaneBase, VTK,VTKVolume
+from panel.models.vtk import VTKJSPlot, VTKVolumePlot, VTKAxes, VTKSynchronizedPlot
+from panel.pane import Pane, PaneBase, VTKJS, VTKVolume, VTKSynchronized
 
 vtk_available = pytest.mark.skipif(vtk is None, reason="requires vtk")
 pyvista_available = pytest.mark.skipif(pv is None, reason="requires pyvista")
@@ -71,17 +71,17 @@ def make_image_data():
 
 def test_get_vtk_pane_type_from_url():
     url = r'https://raw.githubusercontent.com/Kitware/vtk-js/master/Data/StanfordDragon.vtkjs'
-    assert PaneBase.get_pane_type(url) is VTK
+    assert PaneBase.get_pane_type(url) is VTKJS
 
 
 def test_get_vtk_pane_type_from_file():
     file = r'StanfordDragon.vtkjs'
-    assert PaneBase.get_pane_type(file) is VTK
+    assert PaneBase.get_pane_type(file) is VTKJS
 
 
 @vtk_available
 def test_get_vtk_pane_type_from_render_window():
-    assert PaneBase.get_pane_type(vtk.vtkRenderWindow()) is VTK
+    assert PaneBase.get_pane_type(vtk.vtkRenderWindow()) is VTKSynchronized
 
 
 def test_vtk_volume_pane_type_from_np_array():
@@ -94,33 +94,22 @@ def test_vtk_volume_pane_type_from_vtk_image():
     assert PaneBase.get_pane_type(image_data) is VTKVolume
 
 
-def test_vtk_pane_from_url(document, comm):
+def test_vtk_pane_from_url(document, comm, tmp_path):
     url = r'https://raw.githubusercontent.com/Kitware/vtk-js/master/Data/StanfordDragon.vtkjs'
 
     pane = Pane(url)
 
     # Create pane
     model = pane.get_root(document, comm=comm)
-    assert isinstance(model, VTKPlot)
+    assert isinstance(model, VTKJSPlot)
     assert pane._models[model.ref['id']][0] is model
     assert isinstance(model.data, string_types)
-
-
-@vtk_available
-def test_vtk_pane_from_renwin(document, comm, tmp_path):
-    renWin = make_render_window()
-    pane = VTK(renWin)
-
-    # Create pane
-    model = pane.get_root(document, comm=comm)
-    assert isinstance(model, VTKPlot)
-    assert pane._models[model.ref['id']][0] is model
-
+    
     with BytesIO(base64.b64decode(model.data.encode())) as in_memory:
         with ZipFile(in_memory) as zf:
             filenames = zf.namelist()
-            assert len(filenames) == 4
-            assert 'index.json' in filenames
+            assert len(filenames) == 9
+            assert 'StanfordDragon.obj/index.json' in filenames
 
     # Export Update and Read
     tmpfile = os.path.join(*tmp_path.joinpath('export.vtkjs').parts)
@@ -128,33 +117,32 @@ def test_vtk_pane_from_renwin(document, comm, tmp_path):
     with open(tmpfile, 'rb') as  file_exported:
         pane.object = file_exported
 
+
+@vtk_available
+def test_vtk_pane_from_renwin(document, comm):
+    renWin = make_render_window()
+    pane = VTKSynchronized(renWin)
+
+    # Create pane
+    model = pane.get_root(document, comm=comm)
+    assert isinstance(model, VTKSynchronizedPlot)
+    assert pane._models[model.ref['id']][0] is model
+
     # Cleanup
     pane._cleanup(model)
+    assert pane._contexts == {}
     assert pane._models == {}
 
 
 @pyvista_available
 def test_vtk_pane_more_complex(document, comm):
     renWin = pyvista_render_window()
-    pane = VTK(renWin)
+    pane = VTKSynchronized(renWin)
 
     # Create pane
     model = pane.get_root(document, comm=comm)
-    assert isinstance(model, VTKPlot)
+    assert isinstance(model, VTKSynchronizedPlot)
     assert pane._models[model.ref['id']][0] is model
-
-    #test colorbar
-    colorbars_plot = pane.construct_colorbars()
-    cb_model = colorbars_plot.below[0]
-    cb_title = cb_model.title
-    assert cb_title == 'test'
-    assert cb_model.color_mapper.palette == pane._legend[cb_title]['palette']
-
-    with BytesIO(base64.b64decode(model.data.encode())) as in_memory:
-        with ZipFile(in_memory) as zf:
-            filenames = zf.namelist()
-            assert len(filenames) == 12
-            assert 'index.json' in filenames
 
     # add axes
     pane.axes = dict(
@@ -172,6 +160,7 @@ def test_vtk_pane_more_complex(document, comm):
 
     # Cleanup
     pane._cleanup(model)
+    assert pane._contexts == {}
     assert pane._models == {}
 
 
