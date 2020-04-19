@@ -8,6 +8,7 @@ and become viewable including:
 * Viewable: Defines methods to view the component in the
   notebook, on the server or in static exports
 """
+import json
 import logging
 import sys
 import traceback
@@ -18,7 +19,8 @@ from functools import partial
 import param
 
 from bokeh.document.document import Document as _Document
-from bokeh.io import curdoc as _curdoc
+from bokeh.document.events import MessageSentEvent
+from bokeh.io.doc import curdoc as _curdoc
 from pyviz_comms import JupyterCommManager
 
 from .config import config, panel_extension
@@ -234,14 +236,44 @@ class ServableMixin(object):
         return get_server(self, port, websocket_origin, loop, show,
                           start, title, verbose, **kwargs)
 
+    def _handle_kernel_msg(self, event):
+        from ipywidgets_bokeh.kernel import BytesWrap, StreamWrapper
+        from ipykernel.kernelbase import Kernel
+
+        kernel = Kernel._instance
+        stream = StreamWrapper('shell')
+        session = self._kernel.session
+        if 'msg_data' not in event:
+            return
+        data = event['msg_data']
+        msg = json.loads(data)
+        msg_serialized = session.serialize(msg)
+        idents, msg = session.feed_identities(msg_serialized)
+        msg_list = [BytesWrap(k) for k in msg ]
+        msg = session.deserialize(msg_list, content=True, copy=False)
+        self._kernel.set_parent(idents, msg)
+        self._kernel._publish_status('busy')
+        h = kernel.shell_handlers['comm_msg'](stream, idents, msg)
+        self._kernel._publish_status('idle')
+
     def _on_msg(self, ref, manager, msg):
         """
         Handles Protocol messages arriving from the client comm.
         """
         root, doc, comm = state._views[ref][1:]
         patch_cds_msg(root, msg)
-        patch = manager.assemble(msg)
         held = doc._hold
+        events = msg.get('content', {}).get('events', [])
+        ipywidget_events = [
+            event for event in events if event.get('msg_type', 'ipywidgets_bokeh')
+        ]
+        if self._kernel and ipywidget_events:
+            from .io.notebook import push
+            self._handle_kernel_msg(ipywidget_events[0])
+            push(doc, comm)
+            return
+        patch = manager.assemble(msg)
+        doc.hold()
         patch.apply_to_document(doc, comm.id)
         doc.unhold()
         if held:
@@ -514,9 +546,8 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         from IPython.display import display
         from .models.comm_manager import CommManager
 
-        comm = state._comm_manager.get_server_comm()
-
         doc = _Document()
+        comm = state._comm_manager.get_server_comm()
         model = self._render_model(doc, comm)
         ref = model.ref['id']
         manager = CommManager(comm_id=comm.id, plot_id=ref)
@@ -527,6 +558,22 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         )
         self._comms[ref] = (comm, client_comm)
         manager.client_comm_id = client_comm.id
+
+        if 'ipywidgets_bokeh' in sys.modules:
+            from ipywidgets_bokeh import IPyWidget
+            from ipywidgets_bokeh.kernel import BokehKernel
+
+            from .io.notebook import push
+
+            kernel = BokehKernel.instance(
+                key=ref.encode('utf-8'), document=doc, send_callback=partial(push, doc, comm)
+            )
+
+            widgets = model.select({'type': IPyWidget})
+            for w in widgets:
+                w._widget.comm.kernel = kernel
+
+            self._kernel = kernel
 
         if config.console_output != 'disable':
             handle = display(display_id=uuid.uuid4().hex)
