@@ -157,6 +157,32 @@ class ListLike(param.Parameterized):
         for obj in self.objects:
             yield obj
 
+    def __iadd__(self, other):
+        self.extend(other)
+        return self
+
+    def __add__(self, other):
+        if isinstance(other, ListLike):
+            other = other.objects
+        if not isinstance(other, list):
+            stype = type(self).__name__
+            otype = type(other).__name__
+            raise ValueError("Cannot add items of type %s and %s, can only "
+                             "combine %s.objects with list or ListLike object."
+                             % (stype, otype, stype))
+        return self.clone(*(self.objects+other))
+
+    def __radd__(self, other):
+        if isinstance(other, ListLike):
+            other = other.objects
+        if not isinstance(other, list):
+            stype = type(self).__name__
+            otype = type(other).__name__
+            raise ValueError("Cannot add items of type %s and %s, can only "
+                             "combine %s.objects with list or ListLike object."
+                             % (otype, stype, stype))
+        return self.clone(*(other+self.objects))
+
     def __contains__(self, obj):
         return obj in self.objects
 
@@ -411,6 +437,34 @@ class NamedListPanel(ListPanel):
     #----------------------------------------------------------------
     # Public API
     #----------------------------------------------------------------
+
+    def __add__(self, other):
+        if isinstance(other, NamedListPanel):
+            other = list(zip(other._names, other.objects))
+        elif isinstance(other, ListLike):
+            other = other.objects
+        if not isinstance(other, list):
+            stype = type(self).__name__
+            otype = type(other).__name__
+            raise ValueError("Cannot add items of type %s and %s, can only "
+                             "combine %s.objects with list or ListLike object."
+                             % (stype, otype, stype))
+        objects = list(zip(self._names, self.objects))
+        return self.clone(*(objects+other))
+
+    def __radd__(self, other):
+        if isinstance(other, NamedListPanel):
+            other = list(zip(other._names, other.objects))
+        elif isinstance(other, ListLike):
+            other = other.objects
+        if not isinstance(other, list):
+            stype = type(self).__name__
+            otype = type(other).__name__
+            raise ValueError("Cannot add items of type %s and %s, can only "
+                             "combine %s.objects with list or ListLike object."
+                             % (otype, stype, stype))
+        objects = list(zip(self._names, self.objects))
+        return self.clone(*(other+objects))
 
     def __setitem__(self, index, panes):
         new_objects = list(self)
