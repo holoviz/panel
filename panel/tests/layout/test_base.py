@@ -86,6 +86,21 @@ def test_layout_add_list(panel, document, comm):
 
 
 @pytest.mark.parametrize('panel', [Column, Row])
+def test_layout_radd_list(panel, document, comm):
+    div1 = Div()
+    div2 = Div()
+    layout1 = panel(div1, div2)
+    div3 = Div()
+    div4 = Div()
+
+    combined = [div3, div4] + layout1
+
+    model = combined.get_root(document, comm=comm)
+
+    assert model.children == [div3, div4, div1, div2]
+
+
+@pytest.mark.parametrize('panel', [Column, Row])
 def test_layout_add_error(panel, document, comm):
     div1 = Div()
     div2 = Div()
