@@ -268,6 +268,7 @@ class VTKSynchronized(AbstractVTK, SyncHelpers):
     def _update(self, model):
         context = self._contexts[model.id]
         scene, arrays = self._serialize_ren_win(self.object, context)
+        context.checkForArraysToRelease()
         arrays_not_processed = {k:val for k,val in arrays.items() 
                                 if k not in model.arrays_processed}
         model.update(arrays=arrays_not_processed)

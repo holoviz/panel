@@ -158,7 +158,8 @@ export class VTKVolumePlotView extends AbstractVTKView {
       .getRenderer()
       .setBackground(...hexToRGB(this.model.render_background))
     this._set_interpolation(this.model.interpolation)
-    this._vtk_renwin.getRenderer().resetCamera()
+    if (!this.model.camera)
+      this._vtk_renwin.getRenderer().resetCamera()
   }
 
   _connect_controls(): void {
