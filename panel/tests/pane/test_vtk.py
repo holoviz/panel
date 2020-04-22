@@ -45,13 +45,15 @@ def pyvista_render_window():
     Allow to download and create a more complex example easily
     """
     from pyvista import examples
-    globe = examples.load_globe() #add texture
-    pl = pv.Plotter()
-    pl.add_mesh(globe)
-    sphere = pv.Sphere()
+    sphere = pv.Sphere() #test actor
+    globe = examples.load_globe() #test texture
+    head = examples.download_head() #test volume
     scalars=sphere.points[:, 2]
     sphere._add_point_array(scalars, 'test', set_active=True) #allow to test scalars
+    pl = pv.Plotter()
+    pl.add_mesh(globe)
     pl.add_mesh(sphere)
+    pl.add_volume(head)
     return pl.ren_win
 
 def make_image_data():
@@ -128,6 +130,16 @@ def test_vtk_pane_from_renwin(document, comm):
     assert isinstance(model, VTKSynchronizedPlot)
     assert pane._models[model.ref['id']][0] is model
 
+    # Check array release when actor are removed from scene
+    ctx = pane._contexts[model.id]
+    assert len(ctx.dataArrayCache.keys()) == 2
+    pane.remove_all_actors()
+    # Default : 20s before removing arrays
+    assert len(ctx.dataArrayCache.keys()) == 2
+    # Force 0s for removing arrays
+    ctx.checkForArraysToRelease(0)
+    assert len(ctx.dataArrayCache.keys()) == 0
+
     # Cleanup
     pane._cleanup(model)
     assert pane._contexts == {}
@@ -174,6 +186,10 @@ def test_vtk_helpers(document, comm):
     # Unconnect camera
     pane2.unlink_camera()
     assert pane2.vtk_camera is not save_vtk_camera2
+
+    # SetBackground
+    pane1.set_background(0, 0, 0)
+    assert list(renWin1.GetRenderers())[0].GetBackground() == (0, 0, 0)
 
     # Cleanup
     pane1._cleanup(model1)
