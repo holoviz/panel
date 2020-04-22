@@ -160,16 +160,30 @@ export interface VTKSynchronizedPlot extends VTKSynchronizedPlot.Attrs {}
 export class VTKSynchronizedPlot extends AbstractVTKPlot {
   properties: VTKSynchronizedPlot.Props
   renderer_el: any
+  outline: any
+  outline_actor: any
 
   static __module__ = "panel.models.vtk"
 
   constructor(attrs?: Partial<VTKSynchronizedPlot.Attrs>) {
     super(attrs)
-    this.renderer_el = null
+    this.outline = vtkns.OutlineFilter.newInstance() //use to display bouding box of a selected actor
+    const mapper = vtkns.Mapper.newInstance()
+    mapper.setInputConnection(this.outline.getOutputPort())
+    this.outline_actor = vtkns.Actor.newInstance()
+    this.outline_actor.setMapper(mapper)
   }
 
-  getActors(): [any] {
-    return this.renderer_el.getRenderer().getActors()
+  getActors(ptr_ref?: string): [any] {
+    let actors = this.renderer_el.getRenderer().getActors()
+    if(ptr_ref){
+      const context = this.renderer_el.getSynchronizerContext(CONTEXT_NAME)
+      actors = actors.filter((actor: any) => {
+        const id_actor = context.getInstanceId(actor)
+        return id_actor? id_actor.slice(-16) == ptr_ref.slice(1, 17): false
+      })
+    }
+    return actors
   }
 
   static init_VTKSynchronizedPlot(): void {
