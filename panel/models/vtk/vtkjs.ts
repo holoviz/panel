@@ -56,18 +56,6 @@ export interface VTKJSPlot extends VTKJSPlot.Attrs {}
 
 export class VTKJSPlot extends AbstractVTKPlot {
   properties: VTKJSPlot.Props
-  renderer_el: any
-  outline: any
-  outline_actor: any
-
-  constructor(attrs?: Partial<VTKJSPlot.Attrs>) {
-    super(attrs)
-    this.outline = vtkns.OutlineFilter.newInstance() //use to display bouding box of a selected actor
-    const mapper = vtkns.Mapper.newInstance()
-    mapper.setInputConnection(this.outline.getOutputPort())
-    this.outline_actor = vtkns.Actor.newInstance()
-    this.outline_actor.setMapper(mapper)
-  }
 
   static init_VTKJSPlot(): void {
     this.prototype.default_view = VTKJSPlotView

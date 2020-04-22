@@ -69,32 +69,32 @@ def make_image_data():
     return image_data
 
 
-def test_get_vtk_pane_type_from_url():
+def test_get_vtkjs_pane_type_from_url():
     url = r'https://raw.githubusercontent.com/Kitware/vtk-js/master/Data/StanfordDragon.vtkjs'
     assert PaneBase.get_pane_type(url) is VTKJS
 
 
-def test_get_vtk_pane_type_from_file():
+def test_get_vtkjs_pane_type_from_file():
     file = r'StanfordDragon.vtkjs'
     assert PaneBase.get_pane_type(file) is VTKJS
 
 
 @vtk_available
-def test_get_vtk_pane_type_from_render_window():
+def test_get_vtksync_pane_type_from_render_window():
     assert PaneBase.get_pane_type(vtk.vtkRenderWindow()) is VTKSynchronized
 
 
-def test_vtk_volume_pane_type_from_np_array():
+def test_get_vtkvol_pane_type_from_np_array():
     assert PaneBase.get_pane_type(np.array([]).reshape((0,0,0))) is VTKVolume
 
 
 @vtk_available
-def test_vtk_volume_pane_type_from_vtk_image():
+def test_get_vtkvol_pane_type_from_vtk_image():
     image_data = make_image_data()
     assert PaneBase.get_pane_type(image_data) is VTKVolume
 
 
-def test_vtk_pane_from_url(document, comm, tmp_path):
+def test_vtkjs_pane_from_url(document, comm, tmp_path):
     url = r'https://raw.githubusercontent.com/Kitware/vtk-js/master/Data/StanfordDragon.vtkjs'
 
     pane = Pane(url)
@@ -119,7 +119,7 @@ def test_vtk_pane_from_url(document, comm, tmp_path):
 
 
 @vtk_available
-def test_vtk_pane_from_renwin(document, comm):
+def test_vtksync_pane_from_renwin(document, comm):
     renWin = make_render_window()
     pane = VTKSynchronized(renWin)
 
@@ -133,9 +133,55 @@ def test_vtk_pane_from_renwin(document, comm):
     assert pane._contexts == {}
     assert pane._models == {}
 
+@vtk_available
+def test_vtksync_helpers(document, comm):
+    renWin1 = make_render_window()
+    renWin2 = make_render_window()
+    pane1 = VTKSynchronized(renWin1)
+    pane2 = VTKSynchronized(renWin2)
+
+    # Create pane
+    model1 = pane1.get_root(document, comm=comm)
+    model2 = pane2.get_root(document, comm=comm)
+
+    # Actors getter
+    assert len(pane1.actors) == 1
+    assert len(pane2.actors) == 1
+    assert pane1.actors[0] is not pane2.actors[0]
+
+    # Actors add
+    pane1.add_actors(pane2.actors)
+    assert len(pane1.actors) == 2
+    assert pane1.actors[1] is pane2.actors[0]
+
+    # Actors remove
+    save_actor = pane1.actors[0]
+    pane1.remove_actors([pane1.actors[0]])
+    assert pane1.actors[0] is pane2.actors[0]
+
+    # Actors remove all
+    pane1.add_actors([save_actor])
+    assert len(pane1.actors) == 2
+    pane1.remove_all_actors()
+    assert len(pane1.actors) == 0
+
+    # Connect camera
+    save_vtk_camera2 = pane2.vtk_camera
+    assert pane1.vtk_camera is not save_vtk_camera2
+    pane1.link_camera(pane2)
+    assert pane1.vtk_camera is save_vtk_camera2
+
+    # Unconnect camera
+    pane2.unlink_camera()
+    assert pane2.vtk_camera is not save_vtk_camera2
+
+    # Cleanup
+    pane1._cleanup(model1)
+    pane2._cleanup(model2)
+
 
 @pyvista_available
-def test_vtk_pane_more_complex(document, comm):
+def test_vtksync_pane_more_complex(document, comm):
     renWin = pyvista_render_window()
     pane = VTKSynchronized(renWin)
 
@@ -165,7 +211,7 @@ def test_vtk_pane_more_complex(document, comm):
 
 
 @vtk_available
-def test_vtk_pane_volume_from_np_array(document, comm):
+def test_vtkvol_pane_from_np_array(document, comm):
     pane = VTKVolume(np.ones((10,10,10)))
     from operator import eq
     # Create pane
@@ -186,7 +232,7 @@ def test_vtk_pane_volume_from_np_array(document, comm):
 
 
 @vtk_available
-def test_vtk_pane_volume_from_image_data(document, comm):
+def test_vtkvol_pane_from_image_data(document, comm):
     image_data = make_image_data()
     pane = VTKVolume(image_data)
     from operator import eq
