@@ -115,12 +115,14 @@ export class VTKSynchronizedPlotView extends AbstractVTKView {
       this._vtk_renwin.getRenderWindow().addRenderer(renderer)
     }
     this._vtk_renwin.getRenderWindow().synchronize(this.model.scene)
-    this._vtk_renwin
-      .getRenderer()
-      .getActiveCamera()
-      .onModified(() => {
-        this._vtk_render()
-      })
+    this._camera_callbacks.push(
+      this._vtk_renwin
+        .getRenderer()
+        .getActiveCamera()
+        .onModified(() => {
+          this._vtk_render()
+        })
+    )
     //hack to handle the orientation widget when synchronized
     if (this._orientationWidget){
       this._orientationWidget.setEnabled(false)

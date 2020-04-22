@@ -13,6 +13,7 @@ import {VTKAxes} from "./vtkaxes"
 export abstract class AbstractVTKView extends PanelHTMLBoxView {
   model: AbstractVTKPlot
   protected _axes: any
+  protected _camera_callbacks: any[]
   protected _orientationWidget: any
   protected _setting_camera: boolean
   protected _vtk_container: HTMLDivElement
@@ -22,6 +23,7 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
   initialize(): void {
     super.initialize()
     this._setting_camera = false
+    this._camera_callbacks = []
   }
 
   _add_colorbars(): void {
@@ -123,7 +125,13 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
     this._vtk_render()
   }
 
+  invalidate_render(): void {
+    this._unsubscribe_camera_cb()
+    super.invalidate_render()
+  }
+
   remove(): void {
+    this._unsubscribe_camera_cb()
     window.removeEventListener("resize", this._vtk_renwin.resize)
     this._vtk_renwin.delete()
     super.remove()
@@ -348,6 +356,12 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
       this._vtk_render()
       this._setting_camera = false
     }
+  }
+
+  _unsubscribe_camera_cb(): void {
+    this._camera_callbacks
+      .splice(0, this._camera_callbacks.length)
+      .map((cb) => cb.unsubscribe())
   }
 
   _vtk_render(): void {
