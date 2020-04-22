@@ -139,6 +139,7 @@ export class VTKSynchronizedPlotView extends AbstractVTKView {
     this.connect(this.model.properties.scene.change, () => {
       this._plot()
       this._vtk_render()
+      this._connect_vtkcamera_to_model()
     })
     this.connect(this.model.properties.one_time_reset.change, () => {
       this._vtk_renwin.getRenderWindow().clearOneTimeUpdaters()

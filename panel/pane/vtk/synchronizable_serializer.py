@@ -267,6 +267,8 @@ def initializeSerializers():
     registerInstanceSerializer('vtkPolyData', polydataSerializer)
     registerInstanceSerializer('vtkImageData', imagedataSerializer)
     registerInstanceSerializer(
+        'vtkStructuredGrid', mergeToPolydataSerializer)
+    registerInstanceSerializer(
         'vtkUnstructuredGrid', mergeToPolydataSerializer)
     registerInstanceSerializer(
         'vtkMultiBlockDataSet', mergeToPolydataSerializer)
@@ -605,8 +607,14 @@ def genericMapperSerializer(parent, mapper, mapperId, context, depth):
 
     if dataObject:
         dataObjectId = '%s-dataset' % mapperId
-        dataObjectInstance = serializeInstance(
-            mapper, dataObject, dataObjectId, context, depth + 1)
+        if parent.IsA('vtkActor'):
+            # vtk-js actors can render only surfacic datasets
+            # => we ensure to convert the dataset in polydata
+            dataObjectInstance = mergeToPolydataSerializer(
+                mapper, dataObject, dataObjectId, context, depth + 1)
+        else:
+            dataObjectInstance = serializeInstance(
+                mapper, dataObject, dataObjectId, context, depth + 1)
         if dataObjectInstance:
             dependencies.append(dataObjectInstance)
             calls.append(['setInputData', [wrapId(dataObjectId)]])
@@ -851,7 +859,9 @@ def mergeToPolydataSerializer(parent, dataObject, dataObjectId, context, depth):
         gf.SetInputData(dataObject)
         gf.Update()
         dataset = gf.GetOutput()
-    elif dataObject.IsA('vtkUnstructuredGrid'):
+    elif (dataObject.IsA('vtkUnstructuredGrid') or
+          dataObject.IsA('vtkStructuredGrid') or
+          dataObject.IsA('vtkImageData')):
         gf = vtkGeometryFilter()
         gf.SetInputData(dataObject)
         gf.Update()

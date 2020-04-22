@@ -84,18 +84,19 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
 
   connect_signals(): void {
     super.connect_signals()
-    this.connect(this.model.properties.orientation_widget.change, () => {
+    this.on_change(this.model.properties.orientation_widget, () => {
       this._orientation_widget_visibility(this.model.orientation_widget)
     })
-    this.connect(this.model.properties.camera.change, () =>
-      this._set_camera_state()
+    this.on_change(this.model.properties.camera, vtkns.macro.debounce(
+        () => this._set_camera_state(), 50
+      )
     )
-    this.connect(this.model.properties.axes.change, () => {
+    this.on_change(this.model.properties.axes, () => {
       this._delete_axes()
       if (this.model.axes) this._set_axes()
       this._vtk_render()
     })
-    this.connect(this.model.properties.color_mappers.change, () => this._add_colorbars())
+    this.on_change(this.model.properties.color_mappers, () => this._add_colorbars())
   }
 
   render(): void {
@@ -110,9 +111,12 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
     })
     this._remove_default_key_binding()
     this._create_orientation_widget()
+    if (this.model.camera)
+        this._set_camera_state()
     this._connect_vtkcamera_to_model()
     this._vtk_renwin.getRenderer().getActiveCamera().modified()
-    this._set_camera_state()
+    if (!this.model.camera)
+        this._set_camera_state()
     this.model.renderer_el = this._vtk_renwin
   }
 
@@ -132,6 +136,30 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
     window.removeEventListener("resize", this._vtk_renwin.resize)
     this._vtk_renwin.delete()
     super.remove()
+  }
+
+  
+  get _vtk_camera_state(): any {
+    const vtk_camera = this._vtk_renwin.getRenderer().getActiveCamera()
+    let state: any
+    if (vtk_camera){
+      state = clone(vtk_camera.get())
+      delete state.classHierarchy
+      delete state.vtkObject
+      delete state.vtkCamera
+      delete state.viewPlaneNormal
+      delete state.flattenedDepIds
+      delete state.managedInstanceId
+      delete state.directionOfProjection
+      delete state.projectionMatrix
+      delete state.viewMatrix
+      delete state.physicalTranslation
+      delete state.physicalScale
+      delete state.physicalViewUp
+      delete state.physicalViewNorth
+      delete state.mtime
+    }
+    return state
   }
 
   get _axes_canvas(): HTMLCanvasElement {
@@ -198,7 +226,7 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
         .getRenderer()
         .getActiveCamera()
         .onModified(
-          vtkns.macro.debounce(() => this._get_camera_state(), 50)
+          () => this._get_camera_state()
         )
     )
   }
@@ -278,24 +306,9 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
   _get_camera_state(): void {
     if (!this._setting_camera) {
       this._setting_camera = true
-      const state = clone(
-        this._vtk_renwin.getRenderer().getActiveCamera().get()
-      )
-      delete state.classHierarchy
-      delete state.vtkObject
-      delete state.vtkCamera
-      delete state.viewPlaneNormal
-      delete state.flattenedDepIds
-      delete state.managedInstanceId
-      delete state.directionOfProjection
-      delete state.projectionMatrix
-      delete state.viewMatrix
-      delete state.physicalTranslation
-      delete state.physicalScale
-      delete state.physicalViewUp
-      delete state.physicalViewNorth
-      delete state.mtime
-      this.model.camera = state
+      const vtk_camera_state = this._vtk_camera_state
+      if (JSON.stringify(this.model.camera) != JSON.stringify(vtk_camera_state))
+        this.model.camera = vtk_camera_state
       this._setting_camera = false
     }
   }
@@ -335,17 +348,17 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
   _set_camera_state(): void {
     if (!this._setting_camera) {
       this._setting_camera = true
-      try {
-        if (this.model.camera)
+        if (
+          this.model.camera &&
+          JSON.stringify(this.model.camera) != JSON.stringify(this._vtk_camera_state)
+        )
           this._vtk_renwin
             .getRenderer()
             .getActiveCamera()
             .set(this.model.camera)
-      } finally {
-        this._setting_camera = false
-      }
       this._vtk_renwin.getRenderer().resetCameraClippingRange()
       this._vtk_render()
+      this._setting_camera = false
     }
   }
   
