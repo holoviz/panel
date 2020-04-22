@@ -27,6 +27,7 @@ else:
     base64encode = lambda x: x.encode('base64')
 
 from bokeh.util.serialization import make_globally_unique_id
+from bokeh.models import LinearColorMapper
 from abc import abstractmethod
 
 class AbstractVTK(PaneBase):
@@ -57,6 +58,8 @@ class AbstractVTK(PaneBase):
     """)
 
     camera = param.Dict(doc="""State of the rendered VTK camera.""")
+
+    color_mappers = param.List(doc="""Color mapper of the actor in the scene""")
 
     orientation_widget = param.Boolean(default=False, doc="""
         Activate/Deactivate the orientation widget display.""")
@@ -105,6 +108,32 @@ class SyncHelpers:
             self.get_renderer().AddActor(actor)
         if reset_camera: self.reset_camera()
         self.synchronize()
+    
+    @staticmethod
+    def _rgb2hex(r, g, b):
+        int_type = (int, np.integer)
+        if isinstance(r, int_type) and isinstance(g, int_type) is isinstance(b, int_type):
+            return "#{0:02x}{1:02x}{2:02x}".format(r, g, b)
+        else:
+            return "#{0:02x}{1:02x}{2:02x}".format(
+                int(255 * r), int(255 * g), int(255 * b)
+            )
+    
+    def get_color_mappers(self):
+        cmaps = []
+        for view_prop in self.get_renderer().GetViewProps():
+            if view_prop.IsA('vtkScalarBarActor'):
+                rgba_arr = np.frombuffer(
+                    memoryview(view_prop.GetLookupTable().GetTable()), 
+                    dtype=np.uint8
+                ).reshape((-1, 4))
+                palette = [self._rgb2hex(*rgb) for rgb in rgba_arr[:,:3]]
+                low, high = view_prop.GetLookupTable().GetTableRange()
+                name = view_prop.GetTitle()
+                cmaps.append(
+                    LinearColorMapper(low=low, high=high, name=name, palette=palette)
+                )
+        return cmaps
 
     def remove_actors(self, actors, reset_camera=True):
         """
@@ -204,16 +233,17 @@ class VTKSynchronized(AbstractVTK, SyncHelpers):
             VTKSynchronizedPlot = getattr(sys.modules['panel.models.vtk'], 'VTKSynchronizedPlot')
         import panel.pane.vtk.synchronizable_serializer as rws
         model = VTKSynchronizedPlot()
-        context = rws.SynchronizationContext(id_root=make_globally_unique_id(), debug=True)
+        context = rws.SynchronizationContext(id_root=make_globally_unique_id(), debug=False)
         scene, arrays = self._serialize_ren_win(self.object, context)
+        color_mappers = self.get_color_mappers()
         props = self._process_param_change(self._init_properties())
-        props.update(scene=scene, arrays=arrays)
+        props.update(scene=scene, arrays=arrays, color_mappers=color_mappers)
         model.update(**props)
 
         if root is None:
             root = model
         self._link_props(model, 
-                         ['camera', 'enable_keybindings', 'one_time_reset',
+                         ['camera', 'color_mappers', 'enable_keybindings', 'one_time_reset',
                           'orientation_widget'],
                          doc, root, comm)
         self._contexts[model.id] =  context
@@ -242,6 +272,9 @@ class VTKSynchronized(AbstractVTK, SyncHelpers):
                                 if k not in model.arrays_processed}
         model.update(arrays=arrays_not_processed)
         model.update(scene=scene)
+
+    def _update_color_mappers(self):
+        self.color_mappers = self.get_color_mappers()
 
     def get_renderer(self):
         """
