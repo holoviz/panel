@@ -28,11 +28,9 @@ else:
 
 from bokeh.util.serialization import make_globally_unique_id
 
-class VTKSynchronized(PaneBase):
-    """
-    VTK panes allow rendering VTK objects.
-    """
 
+class AbstractVTK(PaneBase):
+    
     axes = param.Dict(doc="""
         Parameters of the axes to construct in the 3d view.
 
@@ -58,15 +56,41 @@ class VTKSynchronized(PaneBase):
 
     camera = param.Dict(doc="""State of the rendered VTK camera.""")
 
+    orientation_widget = param.Boolean(default=False, doc="""
+        Activate/Deactivate the orientation widget display.""")
+
+    def _process_param_change(self, msg):
+        msg = super(AbstractVTK, self)._process_param_change(msg)
+        if 'axes' in msg and msg['axes'] is not None:
+            VTKAxes = getattr(sys.modules['panel.models.vtk'], 'VTKAxes')
+            axes = msg['axes']
+            msg['axes'] = VTKAxes(**axes)
+        return msg
+
+    def _update_model(self, events, msg, root, model, doc, comm):
+        if 'axes' in msg and msg['axes'] is not None:
+            VTKAxes = getattr(sys.modules['panel.models.vtk'], 'VTKAxes')
+            axes = msg['axes']
+            if isinstance(axes, dict):
+                msg['axes'] = VTKAxes(**axes)
+            elif isinstance(axes, VTKAxes):
+                msg['axes'] = VTKAxes(**axes.properties_with_values())
+        super(AbstractVTK, self)._update_model(events, msg, root, model, doc, comm)
+
+
+class VTKSynchronized(AbstractVTK):
+    """
+    VTK panes allow rendering VTK objects.
+    Synchronize a vtkRenderWindow constructs on python side
+    with a custom bokeh model on javascript side
+    """
+
     enable_keybindings = param.Boolean(default=False, doc="""
         Activate/Deactivate keys binding.
 
         Warning: These keys bind may not work as expected in a notebook
         context if they interact with already binded keys
     """)
-
-    orientation_widget = param.Boolean(default=False, doc="""
-        Activate/Deactivate the orientation widget display.""")
 
     _one_time_reset = param.Boolean(default=False)
 
@@ -124,8 +148,8 @@ class VTKSynchronized(PaneBase):
         if root is None:
             root = model
         self._link_props(model, 
-                         ['enable_keybindings', 'orientation_widget',
-                          'one_time_reset'],
+                         ['camera', 'enable_keybindings', 'one_time_reset',
+                          'orientation_widget'],
                          doc, root, comm)
         self._contexts[model.id] =  context
         self._models[root.ref['id']] = (model, parent)
@@ -135,24 +159,6 @@ class VTKSynchronized(PaneBase):
         ref = root.ref['id']
         self._contexts.pop(ref, None)
         super(VTKSynchronized, self)._cleanup(root)
-        
-    def _process_param_change(self, msg):
-        msg = super(VTKSynchronized, self)._process_param_change(msg)
-        if 'axes' in msg and msg['axes'] is not None:
-            VTKAxes = getattr(sys.modules['panel.models.vtk'], 'VTKAxes')
-            axes = msg['axes']
-            msg['axes'] = VTKAxes(**axes)
-        return msg
-
-    def _update_model(self, events, msg, root, model, doc, comm):
-        if 'axes' in msg and msg['axes'] is not None:
-            VTKAxes = getattr(sys.modules['panel.models.vtk'], 'VTKAxes')
-            axes = msg['axes']
-            if isinstance(axes, dict):
-                msg['axes'] = VTKAxes(**axes)
-            elif isinstance(axes, VTKAxes):
-                msg['axes'] = VTKAxes(**axes.properties_with_values())
-        super(VTKSynchronized, self)._update_model(events, msg, root, model, doc, comm)
     
     def set_background(self, r, g, b):
         self.get_renderer().SetBackground(r, g, b)
@@ -229,14 +235,12 @@ class VTKSynchronized(PaneBase):
         model.update(scene=scene)
 
 
-class VTKVolume(PaneBase):
+class VTKVolume(AbstractVTK):
 
     ambient = param.Number(default=0.2, step=1e-2, doc="""
         Value to control the ambient lighting. It is the light an
         object gives even in the absence of strong light. It is
         constant in all directions.""")
-
-    camera = param.Dict(doc="State of the rendered VTK camera.")
 
     colormap = param.Selector(default='erdc_rainbow_bright', objects=PRESET_CMAPS, doc="""
         Name of the colormap used to transform pixel value in color.""")
@@ -271,9 +275,6 @@ class VTKVolume(PaneBase):
 
     max_data_size = param.Number(default=(256 ** 3) * 2 / 1e6, doc="""
         Maximum data size transfert allowed without subsampling""")
-
-    orientation_widget = param.Boolean(default=False, doc="""
-        Activate/Deactivate the orientation widget display.""")
 
     origin = param.Tuple(default=None, length=3, allow_None=True)
 
@@ -487,39 +488,10 @@ class VTKVolume(PaneBase):
         return sub_array
 
 
-class VTK(PaneBase):
+class VTKJS(AbstractVTK):
     """
-    VTK panes allow rendering VTK objects.
+    VTK panes allow rendering vtk scene stored in a vtkjs.
     """
-
-    axes = param.Dict(doc="""
-        Parameters of the axes to construct in the 3d view.
-
-        Must contain at least ``xticker``, ``yticker`` and ``zticker``.
-
-        A ``ticker`` is a dictionary which contains:
-          - ``ticks`` (array of numbers) - required.
-              Positions in the scene coordinates of the corresponding
-              axis' ticks.
-          - ``labels`` (array of strings) - optional.
-              Label displayed respectively to the `ticks` positions.
-              If `labels` are not defined they are infered from the
-              `ticks` array.
-          - ``digits``: number of decimal digits when `ticks` are converted to `labels`.
-          - ``fontsize``: size in pts of the ticks labels.
-          - ``show_grid``: boolean.
-                If true (default) the axes grid is visible.
-          - ``grid_opacity``: float between 0-1.
-                Defines the grid opacity.
-          - ``axes_opacity``: float between 0-1.
-                Defines the axes lines opacity.
-    """)
-
-    camera = param.Dict(doc="State of the rendered VTK camera.")
-
-    color_mappers = param.List(doc="""
-        List of color_mapper which will be display with colorbars in the
-        panel.""")
 
     enable_keybindings = param.Boolean(default=False, doc="""
         Activate/Deactivate keys binding.
@@ -528,37 +500,19 @@ class VTK(PaneBase):
                  notebook context if they interact with already
                  bound keys.""")
 
-    orientation_widget = param.Boolean(default=False, doc="""
-        Activate/Deactivate the orientation widget display.""")
-
-    serialize_on_instantiation = param.Boolean(default=True, doc="""
-        Define if the object serialization occurs at panel instantiation
-        or when the panel is displayed.""")
+    _serializers = {}
 
     _updates = True
 
-    _rerender_params = ['object', 'serialize_on_instantiation']
-
-    _serializers = {}
 
     def __init__(self, object=None, **params):
-        super(VTK, self).__init__(object, **params)
-        self._legend = None
+        super(VTKJS, self).__init__(object, **params)
         self._vtkjs = None
-        if self.serialize_on_instantiation:
-            self._vtkjs = self._get_vtkjs()
-            self.color_mappers = self._construct_color_mappers()
 
     @classmethod
     def applies(cls, obj):
-        if (isinstance(obj, string_types) and obj.endswith('.vtkjs') or
-            any([isinstance(obj, k) for k in cls._serializers.keys()])):
+        if isinstance(obj, string_types) and obj.endswith('.vtkjs'):
             return True
-        elif 'vtk' not in sys.modules:
-            return False
-        else:
-            import vtk
-            return isinstance(obj, vtk.vtkRenderWindow)
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         """
@@ -571,83 +525,19 @@ class VTK(PaneBase):
                                    'the notebook kernel and ensure you load '
                                    'it as part of the extension using:'
                                    '\n\npn.extension(\'vtk\')\n')
-            from ...models.vtk import VTKPlot
+            from ...models.vtk import VTKJSPlot
         else:
-            VTKPlot = getattr(sys.modules['panel.models.vtk'], 'VTKPlot')
+            VTKJSPlot = getattr(sys.modules['panel.models.vtk'], 'VTKJSPlot')
 
         vtkjs = self._get_vtkjs()
         data = base64encode(vtkjs) if vtkjs is not None else vtkjs
         props = self._process_param_change(self._init_properties())
-        model = VTKPlot(data=data, **props)
+        model = VTKJSPlot(data=data, **props)
         if root is None:
             root = model
         self._link_props(model, ['camera', 'enable_keybindings', 'orientation_widget'], doc, root, comm)
         self._models[root.ref['id']] = (model, parent)
         return model
-
-    def _update_object(self, ref, doc, root, parent, comm):
-        self._legend = None
-        super(VTK, self)._update_object(ref, doc, root, parent, comm)
-
-    def _construct_color_mappers(self):
-        if self._legend is None:
-            try:
-                from .vtkjs_serializer import construct_palettes
-                self._legend = construct_palettes(self.object)
-            except Exception:
-                self._legend = {}
-        if self._legend:
-            from bokeh.models import LinearColorMapper
-            return [LinearColorMapper(name=k, low=v['low'], high=v['high'], palette=v['palette'])
-                        for k, v in self._legend.items()]
-        else:
-            return []
-
-    def construct_colorbars(self, orientation='horizontal'):
-        color_mappers = self._construct_color_mappers()
-        if len(color_mappers)>0:
-            from bokeh.models import Plot, ColorBar, FixedTicker
-            if orientation == 'horizontal':
-                cbs = []
-                for color_mapper in color_mappers:
-                    ticks = np.linspace(color_mapper.low, color_mapper.high, 5)
-                    cbs.append(ColorBar(
-                        color_mapper=color_mapper,
-                        title=color_mapper.name,
-                        ticker=FixedTicker(ticks=ticks),
-                        label_standoff=5, background_fill_alpha=0, orientation='horizontal', location=(0, 0)
-                    ))
-                plot = Plot(toolbar_location=None, frame_height=0, sizing_mode='stretch_width',
-                            outline_line_width=0)
-                [plot.add_layout(cb, 'below') for cb in cbs]
-                return plot
-            else:
-                raise ValueError('orientation can only be horizontal')
-        else:
-            return None
-
-    def _init_properties(self):
-        return {k: v for k, v in self.param.get_param_values()
-                if v is not None and k not in ['default_layout', 'object', 'infer_legend',
-                'serialize_on_instantiation']}
-
-    def _process_param_change(self, msg):
-        msg = super(VTK, self)._process_param_change(msg)
-        if 'axes' in msg and msg['axes'] is not None:
-            VTKAxes = getattr(sys.modules['panel.models.vtk'], 'VTKAxes')
-            axes = msg['axes']
-            msg['axes'] = VTKAxes(**axes)
-        return msg
-
-    @classmethod
-    def register_serializer(cls, class_type, serializer):
-        """
-        Register a seriliazer for a given type of class.
-        A serializer is a function which take an instance of `class_type`
-        (like a vtk.vtkRenderWindow) as input and return the binary zip
-        stream of the corresponding `vtkjs` file
-        """
-        cls._serializers.update({class_type:serializer})
 
     def _get_vtkjs(self):
         if self._vtkjs is None and self.object is not None:
@@ -660,36 +550,13 @@ class VTK(PaneBase):
                     vtkjs = data_url.read()
             elif hasattr(self.object, 'read'):
                 vtkjs = self.object.read()
-            else:
-                available_serializer = [v for k, v in VTK._serializers.items() if isinstance(self.object, k)]
-                if len(available_serializer) == 0:
-                    import vtk
-                    from .vtkjs_serializer import render_window_serializer
-
-                    VTK.register_serializer(vtk.vtkRenderWindow, render_window_serializer)
-                    serializer = render_window_serializer
-                else:
-                    serializer = available_serializer[0]
-                vtkjs = serializer(self.object)
             self._vtkjs = vtkjs
-
         return self._vtkjs
-
-    def _update_model(self, events, msg, root, model, doc, comm):
-        if 'axes' in msg and msg['axes'] is not None:
-            VTKAxes = getattr(sys.modules['panel.models.vtk'], 'VTKAxes')
-            axes = msg['axes']
-            if isinstance(axes, dict):
-                msg['axes'] = VTKAxes(**axes)
-            elif isinstance(axes, VTKAxes):
-                msg['axes'] = VTKAxes(**axes.properties_with_values())
-        super(VTK, self)._update_model(events, msg, root, model, doc, comm)
 
     def _update(self, model):
         self._vtkjs = None
         vtkjs = self._get_vtkjs()
         model.data = base64encode(vtkjs) if vtkjs is not None else vtkjs
-        self.color_mappers = self._construct_color_mappers()
 
     def export_vtkjs(self, filename='vtk_panel.vtkjs'):
         with open(filename, 'wb') as f:
