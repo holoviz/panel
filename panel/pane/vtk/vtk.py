@@ -208,6 +208,7 @@ class VTK(AbstractVTK, SyncHelpers):
     def __init__(self, object=None, **params):
         if object is None:
             object = self.make_ren_win()
+        self._debug_serializer = params.pop('debug_serializer', False)
         super(VTK, self).__init__(object, **params)
         self._contexts = {}
         import panel.pane.vtk.synchronizable_serializer as rws
@@ -229,7 +230,7 @@ class VTK(AbstractVTK, SyncHelpers):
             VTKSynchronizedPlot = getattr(sys.modules['panel.models.vtk'], 'VTKSynchronizedPlot')
         import panel.pane.vtk.synchronizable_serializer as rws
         model = VTKSynchronizedPlot()
-        context = rws.SynchronizationContext(id_root=make_globally_unique_id(), debug=False)
+        context = rws.SynchronizationContext(id_root=make_globally_unique_id(), debug=self._debug_serializer)
         scene, arrays = self._serialize_ren_win(self.object, context)
         color_mappers = self.get_color_mappers()
         props = self._process_param_change(self._init_properties())
@@ -251,23 +252,28 @@ class VTK(AbstractVTK, SyncHelpers):
         self._contexts.pop(ref, None)
         super(VTK, self)._cleanup(root)
 
-    def _serialize_ren_win(self, ren_win, context):
+    def _serialize_ren_win(self, ren_win, context, exclude_arrays=None):
         import panel.pane.vtk.synchronizable_serializer as rws
+        if exclude_arrays is None:
+            exclude_arrays = []
         ren_win.OffScreenRenderingOn() # to not pop a vtk windows
         ren_win.Modified()
         ren_win.Render()
         scene = rws.serializeInstance(None, ren_win, context.getReferenceId(ren_win), context, 0)
         arrays = {name: context.getCachedDataArray(name, compression=True)
-                    for name in context.dataArrayCache.keys()}
+                    for name in context.dataArrayCache.keys() 
+                    if name not in exclude_arrays}
         return scene, arrays
 
     def _update(self, model):
         context = self._contexts[model.id]
-        scene, arrays = self._serialize_ren_win(self.object, context)
+        scene, arrays = self._serialize_ren_win(
+            self.object, 
+            context,
+            exclude_arrays=model.arrays_processed
+        )
         context.checkForArraysToRelease()
-        arrays_not_processed = {k:val for k,val in arrays.items() 
-                                if k not in model.arrays_processed}
-        model.update(arrays=arrays_not_processed)
+        model.update(arrays=arrays)
         model.update(scene=scene)
 
     def _update_color_mappers(self):

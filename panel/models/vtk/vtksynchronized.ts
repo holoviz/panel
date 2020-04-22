@@ -15,11 +15,14 @@ export class VTKSynchronizedPlotView extends AbstractVTKView {
   protected _arrays: any
   protected _decoded_arrays: any
   protected _pending_arrays: any
+  protected _promises: Promise<any>[]
   public getArray: CallableFunction
   public registerArray: CallableFunction
 
   initialize(): void {
     super.initialize()
+    this._promises = []
+    this._renderable = false
     this._arrays = {}
     this._decoded_arrays = {}
     this._pending_arrays = {}
@@ -67,8 +70,6 @@ export class VTKSynchronizedPlotView extends AbstractVTKView {
       this._remove_default_key_binding()
       this._bind_key_events()
       this._set_camera_state()
-      this._create_orientation_widget()
-      this._set_axes()
       this._add_colorbars()
       this.model.renderer_el = this._vtk_renwin
     } else {
@@ -81,7 +82,6 @@ export class VTKSynchronizedPlotView extends AbstractVTKView {
 
   _decode_arrays(): void {
     const jszip = new (window as any).JSZip()
-    const promises: any = []
     const arrays: any = this.model.arrays
     const registerArray: any = this.registerArray
     const arrays_processed = this.model.arrays_processed
@@ -98,15 +98,13 @@ export class VTKSynchronizedPlotView extends AbstractVTKView {
     Object.keys(arrays).forEach((key: string) => {
       if (!this._decoded_arrays[key]) {
         this._decoded_arrays[key] = true
-        promises.push(load(key))
-        }
-    })
-    Promise.all(promises).then(() => {
-      this.model.arrays_processed = [...this.model.arrays_processed]
+        this._promises.push(load(key))
+      }
     })
   }
 
   _plot(): void {
+    this._unsubscribe_camera_cb()
     this._synchronizer_context.setFetchArrayFunction(this.getArray)
     const renderer = this._synchronizer_context.getInstance(
       this.model.scene.dependencies[0].id
@@ -114,20 +112,32 @@ export class VTKSynchronizedPlotView extends AbstractVTKView {
     if (renderer && !this._vtk_renwin.getRenderer()) {
       this._vtk_renwin.getRenderWindow().addRenderer(renderer)
     }
+    this._renderable = false // Need to wait all promises are resolved before rendering
     this._vtk_renwin.getRenderWindow().synchronize(this.model.scene)
-    this._camera_callbacks.push(
-      this._vtk_renwin
-        .getRenderer()
-        .getActiveCamera()
-        .onModified(() => {
-          this._vtk_render()
-        })
-    )
-    //hack to handle the orientation widget when synchronized
-    if (this._orientationWidget){
-      this._orientationWidget.setEnabled(false)
-      this._orientationWidget.setEnabled(this.model.orientation_widget)
-    }
+    
+    Promise.all(this._promises).then(() => {
+      this._promises = []
+      this.model.arrays_processed = [...this.model.arrays_processed]
+      this._renderable = true
+      this._camera_callbacks.push(
+        this._vtk_renwin
+          .getRenderer()
+          .getActiveCamera()
+          .onModified(() => this._vtk_render())
+      )
+      this._vtk_renwin.resize()
+      if (!this._orientationWidget)
+        this._create_orientation_widget()
+      // hack to handle the orientation widget when synchronized
+      else {
+        this._orientationWidget.setEnabled(false)
+        this._orientationWidget.setEnabled(this.model.orientation_widget)
+      }
+      if (!this._axes)
+        this._set_axes()
+      this._vtk_render()
+    })
+
   }
 
   connect_signals(): void {
@@ -136,9 +146,7 @@ export class VTKSynchronizedPlotView extends AbstractVTKView {
       this._decode_arrays()
     )
     this.connect(this.model.properties.scene.change, () => {
-      this._unsubscribe_camera_cb()
       this._plot()
-      this._vtk_render()
       this._connect_interactions_to_model()
     })
     this.connect(this.model.properties.one_time_reset.change, () => {

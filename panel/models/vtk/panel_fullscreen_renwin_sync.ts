@@ -4,7 +4,7 @@ import {vtk, vtkns} from "./vtk_utils"
 //------------------------//
 export let FullScreenRenderWindowSynchronized: any
 
-if(vtk){
+if (vtk) {
   const DEFAULT_VALUES = {
     containerStyle: null,
     controlPanelStyle: null,

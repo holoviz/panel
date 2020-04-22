@@ -10,7 +10,7 @@ from bokeh.core.enums import enumeration
 from bokeh.models import HTMLBox, Model, ColorMapper
 
 jszip_cdn = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.js"
-vtk_cdn = "https://unpkg.com/vtk.js"
+vtk_cdn = "http://localhost:8000/vtk.js"
 
 
 class VTKAxes(Model):

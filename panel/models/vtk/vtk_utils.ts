@@ -46,7 +46,40 @@ if (vtk) {
   vtkns['Volume'] = vtk.Rendering.Core.vtkVolume
   vtkns['VolumeController'] = vtk.Interaction.UI.vtkVolumeController
   vtkns['VolumeMapper'] = vtk.Rendering.Core.vtkVolumeMapper
+  vtkns['VolumeProperty'] = vtk.Rendering.Core.vtkVolumeProperty
   vtkns['WidgetManager'] = vtk.Widgets.Core.vtkWidgetManager
+
+  const {vtkObjectManager} = vtkns.SynchronizableRenderWindow
+
+  vtkObjectManager.setTypeMapping(
+    'vtkVolume',
+    vtkns.Volume.newInstance,
+  )
+  vtkObjectManager.setTypeMapping(
+    'vtkVolumeMapper',
+    vtkns.VolumeMapper.newInstance,
+    vtkObjectManager.oneTimeGenericUpdater,
+  )
+  vtkObjectManager.setTypeMapping(
+    'vtkVolumeProperty',
+    vtkns.VolumeProperty.newInstance,
+  )
+  vtkObjectManager.setTypeMapping(
+    'vtkPiecewiseFunction',
+    vtkns.PiecewiseFunction.newInstance,
+    piecewiseFunctionUpdater,
+  )
+}
+
+function piecewiseFunctionUpdater(instance: any, state: any, context: any) {
+  context.start();
+  const nodes = (state.properties.nodes as number[][]).map(
+    ([x, y, midpoint, sharpness]) => ({ x, y, midpoint, sharpness })
+  );
+  instance.set(Object.assign({}, state.properties, { nodes }), true);
+  instance.sortAndUpdateRange();
+  instance.modified();
+  context.end();
 }
 
 export function exclude_by_keys(obj:any, excludes: string[] = []): any {

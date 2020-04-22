@@ -15,6 +15,7 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
   protected _axes: any
   protected _camera_callbacks: any[]
   protected _orientationWidget: any
+  protected _renderable: boolean
   protected _setting_camera: boolean
   protected _vtk_container: HTMLDivElement
   protected _vtk_renwin: any
@@ -22,8 +23,9 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
   
   initialize(): void {
     super.initialize()
-    this._setting_camera = false
     this._camera_callbacks = []
+    this._renderable = false
+    this._setting_camera = false
   }
 
   _add_colorbars(): void {
@@ -121,7 +123,8 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
 
   after_layout(): void {
     super.after_layout()
-    this._vtk_renwin.resize()
+    if (this._renderable)
+      this._vtk_renwin.resize() // resize call render method
     this._vtk_render()
   }
 
@@ -365,9 +368,11 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
   }
 
   _vtk_render(): void {
-    if (this._orientationWidget)
-      this._orientationWidget.updateMarkerOrientation()
-    this._vtk_renwin.getRenderWindow().render()
+    if (this._renderable){
+      if (this._orientationWidget)
+        this._orientationWidget.updateMarkerOrientation()
+      this._vtk_renwin.getRenderWindow().render()
+    }
   }
 }
 
