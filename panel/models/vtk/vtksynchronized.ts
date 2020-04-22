@@ -63,7 +63,7 @@ export class VTKSynchronizedPlotView extends AbstractVTKView {
       this._vtk_renwin.getRenderWindow().clearOneTimeUpdaters()
       this._decode_arrays()
       this._plot()
-      this._connect_vtkcamera_to_model()
+      this._connect_interactions_to_model()
       this._remove_default_key_binding()
       this._bind_key_events()
       this._set_camera_state()
@@ -108,7 +108,6 @@ export class VTKSynchronizedPlotView extends AbstractVTKView {
 
   _plot(): void {
     this._synchronizer_context.setFetchArrayFunction(this.getArray)
-    this._unsubscribe_camera_cb()
     const renderer = this._synchronizer_context.getInstance(
       this.model.scene.dependencies[0].id
     )
@@ -116,14 +115,12 @@ export class VTKSynchronizedPlotView extends AbstractVTKView {
       this._vtk_renwin.getRenderWindow().addRenderer(renderer)
     }
     this._vtk_renwin.getRenderWindow().synchronize(this.model.scene)
-    this._camera_callbacks.push(
-      this._vtk_renwin
-        .getRenderer()
-        .getActiveCamera()
-        .onModified(() => {
-          this._vtk_render()
-        })
-    )
+    this._vtk_renwin
+      .getRenderer()
+      .getActiveCamera()
+      .onModified(() => {
+        this._vtk_render()
+      })
     //hack to handle the orientation widget when synchronized
     if (this._orientationWidget){
       this._orientationWidget.setEnabled(false)
@@ -139,7 +136,7 @@ export class VTKSynchronizedPlotView extends AbstractVTKView {
     this.connect(this.model.properties.scene.change, () => {
       this._plot()
       this._vtk_render()
-      this._connect_vtkcamera_to_model()
+      this._connect_interactions_to_model()
     })
     this.connect(this.model.properties.one_time_reset.change, () => {
       this._vtk_renwin.getRenderWindow().clearOneTimeUpdaters()

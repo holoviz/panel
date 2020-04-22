@@ -13,7 +13,6 @@ import {VTKAxes} from "./vtkaxes"
 export abstract class AbstractVTKView extends PanelHTMLBoxView {
   model: AbstractVTKPlot
   protected _axes: any
-  protected _camera_callbacks: any[]
   protected _orientationWidget: any
   protected _setting_camera: boolean
   protected _vtk_container: HTMLDivElement
@@ -23,7 +22,6 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
   initialize(): void {
     super.initialize()
     this._setting_camera = false
-    this._camera_callbacks = []
   }
 
   _add_colorbars(): void {
@@ -87,9 +85,8 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
     this.on_change(this.model.properties.orientation_widget, () => {
       this._orientation_widget_visibility(this.model.orientation_widget)
     })
-    this.on_change(this.model.properties.camera, vtkns.macro.debounce(
-        () => this._set_camera_state(), 50
-      )
+    this.on_change(this.model.properties.camera,
+      () => this._set_camera_state()
     )
     this.on_change(this.model.properties.axes, () => {
       this._delete_axes()
@@ -113,7 +110,7 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
     this._create_orientation_widget()
     if (this.model.camera)
         this._set_camera_state()
-    this._connect_vtkcamera_to_model()
+    this._connect_interactions_to_model()
     this._vtk_renwin.getRenderer().getActiveCamera().modified()
     if (!this.model.camera)
         this._set_camera_state()
@@ -126,13 +123,7 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
     this._vtk_render()
   }
 
-  invalidate_render(): void {
-    this._unsubscribe_camera_cb()
-    super.invalidate_render()
-  }
-
   remove(): void {
-    this._unsubscribe_camera_cb()
     window.removeEventListener("resize", this._vtk_renwin.resize)
     this._vtk_renwin.delete()
     super.remove()
@@ -220,15 +211,14 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
     })
   }
 
-  _connect_vtkcamera_to_model(): void {
-    this._camera_callbacks.push(
-      this._vtk_renwin
-        .getRenderer()
-        .getActiveCamera()
-        .onModified(
-          () => this._get_camera_state()
-        )
-    )
+  _connect_interactions_to_model(): void {
+    // update camera model state only at the end of the interaction
+    // with the scene (avoid bouncing events and large amount of events)
+
+    const update_model_camera = () => this._get_camera_state()
+    const interactor = this._vtk_renwin.getInteractor()
+    const event_list = ["LeftButtonRelease", "RightButtonRelease", "EndAnimation"]
+    event_list.forEach((event) => interactor['on' + event](update_model_camera))
   }
 
   _create_orientation_widget(): void {
@@ -306,9 +296,7 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
   _get_camera_state(): void {
     if (!this._setting_camera) {
       this._setting_camera = true
-      const vtk_camera_state = this._vtk_camera_state
-      if (JSON.stringify(this.model.camera) != JSON.stringify(vtk_camera_state))
-        this.model.camera = vtk_camera_state
+      this.model.camera = this._vtk_camera_state
       this._setting_camera = false
     }
   }
@@ -360,12 +348,6 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
       this._vtk_render()
       this._setting_camera = false
     }
-  }
-  
-  _unsubscribe_camera_cb(): void {
-    this._camera_callbacks
-      .splice(0, this._camera_callbacks.length)
-      .map((cb) => cb.unsubscribe())
   }
 
   _vtk_render(): void {
