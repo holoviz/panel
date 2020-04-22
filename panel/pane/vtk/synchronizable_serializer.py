@@ -6,7 +6,7 @@ import sys
 import time
 import zipfile
 
-from vtk.vtkCommonCore import vtkTypeUInt32Array
+from vtk.vtkCommonCore import vtkTypeUInt32Array, vtkTypeInt32Array
 from vtk.vtkFiltersGeometry import vtkCompositeDataGeometryFilter
 from vtk.vtkFiltersGeometry import vtkGeometryFilter
 from vtk.vtkRenderingCore import vtkColorTransferFunction
@@ -36,19 +36,24 @@ else:
 # -----------------------------------------------------------------------------
 
 arrayTypesMapping = [
-    ' ',  # VTK_VOID            0
-    ' ',  # VTK_BIT             1
-    'b',  # VTK_CHAR            2
-    'B',  # VTK_UNSIGNED_CHAR   3
-    'h',  # VTK_SHORT           4
-    'H',  # VTK_UNSIGNED_SHORT  5
-    'i',  # VTK_INT             6
-    'I',  # VTK_UNSIGNED_INT    7
-    'l',  # VTK_LONG            8
-    'L',  # VTK_UNSIGNED_LONG   9
-    'f',  # VTK_FLOAT          10
-    'd',  # VTK_DOUBLE         11
-    'L',  # VTK_ID_TYPE        12
+    ' ',  # VTK_VOID                0
+    ' ',  # VTK_BIT                 1
+    'b',  # VTK_CHAR                2
+    'B',  # VTK_UNSIGNED_CHAR       3
+    'h',  # VTK_SHORT               4
+    'H',  # VTK_UNSIGNED_SHORT      5
+    'i',  # VTK_INT                 6
+    'I',  # VTK_UNSIGNED_INT        7
+    'l',  # VTK_LONG                8
+    'L',  # VTK_UNSIGNED_LONG       9
+    'f',  # VTK_FLOAT               10
+    'd',  # VTK_DOUBLE              11
+    'L',  # VTK_ID_TYPE             12
+    ' ',  # VTK_STRING              13
+    ' ',  # VTK_OPAQUE              14
+    ' ',  # UNDEFINED
+    'l',  # VTK_LONG_LONG           16
+    'L',  # VTK_UNSIGNED_LONG_LONG  17
 ]
 
 javascriptMapping = {
@@ -141,10 +146,14 @@ class SynchronizationContext():
             if context.debugAll:
                 print(' ***** ERROR: you asked for an old cache key! ***** ')
 
-        if array.GetDataType() == 12:
-            # IdType need to be converted to Uint32
+        if array.GetDataType() in (12, 16, 17):
             arraySize = array.GetNumberOfTuples() * array.GetNumberOfComponents()
-            newArray = vtkTypeUInt32Array()
+            if array.GetDataType() in (12, 17):
+                # IdType and unsigned long long need to be converted to Uint32
+                newArray = vtkTypeUInt32Array()
+            else:
+                #  long long need to be converted to Int32
+                newArray = vtkTypeInt32Array()
             newArray.SetNumberOfTuples(arraySize)
             for i in range(arraySize):
                 newArray.SetValue(i, -1 if array.GetValue(i)
