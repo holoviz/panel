@@ -98,7 +98,7 @@ class SyncHelpers:
         self.get_renderer().SetBackground(r, g, b)
         self.synchronize()
     
-    def add_actors(self, actors, reset_camera=True):
+    def add_actors(self, actors):
         """
         Add a list of `actors` to the VTK renderer
         if `reset_camera` is True, the current camera and it's clipping
@@ -106,8 +106,6 @@ class SyncHelpers:
         """
         for actor in actors:
             self.get_renderer().AddActor(actor)
-        if reset_camera: self.reset_camera()
-        self.synchronize()
     
     @staticmethod
     def _rgb2hex(r, g, b):
@@ -135,7 +133,7 @@ class SyncHelpers:
                 )
         return cmaps
 
-    def remove_actors(self, actors, reset_camera=True):
+    def remove_actors(self, actors):
         """
         Add a list of `actors` to the VTK renderer
         if `reset_camera` is True, the current camera and it's clipping
@@ -143,11 +141,9 @@ class SyncHelpers:
         """
         for actor in actors:
             self.get_renderer().RemoveActor(actor)
-        if reset_camera: self.reset_camera()
-        self.synchronize()
     
-    def remove_all_actors(self, reset_camera=True):
-        self.remove_actors(self.actors, reset_camera=reset_camera)
+    def remove_all_actors(self):
+        self.remove_actors(self.actors)
 
     @property
     def vtk_camera(self):
@@ -294,7 +290,6 @@ class VTKSynchronized(AbstractVTK, SyncHelpers):
             raise TypeError('Only instance of VTKSynchronized class can be linked')
         else:
             self.vtk_camera = other.vtk_camera
-            self.synchronize()
 
     def reset_camera(self):
         self.get_renderer().ResetCamera()
@@ -305,9 +300,9 @@ class VTKSynchronized(AbstractVTK, SyncHelpers):
         Create a fresh vtkCamera instance and set it to the renderer
         """
         import vtk
-        old_camera = self.get_renderer().GetActiveCamera()
+        old_camera = self.vtk_camera
         new_camera = vtk.vtkCamera()
-        self.get_renderer().SetActiveCamera(new_camera)
+        self.vtk_camera = new_camera
         if self.camera is not None:
             for k, v in self.camera.items():
                 if type(v) is list:
@@ -316,7 +311,6 @@ class VTKSynchronized(AbstractVTK, SyncHelpers):
                     getattr(new_camera, 'Set' + k[0].capitalize() + k[1:])(v)
         else:
             new_camera.DeepCopy(old_camera)
-        self.synchronize()
 
 
 class VTKVolume(AbstractVTK):
