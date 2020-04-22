@@ -1,1 +1,1 @@
-from .vtk import VTKJS, VTKVolume, VTKSynchronized # noqa
+from .vtk import VTKJS, VTKVolume, VTK # noqa

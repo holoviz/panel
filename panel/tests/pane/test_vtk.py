@@ -22,7 +22,7 @@ except Exception:
 
 from six import string_types
 from panel.models.vtk import VTKJSPlot, VTKVolumePlot, VTKAxes, VTKSynchronizedPlot
-from panel.pane import Pane, PaneBase, VTKJS, VTKVolume, VTKSynchronized
+from panel.pane import Pane, PaneBase, VTKJS, VTKVolume, VTK
 
 vtk_available = pytest.mark.skipif(vtk is None, reason="requires vtk")
 pyvista_available = pytest.mark.skipif(pv is None, reason="requires pyvista")
@@ -80,8 +80,8 @@ def test_get_vtkjs_pane_type_from_file():
 
 
 @vtk_available
-def test_get_vtksync_pane_type_from_render_window():
-    assert PaneBase.get_pane_type(vtk.vtkRenderWindow()) is VTKSynchronized
+def test_get_vtk_pane_type_from_render_window():
+    assert PaneBase.get_pane_type(vtk.vtkRenderWindow()) is VTK
 
 
 def test_get_vtkvol_pane_type_from_np_array():
@@ -119,9 +119,9 @@ def test_vtkjs_pane_from_url(document, comm, tmp_path):
 
 
 @vtk_available
-def test_vtksync_pane_from_renwin(document, comm):
+def test_vtk_pane_from_renwin(document, comm):
     renWin = make_render_window()
-    pane = VTKSynchronized(renWin)
+    pane = VTK(renWin)
 
     # Create pane
     model = pane.get_root(document, comm=comm)
@@ -134,11 +134,11 @@ def test_vtksync_pane_from_renwin(document, comm):
     assert pane._models == {}
 
 @vtk_available
-def test_vtksync_helpers(document, comm):
+def test_vtk_helpers(document, comm):
     renWin1 = make_render_window()
     renWin2 = make_render_window()
-    pane1 = VTKSynchronized(renWin1)
-    pane2 = VTKSynchronized(renWin2)
+    pane1 = VTK(renWin1)
+    pane2 = VTK(renWin2)
 
     # Create pane
     model1 = pane1.get_root(document, comm=comm)
@@ -181,9 +181,9 @@ def test_vtksync_helpers(document, comm):
 
 
 @pyvista_available
-def test_vtksync_pane_more_complex(document, comm):
+def test_vtk_pane_more_complex(document, comm):
     renWin = pyvista_render_window()
-    pane = VTKSynchronized(renWin)
+    pane = VTK(renWin)
 
     # Create pane
     model = pane.get_root(document, comm=comm)

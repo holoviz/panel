@@ -175,7 +175,7 @@ class SyncHelpers:
         Reset the camera
         """
 
-class VTKSynchronized(AbstractVTK, SyncHelpers):
+class VTK(AbstractVTK, SyncHelpers):
     """
     VTK panes allow rendering VTK objects.
     Synchronize a vtkRenderWindow constructs on python side
@@ -208,7 +208,7 @@ class VTKSynchronized(AbstractVTK, SyncHelpers):
     def __init__(self, object=None, **params):
         if object is None:
             object = self.make_ren_win()
-        super(VTKSynchronized, self).__init__(object, **params)
+        super(VTK, self).__init__(object, **params)
         self._contexts = {}
         import panel.pane.vtk.synchronizable_serializer as rws
         rws.initializeSerializers()
@@ -249,7 +249,7 @@ class VTKSynchronized(AbstractVTK, SyncHelpers):
     def _cleanup(self, root):
         ref = root.ref['id']
         self._contexts.pop(ref, None)
-        super(VTKSynchronized, self)._cleanup(root)
+        super(VTK, self)._cleanup(root)
 
     def _serialize_ren_win(self, ren_win, context):
         import panel.pane.vtk.synchronizable_serializer as rws
@@ -286,7 +286,7 @@ class VTKSynchronized(AbstractVTK, SyncHelpers):
         """
         Associate the camera of an other VTKSynchronized pane to this renderer
         """
-        if not isinstance(other, VTKSynchronized):
+        if not isinstance(other, VTK):
             raise TypeError('Only instance of VTKSynchronized class can be linked')
         else:
             self.vtk_camera = other.vtk_camera
