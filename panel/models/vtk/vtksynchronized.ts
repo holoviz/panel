@@ -4,8 +4,8 @@ import {AbstractVTKView, AbstractVTKPlot} from "./vtk_layout"
 
 import {div} from "@bokehjs/core/dom"
 import {set_size} from "../layout"
-import {FullScreenRenderWindowSynchronized} from "./panel_fullscreen_renwin_sync"
 import {vtkns} from "./vtk_utils"
+import {FullScreenRenderWindowSynchronized} from "./panel_fullscreen_renwin_sync"
 
 const CONTEXT_NAME = "panel"
 
