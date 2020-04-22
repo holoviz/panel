@@ -1,27 +1,28 @@
-import {mat4, vec3} from 'gl-matrix'
-import {Model} from "@bokehjs/model"
 import * as p from "@bokehjs/core/properties"
+
+import {Model} from "@bokehjs/model"
+import {mat4, vec3} from "gl-matrix"
+
 import {cartesian_product, vtk, vtkns} from "./vtk_utils"
 
-
 type VTKTicker = {
-    ticks: number[],
-    labels: string[]
+  ticks: number[]
+  labels: string[]
 }
 
 export namespace VTKAxes {
   export type Attrs = p.AttrsOf<Props>
 
   export type Props = Model.Props & {
-      origin: p.Property<number[]>
-      xticker: p.Property<VTKTicker>,
-      yticker: p.Property<VTKTicker>,
-      zticker: p.Property<VTKTicker>,
-      digits: p.Property<number>,
-      show_grid: p.Property<boolean>,
-      grid_opacity: p.Property<number>,
-      axes_opacity: p.Property<number>,
-      fontsize: p.Property<number>,
+    origin: p.Property<number[]>
+    xticker: p.Property<VTKTicker>
+    yticker: p.Property<VTKTicker>
+    zticker: p.Property<VTKTicker>
+    digits: p.Property<number>
+    show_grid: p.Property<boolean>
+    grid_opacity: p.Property<number>
+    axes_opacity: p.Property<number>
+    fontsize: p.Property<number>
   }
 }
 
@@ -38,58 +39,64 @@ export class VTKAxes extends Model {
 
   static init_VTKAxes(): void {
     this.define<VTKAxes.Props>({
-      origin:          [ p.Array         ],
-      xticker:         [ p.Instance      ],
-      yticker:         [ p.Instance      ],
-      zticker:         [ p.Instance      ],
-      digits:          [ p.Number, 1     ],
-      show_grid:       [ p.Boolean, true ],
-      grid_opacity:    [ p.Number, 0.1   ],
-      axes_opacity:    [ p.Number, 1     ],
-      fontsize:        [ p.Number, 12    ],
+      origin: [p.Array],
+      xticker: [p.Instance],
+      yticker: [p.Instance],
+      zticker: [p.Instance],
+      digits: [p.Number, 1],
+      show_grid: [p.Boolean, true],
+      grid_opacity: [p.Number, 0.1],
+      axes_opacity: [p.Number, 1],
+      fontsize: [p.Number, 12],
     })
   }
 
-  get xticks(): number[]{
+  get xticks(): number[] {
     return this.xticker.ticks
   }
 
-  get yticks(): number[]{
+  get yticks(): number[] {
     return this.yticker.ticks
   }
 
-  get zticks(): number[]{
+  get zticks(): number[] {
     return this.zticker.ticks
   }
 
-  get xlabels(): string[]{
-    return this.xticker.labels ? this.xticker.labels: this.xticks.map((elem) => elem.toFixed(this.digits))
+  get xlabels(): string[] {
+    return this.xticker.labels
+      ? this.xticker.labels
+      : this.xticks.map((elem) => elem.toFixed(this.digits))
   }
 
-  get ylabels(): string[]{
-    return this.yticker.labels ? this.yticker.labels: this.yticks.map((elem) => elem.toFixed(this.digits))
+  get ylabels(): string[] {
+    return this.yticker.labels
+      ? this.yticker.labels
+      : this.yticks.map((elem) => elem.toFixed(this.digits))
   }
 
-  get zlabels(): string[]{
-    return this.zticker.labels ? this.zticker.labels: this.zticks.map((elem) => elem.toFixed(this.digits))
+  get zlabels(): string[] {
+    return this.zticker.labels
+      ? this.zticker.labels
+      : this.zticks.map((elem) => elem.toFixed(this.digits))
   }
 
-  _make_grid_lines(n: number, m: number, offset: number): number[][]{
+  _make_grid_lines(n: number, m: number, offset: number): number[][] {
     const out = []
-    for (let i = 0; i < n-1;  i++) {
-      for (let j = 0; j < m-1;  j++) {
-        const v0 = i*m + j + offset
-        const v1 = i*m + j + 1 + offset
+    for (let i = 0; i < n - 1; i++) {
+      for (let j = 0; j < m - 1; j++) {
+        const v0 = i * m + j + offset
+        const v1 = i * m + j + 1 + offset
         const v2 = (i + 1) * m + j + 1 + offset
         const v3 = (i + 1) * m + j + offset
-        const line = [5, v0, v1, v2, v3, v0];
+        const line = [5, v0, v1, v2, v3, v0]
         out.push(line)
       }
     }
     return out
   }
 
-  _create_grid_axes(): any{
+  _create_grid_axes(): any {
     const pts = []
     pts.push(cartesian_product(this.xticks, this.yticks, [this.origin[2]])) //xy
     pts.push(cartesian_product([this.origin[0]], this.yticks, this.zticks)) //yz
@@ -97,25 +104,31 @@ export class VTKAxes extends Model {
 
     const polys = []
     let offset = 0
-    polys.push(this._make_grid_lines(this.xticks.length, this.yticks.length, offset)) //xy
+    polys.push(
+      this._make_grid_lines(this.xticks.length, this.yticks.length, offset)
+    ) //xy
     offset += this.xticks.length * this.yticks.length
-    polys.push(this._make_grid_lines(this.yticks.length, this.zticks.length, offset)) //yz
+    polys.push(
+      this._make_grid_lines(this.yticks.length, this.zticks.length, offset)
+    ) //yz
     offset += this.yticks.length * this.zticks.length
-    polys.push(this._make_grid_lines(this.xticks.length, this.zticks.length, offset)) //xz
+    polys.push(
+      this._make_grid_lines(this.xticks.length, this.zticks.length, offset)
+    ) //xz
     const gridPolyData = vtk({
-      vtkClass: 'vtkPolyData',
+      vtkClass: "vtkPolyData",
       points: {
-        vtkClass: 'vtkPoints',
-        dataType: 'Float32Array',
+        vtkClass: "vtkPoints",
+        dataType: "Float32Array",
         numberOfComponents: 3,
         values: (pts as any).flat(2),
       },
       lines: {
-        vtkClass: 'vtkCellArray',
-        dataType: 'Uint32Array',
-        values: (polys as any).flat(2)
-      }
-    });
+        vtkClass: "vtkCellArray",
+        dataType: "Uint32Array",
+        values: (polys as any).flat(2),
+      },
+    })
 
     const gridMapper = vtkns.Mapper.newInstance()
     const gridActor = vtkns.Actor.newInstance()
@@ -124,85 +137,96 @@ export class VTKAxes extends Model {
     gridActor.getProperty().setOpacity(this.grid_opacity)
     gridActor.setVisibility(this.show_grid)
 
-    return gridActor;
+    return gridActor
   }
 
-
-  create_axes(canvas: HTMLCanvasElement): any{
+  create_axes(canvas: HTMLCanvasElement): any {
     const points = ([this.xticks, this.yticks, this.zticks].map((arr, axis) => {
       let coords = null
       switch (axis) {
         case 0:
-          coords = cartesian_product(arr, [this.origin[1]], [this.origin[2]]);
-          break;
+          coords = cartesian_product(arr, [this.origin[1]], [this.origin[2]])
+          break
         case 1:
-          coords = cartesian_product([this.origin[0]], arr, [this.origin[2]]);
-          break;
+          coords = cartesian_product([this.origin[0]], arr, [this.origin[2]])
+          break
         case 2:
-          coords = cartesian_product([this.origin[0]], [this.origin[1]], arr);
-          break;
+          coords = cartesian_product([this.origin[0]], [this.origin[1]], arr)
+          break
       }
       return coords
-    }) as any).flat(2);
+    }) as any).flat(2)
     const axesPolyData = vtk({
-      vtkClass: 'vtkPolyData',
+      vtkClass: "vtkPolyData",
       points: {
-        vtkClass: 'vtkPoints',
-        dataType: 'Float32Array',
+        vtkClass: "vtkPoints",
+        dataType: "Float32Array",
         numberOfComponents: 3,
         values: points,
       },
       lines: {
-        vtkClass: 'vtkCellArray',
-        dataType: 'Uint32Array',
-        values: [2,                  0,                    this.xticks.length-1,
-                  2, this.xticks.length,                    this.xticks.length+this.yticks.length-1,
-                  2, this.xticks.length+this.yticks.length, this.xticks.length+this.yticks.length+this.zticks.length-1]
-      }
-    });
-    const psMapper = vtkns.PixelSpaceCallbackMapper.newInstance();
-    psMapper.setInputData(axesPolyData);
-    psMapper.setUseZValues(true);
+        vtkClass: "vtkCellArray",
+        dataType: "Uint32Array",
+        values: [
+          2,
+          0,
+          this.xticks.length - 1,
+          2,
+          this.xticks.length,
+          this.xticks.length + this.yticks.length - 1,
+          2,
+          this.xticks.length + this.yticks.length,
+          this.xticks.length + this.yticks.length + this.zticks.length - 1,
+        ],
+      },
+    })
+    const psMapper = vtkns.PixelSpaceCallbackMapper.newInstance()
+    psMapper.setInputData(axesPolyData)
+    psMapper.setUseZValues(true)
     psMapper.setCallback((coordsList: number[][], camera: any, aspect: any) => {
-      const textCtx = canvas.getContext("2d");
+      const textCtx = canvas.getContext("2d")
       if (textCtx) {
         const dims = {
           height: canvas.clientHeight * window.devicePixelRatio,
-          width: canvas.clientWidth * window.devicePixelRatio
-        };
-        const dataPoints = psMapper.getInputData().getPoints();
-        const viewMatrix = camera.getViewMatrix();
-        mat4.transpose(viewMatrix, viewMatrix);
-        const projMatrix = camera.getProjectionMatrix(aspect, -1, 1);
-        mat4.transpose(projMatrix, projMatrix);
-        textCtx.clearRect(0, 0, dims.width, dims.height);
+          width: canvas.clientWidth * window.devicePixelRatio,
+        }
+        const dataPoints = psMapper.getInputData().getPoints()
+        const viewMatrix = camera.getViewMatrix()
+        mat4.transpose(viewMatrix, viewMatrix)
+        const projMatrix = camera.getProjectionMatrix(aspect, -1, 1)
+        mat4.transpose(projMatrix, projMatrix)
+        textCtx.clearRect(0, 0, dims.width, dims.height)
         coordsList.forEach((xy, idx) => {
-          const pdPoint = dataPoints.getPoint(idx);
-          const vc = vec3.fromValues(pdPoint[0], pdPoint[1], pdPoint[2]);
-          vec3.transformMat4(vc, vc, viewMatrix);
-          vc[2] += 0.05; // sensibility
-          vec3.transformMat4(vc, vc, projMatrix);
+          const pdPoint = dataPoints.getPoint(idx)
+          const vc = vec3.fromValues(pdPoint[0], pdPoint[1], pdPoint[2])
+          vec3.transformMat4(vc, vc, viewMatrix)
+          vc[2] += 0.05 // sensibility
+          vec3.transformMat4(vc, vc, projMatrix)
           if (vc[2] - 0.001 < xy[3]) {
-            textCtx.font = '30px serif';
-            textCtx.textAlign = 'center';
-            textCtx.textBaseline = 'alphabetic';
-            textCtx.fillText(`.`, xy[0], dims.height - xy[1]+2);
-            textCtx.font = `${this.fontsize*window.devicePixelRatio}px serif`;
-            textCtx.textAlign = 'right';
-            textCtx.textBaseline = 'top';
+            textCtx.font = "30px serif"
+            textCtx.textAlign = "center"
+            textCtx.textBaseline = "alphabetic"
+            textCtx.fillText(`.`, xy[0], dims.height - xy[1] + 2)
+            textCtx.font = `${this.fontsize * window.devicePixelRatio}px serif`
+            textCtx.textAlign = "right"
+            textCtx.textBaseline = "top"
             let label
-            if(idx<this.xticks.length)
-              label = this.xlabels[idx]
-            else if(idx>=this.xticks.length && idx<this.xticks.length+this.yticks.length)
-              label = this.ylabels[idx-this.xticks.length]
+            if (idx < this.xticks.length) label = this.xlabels[idx]
+            else if (
+              idx >= this.xticks.length &&
+              idx < this.xticks.length + this.yticks.length
+            )
+              label = this.ylabels[idx - this.xticks.length]
             else
-              label = this.zlabels[idx-(this.xticks.length+this.yticks.length)]
-            textCtx.fillText(`${label}`, xy[0], dims.height - xy[1]);
+              label = this.zlabels[
+                idx - (this.xticks.length + this.yticks.length)
+              ]
+            textCtx.fillText(`${label}`, xy[0], dims.height - xy[1])
           }
-        });
+        })
       }
-    });
-    const psActor = vtkns.Actor.newInstance()
+    })
+    const psActor = vtkns.Actor.newInstance() //PixelSpace
     psActor.setMapper(psMapper)
 
     const axesMapper = vtkns.Mapper.newInstance()

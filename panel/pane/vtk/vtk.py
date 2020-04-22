@@ -2,8 +2,6 @@
 """
 Defines a VTKPane which renders a vtk plot using VTKPlot bokeh model.
 """
-from __future__ import absolute_import, division, unicode_literals
-
 import sys
 import base64
 
@@ -27,6 +25,208 @@ if sys.version_info >= (2, 7):
     base64encode = lambda x: base64.b64encode(x).decode('utf-8')
 else:
     base64encode = lambda x: x.encode('base64')
+
+from bokeh.util.serialization import make_globally_unique_id
+
+class VTKSynchronized(PaneBase):
+    """
+    VTK panes allow rendering VTK objects.
+    """
+
+    axes = param.Dict(doc="""
+        Parameters of the axes to construct in the 3d view.
+
+        Must contain at least ``xticker``, ``yticker`` and ``zticker``.
+
+        A ``ticker`` is a dictionary which contains:
+          - ``ticks`` (array of numbers) - required.
+              Positions in the scene coordinates of the corresponding
+              axis' ticks.
+          - ``labels`` (array of strings) - optional.
+              Label displayed respectively to the `ticks` positions.
+              If `labels` are not defined they are infered from the
+              `ticks` array.
+          - ``digits``: number of decimal digits when `ticks` are converted to `labels`.
+          - ``fontsize``: size in pts of the ticks labels.
+          - ``show_grid``: boolean.
+                If true (default) the axes grid is visible.
+          - ``grid_opacity``: float between 0-1.
+                Defines the grid opacity.
+          - ``axes_opacity``: float between 0-1.
+                Defines the axes lines opacity.
+    """)
+
+    camera = param.Dict(doc="""State of the rendered VTK camera.""")
+
+    enable_keybindings = param.Boolean(default=False, doc="""
+        Activate/Deactivate keys binding.
+
+        Warning: These keys bind may not work as expected in a notebook
+        context if they interact with already binded keys
+    """)
+
+    orientation_widget = param.Boolean(default=False, doc="""
+        Activate/Deactivate the orientation widget display.""")
+
+    _one_time_reset = param.Boolean(default=False)
+
+    _updates = True
+
+    _rerender_params = ['object']
+
+    _rename = {'_one_time_reset': 'one_time_reset'}
+
+    @classmethod
+    def applies(cls, obj):
+        if 'vtk' not in sys.modules:
+            return False
+        else:
+            import vtk
+            return isinstance(obj, vtk.vtkRenderWindow)
+    
+    def __init__(self, object=None, **params):
+        if object is None:
+            object = self._make_ren_win()
+        super(VTKSynchronized, self).__init__(object, **params)
+        self._contexts = {}
+        import panel.pane.vtk.synchronizable_serializer as rws
+        rws.initializeSerializers()
+
+    def _make_ren_win(self):
+        import vtk
+        ren = vtk.vtkRenderer()
+        ren_win = vtk.vtkRenderWindow()
+        ren_win.AddRenderer(ren)
+        return ren_win
+
+    def _get_model(self, doc, root=None, parent=None, comm=None):
+        """
+        Should return the bokeh model to be rendered.
+        """
+        if 'panel.models.vtk' not in sys.modules:
+            if isinstance(comm, JupyterComm):
+                self.param.warning('VTKSynchronizedPlot was not imported on instantiation '
+                                   'and may not render in a notebook. Restart '
+                                   'the notebook kernel and ensure you load '
+                                   'it as part of the extension using:'
+                                   '\n\npn.extension(\'vtk\')\n')
+            from ...models.vtk import VTKSynchronizedPlot
+        else:
+            VTKSynchronizedPlot = getattr(sys.modules['panel.models.vtk'], 'VTKSynchronizedPlot')
+        import panel.pane.vtk.synchronizable_serializer as rws
+        model = VTKSynchronizedPlot()
+        context = rws.SynchronizationContext(id_root=make_globally_unique_id(), debug=True)
+        scene, arrays = self._serialize_ren_win(self.object, context)
+        props = self._process_param_change(self._init_properties())
+        props.update(scene=scene, arrays=arrays)
+        model.update(**props)
+
+        if root is None:
+            root = model
+        self._link_props(model, 
+                         ['enable_keybindings', 'orientation_widget',
+                          'one_time_reset'],
+                         doc, root, comm)
+        self._contexts[model.id] =  context
+        self._models[root.ref['id']] = (model, parent)
+        return model
+
+    def _cleanup(self, root):
+        ref = root.ref['id']
+        self._contexts.pop(ref, None)
+        super(VTKSynchronized, self)._cleanup(root)
+        
+    def _process_param_change(self, msg):
+        msg = super(VTKSynchronized, self)._process_param_change(msg)
+        if 'axes' in msg and msg['axes'] is not None:
+            VTKAxes = getattr(sys.modules['panel.models.vtk'], 'VTKAxes')
+            axes = msg['axes']
+            msg['axes'] = VTKAxes(**axes)
+        return msg
+
+    def _update_model(self, events, msg, root, model, doc, comm):
+        if 'axes' in msg and msg['axes'] is not None:
+            VTKAxes = getattr(sys.modules['panel.models.vtk'], 'VTKAxes')
+            axes = msg['axes']
+            if isinstance(axes, dict):
+                msg['axes'] = VTKAxes(**axes)
+            elif isinstance(axes, VTKAxes):
+                msg['axes'] = VTKAxes(**axes.properties_with_values())
+        super(VTKSynchronized, self)._update_model(events, msg, root, model, doc, comm)
+    
+    def set_background(self, r, g, b):
+        self.get_renderer().SetBackground(r, g, b)
+
+    def link_camera(self, other):
+        """
+        Associate the camera of an other VTKSynchronized pane to this renderer
+        """
+        if not isinstance(other, VTKSynchronized):
+            raise TypeError('Only instance of VTKSynchronized class can be linked')
+        else:
+            other_camera = other.get_renderer().GetActiveCamera()
+            self.get_renderer().SetActiveCamera(other_camera)
+            self.param.trigger('object')
+    
+    def add_actors(self, actors, reset_camera=True):
+        """
+        Add a list of `actors` to the VTK renderer
+        if `reset_camera` is True, the current camera and it's clipping
+        will be reset.
+        """
+        for actor in actors:
+            self.get_renderer().AddActor(actor)
+        if reset_camera: self.reset_camera()
+        self.param.trigger('object')
+
+    def get_renderer(self):
+        """
+        Get the vtk Renderer associated to this pane
+        """
+        return list(self.object.GetRenderers())[0]
+
+    def reset_camera(self):
+        """
+        Reset the camera
+        """
+        self.get_renderer().ResetCamera()
+        self._one_time_reset = not self._one_time_reset #trigger event
+
+    def unlink_camera(self):
+        """
+        Create a fresh vtkCamera instance and set it to the renderer
+        """
+        import vtk
+        old_camera = self.get_renderer().GetActiveCamera()
+        new_camera = vtk.vtkCamera()
+        self.get_renderer().SetActiveCamera(new_camera)
+        if self.camera is not None:
+            for k, v in self.camera.items():
+                if type(v) is list:
+                    getattr(new_camera, 'Set' + k[0].capitalize() + k[1:])(*v)
+                else:
+                    getattr(new_camera, 'Set' + k[0].capitalize() + k[1:])(v)
+        else:
+            new_camera.DeepCopy(old_camera)
+        self.param.trigger('object')
+
+    def _serialize_ren_win(self, ren_win, context):
+        import panel.pane.vtk.synchronizable_serializer as rws
+        ren_win.OffScreenRenderingOn() # to not pop a vtk windows
+        ren_win.Modified()
+        ren_win.Render()
+        scene = rws.serializeInstance(None, ren_win, context.getReferenceId(ren_win), context, 0)
+        arrays = {name: context.getCachedDataArray(name, compression=True)
+                    for name in context.dataArrayCache.keys()}
+        return scene, arrays
+
+    def _update(self, model):
+        context = self._contexts[model.id]
+        scene, arrays = self._serialize_ren_win(self.object, context)
+        arrays_not_processed = {k:val for k,val in arrays.items() 
+                                if k not in model.arrays_processed}
+        model.update(arrays=arrays_not_processed)
+        model.update(scene=scene)
 
 
 class VTKVolume(PaneBase):
@@ -474,6 +674,16 @@ class VTK(PaneBase):
             self._vtkjs = vtkjs
 
         return self._vtkjs
+
+    def _update_model(self, events, msg, root, model, doc, comm):
+        if 'axes' in msg and msg['axes'] is not None:
+            VTKAxes = getattr(sys.modules['panel.models.vtk'], 'VTKAxes')
+            axes = msg['axes']
+            if isinstance(axes, dict):
+                msg['axes'] = VTKAxes(**axes)
+            elif isinstance(axes, VTKAxes):
+                msg['axes'] = VTKAxes(**axes.properties_with_values())
+        super(VTK, self)._update_model(events, msg, root, model, doc, comm)
 
     def _update(self, model):
         self._vtkjs = None
