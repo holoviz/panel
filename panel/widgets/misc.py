@@ -230,6 +230,11 @@ class FileDownload(Widget):
     def _update_default(self):
         self._default_label = False
 
+    @param.depends('file', watch=True)
+    def _update_filename(self):
+        if isinstance(self.file, str):
+            self.filename = os.path.basename(self.file)
+
     @param.depends('auto', 'file', 'filename', watch=True)
     def _update_label(self):
         label = 'Download' if self._synced or self.auto else 'Transfer'
