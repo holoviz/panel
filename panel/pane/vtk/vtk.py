@@ -260,6 +260,7 @@ class VTK(AbstractVTK, SyncHelpers):
         ren_win.Modified()
         ren_win.Render()
         scene = rws.serializeInstance(None, ren_win, context.getReferenceId(ren_win), context, 0)
+        scene['properties']['numberOfLayers'] = 2 #On js side the second layer is for the orientation widget
         arrays = {name: context.getCachedDataArray(name, compression=True)
                     for name in context.dataArrayCache.keys() 
                     if name not in exclude_arrays}
