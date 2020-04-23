@@ -24,7 +24,7 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
   initialize(): void {
     super.initialize()
     this._camera_callbacks = []
-    this._renderable = false
+    this._renderable = true
     this._setting_camera = false
   }
 
