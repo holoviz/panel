@@ -14,7 +14,7 @@ class Accordion(NamedListPanel):
     active = param.List(default=[], doc="""
         List of indexes of active cards.""")
 
-    button_color = param.String(doc="""
+    header_color = param.String(doc="""
         A valid CSS color to apply to the expand button.""")
 
     header_background = param.String(default=None, doc="""
@@ -27,7 +27,7 @@ class Accordion(NamedListPanel):
     
     _rename = {'active': None, 'active_header_background': None,
                'header_background': None, 'objects': 'children',
-               'dynamic': None, 'toggle': None, 'button_color': None}
+               'dynamic': None, 'toggle': None, 'header_color': None}
 
     _toggle = """
     for (var child of accordion.children) {
@@ -39,7 +39,7 @@ class Accordion(NamedListPanel):
 
     _synced_properties = [
         'active_header_background', 'header_background', 'width',
-        'sizing_mode', 'width_policy', 'height_policy', 'button_color'
+        'sizing_mode', 'width_policy', 'height_policy', 'header_color'
     ]
 
     def __init__(self, *objects, **params):

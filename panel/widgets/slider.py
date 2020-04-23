@@ -66,23 +66,27 @@ class ContinuousSlider(_SliderBase):
             params['value'] = params.get('start', self.start)
         super(ContinuousSlider, self).__init__(**params)
 
-    def _get_embed_state(self, root, max_opts=3):
+    def _get_embed_state(self, root, values=None, max_opts=3):
         ref = root.ref['id']
         w_model, parent = self._models[ref]
         _, _, doc, comm = state._views[ref]
 
         # Compute sampling
         start, end, step = w_model.start, w_model.end, w_model.step
-        span = end-start
-        dtype = int if isinstance(step, int) else float
-        if (span/step) > (max_opts-1):
-            step = dtype(span/(max_opts-1))
-        vals = [dtype(v) for v in np.arange(start, end+step, step)]
+        if values is None:
+            span = end-start
+            dtype = int if isinstance(step, int) else float
+            if (span/step) > (max_opts-1):
+                step = dtype(span/(max_opts-1))
+            values = [dtype(v) for v in np.arange(start, end+step, step)]
+        elif any(v < start or v > end for v in values):
+            raise ValueError('Supplied embed states for %s widget outside '
+                             'of valid range.' % type(self).__name__)
 
         # Replace model
         layout_opts = {k: v for k, v in self.param.get_param_values()
                        if k in Layoutable.param and k != 'name'}
-        dw = DiscreteSlider(options=vals, name=self.name, **layout_opts)
+        dw = DiscreteSlider(options=values, name=self.name, **layout_opts)
         dw.link(self, value='value')
         self._models.pop(ref)
         index = parent.children.index(w_model)
@@ -94,7 +98,7 @@ class ContinuousSlider(_SliderBase):
         w_model = w_model.children[1]
         w_model.js_on_change('value', link)
 
-        return (dw, w_model, vals, lambda x: x.value, 'value', 'cb_obj.value')
+        return (dw, w_model, values, lambda x: x.value, 'value', 'cb_obj.value')
 
 
 class FloatSlider(ContinuousSlider):
@@ -266,9 +270,14 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
         finally:
             self._syncing = False
 
-    def _get_embed_state(self, root, max_opts=3):
+    def _get_embed_state(self, root, values=None, max_opts=3):
         model = self._composite[1]._models[root.ref['id']][0]
-        return self, model, self.values, lambda x: x.value, 'value', 'cb_obj.value'
+        if values is None:
+            values = self.values
+        elif any(v not in self.values for v in values):
+            raise ValueError("Supplieed embed states were not found "
+                             "in the %s widgets' values list." % type(self).__name__)
+        return self, model, values, lambda x: x.value, 'value', 'cb_obj.value'
 
     @property
     def labels(self):

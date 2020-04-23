@@ -14,7 +14,8 @@ from bokeh.models.layouts import GridBox as _BkGridBox
 from ..io import push, state, unlocked
 from ..layout import Panel, Row
 from ..links import Link
-from ..viewable import Viewable, Reactive, Layoutable
+from ..reactive import Reactive
+from ..viewable import Layoutable, Viewable
 from ..util import param_reprs
 
 

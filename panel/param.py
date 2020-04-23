@@ -11,7 +11,7 @@ import types
 import inspect
 import itertools
 
-from collections import OrderedDict, namedtuple
+from collections import OrderedDict, defaultdict, namedtuple
 from six import string_types
 
 import param
@@ -656,8 +656,11 @@ class ParamFunction(ParamMethod):
     def _link_object_params(self):
         deps = self.object._dinfo
         dep_params = list(deps['dependencies']) + list(deps.get('kw', {}).values())
-        for p in dep_params:
-            watcher = p.owner.param.watch(self._replace_pane, p.name)
+        grouped = defaultdict(list)
+        for dep in dep_params:
+            grouped[id(dep.owner)].append(dep)
+        for group in grouped.values():
+            watcher = group[0].owner.param.watch(self._replace_pane, [dep.name for dep in group])
             self._callbacks.append(watcher)
 
     #----------------------------------------------------------------

@@ -31,8 +31,8 @@ export class CardView extends ColumnView {
   connect_signals(): void {
     super.connect_signals()
     this.connect(this.model.properties.collapsed.change, () => this._collapse())
-    const {active_header_background, header_background, button_color} = this.model.properties
-    this.on_change([active_header_background, header_background, button_color], () => this.render())
+    const {active_header_background, header_background, header_color} = this.model.properties
+    this.on_change([active_header_background, header_background, header_color], () => this.render())
   }
 
   _update_layout(): void {
@@ -49,7 +49,7 @@ export class CardView extends ColumnView {
   render(): void {
     empty(this.el)
 
-    const {background, button_color, button_css_classes, header_tag, header_css_classes} = this.model
+    const {background, button_css_classes, header_color, header_tag, header_css_classes} = this.model
 
     this.el.style.backgroundColor = background != null ? background : ""
     classes(this.el).clear().add(...this.css_classes())
@@ -65,8 +65,7 @@ export class CardView extends ColumnView {
       this.button_el.style.backgroundColor = header_background != null ? header_background : ""
       this.button_el.appendChild(header.el)
       const icon = DOM.createElement("p", {class: button_css_classes})
-      icon.innerHTML = this.model.collapsed ? "+" : "-"
-      icon.style.color = button_color != null ? button_color : ""
+      icon.innerHTML = this.model.collapsed ? "+" : "\u2212"
       this.button_el.appendChild(icon)
       this.button_el.onclick = () => this._toggle_button()
       header_el = this.button_el
@@ -75,6 +74,7 @@ export class CardView extends ColumnView {
       header_el.style.backgroundColor = header_background != null ? header_background : ""
       header_el.appendChild(header.el)
     }
+	header_el.style.color = header_color != null ? header_color : ""
 
     this.el.appendChild(header_el)
     header.render()
@@ -105,11 +105,11 @@ export namespace Card {
 
   export type Props = Column.Props & {
     active_header_background: p.Property<string | null>
-    button_color: p.Property<string | null>
     button_css_classes: p.Property<string[]>
     collapsed: p.Property<boolean>
     collapsible: p.Property<boolean>
     header_background: p.Property<string | null>
+    header_color: p.Property<string | null>
     header_css_classes: p.Property<string[]>
     header_tag: p.Property<string>
     tag: p.Property<string>
@@ -132,11 +132,11 @@ export class Card extends Column {
 
     this.define<Card.Props>({
       active_header_background:  [ p.String,  null  ],
-      button_color:       [ p.String,  null  ],
       button_css_classes: [ p.Array,   []    ],
       collapsed:          [ p.Boolean, true  ],
       collapsible:        [ p.Boolean, true  ],
       header_background:  [ p.String,  null  ],
+      header_color:       [ p.String,  null  ],
       header_css_classes: [ p.Array,   []    ],
       header_tag:         [ p.String,  "div" ],
       tag:                [ p.String,  "div" ],

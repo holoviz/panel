@@ -1,5 +1,5 @@
-from bokeh.models import Model
 from bokeh.core.properties import Bool, Dict, Any, List
+from bokeh.models import Model
 
 
 class State(Model):
