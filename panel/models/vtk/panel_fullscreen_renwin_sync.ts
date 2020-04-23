@@ -1,4 +1,4 @@
-import {vtk, vtkns} from "./vtk_utils"
+import {vtk, vtkns, applyStyle, CSSProperties} from "./util"
 //------------------------//
 //Custom Extended Classes
 //------------------------//
@@ -14,7 +14,7 @@ if (vtk) {
     synchronizerContextName: "default",
   }
 
-  const STYLE_CONTROL_PANEL = {
+  const STYLE_CONTROL_PANEL: CSSProperties = {
     position: "absolute",
     left: "25px",
     top: "25px",
@@ -28,12 +28,6 @@ if (vtk) {
     maxWidth: "calc(100vw - 70px)",
     maxHeight: "calc(100vh - 60px)",
     overflow: "auto",
-  }
-
-  function applyStyle(el: HTMLElement, style: CSSStyleDeclaration) {
-    Object.keys(style).forEach((key: any) => {
-      el.style[key] = style[key]
-    })
   }
 
   function panelFullScreenRenderWindowSynchronized(publicAPI: any, model: any) {

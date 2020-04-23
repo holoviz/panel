@@ -10,7 +10,7 @@ from bokeh.core.enums import enumeration
 from bokeh.models import HTMLBox, Model, ColorMapper
 
 jszip_cdn = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.js"
-vtk_cdn = "http://localhost:8000/vtk.js"
+vtk_cdn = "https://unpkg.com/vtk.js"
 
 
 class VTKAxes(Model):
@@ -58,8 +58,6 @@ class AbstractVTKPlot(HTMLBox):
         }
     }
 
-    renderer_el = Any(readonly=True)
-
     axes = Instance(VTKAxes)
 
     camera = Dict(String, Any)
@@ -72,12 +70,10 @@ class AbstractVTKPlot(HTMLBox):
 
     width = Override(default=300)
 
-    axes = Instance(VTKAxes)
-
 
 class VTKSynchronizedPlot(AbstractVTKPlot):
     """
-    TODO
+    Bokeh model dedicated to plot a vtk render window
     """
 
     arrays = Dict(String, Any)
@@ -93,8 +89,7 @@ class VTKSynchronizedPlot(AbstractVTKPlot):
 
 class VTKJSPlot(AbstractVTKPlot):
     """
-    Bokeh model dedicated to plot a vtk render window with only 3D geometry objects
-    (Volumes are not suported)
+    Bokeh model dedicated to plot 3d scene saved under the `.vtk-js` format
     """
 
     data = String(help="""The serialized vtk.js data""")
@@ -105,7 +100,6 @@ class VTKJSPlot(AbstractVTKPlot):
 class VTKVolumePlot(AbstractVTKPlot):
     """
     Bokeh model dedicated to plot a volumetric object with the help of vtk-js
-    (3D geometry objects are not suported)
     """
 
     ambient = Float(default=0.2)

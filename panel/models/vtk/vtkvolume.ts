@@ -1,6 +1,6 @@
 import * as p from "@bokehjs/core/properties"
 
-import {AbstractVTKPlot, AbstractVTKView} from "./vtk_layout"
+import {AbstractVTKPlot, AbstractVTKView} from "./vtklayout"
 import {
   VolumeType,
   vtkns,
@@ -8,7 +8,7 @@ import {
   hexToRGB,
   vtkLutToMapper,
   ColorMapper,
-} from "./vtk_utils"
+} from "./util"
 
 declare type InterpolationType = "fast_linear" | "linear" | "nearest"
 export class VTKVolumePlotView extends AbstractVTKView {
@@ -19,12 +19,13 @@ export class VTKVolumePlotView extends AbstractVTKView {
   connect_signals(): void {
     super.connect_signals()
     this.connect(this.model.properties.data.change, () => {
+      this._vtk_image_data = data2VTKImageData(this.model.data as VolumeType)
       this.invalidate_render()
     })
     this.connect(this.model.properties.colormap.change, () => {
-      this.colormap_slector.value = this.model.colormap
+      this.colormap_selector.value = this.model.colormap
       const event = new Event("change")
-      this.colormap_slector.dispatchEvent(event)
+      this.colormap_selector.dispatchEvent(event)
     })
     this.connect(this.model.properties.shadow.change, () => {
       this.shadow_selector.value = this.model.shadow ? "1" : "0"
@@ -92,9 +93,61 @@ export class VTKVolumePlotView extends AbstractVTKView {
       this._vtk_renwin.getRenderWindow().render()
     })
   }
+  
+  render(): void {
+    this._vtk_renwin = null
+    this._orientationWidget = null
+    this._axes = null
+    super.render()
+    this._create_orientation_widget()
+    this._set_axes()
+    if (!this.model.camera)
+      this._vtk_renwin.getRenderer().resetCamera()
+  }
 
+  invalidate_render(): void {
+    this._vtk_renwin = null
+    super.invalidate_render()
+  }
+  
+  init_vtk_renwin(): void {
+    this._vtk_renwin = vtkns.FullScreenRenderWindow.newInstance({
+      rootContainer: this.el,
+      container: this._vtk_container,
+    })
+  }
+
+  plot(): void {
+    this._controllerWidget = vtkns.VolumeController.newInstance({
+      size: [400, 150],
+      rescaleColorMap: this.model.rescale,
+    })
+    this._plot_volume()
+    this._plot_slices()
+    this._controllerWidget.setupContent(
+      this._vtk_renwin.getRenderWindow(),
+      this.volume,
+      true
+    )
+    this._controllerWidget.setContainer(this.el)
+    this._connect_js_controls()
+    this._vtk_renwin.getRenderWindow().getInteractor()
+    this._vtk_renwin.getRenderWindow().getInteractor().setDesiredUpdateRate(45)
+    this._set_volume_visibility(this.model.display_volume)
+    this._set_slices_visibility(this.model.display_slices)
+    this._vtk_renwin
+      .getRenderer()
+      .setBackground(...hexToRGB(this.model.render_background))
+    this._set_interpolation(this.model.interpolation)
+  }
+
+  get vtk_image_data(): any {
+    if (!this._vtk_image_data)
+      this._vtk_image_data = data2VTKImageData(this.model.data as VolumeType)
+    return this._vtk_image_data
+  }
   get volume(): any {
-    return this._controllerWidget.getActor()
+    return this._vtk_renwin.getRenderer().getVolumes()[0]
   }
 
   get image_actor_i(): any {
@@ -121,53 +174,16 @@ export class VTKVolumePlotView extends AbstractVTKView {
     return this.el.querySelector(".js-spacing") as HTMLInputElement
   }
 
-  get colormap_slector(): HTMLSelectElement {
+  get colormap_selector(): HTMLSelectElement {
     return this.el.querySelector(".js-color-preset") as HTMLSelectElement
   }
 
-  _set_interpolation(interpolation: InterpolationType): void {
-    if (interpolation == "fast_linear") {
-      this.volume.getProperty().setInterpolationTypeToFastLinear()
-      this.image_actor_i.getProperty().setInterpolationTypeToLinear()
-    } else if (interpolation == "linear") {
-      this.volume.getProperty().setInterpolationTypeToLinear()
-      this.image_actor_i.getProperty().setInterpolationTypeToLinear()
-    } else {
-      //nearest
-      this.volume.getProperty().setInterpolationTypeToNearest()
-      this.image_actor_i.getProperty().setInterpolationTypeToNearest()
-    }
-  }
-
-  render(): void {
-    super.render()
-    this._controllerWidget = vtkns.VolumeController.newInstance({
-      size: [400, 150],
-      rescaleColorMap: this.model.rescale,
-    })
-    this._vtk_image_data = data2VTKImageData(this.model.data as VolumeType)
-    this._controllerWidget.setContainer(this.el)
-    this._vtk_renwin.getRenderWindow().getInteractor()
-    this._vtk_renwin.getRenderWindow().getInteractor().setDesiredUpdateRate(45)
-    this._plot_volume()
-    this._connect_controls()
-    this._plot_slices()
-    this._set_volume_visibility(this.model.display_volume)
-    this._set_slices_visibility(this.model.display_slices)
-    this._vtk_renwin
-      .getRenderer()
-      .setBackground(...hexToRGB(this.model.render_background))
-    this._set_interpolation(this.model.interpolation)
-    if (!this.model.camera)
-      this._vtk_renwin.getRenderer().resetCamera()
-  }
-
-  _connect_controls(): void {
+  _connect_js_controls(): void {
     // Colormap selector
-    this.colormap_slector.addEventListener("change", () => {
-      this.model.colormap = this.colormap_slector.value
+    this.colormap_selector.addEventListener("change", () => {
+      this.model.colormap = this.colormap_selector.value
     })
-    if (!this.model.colormap) this.model.colormap = this.colormap_slector.value
+    if (!this.model.colormap) this.model.colormap = this.colormap_selector.value
     else this.model.properties.colormap.change.emit()
 
       // Shadow selector
@@ -200,77 +216,6 @@ export class VTKVolumePlotView extends AbstractVTKView {
       ) >= 5e-3
     )
       this.model.properties.edge_gradient.change.emit()
-  }
-
-  _plot_volume(): void {
-    //Create vtk volume and add it to the scene
-    const source = this._vtk_image_data
-    const actor = vtkns.Volume.newInstance()
-    const mapper = vtkns.VolumeMapper.newInstance()
-
-    actor.setMapper(mapper)
-    mapper.setInputData(source)
-
-    const dataArray =
-      source.getPointData().getScalars() || source.getPointData().getArrays()[0]
-    const dataRange = dataArray.getRange()
-
-    const lookupTable = vtkns.ColorTransferFunction.newInstance()
-    lookupTable.onModified(
-      () => (this.model.mapper = vtkLutToMapper(lookupTable))
-    )
-    const piecewiseFunction = vtkns.PiecewiseFunction.newInstance()
-    const sampleDistance =
-      0.7 *
-      Math.sqrt(
-        source
-          .getSpacing()
-                                                 .map((v: number) => v * v)
-          .reduce((a: number, b: number) => a + b, 0)
-      )
-    mapper.setSampleDistance(sampleDistance)
-
-    actor.getProperty().setRGBTransferFunction(0, lookupTable)
-    actor.getProperty().setScalarOpacity(0, piecewiseFunction)
-    actor.getProperty().setInterpolationTypeToFastLinear()
-    // actor.getProperty().setInterpolationTypeToLinear();
-
-    // For better looking volume rendering
-    // - distance in world coordinates a scalar opacity of 1.0
-    actor
-      .getProperty()
-      .setScalarOpacityUnitDistance(
-        0,
-        vtkns.BoundingBox.getDiagonalLength(source.getBounds()) /
-          Math.max(...source.getDimensions())
-      )
-    // - control how we emphasize surface boundaries
-    //  => max should be around the average gradient magnitude for the
-    //     volume or maybe average plus one std dev of the gradient magnitude
-    //     (adjusted for spacing, this is a world coordinate gradient, not a
-    //     pixel gradient)
-    //  => max hack: (dataRange[1] - dataRange[0]) * 0.05
-    actor.getProperty().setGradientOpacityMinimumValue(0, 0)
-    actor
-      .getProperty()
-      .setGradientOpacityMaximumValue(0, (dataRange[1] - dataRange[0]) * 0.05)
-    // - Use shading based on gradient
-    actor.getProperty().setShade(this.model.shadow)
-    actor.getProperty().setUseGradientOpacity(0, true)
-    // - generic good default
-    actor.getProperty().setGradientOpacityMinimumOpacity(0, 0.0)
-    actor.getProperty().setGradientOpacityMaximumOpacity(0, 1.0)
-    actor.getProperty().setAmbient(this.model.ambient)
-    actor.getProperty().setDiffuse(this.model.diffuse)
-    actor.getProperty().setSpecular(this.model.specular)
-    actor.getProperty().setSpecularPower(this.model.specular_power)
-
-    this._vtk_renwin.getRenderer().addVolume(actor)
-    this._controllerWidget.setupContent(
-      this._vtk_renwin.getRenderWindow(),
-      actor,
-      true
-    )
   }
 
   _plot_slices(): void {
@@ -313,8 +258,84 @@ export class VTKVolumePlotView extends AbstractVTKView {
     renderer.addActor(image_actor_k)
   }
 
-  _set_volume_visibility(visibility: boolean): void {
-    this.volume.setVisibility(visibility)
+  _plot_volume(): void {
+    //Create vtk volume and add it to the scene
+    const source = this.vtk_image_data
+    const actor = vtkns.Volume.newInstance()
+    const mapper = vtkns.VolumeMapper.newInstance()
+
+    actor.setMapper(mapper)
+    mapper.setInputData(source)
+
+    const dataArray =
+      source.getPointData().getScalars() || source.getPointData().getArrays()[0]
+    const dataRange = dataArray.getRange()
+
+    const lookupTable = vtkns.ColorTransferFunction.newInstance()
+    lookupTable.onModified(
+      () => (this.model.mapper = vtkLutToMapper(lookupTable))
+    )
+    const piecewiseFunction = vtkns.PiecewiseFunction.newInstance()
+    const sampleDistance =
+      0.7 *
+      Math.sqrt(
+        source
+          .getSpacing()
+          .map((v: number) => v * v)
+          .reduce((a: number, b: number) => a + b, 0)
+      )
+    mapper.setSampleDistance(sampleDistance)
+
+    actor.getProperty().setRGBTransferFunction(0, lookupTable)
+    actor.getProperty().setScalarOpacity(0, piecewiseFunction)
+    actor.getProperty().setInterpolationTypeToFastLinear()
+    // actor.getProperty().setInterpolationTypeToLinear();
+
+    // For better looking volume rendering
+    // - distance in world coordinates a scalar opacity of 1.0
+    actor
+      .getProperty()
+      .setScalarOpacityUnitDistance(
+        0,
+        vtkns.BoundingBox.getDiagonalLength(source.getBounds()) /
+          Math.max(...source.getDimensions())
+      )
+    // - control how we emphasize surface boundaries
+    //  => max should be around the average gradient magnitude for the
+    //     volume or maybe average plus one std dev of the gradient magnitude
+    //     (adjusted for spacing, this is a world coordinate gradient, not a
+    //     pixel gradient)
+    //  => max hack: (dataRange[1] - dataRange[0]) * 0.05
+    actor.getProperty().setGradientOpacityMinimumValue(0, 0)
+    actor
+      .getProperty()
+      .setGradientOpacityMaximumValue(0, (dataRange[1] - dataRange[0]) * 0.05)
+    // - Use shading based on gradient
+    actor.getProperty().setShade(this.model.shadow)
+    actor.getProperty().setUseGradientOpacity(0, true)
+    // - generic good default
+    actor.getProperty().setGradientOpacityMinimumOpacity(0, 0.0)
+    actor.getProperty().setGradientOpacityMaximumOpacity(0, 1.0)
+    actor.getProperty().setAmbient(this.model.ambient)
+    actor.getProperty().setDiffuse(this.model.diffuse)
+    actor.getProperty().setSpecular(this.model.specular)
+    actor.getProperty().setSpecularPower(this.model.specular_power)
+
+    this._vtk_renwin.getRenderer().addVolume(actor)
+  }
+
+  _set_interpolation(interpolation: InterpolationType): void {
+    if (interpolation == "fast_linear") {
+      this.volume.getProperty().setInterpolationTypeToFastLinear()
+      this.image_actor_i.getProperty().setInterpolationTypeToLinear()
+    } else if (interpolation == "linear") {
+      this.volume.getProperty().setInterpolationTypeToLinear()
+      this.image_actor_i.getProperty().setInterpolationTypeToLinear()
+    } else {
+      //nearest
+      this.volume.getProperty().setInterpolationTypeToNearest()
+      this.image_actor_i.getProperty().setInterpolationTypeToNearest()
+    }
   }
 
   _set_slices_visibility(visibility: boolean): void {
@@ -323,6 +344,11 @@ export class VTKVolumePlotView extends AbstractVTKView {
       .getActors()
       .map((actor: any) => actor.setVisibility(visibility))
   }
+  
+  _set_volume_visibility(visibility: boolean): void {
+    this.volume.setVisibility(visibility)
+  }
+
 }
 
 export namespace VTKVolumePlot {

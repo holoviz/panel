@@ -6,9 +6,24 @@ import {clone} from "@bokehjs/core/util/object"
 import {ColorMapper} from "@bokehjs/models/mappers/color_mapper"
 
 import {PanelHTMLBoxView, set_size} from "../layout"
-import {vtkns, VolumeType, majorAxis} from "./vtk_utils"
-import {VTKColorBar} from "./vtk_colorbar"
+import {vtkns, VolumeType, majorAxis, applyStyle, CSSProperties} from "./util"
+import {VTKColorBar} from "./vtkcolorbar"
 import {VTKAxes} from "./vtkaxes"
+
+const INFO_DIV_STYLE: CSSProperties = {  
+  padding: "0px 2px 0px 2px",
+  maxHeight: "150px",
+  height: "auto",
+  backgroundColor: "rgba(255, 255, 255, 0.4)",
+  borderRadius: "10px",
+  margin: "2px",
+  boxSizing: "border-box",
+  overflow: "hidden",
+  overflowY: "auto",
+  transition: "width 0.1s linear",
+  bottom: "0px",
+  position: "absolute",
+}
 
 export abstract class AbstractVTKView extends PanelHTMLBoxView {
   model: AbstractVTKPlot
@@ -34,24 +49,13 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
     if (old_info_div)
       this.el.removeChild(old_info_div)
     if (this.model.color_mappers.length < 1) return
-
+    
     const info_div = document.createElement("div")
     const expand_width = "350px"
     const collapsed_width = "30px"
     info_div.classList.add('vtk_info')
-    info_div.style.width = expand_width
-    info_div.style.padding = "0px 2px 0px 2px"
-    info_div.style.maxHeight = "150px"
-    info_div.style.height = "auto"
-    info_div.style.backgroundColor = "rgba(255, 255, 255, 0.4)"
-    info_div.style.borderRadius = "10px"
-    info_div.style.margin = "2px"
-    info_div.style.boxSizing = "border-box"
-    info_div.style.overflow = "hidden"
-    info_div.style.overflowY = "auto"
-    info_div.style.transition = "width 0.1s linear"
-    info_div.style.bottom = "0px"
-    info_div.style.position = "absolute"
+    applyStyle(info_div, INFO_DIV_STYLE)
+    applyStyle(info_div, {width: expand_width})
     this.el.appendChild(info_div)
 
     //construct colorbars
@@ -63,20 +67,17 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
 
     //content when collapsed
     const dots = document.createElement('div');
-    dots.style.textAlign = "center"
-    dots.style.fontSize = "20px"
+    applyStyle(dots, {textAlign: "center", fontSize: "20px"})
     dots.innerText = "..."
 
     info_div.addEventListener('click', () => {
       if(info_div.style.width === collapsed_width){
         info_div.removeChild(dots)
-        info_div.style.height = "auto"
-        info_div.style.width = expand_width
+        applyStyle(info_div, {height: "auto", width: expand_width})
         colorbars.forEach((cb) => info_div.appendChild(cb.canvas))
       } else {
         colorbars.forEach((cb) => info_div.removeChild(cb.canvas))
-        info_div.style.height = collapsed_width
-        info_div.style.width = collapsed_width
+        applyStyle(info_div, {height: collapsed_width, width: collapsed_width})
         info_div.appendChild(dots)
       }
     })
@@ -102,23 +103,26 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
 
   render(): void {
     super.render()
-    this._orientationWidget = null
-    this._vtk_container = div()
-    set_size(this._vtk_container, this.model)
-    this.el.appendChild(this._vtk_container)
-    this._vtk_renwin = vtkns.FullScreenRenderWindow.newInstance({
-      rootContainer: this.el,
-      container: this._vtk_container,
-    })
-    this._remove_default_key_binding()
-    this._create_orientation_widget()
-    if (this.model.camera)
-        this._set_camera_state()
-    this._connect_interactions_to_model()
-    this._vtk_renwin.getRenderer().getActiveCamera().modified()
-    if (!this.model.camera)
-        this._set_camera_state()
-    this.model.renderer_el = this._vtk_renwin
+    if (!this._vtk_renwin || !this._vtk_container){
+      this._orientationWidget = null
+      this._axes = null
+      this._vtk_container = div()
+      this.init_vtk_renwin()
+      set_size(this._vtk_container, this.model)
+      this.el.appendChild(this._vtk_container)
+      this._connect_interactions_to_model()
+      this._remove_default_key_binding()
+      this._bind_key_events()
+      this.plot()
+      this._set_camera_state()
+      this._add_colorbars()
+      this.model.renderer_el = this._vtk_renwin
+    } else {
+      set_size(this._vtk_container, this.model)
+      // warning if _vtk_renwin contain controllers or other elements 
+      // we must attach them to the new el
+      this.el.appendChild(this._vtk_container)
+    }
   }
 
   after_layout(): void {
@@ -140,6 +144,9 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
     super.remove()
   }
 
+  abstract init_vtk_renwin(): void
+
+  abstract plot(): void //here goes the specific implementation pour all concrete model based on vtk-js
   
   get _vtk_camera_state(): any {
     const vtk_camera = this._vtk_renwin.getRenderer().getActiveCamera()

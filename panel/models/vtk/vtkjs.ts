@@ -1,7 +1,7 @@
 import * as p from "@bokehjs/core/properties"
 
-import {AbstractVTKView, AbstractVTKPlot} from "./vtk_layout"
-import {vtk, vtkns} from "./vtk_utils"
+import {AbstractVTKView, AbstractVTKPlot} from "./vtklayout"
+import {vtk, vtkns} from "./util"
 
 export class VTKJSPlotView extends AbstractVTKView {
   model: VTKJSPlot
@@ -14,13 +14,24 @@ export class VTKJSPlotView extends AbstractVTKView {
   }
 
   render(): void {
-    this._axes = null
     super.render()
-    this._plot()
-    this._bind_key_events()
+    this._create_orientation_widget()
+    this._set_axes()
   }
 
-  _plot(): void {
+  invalidate_render(): void {
+    this._vtk_renwin = null
+    super.invalidate_render()
+  }
+
+  init_vtk_renwin(): void {
+    this._vtk_renwin = vtkns.FullScreenRenderWindow.newInstance({
+      rootContainer: this.el,
+      container: this._vtk_container,
+    })
+  }
+
+  plot(): void {
     if (!this.model.data) {
       this._vtk_renwin.getRenderWindow().render()
       return

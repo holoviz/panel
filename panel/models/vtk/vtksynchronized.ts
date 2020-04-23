@@ -1,10 +1,7 @@
 import * as p from "@bokehjs/core/properties"
-import {PanelHTMLBoxView} from "../layout"
-import {AbstractVTKView, AbstractVTKPlot} from "./vtk_layout"
+import {AbstractVTKView, AbstractVTKPlot} from "./vtklayout"
 
-import {div} from "@bokehjs/core/dom"
-import {set_size} from "../layout"
-import {vtkns} from "./vtk_utils"
+import {vtkns} from "./util"
 import {FullScreenRenderWindowSynchronized} from "./panel_fullscreen_renwin_sync"
 
 const CONTEXT_NAME = "panel"
@@ -51,33 +48,18 @@ export class VTKSynchronizedPlotView extends AbstractVTKView {
     )
   }
 
-  render(): void {
-    PanelHTMLBoxView.prototype.render.call(this) // super.super.render()
-    this._orientationWidget = null
-    if (!this._vtk_renwin || !this._vtk_container){
-      this._vtk_container = div()
-      this._vtk_renwin = FullScreenRenderWindowSynchronized.newInstance({
-        rootContainer: this.el,
-        container: this._vtk_container,
-        synchronizerContext: this._synchronizer_context,
-      })
-      set_size(this._vtk_container, this.model)
-      this.el.appendChild(this._vtk_container)
-      this._vtk_renwin.getRenderWindow().clearOneTimeUpdaters()
-      this._decode_arrays()
-      this._plot()
-      this._connect_interactions_to_model()
-      this._remove_default_key_binding()
-      this._bind_key_events()
-      this._set_camera_state()
-      this._add_colorbars()
-      this.model.renderer_el = this._vtk_renwin
-    } else {
-      set_size(this._vtk_container, this.model)
-      // warning if _vtk_renwin contain controllers or other elements 
-      // we must attach them to the new el
-      this.el.appendChild(this._vtk_container)
-    }    
+  plot(): void {
+    this._vtk_renwin.getRenderWindow().clearOneTimeUpdaters()
+    this._decode_arrays()
+    this._sync_plot()
+  }
+
+  init_vtk_renwin(): void {
+    this._vtk_renwin = FullScreenRenderWindowSynchronized.newInstance({
+      rootContainer: this.el,
+      container: this._vtk_container,
+      synchronizerContext: this._synchronizer_context,
+    })
   }
 
   _decode_arrays(): void {
@@ -103,7 +85,7 @@ export class VTKSynchronizedPlotView extends AbstractVTKView {
     })
   }
 
-  _plot(): void {
+  _sync_plot(): void {
     this._unsubscribe_camera_cb()
     this._synchronizer_context.setFetchArrayFunction(this.getArray)
     const renderer = this._synchronizer_context.getInstance(
@@ -146,7 +128,7 @@ export class VTKSynchronizedPlotView extends AbstractVTKView {
       this._decode_arrays()
     )
     this.connect(this.model.properties.scene.change, () => {
-      this._plot()
+      this._sync_plot()
       this._connect_interactions_to_model()
     })
     this.connect(this.model.properties.one_time_reset.change, () => {

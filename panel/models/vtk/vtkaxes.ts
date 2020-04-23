@@ -3,7 +3,7 @@ import * as p from "@bokehjs/core/properties"
 import {Model} from "@bokehjs/model"
 import {mat4, vec3} from "gl-matrix"
 
-import {cartesian_product, vtk, vtkns} from "./vtk_utils"
+import {cartesian_product, vtk, vtkns} from "./util"
 
 type VTKTicker = {
   ticks: number[]

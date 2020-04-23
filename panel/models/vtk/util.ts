@@ -71,6 +71,30 @@ if (vtk) {
   )
 }
 
+declare type RGBnode = {
+  x: number,
+  r: number,
+  g: number,
+  b: number
+}
+
+export declare type ColorMapper = {
+  palette: string[],
+  low: number,
+  high: number,
+}
+export declare type CSSProperties = {[key: string]: string}
+
+export declare type VolumeType = {
+  buffer: string
+  dims: number[]
+  dtype: DType
+  spacing: number[]
+  origin: number[] | null
+  extent: number[] | null
+}
+
+// Function to remove when implemented in vtk-js
 function piecewiseFunctionUpdater(instance: any, state: any, context: any) {
   context.start();
   const nodes = (state.properties.nodes as number[][]).map(
@@ -82,19 +106,10 @@ function piecewiseFunctionUpdater(instance: any, state: any, context: any) {
   context.end();
 }
 
-export function exclude_by_keys(obj:any, excludes: string[] = []): any {
-  return Object.assign({}, ...Object.keys(obj).filter(
-    key => !excludes.includes(key)).map(key => ({[key]:obj[key]})
-  ))
-}
-
-export type VolumeType = {
-  buffer: string
-  dims: number[]
-  dtype: DType
-  spacing: number[]
-  origin: number[] | null
-  extent: number[] | null
+export function applyStyle(el: HTMLElement, style: CSSProperties) {
+  Object.keys(style).forEach((key: any) => {
+    el.style[key] = style[key]
+  })
 }
 
 export function hexToRGB(color: string): number[] {
@@ -112,25 +127,12 @@ export function rgbToHex(r: number, g: number, b:number): string {
   return '#' + valToHex(r) + valToHex(g) + valToHex(b)
 }
 
-declare type node = {
-  x: number,
-  r: number,
-  g: number,
-  b: number
-}
-
-export declare type ColorMapper = {
-  palette: string[],
-  low: number,
-  high: number,
-}
-
 export function vtkLutToMapper(vtk_lut: any):  ColorMapper {
   //For the moment only linear colormapper are handle
   const {scale, nodes} = vtk_lut.get('scale', 'nodes')
   if (scale !== vtkns.ColorTransferFunction.Scale.LINEAR)
     throw ('Error transfer function scale not handle')
-  const x = (nodes as node[]).map((a: node) => a.x)
+  const x = (nodes as RGBnode[]).map((a: RGBnode) => a.x)
   const low = Math.min(...x)
   const high = Math.max(...x)
   const vals = linspace(low, high, 255)
