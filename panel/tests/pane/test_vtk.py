@@ -48,11 +48,26 @@ def pyvista_render_window():
     sphere = pv.Sphere() #test actor
     globe = examples.load_globe() #test texture
     head = examples.download_head() #test volume
+    uniform = examples.load_uniform() #test structured grid
+    
     scalars=sphere.points[:, 2]
     sphere._add_point_array(scalars, 'test', set_active=True) #allow to test scalars
+
+    uniform.set_active_scalars("Spatial Cell Data")
+
+    #test datasetmapper
+    threshed = uniform.threshold_percent([0.15, 0.50], invert=True)
+    bodies = threshed.split_bodies() 
+    mapper = vtk.vtkCompositePolyDataMapper2()
+    mapper.SetInputDataObject(0, bodies)
+    multiblock = vtk.vtkActor()
+    multiblock.SetMapper(mapper)
+
     pl = pv.Plotter()
     pl.add_mesh(globe)
     pl.add_mesh(sphere)
+    pl.add_mesh(uniform)
+    pl.add_actor(multiblock)
     pl.add_volume(head)
     return pl.ren_win
 

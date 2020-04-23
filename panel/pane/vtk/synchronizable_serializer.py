@@ -101,8 +101,6 @@ def dataTableToList(dataTable):
         return [data[idx*nbComponents:(idx+1)*nbComponents]
                     for idx in range(nbValues//nbComponents)]
 
-    return None
-
 # -----------------------------------------------------------------------------
 
 def linspace(start, stop, num):
@@ -235,8 +233,6 @@ def serializeInstance(parent, instance, instanceId, context, depth):
         print('%s!!!No serializer for %s with id %s' %
               (pad(depth), instanceType, instanceId))
 
-    return None
-
 # -----------------------------------------------------------------------------
 
 
@@ -307,9 +303,6 @@ def initializeSerializers():
     # Cameras
     registerInstanceSerializer('vtkOpenGLCamera', cameraSerializer)
 
-    # Lights
-    registerInstanceSerializer('vtkPVLight', lightSerializer)
-    registerInstanceSerializer('vtkOpenGLLight', lightSerializer)
 
 # -----------------------------------------------------------------------------
 # Helper functions
@@ -617,8 +610,6 @@ def genericActorSerializer(parent, actor, actorId, context, depth):
             'dependencies': dependencies
         }
 
-    return None
-
 # -----------------------------------------------------------------------------
 
 
@@ -658,9 +649,9 @@ def textureSerializer(parent, texture, textureId, context, depth):
             'dependencies': dependencies
         }
 
-    return None
-
 # -----------------------------------------------------------------------------
+
+
 def genericVolumeMapperSerializer(parent, mapper, mapperId, context, depth):
     dataObject = None
     dataObjectInstance = None
@@ -695,6 +686,8 @@ def genericVolumeMapperSerializer(parent, mapper, mapperId, context, depth):
         'calls': calls,
         'dependencies': dependencies
     }
+
+# -----------------------------------------------------------------------------
 
 
 def genericMapperSerializer(parent, mapper, mapperId, context, depth):
@@ -765,8 +758,6 @@ def genericMapperSerializer(parent, mapper, mapperId, context, depth):
             'dependencies': dependencies
         }
 
-    return None
-
 # -----------------------------------------------------------------------------
 
 
@@ -811,6 +802,7 @@ def lookupTableSerializer(parent, lookupTable, lookupTableId, context, depth):
 
 # -----------------------------------------------------------------------------
 
+
 def lookupTableToColorTransferFunction(lookupTable):
     dataTable = lookupTable.GetTable()
     table = dataTableToList(dataTable)
@@ -820,18 +812,15 @@ def lookupTableToColorTransferFunction(lookupTable):
         points = linspace(*tableRange, num=len(table))
         for x, rgba in zip(points, table):
             ctf.AddRGBPoint(x, *[x/255 for x in rgba[:3]])
-
         return ctf
 
-    return None
+# -----------------------------------------------------------------------------
+
 
 def lookupTableSerializer2(parent, lookupTable, lookupTableId, context, depth):
     ctf = lookupTableToColorTransferFunction(lookupTable)
     if ctf:
         return colorTransferFunctionSerializer(parent, ctf, lookupTableId, context, depth)
-
-    return None
-
 
 # -----------------------------------------------------------------------------
 
@@ -1001,7 +990,6 @@ def polydataSerializer(parent, dataset, datasetId, context, depth):
 
     if context.debugAll:
         print('This dataset has no points!')
-    return None
 
 # -----------------------------------------------------------------------------
 
@@ -1089,7 +1077,6 @@ def piecewiseFunctionSerializer(parent, instance, objId, context, depth):
 def rendererSerializer(parent, instance, objId, context, depth):
     dependencies = []
     viewPropIds = []
-    lightsIds = []
     calls = []
 
     # Camera
@@ -1116,52 +1103,34 @@ def rendererSerializer(parent, instance, objId, context, depth):
     calls += context.buildDependencyCallList('%s-props' %
                                              objId, viewPropIds, 'addViewProp', 'removeViewProp')
 
-    # Lights
-    lightCollection = instance.GetLights()
-    for lightIdx in range(lightCollection.GetNumberOfItems()):
-        light = lightCollection.GetItemAsObject(lightIdx)
-        lightId = context.getReferenceId(light)
-
-        lightInstance = serializeInstance(
-            instance, light, lightId, context, depth + 1)
-        if lightInstance:
-            dependencies.append(lightInstance)
-            lightsIds.append(lightId)
-
-    calls += context.buildDependencyCallList('%s-lights' %
-                                             objId, lightsIds, 'addLight', 'removeLight')
-
-    if len(dependencies) > 1:
-        return {
-            'parent': context.getReferenceId(parent),
-            'id': objId,
-            'type': instance.GetClassName(),
-            'properties': {
-                'background': instance.GetBackground(),
-                'background2': instance.GetBackground2(),
-                'viewport': instance.GetViewport(),
-                # These commented properties do not yet have real setters in vtk.js
-                # 'gradientBackground': instance.GetGradientBackground(),
-                # 'aspect': instance.GetAspect(),
-                # 'pixelAspect': instance.GetPixelAspect(),
-                # 'ambient': instance.GetAmbient(),
-                'twoSidedLighting': instance.GetTwoSidedLighting(),
-                'lightFollowCamera': instance.GetLightFollowCamera(),
-                'layer': instance.GetLayer(),
-                'preserveColorBuffer': instance.GetPreserveColorBuffer(),
-                'preserveDepthBuffer': instance.GetPreserveDepthBuffer(),
-                'nearClippingPlaneTolerance': instance.GetNearClippingPlaneTolerance(),
-                'clippingRangeExpansion': instance.GetClippingRangeExpansion(),
-                'useShadows': instance.GetUseShadows(),
-                'useDepthPeeling': instance.GetUseDepthPeeling(),
-                'occlusionRatio': instance.GetOcclusionRatio(),
-                'maximumNumberOfPeels': instance.GetMaximumNumberOfPeels()
-            },
-            'dependencies': dependencies,
-            'calls': calls
-        }
-
-    return None
+    return {
+        'parent': context.getReferenceId(parent),
+        'id': objId,
+        'type': instance.GetClassName(),
+        'properties': {
+            'background': instance.GetBackground(),
+            'background2': instance.GetBackground2(),
+            'viewport': instance.GetViewport(),
+            # These commented properties do not yet have real setters in vtk.js
+            # 'gradientBackground': instance.GetGradientBackground(),
+            # 'aspect': instance.GetAspect(),
+            # 'pixelAspect': instance.GetPixelAspect(),
+            # 'ambient': instance.GetAmbient(),
+            'twoSidedLighting': instance.GetTwoSidedLighting(),
+            'lightFollowCamera': instance.GetLightFollowCamera(),
+            'layer': instance.GetLayer(),
+            'preserveColorBuffer': instance.GetPreserveColorBuffer(),
+            'preserveDepthBuffer': instance.GetPreserveDepthBuffer(),
+            'nearClippingPlaneTolerance': instance.GetNearClippingPlaneTolerance(),
+            'clippingRangeExpansion': instance.GetClippingRangeExpansion(),
+            'useShadows': instance.GetUseShadows(),
+            'useDepthPeeling': instance.GetUseDepthPeeling(),
+            'occlusionRatio': instance.GetOcclusionRatio(),
+            'maximumNumberOfPeels': instance.GetMaximumNumberOfPeels()
+        },
+        'dependencies': dependencies,
+        'calls': calls
+    }
 
 # -----------------------------------------------------------------------------
 
@@ -1176,49 +1145,6 @@ def cameraSerializer(parent, instance, objId, context, depth):
             'position': instance.GetPosition(),
             'viewUp': instance.GetViewUp(),
             'clippingRange': instance.GetClippingRange(),
-        }
-    }
-
-# -----------------------------------------------------------------------------
-
-
-def lightTypeToString(value):
-    """
-    #define VTK_LIGHT_TYPE_HEADLIGHT    1
-    #define VTK_LIGHT_TYPE_CAMERA_LIGHT 2
-    #define VTK_LIGHT_TYPE_SCENE_LIGHT  3
-
-    'HeadLight';
-    'SceneLight';
-    'CameraLight'
-    """
-    if value == 1:
-        return 'HeadLight'
-    elif value == 2:
-        return 'CameraLight'
-
-    return 'SceneLight'
-
-
-def lightSerializer(parent, instance, objId, context, depth):
-    return {
-        'parent': context.getReferenceId(parent),
-        'id': objId,
-        'type': instance.GetClassName(),
-        'properties': {
-            # 'specularColor': instance.GetSpecularColor(),
-            # 'ambientColor': instance.GetAmbientColor(),
-            'switch': instance.GetSwitch(),
-            'intensity': instance.GetIntensity(),
-            'color': instance.GetDiffuseColor(),
-            'position': instance.GetPosition(),
-            'focalPoint': instance.GetFocalPoint(),
-            'positional': instance.GetPositional(),
-            'exponent': instance.GetExponent(),
-            'coneAngle': instance.GetConeAngle(),
-            'attenuationValues': instance.GetAttenuationValues(),
-            'lightType': lightTypeToString(instance.GetLightType()),
-            'shadowAttenuation': instance.GetShadowAttenuation(),
         }
     }
 
