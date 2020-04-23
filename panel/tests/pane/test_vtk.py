@@ -262,16 +262,22 @@ def test_vtkvol_pane_from_np_array(document, comm):
 
     # Test size limitation of date sent
     pane.max_data_size = 0.1 # limit data size to 0.1MB
-    #with uint8
+    # with uint8
     data = (255*np.random.rand(50,50,50)).astype(np.uint8)
     assert data.nbytes/1e6 > 0.1
     pane.object = data
-    assert np.frombuffer(base64.b64decode(model.data['buffer'].encode())).nbytes/1e6 <= 0.1
-    #with float64
+    data_model = np.frombuffer(base64.b64decode(model.data['buffer'].encode()))
+    assert data_model.nbytes/1e6 <= 0.1
+    # with float64
     data = np.random.rand(50,50,50)
     assert data.nbytes/1e6 > 0.1
     pane.object = data
-    assert np.frombuffer(base64.b64decode(model.data['buffer'].encode())).nbytes/1e6 <= 0.1
+    data_model = np.frombuffer(base64.b64decode(model.data['buffer'].encode()), dtype=np.float64)
+    assert data_model.nbytes/1e6 <= 0.1
+
+    # Test conversion of the slice_i number with subsample array
+    param = pane._process_property_change({'slice_i': (np.cbrt(data_model.size)-1)//2})
+    assert param == {'slice_i': (50-1)//2}
 
     # Cleanup
     pane._cleanup(model)
