@@ -71,16 +71,22 @@ export class VTKVolumePlotView extends AbstractVTKView {
       this._vtk_renwin.getRenderWindow().render()
     })
     this.connect(this.model.properties.slice_i.change, () => {
-      this.image_actor_i.getMapper().setISlice(this.model.slice_i)
-      this._vtk_renwin.getRenderWindow().render()
+      if(this.image_actor_i !== undefined){
+        this.image_actor_i.getMapper().setISlice(this.model.slice_i)
+        this._vtk_renwin.getRenderWindow().render()
+      }
     })
     this.connect(this.model.properties.slice_j.change, () => {
-      this.image_actor_j.getMapper().setJSlice(this.model.slice_j)
-      this._vtk_renwin.getRenderWindow().render()
+      if(this.image_actor_j !== undefined){
+        this.image_actor_j.getMapper().setJSlice(this.model.slice_j)
+        this._vtk_renwin.getRenderWindow().render()
+      }
     })
     this.connect(this.model.properties.slice_k.change, () => {
-      this.image_actor_k.getMapper().setKSlice(this.model.slice_k)
-      this._vtk_renwin.getRenderWindow().render()
+      if(this.image_actor_k !== undefined){
+        this.image_actor_k.getMapper().setKSlice(this.model.slice_k)
+        this._vtk_renwin.getRenderWindow().render()
+      }
     })
     this.connect(this.model.properties.render_background.change, () => {
       this._vtk_renwin

@@ -496,7 +496,7 @@ class VTKVolume(AbstractVTK):
 
     def _update(self, model=None):
         self._volume_data = self._get_volume_data()
-        if self._volume_data:
+        if self._volume_data is not None:
             self._orginal_dimensions = self._get_object_dimensions()
             self._subsample_dimensions = self._volume_data['dims']
             self.param.slice_i.bounds = (0, self._orginal_dimensions[0]-1)
@@ -554,7 +554,7 @@ class VTKVolume(AbstractVTK):
         original_shape = array.shape
         spacing = self.spacing
         extent = tuple((o_s - 1) * s for o_s, s in zip(original_shape, spacing))
-        dim_ratio = np.cbrt((np.prod(original_shape) / 1e6) / self.max_data_size)
+        dim_ratio = np.cbrt((array.nbytes / 1e6) / self.max_data_size)
         max_shape = tuple(int(o_s / dim_ratio) for o_s in original_shape)
         dowsnscale_factor = [max(o_s, m_s) / m_s for m_s, o_s in zip(max_shape, original_shape)]
 

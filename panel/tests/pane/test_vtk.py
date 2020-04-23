@@ -243,10 +243,13 @@ def test_vtk_pane_more_complex(document, comm):
 
 @vtk_available
 def test_vtkvol_pane_from_np_array(document, comm):
-    pane = VTKVolume(np.ones((10,10,10)))
+    # Test empty initialisation
+    pane = VTKVolume()
+    model = pane.get_root(document, comm=comm)
+
+    pane.object = np.ones((10,10,10))
     from operator import eq
     # Create pane
-    model = pane.get_root(document, comm=comm)
     assert isinstance(model, VTKVolumePlot)
     assert pane._models[model.ref['id']][0] is model
     assert np.all(np.frombuffer(base64.b64decode(model.data['buffer'].encode())) == 1)
@@ -256,6 +259,19 @@ def test_vtkvol_pane_from_np_array(document, comm):
     # Test update data
     pane.object = 2*np.ones((10,10,10))
     assert np.all(np.frombuffer(base64.b64decode(model.data['buffer'].encode())) == 2)
+
+    # Test size limitation of date sent
+    pane.max_data_size = 0.1 # limit data size to 0.1MB
+    #with uint8
+    data = (255*np.random.rand(50,50,50)).astype(np.uint8)
+    assert data.nbytes/1e6 > 0.1
+    pane.object = data
+    assert np.frombuffer(base64.b64decode(model.data['buffer'].encode())).nbytes/1e6 <= 0.1
+    #with float64
+    data = np.random.rand(50,50,50)
+    assert data.nbytes/1e6 > 0.1
+    pane.object = data
+    assert np.frombuffer(base64.b64decode(model.data['buffer'].encode())).nbytes/1e6 <= 0.1
 
     # Cleanup
     pane._cleanup(model)
