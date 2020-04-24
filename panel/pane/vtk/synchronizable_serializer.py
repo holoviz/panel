@@ -236,19 +236,22 @@ def serializeInstance(parent, instance, instanceId, context, depth):
 
 def initializeSerializers():
     # Actors/viewProps
-    registerInstanceSerializer('vtkVolume', genericVolumeSerializer)
+    registerInstanceSerializer('vtkImageSlice', genericProp3DSerializer)
+    registerInstanceSerializer('vtkVolume', genericProp3DSerializer)
     registerInstanceSerializer('vtkOpenGLActor', genericActorSerializer)
     registerInstanceSerializer('vtkPVLODActor', genericActorSerializer)
+    
 
     # Mappers
     registerInstanceSerializer(
-        'vtkOpenGLPolyDataMapper', genericMapperSerializer)
+        'vtkOpenGLPolyDataMapper', genericPolyDataMapperSerializer)
     registerInstanceSerializer(
-        'vtkCompositePolyDataMapper2', genericMapperSerializer)
-    registerInstanceSerializer('vtkDataSetMapper', genericMapperSerializer)
+        'vtkCompositePolyDataMapper2', genericPolyDataMapperSerializer)
+    registerInstanceSerializer('vtkDataSetMapper', genericPolyDataMapperSerializer)
     registerInstanceSerializer(
         'vtkFixedPointVolumeRayCastMapper', genericVolumeMapperSerializer)
-    
+    registerInstanceSerializer(
+        'vtkOpenGLImageSliceMapper', imageSliceMapperSerializer)
 
     # LookupTables/TransferFunctions
     registerInstanceSerializer('vtkLookupTable', lookupTableSerializer2)
@@ -267,10 +270,11 @@ def initializeSerializers():
     # Property
     registerInstanceSerializer('vtkOpenGLProperty', propertySerializer)
     registerInstanceSerializer('vtkVolumeProperty', volumePropertySerializer)
+    registerInstanceSerializer('vtkImageProperty', imagePropertySerializer)
 
     # Datasets
     registerInstanceSerializer('vtkPolyData', polydataSerializer)
-    registerInstanceSerializer('vtkImageData', imagedataSerializer)
+    registerInstanceSerializer('vtkImageData', imageDataSerializer)
     registerInstanceSerializer(
         'vtkStructuredGrid', mergeToPolydataSerializer)
     registerInstanceSerializer(
@@ -434,7 +438,8 @@ def extractRequiredFields(extractedFields, parent, dataset, context, requestedFi
                 arrayMeta['registration'] = 'setScalars'
                 extractedFields.append(arrayMeta)
 
-    if parent.IsA('vtkTexture') and dataset.GetPointData().GetScalars():
+    elif ((parent.IsA('vtkTexture') or parent.IsA('vtkImageSliceMapper'))
+          and dataset.GetPointData().GetScalars()):
         arrayMeta = getArrayDescription(
             dataset.GetPointData().GetScalars(), context)
         arrayMeta['location'] = 'pointData'
@@ -465,225 +470,110 @@ def extractRequiredFields(extractedFields, parent, dataset, context, requestedFi
 # Concrete instance serializers
 # -----------------------------------------------------------------------------
 
-def genericVolumeSerializer(parent, volume, volumeId, context, depth):
+def genericPropSerializer(parent, prop, popId, context, depth):
     # This kind of actor has two "children" of interest, a property and a
-    # mapper
-    volumeVisibility = volume.GetVisibility()
+    # mapper (optionnaly a texture)
     mapperInstance = None
     propertyInstance = None
     calls = []
     dependencies = []
 
+    mapper = None
+    if not hasattr(prop, 'GetMapper'):
+        if context.debugAll:
+            print('This volume does not have a GetMapper method')
+    else:
+        mapper = prop.GetMapper()
+    
+    if mapper:
+        mapperId = context.getReferenceId(mapper)
+        mapperInstance = serializeInstance(
+            prop, mapper, mapperId, context, depth + 1)
+        if mapperInstance:
+            dependencies.append(mapperInstance)
+            calls.append(['setMapper', [wrapId(mapperId)]])
 
-    if volumeVisibility:
-        mapper = None
-        if not hasattr(volume, 'GetMapper'):
-            if context.debugAll:
-                print('This volume does not have a GetMapper method')
-        else:
-            mapper = volume.GetMapper()
-        
-        if mapper:
-            mapperId = context.getReferenceId(mapper)
-            mapperInstance = serializeInstance(
-                volume, mapper, mapperId, context, depth + 1)
-            if mapperInstance:
-                dependencies.append(mapperInstance)
-                calls.append(['setMapper', [wrapId(mapperId)]])
-
-        prop = None
-        if hasattr(volume, 'GetProperty'):
-            prop = volume.GetProperty()
-        else:
-            if context.debugAll:
-                print('This volume does not have a GetProperty method')
-
-        if prop:
-            propId = context.getReferenceId(prop)
-            propertyInstance = serializeInstance(
-                volume, prop, propId, context, depth + 1)
-            if propertyInstance:
-                dependencies.append(propertyInstance)
-                calls.append(['setProperty', [wrapId(propId)]])
-        
-        return {
-            'parent': context.getReferenceId(parent),
-            'id': volumeId,
-            'type': volume.GetClassName(),
-            'properties': {
-                # vtkProp
-                'visibility': volumeVisibility,
-                'pickable': volume.GetPickable(),
-                'dragable': volume.GetDragable(),
-                'useBounds': volume.GetUseBounds(),
-                # vtkProp3D
-                'origin': volume.GetOrigin(),
-                'position': volume.GetPosition(),
-                'scale': volume.GetScale(),
-                'orientation': volume.GetOrientation(),
-            },
-            'calls': calls,
-            'dependencies': dependencies
-        }
-
-
-
-def genericActorSerializer(parent, actor, actorId, context, depth):
-    # This kind of actor has two "children" of interest, a property and a
-    # mapper (opionally a texture)
-    actorVisibility = actor.GetVisibility()
-    mapperInstance = None
-    propertyInstance = None
-    calls = []
-    dependencies = []
-
-    if actorVisibility:
-        mapper = None
-        if not hasattr(actor, 'GetMapper'):
-            if context.debugAll:
-                print('This actor does not have a GetMapper method')
-        else:
-            mapper = actor.GetMapper()
-
-        if mapper:
-            mapperId = context.getReferenceId(mapper)
-            mapperInstance = serializeInstance(
-                actor, mapper, mapperId, context, depth + 1)
-            if mapperInstance:
-                dependencies.append(mapperInstance)
-                calls.append(['setMapper', [wrapId(mapperId)]])
-
-        prop = None
-        if hasattr(actor, 'GetProperty'):
-            prop = actor.GetProperty()
-        else:
-            if context.debugAll:
-                print('This actor does not have a GetProperty method')
-
-        if prop:
-            propId = context.getReferenceId(prop)
-            propertyInstance = serializeInstance(
-                actor, prop, propId, context, depth + 1)
-            if propertyInstance:
-                dependencies.append(propertyInstance)
-                calls.append(['setProperty', [wrapId(propId)]])
-
-        # Handle texture if any
-        texture = None
-        if hasattr(actor, 'GetTexture'):
-            texture = actor.GetTexture()
-        else:
-            if context.debugAll:
-                print('This actor does not have a GetTexture method')
-
-        if texture:
-            textureId = context.getReferenceId(texture)
-            textureInstance = serializeInstance(
-                actor, texture, textureId, context, depth + 1)
-            if textureInstance:
-                dependencies.append(textureInstance)
-                calls.append(['addTexture', [wrapId(textureId)]])
-
-    if actorVisibility == 0 or (mapperInstance and propertyInstance):
-        return {
-            'parent': context.getReferenceId(parent),
-            'id': actorId,
-            'type': actor.GetClassName(),
-            'properties': {
-                # vtkProp
-                'visibility': actorVisibility,
-                'pickable': actor.GetPickable(),
-                'dragable': actor.GetDragable(),
-                'useBounds': actor.GetUseBounds(),
-                # vtkProp3D
-                'origin': actor.GetOrigin(),
-                'position': actor.GetPosition(),
-                'scale': actor.GetScale(),
-                'orientation': actor.GetOrientation(),
-                # vtkActor
-                'forceOpaque': actor.GetForceOpaque(),
-                'forceTranslucent': actor.GetForceTranslucent()
-            },
-            'calls': calls,
-            'dependencies': dependencies
-        }
-
-# -----------------------------------------------------------------------------
-
-
-def textureSerializer(parent, texture, textureId, context, depth):
-        # This kind of mapper requires us to get 2 items: input data and lookup
-        # table
-    dataObject = None
-    dataObjectInstance = None
-    calls = []
-    dependencies = []
-
-    if hasattr(texture, 'GetInput'):
-        dataObject = texture.GetInput()
+    properties = None
+    if hasattr(prop, 'GetProperty'):
+        properties = prop.GetProperty()
     else:
         if context.debugAll:
-            print('This texture does not have GetInput method')
+            print('This image does not have a GetProperty method')
 
-    if dataObject:
-        dataObjectId = '%s-texture' % textureId
-        dataObjectInstance = serializeInstance(
-            texture, dataObject, dataObjectId, context, depth + 1)
-        if dataObjectInstance:
-            dependencies.append(dataObjectInstance)
-            calls.append(['setInputData', [wrapId(dataObjectId)]])
-
-    if dataObjectInstance:
-        return {
-            'parent': context.getReferenceId(parent),
-            'id': textureId,
-            'type': 'vtkTexture',
-            'properties': {
-                'interpolate': texture.GetInterpolate(),
-                'repeat': texture.GetRepeat(),
-                'edgeClamp': texture.GetEdgeClamp(),
-            },
-            'calls': calls,
-            'dependencies': dependencies
-        }
-
-# -----------------------------------------------------------------------------
-
-
-def genericVolumeMapperSerializer(parent, mapper, mapperId, context, depth):
-    dataObject = None
-    dataObjectInstance = None
-    calls = []
-    dependencies = []
-
-    if hasattr(mapper, 'GetInputDataObject'):
-        dataObject = mapper.GetInputDataObject(0, 0)
-    else:
-        if context.debugAll:
-            print('This mapper does not have GetInputDataObject method')
+    if properties:
+        propId = context.getReferenceId(properties)
+        propertyInstance = serializeInstance(
+            prop, properties, propId, context, depth + 1)
+        if propertyInstance:
+            dependencies.append(propertyInstance)
+            calls.append(['setProperty', [wrapId(propId)]])
     
-    if dataObject:
-        dataObjectId = '%s-dataset' % mapperId
-        dataObjectInstance = serializeInstance(
-            mapper, dataObject, dataObjectId, context, depth + 1)
-        if dataObjectInstance:
-            dependencies.append(dataObjectInstance)
-            calls.append(['setInputData', [wrapId(dataObjectId)]])
-    
+    # Handle texture if any
+    texture = None
+    if hasattr(prop, 'GetTexture'):
+        texture = prop.GetTexture()
+
+    if texture:
+        textureId = context.getReferenceId(texture)
+        textureInstance = serializeInstance(
+            prop, texture, textureId, context, depth + 1)
+        if textureInstance:
+            dependencies.append(textureInstance)
+            calls.append(['addTexture', [wrapId(textureId)]])
+
     return {
         'parent': context.getReferenceId(parent),
-        'id': mapperId,
-        'type': 'vtkVolumeMapper', # mapper.GetClassName(),
+        'id': popId,
+        'type': prop.GetClassName(),
         'properties': {
-            'sampleDistance': mapper.GetSampleDistance(),
-            'imageSampleDistance': mapper.GetImageSampleDistance(),
-            # 'maximumSamplesPerRay',
-            'autoAdjustSampleDistances': mapper.GetAutoAdjustSampleDistances(),
-            'blendMode': mapper.GetBlendMode(),
+            # vtkProp
+            'visibility': prop.GetVisibility(),
+            'pickable': prop.GetPickable(),
+            'dragable': prop.GetDragable(),
+            'useBounds': prop.GetUseBounds(),  
         },
         'calls': calls,
         'dependencies': dependencies
     }
+
+# -----------------------------------------------------------------------------
+
+
+def genericProp3DSerializer(parent, prop3D, prop3DId, context, depth):
+    # This kind of actor has some position properties to add
+    instance = genericPropSerializer(parent, prop3D, prop3DId, context, depth)
+    
+    if not instance: return
+    
+    instance['properties'].update({
+        # vtkProp3D
+        'origin': prop3D.GetOrigin(),
+        'position': prop3D.GetPosition(),
+        'scale': prop3D.GetScale(),
+        'orientation': prop3D.GetOrientation(),
+    })
+    
+    if prop3D.GetUserMatrix():
+        instance['properties'].update({
+            'userMatrix': [prop3D.GetUserMatrix().GetElement(i%4,i//4) for i in range(16)],
+        })
+    return instance
+
+# -----------------------------------------------------------------------------
+
+
+def genericActorSerializer(parent, actor, actorId, context, depth):
+    # may have texture and 
+    instance = genericProp3DSerializer(parent, actor, actorId, context, depth)
+
+    if not instance: return
+
+    instance['properties'].update({
+        # vtkActor
+        'forceOpaque': actor.GetForceOpaque(),
+        'forceTranslucent': actor.GetForceTranslucent()
+    })
+    return instance
 
 # -----------------------------------------------------------------------------
 
@@ -705,7 +595,7 @@ def genericMapperSerializer(parent, mapper, mapperId, context, depth):
 
     if dataObject:
         dataObjectId = '%s-dataset' % mapperId
-        if parent.IsA('vtkActor'):
+        if parent.IsA('vtkActor') and not mapper.IsA('vtkTexture'):
             # vtk-js actors can render only surfacic datasets
             # => we ensure to convert the dataset in polydata
             dataObjectInstance = mergeToPolydataSerializer(
@@ -721,9 +611,9 @@ def genericMapperSerializer(parent, mapper, mapperId, context, depth):
 
     if hasattr(mapper, 'GetLookupTable'):
         lookupTable = mapper.GetLookupTable()
-    else:
+    elif parent.IsA('vtkActor'):
         if context.debugAll:
-            print('This mapper does not have GetLookupTable method')
+            print('This mapper actor not have GetLookupTable method')
 
     if lookupTable:
         lookupTableId = context.getReferenceId(lookupTable)
@@ -733,28 +623,88 @@ def genericMapperSerializer(parent, mapper, mapperId, context, depth):
             dependencies.append(lookupTableInstance)
             calls.append(['setLookupTable', [wrapId(lookupTableId)]])
 
-    if dataObjectInstance and lookupTableInstance:
-        colorArrayName = mapper.GetArrayName(
-        ) if mapper.GetArrayAccessMode() == 1 else mapper.GetArrayId()
+    if dataObjectInstance:
         return {
             'parent': context.getReferenceId(parent),
             'id': mapperId,
-            'type': 'vtkMapper', # mapper.GetClassName(),
-            'properties': {
-                'resolveCoincidentTopology': mapper.GetResolveCoincidentTopology(),
-                'renderTime': mapper.GetRenderTime(),
-                'arrayAccessMode': mapper.GetArrayAccessMode(),
-                'scalarRange': mapper.GetScalarRange(),
-                'useLookupTableScalarRange': 1 if mapper.GetUseLookupTableScalarRange() else 0,
-                'scalarVisibility': mapper.GetScalarVisibility(),
-                'colorByArrayName': colorArrayName,
-                'colorMode': mapper.GetColorMode(),
-                'scalarMode': mapper.GetScalarMode(),
-                'interpolateScalarsBeforeMapping': 1 if mapper.GetInterpolateScalarsBeforeMapping() else 0
-            },
+            'properties': {},
             'calls': calls,
             'dependencies': dependencies
         }
+
+# -----------------------------------------------------------------------------
+
+
+def genericPolyDataMapperSerializer(parent, mapper, mapperId, context, depth):
+    instance = genericMapperSerializer(parent, mapper, mapperId, context, depth)
+
+    if not instance: return
+
+    colorArrayName = mapper.GetArrayName(
+        ) if mapper.GetArrayAccessMode() == 1 else mapper.GetArrayId()
+
+    instance['type'] = "vtkMapper"
+    instance['properties'].update({
+        'resolveCoincidentTopology': mapper.GetResolveCoincidentTopology(),
+        'renderTime': mapper.GetRenderTime(),
+        'arrayAccessMode': mapper.GetArrayAccessMode(),
+        'scalarRange': mapper.GetScalarRange(),
+        'useLookupTableScalarRange': 1 if mapper.GetUseLookupTableScalarRange() else 0,
+        'scalarVisibility': mapper.GetScalarVisibility(),
+        'colorByArrayName': colorArrayName,
+        'colorMode': mapper.GetColorMode(),
+        'scalarMode': mapper.GetScalarMode(),
+        'interpolateScalarsBeforeMapping': 1 if mapper.GetInterpolateScalarsBeforeMapping() else 0
+    })
+    return instance
+
+# -----------------------------------------------------------------------------
+
+
+def genericVolumeMapperSerializer(parent, mapper, mapperId, context, depth):
+    instance = genericMapperSerializer(parent, mapper, mapperId, context, depth)
+
+    if not instance: return
+
+    instance['type'] = "vtkVolumeMapper"
+    instance['properties'].update({
+        'sampleDistance': mapper.GetSampleDistance(),
+        'imageSampleDistance': mapper.GetImageSampleDistance(),
+        # 'maximumSamplesPerRay',
+        'autoAdjustSampleDistances': mapper.GetAutoAdjustSampleDistances(),
+        'blendMode': mapper.GetBlendMode(),
+    })
+    return instance
+
+# -----------------------------------------------------------------------------
+
+
+def textureSerializer(parent, texture, textureId, context, depth):
+    instance = genericMapperSerializer(parent, texture, textureId, context, depth)
+
+    if not instance: return
+
+    instance['type'] = "vtkTexture"
+    instance['properties'].update({
+        'interpolate': texture.GetInterpolate(),
+        'repeat': texture.GetRepeat(),
+        'edgeClamp': texture.GetEdgeClamp(),
+    })
+    return instance
+
+# -----------------------------------------------------------------------------
+
+
+def imageSliceMapperSerializer(parent, mapper, mapperId, context, depth):
+    # On vtkjs side : vtkImageMapper connected to a vtkImageReslice filter
+
+    instance = genericMapperSerializer(parent, mapper, mapperId, context, depth)    
+
+    if not instance: return
+
+    instance['type'] = mapper.GetClassName()
+    
+    return instance
 
 # -----------------------------------------------------------------------------
 
@@ -862,24 +812,37 @@ def propertySerializer(parent, propObj, propObjId, context, depth):
 def volumePropertySerializer(parent, propObj, propObjId, context, depth):
     dependencies = []
     calls = []
-
-    # ColorTranferFunction
-    ctfun = propObj.GetRGBTransferFunction()
-    ctfunId = context.getReferenceId(ctfun)
-    ctfunInstance = serializeInstance(
-        propObj, ctfun, ctfunId, context, depth + 1)
-    if ctfunInstance:
-        dependencies.append(ctfunInstance)
-        calls.append(['setRGBTransferFunction', [0, wrapId(ctfunId)]])
+    # TODO: for the moment only component 0 handle
 
     #OpactiyFunction
     ofun = propObj.GetScalarOpacity()
-    ofunId = context.getReferenceId(ofun)
-    ofunInstance = serializeInstance(
-        propObj, ofun, ofunId, context, depth + 1)
-    if ofunInstance:
-        dependencies.append(ofunInstance)
-        calls.append(['setScalarOpacity', [0, wrapId(ofunId)]])
+    if ofun:
+        ofunId = context.getReferenceId(ofun)
+        ofunInstance = serializeInstance(
+            propObj, ofun, ofunId, context, depth + 1)
+        if ofunInstance:
+            dependencies.append(ofunInstance)
+            calls.append(['setScalarOpacity', [0, wrapId(ofunId)]])
+
+    # ColorTranferFunction
+    ctfun = propObj.GetRGBTransferFunction()
+    if ctfun:
+        ctfunId = context.getReferenceId(ctfun)
+        ctfunInstance = serializeInstance(
+            propObj, ctfun, ctfunId, context, depth + 1)
+        if ctfunInstance:
+            dependencies.append(ctfunInstance)
+            calls.append(['setRGBTransferFunction', [0, wrapId(ctfunId)]])
+
+    # GrayTranferFunction
+    gtfun = propObj.GetGrayTransferFunction()
+    if gtfun:
+        gtfunId = context.getReferenceId(gtfun)
+        gtfunInstance = serializeInstance(
+            propObj, gtfun, gtfunId, context, depth + 1)
+        if gtfunInstance:
+            dependencies.append(gtfunInstance)
+            calls.append(['setGrayTransferFunction', [0, wrapId(gtfunId)]])
 
     calls += [
         ['setScalarOpacityUnitDistance', [0, propObj.GetScalarOpacityUnitDistance(0)]],
@@ -894,9 +857,9 @@ def volumePropertySerializer(parent, propObj, propObjId, context, depth):
         'properties': {
             'independentComponents': propObj.GetIndependentComponents(),
             'interpolationType': propObj.GetInterpolationType(),
-            'shade': propObj.GetShade(),
             'ambient': propObj.GetAmbient(),
             'diffuse': propObj.GetDiffuse(),
+            'shade': propObj.GetShade(),
             'specular': propObj.GetSpecular(0),
             'specularPower': propObj.GetSpecularPower(),
         },
@@ -904,11 +867,43 @@ def volumePropertySerializer(parent, propObj, propObjId, context, depth):
         'calls': calls,
     }
 
+# -----------------------------------------------------------------------------
+
+
+def imagePropertySerializer(parent, propObj, propObjId, context, depth):
+    calls = []
+    dependencies = []
+
+    lookupTable = propObj.GetLookupTable()
+    if lookupTable: 
+        ctfun = lookupTableToColorTransferFunction(lookupTable)
+        ctfunId = context.getReferenceId(ctfun)
+        ctfunInstance = serializeInstance(
+            propObj, ctfun, ctfunId, context, depth + 1)
+        if ctfunInstance:
+            dependencies.append(ctfunInstance)
+            calls.append(['setRGBTransferFunction', [wrapId(ctfunId)]])
+
+    return {
+        'parent': context.getReferenceId(parent),
+        'id': propObjId,
+        'type': propObj.GetClassName(),
+        'properties': {
+            'interpolationType': propObj.GetInterpolationType(),
+            'colorWindow': propObj.GetColorWindow(),
+            'colorLevel': propObj.GetColorLevel(),
+            'ambient': propObj.GetAmbient(),
+            'diffuse': propObj.GetDiffuse(),
+            'opacity': propObj.GetOpacity(),
+        },
+        'dependencies': dependencies,
+        'calls': calls,
+    }
 
 # -----------------------------------------------------------------------------
 
 
-def imagedataSerializer(parent, dataset, datasetId, context, depth):
+def imageDataSerializer(parent, dataset, datasetId, context, depth):
     datasetType = dataset.GetClassName()
 
     if hasattr(dataset, 'GetDirectionMatrix'):

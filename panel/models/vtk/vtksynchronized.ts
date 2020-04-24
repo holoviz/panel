@@ -111,6 +111,7 @@ export class VTKSynchronizedPlotView extends AbstractVTKView {
       if (!this._axes) this._set_axes()
       this._vtk_renwin.resize()
       this._vtk_render()
+      this._set_camera_state()
     })
 
   }

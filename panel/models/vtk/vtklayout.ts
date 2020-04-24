@@ -114,7 +114,6 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
       this._remove_default_key_binding()
       this._bind_key_events()
       this.plot()
-      this._set_camera_state()
       this._add_colorbars()
       this.model.renderer_el = this._vtk_renwin
     } else {
