@@ -399,6 +399,8 @@ class Renderable(param.Parameterized):
         """
         if root.ref['id'] in state._handles:
             del state._handles[root.ref['id']]
+        if root.document in state._locations:
+            del state._handles[root.document]
 
     def _preprocess(self, root):
         """
@@ -708,8 +710,8 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         if location:
             if isinstance(location, Location):
                 loc = location
-            elif doc in state._locations:
-                loc = state.location
+            elif state._locations.get(doc) is not None:
+                loc = state._locations[doc]
             else:
                 loc = Location()
             state._locations[doc] = loc
