@@ -400,7 +400,7 @@ class Renderable(param.Parameterized):
         if root.ref['id'] in state._handles:
             del state._handles[root.ref['id']]
         if root.document in state._locations:
-            del state._handles[root.document]
+            del state._locations[root.document]
 
     def _preprocess(self, root):
         """
