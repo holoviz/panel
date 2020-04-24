@@ -36,7 +36,6 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'django.contrib.staticfiles',
     # local
     'channels',
     'bokeh.server.django',
@@ -129,7 +128,3 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [bokehjsdir()]
 
 COLOR_MAP = 'Paired'
-
-# Ensure that bokeh resources are loaded from CDN
-# (loading from server broken as of Bokeh 2.0.1 so only CDN and INLINE will work)
-settings.resources = 'cdn'
