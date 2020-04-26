@@ -71,9 +71,7 @@ javascriptMapping = {
 
 
 def hashDataArray(dataArray):
-    hashedBit = hashlib.md5(buffer(dataArray)).hexdigest()
-    typeCode = arrayTypesMapping[dataArray.GetDataType()]
-    return '%s_%d%s' % (hashedBit, dataArray.GetSize(), typeCode)
+    return hashlib.md5(buffer(dataArray)).hexdigest()
 
 
 def getJSArrayType(dataArray):

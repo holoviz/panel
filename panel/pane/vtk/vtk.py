@@ -3,7 +3,9 @@
 Defines a VTKPane which renders a vtk plot using VTKPlot bokeh model.
 """
 import sys
+import json
 import base64
+import zipfile
 
 try:
     from urllib.request import urlopen
@@ -319,6 +321,20 @@ class VTK(AbstractVTK, SyncHelpers):
         else:
             new_camera.DeepCopy(old_camera)
 
+    def export_scene(self, filename='vtk_scene'):
+        if '.' not in filename:
+            filename += '.sync'
+        root = self.get_root()
+        context = self._contexts[root.id]
+        scene = root.scene
+        hash_keys = context.dataArrayCache
+
+        with zipfile.ZipFile(filename, mode='w') as zf:
+            zf.writestr('index.json', json.dumps(scene))
+            for name in hash_keys:
+                data = context.getCachedDataArray(name, binary=True, compression=False)
+                zf.writestr('data/%s' % name, data, zipfile.ZIP_DEFLATED)
+        return filename
 
 class VTKVolume(AbstractVTK):
 
