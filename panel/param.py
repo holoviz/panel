@@ -310,7 +310,9 @@ class Param(PaneBase):
         p_obj = self.object.param[p_name]
         kw_widget = {}
 
+        widget_class_overridden = True
         if self.widgets is None or p_name not in self.widgets:
+            widget_class_overridden = False
             widget_class = self.widget_type(p_obj)
         elif isinstance(self.widgets[p_name], dict):
             if 'type' in self.widgets[p_name]:
@@ -347,12 +349,14 @@ class Param(PaneBase):
             if bounds[1] is not None:
                 kw['end'] = bounds[1]
             if ('start' not in kw or 'end' not in kw):
-                if isinstance(p_obj, param.Number):
-                    widget_class = Spinner
-                    if isinstance(p_obj, param.Integer):
-                        kw['step'] = 1
-                elif not issubclass(widget_class, LiteralInput):
-                    widget_class = LiteralInput
+                # Do not change widget class if _mapping was overridden
+                if not widget_class_overridden:
+                    if isinstance(p_obj, param.Number):
+                        widget_class = Spinner
+                        if isinstance(p_obj, param.Integer):
+                            kw['step'] = 1
+                    elif not issubclass(widget_class, LiteralInput):
+                        widget_class = LiteralInput
             if hasattr(widget_class, 'step') and getattr(p_obj, 'step', None):
                 kw['step'] = p_obj.step
 
