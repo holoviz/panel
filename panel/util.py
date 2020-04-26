@@ -260,11 +260,7 @@ def value_as_date(value):
 
 
 def is_number(s):
-    try:
-        float(s)
-        return True
-    except ValueError:
-        return False
+    return isinstance(s, numbers.Number)
 
 
 def parse_query(query):
