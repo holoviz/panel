@@ -323,7 +323,7 @@ class VTK(AbstractVTK, SyncHelpers):
 
     def export_scene(self, filename='vtk_scene'):
         if '.' not in filename:
-            filename += '.sync'
+            filename += '.synch'
         root = self.get_root()
         context = self._contexts[root.id]
         scene = root.scene
