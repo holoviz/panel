@@ -307,6 +307,8 @@ class ServableMixin(object):
 
         Arguments
         ---------
+        title : str
+          A string title to give the Document (if served as an app)
         port: int (optional, default=0)
           Allows specifying a specific port
         websocket_origin: str or list(str) (optional)
@@ -317,8 +319,6 @@ class ServableMixin(object):
         threaded: boolean (optional, default=False)
           Whether to launch the Server on a separate thread, allowing
           interactive use.
-        title : str
-          A string title to give the Document (if served as an app)
         verbose: boolean (optional, default=True)
           Whether to print the address and port
         open : boolean (optional, default=True)
@@ -479,18 +479,28 @@ class Viewable(Renderable, Layoutable, ServableMixin):
             import holoviews as hv
             loaded = hv.extension._loaded
 
-        if config.comms == 'ipywidgets':
+
+        if config.comms != 'default':
             widget = ipywidget(self)
-            data = {}
+            if hasattr(widget, '_repr_mimebundle_'):
+                return widget._repr_mimebundle(include, exclude)
+            plaintext = repr(widget)
+            if len(plaintext) > 110:
+                plaintext = plaintext[:110] + '…'
+            data = {
+                'text/plain': plaintext,
+            }
             if widget._view_name is not None:
                 data['application/vnd.jupyter.widget-view+json'] = {
                     'version_major': 2,
                     'version_minor': 0,
                     'model_id': widget._model_id
                 }
-            if widget._view_name is not None:
-                widget._handle_displayed()
-            return data, {}
+            if config.comms == 'vscode':
+                from IPython.display import display
+                display(data, raw=True)
+                return {'text/html': '<div style="display: none"></div>'}
+            return data
 
         if not loaded:
             self.param.warning('Displaying Panel objects in the notebook '
