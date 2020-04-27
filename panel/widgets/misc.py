@@ -190,6 +190,8 @@ class FileDownload(Widget):
 
     _clicks = param.Integer(default=0)
 
+    _transfers = param.Integer(default=0)
+
     _mime_types = {
         'application': {
             'pdf': 'pdf', 'zip': 'zip'
@@ -305,3 +307,4 @@ class FileDownload(Widget):
 
         self.param.set_param(data=data, filename=filename)
         self._update_label()
+        self._transfers += 1

@@ -82,6 +82,7 @@ export namespace FileDownload {
     data: p.Property<string | null>
     label: p.Property<string>
     filename: p.Property<string | null>
+    _transfers: p.Property<number>
   }
 }
 
@@ -106,6 +107,7 @@ export class FileDownload extends InputWidget {
       label:    [ p.String,  "Download"  ],
       filename: [ p.String,  null  ],
       button_type: [ p.ButtonType, "default" ], // TODO (bev)
+      _transfers: [ p.Number, 0    ],
     })
 
     this.override({
