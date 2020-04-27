@@ -111,7 +111,7 @@ class Template(param.Parameterized, ServableMixin):
         return template.format(
             cls=cls, objs=('%s' % spacer).join(objs), spacer=spacer)
 
-    def _init_doc(self, doc=None, comm=None, title=None, notebook=False):
+    def _init_doc(self, doc=None, comm=None, title=None, notebook=False, location=True):
         doc = doc or _curdoc()
         title = title or 'Panel Application'
         doc.title = title
@@ -230,7 +230,7 @@ class Template(param.Parameterized, ServableMixin):
                              'referenced in the template.' % name)
         self._render_variables[name] = value
 
-    def server_doc(self, doc=None, title=None):
+    def server_doc(self, doc=None, title=None, location=None):
         """
         Returns a servable bokeh Document with the panel attached
 
@@ -247,7 +247,7 @@ class Template(param.Parameterized, ServableMixin):
         doc : bokeh.Document
           The Bokeh document the panel was attached to
         """
-        return self._init_doc(doc, title=title)
+        return self._init_doc(doc, title=title, location=location)
 
     def save(self, filename, title=None, resources=None, embed=False,
              max_states=1000, max_opts=3, embed_json=False,

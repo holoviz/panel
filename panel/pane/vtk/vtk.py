@@ -42,7 +42,7 @@ class VTKVolume(PaneBase):
         Name of the colormap used to transform pixel value in color.""")
 
     diffuse = param.Number(default=0.7, step=1e-2, doc="""
-        Value to control the diffuse Lighting. It relies on both the 
+        Value to control the diffuse Lighting. It relies on both the
         light direction and the object surface normal.""")
 
     display_volume = param.Boolean(default=True, doc="""
@@ -51,11 +51,11 @@ class VTKVolume(PaneBase):
 
     display_slices = param.Boolean(default=False, doc="""
         If set to true, the orthgonal slices in the three (X, Y, Z)
-        directions are displayed. Position of each slice can be 
+        directions are displayed. Position of each slice can be
         controlled using slice_(i,j,k) parameters.""")
 
     edge_gradient = param.Number(default=0.4, bounds=(0, 1), step=1e-2, doc="""
-        Parameter to adjust the opacity of the volume based on the 
+        Parameter to adjust the opacity of the volume based on the
         gradient between voxels.""")
 
     interpolation = param.Selector(default='fast_linear', objects=['fast_linear','linear','nearest'], doc="""
@@ -82,18 +82,18 @@ class VTKVolume(PaneBase):
         The value must be specified as an hexadecimal color string.""")
 
     rescale = param.Boolean(default=False, doc="""
-        If set to True the colormap is rescaled beween min and max 
+        If set to True the colormap is rescaled beween min and max
         value of the non-transparent pixel, otherwise  the full range
         of the pixel values are used.""")
 
     shadow = param.Boolean(default=True, doc="""
-        If set to False, then the mapper for the volume will not 
-        perform shading computations, it is the same as setting 
+        If set to False, then the mapper for the volume will not
+        perform shading computations, it is the same as setting
         ambient=1, diffuse=0, specular=0.""")
 
     sampling = param.Number(default=0.4, bounds=(0, 1), step=1e-2, doc="""
-        Parameter to adjust the distance between samples used for 
-        rendering. The lower the value is the more precise is the 
+        Parameter to adjust the distance between samples used for
+        rendering. The lower the value is the more precise is the
         representation but it is more computationally intensive.""")
 
     spacing = param.Tuple(default=(1, 1, 1), length=3, doc="""
@@ -317,6 +317,10 @@ class VTK(PaneBase):
 
     camera = param.Dict(doc="State of the rendered VTK camera.")
 
+    color_mappers = param.List(doc="""
+        List of color_mapper which will be display with colorbars in the
+        panel.""")
+
     enable_keybindings = param.Boolean(default=False, doc="""
         Activate/Deactivate keys binding.
 
@@ -343,6 +347,7 @@ class VTK(PaneBase):
         self._vtkjs = None
         if self.serialize_on_instantiation:
             self._vtkjs = self._get_vtkjs()
+            self.color_mappers = self._construct_color_mappers()
 
     @classmethod
     def applies(cls, obj):
@@ -384,7 +389,7 @@ class VTK(PaneBase):
         self._legend = None
         super(VTK, self)._update_object(ref, doc, root, parent, comm)
 
-    def construct_colorbars(self, orientation='horizontal'):
+    def _construct_color_mappers(self):
         if self._legend is None:
             try:
                 from .vtkjs_serializer import construct_palettes
@@ -392,14 +397,23 @@ class VTK(PaneBase):
             except Exception:
                 self._legend = {}
         if self._legend:
-            from bokeh.models import Plot, LinearColorMapper, ColorBar, FixedTicker
+            from bokeh.models import LinearColorMapper
+            return [LinearColorMapper(name=k, low=v['low'], high=v['high'], palette=v['palette'])
+                        for k, v in self._legend.items()]
+        else:
+            return []
+
+    def construct_colorbars(self, orientation='horizontal'):
+        color_mappers = self._construct_color_mappers()
+        if len(color_mappers)>0:
+            from bokeh.models import Plot, ColorBar, FixedTicker
             if orientation == 'horizontal':
                 cbs = []
-                for k, v in self._legend.items():
-                    ticks = np.linspace(v['low'], v['high'], 5)
+                for color_mapper in color_mappers:
+                    ticks = np.linspace(color_mapper.low, color_mapper.high, 5)
                     cbs.append(ColorBar(
-                        color_mapper=LinearColorMapper(low=v['low'], high=v['high'], palette=v['palette']),
-                        title=k,
+                        color_mapper=color_mapper,
+                        title=color_mapper.name,
                         ticker=FixedTicker(ticks=ticks),
                         label_standoff=5, background_fill_alpha=0, orientation='horizontal', location=(0, 0)
                     ))
@@ -465,6 +479,7 @@ class VTK(PaneBase):
         self._vtkjs = None
         vtkjs = self._get_vtkjs()
         model.data = base64encode(vtkjs) if vtkjs is not None else vtkjs
+        self.color_mappers = self._construct_color_mappers()
 
     def export_vtkjs(self, filename='vtk_panel.vtkjs'):
         with open(filename, 'wb') as f:

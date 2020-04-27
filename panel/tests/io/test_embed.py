@@ -3,21 +3,18 @@ from __future__ import absolute_import, division, unicode_literals, print_functi
 import os
 import json
 import glob
+import pytest
 
 from io import StringIO
 
-from bokeh.models import ColumnDataSource, CustomJS
+from bokeh.models import CustomJS
 
 from panel import Row
-from panel.io.notebook import ipywidget
 from panel.config import config
 from panel.io.embed import embed_state
-from panel.io.model import patch_cds_msg
 from panel.pane import Str
 from panel.param import Param
 from panel.widgets import Select, FloatSlider, Checkbox
-
-from .util import jb_available
 
 
 def test_embed_param_jslink(document, comm):
@@ -93,6 +90,81 @@ def test_embed_select_str_link(document, comm):
         assert event['attr'] == 'text'
         assert event['model'] == model.children[1].ref
         assert event['new'] == '&lt;pre&gt;%s&lt;/pre&gt;' % k
+
+
+def test_embed_float_slider_explicit_values(document, comm):
+    select = FloatSlider()
+    string = Str()
+    def link(target, event):
+        target.object = event.new
+    select.link(string, callbacks={'value': link})
+    panel = Row(select, string)
+    with config.set(embed=True):
+        model = panel.get_root(document, comm)
+    embed_state(panel, model, document, states={select: [0.1, 0.7, 1]})
+    _, state = document.roots
+    assert set(state.state) == {0, 1, 2}
+    states = {0: 0.1, 1: 0.7, 2: 1}
+    for (k, v) in state.state.items():
+        content = json.loads(v['content'])
+        assert 'events' in content
+        events = content['events']
+        assert len(events) == 1
+        event = events[0]
+        assert event['kind'] == 'ModelChanged'
+        assert event['attr'] == 'text'
+        assert event['model'] == model.children[1].ref
+        assert event['new'] == '&lt;pre&gt;%s&lt;/pre&gt;' % states[k]
+
+
+def test_embed_select_explicit_values(document, comm):
+    select = Select(options=['A', 'B', 'C'])
+    string = Str()
+    def link(target, event):
+        target.object = event.new
+    select.link(string, callbacks={'value': link})
+    panel = Row(select, string)
+    with config.set(embed=True):
+        model = panel.get_root(document, comm)
+    embed_state(panel, model, document, states={select: ['A', 'B']})
+    _, state = document.roots
+    assert set(state.state) == {'A', 'B'}
+    for k, v in state.state.items():
+        content = json.loads(v['content'])
+        assert 'events' in content
+        events = content['events']
+        assert len(events) == 1
+        event = events[0]
+        assert event['kind'] == 'ModelChanged'
+        assert event['attr'] == 'text'
+        assert event['model'] == model.children[1].ref
+        assert event['new'] == '&lt;pre&gt;%s&lt;/pre&gt;' % k
+
+
+def test_embed_select_str_explicit_values_not_found(document, comm):
+    select = Select(options=['A', 'B', 'C'])
+    string = Str()
+    def link(target, event):
+        target.object = event.new
+    select.link(string, callbacks={'value': link})
+    panel = Row(select, string)
+    with config.set(embed=True):
+        model = panel.get_root(document, comm)
+    with pytest.raises(ValueError):
+        embed_state(panel, model, document, states={select: ['A', 'D']})
+
+
+def test_embed_float_slider_explicit_values_out_of_bounds(document, comm):
+    select = FloatSlider()
+    string = Str()
+    def link(target, event):
+        target.object = event.new
+    select.link(string, callbacks={'value': link})
+    panel = Row(select, string)
+    with config.set(embed=True):
+        model = panel.get_root(document, comm)
+    with pytest.raises(ValueError):
+        embed_state(panel, model, document, states={select: [0.1, 0.7, 2]})
 
 
 def test_embed_select_str_link_two_steps(document, comm):
@@ -409,78 +481,3 @@ def test_save_embed_json(tmpdir):
         assert event['kind'] == 'ModelChanged'
         assert event['attr'] == 'text'
         assert event['new'] == '&lt;pre&gt;%s&lt;/pre&gt;' % v
-
-
-@jb_available
-def test_ipywidget():
-    pane = Str('A')
-    widget = ipywidget(pane)
-
-    assert widget._view_count == 0
-    assert len(pane._models) == 1
-
-    init_id = list(pane._models)[0]
-
-    widget._view_count = 1
-
-    assert widget._view_count == 1
-    assert init_id in pane._models
-
-    widget._view_count = 0
-
-    assert len(pane._models) == 0
-
-    widget._view_count = 1
-
-    assert len(pane._models) == 1
-    prev_id = list(pane._models)[0]
-
-    widget.notify_change({'new': 1, 'old': 1, 'name': '_view_count',
-                          'type': 'change', 'model': widget})
-    assert prev_id in pane._models
-    assert len(pane._models) == 1
-
-    widget._view_count = 2
-
-    assert prev_id in pane._models
-    assert len(pane._models) == 1
-
-
-def test_patch_cds_typed_array():
-    cds = ColumnDataSource()
-    msg = {
-        'header': {'msgid': 'TEST', 'msgtype': 'PATCH-DOC'},
-        'metadata': {},
-        'content': {
-            'events': [{
-                'kind': 'ModelChanged',
-                'model': {'id': cds.ref['id']},
-                'attr': 'data',
-                'new': {
-                    'a': {'2': 2, '0': 0, '1': 1},
-                    'b': {'0': 'a', '2': 'c', '1': 'b'}
-                }
-            }],
-            'references': []
-        },
-        'buffers': []
-    }
-    expected = {
-        'header': {'msgid': 'TEST', 'msgtype': 'PATCH-DOC'},
-        'metadata': {},
-        'content': {
-            'events': [{
-                'kind': 'ModelChanged',
-                'model': {'id': cds.ref['id']},
-                'attr': 'data',
-                'new': {
-                    'a': [0, 1, 2],
-                    'b': ['a', 'b', 'c']
-                }
-            }],
-            'references': []
-        },
-        'buffers': []
-    }
-    patch_cds_msg(cds, msg)
-    assert msg == expected

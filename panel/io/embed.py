@@ -91,7 +91,7 @@ def param_to_jslink(model, widget):
     """
     Converts Param pane widget links into JS links if possible.
     """
-    from ..viewable import Reactive
+    from ..reactive import Reactive
     from ..widgets import Widget, LiteralInput
 
     param_pane = widget._param_pane
@@ -177,7 +177,7 @@ def links_to_jslinks(model, widget):
 
 def embed_state(panel, model, doc, max_states=1000, max_opts=3,
                 json=False, json_prefix='', save_path='./',
-                load_path=None, progress=True):
+                load_path=None, progress=True, states={}):
     """
     Embeds the state of the application on a State model which allows
     exporting a static version of an app. This works by finding all
@@ -188,7 +188,7 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
 
     Arguments
     ---------
-    panel: panel.viewable.Reactive
+    panel: panel.reactive.Reactive
       The Reactive component being exported
     model: bokeh.model.Model
       The bokeh model being exported
@@ -200,12 +200,16 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
       The max number of ticks sampled in a continuous widget like a slider
     json: boolean (default=True)
       Whether to export the data to json files
+    json_prefix: str (default='')
+      Prefix for JSON filename
     save_path: str (default='./')
       The path to save json files to
     load_path: str (default=None)
       The path or URL the json files will be loaded from.
     progress: boolean (default=True)
       Whether to report progress
+    states: dict (default={})
+      A dictionary specifying the widget values to embed for each widget
     """
     from ..config import config
     from ..layout import Panel
@@ -236,6 +240,7 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
                if w not in Link.registry]
     state_model = State()
 
+
     widget_data, ignore = [], []
     for widget in widgets:
         if widget._param_pane is not None:
@@ -259,17 +264,18 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
             continue
 
         # Get data which will let us record the changes on widget events 
-        widget, w_model, vals, getter, on_change, js_getter = widget._get_embed_state(model, max_opts)
-        w_type = widget._widget_type
-        if isinstance(widget, DiscreteSlider):
-            w_model = widget._composite[1]._models[ref][0].select_one({'type': w_type})
+        w, w_model, vals, getter, on_change, js_getter = widget._get_embed_state(
+            model, states.get(widget), max_opts)
+        w_type = w._widget_type
+        if isinstance(w, DiscreteSlider):
+            w_model = w._composite[1]._models[ref][0].select_one({'type': w_type})
         else:
-            w_model = widget._models[ref][0]
+            w_model = w._models[ref][0]
             if not isinstance(w_model, w_type):
                 w_model = w_model.select_one({'type': w_type})
         js_callback = CustomJS(code=STATE_JS.format(
             id=state_model.ref['id'], js_getter=js_getter))
-        widget_data.append((widget, w_model, vals, getter, js_callback, on_change))
+        widget_data.append((w, w_model, vals, getter, js_callback, on_change))
 
     # Ensure we recording state for widgets which could be JS linked
     values = []
