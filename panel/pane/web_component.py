@@ -1,18 +1,20 @@
-"""Implementation of the wired WebComponent"""
+"""Implementation of a generic WebComponent pane"""
+
 import ast
 import json
+
 from html.parser import HTMLParser
 from typing import Dict, Optional, Set
 
-# @philippjfr?: For now i'm using lxml for . Is it ok to add as a requirement?
-# Or shoudl we find another solution like regex or similar?
 import lxml.html as LH
 import param
 
+from bokeh.models import ColumnDataSource
+
 from ..models import WebComponent as _BkWebComponent
 from ..util import escape
+from ..viewable import Layoutable
 from ..widgets.base import Widget
-
 
 
 # Defines how to convert from attribute string value to parameter value
@@ -22,8 +24,9 @@ PARAMETER_TYPE = {
     param.Number: float,
     param.ObjectSelector: str,
     param.Parameter: str,
-    param.List: ast.literal_eval,
-    param.Dict: ast.literal_eval,
+    param.List: json.loads,
+    param.Dict: json.loads,
+    param.Boolean: lambda value: value == "" or value is None
 }
 
 
@@ -31,8 +34,8 @@ class AttributeParser(HTMLParser):
     """Used to parse a the WebComponent html string to a dictionary of attribute keys and
     their values"""
 
-    first_tag: bool = True
-    attr_dict: Optional[Dict] = None
+    first_tag = True
+    attr_dict = None
 
     def handle_starttag(self, tag, attrs):
         if self.first_tag:
@@ -43,11 +46,8 @@ class AttributeParser(HTMLParser):
 
 class WebComponent(Widget):
     """
-    WebComponent
-    ============
-
-    Use the WebComponent to quickly plugin webcomponents and/ or Javascript libraries not already
-    supported in Panel.
+    A WebComponent allows wrapping webcomponents and/ or Javascript
+    libraries not already supported in Panel.
 
     You can use it by instantiating an instance or inheriting from it.
 
@@ -98,7 +98,84 @@ class WebComponent(Widget):
     - Source code for Perspective widgets
     """
 
-    _rename = {
+    attributes_to_watch = param.Dict(default={}, constant=True, doc="""
+        A dictionary of attributes and parameters
+  
+          - The attributes are the names of webcomponent to observe
+            for changes on the client/ browser/ javascript side.
+          - The parameters are the corresponding names of the
+            parameters on the python side
+
+        The attributes and parameters are automatically synchronized
+
+        If an attribute key has a parameter value of None then the
+        attribute is still observed and changes are update in the html
+        parameter. But it is not synchronized to a parameter.""")
+
+    attributes_last_change = param.Dict(doc="""
+        Mapping where the key is the name of the attribute changed and
+        the value is the new value of the attribute.
+
+        Please note that the value is a string or None.""")
+
+    column_data_source = param.ClassSelector(class_=ColumnDataSource, doc="""
+        The ColumnDataSource is used to efficiently transfer columnar
+        data to the client.""")
+
+    column_data_source_orient = param.ObjectSelector("dict", objects=["dict", "records"],
+                                                     doc="""
+        The orientation of the data when provided to the web component.
+
+          - dict: {"x": [1,2], "y": [3,4]}
+          - records: [{"x": 1, "y": 3}, {"x": 2, "y": 4}]
+    """)
+
+    column_data_source_load_function = param.String(doc="""
+        The name of the web component function or property used to load the data""")
+
+    component_type = param.ObjectSelector(default="htmlbox",
+                                          objects=["htmlbox", "inputgroup"])
+
+    events_count_last_change = param.Dict(doc="""
+        Mapping where the key is the name of the event, and the value
+        is the number of times it has fired in total.
+
+        Please note that the communication goes from client to server
+        and not the other way around.""")
+
+    events_to_watch = param.Dict(default={}, doc="""
+        Mapping where the keys are the name of the js events to watch
+        and the value is the name of a python parameter to increment
+        or None.
+
+        Use this if you want to support button clicks, mouseups etc.
+
+          class Button(WebComponent):
+              html = param.String('<wired-button>Button</wired-radio>')
+              events_to_watch = param.Dict(default={"click": "clicks"})
+              clicks = param.Integer()
+        """)
+
+    html = param.String()
+
+    properties_to_watch = param.Dict(default={}, constant=True, doc="""
+        Mapping where the key is the name of the js property and the value
+        is the name of the python parameter.""")
+
+    properties_last_change = param.Dict(doc="""
+        Mapping where the key is the name of the changed property and
+        the value is the new value of the property.""")
+
+    parameters_to_watch = param.List(default=[], constant=True, doc="""
+        A list of parameters that do not correspond to attributes but 
+        that the value of `html` depends on. For example parameters
+        that define the `innerHTML` of the `html` string.
+
+        In order for this to take effect you also need to do a custom
+        implementation of `_get_html_from_parameters_to_watch`.
+        """)
+
+    _rename_dict = {
         "title": None,
         "component_type": "componentType",
         "html": "innerHTML",
@@ -113,225 +190,105 @@ class WebComponent(Widget):
         "column_data_source_orient": "columnDataSourceOrient",
         "column_data_source_load_function": "columnDataSourceLoadFunction",
     }
+
     _widget_type = _BkWebComponent
-    # @Philippfr. Should we seperate this into different classes?
-    component_type = param.ObjectSelector("htmlbox", objects=["htmlbox", "inputgroup"])
-    # @philippjfr: Would it be an idea to add a regex?
-    html = param.String()
-    # @philippjfr: Can we enforce that this is Dict[str, Optional[str]]?
-    attributes_to_watch = param.Dict(
-        doc="""
-    A dictionary of attributes and parameters
 
-    - The attributes are the names of webcomponent to observe for changes on the client/ browser/ javascript side.
-    - The parameters are the corresponding names of the parameters on the python side
-
-    The attributes and parameters are automatically synchronized
-
-    If an attribute key has a parameter value of None then the attribute is still observed and changes
-    are update in the html parameter. But it is not synchronized to a parameter.
-
-    DO NOT CHANGE AFTER CONSTRUCTION OF THE OBJECT!
-
-    Example
-    ~~~~~~~
-
-    `attributes_to_watch = {"checked": "checked", "value": None, "ballSize": "ball_size"}`
-    """
-    )
-    # @philippjfr: Can we enforce that this is Dict[str, Optional[str]]?
-    attributes_last_change = param.Dict(
-        doc="""
-
-    The key is the name of the attribute changed. The value is the new value of the attribute.
-
-    Please note that the value is a string or None
-
-    Examples
-    ~~~~~~~~
-
-    ```
-    attributes_last_change = {"checked": ""}
-    attributes_last_change = {"value": None}
-    attributes_last_change = {"ballSize": "2"}
-    ```
-    """
-    )
-    # @philippjfr: Can we enforce that this is Dict[str, Optional[anything]?
-    properties_to_watch = param.Dict(
-        doc="""
-    The key is the name of the js property. The value is the name of the python parameter
-
-    DO NOT CHANGE AFTER CONSTRUCTION OF THE OBJECT!
-
-    Example
-    ~~~~~~~
-
-    `properties_to_watch = {"checked": "checked", "value": None, "ballSize": "ball_size"}`
-    """
-    )
-    # @philippjfr: Can we enforce that this is Dict[str, Optional[anything]?
-    properties_last_change = param.Dict(
-        doc="""
-
-    The key is the name of the property changed. The value is the new value of the property
-
-     Examples
-    ~~~~~~~~
-
-    ```
-    properties_last_change = {"checked": True}
-    properties_last_change = {"value": None}
-    properties_last_change = {"ballSize": 2}
-    ```
-    """
-    )
-    parameters_to_watch = param.List(
-        doc="""
-        A list of parameters that do not correspond to attributes but that the value of `html`
-        depends on. For example parameters that define the `innerHTML` of the `html` string.
-
-        In order for this to take effect you also need to do a custom implementation of
-        `_get_html_from_parameters_to_watch`.
-
-        DO NOT CHANGE AFTER CONSTRUCTION OF THE OBJECT!
-
-        Example
-        ~~~~~~~
-
-        The Wired `Fab` has an `icon` parameter that defines the `html` of the web component
-        as `<wired-fab><mwc-icon>{self.icon}</mwc-icon></wired-fab>`.
+    @property
+    def _rename(self):
+        """Returns a set of any new parameters added on self compared to WebComponent.
         """
-    )
-    events_to_watch = param.Dict(
-        doc="""
-    The key is the name of the js event. The value is the name of a python parameter to increment
-    or None.
-
-    Use this if you want to support button clicks, mouseups etc.
-
-    Example Button
-    ~~~~~~~~~~~~~~
-
-    class Button(WebComponent):
-        html = param.String('<wired-button>Button</wired-radio>')
-        events_to_watch = param.Dict(default={"click": "clicks"})
-
-        clicks = param.Integer()
-
-
-    Example Combobox
-    ~~~~~~~~~~~~~~~~
-
-    The Wired `ComboBox` does not run the `onchange` event handler when the selection changes. I.e.
-    adding "selected" to the `parameters_to_watch` does not work as expected.
-
-    But the `select` event is fired by the `ComboBox`. So if we also add `select`to
-    `events_to_watch` list, then the synchronization from js `selection` property to python
-    `selection` property works
-    """
-    )
-    events_count_last_change = param.Dict(
-        doc="""
-        Key is the name of the event, Value is the number of times it has fired in total
-
-        Please note that the communication goes from client to server and not the other way around.
-
-        Example
-        ~~~~~~~
-
-        events_count_last_change = {"click": 2}
-        """
-    )
-    # @philpfr which param.X should this be?
-    column_data_source = param.Parameter(
-        doc="""
-    The ColumnDataSource is used to efficiently transfer columnar data to the client
-
-    Example
-    ~~~~~~~
-
-    PerspectiveWidget
-    """
-    )
-    column_data_source_orient = param.ObjectSelector(
-        "dict",
-        objects=["dict", "records"],
-        doc="""
-    The orientation of the data when provided to the web component.
-
-    - dict: {"x": [1,2], "y": [3,4]}
-    - records: [{"x": 1, "y": 3}, {"x": 2, "y": 4}]
-
-    Example
-    ~~~~~~~
-
-    The `perspective-viewer`'s `load`s data in the `records` format.
-    """,
-    )
-    column_data_source_load_function = param.String(
-        doc="""
-    The name of the web component function or property used to load the data
-
-    Example
-    ~~~~~~
-
-    The `perspective-viewer` component uses the `load` function to load data.
-    """
-    )
+        params = (
+            list(self.attributes_to_watch.values()) +
+            list(self.properties_to_watch.values()) +
+            list(self.events_to_watch.values())
+        )
+        return dict(self._rename_dict, **{p: None for p in self.param
+                                          if p not in params and p not in self._rename_dict
+                                          and p not in Layoutable.param})
 
     def __init__(self, **params):
-        # Avoid AttributeError: unexpected attribute ...
-        for parameter in self._child_parameters():
-            self._rename[parameter] = None
-
-        if not self.param.attributes_to_watch.default:
-            self.param.attributes_to_watch.default = {}
-        if not self.param.properties_to_watch.default:
-            self.param.properties_to_watch.default = {}
-        if not self.param.events_to_watch.default:
-            self.param.events_to_watch.default = {}
-        if not self.param.parameters_to_watch.default:
-            self.param.parameters_to_watch.default = {}
-        else:
+        if 'html' not in params:
             params["html"] = self._get_initial_html_from_parameters_to_watch(**params)
-
-        super().__init__(**params)
-
+        super(WebComponent, self).__init__(**params)
         self.parser: HTMLParser = AttributeParser()
-        self.param.watch(self._update_parameters, ["html",])
-        self.param.watch(self._handle_attributes_last_change, ["attributes_last_change",])
-        self.param.watch(self._handle_properties_last_change, ["properties_last_change",])
-        self.param.watch(self._handle_events_count_last_change, ["events_count_last_change",])
-
-        if self.attributes_to_watch:
-            parameters_to_watch = [value for value in self.attributes_to_watch.values() if value]
-            self.param.watch(self._handle_parameter_attribute_change, parameters_to_watch)
-
-        if self.properties_to_watch:
-            parameters_to_watch = list(self.properties_to_watch.values())
-            self.param.watch(self._handle_parameter_property_change, parameters_to_watch)
-
-        if self.parameters_to_watch:
-            self.param.watch(
-                self._handle_parameters_to_watch_change, list(self.parameters_to_watch)
-            )
-
         self.update_html_from_attributes_to_watch()
-        self._update_properties()
+        self.properties_last_change = {
+            prop: getattr(self, pname) for prop, pname in self.properties_to_watch.items()
+        }
 
     def _process_param_change(self, msg):
         msg = super(WebComponent, self)._process_param_change(msg)
         if 'innerHTML' in msg:
             msg['innerHTML'] = escape(msg['innerHTML'])
+        for attr, pname in self.attributes_to_watch.items():
+            if pname not in msg:
+                continue
+            value = self.parse_parameter_value_to_attribute_value(pname, msg.pop(pname))
+            if msg.get('attributesLastChange') is None:
+                msg['attributesLastChange'] = {}
+            msg['attributesLastChange'][attr] = value
+        for prop, pname in self.properties_to_watch.items():
+            if pname not in msg:
+                continue
+            value = msg.pop(pname)
+            if msg.get('propertiesLastChange') is None:
+                msg['propertiesLastChange'] = {}
+            msg['propertiesLastChange'][prop] = value
+        for pname in self.events_to_watch.values():
+            if pname in msg:
+                del msg[pname]
+        html_change = any(pname in msg for pname in self.parameters_to_watch)
+        if html_change:
+            msg = {k: v for k, v in msg.items() if k not in self.parameters_to_watch}
+            params = {parameter: getattr(self, parameter) for parameter in self.parameters_to_watch}
+            html = self._get_html_from_parameters_to_watch(**params)
+            self.html = html
+
         return msg
 
-    def _handle_parameters_to_watch_change(self, event):
-        params = {parameter: getattr(self, parameter) for parameter in self.parameters_to_watch}
-        html = self._get_html_from_parameters_to_watch(**params)
-        html = self._update_html_from_attributes_to_watch(html)
-        if html != self.html:
-            self.html = html
+    def _process_property_change(self, msg):
+        msg = super(WebComponent, self)._process_property_change(msg)
+        if 'html' in msg:
+            attr_dict = self.parse_html_to_dict(msg['html'])
+            for attribute, parameter in self.attributes_to_watch.items():
+                if not parameter:
+                    continue
+                ptype = type(self.param[parameter])
+                if ptype not in PARAMETER_TYPE:
+                    raise TypeError("Parameter of type '%s' is not supported." % ptype)
+                if attribute in attr_dict:
+                    attr_value = attr_dict[attribute]
+                    value = PARAMETER_TYPE[ptype](attr_value)
+                else:
+                    value = self.param[parameter].default
+                msg[attribute] = value
+        if 'attributes_last_change' in msg:
+            for attr, new_value in msg['attributes_last_change'].items():
+                panme = self.attributes_to_watch.get(attr)
+                if pname is None:
+                    continue
+                pobj = self.param[pname]
+                ptype = type(pobj)
+                msg[pname] = PARAMETER_TYPE[ptype](new_value)
+        if 'events_count_last_change' in msg:
+            for prop, new_value in msg['events_count_last_change'].items():
+                pname = self.events_to_watch.get(prop)
+                if pname is None:
+                    continue
+                pobj = self.param[pname]
+                ptype = type(pobj)
+                msg[pname] = PARAMETER_TYPE[ptype](new_value)
+        if 'properties_last_change' in msg:            
+            for prop, new_value in msg['properties_last_change'].items():
+                pname = self.properties_to_watch.get(prop)
+                if pname is None:
+                    continue
+                pobj = self.param[pname]
+                ptype = type(pobj)
+                if isinstance(new_value, str) and ptype in PARAMETER_TYPE:
+                    new_value = PARAMETER_TYPE[ptype](new_value)
+                msg[pname] = new_value            
+        return msg
 
     def _get_initial_html_from_parameters_to_watch(self, **params) -> str:
         """Returns the initial html value based on the specified params and
@@ -380,82 +337,11 @@ class WebComponent(Widget):
             is not empty"""
         )
 
-    def _child_parameters(self) -> Set:
-        """Returns a set of any new parameters added on self compared to WebComponent.
-
-        """
-        return set(self.param.objects()) - set(WebComponent.param.objects())
-
     def parse_html_to_dict(self, html):
         self.parser.attr_dict = {}
         self.parser.first_tag = True
         self.parser.feed(html)
         return self.parser.attr_dict
-
-    def _update_parameters(self, event):
-        if not self.attributes_to_watch:
-            return
-        attr_dict = self.parse_html_to_dict(self.html)
-
-        for attribute, parameter in self.attributes_to_watch.items():
-            if parameter:
-                self.update_parameter(parameter, attribute, attr_dict)
-
-    def update_parameter(self, parameter: str, attribute: str, attr_dict: Dict):
-        """Updates the parameter with the value of a html attribute
-
-        Parameters
-        ----------
-        parameter : str
-            A parameter name like 'checked' or 'ball_size' to update
-        attribute : str
-            An attribute name like 'checked' or 'ballSize' to update from
-        attr_dict : Dict
-            A dictionary containing attribute keys and their values
-
-        Raises
-        ------
-        TypeError
-            If we are trying to parse a non suppported type of parameter like param.Action.
-            If this should be supported in your use case then you can define how by overriding
-            this function
-        """
-        parameter_item = self.param[parameter]
-        if isinstance(parameter_item, param.Boolean):
-            self._update_boolean_parameter(attr_dict, attribute, parameter)
-        elif type(parameter_item) in PARAMETER_TYPE:
-            parameter_type = PARAMETER_TYPE[type(parameter_item)]
-            self._update_parameter(attr_dict, attribute, parameter, parameter_type)
-        else:
-            # @philippjfr: Are f strings allowed in Panel?
-            raise TypeError(f"Parameter of type {type(parameter_item)} is not supported")
-
-    def _update_boolean_parameter(self, attr_dict, attribute, parameter):
-        parameter_value = getattr(self, parameter)
-        if attribute in attr_dict:
-            attr_value = attr_dict[attribute]
-            # <a attribute=""></a> or <a attribute></a> is True
-            if attr_value == "" or attr_value is None:
-                new_parameter_value = True
-            # <a></a> is False
-            else:
-                new_parameter_value = False
-        else:
-            new_parameter_value = False
-
-        if new_parameter_value != parameter_value:
-            setattr(self, parameter, new_parameter_value)
-
-    def _update_parameter(self, attr_dict, attribute, parameter, parameter_type):
-        parameter_value = getattr(self, parameter)
-        if attribute in attr_dict:
-            attr_value = attr_dict[attribute]
-            new_parameter_value = parameter_type(attr_value)
-        else:
-            new_parameter_value = self.param[parameter].default
-
-        if new_parameter_value != parameter_value:
-            setattr(self, parameter, new_parameter_value)
 
     def update_html_from_attributes_to_watch(self):
         if not self.attributes_to_watch or not self.html:
@@ -510,20 +396,6 @@ class WebComponent(Widget):
             )
         return new_html
 
-    def _handle_parameter_attribute_change(self, event=None):
-        if not self.attributes_to_watch:
-            return
-
-        parameters_to_attributes = {v: k for k, v in self.attributes_to_watch.items()}
-        parameter_name = event.name
-        value = event.new
-        value = self.parse_parameter_value_to_attribute_value(parameter_name, value)
-
-        attribute_name = parameters_to_attributes[parameter_name]
-        change = {attribute_name: value}
-        if self.attributes_last_change != change:
-            self.attributes_last_change = change
-
     def parse_parameter_value_to_attribute_value(self, parameter: str, value) -> Optional[str]:
         """Returns the value to input to the setAttribute method of a JS HTML Element
 
@@ -550,94 +422,3 @@ class WebComponent(Widget):
         elif isinstance(parameter_item, (param.String, param.Integer, param.ObjectSelector)):
             return str(value)
         return json.dumps(value, separators=(",", ":"))
-
-    def _handle_attributes_last_change(self, event):
-        if not self.attributes_to_watch or not event.new or event.old == event.new:
-            return
-
-        for attribute_, new_value in event.new.items():
-            if not attribute_ in self.attributes_to_watch:
-                continue
-
-            parameter_name = self.attributes_to_watch[attribute_]
-            parameter_item = self.param[parameter_name]
-
-            if isinstance(parameter_item, param.Boolean):
-                if new_value == "":
-                    new_value = True
-                else:
-                    new_value = False
-            elif new_value is None:
-                if parameter_item.allow_None:
-                    new_value = None
-                else:
-                    new_value = parameter_item.default
-            elif isinstance(parameter_item, param.Integer):
-                new_value = int(new_value)
-            elif isinstance(parameter_item, param.Number):
-                new_value = float(new_value)
-            elif isinstance(parameter_item, (param.String, param.ObjectSelector)):
-                new_value = str(new_value)
-            elif isinstance(parameter_item, (param.List, param.Dict)):
-                new_value = json.loads(new_value)
-
-            old_value = getattr(self, parameter_name)
-            if old_value != new_value:
-                setattr(self, parameter_name, new_value)
-
-    def _handle_properties_last_change(self, event):
-        if not self.properties_to_watch or not event.new:
-            return
-
-        for property_, new_value in event.new.items():
-            if not property_ in self.properties_to_watch:
-                continue
-
-            parameter = self.properties_to_watch[property_]
-
-            if isinstance(new_value, str):
-                parameter_item = self.param[parameter]
-                if type(parameter_item) in PARAMETER_TYPE:
-                    parameter_type = PARAMETER_TYPE[type(parameter_item)]
-                    new_value = parameter_type(new_value)
-
-            old_value = getattr(self, parameter)
-            if old_value != new_value:
-                setattr(self, parameter, new_value)
-
-
-    def _handle_events_count_last_change(self, event):
-        if not self.events_to_watch or not event.new:
-            return
-
-        for property_, new_value in event.new.items():
-            if not property_ in self.events_to_watch:
-                continue
-
-            parameter = self.events_to_watch[property_]
-            if not parameter:
-                continue
-
-            old_value = getattr(self, parameter)
-            if old_value != new_value:
-                setattr(self, parameter, new_value)
-
-    def _handle_parameter_property_change(self, event):
-        if not self.properties_to_watch:
-            return
-
-        parameters_to_properties = {v: k for k, v in self.properties_to_watch.items()}
-        property_name = parameters_to_properties[event.name]
-
-        change = {property_name: event.new}
-        self.properties_last_change = change
-
-    def _update_properties(self):
-        if not self.properties_to_watch or not isinstance(self.properties_to_watch, dict):
-            return
-
-        change = {}
-        for property_, parameter in self.properties_to_watch.items():
-            value = getattr(self, parameter)
-            change[property_] = value
-        self.properties_last_change = change
