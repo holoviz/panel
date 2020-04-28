@@ -122,4 +122,8 @@ class FileDownload(InputWidget):
 
     filename = String(help="""Filename to use on download""")
 
+    _transfers = Int(0, help="""
+    A private property to create and click the link.
+    """)
+
     title = Override(default='')
