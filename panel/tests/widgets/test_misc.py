@@ -74,6 +74,24 @@ def test_file_download_label():
     assert file_download.label == 'Download abc.py'
 
 
+def test_file_download_filename(tmpdir):
+    file_download = FileDownload()
+
+    filepath = tmpdir.join("foo.txt")
+    filepath.write("content")
+    file_download.file = str(filepath)
+
+    assert file_download.filename == "foo.txt"
+
+    file_download._clicks += 1
+    file_download.file = __file__
+
+    assert file_download.filename == "test_misc.py"
+
+    file_download.file = StringIO("data")
+    assert file_download.filename == "test_misc.py"
+
+
 def test_file_download_file():
     with pytest.raises(ValueError):
         FileDownload(StringIO("data"))
@@ -117,6 +135,17 @@ def test_file_download_callback():
     assert file_download.data is not None
     assert file_download.filename == "cba.py"
     assert file_download.label == "Download cba.py"
+
+
+def test_file_download_transfers():
+    file_download = FileDownload(__file__, embed=True)
+    assert file_download._transfers == 1
+
+    file_download = FileDownload(__file__)
+    assert file_download._transfers == 0
+    file_download._clicks += 1
+    assert file_download._transfers == 1
+
 
 def test_file_download_data():
     file_download = FileDownload(__file__, embed=True)
