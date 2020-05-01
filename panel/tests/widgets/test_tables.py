@@ -129,6 +129,6 @@ def test_dataframe_duplicate_column_name(document, comm):
     
     df = pd.DataFrame([[1, 1], [2, 2]], columns=['a', 'b'])
     table = DataFrame(df)
-    model = table.get_root(document, comm)
+    table.get_root(document, comm)
     with pytest.raises(ValueError):
         table.value = table.value.rename(columns={'a': 'b'})
