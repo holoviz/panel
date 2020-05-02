@@ -57,29 +57,10 @@ if (vtk) {
 
   const {vtkObjectManager} = vtkns.SynchronizableRenderWindow
 
-  vtkObjectManager.setTypeMapping("vtkVolume", vtkns.Volume.newInstance)
   vtkObjectManager.setTypeMapping(
     "vtkVolumeMapper",
     vtkns.VolumeMapper.newInstance,
     vtkObjectManager.oneTimeGenericUpdater
-  )
-  vtkObjectManager.setTypeMapping(
-    "vtkVolumeProperty",
-    vtkns.VolumeProperty.newInstance
-  )
-  vtkObjectManager.setTypeMapping(
-    "vtkPiecewiseFunction",
-    vtkns.PiecewiseFunction.newInstance,
-    piecewiseFunctionUpdater
-  )
-  vtkObjectManager.setTypeMapping("vtkImageSlice", vtkns.ImageSlice.newInstance)
-  vtkObjectManager.setTypeMapping(
-    "vtkOpenGLImageSliceMapper",
-    vtkns.ImageMapper.newInstance
-  )
-  vtkObjectManager.setTypeMapping(
-    "vtkImageProperty",
-    vtkns.ImageProperty.newInstance
   )
 }
 
@@ -104,23 +85,6 @@ export declare type VolumeType = {
   spacing: number[]
   origin: number[] | null
   extent: number[] | null
-}
-
-// Function to remove when implemented in vtk-js
-function piecewiseFunctionUpdater(instance: any, state: any, context: any) {
-  context.start()
-  const nodes = (state.properties.nodes as number[][]).map(
-    ([x, y, midpoint, sharpness]) => ({
-      x,
-      y,
-      midpoint,
-      sharpness,
-    })
-  )
-  instance.set(Object.assign({}, state.properties, {nodes}), true)
-  instance.sortAndUpdateRange()
-  instance.modified()
-  context.end()
 }
 
 export function applyStyle(el: HTMLElement, style: CSSProperties) {

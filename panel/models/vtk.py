@@ -12,7 +12,6 @@ from bokeh.models import HTMLBox, Model, ColorMapper
 jszip_cdn = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.js"
 vtk_cdn = "https://unpkg.com/vtk.js"
 
-
 class VTKAxes(Model):
     """
     A Bokeh model for axes

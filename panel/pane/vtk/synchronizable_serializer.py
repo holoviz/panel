@@ -60,7 +60,7 @@ javascriptMapping = {
     'b': 'Int8Array',
     'B': 'Uint8Array',
     'h': 'Int16Array',
-    'H': 'Int16Array',
+    'H': 'UInt16Array',
     'i': 'Int32Array',
     'I': 'Uint32Array',
     'l': 'Int32Array',
@@ -254,7 +254,7 @@ def initializeSerializers():
         'vtkOpenGLImageSliceMapper', imageSliceMapperSerializer)
 
     # LookupTables/TransferFunctions
-    registerInstanceSerializer('vtkLookupTable', lookupTableSerializer2)
+    registerInstanceSerializer('vtkLookupTable', lookupTableSerializer)
     registerInstanceSerializer(
         'vtkPVDiscretizableColorTransferFunction', colorTransferFunctionSerializer)
     registerInstanceSerializer(
@@ -643,7 +643,7 @@ def genericPolyDataMapperSerializer(parent, mapper, mapperId, context, depth):
     colorArrayName = mapper.GetArrayName(
         ) if mapper.GetArrayAccessMode() == 1 else mapper.GetArrayId()
 
-    instance['type'] = "vtkMapper"
+    instance['type'] = mapper.GetClassName()
     instance['properties'].update({
         'resolveCoincidentTopology': mapper.GetResolveCoincidentTopology(),
         'renderTime': mapper.GetRenderTime(),
@@ -666,7 +666,7 @@ def genericVolumeMapperSerializer(parent, mapper, mapperId, context, depth):
 
     if not instance: return
 
-    instance['type'] = "vtkVolumeMapper"
+    instance['type'] = mapper.GetClassName()
     instance['properties'].update({
         'sampleDistance': mapper.GetSampleDistance(),
         'imageSampleDistance': mapper.GetImageSampleDistance(),
@@ -684,7 +684,7 @@ def textureSerializer(parent, texture, textureId, context, depth):
 
     if not instance: return
 
-    instance['type'] = "vtkTexture"
+    instance['type'] = texture.GetClassName()
     instance['properties'].update({
         'interpolate': texture.GetInterpolate(),
         'repeat': texture.GetRepeat(),
@@ -712,7 +712,7 @@ def imageSliceMapperSerializer(parent, mapper, mapperId, context, depth):
 def lookupTableSerializer(parent, lookupTable, lookupTableId, context, depth):
     # No children in this case, so no additions to bindings and return empty list
     # But we do need to add instance
-
+    arrays = []
     lookupTableRange = lookupTable.GetRange()
 
     lookupTableHueRange = [0.5, 0]
@@ -724,6 +724,11 @@ def lookupTableSerializer(parent, lookupTable, lookupTableId, context, depth):
 
     lutSatRange = lookupTable.GetSaturationRange()
     # lutAlphaRange = lookupTable.GetAlphaRange()
+    if lookupTable.GetTable():
+        arrayMeta = getArrayDescription(lookupTable.GetTable(), context)
+        if arrayMeta:
+            arrayMeta['registration'] = 'setTable'
+            arrays.append(arrayMeta)
 
     return {
         'parent': context.getReferenceId(parent),
@@ -744,8 +749,9 @@ def lookupTableSerializer(parent, lookupTable, lookupTableId, context, depth):
             'vectorSize': lookupTable.GetVectorSize(),
             'vectorComponent': lookupTable.GetVectorComponent(),
             'vectorMode': lookupTable.GetVectorMode(),
-            'indexedLookup': lookupTable.GetIndexedLookup()
-        }
+            'indexedLookup': lookupTable.GetIndexedLookup(),
+        }, 
+        'arrays': arrays,
     }
 
 # -----------------------------------------------------------------------------

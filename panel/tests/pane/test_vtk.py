@@ -147,10 +147,10 @@ def test_vtk_pane_from_renwin(document, comm):
 
     # Check array release when actor are removed from scene
     ctx = pane._contexts[model.id]
-    assert len(ctx.dataArrayCache.keys()) == 2
+    assert len(ctx.dataArrayCache.keys()) == 3
     pane.remove_all_actors()
     # Default : 20s before removing arrays
-    assert len(ctx.dataArrayCache.keys()) == 2
+    assert len(ctx.dataArrayCache.keys()) == 3
     # Force 0s for removing arrays
     ctx.checkForArraysToRelease(0)
     assert len(ctx.dataArrayCache.keys()) == 0
