@@ -3,13 +3,9 @@ Subclasses the bokeh serve commandline handler to extend it in various
 ways.
 """
 
-from glob import glob
-
 from bokeh.command.subcommands.serve import Serve as _BkServe
 
 from ..io.server import INDEX_HTML, get_static_routes
-from ..util import bokeh_version
-
 
 def parse_var(s):
     """
