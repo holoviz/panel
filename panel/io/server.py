@@ -16,7 +16,7 @@ from types import FunctionType
 from bokeh.document.events import ModelChangedEvent
 from bokeh.server.server import Server
 from tornado.websocket import WebSocketHandler
-from tornado.web import RequestHandler
+from tornado.web import RequestHandler, StaticFileHandler
 from tornado.wsgi import WSGIContainer
 
 from .state import state
@@ -173,9 +173,26 @@ class ProxyFallbackHandler(RequestHandler):
         self.on_finish()
 
 
+
+def get_static_routes(static_dirs):
+    """
+    Returns a list of tornado routes of StaticFileHandlers given a
+    dictionary of slugs and file paths to serve.
+    """
+    patterns = []
+    for slug, path in static_dirs.items():
+        path = os.path.abspath(path)
+        if not os.path.isdir(path):
+            raise ValueError("Cannot serve non-existent path %s" % path)
+        patterns.append(
+            (r"/%s/(.*)" % slug, StaticFileHandler, {"path": path})
+        )
+    return patterns
+
+
 def get_server(panel, port=0, websocket_origin=None, loop=None,
                show=False, start=False, title=None, verbose=False,
-               location=True, **kwargs):
+               location=True, static_dirs={}, **kwargs):
     """
     Returns a Server instance with this panel attached as the root
     app.
@@ -208,6 +225,9 @@ def get_server(panel, port=0, websocket_origin=None, loop=None,
     location : boolean or panel.io.location.Location
       Whether to create a Location component to observe and
       set the URL location.
+    static_dirs: dict (optional, default={})
+      A dictionary of routes and local paths to serve as static file
+      directories on those routes
     kwargs: dict
       Additional keyword arguments to pass to Server instance
 
@@ -248,6 +268,8 @@ def get_server(panel, port=0, websocket_origin=None, loop=None,
             apps[slug] = partial(_eval_panel, app, server_id, title_, location)
     else:
         apps = {'/': partial(_eval_panel, panel, server_id, title, location)}
+
+    extra_patterns += get_static_routes(static_dirs)
 
     opts = dict(kwargs)
     if loop:
