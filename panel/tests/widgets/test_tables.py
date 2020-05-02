@@ -115,3 +115,20 @@ def test_dataframe_process_data_event(dataframe):
     table._process_events({'data': {'int': {1: 3, 2: 4, 0: 1}}})
     df['int'] = [1, 3, 4]
     pd.testing.assert_frame_equal(table.value, df)
+
+
+def test_dataframe_duplicate_column_name(document, comm):
+    df = pd.DataFrame([[1, 1], [2, 2]], columns=['col', 'col'])
+    with pytest.raises(ValueError):
+        table = DataFrame(df)
+
+    df = pd.DataFrame([[1, 1], [2, 2]], columns=['a', 'b'])
+    table = DataFrame(df)
+    with pytest.raises(ValueError):
+        table.value = table.value.rename(columns={'a': 'b'})
+    
+    df = pd.DataFrame([[1, 1], [2, 2]], columns=['a', 'b'])
+    table = DataFrame(df)
+    table.get_root(document, comm)
+    with pytest.raises(ValueError):
+        table.value = table.value.rename(columns={'a': 'b'})
