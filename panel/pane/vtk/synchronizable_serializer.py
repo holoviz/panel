@@ -840,16 +840,6 @@ def volumePropertySerializer(parent, propObj, propObjId, context, depth):
             dependencies.append(ctfunInstance)
             calls.append(['setRGBTransferFunction', [0, wrapId(ctfunId)]])
 
-    # GrayTranferFunction
-    gtfun = propObj.GetGrayTransferFunction()
-    if gtfun:
-        gtfunId = context.getReferenceId(gtfun)
-        gtfunInstance = serializeInstance(
-            propObj, gtfun, gtfunId, context, depth + 1)
-        if gtfunInstance:
-            dependencies.append(gtfunInstance)
-            calls.append(['setGrayTransferFunction', [0, wrapId(gtfunId)]])
-
     calls += [
         ['setScalarOpacityUnitDistance', [0, propObj.GetScalarOpacityUnitDistance(0)]],
         ['setComponentWeight', [0, propObj.GetComponentWeight(0)]],

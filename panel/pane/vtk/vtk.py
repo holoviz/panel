@@ -334,6 +334,11 @@ class VTK(AbstractVTK, SyncHelpers):
                 zf.writestr('data/%s' % name, data, zipfile.ZIP_DEFLATED)
         return filename
 
+    @staticmethod
+    def import_scene(filename):
+        from .synchronizable_deserializer import import_synch_file
+        return VTK(import_synch_file(filename=filename))
+
 class VTKVolume(AbstractVTK):
 
     ambient = param.Number(default=0.2, step=1e-2, doc="""

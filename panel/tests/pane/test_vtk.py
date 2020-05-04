@@ -235,10 +235,15 @@ def test_vtk_pane_more_complex(document, comm, tmp_path):
     )
     assert isinstance(model.axes, VTKAxes)
 
+    # test export to file
     tmpfile = os.path.join(*tmp_path.joinpath('scene').parts)
     exported_file = pane.export_scene(filename=tmpfile)
     assert exported_file.endswith('.synch')
 
+    # test import from file
+    # (TODO test if the scene imported is identical to the one exported)
+    VTK.import_scene(filename=exported_file)
+    
     # Cleanup
     pane._cleanup(model)
     assert pane._contexts == {}

@@ -8,7 +8,9 @@ from .synchronizable_serializer import arrayTypesMapping
 
 
 METHODS_RENAME = {
-    "AddTexture": "SetTexture"
+    "AddTexture": "SetTexture",
+    "SetUseGradientOpacity": None,
+    "SetRGBTransferFunction": "SetColor",
 }
 WRAP_ID_RE = re.compile("instance:\${([^}]+)}")
 ARRAY_TYPES = {
@@ -40,6 +42,22 @@ def fill_array(vtk_arr, state, zf):
     vtk_arr.SetVoidArray(data, len(data)//elementSize, 1)
     vtk_arr._reference = data
 
+def color_fun_builder(state, zf, register):
+    instance = getattr(vtk, state['type'])()
+    register.update({state['id']: instance})
+    nodes = state['properties'].pop('nodes')
+    set_properties(instance, state['properties'])
+    for node in nodes:
+        instance.AddRGBPoint(*node)
+
+def piecewise_fun_builder(state, zf, register):
+    instance = getattr(vtk, state['type'])()
+    register.update({state['id']: instance})
+    nodes = state['properties'].pop('nodes')
+    set_properties(instance, state['properties'])
+    for node in nodes:
+        instance.AddPoint(*node)
+
 def poly_data_builder(state, zf, register):
     instance = vtk.vtkPolyData()
     register.update({state['id']: instance})
@@ -65,6 +83,10 @@ def poly_data_builder(state, zf, register):
         location = getattr(instance, 'Get' + capitalize(dataset['location']))()
         getattr(location, capitalize(dataset['registration']))(data_arr)
 
+def volume_mapper_builder(state, zf, register):
+    instance = generic_builder(state, zf, register)
+    instance.SetScalarMode(1) #need to force the scalar mode to be on points
+
 def generic_builder(state, zf, register=None):
     if register is None:
         register = {}
@@ -83,23 +105,31 @@ def generic_builder(state, zf, register=None):
     if calls:
         for call in calls:
             args=[]
+            skip=False
             for arg in call[1]:
-                extract_instance = WRAP_ID_RE.findall(arg)
-                if len(extract_instance) > 0:
-                    args.append(register[extract_instance[0]])
-                else:
+                try:
+                    extract_instance = WRAP_ID_RE.findall(arg)[0]
+                    args.append(register[extract_instance])
+                except (IndexError, TypeError):
                     args.append(arg)
+                except KeyError:
+                    skip = True
+            if skip: continue
             if capitalize(call[0]) not in METHODS_RENAME:
                 method = capitalize(call[0])
             else:
                 method = METHODS_RENAME[capitalize(call[0])]
+            if method is None: continue
             getattr(instance, method)(*args)
     arrays = state.get('arrays', None)
     if arrays:
         for array_meta in arrays:
             vtk_array = ARRAY_TYPES[array_meta['dataType']]()
             fill_array(vtk_array, array_meta, zf)
-            getattr(instance, capitalize(array_meta['registration']))(vtk_array)
+            location = (instance 
+                if 'location' not in array_meta
+                else getattr(instance, 'Get'+capitalize(array_meta['location']))())
+            getattr(location, capitalize(array_meta['registration']))(vtk_array)
     return instance
 
 def set_properties(instance, properties):
@@ -126,6 +156,7 @@ def make_type_handlers():
         'vtkActor': ['vtkOpenGLActor', 'vtkPVLODActor'],
         'vtkLight': ['vtkOpenGLLight', 'vtkPVLight'],
         'vtkTexture': ['vtkOpenGLTexture'],
+        'vtkVolumeMapper': ['vtkFixedPointVolumeRayCastMapper']
     }
 
     type_handlers = {
@@ -139,8 +170,12 @@ def make_type_handlers():
         'vtkGlyph3DMapper': generic_builder,
         'vtkProperty': generic_builder,
         'vtkActor': generic_builder,
-        'vtkColorTransferFunction': None,
+        'vtkColorTransferFunction': color_fun_builder,
+        'vtkPiecewiseFunction': piecewise_fun_builder,
         'vtkTexture': generic_builder,
+        'vtkVolumeMapper': volume_mapper_builder,
+        'vtkVolume': generic_builder,
+        'vtkVolumeProperty': generic_builder
     }
 
     for k, alias_list in aliases.items():
