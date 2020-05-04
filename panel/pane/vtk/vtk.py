@@ -254,7 +254,7 @@ class VTK(AbstractVTK, SyncHelpers):
         self._contexts.pop(ref, None)
         super(VTK, self)._cleanup(root)
 
-    def _serialize_ren_win(self, ren_win, context, exclude_arrays=None):
+    def _serialize_ren_win(self, ren_win, context, binary=False, compression=True, exclude_arrays=None):
         import panel.pane.vtk.synchronizable_serializer as rws
         if exclude_arrays is None:
             exclude_arrays = []
@@ -263,7 +263,7 @@ class VTK(AbstractVTK, SyncHelpers):
         ren_win.Render()
         scene = rws.serializeInstance(None, ren_win, context.getReferenceId(ren_win), context, 0)
         scene['properties']['numberOfLayers'] = 2 #On js side the second layer is for the orientation widget
-        arrays = {name: context.getCachedDataArray(name, compression=True)
+        arrays = {name: context.getCachedDataArray(name, binary=binary, compression=compression)
                     for name in context.dataArrayCache.keys() 
                     if name not in exclude_arrays}
         return scene, arrays
@@ -324,15 +324,13 @@ class VTK(AbstractVTK, SyncHelpers):
     def export_scene(self, filename='vtk_scene'):
         if '.' not in filename:
             filename += '.synch'
-        root = self.get_root()
-        context = self._contexts[root.id]
-        scene = root.scene
-        hash_keys = context.dataArrayCache
+        import panel.pane.vtk.synchronizable_serializer as rws
+        context = rws.SynchronizationContext(debug=self._debug_serializer)
+        scene, arrays = self._serialize_ren_win(self.object, context, binary=True, compression=False)
 
         with zipfile.ZipFile(filename, mode='w') as zf:
             zf.writestr('index.json', json.dumps(scene))
-            for name in hash_keys:
-                data = context.getCachedDataArray(name, binary=True, compression=False)
+            for name, data in arrays.items():
                 zf.writestr('data/%s' % name, data, zipfile.ZIP_DEFLATED)
         return filename
 

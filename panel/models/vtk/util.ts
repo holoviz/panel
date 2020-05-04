@@ -48,6 +48,7 @@ if (vtk) {
   vtkns["SphereMapper"] = vtk.Rendering.Core.vtkSphereMapper
   vtkns["SynchronizableRenderWindow"] =
     vtk.Rendering.Misc.vtkSynchronizableRenderWindow
+  vtkns["ThirdParty"] = vtk.ThirdParty
   vtkns["Texture"] = vtk.Rendering.Core.vtkTexture
   vtkns["Volume"] = vtk.Rendering.Core.vtkVolume
   vtkns["VolumeController"] = vtk.Interaction.UI.vtkVolumeController

@@ -212,7 +212,7 @@ def test_vtk_helpers(document, comm):
 
 
 @pyvista_available
-def test_vtk_pane_more_complex(document, comm):
+def test_vtk_pane_more_complex(document, comm, tmp_path):
     renWin = pyvista_render_window()
     pane = VTK(renWin)
 
@@ -234,6 +234,10 @@ def test_vtk_pane_more_complex(document, comm):
         show_grid=True
     )
     assert isinstance(model.axes, VTKAxes)
+
+    tmpfile = os.path.join(*tmp_path.joinpath('scene').parts)
+    exported_file = pane.export_scene(filename=tmpfile)
+    assert exported_file.endswith('.synch')
 
     # Cleanup
     pane._cleanup(model)

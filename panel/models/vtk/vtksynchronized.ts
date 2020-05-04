@@ -47,11 +47,23 @@ export class VTKSynchronizedPlotView extends AbstractVTKView {
       CONTEXT_NAME
     )
   }
-
-  plot(): void {
-    this._vtk_renwin.getRenderWindow().clearOneTimeUpdaters()
-    this._decode_arrays()
-    this._sync_plot()
+  
+  connect_signals(): void {
+    super.connect_signals()
+    this.connect(this.model.properties.arrays.change, () =>
+      this._decode_arrays()
+    )
+    this.connect(this.model.properties.scene.change, () => {
+      Promise.all(this._promises).then(() => {
+        this._sync_plot(() => {
+          this._on_scene_ready()
+          this._connect_interactions_to_model()
+        })
+      })
+    })
+    this.connect(this.model.properties.one_time_reset.change, () => {
+      this._vtk_renwin.getRenderWindow().clearOneTimeUpdaters()
+    })
   }
 
   init_vtk_renwin(): void {
@@ -62,11 +74,20 @@ export class VTKSynchronizedPlotView extends AbstractVTKView {
     })
   }
 
+  plot(): void {
+    this._vtk_renwin.getRenderWindow().clearOneTimeUpdaters()
+    this._decode_arrays()
+    Promise.all(this._promises).then(() => {
+      this._sync_plot(() => this._on_scene_ready())
+    })
+  }
+
   _decode_arrays(): void {
-    const jszip = new (window as any).JSZip()
+    const jszip = new vtkns.ThirdParty.JSZip()
     const arrays: any = this.model.arrays
     const registerArray: any = this.registerArray
     const arrays_processed = this.model.arrays_processed
+    const model = this.model
 
     function load(key: string) {
       return jszip
@@ -74,7 +95,10 @@ export class VTKSynchronizedPlotView extends AbstractVTKView {
         .then((zip: any) => zip.file("data/" + key))
         .then((zipEntry: any) => zipEntry.async("arraybuffer"))
             .then((arraybuffer: any) => registerArray(key, arraybuffer))
-        .then(() => arrays_processed.push(key))
+        .then(() => {
+          arrays_processed.push(key)
+          model.properties.arrays_processed.change.emit()
+        })
     }
 
     Object.keys(arrays).forEach((key: string) => {
@@ -85,50 +109,41 @@ export class VTKSynchronizedPlotView extends AbstractVTKView {
     })
   }
 
-  _sync_plot(): void {
+  _on_scene_ready(): void {
+    if (this._promises.length > 0) return
+    this._renderable = true
+    this._camera_callbacks.push(
+      this._vtk_renwin
+        .getRenderer()
+        .getActiveCamera()
+        .onModified(() => this._vtk_render())
+    )
+    if (!this._orientationWidget) this._create_orientation_widget()
+    if (!this._axes) this._set_axes()
+    this._vtk_renwin.resize()
+    this._vtk_render()
+    this._set_camera_state()
+  }
+
+  _sync_plot(onSceneReady: CallableFunction): void {
+    // Need to ensure all promises are resolved before calling this function
+    this._renderable = false
+    this._promises = []
     this._unsubscribe_camera_cb()
-    this._synchronizer_context.setFetchArrayFunction(this.getArray)
+    this._synchronizer_context.setFetchArrayFunction((hash: string) => {
+      return Promise.resolve(this._arrays[hash])
+    })
     const renderer = this._synchronizer_context.getInstance(
       this.model.scene.dependencies[0].id
     )
-    if (renderer && !this._vtk_renwin.getRenderer()) {
+    if (renderer && !this._vtk_renwin.getRenderer())
       this._vtk_renwin.getRenderWindow().addRenderer(renderer)
-    }
-    this._renderable = false // Need to wait all promises are resolved before rendering
-    this._vtk_renwin.getRenderWindow().synchronize(this.model.scene)
-    
-    Promise.all(this._promises).then(() => {
-      this._promises = []
-      this.model.arrays_processed = [...this.model.arrays_processed]
-      this._renderable = true
-      this._camera_callbacks.push(
-        this._vtk_renwin
-          .getRenderer()
-          .getActiveCamera()
-          .onModified(() => this._vtk_render())
-      )
-      if (!this._orientationWidget) this._create_orientation_widget()
-      if (!this._axes) this._set_axes()
-      this._vtk_renwin.resize()
-      this._vtk_render()
-      this._set_camera_state()
-    })
 
+    this._vtk_renwin
+      .getRenderWindow()
+      .synchronize(this.model.scene).then(onSceneReady)
   }
 
-  connect_signals(): void {
-    super.connect_signals()
-    this.connect(this.model.properties.arrays.change, () =>
-      this._decode_arrays()
-    )
-    this.connect(this.model.properties.scene.change, () => {
-      this._sync_plot()
-      this._connect_interactions_to_model()
-    })
-    this.connect(this.model.properties.one_time_reset.change, () => {
-      this._vtk_renwin.getRenderWindow().clearOneTimeUpdaters()
-    })
-  }
 }
 
 export namespace VTKSynchronizedPlot {
@@ -161,11 +176,11 @@ export class VTKSynchronizedPlot extends AbstractVTKPlot {
 
   getActors(ptr_ref?: string): [any] {
     let actors = this.renderer_el.getRenderer().getActors()
-    if(ptr_ref){
+    if (ptr_ref) {
       const context = this.renderer_el.getSynchronizerContext(CONTEXT_NAME)
       actors = actors.filter((actor: any) => {
         const id_actor = context.getInstanceId(actor)
-        return id_actor? id_actor.slice(-16) == ptr_ref.slice(1, 17): false
+        return id_actor ? id_actor.slice(-16) == ptr_ref.slice(1, 17) : false
       })
     }
     return actors

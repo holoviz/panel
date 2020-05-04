@@ -6,6 +6,10 @@ import struct
 
 from .synchronizable_serializer import arrayTypesMapping
 
+
+METHODS_RENAME = {
+    "AddTexture": "SetTexture"
+}
 WRAP_ID_RE = re.compile("instance:\${([^}]+)}")
 ARRAY_TYPES = {
     'Int8Array': vtk.vtkCharArray,
@@ -85,7 +89,11 @@ def generic_builder(state, zf, register=None):
                     args.append(register[extract_instance[0]])
                 else:
                     args.append(arg)
-            getattr(instance, call[0][0].capitalize()+call[0][1:])(*args)
+            if capitalize(call[0]) not in METHODS_RENAME:
+                method = capitalize(call[0])
+            else:
+                method = METHODS_RENAME[capitalize(call[0])]
+            getattr(instance, method)(*args)
     arrays = state.get('arrays', None)
     if arrays:
         for array_meta in arrays:

@@ -921,8 +921,8 @@ def imageDataSerializer(parent, dataset, datasetId, context, depth):
                      0, 0, 1]
 
     # Extract dataset fields
-    fields = []
-    extractRequiredFields(fields, parent, dataset, context)
+    arrays = []
+    extractRequiredFields(arrays, parent, dataset, context)
 
     return {
         'parent': context.getReferenceId(parent),
@@ -933,8 +933,8 @@ def imageDataSerializer(parent, dataset, datasetId, context, depth):
             'origin': dataset.GetOrigin(),
             'dimensions': dataset.GetDimensions(),
             'direction': direction,
-            'fields': fields,
         },
+        'arrays': arrays
     }
 
 # -----------------------------------------------------------------------------
