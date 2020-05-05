@@ -10,7 +10,7 @@
 
 <!-- goes in body -->
 {% block contents %}
-<header class="mdc-top-app-bar app-bar" id="app-bar">
+<header class="mdc-top-app-bar app-bar" id="header">
   <div class="mdc-top-app-bar__row">
     <section class="mdc-top-app-bar__section mdc-top-app-bar__section--align-start">
       {% if nav %}
@@ -29,7 +29,7 @@
 </header>
 
 {% if nav %}
-<aside class="mdc-drawer mdc-top-app-bar--fixed-adjust mdc-drawer--dismissible mdc-drawer--open">
+<aside class="mdc-drawer mdc-top-app-bar--fixed-adjust mdc-drawer--dismissible mdc-drawer--open" id="sidebar">
   <div class="mdc-drawer__content">
     <div class="mdc-list">
 	  {% for doc in docs %}
@@ -45,7 +45,7 @@
 {% endif %}
 
 <div class="mdc-drawer-app-content mdc-top-app-bar--fixed-adjust">
-<main class="main-content" id="main-content">
+<main class="main-content" id="main">
   {% for doc in docs %}
   {% for root in doc.roots %}
   {% if "main" in root.tags %}

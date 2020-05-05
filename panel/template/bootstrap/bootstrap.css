@@ -1,0 +1,30 @@
+#container {
+  padding: 0px
+}
+
+#sidebar {
+  border-color: rgba(0, 0, 0, 0.12);
+  border-right-width: 1px;
+  border-right-style: solid;
+  min-width: 256px;
+  max-width: 256px;
+  transition: all 0.2s cubic-bezier(0.945, 0.020, 0.270, 0.665);
+  transform-origin: center left; /* Set the transformed position of sidebar to center left side. */
+}
+
+#sidebar.active {
+  margin-left: -256px;
+}
+
+#sidebarCollapse {
+  background: none;
+  border: none;
+}
+
+a.navbar-brand {
+  padding-left: 10px;
+}
+
+p.bk.card-button {
+  display: none;
+}

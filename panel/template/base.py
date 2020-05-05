@@ -278,6 +278,8 @@ class BasicTemplate(BaseTemplate):
 
     title = param.String()
 
+    header_color = param.String()
+
     _css = None
 
     _template = None
@@ -297,14 +299,15 @@ class BasicTemplate(BaseTemplate):
         super(BasicTemplate, self).__init__(
             template, main=main, sidebar=sidebar, header=header, **params
         )
-        self._render_variables['app_title'] = self.title
+        self._update_vars()
         self.main.param.watch(self._update_render_items, ['objects'])
         self.sidebar.param.watch(self._update_render_items, ['objects'])
         self.header.param.watch(self._update_render_items, ['objects'])
-        self.param.watch(self._update_title, ['title'])
+        self.param.watch(self._update_vars, ['title', 'header_color'])
 
-    def _update_title(self, event):
-        self._render_variables['app_title'] = event.new
+    def _update_vars(self, *args):
+        self._render_variables['app_title'] = self.title
+        self._render_variables['header_color'] = self.header_color
 
     def _update_render_items(self, event):
         if event.obj is self.main:

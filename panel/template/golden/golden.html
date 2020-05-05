@@ -5,14 +5,12 @@
 <script type="text/javascript" src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
 <script type="text/javascript" src="https://golden-layout.com/files/latest/js/goldenlayout.js"></script>
 <link type="text/css" rel="stylesheet" href="https://golden-layout.com/files/latest/css/goldenlayout-base.css" />
-<link type="text/css" rel="stylesheet" href="https://golden-layout.com/files/latest/css/goldenlayout-light-theme.css" />
-<link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css?family=Material+Icons&display=block" rel="stylesheet">
+<link type="text/css" rel="stylesheet" href="//golden-layout.com/assets/css/goldenlayout-dark-theme.css" />
 {% endblock %}
 
 <!-- goes in body -->
 {% block contents %}
-<header class="app-bar" id="app-bar">
+<header class="app-bar" id="header">
   <div class="">
     <section class="">
       <span class="header-title">{{ app_title }}</span>
@@ -28,7 +26,7 @@
 </header>
 
 {% if nav %}
-<aside class="header-adjust">
+<aside class="header-adjust" id="sidebar">
   <div class="nav-content">
     <div class="nav-list">
 	  {% for doc in docs %}
@@ -43,13 +41,13 @@
 </aside>
 {% endif %}
 
-<div class="main-area header-adjust">
+<div class="main-area header-adjust" id="main">
   <main class="main-content" id="main-content"></main>
 </div>
 
 <script>
   var config = {
-    content: [{type: 'column', content: [
+    content: [{type: 'stack', content: [
     {% for doc in docs %}
     {% for root in doc.roots %}
     {% if "main" in root.tags %}
