@@ -103,6 +103,13 @@ def test_get_root(document, comm):
     assert div.text == '<b>'+test.name[:-5]+'</b>'
 
 
+def test_expose_mapping():
+    assert Param.mapping() is Param._mapping
+
+    p = Param()
+    assert p.mapping() is Param._mapping
+
+
 def test_single_param(document, comm):
 
     class Test(param.Parameterized):

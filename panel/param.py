@@ -547,6 +547,13 @@ class Param(PaneBase):
         self._models[ref] = (root, None)
         state._views[ref] = (self, root, doc, comm)
         return root
+    
+    @classmethod
+    def mapping(cls):
+        """
+        Returns the mapping between parameter types and widget types.
+        """
+        return cls._mapping
 
 
 class ParamMethod(ReplacementPane):
