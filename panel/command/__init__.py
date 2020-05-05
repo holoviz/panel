@@ -92,7 +92,7 @@ def main(args=None):
             except Exception as e:
                 die("ERROR: " + str(e))
         else:
-            bokeh_entry_point()
+            ret = bokeh_entry_point()
     elif sys.argv[1] in pyct_commands:
         try:
             import pyct.cmd
