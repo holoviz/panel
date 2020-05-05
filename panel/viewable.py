@@ -236,33 +236,6 @@ class ServableMixin(object):
         return get_server(self, port, websocket_origin, loop, show,
                           start, title, verbose, **kwargs)
 
-    def _handle_kernel_msg(self, doc, event, comm=None):
-        if doc not in self._kernels:
-            raise RuntimeError("Could not process ipywidgets_event "
-                               "no kernel found.")
-
-        from ipywidgets_bokeh.kernel import BytesWrap, StreamWrapper
-        from ipykernel.kernelbase import Kernel
-
-        kernel = self._kernels[doc]
-        jupyter_kernel = Kernel._instance
-        stream = StreamWrapper('shell')
-        session = kernel.session
-        if 'msg_data' not in event:
-            return
-        data = event['msg_data']
-        msg = json.loads(data)
-        msg_serialized = session.serialize(msg)
-        idents, msg = session.feed_identities(msg_serialized)
-        msg_list = [BytesWrap(k) for k in msg ]
-        msg = session.deserialize(msg_list, content=True, copy=False)
-        kernel.set_parent(idents, msg)
-        kernel._publish_status('busy')
-        jupyter_kernel.shell_handlers['comm_msg'](stream, idents, msg)
-        kernel._publish_status('idle')
-        if comm:
-            push(doc, comm)
-
     def _on_msg(self, ref, manager, msg):
         """
         Handles Protocol messages arriving from the client comm.
@@ -270,13 +243,6 @@ class ServableMixin(object):
         root, doc, comm = state._views[ref][1:]
         patch_cds_msg(root, msg)
         held = doc._hold
-        events = msg.get('content', {}).get('events', [])
-        ipywidget_events = [
-            event for event in events if event.get('msg_type', 'ipywidgets_bokeh')
-        ]
-        if ipywidget_events:            
-            self._handle_kernel_msg(doc, ipywidget_events[0], comm)
-            return
         patch = manager.assemble(msg)
         doc.hold()
         patch.apply_to_document(doc, comm.id)
@@ -564,22 +530,6 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         )
         self._comms[ref] = (comm, client_comm)
         manager.client_comm_id = client_comm.id
-
-        if 'ipywidgets_bokeh' in sys.modules:
-            from ipywidgets_bokeh import IPyWidget
-            from ipywidgets_bokeh.kernel import BokehKernel
-
-            from .io.notebook import push
-
-            kernel = BokehKernel.instance(
-                key=ref.encode('utf-8'), document=doc, send_callback=partial(push, doc, comm)
-            )
-
-            widgets = model.select({'type': IPyWidget})
-            for w in widgets:
-                w._widget.comm.kernel = kernel
-
-            self._kernels[doc] = kernel
 
         if config.console_output != 'disable':
             handle = display(display_id=uuid.uuid4().hex)
