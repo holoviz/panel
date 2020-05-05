@@ -1,4 +1,6 @@
 import * as p from "@bokehjs/core/properties"
+import { clone } from "@bokehjs/core/util/object"
+
 import {AbstractVTKView, AbstractVTKPlot} from "./vtklayout"
 
 import {vtkns} from "./util"
@@ -54,8 +56,9 @@ export class VTKSynchronizedPlotView extends AbstractVTKView {
       this._decode_arrays()
     )
     this.connect(this.model.properties.scene.change, () => {
+      const state = clone(this.model.scene)
       Promise.all(this._promises).then(() => {
-        this._sync_plot(() => {
+        this._sync_plot(state, () => {
           this._on_scene_ready()
           this._connect_interactions_to_model()
         })
@@ -77,8 +80,9 @@ export class VTKSynchronizedPlotView extends AbstractVTKView {
   plot(): void {
     this._vtk_renwin.getRenderWindow().clearOneTimeUpdaters()
     this._decode_arrays()
+    const state = clone(this.model.scene)
     Promise.all(this._promises).then(() => {
-      this._sync_plot(() => this._on_scene_ready())
+      this._sync_plot(state, () => this._on_scene_ready())
     })
   }
 
@@ -125,7 +129,7 @@ export class VTKSynchronizedPlotView extends AbstractVTKView {
     this._set_camera_state()
   }
 
-  _sync_plot(onSceneReady: CallableFunction): void {
+  _sync_plot(state: any, onSceneReady: CallableFunction): void {
     // Need to ensure all promises are resolved before calling this function
     this._renderable = false
     this._promises = []
@@ -141,7 +145,7 @@ export class VTKSynchronizedPlotView extends AbstractVTKView {
 
     this._vtk_renwin
       .getRenderWindow()
-      .synchronize(this.model.scene).then(onSceneReady)
+      .synchronize(state).then(onSceneReady)
   }
 
 }
