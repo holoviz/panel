@@ -22,16 +22,59 @@ export class SliderInputView extends SliderView {
         value: uislider.get(),
       })
     }
-    this.slider_group_el = div({class: bk_input_group, style: {display:"flex", flexDirection:"row", alignItems:this.align}}, this.slider_el)
-    this.tilte_group_el = div({class: bk_input_group, style: {display:"flex", flexDirection:"column"}}, this.title_el, this.slider_group_el)
-    this.global_group_el = div({class: bk_input_group, style: {display:"flex", flexDirection:"row"}}, this.tilte_group_el, this.input_el)
+    const direction = this.model.orientation == "horizontal" ? "row" : "column"
+    this.slider_group_el = div(
+      {
+        class: bk_input_group,
+        style: {
+          display: "flex",
+          flexDirection: direction,
+          alignItems: this.align,
+        },
+      },
+      this.slider_el
+    )
+
+    //to not overlap the slider handle
+    if (direction == "column") {
+      this.slider_group_el.style.paddingTop = "1px"
+      this.slider_group_el.style.paddingBottom = "6px"
+    } else {
+      this.slider_group_el.style.paddingRight = "6px"
+    }
+
+    this.tilte_group_el = div(
+      {
+        class: bk_input_group,
+        style: {
+          display: "flex",
+          flexDirection: "column",
+          alignItems: this.align,
+        },
+      },
+      this.title_el,
+      this.slider_group_el
+    )
+    this.global_group_el = div(
+      {
+        class: bk_input_group,
+        style: {
+          display: "flex",
+          flexDirection: direction,
+          alignItems: this.align,
+        },
+      },
+      this.tilte_group_el,
+      this.input_el
+    )
     this.el.appendChild(this.global_group_el)
     this.el.style.display = "flex"
-    this.el.style.flexDirection  = "row"
-    this.input_el.style.marginLeft = "6px" //to not overlap the slider handle
+    this.el.style.flexDirection = direction
     const input_size = this.input_size
-    if (input_size.endsWith('%')) {
-      this.tilte_group_el.style.width = `${100-Number(input_size.slice(0,-1))}%`
+    if (input_size.endsWith("%")) {
+      this.tilte_group_el.style.width = `${
+        100 - Number(input_size.slice(0, -1))
+      }%`
     }
     this.input_el.style.width = input_size
 
@@ -41,19 +84,19 @@ export class SliderInputView extends SliderView {
 
     this.input_el.addEventListener("change", () => {
       let value = Number(this.input_el.value)
-      if (value || value===0) {
-        if (this.model.hard_start != null){
-          if (value<this.model.hard_start){
+      if (value || value === 0) {
+        if (this.model.hard_start != null) {
+          if (value < this.model.hard_start) {
             value = this.model.hard_start
             this.input_el.value = this.model.pretty(value)
           }
         }
-        if (this.model.hard_end != null){
-          if (value>this.model.hard_end){
+        if (this.model.hard_end != null) {
+          if (value > this.model.hard_end) {
             value = this.model.hard_end
             this.input_el.value = this.model.pretty(value)
           }
-        } 
+        }
         uislider.set(this.input_el.value)
         this.model.value = value
         this.model.value_throttled = value
@@ -63,9 +106,9 @@ export class SliderInputView extends SliderView {
   }
 
   private get align(): string {
-    if (this.model.align=="center") {
+    if (this.model.align == "center") {
       return "center"
-    } else if (this.model.align=="start") {
+    } else if (this.model.align == "start") {
       return "flex-start"
     } else {
       return "flex-end"
@@ -73,7 +116,7 @@ export class SliderInputView extends SliderView {
   }
 
   private get input_size(): string {
-    return this.model.input_size? this.model.input_size: "30%"
+    return this.model.input_size ? this.model.input_size : "30%"
   }
 
   connect_signals(): void {
@@ -111,7 +154,7 @@ export class SliderInput extends Slider {
     this.define<SliderInput.Props>({
       hard_start: [ p.Number, null ],
       hard_end:   [ p.Number, null ],
-      input_size: [ p.String, null ]
+      input_size: [ p.String, null ],
     })
     this.override({tooltips: false})
   }

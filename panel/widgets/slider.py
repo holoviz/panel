@@ -116,7 +116,7 @@ class FloatSlider(ContinuousSlider):
 class SliderInput(FloatSlider):
 
     show_value = param.Boolean(default=False, doc="""
-        Whether to show the widget value.""", constant=True)
+        Whether to show the widget value.""")
 
     tooltips = param.Boolean(default=False, doc="""
         Whether the slider handle should display tooltips.""",
@@ -129,6 +129,7 @@ class SliderInput(FloatSlider):
     input_size = param.String(default=None, regex=r'^\d+.?\d*(%|px)$')
 
     _widget_type = SliderInput
+
 
 
 class IntSlider(ContinuousSlider):
