@@ -23,6 +23,7 @@ from ..viewable import Layoutable
 from .base import Widget, CompositeWidget
 from ..layout import Column
 from .input import StaticText
+from ..models.widgets import SliderInput
 
 
 
@@ -100,7 +101,6 @@ class ContinuousSlider(_SliderBase):
 
         return (dw, w_model, values, lambda x: x.value, 'value', 'cb_obj.value')
 
-
 class FloatSlider(ContinuousSlider):
 
     start = param.Number(default=0.0)
@@ -112,6 +112,23 @@ class FloatSlider(ContinuousSlider):
     value_throttled = param.Number(default=None)
 
     step = param.Number(default=0.1)
+
+class SliderInput(FloatSlider):
+
+    show_value = param.Boolean(default=False, doc="""
+        Whether to show the widget value.""", constant=True)
+
+    tooltips = param.Boolean(default=False, doc="""
+        Whether the slider handle should display tooltips.""",
+        constant=True)
+
+    hard_start = param.Number(default=None)
+
+    hard_end = param.Number(default=None)
+
+    input_size = param.String(default=None, regex=r'^\d+.?\d*(%|px)$')
+
+    _widget_type = SliderInput
 
 
 class IntSlider(ContinuousSlider):

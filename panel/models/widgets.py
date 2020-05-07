@@ -6,7 +6,7 @@ from __future__ import absolute_import, division, unicode_literals
 from bokeh.core.enums import ButtonType
 from bokeh.core.properties import Int, Float, Override, Enum, Any, Bool, Dict, String
 from bokeh.models.layouts import HTMLBox
-from bokeh.models.widgets import InputWidget, Widget
+from bokeh.models.widgets import InputWidget, Widget, Slider
 
 
 class Player(Widget):
@@ -127,3 +127,22 @@ class FileDownload(InputWidget):
     """)
 
     title = Override(default='')
+
+
+class SliderInput(Slider):
+    """
+    Slider associate with an input
+    """
+    tooltips = Override(default=False)
+
+    hard_start = Float(default=None, help="""
+    The minimum allowable value accept by the input.
+    """)
+
+    hard_end = Float(default=None, help="""
+    The maximum allowable value accept by the input.
+    """)
+
+    input_size = String(default=None, help="""
+    Size of the input in px or %
+    """)
