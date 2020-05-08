@@ -136,7 +136,7 @@ class SliderInput(Slider):
     tooltips = Override(default=False)
 
     hard_start = Float(default=None, help="""
-    The minimum allowable value accept by the input.
+    The minimum allowable value accepted as input, if any.
     """)
 
     hard_end = Float(default=None, help="""
