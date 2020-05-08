@@ -116,7 +116,7 @@ class FloatSlider(ContinuousSlider):
 class SliderInput(FloatSlider):
 
     show_value = param.Boolean(default=False, doc="""
-        Whether to show the widget value.""")
+        Whether to show the current value numerically alongside the widget.""")
 
     tooltips = param.Boolean(default=False, doc="""
         Whether the slider handle should display tooltips.""",
