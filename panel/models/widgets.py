@@ -140,7 +140,7 @@ class SliderInput(Slider):
     """)
 
     hard_end = Float(default=None, help="""
-    The maximum allowable value accept by the input.
+    The maximum allowable value accepted as input, if any.
     """)
 
     input_size = String(default=None, help="""
