@@ -128,6 +128,11 @@ class SliderInput(FloatSlider):
 
     input_size = param.String(default=None, regex=r'^\d+.?\d*(%|px)$')
 
+    slider_align = param.ObjectSelector(default='center',
+                                        objects=['start', 'center', 'end'],
+                                        doc="""
+        Define the alignement of the slider in the widget layout""")
+
     _widget_type = SliderInput
 
 

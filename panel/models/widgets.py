@@ -146,3 +146,7 @@ class SliderInput(Slider):
     input_size = String(default=None, help="""
     Size of the input in px or %
     """)
+
+    slider_align = Enum('start', 'center', 'end', help="""
+    Define the alignement of the slider in the widget layout
+    """, default="center")

@@ -22,21 +22,21 @@ export class SliderInputView extends SliderView {
         value: uislider.get(),
       })
     }
-    const direction = this.model.orientation == "horizontal" ? "row" : "column"
+    const orientation = this.model.orientation == "horizontal" ? "row" : "column"
     this.slider_group_el = div(
       {
         class: bk_input_group,
         style: {
           display: "flex",
-          flexDirection: direction,
-          alignItems: this.align,
+          flexDirection: orientation,
+          alignItems: this.slider_align,
         },
       },
       this.slider_el
     )
 
     //to not overlap the slider handle
-    if (direction == "column") {
+    if (orientation == "column") {
       this.slider_group_el.style.paddingTop = "1px"
       this.slider_group_el.style.paddingBottom = "6px"
     } else {
@@ -49,7 +49,7 @@ export class SliderInputView extends SliderView {
         style: {
           display: "flex",
           flexDirection: "column",
-          alignItems: this.align,
+          alignItems: orientation=="row"? "start": this.slider_align,
         },
       },
       this.title_el,
@@ -60,8 +60,8 @@ export class SliderInputView extends SliderView {
         class: bk_input_group,
         style: {
           display: "flex",
-          flexDirection: direction,
-          alignItems: this.align,
+          flexDirection: orientation,
+          alignItems: this.model.align,
         },
       },
       this.tilte_group_el,
@@ -69,9 +69,9 @@ export class SliderInputView extends SliderView {
     )
     this.el.appendChild(this.global_group_el)
     this.el.style.display = "flex"
-    this.el.style.flexDirection = direction
+    this.el.style.flexDirection = orientation
     const input_size = this.input_size
-    if (input_size.endsWith("%")) {
+    if (input_size.endsWith("%") && orientation=="row") {
       this.tilte_group_el.style.width = `${
         100 - Number(input_size.slice(0, -1))
       }%`
@@ -105,10 +105,10 @@ export class SliderInputView extends SliderView {
     this.input_el.value = this.model.pretty(this.model.value)
   }
 
-  private get align(): string {
-    if (this.model.align == "center") {
+  private get slider_align(): string {
+    if (this.model.slider_align == "center") {
       return "center"
-    } else if (this.model.align == "start") {
+    } else if (this.model.slider_align == "start") {
       return "flex-start"
     } else {
       return "flex-end"
@@ -135,6 +135,7 @@ export namespace SliderInput {
     hard_start: p.Property<number | null>
     hard_end: p.Property<number | null>
     input_size: p.Property<string | null>
+    slider_align: p.Property<"start" | "center" | "end">
   }
 }
 
@@ -152,9 +153,10 @@ export class SliderInput extends Slider {
   static init_SliderInput(): void {
     this.prototype.default_view = SliderInputView
     this.define<SliderInput.Props>({
-      hard_start: [ p.Number, null ],
-      hard_end:   [ p.Number, null ],
-      input_size: [ p.String, null ],
+      hard_start:   [ p.Number,         null ],
+      hard_end:     [ p.Number,         null ],
+      input_size:   [ p.String,         null ],
+      slider_align: [ p.Instance,   "center" ],
     })
     this.override({tooltips: false})
   }
