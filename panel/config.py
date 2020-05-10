@@ -256,7 +256,8 @@ class panel_extension(_pyviz_extension):
                 'deckgl': 'panel.models.deckgl',
                 'vega': 'panel.models.vega',
                 'vtk': 'panel.models.vtk',
-                'ace': 'panel.models.ace'}
+                'ace': 'panel.models.ace',
+                'ipywidgets': 'ipywidgets_bokeh.widget'}
 
     def __call__(self, *args, **params):
         # Abort if IPython not found

@@ -15,7 +15,7 @@ export class IPyWidgetView extends PanelHTMLBoxView {
       this._render().then(() => {
         this.rendered = true
         this.invalidate_layout()
-        this.notify_finished()
+		this.notify_finished()
       })
     }
   }
@@ -27,8 +27,7 @@ export class IPyWidgetView extends PanelHTMLBoxView {
   async _render(): Promise<void> {
     const {spec, state} = this.model.bundle
     let manager: any
-	let model: any
-    if ((Jupyter != null) && (Jupyter.notebook != null))
+	if ((Jupyter != null) && (Jupyter.notebook != null))
       manager = Jupyter.notebook.kernel.widget_manager
     else if ((window as any).PyViz.widget_manager != null)
       manager = (window as any).PyViz.widget_manager
@@ -37,10 +36,15 @@ export class IPyWidgetView extends PanelHTMLBoxView {
       return
     }
 	const models = await manager.set_state(state)
-      model = models.find((item: any) => item.model_id == spec.model_id)
-    if (model != null) {
-	  const view = await manager.create_view(model);
+    const model = models.find((item: any) => item.model_id == spec.model_id)
+	if (model != null) {
+	  const view = await manager.create_view(model, {el: this.el})
+      if (view.children_views) {
+        for (const child of view.children_views.views)
+          await child
+      }
 	  this.el.appendChild(view.el)
+	  view.trigger('displayed', view)
     }
   }
 }
