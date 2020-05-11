@@ -1,10 +1,6 @@
-import sys
+ximport param
 
-from io import BytesIO
-
-import param
-
-from bokeh.models import LayoutDOM, CustomJS, Spacer as BkSpacer
+from pyviz_comms import JupyterComm
 
 from ..config import config
 from ..models import IPyWidget as _BkIPyWidget
@@ -23,7 +19,7 @@ class IPyWidget(PaneBase):
         if root is None:
             return self._get_root(doc, comm)
 
-        if comm and not config.embed:
+        if isinstance(comm, JupyterComm) and not config.embed:
             IPyWidget = _BkIPyWidget
         else:
             from ipywidgets_bokeh.widget import IPyWidget

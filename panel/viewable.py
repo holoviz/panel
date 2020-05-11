@@ -8,7 +8,6 @@ and become viewable including:
 * Viewable: Defines methods to view the component in the
   notebook, on the server or in static exports
 """
-import json
 import logging
 import sys
 import traceback
@@ -26,8 +25,7 @@ from .config import config, panel_extension
 from .io.embed import embed_state
 from .io.model import add_to_doc, patch_cds_msg
 from .io.notebook import (
-    ipywidget, render_mimebundle, render_model, show_embed, show_server,
-    push
+    ipywidget, render_mimebundle, render_model, show_embed, show_server
 )
 from .io.save import save
 from .io.state import state
