@@ -304,6 +304,10 @@ class panel_extension(_pyviz_extension):
                                                 "hv-extension-comm")
             state._comm_manager = _JupyterCommManager
 
+        if 'ipywidgets' in sys.modules and config.embed:
+            # In embedded mode the ipywidgets_bokeh model must be loaded
+            __import__(self._imports['ipywidgets'])
+
         nb_load = False
         if 'holoviews' in sys.modules:
             if getattr(hv.extension, '_loaded', False):
