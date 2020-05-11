@@ -130,6 +130,7 @@ extras_require = {
         'django',
         'pyvista',
         'ipywidgets',
+        'ipywidgets_bokeh',
         'ipyvolume',
         'ipyleaflet'
     ],
