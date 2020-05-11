@@ -1,4 +1,4 @@
-ximport param
+import param
 
 from pyviz_comms import JupyterComm
 
