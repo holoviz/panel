@@ -129,6 +129,9 @@ extras_require = {
         'jupyter_bokeh',
         'django',
         'pyvista',
+        'ipywidgets',
+        'ipyvolume',
+        'ipyleaflet'
     ],
     'tests': _tests,
     'recommended': _recommended,
