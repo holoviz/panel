@@ -256,7 +256,8 @@ class panel_extension(_pyviz_extension):
                 'deckgl': 'panel.models.deckgl',
                 'vega': 'panel.models.vega',
                 'vtk': 'panel.models.vtk',
-                'ace': 'panel.models.ace'}
+                'ace': 'panel.models.ace',
+                'ipywidgets': 'ipywidgets_bokeh.widget'}
 
     def __call__(self, *args, **params):
         # Abort if IPython not found
@@ -302,6 +303,10 @@ class panel_extension(_pyviz_extension):
             _JupyterCommManager.get_client_comm(self._process_comm_msg,
                                                 "hv-extension-comm")
             state._comm_manager = _JupyterCommManager
+
+        if 'ipywidgets' in sys.modules and config.embed:
+            # In embedded mode the ipywidgets_bokeh model must be loaded
+            __import__(self._imports['ipywidgets'])
 
         nb_load = False
         if 'holoviews' in sys.modules:

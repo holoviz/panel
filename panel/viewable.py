@@ -18,7 +18,7 @@ from functools import partial
 import param
 
 from bokeh.document.document import Document as _Document
-from bokeh.io import curdoc as _curdoc
+from bokeh.io.doc import curdoc as _curdoc
 from pyviz_comms import JupyterCommManager
 
 from .config import config, panel_extension
@@ -240,8 +240,9 @@ class ServableMixin(object):
         """
         root, doc, comm = state._views[ref][1:]
         patch_cds_msg(root, msg)
-        patch = manager.assemble(msg)
         held = doc._hold
+        patch = manager.assemble(msg)
+        doc.hold()
         patch.apply_to_document(doc, comm.id)
         doc.unhold()
         if held:
@@ -364,6 +365,7 @@ class Renderable(param.Parameterized):
         self._documents = {}
         self._models = {}
         self._comms = {}
+        self._kernels = {}
         self._found_links = set()
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
@@ -516,9 +518,8 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         from IPython.display import display
         from .models.comm_manager import CommManager
 
-        comm = state._comm_manager.get_server_comm()
-
         doc = _Document()
+        comm = state._comm_manager.get_server_comm()
         model = self._render_model(doc, comm)
         ref = model.ref['id']
         manager = CommManager(comm_id=comm.id, plot_id=ref)

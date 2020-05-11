@@ -5,14 +5,14 @@ import pytest
 import param
 
 from panel.interact import interactive
-from panel.pane import Pane, PaneBase, Bokeh, HoloViews
+from panel.pane import Pane, PaneBase, Bokeh, HoloViews, IPyWidget
 from panel.param import ParamMethod
 from panel.tests.util import check_layoutable_properties, py3_only
 
 
 all_panes = [w for w in param.concrete_descendents(PaneBase).values()
              if not w.__name__.startswith('_') and not
-             issubclass(w, (Bokeh, HoloViews, ParamMethod, interactive))
+             issubclass(w, (Bokeh, HoloViews, ParamMethod, interactive, IPyWidget))
              and w.__module__.startswith('panel')]
 
 
