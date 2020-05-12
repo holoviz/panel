@@ -85,6 +85,10 @@ def test_param_pane_repr_with_params(document, comm):
 
     assert repr(Pane(Test(), parameters=['a'])) == "Param(Test, parameters=['a'])"
 
+    # With a defined name.
+    test_pane = Pane(Test(), parameters=['a'], name='Another')
+    assert repr(test_pane) == "Param(Test, name='Another', parameters=['a'])"
+
 
 def test_get_root(document, comm):
 
@@ -486,6 +490,32 @@ def test_replace_param_object(document, comm):
     pane.object = None
 
     assert len(model.children) == 0
+
+
+def test_set_name(document, comm):
+    class Test(param.Parameterized):
+        a = param.Number(bounds=(0, 10))
+        b = param.String(default='A')
+
+    pane = Param(Test(), name='First')
+
+    model = pane.get_root(document, comm=comm)
+
+    assert len(model.children) == 3
+    title, slider, text = model.children
+    assert isinstance(title, Div)
+    # Check setting name displays in as a title
+    assert title.text == '<b>First</b>'
+    assert isinstance(slider, Slider)
+    assert isinstance(text, TextInput)
+
+    pane.name = 'Second'
+
+    assert len(model.children) == 3
+    title, _, _ = model.children
+    assert isinstance(title, Div)
+    # Check the title updates with name
+    assert title.text == '<b>Second</b>'
 
 
 def test_set_parameters(document, comm):
