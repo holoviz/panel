@@ -1,2 +1,4 @@
-from .base import Template, BaseTemplate
-from .material import MaterialTemplate
+from .base import Template, BaseTemplate # noqa
+from .bootstrap import BootstrapTemplate # noqa
+from .material import MaterialTemplate # noqa
+from .theme import DefaultTheme # noqa

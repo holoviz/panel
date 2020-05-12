@@ -4,7 +4,6 @@ documents.
 """
 from __future__ import absolute_import, division, unicode_literals
 
-import pathlib
 import sys
 import uuid
 
@@ -23,7 +22,7 @@ from ..io.model import add_to_doc
 from ..io.notebook import render_template
 from ..io.save import save
 from ..io.state import state
-from ..layout import Card, Column, ListLike
+from ..layout import Column, ListLike
 from ..models.comm_manager import CommManager
 from ..pane import panel as _panel, HTML, Str, HoloViews
 from ..viewable import ServableMixin, Viewable
@@ -323,10 +322,12 @@ class BasicTemplate(BaseTemplate):
                                              'header_color'])
 
     def _init_doc(self, doc=None, comm=None, title=None, notebook=False, location=True):
-        doc = doc or _curdoc()
-        if self.theme and self.theme.bokeh_theme:
-            doc.theme = self.theme.bokeh_theme
-        return super(BasicTemplate, self)._init_doc(doc, comm, title, notebook, location)
+        doc = super(BasicTemplate, self)._init_doc(doc, comm, title, notebook, location)
+        if self.theme:
+            theme = self.theme.find_theme(type(self))
+            if theme and theme.bokeh_theme:
+                doc.theme = theme.bokeh_theme
+        return doc
 
     def _update_vars(self, *args):
         self._render_variables['app_title'] = self.title

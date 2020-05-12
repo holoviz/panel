@@ -1,8 +1,13 @@
+body {
+  height: 100vh
+}
+
 #container {
   padding:0px;
 }
 
 #content {
+  height: 100vh;
   margin: 0px;
 }
 

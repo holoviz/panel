@@ -5,9 +5,7 @@ import pathlib
 
 import param
 
-from ...config import config
-from ...layout import Row, Column, HSpacer, Spacer, ListLike, Card
-from ...pane import HTML
+from ...layout import Card
 from ..base import BasicTemplate
 from ..theme import DefaultTheme
 

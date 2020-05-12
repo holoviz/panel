@@ -30,6 +30,8 @@ class Theme(param.Parameterized):
 
     @classmethod
     def find_theme(cls, template_type):
+        if cls._template is template_type:
+            return cls
         for theme in param.concrete_descendents(cls).values():
             if theme._template is template_type:
                 return theme
