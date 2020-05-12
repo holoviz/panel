@@ -75,7 +75,7 @@ class Tabs(NamedListPanel):
         if model:
             try:
                 inds = [old.index(tab) for tab in new]
-            except:
+            except Exception:
                 return old, None
             old = self.objects
             new = [old[i] for i in inds]
