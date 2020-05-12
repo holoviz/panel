@@ -10,7 +10,7 @@
 
 <!-- goes in body -->
 {% block contents %}
-<header class="mdc-top-app-bar app-bar" id="header">
+<header class="mdc-top-app-bar app-bar" style="{% if header_background %}background-color: {{ header_background }} !important;{% endif %}{% if header_color %}color: {{ header_color }}{% endif %}" id="header">
   <div class="mdc-top-app-bar__row">
     <section class="mdc-top-app-bar__section mdc-top-app-bar__section--align-start">
       {% if nav %}

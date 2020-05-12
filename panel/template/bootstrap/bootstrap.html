@@ -11,7 +11,7 @@
 <!-- goes in body -->
 {% block contents %}
 <div class="container-fluid d-flex flex-column vh-100 overflow-hidden" id="container">
-  <nav class="navbar navbar-expand-md navbar-dark sticky-top bg-dark shadow" {% if header_color %}style="background-color: {{ header_color }} !important"{% endif %} id="header">
+  <nav class="navbar navbar-expand-md navbar-dark sticky-top shadow" style="{% if header_background %}background-color: {{ header_background }} !important;{% endif %}{% if header_color %}color: {{ header_color }}{% endif %}" id="header">
     {% if nav %}
     <button type="button" class="navbar-toggle collapsed" id="sidebarCollapse">
       <span class="navbar-toggler-icon"></span>

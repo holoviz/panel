@@ -9,6 +9,8 @@ from ...config import config
 from ...layout import Row, Column, HSpacer, Spacer, ListLike, Card
 from ...pane import HTML
 from ..base import BasicTemplate
+from ..theme import DefaultTheme
+
 
 
 class MaterialTemplate(BasicTemplate):
@@ -44,3 +46,10 @@ class MaterialTemplate(BasicTemplate):
         """.format(msg=msg)
         self._snackbar_trigger.object = script
         self._snackbar_trigger.object = ''
+
+
+class MaterialDefaultTheme(DefaultTheme):
+
+    css = param.Filename(default=pathlib.Path(__file__).parent / 'default.css')
+
+    _template = MaterialTemplate
