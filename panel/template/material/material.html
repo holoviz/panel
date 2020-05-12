@@ -66,16 +66,15 @@
 
 <script>
   var drawer = mdc.drawer.MDCDrawer.attachTo(document.querySelector('.mdc-drawer'));
-  var topAppBar = mdc.topAppBar.MDCTopAppBar.attachTo(document.getElementById('app-bar'));
-  topAppBar.setScrollTarget(document.getElementById('main-content'));
-  topAppBar.listen('MDCTopAppBar:nav', () => {
-  drawer.open = !drawer.open;
-
+  drawer.open = true;
+  console.log(drawer)
+  var topAppBar = mdc.topAppBar.MDCTopAppBar.attachTo(document.getElementById('header'));
+  topAppBar.setScrollTarget(document.getElementById('main'));
+  topAppBar.listen('MDCTopAppBar:nav', function() {
+    drawer.open = !drawer.open;
     // Ensure bokeh layout recomputes layout
     window.dispatchEvent(new Event('resize'));
-
-   });
-   drawer.open = true
+  });
 </script>
 
 
