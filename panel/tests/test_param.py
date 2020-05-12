@@ -482,6 +482,11 @@ def test_replace_param_object(document, comm):
     assert widget.start == 0
     assert widget.end == 10
 
+    # Check when object is None
+    pane.object = None
+
+    assert len(model.children) == 0
+
 
 def test_set_parameters(document, comm):
     class Test(param.Parameterized):
