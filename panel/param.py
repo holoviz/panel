@@ -209,7 +209,7 @@ class Param(PaneBase):
         for event in sorted(events, key=lambda x: x.name):
             if event.name == 'object':
                 if isinstance(event.new, param.parameterized.Parameters):
-                    self.object = object.cls if object.self is None else object.self
+                    self.object = self.object.cls if self.object.self is None else self.object.self
                     return
                 if event.new is None:
                     parameters = None

@@ -469,6 +469,19 @@ def test_replace_param_object(document, comm):
     assert widget.start == 0
     assert widget.end == 10
 
+    # Check when object is from parameters
+    pane.object = Test().param
+
+    assert len(model.children) == 2
+    title, widget = model.children
+
+    assert isinstance(title, Div)
+    assert title.text == '<b>Test</b>'
+
+    assert isinstance(widget, Slider)
+    assert widget.start == 0
+    assert widget.end == 10
+
 
 def test_set_parameters(document, comm):
     class Test(param.Parameterized):
