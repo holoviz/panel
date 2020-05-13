@@ -1,6 +1,6 @@
 import param
 
-from bokeh.themes import Theme
+from bokeh.themes import Theme as _BkTheme, _dark_minimal
 
 
 class Theme(param.Parameterized):
@@ -22,7 +22,7 @@ class Theme(param.Parameterized):
 
     css = param.Filename()
 
-    bokeh_theme = param.ClassSelector(class_=Theme)
+    bokeh_theme = param.ClassSelector(class_=(_BkTheme, str))
 
     _template = None
 
@@ -41,3 +41,21 @@ class DefaultTheme(Theme):
     """
     The DefaultTheme uses the standard Panel color palette.
     """
+
+
+
+BOKEH_DARK = dict(_dark_minimal.json)
+
+BOKEH_DARK['attrs']['Figure'].update({
+    "background_fill_color": "#3f3f3f",
+    "border_fill_color": "#2f2f2f",
+
+})
+
+class DarkTheme(Theme):
+    """
+    The DefaultTheme uses the standard Panel color palette.
+    """
+
+    bokeh_theme = param.ClassSelector(class_=(_BkTheme, str),
+                                      default=_BkTheme(json=BOKEH_DARK))

@@ -7,7 +7,7 @@ import param
 
 from ...layout import Card
 from ..base import BasicTemplate
-from ..theme import DefaultTheme
+from ..theme import DarkTheme, DefaultTheme
 
 
 class BootstrapTemplate(BasicTemplate):
@@ -29,5 +29,12 @@ class BootstrapTemplate(BasicTemplate):
 class BootstrapDefaultTheme(DefaultTheme):
 
     css = param.Filename(default=pathlib.Path(__file__).parent / 'default.css')
+
+    _template = BootstrapTemplate
+
+
+class BootstrapDarkTheme(DarkTheme):
+
+    css = param.Filename(default=pathlib.Path(__file__).parent / 'dark.css')
 
     _template = BootstrapTemplate
