@@ -134,6 +134,29 @@ class SyncHelpers:
                     LinearColorMapper(low=low, high=high, name=name, palette=palette)
                 )
         return cmaps
+    
+    def construct_colorbars(self, orientation='horizontal'):
+        color_mappers = self.get_color_mappers()
+        if len(color_mappers)>0:
+            from bokeh.models import Plot, ColorBar, FixedTicker
+            if orientation == 'horizontal':
+                cbs = []
+                for color_mapper in color_mappers:
+                    ticks = np.linspace(color_mapper.low, color_mapper.high, 5)
+                    cbs.append(ColorBar(
+                        color_mapper=color_mapper,
+                        title=color_mapper.name,
+                        ticker=FixedTicker(ticks=ticks),
+                        label_standoff=5, background_fill_alpha=0, orientation='horizontal', location=(0, 0)
+                    ))
+                plot = Plot(toolbar_location=None, frame_height=0, sizing_mode='stretch_width',
+                            outline_line_width=0)
+                [plot.add_layout(cb, 'below') for cb in cbs]
+                return plot
+            else:
+                raise ValueError('orientation can only be horizontal')
+        else:
+            return None
 
     def remove_actors(self, actors):
         """
@@ -234,9 +257,9 @@ class VTKRenderWindow(AbstractVTK, SyncHelpers):
         model = VTKSynchronizedPlot()
         context = rws.SynchronizationContext(id_root=make_globally_unique_id(), debug=self._debug_serializer)
         scene, arrays = self._serialize_ren_win(self.object, context)
-        color_mappers = self.get_color_mappers()
+        self.color_mappers = self.get_color_mappers()
         props = self._process_param_change(self._init_properties())
-        props.update(scene=scene, arrays=arrays, color_mappers=color_mappers)
+        props.update(scene=scene, arrays=arrays, color_mappers=self.color_mappers)
         model.update(**props)
 
         if root is None:
