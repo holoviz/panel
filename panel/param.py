@@ -94,6 +94,9 @@ class Param(PaneBase):
         usually to update the default Parameter values of the
         underlying parameterized object.""")
 
+    name = param.String(default='', doc="""
+        Title of the pane.""")
+
     parameters = param.List(default=[], doc="""
         If set this serves as a whitelist of parameters to display on
         the supplied Parameterized object.""")
@@ -151,6 +154,8 @@ class Param(PaneBase):
             object = object.cls if object.self is None else object.self
         if 'parameters' not in params and object is not None:
             params['parameters'] = [p for p in object.param if p != 'name']
+        if object and 'name' not in params:
+            params['name'] = param_name(object.name)
         super(Param, self).__init__(object, **params)
         self._updating = []
 
@@ -172,7 +177,7 @@ class Param(PaneBase):
                              'type or instance, found %s type.' %
                              type(layout).__name__)
         self.param.watch(self._update_widgets, [
-            'object', 'parameters', 'display_threshold', 'expand_button',
+            'object', 'parameters', 'name', 'display_threshold', 'expand_button',
             'expand', 'expand_layout', 'widgets', 'show_labels', 'show_name'])
         self._update_widgets()
 
@@ -201,7 +206,7 @@ class Param(PaneBase):
     #----------------------------------------------------------------
 
     def _synced_params(self):
-        ignored_params = ['name', 'default_layout']
+        ignored_params = ['default_layout']
         return [p for p in Layoutable.param if p not in ignored_params]
 
     def _update_widgets(self, *events):
@@ -209,14 +214,15 @@ class Param(PaneBase):
         for event in sorted(events, key=lambda x: x.name):
             if event.name == 'object':
                 if isinstance(event.new, param.parameterized.Parameters):
-                    self.object = object.cls if object.self is None else object.self
+                    self.object = event.new.cls if event.new.self is None else event.new.self
                     return
                 if event.new is None:
-                    parameters = None
+                    parameters = []
                 else:
                     parameters = [p for p in event.new.param if p != 'name']
+                    self.name = param_name(event.new.name)
             if event.name == 'parameters':
-                parameters = None if event.new == [] else event.new
+                parameters = [] if event.new == [] else event.new
 
         if parameters != [] and parameters != self.parameters:
             self.parameters = parameters
@@ -491,8 +497,7 @@ class Param(PaneBase):
         if self.expand_layout is Tabs:
             widgets = []
         elif self.show_name:
-            name = param_name(self.object.name)
-            widgets = [('_title', StaticText(value='<b>{0}</b>'.format(name)))]
+            widgets = [('_title', StaticText(value='<b>{0}</b>'.format(self.name)))]
         else:
             widgets = []
         widgets += [(pname, self.widget(pname)) for pname in self._ordered_params]
