@@ -1,0 +1,41 @@
+body {
+  display: flex;
+  height: 100vh;
+  font-family: roboto;
+  margin: 0px;
+}
+
+.mdc-drawer-app-content {
+  flex: auto;
+  overflow: auto;
+  position: relative;
+}
+
+.main-content {
+  height: 100%;
+  margin-left: 20px;
+  margin-right: 20px;
+}
+
+#header {
+  position: absolute;
+  z-index: 7;
+}
+
+button.mdc-button.mdc-card-button {
+  color: transparent;
+  height: 50px;
+}
+
+p.bk.mdc-button {
+  display: none;
+}
+
+div.bk.mdc-card {
+  border-radius: 0px
+}
+
+.bk.mdc-card-title {
+  font-size: 1.5em;
+  font-weight: bold;
+}

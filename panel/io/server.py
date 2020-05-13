@@ -41,12 +41,12 @@ def _server_url(url, port):
         return 'http://%s:%d%s' % (url.split(':')[0], port, "/")
 
 def _eval_panel(panel, server_id, title, location, doc):
-    from ..template import Template
+    from ..template import BaseTemplate
     from ..pane import panel as as_panel
 
     if isinstance(panel, FunctionType):
         panel = panel()
-    if isinstance(panel, Template):
+    if isinstance(panel, BaseTemplate):
         return panel._modify_doc(server_id, title, doc, location)
     return as_panel(panel)._modify_doc(server_id, title, doc, location)
 
