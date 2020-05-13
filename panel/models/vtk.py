@@ -69,7 +69,7 @@ class AbstractVTKPlot(HTMLBox):
 
 class VTKSynchronizedPlot(AbstractVTKPlot):
     """
-    Bokeh model dedicated to plot a vtk render window
+    Bokeh model for plotting a VTK render window
     """
 
     arrays = Dict(String, Any)
@@ -85,7 +85,7 @@ class VTKSynchronizedPlot(AbstractVTKPlot):
 
 class VTKJSPlot(AbstractVTKPlot):
     """
-    Bokeh model dedicated to plot 3d scene saved under the `.vtk-js` format
+    Bokeh model for plotting a 3D scene saved in the `.vtk-js` format
     """
 
     data = String(help="""The serialized vtk.js data""")
