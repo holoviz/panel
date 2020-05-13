@@ -22,6 +22,16 @@ export class SliderInputView extends SliderView {
         value: uislider.get(),
       })
     }
+    this.input_el.style.background = "transparent"
+    this.input_el.style.border = "none"
+    this.input_el.onfocus = () => {
+      this.input_el.style.background = ""
+      this.input_el.style.border = ""
+    }
+    this.input_el.onblur = () => {
+      this.input_el.style.background = "transparent"
+      this.input_el.style.border = "none"
+    }
     const orientation = this.model.orientation == "horizontal" ? "row" : "column"
     this.slider_group_el = div(
       {
