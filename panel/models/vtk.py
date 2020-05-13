@@ -9,7 +9,7 @@ from bokeh.core.has_props import abstract
 from bokeh.core.enums import enumeration
 from bokeh.models import HTMLBox, Model, ColorMapper
 
-vtk_cdn = "https://unpkg.com/vtk.js"
+vtk_cdn = "https://unpkg.com/vtk.js@13.18.0/dist/vtk.js"
 
 class VTKAxes(Model):
     """
