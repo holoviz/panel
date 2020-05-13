@@ -19,9 +19,9 @@ function getNodes(node: any) {
   return recursor(node);
 }
 
-export class MicroTemplateView extends LayoutDOMView {
+export class TemplatedHTMLView extends LayoutDOMView {
   layout: Layoutable
-  model: MicroTemplate
+  model: TemplatedHTML
   _prev_sizing_mode: string | null
 
   connect_signals(): void {
@@ -31,11 +31,11 @@ export class MicroTemplateView extends LayoutDOMView {
 
   render(): void {
     empty(this.el)
-	const decoded = htmlDecode(this.model.html);
+    const decoded = htmlDecode(this.model.html);
     const html = decoded || this.model.html
-	this.el.innerHTML = html
-	const nodes = getNodes(this.el)
-	for (let i = 0; i < this.child_views.length; i++) {
+    this.el.innerHTML = html
+    const nodes = getNodes(this.el)
+    for (let i = 0; i < this.child_views.length; i++) {
       const view = this.child_views[i]
       for (const node of nodes) {
         if (node.innerHTML && (node.innerHTML == `{${i}}`)) {
@@ -44,8 +44,8 @@ export class MicroTemplateView extends LayoutDOMView {
           view.render()
         }
       }
-	}
-	this.root.compute_layout()
+    }
+    this.root.compute_layout()
   }
 
   _update_layout(): void {
@@ -61,7 +61,7 @@ export class MicroTemplateView extends LayoutDOMView {
   }
 }
 
-export namespace MicroTemplate {
+export namespace TemplatedHTML {
   export type Attrs = p.AttrsOf<Props>
 
   export type Props = LayoutDOM.Props & {
@@ -70,23 +70,23 @@ export namespace MicroTemplate {
   }
 }
 
-export interface MicroTemplate extends MicroTemplate.Attrs {}
+export interface TemplatedHTML extends TemplatedHTML.Attrs {}
 
-export class MicroTemplate extends LayoutDOM {
-  properties: MicroTemplate.Props
+export class TemplatedHTML extends LayoutDOM {
+  properties: TemplatedHTML.Props
 
-  constructor(attrs?: Partial<MicroTemplate.Attrs>) {
+  constructor(attrs?: Partial<TemplatedHTML.Attrs>) {
     super(attrs)
   }
 
   static __module__ = "panel.models.layout"
 
-  static init_MicroTemplate(): void {
-    this.prototype.default_view = MicroTemplateView
+  static init_TemplatedHTML(): void {
+    this.prototype.default_view = TemplatedHTMLView
 
-    this.define<MicroTemplate.Props>({
+    this.define<TemplatedHTML.Props>({
       children: [ p.Array,  [] ],
-	  html:   [ p.String, ''        ],
+      html:     [ p.String, '' ],
     })
   }
 }

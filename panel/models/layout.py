@@ -23,6 +23,6 @@ class Card(Column):
     tag = String('tag', help="CSS class to use for the Card as a whole.")
 
 
-class MicroTemplate(Box):
+class TemplatedHTML(Box):
 
     html = String(help="Template HTML")
