@@ -375,86 +375,84 @@ class Param(PaneBase):
         widget._param_pane = self
 
         watchers = self._callbacks
-        if isinstance(widget, Toggle):
-            pass
+
+        def link_widget(change):
+            if p_name in self._updating:
+                return
+            try:
+                self._updating.append(p_name)
+                self.object.param.set_param(**{p_name: change.new})
+            finally:
+                self._updating.remove(p_name)
+
+        if isinstance(p_obj, param.Action):
+            def action(change):
+                value(self.object)
+            watcher = widget.param.watch(action, 'clicks')
         else:
-            def link_widget(change):
-                if p_name in self._updating:
-                    return
-                try:
-                    self._updating.append(p_name)
-                    self.object.param.set_param(**{p_name: change.new})
-                finally:
-                    self._updating.remove(p_name)
+            watcher = widget.param.watch(link_widget, 'value')
+        watchers.append(watcher)
 
-            if isinstance(p_obj, param.Action):
-                def action(change):
-                    value(self.object)
-                watcher = widget.param.watch(action, 'clicks')
+        def link(change, watchers=[watcher]):
+            updates = {}
+            if change.what == 'constant':
+                updates['disabled'] = change.new
+            elif change.what == 'precedence':
+                if (change.new < self.display_threshold and
+                    widget in self._widget_box.objects):
+                    self._widget_box.pop(widget)
+                elif change.new >= self.display_threshold:
+                    precedence = lambda k: self.object.param['name' if k == '_title' else k].precedence
+                    params = self._ordered_params
+                    if self.show_name:
+                        params.insert(0, '_title')
+                    widgets = []
+                    for k in params:
+                        if precedence(k) is None or precedence(k) >= self.display_threshold:
+                            widgets.append(self._widgets[k])
+                    self._widget_box.objects = widgets
+                return
+            elif change.what == 'objects':
+                updates['options'] = p_obj.get_range()
+            elif change.what == 'bounds':
+                start, end = p_obj.get_soft_bounds()
+                updates['start'] = start
+                updates['end'] = end
+            elif change.what == 'step':
+                updates['step'] = p_obj.step
+            elif change.what == 'label':
+                updates['name'] = p_obj.label
+            elif p_name in self._updating:
+                return
+            elif isinstance(p_obj, param.Action):
+                prev_watcher = watchers[0]
+                widget.param.unwatch(prev_watcher)
+                def action(event):
+                    change.new(self.object)
+                watchers[0] = widget.param.watch(action, 'clicks')
+                idx = self._callbacks.index(prev_watcher)
+                self._callbacks[idx] = watchers[0]
+                return
             else:
-                watcher = widget.param.watch(link_widget, 'value')
-            watchers.append(watcher)
+                updates['value'] = change.new
 
-            def link(change, watchers=[watcher]):
-                updates = {}
-                if change.what == 'constant':
-                    updates['disabled'] = change.new
-                elif change.what == 'precedence':
-                    if (change.new < self.display_threshold and
-                        widget in self._widget_box.objects):
-                        self._widget_box.pop(widget)
-                    elif change.new >= self.display_threshold:
-                        precedence = lambda k: self.object.param['name' if k == '_title' else k].precedence
-                        params = self._ordered_params
-                        if self.show_name:
-                            params.insert(0, '_title')
-                        widgets = []
-                        for k in params:
-                            if precedence(k) is None or precedence(k) >= self.display_threshold:
-                                widgets.append(self._widgets[k])
-                        self._widget_box.objects = widgets
-                    return
-                elif change.what == 'objects':
-                    updates['options'] = p_obj.get_range()
-                elif change.what == 'bounds':
-                    start, end = p_obj.get_soft_bounds()
-                    updates['start'] = start
-                    updates['end'] = end
-                elif change.what == 'step':
-                    updates['step'] = p_obj.step
-                elif change.what == 'label':
-                    updates['name'] = p_obj.label
-                elif p_name in self._updating:
-                    return
-                elif isinstance(p_obj, param.Action):
-                    prev_watcher = watchers[0]
-                    widget.param.unwatch(prev_watcher)
-                    def action(event):
-                        change.new(self.object)
-                    watchers[0] = widget.param.watch(action, 'clicks')
-                    idx = self._callbacks.index(prev_watcher)
-                    self._callbacks[idx] = watchers[0]
-                    return
-                else:
-                    updates['value'] = change.new
+            try:
+                self._updating.append(p_name)
+                widget.param.set_param(**updates)
+            finally:
+                self._updating.remove(p_name)
 
-                try:
-                    self._updating.append(p_name)
-                    widget.param.set_param(**updates)
-                finally:
-                    self._updating.remove(p_name)
-
-            # Set up links to parameterized object
-            watchers.append(self.object.param.watch(link, p_name, 'constant'))
-            watchers.append(self.object.param.watch(link, p_name, 'precedence'))
-            watchers.append(self.object.param.watch(link, p_name, 'label'))
-            if hasattr(p_obj, 'get_range'):
-                watchers.append(self.object.param.watch(link, p_name, 'objects'))
-            if hasattr(p_obj, 'get_soft_bounds'):
-                watchers.append(self.object.param.watch(link, p_name, 'bounds'))
-            if 'step' in kw:
-                watchers.append(self.object.param.watch(link, p_name, 'step'))
-            watchers.append(self.object.param.watch(link, p_name))
+        # Set up links to parameterized object
+        watchers.append(self.object.param.watch(link, p_name, 'constant'))
+        watchers.append(self.object.param.watch(link, p_name, 'precedence'))
+        watchers.append(self.object.param.watch(link, p_name, 'label'))
+        if hasattr(p_obj, 'get_range'):
+            watchers.append(self.object.param.watch(link, p_name, 'objects'))
+        if hasattr(p_obj, 'get_soft_bounds'):
+            watchers.append(self.object.param.watch(link, p_name, 'bounds'))
+        if 'step' in kw:
+            watchers.append(self.object.param.watch(link, p_name, 'step'))
+        watchers.append(self.object.param.watch(link, p_name))
 
         options = kwargs.get('options', [])
         if isinstance(options, dict):

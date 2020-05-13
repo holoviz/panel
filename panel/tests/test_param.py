@@ -363,15 +363,21 @@ def test_list_selector_param(document, comm):
 
 def test_action_param(document, comm):
     class Test(param.Parameterized):
-        a = param.Action(lambda x: x.b.append(1))
-        b = param.List(default=[])
+        a = param.Action(lambda x: setattr(x, 'b', 2))
+        b = param.Number(default=1)
 
     test = Test()
     test_pane = Pane(test)
     model = test_pane.get_root(document, comm=comm)
 
-    slider = model.children[1]
-    assert isinstance(slider, Button)
+    button = model.children[1]
+    assert isinstance(button, Button)
+
+    # Check that the action is actually executed
+    pn_button = test_pane.layout[1]
+    pn_button.clicks = 1
+
+    assert test.b == 2
 
 
 def test_explicit_params(document, comm):
