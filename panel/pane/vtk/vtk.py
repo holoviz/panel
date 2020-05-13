@@ -177,7 +177,7 @@ class SyncHelpers:
         Reset the camera
         """
 
-class VTK(AbstractVTK, SyncHelpers):
+class VTKRenderWindow(AbstractVTK, SyncHelpers):
     """
     VTK panes allow rendering VTK objects.
     Synchronize a vtkRenderWindow constructs on python side
@@ -211,7 +211,7 @@ class VTK(AbstractVTK, SyncHelpers):
         if object is None:
             object = self.make_ren_win()
         self._debug_serializer = params.pop('debug_serializer', False)
-        super(VTK, self).__init__(object, **params)
+        super(VTKRenderWindow, self).__init__(object, **params)
         self._contexts = {}
         import panel.pane.vtk.synchronizable_serializer as rws
         rws.initializeSerializers()
@@ -252,7 +252,7 @@ class VTK(AbstractVTK, SyncHelpers):
     def _cleanup(self, root):
         ref = root.ref['id']
         self._contexts.pop(ref, None)
-        super(VTK, self)._cleanup(root)
+        super(VTKRenderWindow, self)._cleanup(root)
 
     def _serialize_ren_win(self, ren_win, context, binary=False, compression=True, exclude_arrays=None):
         import panel.pane.vtk.synchronizable_serializer as rws
@@ -295,8 +295,8 @@ class VTK(AbstractVTK, SyncHelpers):
         """
         Associate the camera of an other VTKSynchronized pane to this renderer
         """
-        if not isinstance(other, VTK):
-            raise TypeError('Only instance of VTKSynchronized class can be linked')
+        if not isinstance(other, VTKRenderWindow):
+            raise TypeError('Only instance of VTKRenderWindow class can be linked')
         else:
             self.vtk_camera = other.vtk_camera
 
@@ -337,7 +337,7 @@ class VTK(AbstractVTK, SyncHelpers):
     @staticmethod
     def import_scene(filename):
         from .synchronizable_deserializer import import_synch_file
-        return VTK(import_synch_file(filename=filename))
+        return VTKRenderWindow(import_synch_file(filename=filename))
 
 class VTKVolume(AbstractVTK):
 
@@ -665,3 +665,16 @@ class VTKJS(AbstractVTK):
     def export_vtkjs(self, filename='vtk_panel.vtkjs'):
         with open(filename, 'wb') as f:
             f.write(self._get_vtkjs())
+
+
+class VTK:
+
+    @classmethod
+    def applies(cls, obj):
+        return VTKRenderWindow.applies(obj) or VTKJS.applies(obj)
+
+    def __new__(self, obj, **params):
+        if VTKRenderWindow.applies(obj):
+            return VTKRenderWindow(object=obj, **params)
+        elif VTKJS.applies(obj):
+            return VTKJS(object=obj, **params)

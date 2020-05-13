@@ -22,7 +22,8 @@ except Exception:
 
 from six import string_types
 from panel.models.vtk import VTKJSPlot, VTKVolumePlot, VTKAxes, VTKSynchronizedPlot
-from panel.pane import Pane, PaneBase, VTKJS, VTKVolume, VTK
+from panel.pane import Pane, PaneBase, VTKVolume, VTK
+from panel.pane.vtk.vtk import VTKRenderWindow, VTKJS
 
 vtk_available = pytest.mark.skipif(vtk is None, reason="requires vtk")
 pyvista_available = pytest.mark.skipif(pv is None, reason="requires pyvista")
@@ -98,7 +99,7 @@ def test_get_vtkjs_pane_type_from_file():
 
 @vtk_available
 def test_get_vtk_pane_type_from_render_window():
-    assert PaneBase.get_pane_type(vtk.vtkRenderWindow()) is VTK
+    assert PaneBase.get_pane_type(vtk.vtkRenderWindow()) is VTKRenderWindow
 
 
 def test_get_vtkvol_pane_type_from_np_array():
@@ -242,7 +243,7 @@ def test_vtk_pane_more_complex(document, comm, tmp_path):
 
     # test import from file
     # (TODO test if the scene imported is identical to the one exported)
-    VTK.import_scene(filename=exported_file)
+    VTKRenderWindow.import_scene(filename=exported_file)
     
     # Cleanup
     pane._cleanup(model)
