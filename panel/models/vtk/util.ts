@@ -63,6 +63,11 @@ if (vtk) {
     vtkns.VolumeMapper.newInstance,
     vtkObjectManager.oneTimeGenericUpdater
   )
+  vtkObjectManager.setTypeMapping(
+    "vtkSmartVolumeMapper",
+    vtkns.VolumeMapper.newInstance,
+    vtkObjectManager.oneTimeGenericUpdater
+  )
 }
 
 declare type RGBnode = {

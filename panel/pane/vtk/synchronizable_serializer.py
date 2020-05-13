@@ -251,6 +251,8 @@ def initializeSerializers():
     registerInstanceSerializer(
         'vtkFixedPointVolumeRayCastMapper', genericVolumeMapperSerializer)
     registerInstanceSerializer(
+        'vtkSmartVolumeMapper', genericVolumeMapperSerializer)
+    registerInstanceSerializer(
         'vtkOpenGLImageSliceMapper', imageSliceMapperSerializer)
 
     # LookupTables/TransferFunctions
@@ -666,10 +668,15 @@ def genericVolumeMapperSerializer(parent, mapper, mapperId, context, depth):
 
     if not instance: return
 
+    imageSampleDistance = (
+        mapper.GetImageSampleDistance() 
+        if hasattr(mapper, 'GetImageSampleDistance') 
+        else 1
+    )
     instance['type'] = mapper.GetClassName()
     instance['properties'].update({
         'sampleDistance': mapper.GetSampleDistance(),
-        'imageSampleDistance': mapper.GetImageSampleDistance(),
+        'imageSampleDistance': imageSampleDistance,
         # 'maximumSamplesPerRay',
         'autoAdjustSampleDistances': mapper.GetAutoAdjustSampleDistances(),
         'blendMode': mapper.GetBlendMode(),

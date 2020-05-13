@@ -156,7 +156,7 @@ def make_type_handlers():
         'vtkActor': ['vtkOpenGLActor', 'vtkPVLODActor'],
         'vtkLight': ['vtkOpenGLLight', 'vtkPVLight'],
         'vtkTexture': ['vtkOpenGLTexture'],
-        'vtkVolumeMapper': ['vtkFixedPointVolumeRayCastMapper']
+        'vtkVolumeMapper': ['vtkFixedPointVolumeRayCastMapper', 'vtkSmartVolumeMapper']
     }
 
     type_handlers = {
