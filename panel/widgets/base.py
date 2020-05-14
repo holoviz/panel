@@ -60,6 +60,26 @@ class Widget(Reactive):
         super(Widget, self).__init__(**params)
         self.param.watch(self._update_widget, self._manual_params)
 
+    @classmethod
+    def from_parameter(cls, parameter, **params):
+        """
+        Construct a widget from a Parameter and link the two
+        bi-directionally.
+        
+        Parameters
+        ----------
+        parameter: param.Parameter
+          A parameter to create the widget from.
+        params: dict
+          Keyword arguments to be passed to the widget constructor
+        
+        Returns
+        -------
+        Widget instance linked to the supplied parameter
+        """
+        from ..param import Param
+        return Param(parameter, widgets={parameter.name: dict(type=cls, **params)})
+
     def _manual_update(self, events, model, doc, root, parent, comm):
         """
         Method for handling any manual update events, i.e. events triggered
