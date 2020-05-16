@@ -247,7 +247,7 @@ class ListLike(param.Parameterized):
                              % type(self).__name__)
         p = dict(self.param.get_param_values(), **params)
         del p['objects']
-        return type(self)(*objects, **params)
+        return type(self)(*objects, **p)
 
     def append(self, obj):
         """
