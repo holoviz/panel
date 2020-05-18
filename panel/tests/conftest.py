@@ -17,6 +17,7 @@ from pyviz_comms import Comm
 
 from panel.pane import HTML, Markdown
 from panel.io import state
+from panel import serve
 
 
 @pytest.fixture
@@ -115,6 +116,36 @@ def markdown_server_session():
         server.stop()
     except AssertionError:
         pass  # tests may already close this
+
+
+@pytest.fixture
+def multiple_apps_server_sessions():
+    """Serve multiple apps and yield a factory to allow
+    parameterizing the slugs and the titles."""
+    servers = []
+    def create_sessions(slugs, titles):
+        app1_slug, app2_slug = slugs
+        apps = {
+            app1_slug: Markdown('First app'),
+            app2_slug: Markdown('Second app')
+        }
+        server = serve(apps, port=5008, title=titles, show=False, start=False)
+        servers.append(server)
+        session1 = pull_session(
+            url=f"http://localhost:{server.port:d}/app1",
+            io_loop=server.io_loop
+        )
+        session2 = pull_session(
+            url=f"http://localhost:{server.port:d}/app2",
+            io_loop=server.io_loop
+        )
+        return session1, session2
+    yield create_sessions
+    for server in servers:
+        try:
+            server.stop()
+        except AssertionError:
+            continue  # tests may already close this
 
 
 @contextmanager
