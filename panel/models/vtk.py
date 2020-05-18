@@ -80,6 +80,8 @@ class VTKSynchronizedPlot(AbstractVTKPlot):
 
     one_time_reset = Bool(default=False)
 
+    rebuild = Bool(default=False, help="""If true when scene change all the render is rebuilt from scratch""")
+
     scene = Dict(String, Any, help="""The serialized vtk.js scene on json format""")
 
 

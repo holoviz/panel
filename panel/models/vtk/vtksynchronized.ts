@@ -56,13 +56,18 @@ export class VTKSynchronizedPlotView extends AbstractVTKView {
       this._decode_arrays()
     )
     this.connect(this.model.properties.scene.change, () => {
-      const state = clone(this.model.scene)
-      Promise.all(this._promises).then(() => {
-        this._sync_plot(state, () => {
-          this._on_scene_ready()
-          this._connect_interactions_to_model()
+      if (this.model.rebuild) {
+        this._vtk_renwin = null
+        this.invalidate_render()
+      } else {
+        const state = clone(this.model.scene)
+        Promise.all(this._promises).then(() => {
+          this._sync_plot(state, () => {
+            this._on_scene_ready()
+            this._connect_interactions_to_model()
+          })
         })
-      })
+      }
     })
     this.connect(this.model.properties.one_time_reset.change, () => {
       this._vtk_renwin.getRenderWindow().clearOneTimeUpdaters()
@@ -147,7 +152,6 @@ export class VTKSynchronizedPlotView extends AbstractVTKView {
       .getRenderWindow()
       .synchronize(state).then(onSceneReady)
   }
-
 }
 
 export namespace VTKSynchronizedPlot {
@@ -156,6 +160,7 @@ export namespace VTKSynchronizedPlot {
     arrays: p.Property<any>
     arrays_processed: p.Property<string[]>
     one_time_reset: p.Property<boolean>
+    rebuild: p.Property<boolean>
     scene: p.Property<any>
   }
 }
@@ -198,6 +203,7 @@ export class VTKSynchronizedPlot extends AbstractVTKPlot {
       arrays_processed:   [ p.Array,      [] ],
       enable_keybindings: [ p.Boolean, false ],
       one_time_reset:     [ p.Boolean        ],
+      rebuild:            [ p.Boolean, false ],
       scene:              [ p.Any,        {} ],
     })
 

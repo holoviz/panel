@@ -37,7 +37,7 @@ def fill_array(vtk_arr, state, zf):
     if vtk_arr.GetDataType() == 12:
         # we need to cast the data to Uint64
         import numpy as np
-        data = np.frombuffer(data, dtype=dataType).astype(np.int64).tobytes()
+        data = np.frombuffer(data, dtype=np.uint32).astype(np.uint64).tobytes()
         elementSize = 8
     vtk_arr.SetVoidArray(data, len(data)//elementSize, 1)
     vtk_arr._reference = data

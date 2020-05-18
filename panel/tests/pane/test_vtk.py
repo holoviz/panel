@@ -21,9 +21,11 @@ except Exception:
     pv = None
 
 from six import string_types
+from bokeh.models import ColorBar
+
 from panel.models.vtk import VTKJSPlot, VTKVolumePlot, VTKAxes, VTKSynchronizedPlot
-from panel.pane import Pane, PaneBase, VTKVolume, VTK
-from panel.pane.vtk.vtk import VTKRenderWindow, VTKJS
+from panel.pane import PaneBase, VTKVolume, VTK
+from panel.pane.vtk.vtk import VTKJS, VTKRenderWindowSynchronized, VTKRenderWindow
 
 vtk_available = pytest.mark.skipif(vtk is None, reason="requires vtk")
 pyvista_available = pytest.mark.skipif(pv is None, reason="requires pyvista")
@@ -99,7 +101,8 @@ def test_get_vtkjs_pane_type_from_file():
 
 @vtk_available
 def test_get_vtk_pane_type_from_render_window():
-    assert PaneBase.get_pane_type(vtk.vtkRenderWindow()) is VTKRenderWindow
+    assert PaneBase.get_pane_type(vtk.vtkRenderWindow()) is VTKRenderWindowSynchronized
+    assert PaneBase.get_pane_type(vtk.vtkRenderWindow(), serialize_on_instantiation=True) is VTKRenderWindow
 
 
 def test_get_vtkvol_pane_type_from_np_array():
@@ -112,15 +115,16 @@ def test_get_vtkvol_pane_type_from_vtk_image():
     assert PaneBase.get_pane_type(image_data) is VTKVolume
 
 
-def test_vtkjs_pane_from_url(document, comm, tmp_path):
+def test_vtkjs_pane(document, comm, tmp_path):
+    # from url
     url = r'https://raw.githubusercontent.com/Kitware/vtk-js/master/Data/StanfordDragon.vtkjs'
 
-    pane = Pane(url)
+    pane_from_url = VTK(url)
 
     # Create pane
-    model = pane.get_root(document, comm=comm)
+    model = pane_from_url.get_root(document, comm=comm)
     assert isinstance(model, VTKJSPlot)
-    assert pane._models[model.ref['id']][0] is model
+    assert pane_from_url._models[model.ref['id']][0] is model
     assert isinstance(model.data, string_types)
     
     with BytesIO(base64.b64decode(model.data.encode())) as in_memory:
@@ -131,9 +135,15 @@ def test_vtkjs_pane_from_url(document, comm, tmp_path):
 
     # Export Update and Read
     tmpfile = os.path.join(*tmp_path.joinpath('export.vtkjs').parts)
-    pane.export_vtkjs(filename=tmpfile)
+    pane_from_url.export_vtkjs(filename=tmpfile)
     with open(tmpfile, 'rb') as  file_exported:
-        pane.object = file_exported
+        pane_from_url.object = file_exported
+
+    #test from file
+    pane_from_file = VTK(tmpfile)
+    model_from_file = pane_from_file.get_root(document, comm=comm)
+    assert isinstance(pane_from_file, VTKJS)
+    assert isinstance(model_from_file, VTKJSPlot)
 
 
 @vtk_available
@@ -162,15 +172,45 @@ def test_vtk_pane_from_renwin(document, comm):
     assert pane._models == {}
 
 @vtk_available
-def test_vtk_helpers(document, comm):
+def test_vtk_serialize_on_instantiation(document, comm, tmp_path):
+    renWin = make_render_window()
+    pane = VTK(renWin, serialize_on_instantiation=True)
+    assert isinstance(pane, VTKRenderWindow)
+
+    model = pane.get_root(document, comm=comm)
+    assert isinstance(model, VTKSynchronizedPlot)
+
+    pane.param.trigger('object')
+    
+    # test export to file
+    tmpfile = os.path.join(*tmp_path.joinpath('scene').parts)
+    exported_file = pane.export_scene(filename=tmpfile)
+    assert exported_file.endswith('.synch')
+
+    # test import from file
+    imported_pane = VTK.import_scene(filename=exported_file, 
+                                     synchronizable=False)
+    assert isinstance(imported_pane, VTKRenderWindow)
+
+
+@vtk_available
+def test_vtk_sync_helpers(document, comm):
     renWin1 = make_render_window()
     renWin2 = make_render_window()
+    
+    # Create 2 panes to compare each other
     pane1 = VTK(renWin1)
     pane2 = VTK(renWin2)
 
-    # Create pane
+    assert isinstance(pane1, VTKRenderWindowSynchronized)
+    assert isinstance(pane2, VTKRenderWindowSynchronized)
+
+    # Create get models
     model1 = pane1.get_root(document, comm=comm)
     model2 = pane2.get_root(document, comm=comm)
+
+    assert isinstance(model1, VTKSynchronizedPlot)
+    assert isinstance(model2, VTKSynchronizedPlot)
 
     # Actors getter
     assert len(pane1.actors) == 1
@@ -222,6 +262,9 @@ def test_vtk_pane_more_complex(document, comm, tmp_path):
     assert isinstance(model, VTKSynchronizedPlot)
     assert pane._models[model.ref['id']][0] is model
 
+    colorbars = pane.construct_colorbars().object()
+    assert len(colorbars.below) == 3
+    assert all(isinstance(cb, ColorBar) for cb in colorbars.below)
     # add axes
     pane.axes = dict(
         origin = [-5, 5, -2],
@@ -243,7 +286,8 @@ def test_vtk_pane_more_complex(document, comm, tmp_path):
 
     # test import from file
     # (TODO test if the scene imported is identical to the one exported)
-    VTKRenderWindow.import_scene(filename=exported_file)
+    imported_scene = VTK.import_scene(filename=exported_file)
+    assert isinstance(imported_scene, VTKRenderWindowSynchronized)
     
     # Cleanup
     pane._cleanup(model)
