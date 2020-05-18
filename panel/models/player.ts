@@ -14,6 +14,12 @@ export class PlayerView extends WidgetView {
     this.connect(this.model.change, () => this.render())
     this.connect(this.model.properties.value.change, () => this.render())
     this.connect(this.model.properties.loop_policy.change, () => this.set_loop_state(this.model.loop_policy))
+    this.connect(this.model.properties.show_loop_controls.change, () => {
+      if (this.model.show_loop_controls && this.loop_state.parentNode != this.el)
+        this.el.appendChild(this.loop_state)
+      else if (!this.model.show_loop_controls && this.loop_state.parentNode == this.el)
+        this.el.removeChild(this.loop_state)
+    })
   }
 
   get_height(): number {
@@ -144,7 +150,8 @@ export class PlayerView extends WidgetView {
 
     this.el.appendChild(this.sliderEl)
     this.el.appendChild(button_div)
-    this.el.appendChild(this.loop_state)
+    if (this.model.show_loop_controls)
+      this.el.appendChild(this.loop_state)
   }
 
   set_frame(frame: number): void {
@@ -272,6 +279,7 @@ export namespace Player {
     step: p.Property<number>
     loop_policy: p.Property<any>
     value: p.Property<any>
+    show_loop_controls: p.Property<boolean>
   }
 }
 
@@ -291,13 +299,14 @@ export class Player extends Widget {
     this.prototype.default_view = PlayerView
 
     this.define<Player.Props>({
-      direction:         [ p.Number,      0            ],
-      interval:          [ p.Number,      500          ],
-      start:             [ p.Number,                   ],
-      end:               [ p.Number,                   ],
-      step:              [ p.Number,      1            ],
-      loop_policy:       [ p.Any,         "once"       ],
-      value:             [ p.Any,         0            ],
+      direction:          [ p.Number,      0            ],
+      interval:           [ p.Number,      500          ],
+      start:              [ p.Number,                   ],
+      end:                [ p.Number,                   ],
+      step:               [ p.Number,      1            ],
+      loop_policy:        [ p.Any,         "once"       ],
+      value:              [ p.Any,         0            ],
+      show_loop_controls: [ p.Boolean,     true         ],
     })
 
     this.override({width: 400})
