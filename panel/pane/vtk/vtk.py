@@ -147,9 +147,14 @@ class SyncHelpers:
         """
 
 
-class VTK(PaneBase):
-
-    __abstract = True
+class VTK:
+    """
+    Class factory: allows to switch between VTKJS, VTKRenderWindow, and 
+    VTKRenderWindowSynchronized pane in function of the object type and
+    when the serialisation of the vtkRenderWindow occurs.
+    Once a pane is returned by this class (inst = VTK(object)), one can 
+    use pn.help(inst) to see parameters available for the current pane
+    """
 
     def __new__(self, obj, **params):
         if BaseVTKRenderWindow.applies(obj):

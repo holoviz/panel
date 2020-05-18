@@ -339,7 +339,7 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
   }
 
   _set_axes(): void {
-    if (this.model.axes) {
+    if (this.model.axes && this._vtk_renwin.getRenderer()) {
       const {psActor, axesActor, gridActor} = this.model.axes.create_axes(
         this._axes_canvas
       )
