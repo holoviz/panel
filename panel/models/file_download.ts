@@ -51,6 +51,8 @@ export class FileDownloadView extends InputWidgetView {
 
   render(): void {
     super.render()
+    this.group_el.style.display = "flex"
+    this.group_el.style.alignItems = "stretch"
     // Create an anchor HTML element that is styled as a bokeh button.
     // When its 'href' and 'download' attributes are set, it's a downloadable link:
     // * A click triggers a download
@@ -195,13 +197,13 @@ export class FileDownload extends InputWidget {
     this.prototype.default_view = FileDownloadView
 
     this.define<FileDownload.Props>({
-      auto:     [ p.Boolean, false ],
-      clicks:   [ p.Number,  0     ],
-      data:     [ p.String,  null  ],
-      label:    [ p.String,  "Download"  ],
-      filename: [ p.String,  null  ],
-      button_type: [ p.ButtonType, "default" ], // TODO (bev)
-      _transfers: [ p.Number, 0    ],
+      auto:         [ p.Boolean,        false ],
+      clicks:       [ p.Number,         0     ],
+      data:         [ p.String,         null  ],
+      label:        [ p.String,   "Download"  ],
+      filename:     [ p.String,         null  ],
+      button_type:  [ p.ButtonType, "default" ], // TODO (bev)
+      _transfers:   [ p.Number,          0    ],
     })
 
     this.override({
