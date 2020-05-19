@@ -580,11 +580,13 @@ class ParamMethod(ReplacementPane):
                            f"a {fn_type} for panel to display you do not "
                            "have to set `watch=True` since panel will "
                            "automatically watch for changes in the "
-                           "dependencies. The use of `watch=True` "
-                           f"should be reserved for {fn_type}s which "
-                           "work via side-effects, e.g. by modifying"
-                           "internal state of a class or global state "
-                           "in an application's namespace.")
+                           "dependencies. If `watch=True` is set the "
+                           f"{fn_type} will be called twice for every "
+                           "change in one of the dependencies. The use of "
+                           f"`watch=True` should therefore be reserved "
+                           "for {fn_type}s which work via side-effects, "
+                           "e.g. by modifying internal state of a class "
+                           "or global state in an application's namespace.")
 
     #----------------------------------------------------------------
     # Callback API
