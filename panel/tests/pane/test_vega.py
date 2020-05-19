@@ -78,6 +78,62 @@ vega_inline_example = {
     }
 }
 
+gdf_example = {
+    'config': {'view': {'continuousWidth': 400, 'continuousHeight': 300}},
+    'data': {'name': 'data-778223ce4ff5da49611148b060c0cd3d'},
+    'mark': {'type': 'geoshape', 'fill': 'lightgray', 'stroke': 'white'},
+    'height': 600,
+    'projection': {'reflectY': True, 'type': 'identity'},
+    'width': 800,
+    '$schema': 'https://vega.github.io/schema/vega-lite/v4.0.0.json',
+    'datasets': {
+        'data-778223ce4ff5da49611148b060c0cd3d': [
+            {
+                'bid': 'SR01-01',
+                'type': 'Feature',
+                'geometry': {
+                    'type': 'Polygon',
+                    'coordinates': [
+                        [[120.0, 855.0],
+                         [120.0, 925.0],
+                         [20.0, 925.0],
+                         [20.0, 855.0],
+                         [120.0, 855.0]]
+                    ]
+                }
+            },
+            {
+                'bid': 'SR02-02',
+                'type': 'Feature',
+                'geometry': {
+                    'type': 'Polygon',
+                    'coordinates': [
+                        [[120.0, 940.0],
+                         [120.0, 1010.0],
+                         [20.0, 1010.0],
+                         [20.0, 940.0],
+                         [120.0, 940.0]]
+                    ]
+                }
+            },
+            {
+                'bid': 'SR03-03',
+                'type': 'Feature',
+                'geometry': {
+                    'type': 'Polygon',
+                    'coordinates': [
+                        [[240.0, 940.0],
+                         [240.0, 1010.0],
+                         [140.0, 1010.0],
+                         [140.0, 940.0],
+                         [240.0, 940.0]]
+                    ]
+                }
+            }
+        ]
+    }
+}
+
 def test_get_vega_pane_type_from_dict():
     assert PaneBase.get_pane_type(vega_example) is Vega
 
@@ -107,6 +163,17 @@ def test_vega_pane(document, comm):
 
     pane._cleanup(model)
     assert pane._models == {}
+
+
+def test_vega_geometry_data(document, comm):
+    pane = Pane(gdf_example)
+
+    # Create pane
+    model = pane.get_root(document, comm=comm)
+    assert isinstance(model, VegaPlot)
+
+    # Ensure geometries are not packed into CDS
+    assert model.data_sources == {}
 
 
 def test_vega_pane_inline(document, comm):
