@@ -22,6 +22,9 @@ class PlayerBase(Widget):
     step = param.Integer(default=1, doc="""
         Number of frames to step forward and back by on each event.""")
 
+    show_loop_controls = param.Boolean(default=True, doc="""
+        Whether the loop controls radio buttons are shown""")
+
     height = param.Integer(default=80)
 
     width = param.Integer(default=510)
