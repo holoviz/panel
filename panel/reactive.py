@@ -10,6 +10,7 @@ import threading
 from collections import namedtuple
 from functools import partial
 
+from bokeh.models import LayoutDOM
 from tornado import gen
 
 from .callbacks import PeriodicCallback
@@ -438,7 +439,16 @@ class Reactive(Syncable, Viewable):
         for k in mapping:
             if k.startswith('event:'):
                 continue
-            elif k not in self.param and k not in list(self._rename.values()):
+            elif hasattr(self, 'object') and isinstance(self.object, LayoutDOM):
+                current = self.object
+                for attr in k.split('.'):
+                    if not hasattr(current, attr):
+                        raise ValueError(f"Could not resolve {k} on "
+                                         f"{self.object} model. Ensure "
+                                         "you jslink an attribute that "
+                                         "exists on the bokeh model.")
+                    current = getattr(current, attr)
+            elif (k not in self.param and k not in list(self._rename.values())):
                 matches = difflib.get_close_matches(k, list(self.param))
                 if matches:
                     matches = ' Similar parameters include: %r' % matches
