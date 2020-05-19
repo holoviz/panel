@@ -103,7 +103,7 @@ class Location(Syncable):
         Arguments
         ---------
         parameterized (param.Parameterized):
-          The Paramterized object to sync query parameters with
+          The Parameterized object to sync query parameters with
         parameters (list or dict):
           A list or dictionary specifying parameters to sync. 
           If a dictionary is supplied it should define a mapping from
@@ -120,6 +120,15 @@ class Location(Syncable):
                                   for k, v in parameters.items()})
 
     def unsync(self, parameterized):
+        """
+        Unsyncs a Parameterized object which has been previous synced
+        with the Location component.
+        
+        Arguments
+        ---------
+        parameterized (param.Parameterized):
+          The Parameterized object to sync query parameters with
+        """
         matches = [s for s in self._synced if s[0] is parameterized]
         if not matches:
             ptype = type(parameterized)
