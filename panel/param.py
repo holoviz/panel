@@ -566,7 +566,25 @@ class ParamMethod(ReplacementPane):
         super(ParamMethod, self).__init__(object, **params)
         self._link_object_params()
         if object is not None:
+            self._validate_object()
             self._update_inner(self.eval(object))
+
+    @param.depends('object', watch=True)
+    def _validate_object(self):
+        dependencies = getattr(self.object, '_dinfo', None)
+        if not dependencies or not dependencies.get('watch'):
+            return
+        fn_type = 'method' if type(self) is ParamMethod else 'function'
+        self.param.warning(f"The {fn_type} supplied to panel was found "
+                           "to have set `watch=True`. When providing "
+                           f"a {fn_type} for panel to display you do not "
+                           "have to set `watch=True` since panel will "
+                           "automatically watch for changes in the "
+                           "dependencies. The use of `watch=True` "
+                           f"should be reserved for {fn_type}s which "
+                           "work via side-effects, e.g. by modifying"
+                           "internal state of a class or global state "
+                           "in an application's namespace.")
 
     #----------------------------------------------------------------
     # Callback API
