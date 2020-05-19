@@ -1,3 +1,5 @@
+import pytest
+
 from panel.models import HTML as BkHTML
 from panel.io import state
 
@@ -43,3 +45,15 @@ def test_kill_all_servers(html_server_session, markdown_server_session):
     state.kill_all_servers()
     assert server_1._stopped
     assert server_2._stopped
+
+def test_multiple_titles(multiple_apps_server_sessions):
+    """Serve multiple apps with a title per app."""
+    session1, session2 = multiple_apps_server_sessions(
+        slugs=('app1', 'app2'), titles={'app1': 'APP1', 'app2': 'APP2'})
+    assert session1.document.title == 'APP1'
+    assert session2.document.title == 'APP2'
+
+    # Slug names and title keys should match
+    with pytest.raises(KeyError):
+        session1, session2 = multiple_apps_server_sessions(
+            slugs=('app1', 'app2'), titles={'badkey': 'APP1', 'app2': 'APP2'})
