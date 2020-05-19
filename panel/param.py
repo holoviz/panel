@@ -575,18 +575,17 @@ class ParamMethod(ReplacementPane):
         if not dependencies or not dependencies.get('watch'):
             return
         fn_type = 'method' if type(self) is ParamMethod else 'function'
-        self.param.warning(f"The {fn_type} supplied to panel was found "
-                           "to have set `watch=True`. When providing "
-                           f"a {fn_type} for panel to display you do not "
-                           "have to set `watch=True` since panel will "
-                           "automatically watch for changes in the "
-                           "dependencies. If `watch=True` is set the "
-                           f"{fn_type} will be called twice for every "
-                           "change in one of the dependencies. The use of "
-                           f"`watch=True` should therefore be reserved "
-                           "for {fn_type}s which work via side-effects, "
-                           "e.g. by modifying internal state of a class "
-                           "or global state in an application's namespace.")
+        self.param.warning(f"The {fn_type} supplied for Panel to display "
+                           "was declared with `watch=True`, which will "
+                           f"cause the {fn_type} to be called twice for "
+                           "any change in a dependent Parameter. "
+                           "`watch` should be False when Panel is "
+                           "responsible for displaying the result "
+                           f"of the {fn_type} call, while `watch=True` "
+                           f"should be reserved for {fn_type}s that work "
+                           "via side-effects, e.g. by modifying internal  "
+                           "state of a class or global state in an "
+                           "application's namespace.")
 
     #----------------------------------------------------------------
     # Callback API
