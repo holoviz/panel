@@ -131,7 +131,7 @@ def serve(panels, port=0, websocket_origin=None, loop=None, show=True,
     start : boolean(optional, default=False)
       Whether to start the Server
     title: str or {str: str} (optional, default=None)
-      An HTML title for the application or a dictionnary mapping
+      An HTML title for the application or a dictionary mapping
       from the URL slug to a customized title
     verbose: boolean (optional, default=True)
       Whether to print the address and port
@@ -190,7 +190,7 @@ def get_server(panel, port=0, websocket_origin=None, loop=None,
     start : boolean(optional, default=False)
       Whether to start the Server
     title: str or {str: str} (optional, default=None)
-      An HTML title for the application or a dictionnary mapping
+      An HTML title for the application or a dictionary mapping
       from the URL slug to a customized title
     verbose: boolean (optional, default=False)
       Whether to report the address and port
@@ -218,7 +218,7 @@ def get_server(panel, port=0, websocket_origin=None, loop=None,
                 except KeyError:
                     raise KeyError(
                         "Keys of the title dictionnary and of the apps "
-                        f"dictionnary must match. No {slug} key found in the "
+                        f"dictionary must match. No {slug} key found in the "
                         "title dictionnary.") 
             else:
                 title_ = title
