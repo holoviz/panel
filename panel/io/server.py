@@ -130,8 +130,9 @@ def serve(panels, port=0, websocket_origin=None, loop=None, show=True,
       Whether to open the server in a new browser tab on start
     start : boolean(optional, default=False)
       Whether to start the Server
-    title: str (optional, default=None)
-      An HTML title for the application
+    title: str or {str: str} (optional, default=None)
+      An HTML title for the application or a dictionary mapping
+      from the URL slug to a customized title
     verbose: boolean (optional, default=True)
       Whether to print the address and port
     location : boolean or panel.io.location.Location
@@ -188,8 +189,9 @@ def get_server(panel, port=0, websocket_origin=None, loop=None,
       Whether to open the server in a new browser tab on start
     start : boolean(optional, default=False)
       Whether to start the Server
-    title: str (optional, default=None)
-      An HTML title for the application
+    title: str or {str: str} (optional, default=None)
+      An HTML title for the application or a dictionary mapping
+      from the URL slug to a customized title
     verbose: boolean (optional, default=False)
       Whether to report the address and port
     location : boolean or panel.io.location.Location
@@ -210,6 +212,16 @@ def get_server(panel, port=0, websocket_origin=None, loop=None,
     if isinstance(panel, dict):
         apps = {}
         for slug, app in panel.items():
+            if isinstance(title, dict):
+                try:
+                    title_ = title[slug]
+                except KeyError:
+                    raise KeyError(
+                        "Keys of the title dictionnary and of the apps "
+                        f"dictionary must match. No {slug} key found in the "
+                        "title dictionnary.") 
+            else:
+                title_ = title
             slug = slug if slug.startswith('/') else '/'+slug
             if 'flask' in sys.modules:
                 from flask import Flask
@@ -222,7 +234,7 @@ def get_server(panel, port=0, websocket_origin=None, loop=None,
                     extra_patterns.append(('^'+slug+'.*', ProxyFallbackHandler,
                                            dict(fallback=wsgi, proxy=slug)))
                     continue
-            apps[slug] = partial(_eval_panel, app, server_id, title, location)
+            apps[slug] = partial(_eval_panel, app, server_id, title_, location)
     else:
         apps = {'/': partial(_eval_panel, panel, server_id, title, location)}
 
