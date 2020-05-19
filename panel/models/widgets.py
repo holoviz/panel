@@ -30,6 +30,9 @@ class Player(Widget):
 
     loop_policy = Enum('once', 'reflect', 'loop', default='once')
 
+    show_loop_controls = Bool(True, help="""Whether the loop controls
+        radio buttons are shown""")
+
     width = Override(default=400)
 
     height = Override(default=250)
