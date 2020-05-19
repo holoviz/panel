@@ -5,6 +5,7 @@ import {Widget, WidgetView} from "@bokehjs/models/widgets/widget"
 export class PlayerView extends WidgetView {
   model: Player
 
+  protected groupEl: HTMLDivElement
   protected sliderEl: HTMLInputElement
   protected loop_state: HTMLFormElement
   protected timer: any
@@ -15,9 +16,9 @@ export class PlayerView extends WidgetView {
     this.connect(this.model.properties.value.change, () => this.render())
     this.connect(this.model.properties.loop_policy.change, () => this.set_loop_state(this.model.loop_policy))
     this.connect(this.model.properties.show_loop_controls.change, () => {
-      if (this.model.show_loop_controls && this.loop_state.parentNode != this.el)
-        this.el.appendChild(this.loop_state)
-      else if (!this.model.show_loop_controls && this.loop_state.parentNode == this.el)
+      if (this.model.show_loop_controls && this.loop_state.parentNode != this.groupEl)
+        this.groupEl.appendChild(this.loop_state)
+      else if (!this.model.show_loop_controls && this.loop_state.parentNode == this.groupEl)
         this.el.removeChild(this.loop_state)
     })
   }
@@ -30,29 +31,36 @@ export class PlayerView extends WidgetView {
     if (this.sliderEl == null) {
       super.render()
     } else {
-      this.sliderEl.style.width = `{this.model.width}px`
-      this.sliderEl.min = String(this.model.start);
-      this.sliderEl.max = String(this.model.end);
-      this.sliderEl.value = String(this.model.value);
+      this.sliderEl.min = String(this.model.start)
+      this.sliderEl.max = String(this.model.end)
+      this.sliderEl.value = String(this.model.value)
       return
     }
 
+    // Layout to group the elements
+    this.groupEl = div()
+    this.groupEl.style.display = "flex"
+    this.groupEl.style.flexDirection = "column"
+    this.groupEl.style.alignItems = "center"
+
     // Slider
     this.sliderEl = document.createElement('input')
-    this.sliderEl.setAttribute("type", "range");
-    this.sliderEl.style.width = this.model.width+'px'
-    this.sliderEl.value = String(this.model.value);
-    this.sliderEl.min = String(this.model.start);
-    this.sliderEl.max = String(this.model.end);
+    this.sliderEl.style.width = "100%"
+    this.sliderEl.setAttribute("type", "range")
+    this.sliderEl.value = String(this.model.value)
+    this.sliderEl.min = String(this.model.start)
+    this.sliderEl.max = String(this.model.end)
     this.sliderEl.onchange = (ev) => this.set_frame(parseInt((ev.target as HTMLInputElement).value))
 
     // Buttons
-    const button_div = div() as any;
-    button_div.style.cssText = "margin: 0 auto; display: table; padding: 5px"
-    const button_style = "text-align: center; min-width: 40px; margin: 2px";
+    const button_div = div() as any
+    button_div.style.cssText = "margin: 0 auto; display: flex; padding: 5px; align-items: stretch; width: 100%;"
+
+    const button_style_small = "text-align: center; min-width: 20px; flex-grow: 1; margin: 2px";
+    const button_style = "text-align: center; min-width: 40px; flex-grow: 2; margin: 2px";
 
     const slower = document.createElement('button')
-    slower.style.cssText = "text-align: center; min-width: 20px"
+    slower.style.cssText = button_style_small
     slower.appendChild(document.createTextNode('–'))
     slower.onclick = () => this.slower()
     button_div.appendChild(slower)
@@ -100,7 +108,7 @@ export class PlayerView extends WidgetView {
     button_div.appendChild(last)
 
     const faster = document.createElement('button')
-    faster.style.cssText = "text-align: center; min-width: 20px"
+    faster.style.cssText = button_style_small
     faster.appendChild(document.createTextNode('+'))
     faster.onclick = () => this.faster()
     button_div.appendChild(faster)
@@ -148,10 +156,13 @@ export class PlayerView extends WidgetView {
     this.loop_state.appendChild(reflect)
     this.loop_state.appendChild(reflect_label)
 
-    this.el.appendChild(this.sliderEl)
-    this.el.appendChild(button_div)
+
+
+    this.groupEl.appendChild(this.sliderEl)
+    this.groupEl.appendChild(button_div)
     if (this.model.show_loop_controls)
-      this.el.appendChild(this.loop_state)
+      this.groupEl.appendChild(this.loop_state)
+    this.el.appendChild(this.groupEl)
   }
 
   set_frame(frame: number): void {
