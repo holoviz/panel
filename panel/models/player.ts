@@ -2,12 +2,24 @@ import * as p from "@bokehjs/core/properties"
 import {div} from "@bokehjs/core/dom"
 import {Widget, WidgetView} from "@bokehjs/models/widgets/widget"
 
+
+function press(btn_list: HTMLButtonElement[]): void {
+  btn_list.forEach((btn) => btn.style.borderStyle = 'inset')
+}
+
+function unpress(btn_list: HTMLButtonElement[]): void {
+  btn_list.forEach((btn) => btn.style.borderStyle = 'outset')
+}
+
 export class PlayerView extends WidgetView {
   model: Player
 
   protected sliderEl: HTMLInputElement
   protected loop_state: HTMLFormElement
   protected timer: any
+  protected _toggle_reverse: CallableFunction
+  protected _toogle_pause: CallableFunction
+  protected _toggle_play: CallableFunction
 
   connect_signals(): void {
     super.connect_signals()
@@ -98,6 +110,20 @@ export class PlayerView extends WidgetView {
     faster.appendChild(document.createTextNode('+'))
     faster.onclick = () => this.faster()
     button_div.appendChild(faster)
+
+    // toggle
+    this._toggle_reverse = () => {
+      unpress([pause, play])
+      press([reverse])
+    }
+    this._toogle_pause = () => {
+      unpress([reverse, play])
+      press([pause])
+    }
+    this._toggle_play = () => {
+      unpress([reverse, pause])
+      press([play])
+    }
 
     // Loop control
     this.loop_state = document.createElement('form')
@@ -240,6 +266,7 @@ export class PlayerView extends WidgetView {
   }
 
   pause_animation(): void {
+    this._toogle_pause()
     this.model.direction = 0;
     if (this.timer) {
       clearInterval(this.timer);
@@ -249,6 +276,7 @@ export class PlayerView extends WidgetView {
 
   play_animation(): void {
     this.pause_animation();
+    this._toggle_play()
     this.model.direction = 1;
     if (!this.timer)
       this.timer = setInterval(() => this.anim_step_forward(), this.model.interval);
@@ -256,6 +284,7 @@ export class PlayerView extends WidgetView {
 
   reverse_animation(): void {
     this.pause_animation();
+    this._toggle_reverse()
     this.model.direction = -1;
     if (!this.timer)
       this.timer = setInterval(() => this.anim_step_reverse(), this.model.interval);
