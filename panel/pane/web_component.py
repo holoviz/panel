@@ -1,10 +1,8 @@
 """Implementation of a generic WebComponent pane"""
 
-import ast
 import json
 
 from html.parser import HTMLParser
-from typing import Dict, Optional, Set
 
 import lxml.html as LH
 import param
@@ -396,7 +394,7 @@ class WebComponent(Widget):
             )
         return new_html
 
-    def parse_parameter_value_to_attribute_value(self, parameter: str, value) -> Optional[str]:
+    def parse_parameter_value_to_attribute_value(self, parameter, value):
         """Returns the value to input to the setAttribute method of a JS HTML Element
 
         Parameters
