@@ -12,7 +12,7 @@ from bokeh.models import ColumnDataSource
 from ..models import WebComponent as _BkWebComponent
 from ..util import escape
 from ..viewable import Layoutable
-from ..widgets.base import Widget
+from .base import Widget
 
 
 # Defines how to convert from attribute string value to parameter value
