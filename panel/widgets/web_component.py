@@ -4,7 +4,6 @@ import json
 
 from html.parser import HTMLParser
 
-import lxml.html as LH
 import param
 
 from bokeh.models import ColumnDataSource
@@ -351,7 +350,7 @@ class WebComponent(Widget):
         if new_html != self.html:
             self.html = new_html
 
-    def _update_html_from_attributes_to_watch(self, html: str) -> str:
+    def _update_html_from_attributes_to_watch(self, html):
         """Returns a html string with the attributes updated
 
         Parameters
@@ -365,6 +364,16 @@ class WebComponent(Widget):
             A html string like `<wired-link href="www.google.com" target="_blank">link</wired-link>`
             based on the values of the attributes_to_watch
         """
+        if not self.attributes_to_watch:
+            return html
+
+        try:
+            import lxml.html as LH
+        except Exception:
+            raise ImportError("Watching attributes on WebComponent "
+                              "requires the lxml library. Ensure it "
+                              "is installed before using the component.")
+
         html = f"<span>{html}</span>"  # Workaround to handle both single tags and multiple tags
         root = LH.fromstring(html)
         iterchildren = [item for item in root.iterchildren()]

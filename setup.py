@@ -132,7 +132,8 @@ extras_require = {
         'ipywidgets',
         'ipywidgets_bokeh',
         'ipyvolume',
-        'ipyleaflet'
+        'ipyleaflet',
+        'lxml'
     ],
     'tests': _tests,
     'recommended': _recommended,
