@@ -112,7 +112,6 @@ calls it with the rendered model.
         if (url.endsWith('?module')) {
           element.type = "module"
         }
-		console.log(element)
         console.debug("Bokeh: injecting script tag for BokehJS library: ", url);
         document.head.appendChild(element);
       }
