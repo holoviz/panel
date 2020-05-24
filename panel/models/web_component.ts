@@ -1,15 +1,14 @@
 import { div, label } from "@bokehjs/core/dom"
 import * as p from "@bokehjs/core/properties"
-import { HTMLBox, HTMLBoxView } from "@bokehjs/models/layouts/html_box"
-import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source"
+import { HTMLBox } from "@bokehjs/models/layouts/html_box"
+import { ColumnDataSource } from "@bokehjs/models/sources/column_data_source"
 import { bk_input_group } from "@bokehjs/styles/widgets/inputs"
 
-function htmlDecode(input: string): string | null {
-  var doc = new DOMParser().parseFromString(input, "text/html");
-  return doc.documentElement.textContent;
-}
+import { htmlDecode } from "./html"
+import { PanelHTMLBoxView } from "./layout"
 
-export class WebComponentView extends HTMLBoxView {
+
+export class WebComponentView extends PanelHTMLBoxView {
   model: WebComponent
   webComponentElement: any // Element
   eventsCount: any // Dict
@@ -47,10 +46,6 @@ export class WebComponentView extends HTMLBoxView {
     if (this.webComponentElement)
       this.webComponentElement.onchange = null
 
-    // @Philippfr: How do we make sure the component is automatically sized according to the
-    // parameters of the WebComponent like width, height, sizing_mode etc?
-    // Should we set height and width to 100% or similar?
-    // For now I've set min_height as a part of .py __init__ for some of the Wired components?
     const title = this.model.name
     if (this.model.componentType === "inputgroup" && title) {
       this.group_el = div({ class: bk_input_group }, this.label_el)
@@ -146,31 +141,25 @@ export class WebComponentView extends HTMLBoxView {
     }
   }
 
-  /**
-   * Handles changes to `this.model.columnDataSource`
-   * by
-   * updating the data source of `this.webComponentElement`
-   * using the function or property specifed in `this.model.columnDataSourceLoadFunction`
+  /*
+   * Handles changes to `this.model.columnDataSource` by updating the
+   * data source of `this.webComponentElement` using the function
+   * or property specifed in `this.model.columnDataSourceLoadFunction`
    */
   handleColumnDataSourceChange(): void {
-    // @Philippfr: Right now we just reload all the data
-    // For example Perspective has an `update` function to append data
-    // Is this something we could/ should support?
-    if (this.model.columnDataSource) {
-      let data: any // list
-      const columnDataSourceOrient: any = this.model.columnDataSourceOrient
-      if (columnDataSourceOrient === "records")
-        data = this.transform_cds_to_records(this.model.columnDataSource)
-      else
-        data = this.model.columnDataSource.data; // @ts-ignore
-      const loadFunctionName: string = this.model.columnDataSourceLoadFunction.toString();
-      const loadFunction = this.webComponentElement[loadFunctionName]
-      if (this.isFunction(loadFunction))
-        this.webComponentElement[loadFunctionName](data)
-      else
-        this.webComponentElement[loadFunctionName] = data
-    }
-    // Todo: handle situation where this.model.columnDataSource is null
+    if (this.model.columnDataSource == null) { return }
+    let data: any // list
+    const columnDataSourceOrient: any = this.model.columnDataSourceOrient
+    if (columnDataSourceOrient === "records")
+      data = this.transform_cds_to_records(this.model.columnDataSource)
+    else
+      data = this.model.columnDataSource.data; // @ts-ignore
+    const loadFunctionName: string = this.model.columnDataSourceLoadFunction.toString();
+    const loadFunction = this.webComponentElement[loadFunctionName]
+    if (this.isFunction(loadFunction))
+      this.webComponentElement[loadFunctionName](data)
+    else
+      this.webComponentElement[loadFunctionName] = data
   }
 
   private activate_scripts(el: Element) {
@@ -249,10 +238,11 @@ export class WebComponentView extends HTMLBoxView {
     this.checkIfPropertiesChanged()
   }
 
-  /** Checks if any properties have changed. In case this is communicated to the server.
-   *
-   * For example the Wired `DropDown` does not run the `onchange` event handler when the selection changes.
-   * Insted the `select` event is fired. Thus we can subscribe to this event and manually check for property changes.
+  /*
+   * Checks if any properties have changed to sync with the server, e.g.
+   * Wired `DropDown` does not run the `onchange` event handler when
+   * the selection changes. Instead the `select` event is fired.
+   * Thus we can subscribe to this event and manually check for property changes.
    */
   checkIfPropertiesChanged(): void {
     const propertiesChange: any = {};
@@ -280,7 +270,7 @@ export class WebComponentView extends HTMLBoxView {
       if (ev.detail && property in ev.detail) {
         properties_change[property] = ev.detail[property];
         this.propertyValues[property] = ev.detail[property];
-      } else if (ev.target && property in ev.target){
+      } else if (ev.target && property in ev.target) {
         // mwc-select has ev.target but not ev.detail
         properties_change[property] = ev.target[property];
         this.propertyValues[property] = ev.target[property];
@@ -344,17 +334,17 @@ export class WebComponentView extends HTMLBoxView {
 
 export namespace WebComponent {
   export type Attrs = p.AttrsOf<Props>
-  // @Philipfr: How do I make property types more specific
+
   export type Props = HTMLBox.Props & {
     componentType: p.Property<string>,
     innerHTML: p.Property<string>,
-    attributesToWatch: p.Property<any> // A dictionary
+    attributesToWatch: p.Property<any>
     attributesLastChange: p.Property<any>, // A dictionary
     propertiesToWatch: p.Property<any>, // A dictionary
     propertiesLastChange: p.Property<any>, // A dictionary
     eventsToWatch: p.Property<any> // A dictionary
     eventsCountLastChange: p.Property<any> // A Dictionary
-    columnDataSource: p.Property<ColumnDataSource> // A ColumnDataSource
+    columnDataSource: p.Property<ColumnDataSource>
     columnDataSourceOrient: p.Property<string>
     columnDataSourceLoadFunction: p.Property<string>
   }
@@ -375,18 +365,18 @@ export class WebComponent extends HTMLBox {
     this.prototype.default_view = WebComponentView;
 
     this.define<WebComponent.Props>({
-      // @Philipfr: How do I make property types more specific
-      componentType: [p.String, 'htmlbox'],
-      innerHTML: [p.String, ''],
-      attributesToWatch: [p.Any], // A dictionary
-      attributesLastChange: [p.Any], // A dictionary
-      propertiesToWatch: [p.Any], // A dictionary
-      propertiesLastChange: [p.Any], // A dictionary
-      eventsToWatch: [p.Any], // A dictionary
-      eventsCountLastChange: [p.Any], // A list
-      columnDataSource: [p.Any], // A ColumnDataSource
-      columnDataSourceOrient: [p.Any], // A string
-      columnDataSourceLoadFunction: [p.Any], // A string
+      componentType:          [p.String, 'htmlbox'],
+      innerHTML:              [p.String, ''],
+      attributesToWatch:      [p.Any], // A dictionary
+      attributesLastChange:   [p.Any], // A dictionary
+      propertiesToWatch:      [p.Any], // A dictionary
+      propertiesLastChange:   [p.Any], // A dictionary
+      eventsToWatch:          [p.Any], // A dictionary
+      eventsCountLastChange:  [p.Array], // A list
+      columnDataSource:       [p.Instance], // A ColumnDataSource
+      columnDataSourceOrient: [p.String], // A string
+      columnDataSourceLoadFunction: [p.String], // A string
     })
   }
 }
+>>>>>>> Refactored WebComponent model
