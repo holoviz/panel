@@ -141,13 +141,20 @@ export class WebComponentView extends PanelHTMLBoxView {
     }
   }
 
+  handleColumnDataSourceChange(): void {
+    if (this.model.columnDataSource == null) { return }
+    this.connect(this.model.columnDataSource.properties.data.change, () => this.handleColumnDataSourceUpdate())
+    this.handleColumnDataSourceUpdate()
+  }
+
   /*
    * Handles changes to `this.model.columnDataSource` by updating the
    * data source of `this.webComponentElement` using the function
    * or property specifed in `this.model.columnDataSourceLoadFunction`
    */
-  handleColumnDataSourceChange(): void {
+  handleColumnDataSourceUpdate(): void {
     if (this.model.columnDataSource == null) { return }
+
     let data: any // list
     const columnDataSourceOrient: any = this.model.columnDataSourceOrient
     if (columnDataSourceOrient === "records")
@@ -379,4 +386,3 @@ export class WebComponent extends HTMLBox {
     })
   }
 }
->>>>>>> Refactored WebComponent model
