@@ -109,6 +109,10 @@ calls it with the rendered model.
         element.onerror = on_error;
         element.async = false;
         element.src = url;
+        if (url.endsWith('?module')) {
+          element.type = "module"
+        }
+		console.log(element)
         console.debug("Bokeh: injecting script tag for BokehJS library: ", url);
         document.head.appendChild(element);
       }

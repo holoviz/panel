@@ -13,18 +13,27 @@ from contextlib import contextmanager
 from functools import partial
 from types import FunctionType
 
+from bokeh.core import templates
+from bokeh.embed import bundle
+from bokeh import resources
 from bokeh.document.events import ModelChangedEvent
 from bokeh.server.server import Server
 from tornado.websocket import WebSocketHandler
 from tornado.web import RequestHandler
 from tornado.wsgi import WSGIContainer
 
+from .resources import _env
 from .state import state
 
 
 #---------------------------------------------------------------------
 # Private API
 #---------------------------------------------------------------------
+
+JS_RESOURCES = _env.get_template("js_resources.html")
+templates.JS_RESOURCES = JS_RESOURCES
+bundle.JS_RESOURCES = JS_RESOURCES
+resources.JS_RESOURCES = JS_RESOURCES
 
 INDEX_HTML = os.path.join(os.path.dirname(__file__), '..', '_templates', "index.html")
 
