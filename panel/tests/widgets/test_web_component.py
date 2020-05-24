@@ -3,8 +3,7 @@ import param
 import pytest
 from bokeh.models import ColumnDataSource
 
-from panel.pane import WebComponent
-from panel.pane.web_component import PARAMETER_TYPE
+from panel.widgets.web_component import WebComponent, PARAMETER_TYPE
 
 
 @pytest.fixture
@@ -566,4 +565,3 @@ if __name__.startswith("bk"):
 
     component=Component_()
     pn.Column(*section(component)).servable()
-
