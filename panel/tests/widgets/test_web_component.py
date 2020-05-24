@@ -1,6 +1,9 @@
+from html import unescape 
+
 import pandas as pd
 import param
 import pytest
+
 from bokeh.models import ColumnDataSource
 
 from panel.widgets.web_component import WebComponent, PARAMETER_TYPE
@@ -79,7 +82,7 @@ def test_bokeh_model(document, comm, html):
     # Then
     assert web_component._models[model.ref['id']][0] is model
     assert type(model).__name__ == 'WebComponent'
-    assert model.innerHTML == html
+    assert unescape(model.innerHTML) == html
     assert model.attributesToWatch == {}
 
     assert hasattr(model, "columnDataSource")
@@ -98,7 +101,7 @@ def test_custom_web_component(document, comm, html, CustomWebComponent):
     model = web_component.get_root(document, comm=comm)
     assert web_component._models[model.ref['id']][0] is model
     assert type(model).__name__ == 'WebComponent'
-    assert model.innerHTML == html
+    assert unescape(model.innerHTML) == html
 
     # Cleanup
     web_component._cleanup(model)
@@ -115,7 +118,7 @@ def test_web_component_parameter_attribute_change(document, comm, CustomWebCompo
     model = component.get_root(document, comm=comm)
     assert component._models[model.ref['id']][0] is model
     assert type(model).__name__ == 'WebComponent'
-    assert model.innerHTML == '<div string="" integer="0" number="0.0"></div>'
+    assert unescape(model.innerHTML) == '<div string="" integer="0" number="0.0"></div>'
     assert model.attributesToWatch == {"boolean": "boolean", "string": "string", "integer": "integer", "number": "number", "list": "list_"}
     assert model.attributesLastChange == {}
 
@@ -170,7 +173,7 @@ def test_custom_web_component_attributes_comm(document, comm):
     model = component.get_root(document, comm=comm)
     assert component._models[model.ref['id']][0] is model
     assert type(model).__name__ == 'WebComponent'
-    assert model.innerHTML == '<div baram1=""></div>'
+    assert unescape(model.innerHTML) == '<div baram1=""></div>'
     assert model.attributesToWatch == {"baram1": "param1"}
     assert model.attributesLastChange == {}
 
@@ -215,16 +218,16 @@ def test_attributes_last_change_change_to_none(document, comm, CustomWebComponen
     assert component.dict_ !=  component.param.dict_.default
 
     # When
-    component.attributes_last_change = {
+    component._process_events({'attributes_last_change': {
         "boolean": None,
         "string": None,
         "integer": None,
         "number": None,
         "list": None,
         "dict": None,
-    }
+    }})
     # Then
-    assert component.boolean ==  False
+    assert component.boolean ==  True
     assert component.string ==  component.param.string.default
     assert component.integer ==  component.param.integer.default
     assert component.number ==  component.param.number.default
@@ -246,7 +249,7 @@ def test_custom_web_component_properties_comm(document, comm):
     model = component.get_root(document, comm=comm)
     assert component._models[model.ref['id']][0] is model
     assert type(model).__name__ == 'WebComponent'
-    assert model.innerHTML == '<div></div>'
+    assert unescape(model.innerHTML) == '<div></div>'
     assert model.propertiesToWatch == {"baram1": "param1"}
     assert model.propertiesLastChange == {"baram1": ""}
 
@@ -284,35 +287,35 @@ def test_parse_html_to_dict(html, expected):
 def test_update_parameters_boolean(CustomWebComponent):
     # When/ Then
     custom_web_component = CustomWebComponent(attributes_to_watch={"boolean": "boolean"})
-    custom_web_component.html = '<wired-radio>Radio Two</wired-radio>'
+    custom_web_component._process_events({'html': '<wired-radio>Radio Two</wired-radio>'})
     assert custom_web_component.boolean == False
-    custom_web_component.html = '<wired-radio boolean>Radio Two</wired-radio>'
+    custom_web_component._process_events({'html': '<wired-radio boolean>Radio Two</wired-radio>'})
     assert custom_web_component.boolean == True
-    custom_web_component.html = '<wired-radio>Radio Two</wired-radio>'
+    custom_web_component._process_events({'html': '<wired-radio>Radio Two</wired-radio>'})
     assert custom_web_component.boolean == False
-    custom_web_component.html = '<wired-radio boolean="">Radio Two</wired-radio>'
+    custom_web_component._process_events({'html': '<wired-radio boolean="">Radio Two</wired-radio>'})
     assert custom_web_component.boolean == True
 
 def test_update_parameters_string(CustomWebComponent):
     # When/ Then
     custom_web_component = CustomWebComponent(attributes_to_watch={"string": "string"})
-    custom_web_component.html = '<a></a>'
+    custom_web_component._process_events({"html": '<a></a>'})
     assert custom_web_component.string == ""
-    custom_web_component.html = '<a string=""></a>'
+    custom_web_component._process_events({"html": '<a string=""></a>'})
     assert custom_web_component.string == ""
-    custom_web_component.html = '<a string="b"></a>'
+    custom_web_component._process_events({"html": '<a string="b"></a>'})
     assert custom_web_component.string == "b"
-    custom_web_component.html = '<a></a>'
+    custom_web_component._process_events({"html": '<a></a>'})
     assert custom_web_component.string == ""
 
 def test_update_parameters_integer(CustomWebComponent):
     # When/ Then
     custom_web_component = CustomWebComponent(attributes_to_watch={"integer": "integer"})
-    custom_web_component.html = '<a></a>'
+    custom_web_component._process_events({"html": '<a></a>'})
     assert custom_web_component.integer == custom_web_component.param.integer.default
-    custom_web_component.html = '<a integer=4></a>'
+    custom_web_component._process_events({"html": '<a integer=4></a>'})
     assert custom_web_component.integer == 4
-    custom_web_component.html = '<a></a>'
+    custom_web_component._process_events({"html": '<a></a>'})
     assert custom_web_component.integer == custom_web_component.param.integer.default
 
 def test_update_parameters_number(CustomWebComponent):
@@ -320,11 +323,11 @@ def test_update_parameters_number(CustomWebComponent):
     custom_web_component = CustomWebComponent(attributes_to_watch={"number": "number"})
     custom_web_component.html = '<a></a>'
     assert custom_web_component.number == custom_web_component.param.integer.default
-    custom_web_component.html = '<a number="4.1"></a>'
+    custom_web_component._process_events({"html": '<a number="4.1"></a>'}) 
     assert custom_web_component.number == 4.1
-    custom_web_component.html = '<a></a>'
+    custom_web_component._process_events({"html": '<a"></a>'})
     assert custom_web_component.number == custom_web_component.param.integer.default
-    custom_web_component.html = '<a number="40.507407407407406"></a>'
+    custom_web_component._process_events({"html": '<a number="40.507407407407406"></a>'})
     assert custom_web_component.number == 40.507407407407406
 
 def test_update_parameters_list():
@@ -379,11 +382,11 @@ def test_property_change_triggers_parameter_change(CustomWebComponent):
     component = CustomWebComponent(attributes_to_watch={}, properties_to_watch={"boolean": "boolean"})
 
     # When/ Then
-    component.properties_last_change = {"boolean": True}
+    component._process_events({"boolean": True})
     assert component.boolean == True
-    component.properties_last_change = {"boolean": False}
+    component._process_events({"boolean": False})
     assert component.boolean == False
-    component.properties_last_change = {"boolean": True}
+    component._process_events({"boolean": True})
     assert component.boolean == True
 
 def test_parameter_change_triggers_property_change(CustomWebComponent):
@@ -410,7 +413,7 @@ def test_events_count_last_change_triggers_parameter_update(CustomWebComponent):
     # Given
     web_component = CustomWebComponent(events_to_watch={"click": "clicks"})
     # When
-    web_component.events_count_last_change = {"click": 2}
+    web_component._process_events({"clicks": 2})
     # Then
     assert web_component.clicks == 2
 

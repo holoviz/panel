@@ -21,8 +21,8 @@ PARAMETER_TYPE = {
     param.Number: float,
     param.ObjectSelector: str,
     param.Parameter: str,
-    param.List: json.loads,
-    param.Dict: json.loads,
+    param.List: lambda value: json.loads(value.replace("'", '"')),
+    param.Dict: lambda value: json.loads(value.replace("'", '"')),
     param.Boolean: lambda value: value == "" or value is None
 }
 
@@ -197,7 +197,8 @@ class WebComponent(Widget):
         params = (
             list(self.attributes_to_watch.values()) +
             list(self.properties_to_watch.values()) +
-            list(self.events_to_watch.values())
+            list(self.events_to_watch.values()) +
+            self.parameters_to_watch
         )
         return dict(self._rename_dict, **{p: None for p in self.param
                                           if p not in params and p not in self._rename_dict
@@ -213,6 +214,11 @@ class WebComponent(Widget):
             prop: getattr(self, pname) for prop, pname in self.properties_to_watch.items()
         }
 
+    def _get_model(self, doc, root=None, parent=None, comm=None):
+        model = super(WebComponent, self)._get_model(doc, root, parent, comm)
+        model.attributesLastChange = {}
+        return model
+
     def _process_param_change(self, msg):
         msg = super(WebComponent, self)._process_param_change(msg)
         if 'innerHTML' in msg:
@@ -224,6 +230,8 @@ class WebComponent(Widget):
             if msg.get('attributesLastChange') is None:
                 msg['attributesLastChange'] = {}
             msg['attributesLastChange'][attr] = value
+        if 'attributesLastChange' in msg:
+            self.attributes_last_change = msg['attributesLastChange']
         for prop, pname in self.properties_to_watch.items():
             if pname not in msg:
                 continue
@@ -231,6 +239,8 @@ class WebComponent(Widget):
             if msg.get('propertiesLastChange') is None:
                 msg['propertiesLastChange'] = {}
             msg['propertiesLastChange'][prop] = value
+        if 'propertiesLastChange' in msg:
+            self.properties_last_change = msg['propertiesLastChange']
         for pname in self.events_to_watch.values():
             if pname in msg:
                 del msg[pname]
@@ -239,7 +249,7 @@ class WebComponent(Widget):
             msg = {k: v for k, v in msg.items() if k not in self.parameters_to_watch}
             params = {parameter: getattr(self, parameter) for parameter in self.parameters_to_watch}
             html = self._get_html_from_parameters_to_watch(**params)
-            self.html = html
+            self.html = self._update_html_from_attributes_to_watch(html)
 
         return msg
 
@@ -266,7 +276,10 @@ class WebComponent(Widget):
                     continue
                 pobj = self.param[pname]
                 ptype = type(pobj)
-                msg[pname] = PARAMETER_TYPE[ptype](new_value)
+                if new_value is None:
+                    msg[pname] = pobj.default
+                else:
+                    msg[pname] = PARAMETER_TYPE[ptype](new_value)
         if 'events_count_last_change' in msg:
             for prop, new_value in msg['events_count_last_change'].items():
                 pname = self.events_to_watch.get(prop)
@@ -275,7 +288,7 @@ class WebComponent(Widget):
                 pobj = self.param[pname]
                 ptype = type(pobj)
                 msg[pname] = PARAMETER_TYPE[ptype](new_value)
-        if 'properties_last_change' in msg:            
+        if 'properties_last_change' in msg:
             for prop, new_value in msg['properties_last_change'].items():
                 pname = self.properties_to_watch.get(prop)
                 if pname is None:
@@ -343,12 +356,7 @@ class WebComponent(Widget):
     def update_html_from_attributes_to_watch(self):
         if not self.attributes_to_watch or not self.html:
             return
-        html = self.html
-
-        new_html = self._update_html_from_attributes_to_watch(html)
-
-        if new_html != self.html:
-            self.html = new_html
+        self.html = self._update_html_from_attributes_to_watch(self.html)
 
     def _update_html_from_attributes_to_watch(self, html):
         """Returns a html string with the attributes updated
