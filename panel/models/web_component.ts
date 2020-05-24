@@ -277,9 +277,13 @@ export class WebComponentView extends HTMLBoxView {
   handlePropertiesChange(ev: any): void {
     const properties_change: any = new Object();
     for (const property in this.model.propertiesToWatch) {
-      if (property in ev.detail) {
+      if (ev.detail && property in ev.detail) {
         properties_change[property] = ev.detail[property];
         this.propertyValues[property] = ev.detail[property];
+      } else if (ev.target && property in ev.target){
+        // mwc-select has ev.target but not ev.detail
+        properties_change[property] = ev.target[property];
+        this.propertyValues[property] = ev.target[property];
       }
     }
     if (Object.keys(properties_change).length)
