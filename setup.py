@@ -114,6 +114,7 @@ _tests = [
     'pytest-cov',
     'codecov',
     'folium',
+    'lxml'
 ]
 
 extras_require = {
@@ -132,8 +133,7 @@ extras_require = {
         'ipywidgets',
         'ipywidgets_bokeh',
         'ipyvolume',
-        'ipyleaflet',
-        'lxml'
+        'ipyleaflet'
     ],
     'tests': _tests,
     'recommended': _recommended,
