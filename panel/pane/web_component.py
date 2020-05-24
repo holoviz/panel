@@ -264,7 +264,7 @@ class WebComponent(Widget):
                 msg[attribute] = value
         if 'attributes_last_change' in msg:
             for attr, new_value in msg['attributes_last_change'].items():
-                panme = self.attributes_to_watch.get(attr)
+                pname = self.attributes_to_watch.get(attr)
                 if pname is None:
                     continue
                 pobj = self.param[pname]
