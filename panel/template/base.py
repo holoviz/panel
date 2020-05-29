@@ -85,6 +85,8 @@ class BaseTemplate(param.Parameterized, ServableMixin):
             cls=cls, objs=('%s' % spacer).join(objs), spacer=spacer)
 
     def _apply_modifiers(self, viewable, mref):
+        if mref not in viewable._models:
+            return
         model, _ = viewable._models[mref]
         modifiers = self._modifiers.get(type(viewable), {})
         viewable.param.set_param(**{k: v for k, v in modifiers.items()
@@ -102,7 +104,10 @@ class BaseTemplate(param.Parameterized, ServableMixin):
             mref = model.ref['id']
             doc.on_session_destroyed(obj._server_destroy)
             for sub in obj.select(Viewable):
-                sub._models[ref] = sub._models.get(mref)
+                submodel = sub._models.get(mref)
+                if submodel is None:
+                    continue
+                sub._models[ref] = submodel
                 if isinstance(sub, HoloViews) and mref in sub._plots:
                     sub._plots[ref] = sub._plots.get(mref)
             col.objects.append(obj)
