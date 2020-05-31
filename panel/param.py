@@ -324,6 +324,7 @@ class Param(PaneBase):
             if 'type' in self.widgets[p_name]:
                 widget_class = self.widgets[p_name].pop('type')
             else:
+                widget_class_overridden = False
                 widget_class = self.widget_type(p_obj)
             kw_widget = self.widgets[p_name]
         else:
