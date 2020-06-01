@@ -344,10 +344,6 @@ class Param(PaneBase):
         # Update kwargs
         kw.update(kw_widget)
 
-        # Set widgets align to end in a Row layout
-        if self.default_layout == Row and 'align' not in kw:
-            kw.update({'align': 'end'})
-
         if hasattr(p_obj, 'get_range'):
             options = p_obj.get_range()
             if not options and value is not None:
