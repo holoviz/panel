@@ -140,10 +140,10 @@ class DataFrame(Widget):
             return []
 
         groups = []
-        for group in self.indexes[:-1]:
+        for group, agg_group in zip(self.indexes[:-1], self.indexes[1:]):
             if str(group) != group:
                 self._renamed_cols[str(group)] = group
-            aggs = self._get_aggregators(group)
+            aggs = self._get_aggregators(agg_group)
             groups.append(GroupingInfo(getter=str(group), aggregators=aggs))
         return groups
 
@@ -210,11 +210,14 @@ class DataFrame(Widget):
                         for k, v in ColumnDataSource.from_df(self.value).items()}
                 cds.data = data
                 model.columns = self._get_columns()
+                if isinstance(model, DataCube):
+                    model.groupings = self._get_groupings()
             elif event.name == 'selection':
                 model.source.selected.indices = self.selection
             elif event.name == 'aggregators':
-                for g in model.groups:
-                    index = self._renamed_cols.get(g.getter, g.getter)
+                for g in model.grouping:
+                    group = self._renamed_cols.get(g.getter, g.getter)
+                    index = self.indexes[self.indexes.index(group)+1]
                     g.aggregators = self._get_aggregators(index)
             else:
                 for col in model.columns:
