@@ -10,7 +10,7 @@ except ImportError:
 
 from bokeh.models.widgets.tables import (
     NumberFormatter, IntEditor, NumberEditor, StringFormatter,
-    SelectEditor, DateFormatter, DateEditor, DataCube, CellEditor,
+    SelectEditor, DateFormatter, DataCube, CellEditor,
     SumAggregator, AvgAggregator, MinAggregator
 )
 
