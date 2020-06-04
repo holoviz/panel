@@ -78,7 +78,9 @@ class DataFrame(Widget):
     @property
     def indexes(self):
         import pandas as pd
-        if isinstance(self.value.index, pd.MultiIndex):
+        if self.value is None:
+            return []
+        elif isinstance(self.value.index, pd.MultiIndex):
             return list(self.value.index.names)
         return [self.value.index.name or 'index']
 
