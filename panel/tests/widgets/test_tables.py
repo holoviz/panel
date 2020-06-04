@@ -167,3 +167,12 @@ def test_hierarchical_index(document, comm):
     assert isinstance(agg1, MinAggregator)
     assert agg2.field_ == 'Float'
     assert isinstance(agg2, MinAggregator)
+
+
+def test_none_table(document, comm):
+    table = DataFrame(value=None)
+    assert table.indexes == []
+
+    model = table.get_root(document, comm)
+
+    assert model.source.data == {}
