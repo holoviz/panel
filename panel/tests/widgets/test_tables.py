@@ -10,7 +10,8 @@ except ImportError:
 
 from bokeh.models.widgets.tables import (
     NumberFormatter, IntEditor, NumberEditor, StringFormatter,
-    SelectEditor, DateFormatter, DateEditor
+    SelectEditor, DateFormatter, DataCube, CellEditor,
+    SumAggregator, AvgAggregator, MinAggregator
 )
 
 from panel.widgets import DataFrame
@@ -26,7 +27,7 @@ def test_dataframe_widget(dataframe, document, comm):
 
     assert index_col.title == 'index'
     assert isinstance(index_col.formatter, NumberFormatter)
-    assert isinstance(index_col.editor, IntEditor)
+    assert isinstance(index_col.editor, CellEditor)
 
     assert int_col.title == 'int'
     assert isinstance(int_col.formatter, NumberFormatter)
@@ -51,7 +52,7 @@ def test_dataframe_widget_datetimes(document, comm):
 
     assert dt_col.title == 'index'
     assert isinstance(dt_col.formatter, DateFormatter)
-    assert isinstance(dt_col.editor, DateEditor)
+    assert isinstance(dt_col.editor, CellEditor)
 
 
 def test_dataframe_editors(dataframe, document, comm):
@@ -132,3 +133,46 @@ def test_dataframe_duplicate_column_name(document, comm):
     table.get_root(document, comm)
     with pytest.raises(ValueError):
         table.value = table.value.rename(columns={'a': 'b'})
+
+
+def test_hierarchical_index(document, comm):
+    df = pd.DataFrame([
+        ('Germany', 2020, 9, 2.4, 'A'),
+        ('Germany', 2021, 3, 7.3, 'C'),
+        ('Germany', 2022, 6, 3.1, 'B'),
+        ('UK', 2020, 5, 8.0, 'A'),
+        ('UK', 2021, 1, 3.9, 'B'),
+        ('UK', 2022, 9, 2.2, 'A')
+    ], columns=['Country', 'Year', 'Int', 'Float', 'Str']).set_index(['Country', 'Year'])
+
+    table = DataFrame(value=df, hierarchical=True,
+                      aggregators={'Year': {'Int': 'sum', 'Float': 'mean'}})
+
+    model = table.get_root(document, comm)
+    assert isinstance(model, DataCube)
+    assert len(model.grouping) == 1
+    grouping = model.grouping[0]
+    assert len(grouping.aggregators) == 2
+    agg1, agg2 = grouping.aggregators
+    assert agg1.field_ == 'Int'
+    assert isinstance(agg1, SumAggregator)
+    assert agg2.field_ == 'Float'
+    assert isinstance(agg2, AvgAggregator)
+
+    table.aggregators = {'Year': 'min'}
+
+    agg1, agg2 = grouping.aggregators
+    print(grouping)
+    assert agg1.field_ == 'Int'
+    assert isinstance(agg1, MinAggregator)
+    assert agg2.field_ == 'Float'
+    assert isinstance(agg2, MinAggregator)
+
+
+def test_none_table(document, comm):
+    table = DataFrame(value=None)
+    assert table.indexes == []
+
+    model = table.get_root(document, comm)
+
+    assert model.source.data == {}
