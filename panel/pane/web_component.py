@@ -100,7 +100,7 @@ class WebComponent(Widget):
 
     attributes_to_watch = param.Dict(default={}, constant=True, doc="""
         A dictionary of attributes and parameters
-  
+
           - The attributes are the names of webcomponent to observe
             for changes on the client/ browser/ javascript side.
           - The parameters are the corresponding names of the
@@ -167,7 +167,7 @@ class WebComponent(Widget):
         the value is the new value of the property.""")
 
     parameters_to_watch = param.List(default=[], constant=True, doc="""
-        A list of parameters that do not correspond to attributes but 
+        A list of parameters that do not correspond to attributes but
         that the value of `html` depends on. For example parameters
         that define the `innerHTML` of the `html` string.
 
@@ -264,7 +264,7 @@ class WebComponent(Widget):
                 msg[attribute] = value
         if 'attributes_last_change' in msg:
             for attr, new_value in msg['attributes_last_change'].items():
-                panme = self.attributes_to_watch.get(attr)
+                pname = self.attributes_to_watch.get(attr)
                 if pname is None:
                     continue
                 pobj = self.param[pname]
@@ -278,7 +278,7 @@ class WebComponent(Widget):
                 pobj = self.param[pname]
                 ptype = type(pobj)
                 msg[pname] = PARAMETER_TYPE[ptype](new_value)
-        if 'properties_last_change' in msg:            
+        if 'properties_last_change' in msg:
             for prop, new_value in msg['properties_last_change'].items():
                 pname = self.properties_to_watch.get(prop)
                 if pname is None:
@@ -287,7 +287,7 @@ class WebComponent(Widget):
                 ptype = type(pobj)
                 if isinstance(new_value, str) and ptype in PARAMETER_TYPE:
                     new_value = PARAMETER_TYPE[ptype](new_value)
-                msg[pname] = new_value            
+                msg[pname] = new_value
         return msg
 
     def _get_initial_html_from_parameters_to_watch(self, **params) -> str:
