@@ -12,6 +12,7 @@ from .base import PaneBase, Pane, panel # noqa
 from .equation import LaTeX # noqa
 from .deckgl import DeckGL # noqa
 from .holoviews import HoloViews # noqa
+from .ipywidget import IPyWidget # noqa
 from .image import GIF, JPG, PNG, SVG # noqa
 from .markup import DataFrame, HTML, JSON, Markdown, Str # noqa
 from .media import Audio, Video # noqa
@@ -20,4 +21,3 @@ from .plot import Bokeh, Matplotlib, RGGPlot, YT # noqa
 from .streamz import Streamz # noqa
 from .vega import Vega # noqa
 from .vtk import VTK, VTKVolume # noqa
-from .web_component import WebComponent # noqa

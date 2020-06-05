@@ -33,3 +33,4 @@ from .select import (# noqa
     ToggleGroup
 )
 from .tables import DataFrame  # noqa
+from .web_component import WebComponent # noqa

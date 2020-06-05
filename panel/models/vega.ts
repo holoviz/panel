@@ -30,7 +30,7 @@ export class VegaPlotView extends HTMLBoxView {
       const cds = this.model.data_sources[ds];
       const data: any = []
       const columns = cds.columns()
-      for (let i = 0; i < cds.data[columns[0]].length; i++) {
+      for (let i = 0; i < cds.get_length(); i++) {
         const item: any = {}
         for (const column of columns) {
           item[column] = cds.data[column][i]

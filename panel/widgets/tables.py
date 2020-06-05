@@ -47,7 +47,17 @@ class DataFrame(Widget):
 
     def __init__(self, value=None, **params):
         super(DataFrame, self).__init__(value=value, **params)
+        self.param.watch(self._validate, 'value')
+        self._validate(None)
         self._renamed_cols = {}
+
+    def _validate(self, event):
+        if self.value is None:
+            return
+        cols = self.value.columns
+        if len(cols) != len(cols.drop_duplicates()):
+            raise ValueError('Cannot display a pandas.DataFrame with '
+                             'duplicate column names.')
 
     def _get_columns(self):
         if self.value is None:
@@ -122,6 +132,7 @@ class DataFrame(Widget):
         return model
 
     def _manual_update(self, events, model, doc, root, parent, comm):
+        self._validate(None)
         for event in events:
             if event.name == 'value':
                 cds = model.source

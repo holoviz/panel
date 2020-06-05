@@ -23,7 +23,7 @@ def require_components():
             js_requires.append(model)
 
     for export, js in config.js_files.items():
-        name = js.split('/')[-1].replace('.min', '').split('.')[-2]
+        name = js.split('/')[-1].replace('.min', '').split('.')[0]
         conf = {'paths': {name: js[:-3]}, 'exports': {name: export}}
         js_requires.append(conf)
 

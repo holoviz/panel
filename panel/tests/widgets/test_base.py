@@ -5,13 +5,16 @@ import pytest
 
 from panel.io import block_comm
 from panel.widgets import (
-    CompositeWidget, DataFrame, FileDownload, TextInput, ToggleGroup, Widget
+    CompositeWidget, DataFrame, FileDownload, FloatSlider, TextInput,
+    ToggleGroup, Widget, WebComponent
 )
 from panel.tests.util import check_layoutable_properties, py3_only
 
-all_widgets = [w for w in param.concrete_descendents(Widget).values()
-               if not w.__name__.startswith('_') and
-               not issubclass(w, (CompositeWidget, DataFrame, FileDownload, ToggleGroup))]
+all_widgets = [
+    w for w in param.concrete_descendents(Widget).values()
+    if not w.__name__.startswith('_') and
+    not issubclass(w, (CompositeWidget, DataFrame, FileDownload, ToggleGroup, WebComponent))
+]
 
 
 @py3_only
@@ -95,3 +98,56 @@ def test_widget_triggers_events(document, comm):
     assert event.attr == 'value'
     assert event.model is widget
     assert event.new == '123'
+
+
+def test_widget_from_param_cls():
+    class Test(param.Parameterized):
+
+        a = param.Parameter()
+
+    widget = TextInput.from_param(Test.param.a)
+    assert isinstance(widget, TextInput)
+    assert widget.name == 'A'
+
+    Test.a = 'abc'
+    assert widget.value == 'abc'
+
+    widget.value = 'def'
+    assert Test.a == 'def'
+
+
+def test_widget_from_param_instance():
+    class Test(param.Parameterized):
+
+        a = param.Parameter()
+
+    test = Test()
+    widget = TextInput.from_param(test.param.a)
+    assert isinstance(widget, TextInput)
+    assert widget.name == 'A'
+
+    test.a = 'abc'
+    assert widget.value == 'abc'
+
+    widget.value = 'def'
+    assert test.a == 'def'
+
+
+def test_widget_from_param_instance_with_kwargs():
+    class Test(param.Parameterized):
+
+        a = param.Number(default=3.14)
+
+    test = Test()
+    widget = FloatSlider.from_param(test.param.a, start=0.3, end=5.2)
+    assert isinstance(widget, FloatSlider)
+    assert widget.name == 'A'
+    assert widget.start == 0.3
+    assert widget.end == 5.2
+    assert widget.value == 3.14
+
+    test.a = 1.57
+    assert widget.value == 1.57
+
+    widget.value = 4.3
+    assert test.a == 4.3
