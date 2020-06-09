@@ -1,6 +1,5 @@
 import logging
 
-from bokeh.io import curdoc
 from bokeh.document.events import MessageSentEvent
 from ipykernel.comm import CommManager
 from ipywidgets_bokeh.kernel import BokehKernel, SessionWebsocket, WebsocketStream
