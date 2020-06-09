@@ -29,6 +29,9 @@ class Ace(Widget):
 
     language = param.String(default="python", doc="Language of the editor")
 
+    print_margin = param.Boolean(default=False, doc="""
+        Whether to show the a print margin.""")
+
     readonly = param.Boolean(default=False, doc="""
         Define if editor content can be modified""")
 

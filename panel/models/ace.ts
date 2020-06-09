@@ -36,6 +36,7 @@ export class AcePlotView extends PanelHTMLBoxView {
     this.connect(this.model.properties.code.change, () => this._update_code_from_model())
     this.connect(this.model.properties.theme.change, () => this._update_theme())
     this.connect(this.model.properties.language.change, () => this._update_language())
+    this.connect(this.model.properties.print_margin.change, () => this._update_print_margin())
     this.connect(this.model.properties.annotations.change, () => this._add_annotations())
     this.connect(this.model.properties.readonly.change, () => {
       this._editor.setReadOnly(this.model.readonly)
@@ -57,12 +58,17 @@ export class AcePlotView extends PanelHTMLBoxView {
         enableSnippets: true,
         fontFamily: "monospace", //hack for cursor position
       });
+	  this._editor.setShowPrintMargin(this.model.print_margin);
       this._editor.on('change', () => this._update_code_from_editor())
   }
 
   _update_code_from_model(): void {
     if (this._editor && this._editor.getValue() !=  this.model.code)
       this._editor.setValue(this.model.code)
+  }
+
+  _update_print_margin(): void {
+    this._editor.setShowPrintMargin(this.model.print_margin);
   }
 
   _update_code_from_editor(): void {
@@ -116,11 +122,12 @@ export class AcePlot extends HTMLBox {
     this.prototype.default_view = AcePlotView
 
     this.define<AcePlot.Props>({
-      code:        [ p.String            ],
-      language:    [ p.String,  'python' ],
-      theme:       [ p.String,  'chrome' ],
-      annotations: [ p.Array,   []       ],
-      readonly:    [ p.Boolean, false    ]
+      code:         [ p.String            ],
+      language:     [ p.String,  'python' ],
+      theme:        [ p.String,  'chrome' ],
+      annotations:  [ p.Array,   []       ],
+      readonly:     [ p.Boolean, false    ],
+      print_margin: [ p.Boolean, false    ]
     })
 
     this.override({
