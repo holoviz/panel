@@ -20,6 +20,10 @@ class _state(param.Parameterized):
     apps to indicate their state to a user.
     """
 
+    busy = param.Boolean(default=False, readonly=True, doc="""
+       Whether the application is currently busy processing a user
+       callback.""")
+
     cache = param.Dict(default={}, doc="""
        Global location you can use to cache large datasets or expensive computation results
        across multiple client sessions for a given server.""") 
@@ -55,8 +59,13 @@ class _state(param.Parameterized):
     # Jupyter display handles
     _handles = {}
 
+    # Dictionary of callbacks to be triggered on app load
+    _onload = WeakKeyDictionary()
+
     # Stores a set of locked Websockets, reset after every change event
     _locks = WeakSet()
+
+    _indicators = []
 
     def __repr__(self):
         server_info = []
@@ -81,6 +90,29 @@ class _state(param.Parameterized):
         thread = threading.current_thread()
         thread_id = thread.ident if thread else None
         return doc is self.curdoc and self._thread_id == thread_id
+
+    def onload(self, callback):
+        """
+        Callback that is triggered when a session has been served.
+        """
+        if self.curdoc is None:
+            callback()
+            return
+        if self.curdoc not in self._onload:
+            self._onload[self.curdoc] = []
+        self._onload[self.curdoc].append(callback)
+
+    def sync_busy(self, indicator):
+        """
+        Syncs the busy state with an indicator with a boolean value
+        parameter.
+        """
+        self._indicators.append(indicator)
+
+    @param.depends('busy')
+    def _update_busy(self):
+        for indicator in self._indicators:
+            indicator.value = self.busy
 
     @property
     def curdoc(self):

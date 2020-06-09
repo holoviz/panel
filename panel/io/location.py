@@ -9,6 +9,7 @@ import param
 from ..models.location import Location as _BkLocation
 from ..reactive import Syncable
 from ..util import parse_query
+from .state import state
 
 
 class Location(Syncable):
@@ -52,6 +53,13 @@ class Location(Syncable):
         self._synced = []
         self._syncing = False
         self.param.watch(self._update_synced, ['search'])
+        self.param.watch(self._onload, ['href'])
+
+    def _onload(self, event):
+        if event.old: # Skip if href was not previously empty
+            return
+        for cb in state._onload[state.curdoc]:
+            cb()
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         model = _BkLocation(**self._process_param_change(self._init_properties()))
