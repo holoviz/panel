@@ -15,9 +15,9 @@ class GoldenLayoutTemplate(BasicTemplate):
     GoldenLayoutTemplate is built on top of GoldenLayout web components.
     """
 
-    _css = pathlib.Path(__file__).parent / 'goldenlayout.css'
+    _css = pathlib.Path(__file__).parent / 'golden_layout.css'
 
-    _template = pathlib.Path(__file__).parent / 'goldenlayout.html'
+    _template = pathlib.Path(__file__).parent / 'golden_layout.html'
 
     _modifiers = {
         Card: {
