@@ -1,0 +1,48 @@
+body {
+    height: 100vh
+  }
+  
+  #container {
+    padding:0px;
+    width: 100vw;
+  }
+  
+  #content {
+    height: 100vh;
+    margin: 0px;
+    width: 100vw;
+    display: inline-flex;
+  }
+  
+  #sidebar {
+    transition: all 0.2s cubic-bezier(0.945, 0.020, 0.270, 0.665);
+    transform-origin: center left; /* Set the transformed position of sidebar to center left side. */
+    width: 15vw;
+  }
+  
+  #sidebar.active {
+    margin-left: -16.7%;
+  }
+  
+  #main {
+    overflow-y: scroll;
+    width: 100vw;
+  }
+  
+  #sidebarCollapse {
+    background: none;
+    border: none;
+  }
+  
+  .bk-input-group{
+    width: 12vw;
+  }
+
+  a.navbar-brand {
+    padding-left: 10px;
+  }
+  
+  p.bk.card-button {
+    display: none;
+  }
+  
