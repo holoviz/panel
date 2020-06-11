@@ -354,7 +354,7 @@ class VTK(PaneBase):
         if (isinstance(obj, string_types) and obj.endswith('.vtkjs') or
             any([isinstance(obj, k) for k in cls._serializers.keys()])):
             return True
-        elif 'vtk' not in sys.modules:
+        elif 'vtk' not in sys.modules and 'vtkmodules' not in sys.modules:
             return False
         else:
             import vtk

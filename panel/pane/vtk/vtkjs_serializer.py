@@ -382,8 +382,11 @@ def render_window_serializer(render_window):
     correspond to a relative file path in the `vtkjs` directory structure and values
     of the binary content of the corresponding file.
     """
+    store_offscreen_rendering = render_window.GetOffScreenRendering()
     render_window.OffScreenRenderingOn() # to not pop a vtk windows
     render_window.Render()
+    render_window.SetOffScreenRendering(store_offscreen_rendering)
+
     renderers = render_window.GetRenderers()
 
     objIds = []
