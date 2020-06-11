@@ -1,0 +1,105 @@
+{% extends base %}	
+
+<!-- goes in body -->	
+{% block postamble %}	
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.11.1.min.js"></script>	
+<script type="text/javascript" src="https://golden-layout.com/files/latest/js/goldenlayout.js"></script>	
+<link type="text/css" rel="stylesheet" href="https://golden-layout.com/files/latest/css/goldenlayout-base.css" />	
+<link type="text/css" rel="stylesheet" href="//golden-layout.com/assets/css/goldenlayout-dark-theme.css" />	
+{% endblock %}	
+
+<!-- goes in body -->	
+{% block contents %}	
+<header class="app-bar" id="header">	
+  <div class="">	
+    <section class="">	
+      <span class="header-title">{{ app_title }}</span>	
+	  {% for doc in docs %}	
+      {% for root in doc.roots %}	
+      {% if "header" in root.tags %}	
+      {{ embed(root) | indent(8) }}	
+      {% endif %}	
+      {% endfor %}	
+      {% endfor %}	
+    </section>	
+  </div>	
+</header>	
+
+<!-- {% if nav %}	
+<aside class="header-adjust" id="sidebar">	
+  <div class="nav-content">	
+    <div class="nav-list">	
+	  {% for doc in docs %}	
+	  {% for root in doc.roots %}	
+	  {% if "nav" in root.tags %}	
+      {{ embed(root) | indent(8) }}	
+	  {% endif %}	
+	  {% endfor %}	
+	  {% endfor %}	
+    </div>	
+  </div>	
+</aside>	
+{% endif %}	 -->
+
+<div class="main-area header-adjust" id="main">	
+  <main class="main-content" id="main-content"></main>	
+</div>	
+
+<script>	
+  var config = {	
+    content: [
+        // {
+        //     type: 'column', content: [	
+        //         {% for doc in docs %}	
+        //         {% for root in doc.roots %}	
+        //         {% if "nav" in root.tags %}	
+        //         {'type': 'component', 'componentName': 'view', componentState: {model: '{{ embed(root) }}', title: '{{ root.name}}' }},	
+        //         {% endif %}
+        //         {% endfor %}	
+        //         {% endfor %}	
+        //     ]
+        // },
+        {
+            type: 'stack', content: [	
+                {% for doc in docs %}	
+                {% for root in doc.roots %}	
+                {% if "main" in root.tags%}	
+                {'type': 'component', 'componentName': 'view', componentState: {model: '{{ embed(root) }}', title: '{{ root.name}}' }},	
+                {% endif %}	
+                {% if "nav" in root.tags %}	
+                {'type': 'component', 'componentName': 'view', componentState: {model: '{{ embed(root) }}', title: '{{ root.name}}' }},	
+                {% endif %}
+                {% endfor %}	
+                {% endfor %}	
+            ]
+        }
+    ]	
+  };	
+
+  var myLayout = new GoldenLayout(config, $('#main-content'));	
+  console.log(1)
+  myLayout.registerComponent('view', function( container, componentState ){	
+    const {width, css_classes} = componentState	
+    console.log(2)
+    if(width)	
+      container.on('open', () => container.setSize(width, container.height))	
+    console.log(3)
+    if (css_classes)	
+      css_classes.map((item) => container.getElement().addClass(item))	
+    console.log(4)
+    container.setTitle(componentState.title)
+    console.log(5)
+    container.getElement().html(componentState.model);
+    console.log(6)
+    container.on('resize', () => window.dispatchEvent(new Event('resize')))	
+    console.log(7)
+    window.dispatchEvent(new Event('resize'));	
+    console.log(8)
+  });	
+  console.log(9)
+  myLayout.init()	
+  console.log(10)
+</script>	
+
+
+{% endblock %}
