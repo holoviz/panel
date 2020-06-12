@@ -230,25 +230,36 @@ class BaseVTKRenderWindow(AbstractVTK):
         """
         return list(self.object.GetRenderers())[0]
 
-    def get_color_mappers(self):
-        cmaps = []
-        for view_prop in self.get_renderer().GetViewProps():
-            if view_prop.IsA('vtkScalarBarActor'):
-                rgba_arr = np.frombuffer(
-                    memoryview(view_prop.GetLookupTable().GetTable()), 
-                    dtype=np.uint8
-                ).reshape((-1, 4))
-                palette = [self._rgb2hex(*rgb) for rgb in rgba_arr[:,:3]]
-                low, high = view_prop.GetLookupTable().GetTableRange()
-                name = view_prop.GetTitle()
-                cmaps.append(
-                    LinearColorMapper(low=low, high=high, name=name, palette=palette)
-                )
+    def _vtklut2bkcmap(self, lut, name):
+        table = lut.GetTable()
+        low, high = lut.GetTableRange()
+        rgba_arr =  np.frombuffer(memoryview(table),  dtype=np.uint8).reshape((-1, 4))
+        palette = [self._rgb2hex(*rgb) for rgb in rgba_arr[:,:3]]
+        return LinearColorMapper(low=low, high=high, name=name, palette=palette)
+
+    def get_color_mappers(self, infer=False):
+        if not infer:
+            cmaps = []
+            for view_prop in self.get_renderer().GetViewProps():
+                if view_prop.IsA('vtkScalarBarActor'):
+                    name = view_prop.GetTitle()
+                    lut = view_prop.GetLookupTable()
+                    cmaps.append(self._vtklut2bkcmap(lut, name))
+        else:
+            infered_cmaps = {}
+            for actor in self.get_renderer().GetActors():
+                mapper = actor.GetMapper()
+                cmap_name = mapper.GetArrayName()
+                if cmap_name and cmap_name not in infered_cmaps:
+                    lut = mapper.GetLookupTable()
+                    infered_cmaps[cmap_name] = self._vtklut2bkcmap(lut, cmap_name)
+            cmaps = infered_cmaps.values()
         return cmaps
     
     @param.depends('color_mappers')
-    def _construct_colorbars(self):
-        color_mappers = self.color_mappers
+    def _construct_colorbars(self, color_mappers=None):
+        if not color_mappers:
+            color_mappers = self.color_mappers
         from bokeh.models import Plot, ColorBar, FixedTicker
         cbs = []
         for color_mapper in color_mappers:
@@ -264,8 +275,13 @@ class BaseVTKRenderWindow(AbstractVTK):
         [plot.add_layout(cb, 'below') for cb in cbs]
         return plot
 
-    def construct_colorbars(self):
-        return Pane(self._construct_colorbars)
+    def construct_colorbars(self, infer=True):
+        if infer:
+            color_mappers = self.get_color_mappers(infer)
+            return Pane(self._construct_colorbars(color_mappers))
+        else:
+            return Pane(self._construct_colorbars)
+            
 
     def export_scene(self, filename='vtk_scene'):
         if '.' not in filename:
@@ -310,12 +326,13 @@ class BaseVTKRenderWindow(AbstractVTK):
         ren_win.OffScreenRenderingOn() # to not pop a vtk windows
         ren_win.Modified()
         ren_win.Render()
-        ren_win.SetOffScreenRendering(store_offscreen_rendering)
         scene = rws.serializeInstance(None, ren_win, context.getReferenceId(ren_win), context, 0)
         scene['properties']['numberOfLayers'] = 2 #On js side the second layer is for the orientation widget
         arrays = {name: context.getCachedDataArray(name, binary=binary, compression=compression)
                     for name in context.dataArrayCache.keys() 
                     if name not in exclude_arrays}
+        ren_win.Finalize()
+        ren_win.SetOffScreenRendering(store_offscreen_rendering)
         return scene, arrays
 
     @staticmethod
