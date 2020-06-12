@@ -744,6 +744,7 @@ def lookupTableSerializer(parent, lookupTable, lookupTableId, context, depth):
         'properties': {
             'numberOfColors': lookupTable.GetNumberOfColors(),
             'valueRange': lookupTableRange,
+            'range': lookupTableRange,
             'hueRange': lookupTableHueRange,
             # 'alphaRange': lutAlphaRange,  # Causes weird rendering artifacts on client
             'saturationRange': lutSatRange,
