@@ -218,7 +218,7 @@ class BaseVTKRenderWindow(AbstractVTK):
 
     @classmethod
     def applies(cls, obj, **kwargs):
-        if 'vtk' not in sys.modules:
+        if 'vtk' not in sys.modules and 'vtkmodules' not in sys.modules:
             return False
         else:
             import vtk
@@ -306,9 +306,11 @@ class BaseVTKRenderWindow(AbstractVTK):
         import panel.pane.vtk.synchronizable_serializer as rws
         if exclude_arrays is None:
             exclude_arrays = []
+        store_offscreen_rendering = ren_win.GetOffScreenRendering()
         ren_win.OffScreenRenderingOn() # to not pop a vtk windows
         ren_win.Modified()
         ren_win.Render()
+        ren_win.SetOffScreenRendering(store_offscreen_rendering)
         scene = rws.serializeInstance(None, ren_win, context.getReferenceId(ren_win), context, 0)
         scene['properties']['numberOfLayers'] = 2 #On js side the second layer is for the orientation widget
         arrays = {name: context.getCachedDataArray(name, binary=binary, compression=compression)
