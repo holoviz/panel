@@ -399,10 +399,9 @@ class Renderable(param.Parameterized):
         root: bokeh.model.Model
           Bokeh model for the view being cleaned up
         """
-        if root.ref['id'] in state._handles:
-            del state._handles[root.ref['id']]
-        if root.document in state._locations:
-            del state._locations[root.document]
+        ref = root.ref['id']
+        if ref in state._handles:
+            del state._handles[ref]
 
     def _preprocess(self, root):
         """
@@ -544,8 +543,16 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         Server lifecycle hook triggered when session is destroyed.
         """
         doc = session_context._document
-        self._cleanup(self._documents[doc])
+        root = self._documents[doc]
+        ref = root.ref['id']
+        self._cleanup(root)
         del self._documents[doc]
+        if ref in state._views:
+            del state._views[ref]
+        if doc in state._locations:
+            loc = state._locations[doc]
+            loc._cleanup(root)
+            del state._locations[doc]
 
     #----------------------------------------------------------------
     # Public API
