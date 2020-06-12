@@ -262,9 +262,14 @@ def test_vtk_pane_more_complex(document, comm, tmp_path):
     assert isinstance(model, VTKSynchronizedPlot)
     assert pane._models[model.ref['id']][0] is model
 
-    colorbars = pane.construct_colorbars().object()
-    assert len(colorbars.below) == 3
-    assert all(isinstance(cb, ColorBar) for cb in colorbars.below)
+    colorbars_infered = pane.construct_colorbars().object
+    
+    assert len(colorbars_infered.below) == 2 # infer only actor color bars
+    assert all(isinstance(cb, ColorBar) for cb in colorbars_infered.below)
+
+    colorbars_in_scene = pane.construct_colorbars(infer=False).object()
+    assert len(colorbars_in_scene.below) == 3
+    assert all(isinstance(cb, ColorBar) for cb in colorbars_in_scene.below)
     # add axes
     pane.axes = dict(
         origin = [-5, 5, -2],
