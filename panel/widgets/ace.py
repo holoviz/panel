@@ -27,7 +27,9 @@ class Ace(Widget):
     theme = param.ObjectSelector(default="chrome", objects=list(ace_themes),
                                  doc="Theme of the editor")
 
-    language = param.String(default="python", doc="Language of the editor")
+    filename = param.String(doc="Filename from which to deduce language")
+
+    language = param.String(allow_None=True, doc="Language of the editor")
 
     print_margin = param.Boolean(default=False, doc="""
         Whether to show the a print margin.""")
@@ -56,3 +58,10 @@ class Ace(Widget):
             self._widget_type = getattr(sys.modules["panel.models.ace"], "AcePlot")
 
         return super(Ace, self)._get_model(doc, root, parent, comm)
+
+    def __init__(self, value=None, **params):
+        if value is not None:
+            params['value'] = value
+        super(Ace, self).__init__(**params)
+        if self.language is None and self.filename is None:
+            self.language = 'text'
