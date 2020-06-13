@@ -232,7 +232,10 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
     // update camera model state only at the end of the interaction
     // with the scene (avoid bouncing events and large amount of events)
 
-    const update_model_camera = () => this._get_camera_state()
+    const update_model_camera = () => {
+      this._get_camera_state()
+      this.model.properties.camera.change.emit()
+    }
     const interactor = this._vtk_renwin.getInteractor()
     const event_list = ["LeftButtonRelease", "RightButtonRelease", "EndAnimation"]
     event_list.forEach((event) => interactor['on' + event](update_model_camera))
