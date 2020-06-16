@@ -40,15 +40,26 @@ def _server_url(url, port):
     else:
         return 'http://%s:%d%s' % (url.split(':')[0], port, "/")
 
+
+@contextmanager
+def set_curdoc(doc):
+    state.curdoc = doc
+    yield
+    state.curdoc = None
+
+
 def _eval_panel(panel, server_id, title, location, doc):
     from ..template import BaseTemplate
     from ..pane import panel as as_panel
 
-    if isinstance(panel, FunctionType):
-        panel = panel()
-    if isinstance(panel, BaseTemplate):
-        return panel._modify_doc(server_id, title, doc, location)
-    return as_panel(panel)._modify_doc(server_id, title, doc, location)
+    with set_curdoc(doc):
+        if isinstance(panel, FunctionType):
+            panel = panel()
+        if isinstance(panel, BaseTemplate):
+            doc = panel._modify_doc(server_id, title, doc, location)
+        else:
+            doc = as_panel(panel)._modify_doc(server_id, title, doc, location)
+        return doc
 
 #---------------------------------------------------------------------
 # Public API
