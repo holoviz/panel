@@ -25,22 +25,6 @@
   </div>	
 </header>	
 
-<!-- {% if nav %}	
-<aside class="header-adjust" id="sidebar">	
-  <div class="nav-content">	
-    <div class="nav-list">	
-	  {% for doc in docs %}	
-	  {% for root in doc.roots %}	
-	  {% if "nav" in root.tags %}	
-      {{ embed(root) | indent(8) }}	
-	  {% endif %}	
-	  {% endfor %}	
-	  {% endfor %}	
-    </div>	
-  </div>	
-</aside>	
-{% endif %}	 -->
-
 <div class="main-area header-adjust" id="main">	
   <main class="main-content" id="main-content"></main>	
 </div>	
@@ -48,31 +32,22 @@
 <script>	
   var config = {	
     content: [
-        // {
-        //     type: 'column', content: [	
-        //         {% for doc in docs %}	
-        //         {% for root in doc.roots %}	
-        //         {% if "nav" in root.tags %}	
-        //         {'type': 'component', 'componentName': 'view', componentState: {model: '{{ embed(root) }}', title: '{{ root.name}}' }},	
-        //         {% endif %}
-        //         {% endfor %}	
-        //         {% endfor %}	
-        //     ]
-        // },
         {
-            type: 'stack', content: [	
-                {% for doc in docs %}	
-                {% for root in doc.roots %}	
-                {% if "main" in root.tags%}	
-                {'type': 'component', 'componentName': 'view', componentState: {model: '{{ embed(root) }}', title: '{{ root.name}}' }},	
-                {% endif %}	
-                {% if "nav" in root.tags %}	
-                {'type': 'component', 'componentName': 'view', componentState: {model: '{{ embed(root) }}', title: '{{ root.name}}' }},	
-                {% endif %}
-                {% endfor %}	
-                {% endfor %}	
+            type: 'row', content: [
+                {type: 'component', componentName: 'view', componentState: {title: "Sidebar", model: '{% for doc in docs %}{% for root in doc.roots %}{% if "nav" in root.tags %} {{ embed(root) }} {% endif %}{% endfor %}{% endfor %}'}},
+                {
+                    type: 'stack', content: [	
+                        {% for doc in docs %}	
+                        {% for root in doc.roots %}	
+                        {% if "main" in root.tags%}	
+                        {type: 'component', componentName: 'view', componentState: {model: '{{ embed(root) }}', title: "{{ 'Content' }}" }},	
+                        {% endif %}	
+                        {% endfor %}	
+                        {% endfor %}	
+                    ]
+                }
             ]
-        }
+        }        
     ]	
   };	
 
