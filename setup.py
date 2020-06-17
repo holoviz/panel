@@ -89,7 +89,7 @@ except Exception:
 ########## dependencies ##########
 
 install_requires = [
-    'bokeh >=2.0.0',
+    'bokeh >=2.0.1',
     'param >=1.9.3',
     'pyviz_comms >=0.7.4',
     'markdown',
@@ -205,7 +205,7 @@ setup_args = dict(
     python_requires=">=3.6",
     entry_points={
         'console_scripts': [
-            'panel = panel.cli:main'
+            'panel = panel.command:main'
         ]},
     install_requires=install_requires,
     extras_require=extras_require,

@@ -7,11 +7,12 @@ import sys
 import argparse
 
 from bokeh.__main__ import main as bokeh_entry_point
+from bokeh.command.subcommands.serve import Serve as BkServe
 from bokeh.command.util import die
 from bokeh.util.string import nice_join
 
-from . import __version__
-from .io.server import INDEX_HTML
+from .. import __version__
+from .serve import Serve
 
 
 def transform_cmds(argv):
@@ -19,10 +20,11 @@ def transform_cmds(argv):
     Allows usage with anaconda-project by remapping the argv list provided
     into arguments accepted by Bokeh 0.12.7 or later.
     """
-    replacements = {'--anaconda-project-host':'--allow-websocket-origin',
-                    '--anaconda-project-port': '--port',
-                    '--anaconda-project-address': '--address'
-                     }
+    replacements = {
+        '--anaconda-project-host':'--allow-websocket-origin',
+        '--anaconda-project-port': '--port',
+        '--anaconda-project-address': '--address'
+    }
     transformed = []
     skip = False
     for arg in argv:
@@ -65,7 +67,12 @@ def main(args=None):
         subs.add_parser(cmd, help=fn.__doc__)
 
     for cls in bokeh_commands:
-        subs.add_parser(cls.name, help=cls.help)
+        if cls is BkServe:
+            subparser = subs.add_parser(Serve.name, help=Serve.help)
+            subcommand = Serve(parser=subparser)
+            subparser.set_defaults(invoke=subcommand.invoke)
+        else:
+            subs.add_parser(cls.name, help=cls.help)
 
     if len(sys.argv) == 1:
         all_commands = sorted([c.name for c in bokeh_commands] + pyct_commands)
@@ -77,10 +84,15 @@ def main(args=None):
         sys.exit()
 
     if len(sys.argv) > 1 and any(sys.argv[1] == c.name for c in bokeh_commands):
-        if sys.argv[1] == 'serve' and not any(arg.startswith('--index') for arg in sys.argv):
-            sys.argv = sys.argv + ['--index=%s' % INDEX_HTML]
         sys.argv = transform_cmds(sys.argv)
-        bokeh_entry_point()
+        if sys.argv[1] == 'serve':
+            args = parser.parse_args(sys.argv[1:])
+            try:
+                ret = args.invoke(args)
+            except Exception as e:
+                die("ERROR: " + str(e))
+        else:
+            ret = bokeh_entry_point()
     elif sys.argv[1] in pyct_commands:
         try:
             import pyct.cmd
@@ -91,6 +103,13 @@ def main(args=None):
     else:
         parser.parse_args(sys.argv[1:])
         sys.exit(1)
+
+    if ret is False:
+        sys.exit(1)
+    elif ret is not True and isinstance(ret, int) and ret != 0:
+        sys.exit(ret)
+
+
 
 if __name__ == "__main__":
     main()
