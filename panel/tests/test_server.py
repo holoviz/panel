@@ -1,7 +1,16 @@
-import pytest
+import os
+import time
 
-from panel.models import HTML as BkHTML
+import pytest
+import requests
+
+from bokeh.client import pull_session
+from tornado.ioloop import IOLoop
+
 from panel.io import state
+from panel.models import HTML as BkHTML
+from panel.pane import Markdown
+from panel.io.server import StoppableThread, get_server
 
 
 def test_get_server(html_server_session):
@@ -31,6 +40,25 @@ def test_server_change_io_state(html_server_session):
 
     html.param.watch(handle_event, 'object')
     html._server_change(session.document, None, 'text', '<h1>Title</h1>', '<h1>New Title</h1>')
+
+
+def test_server_static_dirs():
+    html = Markdown('# Title')
+
+    loop = IOLoop()
+    server = StoppableThread(
+        target=html._get_server, io_loop=loop,
+        args=(5008, None, loop, False, True, None, False, None),
+        kwargs=dict(static_dirs={'tests': os.path.dirname(__file__)}))
+    server.start()
+
+    # Wait for server to start
+    time.sleep(1)
+
+    r = requests.get("http://localhost:5008/tests/test_server.py")
+    with open(__file__) as f:
+        assert f.read() == r.content.decode('utf-8')
+    server.stop()
 
 
 def test_show_server_info(html_server_session, markdown_server_session):
