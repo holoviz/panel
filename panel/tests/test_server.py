@@ -4,13 +4,12 @@ import time
 import pytest
 import requests
 
-from bokeh.client import pull_session
 from tornado.ioloop import IOLoop
 
 from panel.io import state
 from panel.models import HTML as BkHTML
 from panel.pane import Markdown
-from panel.io.server import StoppableThread, get_server
+from panel.io.server import StoppableThread
 
 
 def test_get_server(html_server_session):
