@@ -37,10 +37,10 @@ stages:
     if: tag =~ ^v(\d+|\.)+([a-z]|rc)\d+$
   - name: pip_package
     if: tag =~ ^v(\d+|\.)+[^a-z]\d+$
-  - name: docs
-    if: tag =~ ^v(\d+|\.)+[^a-z]\d+$
-  - name: docs_dev
-    if: tag =~ ^v(\d+|\.)+([a-z]|rc)\d+$
+  - name: website_dev
+    if: tag =~ ^v(\d+|\.)+[a-z]\d+$ OR tag = website_dev
+  - name: website_release
+    if: tag =~ ^v(\d+|\.)+[^a-z]\d+$ OR tag = website
   - name: docs_daily
     if: ((type = cron and branch = master) OR (commit_message =~ /\[doc-build\]/))
 
@@ -112,7 +112,7 @@ jobs:
 
     - &doc_build
       <<: *conda_default
-      stage: docs
+      stage: website_release
       env: DESC="docs" PANEL_DOC_BUILD='true' PANEL_EMBED="true" PANEL_EMBED_JSON="true" PANEL_EMBED_JSON_PREFIX="json"
       script:
         - doit develop_install $CHANS_DEV -o doc -o examples
@@ -136,7 +136,7 @@ jobs:
         - sleep 10
 
     - <<: *doc_build
-      stage: docs_dev
+      stage: website_dev
       deploy:
         provider: pages
         skip_cleanup: true
