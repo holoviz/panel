@@ -244,7 +244,7 @@ export class PlotlyPlotView extends PanelHTMLBoxView {
       let prop = prop_path[prop_path.length - 1];
       var prop_parent = trace;
       for(let k of prop_path.slice(0, -1)) {
-        prop_parent = prop_parent[k]
+        prop_parent = (prop_parent[k] as any)
       }
 
       if (update && prop_path.length == 1) {
