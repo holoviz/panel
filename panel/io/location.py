@@ -59,7 +59,7 @@ class Location(Syncable):
         # Skip if href was not previously empty or not in a server context
         if event.old or not state.curdoc: 
             return
-        for cb in state._onload[state.curdoc]:
+        for cb in state._onload.get(state.curdoc, []):
             cb()
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
