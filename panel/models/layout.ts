@@ -79,6 +79,10 @@ export class CachedVariadicBox extends Layoutable {
     this._cache_count[key_str] = 0;
     return size;
   }
+
+  invalidate_cache(): void {
+    this._cache = {};
+  }
 }
 
 export class PanelMarkupView extends MarkupView {
