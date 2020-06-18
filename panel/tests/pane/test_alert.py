@@ -2,6 +2,7 @@
 import pytest
 
 import panel as pn
+
 from panel.pane import Alert
 from panel.pane.alert import ALERT_TYPES
 
@@ -28,7 +29,7 @@ def test_existing_css_classes():
     assert set(alert.css_classes) == {"alert", f"alert-{Alert.param.alert_type.default}", "important"}
 
     alert.alert_type="info"
-    assert set(alert.css_classes) == {"alert", f"alert-info", "important"}
+    assert set(alert.css_classes) == {"alert", "alert-info", "important"}
 
 
 def test_all_view():
