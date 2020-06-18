@@ -16,7 +16,7 @@ from tornado.web import FallbackHandler
 
 from ..auth import OAuthProvider
 from ..config import config
-from ..io.rest import ParamHandler, build_tranquilize_application
+from ..io.rest import REST_PROVIDERS, ParamHandler, build_tranquilize_application
 from ..io.server import INDEX_HTML
 from ..io.state import state, get_static_routes
 
@@ -130,12 +130,9 @@ class Serve(_BkServe):
                 files.append(f)
 
         # Handle tranquilized functions in the supplied functions
-        if args.rest_provider == 'tranquilizer':
-            app = build_tranquilize_application(files, args)
-            tr = WSGIContainer(app)
-            patterns.append((r"^/%s/.*" % args.rest_endpoint, FallbackHandler, dict(fallback=tr)))
-        elif args.rest_provider == 'param':
-            patterns.append((r"^.*", ParamHandler))
+        if args.rest_provider in REST_PROVIDERS:
+            pattern = REST_PROVIDERS[args.rest_provider](files, args.rest_endpoint)
+            patterns.extend(pattern)
         elif args.rest_provider is not None:
             raise ValueError("rest-provider %r not recognized." % args.rest_provider)
 

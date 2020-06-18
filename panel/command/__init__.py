@@ -93,15 +93,10 @@ def main(args=None):
                 ret = args.invoke(args)
             except Exception as e:
                 die("ERROR: " + str(e))
-<<<<<<< HEAD:panel/command/__init__.py
         elif sys.argv[1] == 'oauth-secret':
             ret = OAuthSecret(parser).invoke(args)
         else:
             ret = bokeh_entry_point()
-=======
-        else:
-            bokeh_entry_point()
->>>>>>> Allow serving tranquilized functions as part of panel serve:panel/command/__init__.py
     elif sys.argv[1] in pyct_commands:
         try:
             import pyct.cmd

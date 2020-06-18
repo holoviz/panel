@@ -1,4 +1,5 @@
 import json
+import pkg_resources
 
 from ast import literal_eval
 from urllib.parse import parse_qs
@@ -18,7 +19,6 @@ class HTTPError(web.HTTPError):
 class BaseHandler(web.RequestHandler):
 
     def write_error(self, status_code, **kwargs):
-
         self.set_header('Content-Type', 'application/json')
         if self.settings.get("serve_traceback") and "exc_info" in kwargs:
             # in debug mode, try to send a traceback
@@ -59,7 +59,7 @@ class ParamHandler(BaseHandler):
                 value = literal_eval(value)
             params[p] = value
         return params
-        
+
     def get(self):
         endpoint = self.request.path
         parameterized, parameters, _ = state._rest_endpoints.get(
@@ -74,7 +74,7 @@ class ParamHandler(BaseHandler):
         self.write(self.serialize(parameterized[0], parameters))
 
 
-def build_tranquilize_application(files, argv):
+def build_tranquilize_application(files):
     from tranquilizer.handler import ScriptHandler, NotebookHandler
     from tranquilizer.main import make_app, UnsupportedFileType
 
@@ -94,3 +94,54 @@ def build_tranquilize_application(files, argv):
             raise UnsupportedFileType('{} is not a script (.py) or notebook (.ipynb)'.format(filename))
         functions.extend(source.tranquilized_functions)
     return make_app(functions, 'Panel REST API', prefix='rest/')
+
+
+def tranquilizer_rest_provider(files, endpoint):
+    """
+    Returns a Tranquilizer based REST API. Builds the API by evaluating
+    the scripts and notebooks being served and finding all tranquilized
+    functions inside them.
+
+    Arguments
+    ---------
+    files: list(str)
+      A list of paths being served
+    endpoint: str
+      The endpoint to serve the REST API on
+
+    Returns
+    -------
+    A Tornado routing pattern containing the route and handler
+    """
+    app = build_tranquilize_application(files, args)
+    tr = WSGIContainer(app)
+    return [(r"^/%s/.*" % endpoint, FallbackHandler, dict(fallback=tr))]
+
+
+def param_rest_provider(files, endpoint):
+    """
+    Returns a Param based REST API given the scripts or notebooks
+    containing the tranquilized functions.
+
+    Arguments
+    ---------
+    files: list(str)
+      A list of paths being served
+    endpoint: str
+      The endpoint to serve the REST API on
+
+    Returns
+    -------
+    A Tornado routing pattern containing the route and handler
+    """
+    return [(r"^.*", ParamHandler)]
+
+
+REST_PROVIDERS = {
+    'tranquilizer': tranquilizer_rest_provider,
+    'param': param_rest_provider
+}
+
+# Populate REST Providers from external extensions
+for entry_point in pkg_resources.iter_entry_points('panel.io.rest'):
+    REST_PROVIDERS[entry_point.name] = entry_point.resolve()
