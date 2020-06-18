@@ -24,12 +24,12 @@ class Alert(Markdown):
         priority = Markdown.applies(obj)
         return 0 if priority else False
 
-    def __init__(self, text, **kwargs):
+    def __init__(self, object=None, **kwargs):
         if "margin" not in kwargs:
             kwargs["margin"] = (0, 0, 25, 0)
         if "sizing_mode" not in kwargs:
             kwargs["sizing_mode"] = "stretch_width"
-        super().__init__(text, **kwargs)
+        super().__init__(object, **kwargs)
         self._set_css_classes()
 
     @param.depends("alert_type", watch=True)
