@@ -527,7 +527,7 @@ class WidgetBox(ListPanel):
     Vertical layout of widgets.
     """
 
-    css_classes = param.List(default=['widget-box'], doc="""
+    css_classes = param.List(default=['panel-widget-box'], doc="""
         CSS classes to apply to the layout.""")
 
     disabled = param.Boolean(default=False, doc="""
