@@ -650,7 +650,10 @@ class Tabs(ListPanel):
         """
         model, _ = self._models.get(ref)
         if model:
-            inds = [old.index(tab) for tab in new]
+            try:
+                inds = [old.index(tab) for tab in new]
+            except Exception:
+                return old, None
             old = self.objects
             new = [old[i] for i in inds]
         return old, new
@@ -661,6 +664,8 @@ class Tabs(ListPanel):
             return
         if attr == 'tabs':
             old, new = self._process_close(ref, attr, old, new)
+            if new is None:
+                return
         super(Tabs, self)._comm_change(doc, ref, attr, old, new)
 
     def _server_change(self, doc, ref, attr, old, new):
@@ -669,6 +674,8 @@ class Tabs(ListPanel):
             return
         if attr == 'tabs':
             old, new = self._process_close(ref, attr, old, new)
+            if new is None:
+                return
         super(Tabs, self)._server_change(doc, ref, attr, old, new)
 
     def _update_names(self, event):
