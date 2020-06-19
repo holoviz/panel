@@ -1,4 +1,4 @@
-import {Layoutable} from "@bokehjs/core/layout/layoutable"
+import {VariadicBox} from "@bokehjs/core/layout/html"
 import {Size, SizeHint, Sizeable} from "@bokehjs/core/layout/types"
 import {sized, content_size, extents} from "@bokehjs/core/dom"
 
@@ -47,15 +47,13 @@ export function set_size(el: HTMLElement, model: HTMLBox): void {
   else if (height_policy == "max")
     el.style.height = "100%";
 }
-  
 
-export class CachedVariadicBox extends Layoutable {
-  _cache: {[key: string]: Size}
-  _cache_count: {[key: string]: number}
+export class CachedVariadicBox extends VariadicBox {
+  private readonly _cache: Map<string, SizeHint> = new Map()
+  private _cache_count: {[key: string]: number}
 
   constructor(readonly el: HTMLElement, readonly sizing_mode: string | null, readonly changed: boolean) {
-    super()
-    this._cache = {};
+    super(el)
     this._cache_count = {}
   }
 
@@ -67,7 +65,9 @@ export class CachedVariadicBox extends Layoutable {
     const min_count = (!this.changed || (this.sizing_mode == 'fixed') || (this.sizing_mode == null)) ? 0 : 1;
     if ((key_str in this._cache) && (this._cache_count[key_str] >= min_count)) {
       this._cache_count[key_str] = this._cache_count[key_str] + 1;
-      return this._cache[key_str]
+      const cached_size = this._cache.get(key_str)
+      if (cached_size != null)
+        return cached_size
     }
     const bounded = new Sizeable(viewport).bounded_to(this.sizing.size)
     const size = sized(this.el, bounded, () => {
@@ -75,9 +75,13 @@ export class CachedVariadicBox extends Layoutable {
       const {border, padding} = extents(this.el)
       return content.grow_by(border).grow_by(padding).map(Math.ceil)
     })
-    this._cache[key_str] = size;
+    this._cache.set(key_str, size);
     this._cache_count[key_str] = 0;
     return size;
+  }
+
+  invalidate_cache(): void {
+     this._cache.clear()
   }
 }
 
@@ -88,7 +92,7 @@ export class PanelMarkupView extends MarkupView {
     let changed = ((this._prev_sizing_mode !== undefined) &&
                    (this._prev_sizing_mode !== this.model.sizing_mode))
     this._prev_sizing_mode = this.model.sizing_mode;
-    this.layout = new CachedVariadicBox(this.el, this.model.sizing_mode, changed)
+    this.layout = (new CachedVariadicBox(this.el, this.model.sizing_mode, changed) as any)
     this.layout.set_sizing(this.box_sizing())
   }
 
