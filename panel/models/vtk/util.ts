@@ -1,5 +1,17 @@
-import {ARRAY_TYPES, DType} from "@bokehjs/core/util/serialization"
 import {linspace} from "@bokehjs/core/util/array"
+
+export const ARRAY_TYPES = {
+  uint8:   Uint8Array,
+  int8:    Int8Array,
+  uint16:  Uint16Array,
+  int16:   Int16Array,
+  uint32:  Uint32Array,
+  int32:   Int32Array,
+  float32: Float32Array,
+  float64: Float64Array,
+}
+
+export type DType = keyof typeof ARRAY_TYPES
 
 export const vtk = (window as any).vtk
 
