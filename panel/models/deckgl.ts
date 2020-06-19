@@ -93,11 +93,11 @@ export class DeckGLPlotView extends PanelHTMLBoxView {
       }
       const data: any = []
       const columns = cds.columns()
-      for (let i = 0; i < cds.data[columns[0]].length; i++) {
+      for (let i = 0; i < cds.get_length(); i++) {
         const item: any = {}
         for (const column of columns) {
-          let array = cds.get_array(column)[0];
-          const shape = array.shape == null ? null : array.shape;
+          let array = cds.get_array(column);
+          const shape = array[0].shape == null ? null : array[0].shape;
           if ((shape != null) && (shape.length > 1) && (typeof shape[0] == "number"))
             item[column] = array.slice(i*shape[1], i*shape[1]+shape[1])
           else
