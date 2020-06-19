@@ -285,11 +285,14 @@ class panel_extension(_pyviz_extension):
         if 'holoviews' in sys.modules:
             import holoviews as hv
             import holoviews.plotting.bokeh # noqa
-            if not getattr(hv.extension, '_loaded', False):
-                if hasattr(hv.Store, 'set_current_backend'):
-                    hv.Store.set_current_backend('bokeh')
-                else:
-                    hv.Store.current_backend = 'bokeh'
+            if hv.Store.current_backend in hv.Store.renderers:
+                backend = hv.Store.current_backend
+            else:
+                backend = 'bokeh'
+            if hasattr(hv.Store, 'set_current_backend'):
+                hv.Store.set_current_backend(backend)
+            else:
+                hv.Store.current_backend = backend
 
         try:
             ip = params.pop('ip', None) or get_ipython() # noqa (get_ipython)
