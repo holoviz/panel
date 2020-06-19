@@ -19,6 +19,7 @@ import param
 
 from bokeh.document.document import Document as _Document
 from bokeh.io import curdoc as _curdoc
+from bokeh.models import LayoutDOM
 from pyviz_comms import JupyterCommManager
 from tornado import gen
 
