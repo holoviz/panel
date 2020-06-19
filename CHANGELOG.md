@@ -2,7 +2,7 @@
 
 ## Version 0.9.6
 
-This is a minor bug fix release primarily for compatibility with Bokeh versions >=2.1.0. Many thanks for the many people contributing bug fixes including @mattpap, @kebowen730, @xavArtley, @maximlt, @jbednar, @mycarta, @basnijholt, @jbednar and @philippjfr. 
+This is a minor bug fix release primarily for compatibility with Bokeh versions >=2.1.0. Many thanks for the many people contributing bug fixes including @mattpap, @kebowen730, @xavArtley, @maximlt, @mycarta, @basnijholt, @jbednar and @philippjfr. 
 
 - Compatibility with Bokeh 2.1 ([#1424](https://github.com/holoviz/panel/pull/1424))
 - Fixes for `FileDownload` widget handling of callbacks ([#1246](https://github.com/holoviz/panel/pull/1246), [#1306](https://github.com/holoviz/panel/pull/1306))

@@ -6,14 +6,14 @@ Version 0.9.6
 
 Date: 2020-06-19
 
-This is a minor bug fix release primarily for compatibility with Bokeh versions >=2.1.0. Many thanks for the many people contributing bug fixes including @mattpap, @kebowen730, @xavArtley, @maximlt, @jbednar, @mycarta, @basnijholt, @jbednar and @philippjfr.
+This is a minor bug fix release primarily for compatibility with Bokeh versions >=2.1.0. Many thanks for the many people contributing bug fixes including @mattpap, @kebowen730, @xavArtley, @maximlt, @mycarta, @basnijholt, @jbednar and @philippjfr.
 
 - Compatibility with Bokeh 2.1 (`#1424 <https://github.com/holoviz/panel/pull/1424>`_)
 - Fixes for `FileDownload` widget handling of callbacks (`#1246 <https://github.com/holoviz/panel/pull/1246>`_, `#1306 <https://github.com/holoviz/panel/pull/1306>`_)
 - Improvements and fixes for Param pane widget mapping (`#1301 <https://github.com/holoviz/panel/pull/1301>`_, `#1342 <https://github.com/holoviz/panel/pull/1342>`_, `#1378 <https://github.com/holoviz/panel/pull/1378>`_)
 - Fixed bugs handling of closed Tabs (`#1337 <https://github.com/holoviz/panel/pull/1337>`_)
 - Fix bug in layout `clone` method (`#1349 <https://github.com/holoviz/panel/pull/1349>`_)
-- Improvements for `Player` widget (`#1353 <https://github.com/holoviz/panel/pull/1353`_, `#1360 <https://github.com/holoviz/panel/pull/1360>`_)
+- Improvements for `Player` widget (`#1353 <https://github.com/holoviz/panel/pull/1353>`_, `#1360 <https://github.com/holoviz/panel/pull/1360>`_)
 - Fix for `jslink` on Bokeh models (`#1358 <https://github.com/holoviz/panel/pull/1358>`_)
 - Fix for rendering geometries in `Vega` pane (`#1359 <https://github.com/holoviz/panel/pull/1359>`_)
 
