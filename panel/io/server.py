@@ -280,7 +280,7 @@ def get_server(panel, port=0, websocket_origin=None, loop=None,
     if loop:
         loop.make_current()
         opts['io_loop'] = loop
-    else:
+    elif opts.get('num_procs', 1) == 1:
         opts['io_loop'] = IOLoop.current()
 
     if 'index' not in opts:
