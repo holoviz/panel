@@ -210,3 +210,13 @@ def test_json_pane(document, comm):
     # Cleanup
     pane._cleanup(model)
     assert pane._models == {}
+
+
+def test_json_pane_rerenders_on_depth_change(document, comm):
+    pane = JSON({'a': 2}, depth=2)
+
+    model = pane.get_root(document, comm=comm)
+
+    pane.depth = -1
+
+    assert model.depth is None
