@@ -832,6 +832,24 @@ def test_expand_param_subobject_tabs(document, comm):
     assert len(model.tabs) == 1
 
 
+def test_param_js_callbacks(document, comm):
+    class JsButton(param.Parameterized):
+        param_btn = param.Action(lambda self: print('Action Python Response'), label='Action')
+
+    param_button = Param(JsButton())
+    code = "console.log('Action button clicked')"
+    param_button[1].js_on_click(code=code)
+
+    model = param_button.get_root(document, comm=comm)
+
+    button = model.children[1]
+    assert len(button.js_event_callbacks) == 1
+    callbacks = button.js_event_callbacks
+    assert 'button_click' in callbacks
+    assert len(callbacks['button_click']) == 1
+    assert code in callbacks['button_click'][0].code
+
+
 class View(param.Parameterized):
 
     a = param.Integer(default=0)
