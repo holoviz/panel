@@ -228,11 +228,11 @@ class ServableMixin(object):
             state._servers[server_id][2].append(doc)
         return self.server_doc(doc, title, location)
 
-    def _get_server(self, port=0, websocket_origin=None, loop=None,
+    def _get_server(self, port=0, address=None, websocket_origin=None, loop=None,
                     show=False, start=False, title=None, verbose=False,
                     location=True, **kwargs):
-        return get_server(self, port, websocket_origin, loop, show,
-                          start, title, verbose, **kwargs)
+        return get_server(self, port, address, websocket_origin, loop,
+                          show, start, title, verbose, **kwargs)
 
     def _on_msg(self, ref, manager, msg):
         """
@@ -301,15 +301,19 @@ class ServableMixin(object):
             self.server_doc(title=title, location=True)
         return self
 
-    def show(self, title=None, port=0, websocket_origin=None, threaded=False,
-             verbose=True, open=True, location=True, **kwargs):
+    def show(self, title=None, port=0, address=None, websocket_origin=None,
+             threaded=False, verbose=True, open=True, location=True, **kwargs):
         """
         Starts a Bokeh server and displays the Viewable in a new tab.
 
         Arguments
         ---------
+        title : str
+          A string title to give the Document (if served as an app)
         port: int (optional, default=0)
           Allows specifying a specific port
+        address : str
+          The address the server should listen on for HTTP requests.
         websocket_origin: str or list(str) (optional)
           A list of hosts that can connect to the websocket.
           This is typically required when embedding a server app in
@@ -318,8 +322,6 @@ class ServableMixin(object):
         threaded: boolean (optional, default=False)
           Whether to launch the Server on a separate thread, allowing
           interactive use.
-        title : str
-          A string title to give the Document (if served as an app)
         verbose: boolean (optional, default=True)
           Whether to print the address and port
         open : boolean (optional, default=True)
@@ -339,12 +341,13 @@ class ServableMixin(object):
             loop = IOLoop()
             server = StoppableThread(
                 target=self._get_server, io_loop=loop,
-                args=(port, websocket_origin, loop, open, True, title, verbose, location),
+                args=(port, address, websocket_origin, loop, open,
+                      True, title, verbose, location),
                 kwargs=kwargs)
             server.start()
         else:
             server = self._get_server(
-                port, websocket_origin, show=open, start=True,
+                port, address, websocket_origin, show=open, start=True,
                 title=title, verbose=verbose, location=location, **kwargs
             )
         return server
