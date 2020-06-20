@@ -6,6 +6,12 @@ import {PanelMarkupView} from "./layout"
 export class JSONView extends PanelMarkupView {
   model: JSON
 
+  connect_signals(): void {
+    super.connect_signals()
+	const {depth, hover_preview, theme} = this.model.properties
+    this.on_change([depth, hover_preview, theme], () => this.render())
+  }
+
   render(): void {
     super.render();
     const text = this.model.text.replace(/(\r\n|\n|\r)/gm, "").replace("'", '"')
@@ -17,7 +23,8 @@ export class JSONView extends PanelMarkupView {
       return
     }
     const config = {hoverPreviewEnabled: this.model.hover_preview, theme: this.model.theme}
-    const formatter = new JSONFormatter(json, this.model.depth, config)
+	const depth = this.model.depth == null ? Infinity : this.model.depth
+    const formatter = new JSONFormatter(json, depth, config)
     const rendered = formatter.render()
     let style = "border-radius: 5px; padding: 10px;";
     if (this.model.theme == "dark")
