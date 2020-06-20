@@ -47,7 +47,7 @@ def test_server_static_dirs():
     loop = IOLoop()
     server = StoppableThread(
         target=html._get_server, io_loop=loop,
-        args=(5008, None, loop, False, True, None, False, None),
+        args=(5008, None, None, loop, False, True, None, False, None),
         kwargs=dict(static_dirs={'tests': os.path.dirname(__file__)}))
     server.start()
 
