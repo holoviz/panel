@@ -111,8 +111,9 @@ def unlocked():
             curdoc.unhold()
 
 
-def serve(panels, port=0, websocket_origin=None, loop=None, show=True,
-          start=True, title=None, verbose=True, location=True, **kwargs):
+def serve(panels, port=0, address=None, websocket_origin=None, loop=None,
+          show=True, start=True, title=None, verbose=True, location=True,
+          **kwargs):
     """
     Allows serving one or more panel objects on a single server.
     The panels argument should be either a Panel object or a function
@@ -123,11 +124,13 @@ def serve(panels, port=0, websocket_origin=None, loop=None, show=True,
 
     Arguments
     ---------
-    panel: Viewable, function or {str: Viewable}
+    panel: Viewable, function or {str: Viewable or function}
       A Panel object, a function returning a Panel object or a
       dictionary mapping from the URL slug to either.
     port: int (optional, default=0)
       Allows specifying a specific port
+    address : str
+      The address the server should listen on for HTTP requests.
     websocket_origin: str or list(str) (optional)
       A list of hosts that can connect to the websocket.
 
@@ -152,8 +155,8 @@ def serve(panels, port=0, websocket_origin=None, loop=None, show=True,
     kwargs: dict
       Additional keyword arguments to pass to Server instance
     """
-    return get_server(panels, port, websocket_origin, loop, show, start,
-                      title, verbose, location, **kwargs)
+    return get_server(panels, port, address, websocket_origin, loop,
+                      show, start, title, verbose, location, **kwargs)
 
 
 class ProxyFallbackHandler(RequestHandler):
@@ -195,9 +198,9 @@ def get_static_routes(static_dirs):
     return patterns
 
 
-def get_server(panel, port=0, websocket_origin=None, loop=None,
-               show=False, start=False, title=None, verbose=False,
-               location=True, static_dirs={}, **kwargs):
+def get_server(panel, port=0, address=None, websocket_origin=None,
+               loop=None, show=False, start=False, title=None,
+               verbose=False, location=True, static_dirs={}, **kwargs):
     """
     Returns a Server instance with this panel attached as the root
     app.
@@ -209,6 +212,8 @@ def get_server(panel, port=0, websocket_origin=None, loop=None,
       dictionary mapping from the URL slug to either.
     port: int (optional, default=0)
       Allows specifying a specific port
+    address : str
+      The address the server should listen on for HTTP requests.
     websocket_origin: str or list(str) (optional)
       A list of hosts that can connect to the websocket.
 
@@ -217,24 +222,24 @@ def get_server(panel, port=0, websocket_origin=None, loop=None,
 
       If None, "localhost" is used.
     loop : tornado.ioloop.IOLoop (optional, default=IOLoop.current())
-      The tornado IOLoop to run the Server on
+      The tornado IOLoop to run the Server on.
     show : boolean (optional, default=False)
-      Whether to open the server in a new browser tab on start
+      Whether to open the server in a new browser tab on start.
     start : boolean(optional, default=False)
-      Whether to start the Server
-    title: str or {str: str} (optional, default=None)
+      Whether to start the Server.
+    title : str or {str: str} (optional, default=None)
       An HTML title for the application or a dictionary mapping
-      from the URL slug to a customized title
+      from the URL slug to a customized title.
     verbose: boolean (optional, default=False)
-      Whether to report the address and port
+      Whether to report the address and port.
     location : boolean or panel.io.location.Location
       Whether to create a Location component to observe and
       set the URL location.
     static_dirs: dict (optional, default={})
       A dictionary of routes and local paths to serve as static file
-      directories on those routes
+      directories on those routes.
     kwargs: dict
-      Additional keyword arguments to pass to Server instance
+      Additional keyword arguments to pass to Server instance.
 
     Returns
     -------
@@ -285,6 +290,9 @@ def get_server(panel, port=0, websocket_origin=None, loop=None,
 
     if 'index' not in opts:
         opts['index'] = INDEX_HTML
+
+    if address is not None:
+        opts['address'] = address
 
     if websocket_origin:
         if not isinstance(websocket_origin, list):
