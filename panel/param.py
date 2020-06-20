@@ -28,9 +28,10 @@ from .util import (
 )
 from .viewable import Layoutable
 from .widgets import (
-    Button, Checkbox, ColorPicker, DataFrame, DatetimeInput, DateRangeSlider,
-    FileSelector, FloatSlider, IntSlider, LiteralInput, MultiSelect,
-    RangeSlider, Select, Spinner, StaticText, TextInput, Toggle, Widget
+    Button, Checkbox, ColorPicker, DataFrame, DatePicker, DatetimeInput,
+    DateRangeSlider, FileSelector, FloatSlider, IntSlider, LiteralInput,
+    MultiSelect, RangeSlider, Select, Spinner, StaticText, TextInput,
+    Toggle, Widget
 )
 from .widgets.button import _ButtonBase
 
@@ -121,6 +122,7 @@ class Param(PaneBase):
     _mapping = {
         param.Action:            Button,
         param.Boolean:           Checkbox,
+        param.CalendarDate:      DatePicker,
         param.Color:             ColorPicker,
         param.Date:              DatetimeInput,
         param.DateRange:         DateRangeSlider,

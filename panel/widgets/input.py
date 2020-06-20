@@ -131,11 +131,11 @@ class StaticText(Widget):
 
 class DatePicker(Widget):
 
-    value = param.Date(default=None)
+    value = param.CalendarDate(default=None)
 
-    start = param.Date(default=None)
+    start = param.CalendarDate(default=None)
 
-    end = param.Date(default=None)
+    end = param.CalendarDate(default=None)
 
     _source_transforms = {'value': None, 'start': None, 'end': None}
 
