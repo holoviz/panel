@@ -532,6 +532,23 @@ class Param(PaneBase):
                     return cls._mapping[t](pobj)
                 return cls._mapping[t]
 
+    def select(self, selector=None):
+        """
+        Iterates over the Viewable and any potential children in the
+        applying the Selector.
+
+        Arguments
+        ---------
+        selector: type or callable or None
+          The selector allows selecting a subset of Viewables by
+          declaring a type or callable function to filter by.
+
+        Returns
+        -------
+        viewables: list(Viewable)
+        """
+        return super().select(selector) + self.layout.select(selector)
+
     def get_root(self, doc=None, comm=None):
         """
         Returns the root model and applies pre-processing hooks
