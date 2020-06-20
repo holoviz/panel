@@ -239,8 +239,8 @@ def show_server(panel, notebook_url, port):
     else:
         origin = _origin_url(notebook_url)
     server_id = uuid.uuid4().hex
-    server = get_server(panel, port, origin, start=True, show=False,
-                        server_id=server_id)
+    server = get_server(panel, port=port, websocket_origin=origin,
+                        start=True, show=False, server_id=server_id)
 
     if callable(notebook_url):
         url = notebook_url(server.port)
