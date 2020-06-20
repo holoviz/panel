@@ -330,7 +330,6 @@ class Param(PaneBase):
         else:
             widget_class = self.widgets[p_name]
 
-
         if not self.show_labels and not issubclass(widget_class, _ButtonBase):
             label = ''
         else:
@@ -358,7 +357,8 @@ class Param(PaneBase):
             if ('start' not in kw or 'end' not in kw):
                 # Do not change widget class if _mapping was overridden
                 if not widget_class_overridden:
-                    if isinstance(p_obj, param.Number):
+                    if (isinstance(p_obj, param.Number) and
+                        not isinstance(p_obj, (param.Date, param.CalendarDate))):
                         widget_class = Spinner
                         if isinstance(p_obj, param.Integer):
                             kw['step'] = 1
