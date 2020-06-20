@@ -15,6 +15,19 @@ def test_button(document, comm):
     assert button.clicks == 1
 
 
+def test_button_jscallback_clicks(document, comm):
+    button = Button(name='Button')
+    code = 'console.log("Clicked!")'
+    button.jscallback(clicks=code)
+
+    widget = button.get_root(document, comm=comm)
+    assert len(widget.js_event_callbacks) == 1
+    callbacks = widget.js_event_callbacks
+    assert 'button_click' in callbacks
+    assert len(callbacks['button_click']) == 1
+    assert code in callbacks['button_click'][0].code
+
+
 def test_toggle(document, comm):
     toggle = Toggle(name='Toggle', value=True)
 
