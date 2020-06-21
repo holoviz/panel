@@ -2,9 +2,9 @@
 
 ## Version 0.9.6
 
-This is a minor bug fix release primarily for compatibility with Bokeh versions >=2.1.0. Many thanks for the many people contributing bug fixes including @mattpap, @kebowen730, @xavArtley, @maximlt, @mycarta, @basnijholt, @jbednar and @philippjfr. 
+This is a minor bug fix release primarily for compatibility with Bokeh versions >=2.1.0 along with a variety of important bug fixes. Many thanks for the many people who contributed to this release including @mattpap, @kebowen730, @xavArtley, @maximlt, @mycarta, @basnijholt, @jbednar and @philippjfr.
 
-- Compatibility with Bokeh 2.1 ([#1424](https://github.com/holoviz/panel/pull/1424))
+- Compatibility with Bokeh 2.1 ([#1424](https://github.com/holoviz/panel/pull/1424), [#1428](https://github.com/holoviz/panel/pull/1428))
 - Fixes for `FileDownload` widget handling of callbacks ([#1246](https://github.com/holoviz/panel/pull/1246), [#1306](https://github.com/holoviz/panel/pull/1306))
 - Improvements and fixes for Param pane widget mapping ([#1301](https://github.com/holoviz/panel/pull/1301), [#1342](https://github.com/holoviz/panel/pull/1342), [#1378](https://github.com/holoviz/panel/pull/1378)) 
 - Fixed bugs handling of closed Tabs ([#1337](https://github.com/holoviz/panel/pull/1337))
@@ -12,6 +12,14 @@ This is a minor bug fix release primarily for compatibility with Bokeh versions 
 - Improvements for `Player` widget ([#1353](https://github.com/holoviz/panel/pull/1353), [#1360](https://github.com/holoviz/panel/pull/1360))
 - Fix for `jslink` on Bokeh models ([#1358](https://github.com/holoviz/panel/pull/1358))
 - Fix for rendering geometries in `Vega` pane ([#1359](https://github.com/holoviz/panel/pull/1359))
+- Fix issue with `HoloViews` pane overriding selected renderer ([#1429](https://github.com/holoviz/panel/pull/1429))
+- Fix issues with `JSON` pane depth parameter and rerendering ([#1431](https://github.com/holoviz/panel/pull/1431))
+- Fixed `param.Date` and `param.CalenderDate` parameter mappings ([#1433](https://github.com/holoviz/panel/pull/1433), [#1434](https://github.com/holoviz/panel/pull/1434))
+- Fixed issue with enabling `num_procs` on `pn.serve` ([#1436](https://github.com/holoviz/panel/pull/1436))
+- Warn if a particular extension could not be loaded ([#1437](https://github.com/holoviz/panel/pull/1437))
+- Fix issues with garbage collection and potential memory leaks ([#1407](https://github.com/holoviz/panel/pull/1407))
+- Support recent versions of pydeck in `DeckGL` pane ([#1443](https://github.com/holoviz/panel/pull/1443))
+- Ensure JS callbacks on widget created from Parameters are initialized ([#1439](https://github.com/holoviz/panel/pull/1439))
 
 ## Version 0.9.5
 
