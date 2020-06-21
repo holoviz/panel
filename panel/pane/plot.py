@@ -9,9 +9,10 @@ from io import BytesIO
 
 import param
 
-from bokeh.models import LayoutDOM, CustomJS, Spacer as BkSpacer
+from bokeh.models import CustomJS, LayoutDOM, Model, Spacer as BkSpacer
 
 from ..io import remove_root
+from ..io.notebook import push
 from ..viewable import Layoutable
 from .base import PaneBase
 from .markup import HTML
@@ -29,6 +30,45 @@ class Bokeh(PaneBase):
     def applies(cls, obj):
         return isinstance(obj, LayoutDOM)
 
+    @classmethod
+    def _property_callback_wrapper(cls, cb, doc, comm):
+        def wrapped_callback(attr, old, new):
+            if comm:
+                hold = doc._hold
+                doc.hold('combine')
+            cb(attr, old, new)
+            if comm:
+                push(doc, comm)
+                doc.hold(hold)
+        return wrapped_callback
+
+    @classmethod
+    def _event_callback_wrapper(cls, cb, doc, comm):
+        def wrapped_callback(event):
+            if comm:
+                hold = doc._hold
+                doc.hold('combine')
+            cb(event)
+            if comm:
+                push(doc, comm)
+                doc.hold(hold)
+        return wrapped_callback
+
+    @classmethod
+    def _wrap_bokeh_callbacks(cls, root, bokeh_model, doc, comm):
+        ref = root.ref['id']
+        for model in bokeh_model.select(type=Model):
+            for key, cbs in model._callbacks.items():
+                model._callbacks[key] = [
+                    cls._property_callback_wrapper(cb, doc, comm)
+                    for cb in cbs
+                ]
+            for key, cbs in model._event_callbacks.items():
+                model._event_callbacks[key] = [
+                    cls._event_callback_wrapper(cb, doc, comm)
+                    for cb in cbs
+                ]
+
     def _get_model(self, doc, root=None, parent=None, comm=None):
         if root is None:
             return self._get_root(doc, comm)
@@ -45,6 +85,7 @@ class Bokeh(PaneBase):
                 continue
             properties[p] = value
         model.update(**properties)
+        self._wrap_bokeh_callbacks(root, model, doc, comm)
 
         ref = root.ref['id']
         for js in model.select({'type': CustomJS}):
