@@ -71,7 +71,6 @@ class Bokeh(PaneBase):
 
     @classmethod
     def _wrap_bokeh_callbacks(cls, root, bokeh_model, doc, comm):
-        ref = root.ref['id']
         for model in bokeh_model.select(type=Model):
             for key, cbs in model._callbacks.items():
                 callbacks = model._callbacks[key]
