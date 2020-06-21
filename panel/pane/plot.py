@@ -7,6 +7,8 @@ import sys
 
 from io import BytesIO
 
+from contextlib import contextmanager
+
 import param
 
 from bokeh.models import CustomJS, LayoutDOM, Model, Spacer as BkSpacer
@@ -17,6 +19,29 @@ from ..viewable import Layoutable
 from .base import PaneBase
 from .markup import HTML
 from .image import PNG
+
+
+@contextmanager
+def _wrap_callback(cb, wrapped, doc, comm, callbacks):
+    """
+    Wraps a bokeh callback ensuring that any events triggered by it
+    appropriately dispatch events in the notebook. Also temporarily
+    replaces the wrapped callback with the real one while the callback
+    is exectuted to ensure the callback can be removed as usual.
+    """
+    if comm:
+        hold = doc._hold
+        doc.hold('combine')
+    if wrapped in callbacks:
+        index = callbacks.index(wrapped)
+        callbacks[index] = cb
+    yield
+    if cb in callbacks:
+        index = callbacks.index(cb)
+        callbacks[index] = wrapped
+    if comm:
+        push(doc, comm)
+        doc.hold(hold)
 
 
 class Bokeh(PaneBase):
@@ -31,27 +56,17 @@ class Bokeh(PaneBase):
         return isinstance(obj, LayoutDOM)
 
     @classmethod
-    def _property_callback_wrapper(cls, cb, doc, comm):
+    def _property_callback_wrapper(cls, cb, doc, comm, callbacks):
         def wrapped_callback(attr, old, new):
-            if comm:
-                hold = doc._hold
-                doc.hold('combine')
-            cb(attr, old, new)
-            if comm:
-                push(doc, comm)
-                doc.hold(hold)
+            with _wrap_callback(cb, wrapped_callback, doc, comm, callbacks):
+                cb(attr, old, new)
         return wrapped_callback
 
     @classmethod
-    def _event_callback_wrapper(cls, cb, doc, comm):
+    def _event_callback_wrapper(cls, cb, doc, comm, callbacks):
         def wrapped_callback(event):
-            if comm:
-                hold = doc._hold
-                doc.hold('combine')
-            cb(event)
-            if comm:
-                push(doc, comm)
-                doc.hold(hold)
+            with _wrap_callback(cb, wrapped_callback, doc, comm, callbacks):
+                cb(event)
         return wrapped_callback
 
     @classmethod
@@ -59,13 +74,15 @@ class Bokeh(PaneBase):
         ref = root.ref['id']
         for model in bokeh_model.select(type=Model):
             for key, cbs in model._callbacks.items():
-                model._callbacks[key] = [
-                    cls._property_callback_wrapper(cb, doc, comm)
+                callbacks = model._callbacks[key]
+                callbacks[:] = [
+                    cls._property_callback_wrapper(cb, doc, comm, callbacks)
                     for cb in cbs
                 ]
             for key, cbs in model._event_callbacks.items():
-                model._event_callbacks[key] = [
-                    cls._event_callback_wrapper(cb, doc, comm)
+                callbacks = model._event_callbacks[key]
+                callbacks[:] = [
+                    cls._event_callback_wrapper(cb, doc, comm, callbacks)
                     for cb in cbs
                 ]
 
