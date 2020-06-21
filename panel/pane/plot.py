@@ -29,9 +29,8 @@ def _wrap_callback(cb, wrapped, doc, comm, callbacks):
     replaces the wrapped callback with the real one while the callback
     is exectuted to ensure the callback can be removed as usual.
     """
-    if comm:
-        hold = doc._hold
-        doc.hold('combine')
+    hold = doc._hold
+    doc.hold('combine')
     if wrapped in callbacks:
         index = callbacks.index(wrapped)
         callbacks[index] = cb
@@ -39,9 +38,8 @@ def _wrap_callback(cb, wrapped, doc, comm, callbacks):
     if cb in callbacks:
         index = callbacks.index(cb)
         callbacks[index] = wrapped
-    if comm:
-        push(doc, comm)
-        doc.hold(hold)
+    push(doc, comm)
+    doc.hold(hold)
 
 
 class Bokeh(PaneBase):
@@ -101,7 +99,8 @@ class Bokeh(PaneBase):
                 continue
             properties[p] = value
         model.update(**properties)
-        self._wrap_bokeh_callbacks(root, model, doc, comm)
+        if comm:
+            self._wrap_bokeh_callbacks(root, model, doc, comm)
 
         ref = root.ref['id']
         for js in model.select({'type': CustomJS}):
