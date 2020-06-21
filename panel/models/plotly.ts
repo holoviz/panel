@@ -8,7 +8,6 @@ import {deepCopy, isPlainObject, get, throttle} from "./util"
 
 import {PanelHTMLBoxView} from "./layout"
 
-const Plotly = (window as any).Plotly;
 
 interface PlotlyHTMLElement extends HTMLElement {
     on(event: 'plotly_relayout', callback: (eventData: any) => void): void;
@@ -151,7 +150,7 @@ export class PlotlyPlotView extends PanelHTMLBoxView {
     }
 
     this._reacting = true;
-    Plotly.react(this.el, data, newLayout, this.model.config).then(() => {
+    (window as any).Plotly.react(this.el, data, newLayout, this.model.config).then(() => {
         this._updateSetViewportFunction();
         this._updateViewportProperty();
 
@@ -257,7 +256,7 @@ export class PlotlyPlotView extends PanelHTMLBoxView {
   }
 
   _updateViewportFromProperty(): void {
-    if (!Plotly || this._settingViewport || this._reacting || !this.model.viewport ) { return }
+    if (!(window as any).Plotly || this._settingViewport || this._reacting || !this.model.viewport ) { return }
 
     const fullLayout = (this.el as any)._fullLayout;
 
@@ -266,7 +265,7 @@ export class PlotlyPlotView extends PanelHTMLBoxView {
       if (!isEqual(get(fullLayout, key), value)) {
         let clonedViewport = deepCopy(this.model.viewport)
         clonedViewport['_update_from_property'] = true;
-        Plotly.relayout(this.el, clonedViewport);
+        (window as any).Plotly.relayout(this.el, clonedViewport);
         return false
       } else {
         return true
