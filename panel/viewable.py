@@ -534,8 +534,12 @@ class Viewable(Layoutable, ServableMixin):
         Server lifecycle hook triggered when session is destroyed.
         """
         doc = session_context._document
-        self._cleanup(self._documents[doc])
+        root = self._documents[doc]
+        ref = root.ref['id']
+        self._cleanup(root)
         del self._documents[doc]
+        if ref in state._views:
+            del state._views[ref]
 
     #----------------------------------------------------------------
     # Public API
