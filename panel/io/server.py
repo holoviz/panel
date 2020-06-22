@@ -11,7 +11,7 @@ import uuid
 
 from contextlib import contextmanager
 from functools import partial
-from types import FunctionType
+from types import FunctionType, MethodType
 
 from bokeh.document.events import ModelChangedEvent
 from bokeh.server.server import Server
@@ -53,7 +53,7 @@ def _eval_panel(panel, server_id, title, location, doc):
     from ..pane import panel as as_panel
 
     with set_curdoc(doc):
-        if isinstance(panel, FunctionType):
+        if isinstance(panel, (FunctionType, MethodType)):
             panel = panel()
         if isinstance(panel, BaseTemplate):
             doc = panel._modify_doc(server_id, title, doc, location)
