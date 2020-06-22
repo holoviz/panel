@@ -1,4 +1,5 @@
 import {linspace} from "@bokehjs/core/util/array"
+import {Follower} from "./vtkfollower"
 
 export const ARRAY_TYPES = {
   uint8:   Uint8Array,
@@ -27,6 +28,7 @@ if (vtk) {
   vtkns["CubeSource"] = vtk.Filters.Sources.vtkCubeSource
   vtkns["DataAccessHelper"] = vtk.IO.Core.DataAccessHelper
   vtkns["DataArray"] = vtk.Common.Core.vtkDataArray
+  vtkns["Follower"] = Follower
   vtkns["FullScreenRenderWindow"] = vtk.Rendering.Misc.vtkFullScreenRenderWindow
   vtkns["Glyph3DMapper"] = vtk.Rendering.Core.vtkGlyph3DMapper
   vtkns["HttpSceneLoader"] = vtk.IO.Core.vtkHttpSceneLoader
@@ -79,6 +81,11 @@ if (vtk) {
     "vtkSmartVolumeMapper",
     vtkns.VolumeMapper.newInstance,
     vtkObjectManager.oneTimeGenericUpdater
+  )
+  vtkObjectManager.setTypeMapping(
+    "vtkFollower",
+    Follower.newInstance,
+    vtkObjectManager.genericUpdater
   )
 }
 

@@ -239,6 +239,7 @@ def initializeSerializers():
     registerInstanceSerializer('vtkImageSlice', genericProp3DSerializer)
     registerInstanceSerializer('vtkVolume', genericProp3DSerializer)
     registerInstanceSerializer('vtkOpenGLActor', genericActorSerializer)
+    registerInstanceSerializer('vtkFollower', genericActorSerializer)
     registerInstanceSerializer('vtkPVLODActor', genericActorSerializer)
     
 
@@ -575,6 +576,16 @@ def genericActorSerializer(parent, actor, actorId, context, depth):
         'forceOpaque': actor.GetForceOpaque(),
         'forceTranslucent': actor.GetForceTranslucent()
     })
+
+    if actor.IsA('vtkFollower'):
+        camera = actor.GetCamera()
+        cameraId = context.getReferenceId(camera)
+        cameraInstance = serializeInstance(
+            actor, camera, cameraId, context, depth + 1)
+        if cameraInstance:
+            instance['dependencies'].append(cameraInstance)
+            instance['calls'].append(['setCamera', [wrapId(cameraId)]])
+
     return instance
 
 # -----------------------------------------------------------------------------
