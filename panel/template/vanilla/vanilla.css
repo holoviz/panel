@@ -1,7 +1,10 @@
-@import url(https://assets.ubuntu.com/v1/vanilla-framework-version-2.13.0.min.css);
+.bk-root .bk, .bk-root .bk:before, .bk-root .bk:after {
+  box-sizing: content-box; 
+}
 
 body {
-    height: 100vh
+    height: 100vh;
+    margin: 0px;
   }
 
   #container {
@@ -10,7 +13,7 @@ body {
   }
 
   #header{
-    padding: 15px;
+    padding: 10px;
   }
 
   .title{
@@ -80,7 +83,11 @@ body {
     background-color: #eeeeee;
     overflow-x: hidden;
     transition: 0.5s;
-    padding-top: 60px;
+    padding-top: 15px;
+  }
+
+  .bk.card-title {
+    position: absolute !important;
   }
   
   .sidenav a {
