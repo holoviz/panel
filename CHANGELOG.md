@@ -1,5 +1,11 @@
 # Releases 
 
+## Version 0.9.7
+
+The 0.9.6 release unfortunately caused a major regression in layout performance due to the way optimizations in Bokeh and Panel interacted. This release fixes this regression.
+
+- Fix regression in layout performance ([#1453](https://github.com/holoviz/panel/pull/1453))
+
 ## Version 0.9.6
 
 This is a minor bug fix release primarily for compatibility with Bokeh versions >=2.1.0 along with a variety of important bug fixes. Many thanks for the many people who contributed to this release including @mattpap, @kebowen730, @xavArtley, @maximlt, @mycarta, @basnijholt, @jbednar and @philippjfr.
