@@ -11,7 +11,7 @@
 <div class="" id="container">
   <nav class="" style="{% if header_background %}background-color: {{ header_background }} !important;{% endif %}{% if header_color %}color: {{ header_color }}{% endif %}" id="header">
     {% if nav %}
-      <span style="font-size:30px;cursor:pointer" onclick="openNav()" id="sidebar-button">&#9776;</span>
+      <span style="font-size:30px;cursor:pointer" onclick="closeNav()" id="sidebar-button">&#9776;</span>
     {% endif %}
     <a class="title" href="#">{{ app_title }}</a>
     {% for doc in docs %}
@@ -26,7 +26,6 @@
   <div class="row" id="content">
     {% if nav %}
     <div class="sidenav" id="sidebar">
-      <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
       <ul class="nav flex-column">
         {% for doc in docs %}
         {% for root in doc.roots %}
@@ -55,11 +54,13 @@
   function openNav() {
     document.getElementById("sidebar").style.width = "15vw";
     document.getElementById("main").style.marginLeft = "15vw";
+    document.getElementById("sidebar-button").onclick=closeNav;
   }
 
   function closeNav() {
     document.getElementById("sidebar").style.width = "0";
     document.getElementById("main").style.marginLeft = "0";
+    document.getElementById("sidebar-button").onclick=openNav;
   }
 
 </script>
