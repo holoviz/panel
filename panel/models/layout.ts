@@ -50,25 +50,26 @@ export function set_size(el: HTMLElement, model: HTMLBox): void {
 
 export class CachedVariadicBox extends VariadicBox {
   private readonly _cache: Map<string, SizeHint> = new Map()
-  private _cache_count: {[key: string]: number}
+  private readonly _cache_count: Map<string, number> = new Map()
 
   constructor(readonly el: HTMLElement, readonly sizing_mode: string | null, readonly changed: boolean) {
     super(el)
-    this._cache_count = {}
   }
 
   protected _measure(viewport: Size): SizeHint {
     const key = [viewport.width, viewport.height, this.sizing_mode]
     const key_str = key.toString()
+
     // If sizing mode is responsive and has changed since last render
     // we have to wait until second rerender to use cached value
     const min_count = (!this.changed || (this.sizing_mode == 'fixed') || (this.sizing_mode == null)) ? 0 : 1;
-    if ((key_str in this._cache) && (this._cache_count[key_str] >= min_count)) {
-      this._cache_count[key_str] = this._cache_count[key_str] + 1;
-      const cached_size = this._cache.get(key_str)
-      if (cached_size != null)
-        return cached_size
+    const cached = this._cache.get(key_str);
+    const cache_count = this._cache_count.get(key_str)
+    if (cached != null && cache_count != null && (cache_count >= min_count)) {
+      this._cache_count.set(key_str, cache_count + 1);
+      return cached
     }
+
     const bounded = new Sizeable(viewport).bounded_to(this.sizing.size)
     const size = sized(this.el, bounded, () => {
       const content = new Sizeable(content_size(this.el))
@@ -76,12 +77,11 @@ export class CachedVariadicBox extends VariadicBox {
       return content.grow_by(border).grow_by(padding).map(Math.ceil)
     })
     this._cache.set(key_str, size);
-    this._cache_count[key_str] = 0;
+    this._cache_count.set(key_str, 0);
     return size;
   }
 
   invalidate_cache(): void {
-     this._cache.clear()
   }
 }
 
