@@ -1,6 +1,15 @@
 Releases
 ========
 
+Version 0.9.7
+-------------
+
+Date: 2020-06-23
+
+The 0.9.7 release unfortunately caused a major regression in layout performance due to the way optimizations in Bokeh and Panel interacted. This release fixes this regression.
+
+- Fix regression in layout performance (`#1453 <https://github.com/holoviz/panel/pull/1453>`_)
+
 Version 0.9.6
 -------------
 
