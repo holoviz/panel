@@ -1,5 +1,7 @@
 import {linspace} from "@bokehjs/core/util/array"
+
 import {Follower} from "./vtkfollower"
+import {RenderWindowInteractor} from "./vtkrenderwindowinteractor"
 
 export const ARRAY_TYPES = {
   uint8:   Uint8Array,
@@ -58,7 +60,7 @@ if (vtk) {
   vtkns["Property"] = vtk.Rendering.Core.vtkProperty
   vtkns["Renderer"] = vtk.Rendering.Core.vtkRenderer
   vtkns["RenderWindow"] = vtk.Rendering.Core.vtkRenderWindow
-  vtkns["RenderWindowInteractor"] = vtk.Rendering.Core.vtkRenderWindowInteractor
+  vtkns["RenderWindowInteractor"] = RenderWindowInteractor
   vtkns["SphereMapper"] = vtk.Rendering.Core.vtkSphereMapper
   vtkns["SynchronizableRenderWindow"] =
     vtk.Rendering.Misc.vtkSynchronizableRenderWindow
