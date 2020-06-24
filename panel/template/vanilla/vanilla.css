@@ -1,7 +1,3 @@
-/* .bk-root .bk, .bk-root .bk:before, .bk-root .bk:after {
-  box-sizing: unset; 
-} */
-
 body {
     height: 100vh;
     margin: 0px;
@@ -25,6 +21,10 @@ body {
     text-decoration-color: initial;
     font-weight: 400;
     font-size: larger;
+  }
+
+  .bk-canvas {
+    padding-right: 2px !important;
   }
 
   #content {
