@@ -1,4 +1,4 @@
-from panel.cli import transform_cmds
+from panel.command import transform_cmds
 
 def test_transformation():
     args = ['panel', 'serve', '.',

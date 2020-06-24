@@ -27,7 +27,12 @@ class Ace(Widget):
     theme = param.ObjectSelector(default="chrome", objects=list(ace_themes),
                                  doc="Theme of the editor")
 
-    language = param.String(default="python", doc="Language of the editor")
+    filename = param.String(doc="Filename from which to deduce language")
+
+    language = param.String(default='text', doc="Language of the editor")
+
+    print_margin = param.Boolean(default=False, doc="""
+        Whether to show the a print margin.""")
 
     readonly = param.Boolean(default=False, doc="""
         Define if editor content can be modified""")

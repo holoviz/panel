@@ -11,12 +11,12 @@ import uuid
 
 from contextlib import contextmanager
 from functools import partial
-from types import FunctionType
+from types import FunctionType, MethodType
 
 from bokeh.document.events import ModelChangedEvent
 from bokeh.server.server import Server
 from tornado.websocket import WebSocketHandler
-from tornado.web import RequestHandler
+from tornado.web import RequestHandler, StaticFileHandler
 from tornado.wsgi import WSGIContainer
 
 from .state import state
@@ -40,15 +40,26 @@ def _server_url(url, port):
     else:
         return 'http://%s:%d%s' % (url.split(':')[0], port, "/")
 
+
+@contextmanager
+def set_curdoc(doc):
+    state.curdoc = doc
+    yield
+    state.curdoc = None
+
+
 def _eval_panel(panel, server_id, title, location, doc):
     from ..template import BaseTemplate
     from ..pane import panel as as_panel
 
-    if isinstance(panel, FunctionType):
-        panel = panel()
-    if isinstance(panel, BaseTemplate):
-        return panel._modify_doc(server_id, title, doc, location)
-    return as_panel(panel)._modify_doc(server_id, title, doc, location)
+    with set_curdoc(doc):
+        if isinstance(panel, (FunctionType, MethodType)):
+            panel = panel()
+        if isinstance(panel, BaseTemplate):
+            doc = panel._modify_doc(server_id, title, doc, location)
+        else:
+            doc = as_panel(panel)._modify_doc(server_id, title, doc, location)
+        return doc
 
 #---------------------------------------------------------------------
 # Public API
@@ -100,8 +111,9 @@ def unlocked():
             curdoc.unhold()
 
 
-def serve(panels, port=0, websocket_origin=None, loop=None, show=True,
-          start=True, title=None, verbose=True, location=True, **kwargs):
+def serve(panels, port=0, address=None, websocket_origin=None, loop=None,
+          show=True, start=True, title=None, verbose=True, location=True,
+          **kwargs):
     """
     Allows serving one or more panel objects on a single server.
     The panels argument should be either a Panel object or a function
@@ -112,11 +124,13 @@ def serve(panels, port=0, websocket_origin=None, loop=None, show=True,
 
     Arguments
     ---------
-    panel: Viewable, function or {str: Viewable}
+    panel: Viewable, function or {str: Viewable or function}
       A Panel object, a function returning a Panel object or a
       dictionary mapping from the URL slug to either.
     port: int (optional, default=0)
       Allows specifying a specific port
+    address : str
+      The address the server should listen on for HTTP requests.
     websocket_origin: str or list(str) (optional)
       A list of hosts that can connect to the websocket.
 
@@ -141,8 +155,8 @@ def serve(panels, port=0, websocket_origin=None, loop=None, show=True,
     kwargs: dict
       Additional keyword arguments to pass to Server instance
     """
-    return get_server(panels, port, websocket_origin, loop, show, start,
-                      title, verbose, location, **kwargs)
+    return get_server(panels, port, address, websocket_origin, loop,
+                      show, start, title, verbose, location, **kwargs)
 
 
 class ProxyFallbackHandler(RequestHandler):
@@ -162,9 +176,31 @@ class ProxyFallbackHandler(RequestHandler):
         self.on_finish()
 
 
-def get_server(panel, port=0, websocket_origin=None, loop=None,
-               show=False, start=False, title=None, verbose=False,
-               location=True, **kwargs):
+
+def get_static_routes(static_dirs):
+    """
+    Returns a list of tornado routes of StaticFileHandlers given a
+    dictionary of slugs and file paths to serve.
+    """
+    patterns = []
+    for slug, path in static_dirs.items():
+        if not slug.startswith('/'):
+            slug = '/' + slug
+        if slug == '/static':
+            raise ValueError("Static file route may not use /static "
+                             "this is reserved for internal use.")
+        path = os.path.abspath(path)
+        if not os.path.isdir(path):
+            raise ValueError("Cannot serve non-existent path %s" % path)
+        patterns.append(
+            (r"%s/(.*)" % slug, StaticFileHandler, {"path": path})
+        )
+    return patterns
+
+
+def get_server(panel, port=0, address=None, websocket_origin=None,
+               loop=None, show=False, start=False, title=None,
+               verbose=False, location=True, static_dirs={}, **kwargs):
     """
     Returns a Server instance with this panel attached as the root
     app.
@@ -176,6 +212,8 @@ def get_server(panel, port=0, websocket_origin=None, loop=None,
       dictionary mapping from the URL slug to either.
     port: int (optional, default=0)
       Allows specifying a specific port
+    address : str
+      The address the server should listen on for HTTP requests.
     websocket_origin: str or list(str) (optional)
       A list of hosts that can connect to the websocket.
 
@@ -184,21 +222,24 @@ def get_server(panel, port=0, websocket_origin=None, loop=None,
 
       If None, "localhost" is used.
     loop : tornado.ioloop.IOLoop (optional, default=IOLoop.current())
-      The tornado IOLoop to run the Server on
+      The tornado IOLoop to run the Server on.
     show : boolean (optional, default=False)
-      Whether to open the server in a new browser tab on start
+      Whether to open the server in a new browser tab on start.
     start : boolean(optional, default=False)
-      Whether to start the Server
-    title: str or {str: str} (optional, default=None)
+      Whether to start the Server.
+    title : str or {str: str} (optional, default=None)
       An HTML title for the application or a dictionary mapping
-      from the URL slug to a customized title
+      from the URL slug to a customized title.
     verbose: boolean (optional, default=False)
-      Whether to report the address and port
+      Whether to report the address and port.
     location : boolean or panel.io.location.Location
       Whether to create a Location component to observe and
       set the URL location.
+    static_dirs: dict (optional, default={})
+      A dictionary of routes and local paths to serve as static file
+      directories on those routes.
     kwargs: dict
-      Additional keyword arguments to pass to Server instance
+      Additional keyword arguments to pass to Server instance.
 
     Returns
     -------
@@ -238,15 +279,20 @@ def get_server(panel, port=0, websocket_origin=None, loop=None,
     else:
         apps = {'/': partial(_eval_panel, panel, server_id, title, location)}
 
+    extra_patterns += get_static_routes(static_dirs)
+
     opts = dict(kwargs)
     if loop:
         loop.make_current()
         opts['io_loop'] = loop
-    else:
+    elif opts.get('num_procs', 1) == 1:
         opts['io_loop'] = IOLoop.current()
 
     if 'index' not in opts:
         opts['index'] = INDEX_HTML
+
+    if address is not None:
+        opts['address'] = address
 
     if websocket_origin:
         if not isinstance(websocket_origin, list):

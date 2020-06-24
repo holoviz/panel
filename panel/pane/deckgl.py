@@ -125,7 +125,7 @@ class DeckGL(PaneBase):
             mapbox_api_key = data.pop('mapbox_key', self.mapbox_api_key)
             deck_widget = data.pop('deck_widget', None)
             tooltip = deck_widget.tooltip
-            data = recurse_data(data)
+            data = {k: v for k, v in recurse_data(data).items() if v is not None}
 
         if layout:
             properties = {p: getattr(self, p) for p in Layoutable.param

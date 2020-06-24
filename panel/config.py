@@ -259,6 +259,8 @@ class panel_extension(_pyviz_extension):
                 'ace': 'panel.models.ace',
                 'ipywidgets': 'ipywidgets_bokeh.widget'}
 
+    _loaded_extensions = []
+
     def __call__(self, *args, **params):
         # Abort if IPython not found
         for arg in args:
@@ -283,19 +285,38 @@ class panel_extension(_pyviz_extension):
         if config.apply_signatures and sys.version_info.major >= 3:
             self._apply_signatures()
 
+        loaded = self._loaded
+
         if 'holoviews' in sys.modules:
             import holoviews as hv
             import holoviews.plotting.bokeh # noqa
-            if not getattr(hv.extension, '_loaded', False):
-                if hasattr(hv.Store, 'set_current_backend'):
-                    hv.Store.set_current_backend('bokeh')
-                else:
-                    hv.Store.current_backend = 'bokeh'
+            loaded = loaded or getattr(hv.extension, '_loaded', False)
+
+            if hv.Store.current_backend in hv.Store.renderers:
+                backend = hv.Store.current_backend
+            else:
+                backend = 'bokeh'
+            if hasattr(hv.Store, 'set_current_backend'):
+                hv.Store.set_current_backend(backend)
+            else:
+                hv.Store.current_backend = backend
 
         try:
             ip = params.pop('ip', None) or get_ipython() # noqa (get_ipython)
         except Exception:
             return
+
+        newly_loaded = [arg for arg in args if arg not in panel_extension._loaded_extensions]
+        if loaded and newly_loaded:
+            self.param.warning(
+                "A HoloViz extension was loaded previously. This means "
+                "the extension is already initialized and the following "
+                "Panel extensions could not be properly loaded: %s. "
+                "If you are loading custom extensions with pn.extension(...) "
+                "ensure that this is called before any other HoloViz "
+                "extension such as hvPlot or HoloViews." % newly_loaded)
+        else:
+            panel_extension._loaded_extensions += newly_loaded
 
         if hasattr(ip, 'kernel') and not self._loaded and not config._doc_build:
             # TODO: JLab extension and pyviz_comms should be changed

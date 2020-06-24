@@ -22,7 +22,15 @@ class IPyWidget(PaneBase):
         if isinstance(comm, JupyterComm) and not config.embed:
             IPyWidget = _BkIPyWidget
         else:
+            import ipykernel
             from ipywidgets_bokeh.widget import IPyWidget
+            from ipywidgets_bokeh.kernel import BokehKernel
+            if not isinstance(ipykernel.kernelbase.Kernel._instance, BokehKernel):
+                from ..io.ipywidget import PanelKernel
+                kernel = PanelKernel(key=root.ref['id'].encode('utf-8'), document=doc)
+                for w in self.object.widgets.values():
+                    w.comm.kernel = kernel
+                    w.comm.open()
 
         props = self._process_param_change(self._init_properties())
         model = IPyWidget(widget=self.object, **props)

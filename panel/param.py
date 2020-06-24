@@ -28,9 +28,10 @@ from .util import (
 )
 from .viewable import Layoutable
 from .widgets import (
-    Button, Checkbox, ColorPicker, DataFrame, DatetimeInput, DateRangeSlider,
-    FileSelector, FloatSlider, IntSlider, LiteralInput, MultiSelect,
-    RangeSlider, Select, Spinner, StaticText, TextInput, Toggle, Widget
+    Button, Checkbox, ColorPicker, DataFrame, DatePicker, DatetimeInput,
+    DateRangeSlider, FileSelector, FloatSlider, IntSlider, LiteralInput,
+    MultiSelect, RangeSlider, Select, Spinner, StaticText, TextInput,
+    Toggle, Widget
 )
 from .widgets.button import _ButtonBase
 
@@ -121,6 +122,7 @@ class Param(PaneBase):
     _mapping = {
         param.Action:            Button,
         param.Boolean:           Checkbox,
+        param.CalendarDate:      DatePicker,
         param.Color:             ColorPicker,
         param.Date:              DatetimeInput,
         param.DateRange:         DateRangeSlider,
@@ -330,7 +332,6 @@ class Param(PaneBase):
         else:
             widget_class = self.widgets[p_name]
 
-
         if not self.show_labels and not issubclass(widget_class, _ButtonBase):
             label = ''
         else:
@@ -358,7 +359,8 @@ class Param(PaneBase):
             if ('start' not in kw or 'end' not in kw):
                 # Do not change widget class if _mapping was overridden
                 if not widget_class_overridden:
-                    if isinstance(p_obj, param.Number):
+                    if (isinstance(p_obj, param.Number) and
+                        not isinstance(p_obj, (param.Date, param.CalendarDate))):
                         widget_class = Spinner
                         if isinstance(p_obj, param.Integer):
                             kw['step'] = 1
@@ -529,6 +531,23 @@ class Param(PaneBase):
                 if isinstance(cls._mapping[t], types.FunctionType):
                     return cls._mapping[t](pobj)
                 return cls._mapping[t]
+
+    def select(self, selector=None):
+        """
+        Iterates over the Viewable and any potential children in the
+        applying the Selector.
+
+        Arguments
+        ---------
+        selector: type or callable or None
+          The selector allows selecting a subset of Viewables by
+          declaring a type or callable function to filter by.
+
+        Returns
+        -------
+        viewables: list(Viewable)
+        """
+        return super().select(selector) + self.layout.select(selector)
 
     def get_root(self, doc=None, comm=None):
         """
