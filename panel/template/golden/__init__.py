@@ -5,9 +5,6 @@ import pathlib
 
 import param	
 
-from ...config import config	
-from ...layout import Row, Column, HSpacer, Spacer, ListLike, Card	
-from ...pane import HTML	
 from ..base import BasicTemplate	
 from ..theme import DarkTheme, DefaultTheme
 
@@ -20,11 +17,6 @@ class GoldenTemplate(BasicTemplate):
 
     _template = pathlib.Path(__file__).parent / 'golden.html'	
 
-    _modifiers = {	
-        Card: {	
-            'button_css_classes': ['golden-card-button']	
-        },	
-    }
 
 class GoldenDefaultTheme(DefaultTheme):
 
