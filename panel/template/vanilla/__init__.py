@@ -5,7 +5,6 @@ import pathlib
 
 import param
 
-from ...layout import Card
 from ..base import BasicTemplate
 from ..theme import DarkTheme, DefaultTheme
 
