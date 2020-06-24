@@ -1,6 +1,6 @@
-.bk-root .bk, .bk-root .bk:before, .bk-root .bk:after {
-  box-sizing: content-box; 
-}
+/* .bk-root .bk, .bk-root .bk:before, .bk-root .bk:after {
+  box-sizing: unset; 
+} */
 
 body {
     height: 100vh;
@@ -39,7 +39,6 @@ body {
     transform-origin: center left; /* Set the transformed position of sidebar to center left side. */
     width: 15vw;
     margin-top: 60px;
-    background-color: #222222;
   }
 
   #sidebar.active {
@@ -76,7 +75,7 @@ body {
   .sidenav {
     height: 100%;
     width: 0;
-    position: fixed;
+    position: absolute;
     z-index: 1;
     top: 0;
     left: 0;
@@ -114,4 +113,8 @@ body {
   @media screen and (max-height: 450px) {
     .sidenav {padding-top: 15px;}
     .sidenav a {font-size: 18px;}
+  }
+
+  .nav.flex-column {
+    padding-inline-start: 0px;
   }
