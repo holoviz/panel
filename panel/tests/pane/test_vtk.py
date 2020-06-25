@@ -32,13 +32,27 @@ pyvista_available = pytest.mark.skipif(pv is None, reason="requires pyvista")
 
 
 def make_render_window():
+
+    #cone actor
     cone = vtk.vtkConeSource()
     coneMapper = vtk.vtkPolyDataMapper()
     coneMapper.SetInputConnection(cone.GetOutputPort())
     coneActor = vtk.vtkActor()
     coneActor.SetMapper(coneMapper)
+
+    #text actor following camera
+    text = vtk.vtkVectorText()
+    text.SetText("Origin")
+    textMapper = vtk.vtkPolyDataMapper()
+    textMapper.SetInputConnection(text.GetOutputPort())
+    textActor = vtk.vtkFollower()
+    textActor.SetMapper(textMapper)
+
     ren = vtk.vtkRenderer()
     ren.AddActor(coneActor)
+    ren.AddActor(textActor)
+    textActor.SetCamera(ren.GetActiveCamera())
+
     renWin = vtk.vtkRenderWindow()
     renWin.AddRenderer(ren)
     return renWin
@@ -52,7 +66,7 @@ def pyvista_render_window():
     globe = examples.load_globe() #test texture
     head = examples.download_head() #test volume
     uniform = examples.load_uniform() #test structured grid
-    
+
     scalars=sphere.points[:, 2]
     sphere._add_point_array(scalars, 'test', set_active=True) #allow to test scalars
 
@@ -60,7 +74,7 @@ def pyvista_render_window():
 
     #test datasetmapper
     threshed = uniform.threshold_percent([0.15, 0.50], invert=True)
-    bodies = threshed.split_bodies() 
+    bodies = threshed.split_bodies()
     mapper = vtk.vtkCompositePolyDataMapper2()
     mapper.SetInputDataObject(0, bodies)
     multiblock = vtk.vtkActor()
@@ -126,7 +140,7 @@ def test_vtkjs_pane(document, comm, tmp_path):
     assert isinstance(model, VTKJSPlot)
     assert pane_from_url._models[model.ref['id']][0] is model
     assert isinstance(model.data, string_types)
-    
+
     with BytesIO(base64.b64decode(model.data.encode())) as in_memory:
         with ZipFile(in_memory) as zf:
             filenames = zf.namelist()
@@ -158,10 +172,10 @@ def test_vtk_pane_from_renwin(document, comm):
 
     # Check array release when actor are removed from scene
     ctx = pane._contexts[model.id]
-    assert len(ctx.dataArrayCache.keys()) == 3
+    assert len(ctx.dataArrayCache.keys()) == 5
     pane.remove_all_actors()
     # Default : 20s before removing arrays
-    assert len(ctx.dataArrayCache.keys()) == 3
+    assert len(ctx.dataArrayCache.keys()) == 5
     # Force 0s for removing arrays
     ctx.checkForArraysToRelease(0)
     assert len(ctx.dataArrayCache.keys()) == 0
@@ -181,14 +195,14 @@ def test_vtk_serialize_on_instantiation(document, comm, tmp_path):
     assert isinstance(model, VTKSynchronizedPlot)
 
     pane.param.trigger('object')
-    
+
     # test export to file
     tmpfile = os.path.join(*tmp_path.joinpath('scene').parts)
     exported_file = pane.export_scene(filename=tmpfile)
     assert exported_file.endswith('.synch')
 
     # test import from file
-    imported_pane = VTK.import_scene(filename=exported_file, 
+    imported_pane = VTK.import_scene(filename=exported_file,
                                      synchronizable=False)
     assert isinstance(imported_pane, VTKRenderWindow)
 
@@ -197,7 +211,7 @@ def test_vtk_serialize_on_instantiation(document, comm, tmp_path):
 def test_vtk_sync_helpers(document, comm):
     renWin1 = make_render_window()
     renWin2 = make_render_window()
-    
+
     # Create 2 panes to compare each other
     pane1 = VTK(renWin1)
     pane2 = VTK(renWin2)
@@ -213,23 +227,23 @@ def test_vtk_sync_helpers(document, comm):
     assert isinstance(model2, VTKSynchronizedPlot)
 
     # Actors getter
-    assert len(pane1.actors) == 1
-    assert len(pane2.actors) == 1
+    assert len(pane1.actors) == 2
+    assert len(pane2.actors) == 2
     assert pane1.actors[0] is not pane2.actors[0]
 
     # Actors add
     pane1.add_actors(pane2.actors)
-    assert len(pane1.actors) == 2
-    assert pane1.actors[1] is pane2.actors[0]
+    assert len(pane1.actors) == 4
+    assert pane1.actors[3] is pane2.actors[1]
 
     # Actors remove
     save_actor = pane1.actors[0]
     pane1.remove_actors([pane1.actors[0]])
-    assert pane1.actors[0] is pane2.actors[0]
+    assert pane1.actors[2] is pane2.actors[1]
 
     # Actors remove all
     pane1.add_actors([save_actor])
-    assert len(pane1.actors) == 2
+    assert len(pane1.actors) == 4
     pane1.remove_all_actors()
     assert len(pane1.actors) == 0
 
@@ -263,7 +277,7 @@ def test_vtk_pane_more_complex(document, comm, tmp_path):
     assert pane._models[model.ref['id']][0] is model
 
     colorbars_infered = pane.construct_colorbars().object
-    
+
     assert len(colorbars_infered.below) == 2 # infer only actor color bars
     assert all(isinstance(cb, ColorBar) for cb in colorbars_infered.below)
 
@@ -293,7 +307,7 @@ def test_vtk_pane_more_complex(document, comm, tmp_path):
     # (TODO test if the scene imported is identical to the one exported)
     imported_scene = VTK.import_scene(filename=exported_file)
     assert isinstance(imported_scene, VTKRenderWindowSynchronized)
-    
+
     # Cleanup
     pane._cleanup(model)
     assert pane._contexts == {}
