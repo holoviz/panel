@@ -18,6 +18,8 @@ if (vtk) {
         return null
       }
       const rc = model.view.getRenderable().getRenderersByReference()
+      rc.sort((a: any, b: any) => a.getLayer() - b.getLayer())
+
       let interactiveren = null
       let viewportren = null
       let currentRenderer = null
