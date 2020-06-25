@@ -16,7 +16,7 @@
 	  {% for doc in docs %}	
       {% for root in doc.roots %}	
       {% if "header" in root.tags %}	
-      {{ embed(root) | indent(8) }}	
+      {type: 'component', componentName: 'view', componentState: {model: '{{ embed(root) }}', title: "{{ 'Sidebar' }}"}},	
       {% endif %}	
       {% endfor %}	
       {% endfor %}	
@@ -33,7 +33,7 @@
     content: [
         {
             type: 'row', content: [
-                {type: 'component', componentName: 'view', componentState: {title: "Sidebar", model: '{% for doc in docs %}{% for root in doc.roots %}{% if "nav" in root.tags %} {{ embed(root) }} {% endif %}{% endfor %}{% endfor %}'}},
+                {type: 'component', componentName: 'view', componentState: {width: 300, title: "Controls", model: '{% for doc in docs %}{% for root in doc.roots %}{% if "nav" in root.tags %} {{ embed(root) }} {% endif %}{% endfor %}{% endfor %}'}},       
                 {
                     type: 'stack', content: [	
                         {% for doc in docs %}	
@@ -46,17 +46,17 @@
                     ]
                 }
             ]
-        }        
+        }
     ]	
   };	
 
   var myLayout = new GoldenLayout(config, $('#main-content'));	
   myLayout.registerComponent('view', function( container, componentState ){	
-    const {width, css_classes} = componentState	
+    const {width, css_classes} = componentState
     if(width)	
       container.on('open', () => container.setSize(width, container.height))	
     if (css_classes)	
-      css_classes.map((item) => container.getElement().addClass(item))	
+      css_classes.map((item) => container.getElement().addClass(item))
     container.setTitle(componentState.title)
     container.getElement().html(componentState.model);
     container.on('resize', () => window.dispatchEvent(new Event('resize')))	

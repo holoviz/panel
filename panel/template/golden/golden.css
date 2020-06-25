@@ -50,15 +50,19 @@ p.bk.golden-card-button {
     display: none;	
 }	
 
-div.lm_content {	
-    padding: 20px;	
-}	
-
 .bk.card {	
-    background-color: white;	
+    background-color: white;
 }	
 
 .bk.card-title {	
     font-size: 1.5em;	
     font-weight: bold;	
+}
+
+.bk.card-button {
+    display: none;
+}
+
+.bk-canvas {
+    padding-right: 2px !important;
 }

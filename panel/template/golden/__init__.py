@@ -17,7 +17,6 @@ class GoldenTemplate(BasicTemplate):
 
     _template = pathlib.Path(__file__).parent / 'golden.html'	
 
-
 class GoldenDefaultTheme(DefaultTheme):
 
     css = param.Filename(default=pathlib.Path(__file__).parent / 'default.css')
