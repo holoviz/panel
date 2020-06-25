@@ -10,7 +10,7 @@ table.panel-df {
     width: 100%;
 }
 
-.panel-df tr, th, td {
+.panel-df tr, .panel-df th, .panel-df td {
     text-align: right;
     vertical-align: middle;
     padding: 0.5em 0.5em !important;

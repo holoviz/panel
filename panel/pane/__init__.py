@@ -8,6 +8,7 @@ images, equations etc.
 from __future__ import absolute_import, division, unicode_literals
 
 from .ace import Ace # noqa
+from .alert import Alert # noqa
 from .base import PaneBase, Pane, panel # noqa
 from .equation import LaTeX # noqa
 from .deckgl import DeckGL # noqa
@@ -20,4 +21,4 @@ from .plotly import Plotly # noqa
 from .plot import Bokeh, Matplotlib, RGGPlot, YT # noqa
 from .streamz import Streamz # noqa
 from .vega import Vega # noqa
-from .vtk import VTK, VTKVolume # noqa
+from .vtk import VTKVolume, VTK # noqa

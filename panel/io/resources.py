@@ -31,8 +31,15 @@ def css_raw(self):
 def js_files(self):
     from ..config import config
     files = super(Resources, self).js_files
-    return files + list(config.js_files.values())
+    js_files = files + list(config.js_files.values())
 
+    # Load requirejs last to avoid interfering with other libraries
+    require_index = [i for i, jsf in enumerate(js_files) if 'require' in jsf]
+    if require_index:
+        requirejs = js_files.pop(require_index[0])
+        js_files.append(requirejs)
+    return js_files
+                    
 def css_files(self):
     from ..config import config
     files = super(Resources, self).css_files

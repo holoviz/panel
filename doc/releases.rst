@@ -1,6 +1,40 @@
 Releases
 ========
 
+Version 0.9.7
+-------------
+
+Date: 2020-06-23
+
+The 0.9.7 release unfortunately caused a major regression in layout performance due to the way optimizations in Bokeh and Panel interacted. This release fixes this regression.
+
+- Fix regression in layout performance (`#1453 <https://github.com/holoviz/panel/pull/1453>`_)
+
+Version 0.9.6
+-------------
+
+Date: 2020-06-21
+
+This is a minor bug fix release primarily for compatibility with Bokeh versions >=2.1.0 along with a variety of important bug fixes. Many thanks for the many people who contributed to this release including @mattpap, @kebowen730, @xavArtley, @maximlt, @jbednar, @mycarta, @basnijholt, @jbednar and @philippjfr.
+
+- Compatibility with Bokeh 2.1 (`#1424 <https://github.com/holoviz/panel/pull/1424>`_)
+- Fixes for `FileDownload` widget handling of callbacks (`#1246 <https://github.com/holoviz/panel/pull/1246>`_, `#1306 <https://github.com/holoviz/panel/pull/1306>`_)
+- Improvements and fixes for Param pane widget mapping (`#1301 <https://github.com/holoviz/panel/pull/1301>`_, `#1342 <https://github.com/holoviz/panel/pull/1342>`_, `#1378 <https://github.com/holoviz/panel/pull/1378>`_)
+- Fixed bugs handling of closed Tabs (`#1337 <https://github.com/holoviz/panel/pull/1337>`_)
+- Fix bug in layout `clone` method (`#1349 <https://github.com/holoviz/panel/pull/1349>`_)
+- Improvements for `Player` widget (`#1353 <https://github.com/holoviz/panel/pull/1353`_, `#1360 <https://github.com/holoviz/panel/pull/1360>`_)
+- Fix for `jslink` on Bokeh models (`#1358 <https://github.com/holoviz/panel/pull/1358>`_)
+- Fix for rendering geometries in `Vega` pane (`#1359 <https://github.com/holoviz/panel/pull/1359>`_)
+- Fix issue with `HoloViews` pane overriding selected renderer (`#1429 <https://github.com/holoviz/panel/pull/1429>`_)
+- Fix issues with `JSON` pane depth parameter and rerendering (`#1431 <https://github.com/holoviz/panel/pull/1431>`_)
+- Fixed `param.Date` and `param.CalenderDate` parameter mappings (`#1433 <https://github.com/holoviz/panel/pull/1433>`_, `#1434 <https://github.com/holoviz/panel/pull/1434>`_)
+- Fixed issue with enabling `num_procs` on `pn.serve` (`#1436 <https://github.com/holoviz/panel/pull/1436>`_)
+- Warn if a particular extension could not be loaded (`#1437 <https://github.com/holoviz/panel/pull/1437>`_)
+- Fix issues with garbage collection and potential memory leaks (`#1407 <https://github.com/holoviz/panel/pull/1407>`_)
+- Support recent versions of pydeck in `DeckGL` pane (`#1443 <https://github.com/holoviz/panel/pull/1443>`_)
+- Ensure JS callbacks on widget created from Parameters are initialized (`#1439 <https://github.com/holoviz/panel/pull/1439>`_)
+
+
 Version 0.9.5
 -------------
 
@@ -15,7 +49,7 @@ Enhancements:
 Bug fixes:
 
 - Fixed formatting of datetimes in `DataFrame` widget (`#1221 <https://github.com/holoviz/panel/pull/1221>`_)
-- Add `panel/models/vtk/` subpackage to MANIFEST to ensure it is shipped with packages 
+- Add `panel/models/vtk/` subpackage to MANIFEST to ensure it is shipped with packages
 
 Documentation:
 
@@ -34,7 +68,7 @@ This is a minor release fixing a number of regressions and compatibility issues 
 Enhancements:
 
 - Switch to using CommManager in notebook hugely simplifying comms in notebooks and reducing the amount of inlined Javascript (`#1171 <https://github.com/holoviz/panel/pull/1171>`_)
-- Add ability to serve Flask apps directly using pn.serve (`#1215 <https://github.com/holoviz/panel/pull/1215>`_) 
+- Add ability to serve Flask apps directly using pn.serve (`#1215 <https://github.com/holoviz/panel/pull/1215>`_)
 
 Bug fixes:
 
@@ -137,7 +171,7 @@ This release focused primarily on solidifying existing functionality, improving 
 
 Major Enhancements:
 
-- Added new `DeckGL` pane (`#1019 <https://github.com/holoviz/panel/issues/1019>`_, `#1027 <https://github.com/holoviz/panel/issues/1027>`_) [@MarcSkovMadsen & @philippjfr] 
+- Added new `DeckGL` pane (`#1019 <https://github.com/holoviz/panel/issues/1019>`_, `#1027 <https://github.com/holoviz/panel/issues/1027>`_) [@MarcSkovMadsen & @philippjfr]
 - Major improvements to support for JS linking (`#1007 <https://github.com/holoviz/panel/issues/1007>`_) [@philippjfr]
 - Huge performance improvements when nesting a lot of components deeply (`#867 <https://github.com/holoviz/panel/issues/867>`_, `#888 <https://github.com/holoviz/panel/issues/888>`_, `#895 <https://github.com/holoviz/panel/issues/895>`_, `#988 <https://github.com/holoviz/panel/issues/988>`_) [@philippjfr]
 - Add support for displaying callback errors and print output in the notebook simplifying debugging (`#977 <https://github.com/holoviz/panel/issues/977>`_) [@philippjfr]
@@ -291,8 +325,8 @@ Enhancements:
 
 * Added support for embedding Player widget (`#584 <https://github.com/holoviz/panel/issues/584>`_)
 * Add support for linking HoloViews plot axes across panels (`#586 <https://github.com/holoviz/panel/issues/586>`_)
-* Allow saving to BytesIO buffer (`#596 <https://github.com/holoviz/panel/issues/596>`_) 
-* Allow ``PeriodicCallback.period`` to be updated dynamically (`#609 <https://github.com/holoviz/panel/issues/609>`_) 
+* Allow saving to BytesIO buffer (`#596 <https://github.com/holoviz/panel/issues/596>`_)
+* Allow ``PeriodicCallback.period`` to be updated dynamically (`#609 <https://github.com/holoviz/panel/issues/609>`_)
 
 Bug fixes:
 
