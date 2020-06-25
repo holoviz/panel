@@ -12,7 +12,7 @@ METHODS_RENAME = {
     "SetUseGradientOpacity": None,
     "SetRGBTransferFunction": "SetColor",
 }
-WRAP_ID_RE = re.compile("instance:\${([^}]+)}")
+WRAP_ID_RE = re.compile(r"instance:\${([^}]+)}")
 ARRAY_TYPES = {
     'Int8Array': vtk.vtkCharArray,
     'Uint8Array': vtk.vtkUnsignedCharArray,
@@ -170,6 +170,7 @@ def make_type_handlers():
         'vtkGlyph3DMapper': generic_builder,
         'vtkProperty': generic_builder,
         'vtkActor': generic_builder,
+        'vtkFollower': generic_builder,
         'vtkColorTransferFunction': color_fun_builder,
         'vtkPiecewiseFunction': piecewise_fun_builder,
         'vtkTexture': generic_builder,
