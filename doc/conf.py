@@ -74,6 +74,7 @@ nbsite_gallery_conf = {
                 'panes',
                 'layouts',
                 'indicators',
+                'templates'
                 'widgets'
             ]
         }
