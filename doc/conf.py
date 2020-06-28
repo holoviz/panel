@@ -75,7 +75,8 @@ nbsite_gallery_conf = {
                 'layouts',
                 'templates'
                 'indicators',
-                'widgets'
+                'templates'
+                'widgets',
             ]
         }
     },
