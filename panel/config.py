@@ -5,6 +5,7 @@ components.
 """
 from __future__ import absolute_import, division, unicode_literals
 
+import ast
 import glob
 import inspect
 import os
@@ -105,8 +106,8 @@ class _config(param.Parameterized):
     _embed_save_path = param.String(default='./', doc="""
         Where to save json files for embedded state.""")
 
-    _oauth_provider = param.ObjectSelector(default=None, allow_None=True,
-                                           objects=['github'], doc="""
+    _oauth_provider = param.ObjectSelector(
+        default=None, allow_None=True, objects=[], doc="""
         Select between a list of authentification providers.""")
 
     _oauth_key = param.String(default=None, doc="""
@@ -114,6 +115,9 @@ class _config(param.Parameterized):
 
     _oauth_secret = param.String(default=None, doc="""
         A client secret to provide to the OAuth provider.""")
+
+    _oauth_extra_params = param.Dict(default={}, doc="""
+        Additional parameters required for OAuth provider.""")
 
     _inline = param.Boolean(default=True, allow_None=True, doc="""
         Whether to inline JS and CSS resources. If disabled, resources
@@ -277,6 +281,22 @@ class _config(param.Parameterized):
     def oauth_secret(self, value):
         validate_config(self, '_oauth_secret', value)
         self._oauth_secret_ = value
+
+    @property
+    def oauth_extra_params(self):
+        if self._oauth_extra_params_ is not None:
+            return self._oauth_extra_params_
+        else:
+            if 'PANEL_OAUTH_EXTRA_PARAMS' in os.environ:
+                return ast.literal_eval(os.environ['PANEL_OAUTH_EXTRA_PARAMS'])
+            else:
+                return _config._oauth_extra_params
+
+    @oauth_extra_params.setter
+    def oauth_extra_params(self, value):
+        validate_config(self, '_oauth_extra_params', value)
+        self._oauth_extra_params_ = value
+
         
 
 if hasattr(_config.param, 'objects'):

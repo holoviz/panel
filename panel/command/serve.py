@@ -3,9 +3,14 @@ Subclasses the bokeh serve commandline handler to extend it in various
 ways.
 """
 
+import ast
+
 from bokeh.command.subcommands.serve import Serve as _BkServe
 
+from ..auth import OAuthProvider
+from ..config import config
 from ..io.server import INDEX_HTML, get_static_routes
+
 
 def parse_var(s):
     """
@@ -41,8 +46,28 @@ class Serve(_BkServe):
             help=("Static directories to serve specified as key=value "
                   "pairs mapping from URL route to static file directory.")
         )),
+        ('--oauth-provider', dict(
+            action = 'store',
+            type   = str,
+            help   = "The OAuth2 provider to use."
+        )),
+        ('--oauth-key', dict(
+            action  = 'store',
+            type    = str,
+            help    = "The OAuth2 key to use",
+        )),
+        ('--oauth-secret', dict(
+            action  = 'store',
+            type    = str,
+            help    = "The OAuth2 secret to use",
+        )),
+        ('--oauth-extra-params', dict(
+            action  = 'store',
+            type    = str,
+            help    = "Additional parameters to use.",
+        ))
     )
-    
+
     def customize_kwargs(self, args, server_kwargs):
         '''Allows subclasses to customize ``server_kwargs``.
 
@@ -57,5 +82,13 @@ class Serve(_BkServe):
 
         if args.static_dirs:
             patterns += get_static_routes(parse_vars(args.static_dirs))
+
+        if args.oauth_provider:
+            config.oauth_provider = args.oauth_provider
+            config.oauth_key = args.oauth_key
+            config.oauth_secret = args.oauth_secret
+            if args.oauth_extra_params:
+                config.oauth_extra_params = ast.literal_eval(args.oauth_extra_params)
+            kwargs['auth_provider'] = OAuthProvider()
 
         return kwargs
