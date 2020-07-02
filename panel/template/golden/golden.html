@@ -61,32 +61,31 @@
     ]	
   };
 
-  var containers = []
   var myLayout = new GoldenLayout(config, $('#main-content'));
-  var resize_dispatcher = () => window.dispatchEvent(new Event("resize"))
-  myLayout.registerComponent('view', function( container, componentState ){	
+  var resizing = false;
+  var resize_dispatcher = () => {
+    resizing = true;
+    window.dispatchEvent(new Event("resize"))
+    resizing = false;
+  }
+  myLayout.registerComponent('view', function( container, componentState ) {
     const {width, css_classes} = componentState
-    if (width)
-      container.on('open', () => container.setSize(width, container.height))	
-    if (css_classes)	
+    if (width) {
+      container.on('open', () => container.setSize(width, container.height))
+    }
+    if (css_classes) {
       css_classes.map((item) => container.getElement().addClass(item))
+    }
     container.setTitle(componentState.title)
     container.getElement().html(componentState.model);
     container.on("resize", resize_dispatcher)
-    containers.push(container)
-    container.on("maximised", () => {
-      containers.forEach((container) =>
-        container.off("resize", resize_dispatcher)
-      )
-    })
-    container.on("minimised", () => {
-      resize_dispatcher()
-      containers.forEach((container) =>
-        container.on("resize", resize_dispatcher)
-      )
-    })
   })
-  myLayout.init()	
+  myLayout.init()
+  window.addEventListener('resize', (event) => {
+    if (!resizing) {
+      myLayout.updateSize(window.innerWidth, window.innerHeight)
+    }
+  });
 </script>
 
 {% endblock %}
