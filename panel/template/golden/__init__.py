@@ -1,21 +1,36 @@
-"""	
-GoldenTemplate based on the golden-layout library.	
-"""	
-import pathlib	
+"""
+GoldenTemplate based on the golden-layout library.
+"""
+import pathlib
 
-import param	
+import param
 
-from ..base import BasicTemplate	
+from ...config import config
+from ...layout import Row, Column, HSpacer, Spacer, ListLike, Card
+from ...pane import HTML
+from ..base import BasicTemplate
 from ..theme import DarkTheme, DefaultTheme
 
 
-class GoldenTemplate(BasicTemplate):	
-    """	
-    GoldenTemplate is built on top of golden-layout library.	
-    """	
-    _css = pathlib.Path(__file__).parent / 'golden.css'	
+class GoldenTemplate(BasicTemplate):
+    """
+    GoldenTemplate is built on top of golden-layout library.
+    """
+    _css = pathlib.Path(__file__).parent / 'golden.css'
 
-    _template = pathlib.Path(__file__).parent / 'golden.html'	
+    _template = pathlib.Path(__file__).parent / 'golden.html'
+
+    _modifiers = {
+        Card: {
+            'children': {'margin': (0, 10)},
+            'button_css_classes': ['golden-card-button']
+        },
+    }
+
+    def _apply_root(self, name, model, tags):
+        if 'main' in tags:
+            model.margin = (10, 15, 10, 10)
+
 
 class GoldenDefaultTheme(DefaultTheme):
 
