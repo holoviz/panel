@@ -251,7 +251,8 @@ class _config(param.Parameterized):
         if self._oauth_provider_ is not None:
             return self._oauth_provider_
         else:
-            return os.environ.get('PANEL_OAUTH_PROVIDER', _config._oauth_provider).lower()
+            provider = os.environ.get('PANEL_OAUTH_PROVIDER', _config._oauth_provider)
+            return provider.lower() if provider else None
 
     @oauth_provider.setter
     def oauth_provider(self, value):
