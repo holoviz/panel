@@ -22,6 +22,7 @@ class MaterialTemplate(BasicTemplate):
 
     _modifiers = {
         Card: {
+            'children': {'margin': (0, 10)},
             'title_css_classes': ['mdc-card-title'],
             'css_classes': ['mdc-card'],
             'header_css_classes': ['mdc-card__primary-action'],

@@ -1,12 +1,6 @@
 {% extends base %}
 
 <!-- goes in body -->
-{% block postamble %}
-<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
-
-{% endblock %}
-
-<!-- goes in body -->
 {% block contents %}
 <div class="" id="container">
   <nav class="" style="{% if header_background %}background-color: {{ header_background }} !important;{% endif %}{% if header_color %}color: {{ header_color }}{% endif %}" id="header">
@@ -55,13 +49,14 @@
     document.getElementById("sidebar").style.width = "15vw";
     document.getElementById("main").style.marginLeft = "15vw";
     document.getElementById("sidebar-button").onclick=closeNav;
+    window.dispatchEvent(new Event("resize"))
   }
 
   function closeNav() {
     document.getElementById("sidebar").style.width = "0";
     document.getElementById("main").style.marginLeft = "0";
     document.getElementById("sidebar-button").onclick=openNav;
+    window.dispatchEvent(new Event("resize"))
   }
-
 </script>
 {% endblock %}

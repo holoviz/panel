@@ -1,0 +1,27 @@
+@import url("https://golden-layout.com/assets/css/goldenlayout-light-theme.css");
+
+#header {
+  background-color: #00aa41;
+}
+
+.bk.bk-input-group {
+  color: black;
+}
+
+.lm_content {
+  background-color: #ffffff;
+}
+
+.lm_header .lm_tab {
+  background-color: #efefef;
+  padding-bottom: 4px !important;
+}
+
+.lm_header .lm_tab.lm_active {
+  background-color: #ffffff;
+  padding-bottom: 5px !important;
+}
+
+.lm_header {
+  background-color: white;
+}
