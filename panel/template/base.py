@@ -89,8 +89,22 @@ class BaseTemplate(param.Parameterized, ServableMixin):
             return
         model, _ = viewable._models[mref]
         modifiers = self._modifiers.get(type(viewable), {})
-        viewable.param.set_param(**{k: v for k, v in modifiers.items()
-                                    if getattr(viewable, k) == viewable.param[k].default})
+        child_modifiers = modifiers.get('children', {})
+        if child_modifiers:
+            for child in viewable:
+                child_params = {
+                    k: v for k, v in child_modifiers.items()
+                    if getattr(child, k) == child.param[k].default
+                }
+                child.param.set_param(**child_params)
+        params = {
+            k: v for k, v in modifiers.items() if k != 'children' and
+            getattr(viewable, k) == viewable.param[k].default
+        }
+        viewable.param.set_param(**params)
+
+    def _apply_root(self, name, viewable, tags):
+        pass
 
     def _init_doc(self, doc=None, comm=None, title=None, notebook=False, location=True):
         doc = doc or _curdoc()
@@ -114,6 +128,7 @@ class BaseTemplate(param.Parameterized, ServableMixin):
             obj._documents[doc] = model
             model.name = name
             model.tags = tags
+            self._apply_root(name, model, tags)
             for o in obj.select():
                 self._apply_modifiers(o, mref)
             add_to_doc(model, doc, hold=bool(comm))
@@ -350,13 +365,16 @@ class BasicTemplate(BaseTemplate):
             ref = str(id(obj))
             if obj not in event.new and ref in self._render_items:
                 del self._render_items[ref]
+        labels = {}
         for obj in event.new:
             ref = str(id(obj))
+            labels[ref] = 'Content' if obj.name.startswith(type(obj).__name__) else obj.name
             if ref not in self._render_items:
                 self._render_items[ref] = (obj, [tag])
         tags = [tags for _, tags in self._render_items.values()]
         self._render_variables['nav'] = any('nav' in ts for ts in tags)
         self._render_variables['header'] = any('header' in ts for ts in tags)
+        self._render_variables['root_labels'] = labels
 
 
 
