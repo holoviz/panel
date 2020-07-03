@@ -365,13 +365,16 @@ class BasicTemplate(BaseTemplate):
             ref = str(id(obj))
             if obj not in event.new and ref in self._render_items:
                 del self._render_items[ref]
+        labels = {}
         for obj in event.new:
             ref = str(id(obj))
+            labels[ref] = 'Content' if obj.name.startswith(type(obj).__name__) else obj.name
             if ref not in self._render_items:
                 self._render_items[ref] = (obj, [tag])
         tags = [tags for _, tags in self._render_items.values()]
         self._render_variables['nav'] = any('nav' in ts for ts in tags)
         self._render_variables['header'] = any('header' in ts for ts in tags)
+        self._render_variables['root_labels'] = labels
 
 
 

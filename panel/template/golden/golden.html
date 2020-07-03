@@ -50,7 +50,14 @@
               {% for doc in docs %}	
               {% for root in doc.roots %}	
               {% if "main" in root.tags%}	
-                {type: 'component', componentName: 'view', componentState: {model: '{{ embed(root) }}', title: "{{ 'Content' }}" }},	
+              {
+                type: 'component',
+                componentName: 'view',
+                componentState: {
+                  model: '{{ embed(root) }}',
+                  title: "{{ root_labels[root.name] }}"
+                },
+              }
               {% endif %}	
               {% endfor %}	
               {% endfor %}	
@@ -58,7 +65,7 @@
           }
         ]
       }     
-    ]	
+    ]
   };
 
   var myLayout = new GoldenLayout(config, $('#main-content'));
