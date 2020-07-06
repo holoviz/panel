@@ -13,6 +13,7 @@ import tornado
 
 from bokeh.server.auth_provider import AuthProvider
 from tornado.auth import OAuth2Mixin
+from tornado.httputil import url_concat
 
 from .config import config
 from .io import state
@@ -35,6 +36,15 @@ def decode_response_body(response):
 
 
 class OAuthLoginHandler(tornado.web.RequestHandler):
+
+    _API_BASE_HEADERS = {
+        'Accept': 'application/json',
+        'User-Agent': 'Tornado OAuth'
+    }
+
+    _SCOPE = None
+
+    _EXTRA_TOKEN_PARAMS = {}
 
     x_site_token = 'application'
 
@@ -70,9 +80,13 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
             'client_id':    client_id,
             'client_secret': client_secret,
             'extra_params': {
-                'state': state
-            }
+                'state': state,
+            },
         }
+        if self._SCOPE is not None:
+            params['scope'] = self._SCOPE
+        if 'scope' in config.oauth_extra_params:
+            params['scope'] = config.oauth_extra_params['scope']
         self.authorize_redirect(**params)
 
     async def _fetch_access_token(self, code, success_callback, error_callback,
@@ -108,7 +122,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
             'redirect_url':  redirect_uri,
             'client_id':     client_id,
             'client_secret': client_secret,
-            **self._EXTRA_AUTHORIZE_PARAMS
+            **self._EXTRA_TOKEN_PARAMS
         }
 
         http = self.get_auth_http_client()
@@ -303,11 +317,6 @@ class GithubLoginHandler(OAuthLoginHandler, OAuth2Mixin):
     secret.
     """
 
-    _API_BASE_HEADERS = {
-        'Accept': 'application/json',
-        'User-Agent': 'Tornado OAuth'
-    }
-
     _EXTRA_AUTHORIZE_PARAMS = {}
 
     _OAUTH_ACCESS_TOKEN_URL = 'https://github.com/login/oauth/access_token'
@@ -327,6 +336,231 @@ class GithubLoginHandler(OAuthLoginHandler, OAuth2Mixin):
     def _on_error(self, user):
         self.clear_all_cookies()
         raise tornado.web.HTTPError(500, 'Azure AD authentication failed')
+
+
+
+class GitLabLoginHandler(OAuthLoginHandler, OAuth2Mixin):
+
+    _API_BASE_HEADERS = {
+        'Accept': 'application/json',
+    }
+
+    _EXTRA_TOKEN_PARAMS = {
+        'grant_type':    'authorization_code'
+    }
+
+    _OAUTH_ACCESS_TOKEN_URL_ = 'https://{0}/oauth/token'
+    _OAUTH_AUTHORIZE_URL_ = 'https://{0}/oauth/authorize'
+    _OAUTH_USER_URL_ = 'https://{0}/api/v4/user'
+
+    @property
+    def _OAUTH_ACCESS_TOKEN_URL(self):
+        url = config.oauth_extra_params.get('url', 'gitlab.com')
+        return self._OAUTH_ACCESS_TOKEN_URL_.format(url)
+
+    @property
+    def _OAUTH_AUTHORIZE_URL(self):
+        url = config.oauth_extra_params.get('url', 'gitlab.com')
+        return self._OAUTH_AUTHORIZE_URL_.format(url)
+
+    @property
+    def _OAUTH_USER_URL(self):
+        url = config.oauth_extra_params.get('url', 'gitlab.com')
+        return self._OAUTH_USER_URL_.format(url)
+
+    async def _fetch_access_token(self, code, success_callback, error_callback,
+                                  redirect_uri, client_id, client_secret):
+        """
+        Fetches the access token.
+
+        Arguments
+        ----------
+        code:
+          The response code from the server
+        success_callback:
+          The  callback used when fetching the access token succeeds
+        error_callback:
+          The callback used when fetching the access token fails
+        redirect_uri:
+          The redirect URI
+        client_id:
+          The client ID
+        client_secret:
+          The client secret
+        state:
+          The unguessable random string to protect against cross-site
+          request forgery attacks
+        """
+        if not (client_secret and success_callback and error_callback):
+            raise ValueError(
+                'The client secret or any callbacks are undefined.'
+            )
+
+        http = self.get_auth_http_client()
+
+        params = {
+            'code':          code,
+            'redirect_uri':  redirect_uri,
+            'client_id':     client_id,
+            'client_secret': client_secret,
+            **self._EXTRA_TOKEN_PARAMS
+        }
+
+        url = url_concat(self._OAUTH_ACCESS_TOKEN_URL, params)
+
+        # Request the access token.
+        response = await http.fetch(
+            url,
+            method='POST',
+            body='',
+            headers=self._API_BASE_HEADERS
+        )
+
+        body = decode_response_body(response)
+
+        if not body:
+            return
+
+        if 'access_token' not in body:
+            data = {
+                'code': response.code,
+                'body': body
+            }
+            if response.error:
+                data['error'] = response.error
+            error_callback(**data)
+
+
+        headers = dict(self._API_BASE_HEADERS, **{
+            "Authorization": "Bearer {}".format(body['access_token']),
+        })
+        user_response = await http.fetch(
+            self._OAUTH_USER_URL,
+            method="GET",
+            headers=headers
+        )
+
+        user = decode_response_body(user_response)
+
+        if not user:
+            return
+        success_callback(user, body['access_token'])
+
+    def _on_auth(self, user_info, access_token):
+        self.set_secure_cookie('user', user_info['username'])
+        id_token = base64url_encode(json.dumps(user_info))
+        if state.encryption:
+            access_token = state.encryption.encrypt(access_token.encode('utf-8'))
+            id_token = state.encryption.encrypt(id_token.encode('utf-8'))
+        self.set_secure_cookie('access_token', access_token)
+        self.set_secure_cookie('id_token', id_token)
+        self.redirect('/')
+
+    def _on_error(self, user):
+        self.clear_all_cookies()
+        raise tornado.web.HTTPError(500, 'GitLab authentication failed')
+
+
+
+class GoogleLoginHandler(OAuthLoginHandler, OAuth2Mixin):
+
+    _EXTRA_TOKEN_PARAMS = {
+        'grant_type':    'authorization_code'
+    }
+
+    _SCOPE = ['profile', 'email']
+
+    _API_BASE_HEADERS = {
+        "Content-Type": "application/x-www-form-urlencoded; charset=utf-8"
+    }
+
+    _OAUTH_AUTHORIZE_URL = "https://accounts.google.com/o/oauth2/v2/auth"
+    _OAUTH_ACCESS_TOKEN_URL = "https://accounts.google.com/o/oauth2/token"
+    _OAUTH_USERINFO_URL = "https://www.googleapis.com/oauth2/v1/userinfo"
+
+    async def _fetch_access_token(self, code, success_callback, error_callback,
+                                  redirect_uri, client_id, client_secret):
+        """
+        Fetches the access token.
+
+        Arguments
+        ----------
+        code:
+          The response code from the server
+        success_callback:
+          The  callback used when fetching the access token succeeds
+        error_callback:
+          The callback used when fetching the access token fails
+        redirect_uri:
+          The redirect URI
+        client_id:
+          The client ID
+        client_secret:
+          The client secret
+        state:
+          The unguessable random string to protect against cross-site
+          request forgery attacks
+        """
+        if not (client_secret and success_callback and error_callback):
+            raise ValueError(
+                'The client secret or any callbacks are undefined.'
+            )
+
+        http = self.get_auth_http_client()
+
+        params = {
+            'code':          code,
+            'redirect_uri':  redirect_uri,
+            'client_id':     client_id,
+            'client_secret': client_secret,
+            **self._EXTRA_TOKEN_PARAMS
+        }
+
+        # Request the access token.
+        response = await http.fetch(
+            self._OAUTH_ACCESS_TOKEN_URL,
+            method='POST',
+            body=urlencode(params),
+            headers=self._API_BASE_HEADERS
+        )
+
+        decoded_body = decode_response_body(response)
+
+        if not decoded_body:
+            return
+
+        decoded_body = decode_response_body(response)
+
+        if 'access_token' not in decoded_body:
+            data = {
+                'code': response.code,
+                'body': decoded_body
+            }
+
+            if response.error:
+                data['error'] = response.error
+            error_callback(**data)
+            return
+
+        access_token = decoded_body['access_token']
+        id_token = decoded_body['id_token']
+        success_callback(id_token, access_token)
+
+    def _on_auth(self, id_token, access_token):
+        signing_input, _ = id_token.encode('utf-8').rsplit(b".", 1)
+        _, payload_segment = signing_input.split(b".", 1)
+        decoded = json.loads(base64url_decode(payload_segment).decode('utf-8'))
+        self.set_secure_cookie('user', decoded['email'])
+        if state.encryption:
+            access_token = state.encryption.encrypt(access_token.encode('utf-8'))
+            id_token = state.encryption.encrypt(id_token.encode('utf-8'))
+        self.set_secure_cookie('access_token', access_token)
+        self.set_secure_cookie('id_token', id_token)
+        self.redirect('/')
+
+    def _on_error(self, user):
+        self.clear_all_cookies()
+        raise tornado.web.HTTPError(500, 'Google authentication failed')
 
 
 
@@ -366,7 +600,9 @@ class OAuthProvider(AuthProvider):
 
 AUTH_PROVIDERS = {
     'azure': AzureAdLoginHandler,
+    'google': GoogleLoginHandler,
     'github': GithubLoginHandler,
+    'gitlab': GitLabLoginHandler
 }
 
 # Populate AUTH Providers from external extensions
