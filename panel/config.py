@@ -5,6 +5,7 @@ components.
 """
 from __future__ import absolute_import, division, unicode_literals
 
+import ast
 import glob
 import inspect
 import os
@@ -90,6 +91,9 @@ class _config(param.Parameterized):
         How to log errors and stdout output triggered by callbacks
         from Javascript in the notebook.""")
 
+    _cookie_secret = param.String(default=None, doc="""
+        Configure to enable getting/setting secure cookies.""")
+
     _embed = param.Boolean(default=False, allow_None=True, doc="""
         Whether plot data will be embedded.""")
 
@@ -104,6 +108,22 @@ class _config(param.Parameterized):
 
     _embed_save_path = param.String(default='./', doc="""
         Where to save json files for embedded state.""")
+
+    _oauth_provider = param.ObjectSelector(
+        default=None, allow_None=True, objects=[], doc="""
+        Select between a list of authentification providers.""")
+
+    _oauth_key = param.String(default=None, doc="""
+        A client key to provide to the OAuth provider.""")
+
+    _oauth_secret = param.String(default=None, doc="""
+        A client secret to provide to the OAuth provider.""")
+
+    _oauth_encryption_key = param.ClassSelector(default=None, class_=bytes, doc="""
+        A random string used to encode OAuth related user information.""")
+
+    _oauth_extra_params = param.Dict(default={}, doc="""
+        Additional parameters required for OAuth provider.""")
 
     _inline = param.Boolean(default=True, allow_None=True, doc="""
         Whether to inline JS and CSS resources. If disabled, resources
@@ -232,6 +252,86 @@ class _config(param.Parameterized):
         validate_config(self, '_inline', value)
         self._inline_ = value
 
+    @property
+    def oauth_provider(self):
+        if self._oauth_provider_ is not None:
+            return self._oauth_provider_
+        else:
+            provider = os.environ.get('PANEL_OAUTH_PROVIDER', _config._oauth_provider)
+            return provider.lower() if provider else None
+
+    @oauth_provider.setter
+    def oauth_provider(self, value):
+        validate_config(self, '_oauth_provider', value.lower())
+        self._oauth_provider_ = value.lower()
+
+    @property
+    def oauth_key(self):
+        if self._oauth_key_ is not None:
+            return self._oauth_key_
+        else:
+            return os.environ.get('PANEL_OAUTH_KEY', _config._oauth_key)
+
+    @oauth_key.setter
+    def oauth_key(self, value):
+        validate_config(self, '_oauth_key', value)
+        self._oauth_key_ = value
+
+    @property
+    def cookie_secret(self):
+        if self._cookie_secret_ is not None:
+            return self._cookie_secret_
+        else:
+            return os.environ.get(
+                'PANEL_COOKIE_SECRET',
+                os.environ.get('BOKEH_COOKIE_SECRET', _config._cookie_secret)
+            )
+
+    @cookie_secret.setter
+    def cookie_secret(self, value):
+        validate_config(self, '_cookie_secret', value)
+        self._cookie_secret_ = value
+
+    @property
+    def oauth_secret(self):
+        if self._oauth_secret_ is not None:
+            return self._oauth_secret_
+        else:
+            return os.environ.get('PANEL_OAUTH_SECRET', _config._oauth_secret)
+
+    @oauth_secret.setter
+    def oauth_secret(self, value):
+        validate_config(self, '_oauth_secret', value)
+        self._oauth_secret_ = value
+
+    @property
+    def oauth_encryption_key(self):
+        if self._oauth_encryption_key_ is not None:
+            return self._oauth_encryption_key_
+        else:
+            return os.environ.get('PANEL_OAUTH_ENCRYPTION', _config._oauth_encryption_key)
+
+    @oauth_encryption_key.setter
+    def oauth_encryption_key(self, value):
+        validate_config(self, '_oauth_encryption_key', value)
+        self._oauth_encryption_key_ = value
+
+    @property
+    def oauth_extra_params(self):
+        if self._oauth_extra_params_ is not None:
+            return self._oauth_extra_params_
+        else:
+            if 'PANEL_OAUTH_EXTRA_PARAMS' in os.environ:
+                return ast.literal_eval(os.environ['PANEL_OAUTH_EXTRA_PARAMS'])
+            else:
+                return _config._oauth_extra_params
+
+    @oauth_extra_params.setter
+    def oauth_extra_params(self, value):
+        validate_config(self, '_oauth_extra_params', value)
+        self._oauth_extra_params_ = value
+
+        
 
 if hasattr(_config.param, 'objects'):
     _params = _config.param.objects()

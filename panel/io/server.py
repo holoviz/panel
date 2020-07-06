@@ -200,7 +200,10 @@ def get_static_routes(static_dirs):
 
 def get_server(panel, port=0, address=None, websocket_origin=None,
                loop=None, show=False, start=False, title=None,
-               verbose=False, location=True, static_dirs={}, **kwargs):
+               verbose=False, location=True, static_dirs={},
+               oauth_provider=None, oauth_key=None, oauth_secret=None,
+               oauth_extra_params={}, cookie_secret=None,
+               oauth_encryption_key=None, **kwargs):
     """
     Returns a Server instance with this panel attached as the root
     app.
@@ -238,6 +241,19 @@ def get_server(panel, port=0, address=None, websocket_origin=None,
     static_dirs: dict (optional, default={})
       A dictionary of routes and local paths to serve as static file
       directories on those routes.
+    oauth_provider: str
+      One of the available OAuth providers
+    oauth_key: str (optional, default=None)
+      The public OAuth identifier
+    oauth_secret: str (optional, default=None)
+      The client secret for the OAuth provider
+    oauth_extra_params: dict (optional, default={})
+      Additional information for the OAuth provider
+    cookie_secret: str (optional, default=None)
+      A random secret string to sign cookies (required for OAuth)
+    oauth_encryption_key: str (optional, default=False)
+      A random encryption key used for encrypting OAuth user
+      information and access tokens.
     kwargs: dict
       Additional keyword arguments to pass to Server instance.
 
@@ -299,6 +315,21 @@ def get_server(panel, port=0, address=None, websocket_origin=None,
             websocket_origin = [websocket_origin]
         opts['allow_websocket_origin'] = websocket_origin
 
+    # Configure OAuth
+    from ..config import config
+    if config.oauth_provider:
+        from ..auth import OAuthProvider
+        opts['auth_provider'] = OAuthProvider()
+    if oauth_provider:
+        config.oauth_provider = oauth_provider
+    if oauth_key:
+        config.oauth_key = oauth_key
+    if oauth_extra_params:
+        config.oauth_extra_params = oauth_extra_params
+    if cookie_secret:
+        config.cookie_secret = cookie_secret
+    opts['cookie_secret'] = config.cookie_secret
+
     server = Server(apps, port=port, **opts)
     if verbose:
         address = server.address or 'localhost'
@@ -308,7 +339,7 @@ def get_server(panel, port=0, address=None, websocket_origin=None,
 
     if show:
         def show_callback():
-            server.show('/')
+            server.show('/login' if config.oauth_provider else '/')
         server.io_loop.add_callback(show_callback)
 
     def sig_exit(*args, **kwargs):

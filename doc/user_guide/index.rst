@@ -57,6 +57,9 @@ when needed.
 `Server Deployment <Server_Deployment.html>`_
  Step-by-step guides for deploying Panel apps locally, on a web server or on common cloud providers.
 
+`Authentication <Authentication.html>`_
+ Learn how to add an authentication component in front of your application.
+ 
 Supplementary guides
 --------------------
 
@@ -81,4 +84,5 @@ Supplementary guides
     Pipelines <Pipelines>
     Templates <Templates>
     Server Deployment <Server_Deployment>
+    Authentication <Authentication>
     Django Apps <Django_Apps>
