@@ -13,6 +13,7 @@ from bokeh.util.string import nice_join
 
 from .. import __version__
 from .serve import Serve
+from .oauth_secret import OAuthSecret
 
 
 def transform_cmds(argv):
@@ -46,6 +47,7 @@ def transform_cmds(argv):
 def main(args=None):
     """Merges commands offered by pyct and bokeh and provides help for both"""
     from bokeh.command.subcommands import all as bokeh_commands
+    bokeh_commands = bokeh_commands + [OAuthSecret]
 
     try:
         import pyct.cmd
@@ -91,6 +93,8 @@ def main(args=None):
                 ret = args.invoke(args)
             except Exception as e:
                 die("ERROR: " + str(e))
+        elif sys.argv[1] == 'oauth-secret':
+            ret = OAuthSecret(parser).invoke(args)
         else:
             ret = bokeh_entry_point()
     elif sys.argv[1] in pyct_commands:

@@ -21,13 +21,30 @@ from tornado.auth import OAuth2Mixin
 from tornado.escape import json_decode
 
 from .config import config
+from .io import state
+from .util import base64url_encode
+
+
+
+def decode_response_body(response):
+    """ Decodes the JSON-format response body
+    :param response: the response object
+    :type response: tornado.httpclient.HTTPResponse
+    :return: the decoded data
+    """
+    # Fix GitHub response.
+    body = codecs.decode(response.body, 'ascii')
+    body = re.sub('"', '\"', body)
+    body = re.sub("'", '"', body)
+    body = json.loads(body)
+    return body
 
 
 class OAuthLoginHandler(tornado.web.RequestHandler):
 
     x_site_token = 'application'
 
-    def get_authenticated_user(self, redirect_uri, client_id, state,
+    async def get_authenticated_user(self, redirect_uri, client_id, state,
                                client_secret=None, code=None,
                                success_callback=None,
                                error_callback=None):
@@ -44,7 +61,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
                                token fails
         """
         if code:
-            self._fetch_access_token(
+            await self._fetch_access_token(
                 code,
                 success_callback,
                 error_callback,
@@ -62,23 +79,30 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
                 'state': state
             }
         }
-
         self.authorize_redirect(**params)
 
-    def _fetch_access_token(self, code, success_callback, error_callback,
-                            redirect_uri, client_id, client_secret):
-        """ Fetches the access token.
-        :param code: the response code from the server
-        :param success_callback: the success callback used when fetching
-                                 the access token succeeds
-        :param error_callback: the callback used when fetching the access
-                               token fails
-        :param redirect_uri: the redirect URI
-        :param client_id: the client ID
-        :param client_secret: the client secret
-        :param state: the unguessable random string to protect against
-                      cross-site request forgery attacks
-        :return:
+    async def _fetch_access_token(self, code, success_callback, error_callback,
+                                  redirect_uri, client_id, client_secret):
+        """
+        Fetches the access token.
+
+        Arguments
+        ----------
+        code:
+          The response code from the server
+        success_callback:
+          The  callback used when fetching the access token succeeds
+        error_callback:
+          The callback used when fetching the access token fails
+        redirect_uri:
+          The redirect URI
+        client_id:
+          The client ID
+        client_secret:
+          The client secret
+        state:
+          The unguessable random string to protect against cross-site
+          request forgery attacks
         """
         if not (client_secret and success_callback and error_callback):
             raise ValueError(
@@ -93,87 +117,45 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
             **self._EXTRA_AUTHORIZE_PARAMS
         }
 
-        http = httpclient.AsyncHTTPClient()
+        http = self.get_auth_http_client()
 
-        callback_sharing_data = {}
 
-        def use_error_callback(response, decoded_body):
-            data = {
-                'code': response.code,
-                'body': decoded_body
-            }
-
-            if response.error:
-                data['error'] = response.error
-
-            error_callback(**data)
-
-        def decode_response_body(response):
-            """ Decodes the JSON-format response body
-            :param response: the response object
-            :type response: tornado.httpclient.HTTPResponse
-            :return: the decoded data
-            """
-            # Fix GitHub response.
-            body = codecs.decode(response.body, 'ascii')
-            body = re.sub('"', '\"', body)
-            body = re.sub("'", '"', body)
-            body = json.loads(body)
-
-            if response.error:
-                use_error_callback(response, body)
-                return None
-
-            return body
-
-        def on_authenticate(response):
-            """ The callback handling the authentication
-            :param response: the response object
-            :type response: tornado.httpclient.HTTPResponse
-            """
-            body = decode_response_body(response)
-
-            if not body:
-                return
-
-            if 'access_token' not in body:
-                use_error_callback(response, body)
-                return
-
-            callback_sharing_data['access_token'] = body['access_token']
-            http.fetch(
-                '{}{}'.format(
-                    self._OAUTH_USER_URL, callback_sharing_data['access_token']
-                ),
-                on_fetching_user_information,
-                headers=self._API_BASE_HEADERS
-            )
-
-        def on_fetching_user_information(response):
-            """ The callback handling the data after fetching the user info
-            :param response: the response object
-            :type response: tornado.httpclient.HTTPResponse
-            """
-            # Fix GitHub response.
-            user = decode_response_body(response)
-
-            if not user:
-                return
-
-            success_callback(user, callback_sharing_data['access_token'])
-
-        print(params)
         # Request the access token.
-        http.fetch(
+        response = await http.fetch(
             self._OAUTH_ACCESS_TOKEN_URL,
-            on_authenticate,
             method='POST',
             body=urlencode(params),
             headers=self._API_BASE_HEADERS
         )
 
-    @tornado.gen.coroutine
-    def get(self):
+        body = decode_response_body(response)
+
+        if not body:
+            return
+
+        if 'access_token' not in body:
+            data = {
+                'code': response.code,
+                'body': decoded_body
+            }
+            if response.error:
+                data['error'] = response.error
+            error_callback(**data)
+
+        user_response = await http.fetch(
+            '{}{}'.format(
+                self._OAUTH_USER_URL, body['access_token']
+            ),
+            headers=self._API_BASE_HEADERS
+        )
+
+        user = decode_response_body(user_response)
+
+        if not user:
+            return
+        success_callback(user, body['access_token'])
+
+    async def get(self):
         redirect_uri = "{0}://{1}".format(
             self.request.protocol,
             self.request.host
@@ -204,24 +186,14 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
                 'code':  code,
                 'state': state
             })
-            yield self.get_authenticated_user(**params)
+            await self.get_authenticated_user(**params)
             return
         # Redirect for user authentication
-        self.get_authenticated_user(**params)
-
-    def _on_auth(self, user, access_token):
-        print(user)
-        self.set_cookie('user', str(user['id']))
-        self.set_secure_cookie('access_token', access_token)
-        self.redirect('/')
-
-    def _on_error(self, user):
-        self.clear_all_cookies()
-        raise tornado.web.HTTPError(500, 'Github authentication failed')
+        await self.get_authenticated_user(**params)
 
 
 
-class AzureAdMixin(OAuth2Mixin):
+class AzureAdLoginHandler(OAuthLoginHandler, OAuth2Mixin):
 
     _API_BASE_HEADERS = {
         'Accept': 'application/json',
@@ -248,25 +220,36 @@ class AzureAdMixin(OAuth2Mixin):
     def _OAUTH_USER_URL(self):
         return self._OAUTH_USER_URL_.format(**config.oauth_extra_params)
 
-    def _fetch_access_token(self, code, success_callback, error_callback,
-                            redirect_uri, client_id, client_secret):
-        """ Fetches the access token.
-        :param code: the response code from the server
-        :param success_callback: the success callback used when fetching
-                                 the access token succeeds
-        :param error_callback: the callback used when fetching the access
-                               token fails
-        :param redirect_uri: the redirect URI
-        :param client_id: the client ID
-        :param client_secret: the client secret
-        :param state: the unguessable random string to protect against
-                      cross-site request forgery attacks
-        :return:
+    async def _fetch_access_token(
+        self, code, success_callback, error_callback, redirect_uri,
+        client_id, client_secret):
+        """
+        Fetches the access token.
+
+        Arguments
+        ----------
+        code:
+          The response code from the server
+        success_callback:
+          The  callback used when fetching the access token succeeds
+        error_callback:
+          The callback used when fetching the access token fails
+        redirect_uri:
+          The redirect URI
+        client_id:
+          The client ID
+        client_secret:
+          The client secret
+        state:
+          The unguessable random string to protect against cross-site
+          request forgery attacks
         """
         if not (client_secret and success_callback and error_callback):
             raise ValueError(
                 'The client secret or any callbacks are undefined.'
             )
+
+        http = self.get_auth_http_client()
 
         params = {
             'code':          code,
@@ -277,15 +260,16 @@ class AzureAdMixin(OAuth2Mixin):
         }
 
         # Request the access token.
-        response = requests.post(
+        response = await http.fetch(
             self._OAUTH_ACCESS_TOKEN_URL,
-            data=params
+            method='POST',
+            data=urlencode(params),
+            headers=self._API_BASE_HEADERS
         )
 
-        if not resp_json:
-            return
+        decoded_body = decode_response_body(response)
 
-        if 'access_token' not in resp_json:
+        if 'access_token' not in decoded_body:
             data = {
                 'code': response.code,
                 'body': resp_json
@@ -293,29 +277,30 @@ class AzureAdMixin(OAuth2Mixin):
 
             if response.error:
                 data['error'] = response.error
-
             error_callback(**data)
             return
 
-        access_token = resp_json['access_token']
-        id_token = resp_json['id_token']
-        decoded = jwt.decode(id_token, verify=False)
-        success_callback(decoded, access_token)
+        access_token = decoded_body['access_token']
+        id_token = decoded_body['id_token']
+        success_callback(id_token, access_token)
 
     def _on_auth(self, id_token, access_token):
-        self.set_cookie('user_family_name', id_token['family_name'])
-        self.set_cookie('user_given_name', id_token['given_name'])
-        self.set_cookie('user_ipaddr', id_token['ipaadr'])
-        self.set_cookie('user_unique_name', id_token['unique_name'])
-        self.set_cookie('user_name', id_token['name'])
-        self.set_cookie('user_email', id_token['email'])
-        self.set_cookie('user', id_token['email'])
-        self.set_secret_cookie('id_token', id_token)
-        self.set_secret_cookie('access_token', id_token)
+        decoded = jwt.decode(id_token, verify=False)
+        self.set_secure_cookie('user', decoded['email'])
+        if state.encryption:
+            access_token = state.encryption.encrypt(access_token.encode('utf-8'))
+            id_token = state.encryption.encrypt(id_token.encode('utf-8'))
+        self.set_secure_cookie('access_token', access_token)
+        self.set_secure_cookie('id_token', id_token)
         self.redirect('/')
 
+    def _on_error(self, user):
+        self.clear_all_cookies()
+        raise tornado.web.HTTPError(500, 'Github authentication failed')
 
-class GithubMixin(OAuth2Mixin):
+
+
+class GithubLoginHandler(OAuthLoginHandler, OAuth2Mixin):
     """GitHub OAuth2 Authentication
     To authenticate with GitHub, first register your application at
     https://github.com/settings/applications/new to get the client ID and
@@ -333,15 +318,20 @@ class GithubMixin(OAuth2Mixin):
     _OAUTH_AUTHORIZE_URL = 'https://github.com/login/oauth/authorize'
     _OAUTH_USER_URL = 'https://api.github.com/user?access_token='
 
+    def _on_auth(self, user_info, access_token):
+        self.set_secure_cookie('user', user_info['login'])
+        id_token = base64url_encode(json.dumps(user_info))
+        if state.encryption:
+            access_token = state.encryption.encrypt(access_token.encode('utf-8'))
+            id_token = state.encryption.encrypt(id_token.encode('utf-8'))
+        self.set_secure_cookie('access_token', access_token)
+        self.set_secure_cookie('id_token', id_token)
+        self.redirect('/')
 
-class GithubLoginHandler(OAuthLoginHandler, GithubMixin):
-    """
-    """
+    def _on_error(self, user):
+        self.clear_all_cookies()
+        raise tornado.web.HTTPError(500, 'Azure AD authentication failed')
 
-
-class AzureAdLoginHandler(AzureAdMixin, OAuthLoginHandler):
-    """
-    """
 
 
 class OAuthProvider(AuthProvider):
@@ -349,7 +339,7 @@ class OAuthProvider(AuthProvider):
     @property
     def get_user(self):
         def get_user(request_handler):
-            return request_handler.get_cookie("user")
+            return request_handler.get_secure_cookie("user")
         return get_user
 
     @property
@@ -366,8 +356,8 @@ class OAuthProvider(AuthProvider):
 
 
 AUTH_PROVIDERS = {
+    'azure': AzureAdLoginHandler,
     'github': GithubLoginHandler,
-    'azure': AzureAdLoginHandler
 }
 
 # Populate AUTH Providers from external extensions

@@ -91,6 +91,9 @@ class _config(param.Parameterized):
         How to log errors and stdout output triggered by callbacks
         from Javascript in the notebook.""")
 
+    _cookie_secret = param.String(default=None, doc="""
+        Configure to enable getting/setting secure cookies.""")
+
     _embed = param.Boolean(default=False, allow_None=True, doc="""
         Whether plot data will be embedded.""")
 
@@ -115,6 +118,9 @@ class _config(param.Parameterized):
 
     _oauth_secret = param.String(default=None, doc="""
         A client secret to provide to the OAuth provider.""")
+
+    _oauth_encryption_key = param.ClassSelector(default=None, class_=bytes, doc="""
+        A random string used to encode OAuth related user information.""")
 
     _oauth_extra_params = param.Dict(default={}, doc="""
         Additional parameters required for OAuth provider.""")
@@ -272,6 +278,21 @@ class _config(param.Parameterized):
         self._oauth_key_ = value
 
     @property
+    def cookie_secret(self):
+        if self._cookie_secret_ is not None:
+            return self._cookie_secret_
+        else:
+            return os.environ.get(
+                'PANEL_COOKIE_SECRET',
+                os.environ.get('BOKEH_COOKIE_SECRET', _config._cookie_secret)
+            )
+
+    @cookie_secret.setter
+    def cookie_secret(self, value):
+        validate_config(self, '_cookie_secret', value)
+        self._cookie_secret_ = value
+
+    @property
     def oauth_secret(self):
         if self._oauth_secret_ is not None:
             return self._oauth_secret_
@@ -282,6 +303,18 @@ class _config(param.Parameterized):
     def oauth_secret(self, value):
         validate_config(self, '_oauth_secret', value)
         self._oauth_secret_ = value
+
+    @property
+    def oauth_encryption_key(self):
+        if self._oauth_encryption_key_ is not None:
+            return self._oauth_encryption_key_
+        else:
+            return os.environ.get('PANEL_OAUTH_ENCRYPTION', _config._oauth_encryption_key)
+
+    @oauth_encryption_key.setter
+    def oauth_encryption_key(self, value):
+        validate_config(self, '_oauth_encryption_key', value)
+        self._oauth_encryption_key_ = value
 
     @property
     def oauth_extra_params(self):

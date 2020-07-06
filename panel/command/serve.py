@@ -4,12 +4,15 @@ ways.
 """
 
 import ast
+import base64
 
 from bokeh.command.subcommands.serve import Serve as _BkServe
 
 from ..auth import OAuthProvider
 from ..config import config
 from ..io.server import INDEX_HTML, get_static_routes
+from ..io.state import state
+from ..util import base64url_decode
 
 
 def parse_var(s):
@@ -65,6 +68,11 @@ class Serve(_BkServe):
             action  = 'store',
             type    = str,
             help    = "Additional parameters to use.",
+        )),
+        ('--oauth-encryption-key', dict(
+            action = 'store',
+            type    = str,
+            help    = "A random string used to encode the user information."
         ))
     )
 
@@ -85,10 +93,92 @@ class Serve(_BkServe):
 
         if args.oauth_provider:
             config.oauth_provider = args.oauth_provider
-            config.oauth_key = args.oauth_key
-            config.oauth_secret = args.oauth_secret
+            if config.oauth_key and args.oauth_key:
+                raise ValueError(
+                    "Supply OAuth key either using environment variable "
+                    "or via explicit argument, not both."
+                )
+            elif args.oauth_key:
+                config.oauth_key = args.oauth_key
+            elif not config.oauth_key:
+                raise ValueError(
+                    "When enabling an OAuth provider you must supply "
+                    "a valid oauth_key either using the --oauth-key "
+                    "CLI argument or PANEL_OAUTH_KEY environment "
+                    "variable."
+                )
+
+            if config.oauth_secret and args.oauth_secret:
+                raise ValueError(
+                    "Supply OAuth secret either using environment variable "
+                    "or via explicit argument, not both."
+                )
+            elif args.oauth_secret:
+                config.oauth_secret = args.oauth_secret
+            elif not config.oauth_secret:
+                raise ValueError(
+                    "When enabling an OAuth provider you must supply "
+                    "a valid OAuth secret either using the --oauth-secret "
+                    "CLI argument or PANEL_OAUTH_SECRET environment "
+                    "variable."
+                )
+
             if args.oauth_extra_params:
                 config.oauth_extra_params = ast.literal_eval(args.oauth_extra_params)
+
+            if config.oauth_encryption_key and args.oauth_encryption_key:
+                raise ValueError(
+                    "Supply OAuth encryption key either using environment "
+                    "variable or via explicit argument, not both."
+                )
+            elif args.oauth_encryption_key:
+                encryption_key = args.oauth_encryption_key.encode('ascii')
+                key = base64.urlsafe_b64decode(encryption_key)
+                if len(key) != 32:
+                    raise ValueError(
+                        "OAuth encryption key must be 32 url-safe "
+                        "base64-encoded bytes."
+                    )
+                config.oauth_encryption_key = encryption_key
+            else:
+                print("WARNING: OAuth has not been configured with an "
+                      "encryption key and will potentially leak "
+                      "credentials in cookies and a JWT token embedded "
+                      "in the served website. Use at your own risk or "
+                      "generate a key with the `panel oauth-key` CLI "
+                      "command and then provide it to `panel serve` "
+                      "using the PANEL_OAUTH_ENCRYPTION environment "
+                      "variable or the --oauth-encryption-key CLI "
+                      "argument.")
+
+            if config.oauth_encryption_key:
+                try:
+                    from cryptography.fernet import Fernet
+                except:
+                    raise ImportError(
+                        "Using OAuth2 provider with Panel requires the "
+                        "cryptography library. Install it with `pip install "
+                        "cryptography` or `conda install cryptography`."
+                    )
+                state.encryption = Fernet(config.oauth_encryption_key)
+
+            if args.cookie_secret and config.cookie_secret:
+                raise ValueError(
+                    "Supply cookie secret either using environment "
+                    "variable or via explicit argument, not both."
+                )
+            elif args.cookie_secret:
+                config.cookie_secret = args.cookie_secret
+            else:
+                raise ValueError(
+                    "When enabling an OAuth provider you must supply "
+                    "a valid cookie_secret either using the --cookie-secret "
+                    "CLI argument or the PANEL_COOKIE_SECRET environment "
+                    "variable."
+                )
             kwargs['auth_provider'] = OAuthProvider()
+
+        if config.cookie_secret:
+            kwargs['cookie_secret'] = config.cookie_secret
 
         return kwargs
