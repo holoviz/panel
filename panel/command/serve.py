@@ -12,7 +12,6 @@ from ..auth import OAuthProvider
 from ..config import config
 from ..io.server import INDEX_HTML, get_static_routes
 from ..io.state import state
-from ..util import base64url_decode
 
 
 def parse_var(s):
@@ -154,7 +153,7 @@ class Serve(_BkServe):
             if config.oauth_encryption_key:
                 try:
                     from cryptography.fernet import Fernet
-                except:
+                except ImportError:
                     raise ImportError(
                         "Using OAuth2 provider with Panel requires the "
                         "cryptography library. Install it with `pip install "

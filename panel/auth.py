@@ -1,11 +1,7 @@
 import codecs
 import json
 import pkg_resources
-import requests
 import re
-import jwt
-import urllib
-import uuid
 
 try:
     from urllib import urlencode
@@ -16,13 +12,11 @@ except ImportError:
 import tornado
 
 from bokeh.server.auth_provider import AuthProvider
-from tornado import httpclient
 from tornado.auth import OAuth2Mixin
-from tornado.escape import json_decode
 
 from .config import config
 from .io import state
-from .util import base64url_encode
+from .util import base64url_encode, base64url_decode
 
 
 
@@ -136,7 +130,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
         if 'access_token' not in body:
             data = {
                 'code': response.code,
-                'body': decoded_body
+                'body': body
             }
             if response.error:
                 data['error'] = response.error
@@ -263,7 +257,7 @@ class AzureAdLoginHandler(OAuthLoginHandler, OAuth2Mixin):
         response = await http.fetch(
             self._OAUTH_ACCESS_TOKEN_URL,
             method='POST',
-            data=urlencode(params),
+            body=urlencode(params),
             headers=self._API_BASE_HEADERS
         )
 
@@ -272,7 +266,7 @@ class AzureAdLoginHandler(OAuthLoginHandler, OAuth2Mixin):
         if 'access_token' not in decoded_body:
             data = {
                 'code': response.code,
-                'body': resp_json
+                'body': decoded_body
             }
 
             if response.error:
@@ -285,7 +279,9 @@ class AzureAdLoginHandler(OAuthLoginHandler, OAuth2Mixin):
         success_callback(id_token, access_token)
 
     def _on_auth(self, id_token, access_token):
-        decoded = jwt.decode(id_token, verify=False)
+        signing_input, _ = id_token.encode('utf-8').rsplit(b".", 1)
+        _, payload_segment = signing_input.split(b".", 1)
+        decoded = json.loads(base64url_decode(payload_segment).decode('utf-8'))
         self.set_secure_cookie('user', decoded['email'])
         if state.encryption:
             access_token = state.encryption.encrypt(access_token.encode('utf-8'))
@@ -334,6 +330,15 @@ class GithubLoginHandler(OAuthLoginHandler, OAuth2Mixin):
 
 
 
+class LogoutHandler(tornado.web.RequestHandler):
+
+    def get(self):
+        self.clear_cookie("user")
+        self.clear_cookie("id_token")
+        self.clear_cookie("access_token")
+        self.redirect("/")
+
+
 class OAuthProvider(AuthProvider):
 
     @property
@@ -351,8 +356,12 @@ class OAuthProvider(AuthProvider):
         return AUTH_PROVIDERS[config.oauth_provider]
 
     @property
+    def logout_url(self):
+        return "/logout"
+
+    @property
     def logout_handler(self):
-        return
+        return LogoutHandler
 
 
 AUTH_PROVIDERS = {
