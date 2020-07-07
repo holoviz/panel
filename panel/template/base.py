@@ -27,6 +27,7 @@ from ..models.comm_manager import CommManager
 from ..pane import panel as _panel, HTML, Str, HoloViews
 from ..viewable import ServableMixin, Viewable
 from ..widgets import Button
+from ..widgets.indicators import Indicator
 from .theme import DefaultTheme, Theme
 
 _server_info = (
@@ -312,6 +313,9 @@ class BasicTemplate(BaseTemplate):
     sidebar = param.ClassSelector(class_=ListLike, constant=True, doc="""
         A list-like container which populates the sidebar.""")
 
+    busy_indicator = param.ClassSelector(class_=Indicator, constant=True, doc="""
+        Indicator class""")
+
     title = param.String(doc="A title to show in the header.")
 
     header_background = param.String(doc="Optional header background color override")
@@ -331,6 +335,8 @@ class BasicTemplate(BaseTemplate):
 
     def __init__(self, **params):
         template = self._template.read_text()
+        if 'busy_indicator' in params:
+            state.sync_busy(params['busy_indicator'])
         if 'header' not in params:
             params['header'] = ListLike()
         if 'main' not in params:
@@ -387,6 +393,8 @@ class BasicTemplate(BaseTemplate):
             if ref not in self._render_items:
                 self._render_items[ref] = (obj, [tag])
         tags = [tags for _, tags in self._render_items.values()]
+        self._render_items['busy_indicator'] = (self.busy_indicator, [])
+        self._render_variables['busy'] = self.busy_indicator is not None
         self._render_variables['nav'] = any('nav' in ts for ts in tags)
         self._render_variables['header'] = any('header' in ts for ts in tags)
         self._render_variables['root_labels'] = labels

@@ -1,35 +1,38 @@
-{% extends base %}	
+{% extends base %}
 
-<!-- goes in body -->	
+<!-- goes in body -->
 {% block preamble %}
-<script type="text/javascript" src="http://code.jquery.com/jquery-1.11.1.min.js"></script>	
-<script type="text/javascript" src="https://golden-layout.com/files/latest/js/goldenlayout.js"></script>	
-<link type="text/css" rel="stylesheet" href="https://golden-layout.com/files/latest/css/goldenlayout-base.css" />	
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
+<script type="text/javascript" src="https://golden-layout.com/files/latest/js/goldenlayout.js"></script>
+<link type="text/css" rel="stylesheet" href="https://golden-layout.com/files/latest/css/goldenlayout-base.css" />
 {% endblock %}
 
-<!-- goes in body -->	
-{% block contents %}	
-<header class="app-bar" id="header">	
-  <div class="">	
-    <section class="">	
-      <span class="header-title">{{ app_title }}</span>	
-	  {% for doc in docs %}	
-      {% for root in doc.roots %}	
-      {% if "header" in root.tags %}	
-      {type: 'component', componentName: 'view', componentState: {model: '{{ embed(root) }}', title: "{{ 'Sidebar' }}"}},	
-      {% endif %}	
-      {% endfor %}	
-      {% endfor %}	
-    </section>	
-  </div>	
-</header>	
+<!-- goes in body -->
+{% block contents %}
+<header class="app-bar" id="header">
+  <div>
+    <span class="header-title">{{ app_title }}</span>
+    <section>
+	  {% for doc in docs %}
+      {% for root in doc.roots %}
+      {% if "header" in root.tags %}
+      {{ embed(root) }}
+      {% endif %}
+      {% endfor %}
+      {% endfor %}
+    </section>
+	{% if "busy" in root.tags %}
+	{{ embed(roots.busy_indicator) | indent(6) }}
+	{% endif %}
+  </div>
+</header>
 
-<div class="main-area header-adjust" id="main">	
-  <main class="main-content" id="main-content"></main>	
-</div>	
+<div class="main-area header-adjust" id="main">
+  <main class="main-content" id="main-content"></main>
+</div>
 
-<script>	
-  var config = {	
+<script>
+  var config = {
     content: [
       {
         type: 'row',
@@ -46,10 +49,10 @@
           {
             type: 'stack',
             width: 80,
-            content: [	
-              {% for doc in docs %}	
-              {% for root in doc.roots %}	
-              {% if "main" in root.tags%}	
+            content: [
+              {% for doc in docs %}
+              {% for root in doc.roots %}
+              {% if "main" in root.tags%}
               {
                 type: 'component',
                 componentName: 'view',
@@ -58,13 +61,13 @@
                   title: "{{ root_labels[root.name] }}"
                 },
               }
-              {% endif %}	
-              {% endfor %}	
-              {% endfor %}	
+              {% endif %}
+              {% endfor %}
+              {% endfor %}
             ]
           }
         ]
-      }     
+      }
     ]
   };
 

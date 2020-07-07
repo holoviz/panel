@@ -25,6 +25,9 @@
       {% endfor %}
       {% endfor %}
     </section>
+    {% if "busy" in root.tags %}
+	{{ embed(roots.busy_indicator) | indent(6) }}
+	{% endif %}
   </div>
 </header>
 

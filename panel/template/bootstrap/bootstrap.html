@@ -25,6 +25,9 @@
     {% endif %}
     {% endfor %}
     {% endfor %}
+    {% if busy %}
+	{{ embed(roots.busy_indicator) | indent(6) }}
+	{% endif %}
   </nav>
 
   <div class="row overflow-hidden" id="content">
