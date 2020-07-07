@@ -117,7 +117,7 @@ class _state(param.Parameterized):
         """
         self._indicators.append(indicator)
 
-    @param.depends('busy')
+    @param.depends('busy', watch=True)
     def _update_busy(self):
         for indicator in self._indicators:
             indicator.value = self.busy
