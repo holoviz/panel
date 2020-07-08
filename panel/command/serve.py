@@ -73,6 +73,11 @@ class Serve(_BkServe):
             type    = str,
             help    = "Additional parameters to use.",
         )),
+        ('--oauth-jwt-user', dict(
+            action  = 'store',
+            type    = str,
+            help    = "The key in the ID JWT token to consider the user.",
+        )),
         ('--oauth-encryption-key', dict(
             action = 'store',
             type    = str,
@@ -189,6 +194,14 @@ class Serve(_BkServe):
                 )
             elif args.oauth_redirect_uri:
                 config.oauth_redirect_uri = args.oauth_redirect_uri
+
+            if args.oauth_jwt_user and config.oauth_jwt_user:
+                raise ValueError(
+                    "Supply OAuth JWT user either using environment "
+                    "variable or via explicit argument, not both."
+                )
+            elif args.oauth_jwt_user:
+                config.oauth_jwt_user = args.oauth_jwt_user
 
         if config.cookie_secret:
             kwargs['cookie_secret'] = config.cookie_secret

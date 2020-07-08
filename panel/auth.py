@@ -202,7 +202,8 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
         await self.get_authenticated_user(**params)
 
     def _on_auth(self, user_info, access_token):
-        self.set_secure_cookie('user', user_info[self._USER_KEY])
+        user_key = config.oauth_jwt_user or self._USER_KEY
+        self.set_secure_cookie('user', user_info[user_key])
         id_token = base64url_encode(json.dumps(user_info))
         if state.encryption:
             access_token = state.encryption.encrypt(access_token.encode('utf-8'))
@@ -434,7 +435,8 @@ class OAuthIDTokenLoginHandler(OAuthLoginHandler):
         signing_input, _ = id_token.encode('utf-8').rsplit(b".", 1)
         _, payload_segment = signing_input.split(b".", 1)
         decoded = json.loads(base64url_decode(payload_segment).decode('utf-8'))
-        self.set_secure_cookie('user', decoded['email'])
+        user_key = config.oauth_jwt_user or self._USER_KEY
+        self.set_secure_cookie('user', decoded[user_key])
         if state.encryption:
             access_token = state.encryption.encrypt(access_token.encode('utf-8'))
             id_token = state.encryption.encrypt(id_token.encode('utf-8'))
@@ -453,6 +455,8 @@ class AzureAdLoginHandler(OAuthIDTokenLoginHandler, OAuth2Mixin):
     _OAUTH_ACCESS_TOKEN_URL_ = 'https://login.microsoftonline.com/{tenant}/oauth2/token'
     _OAUTH_AUTHORIZE_URL_ = 'https://login.microsoftonline.com/{tenant}/oauth2/authorize'
     _OAUTH_USER_URL_ = ''
+
+    _USER_KEY = 'unique_name'
 
     @property
     def _OAUTH_ACCESS_TOKEN_URL(self):
@@ -478,6 +482,7 @@ class GoogleLoginHandler(OAuthIDTokenLoginHandler, OAuth2Mixin):
 
     _SCOPE = ['profile', 'email']
 
+    _USER_KEY = 'email'
 
 
 class LogoutHandler(tornado.web.RequestHandler):

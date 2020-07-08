@@ -119,6 +119,9 @@ class _config(param.Parameterized):
     _oauth_secret = param.String(default=None, doc="""
         A client secret to provide to the OAuth provider.""")
 
+    _oauth_jwt_user = param.String(default=None, doc="""
+        The key in the ID JWT token to consider the user.""")
+
     _oauth_redirect_uri = param.String(default=None, doc="""
         A redirect URI to provide to the OAuth provider.""")
 
@@ -318,6 +321,18 @@ class _config(param.Parameterized):
     def oauth_redirect_uri(self, value):
         validate_config(self, '_oauth_redirect_uri', value)
         self._oauth_redirect_uri_ = value
+
+    @property
+    def oauth_jwt_user(self):
+        if self._oauth_jwt_user_ is not None:
+            return self._oauth_jwt_user_
+        else:
+            return os.environ.get('PANEL_OAUTH_JWT_USER', _config._oauth_jwt_user)
+
+    @oauth_jwt_user.setter
+    def oauth_secret(self, value):
+        validate_config(self, '_oauth_jwt_user', value)
+        self._oauth_jwt_user_ = value
 
     @property
     def oauth_encryption_key(self):
