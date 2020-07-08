@@ -119,6 +119,9 @@ class _config(param.Parameterized):
     _oauth_secret = param.String(default=None, doc="""
         A client secret to provide to the OAuth provider.""")
 
+    _oauth_redirect_uri = param.String(default=None, doc="""
+        A redirect URI to provide to the OAuth provider.""")
+
     _oauth_encryption_key = param.ClassSelector(default=None, class_=bytes, doc="""
         A random string used to encode OAuth related user information.""")
 
@@ -303,6 +306,18 @@ class _config(param.Parameterized):
     def oauth_secret(self, value):
         validate_config(self, '_oauth_secret', value)
         self._oauth_secret_ = value
+
+    @property
+    def oauth_redirect_uri(self):
+        if self._oauth_redirect_uri_ is not None:
+            return self._oauth_redirect_uri_
+        else:
+            return os.environ.get('PANEL_OAUTH_REDIRECT_URI', _config._oauth_redirect_uri)
+
+    @oauth_redirect_uri.setter
+    def oauth_redirect_uri(self, value):
+        validate_config(self, '_oauth_redirect_uri', value)
+        self._oauth_redirect_uri_ = value
 
     @property
     def oauth_encryption_key(self):
