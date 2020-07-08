@@ -152,7 +152,7 @@ class Matplotlib(PNG, IPyWidget):
 
     def _get_widget(self, fig):
         import matplotlib
-        old_backend = matplotlib.backends.backend
+        old_backend = getattr(matplotlib.backends, 'backend', 'agg')
 
         from ipympl.backend_nbagg import FigureManager, Canvas, is_interactive
         from matplotlib._pylab_helpers import Gcf
@@ -160,7 +160,7 @@ class Matplotlib(PNG, IPyWidget):
         matplotlib.use(old_backend)
 
         def closer(event):
-            Gcf.destroy(num)
+            Gcf.destroy(0)
 
         canvas = Canvas(fig)
         fig.patch.set_alpha(0)
