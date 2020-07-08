@@ -15,25 +15,28 @@ class IPyWidget(PaneBase):
     def applies(cls, obj):
         return (hasattr(obj, 'traits') and hasattr(obj, 'get_manager_state') and hasattr(obj, 'comm'))
 
-    def _get_model(self, doc, root=None, parent=None, comm=None):
-        if root is None:
-            return self._get_root(doc, comm)
-
+    def _get_ipywidget(self, obj, doc, root, comm, **kwargs):
         if isinstance(comm, JupyterComm) and not config.embed:
             IPyWidget = _BkIPyWidget
         else:
             import ipykernel
-            from ipywidgets_bokeh.widget import IPyWidget
             from ipywidgets_bokeh.kernel import BokehKernel
+            from ipywidgets_bokeh.widget import IPyWidget
             if not isinstance(ipykernel.kernelbase.Kernel._instance, BokehKernel):
                 from ..io.ipywidget import PanelKernel
-                kernel = PanelKernel(key=root.ref['id'].encode('utf-8'), document=doc)
-                for w in self.object.widgets.values():
+                kernel = PanelKernel(document=doc, key=str(id(doc)).encode('utf-8'))
+                for w in obj.widgets.values():
                     w.comm.kernel = kernel
                     w.comm.open()
 
-        props = self._process_param_change(self._init_properties())
-        model = IPyWidget(widget=self.object, **props)
+        model = IPyWidget(widget=obj, **kwargs)
+        return model
+
+    def _get_model(self, doc, root=None, parent=None, comm=None):
+        if root is None:
+            return self.get_root(doc, comm)
+        kwargs = self._process_param_change(self._init_properties())
+        model = self._get_ipywidget(self.object, doc, root, comm, **kwargs)
         self._models[root.ref['id']] = (model, parent)
         return model
 

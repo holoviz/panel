@@ -212,7 +212,7 @@ class DeckGL(PaneBase):
         self._models[root.ref["id"]] = (model, parent)
         return model
 
-    def _update(self, model):
+    def _update(self, ref=None, model=None):
         data, properties = self._get_properties(layout=False)
         self._update_sources(data, model.data_sources)
         properties['data'] = data

@@ -46,7 +46,7 @@ class DivPaneBase(PaneBase):
         self._models[root.ref['id']] = (model, parent)
         return model
 
-    def _update(self, model):
+    def _update(self, ref=None, model=None):
         model.update(**self._get_properties())
 
 
