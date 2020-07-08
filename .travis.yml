@@ -38,9 +38,9 @@ stages:
   - name: pip_package
     if: tag =~ ^v(\d+|\.)+[^a-z]\d+$
   - name: website_dev
-    if: (tag =~ ^v(\d+|\.)+[a-z]\d+$) OR (tag = website_dev) OR (commit_message =~ /^.*(website_dev).*$/)
+    if: (tag =~ ^v(\d+|\.)+[a|b|rc]\d+$) OR (tag = website_dev) OR (commit_message =~ /^.*(website_dev).*$/)
   - name: website_release
-    if: (tag =~ ^v(\d+|\.)+[^a-z]\d+$) OR (tag = website) OR (commit_message =~ /^.*(website_release).*$/)
+    if: (tag =~ ^v(\d+|\.)+\d+$) OR (tag = website_release) OR (commit_message =~ /^.*(website_release).*$/)
   - name: docs_daily
     if: ((type = cron and branch = master) OR (commit_message =~ /\[doc-build\]/))
 
