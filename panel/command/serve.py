@@ -63,6 +63,11 @@ class Serve(_BkServe):
             type    = str,
             help    = "The OAuth2 secret to use",
         )),
+        ('--oauth-redirect-uri', dict(
+            action  = 'store',
+            type    = str,
+            help    = "The OAuth2 redirect URI",
+        )),
         ('--oauth-extra-params', dict(
             action  = 'store',
             type    = str,
@@ -176,6 +181,14 @@ class Serve(_BkServe):
                     "variable."
                 )
             kwargs['auth_provider'] = OAuthProvider()
+
+            if args.oauth_redirect_uri and config.oauth_redirect_uri:
+                raise ValueError(
+                    "Supply OAuth redirect URI either using environment "
+                    "variable or via explicit argument, not both."
+                )
+            elif args.oauth_redirect_uri:
+                config.oauth_redirect_uri = args.oauth_redirect_uri
 
         if config.cookie_secret:
             kwargs['cookie_secret'] = config.cookie_secret
