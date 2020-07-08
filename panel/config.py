@@ -330,7 +330,7 @@ class _config(param.Parameterized):
             return os.environ.get('PANEL_OAUTH_JWT_USER', _config._oauth_jwt_user)
 
     @oauth_jwt_user.setter
-    def oauth_secret(self, value):
+    def oauth_jwt_user(self, value):
         validate_config(self, '_oauth_jwt_user', value)
         self._oauth_jwt_user_ = value
 
