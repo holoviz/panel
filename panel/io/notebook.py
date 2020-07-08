@@ -318,7 +318,7 @@ def ipywidget(obj, **kwargs):
     from jupyter_bokeh import BokehModel
     from ..pane import panel
     model = panel(obj, **kwargs).get_root()
-    widget = BokehModel(model)
+    widget = BokehModel(model, combine_events=True)
     if hasattr(widget, '_view_count'):
         widget._view_count = 0
         def view_count_changed(change, current=[model]):
