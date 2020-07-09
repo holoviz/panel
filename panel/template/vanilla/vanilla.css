@@ -1,0 +1,116 @@
+body {
+    height: 100vh;
+    margin: 0px;
+  }
+
+  #container {
+    padding:0px;
+    width: 100vw;
+  }
+
+  #header{
+    padding: 10px;
+  }
+
+  .title{
+    color: #fff;
+    padding-left: 10px;
+    text-decoration: none;
+    text-decoration-line: none;
+    text-decoration-style: initial;
+    text-decoration-color: initial;
+    font-weight: 400;
+    font-size: 28px;
+  }
+
+  .bk-canvas {
+    padding-right: 2px !important;
+  }
+
+  #content {
+    height: 100vh;
+    margin: 0px;
+    width: 100vw;
+    display: inline-flex;
+  }
+
+  #sidebar {
+    transition: all 0.2s cubic-bezier(0.945, 0.020, 0.270, 0.665);
+    transform-origin: center left; /* Set the transformed position of sidebar to center left side. */
+    width: 15vw;
+    margin-top: 60px;
+  }
+
+  #sidebar.active {
+    margin-left: -16.7%;
+  }
+
+  #main {
+    overflow-y: scroll;
+    width: 100vw;
+    margin-left: 15vw;
+  }
+
+  #sidebarCollapse {
+    background: none;
+    border: none;
+  }
+
+  a.navbar-brand {
+    padding-left: 10px;
+  }
+
+  p.bk.card-button {
+    display: none;
+  }  
+
+  body {
+    font-family: "Lato", sans-serif;
+  }
+  
+  .sidenav {
+    height: 100%;
+    width: 0;
+    position: absolute;
+    z-index: 1;
+    top: 0;
+    left: 0;
+    background-color: #eeeeee;
+    overflow-x: hidden;
+    transition: 0.5s;
+    padding-top: 15px;
+  }
+
+  .bk.card-title {
+    position: absolute !important;
+  }
+  
+  .sidenav a {
+    padding: 8px 8px 8px 32px;
+    text-decoration: none;
+    font-size: 25px;
+    color: #818181;
+    display: block;
+    transition: 0.3s;
+  }
+  
+  .sidenav a:hover {
+    color: #f1f1f1;
+  }
+  
+  .sidenav .closebtn {
+    position: absolute;
+    top: 0;
+    right: 25px;
+    font-size: 36px;
+    margin-left: 50px;
+  }
+  
+  @media screen and (max-height: 450px) {
+    .sidenav {padding-top: 15px;}
+    .sidenav a {font-size: 18px;}
+  }
+
+  .nav.flex-column {
+    padding-inline-start: 0px;
+  }

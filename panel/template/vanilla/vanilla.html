@@ -1,0 +1,62 @@
+{% extends base %}
+
+<!-- goes in body -->
+{% block contents %}
+<div class="" id="container">
+  <nav class="" style="{% if header_background %}background-color: {{ header_background }} !important;{% endif %}{% if header_color %}color: {{ header_color }}{% endif %}" id="header">
+    {% if nav %}
+      <span style="font-size:30px;cursor:pointer" onclick="closeNav()" id="sidebar-button">&#9776;</span>
+    {% endif %}
+    <a class="title" href="#">{{ app_title }}</a>
+    {% for doc in docs %}
+    {% for root in doc.roots %}
+    {% if "header" in root.tags %}
+    {{ embed(root) | indent(8) }}
+    {% endif %}
+    {% endfor %}
+    {% endfor %}
+  </nav>
+
+  <div class="row" id="content">
+    {% if nav %}
+    <div class="sidenav" id="sidebar">
+      <ul class="nav flex-column">
+        {% for doc in docs %}
+        {% for root in doc.roots %}
+        {% if "nav" in root.tags %}
+        {{ embed(root) | indent(8) }}
+        {% endif %}
+        {% endfor %}
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+    <div class="" id="main">
+      {% for doc in docs %}
+      {% for root in doc.roots %}
+      {% if "main" in root.tags %}
+      {{ embed(root) | indent(4) }}
+      {% endif %}
+      {% endfor %}
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<script>
+  function openNav() {
+    document.getElementById("sidebar").style.width = "15vw";
+    document.getElementById("main").style.marginLeft = "15vw";
+    document.getElementById("sidebar-button").onclick=closeNav;
+    window.dispatchEvent(new Event("resize"))
+  }
+
+  function closeNav() {
+    document.getElementById("sidebar").style.width = "0";
+    document.getElementById("main").style.marginLeft = "0";
+    document.getElementById("sidebar-button").onclick=openNav;
+    window.dispatchEvent(new Event("resize"))
+  }
+</script>
+{% endblock %}
