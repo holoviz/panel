@@ -79,7 +79,8 @@ class Accordion(NamedListPanel):
             else:
                 card = Card(
                     pane, title=name, css_classes=['accordion'],
-                    header_css_classes=['accordion-header']
+                    header_css_classes=['accordion-header'],
+                    margin=self.margin
                 )
                 self._panels[id(pane)] = card
             card.param.set_param(**params)
@@ -96,6 +97,7 @@ class Accordion(NamedListPanel):
             
             new_models.append(panel)
         self._update_cards()
+        self._update_active()
         return new_models
 
     def _cleanup(self, root):
@@ -114,6 +116,8 @@ class Accordion(NamedListPanel):
 
     def _update_active(self, *events):
         for i, pane in enumerate(self.objects):
+            if id(pane) not in self._panels:
+                continue
             self._panels[id(pane)].collapsed = i not in self.active
 
     def _update_cards(self, *events):
