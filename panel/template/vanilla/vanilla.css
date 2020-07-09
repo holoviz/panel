@@ -20,7 +20,7 @@ body {
     text-decoration-style: initial;
     text-decoration-color: initial;
     font-weight: 400;
-    font-size: larger;
+    font-size: 28px;
   }
 
   .bk-canvas {
@@ -54,10 +54,6 @@ body {
   #sidebarCollapse {
     background: none;
     border: none;
-  }
-
-  .bk-input-group{
-    width: 12vw;
   }
 
   a.navbar-brand {
