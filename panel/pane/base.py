@@ -151,7 +151,7 @@ class PaneBase(Reactive):
     def _update_object(self, ref, doc, root, parent, comm):
         old_model = self._models[ref][0]
         if self._updates:
-            self._update(old_model)
+            self._update(ref, old_model)
         else:
             new_model = self._get_model(doc, root, parent, comm)
             try:
@@ -196,7 +196,7 @@ class PaneBase(Reactive):
                 else:
                     cb()
 
-    def _update(self, model):
+    def _update(self, ref=None, model=None):
         """
         If _updates=True this method is used to update an existing
         Bokeh model instead of replacing the model entirely. The

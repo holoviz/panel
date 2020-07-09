@@ -3,6 +3,7 @@ Various utilities for recording and embedding state in a rendered app.
 """
 from __future__ import absolute_import, division, unicode_literals
 
+import json
 import threading
 
 from weakref import WeakKeyDictionary, WeakSet
@@ -12,6 +13,9 @@ import param
 from bokeh.document import Document
 from bokeh.io import curdoc as _curdoc
 from pyviz_comms import CommManager as _CommManager
+from tornado.web import decode_signed_value
+
+from ..util import base64url_decode
 
 
 class _state(param.Parameterized):
@@ -26,7 +30,11 @@ class _state(param.Parameterized):
 
     cache = param.Dict(default={}, doc="""
        Global location you can use to cache large datasets or expensive computation results
-       across multiple client sessions for a given server.""") 
+       across multiple client sessions for a given server.""")
+
+    encryption = param.Parameter(default=None, doc="""
+       Object with encrypt and decrypt methods to support encryption
+       of secret variables including OAuth information.""")
 
     webdriver = param.Parameter(default=None, doc="""
       Selenium webdriver used to export bokeh models to pngs.""")
@@ -136,6 +144,43 @@ class _state(param.Parameterized):
     @property
     def session_args(self):
         return self.curdoc.session_context.request.arguments if self.curdoc else {}
+
+    @property
+    def access_token(self):
+        from ..config import config
+        access_token = self.cookies.get('access_token')
+        if access_token is None:
+            return None
+        access_token = decode_signed_value(config.cookie_secret, 'access_token', access_token)
+        if self.encryption is None:
+            return access_token.decode('utf-8')
+        return self.encryption.decrypt(access_token).decode('utf-8')
+
+    @property
+    def user(self):
+        from ..config import config
+        user = self.cookies.get('user')
+        if user is None:
+            return None
+        return decode_signed_value(config.cookie_secret, 'user', user).decode('utf-8')
+
+    @property
+    def user_info(self):
+        from ..config import config
+        id_token = self.cookies.get('id_token')
+        if id_token is None:
+            return None
+        id_token = decode_signed_value(config.cookie_secret, 'id_token', id_token)
+        if self.encryption is None:
+            id_token = id_token
+        else:
+            id_token = self.encryption.decrypt(id_token)
+        if b"." in id_token:
+            signing_input, _ = id_token.rsplit(b".", 1)
+            _, payload_segment = signing_input.split(b".", 1)
+        else:
+            payload_segment = id_token
+        return json.loads(base64url_decode(payload_segment).decode('utf-8'))
 
     @property
     def location(self):

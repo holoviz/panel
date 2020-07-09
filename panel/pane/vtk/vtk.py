@@ -365,7 +365,7 @@ class VTKRenderWindow(BaseVTKRenderWindow):
         super(VTKRenderWindow, self).__init__(object, **params)
         if object is not None:
             self.color_mappers = self.get_color_mappers()
-            self._update(model=None)
+            self._update()
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         VTKSynchronizedPlot = super(VTKRenderWindow, self)._get_model(doc, root=None, parent=None, comm=None)
@@ -383,7 +383,7 @@ class VTKRenderWindow(BaseVTKRenderWindow):
         self._models[root.ref['id']] = (model, parent)
         return model
 
-    def _update(self, model):
+    def _update(self, ref=None, model=None):
         import panel.pane.vtk.synchronizable_serializer as rws
         context = rws.SynchronizationContext(id_root=make_globally_unique_id(), debug=self._debug_serializer)
         self._scene, self._arrays = self._serialize_ren_win(
@@ -450,7 +450,7 @@ class VTKRenderWindowSynchronized(BaseVTKRenderWindow, SyncHelpers):
         self._contexts.pop(ref, None)
         super(VTKRenderWindowSynchronized, self)._cleanup(root)
 
-    def _update(self, model):
+    def _update(self, ref=None, model=None):
         context = self._contexts[model.id]
         scene, arrays = self._serialize_ren_win(
             self.object, 
@@ -670,7 +670,7 @@ class VTKVolume(AbstractVTK):
                     msg[k] = int(np.round(v * ori_dim[index] / sub_dim[index]))
         return msg
 
-    def _update(self, model=None):
+    def _update(self, ref=None, model=None):
         self._volume_data = self._get_volume_data()
         if self._volume_data is not None:
             self._orginal_dimensions = self._get_object_dimensions()
@@ -814,7 +814,7 @@ class VTKJS(AbstractVTK):
             self._vtkjs = vtkjs
         return self._vtkjs
 
-    def _update(self, model):
+    def _update(self, ref=None, model=None):
         self._vtkjs = None
         vtkjs = self._get_vtkjs()
         model.data = base64encode(vtkjs) if vtkjs is not None else vtkjs

@@ -114,6 +114,7 @@ _tests = [
     'pytest-cov',
     'codecov',
     'folium',
+    'ipympl'
 ]
 
 extras_require = {

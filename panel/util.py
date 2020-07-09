@@ -3,6 +3,7 @@ Various general utilities used in the panel codebase.
 """
 from __future__ import absolute_import, division, unicode_literals
 
+import base64
 import datetime as dt
 import inspect
 import json
@@ -281,6 +282,27 @@ def parse_query(query):
         elif v.startswith('[') or v.startswith('{'):
             query[k] = json.loads(v)
     return query
+
+
+def base64url_encode(input):
+    if isinstance(input, str):
+        input = input.encode("utf-8")
+    encoded = base64.urlsafe_b64encode(input).decode('ascii')
+    # remove padding '=' chars that cause trouble
+    return str(encoded.rstrip('='))
+
+
+def base64url_decode(input):
+    if isinstance(input, str):
+        input = input.encode("ascii")
+
+    rem = len(input) % 4
+
+    if rem > 0:
+        input += b"=" * (4 - rem)
+
+    return base64.urlsafe_b64decode(input)
+
 
 # This functionality should be contributed to param
 # See https://github.com/holoviz/param/issues/379

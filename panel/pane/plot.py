@@ -17,6 +17,7 @@ from ..io import remove_root
 from ..io.notebook import push
 from ..viewable import Layoutable
 from .base import PaneBase
+from .ipywidget import IPyWidget
 from .markup import HTML
 from .image import PNG
 
@@ -113,7 +114,7 @@ class Bokeh(PaneBase):
         return model
 
 
-class Matplotlib(PNG):
+class Matplotlib(PNG, IPyWidget):
     """
     A Matplotlib pane renders a matplotlib figure to png and wraps the
     base64 encoded data in a bokeh Div model. The size of the image in
@@ -124,6 +125,9 @@ class Matplotlib(PNG):
 
     dpi = param.Integer(default=144, bounds=(1, None), doc="""
         Scales the dpi of the matplotlib figure.""")
+
+    interactive = param.Boolean(default=False, constant=True, doc="""
+    """)
 
     tight = param.Boolean(default=False, doc="""
         Automatically adjust the figure size to fit the
@@ -141,6 +145,63 @@ class Matplotlib(PNG):
             raise ValueError('Matplotlib figure has no canvas and '
                              'cannot be rendered.')
         return is_fig
+
+    def __init__(self, object=None, **params):
+        super(Matplotlib, self).__init__(object, **params)
+        self._managers = {}
+
+    def _get_widget(self, fig):
+        import matplotlib
+        old_backend = getattr(matplotlib.backends, 'backend', 'agg')
+
+        from ipympl.backend_nbagg import FigureManager, Canvas, is_interactive
+        from matplotlib._pylab_helpers import Gcf
+
+        matplotlib.use(old_backend)
+
+        def closer(event):
+            Gcf.destroy(0)
+
+        canvas = Canvas(fig)
+        fig.patch.set_alpha(0)
+        manager = FigureManager(canvas, 0)
+
+        if is_interactive():
+            fig.canvas.draw_idle()
+
+        canvas.mpl_connect('close_event', closer)
+        return manager
+
+    def _get_model(self, doc, root=None, parent=None, comm=None):
+        if not self.interactive:
+            return PNG._get_model(self, doc, root, parent, comm)
+        self.object.set_dpi(self.dpi)
+        manager = self._get_widget(self.object)
+        props = self._process_param_change(self._init_properties())
+        kwargs = {k: v for k, v in props.items()
+                  if k not in self._rerender_params+['interactive']}
+        model = self._get_ipywidget(manager.canvas, doc, root, comm,
+                                    **kwargs)
+        if root is None:
+            root = model
+        self._models[root.ref['id']] = (model, parent)
+        self._managers[root.ref['id']] = manager
+        return model
+
+    def _update(self, ref=None, model=None):
+        if not self.interactive:
+            model.update(**self._get_properties())
+            return
+        manager = self._managers[ref]
+        if self.object is not manager.canvas.figure:
+            self.object.set_dpi(self.dpi)
+            self.object.patch.set_alpha(0)
+            manager.canvas.figure = self.object
+            self.object.set_canvas(manager.canvas)
+            event = {'width': manager.canvas._width,
+                     'height': manager.canvas._height}
+            manager.canvas.handle_resize(event)
+        manager.canvas.draw_idle()
 
     def _imgshape(self, data):
         """Calculate and return image width,height"""
