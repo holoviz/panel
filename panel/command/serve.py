@@ -95,10 +95,12 @@ class Serve(_BkServe):
             kwargs['index'] = INDEX_HTML
 
         # Handle tranquilized functions in the supplied functions
-        kwargs['extra_patterns'] = patterns = []
+        kwargs['extra_patterns'] = patterns = kwargs.get('extra_patterns', [])
 
         if args.static_dirs:
-            patterns += get_static_routes(parse_vars(args.static_dirs))
+            static_dirs = parse_vars(args.static_dirs)
+            static_dirs['panel_dist'] = os.path.join(os.path.split(__file__)[0], 'dist')
+            patterns += get_static_routes()
 
         if args.oauth_provider:
             config.oauth_provider = args.oauth_provider
