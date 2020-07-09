@@ -5,6 +5,7 @@ ways.
 
 import ast
 import base64
+import os
 
 from bokeh.command.subcommands.serve import Serve as _BkServe
 
