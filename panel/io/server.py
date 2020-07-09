@@ -74,7 +74,7 @@ def unlocked():
     on current sessions.
     """
     curdoc = state.curdoc
-    if curdoc is None or curdoc.session_context is None:
+    if curdoc is None or curdoc.session_context is None or curdoc.session_context.session is None:
         yield
         return
     connections = curdoc.session_context.session._subscribed_connections
@@ -294,6 +294,9 @@ def get_server(panel, port=0, address=None, websocket_origin=None,
             apps[slug] = partial(_eval_panel, app, server_id, title_, location)
     else:
         apps = {'/': partial(_eval_panel, panel, server_id, title, location)}
+
+    dist_dir = os.path.join(os.path.split(os.path.dirname(__file__))[0], 'dist')
+    static_dirs = dict(static_dirs, panel_dist=dist_dir)
 
     extra_patterns += get_static_routes(static_dirs)
 

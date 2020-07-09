@@ -25,7 +25,9 @@ def css_raw(self):
         if not os.path.isfile(cssf):
             continue
         with open(cssf) as f:
-            raw.append(f.read())
+            css_txt = f.read()
+            if css_txt not in raw:
+                raw.append(css_txt)
     return raw + config.raw_css
 
 def js_files(self):
@@ -37,14 +39,18 @@ def js_files(self):
     require_index = [i for i, jsf in enumerate(js_files) if 'require' in jsf]
     if require_index:
         requirejs = js_files.pop(require_index[0])
+        if any('ace' in jsf for jsf in js_files):
+            js_files.append('/panel_dist/pre_require.js')
         js_files.append(requirejs)
+        if any('ace' in jsf for jsf in js_files):
+            js_files.append('/panel_dist/post_require.js')
     return js_files
                     
 def css_files(self):
     from ..config import config
     files = super(Resources, self).css_files
     for cssf in config.css_files:
-        if os.path.isfile(cssf):
+        if os.path.isfile(cssf) or cssf in files:
             continue
         files.append(cssf)
     return files
