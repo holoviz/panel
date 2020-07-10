@@ -1,23 +1,24 @@
 import codecs
 import json
+import logging
+import os
 import pkg_resources
 import re
 
-try:
-    from urllib import urlencode
-except ImportError:
-    # python 3
-    from urllib.parse import urlencode
+from urllib.parse import urlencode
 
 import tornado
 
 from bokeh.server.auth_provider import AuthProvider
 from tornado.auth import OAuth2Mixin
+from tornado.httpclient import HTTPRequest
 from tornado.httputil import url_concat
 
 from .config import config
 from .io import state
 from .util import base64url_encode, base64url_decode
+
+log = logging.getLogger(__file__)
 
 
 
@@ -163,6 +164,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
         success_callback(user, body['access_token'])
 
     async def get(self):
+        log.info("%s received login request" % type(self).__name__)
         if config.oauth_redirect_uri:
             redirect_uri = config.oauth_redirect_uri
         else:
@@ -177,7 +179,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
         }
         # Some OAuth2 backends do not correctly return code
         next_code = self.get_argument('next', None)
-        if 'code=' in next_code:
+        if next_code and 'code=' in next_code:
             url_params = next_code[next_code.index('code='):].replace('code=', '').split('&')
             code = url_params[0]
             state = [p.replace('state=', '') for p in url_params if p.startswith('state')]
@@ -363,6 +365,11 @@ class GitLabLoginHandler(OAuthLoginHandler, OAuth2Mixin):
 
 class OAuthIDTokenLoginHandler(OAuthLoginHandler):
 
+    _API_BASE_HEADERS = {
+        'Content-Type':
+        'application/x-www-form-urlencoded; charset=UTF-8'
+    }
+
     _EXTRA_AUTHORIZE_PARAMS = {
         'grant_type':    'authorization_code'
     }
@@ -406,15 +413,24 @@ class OAuthIDTokenLoginHandler(OAuthLoginHandler):
             **self._EXTRA_AUTHORIZE_PARAMS
         }
 
-        # Request the access token.
-        response = await http.fetch(
-            self._OAUTH_ACCESS_TOKEN_URL,
-            method='POST',
-            body=urlencode(params),
-            headers=self._API_BASE_HEADERS
-        )
+        try:
+            data = urlencode(
+                params, doseq=True, encoding='utf-8', safe='=')
 
-        decoded_body = decode_response_body(response)
+            # Request the access token.
+            req = HTTPRequest(
+                self._OAUTH_ACCESS_TOKEN_URL,
+                method="POST",
+                headers=self._API_BASE_HEADERS,
+                body=data
+            )
+
+            response = await http.fetch(req)
+            decoded_body = decode_response_body(response)
+        except Exception:
+            import requests
+            response = requests.post(self._OAUTH_ACCESS_TOKEN_URL, data=params)
+            decoded_body = response.json()
 
         if 'access_token' not in decoded_body:
             data = {
@@ -460,11 +476,13 @@ class AzureAdLoginHandler(OAuthIDTokenLoginHandler, OAuth2Mixin):
 
     @property
     def _OAUTH_ACCESS_TOKEN_URL(self):
-        return self._OAUTH_ACCESS_TOKEN_URL_.format(**config.oauth_extra_params)
+        tenant = os.environ.get('AAD_TENANT_ID', config.oauth_extra_params.get('tenant', 'common'))
+        return self._OAUTH_ACCESS_TOKEN_URL_.format(tenant=tenant)
 
     @property
     def _OAUTH_AUTHORIZE_URL(self):
-        return self._OAUTH_AUTHORIZE_URL_.format(**config.oauth_extra_params)
+        tenant = os.environ.get('AAD_TENANT_ID', config.oauth_extra_params.get('tenant', 'common'))
+        return self._OAUTH_AUTHORIZE_URL_.format(tenant=tenant)
 
     @property
     def _OAUTH_USER_URL(self):
