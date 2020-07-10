@@ -18,8 +18,7 @@ from .config import config
 from .io import state
 from .util import base64url_encode, base64url_decode
 
-log = logging.getLogger(__file__)
-
+log = logging.getLogger(__name__)
 
 
 def decode_response_body(response):
@@ -79,7 +78,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
             params['scope'] = self._SCOPE
         if 'scope' in config.oauth_extra_params:
             params['scope'] = config.oauth_extra_params['scope']
-        log.info("%s making authorize request" % type(self).__name__)
+        log.debug("%s making authorize request" % type(self).__name__)
         self.authorize_redirect(**params)
 
     async def _fetch_access_token(self, code, redirect_uri, client_id, client_secret):
@@ -103,7 +102,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
         if not client_secret:
             raise ValueError('The client secret is undefined.')
 
-        log.info("%s making access token request." % type(self).__name__)
+        log.debug("%s making access token request." % type(self).__name__)
 
         params = {
             'code':          code,
@@ -149,11 +148,11 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
         if not user:
             return
 
-        log.info("%s received user information." % type(self).__name__)
+        log.debug("%s received user information." % type(self).__name__)
         return self._on_auth(user, body['access_token'])
 
     async def get(self):
-        log.info("%s received login request" % type(self).__name__)
+        log.debug("%s received login request" % type(self).__name__)
         if config.oauth_redirect_uri:
             redirect_uri = config.oauth_redirect_uri
         else:
@@ -188,7 +187,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
             user = await self.get_authenticated_user(**params)
             if user is None:
                 raise tornado.web.HTTPError(403)
-            log.info("%s authorized user, redirecting to app." % type(self).__name__)
+            log.debug("%s authorized user, redirecting to app." % type(self).__name__)
             self.redirect('/')
         else:
             # Redirect for user authentication
@@ -297,7 +296,7 @@ class GitLabLoginHandler(OAuthLoginHandler, OAuth2Mixin):
         if not client_secret:
             raise ValueError('The client secret is undefined.')
 
-        log.info("%s making access token request." % type(self).__name__)
+        log.debug("%s making access token request." % type(self).__name__)
 
         http = self.get_auth_http_client()
 
@@ -333,7 +332,7 @@ class GitLabLoginHandler(OAuthLoginHandler, OAuth2Mixin):
                 data['error'] = response.error
             return self._on_error(**data)
 
-        log.info("%s granted access_token." % type(self).__name__)
+        log.debug("%s granted access_token." % type(self).__name__)
 
         headers = dict(self._API_BASE_HEADERS, **{
             "Authorization": "Bearer {}".format(body['access_token']),
@@ -350,7 +349,7 @@ class GitLabLoginHandler(OAuthLoginHandler, OAuth2Mixin):
         if not user:
             return
 
-        log.info("%s received user information." % type(self).__name__)
+        log.debug("%s received user information." % type(self).__name__)
 
         return self._on_auth(user, body['access_token'])
 
@@ -388,7 +387,7 @@ class OAuthIDTokenLoginHandler(OAuthLoginHandler):
         if not client_secret:
             raise ValueError('The client secret are undefined.')
 
-        log.info("%s making access token request." % type(self).__name__)
+        log.debug("%s making access token request." % type(self).__name__)
 
         http = self.get_auth_http_client()
 
@@ -424,7 +423,7 @@ class OAuthIDTokenLoginHandler(OAuthLoginHandler):
                 data['error'] = response.error
             return self._on_error(**data)
 
-        log.info("%s granted access_token." % type(self).__name__)
+        log.debug("%s granted access_token." % type(self).__name__)
 
         access_token = decoded_body['access_token']
         id_token = decoded_body['id_token']
