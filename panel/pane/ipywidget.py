@@ -20,10 +20,9 @@ class IPyWidget(PaneBase):
             IPyWidget = _BkIPyWidget
         else:
             import ipykernel
-            from ipywidgets_bokeh.kernel import BokehKernel
             from ipywidgets_bokeh.widget import IPyWidget
-            if not isinstance(ipykernel.kernelbase.Kernel._instance, BokehKernel):
-                from ..io.ipywidget import PanelKernel
+            from ..io.ipywidget import PanelKernel
+            if not isinstance(ipykernel.kernelbase.Kernel._instance, PanelKernel):
                 kernel = PanelKernel(document=doc, key=str(id(doc)).encode('utf-8'))
                 for w in obj.widgets.values():
                     w.comm.kernel = kernel
