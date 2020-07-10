@@ -109,6 +109,10 @@ class _config(param.Parameterized):
     _embed_save_path = param.String(default='./', doc="""
         Where to save json files for embedded state.""")
 
+    _log_level = param.Selector(
+        default=None, objects=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+        doc="Log level of Panel loggers")
+
     _oauth_provider = param.ObjectSelector(
         default=None, allow_None=True, objects=[], doc="""
         Select between a list of authentification providers.""")
@@ -257,6 +261,20 @@ class _config(param.Parameterized):
     def inline(self, value):
         validate_config(self, '_inline', value)
         self._inline_ = value
+
+    @property
+    def log_level(self):
+        if self._log_level_ is not None:
+            return self._log_level_
+        elif 'PANEL_LOG_LEVEL' in os.environ:
+            return os.environ['PANEL_LOG_LEVEL'].upper()
+        else:
+            return self._log_level
+
+    @log_level.setter
+    def log_level(self, value):
+        validate_config(self, '_log_level', value)
+        self._log_level_ = value
 
     @property
     def oauth_provider(self):

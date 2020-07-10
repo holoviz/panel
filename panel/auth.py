@@ -50,9 +50,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
     x_site_token = 'application'
 
     async def get_authenticated_user(self, redirect_uri, client_id, state,
-                               client_secret=None, code=None,
-                               success_callback=None,
-                               error_callback=None):
+                                     client_secret=None, code=None):
         """ Fetches the authenticated user
         :param redirect_uri: the redirect URI
         :param client_id: the client ID
@@ -60,21 +58,14 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
                       cross-site request forgery attacks
         :param client_secret: the client secret
         :param code: the response code from the server
-        :param success_callback: the success callback used when fetching
-                                 the access token succeeds
-        :param error_callback: the callback used when fetching the access
-                               token fails
         """
         if code:
-            await self._fetch_access_token(
+            return await self._fetch_access_token(
                 code,
-                success_callback,
-                error_callback,
                 redirect_uri,
                 client_id,
                 client_secret
             )
-            return
 
         params = {
             'redirect_uri': redirect_uri,
@@ -88,10 +79,10 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
             params['scope'] = self._SCOPE
         if 'scope' in config.oauth_extra_params:
             params['scope'] = config.oauth_extra_params['scope']
+        log.info("%s making authorize request" % type(self).__name__)
         self.authorize_redirect(**params)
 
-    async def _fetch_access_token(self, code, success_callback, error_callback,
-                                  redirect_uri, client_id, client_secret):
+    async def _fetch_access_token(self, code, redirect_uri, client_id, client_secret):
         """
         Fetches the access token.
 
@@ -99,10 +90,6 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
         ----------
         code:
           The response code from the server
-        success_callback:
-          The  callback used when fetching the access token succeeds
-        error_callback:
-          The callback used when fetching the access token fails
         redirect_uri:
           The redirect URI
         client_id:
@@ -113,10 +100,10 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
           The unguessable random string to protect against cross-site
           request forgery attacks
         """
-        if not (client_secret and success_callback and error_callback):
-            raise ValueError(
-                'The client secret or any callbacks are undefined.'
-            )
+        if not client_secret:
+            raise ValueError('The client secret is undefined.')
+
+        log.info("%s making access token request." % type(self).__name__)
 
         params = {
             'code':          code,
@@ -148,7 +135,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
             }
             if response.error:
                 data['error'] = response.error
-            error_callback(**data)
+            return self._on_error(**data)
 
         user_response = await http.fetch(
             '{}{}'.format(
@@ -161,7 +148,10 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
 
         if not user:
             return
-        success_callback(user, body['access_token'])
+
+        log.info("%s received user information." % type(self).__name__)
+
+        return self._on_auth(user, body['access_token'])
 
     async def get(self):
         log.info("%s received login request" % type(self).__name__)
@@ -193,28 +183,31 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
             # retrieved from the query string.
             params.update({
                 'client_secret': config.oauth_secret,
-                'success_callback': self._on_auth,
-                'error_callback': self._on_error,
                 'code':  code,
                 'state': state
             })
+            user = await self.get_authenticated_user(**params)
+            if user is None:
+                raise web.HTTPError(403)
+            log.info("%s authorized user, redirecting to app." % type(self).__name__)
+            self.redirect('/')
+        else:
+            # Redirect for user authentication
             await self.get_authenticated_user(**params)
-            return
-        # Redirect for user authentication
-        await self.get_authenticated_user(**params)
 
     def _on_auth(self, user_info, access_token):
         user_key = config.oauth_jwt_user or self._USER_KEY
-        self.set_secure_cookie('user', user_info[user_key])
+        user = user_info[user_key]
+        self.set_secure_cookie('user', user)
         id_token = base64url_encode(json.dumps(user_info))
         if state.encryption:
             access_token = state.encryption.encrypt(access_token.encode('utf-8'))
             id_token = state.encryption.encrypt(id_token.encode('utf-8'))
         self.set_secure_cookie('access_token', access_token)
         self.set_secure_cookie('id_token', id_token)
-        self.redirect('/')
+        return user
 
-    def _on_error(self, user):
+    def _on_error(self, **kwargs):
         self.clear_all_cookies()
         name = type(self).__name__.replace('LoginHandler', '')
         raise tornado.web.HTTPError(500, '%s authentication failed' % name)
@@ -284,8 +277,7 @@ class GitLabLoginHandler(OAuthLoginHandler, OAuth2Mixin):
         url = config.oauth_extra_params.get('url', 'gitlab.com')
         return self._OAUTH_USER_URL_.format(url)
 
-    async def _fetch_access_token(self, code, success_callback, error_callback,
-                                  redirect_uri, client_id, client_secret):
+    async def _fetch_access_token(self, code, redirect_uri, client_id, client_secret):
         """
         Fetches the access token.
 
@@ -293,10 +285,6 @@ class GitLabLoginHandler(OAuthLoginHandler, OAuth2Mixin):
         ----------
         code:
           The response code from the server
-        success_callback:
-          The  callback used when fetching the access token succeeds
-        error_callback:
-          The callback used when fetching the access token fails
         redirect_uri:
           The redirect URI
         client_id:
@@ -307,10 +295,10 @@ class GitLabLoginHandler(OAuthLoginHandler, OAuth2Mixin):
           The unguessable random string to protect against cross-site
           request forgery attacks
         """
-        if not (client_secret and success_callback and error_callback):
-            raise ValueError(
-                'The client secret or any callbacks are undefined.'
-            )
+        if not client_secret:
+            raise ValueError('The client secret is undefined.')
+
+        log.info("%s making access token request." % type(self).__name__)
 
         http = self.get_auth_http_client()
 
@@ -344,11 +332,14 @@ class GitLabLoginHandler(OAuthLoginHandler, OAuth2Mixin):
             }
             if response.error:
                 data['error'] = response.error
-            error_callback(**data)
+            return self._on_error(**data)
+
+        log.info("%s granted access_token." % type(self).__name__)
 
         headers = dict(self._API_BASE_HEADERS, **{
             "Authorization": "Bearer {}".format(body['access_token']),
         })
+
         user_response = await http.fetch(
             self._OAUTH_USER_URL,
             method="GET",
@@ -359,7 +350,10 @@ class GitLabLoginHandler(OAuthLoginHandler, OAuth2Mixin):
 
         if not user:
             return
-        success_callback(user, body['access_token'])
+
+        log.info("%s received user information." % type(self).__name__)
+
+        return self._on_auth(user, body['access_token'])
 
 
 
@@ -374,9 +368,7 @@ class OAuthIDTokenLoginHandler(OAuthLoginHandler):
         'grant_type':    'authorization_code'
     }
 
-    async def _fetch_access_token(
-        self, code, success_callback, error_callback, redirect_uri,
-        client_id, client_secret):
+    async def _fetch_access_token(self, code, redirect_uri, client_id, client_secret):
         """
         Fetches the access token.
 
@@ -384,10 +376,6 @@ class OAuthIDTokenLoginHandler(OAuthLoginHandler):
         ----------
         code:
           The response code from the server
-        success_callback:
-          The  callback used when fetching the access token succeeds
-        error_callback:
-          The callback used when fetching the access token fails
         redirect_uri:
           The redirect URI
         client_id:
@@ -398,10 +386,10 @@ class OAuthIDTokenLoginHandler(OAuthLoginHandler):
           The unguessable random string to protect against cross-site
           request forgery attacks
         """
-        if not (client_secret and success_callback and error_callback):
-            raise ValueError(
-                'The client secret or any callbacks are undefined.'
-            )
+        if not client_secret:
+            raise ValueError('The client secret are undefined.')
+
+        log.info("%s making access token request." % type(self).__name__)
 
         http = self.get_auth_http_client()
 
@@ -413,24 +401,19 @@ class OAuthIDTokenLoginHandler(OAuthLoginHandler):
             **self._EXTRA_AUTHORIZE_PARAMS
         }
 
-        try:
-            data = urlencode(
-                params, doseq=True, encoding='utf-8', safe='=')
+        data = urlencode(
+            params, doseq=True, encoding='utf-8', safe='=')
 
-            # Request the access token.
-            req = HTTPRequest(
-                self._OAUTH_ACCESS_TOKEN_URL,
-                method="POST",
-                headers=self._API_BASE_HEADERS,
-                body=data
-            )
+        # Request the access token.
+        req = HTTPRequest(
+            self._OAUTH_ACCESS_TOKEN_URL,
+            method="POST",
+            headers=self._API_BASE_HEADERS,
+            body=data
+        )
 
-            response = await http.fetch(req)
-            decoded_body = decode_response_body(response)
-        except Exception:
-            import requests
-            response = requests.post(self._OAUTH_ACCESS_TOKEN_URL, data=params)
-            decoded_body = response.json()
+        response = await http.fetch(req)
+        decoded_body = decode_response_body(response)
 
         if 'access_token' not in decoded_body:
             data = {
@@ -440,25 +423,27 @@ class OAuthIDTokenLoginHandler(OAuthLoginHandler):
 
             if response.error:
                 data['error'] = response.error
-            error_callback(**data)
-            return
+            return self._on_error(**data)
+
+        log.info("%s granted access_token." % type(self).__name__)
 
         access_token = decoded_body['access_token']
         id_token = decoded_body['id_token']
-        success_callback(id_token, access_token)
+        return self._on_auth(id_token, access_token)
 
     def _on_auth(self, id_token, access_token):
         signing_input, _ = id_token.encode('utf-8').rsplit(b".", 1)
         _, payload_segment = signing_input.split(b".", 1)
         decoded = json.loads(base64url_decode(payload_segment).decode('utf-8'))
         user_key = config.oauth_jwt_user or self._USER_KEY
-        self.set_secure_cookie('user', decoded[user_key])
+        user = decoded[user_key]
+        self.set_secure_cookie('user', user)
         if state.encryption:
             access_token = state.encryption.encrypt(access_token.encode('utf-8'))
             id_token = state.encryption.encrypt(id_token.encode('utf-8'))
         self.set_secure_cookie('access_token', access_token)
         self.set_secure_cookie('id_token', id_token)
-        self.redirect('/')
+        return user
 
 
 class AzureAdLoginHandler(OAuthIDTokenLoginHandler, OAuth2Mixin):
