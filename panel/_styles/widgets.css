@@ -144,9 +144,9 @@ div.loader:after {
   content: "";
   background: conic-gradient(
     #f3f3f3 0 100%
-  );
+  ) !important;
   border-radius: 50%;
-  -webkit-mask-image: radial-gradient(transparent 50%, rgba(0, 0, 0, 1) 50%);
+  -webkit-mask-image: radial-gradient(transparent 50%, rgba(0, 0, 0, 1) 54%);
   width: 100%;
   height: 100%;
   left: 0;
@@ -158,7 +158,7 @@ div.loader.spin:after {
   background: conic-gradient(
     #3498db 25%,
     #f3f3f3 0 50%
-  );
+  ) !important;
   animation: spin 2s linear infinite;
 }
 
@@ -172,7 +172,6 @@ div.loader.spin:after {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
-
 
 .dot div {
   height: 100%;
