@@ -37,6 +37,19 @@ def decode_response_body(response):
     body = json.loads(body)
     return body
 
+def extract_urlparam(name, urlparam):
+    """
+    Attempts to extract a url parameter embedded in another URL
+    parameter.
+    """
+    if urlparam is None:
+        return None
+    query = name+'='
+    if query in urlparam:
+        split_args = urlparam[urlparam.index(query):].replace(query, '').split('&')
+        return split_args[0] if split_args else None
+    else:
+        return None
 
 class OAuthLoginHandler(tornado.web.RequestHandler):
 
@@ -182,15 +195,10 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
             'client_id':    config.oauth_key,
         }
         # Some OAuth2 backends do not correctly return code
-        next_code = self.get_argument('next', None)
-        if next_code and 'code=' in next_code:
-            url_params = next_code[next_code.index('code='):].replace('code=', '').split('&')
-            code = url_params[0]
-            state = [p.replace('state=', '') for p in url_params if p.startswith('state')]
-            url_state = state[0] if state else None
-        else:
-            code = self.get_argument('code', None)
-            url_state = self.get_argument('state', None)
+        next_arg = self.get_argument('next', None)
+        url_state = self.get_argument('state', None)
+        code = self.get_argument('code', extract_urlparam('code', next_arg))
+        url_state = self.get_argument('state', extract_urlparam('state', next_arg))
 
         # Seek the authorization
         cookie_state = self.get_state_cookie()
@@ -215,6 +223,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
             # Redirect for user authentication
             state = uuid.uuid4().hex
             params['state'] = state
+            print('>>>', state)
             self.set_state_cookie(state)
             await self.get_authenticated_user(**params)
 
