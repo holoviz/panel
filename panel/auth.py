@@ -150,7 +150,6 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
             return
 
         log.info("%s received user information." % type(self).__name__)
-
         return self._on_auth(user, body['access_token'])
 
     async def get(self):
@@ -188,7 +187,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
             })
             user = await self.get_authenticated_user(**params)
             if user is None:
-                raise web.HTTPError(403)
+                raise tornado.web.HTTPError(403)
             log.info("%s authorized user, redirecting to app." % type(self).__name__)
             self.redirect('/')
         else:
