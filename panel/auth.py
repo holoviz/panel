@@ -4,6 +4,7 @@ import logging
 import os
 import pkg_resources
 import re
+import uuid
 
 from urllib.parse import urlencode
 
@@ -19,6 +20,8 @@ from .io import state
 from .util import base64url_encode, base64url_decode
 
 log = logging.getLogger(__name__)
+
+STATE_COOKIE_NAME = 'panel-oauth-state'
 
 
 def decode_response_body(response):
@@ -46,7 +49,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
 
     _SCOPE = None
 
-    x_site_token = 'application'
+    _state_cookie = None
 
     async def get_authenticated_user(self, redirect_uri, client_id, state,
                                      client_secret=None, code=None):
@@ -151,6 +154,20 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
         log.debug("%s received user information." % type(self).__name__)
         return self._on_auth(user, body['access_token'])
 
+    def get_state_cookie(self):
+        """Get OAuth state from cookies
+        To be compared with the value in redirect URL
+        """
+        if self._state_cookie is None:
+            self._state_cookie = (
+                self.get_secure_cookie(STATE_COOKIE_NAME) or b''
+            ).decode('utf8', 'replace')
+            self.clear_cookie(STATE_COOKIE_NAME)
+        return self._state_cookie
+
+    def set_state_cookie(self, state):
+        self.set_secure_cookie(STATE_COOKIE_NAME, state, expires_days=1, httponly=True)
+
     async def get(self):
         log.debug("%s received login request" % type(self).__name__)
         if config.oauth_redirect_uri:
@@ -163,7 +180,6 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
         params = {
             'redirect_uri': redirect_uri,
             'client_id':    config.oauth_key,
-            'state':        self.x_site_token
         }
         # Some OAuth2 backends do not correctly return code
         next_code = self.get_argument('next', None)
@@ -171,18 +187,24 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
             url_params = next_code[next_code.index('code='):].replace('code=', '').split('&')
             code = url_params[0]
             state = [p.replace('state=', '') for p in url_params if p.startswith('state')]
-            state = state[0] if state else None
+            url_state = state[0] if state else None
         else:
             code = self.get_argument('code', None)
-            state = self.get_argument('state', None)
+            url_state = self.get_argument('state', None)
+
         # Seek the authorization
+        cookie_state = self.get_state_cookie()
         if code:
+            if cookie_state != url_state:
+                log.warning("OAuth state mismatch: %s != %s", cookie_state, url_state)
+                raise tornado.web.HTTPError(400, "OAuth state mismatch")
+
             # For security reason, the state value (cross-site token) will be
             # retrieved from the query string.
             params.update({
                 'client_secret': config.oauth_secret,
                 'code':  code,
-                'state': state
+                'state': url_state
             })
             user = await self.get_authenticated_user(**params)
             if user is None:
@@ -191,6 +213,9 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
             self.redirect('/')
         else:
             # Redirect for user authentication
+            state = uuid.uuid4().hex
+            params['state'] = state
+            self.set_state_cookie(state)
             await self.get_authenticated_user(**params)
 
     def _on_auth(self, user_info, access_token):
