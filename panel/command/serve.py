@@ -17,8 +17,8 @@ from tornado.web import FallbackHandler
 from ..auth import OAuthProvider
 from ..config import config
 from ..io.rest import REST_PROVIDERS, ParamHandler, build_tranquilize_application
-from ..io.server import INDEX_HTML
-from ..io.state import state, get_static_routes
+from ..io.server import INDEX_HTML, get_static_routes
+from ..io.state import state
 
 log = logging.getLogger(__name__)
 
