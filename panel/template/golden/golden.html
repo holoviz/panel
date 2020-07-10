@@ -10,7 +10,7 @@
 <!-- goes in body -->
 {% block contents %}
 <header class="app-bar" id="header">
-  <div>
+  <div style="display: contents;">
     <span class="header-title">{{ app_title }}</span>
     <section>
 	  {% for doc in docs %}
@@ -21,7 +21,7 @@
       {% endfor %}
       {% endfor %}
     </section>
-	{% if "busy" in root.tags %}
+	{% if busy %}
 	{{ embed(roots.busy_indicator) | indent(6) }}
 	{% endif %}
   </div>
