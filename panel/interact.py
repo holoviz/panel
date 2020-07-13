@@ -197,7 +197,7 @@ class interactive(PaneBase):
                 self._pane = panel(new_object)
                 self._inner_layout[0] = self._pane
 
-            if self.throttled is True and hasattr(widget, 'value_throttled'):
+            if self.throttled and hasattr(widget, 'value_throttled'):
                 widget.value = widget.value_throttled
                 v = 'value_throttled'
             else:
