@@ -158,9 +158,11 @@ class BaseTemplate(param.Parameterized, ServableMixin):
         else:
             doc.template = self.template
         doc._template_variables.update(self._render_variables)
-        doc._template_variables['template_css_files'] = [
-            str(cssf) for cssf in self._css_files
-        ]
+        doc._template_variables['template_css_files'] = css_files = (
+            doc._template_variables.get('template_css_files', [])
+        )
+        for cssf in self._css_files:
+            css_files.append(str(cssf))
         return doc
 
     def _repr_mimebundle_(self, include=None, exclude=None):

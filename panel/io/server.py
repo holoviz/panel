@@ -407,18 +407,9 @@ def get_server(panel, port=0, address=None, websocket_origin=None,
 class StoppableThread(threading.Thread):
     """Thread class with a stop() method."""
 
-    def __init__(self, io_loop=None, timeout=1000, **kwargs):
-        from tornado import ioloop
+    def __init__(self, io_loop=None,, **kwargs):
         super(StoppableThread, self).__init__(**kwargs)
-        self._stop_event = threading.Event()
         self.io_loop = io_loop
-        self._cb = ioloop.PeriodicCallback(self._check_stopped, timeout)
-        self._cb.start()
-
-    def _check_stopped(self):
-        if self.stopped:
-            self._cb.stop()
-            self.io_loop.stop()
 
     def run(self):
         if hasattr(self, '_target'):
@@ -439,8 +430,4 @@ class StoppableThread(threading.Thread):
                 del self._Thread__target, self._Thread__args, self._Thread__kwargs
 
     def stop(self):
-        self._stop_event.set()
-
-    @property
-    def stopped(self):
-        return self._stop_event.is_set()
+        self.io_loop.add_callback(self.io_loop.stop)
