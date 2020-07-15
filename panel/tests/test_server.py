@@ -1,6 +1,8 @@
 import os
 import time
 
+from tempfile import NamedTemporaryFile
+
 import pytest
 import requests
 
@@ -10,6 +12,7 @@ from panel.io import state
 from panel.models import HTML as BkHTML
 from panel.pane import Markdown
 from panel.io.server import StoppableThread
+from panel.template import Template
 
 
 def test_get_server(html_server_session):
@@ -73,6 +76,7 @@ def test_kill_all_servers(html_server_session, markdown_server_session):
     assert server_1._stopped
     assert server_2._stopped
 
+
 def test_multiple_titles(multiple_apps_server_sessions):
     """Serve multiple apps with a title per app."""
     session1, session2 = multiple_apps_server_sessions(
@@ -84,3 +88,27 @@ def test_multiple_titles(multiple_apps_server_sessions):
     with pytest.raises(KeyError):
         session1, session2 = multiple_apps_server_sessions(
             slugs=('app1', 'app2'), titles={'badkey': 'APP1', 'app2': 'APP2'})
+
+
+def test_template_css():
+    t = Template("{% extends base %}")
+    t.add_panel('A', 1)
+    css = ".test { color: 'green' }"
+    ntf = NamedTemporaryFile()
+    with open(ntf.name, 'w') as f:
+        f.write(css)
+    t.add_variable('template_css_files', [ntf.name])
+
+    loop = IOLoop()
+    server = StoppableThread(
+        target=t._get_server, io_loop=loop,
+        args=(5009, None, None, loop, False, True, None, False, None)
+    )
+    server.start()
+
+    # Wait for server to start
+    time.sleep(1)
+
+    r = requests.get("http://localhost:5009/")
+    assert css in r.content.decode('utf-8')
+    server.stop()

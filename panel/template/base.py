@@ -158,6 +158,11 @@ class BaseTemplate(param.Parameterized, ServableMixin):
         else:
             doc.template = self.template
         doc._template_variables.update(self._render_variables)
+        doc._template_variables['template_css_files'] = css_files = (
+            doc._template_variables.get('template_css_files', [])
+        )
+        for cssf in self._css_files:
+            css_files.append(str(cssf))
         return doc
 
     def _repr_mimebundle_(self, include=None, exclude=None):
@@ -201,6 +206,10 @@ class BaseTemplate(param.Parameterized, ServableMixin):
 
         return render_template(doc, comm, manager)
 
+    @property
+    def _css_files(self):
+        return []
+
     #----------------------------------------------------------------
     # Public API
     #----------------------------------------------------------------
@@ -236,6 +245,7 @@ class BaseTemplate(param.Parameterized, ServableMixin):
         """
         if embed:
             raise ValueError("Embedding is not yet supported on Template.")
+
         return save(self, filename, title, resources, self.template,
                     self._render_variables, embed, max_states, max_opts,
                     embed_json, json_prefix, save_path, load_path)
@@ -320,8 +330,6 @@ class BasicTemplate(BaseTemplate):
     __abstract = True
 
     def __init__(self, **params):
-        if self._css and self._css not in config.css_files:
-            config.css_files.append(self._css)
         template = self._template.read_text()
         if 'header' not in params:
             params['header'] = ListLike()
@@ -330,16 +338,23 @@ class BasicTemplate(BaseTemplate):
         if 'sidebar' not in params:
             params['sidebar'] = ListLike()
         super(BasicTemplate, self).__init__(template=template, **params)
-        if self.theme:
-            theme = self.theme.find_theme(type(self))
-            if theme and theme.css and theme.css not in config.css_files:
-                config.css_files.append(theme.css)
         self._update_vars()
         self.main.param.watch(self._update_render_items, ['objects'])
         self.sidebar.param.watch(self._update_render_items, ['objects'])
         self.header.param.watch(self._update_render_items, ['objects'])
         self.param.watch(self._update_vars, ['title', 'header_background',
                                              'header_color'])
+
+    @property
+    def _css_files(self):
+        css_files = []
+        if self._css and self._css not in config.css_files:
+            css_files.append(self._css)
+        if self.theme:
+            theme = self.theme.find_theme(type(self))
+            if theme and theme.css and theme.css not in config.css_files:
+                css_files.append(theme.css)
+        return css_files
 
     def _init_doc(self, doc=None, comm=None, title=None, notebook=False, location=True):
         doc = super(BasicTemplate, self)._init_doc(doc, comm, title, notebook, location)

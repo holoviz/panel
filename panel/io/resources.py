@@ -45,7 +45,7 @@ def js_files(self):
         if any('ace' in jsf for jsf in js_files):
             js_files.append('/panel_dist/post_require.js')
     return js_files
-                    
+
 def css_files(self):
     from ..config import config
     files = super(Resources, self).css_files
@@ -58,10 +58,30 @@ def css_files(self):
 def conffilter(value):
     return json.dumps(OrderedDict(value)).replace('"', '\'')
 
-Resources.css_raw = property(css_raw)
-Resources.js_files = property(js_files)
-Resources.css_files = property(css_files)
+
+class PanelResources(Resources):
+
+    def __init__(self, extra_css_files=None, **kwargs):
+        super(PanelResources, self).__init__(**kwargs)
+        self._extra_css_files = extra_css_files
+
+    @property
+    def css_raw(self):
+        raw = super(PanelResources, self).css_raw
+        for cssf in self._extra_css_files:
+            if not os.path.isfile(cssf):
+                continue
+            with open(cssf) as f:
+                css_txt = f.read()
+                if css_txt not in raw:
+                    raw.append(css_txt)
+        return raw
+
 
 _env = get_env()
 _env.filters['json'] = lambda obj: Markup(json.dumps(obj))
 _env.filters['conffilter'] = conffilter
+
+Resources.css_raw = property(css_raw)
+Resources.js_files = property(js_files)
+Resources.css_files = property(css_files)

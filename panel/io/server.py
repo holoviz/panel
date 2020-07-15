@@ -14,11 +14,17 @@ from functools import partial
 from types import FunctionType, MethodType
 
 from bokeh.document.events import ModelChangedEvent
+from bokeh.embed.server import server_html_page_for_session
 from bokeh.server.server import Server
+from bokeh.server.views.session_handler import SessionHandler
+from bokeh.server.views.static_handler import StaticHandler
+from bokeh.server.urls import per_app_patterns
+from bokeh.settings import settings
 from tornado.websocket import WebSocketHandler
-from tornado.web import RequestHandler, StaticFileHandler
+from tornado.web import RequestHandler, StaticFileHandler, authenticated
 from tornado.wsgi import WSGIContainer
 
+from .resources import PanelResources
 from .state import state
 
 
@@ -60,6 +66,39 @@ def _eval_panel(panel, server_id, title, location, doc):
         else:
             doc = as_panel(panel)._modify_doc(server_id, title, doc, location)
         return doc
+
+
+class PanelDocHandler(SessionHandler):
+    """
+    Implements a custom Tornado handler for document display page
+    overriding the default bokeh DocHandler to replace the default
+    resources with a Panel resources object.
+    """
+
+    @authenticated
+    async def get(self, *args, **kwargs):
+        session = await self.get_session()
+
+        mode = settings.resources(default="server")
+        css_files = session.document.template_variables.get('template_css_files')
+        resource_opts = dict(mode=mode, extra_css_files=css_files)
+        if mode == "server":
+            resource_opts.update({
+                'root_url': self.application._prefix,
+                'path_versioner': StaticHandler.append_version
+            })
+        resources = PanelResources(**resource_opts)
+
+        page = server_html_page_for_session(
+            session, resources=resources, title=session.document.title,
+            template=session.document.template,
+            template_variables=session.document.template_variables
+        )
+
+        self.set_header("Content-Type", 'text/html')
+        self.write(page)
+
+per_app_patterns[0] = (r'/?', PanelDocHandler)
 
 #---------------------------------------------------------------------
 # Public API
@@ -368,18 +407,9 @@ def get_server(panel, port=0, address=None, websocket_origin=None,
 class StoppableThread(threading.Thread):
     """Thread class with a stop() method."""
 
-    def __init__(self, io_loop=None, timeout=1000, **kwargs):
-        from tornado import ioloop
+    def __init__(self, io_loop=None, **kwargs):
         super(StoppableThread, self).__init__(**kwargs)
-        self._stop_event = threading.Event()
         self.io_loop = io_loop
-        self._cb = ioloop.PeriodicCallback(self._check_stopped, timeout)
-        self._cb.start()
-
-    def _check_stopped(self):
-        if self.stopped:
-            self._cb.stop()
-            self.io_loop.stop()
 
     def run(self):
         if hasattr(self, '_target'):
@@ -400,8 +430,4 @@ class StoppableThread(threading.Thread):
                 del self._Thread__target, self._Thread__args, self._Thread__kwargs
 
     def stop(self):
-        self._stop_event.set()
-
-    @property
-    def stopped(self):
-        return self._stop_event.is_set()
+        self.io_loop.add_callback(self.io_loop.stop)
