@@ -63,7 +63,7 @@ class PanelResources(Resources):
 
     def __init__(self, extra_css_files=None, **kwargs):
         super(PanelResources, self).__init__(**kwargs)
-        self._extra_css_files = extra_css_files
+        self._extra_css_files = extra_css_files or []
 
     @property
     def css_raw(self):

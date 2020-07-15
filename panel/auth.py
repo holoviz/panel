@@ -12,7 +12,7 @@ import tornado
 
 from bokeh.server.auth_provider import AuthProvider
 from tornado.auth import OAuth2Mixin
-from tornado.httpclient import HTTPRequest
+from tornado.httpclient import HTTPRequest, HTTPError
 from tornado.httputil import url_concat
 
 from .config import config
@@ -25,10 +25,16 @@ STATE_COOKIE_NAME = 'panel-oauth-state'
 
 
 def decode_response_body(response):
-    """ Decodes the JSON-format response body
-    :param response: the response object
-    :type response: tornado.httpclient.HTTPResponse
-    :return: the decoded data
+    """
+    Decodes the JSON-format response body
+
+    Arguments
+    ---------
+    response: tornado.httpclient.HTTPResponse
+
+    Returns
+    -------
+    Decoded response content
     """
     # Fix GitHub response.
     body = codecs.decode(response.body, 'ascii')
@@ -36,6 +42,16 @@ def decode_response_body(response):
     body = re.sub("'", '"', body)
     body = json.loads(body)
     return body
+
+
+def decode_id_token(id_token):
+    """
+    Decodes a signed ID JWT token.
+    """
+    signing_input, _ = id_token.encode('utf-8').rsplit(b".", 1)
+    _, payload_segment = signing_input.split(b".", 1)
+    return json.loads(base64url_decode(payload_segment).decode('utf-8'))
+
 
 def extract_urlparam(name, urlparam):
     """
@@ -50,6 +66,7 @@ def extract_urlparam(name, urlparam):
         return split_args[0] if split_args else None
     else:
         return None
+
 
 class OAuthLoginHandler(tornado.web.RequestHandler):
 
@@ -66,13 +83,22 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
 
     async def get_authenticated_user(self, redirect_uri, client_id, state,
                                      client_secret=None, code=None):
-        """ Fetches the authenticated user
-        :param redirect_uri: the redirect URI
-        :param client_id: the client ID
-        :param state: the unguessable random string to protect against
-                      cross-site request forgery attacks
-        :param client_secret: the client secret
-        :param code: the response code from the server
+        """
+        Fetches the authenticated user
+
+        Arguments
+        ---------
+        redirect_uri: (str)
+          The OAuth redirect URI
+        client_id: (str)
+          The OAuth client ID
+        state: (str)
+          The unguessable random string to protect against
+          cross-site request forgery attacks
+        client_secret: (str, optional)
+          The client secret
+        code: (str, optional)
+          The response code from the server
         """
         if code:
             return await self._fetch_access_token(
@@ -102,7 +128,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
         Fetches the access token.
 
         Arguments
-        ----------
+        ---------
         code:
           The response code from the server
         redirect_uri:
@@ -131,12 +157,16 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
         http = self.get_auth_http_client()
 
         # Request the access token.
-        response = await http.fetch(
+        req = HTTPRequest(
             self._OAUTH_ACCESS_TOKEN_URL,
             method='POST',
             body=urlencode(params),
             headers=self._API_BASE_HEADERS
         )
+        try:
+            response = await http.fetch(req)
+        except HTTPError as e:
+            return self._on_error(e.response)
 
         body = decode_response_body(response)
 
@@ -144,13 +174,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
             return
 
         if 'access_token' not in body:
-            data = {
-                'code': response.code,
-                'body': body
-            }
-            if response.error:
-                data['error'] = response.error
-            return self._on_error(**data)
+            return self._on_error(response, body)
 
         user_response = await http.fetch(
             '{}{}'.format(
@@ -205,7 +229,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
         if code:
             if cookie_state != url_state:
                 log.warning("OAuth state mismatch: %s != %s", cookie_state, url_state)
-                raise tornado.web.HTTPError(400, "OAuth state mismatch")
+                raise HTTPError(400, "OAuth state mismatch")
 
             # For security reason, the state value (cross-site token) will be
             # retrieved from the query string.
@@ -216,14 +240,13 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
             })
             user = await self.get_authenticated_user(**params)
             if user is None:
-                raise tornado.web.HTTPError(403)
+                raise HTTPError(403)
             log.debug("%s authorized user, redirecting to app." % type(self).__name__)
             self.redirect('/')
         else:
             # Redirect for user authentication
             state = uuid.uuid4().hex
             params['state'] = state
-            print('>>>', state)
             self.set_state_cookie(state)
             await self.get_authenticated_user(**params)
 
@@ -239,10 +262,18 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
         self.set_secure_cookie('id_token', id_token)
         return user
 
-    def _on_error(self, **kwargs):
+    def _on_error(self, response, body=None):
         self.clear_all_cookies()
-        name = type(self).__name__.replace('LoginHandler', '')
-        raise tornado.web.HTTPError(500, '%s authentication failed' % name)
+        body = body or decode_response_body(response)
+        provider = self.__class__.__name__.replace('LoginHandler', '')
+        if response.error:
+            log.error(f"{provider} OAuth provider returned a {response.error} "
+                      f"error. The full response was: {body}")
+        else:
+            log.warning(f"{provider} OAuth provider failed to fully "
+                        f"authenticate returning the following response:"
+                        f"{body}.")
+        raise HTTPError(500, f"{provider} authentication failed")
 
 
 class GithubLoginHandler(OAuthLoginHandler, OAuth2Mixin):
@@ -345,12 +376,16 @@ class GitLabLoginHandler(OAuthLoginHandler, OAuth2Mixin):
         url = url_concat(self._OAUTH_ACCESS_TOKEN_URL, params)
 
         # Request the access token.
-        response = await http.fetch(
+        req = HTTPRequest(
             url,
-            method='POST',
-            body='',
-            headers=self._API_BASE_HEADERS
+            method="POST",
+            headers=self._API_BASE_HEADERS,
+            body=''
         )
+        try:
+            response = await http.fetch(req)
+        except HTTPError as e:
+            return self._on_error(e.response)
 
         body = decode_response_body(response)
 
@@ -358,13 +393,7 @@ class GitLabLoginHandler(OAuthLoginHandler, OAuth2Mixin):
             return
 
         if 'access_token' not in body:
-            data = {
-                'code': response.code,
-                'body': body
-            }
-            if response.error:
-                data['error'] = response.error
-            return self._on_error(**data)
+            return self._on_error(response, body)
 
         log.debug("%s granted access_token." % type(self).__name__)
 
@@ -397,7 +426,7 @@ class OAuthIDTokenLoginHandler(OAuthLoginHandler):
     }
 
     _EXTRA_AUTHORIZE_PARAMS = {
-        'grant_type':    'authorization_code'
+        'grant_type': 'authorization_code'
     }
 
     async def _fetch_access_token(self, code, redirect_uri, client_id, client_secret):
@@ -444,29 +473,24 @@ class OAuthIDTokenLoginHandler(OAuthLoginHandler):
             body=data
         )
 
-        response = await http.fetch(req)
-        decoded_body = decode_response_body(response)
+        try:
+            response = await http.fetch(req)
+        except HTTPError as e:
+            return self._on_error(e.response)
 
-        if 'access_token' not in decoded_body:
-            data = {
-                'code': response.code,
-                'body': decoded_body
-            }
+        body = decode_response_body(response)
 
-            if response.error:
-                data['error'] = response.error
-            return self._on_error(**data)
+        if 'access_token' not in body:
+            return self._on_error(response, body)
 
         log.debug("%s granted access_token." % type(self).__name__)
 
-        access_token = decoded_body['access_token']
-        id_token = decoded_body['id_token']
+        access_token = body['access_token']
+        id_token = body['id_token']
         return self._on_auth(id_token, access_token)
 
     def _on_auth(self, id_token, access_token):
-        signing_input, _ = id_token.encode('utf-8').rsplit(b".", 1)
-        _, payload_segment = signing_input.split(b".", 1)
-        decoded = json.loads(base64url_decode(payload_segment).decode('utf-8'))
+        decoded = decode_id_token(id_token)
         user_key = config.oauth_jwt_user or self._USER_KEY
         user = decoded[user_key]
         self.set_secure_cookie('user', user)
