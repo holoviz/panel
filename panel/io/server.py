@@ -407,7 +407,7 @@ def get_server(panel, port=0, address=None, websocket_origin=None,
 class StoppableThread(threading.Thread):
     """Thread class with a stop() method."""
 
-    def __init__(self, io_loop=None,, **kwargs):
+    def __init__(self, io_loop=None, **kwargs):
         super(StoppableThread, self).__init__(**kwargs)
         self.io_loop = io_loop
 
