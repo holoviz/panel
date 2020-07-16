@@ -22,6 +22,12 @@ body {
   z-index: 7;
 }
 
+.busy-container {
+  align-items: center;
+  justify-content: center;
+  display: flex;
+}
+
 button.mdc-button.mdc-card-button {
   color: transparent;
   height: 50px;

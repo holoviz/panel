@@ -18,10 +18,10 @@ class Indicator(Widget):
 
 class Busy(Indicator):
 
-    height = param.Integer(default=25, doc="""
+    height = param.Integer(default=20, doc="""
         height of the circle.""")
 
-    width = param.Integer(default=25, doc="""
+    width = param.Integer(default=20, doc="""
         Width of the circle.""")
 
     value = param.Boolean(default=False, doc="""

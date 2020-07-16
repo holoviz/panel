@@ -27,7 +27,7 @@ from ..models.comm_manager import CommManager
 from ..pane import panel as _panel, HTML, Str, HoloViews
 from ..viewable import ServableMixin, Viewable
 from ..widgets import Button
-from ..widgets.indicators import Indicator
+from ..widgets.indicators import Indicator, Busy
 from .theme import DefaultTheme, Theme
 
 _server_info = (
@@ -304,6 +304,10 @@ class BasicTemplate(BaseTemplate):
     feel without having to write any Jinja2 template themselves.
     """
 
+    busy_indicator = param.ClassSelector(default=Busy(), class_=Indicator,
+                                         constant=True, doc="""
+        Indicator class""")
+
     header = param.ClassSelector(class_=ListLike, constant=True, doc="""
         A list-like container which populates the header bar.""")
 
@@ -312,9 +316,6 @@ class BasicTemplate(BaseTemplate):
 
     sidebar = param.ClassSelector(class_=ListLike, constant=True, doc="""
         A list-like container which populates the sidebar.""")
-
-    busy_indicator = param.ClassSelector(class_=Indicator, constant=True, doc="""
-        Indicator class""")
 
     title = param.String(doc="A title to show in the header.")
 
@@ -335,8 +336,6 @@ class BasicTemplate(BaseTemplate):
 
     def __init__(self, **params):
         template = self._template.read_text()
-        if 'busy_indicator' in params:
-            state.sync_busy(params['busy_indicator'])
         if 'header' not in params:
             params['header'] = ListLike()
         if 'main' not in params:
@@ -344,6 +343,8 @@ class BasicTemplate(BaseTemplate):
         if 'sidebar' not in params:
             params['sidebar'] = ListLike()
         super(BasicTemplate, self).__init__(template=template, **params)
+        if self.busy_indicator:
+            state.sync_busy(self.busy_indicator)
         self._update_vars()
         self.main.param.watch(self._update_render_items, ['objects'])
         self.sidebar.param.watch(self._update_render_items, ['objects'])
@@ -393,7 +394,10 @@ class BasicTemplate(BaseTemplate):
             if ref not in self._render_items:
                 self._render_items[ref] = (obj, [tag])
         tags = [tags for _, tags in self._render_items.values()]
-        self._render_items['busy_indicator'] = (self.busy_indicator, [])
+        if self.busy_indicator:
+            self._render_items['busy_indicator'] = (self.busy_indicator, [])
+        elif 'busy_indicator' in self._render_items:
+            del self._render_items['busy_indicator']
         self._render_variables['busy'] = self.busy_indicator is not None
         self._render_variables['nav'] = any('nav' in ts for ts in tags)
         self._render_variables['header'] = any('header' in ts for ts in tags)
