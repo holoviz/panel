@@ -9,6 +9,9 @@ export class EChartsView extends HTMLBoxView {
     super.connect_signals()
     this.connect(this.model.properties.data.change, () => this._plot())
     this.connect(this.model.properties.theme.change, () => this._retheme())
+	const {width, height} = this.model.properties
+    this.on_change([width, height], () => this._resize())
+
   }
 
   render(): void {
@@ -26,6 +29,10 @@ export class EChartsView extends HTMLBoxView {
   _retheme(): void {
     (window as any).echarts.dispose(this._chart);
 	this.render();
+  }
+
+  _resize(): void {
+	this._chart.resize({width: this.model.width, height: this.model.height});
   }
 }
 
