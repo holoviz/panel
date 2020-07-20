@@ -405,6 +405,7 @@ class panel_extension(_pyviz_extension):
                 'vega': 'panel.models.vega',
                 'vtk': 'panel.models.vtk',
                 'ace': 'panel.models.ace',
+                'echarts': 'panel.models.echarts',
                 'ipywidgets': 'ipywidgets_bokeh.widget'}
 
     _loaded_extensions = []

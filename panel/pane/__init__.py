@@ -12,6 +12,7 @@ from .alert import Alert # noqa
 from .base import PaneBase, Pane, panel # noqa
 from .equation import LaTeX # noqa
 from .deckgl import DeckGL # noqa
+from .echarts import ECharts # noqa
 from .holoviews import HoloViews # noqa
 from .ipywidget import IPyWidget # noqa
 from .image import GIF, JPG, PNG, SVG # noqa
