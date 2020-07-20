@@ -42,6 +42,27 @@ def test_dataframe_widget(dataframe, document, comm):
     assert isinstance(float_col.editor, NumberEditor)
 
 
+def test_dataframe_widget_no_show_index(dataframe, document, comm):
+    table = DataFrame(dataframe, show_index=False)
+
+    model = table.get_root(document, comm)
+
+    assert len(model.columns) == 3
+    int_col, float_col, str_col = model.columns
+    assert int_col.title == 'int'
+    assert float_col.title == 'float'
+    assert str_col.title == 'str'
+
+    table.show_index = True
+
+    assert len(model.columns) == 4
+    index_col, int_col, float_col, str_col = model.columns
+    assert index_col.title == 'index'
+    assert int_col.title == 'int'
+    assert float_col.title == 'float'
+    assert str_col.title == 'str'
+
+
 def test_dataframe_widget_datetimes(document, comm):
 
     table = DataFrame(makeTimeDataFrame())

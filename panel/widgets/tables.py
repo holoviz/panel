@@ -44,6 +44,9 @@ class DataFrame(Widget):
     selection = param.List(default=[], doc="""
         The currently selected rows of the table.""")
 
+    show_index = param.Boolean(default=True, doc="""
+        Whether to show the index column.""")
+
     row_height = param.Integer(default=25, doc="""
         The height of each table row.""")
 
@@ -53,10 +56,10 @@ class DataFrame(Widget):
     value = param.Parameter(default=None)
 
     _rename = {'editors': None, 'formatters': None, 'widths': None,
-               'disabled': None}
+               'disabled': None, 'show_index': None}
 
     _manual_params = ['value', 'editors', 'formatters', 'selection',
-                      'widths', 'aggregators']
+                      'widths', 'aggregators', 'show_index']
 
     _aggregators = {'sum': SumAggregator, 'max': MaxAggregator,
                     'min': MinAggregator, 'mean': AvgAggregator}
@@ -78,7 +81,7 @@ class DataFrame(Widget):
     @property
     def indexes(self):
         import pandas as pd
-        if self.value is None:
+        if self.value is None or not self.show_index:
             return []
         elif isinstance(self.value.index, pd.MultiIndex):
             return list(self.value.index.names)
@@ -206,7 +209,7 @@ class DataFrame(Widget):
     def _manual_update(self, events, model, doc, root, parent, comm):
         self._validate(None)
         for event in events:
-            if event.name == 'value':
+            if event.name in ('value', 'show_index'):
                 cds = model.source
                 data = {k if isinstance(k, str) else str(k): v
                         for k, v in ColumnDataSource.from_df(self.value).items()}
