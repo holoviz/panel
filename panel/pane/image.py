@@ -58,6 +58,8 @@ class ImageBase(DivPaneBase):
                 return True
             if isurl(obj, [cls.imgtype]):
                 return True
+            elif isurl(obj, None):
+                return 0
         if hasattr(obj, 'read'):  # Check for file like object
             return True
         return False
@@ -77,7 +79,7 @@ class ImageBase(DivPaneBase):
                     return f.read()
         if hasattr(self.object, 'read'):
             return self.object.read()
-        if isurl(self.object, [self.imgtype]):
+        if isurl(self.object, None):
             import requests
             r = requests.request(url=self.object, method='GET')
             return r.content
