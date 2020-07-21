@@ -41,8 +41,24 @@ class DataFrame(Widget):
         results in no horizontal scrollbar showing up, but data can
         get unreadable if there is no enough space available.""")
 
+    reorderable = param.Boolean(default=True, doc="""
+        Allows the reordering of a table's columns. To reorder a
+        column, click and drag a table's header to the desired
+        location in the table.  The columns on either side will remain
+        in their previous order.""")
+
     selection = param.List(default=[], doc="""
         The currently selected rows of the table.""")
+
+    show_index = param.Boolean(default=True, doc="""
+        Whether to show the index column.""")
+
+    sortable = param.Boolean(default=True, doc="""
+        Allows to sort table's contents. By default natural order is
+        preserved.  To sort a column, click on it's header. Clicking
+        one more time changes sort direction. Use Ctrl + click to
+        return to natural order. Use Shift + click to sort multiple
+        columns simultaneously.""")
 
     row_height = param.Integer(default=25, doc="""
         The height of each table row.""")
@@ -53,10 +69,10 @@ class DataFrame(Widget):
     value = param.Parameter(default=None)
 
     _rename = {'editors': None, 'formatters': None, 'widths': None,
-               'disabled': None}
+               'disabled': None, 'show_index': None}
 
     _manual_params = ['value', 'editors', 'formatters', 'selection',
-                      'widths', 'aggregators']
+                      'widths', 'aggregators', 'show_index']
 
     _aggregators = {'sum': SumAggregator, 'max': MaxAggregator,
                     'min': MinAggregator, 'mean': AvgAggregator}
@@ -78,7 +94,7 @@ class DataFrame(Widget):
     @property
     def indexes(self):
         import pandas as pd
-        if self.value is None:
+        if self.value is None or not self.show_index:
             return []
         elif isinstance(self.value.index, pd.MultiIndex):
             return list(self.value.index.names)
@@ -186,6 +202,8 @@ class DataFrame(Widget):
         props['fit_columns'] = self.fit_columns
         props['row_height'] = self.row_height
         props['editable'] = not self.disabled and len(self.indexes) == 1
+        props['sortable'] = self.sortable
+        props['reorderable'] = self.reorderable
         return props
 
     def _process_param_change(self, msg):
@@ -206,7 +224,7 @@ class DataFrame(Widget):
     def _manual_update(self, events, model, doc, root, parent, comm):
         self._validate(None)
         for event in events:
-            if event.name == 'value':
+            if event.name in ('value', 'show_index'):
                 cds = model.source
                 data = {k if isinstance(k, str) else str(k): v
                         for k, v in ColumnDataSource.from_df(self.value).items()}
