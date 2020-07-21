@@ -3,13 +3,10 @@ from __future__ import absolute_import, division, unicode_literals
 import sys
 
 import param
-import numpy as np
 
-from bokeh.models import ColumnDataSource
 from pyviz_comms import JupyterComm
 
 from ..viewable import Layoutable
-from ..util import string_types
 from .base import PaneBase
 
 
