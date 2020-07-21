@@ -49,7 +49,7 @@ def isurl(obj, formats):
     return (
         lower_string.startswith('http://')
         or lower_string.startswith('https://')
-    ) and any(lower_string.endswith('.'+fmt) for fmt in formats)
+    ) and (formats is None or any(lower_string.endswith('.'+fmt) for fmt in formats))
 
 
 def is_dataframe(obj):
