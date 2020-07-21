@@ -26,4 +26,6 @@ class ECharts(LayoutDOM):
 
     data = Dict(String, Any)
 
+    renderer = Enum("canvas", "svg")
+
     theme = Enum("default", "light", "dark")

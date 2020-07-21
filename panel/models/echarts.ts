@@ -8,31 +8,36 @@ export class EChartsView extends HTMLBoxView {
   connect_signals(): void {
     super.connect_signals()
     this.connect(this.model.properties.data.change, () => this._plot())
-    this.connect(this.model.properties.theme.change, () => this._retheme())
-	const {width, height} = this.model.properties
+    const {width, height, renderer, theme} = this.model.properties
     this.on_change([width, height], () => this._resize())
-
+    this.on_change([theme, renderer], () => this._rerender())
   }
 
   render(): void {
     super.render()
-	this._chart = (window as any).echarts.init(this.el, this.model.theme, {width: this.model.width, height: this.model.height});
+    const config = {width: this.model.width, height: this.model.height, renderer: this.model.renderer}
+    this._chart = (window as any).echarts.init(this.el, this.model.theme, config);
     this._plot()
+  }
+
+  after_layout(): void {
+    super.after_layout()
+    this._chart.resize()
   }
 
   _plot(): void {
     if ((window as any).echarts == null)
       return
-	this._chart.setOption(this.model.data);
+    this._chart.setOption(this.model.data);
   }
 
-  _retheme(): void {
+  _rerender(): void {
     (window as any).echarts.dispose(this._chart);
-	this.render();
+    this.render();
   }
 
   _resize(): void {
-	this._chart.resize({width: this.model.width, height: this.model.height});
+    this._chart.resize({width: this.model.width, height: this.model.height});
   }
 }
 
@@ -40,6 +45,7 @@ export namespace ECharts {
   export type Attrs = p.AttrsOf<Props>
   export type Props = HTMLBox.Props & {
     data: p.Property<any>
+    renderer: p.Property<string>
     theme: p.Property<string>
   }
 }
@@ -60,7 +66,8 @@ export class ECharts extends HTMLBox {
 
     this.define<ECharts.Props>({
       data:  [ p.Any               ],
-      theme: [ p.String, "default" ]
+      theme: [ p.String, "default" ],
+      renderer: [ p.String, "canvas"]
     })
   }
 }
