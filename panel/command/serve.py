@@ -100,8 +100,8 @@ class Serve(_BkServe):
 
         if args.static_dirs:
             static_dirs = parse_vars(args.static_dirs)
-            static_dirs['panel_dist'] = os.path.join(os.path.split(__file__)[0], 'dist')
-            patterns += get_static_routes()
+            static_dirs['panel_dist'] = os.path.join(os.path.dirname(os.path.split(__file__)[0]), 'dist')
+            patterns += get_static_routes(static_dirs)
 
         if args.oauth_provider:
             config.oauth_provider = args.oauth_provider
