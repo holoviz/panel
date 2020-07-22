@@ -317,6 +317,9 @@ class BasicTemplate(BaseTemplate):
     sidebar = param.ClassSelector(class_=ListLike, constant=True, doc="""
         A list-like container which populates the sidebar.""")
 
+    modal = param.ClassSelector(class_=ListLike, constant=True, doc="""
+        A list-like container which populates the modal""")
+
     title = param.String(doc="A title to show in the header.")
 
     header_background = param.String(doc="Optional header background color override")
@@ -342,15 +345,20 @@ class BasicTemplate(BaseTemplate):
             params['main'] = ListLike()
         if 'sidebar' not in params:
             params['sidebar'] = ListLike()
+        if 'modal' not in params:
+            params['modal'] = ListLike()
         super(BasicTemplate, self).__init__(template=template, **params)
         if self.busy_indicator:
             state.sync_busy(self.busy_indicator)
         self._update_vars()
         self.main.param.watch(self._update_render_items, ['objects'])
+        self.modal.param.watch(self._update_render_items, ['objects'])
         self.sidebar.param.watch(self._update_render_items, ['objects'])
         self.header.param.watch(self._update_render_items, ['objects'])
         self.param.watch(self._update_vars, ['title', 'header_background',
                                              'header_color'])
+        self._callbacks = {'main': [], 'sidebar': [], 'header': []}
+        self._js_area = HTML(margin=0)
 
     @property
     def _css_files(self):
@@ -383,6 +391,9 @@ class BasicTemplate(BaseTemplate):
             tag = 'nav'
         elif event.obj is self.header:
             tag = 'header'
+        elif event.obj is self.modal:
+            tag = 'modal'
+
         for obj in event.old:
             ref = str(id(obj))
             if obj not in event.new and ref in self._render_items:
@@ -393,6 +404,7 @@ class BasicTemplate(BaseTemplate):
             labels[ref] = 'Content' if obj.name.startswith(type(obj).__name__) else obj.name
             if ref not in self._render_items:
                 self._render_items[ref] = (obj, [tag])
+        self._render_items['js_area'] = (self._js_area, [])
         tags = [tags for _, tags in self._render_items.values()]
         if self.busy_indicator:
             self._render_items['busy_indicator'] = (self.busy_indicator, [])
@@ -403,6 +415,27 @@ class BasicTemplate(BaseTemplate):
         self._render_variables['header'] = any('header' in ts for ts in tags)
         self._render_variables['root_labels'] = labels
 
+    def open_modal(self):
+        """
+        Opens the modal area
+        """
+        self._js_area.object = """
+        <script>
+          var modal = document.getElementById("pn-Modal");
+          modal.style.display = "block";
+        </script>
+        """
+
+    def close_modal(self):
+        """
+        Closes the modal area
+        """
+        self._js_area.object = """
+        <script>
+          var modal = document.getElementById("pn-Modal");
+          modal.style.display = "none";
+        </script>
+        """
 
 
 class Template(BaseTemplate):

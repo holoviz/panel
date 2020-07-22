@@ -66,3 +66,43 @@ p.bk.golden-card-button {
 .bk-canvas {
   padding-right: 2px !important;
 }
+
+
+.pn-modal {
+  overflow-y: scroll;
+  width: 100%;
+  position: absolute;
+  display: none;
+  top: 0;
+  left: 0;
+}
+
+.pn-modal-content {
+  background-color: #fefefe;
+  margin: auto;
+  margin-top: 25px;
+  margin-bottom: 25px;
+  padding: 15px 20px 20px 20px;
+  border: 1px solid #888;
+  width: 80% !important;
+}
+
+.pn-modal-close {
+  position: absolute;
+  right: 25px;
+  z-index: 100;
+}
+
+.pn-modal-close:hover,
+.pn-modal-close:focus {
+  color: #000;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.pn-busy-container {
+  align-items: center;
+  justify-content: center;
+  display: flex;
+  margin-left: auto;
+}
