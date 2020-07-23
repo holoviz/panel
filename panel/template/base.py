@@ -27,19 +27,20 @@ from ..models.comm_manager import CommManager
 from ..pane import panel as _panel, HTML, Str, HoloViews
 from ..viewable import ServableMixin, Viewable
 from ..widgets import Button
-from ..widgets.indicators import Indicator, Busy
+from ..widgets.indicators import BooleanIndicator, LoadingSpinner
 from .theme import DefaultTheme, Theme
 
 _server_info = (
     '<b>Running server:</b> <a target="_blank" href="https://localhost:{port}">'
-    'https://localhost:{port}</a>')
+    'https://localhost:{port}</a>'
+)
 
 
 class BaseTemplate(param.Parameterized, ServableMixin):
 
     # Dictionary of property overrides by bokeh Model type
     _modifiers = {}
-    
+
     __abstract = True
 
     def __init__(self, template=None, items=None, nb_template=None, **params):
@@ -304,9 +305,9 @@ class BasicTemplate(BaseTemplate):
     feel without having to write any Jinja2 template themselves.
     """
 
-    busy_indicator = param.ClassSelector(default=Busy(), class_=Indicator,
-                                         constant=True, doc="""
-        Indicator class""")
+    busy_indicator = param.ClassSelector(default=LoadingSpinner(width=20, height=20),
+                                         class_=BooleanIndicator, constant=True, doc="""
+        Visual indicator of application busy state.""")
 
     header = param.ClassSelector(class_=ListLike, constant=True, doc="""
         A list-like container which populates the header bar.""")

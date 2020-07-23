@@ -142,9 +142,6 @@ progress:not([value])::before {
 
 div.loader:after {
   content: "";
-  background: conic-gradient(
-    #f3f3f3 0 100%
-  ) !important;
   border-radius: 50%;
   -webkit-mask-image: radial-gradient(transparent 50%, rgba(0, 0, 0, 1) 54%);
   width: 100%;
@@ -154,12 +151,133 @@ div.loader:after {
   position: absolute;
 }
 
-div.loader.spin:after {
+div.loader.dark:after {
   background: conic-gradient(
-    #3498db 25%,
-    #f3f3f3 0 50%
+    #0f0f0f 0 100%
   ) !important;
+}
+
+
+div.loader.light:after {
+  background: conic-gradient(
+    #f0f0f0 0 100%
+  ) !important;
+}
+
+div.loader.spin:after {
   animation: spin 2s linear infinite;
+}
+
+div.loader.spin.primary-light:after {
+  background: conic-gradient(
+    #007bff 25%,
+    #f0f0f0 0 50%
+  ) !important;
+}
+
+div.loader.spin.secondary-light:after {
+  background: conic-gradient(
+    #6c757d 25%,
+    #f0f0f0 0 50%
+  ) !important;
+}
+
+div.loader.spin.success-light:after {
+  background: conic-gradient(
+    #28a745 25%,
+    #f0f0f0 0 50%
+  ) !important;
+}
+
+div.loader.spin.danger-light:after {
+  background: conic-gradient(
+    #dc3545 25%,
+    #f0f0f0 0 50%
+  ) !important;
+}
+
+div.loader.spin.warning-light:after {
+  background: conic-gradient(
+    #ffc107 25%,
+    #f0f0f0 0 50%
+  ) !important;
+}
+
+div.loader.spin.info-light:after {
+  background: conic-gradient(
+    #17a2b8 25%,
+    #f0f0f0 0 50%
+  ) !important;
+}
+
+div.loader.spin.light-light:after {
+  background: conic-gradient(
+    #f8f9fa 25%,
+    #f0f0f0 0 50%
+  ) !important;
+}
+
+div.loader.spin.dark-light:after {
+  background: conic-gradient(
+    #343a40 25%,
+    #f0f0f0 0 50%
+  ) !important;
+}
+
+div.loader.spin.primary-dark:after {
+  background: conic-gradient(
+    #007bff 25%,
+    #0f0f0f 0 50%
+  ) !important;
+}
+
+div.loader.spin.secondary-dark:after {
+  background: conic-gradient(
+    #6c757d 25%,
+    #0f0f0f 0 50%
+  ) !important;
+}
+
+div.loader.spin.success-dark:after {
+  background: conic-gradient(
+    #28a745 25%,
+    #0f0f0f 0 50%
+  ) !important;
+}
+
+div.loader.spin.danger-dark:after {
+  background: conic-gradient(
+    #dc3545 25%,
+    #0f0f0f 0 50%
+  ) !important;
+}
+
+div.loader.spin.warning-dark:after {
+  background: conic-gradient(
+    #ffc107 25%,
+    #0f0f0f 0 50%
+  ) !important;
+}
+
+div.loader.spin.info-dark:after {
+  background: conic-gradient(
+    #17a2b8 25%,
+    #0f0f0f 0 50%
+  ) !important;
+}
+
+div.loader.spin.light-dark:after {
+  background: conic-gradient(
+    #f8f9fa 25%,
+    #0f0f0f 0 50%
+  ) !important;
+}
+
+div.loader.spin.dark-dark:after {
+  background: conic-gradient(
+    #343a40 25%,
+    #0f0f0f 0 50%
+  ) !important;
 }
 
 /* Safari */
@@ -186,7 +304,38 @@ div.loader.spin:after {
   height: 100%;
   width: 100%;
   border: 1px solid #000 !important;
-  background-color: #000;
   border-radius: 50%;
   display: inline-block;
+}
+
+.dot-filled.primary div {
+  background-color: #007bff;
+}
+
+.dot-filled.secondary div {
+  background-color: #6c757d;
+}
+
+.dot-filled.success div {
+  background-color: #28a745;
+}
+
+.dot-filled.danger div {
+  background-color: #dc3545;
+}
+
+.dot-filled.warning div {
+  background-color: #ffc107;
+}
+
+.dot-filled.info div {
+  background-color: #17a2b8;
+}
+
+.dot-filled.dark div {
+  background-color: #343a40;
+}
+
+.dot-filled.light div {
+  background-color: #f8f9fa;
 }
