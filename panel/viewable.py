@@ -470,6 +470,11 @@ class Viewable(Renderable, Layoutable, ServableMixin):
 
     _preprocessing_hooks = []
 
+    def __init__(self, **params):
+        hooks = params.pop('hooks', [])
+        super().__init__(**params)
+        self._hooks = hooks
+
     def __repr__(self, depth=0):
         return '{cls}({params})'.format(cls=type(self).__name__,
                                         params=', '.join(param_reprs(self)))
