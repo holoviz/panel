@@ -1,7 +1,7 @@
 git:
   depth: 100
 
-language: generic
+language: python
 
 os:
   - linux
@@ -18,7 +18,6 @@ addons:
 
 env:
   global:
-    - PYENV_VERSION=3.7
     - CHANS_DEV="-c pyviz/label/dev -c bokeh/label/dev -c conda-forge"
     - CHANS_REL="-c pyviz -c bokeh -c conda-forge"
     - LABELS_DEV="--label dev"
