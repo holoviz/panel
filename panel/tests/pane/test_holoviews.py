@@ -406,6 +406,7 @@ def test_holoviews_linked_axes(document, comm):
     assert p1.x_range is p2.x_range
     assert p1.y_range is p2.y_range
 
+
 @hv_available
 def test_holoviews_linked_axes_merged_ranges(document, comm):
     c1 = hv.Curve([1, 2, 3])
@@ -419,8 +420,9 @@ def test_holoviews_linked_axes_merged_ranges(document, comm):
 
     assert p1.x_range is p2.x_range
     assert p1.y_range is p2.y_range
-    assert p1.y_range.start == 0
-    assert p1.y_range.end == 4
+    assert p1.y_range.start == -0.4
+    assert p1.y_range.end == 4.4
+
 
 @hv_available
 def test_holoviews_linked_x_axis(document, comm):
