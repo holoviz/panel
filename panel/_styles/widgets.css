@@ -140,7 +140,7 @@ progress:not([value])::before {
   to {background-position: 100%}
 }
 
-div.loader:after {
+.bk.loader::after {
   content: "";
   border-radius: 50%;
   -webkit-mask-image: radial-gradient(transparent 50%, rgba(0, 0, 0, 1) 54%);
@@ -151,133 +151,80 @@ div.loader:after {
   position: absolute;
 }
 
-div.loader.dark:after {
-  background: conic-gradient(
-    #0f0f0f 0 100%
-  ) !important;
+.bk-root .bk.loader.dark::after {
+  background: #0f0f0f;
 }
 
-
-div.loader.light:after {
-  background: conic-gradient(
-    #f0f0f0 0 100%
-  ) !important;
+.bk-root .bk.loader.light::after {
+  background: #f0f0f0;
 }
 
-div.loader.spin:after {
+.bk-root .bk.loader.spin::after {
   animation: spin 2s linear infinite;
 }
 
-div.loader.spin.primary-light:after {
-  background: conic-gradient(
-    #007bff 25%,
-    #f0f0f0 0 50%
-  ) !important;
+.bk-root div.bk.loader.spin.primary-light::after {
+  background: linear-gradient(135deg, #f0f0f0 50%, transparent 50%), linear-gradient(45deg, #f0f0f0 50%, #007bff 50%);
 }
 
-div.loader.spin.secondary-light:after {
-  background: conic-gradient(
-    #6c757d 25%,
-    #f0f0f0 0 50%
-  ) !important;
+.bk-root div.bk.loader.spin.secondary-light::after {
+  background: linear-gradient(135deg, #f0f0f0 50%, transparent 50%), linear-gradient(45deg, #f0f0f0 50%, #6c757d 50%);
 }
 
-div.loader.spin.success-light:after {
-  background: conic-gradient(
-    #28a745 25%,
-    #f0f0f0 0 50%
-  ) !important;
+.bk-root div.bk.loader.spin.success-light::after {
+  background: linear-gradient(135deg, #f0f0f0 50%, transparent 50%), linear-gradient(45deg, #f0f0f0 50%, #28a745 50%);
 }
 
-div.loader.spin.danger-light:after {
-  background: conic-gradient(
-    #dc3545 25%,
-    #f0f0f0 0 50%
-  ) !important;
+.bk-root div.bk.loader.spin.danger-light::after {
+  background: linear-gradient(135deg, #f0f0f0 50%, transparent 50%), linear-gradient(45deg, #f0f0f0 50%, #dc3545 50%);
 }
 
-div.loader.spin.warning-light:after {
-  background: conic-gradient(
-    #ffc107 25%,
-    #f0f0f0 0 50%
-  ) !important;
+.bk-root div.bk.loader.spin.warning-light::after {
+  background: linear-gradient(135deg, #f0f0f0 50%, transparent 50%), linear-gradient(45deg, #f0f0f0 50%, #ffc107 50%);
 }
 
-div.loader.spin.info-light:after {
-  background: conic-gradient(
-    #17a2b8 25%,
-    #f0f0f0 0 50%
-  ) !important;
+.bk-root div.bk.loader.spin.info-light::after {
+  background: linear-gradient(135deg, #f0f0f0 50%, transparent 50%), linear-gradient(45deg, #f0f0f0 50%, #17a2b8 50%);
 }
 
-div.loader.spin.light-light:after {
-  background: conic-gradient(
-    #f8f9fa 25%,
-    #f0f0f0 0 50%
-  ) !important;
+.bk-root div.bk.loader.spin.light-light::after {
+  background: linear-gradient(135deg, #f0f0f0 50%, transparent 50%), linear-gradient(45deg, #f0f0f0 50%, #f8f9fa 50%);
 }
 
-div.loader.spin.dark-light:after {
-  background: conic-gradient(
-    #343a40 25%,
-    #f0f0f0 0 50%
-  ) !important;
+.bk-root div.bk.loader.dark-light::after {
+  background: linear-gradient(135deg, #f0f0f0 50%, transparent 50%), linear-gradient(45deg, #f0f0f0 50%, #343a40 50%);
 }
 
-div.loader.spin.primary-dark:after {
-  background: conic-gradient(
-    #007bff 25%,
-    #0f0f0f 0 50%
-  ) !important;
+.bk-root div.bk.loader.spin.primary-dark::after {
+  background: linear-gradient(135deg, #0f0f0f 50%, transparent 50%), linear-gradient(45deg, #0f0f0f 50%, #007bff 50%);
 }
 
-div.loader.spin.secondary-dark:after {
-  background: conic-gradient(
-    #6c757d 25%,
-    #0f0f0f 0 50%
-  ) !important;
+.bk-root div.bk.loader.spin.secondary-dark::after {
+  background: linear-gradient(135deg, #0f0f0f 50%, transparent 50%), linear-gradient(45deg, #0f0f0f 50%, #6c757d 50%);
 }
 
-div.loader.spin.success-dark:after {
-  background: conic-gradient(
-    #28a745 25%,
-    #0f0f0f 0 50%
-  ) !important;
+.bk-root div.bk.loader.spin.success-dark::after {
+  background: linear-gradient(135deg, #0f0f0f 50%, transparent 50%), linear-gradient(45deg, #0f0f0f 50%, #28a745 50%);
 }
 
-div.loader.spin.danger-dark:after {
-  background: conic-gradient(
-    #dc3545 25%,
-    #0f0f0f 0 50%
-  ) !important;
+.bk-root div.bk.loader.spin.danger-dark::after {
+  background: linear-gradient(135deg, #0f0f0f 50%, transparent 50%), linear-gradient(45deg, #0f0f0f 50%, #dc3545 50%)
 }
 
-div.loader.spin.warning-dark:after {
-  background: conic-gradient(
-    #ffc107 25%,
-    #0f0f0f 0 50%
-  ) !important;
+.bk-root div.bk.loader.spin.warning-dark::after {
+  background: linear-gradient(135deg, #0f0f0f 50%, transparent 50%), linear-gradient(45deg, #0f0f0f 50%, #ffc107 50%);
 }
 
-div.loader.spin.info-dark:after {
-  background: conic-gradient(
-    #17a2b8 25%,
-    #0f0f0f 0 50%
-  ) !important;
+.bk-root div.bk.loader.spin.info-dark::after {
+  background: linear-gradient(135deg, #0f0f0f 50%, transparent 50%), linear-gradient(45deg, #0f0f0f 50%, #17a2b8 50%);
 }
 
-div.loader.spin.light-dark:after {
-  background: conic-gradient(
-    #f8f9fa 25%,
-    #0f0f0f 0 50%
-  ) !important;
+.bk-root div.bk.loader.spin.light-dark::after {
+  background: linear-gradient(135deg, #0f0f0f 50%, transparent 50%), linear-gradient(45deg, #0f0f0f 50%, #f8f9fa 50%);
 }
 
-div.loader.spin.dark-dark:after {
-  background: conic-gradient(
-    #343a40 25%,
-    #0f0f0f 0 50%
-  ) !important;
+.bk-root div.bk.loader.spin.dark-dark::after {
+  background: linear-gradient(135deg, #0f0f0f 50%, transparent 50%), linear-gradient(45deg, #0f0f0f 50%, #343a40 50%);
 }
 
 /* Safari */
