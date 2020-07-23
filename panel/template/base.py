@@ -384,6 +384,11 @@ class BasicTemplate(BaseTemplate):
         self._render_variables['header_background'] = self.header_background
         self._render_variables['header_color'] = self.header_color
 
+    def _on_objects_change(self, event):
+        for ref in event.obj._models:
+            for o in event.obj.select():
+                self._apply_modifiers(o, ref)
+
     def _update_render_items(self, event):
         if event.obj is self.main:
             tag = 'main'
@@ -398,11 +403,22 @@ class BasicTemplate(BaseTemplate):
             ref = str(id(obj))
             if obj not in event.new and ref in self._render_items:
                 del self._render_items[ref]
+                cbs = self._callbacks[tag]
+                new_cbs = []
+                for cb in cbs:
+                    if cb.owner is obj:
+                        obj.param.unwatch(cb)
+                    else:
+                        new_cbs.append(cb)
+
         labels = {}
         for obj in event.new:
             ref = str(id(obj))
             labels[ref] = 'Content' if obj.name.startswith(type(obj).__name__) else obj.name
             if ref not in self._render_items:
+                if hasattr(obj, 'objects'):
+                    watcher = obj.param.watch(self._on_objects_change, 'objects')
+                    self._callbacks[tag].append(watcher)
                 self._render_items[ref] = (obj, [tag])
         self._render_items['js_area'] = (self._js_area, [])
         tags = [tags for _, tags in self._render_items.values()]
