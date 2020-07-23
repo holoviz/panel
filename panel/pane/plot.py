@@ -133,6 +133,8 @@ class Matplotlib(PNG, IPyWidget):
         Automatically adjust the figure size to fit the
         subplots and other artist elements.""")
 
+    _rename = {'object': 'text', 'interactive': None, 'dpi': None,  'tight': None}
+
     _rerender_params = PNG._rerender_params + ['object', 'dpi', 'tight']
 
     @classmethod
