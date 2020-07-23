@@ -76,8 +76,6 @@
 
 <script>
   var drawer = mdc.drawer.MDCDrawer.attachTo(document.querySelector('.mdc-drawer'));
-  drawer.open = true;
-  console.log(drawer)
   var topAppBar = mdc.topAppBar.MDCTopAppBar.attachTo(document.getElementById('header'));
   topAppBar.setScrollTarget(document.getElementById('main'));
   topAppBar.listen('MDCTopAppBar:nav', function() {
@@ -85,6 +83,8 @@
     // Ensure bokeh layout recomputes layout
     window.dispatchEvent(new Event('resize'));
   });
+
+  drawer.open = true;
 
   var modal = document.getElementById("pn-Modal");
   var span = document.getElementById("pn-closeModal");

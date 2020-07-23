@@ -357,8 +357,8 @@ class BasicTemplate(BaseTemplate):
         self.header.param.watch(self._update_render_items, ['objects'])
         self.param.watch(self._update_vars, ['title', 'header_background',
                                              'header_color'])
-        self._callbacks = {'main': [], 'sidebar': [], 'header': []}
-        self._js_area = HTML(margin=0)
+        self._callbacks = {'main': [], 'sidebar': [], 'header': [], 'modal': []}
+        self._js_area = HTML(margin=0, width=0, height=0)
 
     @property
     def _css_files(self):
