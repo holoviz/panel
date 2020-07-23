@@ -86,11 +86,18 @@ class BaseTemplate(param.Parameterized, ServableMixin):
         return template.format(
             cls=cls, objs=('%s' % spacer).join(objs), spacer=spacer)
 
-    def _apply_modifiers(self, viewable, mref):
+    @classmethod
+    def _apply_hooks(cls, viewable, root):
+        ref = root.ref['id']
+        for o in viewable.select():
+            cls._apply_modifiers(o, ref)
+
+    @classmethod
+    def _apply_modifiers(cls, viewable, mref):
         if mref not in viewable._models:
             return
         model, _ = viewable._models[mref]
-        modifiers = self._modifiers.get(type(viewable), {})
+        modifiers = cls._modifiers.get(type(viewable), {})
         child_modifiers = modifiers.get('children', {})
         if child_modifiers:
             for child in viewable:
@@ -99,11 +106,15 @@ class BaseTemplate(param.Parameterized, ServableMixin):
                     if getattr(child, k) == child.param[k].default
                 }
                 child.param.set_param(**child_params)
+                child_props = child._process_param_change(child_params)
+                child._models[mref][0].update(**child_props)
         params = {
             k: v for k, v in modifiers.items() if k != 'children' and
             getattr(viewable, k) == viewable.param[k].default
         }
         viewable.param.set_param(**params)
+        props = viewable._process_param_change(params)
+        model.update(**props)
 
     def _apply_root(self, name, viewable, tags):
         pass
@@ -116,6 +127,8 @@ class BaseTemplate(param.Parameterized, ServableMixin):
         preprocess_root = col.get_root(doc, comm)
         ref = preprocess_root.ref['id']
         for name, (obj, tags) in self._render_items.items():
+            if self._apply_hooks not in obj._hooks:
+                obj._hooks.append(self._apply_hooks)
             model = obj.get_root(doc, comm)
             mref = model.ref['id']
             doc.on_session_destroyed(obj._server_destroy)
@@ -131,8 +144,6 @@ class BaseTemplate(param.Parameterized, ServableMixin):
             model.name = name
             model.tags = tags
             self._apply_root(name, model, tags)
-            for o in obj.select():
-                self._apply_modifiers(o, mref)
             add_to_doc(model, doc, hold=bool(comm))
 
         state._fake_roots.append(ref)
@@ -358,7 +369,7 @@ class BasicTemplate(BaseTemplate):
         self.header.param.watch(self._update_render_items, ['objects'])
         self.param.watch(self._update_vars, ['title', 'header_background',
                                              'header_color'])
-        self._callbacks = {'main': [], 'sidebar': [], 'header': [], 'modal': []}
+        self._callbacks = {'main': [], 'nav': [], 'header': [], 'modal': []}
         self._js_area = HTML(margin=0, width=0, height=0)
 
     @property
