@@ -52,6 +52,7 @@ jobs:
       stage: test
       env: DESC="dev test_all"
       before_install:
+        - python --version
         # install doit/pyctdev and use to install miniconda...
         - pip install pyctdev && doit miniconda_install && pip uninstall -y doit pyctdev
         - export PATH="$HOME/miniconda/bin:$PATH" && hash -r

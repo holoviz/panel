@@ -9,10 +9,12 @@ except Exception:
     hv = None
 
 import param
+import pytest
 
 from panel.layout import Row
-from panel.pane import HoloViews
+from panel.pane import HoloViews, Markdown
 from panel.template import Template
+from panel.template.base import BasicTemplate
 from panel.widgets import FloatSlider
 
 from .util import hv_available
@@ -75,3 +77,48 @@ def test_template_session_destroy(document, comm):
     assert len(row._models) == 0
     assert len(row[0]._models) == 0
     assert len(row[1]._models) == 0
+
+
+@pytest.mark.parametrize('template', list(param.concrete_descendents(BasicTemplate).values()))
+def test_basic_template(template, document, comm):
+    tmplt = template(title='BasicTemplate', header_background='blue', header_color='red')
+
+    tvars = tmplt._render_variables
+
+    assert tvars['app_title'] == 'BasicTemplate'
+    assert tvars['header_background'] == 'blue'
+    assert tvars['header_color'] == 'red'
+    assert tvars['nav'] == False
+    assert tvars['busy'] == True
+    assert tvars['header'] == False
+
+    titems = tmplt._render_items
+
+    assert titems['busy_indicator'] == (tmplt.busy_indicator, [])
+
+    markdown = Markdown('# Some title')
+    tmplt.main.append(markdown)
+
+    assert titems[str(id(markdown))] == (markdown, ['main'])
+
+    slider = FloatSlider()
+    tmplt.sidebar.append(slider)
+
+    assert titems[str(id(slider))] == (slider, ['nav'])
+    assert tvars['nav'] == True
+    
+    tmplt.sidebar[:] = []
+    assert tvars['nav'] == False
+    assert str(id(slider)) not in titems
+
+    subtitle = Markdown('## Some subtitle')
+    tmplt.header.append(subtitle)
+
+    assert titems[str(id(subtitle))] == (subtitle, ['header'])
+    assert tvars['header'] == True
+
+    tmplt.header[:] = []
+    assert str(id(subtitle)) not in titems
+    assert tvars['header'] == False
+
+    

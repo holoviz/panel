@@ -27,18 +27,20 @@ from ..models.comm_manager import CommManager
 from ..pane import panel as _panel, HTML, Str, HoloViews
 from ..viewable import ServableMixin, Viewable
 from ..widgets import Button
+from ..widgets.indicators import BooleanIndicator, LoadingSpinner
 from .theme import DefaultTheme, Theme
 
 _server_info = (
     '<b>Running server:</b> <a target="_blank" href="https://localhost:{port}">'
-    'https://localhost:{port}</a>')
+    'https://localhost:{port}</a>'
+)
 
 
 class BaseTemplate(param.Parameterized, ServableMixin):
 
     # Dictionary of property overrides by bokeh Model type
     _modifiers = {}
-    
+
     __abstract = True
 
     def __init__(self, template=None, items=None, nb_template=None, **params):
@@ -84,11 +86,18 @@ class BaseTemplate(param.Parameterized, ServableMixin):
         return template.format(
             cls=cls, objs=('%s' % spacer).join(objs), spacer=spacer)
 
-    def _apply_modifiers(self, viewable, mref):
+    @classmethod
+    def _apply_hooks(cls, viewable, root):
+        ref = root.ref['id']
+        for o in viewable.select():
+            cls._apply_modifiers(o, ref)
+
+    @classmethod
+    def _apply_modifiers(cls, viewable, mref):
         if mref not in viewable._models:
             return
         model, _ = viewable._models[mref]
-        modifiers = self._modifiers.get(type(viewable), {})
+        modifiers = cls._modifiers.get(type(viewable), {})
         child_modifiers = modifiers.get('children', {})
         if child_modifiers:
             for child in viewable:
@@ -97,11 +106,15 @@ class BaseTemplate(param.Parameterized, ServableMixin):
                     if getattr(child, k) == child.param[k].default
                 }
                 child.param.set_param(**child_params)
+                child_props = child._process_param_change(child_params)
+                child._models[mref][0].update(**child_props)
         params = {
             k: v for k, v in modifiers.items() if k != 'children' and
             getattr(viewable, k) == viewable.param[k].default
         }
         viewable.param.set_param(**params)
+        props = viewable._process_param_change(params)
+        model.update(**props)
 
     def _apply_root(self, name, viewable, tags):
         pass
@@ -114,6 +127,8 @@ class BaseTemplate(param.Parameterized, ServableMixin):
         preprocess_root = col.get_root(doc, comm)
         ref = preprocess_root.ref['id']
         for name, (obj, tags) in self._render_items.items():
+            if self._apply_hooks not in obj._hooks:
+                obj._hooks.append(self._apply_hooks)
             model = obj.get_root(doc, comm)
             mref = model.ref['id']
             doc.on_session_destroyed(obj._server_destroy)
@@ -129,8 +144,6 @@ class BaseTemplate(param.Parameterized, ServableMixin):
             model.name = name
             model.tags = tags
             self._apply_root(name, model, tags)
-            for o in obj.select():
-                self._apply_modifiers(o, mref)
             add_to_doc(model, doc, hold=bool(comm))
 
         state._fake_roots.append(ref)
@@ -303,6 +316,10 @@ class BasicTemplate(BaseTemplate):
     feel without having to write any Jinja2 template themselves.
     """
 
+    busy_indicator = param.ClassSelector(default=LoadingSpinner(width=20, height=20),
+                                         class_=BooleanIndicator, constant=True, doc="""
+        Visual indicator of application busy state.""")
+
     header = param.ClassSelector(class_=ListLike, constant=True, doc="""
         A list-like container which populates the header bar.""")
 
@@ -311,6 +328,9 @@ class BasicTemplate(BaseTemplate):
 
     sidebar = param.ClassSelector(class_=ListLike, constant=True, doc="""
         A list-like container which populates the sidebar.""")
+
+    modal = param.ClassSelector(class_=ListLike, constant=True, doc="""
+        A list-like container which populates the modal""")
 
     title = param.String(doc="A title to show in the header.")
 
@@ -337,11 +357,23 @@ class BasicTemplate(BaseTemplate):
             params['main'] = ListLike()
         if 'sidebar' not in params:
             params['sidebar'] = ListLike()
+        if 'modal' not in params:
+            params['modal'] = ListLike()
         super(BasicTemplate, self).__init__(template=template, **params)
+        if self.busy_indicator:
+            state.sync_busy(self.busy_indicator)
+        self._js_area = HTML(margin=0, width=0, height=0)
+        self._render_items['js_area'] = (self._js_area, [])
         self._update_vars()
+        self._update_busy()
         self.main.param.watch(self._update_render_items, ['objects'])
+        self.modal.param.watch(self._update_render_items, ['objects'])
         self.sidebar.param.watch(self._update_render_items, ['objects'])
         self.header.param.watch(self._update_render_items, ['objects'])
+        self.main.param.trigger('objects')
+        self.sidebar.param.trigger('objects')
+        self.header.param.trigger('objects')
+        self.modal.param.trigger('objects')
         self.param.watch(self._update_vars, ['title', 'header_background',
                                              'header_color'])
 
@@ -369,17 +401,30 @@ class BasicTemplate(BaseTemplate):
         self._render_variables['header_background'] = self.header_background
         self._render_variables['header_color'] = self.header_color
 
+    def _update_busy(self):
+        if self.busy_indicator:
+            self._render_items['busy_indicator'] = (self.busy_indicator, [])
+        elif 'busy_indicator' in self._render_items:
+            del self._render_items['busy_indicator']
+        self._render_variables['busy'] = self.busy_indicator is not None
+
     def _update_render_items(self, event):
+        if event.obj is self and event.name == 'busy_indicator':
+            return self._update_busy()
         if event.obj is self.main:
             tag = 'main'
         elif event.obj is self.sidebar:
             tag = 'nav'
         elif event.obj is self.header:
             tag = 'header'
+        elif event.obj is self.modal:
+            tag = 'modal'
+
         for obj in event.old:
             ref = str(id(obj))
             if obj not in event.new and ref in self._render_items:
                 del self._render_items[ref]
+
         labels = {}
         for obj in event.new:
             ref = str(id(obj))
@@ -391,6 +436,27 @@ class BasicTemplate(BaseTemplate):
         self._render_variables['header'] = any('header' in ts for ts in tags)
         self._render_variables['root_labels'] = labels
 
+    def open_modal(self):
+        """
+        Opens the modal area
+        """
+        self._js_area.object = """
+        <script>
+          var modal = document.getElementById("pn-Modal");
+          modal.style.display = "block";
+        </script>
+        """
+
+    def close_modal(self):
+        """
+        Closes the modal area
+        """
+        self._js_area.object = """
+        <script>
+          var modal = document.getElementById("pn-Modal");
+          modal.style.display = "none";
+        </script>
+        """
 
 
 class Template(BaseTemplate):
