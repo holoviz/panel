@@ -362,14 +362,20 @@ class BasicTemplate(BaseTemplate):
         super(BasicTemplate, self).__init__(template=template, **params)
         if self.busy_indicator:
             state.sync_busy(self.busy_indicator)
+        self._js_area = HTML(margin=0, width=0, height=0)
+        self._render_items['js_area'] = (self._js_area, [])
         self._update_vars()
+        self._update_busy()
         self.main.param.watch(self._update_render_items, ['objects'])
         self.modal.param.watch(self._update_render_items, ['objects'])
         self.sidebar.param.watch(self._update_render_items, ['objects'])
         self.header.param.watch(self._update_render_items, ['objects'])
+        self.main.param.trigger('objects')
+        self.sidebar.param.trigger('objects')
+        self.header.param.trigger('objects')
+        self.modal.param.trigger('objects')
         self.param.watch(self._update_vars, ['title', 'header_background',
                                              'header_color'])
-        self._js_area = HTML(margin=0, width=0, height=0)
 
     @property
     def _css_files(self):
@@ -395,7 +401,16 @@ class BasicTemplate(BaseTemplate):
         self._render_variables['header_background'] = self.header_background
         self._render_variables['header_color'] = self.header_color
 
+    def _update_busy(self):
+        if self.busy_indicator:
+            self._render_items['busy_indicator'] = (self.busy_indicator, [])
+        elif 'busy_indicator' in self._render_items:
+            del self._render_items['busy_indicator']
+        self._render_variables['busy'] = self.busy_indicator is not None
+
     def _update_render_items(self, event):
+        if event.obj is self and event.name == 'busy_indicator':
+            return self._update_busy()
         if event.obj is self.main:
             tag = 'main'
         elif event.obj is self.sidebar:
@@ -416,13 +431,7 @@ class BasicTemplate(BaseTemplate):
             labels[ref] = 'Content' if obj.name.startswith(type(obj).__name__) else obj.name
             if ref not in self._render_items:
                 self._render_items[ref] = (obj, [tag])
-        self._render_items['js_area'] = (self._js_area, [])
         tags = [tags for _, tags in self._render_items.values()]
-        if self.busy_indicator:
-            self._render_items['busy_indicator'] = (self.busy_indicator, [])
-        elif 'busy_indicator' in self._render_items:
-            del self._render_items['busy_indicator']
-        self._render_variables['busy'] = self.busy_indicator is not None
         self._render_variables['nav'] = any('nav' in ts for ts in tags)
         self._render_variables['header'] = any('header' in ts for ts in tags)
         self._render_variables['root_labels'] = labels
