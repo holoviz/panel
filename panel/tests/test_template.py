@@ -3,6 +3,8 @@ These that verify Templates are working correctly.
 """
 from __future__ import absolute_import, division, unicode_literals
 
+from distutils.version import LooseVersion
+
 try:
     import holoviews as hv
 except Exception:
@@ -10,6 +12,9 @@ except Exception:
 
 import param
 import pytest
+
+latest_param = pytest.mark.skipif(LooseVersion(param.__version__) < '1.10.0a4',
+                                  reason="requires param>=1.10.0a4")
 
 from panel.layout import Row
 from panel.pane import HoloViews, Markdown
@@ -79,6 +84,7 @@ def test_template_session_destroy(document, comm):
     assert len(row[1]._models) == 0
 
 
+@latest_param
 @pytest.mark.parametrize('template', list(param.concrete_descendents(BasicTemplate).values()))
 def test_basic_template(template, document, comm):
     tmplt = template(title='BasicTemplate', header_background='blue', header_color='red')
