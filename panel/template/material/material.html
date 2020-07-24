@@ -75,6 +75,7 @@
 </div>
 
 <script>
+  {% if nav %}
   var drawer = mdc.drawer.MDCDrawer.attachTo(document.querySelector('.mdc-drawer'));
   var topAppBar = mdc.topAppBar.MDCTopAppBar.attachTo(document.getElementById('header'));
   topAppBar.setScrollTarget(document.getElementById('main'));
@@ -85,6 +86,7 @@
   });
 
   drawer.open = true;
+  {% endif %}
 
   var modal = document.getElementById("pn-Modal");
   var span = document.getElementById("pn-closeModal");
