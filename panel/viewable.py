@@ -234,6 +234,23 @@ class ServableMixin(object):
         return get_server(self, port, address, websocket_origin, loop,
                           show, start, title, verbose, **kwargs)
 
+    def _add_location(self, doc, location, root=None):
+        from .io.location import Location
+        if isinstance(location, Location):
+            loc = location
+        elif doc in state._locations:
+            loc = state.location
+        else:
+            loc = Location()
+        state._locations[doc] = loc
+        if root is None:
+            loc_model = loc._get_root(doc)
+        else:
+            loc_model = loc._get_model(doc, root)
+        loc_model.name = 'location'
+        doc.add_root(loc_model)
+        return loc
+
     def _on_msg(self, ref, manager, msg):
         """
         Handles Protocol messages arriving from the client comm.
@@ -435,6 +452,22 @@ class Renderable(param.Parameterized):
         return {k: v for k, v in self.param.get_param_values()
                 if v is not None}
 
+    def _server_destroy(self, session_context):
+        """
+        Server lifecycle hook triggered when session is destroyed.
+        """
+        doc = session_context._document
+        root = self._documents[doc]
+        ref = root.ref['id']
+        self._cleanup(root)
+        del self._documents[doc]
+        if ref in state._views:
+            del state._views[ref]
+        if doc in state._locations:
+            loc = state._locations[doc]
+            loc._cleanup(root)
+            del state._locations[doc]
+
     def get_root(self, doc=None, comm=None):
         """
         Returns the root model and applies pre-processing hooks
@@ -545,22 +578,6 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         if config.embed:
             return render_model(model)
         return render_mimebundle(model, doc, comm, manager, location)
-
-    def _server_destroy(self, session_context):
-        """
-        Server lifecycle hook triggered when session is destroyed.
-        """
-        doc = session_context._document
-        root = self._documents[doc]
-        ref = root.ref['id']
-        self._cleanup(root)
-        del self._documents[doc]
-        if ref in state._views:
-            del state._views[ref]
-        if doc in state._locations:
-            loc = state._locations[doc]
-            loc._cleanup(root)
-            del state._locations[doc]
 
     #----------------------------------------------------------------
     # Public API
@@ -714,7 +731,6 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         doc : bokeh.Document
           The bokeh document the panel was attached to
         """
-        from .io.location import Location
         doc = doc or _curdoc()
         title = title or 'Panel Application'
         doc.title = title
@@ -723,14 +739,5 @@ class Viewable(Renderable, Layoutable, ServableMixin):
             doc.on_session_destroyed(self._server_destroy)
             self._documents[doc] = model
         add_to_doc(model, doc)
-        if location:
-            if isinstance(location, Location):
-                loc = location
-            elif state._locations.get(doc) is not None:
-                loc = state._locations[doc]
-            else:
-                loc = Location()
-            state._locations[doc] = loc
-            loc_model = loc._get_model(doc, model)
-            doc.add_root(loc_model)
+        if location: self._add_location(doc, location, model)
         return doc

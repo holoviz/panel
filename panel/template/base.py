@@ -149,19 +149,6 @@ class BaseTemplate(param.Parameterized, ServableMixin):
         state._fake_roots.append(ref)
         state._views[ref] = (col, preprocess_root, doc, comm)
 
-        if location:
-            from ..io.location import Location
-            if isinstance(location, Location):
-                loc = location
-            elif doc in state._locations:
-                loc = state.location
-            else:
-                loc = Location()
-            state._locations[doc] = loc
-            loc_model = loc._get_model(doc, preprocess_root)
-            loc_model.name = 'location'
-            #doc.add_root(loc_model)
-
         col._preprocess(preprocess_root)
         col._documents[doc] = preprocess_root
         doc.on_session_destroyed(col._server_destroy)
@@ -390,6 +377,9 @@ class BasicTemplate(BaseTemplate):
 
     def _init_doc(self, doc=None, comm=None, title=None, notebook=False, location=True):
         doc = super(BasicTemplate, self)._init_doc(doc, comm, title, notebook, location)
+        if location:
+            loc = self._add_location(doc, location)
+            doc.on_session_destroyed(loc._server_destroy)
         if self.theme:
             theme = self.theme.find_theme(type(self))
             if theme and theme.bokeh_theme:
