@@ -8,7 +8,7 @@ from __future__ import absolute_import, division, unicode_literals
 import time
 import param
 
-from bokeh.io import curdoc as _curdoc
+from .io.state import state
 
 
 class PeriodicCallback(param.Parameterized):
@@ -47,8 +47,8 @@ class PeriodicCallback(param.Parameterized):
         if self._cb is not None:
             raise RuntimeError('Periodic callback has already started.')
         self._start_time = time.time()
-        if _curdoc().session_context:
-            self._doc = _curdoc()
+        if state.curdoc and state.curdoc.session_context:
+            self._doc = state.curdoc
             self._cb = self._doc.add_periodic_callback(self._periodic_callback, self.period)
         else:
             from tornado.ioloop import PeriodicCallback
