@@ -358,6 +358,8 @@ class ListPanel(ListLike, Panel):
                                  "as positional arguments or as a keyword, "
                                  "not both." % type(self).__name__)
             params['objects'] = [panel(pane) for pane in objects]
+        elif 'objects' in params:
+            params['objects'] = [panel(pane) for pane in params['objects']]
         super(Panel, self).__init__(**params)
 
     def _process_param_change(self, params):
