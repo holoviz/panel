@@ -13,8 +13,8 @@ from functools import partial
 from bokeh.models import LayoutDOM
 from tornado import gen
 
-from .callbacks import PeriodicCallback
 from .config import config
+from .io.callbacks import PeriodicCallback
 from .io.model import hold
 from .io.notebook import push
 from .io.server import unlocked

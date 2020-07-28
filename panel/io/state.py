@@ -85,6 +85,20 @@ class _state(param.Parameterized):
             return "state(servers=[])"
         return "state(servers=[\n  {}\n])".format(",\n  ".join(server_info))
 
+    def _unblocked(self, doc):
+        thread = threading.current_thread()
+        thread_id = thread.ident if thread else None
+        return doc is self.curdoc and self._thread_id == thread_id
+
+    @param.depends('busy', watch=True)
+    def _update_busy(self):
+        for indicator in self._indicators:
+            indicator.value = self.busy
+
+    #----------------------------------------------------------------
+    # Public Methods
+    #----------------------------------------------------------------
+
     def kill_all_servers(self):
         """Stop all servers and clear them from the current state."""
         for server_id in self._servers:
@@ -93,11 +107,6 @@ class _state(param.Parameterized):
             except AssertionError:  # can't stop a server twice
                 pass
         self._servers = {}
-
-    def _unblocked(self, doc):
-        thread = threading.current_thread()
-        thread_id = thread.ident if thread else None
-        return doc is self.curdoc and self._thread_id == thread_id
 
     def onload(self, callback):
         """
@@ -110,18 +119,67 @@ class _state(param.Parameterized):
             self._onload[self.curdoc] = []
         self._onload[self.curdoc].append(callback)
 
+    def add_periodic_callback(self, callback, period=500, count=None,
+                              timeout=None, start=True):
+        """
+        Schedules a periodic callback to be run at an interval set by
+        the period. Returns a PeriodicCallback object with the option
+        to stop and start the callback.
+
+        Arguments
+        ---------
+        callback: callable
+          Callable function to be executed at periodic interval.
+        period: int
+          Interval in milliseconds at which callback will be executed.
+        count: int
+          Maximum number of times callback will be invoked.
+        timeout: int
+          Timeout in seconds when the callback should be stopped.
+        start: boolean (default=True)
+          Whether to start callback immediately.
+
+        Returns
+        -------
+        Return a PeriodicCallback object with start and stop methods.
+        """
+        from .callbacks import PeriodicCallback
+
+        cb = PeriodicCallback(callback=callback, period=period,
+                              count=count, timeout=timeout)
+        if start:
+            cb.start()
+        return cb
+
     def sync_busy(self, indicator):
         """
         Syncs the busy state with an indicator with a boolean value
         parameter.
+
+        Arguments
+        ---------
+        indicator: An BooleanIndicator to sync with the busy property
         """
+        if not isinstance(indicator.param.value, param.Boolean):
+            raise ValueError("Busy indicator must have a value parameter"
+                             "of Boolean type.")
         self._indicators.append(indicator)
 
-    @param.depends('busy', watch=True)
-    def _update_busy(self):
-        for indicator in self._indicators:
-            indicator.value = self.busy
+    #----------------------------------------------------------------
+    # Public Properties
+    #----------------------------------------------------------------
 
+    @property
+    def access_token(self):
+        from ..config import config
+        access_token = self.cookies.get('access_token')
+        if access_token is None:
+            return None
+        access_token = decode_signed_value(config.cookie_secret, 'access_token', access_token)
+        if self.encryption is None:
+            return access_token.decode('utf-8')
+        return self.encryption.decrypt(access_token).decode('utf-8')
+            
     @property
     def curdoc(self):
         if self._curdoc:
@@ -142,19 +200,19 @@ class _state(param.Parameterized):
         return self.curdoc.session_context.request.headers if self.curdoc else {}
 
     @property
-    def session_args(self):
-        return self.curdoc.session_context.request.arguments if self.curdoc else {}
+    def location(self):
+        if self.curdoc and self.curdoc not in self._locations:
+            from .location import Location
+            self._locations[self.curdoc] = loc = Location()
+            return loc
+        elif self.curdoc is None:
+            return self._location
+        else:
+            return self._locations.get(self.curdoc) if self.curdoc else None
 
     @property
-    def access_token(self):
-        from ..config import config
-        access_token = self.cookies.get('access_token')
-        if access_token is None:
-            return None
-        access_token = decode_signed_value(config.cookie_secret, 'access_token', access_token)
-        if self.encryption is None:
-            return access_token.decode('utf-8')
-        return self.encryption.decrypt(access_token).decode('utf-8')
+    def session_args(self):
+        return self.curdoc.session_context.request.arguments if self.curdoc else {}
 
     @property
     def user(self):
@@ -181,17 +239,6 @@ class _state(param.Parameterized):
         else:
             payload_segment = id_token
         return json.loads(base64url_decode(payload_segment).decode('utf-8'))
-
-    @property
-    def location(self):
-        if self.curdoc and self.curdoc not in self._locations:
-            from .location import Location
-            self._locations[self.curdoc] = loc = Location()
-            return loc
-        elif self.curdoc is None:
-            return self._location
-        else:
-            return self._locations.get(self.curdoc) if self.curdoc else None
 
 
 state = _state()

@@ -152,7 +152,7 @@ def unlocked():
 
 def serve(panels, port=0, address=None, websocket_origin=None, loop=None,
           show=True, start=True, title=None, verbose=True, location=True,
-          **kwargs):
+          threaded=False, **kwargs):
     """
     Allows serving one or more panel objects on a single server.
     The panels argument should be either a Panel object or a function
@@ -191,11 +191,28 @@ def serve(panels, port=0, address=None, websocket_origin=None, loop=None,
     location : boolean or panel.io.location.Location
       Whether to create a Location component to observe and
       set the URL location.
+    threaded: boolean (default=False)
+      Whether to start the server on a new Thread
     kwargs: dict
       Additional keyword arguments to pass to Server instance
     """
-    return get_server(panels, port, address, websocket_origin, loop,
-                      show, start, title, verbose, location, **kwargs)
+    if threaded:
+        from tornado.ioloop import IOLoop
+        loop = IOLoop()
+        server = StoppableThread(
+            target=get_server, io_loop=loop,
+            args=(panels, port, address, websocket_origin, loop, show,
+                  True, title, verbose, location),
+            kwargs=kwargs
+        )
+        server.start()
+    else:
+        server = get_server(
+            panels, port, address, websocket_origin, loop=loop, show=show,
+            start=True, title=title, verbose=verbose, location=location,
+            **kwargs
+        )
+    return serve
 
 
 class ProxyFallbackHandler(RequestHandler):
@@ -213,7 +230,6 @@ class ProxyFallbackHandler(RequestHandler):
         self.fallback(self.request)
         self._finished = True
         self.on_finish()
-
 
 
 def get_static_routes(static_dirs):
