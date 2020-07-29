@@ -108,13 +108,14 @@ _recommended = [
 _tests = [
     'flake8',
     'parameterized',
-    'pytest',
+    'pytest<6.0', # temporary fix for nbval incompatibility
     'scipy',
     'nbsmoke >=0.2.0',
     'pytest-cov',
     'codecov',
     'folium',
-    'ipympl'
+    'ipympl',
+    'pandas<1.1' # temporary fix for streamz incompatibility
 ]
 
 extras_require = {

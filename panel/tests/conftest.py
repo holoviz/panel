@@ -89,7 +89,7 @@ def tmpdir(request, tmpdir_factory):
 @pytest.fixture()
 def html_server_session():
     html = HTML('<h1>Title</h1>')
-    server = html._get_server(port=5006)
+    server = serve(html, port=5006, show=False, start=False)
     session = pull_session(
         session_id='Test',
         url="http://localhost:{:d}/".format(server.port),
@@ -105,7 +105,7 @@ def html_server_session():
 @pytest.fixture()
 def markdown_server_session():
     html = Markdown('#Title')
-    server = html._get_server(port=5007)
+    server = serve(html, port=5007, show=False, start=False)
     session = pull_session(
         session_id='Test',
         url="http://localhost:{:d}/".format(server.port),

@@ -13,8 +13,8 @@ from functools import partial
 from bokeh.models import LayoutDOM
 from tornado import gen
 
-from .callbacks import PeriodicCallback
 from .config import config
+from .io.callbacks import PeriodicCallback
 from .io.model import hold
 from .io.notebook import push
 from .io.server import unlocked
@@ -266,6 +266,11 @@ class Reactive(Syncable, Viewable):
         -------
         Return a PeriodicCallback object with start and stop methods.
         """
+        self.param.warning(
+            "Calling add_periodic_callback on a Panel component is "
+            "deprecated and will be removed in the next minor release. "
+            "Use the pn.state.add_periodic_callback API instead."
+        )
         cb = PeriodicCallback(callback=callback, period=period,
                               count=count, timeout=timeout)
         if start:
