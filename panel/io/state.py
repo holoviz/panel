@@ -73,7 +73,11 @@ class _state(param.Parameterized):
     # Stores a set of locked Websockets, reset after every change event
     _locks = WeakSet()
 
+    # Indicators listening to the busy state
     _indicators = []
+
+    # Endpoints
+    _rest_endpoints = {}
 
     def __repr__(self):
         server_info = []
@@ -95,29 +99,36 @@ class _state(param.Parameterized):
         for indicator in self._indicators:
             indicator.value = self.busy
 
+    def _get_callback(self, endpoint):
+        _updating = {}
+        def link(*events):
+            event = events[0]
+            obj = event.cls if event.obj is None else event.obj
+            parameterizeds = self._rest_endpoints[endpoint][0]
+            if obj not in parameterizeds:
+                return
+            updating = _updating.get(id(obj), [])
+            values = {event.name: event.new for event in events
+                      if event.name not in updating}
+            if not values:
+                return
+            _updating[id(obj)] = list(values)
+            for parameterized in parameterizeds:
+                if parameterized in _updating:
+                    continue
+                try:
+                    parameterized.param.set_param(**values)
+                except Exception:
+                    raise
+                finally:
+                    if id(obj) in _updating:
+                        not_updated = [p for p in _updating[id(obj)] if p not in values]
+                        _updating[id(obj)] = not_updated
+        return link
+
     #----------------------------------------------------------------
     # Public Methods
     #----------------------------------------------------------------
-
-    def kill_all_servers(self):
-        """Stop all servers and clear them from the current state."""
-        for server_id in self._servers:
-            try:
-                self._servers[server_id][0].stop()
-            except AssertionError:  # can't stop a server twice
-                pass
-        self._servers = {}
-
-    def onload(self, callback):
-        """
-        Callback that is triggered when a session has been served.
-        """
-        if self.curdoc is None:
-            callback()
-            return
-        if self.curdoc not in self._onload:
-            self._onload[self.curdoc] = []
-        self._onload[self.curdoc].append(callback)
 
     def add_periodic_callback(self, callback, period=500, count=None,
                               timeout=None, start=True):
@@ -150,6 +161,55 @@ class _state(param.Parameterized):
         if start:
             cb.start()
         return cb
+
+    def kill_all_servers(self):
+        """Stop all servers and clear them from the current state."""
+        for server_id in self._servers:
+            try:
+                self._servers[server_id][0].stop()
+            except AssertionError:  # can't stop a server twice
+                pass
+        self._servers = {}
+
+    def onload(self, callback):
+        """
+        Callback that is triggered when a session has been served.
+        """
+        if self.curdoc is None:
+            callback()
+            return
+        if self.curdoc not in self._onload:
+            self._onload[self.curdoc] = []
+        self._onload[self.curdoc].append(callback)
+
+    def publish(self, endpoint, parameterized, parameters=None):
+        """
+        Publish parameters on a Parameterized object as a REST API.
+
+        Arguments
+        ---------
+        endpoint: str
+          The endpoint at which to serve the REST API.
+        parameterized: param.Parameterized
+          The Parameterized object to publish parameters from.
+        parameters: list(str) or None
+          A subset of parameters on the Parameterized to publish.
+        """
+        if parameters is None:
+            parameters = list(parameterized.param)
+        if endpoint.startswith('/'):
+            endpoint = endpoint[1:]
+        if endpoint in self._rest_endpoints:
+            parameterizeds, old_parameters, cb = self._rest_endpoints[endpoint]
+            if set(parameters) != set(old_parameters):
+                raise ValueError("Param REST API output parameters must match across sessions.")
+            values = {k: v for k, v in parameterizeds[0].param.get_param_values() if k in parameters}
+            parameterized.param.set_param(**values)
+            parameterizeds.append(parameterized)
+        else:
+            cb = self._get_callback(endpoint)
+            self._rest_endpoints[endpoint] = ([parameterized], parameters, cb)
+        parameterized.param.watch(cb, parameters)
 
     def sync_busy(self, indicator):
         """

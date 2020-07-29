@@ -5,14 +5,20 @@ ways.
 
 import ast
 import base64
+import logging # isort:skip
 import os
+
+from glob import glob
 
 from bokeh.command.subcommands.serve import Serve as _BkServe
 
 from ..auth import OAuthProvider
 from ..config import config
+from ..io.rest import REST_PROVIDERS
 from ..io.server import INDEX_HTML, get_static_routes
 from ..io.state import state
+
+log = logging.getLogger(__name__)
 
 
 def parse_var(s):
@@ -83,6 +89,17 @@ class Serve(_BkServe):
             action = 'store',
             type    = str,
             help    = "A random string used to encode the user information."
+        )),
+        ('--rest-provider', dict(
+            action = 'store',
+            type   = str,
+            help   = "The interface to use to serve REST API"
+        )),
+        ('--rest-endpoint', dict(
+            action  = 'store',
+            type    = str,
+            help    = "Endpoint to store REST API on.",
+            default = 'rest'
         ))
     )
 
@@ -102,6 +119,20 @@ class Serve(_BkServe):
             static_dirs = parse_vars(args.static_dirs)
             static_dirs['panel_dist'] = os.path.join(os.path.dirname(os.path.split(__file__)[0]), 'dist')
             patterns += get_static_routes(static_dirs)
+
+        files = []
+        for f in args.files:
+            if args.glob:
+                files.extend(glob(f))
+            else:
+                files.append(f)
+
+        # Handle tranquilized functions in the supplied functions
+        if args.rest_provider in REST_PROVIDERS:
+            pattern = REST_PROVIDERS[args.rest_provider](files, args.rest_endpoint)
+            patterns.extend(pattern)
+        elif args.rest_provider is not None:
+            raise ValueError("rest-provider %r not recognized." % args.rest_provider)
 
         if args.oauth_provider:
             config.oauth_provider = args.oauth_provider
