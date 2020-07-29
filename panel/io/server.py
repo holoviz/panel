@@ -204,7 +204,7 @@ def serve(panels, port=0, address=None, websocket_origin=None, loop=None,
     ))
     if threaded:
         from tornado.ioloop import IOLoop
-        loop = IOLoop() if loop is None else loop
+        kwargs['loop'] = loop = IOLoop() if loop is None else loop
         server = StoppableThread(
             target=get_server, io_loop=loop, args=(panels,), kwargs=kwargs
         )

@@ -228,15 +228,6 @@ class ServableMixin(object):
             state._servers[server_id][2].append(doc)
         return self.server_doc(doc, title, location)
 
-    def _get_server(self, port=0, address=None, websocket_origin=None, loop=None,
-                    show=False, start=False, title=None, verbose=False,
-                    location=True, threaded=False, **kwargs):
-        return serve(
-            self, port=port, address=address, websocket_origin=websocket_origin,
-            loop=loop, show=show, start=start, title=title, verbose=verbose,
-            location=location, threaded=threaded, **kwargs
-        )
-
     def _add_location(self, doc, location, root=None):
         from .io.location import Location
         if isinstance(location, Location):
@@ -356,10 +347,10 @@ class ServableMixin(object):
           Returns the Bokeh server instance or the thread the server
           was launched on (if threaded=True)
         """
-        return self._get_server(
-            port, address, websocket_origin, show=open, start=True,
-            title=title, verbose=verbose, location=location,
-            threaded=threaded, **kwargs
+        return serve(
+            self, port=port, address=address, websocket_origin=websocket_origin,
+            show=open, start=True, title=title, verbose=verbose,
+            location=location, threaded=threaded, **kwargs
         )
 
 
