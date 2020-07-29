@@ -6,12 +6,10 @@ from tempfile import NamedTemporaryFile
 import pytest
 import requests
 
-from tornado.ioloop import IOLoop
-
 from panel.io import state
 from panel.models import HTML as BkHTML
 from panel.pane import Markdown
-from panel.io.server import StoppableThread, serve
+from panel.io.server import serve
 from panel.template import Template
 
 
