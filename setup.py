@@ -114,7 +114,8 @@ _tests = [
     'pytest-cov',
     'codecov',
     'folium',
-    'ipympl'
+    'ipympl',
+    'pandas<1.1' # temporary fix for streamz
 ]
 
 extras_require = {
