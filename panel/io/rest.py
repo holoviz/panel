@@ -1,15 +1,15 @@
 import json
+import os
 import pkg_resources
 import tempfile
+import traceback
 
-from ast import literal_eval
 from runpy import run_path
 from unittest.mock import MagicMock
 from urllib.parse import parse_qs
 
-import param
-
 from tornado import web
+from tornado.wsgi import WSGIContainer
 
 from .state import state
 
@@ -118,9 +118,9 @@ def tranquilizer_rest_provider(files, endpoint):
     -------
     A Tornado routing pattern containing the route and handler
     """
-    app = build_tranquilize_application(files, args)
+    app = build_tranquilize_application(files)
     tr = WSGIContainer(app)
-    return [(r"^/%s/.*" % endpoint, FallbackHandler, dict(fallback=tr))]
+    return [(r"^/%s/.*" % endpoint, web.FallbackHandler, dict(fallback=tr))]
 
 
 def param_rest_provider(files, endpoint):
@@ -146,12 +146,13 @@ def param_rest_provider(files, endpoint):
         elif extension == 'ipynb':
             try:
                 import nbconvert # noqa
-            except ImportError as e:
+            except ImportError:
                 raise ImportError("Please install nbconvert to serve Jupyter Notebooks.")
             from nbconvert import ScriptExporter
             exporter = ScriptExporter()
             source, _ = exporter.from_filename(filename)
-            with tempfile.NamedTemporaryFile(mode='w', dir=dirname(self.fn), delete=True) as tmp:
+            source_dir = os.path.dirname(filename)
+            with tempfile.NamedTemporaryFile(mode='w', dir=source_dir, delete=True) as tmp:
                 tmp.write(source)
                 tmp.flush()
                 run_path(tmp.name, init_globals={'get_ipython': MagicMock()})

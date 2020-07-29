@@ -99,29 +99,36 @@ class _state(param.Parameterized):
         for indicator in self._indicators:
             indicator.value = self.busy
 
+    def _get_callback(self, endpoint):
+        _updating = {}
+        def link(*events):
+            event = events[0]
+            obj = event.cls if event.obj is None else event.obj
+            parameterizeds = self._rest_endpoints[endpoint][0]
+            if obj not in parameterizeds:
+                return
+            updating = _updating.get(id(obj), [])
+            values = {event.name: event.new for event in events
+                      if event.name not in updating}
+            if not values:
+                return
+            _updating[id(obj)] = list(values)
+            for parameterized in parameterizeds:
+                if parameterized in _updating:
+                    continue
+                try:
+                    parameterized.param.set_param(**values)
+                except Exception:
+                    raise
+                finally:
+                    if id(obj) in _updating:
+                        not_updated = [p for p in _updating[id(obj)] if p not in values]
+                        _updating[id(obj)] = not_updated
+        return link
+
     #----------------------------------------------------------------
     # Public Methods
     #----------------------------------------------------------------
-
-    def kill_all_servers(self):
-        """Stop all servers and clear them from the current state."""
-        for server_id in self._servers:
-            try:
-                self._servers[server_id][0].stop()
-            except AssertionError:  # can't stop a server twice
-                pass
-        self._servers = {}
-
-    def onload(self, callback):
-        """
-        Callback that is triggered when a session has been served.
-        """
-        if self.curdoc is None:
-            callback()
-            return
-        if self.curdoc not in self._onload:
-            self._onload[self.curdoc] = []
-        self._onload[self.curdoc].append(callback)
 
     def add_periodic_callback(self, callback, period=500, count=None,
                               timeout=None, start=True):
@@ -155,50 +162,25 @@ class _state(param.Parameterized):
             cb.start()
         return cb
 
-    def sync_busy(self, indicator):
+    def kill_all_servers(self):
+        """Stop all servers and clear them from the current state."""
+        for server_id in self._servers:
+            try:
+                self._servers[server_id][0].stop()
+            except AssertionError:  # can't stop a server twice
+                pass
+        self._servers = {}
+
+    def onload(self, callback):
         """
-        Syncs the busy state with an indicator with a boolean value
-        parameter.
-
-        Arguments
-        ---------
-        indicator: An BooleanIndicator to sync with the busy property
+        Callback that is triggered when a session has been served.
         """
-        if not isinstance(indicator.param.value, param.Boolean):
-            raise ValueError("Busy indicator must have a value parameter"
-                             "of Boolean type.")
-        self._indicators.append(indicator)
-
-    #----------------------------------------------------------------
-    # Public Properties
-    #----------------------------------------------------------------
-
-    def _get_callback(self, endpoint):
-        _updating = {}
-        def link(*events):
-            event = events[0]
-            obj = event.cls if event.obj is None else event.obj
-            parameterizeds = self._rest_endpoints[endpoint][0]
-            if obj not in parameterizeds:
-                return
-            updating = _updating.get(id(obj), [])
-            values = {event.name: event.new for event in events
-                      if event.name not in updating}
-            if not values:
-                return
-            _updating[id(obj)] = list(values)
-            for parameterized in parameterizeds:
-                if parameterized in _updating:
-                    continue
-                try:
-                    parameterized.param.set_param(**values)
-                except Exception:
-                    raise
-                finally:
-                    if id(obj) in _updating:
-                        not_updated = [p for p in _updating[id(obj)] if p not in values]
-                        _updating[id(obj)] = not_updated
-        return link
+        if self.curdoc is None:
+            callback()
+            return
+        if self.curdoc not in self._onload:
+            self._onload[self.curdoc] = []
+        self._onload[self.curdoc].append(callback)
 
     def publish(self, endpoint, parameterized, parameters=None):
         """
@@ -228,6 +210,24 @@ class _state(param.Parameterized):
             cb = self._get_callback(endpoint)
             self._rest_endpoints[endpoint] = ([parameterized], parameters, cb)
         parameterized.param.watch(cb, parameters)
+
+    def sync_busy(self, indicator):
+        """
+        Syncs the busy state with an indicator with a boolean value
+        parameter.
+
+        Arguments
+        ---------
+        indicator: An BooleanIndicator to sync with the busy property
+        """
+        if not isinstance(indicator.param.value, param.Boolean):
+            raise ValueError("Busy indicator must have a value parameter"
+                             "of Boolean type.")
+        self._indicators.append(indicator)
+
+    #----------------------------------------------------------------
+    # Public Properties
+    #----------------------------------------------------------------
 
     @property
     def access_token(self):
