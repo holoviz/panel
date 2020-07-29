@@ -20,6 +20,7 @@ from bokeh.server.views.session_handler import SessionHandler
 from bokeh.server.views.static_handler import StaticHandler
 from bokeh.server.urls import per_app_patterns
 from bokeh.settings import settings
+from tornado.ioloop import IOLoop
 from tornado.websocket import WebSocketHandler
 from tornado.web import RequestHandler, StaticFileHandler, authenticated
 from tornado.wsgi import WSGIContainer
@@ -196,22 +197,20 @@ def serve(panels, port=0, address=None, websocket_origin=None, loop=None,
     kwargs: dict
       Additional keyword arguments to pass to Server instance
     """
+    kwargs = dict(kwargs, **dict(
+        port=port, address=address, websocket_origin=websocket_origin,
+        loop=loop, show=show, start=start, title=title, verbose=verbose,
+        location=location
+    ))
     if threaded:
         from tornado.ioloop import IOLoop
-        loop = IOLoop()
+        loop = IOLoop() if loop is None else loop
         server = StoppableThread(
-            target=get_server, io_loop=loop,
-            args=(panels, port, address, websocket_origin, loop, show,
-                  True, title, verbose, location),
-            kwargs=kwargs
+            target=get_server, io_loop=loop, args=(panels,), kwargs=kwargs
         )
         server.start()
     else:
-        server = get_server(
-            panels, port, address, websocket_origin, loop=loop, show=show,
-            start=True, title=title, verbose=verbose, location=location,
-            **kwargs
-        )
+        server = get_server(panels, **kwargs)
     return server
 
 
@@ -317,8 +316,6 @@ def get_server(panel, port=0, address=None, websocket_origin=None,
     server : bokeh.server.server.Server
       Bokeh Server instance running this panel
     """
-    from tornado.ioloop import IOLoop
-
     server_id = kwargs.pop('server_id', uuid.uuid4().hex)
     kwargs['extra_patterns'] = extra_patterns = kwargs.get('extra_patterns', [])
     if isinstance(panel, dict):
