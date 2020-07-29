@@ -212,7 +212,7 @@ def serve(panels, port=0, address=None, websocket_origin=None, loop=None,
             start=True, title=title, verbose=verbose, location=location,
             **kwargs
         )
-    return serve
+    return server
 
 
 class ProxyFallbackHandler(RequestHandler):
