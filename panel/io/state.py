@@ -191,7 +191,7 @@ class _state(param.Parameterized):
                 if parameterized in _updating:
                     continue
                 try:
-                    parameterized.set_param(**values)
+                    parameterized.param.set_param(**values)
                 except Exception:
                     raise
                 finally:
@@ -201,12 +201,28 @@ class _state(param.Parameterized):
         return link
 
     def publish(self, endpoint, parameterized, parameters=None):
+        """
+        Publish parameters on a Parameterized object as a REST API.
+
+        Arguments
+        ---------
+        endpoint: str
+          The endpoint at which to serve the REST API.
+        parameterized: param.Parameterized
+          The Parameterized object to publish parameters from.
+        parameters: list(str) or None
+          A subset of parameters on the Parameterized to publish.
+        """
         if parameters is None:
             parameters = list(parameterized.param)
+        if endpoint.startswith('/'):
+            endpoint = endpoint[1:]
         if endpoint in self._rest_endpoints:
             parameterizeds, old_parameters, cb = self._rest_endpoints[endpoint]
             if set(parameters) != set(old_parameters):
                 raise ValueError("Param REST API output parameters must match across sessions.")
+            values = {k: v for k, v in parameterizeds[0].param.get_param_values() if k in parameters}
+            parameterized.param.set_param(**values)
             parameterizeds.append(parameterized)
         else:
             cb = self._get_callback(endpoint)

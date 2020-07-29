@@ -1,7 +1,10 @@
 import json
 import pkg_resources
+import tempfile
 
 from ast import literal_eval
+from runpy import run_path
+from unittest.mock import MagicMock
 from urllib.parse import parse_qs
 
 import param
@@ -12,8 +15,9 @@ from .state import state
 
 
 class HTTPError(web.HTTPError):
-
-    pass
+    """
+    Custom HTTPError type
+    """
 
 
 class BaseHandler(web.RequestHandler):
@@ -42,26 +46,27 @@ class BaseHandler(web.RequestHandler):
 
 class ParamHandler(BaseHandler):
 
+    def __init__(self, app, request, **kwargs):
+        self.root = kwargs.pop('root', None)
+        super().__init__(app, request, **kwargs)
+
     @classmethod
     def serialize(cls, parameterized, parameters):
-        return {p: getattr(parameterized, p) for p in parameters}
+        values = {p: getattr(parameterized, p) for p in parameters}
+        return parameterized.param.serialize_parameters(values)
 
     @classmethod
     def deserialize(cls, parameterized, parameters):
-        params = {}
-        for p, values in parameters.items():
+        for p in parameters:
             if p not in parameterized.param:
-                raise HTTPError(reason="%s query parameter not recognized." % p,
-                                status_code=400)
-            parameter = parameterized.param[p]
-            value = values[0]
-            if not isinstance(parameter, param.String):
-                value = literal_eval(value)
-            params[p] = value
-        return params
+                reason = f"'{p}' query parameter not recognized."
+                raise HTTPError(reason=reason, status_code=400)
+        return {p: parameterized.param.deserialize_value(p, v)
+                for p, v in parameters.items()}
 
-    def get(self):
-        endpoint = self.request.path
+    async def get(self):
+        path = self.request.path
+        endpoint = path[path.index(self.root)+len(self.root):]
         parameterized, parameters, _ = state._rest_endpoints.get(
             endpoint, (None, None, None)
         )
@@ -134,7 +139,28 @@ def param_rest_provider(files, endpoint):
     -------
     A Tornado routing pattern containing the route and handler
     """
-    return [(r"^.*", ParamHandler)]
+    for filename in files:
+        extension = filename.split('.')[-1]
+        if extension == 'py':
+            run_path(filename)
+        elif extension == 'ipynb':
+            try:
+                import nbconvert # noqa
+            except ImportError as e:
+                raise ImportError("Please install nbconvert to serve Jupyter Notebooks.")
+            from nbconvert import ScriptExporter
+            exporter = ScriptExporter()
+            source, _ = exporter.from_filename(filename)
+            with tempfile.NamedTemporaryFile(mode='w', dir=dirname(self.fn), delete=True) as tmp:
+                tmp.write(source)
+                tmp.flush()
+                run_path(tmp.name, init_globals={'get_ipython': MagicMock()})
+        else:
+            raise ValueError('{} is not a script (.py) or notebook (.ipynb)'.format(filename))
+
+    if endpoint and not endpoint.endswith('/'):
+        endpoint += '/'
+    return [((r"^/%s.*" % endpoint if endpoint else r"^.*"), ParamHandler, dict(root=endpoint))]
 
 
 REST_PROVIDERS = {
