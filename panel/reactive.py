@@ -182,10 +182,12 @@ class Syncable(Renderable):
     def _process_events(self, events):
         with edit_readonly(state):
             state.busy = True
-        with edit_readonly(self):
-            self.param.set_param(**self._process_property_change(events))
-        with edit_readonly(state):
-            state.busy = False
+        try:
+            with edit_readonly(self):
+                self.param.set_param(**self._process_property_change(events))
+        finally:
+            with edit_readonly(state):
+                state.busy = False
 
     @gen.coroutine
     def _change_coroutine(self, doc=None):

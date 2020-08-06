@@ -7,6 +7,7 @@ from __future__ import absolute_import, division, unicode_literals
 import time
 import param
 
+from ..util import edit_readonly
 from .state import state
 
 
@@ -60,7 +61,13 @@ class PeriodicCallback(param.Parameterized):
             self.start()
 
     def _periodic_callback(self):
-        self.callback()
+        with edit_readonly(state):
+            state.busy = True
+        try:
+            self.callback()
+        finally:
+            with edit_readonly(state):
+                state.busy = False
         self._counter += 1
         if self.timeout is not None:
             dt = (time.time() - self._start_time) * 1000
