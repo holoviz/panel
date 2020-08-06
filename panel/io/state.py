@@ -73,7 +73,11 @@ class _state(param.Parameterized):
     # Stores a set of locked Websockets, reset after every change event
     _locks = WeakSet()
 
+    # Indicators listening to the busy state
     _indicators = []
+
+    # Endpoints
+    _rest_endpoints = {}
 
     def __repr__(self):
         server_info = []
@@ -85,6 +89,79 @@ class _state(param.Parameterized):
             return "state(servers=[])"
         return "state(servers=[\n  {}\n])".format(",\n  ".join(server_info))
 
+    def _unblocked(self, doc):
+        thread = threading.current_thread()
+        thread_id = thread.ident if thread else None
+        return doc is self.curdoc and self._thread_id == thread_id
+
+    @param.depends('busy', watch=True)
+    def _update_busy(self):
+        for indicator in self._indicators:
+            indicator.value = self.busy
+
+    def _get_callback(self, endpoint):
+        _updating = {}
+        def link(*events):
+            event = events[0]
+            obj = event.cls if event.obj is None else event.obj
+            parameterizeds = self._rest_endpoints[endpoint][0]
+            if obj not in parameterizeds:
+                return
+            updating = _updating.get(id(obj), [])
+            values = {event.name: event.new for event in events
+                      if event.name not in updating}
+            if not values:
+                return
+            _updating[id(obj)] = list(values)
+            for parameterized in parameterizeds:
+                if parameterized in _updating:
+                    continue
+                try:
+                    parameterized.param.set_param(**values)
+                except Exception:
+                    raise
+                finally:
+                    if id(obj) in _updating:
+                        not_updated = [p for p in _updating[id(obj)] if p not in values]
+                        _updating[id(obj)] = not_updated
+        return link
+
+    #----------------------------------------------------------------
+    # Public Methods
+    #----------------------------------------------------------------
+
+    def add_periodic_callback(self, callback, period=500, count=None,
+                              timeout=None, start=True):
+        """
+        Schedules a periodic callback to be run at an interval set by
+        the period. Returns a PeriodicCallback object with the option
+        to stop and start the callback.
+
+        Arguments
+        ---------
+        callback: callable
+          Callable function to be executed at periodic interval.
+        period: int
+          Interval in milliseconds at which callback will be executed.
+        count: int
+          Maximum number of times callback will be invoked.
+        timeout: int
+          Timeout in seconds when the callback should be stopped.
+        start: boolean (default=True)
+          Whether to start callback immediately.
+
+        Returns
+        -------
+        Return a PeriodicCallback object with start and stop methods.
+        """
+        from .callbacks import PeriodicCallback
+
+        cb = PeriodicCallback(callback=callback, period=period,
+                              count=count, timeout=timeout)
+        if start:
+            cb.start()
+        return cb
+
     def kill_all_servers(self):
         """Stop all servers and clear them from the current state."""
         for server_id in self._servers:
@@ -93,11 +170,6 @@ class _state(param.Parameterized):
             except AssertionError:  # can't stop a server twice
                 pass
         self._servers = {}
-
-    def _unblocked(self, doc):
-        thread = threading.current_thread()
-        thread_id = thread.ident if thread else None
-        return doc is self.curdoc and self._thread_id == thread_id
 
     def onload(self, callback):
         """
@@ -110,18 +182,64 @@ class _state(param.Parameterized):
             self._onload[self.curdoc] = []
         self._onload[self.curdoc].append(callback)
 
+    def publish(self, endpoint, parameterized, parameters=None):
+        """
+        Publish parameters on a Parameterized object as a REST API.
+
+        Arguments
+        ---------
+        endpoint: str
+          The endpoint at which to serve the REST API.
+        parameterized: param.Parameterized
+          The Parameterized object to publish parameters from.
+        parameters: list(str) or None
+          A subset of parameters on the Parameterized to publish.
+        """
+        if parameters is None:
+            parameters = list(parameterized.param)
+        if endpoint.startswith('/'):
+            endpoint = endpoint[1:]
+        if endpoint in self._rest_endpoints:
+            parameterizeds, old_parameters, cb = self._rest_endpoints[endpoint]
+            if set(parameters) != set(old_parameters):
+                raise ValueError("Param REST API output parameters must match across sessions.")
+            values = {k: v for k, v in parameterizeds[0].param.get_param_values() if k in parameters}
+            parameterized.param.set_param(**values)
+            parameterizeds.append(parameterized)
+        else:
+            cb = self._get_callback(endpoint)
+            self._rest_endpoints[endpoint] = ([parameterized], parameters, cb)
+        parameterized.param.watch(cb, parameters)
+
     def sync_busy(self, indicator):
         """
         Syncs the busy state with an indicator with a boolean value
         parameter.
+
+        Arguments
+        ---------
+        indicator: An BooleanIndicator to sync with the busy property
         """
+        if not isinstance(indicator.param.value, param.Boolean):
+            raise ValueError("Busy indicator must have a value parameter"
+                             "of Boolean type.")
         self._indicators.append(indicator)
 
-    @param.depends('busy')
-    def _update_busy(self):
-        for indicator in self._indicators:
-            indicator.value = self.busy
+    #----------------------------------------------------------------
+    # Public Properties
+    #----------------------------------------------------------------
 
+    @property
+    def access_token(self):
+        from ..config import config
+        access_token = self.cookies.get('access_token')
+        if access_token is None:
+            return None
+        access_token = decode_signed_value(config.cookie_secret, 'access_token', access_token)
+        if self.encryption is None:
+            return access_token.decode('utf-8')
+        return self.encryption.decrypt(access_token).decode('utf-8')
+            
     @property
     def curdoc(self):
         if self._curdoc:
@@ -142,19 +260,19 @@ class _state(param.Parameterized):
         return self.curdoc.session_context.request.headers if self.curdoc else {}
 
     @property
-    def session_args(self):
-        return self.curdoc.session_context.request.arguments if self.curdoc else {}
+    def location(self):
+        if self.curdoc and self.curdoc not in self._locations:
+            from .location import Location
+            self._locations[self.curdoc] = loc = Location()
+            return loc
+        elif self.curdoc is None:
+            return self._location
+        else:
+            return self._locations.get(self.curdoc) if self.curdoc else None
 
     @property
-    def access_token(self):
-        from ..config import config
-        access_token = self.cookies.get('access_token')
-        if access_token is None:
-            return None
-        access_token = decode_signed_value(config.cookie_secret, 'access_token', access_token)
-        if self.encryption is None:
-            return access_token.decode('utf-8')
-        return self.encryption.decrypt(access_token).decode('utf-8')
+    def session_args(self):
+        return self.curdoc.session_context.request.arguments if self.curdoc else {}
 
     @property
     def user(self):
@@ -181,17 +299,6 @@ class _state(param.Parameterized):
         else:
             payload_segment = id_token
         return json.loads(base64url_decode(payload_segment).decode('utf-8'))
-
-    @property
-    def location(self):
-        if self.curdoc and self.curdoc not in self._locations:
-            from .location import Location
-            self._locations[self.curdoc] = loc = Location()
-            return loc
-        elif self.curdoc is None:
-            return self._location
-        else:
-            return self._locations.get(self.curdoc) if self.curdoc else None
 
 
 state = _state()

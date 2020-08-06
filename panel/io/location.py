@@ -71,6 +71,12 @@ class Location(Syncable):
         self._link_props(model, properties, doc, root, comm)
         return model
 
+    def _get_root(self, doc=None, comm=None):
+        root = self._get_model(doc, comm=comm)
+        ref = root.ref['id']
+        state._views[ref] = (self, root, doc, comm)
+        return root
+
     def _update_synced(self, event=None):
         if self._syncing:
             return

@@ -54,6 +54,14 @@ def test_layout_constructor(panel):
     assert all(isinstance(p, Bokeh) for p in layout.objects)
 
 
+@pytest.mark.parametrize('panel', [Card, Column, Row])
+def test_layout_constructor_with_objects_param(panel):
+    div1 = Div()
+    div2 = Div()
+    layout = panel(objects=[div1, div2])
+    assert all(isinstance(p, Bokeh) for p in layout.objects)
+
+
 @pytest.mark.parametrize('panel', [Column, Row])
 def test_layout_add(panel, document, comm):
     div1 = Div()

@@ -6,12 +6,10 @@ from tempfile import NamedTemporaryFile
 import pytest
 import requests
 
-from tornado.ioloop import IOLoop
-
 from panel.io import state
 from panel.models import HTML as BkHTML
 from panel.pane import Markdown
-from panel.io.server import StoppableThread
+from panel.io.server import serve
 from panel.template import Template
 
 
@@ -47,12 +45,8 @@ def test_server_change_io_state(html_server_session):
 def test_server_static_dirs():
     html = Markdown('# Title')
 
-    loop = IOLoop()
-    server = StoppableThread(
-        target=html._get_server, io_loop=loop,
-        args=(5008, None, None, loop, False, True, None, False, None),
-        kwargs=dict(static_dirs={'tests': os.path.dirname(__file__)}))
-    server.start()
+    static = {'tests': os.path.dirname(__file__)}
+    server = serve(html, port=5008, threaded=True, static_dirs=static, show=False)
 
     # Wait for server to start
     time.sleep(1)
@@ -99,12 +93,7 @@ def test_template_css():
         f.write(css)
     t.add_variable('template_css_files', [ntf.name])
 
-    loop = IOLoop()
-    server = StoppableThread(
-        target=t._get_server, io_loop=loop,
-        args=(5009, None, None, loop, False, True, None, False, None)
-    )
-    server.start()
+    server = serve(t, port=5009, threaded=True, show=False)
 
     # Wait for server to start
     time.sleep(1)

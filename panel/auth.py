@@ -264,7 +264,10 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
 
     def _on_error(self, response, body=None):
         self.clear_all_cookies()
-        body = body or decode_response_body(response)
+        try:
+            body = body or decode_response_body(response)
+        except json.decoder.JSONDecodeError:
+            body = body
         provider = self.__class__.__name__.replace('LoginHandler', '')
         if response.error:
             log.error(f"{provider} OAuth provider returned a {response.error} "

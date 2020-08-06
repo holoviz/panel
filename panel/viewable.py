@@ -29,7 +29,7 @@ from .io.notebook import (
 )
 from .io.save import save
 from .io.state import state
-from .io.server import StoppableThread, get_server
+from .io.server import serve
 from .util import escape, param_reprs
 
 
@@ -228,11 +228,22 @@ class ServableMixin(object):
             state._servers[server_id][2].append(doc)
         return self.server_doc(doc, title, location)
 
-    def _get_server(self, port=0, address=None, websocket_origin=None, loop=None,
-                    show=False, start=False, title=None, verbose=False,
-                    location=True, **kwargs):
-        return get_server(self, port, address, websocket_origin, loop,
-                          show, start, title, verbose, **kwargs)
+    def _add_location(self, doc, location, root=None):
+        from .io.location import Location
+        if isinstance(location, Location):
+            loc = location
+        elif doc in state._locations:
+            loc = state.location
+        else:
+            loc = Location()
+        state._locations[doc] = loc
+        if root is None:
+            loc_model = loc._get_root(doc)
+        else:
+            loc_model = loc._get_model(doc, root)
+        loc_model.name = 'location'
+        doc.add_root(loc_model)
+        return loc
 
     def _on_msg(self, ref, manager, msg):
         """
@@ -336,21 +347,11 @@ class ServableMixin(object):
           Returns the Bokeh server instance or the thread the server
           was launched on (if threaded=True)
         """
-        if threaded:
-            from tornado.ioloop import IOLoop
-            loop = IOLoop()
-            server = StoppableThread(
-                target=self._get_server, io_loop=loop,
-                args=(port, address, websocket_origin, loop, open,
-                      True, title, verbose, location),
-                kwargs=kwargs)
-            server.start()
-        else:
-            server = self._get_server(
-                port, address, websocket_origin, show=open, start=True,
-                title=title, verbose=verbose, location=location, **kwargs
-            )
-        return server
+        return serve(
+            self, port=port, address=address, websocket_origin=websocket_origin,
+            show=open, start=True, title=title, verbose=verbose,
+            location=location, threaded=threaded, **kwargs
+        )
 
 
 class Renderable(param.Parameterized):
@@ -435,6 +436,22 @@ class Renderable(param.Parameterized):
         return {k: v for k, v in self.param.get_param_values()
                 if v is not None}
 
+    def _server_destroy(self, session_context):
+        """
+        Server lifecycle hook triggered when session is destroyed.
+        """
+        doc = session_context._document
+        root = self._documents[doc]
+        ref = root.ref['id']
+        self._cleanup(root)
+        del self._documents[doc]
+        if ref in state._views:
+            del state._views[ref]
+        if doc in state._locations:
+            loc = state._locations[doc]
+            loc._cleanup(root)
+            del state._locations[doc]
+
     def get_root(self, doc=None, comm=None):
         """
         Returns the root model and applies pre-processing hooks
@@ -469,6 +486,11 @@ class Viewable(Renderable, Layoutable, ServableMixin):
     """
 
     _preprocessing_hooks = []
+
+    def __init__(self, **params):
+        hooks = params.pop('hooks', [])
+        super().__init__(**params)
+        self._hooks = hooks
 
     def __repr__(self, depth=0):
         return '{cls}({params})'.format(cls=type(self).__name__,
@@ -540,22 +562,6 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         if config.embed:
             return render_model(model)
         return render_mimebundle(model, doc, comm, manager, location)
-
-    def _server_destroy(self, session_context):
-        """
-        Server lifecycle hook triggered when session is destroyed.
-        """
-        doc = session_context._document
-        root = self._documents[doc]
-        ref = root.ref['id']
-        self._cleanup(root)
-        del self._documents[doc]
-        if ref in state._views:
-            del state._views[ref]
-        if doc in state._locations:
-            loc = state._locations[doc]
-            loc._cleanup(root)
-            del state._locations[doc]
 
     #----------------------------------------------------------------
     # Public API
@@ -709,7 +715,6 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         doc : bokeh.Document
           The bokeh document the panel was attached to
         """
-        from .io.location import Location
         doc = doc or _curdoc()
         title = title or 'Panel Application'
         doc.title = title
@@ -718,14 +723,5 @@ class Viewable(Renderable, Layoutable, ServableMixin):
             doc.on_session_destroyed(self._server_destroy)
             self._documents[doc] = model
         add_to_doc(model, doc)
-        if location:
-            if isinstance(location, Location):
-                loc = location
-            elif state._locations.get(doc) is not None:
-                loc = state._locations[doc]
-            else:
-                loc = Location()
-            state._locations[doc] = loc
-            loc_model = loc._get_model(doc, model)
-            doc.add_root(loc_model)
+        if location: self._add_location(doc, location, model)
         return doc

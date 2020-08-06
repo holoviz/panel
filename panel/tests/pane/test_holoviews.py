@@ -408,6 +408,23 @@ def test_holoviews_linked_axes(document, comm):
 
 
 @hv_available
+def test_holoviews_linked_axes_merged_ranges(document, comm):
+    c1 = hv.Curve([1, 2, 3])
+    c2 = hv.Curve([0, 1, 2, 3, 4])
+
+    layout = Row(HoloViews(c1, backend='bokeh'), HoloViews(c2, backend='bokeh'))
+
+    row_model = layout.get_root(document, comm=comm)
+
+    p1, p2 = row_model.select({'type': Figure})
+
+    assert p1.x_range is p2.x_range
+    assert p1.y_range is p2.y_range
+    assert p1.y_range.start == -0.4
+    assert p1.y_range.end == 4.4
+
+
+@hv_available
 def test_holoviews_linked_x_axis(document, comm):
     c1 = hv.Curve([1, 2, 3])
     c2 = hv.Curve([1, 2, 3], vdims='y2')

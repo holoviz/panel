@@ -20,6 +20,7 @@ from bokeh.server.views.session_handler import SessionHandler
 from bokeh.server.views.static_handler import StaticHandler
 from bokeh.server.urls import per_app_patterns
 from bokeh.settings import settings
+from tornado.ioloop import IOLoop
 from tornado.websocket import WebSocketHandler
 from tornado.web import RequestHandler, StaticFileHandler, authenticated
 from tornado.wsgi import WSGIContainer
@@ -152,7 +153,7 @@ def unlocked():
 
 def serve(panels, port=0, address=None, websocket_origin=None, loop=None,
           show=True, start=True, title=None, verbose=True, location=True,
-          **kwargs):
+          threaded=False, **kwargs):
     """
     Allows serving one or more panel objects on a single server.
     The panels argument should be either a Panel object or a function
@@ -191,11 +192,26 @@ def serve(panels, port=0, address=None, websocket_origin=None, loop=None,
     location : boolean or panel.io.location.Location
       Whether to create a Location component to observe and
       set the URL location.
+    threaded: boolean (default=False)
+      Whether to start the server on a new Thread
     kwargs: dict
       Additional keyword arguments to pass to Server instance
     """
-    return get_server(panels, port, address, websocket_origin, loop,
-                      show, start, title, verbose, location, **kwargs)
+    kwargs = dict(kwargs, **dict(
+        port=port, address=address, websocket_origin=websocket_origin,
+        loop=loop, show=show, start=start, title=title, verbose=verbose,
+        location=location
+    ))
+    if threaded:
+        from tornado.ioloop import IOLoop
+        kwargs['loop'] = loop = IOLoop() if loop is None else loop
+        server = StoppableThread(
+            target=get_server, io_loop=loop, args=(panels,), kwargs=kwargs
+        )
+        server.start()
+    else:
+        server = get_server(panels, **kwargs)
+    return server
 
 
 class ProxyFallbackHandler(RequestHandler):
@@ -213,7 +229,6 @@ class ProxyFallbackHandler(RequestHandler):
         self.fallback(self.request)
         self._finished = True
         self.on_finish()
-
 
 
 def get_static_routes(static_dirs):
@@ -301,8 +316,6 @@ def get_server(panel, port=0, address=None, websocket_origin=None,
     server : bokeh.server.server.Server
       Bokeh Server instance running this panel
     """
-    from tornado.ioloop import IOLoop
-
     server_id = kwargs.pop('server_id', uuid.uuid4().hex)
     kwargs['extra_patterns'] = extra_patterns = kwargs.get('extra_patterns', [])
     if isinstance(panel, dict):

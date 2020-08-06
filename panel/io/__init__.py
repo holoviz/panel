@@ -7,6 +7,7 @@ import logging
 
 from ..config import config
 
+from .callbacks import PeriodicCallback # noqa
 from .embed import embed_state # noqa
 from .state import state # noqa
 from .model import add_to_doc, remove_root, diff # noqa

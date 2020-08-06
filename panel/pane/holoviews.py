@@ -12,7 +12,7 @@ from functools import partial
 
 import param
 
-from bokeh.models import Spacer as _BkSpacer
+from bokeh.models import Spacer as _BkSpacer, Range1d
 
 from ..io import state, unlocked
 from ..layout import Column, WidgetBox, HSpacer, VSpacer, Row
@@ -276,12 +276,12 @@ class HoloViews(PaneBase):
         if backend == 'bokeh' and mode != renderer.mode:
             renderer = renderer.instance(mode=mode)
 
+        kwargs = {'margin': self.margin}
         if backend == 'bokeh' or LooseVersion(str(hv.__version__)) >= str('1.13.0'):
-            kwargs = {'doc': doc, 'root': root}
+            kwargs['doc'] = doc
+            kwargs['root'] = root
             if comm:
                 kwargs['comm'] = comm
-        else:
-            kwargs = {}
 
         return renderer.get_plot(self.object, **kwargs)
 
@@ -520,7 +520,7 @@ def link_axes(root_view, root_model):
         return
 
     from holoviews.core.options import Store
-    from holoviews.core.util import unique_iterator
+    from holoviews.core.util import unique_iterator, max_range
     from holoviews.plotting.bokeh.element import ElementPlot
 
     ref = root_model.ref['id']
@@ -548,6 +548,13 @@ def link_axes(root_view, root_model):
 
     for (tag), axes in range_map.items():
         fig, p, ax, axis = axes[0]
+        if isinstance(axis, Range1d):
+            start, end = max_range([
+                (ax[-1].start, ax[-1].end) for ax in axes
+                if isinstance(ax[-1], Range1d)
+            ])
+            axis.start = start
+            axis.end = end
         for fig, p, pax, _ in axes[1:]:
             changed = []
             if  type(ax) is not type(pax):
