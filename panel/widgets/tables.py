@@ -25,6 +25,9 @@ class DataFrame(Widget):
         aggregators for different columns are required the dictionary
         may be nested as `{index_name: {column_name: aggregator}}`""")
 
+    auto_edit = param.Boolean(default=False, doc="""
+        Whether clicking on a table cell automatically starts edit mode.""")
+
     autosize_mode = param.ObjectSelector(default='force_fit', objects=[
         "none", "fit_columns", "fit_viewport", "force_fit"], doc="""
 
@@ -243,6 +246,7 @@ class DataFrame(Widget):
             props['frozen_columns'] = self.frozen_columns
             props['frozen_rows'] = self.frozen_rows
             props['autosize_mode'] = self.autosize_mode
+            props['auto_edit'] = self.auto_edit
         props['row_height'] = self.row_height
         props['editable'] = not self.disabled and len(self.indexes) == 1
         props['sortable'] = self.sortable
