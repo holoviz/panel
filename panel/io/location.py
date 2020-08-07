@@ -75,7 +75,16 @@ class Location(Syncable):
         root = self._get_model(doc, comm=comm)
         ref = root.ref['id']
         state._views[ref] = (self, root, doc, comm)
+        self._documents[doc] = root
         return root
+
+    def _cleanup(self, root):
+        if root.document in self._documents:
+            del self._documents[root.document]
+        ref = root.ref['id']
+        super()._cleanup(root)
+        if ref in state._views:
+            del state._views[ref]
 
     def _update_synced(self, event=None):
         if self._syncing:

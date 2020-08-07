@@ -233,7 +233,7 @@ class ServableMixin(object):
         if isinstance(location, Location):
             loc = location
         elif doc in state._locations:
-            loc = state.location
+            loc = state._locations[doc]
         else:
             loc = Location()
         state._locations[doc] = loc
