@@ -121,6 +121,7 @@ class DataFrame(Widget):
         self.param.watch(self._validate, 'value')
         self._validate(None)
         self._renamed_cols = {}
+        self._updating = False
 
     def _validate(self, event):
         if self.value is None:
@@ -271,7 +272,9 @@ class DataFrame(Widget):
     def _manual_update(self, events, model, doc, root, parent, comm):
         self._validate(None)
         for event in events:
-            if event.name in ('value', 'show_index'):
+            if event.type == 'triggered' and self._updating:
+                continue
+            elif event.name in ('value', 'show_index'):
                 cds = model.source
                 data = {k if isinstance(k, str) else str(k): v
                         for k, v in ColumnDataSource.from_df(self.value).items()}
@@ -313,7 +316,11 @@ class DataFrame(Widget):
                     self.value[k] = v
                     updated = True
             if updated:
-                self.param.trigger('value')
+                self._updating = True
+                try:
+                    self.param.trigger('value')
+                finally:
+                    self._updating = False
         if 'indices' in events:
             self.selection = events.pop('indices')
         super(DataFrame, self)._process_events(events)
