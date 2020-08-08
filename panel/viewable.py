@@ -411,7 +411,8 @@ class Renderable(param.Parameterized):
         """
         Applies preprocessing hooks to the model.
         """
-        for hook in self._preprocessing_hooks:
+        hooks = self._preprocessing_hooks+self._hooks
+        for hook in hooks:
             hook(self, root)
 
     def _render_model(self, doc=None, comm=None):
