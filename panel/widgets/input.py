@@ -8,7 +8,7 @@ import ast
 import json
 
 from base64 import b64decode
-from datetime import datetime
+from datetime import datetime, date
 from six import string_types
 
 import param
@@ -136,6 +136,10 @@ class DatePicker(Widget):
     start = param.CalendarDate(default=None)
 
     end = param.CalendarDate(default=None)
+
+    disabled_dates = param.List(default=None, class_=(date, str))
+
+    enabled_dates = param.List(default=None, class_=(date, str))
 
     _source_transforms = {'value': None, 'start': None, 'end': None}
 
