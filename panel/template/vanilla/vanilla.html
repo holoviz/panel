@@ -1,0 +1,106 @@
+{% extends base %}
+
+<!-- goes in body -->
+{% block contents %}
+<div class="" id="container">
+  <nav class="" style="{% if header_background %}background-color: {{ header_background }} !important;{% endif %}{% if header_color %}color: {{ header_color }}{% endif %}" id="header">
+    {% if nav %}
+    <span style="font-size:30px;cursor:pointer" onclick="closeNav()" id="sidebar-button">
+	  <div class="pn-bar"></div>
+	  <div class="pn-bar"></div>
+	  <div class="pn-bar"></div>
+	</span>
+    {% endif %}
+    <a class="title" href="#">{{ app_title }}</a>
+    {% for doc in docs %}
+    {% for root in doc.roots %}
+    {% if "header" in root.tags %}
+    {{ embed(root) | indent(8) }}
+    {% endif %}
+    {% endfor %}
+    {% endfor %}
+
+	{% if busy %}
+	<div class="pn-busy-container">
+	  {{ embed(roots.busy_indicator) | indent(6) }}
+	</div>
+	{% endif %}
+
+  </nav>
+
+  <div id="content">
+    {% if nav %}
+    <div class="sidenav" id="sidebar">
+      <ul class="nav flex-column">
+        {% for doc in docs %}
+        {% for root in doc.roots %}
+        {% if "nav" in root.tags %}
+        {{ embed(root) | indent(8) }}
+        {% endif %}
+        {% endfor %}
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+    <div class="main" id="main">
+      {% for doc in docs %}
+      {% for root in doc.roots %}
+      {% if "main" in root.tags %}
+      {{ embed(root) | indent(4) }}
+      {% endif %}
+      {% endfor %}
+      {% endfor %}
+
+	  <div id="pn-Modal" class="pn-modal header-adjust">
+		<div class="pn-modal-content">
+		  <span class="pn-modalclose" id="pn-closeModal">&times;</span>
+		  {% for doc in docs %}
+		  {% for root in doc.roots %}
+		  {% if "modal" in root.tags %}
+		  {{ embed(root) | indent(10) }}
+		  {% endif %}
+		  {% endfor %}
+		  {% endfor %}
+		</div>
+	  </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function openNav() {
+    document.getElementById("sidebar").style.left = 0;
+    document.getElementById("main").style.marginLeft = "16.7vw";
+    document.getElementById("sidebar-button").onclick = closeNav;
+    var interval = setInterval(function () { window.dispatchEvent(new Event('resize')); }, 10);
+    setTimeout(function () { clearInterval(interval) }, 210)
+  }
+
+  function closeNav() {
+    document.getElementById("sidebar").style.left = "-16.7vw";
+    document.getElementById("main").style.marginLeft = 0;
+    document.getElementById("sidebar-button").onclick = openNav;
+    var interval = setInterval(function () { window.dispatchEvent(new Event('resize')); }, 10);
+    setTimeout(function () { clearInterval(interval) }, 210)
+  }
+
+  var modal = document.getElementById("pn-Modal");
+  var span = document.getElementById("pn-closeModal");
+
+  span.onclick = function() {
+    modal.style.display = "none";
+  }
+
+  window.onclick = function(event) {
+    if (event.target == modal) {
+      modal.style.display = "none";
+    }
+  }
+</script>
+
+
+{{ embed(roots.js_area) }}
+{{ embed(roots.location) }}
+
+{% endblock %}

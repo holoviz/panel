@@ -55,6 +55,70 @@ def test_layout_constructor(panel):
 
 
 @pytest.mark.parametrize('panel', [Card, Column, Row])
+def test_layout_constructor_with_objects_param(panel):
+    div1 = Div()
+    div2 = Div()
+    layout = panel(objects=[div1, div2])
+    assert all(isinstance(p, Bokeh) for p in layout.objects)
+
+
+@pytest.mark.parametrize('panel', [Column, Row])
+def test_layout_add(panel, document, comm):
+    div1 = Div()
+    div2 = Div()
+    layout1 = panel(div1, div2)
+    div3 = Div()
+    div4 = Div()
+    layout2 = panel(div3, div4)
+
+    combined = layout1 + layout2
+
+    model = combined.get_root(document, comm=comm)
+
+    assert model.children == [div1, div2, div3, div4]
+
+
+@pytest.mark.parametrize('panel', [Column, Row])
+def test_layout_add_list(panel, document, comm):
+    div1 = Div()
+    div2 = Div()
+    layout1 = panel(div1, div2)
+    div3 = Div()
+    div4 = Div()
+
+    combined = layout1 + [div3, div4]
+
+    model = combined.get_root(document, comm=comm)
+
+    assert model.children == [div1, div2, div3, div4]
+
+
+@pytest.mark.parametrize('panel', [Column, Row])
+def test_layout_radd_list(panel, document, comm):
+    div1 = Div()
+    div2 = Div()
+    layout1 = panel(div1, div2)
+    div3 = Div()
+    div4 = Div()
+
+    combined = [div3, div4] + layout1
+
+    model = combined.get_root(document, comm=comm)
+
+    assert model.children == [div3, div4, div1, div2]
+
+
+@pytest.mark.parametrize('panel', [Column, Row])
+def test_layout_add_error(panel, document, comm):
+    div1 = Div()
+    div2 = Div()
+    layout = panel(div1, div2)
+
+    with pytest.raises(ValueError):
+        layout + 1
+
+
+@pytest.mark.parametrize('panel', [Card, Column, Row])
 def test_layout_getitem(panel):
     div1 = Div()
     div2 = Div()
@@ -146,6 +210,20 @@ def test_layout_extend(panel, document, comm):
     div3 = Div()
     div4 = Div()
     layout.extend([div4, div3])
+    assert model.children == [div1, div2, div4, div3]
+
+
+@pytest.mark.parametrize('panel', [Column, Row])
+def test_layout_iadd(panel, document, comm):
+    div1 = Div()
+    div2 = Div()
+    layout = panel(div1, div2)
+
+    model = layout.get_root(document, comm=comm)
+
+    div3 = Div()
+    div4 = Div()
+    layout += [div4, div3]
     assert model.children == [div1, div2, div4, div3]
 
 
@@ -330,6 +408,46 @@ def test_layout_clone_kwargs(panel):
 
     assert clone.width == 400
     assert clone.sizing_mode == 'stretch_height'
+
+
+@pytest.mark.parametrize('panel', [Column, Row])
+def test_layout_clone_no_args_no_kwargs(panel):
+    div1 = Div()
+    div2 = Div()
+    layout = panel(div1, div2, width=400, sizing_mode='stretch_height')
+    clone = layout.clone()
+
+    assert layout.objects[0].object is clone.objects[0].object
+    assert layout.objects[1].object is clone.objects[1].object
+
+    assert clone.width == 400
+    assert clone.sizing_mode == 'stretch_height'
+
+
+@pytest.mark.parametrize('panel', [Column, Row])
+def test_layout_clone_objects_in_kwargs(panel):
+    div1 = Div()
+    div2 = Div()
+    layout = panel(div1, div2)
+    clone = layout.clone(
+        objects=(div2, div1), 
+        width=400, sizing_mode='stretch_height'
+    )
+
+    assert layout.objects[0].object is clone.objects[1].object
+    assert layout.objects[1].object is clone.objects[0].object
+
+    assert clone.width == 400
+    assert clone.sizing_mode == 'stretch_height'
+
+
+@pytest.mark.parametrize('panel', [Column, Row])
+def test_layout_clone_objects_in_args_and_kwargs(panel):
+    div1 = Div()
+    div2 = Div()
+    layout = panel(div1, div2)
+    with pytest.raises(ValueError):
+        layout.clone(div1, objects=div1)
 
 
 def test_widgetbox(document, comm):

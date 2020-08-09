@@ -10,7 +10,7 @@ import pytest
 from bokeh.plotting import figure
 from panel.layout import Row
 from panel.links import Link
-from panel.pane import HoloViews
+from panel.pane import Bokeh, HoloViews
 from panel.widgets import FloatSlider, RangeSlider, ColorPicker, TextInput, DatetimeInput
 from panel.tests.util import hv_available
 
@@ -71,7 +71,7 @@ def test_widget_link_no_target_transform_error():
         t2.jslink(t1, value='value')
     assert ("Cannot jslink \'value\' parameter on TextInput object "
             "to \'value\' parameter on DatetimeInput object") in str(excinfo)
-    
+
     
 @hv_available
 def test_pnwidget_hvplot_links(document, comm):
@@ -225,6 +225,38 @@ def test_widget_bkplot_link(document, comm):
     """
     assert link_customjs.code == code
 
+
+def test_bokeh_figure_jslink(document, comm):
+    fig = figure()
+
+    pane = Bokeh(fig)
+    t1 = TextInput()
+    
+    pane.jslink(t1, **{'x_range.start': 'value'})
+    row = Row(pane, t1)
+    
+    model = row.get_root(document, comm)
+
+    link_customjs = fig.x_range.js_property_callbacks['change:start'][-1]
+    assert link_customjs.args['source'] == fig.x_range
+    assert link_customjs.args['target'] == model.children[1]
+    assert link_customjs.code == """
+    var value = source['start'];
+    value = value;
+    value = value;
+    try {
+      var property = target.properties['value'];
+      if (property !== undefined) { property.validate(value); }
+    } catch(err) {
+      console.log('WARNING: Could not set value on target, raised error: ' + err);
+      return;
+    }
+    try {
+      target['value'] = value;
+    } catch(err) {
+      console.log(err)
+    }
+    """
 
 def test_widget_jscallback(document, comm):
     widget = ColorPicker(value='#ff00ff')

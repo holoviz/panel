@@ -239,8 +239,8 @@ def show_server(panel, notebook_url, port):
     else:
         origin = _origin_url(notebook_url)
     server_id = uuid.uuid4().hex
-    server = get_server(panel, port, origin, start=True, show=False,
-                        server_id=server_id)
+    server = get_server(panel, port=port, websocket_origin=origin,
+                        start=True, show=False, server_id=server_id)
 
     if callable(notebook_url):
         url = notebook_url(server.port)
@@ -318,7 +318,7 @@ def ipywidget(obj, **kwargs):
     from jupyter_bokeh import BokehModel
     from ..pane import panel
     model = panel(obj, **kwargs).get_root()
-    widget = BokehModel(model)
+    widget = BokehModel(model, combine_events=True)
     if hasattr(widget, '_view_count'):
         widget._view_count = 0
         def view_count_changed(change, current=[model]):

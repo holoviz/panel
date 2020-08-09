@@ -85,6 +85,10 @@ def test_param_pane_repr_with_params(document, comm):
 
     assert repr(Pane(Test(), parameters=['a'])) == "Param(Test, parameters=['a'])"
 
+    # With a defined name.
+    test_pane = Pane(Test(), parameters=['a'], name='Another')
+    assert repr(test_pane) == "Param(Test, name='Another', parameters=['a'])"
+
 
 def test_get_root(document, comm):
 
@@ -359,15 +363,21 @@ def test_list_selector_param(document, comm):
 
 def test_action_param(document, comm):
     class Test(param.Parameterized):
-        a = param.Action(lambda x: x.b.append(1))
-        b = param.List(default=[])
+        a = param.Action(lambda x: setattr(x, 'b', 2))
+        b = param.Number(default=1)
 
     test = Test()
     test_pane = Pane(test)
     model = test_pane.get_root(document, comm=comm)
 
-    slider = model.children[1]
-    assert isinstance(slider, Button)
+    button = model.children[1]
+    assert isinstance(button, Button)
+
+    # Check that the action is actually executed
+    pn_button = test_pane.layout[1]
+    pn_button.clicks = 1
+
+    assert test.b == 2
 
 
 def test_explicit_params(document, comm):
@@ -468,6 +478,50 @@ def test_replace_param_object(document, comm):
     assert isinstance(widget, Slider)
     assert widget.start == 0
     assert widget.end == 10
+
+    # Check when object is from parameters
+    pane.object = Test().param
+
+    assert len(model.children) == 2
+    title, widget = model.children
+
+    assert isinstance(title, Div)
+    assert title.text == '<b>Test</b>'
+
+    assert isinstance(widget, Slider)
+    assert widget.start == 0
+    assert widget.end == 10
+
+    # Check when object is None
+    pane.object = None
+
+    assert len(model.children) == 0
+
+
+def test_set_name(document, comm):
+    class Test(param.Parameterized):
+        a = param.Number(bounds=(0, 10))
+        b = param.String(default='A')
+
+    pane = Param(Test(), name='First')
+
+    model = pane.get_root(document, comm=comm)
+
+    assert len(model.children) == 3
+    title, slider, text = model.children
+    assert isinstance(title, Div)
+    # Check setting name displays in as a title
+    assert title.text == '<b>First</b>'
+    assert isinstance(slider, Slider)
+    assert isinstance(text, TextInput)
+
+    pane.name = 'Second'
+
+    assert len(model.children) == 3
+    title, _, _ = model.children
+    assert isinstance(title, Div)
+    # Check the title updates with name
+    assert title.text == '<b>Second</b>'
 
 
 def test_set_parameters(document, comm):
@@ -776,6 +830,24 @@ def test_expand_param_subobject_tabs(document, comm):
     # Collapse subpanel
     test_pane._widgets['abc'][1].value = False
     assert len(model.tabs) == 1
+
+
+def test_param_js_callbacks(document, comm):
+    class JsButton(param.Parameterized):
+        param_btn = param.Action(lambda self: print('Action Python Response'), label='Action')
+
+    param_button = Param(JsButton())
+    code = "console.log('Action button clicked')"
+    param_button[1].js_on_click(code=code)
+
+    model = param_button.get_root(document, comm=comm)
+
+    button = model.children[1]
+    assert len(button.js_event_callbacks) == 1
+    callbacks = button.js_event_callbacks
+    assert 'button_click' in callbacks
+    assert len(callbacks['button_click']) == 1
+    assert code in callbacks['button_click'][0].code
 
 
 class View(param.Parameterized):

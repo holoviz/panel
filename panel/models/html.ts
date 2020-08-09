@@ -2,7 +2,7 @@ import * as p from "@bokehjs/core/properties"
 import {Markup} from "@bokehjs/models/widgets/markup"
 import {PanelMarkupView} from "./layout"
 
-function htmlDecode(input: string): string | null {
+export function htmlDecode(input: string): string | null {
   var doc = new DOMParser().parseFromString(input, "text/html");
   return doc.documentElement.textContent;
 }

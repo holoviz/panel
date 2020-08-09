@@ -1,0 +1,100 @@
+{% extends base %}
+
+<!-- goes in body -->
+{% block preamble %}
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+{% endblock %}
+
+<!-- goes in body -->
+{% block contents %}
+<div class="container-fluid d-flex flex-column vh-100 overflow-hidden" id="container">
+  <nav class="navbar navbar-expand-md navbar-dark sticky-top shadow" style="{% if header_background %}background-color: {{ header_background }} !important;{% endif %}{% if header_color %}color: {{ header_color }}{% endif %}" id="header">
+    {% if nav %}
+    <button type="button" class="navbar-toggle collapsed" id="sidebarCollapse">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    {% endif %}
+    <a class="navbar-brand" href="#">{{ app_title }}</a>
+    {% for doc in docs %}
+    {% for root in doc.roots %}
+    {% if "header" in root.tags %}
+    {{ embed(root) | indent(8) }}
+    {% endif %}
+    {% endfor %}
+    {% endfor %}
+    {% if busy %}
+	<div class="pn-busy-container">
+	  {{ embed(roots.busy_indicator) | indent(6) }}
+	</div>
+	{% endif %}
+  </nav>
+
+  <div class="row overflow-hidden" id="content">
+    {% if nav %}
+    <div class="col-2 mh-100 overflow-auto border-right py-2" id="sidebar">
+      <ul class="nav flex-column">
+        {% for doc in docs %}
+	    {% for root in doc.roots %}
+	    {% if "nav" in root.tags %}
+        {{ embed(root) | indent(8) }}
+	    {% endif %}
+	    {% endfor %}
+	    {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+    <div class="col mh-100 float-left" id="main">
+      {% for doc in docs %}
+      {% for root in doc.roots %}
+      {% if "main" in root.tags %}
+      {{ embed(root) | indent(4) }}
+      {% endif %}
+      {% endfor %}
+      {% endfor %}
+	  <div id="pn-Modal" class="pn-modal mdc-top-app-bar--fixed-adjust">
+		<div class="pn-modal-content">
+		  <span class="pn-modalclose" id="pn-closeModal">&times;</span>
+		  {% for doc in docs %}
+		  {% for root in doc.roots %}
+		  {% if "modal" in root.tags %}
+		  {{ embed(root) | indent(6) }}
+		  {% endif %}
+		  {% endfor %}
+		  {% endfor %}
+		</div>
+	  </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  $(document).ready(function () {
+    $('#sidebarCollapse').on('click', function () {
+      $('#sidebar').toggleClass('active')
+      $(this).toggleClass('active')
+      var interval = setInterval(function () { window.dispatchEvent(new Event('resize')); }, 10);
+      setTimeout(function () { clearInterval(interval) }, 210)
+    });
+  });
+
+  var modal = document.getElementById("pn-Modal");
+  var span = document.getElementById("pn-closeModal");
+
+  span.onclick = function() {
+    modal.style.display = "none";
+  }
+
+  window.onclick = function(event) {
+    if (event.target == modal) {
+      modal.style.display = "none";
+    }
+  }
+</script>
+
+{{ embed(roots.js_area) }}
+{{ embed(roots.location) }}
+
+{% endblock %}

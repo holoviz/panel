@@ -10,10 +10,11 @@ import threading
 from collections import namedtuple
 from functools import partial
 
+from bokeh.models import LayoutDOM
 from tornado import gen
 
-from .callbacks import PeriodicCallback
 from .config import config
+from .io.callbacks import PeriodicCallback
 from .io.model import hold
 from .io.notebook import push
 from .io.server import unlocked
@@ -179,8 +180,14 @@ class Syncable(Renderable):
                 doc.add_next_tick_callback(cb)
 
     def _process_events(self, events):
-        with edit_readonly(self):
-            self.param.set_param(**self._process_property_change(events))
+        with edit_readonly(state):
+            state.busy = True
+        try:
+            with edit_readonly(self):
+                self.param.set_param(**self._process_property_change(events))
+        finally:
+            with edit_readonly(state):
+                state.busy = False
 
     @gen.coroutine
     def _change_coroutine(self, doc=None):
@@ -261,6 +268,11 @@ class Reactive(Syncable, Viewable):
         -------
         Return a PeriodicCallback object with start and stop methods.
         """
+        self.param.warning(
+            "Calling add_periodic_callback on a Panel component is "
+            "deprecated and will be removed in the next minor release. "
+            "Use the pn.state.add_periodic_callback API instead."
+        )
         cb = PeriodicCallback(callback=callback, period=period,
                               count=count, timeout=timeout)
         if start:
@@ -438,7 +450,16 @@ class Reactive(Syncable, Viewable):
         for k in mapping:
             if k.startswith('event:'):
                 continue
-            elif k not in self.param and k not in list(self._rename.values()):
+            elif hasattr(self, 'object') and isinstance(self.object, LayoutDOM):
+                current = self.object
+                for attr in k.split('.'):
+                    if not hasattr(current, attr):
+                        raise ValueError(f"Could not resolve {k} on "
+                                         f"{self.object} model. Ensure "
+                                         "you jslink an attribute that "
+                                         "exists on the bokeh model.")
+                    current = getattr(current, attr)
+            elif (k not in self.param and k not in list(self._rename.values())):
                 matches = difflib.get_close_matches(k, list(self.param))
                 if matches:
                     matches = ' Similar parameters include: %r' % matches

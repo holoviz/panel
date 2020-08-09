@@ -75,6 +75,33 @@ class Button(_ButtonBase):
         from ..links import Callback
         return Callback(self, code={'event:button_click': code}, args=args)
 
+    def jscallback(self, args={}, **callbacks):
+        """
+        Allows defining a JS callback to be triggered when a property
+        changes on the source object. The keyword arguments define the
+        properties that trigger a callback and the JS code that gets
+        executed.
+
+        Arguments
+        ----------
+        args: dict
+          A mapping of objects to make available to the JS callback
+        **callbacks: dict
+          A mapping between properties on the source model and the code
+          to execute when that property changes
+
+        Returns
+        -------
+        callback: Callback
+          The Callback which can be used to disable the callback.
+        """
+        from ..links import Callback
+        for k, v in list(callbacks.items()):
+            if k == 'clicks':
+                k = 'event:button_click'
+            callbacks[k] = self._rename.get(v, v)
+        return Callback(self, code=callbacks, args=args)
+
 
 
 class Toggle(_ButtonBase):

@@ -30,6 +30,9 @@ class Player(Widget):
 
     loop_policy = Enum('once', 'reflect', 'loop', default='once')
 
+    show_loop_controls = Bool(True, help="""Whether the loop controls
+        radio buttons are shown""")
+
     width = Override(default=400)
 
     height = Override(default=250)
@@ -121,5 +124,9 @@ class FileDownload(InputWidget):
     label = String("", help="""The text label for the button to display.""")
 
     filename = String(help="""Filename to use on download""")
+
+    _transfers = Int(0, help="""
+    A private property to create and click the link.
+    """)
 
     title = Override(default='')

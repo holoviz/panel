@@ -89,7 +89,7 @@ except Exception:
 ########## dependencies ##########
 
 install_requires = [
-    'bokeh >=2.0.0',
+    'bokeh >=2.1',
     'param >=1.9.3',
     'pyviz_comms >=0.7.4',
     'markdown',
@@ -108,12 +108,14 @@ _recommended = [
 _tests = [
     'flake8',
     'parameterized',
-    'pytest',
+    'pytest<6.0', # temporary fix for nbval incompatibility
     'scipy',
     'nbsmoke >=0.2.0',
     'pytest-cov',
     'codecov',
     'folium',
+    'ipympl',
+    'pandas<1.1' # temporary fix for streamz incompatibility
 ]
 
 extras_require = {
@@ -129,6 +131,10 @@ extras_require = {
         'jupyter_bokeh',
         'django',
         'pyvista',
+        'ipywidgets',
+        'ipywidgets_bokeh',
+        'ipyvolume',
+        'ipyleaflet'
     ],
     'tests': _tests,
     'recommended': _recommended,
@@ -201,7 +207,7 @@ setup_args = dict(
     python_requires=">=3.6",
     entry_points={
         'console_scripts': [
-            'panel = panel.cli:main'
+            'panel = panel.command:main'
         ]},
     install_requires=install_requires,
     extras_require=extras_require,

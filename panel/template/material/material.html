@@ -1,0 +1,108 @@
+{% extends base %}
+
+<!-- goes in body -->
+{% block preamble %}
+<link href="https://unpkg.com/material-components-web@v4.0.0/dist/material-components-web.min.css" rel="stylesheet">
+<script src="https://unpkg.com/material-components-web@v4.0.0/dist/material-components-web.min.js"></script>
+<link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Material+Icons&display=block" rel="stylesheet">
+{% endblock %}
+
+<!-- goes in body -->
+{% block contents %}
+<header class="mdc-top-app-bar app-bar" style="{% if header_background %}background-color: {{ header_background }} !important;{% endif %}{% if header_color %}color: {{ header_color }}{% endif %}" id="header">
+  <div class="mdc-top-app-bar__row">
+    <section class="mdc-top-app-bar__section mdc-top-app-bar__section--align-start">
+      {% if nav %}
+      <button class="material-icons mdc-top-app-bar__navigation-icon mdc-icon-button">menu</button>
+      {% endif %}
+      <span class="mdc-top-app-bar__title">{{ app_title }}</span>
+	  {% for doc in docs %}
+      {% for root in doc.roots %}
+      {% if "header" in root.tags %}
+      {{ embed(root) | indent(8) }}
+      {% endif %}
+      {% endfor %}
+      {% endfor %}
+    </section>
+    {% if busy %}
+	<div class="pn-busy-container">
+	  {{ embed(roots.busy_indicator) | indent(6) }}
+	</div>
+	{% endif %}
+  </div>
+</header>
+
+{% if nav %}
+<aside class="mdc-drawer mdc-top-app-bar--fixed-adjust mdc-drawer--dismissible mdc-drawer--open" id="sidebar">
+  <div class="mdc-drawer__content">
+    <div class="mdc-list">
+	  {% for doc in docs %}
+	  {% for root in doc.roots %}
+	  {% if "nav" in root.tags %}
+      {{ embed(root) | indent(8) }}
+	  {% endif %}
+	  {% endfor %}
+	  {% endfor %}
+    </div>
+  </div>
+</aside>
+{% endif %}
+
+<div class="mdc-drawer-app-content mdc-top-app-bar--fixed-adjust">
+<main class="main-content" id="main">
+  {% for doc in docs %}
+  {% for root in doc.roots %}
+  {% if "main" in root.tags %}
+  {{ embed(root) | indent(4) }}
+  {% endif %}
+  {% endfor %}
+  {% endfor %}
+</main>
+
+<div id="pn-Modal" class="pn-modal mdc-top-app-bar--fixed-adjust">
+  <div class="pn-modal-content">
+    <span class="pn-modalclose" id="pn-closeModal">&times;</span>
+    {% for doc in docs %}
+	{% for root in doc.roots %}
+	{% if "modal" in root.tags %}
+	{{ embed(root) | indent(4) }}
+	{% endif %}
+	{% endfor %}
+	{% endfor %}
+  </div>
+</div>
+</div>
+
+<script>
+  {% if nav %}
+  var drawer = mdc.drawer.MDCDrawer.attachTo(document.querySelector('.mdc-drawer'));
+  var topAppBar = mdc.topAppBar.MDCTopAppBar.attachTo(document.getElementById('header'));
+  topAppBar.setScrollTarget(document.getElementById('main'));
+  topAppBar.listen('MDCTopAppBar:nav', function() {
+    drawer.open = !drawer.open;
+    // Ensure bokeh layout recomputes layout
+    window.dispatchEvent(new Event('resize'));
+  });
+
+  drawer.open = true;
+  {% endif %}
+
+  var modal = document.getElementById("pn-Modal");
+  var span = document.getElementById("pn-closeModal");
+
+  span.onclick = function() {
+    modal.style.display = "none";
+  }
+
+  window.onclick = function(event) {
+    if (event.target == modal) {
+      modal.style.display = "none";
+    }
+  }
+</script>
+
+{{ embed(roots.js_area) }}
+{{ embed(roots.location) }}
+
+{% endblock %}

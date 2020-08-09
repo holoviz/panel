@@ -46,7 +46,7 @@ class DivPaneBase(PaneBase):
         self._models[root.ref['id']] = (model, parent)
         return model
 
-    def _update(self, model):
+    def _update(self, ref=None, model=None):
         model.update(**self._get_properties())
 
 
@@ -323,6 +323,8 @@ class JSON(DivPaneBase):
     _bokeh_model = _BkJSON
     _rename = {"name": None, "object": "text", "encoder": None}
 
+    _rerender_params = ['object', 'depth', 'encoder', 'hover_preview', 'theme']
+
     @classmethod
     def applies(cls, obj, **params):
         if isinstance(obj, (list, dict)):
@@ -343,6 +345,6 @@ class JSON(DivPaneBase):
             text = self.object
         else:
             text = json.dumps(self.object or {}, cls=self.encoder)
-        depth = float('inf') if self.depth < 0 else self.depth
+        depth = None if self.depth < 0 else self.depth
         return dict(text=text, theme=self.theme, depth=depth,
                     hover_preview=self.hover_preview, **properties)

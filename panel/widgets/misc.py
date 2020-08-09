@@ -190,6 +190,8 @@ class FileDownload(Widget):
 
     _clicks = param.Integer(default=0)
 
+    _transfers = param.Integer(default=0)
+
     _mime_types = {
         'application': {
             'pdf': 'pdf', 'zip': 'zip'
@@ -229,6 +231,11 @@ class FileDownload(Widget):
     @param.depends('label', watch=True)
     def _update_default(self):
         self._default_label = False
+
+    @param.depends('file', watch=True)
+    def _update_filename(self):
+        if isinstance(self.file, str):
+            self.filename = os.path.basename(self.file)
 
     @param.depends('auto', 'file', 'filename', watch=True)
     def _update_label(self):
@@ -300,3 +307,4 @@ class FileDownload(Widget):
 
         self.param.set_param(data=data, filename=filename)
         self._update_label()
+        self._transfers += 1

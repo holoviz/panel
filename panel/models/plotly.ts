@@ -8,7 +8,6 @@ import {deepCopy, isPlainObject, get, throttle} from "./util"
 
 import {PanelHTMLBoxView} from "./layout"
 
-const Plotly = (window as any).Plotly;
 
 interface PlotlyHTMLElement extends HTMLElement {
     on(event: 'plotly_relayout', callback: (eventData: any) => void): void;
@@ -151,7 +150,7 @@ export class PlotlyPlotView extends PanelHTMLBoxView {
     }
 
     this._reacting = true;
-    Plotly.react(this.el, data, newLayout, this.model.config).then(() => {
+    (window as any).Plotly.react(this.el, data, newLayout, this.model.config).then(() => {
         this._updateSetViewportFunction();
         this._updateViewportProperty();
 
@@ -231,10 +230,10 @@ export class PlotlyPlotView extends PanelHTMLBoxView {
     const trace = clone(this.model.data[index]);
     const cds = this.model.data_sources[index];
     for (const column of cds.columns()) {
-      const shape: number[] = cds._shapes[column][0];
       let array = cds.get_array(column)[0];
-      if (shape.length > 1) {
+      if (array.shape != null && array.shape.length > 1) {
         const arrays = [];
+        const shape = array.shape;
         for (let s = 0; s < shape[0]; s++) {
           arrays.push(array.slice(s*shape[1], (s+1)*shape[1]));
         }
@@ -242,9 +241,9 @@ export class PlotlyPlotView extends PanelHTMLBoxView {
       }
       let prop_path = column.split(".");
       let prop = prop_path[prop_path.length - 1];
-      var prop_parent = trace;
-      for(let k of prop_path.slice(0, -1)) {
-        prop_parent = prop_parent[k]
+      let prop_parent = trace;
+      for (let k of prop_path.slice(0, -1)) {
+        prop_parent = (prop_parent[k] as any)
       }
 
       if (update && prop_path.length == 1) {
@@ -257,7 +256,7 @@ export class PlotlyPlotView extends PanelHTMLBoxView {
   }
 
   _updateViewportFromProperty(): void {
-    if (!Plotly || this._settingViewport || this._reacting || !this.model.viewport ) { return }
+    if (!(window as any).Plotly || this._settingViewport || this._reacting || !this.model.viewport ) { return }
 
     const fullLayout = (this.el as any)._fullLayout;
 
@@ -266,7 +265,7 @@ export class PlotlyPlotView extends PanelHTMLBoxView {
       if (!isEqual(get(fullLayout, key), value)) {
         let clonedViewport = deepCopy(this.model.viewport)
         clonedViewport['_update_from_property'] = true;
-        Plotly.relayout(this.el, clonedViewport);
+        (window as any).Plotly.relayout(this.el, clonedViewport);
         return false
       } else {
         return true

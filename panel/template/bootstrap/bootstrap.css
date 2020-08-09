@@ -1,0 +1,77 @@
+body {
+  height: 100vh
+}
+
+#container {
+  padding:0px;
+}
+
+#content {
+  height: 100vh;
+  margin: 0px;
+}
+
+#sidebar {
+  transition: all 0.2s cubic-bezier(0.945, 0.020, 0.270, 0.665);
+  transform-origin: center left; /* Set the transformed position of sidebar to center left side. */
+}
+
+#sidebar.active {
+  margin-left: -16.7%;
+}
+
+#main {
+  overflow-y: scroll;
+}
+
+#sidebarCollapse {
+  background: none;
+  border: none;
+}
+
+a.navbar-brand {
+  padding-left: 10px;
+}
+
+p.bk.card-button {
+  display: none;
+}
+
+.pn-modal {
+  overflow-y: scroll;
+  width: 100%;
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.pn-modal-content {
+  background-color: #fefefe;
+  margin: auto;
+  margin-top: 25px;
+  margin-bottom: 25px;
+  padding: 15px 20px 20px 20px;
+  border: 1px solid #888;
+  width: 80% !important;
+}
+
+.pn-modal-close {
+  position: absolute;
+  right: 25px;
+  z-index: 100;
+}
+
+.pn-modal-close:hover,
+.pn-modal-close:focus {
+  color: #000;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.pn-busy-container {
+  align-items: center;
+  justify-content: center;
+  display: flex;
+  margin-left: auto;
+}

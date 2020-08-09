@@ -9,6 +9,7 @@ import param
 from ..models.location import Location as _BkLocation
 from ..reactive import Syncable
 from ..util import parse_query
+from .state import state
 
 
 class Location(Syncable):
@@ -52,6 +53,14 @@ class Location(Syncable):
         self._synced = []
         self._syncing = False
         self.param.watch(self._update_synced, ['search'])
+        self.param.watch(self._onload, ['href'])
+
+    def _onload(self, event):
+        # Skip if href was not previously empty or not in a server context
+        if event.old or not state.curdoc: 
+            return
+        for cb in state._onload.get(state.curdoc, []):
+            cb()
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         model = _BkLocation(**self._process_param_change(self._init_properties()))
@@ -62,11 +71,26 @@ class Location(Syncable):
         self._link_props(model, properties, doc, root, comm)
         return model
 
+    def _get_root(self, doc=None, comm=None):
+        root = self._get_model(doc, comm=comm)
+        ref = root.ref['id']
+        state._views[ref] = (self, root, doc, comm)
+        self._documents[doc] = root
+        return root
+
+    def _cleanup(self, root):
+        if root.document in self._documents:
+            del self._documents[root.document]
+        ref = root.ref['id']
+        super()._cleanup(root)
+        if ref in state._views:
+            del state._views[ref]
+
     def _update_synced(self, event=None):
         if self._syncing:
             return
         query_params = self.query_params
-        for p, parameters in self._synced:
+        for p, parameters, _ in self._synced:
             mapping = {v: k for k, v in parameters.items()}
             p.param.set_param(**{mapping[k]: v for k, v in query_params.items()
                                  if k in mapping})
@@ -76,7 +100,7 @@ class Location(Syncable):
             return
         query = query or {}
         for e in events:
-            matches = [ps for o, ps in self._synced if o in (e.cls, e.obj)]
+            matches = [ps for o, ps, _ in self._synced if o in (e.cls, e.obj)]
             if not matches:
                 continue
             query[matches[0][e.name]] = e.new
@@ -103,7 +127,7 @@ class Location(Syncable):
         Arguments
         ---------
         parameterized (param.Parameterized):
-          The Paramterized object to sync query parameters with
+          The Parameterized object to sync query parameters with
         parameters (list or dict):
           A list or dictionary specifying parameters to sync. 
           If a dictionary is supplied it should define a mapping from
@@ -113,8 +137,28 @@ class Location(Syncable):
         parameters = parameters or [p for p in parameterized.param if p != 'name']
         if not isinstance(parameters, dict):
             parameters = dict(zip(parameters, parameters))
-        self._synced.append((parameterized, parameters))
-        parameterized.param.watch(self._update_query, list(parameters))
+        watcher = parameterized.param.watch(self._update_query, list(parameters))
+        self._synced.append((parameterized, parameters, watcher))
         self._update_synced()
         self._update_query(query={v: getattr(parameterized, k)
                                   for k, v in parameters.items()})
+
+    def unsync(self, parameterized):
+        """
+        Unsyncs a Parameterized object which has been previous synced
+        with the Location component.
+        
+        Arguments
+        ---------
+        parameterized (param.Parameterized):
+          The Parameterized object to sync query parameters with
+        """
+        matches = [s for s in self._synced if s[0] is parameterized]
+        if not matches:
+            ptype = type(parameterized)
+            raise ValueError(f"Cannot unsync {ptype} object since it "
+                             "was never synced in the first place.")
+        self._synced.remove(matches[0])
+        parameterized.param.unwatch(matches[0][-1])
+        
+        

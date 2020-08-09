@@ -18,7 +18,7 @@ from functools import partial
 import param
 
 from bokeh.document.document import Document as _Document
-from bokeh.io import curdoc as _curdoc
+from bokeh.io.doc import curdoc as _curdoc
 from pyviz_comms import JupyterCommManager
 
 from .config import config, panel_extension
@@ -29,7 +29,7 @@ from .io.notebook import (
 )
 from .io.save import save
 from .io.state import state
-from .io.server import StoppableThread, get_server
+from .io.server import serve
 from .util import escape, param_reprs
 
 
@@ -228,11 +228,22 @@ class ServableMixin(object):
             state._servers[server_id][2].append(doc)
         return self.server_doc(doc, title, location)
 
-    def _get_server(self, port=0, websocket_origin=None, loop=None,
-                    show=False, start=False, title=None, verbose=False,
-                    location=True, **kwargs):
-        return get_server(self, port, websocket_origin, loop, show,
-                          start, title, verbose, **kwargs)
+    def _add_location(self, doc, location, root=None):
+        from .io.location import Location
+        if isinstance(location, Location):
+            loc = location
+        elif doc in state._locations:
+            loc = state._locations[doc]
+        else:
+            loc = Location()
+        state._locations[doc] = loc
+        if root is None:
+            loc_model = loc._get_root(doc)
+        else:
+            loc_model = loc._get_model(doc, root)
+        loc_model.name = 'location'
+        doc.add_root(loc_model)
+        return loc
 
     def _on_msg(self, ref, manager, msg):
         """
@@ -240,8 +251,9 @@ class ServableMixin(object):
         """
         root, doc, comm = state._views[ref][1:]
         patch_cds_msg(root, msg)
-        patch = manager.assemble(msg)
         held = doc._hold
+        patch = manager.assemble(msg)
+        doc.hold()
         patch.apply_to_document(doc, comm.id)
         doc.unhold()
         if held:
@@ -300,15 +312,19 @@ class ServableMixin(object):
             self.server_doc(title=title, location=True)
         return self
 
-    def show(self, title=None, port=0, websocket_origin=None, threaded=False,
-             verbose=True, open=True, location=True, **kwargs):
+    def show(self, title=None, port=0, address=None, websocket_origin=None,
+             threaded=False, verbose=True, open=True, location=True, **kwargs):
         """
         Starts a Bokeh server and displays the Viewable in a new tab.
 
         Arguments
         ---------
+        title : str
+          A string title to give the Document (if served as an app)
         port: int (optional, default=0)
           Allows specifying a specific port
+        address : str
+          The address the server should listen on for HTTP requests.
         websocket_origin: str or list(str) (optional)
           A list of hosts that can connect to the websocket.
           This is typically required when embedding a server app in
@@ -317,8 +333,6 @@ class ServableMixin(object):
         threaded: boolean (optional, default=False)
           Whether to launch the Server on a separate thread, allowing
           interactive use.
-        title : str
-          A string title to give the Document (if served as an app)
         verbose: boolean (optional, default=True)
           Whether to print the address and port
         open : boolean (optional, default=True)
@@ -333,20 +347,11 @@ class ServableMixin(object):
           Returns the Bokeh server instance or the thread the server
           was launched on (if threaded=True)
         """
-        if threaded:
-            from tornado.ioloop import IOLoop
-            loop = IOLoop()
-            server = StoppableThread(
-                target=self._get_server, io_loop=loop,
-                args=(port, websocket_origin, loop, open, True, title, verbose, location),
-                kwargs=kwargs)
-            server.start()
-        else:
-            server = self._get_server(
-                port, websocket_origin, show=open, start=True,
-                title=title, verbose=verbose, location=location, **kwargs
-            )
-        return server
+        return serve(
+            self, port=port, address=address, websocket_origin=websocket_origin,
+            show=open, start=True, title=title, verbose=verbose,
+            location=location, threaded=threaded, **kwargs
+        )
 
 
 class Renderable(param.Parameterized):
@@ -364,6 +369,7 @@ class Renderable(param.Parameterized):
         self._documents = {}
         self._models = {}
         self._comms = {}
+        self._kernels = {}
         self._found_links = set()
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
@@ -397,14 +403,16 @@ class Renderable(param.Parameterized):
         root: bokeh.model.Model
           Bokeh model for the view being cleaned up
         """
-        if root.ref['id'] in state._handles:
-            del state._handles[root.ref['id']]
+        ref = root.ref['id']
+        if ref in state._handles:
+            del state._handles[ref]
 
     def _preprocess(self, root):
         """
         Applies preprocessing hooks to the model.
         """
-        for hook in self._preprocessing_hooks:
+        hooks = self._preprocessing_hooks+self._hooks
+        for hook in hooks:
             hook(self, root)
 
     def _render_model(self, doc=None, comm=None):
@@ -428,6 +436,22 @@ class Renderable(param.Parameterized):
     def _init_properties(self):
         return {k: v for k, v in self.param.get_param_values()
                 if v is not None}
+
+    def _server_destroy(self, session_context):
+        """
+        Server lifecycle hook triggered when session is destroyed.
+        """
+        doc = session_context._document
+        root = self._documents[doc]
+        ref = root.ref['id']
+        self._cleanup(root)
+        del self._documents[doc]
+        if ref in state._views:
+            del state._views[ref]
+        if doc in state._locations:
+            loc = state._locations[doc]
+            loc._cleanup(root)
+            del state._locations[doc]
 
     def get_root(self, doc=None, comm=None):
         """
@@ -463,6 +487,11 @@ class Viewable(Renderable, Layoutable, ServableMixin):
     """
 
     _preprocessing_hooks = []
+
+    def __init__(self, **params):
+        hooks = params.pop('hooks', [])
+        super().__init__(**params)
+        self._hooks = hooks
 
     def __repr__(self, depth=0):
         return '{cls}({params})'.format(cls=type(self).__name__,
@@ -514,9 +543,8 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         from IPython.display import display
         from .models.comm_manager import CommManager
 
-        comm = state._comm_manager.get_server_comm()
-
         doc = _Document()
+        comm = state._comm_manager.get_server_comm()
         model = self._render_model(doc, comm)
         ref = model.ref['id']
         manager = CommManager(comm_id=comm.id, plot_id=ref)
@@ -535,14 +563,6 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         if config.embed:
             return render_model(model)
         return render_mimebundle(model, doc, comm, manager, location)
-
-    def _server_destroy(self, session_context):
-        """
-        Server lifecycle hook triggered when session is destroyed.
-        """
-        doc = session_context._document
-        self._cleanup(self._documents[doc])
-        del self._documents[doc]
 
     #----------------------------------------------------------------
     # Public API
@@ -685,18 +705,17 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         doc : bokeh.Document (optional)
           The bokeh Document to attach the panel to as a root,
           defaults to bokeh.io.curdoc()
+        title : str
+          A string title to give the Document
         location : boolean or panel.io.location.Location
           Whether to create a Location component to observe and
           set the URL location.
-        title : str
-          A string title to give the Document
 
         Returns
         -------
         doc : bokeh.Document
           The bokeh document the panel was attached to
         """
-        from .io.location import Location
         doc = doc or _curdoc()
         title = title or 'Panel Application'
         doc.title = title
@@ -705,14 +724,5 @@ class Viewable(Renderable, Layoutable, ServableMixin):
             doc.on_session_destroyed(self._server_destroy)
             self._documents[doc] = model
         add_to_doc(model, doc)
-        if location:
-            if isinstance(location, Location):
-                loc = location
-            elif doc in state._locations:
-                loc = state.location
-            else:
-                loc = Location()
-            state._locations[doc] = loc
-            loc_model = loc._get_model(doc, model)
-            doc.add_root(loc_model)
+        if location: self._add_location(doc, location, model)
         return doc

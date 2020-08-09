@@ -125,7 +125,7 @@ class DeckGL(PaneBase):
             mapbox_api_key = data.pop('mapbox_key', self.mapbox_api_key)
             deck_widget = data.pop('deck_widget', None)
             tooltip = deck_widget.tooltip
-            data = recurse_data(data)
+            data = {k: v for k, v in recurse_data(data).items() if v is not None}
 
         if layout:
             properties = {p: getattr(self, p) for p in Layoutable.param
@@ -212,7 +212,7 @@ class DeckGL(PaneBase):
         self._models[root.ref["id"]] = (model, parent)
         return model
 
-    def _update(self, model):
+    def _update(self, ref=None, model=None):
         data, properties = self._get_properties(layout=False)
         self._update_sources(data, model.data_sources)
         properties['data'] = data

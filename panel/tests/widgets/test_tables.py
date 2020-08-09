@@ -10,7 +10,8 @@ except ImportError:
 
 from bokeh.models.widgets.tables import (
     NumberFormatter, IntEditor, NumberEditor, StringFormatter,
-    SelectEditor, DateFormatter, DateEditor
+    SelectEditor, DateFormatter, DataCube, CellEditor,
+    SumAggregator, AvgAggregator, MinAggregator
 )
 
 from panel.widgets import DataFrame
@@ -26,7 +27,7 @@ def test_dataframe_widget(dataframe, document, comm):
 
     assert index_col.title == 'index'
     assert isinstance(index_col.formatter, NumberFormatter)
-    assert isinstance(index_col.editor, IntEditor)
+    assert isinstance(index_col.editor, CellEditor)
 
     assert int_col.title == 'int'
     assert isinstance(int_col.formatter, NumberFormatter)
@@ -41,6 +42,27 @@ def test_dataframe_widget(dataframe, document, comm):
     assert isinstance(float_col.editor, NumberEditor)
 
 
+def test_dataframe_widget_no_show_index(dataframe, document, comm):
+    table = DataFrame(dataframe, show_index=False)
+
+    model = table.get_root(document, comm)
+
+    assert len(model.columns) == 3
+    int_col, float_col, str_col = model.columns
+    assert int_col.title == 'int'
+    assert float_col.title == 'float'
+    assert str_col.title == 'str'
+
+    table.show_index = True
+
+    assert len(model.columns) == 4
+    index_col, int_col, float_col, str_col = model.columns
+    assert index_col.title == 'index'
+    assert int_col.title == 'int'
+    assert float_col.title == 'float'
+    assert str_col.title == 'str'
+
+
 def test_dataframe_widget_datetimes(document, comm):
 
     table = DataFrame(makeTimeDataFrame())
@@ -51,7 +73,7 @@ def test_dataframe_widget_datetimes(document, comm):
 
     assert dt_col.title == 'index'
     assert isinstance(dt_col.formatter, DateFormatter)
-    assert isinstance(dt_col.editor, DateEditor)
+    assert isinstance(dt_col.editor, CellEditor)
 
 
 def test_dataframe_editors(dataframe, document, comm):
@@ -115,3 +137,63 @@ def test_dataframe_process_data_event(dataframe):
     table._process_events({'data': {'int': {1: 3, 2: 4, 0: 1}}})
     df['int'] = [1, 3, 4]
     pd.testing.assert_frame_equal(table.value, df)
+
+
+def test_dataframe_duplicate_column_name(document, comm):
+    df = pd.DataFrame([[1, 1], [2, 2]], columns=['col', 'col'])
+    with pytest.raises(ValueError):
+        table = DataFrame(df)
+
+    df = pd.DataFrame([[1, 1], [2, 2]], columns=['a', 'b'])
+    table = DataFrame(df)
+    with pytest.raises(ValueError):
+        table.value = table.value.rename(columns={'a': 'b'})
+    
+    df = pd.DataFrame([[1, 1], [2, 2]], columns=['a', 'b'])
+    table = DataFrame(df)
+    table.get_root(document, comm)
+    with pytest.raises(ValueError):
+        table.value = table.value.rename(columns={'a': 'b'})
+
+
+def test_hierarchical_index(document, comm):
+    df = pd.DataFrame([
+        ('Germany', 2020, 9, 2.4, 'A'),
+        ('Germany', 2021, 3, 7.3, 'C'),
+        ('Germany', 2022, 6, 3.1, 'B'),
+        ('UK', 2020, 5, 8.0, 'A'),
+        ('UK', 2021, 1, 3.9, 'B'),
+        ('UK', 2022, 9, 2.2, 'A')
+    ], columns=['Country', 'Year', 'Int', 'Float', 'Str']).set_index(['Country', 'Year'])
+
+    table = DataFrame(value=df, hierarchical=True,
+                      aggregators={'Year': {'Int': 'sum', 'Float': 'mean'}})
+
+    model = table.get_root(document, comm)
+    assert isinstance(model, DataCube)
+    assert len(model.grouping) == 1
+    grouping = model.grouping[0]
+    assert len(grouping.aggregators) == 2
+    agg1, agg2 = grouping.aggregators
+    assert agg1.field_ == 'Int'
+    assert isinstance(agg1, SumAggregator)
+    assert agg2.field_ == 'Float'
+    assert isinstance(agg2, AvgAggregator)
+
+    table.aggregators = {'Year': 'min'}
+
+    agg1, agg2 = grouping.aggregators
+    print(grouping)
+    assert agg1.field_ == 'Int'
+    assert isinstance(agg1, MinAggregator)
+    assert agg2.field_ == 'Float'
+    assert isinstance(agg2, MinAggregator)
+
+
+def test_none_table(document, comm):
+    table = DataFrame(value=None)
+    assert table.indexes == []
+
+    model = table.get_root(document, comm)
+
+    assert model.source.data == {}

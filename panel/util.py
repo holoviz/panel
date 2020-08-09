@@ -3,6 +3,7 @@ Various general utilities used in the panel codebase.
 """
 from __future__ import absolute_import, division, unicode_literals
 
+import base64
 import datetime as dt
 import inspect
 import json
@@ -15,6 +16,7 @@ import urllib.parse as urlparse
 from collections import defaultdict, OrderedDict
 from contextlib import contextmanager
 from datetime import datetime
+from distutils.version import LooseVersion
 from six import string_types
 
 try:  # python >= 3.3
@@ -24,6 +26,7 @@ except ImportError:
 
 from html import escape # noqa
 
+import bokeh
 import param
 import numpy as np
 
@@ -32,6 +35,7 @@ datetime_types = (np.datetime64, dt.datetime, dt.date)
 if sys.version_info.major > 2:
     unicode = str
 
+bokeh_version = LooseVersion(bokeh.__version__)
 
 def isfile(path):
     """Safe version of os.path.isfile robust to path length issues on Windows"""
@@ -48,7 +52,7 @@ def isurl(obj, formats):
     return (
         lower_string.startswith('http://')
         or lower_string.startswith('https://')
-    ) and any(lower_string.endswith('.'+fmt) for fmt in formats)
+    ) and (formats is None or any(lower_string.endswith('.'+fmt) for fmt in formats))
 
 
 def is_dataframe(obj):
@@ -281,6 +285,27 @@ def parse_query(query):
         elif v.startswith('[') or v.startswith('{'):
             query[k] = json.loads(v)
     return query
+
+
+def base64url_encode(input):
+    if isinstance(input, str):
+        input = input.encode("utf-8")
+    encoded = base64.urlsafe_b64encode(input).decode('ascii')
+    # remove padding '=' chars that cause trouble
+    return str(encoded.rstrip('='))
+
+
+def base64url_decode(input):
+    if isinstance(input, str):
+        input = input.encode("ascii")
+
+    rem = len(input) % 4
+
+    if rem > 0:
+        input += b"=" * (4 - rem)
+
+    return base64.urlsafe_b64decode(input)
+
 
 # This functionality should be contributed to param
 # See https://github.com/holoviz/param/issues/379

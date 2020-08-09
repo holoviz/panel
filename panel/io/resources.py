@@ -25,19 +25,32 @@ def css_raw(self):
         if not os.path.isfile(cssf):
             continue
         with open(cssf) as f:
-            raw.append(f.read())
+            css_txt = f.read()
+            if css_txt not in raw:
+                raw.append(css_txt)
     return raw + config.raw_css
 
 def js_files(self):
     from ..config import config
     files = super(Resources, self).js_files
-    return files + list(config.js_files.values())
+    js_files = files + list(config.js_files.values())
+
+    # Load requirejs last to avoid interfering with other libraries
+    require_index = [i for i, jsf in enumerate(js_files) if 'require' in jsf]
+    if require_index:
+        requirejs = js_files.pop(require_index[0])
+        if any('ace' in jsf for jsf in js_files):
+            js_files.append('/panel_dist/pre_require.js')
+        js_files.append(requirejs)
+        if any('ace' in jsf for jsf in js_files):
+            js_files.append('/panel_dist/post_require.js')
+    return js_files
 
 def css_files(self):
     from ..config import config
     files = super(Resources, self).css_files
     for cssf in config.css_files:
-        if os.path.isfile(cssf):
+        if os.path.isfile(cssf) or cssf in files:
             continue
         files.append(cssf)
     return files
@@ -45,10 +58,30 @@ def css_files(self):
 def conffilter(value):
     return json.dumps(OrderedDict(value)).replace('"', '\'')
 
-Resources.css_raw = property(css_raw)
-Resources.js_files = property(js_files)
-Resources.css_files = property(css_files)
+
+class PanelResources(Resources):
+
+    def __init__(self, extra_css_files=None, **kwargs):
+        super(PanelResources, self).__init__(**kwargs)
+        self._extra_css_files = extra_css_files or []
+
+    @property
+    def css_raw(self):
+        raw = super(PanelResources, self).css_raw
+        for cssf in self._extra_css_files:
+            if not os.path.isfile(cssf):
+                continue
+            with open(cssf) as f:
+                css_txt = f.read()
+                if css_txt not in raw:
+                    raw.append(css_txt)
+        return raw
+
 
 _env = get_env()
 _env.filters['json'] = lambda obj: Markup(json.dumps(obj))
 _env.filters['conffilter'] = conffilter
+
+Resources.css_raw = property(css_raw)
+Resources.js_files = property(js_files)
+Resources.css_files = property(css_files)
