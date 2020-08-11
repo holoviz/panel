@@ -130,6 +130,35 @@ class _state(param.Parameterized):
     # Public Methods
     #----------------------------------------------------------------
 
+    def as_cached(self, key, fn, **kwargs):
+        """
+        Caches the return value of a function, memoizing on the given
+        key and supplied keyword arguments.
+
+        Note: Keyword arguments must be hashable.
+
+        Arguments
+        ---------
+        key: (str)
+          The key to cache the return value under.
+        fn: (callable)
+          The function or callable whose return value will be cached.
+        **kwargs: dict
+          Additional keyword arguments to supply to the function,
+          which will be memoized over as well.
+
+        Returns
+        -------
+        Returns the value returned by the cache or the value in
+        the cache.
+        """
+        key = (key,)+tuple((k, v) for k, v in sorted(kwargs.items()))
+        if key in self.cache:
+            ret = self.cache.get(key)
+        else:
+            ret = self.cache[key] = fn(**kwargs)
+        return ret
+
     def add_periodic_callback(self, callback, period=500, count=None,
                               timeout=None, start=True):
         """
@@ -239,7 +268,7 @@ class _state(param.Parameterized):
         if self.encryption is None:
             return access_token.decode('utf-8')
         return self.encryption.decrypt(access_token).decode('utf-8')
-            
+
     @property
     def curdoc(self):
         if self._curdoc:
