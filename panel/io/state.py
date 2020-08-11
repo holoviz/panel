@@ -153,7 +153,7 @@ class _state(param.Parameterized):
         the cache.
         """
         key = (key,)+tuple((k, v) for k, v in sorted(kwargs.items()))
-        if key in self.cache and not update:
+        if key in self.cache:
             ret = self.cache.get(key)
         else:
             ret = self.cache[key] = fn(**kwargs)
