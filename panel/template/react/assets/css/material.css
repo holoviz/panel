@@ -1,0 +1,79 @@
+body {
+  display: flex;
+  height: 100vh;
+  font-family: roboto;
+  margin: 0px;
+}
+
+.mdc-drawer-app-content {
+  flex: auto;
+  overflow: auto;
+  position: relative;
+}
+
+.main-content {
+  height: 100%;
+  margin-left: 20px;
+  margin-right: 20px;
+}
+
+#header {
+  position: absolute;
+  z-index: 7;
+}
+
+.pn-busy-container {
+  align-items: center;
+  justify-content: center;
+  display: flex;
+}
+
+button.mdc-button.mdc-card-button {
+  color: transparent;
+  height: 50px;
+}
+
+p.bk.mdc-button {
+  display: none;
+}
+
+div.bk.mdc-card {
+  border-radius: 0px
+}
+
+.bk.mdc-card-title {
+  font-size: 1.5em;
+  font-weight: bold;
+}
+
+.pn-modal {
+  overflow-y: scroll;
+  width: 100%;
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.pn-modal-content {
+  background-color: #fefefe;
+  margin: auto;
+  margin-top: 25px;
+  margin-bottom: 25px;
+  padding: 15px 20px 20px 20px;
+  border: 1px solid #888;
+  width: 80% !important;
+}
+
+.pn-modal-close {
+  position: absolute;
+  right: 25px;
+  z-index: 100;
+}
+
+.pn-modal-close:hover,
+.pn-modal-close:focus {
+  color: #000;
+  text-decoration: none;
+  cursor: pointer;
+}
