@@ -19,6 +19,7 @@
 {% endblock %}
 
 
+
 <!-- goes in body -->
 {% block contents %}
 <div class="" id="container">
@@ -63,24 +64,9 @@
     {% endif %}
 
     <div class="main" id="main">
-         
-       <div> 
-        {{ grilla1}}
-
-        {{ grilla2}}
-
-
-        <!-- {% for doc in docs %}
-        {% for root in doc.roots %}
-          <p>  {{ embed(root)| my_multiplier}}  </p>
-            {% endfor %}
-        {% endfor %} -->
-      </div> 
-    
-      <div id="mydiv" style="margin: 10px;"></div>  <!--  div for react grid layout container  -->
+            
+      <div id="mydiv" style="margin: 10px; overflow-x: hide; overflow-y: hide"></div>  <!--  div for react grid layout container  -->
       
-
-
 	  <div id="pn-Modal" class="pn-modal header-adjust">
 		<div class="pn-modal-content">
 		  <span class="pn-modalclose" id="pn-closeModal">&times;</span>
@@ -91,8 +77,7 @@
 		  {% endif %}
 		  {% endfor %}
       {% endfor %}
-      
-     
+        
 
 		</div>
 	  </div>
@@ -131,7 +116,6 @@
   }
 </script>
 
-
 <script type="text/babel">
   const divStyle = {
    color: 'blue',
@@ -139,15 +123,29 @@
  };  
  
  const s2 = {
-   color: 'blue',
-   background: 'red'
+    borderRadius: '5px',
+    color: 'blue',
+    background: 'red'
  };  
  
- const heig = 6; 
+ const heig = 15; 
  const ResponsiveGridLayout = ReactGridLayout.WidthProvider(ReactGridLayout.Responsive)
+
+ const originalLayout = getFromLS("layouts") || {};
+
  var listOfObjects = []; 
 
    class MyFirstGrid extends React.Component {
+
+    static defaultProps = {
+    className: "layout",
+    cols: 12,
+    rowHeight: 30,
+    onLayoutChange: function() {}
+  };
+
+
+
      constructor(props) {
        super(props);
         {% for doc in docs %}
@@ -160,9 +158,17 @@
           {% endif %}
           {% endfor %}
           {% endfor %} 
+
+          this.state = {
+      layout: JSON.parse(JSON.stringify(originalLayout))
+    };
+
+    this.onLayoutChange = this.onLayoutChange.bind(this);
+    this.resetLayout = this.resetLayout.bind(this);
+
         
        } 
-    
+   
  
      get_data_root_id(tag_str){
       return 'panelID_' + tag_str.split('data-root-id=')[1].split('"')[1]
@@ -189,53 +195,83 @@
     console.log('noooo', obj, old_, new_)
   } 
 
-  render() {
-     // layout is an array of objects, see the demo for more complete usage
-     const layouts = { lg: [
-       {% for doc in docs %}           {% for root in doc.roots %}           {% if "main" in root.tags %}              
-        {i: this.get_data_root_id(this.{{ embed(root) | letters }}), x: 0, y: 23, w: 5.9, h: heig, minW: 2, maxW: 24},
-       {% endif %}        {% endfor %}           {% endfor %} 
-     ],
-     xs: [
-       {% for doc in docs %}           {% for root in doc.roots %}           
-              {% if "main" in root.tags %}              
-                  {i: this.get_data_root_id(this.{{embed(root) | letters}}), 
-                        x: 0, y: 23, w: 3.9, h: heig, minW: 2, maxW: 24},
-              {% endif %}        
-       {% endfor %}           {% endfor %} 
-     ],
- 
-        
-     } 
-  
-    //  https://stackoverflow.com/questions/26088810/how-to-avoid-children-with-same-key-when-replacing-state-in-reactjs-component 
 
-     return <ResponsiveGridLayout className="layout" layouts={layouts}
-     breakpoints={% raw %}{{lg: 1200,  xs: 240}}{% endraw %}
-     cols={% raw %}{{lg: 12, xs: 4}}{% endraw %}
-     rowHeight={30} width={1200}
+  resetLayout() {
+    this.setState({
+      layout: []
+    });
+  }
+
+
+  onLayoutChange(layout) {
+    /*eslint no-console: 0*/
+    saveToLS("layout", layout);
+    this.setState({ layout });
+    this.props.onLayoutChange(layout); // updates status display
+  }
+
+  render() {
+     return (
+       <ResponsiveGridLayout className="layout" layouts={this.state.layout}
+     breakpoints={% raw %}{{lg: 800,  xs: 240}}{% endraw %}
+     cols={% raw %}{{lg: 12, xs: 12}}{% endraw %}
+     rowHeight={30} width = {window.screen.width}
      onResize = {this.resize_layout} 
      onResizeStop = {this.resize_layout_stop}
     
      onDrag = {this.dragging_stop}
-     margin={[10,10]}   draggableCancel='.bk-root' >
- 
-         {% for doc in docs %}
+     margin={[10,10]}   draggableCancel='.bk-root' 
+     
+     layout={this.state.layout}
+          onLayoutChange={this.onLayoutChange}
+          >
+
+          {% set count = [] %} 
+          {% for doc in docs %}
           {% for root in doc.roots %}
-          {% if "main" in root.tags %}
-              <div key="{{embed(root) | letters}}" style={s2}>
-                      {{ embed(root) | indent(4) }}
+            {% if "main" in root.tags %}
+              <div key="{{embed(root) | letters}}" style={s2} 
+               data-grid={% raw %} { {% endraw %} {{data_grid[count|length]}} {% raw %} } {% endraw %} >
+                      {{ embed(root) | indent(4) }} 
               </div>
-          {% endif %}
+
+              {% set __ = count.append(1) %}
+            {% endif %}
           {% endfor %}
           {% endfor %}
         
            </ResponsiveGridLayout>
-     
+     );
    }
  }
  
- 
+ function getFromLS(key) {
+  let ls = {};
+  if (window.localStorage) {
+    try {
+      ls = JSON.parse(window.localStorage.getItem("rgl-7")) || {};
+    } catch (e) {
+      /*Ignore*/
+    }
+  }
+  return ls[key];
+}
+
+function saveToLS(key, value) {
+  if (window.localStorage) {
+    window.localStorage.setItem(
+      "rgl-7",
+      JSON.stringify({
+        [key]: value
+      })
+    );
+  }
+}
+
+
+
+
+
  ReactDOM.render(<MyFirstGrid />, document.getElementById('mydiv'))
  
  </script>
