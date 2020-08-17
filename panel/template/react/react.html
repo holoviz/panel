@@ -5,21 +5,12 @@
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
 <!-- Font Awesome -->
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
-<!-- react-grid-layout css-->
-<link rel="stylesheet" href="assets/css/react-grid-layout.css">
-<!-- react-resizable css-->
-<link rel="stylesheet" href="assets/css/react-resizable.css">
-<!-- React development assets -->
-<!-- <link href="assets/css/custom.min.css" rel="stylesheet"> -->
+
+<!-- React-grid-layout script -->
 <script src="https://unpkg.com/react@16/umd/react.development.js" crossorigin></script>
 <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js" crossorigin></script>
 <script src="https://unpkg.com/babel-standalone@latest/babel.min.js" crossorigin></script>
-<!-- React-grid-layout script -->
-<!-- <script src="assets/js/react-grid-layout.min.js"></script>// -->
-<script src = "https://cdnjs.cloudflare.com/ajax/libs/react-grid-layout/1.0.0/react-grid-layout.min.js" crossorigin></script>
-
-
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-grid-layout/1.0.0/react-grid-layout.min.js" crossorigin></script>
 
 {% endblock %}
 
@@ -53,7 +44,7 @@
 
   </nav>
 
-  <div id="content">
+  <div id="content" style="overflow-x: hide;">
     {% if nav %}
     <div class="sidenav" id="sidebar">
       <ul class="nav flex-column">
@@ -68,23 +59,23 @@
     </div>
     {% endif %}
 
-    <div class="main" id="main">
+    <div class="main" id="main" style=" height: 100vh; ">
             
       <div id="mydiv" style="margin: 10px; overflow-x: hide; overflow-y: hide"></div>  <!--  div for react grid layout container  -->
       
-	  <div id="pn-Modal" class="pn-modal header-adjust">
-		<div class="pn-modal-content">
-		  <span class="pn-modalclose" id="pn-closeModal">&times;</span>
-		  {% for doc in docs %}
-		  {% for root in doc.roots %}
-		  {% if "modal" in root.tags %}
-		  {{ embed(root) | indent(10) }}
-		  {% endif %}
-		  {% endfor %}
-      {% endfor %}
-        
+      <div id="pn-Modal" class="pn-modal header-adjust">
+      <div class="pn-modal-content">
+        <span class="pn-modalclose" id="pn-closeModal">&times;</span>
+        {% for doc in docs %}
+        {% for root in doc.roots %}
+        {% if "modal" in root.tags %}
+        {{ embed(root) | indent(10) }}
+        {% endif %}
+        {% endfor %}
+        {% endfor %}
+          
 
-		</div>
+      </div>
 	  </div>
     </div>
   </div>
@@ -122,66 +113,15 @@
 </script>
 
 <script type="text/babel">
-  const divStyle = {
-   color: 'blue',
-   background: 'red'
- };  
- 
- const s2 = {
-    borderRadius: '5px',
-    color: 'blue',
-    background: 'red'
- };  
- 
- const heig = 15; 
- const ResponsiveGridLayout = ReactGridLayout.WidthProvider(ReactGridLayout.Responsive)
 
- const originalLayout = getFromLS("layouts") || {};
+const divStyle = { borderRadius: '5px' };  
 
- var listOfObjects = []; 
+const ResponsiveGridLayout = ReactGridLayout.WidthProvider(ReactGridLayout.Responsive)
 
    class MyFirstGrid extends React.Component {
-
-    static defaultProps = {
-    className: "layout",
-    cols: 12,
-    rowHeight: 30,
-    onLayoutChange: function() {}
-  };
-
-
-
      constructor(props) {
-       super(props);
-        {% for doc in docs %}
-          {% for root in doc.roots %}
-          {% if "main" in root.tags %}
-        
-              
-              this.{{embed(root) | letters}} = '{{ embed(root) }}';   
-            
-          {% endif %}
-          {% endfor %}
-          {% endfor %} 
-
-          this.state = {
-      layout: JSON.parse(JSON.stringify(originalLayout))
-    };
-
-    this.onLayoutChange = this.onLayoutChange.bind(this);
-    this.resetLayout = this.resetLayout.bind(this);
-
-        
-       } 
-   
- 
-     get_data_root_id(tag_str){
-      return 'panelID_' + tag_str.split('data-root-id=')[1].split('"')[1]
-  }
-
-  get_id(tag_str){
-      return 'panelID_' + tag_str.split('id=')[1].split('"')[1].replace(/-/g, "");
-  }
+       super(props);     
+       }  
 
   resize_layout(obj, old_, new_, p, e, element) {
      window.Bokeh.index[new_['i'].split('_')[1]].resize_layout();
@@ -195,93 +135,37 @@
    },50);
   }
 
-  dragging_stop(obj, old_, new_, p, e, element) {
-    // window.Bokeh.index[new_['i']].resize_layout();
-    console.log('noooo', obj, old_, new_)
-  } 
+    render() {
+      return (
+        <ResponsiveGridLayout className="layout" 
+          breakpoints={% raw %}{{lg: 800,  xs: 240}}{% endraw %}
+          cols={% raw %}{{lg: 12, xs: 12}}{% endraw %}
+          rowHeight={30} width = {window.screen.width}
+          onResize = {this.resize_layout} 
+          onResizeStop = {this.resize_layout_stop}
+          margin={[10,10]}   draggableCancel='.bk-root' >
+  
+              {% set count = [] %} 
+              {% for doc in docs %}
+              {% for root in doc.roots %}
+                {% if "main" in root.tags %}
+                  <div key="{{embed(root) | define_id}}" style={divStyle } 
+                  data-grid={% raw %} { {% endraw %} {{data_grid[count|length]}} {% raw %} } {% endraw %} >
+                          {{ embed(root) | indent(4) }} 
+                  </div>
 
-
-  resetLayout() {
-    this.setState({
-      layout: []
-    });
-  }
-
-
-  onLayoutChange(layout) {
-    /*eslint no-console: 0*/
-    saveToLS("layout", layout);
-    this.setState({ layout });
-    this.props.onLayoutChange(layout); // updates status display
-  }
-
-  render() {
-     return (
-       <ResponsiveGridLayout className="layout" layouts={this.state.layout}
-     breakpoints={% raw %}{{lg: 800,  xs: 240}}{% endraw %}
-     cols={% raw %}{{lg: 12, xs: 12}}{% endraw %}
-     rowHeight={30} width = {window.screen.width}
-     onResize = {this.resize_layout} 
-     onResizeStop = {this.resize_layout_stop}
-    
-     onDrag = {this.dragging_stop}
-     margin={[10,10]}   draggableCancel='.bk-root' 
-     
-     layout={this.state.layout}
-          onLayoutChange={this.onLayoutChange}
-          >
-
-          {% set count = [] %} 
-          {% for doc in docs %}
-          {% for root in doc.roots %}
-            {% if "main" in root.tags %}
-              <div key="{{embed(root) | letters}}" style={s2} 
-               data-grid={% raw %} { {% endraw %} {{data_grid[count|length]}} {% raw %} } {% endraw %} >
-                      {{ embed(root) | indent(4) }} 
-              </div>
-
-              {% set __ = count.append(1) %}
-            {% endif %}
-          {% endfor %}
-          {% endfor %}
-        
-           </ResponsiveGridLayout>
-     );
-   }
+                  {% set __ = count.append(1) %}
+                {% endif %}
+              {% endfor %}
+              {% endfor %}
+                    
+        </ResponsiveGridLayout>
+      );
+    }
  }
  
- function getFromLS(key) {
-  let ls = {};
-  if (window.localStorage) {
-    try {
-      ls = JSON.parse(window.localStorage.getItem("rgl-7")) || {};
-    } catch (e) {
-      /*Ignore*/
-    }
-  }
-  return ls[key];
-}
-
-function saveToLS(key, value) {
-  if (window.localStorage) {
-    window.localStorage.setItem(
-      "rgl-7",
-      JSON.stringify({
-        [key]: value
-      })
-    );
-  }
-}
-
-
-
-
-
  ReactDOM.render(<MyFirstGrid />, document.getElementById('mydiv'))
- 
  </script>
-
-
 
 {{ embed(roots.js_area) }}
 {{ embed(roots.location) }}

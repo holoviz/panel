@@ -7,6 +7,19 @@
   box-shadow: 0px 0px 1px;
 }
 
+#main {
+  color: lightgray;
+  background-color: lightgray ;
+}
+
 #sidebar-button {
   color: white;
 }
+
+.react-grid-item{
+  background-color:  white !important;
+}
+
+
+
+

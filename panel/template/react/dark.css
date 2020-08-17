@@ -27,3 +27,7 @@ body {
   color: white;
   background-color: #292929 !important;
 }
+
+.react-grid-item{
+  background-color: #2f2f2f !important;
+}

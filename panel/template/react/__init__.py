@@ -33,16 +33,11 @@ class ReactTemplate(BasicTemplate):
         super(ReactTemplate, self).__init__(**params)
         self.data_grid = []
 
-    def my_multiplier(s):   
-        return s[5:-7]
-
-    def letters(s):   
-        print(s)
+    def define_id(s):   
         s = s[6:-7] # 
         return  'panelID_' + dict([i.split('=') for i in s.split(' ')])['data-root-id'].replace('"','').replace('-','')
 
-    environment.DEFAULT_FILTERS['my_multiplier'] = my_multiplier
-    environment.DEFAULT_FILTERS['letters'] = letters
+    environment.DEFAULT_FILTERS['define_id'] = define_id
 
     def _apply_root(self, name, model, tags):
         if 'main' in tags:
