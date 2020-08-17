@@ -448,25 +448,6 @@ class BasicTemplate(BaseTemplate):
         </script>
         """
 
-    def add_variable(self, name, value):
-        """
-        Add parameters to the template, which may then be referenced
-        by the given name in the Jinja2 template.
-
-        Arguments
-        ---------
-        name : str
-          The name to refer to the panel by in the template
-        value : object
-          Any valid Jinja2 variable type.
-        """
-        if name in self._render_variables:
-            raise ValueError('The name %s has already been used for '
-                             'another variable. Ensure each variable '
-                             'has a unique name by which it can be '
-                             'referenced in the template.' % name)
-        self._render_variables[name] = value
-
 
 
 class Template(BaseTemplate):
