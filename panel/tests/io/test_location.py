@@ -49,7 +49,18 @@ def test_location_unsync(location):
     p.integer = 3
     p.string = "ghi"
     assert location.search == "?integer=2&string=def"
-    
+
+def test_location_unsync_partial(location):
+    p = SyncParameterized(integer=1, string='abc')
+    location.sync(p)
+    assert location.search == "?integer=1&string=abc"
+    location.unsync(p, ['string'])
+    location.update_query(integer=2, string='def')
+    assert p.integer == 2
+    assert p.string == "abc"
+    p.integer = 3
+    p.string = "ghi"
+    assert location.search == "?integer=3&string=def"
 
 def test_location_sync_query_init_partial(location):
     p = SyncParameterized(integer=1, string='abc')

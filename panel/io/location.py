@@ -57,7 +57,7 @@ class Location(Syncable):
 
     def _onload(self, event):
         # Skip if href was not previously empty or not in a server context
-        if event.old or not state.curdoc: 
+        if event.old or not state.curdoc:
             return
         for cb in state._onload.get(state.curdoc, []):
             cb()
@@ -122,14 +122,15 @@ class Location(Syncable):
     def sync(self, parameterized, parameters=None):
         """
         Syncs the parameters of a Parameterized object with the query
-        parameters in the URL.
-        
+        parameters in the URL. If no parameters are supplied all
+        parameters except the name are synced.
+
         Arguments
         ---------
         parameterized (param.Parameterized):
           The Parameterized object to sync query parameters with
         parameters (list or dict):
-          A list or dictionary specifying parameters to sync. 
+          A list or dictionary specifying parameters to sync.
           If a dictionary is supplied it should define a mapping from
           the Parameterized's parameteres to the names of the query
           parameters.
@@ -143,22 +144,33 @@ class Location(Syncable):
         self._update_query(query={v: getattr(parameterized, k)
                                   for k, v in parameters.items()})
 
-    def unsync(self, parameterized):
+    def unsync(self, parameterized, parameters=None):
         """
-        Unsyncs a Parameterized object which has been previous synced
-        with the Location component.
-        
+        Unsyncs the parameters of the Parameterized with the query
+        params in the URL. If no parameters are supplied all
+        parameters except the name are unsynced.
+
         Arguments
         ---------
         parameterized (param.Parameterized):
-          The Parameterized object to sync query parameters with
+          The Parameterized object to unsync query parameters with
+        parameters (list or dict):
+          A list of parameters to unsync.
         """
         matches = [s for s in self._synced if s[0] is parameterized]
         if not matches:
             ptype = type(parameterized)
             raise ValueError(f"Cannot unsync {ptype} object since it "
                              "was never synced in the first place.")
-        self._synced.remove(matches[0])
-        parameterized.param.unwatch(matches[0][-1])
-        
-        
+        synced = []
+        for p, params, watcher in self._synced:
+            if parameterized is p:
+                parameterized.param.unwatch(watcher)
+                if parameters is not None:
+                    new_params = {p: q for p, q in params.items()
+                                  if p not in parameters}
+                    new_watcher = parameterized.param.watch(watcher.fn, list(new_params))
+                    synced.append((p, new_params, new_watcher))
+            else:
+                synced.append((p, params, watcher))
+        self._synced = synced
