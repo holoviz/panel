@@ -2,6 +2,7 @@ import {div} from "@bokehjs/core/dom"
 import * as p from "@bokehjs/core/properties"
 import {HTMLBox} from "@bokehjs/models/layouts/html_box"
 
+import {transform_cds_to_records} from "./data"
 import {PanelHTMLBoxView, set_size} from "./layout"
 import {makeTooltip} from "./tooltips"
 
@@ -88,21 +89,7 @@ export class DeckGLPlotView extends PanelHTMLBoxView {
         this._layer_map[n-1] = layer.data
         cds = this.model.data_sources[layer.data]
       }
-      const data: any = []
-      const columns = cds.columns()
-      for (let i = 0; i < cds.get_length(); i++) {
-        const item: any = {}
-        for (const column of columns) {
-          let array = cds.get_array(column);
-          const shape = array[0].shape == null ? null : array[0].shape;
-          if ((shape != null) && (shape.length > 1) && (typeof shape[0] == "number"))
-            item[column] = array.slice(i*shape[1], i*shape[1]+shape[1])
-          else
-            item[column] = array[i]
-        }
-        data.push(item)
-      }
-      layer.data = data;
+      layer.data = transform_cds_to_records(cds);
     }
     if (render)
       this.updateDeck()
