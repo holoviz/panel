@@ -7,7 +7,7 @@ from bokeh.models import ColumnDataSource
 from bokeh.models.widgets.tables import (
     DataTable, DataCube, TableColumn, GroupingInfo, RowAggregator,
     NumberEditor, NumberFormatter, DateFormatter, CellEditor,
-    DateEditor, StringFormatter, StringEditor, IntEditor,
+    DateEditor, StringFormatter, StringEditor, IntEditor, TextEditor,
     AvgAggregator, MaxAggregator, MinAggregator, SumAggregator
 )
 
@@ -564,11 +564,18 @@ class Tabulator(BaseTable):
     table to provide an awesome interactive table.
     """
 
+    groups = param.Dict(default=None)
+
     layout = param.ObjectSelector(default='fit_data', objects=[
         'fit_data', 'fit_data_fill', 'fit_data_stretch', 'fit_data_table',
         'fit_columns'])
 
     _widget_type = _BkTabulator
+
+    def __init__(self, value=None, **params):
+        configuration = params.pop('configuration', {})
+        super().__init__(value=value, **params)
+        self._configuration = configuration
 
     def _get_properties(self):
         props = {p : getattr(self, p) for p in list(Layoutable.param)
@@ -579,8 +586,94 @@ class Tabulator(BaseTable):
             props['height'] = length * self.row_height + 30
         props['source'] = self._source
         props['columns'] = self._get_columns()
+        props['configuration'] = self.configuration
         return props
 
+    @property
+    def configuration(self):
+        """
+        Returns the Tabulator configuration.
+        """
+        configuration = dict(self._configuration)
+        groups = dict(self.groups or {})
+        order = []
+        cols = {}
+        for column in configuration.get('columns', []):
+            if 'columns' in column:
+                order.append(column['title'])
+                groups[column['title']] = []
+                for col in column['columns']:
+                    field = col['field']
+                    cols[field] = col
+                    groups[column['title']].append(field)
+            else:
+                order.append(col['field'])
+                cols[col['field']] = col
+
+        columns = self._get_columns()
+        config_cols = []
+        for column in columns:
+            editor = column.editor
+            if column.field in cols:
+                col = cols[column.field]
+            else:
+                col = {
+                    'field': column.field,
+                    'title': column.title
+                }
+            if isinstance(self.widths, int) and column.field in self.widths:
+                col['width'] = column.width
+            if column.field not in self.editors and 'editor' in col:
+                config_cols.append(column)
+                continue
+
+            if isinstance(editor, StringEditor):
+                if completions:
+                    col['editor'] = 'autocomplete'
+                    col['editorParams'] = editor.options
+                else:
+                    col['editor'] = 'input'
+            elif isinstance(editor, TextEditor):
+                col['editor'] = 'textarea'
+            elif isinstance(editor, (IntEditor, NumberEditor)):
+                col['editor'] = 'number'
+                col['editorParams'] = {'step': editor.step}
+            elif isinstance(editor, CheckboxEditor):
+                col['editor'] = 'tickCross'
+            elif isinstance(editor, SelectEditor):
+                col['editor'] = "select"
+                col['editorParams'] = {'values': editor.options}
+            config_cols.append(column)
+
+        ordered = []
+        if order:
+            config_cols = {c['field']: c for c in config_cols}
+            for col in order:
+                if col in groups:
+                    group = {'title': col, 'columns': []}
+                    for col in groups[col]:
+                        group['columns'].append(config_cols[col])
+                    ordered.append(group)
+                else:
+                    ordered.append(config_cols[col])
+        else:
+            for col in config_cols:
+                field = col['field']
+                grouped = False
+                for title, group in groups.items():
+                    if field in group:
+                        grouped = True
+                        break
+                if grouped:
+                    group[group.index(field)] = col
+                    if group not in ordered:
+                        ordered.append(group)
+                else:
+                    ordered.append(col)
+
+        configuration['columns'] = ordered
+        return configuration
+        
     @staticmethod
     def config(css="default"):
         """

@@ -73,20 +73,16 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       _view.model.source.patch({[field]: [[index, value]]});
       endUpdating();
     }
-    let default_configuration = {
-      "rowSelectionChanged": rowSelectionChanged,
-      "cellEdited": cellEdited,
-      "index": "index",
-    }
     let configuration = {
       ...this.model.configuration,
-      ...default_configuration,
+	  rowSelectionChanged: rowSelectionChanged,
+      cellEdited: cellEdited,
       columns: this.getColumns(),
       layout: this.model.layout
     }
     console.log(configuration)
     let data = this.model.source;
-    if (data ===null || Object.keys(data.data).length===0)
+    if (data === null || Object.keys(data.data).length===0)
       return configuration;
     else {
       data = transform_cds_to_records(data)
@@ -98,21 +94,42 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   }
 
   getColumns(): any {
-    const columns = []
+	let columns = []
+	let ordered = false
+    if (this.model.configuration.columns != null) {
+      columns = this.model.configuration.columns
+	  ordered = true
+    }
     for (const column of this.model.columns) {
-      const tab_column: any = {
-        field: column.field,
-        title: column.title,
-        width: column.width,
+      let tab_column: any = null
+      for (const col of columns) {
+        if (col.columns != null) {
+          for (const c of col.columns) {
+            if (column.field === c.field)
+              tab_column = c
+              break
+          }
+          if (tab_column != null)
+            break
+        } else if (column.field === col.field) {
+          tab_column = col
+          break
+        }
       }
-      if (column.formatter != null) {
+      if (tab_column == null) {
+        tab_column = {
+          field: column.field,
+          title: column.title,
+          width: column.width,
+        }
+      }
+      if (column.formatter != null && tab_column.formatter == null) {
         tab_column.formatter = (cell: any) => {
           return column.formatter.doFormat(cell.getRow(), cell, cell.getValue(), null, null)
         }
       }
       const editor: any = column.editor
       const ctype = editor.type
-      
       if (ctype === "StringEditor") {
         if (editor.completions) {
           tab_column.editor = "autocomplete"
@@ -130,7 +147,8 @@ export class DataTabulatorView extends PanelHTMLBoxView {
         tab_column.editor = "select"
         tab_column.editorParams = {values: editor.options}
       }
-      columns.push(tab_column)
+      if (!ordered)
+        columns.push(tab_column)
     }
     return columns
   }
