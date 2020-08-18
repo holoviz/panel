@@ -81,10 +81,10 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     let configuration = {
       ...this.model.configuration,
       ...default_configuration,
-	  columns: this.getColumns(),
-	  layout: this.model.layout
+      columns: this.getColumns(),
+      layout: this.model.layout
     }
-	console.log(configuration)
+    console.log(configuration)
     let data = this.model.source;
     if (data ===null || Object.keys(data.data).length===0)
       return configuration;
@@ -98,41 +98,41 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   }
 
   getColumns(): any {
-	const columns = []
-	for (const column of this.model.columns) {
-	  const tab_column: any = {
+    const columns = []
+    for (const column of this.model.columns) {
+      const tab_column: any = {
         field: column.field,
         title: column.title,
         width: column.width,
-	  }
+      }
       if (column.formatter != null) {
         tab_column.formatter = (cell: any) => {
           return column.formatter.doFormat(cell.getRow(), cell, cell.getValue(), null, null)
-		}
+        }
       }
       const editor: any = column.editor
       const ctype = editor.type
-	  
-	  if (ctype === "StringEditor") {
-		if (editor.completions) {
+      
+      if (ctype === "StringEditor") {
+        if (editor.completions) {
           tab_column.editor = "autocomplete"
           tab_column.editorParams = {values: editor.completions}
         } else
           tab_column.editor = "input"
       } else if (ctype === "TextEditor")
-		tab_column.editor = "textarea"
+        tab_column.editor = "textarea"
       else if (ctype === "IntEditor" || ctype === "NumberEditor") {
-		tab_column.editor = "number"
+        tab_column.editor = "number"
         tab_column.editorParams = {step: editor.step}
-	  } else if (ctype === "CheckboxEditor") {
+      } else if (ctype === "CheckboxEditor") {
         tab_column.editor = "tickCross"
       } else if (ctype === "SelectEditor") {
-		tab_column.editor = "select"
+        tab_column.editor = "select"
         tab_column.editorParams = {values: editor.options}
-	  }
+      }
       columns.push(tab_column)
-	}
-	return columns
+    }
+    return columns
   }
 
   after_layout(): void {
@@ -206,8 +206,8 @@ export class DataTabulator extends HTMLBox {
 
     this.define<DataTabulator.Props>({
       configuration: [p.Any, ],
-	  columns: [ p.Array, [] ],
-	  layout: [ p.Any, "fit_columns" ],
+      columns: [ p.Array, [] ],
+      layout: [ p.Any, "fit_columns" ],
       source: [ p.Any, ],
     })
   }
