@@ -1,0 +1,45 @@
+body {
+  color: white;
+  background-color: #121212;
+}
+
+#header {
+  background-color: #2f2f2f;
+}
+
+#main {
+  color: white;
+  background-color: #121212;
+}
+
+#sidebar {
+  color: white;
+  border-color: #292929 !important;
+  background-color: #292929!important;
+}
+
+.bk.card {
+  color: white;
+  background-color: #2f2f2f;
+}
+
+.bk.card-header {
+  color: white;
+  background-color: #292929 !important;
+}
+
+.react-grid-item{
+  /* background-color: #2f2f2f !important; */
+  background-color: #2f2f2f !important;
+}
+
+.react-grid-item > .react-resizable-handle::after {
+  content: "";
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  width: 5px;
+  height: 5px;
+  border-right: 2px solid rgb(255, 255, 255,0.95);
+  border-bottom: 2px solid rgb(252, 252, 252,0.95);  // Update rgba values for color and transparency.
+}

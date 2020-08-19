@@ -449,6 +449,7 @@ class BasicTemplate(BaseTemplate):
         """
 
 
+
 class Template(BaseTemplate):
     """
     A Template is a high-level component to render multiple Panel
