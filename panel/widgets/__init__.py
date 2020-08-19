@@ -6,7 +6,7 @@ from __future__ import absolute_import, division, unicode_literals
 
 from .ace import Ace  # noqa
 from .base import Widget, CompositeWidget  # noqa
-from .button import Button, Toggle  # noqa
+from .button import Button, MenuButton, Toggle  # noqa
 from .file_selector import FileSelector  # noqa
 from .input import (  # noqa
     ColorPicker,

@@ -130,7 +130,7 @@ class Toggle(_ButtonBase):
 
 class MenuButton(_ClickButton):
 
-    clicked = param.String(doc="""
+    clicked = param.String(default=None, doc="""
       Last menu item that was clicked.""")
 
     items = param.List(default=[], doc="""
