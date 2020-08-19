@@ -60,8 +60,8 @@
     {% endif %}
 
     <div class="main" id="main" style=" height: 100vh; ">
-            
-      <div id="mydiv" style="margin: 10px; overflow-x: hide; overflow-y: hide"></div>  <!--  div for react grid layout container  -->
+
+      <div id="mydiv" style="overflow-x: hide; overflow-y: hide"></div>  <!--  div for react grid layout container  -->
       
       <div id="pn-Modal" class="pn-modal header-adjust">
       <div class="pn-modal-content">
@@ -112,59 +112,74 @@
   }
 </script>
 
+
 <script type="text/babel">
 
-const divStyle = { borderRadius: '5px' };  
+const divStyle = { borderRadius: '5px',
+                    margin: '50px' };  
 
 const ResponsiveGridLayout = ReactGridLayout.WidthProvider(ReactGridLayout.Responsive)
 
    class MyFirstGrid extends React.Component {
-     constructor(props) {
-       super(props);     
-       }  
+    constructor(props) {
+    super(props);
+  }
+
+
 
   resize_layout(obj, old_, new_, p, e, element) {
-     window.Bokeh.index[new_['i'].split('_')[1]].resize_layout();
+    //  window.Bokeh.index[new_['i'].split('_')[1]].resize_layout();
     console.log(obj)
+    window.dispatchEvent(new Event("resize"))
   }  
 
   resize_layout_stop(obj, old_, new_, p, e, element) {
     setTimeout(function(){
-        console.log("I am setTimeout");
-        window.Bokeh.index[new_['i'].split('_')[1]].resize_layout();
+        console.log("I am setTimeout", new_['i']);
+        window.dispatchEvent(new Event("resize"))
+    //    window.Bokeh.index[new_['i'].split('_')[1]].resize_layout();
    },50);
   }
 
     render() {
+      const layouts = {{layouts}};
       return (
+        <div>
+        
         <ResponsiveGridLayout className="layout" 
-          breakpoints={% raw %}{{lg: 800,  xs: 240}}{% endraw %}
-          cols={% raw %}{{lg: 12, xs: 12}}{% endraw %}
-          rowHeight={30} width = {window.screen.width}
-          onResize = {this.resize_layout} 
-          onResizeStop = {this.resize_layout_stop}
-          margin={[10,10]}   draggableCancel='.bk-root' >
+            cols={ {{cols}} }
+            breakpoints ={ {{breakpoints}} }
+            width = {window.screen.width}
+            onResize = {this.resize_layout} 
+            onResizeStop = {this.resize_layout_stop}
+            margin={[10,10]}   draggableCancel='.bk-root' 
+            rowHeight={ {{rowHeight}} }
+            layouts={layouts}
+        >
   
               {% set count = [] %} 
               {% for doc in docs %}
               {% for root in doc.roots %}
                 {% if "main" in root.tags %}
-                  <div key="{{embed(root) | define_id}}" style={divStyle } 
-                  data-grid={% raw %} { {% endraw %} {{data_grid[count|length]}} {% raw %} } {% endraw %} >
+
+              
+                  <div key="{{count|length + 1 }}" style={divStyle} >
                           {{ embed(root) | indent(4) }} 
                   </div>
-
+               
+                  
                   {% set __ = count.append(1) %}
                 {% endif %}
               {% endfor %}
               {% endfor %}
                     
         </ResponsiveGridLayout>
+      </div>
       );
     }
  }
  
- ReactDOM.render(<MyFirstGrid />, document.getElementById('mydiv'))
+ReactDOM.render(<MyFirstGrid />, document.getElementById('mydiv'))
  </script>
 
 {{ embed(roots.js_area) }}

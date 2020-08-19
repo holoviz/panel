@@ -31,7 +31,10 @@ class ReactTemplate(BasicTemplate):
 
     def __init__(self, **params):
         super(ReactTemplate, self).__init__(**params)
-        self.data_grid = []
+        self.layouts = {}
+        self.breakpoints = {}
+        self.cols = {}
+        self.rowHeight = {}
 
     def define_id(s):   
         s = s[6:-7] # 
@@ -44,28 +47,35 @@ class ReactTemplate(BasicTemplate):
             model.margin = (10, 15, 10, 10)
 
     
-
-    def add_data_grid(self, name, value):
+    def config_layout(self, layouts, breakpoints,cols,rowHeight=30):
         """
-        Add parameters to the template, which may then be referenced
-        by the given name in the Jinja2 template.
+        Configure layout of the responsive
+        react grid layout component
 
-        Arguments
-        ---------
-        name : str
-          The name to refer to the panel by in the template
-        value : object
-          Any valid Jinja2 variable type.
+        class MyResponsiveGrid ..........
+        // {lg: layout1, md: layout2, ...}
+        const layouts = getLayoutsFromSomewhere();
+        return (
+        <ResponsiveGridLayout className="layout" layouts={layouts}
+        breakpoints={{lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0}}
+        cols={{lg: 12, md: 10, sm: 6, xs: 4, xxs: 2}}>
+        <div key="1">1</div>
+        <div key="2">2</div>
+        <div key="3">3</div>
+      </ResponsiveGridLayout>
+       where for each breakpoint you need define a layout 
+       for each card
+        // layout is an array of objects, see the demo for more complete usage
+        const layout = [
+        {i: 'a', x: 0, y: 0, w: 1, h: 2, static: true},
+        {i: 'b', x: 1, y: 0, w: 3, h: 2, minW: 2, maxW: 4},
+        {i: 'c', x: 4, y: 0, w: 1, h: 2}
         """
-     
-        self.data_grid.append(value)
 
-        if name in self._render_variables:
-            raise ValueError('The name %s has already been used for '
-                             'another variable. Ensure each variable '
-                             'has a unique name by which it can be '
-                             'referenced in the template.' % name)
-        self._render_variables['data_grid'] = self.data_grid
+        self._render_variables['layouts'] = layouts
+        self._render_variables['breakpoints'] = breakpoints
+        self._render_variables['cols'] = cols
+        self._render_variables['rowHeight'] = rowHeight
 
 
 class ReactDefaultTheme(DefaultTheme):
