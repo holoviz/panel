@@ -61,7 +61,7 @@
 
     <div class="main" id="main" style=" height: 100vh; ">
 
-      <div id="mydiv" style="overflow-x: hide; overflow-y: hide"></div>  <!--  div for react grid layout container  -->
+      <div id="mydiv" style="overflow-x: hide; overflow-y: hide"></div>  
       
       <div id="pn-Modal" class="pn-modal header-adjust">
       <div class="pn-modal-content">
@@ -128,16 +128,12 @@ const ResponsiveGridLayout = ReactGridLayout.WidthProvider(ReactGridLayout.Respo
 
 
   resize_layout(obj, old_, new_, p, e, element) {
-    //  window.Bokeh.index[new_['i'].split('_')[1]].resize_layout();
-    console.log(obj)
     window.dispatchEvent(new Event("resize"))
   }  
 
   resize_layout_stop(obj, old_, new_, p, e, element) {
     setTimeout(function(){
-        console.log("I am setTimeout", new_['i']);
         window.dispatchEvent(new Event("resize"))
-    //    window.Bokeh.index[new_['i'].split('_')[1]].resize_layout();
    },50);
   }
 
