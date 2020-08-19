@@ -8,11 +8,8 @@ import param
 from ...layout import Card
 from ..base import BasicTemplate
 from ..theme import DarkTheme, DefaultTheme
-from ...layout import ListLike
 
 from jinja2 import environment
-import random
-import string
 
 class ReactTemplate(BasicTemplate):
     """
