@@ -59,10 +59,9 @@
     </div>
     {% endif %}
 
-    <div class="main" id="main" style=" height: 100vh; ">
+    <div class="main" id="main">
+      <div id="responsive-grid"></div>
 
-      <div id="mydiv" style="overflow-x: hide; overflow-y: hide"></div>  
-      
       <div id="pn-Modal" class="pn-modal header-adjust">
       <div class="pn-modal-content">
         <span class="pn-modalclose" id="pn-closeModal">&times;</span>
@@ -73,8 +72,6 @@
         {% endif %}
         {% endfor %}
         {% endfor %}
-          
-
       </div>
 	  </div>
     </div>
@@ -112,72 +109,51 @@
   }
 </script>
 
-
 <script type="text/babel">
-
-const divStyle = { borderRadius: '5px',
-                    margin: '10px' };  
-                    
+const divStyle = {borderRadius: '5px'};
 
 const ResponsiveGridLayout = ReactGridLayout.WidthProvider(ReactGridLayout.Responsive)
 
-   class MyFirstGrid extends React.Component {
-    constructor(props) {
-    super(props);
-  }
+function resize_layout(obj, old_, new_, p, e, element) {
+  console.log('resize')
+  window.dispatchEvent(new Event("resize"))
+}
 
-
-
-  resize_layout(obj, old_, new_, p, e, element) {
+function resize_layout_stop(obj, old_, new_, p, e, element) {
+  setTimeout(function(){
     window.dispatchEvent(new Event("resize"))
-  }  
+  }, 50);
+}
 
-  resize_layout_stop(obj, old_, new_, p, e, element) {
-    setTimeout(function(){
-        window.dispatchEvent(new Event("resize"))
-   },50);
-  }
-
-    render() {
-      const layouts = {{layouts}};
-      return (
-        <div>
-        
-        <ResponsiveGridLayout className="layout" 
-            cols={ {{cols}} }
-            breakpoints ={ {{breakpoints}} }
-            width = {window.screen.width}
-            onResize = {this.resize_layout} 
-            onResizeStop = {this.resize_layout_stop}
-            margin={[10,10]}   draggableCancel='.bk-root' 
-            rowHeight={ {{rowHeight}} }
-            layouts={layouts}
+function ResponsiveGrid(props) {
+    const layouts = {{layouts}};
+    return (
+        <ResponsiveGridLayout
+		  className="layout"
+          cols={ {{cols}} }
+          breakpoints={ {{breakpoints}} }
+          draggableHandle=".drag-handle"
+          onResize={resize_layout}
+          onResizeStop={resize_layout_stop}
+		  draggableCancel=".bk-root"
+          rowHeight={ {{rowHeight}} }
+          layouts={layouts}
+		  compactType="horizontal"
         >
-  
-              {% set count = [] %} 
-              {% for doc in docs %}
-              {% for root in doc.roots %}
-                {% if "main" in root.tags %}
-
-              
-                  <div key="{{count|length + 1 }}" style={divStyle} >
-                          {{ embed(root) | indent(4) }} 
-                  </div>
-               
-                  
-                  {% set __ = count.append(1) %}
-                {% endif %}
-              {% endfor %}
-              {% endfor %}
-                    
+          {% set count = [] %}
+          {% for doc in docs %}{% for root in doc.roots %}{% if "main" in root.tags %}
+            <div key="{{count|length + 1 }}" style={divStyle} >
+			  <span className="drag-handle"></span>
+              {{ embed(root) | indent(4) | replace("class", "className") }}
+            </div>
+            {% set __ = count.append(1) %}
+          {% endif %}{% endfor %}{% endfor %}
         </ResponsiveGridLayout>
-      </div>
-      );
-    }
- }
- 
-ReactDOM.render(<MyFirstGrid />, document.getElementById('mydiv'))
- </script>
+    );
+}
+
+ReactDOM.render(<ResponsiveGrid />, document.getElementById('responsive-grid'))
+</script>
 
 {{ embed(roots.js_area) }}
 {{ embed(roots.location) }}

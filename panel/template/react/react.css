@@ -45,6 +45,12 @@ body {
   display: inline-flex;
 }
 
+#responsive-grid {
+  height: 100%;
+  width: 100%;
+  padding: 10px;
+}
+
 #sidebar {
   transition: all 0.2s cubic-bezier(0.945, 0.020, 0.270, 0.665);
   transform-origin: center left; /* Set the transformed position of sidebar to center left side. */
@@ -52,15 +58,14 @@ body {
 }
 
 #sidebar.active {
-  margin-left: -16.7%;
+  margin-left: -16.7vw;
 }
 
 #main {
   transition: all 0.2s cubic-bezier(0.945, 0.020, 0.270, 0.665);
-  overflow-y: scroll;
-  width: 100vw;
+  width: 100%;
+  height: 100vh;
   margin-left: 16.7vw;
-  overflow-y: scroll;
 }
 
 #sidebarCollapse {
@@ -157,11 +162,27 @@ p.bk.card-button {
   margin-left: auto;
 }
 
+.drag-handle {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  width: 24px;
+  height: 24px;
+  z-index: 10000;
+  background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0Ij48cGF0aCBmaWxsPSJub25lIiBkPSJNMCAwaDI0djI0SDB6Ii8+PHBhdGggZD0iTTE2IDEzbDYuOTY0IDQuMDYyLTIuOTczLjg1IDIuMTI1IDMuNjgxLTEuNzMyIDEtMi4xMjUtMy42OC0yLjIyMyAyLjE1TDE2IDEzem0tMi03aDJ2Mmg1YTEgMSAwIDAgMSAxIDF2NGgtMnYtM0gxMHYxMGg0djJIOWExIDEgMCAwIDEtMS0xdi01SDZ2LTJoMlY5YTEgMSAwIDAgMSAxLTFoNVY2ek00IDE0djJIMnYtMmgyem0wLTR2Mkgydi0yaDJ6bTAtNHYySDJWNmgyem0wLTR2MkgyVjJoMnptNCAwdjJINlYyaDJ6bTQgMHYyaC0yVjJoMnptNCAwdjJoLTJWMmgyeiIvPjwvc3ZnPg==');
+  opacity: 0;
+  transition-delay: 0.5s;
+  transition: 0.5s;
+}
 
+.drag-handle:hover {
+  transition: 0.5s;
+  opacity: 1;
+}
 
-
-
-
+.drag-handle:focus {
+  opacity: 1;
+}
 
 .react-resizable {
   position: relative;
@@ -229,9 +250,6 @@ p.bk.card-button {
   transform: rotate(45deg);
 }
 
-
-
-
 .react-grid-layout {
   position: relative;
   transition: height 200ms ease;
@@ -275,7 +293,7 @@ p.bk.card-button {
   width: 20px;
   height: 20px;
   bottom: 0;
-  right: 0;
+  right: 5px;
   cursor: se-resize;
 }
 

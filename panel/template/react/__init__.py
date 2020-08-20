@@ -1,20 +1,29 @@
 """
-React template 
+React template
 """
 import pathlib
 
 import param
 
-from ...layout import Card
+from ...depends import depends
+from ...layout import Card, GridSpec
 from ..base import BasicTemplate
 from ..theme import DarkTheme, DefaultTheme
 
-from jinja2 import environment
 
 class ReactTemplate(BasicTemplate):
     """
     ReactTemplate is built on top of React Grid Layout web components.
     """
+
+    cols = param.Dict(default={'lg': 12, 'md': 10, 'sm': 6, 'xs': 4, 'xxs': 2})
+
+    breakpoints = param.Dict(default={'lg': 1200, 'md': 996, 'sm': 768, 'xs': 480, 'xxs': 0})
+
+    main = param.ClassSelector(class_=GridSpec, constant=True, doc="""
+        A list-like container which populates the main area.""")
+
+    row_height = param.Integer(default=300)
 
     _css = pathlib.Path(__file__).parent / 'react.css'
 
@@ -22,57 +31,32 @@ class ReactTemplate(BasicTemplate):
 
     _modifiers = {
         Card: {
-            'children': {'margin': (0, 10)}
+            'children': {'margin': (20, 20)}
         }
     }
 
     def __init__(self, **params):
-        super(ReactTemplate, self).__init__(**params)
-        self.layouts = {}
-        self.breakpoints = {}
-        self.cols = {}
-        self.rowHeight = {}
+        if 'main' not in params:
+            params['main'] = GridSpec()
+        super().__init__(**params)
+        self._update_render_vars()
 
-    def define_id(s):   
-        s = s[6:-7] # 
-        return  'panelID_' + dict([i.split('=') for i in s.split(' ')])['data-root-id'].replace('"','').replace('-','')
+    def _update_render_items(self, event):
+        super()._update_render_items(event)
+        if event.obj is not self.main:
+            return
+        layouts = []
+        for i, ((y0, x0, y1, x1), v) in enumerate(self.main.objects.items()):
+            layouts.append({'x': x0, 'y': y0, 'w': x1-x0, 'h': y1-y0, 'i': str(i+1)})
+        self._render_variables['layouts'] = {'lg': layouts, 'md': layouts}
 
-    environment.DEFAULT_FILTERS['define_id'] = define_id
+    @depends('cols', 'breakpoints', 'row_height', watch=True)
+    def _update_render_vars(self):
+        self._render_variables['breakpoints'] = self.breakpoints
+        self._render_variables['cols'] = self.cols
+        self._render_variables['rowHeight'] = self.row_height
 
-    def _apply_root(self, name, model, tags):
-        if 'main' in tags:
-            model.margin = (10, 15, 10, 10)
 
-    
-    def config_layout(self, layouts, breakpoints,cols,rowHeight=30):
-        """
-        Configure layout of the responsive
-        react grid layout component
-
-        class MyResponsiveGrid ..........
-        // {lg: layout1, md: layout2, ...}
-        const layouts = getLayoutsFromSomewhere();
-        return (
-        <ResponsiveGridLayout className="layout" layouts={layouts}
-        breakpoints={{lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0}}
-        cols={{lg: 12, md: 10, sm: 6, xs: 4, xxs: 2}}>
-        <div key="1">1</div>
-        <div key="2">2</div>
-        <div key="3">3</div>
-      </ResponsiveGridLayout>
-       where for each breakpoint you need define a layout 
-       for each card
-        // layout is an array of objects, see the demo for more complete usage
-        const layout = [
-        {i: 'a', x: 0, y: 0, w: 1, h: 2, static: true},
-        {i: 'b', x: 1, y: 0, w: 3, h: 2, minW: 2, maxW: 4},
-        {i: 'c', x: 4, y: 0, w: 1, h: 2}
-        """
-
-        self._render_variables['layouts'] = layouts
-        self._render_variables['breakpoints'] = breakpoints
-        self._render_variables['cols'] = cols
-        self._render_variables['rowHeight'] = rowHeight
 
 
 class ReactDefaultTheme(DefaultTheme):
