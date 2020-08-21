@@ -4,7 +4,6 @@ import os
 import shutil
 import sys
 import json
-import warnings
 
 from setuptools import setup, find_packages
 from setuptools.command.develop import develop
