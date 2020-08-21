@@ -4,6 +4,7 @@ import os
 import shutil
 import sys
 import json
+import warnings
 
 from setuptools import setup, find_packages
 from setuptools.command.develop import develop
@@ -220,6 +221,16 @@ if __name__ == "__main__":
 
     if 'develop' not in sys.argv and 'egg_info' not in sys.argv:
         pyct.build.examples(example_path, __file__, force=True)
+
+    version = setup_args['version']
+    if 'post' not in version:
+        with open('./panel/package.json') as f:
+            package_json = json.load(f)
+        js_version = package_json['version']
+        if version != js_version:
+            raise ValueError("panel.js version (%s) does not match "
+                             "panel version (%s). Cannot build release."
+                             % (js_version, version))
 
     setup(**setup_args)
 
