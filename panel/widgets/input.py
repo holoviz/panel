@@ -141,7 +141,7 @@ class DatePicker(Widget):
 
     enabled_dates = param.List(default=None, class_=(date, str))
 
-    _source_transforms = {'value': None, 'start': None, 'end': None}
+    _source_transforms = {}
 
     _rename = {'start': 'min_date', 'end': 'max_date', 'name': 'title'}
 
