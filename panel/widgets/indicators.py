@@ -1,6 +1,12 @@
 import sys
 
+from math import pi
+
+import numpy as np
 import param
+
+from bokeh.plotting import figure
+from bokeh.models import ColumnDataSource
 
 from ..models import HTML
 from ..util import escape
@@ -97,6 +103,35 @@ class ValueIndicator(Indicator):
     __abstract = True
 
 
+class String(ValueIndicator):
+
+    default_color = param.String(default='black')
+
+    font_size = param.String(default='54pt')
+
+    title_size = param.String(default='18pt')
+
+    value = param.String(default=None)
+
+    _rename = {}
+
+    _widget_type = HTML
+
+    def _process_param_change(self, msg):
+        msg = super()._process_param_change(msg)
+        font_size = msg.pop('font_size', self.font_size)
+        title_font_size = msg.pop('title_size', self.title_size)
+        name = msg.pop('name', self.name)
+        value = msg.pop('value', self.value)
+        color = msg.pop('default_color', self.default_color)
+        text = f'<div style="font-size: {font_size}; color: {color}">{value}</div>'
+        if self.name:
+            title_font_size = msg.pop('title_size', self.title_size)
+            text = f'<div style="font-size: {title_font_size}; color: {color}">{name}</div>\n{text}'
+        msg['text'] = escape(text)
+        return msg
+
+
 class Number(ValueIndicator):
     """
     The Number indicator renders the value as text optionally colored
@@ -120,7 +155,7 @@ class Number(ValueIndicator):
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
         font_size = msg.pop('font_size', self.font_size)
-        title_font_size = msg.pop('title_font_size', self.title_font_size)
+        title_font_size = msg.pop('title_size', self.title_size)
         name = msg.pop('name', self.name)
         format = msg.pop('format', self.format)
         value = msg.pop('value', self.value)
@@ -132,7 +167,7 @@ class Number(ValueIndicator):
         value = eval("f'{}'".format(format))
         text = f'<div style="font-size: {font_size}; color: {color}">{value}</div>'
         if self.name:
-            title_font_size = msg.pop('title_font_size', self.title_font_size)
+            title_font_size = msg.pop('title_size', self.title_size)
             text = f'<div style="font-size: {title_font_size}; color: {color}">{name}</div>\n{text}'
         msg['text'] = escape(text)
         return msg
@@ -140,7 +175,7 @@ class Number(ValueIndicator):
 
 class Gauge(ValueIndicator):
     """
-    A Gauge represents a value in some range as a position on 
+    A Gauge represents a value in some range as a position on
     speedometer or gauge. It is similar to a Dial but visually a lot
     busier.
     """
@@ -173,7 +208,7 @@ class Gauge(ValueIndicator):
       Whether to show ticks along the dials.""")
 
     show_labels = param.Boolean(default=True, doc="""
-      Whether to show tick labels along the dials."""))
+      Whether to show tick labels along the dials.""")
 
     start_angle = param.Number(default=225, doc="""
       Angle at which the gauge starts.""")
@@ -211,7 +246,7 @@ class Gauge(ValueIndicator):
                 'type': 'gauge',
                 'axisTick': {'show': msg.pop('show_ticks', self.show_ticks)},
                 'axisLabel': {'show': msg.pop('show_labels', self.show_labels)},
-                'title': {'fontWeight': 'bold', 'fontSize': msg.pop('title_font_size', self.title_font_size)},
+                'title': {'fontWeight': 'bold', 'fontSize': msg.pop('title_size', self.title_size)},
                 'splitLine': {'show': True},
                 'radius': '100%',
                 'detail': {'formatter': msg.pop('format', self.format)},
@@ -312,8 +347,8 @@ class Dial(ValueIndicator):
     def _get_data(self):
         vmin, vmax = self.bounds
         fraction = self.value/(vmax-vmin)
-        start = (radians(360-self.start_angle) - pi % (2*pi)) + pi
-        end = (radians(360-self.end_angle) - pi % (2*pi)) + pi
+        start = (np.radians(360-self.start_angle) - pi % (2*pi)) + pi
+        end = (np.radians(360-self.end_angle) - pi % (2*pi)) + pi
         distance = (abs(end-start) % (pi*2))
         if end>start:
             distance = (pi*2)-distance
@@ -334,7 +369,8 @@ class Dial(ValueIndicator):
         }
 
         x0s, y0s, x1s, y1s, clrs = [], [], [], [], []
-        for (val, _), (_, clr) in zip(self.colors[:-1], self.colors[1:]):
+        colors = self.colors or []
+        for (val, _), (_, clr) in zip(colors[:-1], colors[1:]):
             tangle = start-(distance*val)
             if (vmin + val * (vmax-vmin)) <= self.value:
                 continue
@@ -369,18 +405,18 @@ class Dial(ValueIndicator):
         tmaxx, tmaxy = np.cos(end)*center_radius, np.sin(end)*center_radius
         tmin_angle, tmax_angle = start+pi, end+pi % pi
         scale = (self.height/400)
-        title_size = self.title_size if self.title_size else '%spt' % (scale*24)
-        value_size = self.value_size if self.value_size else '%spt' % (scale*36)
-        tick_size = self.tick_size if self.tick_size else '%spt' % (scale*16)
+        title_size = self.title_size if self.title_size else '%spt' % (scale*32)
+        value_size = self.value_size if self.value_size else '%spt' % (scale*48)
+        tick_size = self.tick_size if self.tick_size else '%spt' % (scale*18)
 
         text_data= {
             'x':    [0, 0, tminx, tmaxx],
             'y':    [-.2, -.5, tminy, tmaxy],
             'text': [self.name, value, min_value, max_value],
             'rot':  [0, 0, tmin_angle, tmax_angle],
-            'size': [title_size, value_size, tick_size, tick_size]
+            'size': [title_size, value_size, tick_size, tick_size],
+            'color': ['black', color, 'black', 'black']
         }
-        #print(text_)
         return annulus_data, needle_data, threshold_data, text_data
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
@@ -423,7 +459,7 @@ class Dial(ValueIndicator):
         text_source = ColumnDataSource(data=text, name='label_source')
         model.text(
             x='x', y='y', text='text', font_size='size', text_align='center',
-            text_color='black', source=text_source, text_baseline='top',
+            text_color='color', source=text_source, text_baseline='top',
             angle='rot'
         )
 
