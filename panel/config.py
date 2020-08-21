@@ -135,7 +135,7 @@ class _config(param.Parameterized):
     _oauth_extra_params = param.Dict(default={}, doc="""
         Additional parameters required for OAuth provider.""")
 
-    _inline = param.Boolean(default=True, allow_None=True, doc="""
+    _inline = param.Boolean(default=False, allow_None=True, doc="""
         Whether to inline JS and CSS resources. If disabled, resources
         are loaded from CDN if one is available.""")
 
