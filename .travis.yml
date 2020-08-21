@@ -59,6 +59,9 @@ jobs:
         - conda config --set always_yes True
         # ...and now install doit/pyctdev into miniconda
         - conda install -c pyviz "pyctdev>=0.5" && doit ecosystem_setup
+        - conda install nodejs
+        - echo "//registry.npmjs.org/:_authToken=$NPM_API_TOKEN" > $HOME/.npmrc
+        - npm whoami
       install:
         - doit env_create $CHANS_DEV --python=$PYTHON_VERSION
         - source activate test-environment
