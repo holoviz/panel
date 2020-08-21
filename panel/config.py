@@ -21,6 +21,10 @@ from pyviz_comms import (JupyterCommManager as _JupyterCommManager,
 from .io.notebook import load_notebook
 from .io.state import state
 
+__version__ = str(param.version.Version(
+    fpath=__file__, archive_commit="$Format:%h$", reponame="panel"))
+
+_LOCAL_DEV_VERSION = any(v in __version__ for v in ('post', 'dirty'))
 
 #---------------------------------------------------------------------
 # Public API
@@ -135,7 +139,7 @@ class _config(param.Parameterized):
     _oauth_extra_params = param.Dict(default={}, doc="""
         Additional parameters required for OAuth provider.""")
 
-    _inline = param.Boolean(default=True, allow_None=True, doc="""
+    _inline = param.Boolean(default=_LOCAL_DEV_VERSION, allow_None=True, doc="""
         Whether to inline JS and CSS resources. If disabled, resources
         are loaded from CDN if one is available.""")
 
