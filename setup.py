@@ -226,7 +226,7 @@ if __name__ == "__main__":
         with open('./panel/package.json') as f:
             package_json = json.load(f)
         js_version = package_json['version']
-        if version != js_version:
+        if version.split('+')[0] != js_version:
             raise ValueError("panel.js version (%s) does not match "
                              "panel version (%s). Cannot build release."
                              % (js_version, version))
