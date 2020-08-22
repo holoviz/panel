@@ -4,7 +4,7 @@
   var render_items = {{ render_items }};
   root.Bokeh.embed.embed_items_notebook(docs_json, render_items);
   }
-if (root.Bokeh !== undefined) {
+  if (root.Bokeh !== undefined && root.Bokeh.Panel !== undefined) {
     embed_document(root);
   } else {
     var attempts = 0;
