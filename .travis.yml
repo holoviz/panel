@@ -93,6 +93,7 @@ jobs:
         - doit package_build $CHANS $PKG_TEST_PYTHON --test-group=unit_deploy
       script:
         - doit package_upload --token=$ANACONDA_TOKEN $LABELS
+        - python setup.py develop
         - cd panel
         - npm publish $NPM_TAG
 
