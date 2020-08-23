@@ -44,18 +44,18 @@ class PeriodicCallback(param.Parameterized):
         self._counter = 0
         self._start_time = None
         self._cb = None
+        self._updating = False
         self._doc = None
 
     @param.depends('running', watch=True)
     def _start(self):
-        if not self.running:
+        if not self.running or self._updating:
             return
-        self.running = True
         self.start()
 
     @param.depends('running', watch=True)
     def _stop(self):
-        if self.running:
+        if self.running or self._updating:
             return
         self.stop()
 
@@ -94,7 +94,12 @@ class PeriodicCallback(param.Parameterized):
         """
         if self._cb is not None:
             raise RuntimeError('Periodic callback has already started.')
-        self.running = True
+        if not self.running:
+            try:
+                self._updating = True
+                self.running = True
+            finally:
+                self._updating = False
         self._start_time = time.time()
         if state.curdoc and state.curdoc.session_context:
             self._doc = state.curdoc
@@ -108,7 +113,12 @@ class PeriodicCallback(param.Parameterized):
         """
         Stops running the periodic callback.
         """
-        self.running = False
+        if self.running:
+            try:
+                self._updating = True
+                self.running = False
+            finally:
+                self._updating = False
         self._counter = 0
         self._timeout = None
         if self._doc:
