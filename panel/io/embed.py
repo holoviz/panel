@@ -369,3 +369,4 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
     state_model.update(json=json, state=state_dict, values=init_vals,
                        widgets={m[0].ref['id']: i for i, (_, m, _, _) in enumerate(values)})
     doc.add_root(state_model)
+    return state_model
