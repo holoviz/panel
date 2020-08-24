@@ -249,14 +249,14 @@ class DataFrame(Widget):
             props['autosize_mode'] = self.autosize_mode
             props['auto_edit'] = self.auto_edit
         props['row_height'] = self.row_height
-        props['editable'] = not self.disabled and len(self.indexes) == 1
+        props['editable'] = not self.disabled and len(self.indexes) <= 1
         props['sortable'] = self.sortable
         props['reorderable'] = self.reorderable
         return props
 
     def _process_param_change(self, msg):
         if 'disabled' in msg:
-            msg['editable'] = not msg.pop('disabled') and len(self.indexes) == 1
+            msg['editable'] = not msg.pop('disabled') and len(self.indexes) <= 1
         return super(DataFrame, self)._process_param_change(msg)
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
