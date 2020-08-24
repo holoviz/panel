@@ -18,7 +18,8 @@ class PeriodicCallback(param.Parameterized):
     default the callback will run until the stop method is called,
     but count and timeout values can be set to limit the number of
     executions or the maximum length of time for which the callback
-    will run.
+    will run. The callback may also be started and stopped by setting
+    the running parameter to True or False respectively.
     """
 
     callback = param.Callable(doc="""
@@ -35,24 +36,28 @@ class PeriodicCallback(param.Parameterized):
         Timeout in milliseconds from the start time at which the callback
         expires.""")
 
+    running = param.Boolean(default=False, doc="""
+        Toggles whether the periodic callback is currently running.""")
+
     def __init__(self, **params):
         super(PeriodicCallback, self).__init__(**params)
         self._counter = 0
         self._start_time = None
         self._cb = None
+        self._updating = False
         self._doc = None
 
-    def start(self):
-        if self._cb is not None:
-            raise RuntimeError('Periodic callback has already started.')
-        self._start_time = time.time()
-        if state.curdoc and state.curdoc.session_context:
-            self._doc = state.curdoc
-            self._cb = self._doc.add_periodic_callback(self._periodic_callback, self.period)
-        else:
-            from tornado.ioloop import PeriodicCallback
-            self._cb = PeriodicCallback(self._periodic_callback, self.period)
-            self._cb.start()
+    @param.depends('running', watch=True)
+    def _start(self):
+        if not self.running or self._updating:
+            return
+        self.start()
+
+    @param.depends('running', watch=True)
+    def _stop(self):
+        if self.running or self._updating:
+            return
+        self.stop()
 
     @param.depends('period', watch=True)
     def _update_period(self):
@@ -76,7 +81,44 @@ class PeriodicCallback(param.Parameterized):
         if self._counter == self.count:
             self.stop()
 
+    @property
+    def counter(self):
+        """
+        Returns the execution count of the periodic callback.
+        """
+        return self._counter
+
+    def start(self):
+        """
+        Starts running the periodic callback.
+        """
+        if self._cb is not None:
+            raise RuntimeError('Periodic callback has already started.')
+        if not self.running:
+            try:
+                self._updating = True
+                self.running = True
+            finally:
+                self._updating = False
+        self._start_time = time.time()
+        if state.curdoc and state.curdoc.session_context:
+            self._doc = state.curdoc
+            self._cb = self._doc.add_periodic_callback(self._periodic_callback, self.period)
+        else:
+            from tornado.ioloop import PeriodicCallback
+            self._cb = PeriodicCallback(self._periodic_callback, self.period)
+            self._cb.start()
+
     def stop(self):
+        """
+        Stops running the periodic callback.
+        """
+        if self.running:
+            try:
+                self._updating = True
+                self.running = False
+            finally:
+                self._updating = False
         self._counter = 0
         self._timeout = None
         if self._doc:
