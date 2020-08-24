@@ -14,9 +14,11 @@ from bokeh.models.widgets import (
     AutocompleteInput as _BkAutocompleteInput, CheckboxGroup as _BkCheckboxGroup,
     CheckboxButtonGroup as _BkCheckboxButtonGroup, MultiSelect as _BkMultiSelect,
     RadioButtonGroup as _BkRadioButtonGroup, RadioGroup as _BkRadioBoxGroup,
-    Select as _BkSelect, MultiChoice as _BkMultiChoice)
+    Select as _BkSelect, MultiChoice as _BkMultiChoice
+)
 
 from ..layout import Column, VSpacer
+from ..models import SingleSelect as _BkSingleSelect
 from ..util import as_unicode, isIn, indexOf
 from .base import Widget, CompositeWidget
 from .button import _ButtonBase, Button
@@ -45,24 +47,37 @@ class SelectBase(Widget):
         return OrderedDict(zip(self.labels, self.values))
 
 
+
 class Select(SelectBase):
+
+    size = param.Integer(default=1, bounds=(1, None), doc="""
+        Declares how many options are displayed at the same time.
+        If set to 1 displays options as dropdown otherwise displays
+        scrollable area.""")
 
     value = param.Parameter(default=None)
 
     _supports_embed = True
 
-    _widget_type = _BkSelect
+    @property
+    def _widget_type(self):
+        return _BkSelect if self.size == 1 else _BkSingleSelect
 
     def __init__(self, **params):
         super(Select, self).__init__(**params)
         values = self.values
         if self.value is None and None not in values and values:
             self.value = values[0]
+        if self.size == 1:
+            self.param.size.constant = True
 
     def _process_param_change(self, msg):
         msg = super(Select, self)._process_param_change(msg)
         labels, values = self.labels, self.values
         unique = len(set(self.unicode_values)) == len(labels)
+        if msg.get('size') == 1:
+            msg.pop('size')
+
         if 'value' in msg:
             val = msg['value']
             if isIn(val, values):
@@ -119,6 +134,7 @@ class Select(SelectBase):
                              type(self).__name__)
         return (self, self._models[root.ref['id']][0], values,
                 lambda x: x.value, 'value', 'cb_obj.value')
+
 
 
 class _MultiSelectBase(Select):
