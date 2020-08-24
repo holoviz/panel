@@ -101,7 +101,7 @@ def param_to_jslink(model, widget):
                 and w not in param_pane._callbacks]
 
     if isinstance(pobj, Reactive):
-        tgt_links = [Watcher(*l[:-3]) for l in pobj._links]
+        tgt_links = [Watcher(*l[:-4]) for l in pobj._links]
         tgt_watchers = [w for w in get_watchers(pobj) if w not in pobj._callbacks
                         and w not in tgt_links and w not in param_pane._callbacks]
     else:
@@ -142,7 +142,7 @@ def link_to_jslink(model, source, src_spec, target, tgt_spec):
 def links_to_jslinks(model, widget):
     from ..widgets import Widget
 
-    src_links = [Watcher(*l[:-3]) for l in widget._links]
+    src_links = [Watcher(*l[:-4]) for l in widget._links]
     if any(w not in widget._callbacks and w not in src_links for w in get_watchers(widget)):
         return
 
@@ -155,7 +155,7 @@ def links_to_jslinks(model, widget):
 
         mappings = []
         for pname, tgt_spec in link.links.items():
-            if Watcher(*link[:-3]) in widget._param_watchers[pname]['value']:
+            if Watcher(*link[:-4]) in widget._param_watchers[pname]['value']:
                 mappings.append((pname, tgt_spec))
 
         if mappings:
