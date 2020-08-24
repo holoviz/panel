@@ -169,7 +169,7 @@ def links_to_jslinks(model, widget):
             widget.param.trigger(src_spec)
             jslinks.append(jslink)
     return jslinks
-    
+
 
 #---------------------------------------------------------------------
 # Public API
@@ -240,8 +240,7 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
                if w not in Link.registry]
     state_model = State()
 
-
-    widget_data, ignore = [], []
+    widget_data, merged, ignore = [], {}, []
     for widget in widgets:
         if widget._param_pane is not None:
             # Replace parameter links with JS links
@@ -263,7 +262,7 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
         if not widget._supports_embed or all(w in widget._callbacks for w in get_watchers(widget)):
             continue
 
-        # Get data which will let us record the changes on widget events 
+        # Get data which will let us record the changes on widget events
         w, w_model, vals, getter, on_change, js_getter = widget._get_embed_state(
             model, states.get(widget), max_opts)
         w_type = w._widget_type
@@ -273,17 +272,34 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
             w_model = w._models[ref][0]
             if not isinstance(w_model, w_type):
                 w_model = w_model.select_one({'type': w_type})
+
+        # If there is a widget with the same name, merge with it
+        if widget.name in merged:
+            merged[widget.name][0].append(w)
+            merged[widget.name][1].append(w_model)
+            continue
+
         js_callback = CustomJS(code=STATE_JS.format(
             id=state_model.ref['id'], js_getter=js_getter))
-        widget_data.append((w, w_model, vals, getter, js_callback, on_change))
+        widget_data.append(([w], [w_model], vals, getter, js_callback, on_change))
+        merged[widget.name] = widget_data[-1]
 
     # Ensure we recording state for widgets which could be JS linked
     values = []
-    for (w, w_model, vals, getter, js_callback, on_change) in widget_data:
-        if w in ignore:
+    for (ws, w_models, vals, getter, js_callback, on_change) in widget_data:
+        if ws[0] in ignore:
             continue
-        w_model.js_on_change(on_change, js_callback)
-        values.append((w, w_model, vals, getter))
+        for w_model in w_models:
+            w_model.js_on_change(on_change, js_callback)
+
+        # Bidirectionally link models with same name
+        wm = w_models[0]
+        for wmo in w_models[1:]:
+            attr = ws[0]._rename.get('value', 'value')
+            wm.js_link(attr, wmo, attr)
+            wmo.js_link(attr, wm, attr)
+
+        values.append((ws, w_models, vals, getter))
 
     add_to_doc(model, doc, True)
     doc._held_events = []
@@ -291,10 +307,9 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
     if not widget_data:
         return
 
-    restore = [w.value for w, _, _, _ in values]
-    init_vals = [g(m) for _, m, _, g in values]
+    restore = [ws[0].value for ws, _, _, _ in values]
+    init_vals = [g(ms[0]) for _, ms, _, g in values]
     cross_product = list(product(*[vals[::-1] for _, _, vals, _ in values]))
-
     if len(cross_product) > max_states:
         if config._doc_build:
             return
@@ -312,20 +327,21 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
         sub_dict = state_dict
         skip = False
         for i, k in enumerate(key):
-            w, m, _, g = values[i]
+            ws, m, _, g = values[i]
             try:
                 with always_changed(config.safe_embed):
-                    w.value = k
+                    for w in ws:
+                        w.value = k
             except Exception:
                 skip = True
                 break
-            sub_dict = sub_dict[g(m)]
+            sub_dict = sub_dict[g(m[0])]
         if skip:
             doc._held_events = []
             continue
 
         # Drop events originating from widgets being varied
-        models = [v[1] for v in values]
+        models = [m for v in values for m in v[1]]
         doc._held_events = [e for e in doc._held_events if e.model not in models]
         events = record_events(doc)
         changes |= events['content'] != '{}'
@@ -335,9 +351,10 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
     if not changes:
         return
 
-    for (w, _, _, _), v in zip(values, restore):
+    for (ws, _, _, _), v in zip(values, restore):
         try:
-            w.param.set_param(value=v)
+            for w in ws:
+                w.param.set_param(value=v)
         except Exception:
             pass
 
@@ -350,5 +367,6 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
                                save_path=save_path, load_path=load_path)
 
     state_model.update(json=json, state=state_dict, values=init_vals,
-                       widgets={m.ref['id']: i for i, (_, m, _, _) in enumerate(values)})
+                       widgets={m[0].ref['id']: i for i, (_, m, _, _) in enumerate(values)})
     doc.add_root(state_model)
+    return state_model
