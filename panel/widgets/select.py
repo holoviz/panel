@@ -54,6 +54,8 @@ class SingleSelectBase(SelectBase):
 
     _supports_embed = True
 
+    __abstract = True
+
     def __init__(self, **params):
         super(SingleSelectBase, self).__init__(**params)
         values = self.values
