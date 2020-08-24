@@ -23,11 +23,11 @@ from .input import (  # noqa
 )
 from .misc import Audio, FileDownload, Progress, VideoStream # noqa
 from .player import DiscretePlayer, Player # noqa
-from .slider import (# noqa
+from .slider import ( # noqa
     DateSlider, DateRangeSlider, DiscreteSlider, FloatSlider,
     IntSlider, IntRangeSlider, RangeSlider
 )
-from .select import (# noqa
+from .select import ( # noqa
     AutocompleteInput, CheckBoxGroup, CheckButtonGroup, CrossSelector,
     MultiChoice, MultiSelect, RadioButtonGroup, RadioBoxGroup, Select,
     ToggleGroup
