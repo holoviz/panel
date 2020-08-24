@@ -39,6 +39,7 @@ export class SingleSelectView extends InputWidgetView {
       name: this.model.name,
       disabled: this.model.disabled,
     }, options)
+	this.select_el.style.backgroundImage = 'none';
 
     this.select_el.addEventListener("change", () => this.change_input())
     this.group_el.appendChild(this.select_el)
