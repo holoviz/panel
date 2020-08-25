@@ -216,6 +216,8 @@ class AutocompleteInput(Widget):
     placeholder = param.String(default='')
 
     value = param.Parameter(default=None)
+    
+    case_sensitive = param.Boolean(default=True)
 
     _widget_type = _BkAutocompleteInput
 
