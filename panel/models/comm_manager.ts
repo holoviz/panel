@@ -14,7 +14,6 @@ export class CommManagerView extends View {
 
 export namespace CommManager {
   export type Attrs = p.AttrsOf<Props>
-
   export type Props = Model.Props & {
     plot_id: p.Property<string | null>
     comm_id: p.Property<string | null>
@@ -54,7 +53,7 @@ export class CommManager extends Model {
 
   protected _doc_attached(): void {
     super._doc_attached()
-	if (this.document != null)
+    if (this.document != null)
       this.document.on_change(this._document_listener)
   }
 
@@ -67,7 +66,7 @@ export class CommManager extends Model {
     if (event instanceof ModelChangedEvent && !(event.attr in event.model.serializable_attributes()))
       return
 
-    this._event_buffer.unshift(event);
+    this._event_buffer.push(event);
     if ((!this._blocked || (Date.now() > this._timeout))) {
       setTimeout(() => this.process_events(), this.debounce);
       this._blocked = true;
@@ -76,25 +75,24 @@ export class CommManager extends Model {
   }
 
   process_events() {
-    // Iterates over event queue and sends events via Comm
     if ((this.document == null) || (this._client_comm == null))
       return
-	const message = Message.create('PATCH-DOC', {}, this.document.create_json_patch(this._event_buffer))
-    this._client_comm.send(message)
+    const patch = this.document.create_json_patch(this._event_buffer)
     this._event_buffer = [];
+    const message = Message.create('PATCH-DOC', {}, patch)
+    this._client_comm.send(message)
   }
 
   on_ack(msg: any) {
     // Receives acknowledgement from Python, processing event
     // and unblocking Comm if event queue empty
-    const metadata = msg.metadata;
+    const metadata = msg.metadata
     if (this._event_buffer.length) {
-      this.process_events()
       this._blocked = true
       this._timeout = Date.now()+this.timeout
+      this.process_events()
     } else
       this._blocked = false;
-    this._event_buffer = [];
     if ((metadata.msg_type == "Ready") && metadata.content)
       console.log("Python callback returned following output:", metadata.content)
     else if (metadata.msg_type == "Error")
