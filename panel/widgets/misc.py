@@ -12,7 +12,6 @@ from six import string_types
 import param
 import numpy as np
 
-from ..depends import depends
 from ..io.notebook import push
 from ..io.state import state
 from ..models import (
