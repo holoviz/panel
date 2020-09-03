@@ -231,6 +231,14 @@ class Gauge(ValueIndicator):
             ECharts = getattr(sys.modules['panel.models.echarts'], 'ECharts')
         return ECharts
 
+    def __init__(self, **params):
+        super().__init__(**params)
+        self._update_value_bounds()
+
+    @param.depends('bounds', watch=True)
+    def _update_value_bounds(self):
+        self.param.value.bounds = self.bounds
+
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
         vmin, vmax = msg.pop('bounds', self.bounds)
@@ -339,13 +347,21 @@ class Dial(ValueIndicator):
 
     _rename = {'background': 'background_fill_color'}
 
+    def __init__(self, **params):
+        super().__init__(**params)
+        self._update_value_bounds()
+
+    @param.depends('bounds', watch=True)
+    def _update_value_bounds(self):
+        self.param.value.bounds = self.bounds
+
     def _init_properties(self):
         return {k: v for k, v in self.param.get_param_values()
                 if v is not None and k not in self._manual_params}
 
     def _get_data(self):
         vmin, vmax = self.bounds
-        fraction = self.value/(vmax-vmin)
+        fraction = (self.value-vmin)/(vmax-vmin)
         start = (np.radians(360-self.start_angle) - pi % (2*pi)) + pi
         end = (np.radians(360-self.end_angle) - pi % (2*pi)) + pi
         distance = (abs(end-start) % (pi*2))
