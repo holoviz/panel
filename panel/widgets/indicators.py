@@ -8,7 +8,7 @@ import param
 from bokeh.plotting import figure
 from bokeh.models import ColumnDataSource
 
-from ..models import HTML
+from ..models import HTML, Progress as _BkProgress
 from ..util import escape
 from .base import Widget
 
@@ -103,33 +103,30 @@ class ValueIndicator(Indicator):
     __abstract = True
 
 
-class String(ValueIndicator):
+class Progress(ValueIndicator):
 
-    default_color = param.String(default='black')
+    active = param.Boolean(default=True, doc="""
+        If no value is set the active property toggles animation of the
+        progress bar on and off.""")
 
-    font_size = param.String(default='54pt')
+    bar_color = param.ObjectSelector(default='success', objects=[
+        'primary', 'secondary', 'success', 'info', 'danger', 'warning',
+        'light', 'dark'])
 
-    title_size = param.String(default='18pt')
+    max = param.Integer(default=100, doc="The maximum value of the progress bar.")
 
-    value = param.String(default=None)
+    value = param.Integer(default=None, bounds=(0, 100), doc="""
+        The current value of the progress bar. If set to None the progress
+        bar will be indeterminate and animate depending on the active
+        parameter.""")
 
-    _rename = {}
+    _rename = {'name': None}
 
-    _widget_type = HTML
+    _widget_type = _BkProgress
 
-    def _process_param_change(self, msg):
-        msg = super()._process_param_change(msg)
-        font_size = msg.pop('font_size', self.font_size)
-        title_font_size = msg.pop('title_size', self.title_size)
-        name = msg.pop('name', self.name)
-        value = msg.pop('value', self.value)
-        color = msg.pop('default_color', self.default_color)
-        text = f'<div style="font-size: {font_size}; color: {color}">{value}</div>'
-        if self.name:
-            title_font_size = msg.pop('title_size', self.title_size)
-            text = f'<div style="font-size: {title_font_size}; color: {color}">{name}</div>\n{text}'
-        msg['text'] = escape(text)
-        return msg
+    @param.depends('max', watch=True)
+    def _update_value_bounds(self):
+        self.param.value.bounds = (0, self.max)
 
 
 class Number(ValueIndicator):
@@ -164,7 +161,7 @@ class Number(ValueIndicator):
         for val, clr in (colors or [])[::-1]:
             if value <= val:
                 color = clr
-        value = eval("f'{}'".format(format))
+        value = format.format(value=value)
         text = f'<div style="font-size: {font_size}; color: {color}">{value}</div>'
         if self.name:
             title_font_size = msg.pop('title_size', self.title_size)
@@ -258,12 +255,14 @@ class Gauge(ValueIndicator):
                 'data': [{'value': msg.pop('value', self.value), 'name': self.name}],
                 'axisLine': {
                     'lineStyle': {
-                        'color': msg.pop('colors', self.colors),
-                        'width': msg.pop('line_width', self.line_width),
+                        'width': msg.pop('annulus_width', self.annulus_width),
                     }
                 }
             }]
         }
+        colors = msg.pop('colors', self.colors)
+        if colors:
+            msg['data']['series'][0]['axisLine']['lineStyle']['color'] = colors
         custom_opts = msg.pop('custom_opts', self.custom_opts)
         if custom_opts:
             gauge = msg['data']['series'][0]
@@ -281,6 +280,9 @@ class Dial(ValueIndicator):
     annular dial. It is similar to a Gauge but more minimal visually.
     """
 
+    annulus_width = param.Number(default=0.2, doc="""
+      Width of the radial annulus as a fraction of the total.""")
+
     bounds = param.Range(default=(0, 100), doc="""
       The upper and lower bound of the dial.""")
 
@@ -294,7 +296,7 @@ class Dial(ValueIndicator):
     end_angle = param.Number(default=25, doc="""
       Angle at which the dial ends.""")
 
-    format = param.String(default='%s%%', doc="""
+    format = param.String(default='{value}%', doc="""
       Formatting string for the value indicator and lower/upper bounds.""")
 
     height = param.Integer(default=250, bounds=(1, None))
@@ -304,9 +306,6 @@ class Dial(ValueIndicator):
 
     needle_width = param.Number(default=0.1, doc="""
       Radial width of the needle.""")
-
-    radial_width = param.Number(default=0.2, doc="""
-      Width of the radial annulus as a fraction of the total.""")
 
     start_angle = param.Number(default=-205, doc="""
       Angle at which the dial starts.""")
@@ -330,7 +329,7 @@ class Dial(ValueIndicator):
 
     _manual_params = [
         'value', 'start_angle', 'end_angle', 'bounds',
-        'radial_width', 'format', 'background', 'needle_width',
+        'annulus_width', 'format', 'background', 'needle_width',
         'tick_size', 'title_size', 'value_size', 'colors',
         'default_color', 'unfilled_color', 'height',
         'width', 'needle_color'
@@ -354,7 +353,7 @@ class Dial(ValueIndicator):
             distance = (pi*2)-distance
         radial_fraction = distance*fraction
         angle = (start-radial_fraction)
-        inner_radius = 1-self.radial_width
+        inner_radius = 1-self.annulus_width
 
         color = self.default_color
         for val, clr in (self.colors or [])[::-1]:
@@ -386,7 +385,7 @@ class Dial(ValueIndicator):
             'x0': x0s, 'y0': y0s, 'x1': x1s, 'y1': y1s, 'color': clrs
         }
 
-        center_radius = 1-self.radial_width/2.
+        center_radius = 1-self.annulus_width/2.
         x, y = np.cos(angle)*center_radius, np.sin(angle)*center_radius
         needle_start = pi+angle-(self.needle_width/2.)
         needle_end = pi+angle+(self.needle_width/2.)
@@ -398,9 +397,9 @@ class Dial(ValueIndicator):
             'radius': [center_radius]
         }
 
-        value = self.format % self.value
-        min_value = self.format % vmin
-        max_value = self.format % vmax
+        value = self.format.format(value=self.value)
+        min_value = self.format.format(value=vmin)
+        max_value = self.format.format(value=vmax)
         tminx, tminy = np.cos(start)*center_radius, np.sin(start)*center_radius
         tmaxx, tmaxy = np.cos(end)*center_radius, np.sin(end)*center_radius
         tmin_angle, tmax_angle = start+pi, end+pi % pi
