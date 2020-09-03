@@ -8,6 +8,14 @@ from .ace import Ace  # noqa
 from .base import Widget, CompositeWidget  # noqa
 from .button import Button, MenuButton, Toggle  # noqa
 from .file_selector import FileSelector  # noqa
+from .indicators import ( # noqa
+    BooleanStatus,
+    Dial,
+    Gauge,
+    LoadingSpinner,
+    Number,
+    Progress
+)
 from .input import (  # noqa
     ColorPicker,
     Checkbox,
@@ -21,7 +29,7 @@ from .input import (  # noqa
     PasswordInput,
     TextAreaInput,
 )
-from .misc import Audio, FileDownload, Progress, VideoStream # noqa
+from .misc import Audio, FileDownload, VideoStream # noqa
 from .player import DiscretePlayer, Player # noqa
 from .slider import ( # noqa
     DateSlider, DateRangeSlider, DiscreteSlider, FloatSlider,
