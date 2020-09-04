@@ -15,7 +15,7 @@ from bokeh.io import curdoc as _curdoc
 from pyviz_comms import CommManager as _CommManager
 from tornado.web import decode_signed_value
 
-from ..util import base64url_decode
+from ..util import base64url_decode, bokeh_version
 
 
 class _state(param.Parameterized):
@@ -213,7 +213,8 @@ class _state(param.Parameterized):
             return
         if self.curdoc not in self._onload:
             self._onload[self.curdoc] = []
-            self.curdoc.on_event('document_ready', self._on_load)
+            if bokeh_version >= '2.2.0':
+                self.curdoc.on_event('document_ready', self._on_load)
         self._onload[self.curdoc].append(callback)
 
     def publish(self, endpoint, parameterized, parameters=None):
