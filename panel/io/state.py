@@ -126,6 +126,10 @@ class _state(param.Parameterized):
                         _updating[id(obj)] = not_updated
         return link
 
+    def _on_load(self, event):
+        for cb in self._onload.pop(self.curdoc, []):
+            cb()
+
     #----------------------------------------------------------------
     # Public Methods
     #----------------------------------------------------------------
@@ -209,6 +213,7 @@ class _state(param.Parameterized):
             return
         if self.curdoc not in self._onload:
             self._onload[self.curdoc] = []
+            self.curdoc.on_event('document_ready', self._on_load)
         self._onload[self.curdoc].append(callback)
 
     def publish(self, endpoint, parameterized, parameters=None):
