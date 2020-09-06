@@ -204,11 +204,11 @@ class _SpinnerBase(_NumericInputBase):
 
     value_throttled = param.Number(default=None, allow_None=True)
 
-    page_step_multiplier = param.Number(default=10, bounds=(0, None), doc="""
+    page_step_multiplier = param.Integer(default=10, bounds=(0, None), doc="""
         Defines the multiplication factor applied to step when the page up
         and page down keys are pressed.""")
 
-    wheel_wait = param.Number(default=100, doc="""
+    wheel_wait = param.Integer(default=100, doc="""
         Defines the debounce time in ms before updating `value_throttled` when
         the mouse wheel is used to change the input.""")
 
