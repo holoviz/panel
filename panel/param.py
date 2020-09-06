@@ -30,7 +30,7 @@ from .viewable import Layoutable
 from .widgets import (
     Button, Checkbox, ColorPicker, DataFrame, DatePicker, DatetimeInput,
     DateRangeSlider, FileSelector, FloatSlider, IntSlider, LiteralInput,
-    MultiSelect, RangeSlider, Select, Spinner, StaticText, TextInput,
+    MultiSelect, RangeSlider, Select, FloatSpinner, StaticText, TextInput,
     Toggle, Widget
 )
 from .widgets.button import _ButtonBase
@@ -361,7 +361,7 @@ class Param(PaneBase):
                 if not widget_class_overridden:
                     if (isinstance(p_obj, param.Number) and
                         not isinstance(p_obj, (param.Date, param.CalendarDate))):
-                        widget_class = Spinner
+                        widget_class = FloatSpinner
                         if isinstance(p_obj, param.Integer):
                             kw['step'] = 1
                     elif not issubclass(widget_class, LiteralInput):
