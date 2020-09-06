@@ -249,6 +249,17 @@ class FloatSpinner(_SpinnerBase, FloatInput):
     value_throttled = param.Number(default=None, allow_None=True)
 
 
+class Spinner:
+
+    def __new__(self, **params):
+        param_list = ["value", "start", "stop", "step"]
+        
+        if all(isinstance(params.get(p, 0), int) for p in param_list):
+            return IntSpinner(**params)
+        else:
+            return FloatSpinner(**params)
+
+
 class LiteralInput(Widget):
     """
     LiteralInput allows declaring Python literals using a text

@@ -29,6 +29,7 @@ from .input import (  # noqa
     FloatInput,
     IntSpinner,
     FloatSpinner,
+    Spinner,
     PasswordInput,
     TextAreaInput,
 )
