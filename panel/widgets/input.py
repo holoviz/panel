@@ -170,7 +170,8 @@ class _NumericInputBase(Widget):
     value = param.Number(default=0, allow_None=True, doc="""
         The initial value of the spinner.""")
 
-    placeholder = param.String(default='0')
+    placeholder = param.String(default='0', doc="""
+        Placeholder for empty input field.""")
 
     format = param.String(default=None, allow_None=True, doc="""
         Number formating : http://numbrojs.com/old-format.html .""")
