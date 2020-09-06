@@ -175,12 +175,6 @@ class _NumericInputBase(Widget):
     format = param.String(default=None, allow_None=True, doc="""
         Number formating : http://numbrojs.com/old-format.html .""")
 
-    start = param.Number(default=None, doc="""
-        Optional minimum allowable value.""")
-
-    end = param.Number(default=None, doc="""
-        Optional maximum allowable value.""")
-
     _rename = {'name': 'title', 'start': 'low', 'end': 'high'}
 
     _widget_type = _BkNumericInput
@@ -190,19 +184,35 @@ class _NumericInputBase(Widget):
 
 class IntInput(_NumericInputBase):
 
+    value = param.Integer(default=0, allow_None=True, doc="""
+        The initial value of the spinner.""")
+
+    start = param.Integer(default=None, allow_None=True, doc="""
+        Optional minimum allowable value.""")
+
+    end = param.Integer(default=None, allow_None=True, doc="""
+        Optional maximum allowable value.""")
+
     mode = param.String(default='int', constant=True, doc="""
         Define the type of number which can be enter in the input""")
 
 
 class FloatInput(_NumericInputBase):
 
+    value = param.Number(default=0, allow_None=True, doc="""
+        The initial value of the spinner.""")
+
+    start = param.Number(default=None, allow_None=True, doc="""
+        Optional minimum allowable value.""")
+
+    end = param.Number(default=None, allow_None=True, doc="""
+        Optional maximum allowable value.""")
+
     mode = param.String(default='float', constant=True, doc="""
         Define the type of number which can be enter in the input""")
 
 
 class _SpinnerBase(_NumericInputBase):
-
-    value_throttled = param.Number(default=None, allow_None=True)
 
     page_step_multiplier = param.Integer(default=10, bounds=(0, None), doc="""
         Defines the multiplication factor applied to step when the page up
@@ -228,10 +238,14 @@ class IntSpinner(_SpinnerBase, IntInput):
 
     step = param.Integer(default=1)
 
+    value_throttled = param.Integer(default=None, allow_None=True)
+
 
 class FloatSpinner(_SpinnerBase, FloatInput):
 
     step = param.Number(default=0.1)
+
+    value_throttled = param.Number(default=None, allow_None=True)
 
 
 class LiteralInput(Widget):
