@@ -73,6 +73,7 @@ nbsite_gallery_conf = {
             'sections': [
                 'panes',
                 'layouts',
+                'indicators',
                 'widgets'
             ]
         }

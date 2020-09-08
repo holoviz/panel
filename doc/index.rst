@@ -80,6 +80,30 @@ And then you can launch Jupyter to explore them yourself using either Jupyter No
   jupyter notebook
   jupyter lab
 
+Sponsors
+--------
+
+The Panel project is grateful for the sponsorship by the organizations and companies below:
+
+.. raw:: html
+
+    <table align="center">
+    <tr>
+      <td>
+        <a href="https://www.anaconda.com/">
+          <img src="https://static.bokeh.org/sponsor/anaconda.png"
+             alt="Anaconda Logo" width="200"/>
+         </a>
+      </td>
+      <td colspan="2">
+        <a href="https://www.blackstone.com/the-firm/">
+        <img src="https://static.bokeh.org/sponsor/blackstone.png"
+             alt="Blackstone Logo" width="400"/>
+        </a>
+      </td>
+    </tr>
+    </table>
+
 .. |CondaPyViz| image:: https://img.shields.io/conda/v/pyviz/panel.svg
 .. _CondaPyViz: https://anaconda.org/pyviz/panel
 
