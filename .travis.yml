@@ -129,7 +129,7 @@ jobs:
         - doit develop_install $CHANS_DEV -o doc -o examples
         - pip install pydeck sphinxcontrib-napoleon
         # note: will vastly simplified in a future version of nbsite
-        - nbsite generate-rst --org pyviz --project-name panel
+        - nbsite generate-rst --org holoviz --project-name panel
         - python ./doc/generate_modules.py panel -d ./doc/api -n panel -e tests
         - nbsite build --what=html --output=builtdocs
         - touch ./builtdocs/.nojekyll
