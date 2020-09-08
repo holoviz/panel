@@ -62,6 +62,8 @@ class FileInput(Widget):
 
     value = param.Parameter(default=None)
 
+    multiple = param.Boolean(default=False)
+
     _widget_type = _BkFileInput
 
     _source_transforms = {'value': "'data:' + source.mime_type + ';base64,' + value"}
