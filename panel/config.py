@@ -412,6 +412,17 @@ class panel_extension(_pyviz_extension):
                 'echarts': 'panel.models.echarts',
                 'ipywidgets': 'ipywidgets_bokeh.widget'}
 
+    # Check whether these are loaded before rendering
+    _globals = {
+        'deckgl': 'deck',
+        'echarts': 'echarts',
+        'katex': 'katex',
+        'mathjax': 'MathJax',
+        'plotly': 'Plotly',
+        'vega': 'vega',
+        'vtk': 'vtk'
+    }
+
     _loaded_extensions = []
 
     def __call__(self, *args, **params):

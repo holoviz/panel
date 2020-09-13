@@ -129,15 +129,19 @@ def render_template(document, comm=None, manager=None):
 def render_model(model, comm=None):
     if not isinstance(model, Model):
         raise ValueError("notebook_content expects a single Model instance")
+    from ..config import panel_extension as pnext
 
     target = model.ref['id']
 
     (docs_json, [render_item]) = standalone_docs_json_and_render_items([model], True)
     div = div_for_render_item(render_item)
     render_item = render_item.to_json()
+    requirements = [pnext._globals[ext] for ext in pnext._loaded_extensions
+                    if ext in pnext._globals]
     script = DOC_NB_JS.render(
         docs_json=serialize_json(docs_json),
         render_items=serialize_json([render_item]),
+        requirements=requirements
     )
     bokeh_script, bokeh_div = script, div
     html = "<div id='{id}'>{html}</div>".format(id=target, html=bokeh_div)
