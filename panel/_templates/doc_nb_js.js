@@ -4,12 +4,12 @@
     var render_items = {{ render_items }};
     root.Bokeh.embed.embed_items_notebook(docs_json, render_items);
   }
-  if (root.Bokeh !== undefined && root.Bokeh.Panel !== undefined) {
+  if (root.Bokeh !== undefined && root.Bokeh.Panel !== undefined{% for req in requirements %} && root['{{ req }}'] !== undefined {% endfor %}) {
     embed_document(root);
   } else {
     var attempts = 0;
     var timer = setInterval(function(root) {
-      if (root.Bokeh !== undefined && root.Bokeh.Panel !== undefined) {
+      if (root.Bokeh !== undefined && root.Bokeh.Panel !== undefined{% for req in requirements %} && root['{{ req }}'] !== undefined{% endfor %}) {
         clearInterval(timer);
         embed_document(root);
       } else if (document.readyState == "complete") {
