@@ -324,7 +324,7 @@ class Param(PaneBase):
             widget_class = self.widget_type(p_obj)
         elif isinstance(self.widgets[p_name], dict):
             if 'type' in self.widgets[p_name]:
-                widget_class = self.widgets[p_name].pop('type')
+                widget_class = self.widgets[p_name]['type']
             else:
                 widget_class_overridden = False
                 widget_class = self.widget_type(p_obj)
