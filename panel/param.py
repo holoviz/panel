@@ -227,7 +227,8 @@ class Param(PaneBase):
                 parameters = [] if event.new == [] else event.new
 
         if parameters != [] and parameters != self.parameters:
-            self.parameters = parameters
+            if not self.parameters:
+                self.parameters = parameters
             return
 
         for cb in list(self._callbacks):
