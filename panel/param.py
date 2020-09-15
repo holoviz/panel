@@ -98,7 +98,7 @@ class Param(PaneBase):
     name = param.String(default='', doc="""
         Title of the pane.""")
 
-    parameters = param.List(default=[], doc="""
+    parameters = param.List(default=[], allow_None=True, doc="""
         If set this serves as a whitelist of parameters to display on
         the supplied Parameterized object.""")
 
@@ -154,8 +154,13 @@ class Param(PaneBase):
             object = object.owner
         if isinstance(object, param.parameterized.Parameters):
             object = object.cls if object.self is None else object.self
+
         if 'parameters' not in params and object is not None:
             params['parameters'] = [p for p in object.param if p != 'name']
+            self._explicit_parameters = False
+        else:
+            self._explicit_parameters = object is not None
+
         if object and 'name' not in params:
             params['name'] = param_name(object.name)
         super(Param, self).__init__(object, **params)
@@ -216,17 +221,28 @@ class Param(PaneBase):
         for event in sorted(events, key=lambda x: x.name):
             if event.name == 'object':
                 if isinstance(event.new, param.parameterized.Parameters):
+                    # Setting object will trigger this method a second time
                     self.object = event.new.cls if event.new.self is None else event.new.self
                     return
-                if event.new is None:
+                
+                if self._explicit_parameters:
+                    parameters = self.parameters
+                elif event.new is None:
                     parameters = []
                 else:
                     parameters = [p for p in event.new.param if p != 'name']
                     self.name = param_name(event.new.name)
             if event.name == 'parameters':
-                parameters = [] if event.new == [] else event.new
+                if event.new is None:
+                    self._explicit_parameters = False
+                    if self.object is not None:
+                        parameters = [p for p in self.object.param if p != 'name']
+                else:
+                    self._explicit_parameters = True
+                    parameters = [] if event.new == [] else event.new
 
         if parameters != [] and parameters != self.parameters:
+            # Setting parameters will trigger this method a second time
             self.parameters = parameters
             return
 
