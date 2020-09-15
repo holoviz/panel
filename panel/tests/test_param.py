@@ -11,7 +11,7 @@ from bokeh.models import (
 from panel.pane import Pane, PaneBase, Matplotlib, Bokeh, HTML
 from panel.layout import Tabs, Row
 from panel.param import Param, ParamMethod, ParamFunction, JSONInit
-from panel.widgets import LiteralInput
+from panel.widgets import LiteralInput, TextAreaInput
 from panel.tests.util import mpl_available, mpl_figure
 
 
@@ -1097,3 +1097,33 @@ def test_jsoninit_instance_from_env_var():
 
     assert test.a == 2
     del os.environ['PARAM_JSON_INIT']
+
+def test_change_object_and_keep_widgets():
+    """Test that https://github.com/holoviz/panel/issues/1578 is solved"""
+    # Given
+    class TextModel(param.Parameterized):
+        text = param.String()
+
+    class TextView(param.Parameterized):
+        text = param.ClassSelector(class_=TextModel)
+        text_pane = param.Parameter()
+
+        def __init__(self, **params):
+            params["text"] = TextModel(text="Original Text")
+            super().__init__(**params)
+
+            self.text_pane = Param(
+                self.text, parameters=["text"], widgets={"text": {"type": TextAreaInput}}
+            )
+
+        @param.depends("text", watch=True)
+        def _update_text_pane(self, *_):
+            self.text_pane.object = self.text
+
+    view = TextView()
+    assert isinstance(view.text_pane[1], TextAreaInput)
+
+    # When
+    view.text = TextModel(text="New TextModel")
+    # Then
+    assert isinstance(view.text_pane[1], TextAreaInput)
