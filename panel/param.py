@@ -218,7 +218,9 @@ class Param(PaneBase):
                 if isinstance(event.new, param.parameterized.Parameters):
                     self.object = event.new.cls if event.new.self is None else event.new.self
                     return
-                if event.new is None:
+                if self.parameters:
+                    parameters = self.parameters
+                elif event.new is None:
                     parameters = []
                 else:
                     parameters = [p for p in event.new.param if p != 'name']
@@ -227,8 +229,7 @@ class Param(PaneBase):
                 parameters = [] if event.new == [] else event.new
 
         if parameters != [] and parameters != self.parameters:
-            if not self.parameters:
-                self.parameters = parameters
+            self.parameters = parameters
             return
 
         for cb in list(self._callbacks):
