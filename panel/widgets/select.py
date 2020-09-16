@@ -219,6 +219,8 @@ class AutocompleteInput(Widget):
     
     case_sensitive = param.Boolean(default=True)
 
+    restrict = param.Boolean(default=True)
+
     _widget_type = _BkAutocompleteInput
 
     _rename = {'name': 'title', 'options': 'completions'}
