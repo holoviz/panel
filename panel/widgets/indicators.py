@@ -170,6 +170,38 @@ class Number(ValueIndicator):
         return msg
 
 
+class String(ValueIndicator):
+    """
+    The String indicator renders a string with a title.
+    """
+
+    default_color = param.String(default='black')
+
+    font_size = param.String(default='54pt')
+
+    title_size = param.String(default='18pt')
+
+    value = param.String(default=None)
+
+    _rename = {}
+
+    _widget_type = HTML
+
+    def _process_param_change(self, msg):
+        msg = super()._process_param_change(msg)
+        font_size = msg.pop('font_size', self.font_size)
+        title_font_size = msg.pop('title_size', self.title_size)
+        name = msg.pop('name', self.name)
+        value = msg.pop('value', self.value)
+        color = msg.pop('default_color', self.default_color)
+        text = f'<div style="font-size: {font_size}; color: {color}">{value}</div>'
+        if self.name:
+            title_font_size = msg.pop('title_size', self.title_size)
+            text = f'<div style="font-size: {title_font_size}; color: {color}">{name}</div>\n{text}'
+        msg['text'] = escape(text)
+        return msg
+
+
 class Gauge(ValueIndicator):
     """
     A Gauge represents a value in some range as a position on
