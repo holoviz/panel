@@ -221,6 +221,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
         # Some OAuth2 backends do not correctly return code
         next_arg = self.get_argument('next', None)
         url_state = self.get_argument('state', None)
+        print(self.request)
         code = self.get_argument('code', extract_urlparam('code', next_arg))
         url_state = self.get_argument('state', extract_urlparam('state', next_arg))
 
@@ -294,6 +295,7 @@ class GithubLoginHandler(OAuthLoginHandler, OAuth2Mixin):
 
     _USER_KEY = 'login'
 
+    
 
 class BitbucketLoginHandler(OAuthLoginHandler, OAuth2Mixin):
 
@@ -495,6 +497,7 @@ class OAuthIDTokenLoginHandler(OAuthLoginHandler):
     def _on_auth(self, id_token, access_token):
         decoded = decode_id_token(id_token)
         user_key = config.oauth_jwt_user or self._USER_KEY
+        log.debug(decoded)
         user = decoded[user_key]
         self.set_secure_cookie('user', user)
         if state.encryption:
@@ -531,6 +534,45 @@ class AzureAdLoginHandler(OAuthIDTokenLoginHandler, OAuth2Mixin):
     @property
     def _OAUTH_USER_URL(self):
         return self._OAUTH_USER_URL_.format(**config.oauth_extra_params)
+
+
+class OktaLoginHandler(OAuthIDTokenLoginHandler, OAuth2Mixin):
+    """GitHub OAuth2 Authentication
+    To authenticate with GitHub, first register your application at
+    https://github.com/settings/applications/new to get the client ID and
+    secret.
+    """
+
+    _EXTRA_TOKEN_PARAMS = {
+        'grant_type':    'authorization_code',
+        'response_type': 'code,token,id_token'
+    }
+
+    _OAUTH_ACCESS_TOKEN_URL_ = 'https://{0}/oauth2/{1}/v1/token'
+    _OAUTH_AUTHORIZE_URL_ = 'https://{0}/oauth2/{1}/v1/authorize'
+    _OAUTH_USER_URL_ = 'https://{0}/oauth2/{1}/v1/userinfo?access_token='
+
+    _USER_KEY = 'email'
+
+    _SCOPE = ['openid', 'email', 'profile']
+
+    @property
+    def _OAUTH_ACCESS_TOKEN_URL(self):
+        url = config.oauth_extra_params.get('url', 'okta.com')
+        server = config.oauth_extra_params.get('server', 'default')
+        return self._OAUTH_ACCESS_TOKEN_URL_.format(url, server)
+
+    @property
+    def _OAUTH_AUTHORIZE_URL(self):
+        url = config.oauth_extra_params.get('url', 'okta.com')
+        server = config.oauth_extra_params.get('server', 'default')
+        return self._OAUTH_AUTHORIZE_URL_.format(url, server)
+
+    @property
+    def _OAUTH_USER_URL(self):
+        url = config.oauth_extra_params.get('url', 'okta.com')
+        server = config.oauth_extra_params.get('server', 'default')
+        return self._OAUTH_USER_URL_.format(url, server)
 
 
 class GoogleLoginHandler(OAuthIDTokenLoginHandler, OAuth2Mixin):
@@ -587,6 +629,7 @@ AUTH_PROVIDERS = {
     'google': GoogleLoginHandler,
     'github': GithubLoginHandler,
     'gitlab': GitLabLoginHandler,
+    'okta': OktaLoginHandler
 }
 
 # Populate AUTH Providers from external extensions
