@@ -221,7 +221,6 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
         # Some OAuth2 backends do not correctly return code
         next_arg = self.get_argument('next', None)
         url_state = self.get_argument('state', None)
-        print(self.request)
         code = self.get_argument('code', extract_urlparam('code', next_arg))
         url_state = self.get_argument('state', extract_urlparam('state', next_arg))
 
@@ -537,10 +536,10 @@ class AzureAdLoginHandler(OAuthIDTokenLoginHandler, OAuth2Mixin):
 
 
 class OktaLoginHandler(OAuthIDTokenLoginHandler, OAuth2Mixin):
-    """GitHub OAuth2 Authentication
-    To authenticate with GitHub, first register your application at
-    https://github.com/settings/applications/new to get the client ID and
-    secret.
+    """Okta OAuth2 Authentication
+    
+    To authenticate with Okta you first need to set up and configure
+    in the Okta developer console.
     """
 
     _EXTRA_TOKEN_PARAMS = {
