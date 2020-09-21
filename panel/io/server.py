@@ -14,6 +14,7 @@ from functools import partial
 from types import FunctionType, MethodType
 
 from bokeh.document.events import ModelChangedEvent
+from bokeh.embed.bundle import extension_dirs
 from bokeh.embed.server import server_html_page_for_session
 from bokeh.server.server import Server
 from bokeh.server.views.session_handler import SessionHandler
@@ -32,6 +33,9 @@ from .state import state
 #---------------------------------------------------------------------
 # Private API
 #---------------------------------------------------------------------
+
+# Handle serving of the panel extension before session is loaded
+extension_dirs['panel'] = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'dist'))
 
 INDEX_HTML = os.path.join(os.path.dirname(__file__), '..', '_templates', "index.html")
 
