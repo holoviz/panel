@@ -496,8 +496,12 @@ class OAuthIDTokenLoginHandler(OAuthLoginHandler):
     def _on_auth(self, id_token, access_token):
         decoded = decode_id_token(id_token)
         user_key = config.oauth_jwt_user or self._USER_KEY
-        log.debug(decoded)
-        user = decoded[user_key]
+        if user_key in decoded:
+            user = decoded[user_key]
+        else:
+            log.error("%s token payload did not contain expected '%s'." %
+                      (type(self).__name__, user_key))
+            raise HTTPError(400, "OAuth token payload missing user information")
         self.set_secure_cookie('user', user)
         if state.encryption:
             access_token = state.encryption.encrypt(access_token.encode('utf-8'))
