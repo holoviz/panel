@@ -137,9 +137,22 @@ def getScalars(mapper, dataset):
         if array_access_mode == 0: # VTK_GET_ARRAY_BY_ID
             scalars = fd.GetAbstractArray(array_id)
         else: # VTK_GET_ARRAY_BY_NAME
-            scalars =fd.GetAbstractArray(array_name)
+            scalars = fd.GetAbstractArray(array_name)
         cell_flag = 2
     return scalars, cell_flag
+
+
+def retrieveArrayName(mapper_instance, scalar_mode):
+    colorArrayName = None
+    try:
+        ds = [deps for deps in mapper_instance['dependencies'] if deps['id'].endswith('dataset')][0]
+        location = "pointData" if scalar_mode in (1, 3) else "cellData"
+        for arrayMeta in ds['properties']['fields']:
+            if arrayMeta["location"] == location and arrayMeta.get("registration", None) == "setScalars":
+                colorArrayName = arrayMeta["name"]
+    except Exception:
+        pass
+    return colorArrayName
 
 
 def linspace(start, stop, num):
@@ -704,18 +717,15 @@ def genericPolyDataMapperSerializer(parent, mapper, mapperId, context, depth):
 
     if not instance: return
 
-    colorArrayName = mapper.GetArrayName(
-        ) if mapper.GetArrayAccessMode() == 1 else mapper.GetArrayId()
-
     instance['type'] = mapper.GetClassName()
     instance['properties'].update({
         'resolveCoincidentTopology': mapper.GetResolveCoincidentTopology(),
         'renderTime': mapper.GetRenderTime(),
-        'arrayAccessMode': mapper.GetArrayAccessMode(),
+        'arrayAccessMode': 1, # since we can't set mapper arrayId on vtkjs, we force acess mode by name and use retrieve name function
         'scalarRange': mapper.GetScalarRange(),
         'useLookupTableScalarRange': 1 if mapper.GetUseLookupTableScalarRange() else 0,
         'scalarVisibility': mapper.GetScalarVisibility(),
-        'colorByArrayName': colorArrayName,
+        'colorByArrayName': retrieveArrayName(instance, mapper.GetScalarMode()),
         'colorMode': mapper.GetColorMode(),
         'scalarMode': mapper.GetScalarMode(),
         'interpolateScalarsBeforeMapping': 1 if mapper.GetInterpolateScalarsBeforeMapping() else 0
