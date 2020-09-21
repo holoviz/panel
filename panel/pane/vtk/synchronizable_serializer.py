@@ -7,8 +7,7 @@ import time
 import zipfile
 
 from vtk.vtkCommonCore import vtkTypeUInt32Array, vtkTypeInt32Array
-from vtk.vtkFiltersGeometry import vtkCompositeDataGeometryFilter
-from vtk.vtkFiltersGeometry import vtkGeometryFilter
+from vtk.vtkFiltersGeometry import vtkCompositeDataGeometryFilter, vtkGeometryFilter
 from vtk.vtkRenderingCore import vtkColorTransferFunction
 
 # -----------------------------------------------------------------------------
@@ -99,7 +98,49 @@ def dataTableToList(dataTable):
         return [data[idx*nbComponents:(idx+1)*nbComponents]
                     for idx in range(nbValues//nbComponents)]
 
-# -----------------------------------------------------------------------------
+
+def getScalars(mapper, dataset):
+    scalars = None
+    cell_flag = 0
+    scalar_mode = mapper.GetScalarMode()
+    array_access_mode = mapper.GetArrayAccessMode()
+    array_id = mapper.GetArrayId()
+    array_name = mapper.GetArrayName()
+    pd = dataset.GetPointData()
+    cd = dataset.GetCellData()
+    fd = dataset.GetFieldData()
+    if scalar_mode == 0: # VTK_SCALAR_MODE_DEFAULT
+        scalars = pd.GetScalars()
+        cell_flag = 0
+        if scalars is None:
+            scalars = cd.GetScalars()
+            cell_flag = 1
+    elif scalar_mode == 1: # VTK_SCALAR_MODE_USE_POINT_DATA
+        scalars = pd.GetScalars()
+        cell_flag = 0
+    elif scalar_mode == 2: # VTK_SCALAR_MODE_USE_CELL_DATA
+        scalars = cd.GetScalars()
+        cell_flag = 1
+    elif scalar_mode == 3: # VTK_SCALAR_MODE_USE_POINT_FIELD_DATA
+        if array_access_mode == 0: # VTK_GET_ARRAY_BY_ID
+            scalars = pd.GetAbstractArray(array_id)
+        else: # VTK_GET_ARRAY_BY_NAME
+            scalars = pd.GetAbstractArray(array_name)
+        cell_flag = 0
+    elif scalar_mode == 4: # VTK_SCALAR_MODE_USE_CELL_FIELD_DATA
+        if array_access_mode == 0: # VTK_GET_ARRAY_BY_ID
+            scalars = cd.GetAbstractArray(array_id)
+        else: # VTK_GET_ARRAY_BY_NAME
+            scalars = cd.GetAbstractArray(array_name)
+        cell_flag = 1
+    else: # VTK_SCALAR_MODE_USE_FIELD_DATA
+        if array_access_mode == 0: # VTK_GET_ARRAY_BY_ID
+            scalars = fd.GetAbstractArray(array_id)
+        else: # VTK_GET_ARRAY_BY_NAME
+            scalars =fd.GetAbstractArray(array_name)
+        cell_flag = 2
+    return scalars, cell_flag
+
 
 def linspace(start, stop, num):
     delta = (stop - start)/(num-1)
@@ -113,7 +154,8 @@ def linspace(start, stop, num):
 
 class SynchronizationContext():
 
-    def __init__(self, id_root=None, debug=False):
+    def __init__(self, id_root=None, serialize_all_data_arrays=False, debug=False):
+        self.serializeAllDataArrays = serialize_all_data_arrays
         self.dataArrayCache = {}
         self.lastDependenciesMapping = {}
         self.ingoreLastDependencies = False
@@ -241,7 +283,7 @@ def initializeSerializers():
     registerInstanceSerializer('vtkOpenGLActor', genericActorSerializer)
     registerInstanceSerializer('vtkFollower', genericActorSerializer)
     registerInstanceSerializer('vtkPVLODActor', genericActorSerializer)
-    
+
 
     # Mappers
     registerInstanceSerializer(
@@ -407,47 +449,56 @@ def getArrayDescription(array, context):
 # -----------------------------------------------------------------------------
 
 
+def extractAllDataArrays(extractedFields, dataset, context):
+    pointData = dataset.GetPointData()
+    for id_arr in range(pointData.GetNumberOfArrays()):
+        arrayMeta = getArrayDescription(pointData.GetArray(id_arr), context)
+        if arrayMeta:
+            arrayMeta['location'] = 'pointData'
+            extractedFields.append(arrayMeta)
+    cellData = dataset.GetCellData()
+    for id_arr in range(cellData.GetNumberOfArrays()):
+        arrayMeta = getArrayDescription(cellData.GetArray(id_arr), context)
+        if arrayMeta:
+            arrayMeta['location'] = 'cellData'
+            extractedFields.append(arrayMeta)
+    fieldData = dataset.GetCellData()
+    for id_arr in range(fieldData.GetNumberOfArrays()):
+        arrayMeta = getArrayDescription(fieldData.GetArray(id_arr), context)
+        if arrayMeta:
+            arrayMeta['location'] = 'fieldData'
+            extractedFields.append(arrayMeta)
+
+# -----------------------------------------------------------------------------
+
+
 def extractRequiredFields(extractedFields, parent, dataset, context, requestedFields=['Normals', 'TCoords']):
     # FIXME should evolve and support funky mapper which leverage many arrays
-    if parent.IsA('vtkMapper') or parent.IsA('vtkVolumeMapper'):
-        mapper = parent
-        scalarVisibility = 1 if mapper.IsA('vtkVolumeMapper') else mapper.GetScalarVisibility()
-        arrayAccessMode = mapper.GetArrayAccessMode()
-        colorArrayName = mapper.GetArrayName() if arrayAccessMode == 1 else mapper.GetArrayId()
-        # colorMode = mapper.GetColorMode()
-        scalarMode = mapper.GetScalarMode()
-        if scalarVisibility and scalarMode in (1, 3):
-            arrayMeta = getArrayDescription(
-                dataset.GetPointData().GetArray(colorArrayName), context)
-            if arrayMeta:
-                arrayMeta['location'] = 'pointData'
-                extractedFields.append(arrayMeta)
-            elif dataset.GetPointData().GetScalars():
-                arrayMeta = getArrayDescription(
-                    dataset.GetPointData().GetScalars(), context)
-                arrayMeta['location'] = 'pointData'
+    if any(parent.IsA(cls) for cls in ['vtkMapper', 'vtkVolumeMapper', 'vtkImageSliceMapper', 'vtkTexture']):
+        if parent.IsA("vtkAbstractMapper"): # GetScalars method should exists
+            scalarVisibility = 1 if not hasattr(parent, "GetScalarVisibility") else parent.GetScalarVisibility()
+            scalars, cell_flag = getScalars(parent, dataset)
+            if context.serializeAllDataArrays:
+                extractAllDataArrays(extractedFields, dataset, context)
+                if scalars:
+                    for arrayMeta in extractedFields:
+                        if arrayMeta['name'] == scalars.GetName():
+                            arrayMeta['registration'] = 'setScalars'
+            elif scalars and scalarVisibility and not context.serializeAllDataArrays:
+                arrayMeta = getArrayDescription(scalars, context)
+                if cell_flag == 0:
+                    arrayMeta['location'] = 'pointData'
+                elif cell_flag == 1:
+                    arrayMeta['location'] = 'cellData'
+                else:
+                    raise NotImplementedError("Scalars on field data not handled")
                 arrayMeta['registration'] = 'setScalars'
                 extractedFields.append(arrayMeta)
-        if scalarVisibility and scalarMode in (2, 4):
-            arrayMeta = getArrayDescription(
-                dataset.GetCellData().GetArray(colorArrayName), context)
-            if arrayMeta:
-                arrayMeta['location'] = 'cellData'
-                extractedFields.append(arrayMeta)
-            elif dataset.GetCellData().GetScalars():
-                arrayMeta = getArrayDescription(
-                    dataset.GetCellData().GetScalars(), context)
-                arrayMeta['location'] = 'cellData'
-                arrayMeta['registration'] = 'setScalars'
-                extractedFields.append(arrayMeta)
-
-    elif ((parent.IsA('vtkTexture') or parent.IsA('vtkImageSliceMapper'))
-          and dataset.GetPointData().GetScalars()):
-        arrayMeta = getArrayDescription(
-            dataset.GetPointData().GetScalars(), context)
-        arrayMeta['location'] = 'pointData'
-        arrayMeta['registration'] = 'setScalars'
-        extractedFields.append(arrayMeta)
+        elif dataset.GetPointData().GetScalars():
+            arrayMeta = getArrayDescription(dataset.GetPointData().GetScalars(), context)
+            arrayMeta['location'] = 'pointData'
+            arrayMeta['registration'] = 'setScalars'
+            extractedFields.append(arrayMeta)
 
     # Normal handling
     if 'Normals' in requestedFields:
@@ -487,7 +538,7 @@ def genericPropSerializer(parent, prop, popId, context, depth):
             print('This volume does not have a GetMapper method')
     else:
         mapper = prop.GetMapper()
-    
+
     if mapper:
         mapperId = context.getReferenceId(mapper)
         mapperInstance = serializeInstance(
@@ -510,7 +561,7 @@ def genericPropSerializer(parent, prop, popId, context, depth):
         if propertyInstance:
             dependencies.append(propertyInstance)
             calls.append(['setProperty', [wrapId(propId)]])
-    
+
     # Handle texture if any
     texture = None
     if hasattr(prop, 'GetTexture'):
@@ -533,7 +584,7 @@ def genericPropSerializer(parent, prop, popId, context, depth):
             'visibility': prop.GetVisibility(),
             'pickable': prop.GetPickable(),
             'dragable': prop.GetDragable(),
-            'useBounds': prop.GetUseBounds(),  
+            'useBounds': prop.GetUseBounds(),
         },
         'calls': calls,
         'dependencies': dependencies
@@ -545,9 +596,9 @@ def genericPropSerializer(parent, prop, popId, context, depth):
 def genericProp3DSerializer(parent, prop3D, prop3DId, context, depth):
     # This kind of actor has some position properties to add
     instance = genericPropSerializer(parent, prop3D, prop3DId, context, depth)
-    
+
     if not instance: return
-    
+
     instance['properties'].update({
         # vtkProp3D
         'origin': prop3D.GetOrigin(),
@@ -555,7 +606,7 @@ def genericProp3DSerializer(parent, prop3D, prop3DId, context, depth):
         'scale': prop3D.GetScale(),
         'orientation': prop3D.GetOrientation(),
     })
-    
+
     if prop3D.GetUserMatrix():
         instance['properties'].update({
             'userMatrix': [prop3D.GetUserMatrix().GetElement(i%4,i//4) for i in range(16)],
@@ -566,7 +617,7 @@ def genericProp3DSerializer(parent, prop3D, prop3DId, context, depth):
 
 
 def genericActorSerializer(parent, actor, actorId, context, depth):
-    # may have texture and 
+    # may have texture and
     instance = genericProp3DSerializer(parent, actor, actorId, context, depth)
 
     if not instance: return
@@ -680,8 +731,8 @@ def genericVolumeMapperSerializer(parent, mapper, mapperId, context, depth):
     if not instance: return
 
     imageSampleDistance = (
-        mapper.GetImageSampleDistance() 
-        if hasattr(mapper, 'GetImageSampleDistance') 
+        mapper.GetImageSampleDistance()
+        if hasattr(mapper, 'GetImageSampleDistance')
         else 1
     )
     instance['type'] = mapper.GetClassName()
@@ -716,12 +767,12 @@ def textureSerializer(parent, texture, textureId, context, depth):
 def imageSliceMapperSerializer(parent, mapper, mapperId, context, depth):
     # On vtkjs side : vtkImageMapper connected to a vtkImageReslice filter
 
-    instance = genericMapperSerializer(parent, mapper, mapperId, context, depth)    
+    instance = genericMapperSerializer(parent, mapper, mapperId, context, depth)
 
     if not instance: return
 
     instance['type'] = mapper.GetClassName()
-    
+
     return instance
 
 # -----------------------------------------------------------------------------
@@ -769,7 +820,7 @@ def lookupTableSerializer(parent, lookupTable, lookupTableId, context, depth):
             'vectorComponent': lookupTable.GetVectorComponent(),
             'vectorMode': lookupTable.GetVectorMode(),
             'indexedLookup': lookupTable.GetIndexedLookup(),
-        }, 
+        },
         'arrays': arrays,
     }
 
@@ -890,7 +941,7 @@ def imagePropertySerializer(parent, propObj, propObjId, context, depth):
     dependencies = []
 
     lookupTable = propObj.GetLookupTable()
-    if lookupTable: 
+    if lookupTable:
         ctfun = lookupTableToColorTransferFunction(lookupTable)
         ctfunId = context.getReferenceId(ctfun)
         ctfunInstance = serializeInstance(
