@@ -108,7 +108,7 @@ _recommended = [
 _tests = [
     'flake8',
     'parameterized',
-    'pytest<6.0', # temporary fix for nbval incompatibility
+    'pytest',
     'scipy',
     'nbsmoke >=0.2.0',
     'pytest-cov',
