@@ -115,7 +115,7 @@ _tests = [
     'codecov',
     'folium',
     'ipympl',
-    'rfc3986',
+    'twine',
     'pandas<1.1' # temporary fix for streamz incompatibility
 ]
 
