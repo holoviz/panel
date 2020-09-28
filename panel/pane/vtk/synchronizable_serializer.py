@@ -635,6 +635,19 @@ def genericActorSerializer(parent, actor, actorId, context, depth):
 
     if not instance: return
 
+    # # actor may have a backface property instance (not used by vtkjs rendering)
+    # # https://github.com/Kitware/vtk-js/issues/1545
+
+    # backfaceProperties = actor.GetBackfaceProperty()
+
+    # if backfaceProperties:
+    #     backfacePropId = context.getReferenceId(backfaceProperties)
+    #     backPropertyInstance = serializeInstance(
+    #         actor, backfaceProperties, backfacePropId, context, depth + 1)
+    #     if backPropertyInstance:
+    #         instance['dependencies'].append(backPropertyInstance)
+    #         instance['calls'].append(['setBackfaceProperty', [wrapId(backfacePropId)]])
+
     instance['properties'].update({
         # vtkActor
         'forceOpaque': actor.GetForceOpaque(),
@@ -1195,7 +1208,8 @@ def rendererSerializer(parent, instance, objId, context, depth):
             'useShadows': instance.GetUseShadows(),
             'useDepthPeeling': instance.GetUseDepthPeeling(),
             'occlusionRatio': instance.GetOcclusionRatio(),
-            'maximumNumberOfPeels': instance.GetMaximumNumberOfPeels()
+            'maximumNumberOfPeels': instance.GetMaximumNumberOfPeels(),
+            'interactive': instance.GetInteractive(),
         },
         'dependencies': dependencies,
         'calls': calls
