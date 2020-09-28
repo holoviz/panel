@@ -19,7 +19,7 @@ from bokeh.models.widgets import (
 
 from ..layout import Column, VSpacer
 from ..models import SingleSelect as _BkSingleSelect
-from ..util import as_unicode, isIn, indexOf
+from ..util import as_unicode, isIn, indexOf, bokeh_version
 from .base import Widget, CompositeWidget
 from .button import _ButtonBase, Button
 from .input import TextInput, TextAreaInput
@@ -205,6 +205,11 @@ class MultiChoice(_MultiSelectBase):
     _widget_type = _BkMultiChoice
 
 
+_AutocompleteInput_rename = {'name': 'title', 'options': 'completions'}
+if bokeh_version < '2.3.0':
+    # disable restrict keyword
+    _AutocompleteInput_rename['restrict'] = None
+
 class AutocompleteInput(Widget):
 
     min_characters = param.Integer(default=2, doc="""
@@ -219,9 +224,11 @@ class AutocompleteInput(Widget):
     
     case_sensitive = param.Boolean(default=True)
 
+    restrict = param.Boolean(default=True)
+
     _widget_type = _BkAutocompleteInput
 
-    _rename = {'name': 'title', 'options': 'completions'}
+    _rename = _AutocompleteInput_rename
 
 
 class _RadioGroupBase(SingleSelectBase):
