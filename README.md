@@ -46,7 +46,7 @@ Panel can also be used with the separate [Param](https://param.pyviz.org) projec
 
 ## Requirements
 
-Panel requires the pyviz labextension installed to be working in Jupyter Lab:
+Panel requires the pyviz labextension installed to be working in JupyterLab:
 
 ```bash
 jupyter labextension install @pyviz/jupyterlab_pyviz

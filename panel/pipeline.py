@@ -53,7 +53,7 @@ def find_route(graph, current, target):
 
 def get_root(graph):
     """
-    Search for the root not by finding nodes without inputs.
+    Search for the root node by finding nodes without inputs.
     """
     # Find root node
     roots = []
@@ -107,7 +107,7 @@ def get_breadths(node, graph, depth=0, breadths=None):
 class Pipeline(param.Parameterized):
     """
     A Pipeline represents a directed graph of stages, which each
-    returns a panel object to render. A pipeline therefore represents
+    return a panel object to render. A pipeline therefore represents
     a UI workflow of multiple linear or branching stages.
 
     The Pipeline layout consists of a number of sub-components:
@@ -134,7 +134,7 @@ class Pipeline(param.Parameterized):
 
     The stages are declared using the add_stage method and must each
     be given a unique name. By default any stages will simply be
-    connected linearly, however an explicit graph can be declared using
+    connected linearly, but an explicit graph can be declared using
     the define_graph method.
     """
 
