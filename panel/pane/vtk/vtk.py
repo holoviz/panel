@@ -211,7 +211,7 @@ class BaseVTKRenderWindow(AbstractVTK):
         By default the value is False and only active scalars of each dataset are serialized and transfer to the
         javascript side.
 
-        Enabling it will increase memory and data transfert usage but allows to create more reactive visualization
+        Enabling this option will increase memory and network transfer volume but results in more reactive visualizations
         by using some custom javascript functions.
     """)
 
