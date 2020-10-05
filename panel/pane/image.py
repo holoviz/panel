@@ -84,6 +84,13 @@ class ImageBase(DivPaneBase):
             r = requests.request(url=self.object, method='GET')
             return r.content
 
+    def _b64(self):
+        data = self._img()
+        if not isinstance(data, bytes):
+            data = data.encode('utf-8')
+        b64 = base64.b64encode(data).decode("utf-8")
+        return "data:image/"+self.imgtype+f";base64,{b64}"
+
     def _imgshape(self, data):
         """Calculate and return image width,height"""
         raise NotImplementedError
@@ -206,6 +213,13 @@ class SVG(ImageBase):
             self.object.lstrip().startswith('<svg')):
             return self.object
         return super(SVG, self)._img()
+
+    def _b64(self):
+        data = self._img()
+        if not isinstance(data, bytes):
+            data = data.encode('utf-8')
+        b64 = base64.b64encode(data).decode("utf-8")
+        return f"data:image/svg+xml;base64,{b64}"
 
     def _imgshape(self, data):
         return (self.width, self.height)

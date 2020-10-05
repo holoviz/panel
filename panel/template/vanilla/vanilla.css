@@ -17,13 +17,21 @@ body {
 
 .title {
   color: #fff;
-  padding-left: 10px;
   text-decoration: none;
   text-decoration-line: none;
   text-decoration-style: initial;
   text-decoration-color: initial;
   font-weight: 400;
-  font-size: 28px;
+  font-size: 1.5em;
+  line-height: 2em;
+}
+
+.app-header {
+  display: flex;
+}
+
+img.app-logo {
+  padding-right: 10px;
 }
 
 .pn-bar {
@@ -62,9 +70,8 @@ body {
   overflow-y: scroll;
 }
 
-#sidebarCollapse {
-  background: none;
-  border: none;
+#sidebar-button {
+  padding-right: 10px;
 }
 
 a.navbar-brand {
@@ -110,7 +117,7 @@ p.bk.card-button {
 
 @media screen and (max-height: 450px) {
   .sidenav {padding-top: 15px;}
-  .sidenav a {font-size: 18px;}
+  .sidenav a {font-size: 1.2em;}
 }
 
 .nav.flex-column {

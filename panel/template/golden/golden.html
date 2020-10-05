@@ -11,8 +11,13 @@
 {% block contents %}
 <header class="app-bar" id="header">
   <div style="display: contents;">
-    <span class="header-title">{{ app_title }}</span>
-    <section>
+    <div class="app-header">
+      {% if app_logo %}
+      <img src="{{ app_logo }}" height="30" class="app-logo"></img>
+      {% endif %}
+      <span class="header-title">{{ app_title }}</span>
+    </div>
+	<section>
 	  {% for doc in docs %}
       {% for root in doc.roots %}
       {% if "header" in root.tags %}

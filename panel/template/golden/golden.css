@@ -34,13 +34,22 @@ body {
   color: white;
 }
 
+.app-header {
+  display: flex;
+}
+
+img.app-logo {
+  padding-left: 10px;
+}
+
 .header-adjust {
   padding-top: 64px;
 }
 
 .header-title {
   font-size: 1.5em;
-  padding-left: 1.5em;
+  line-height: 2em;
+  padding-left: 1em;
   font: 1.5em Arial, sans-serif;
   color: white;
   text-align: center;
