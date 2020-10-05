@@ -144,6 +144,9 @@ class Param(PaneBase):
         param.String:            TextInput,
     }
 
+    if hasattr(param, 'Event'):
+        _mapping[param.Event] = Button
+
     _rerender_params = []
 
     def __init__(self, object=None, **params):
@@ -404,7 +407,11 @@ class Param(PaneBase):
             finally:
                 self._updating.remove(p_name)
 
-        if isinstance(p_obj, param.Action):
+        if hasattr(param, 'Event') and isinstance(p_obj, param.Event):
+            def event(change):
+                self.object.param.trigger(p_name)
+            watcher = widget.param.watch(event, 'clicks')
+        elif isinstance(p_obj, param.Action):
             def action(change):
                 value(self.object)
             watcher = widget.param.watch(action, 'clicks')
@@ -442,6 +449,8 @@ class Param(PaneBase):
             elif change.what == 'label':
                 updates['name'] = p_obj.label
             elif p_name in self._updating:
+                return
+            elif hasattr(param, 'Event') and isinstance(p_obj, param.Event):
                 return
             elif isinstance(p_obj, param.Action):
                 prev_watcher = watchers[0]
