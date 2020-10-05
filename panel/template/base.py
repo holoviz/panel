@@ -4,6 +4,7 @@ documents.
 """
 from __future__ import absolute_import, division, unicode_literals
 
+import os
 import sys
 import uuid
 
@@ -25,6 +26,7 @@ from ..io.state import state
 from ..layout import Column, ListLike
 from ..models.comm_manager import CommManager
 from ..pane import panel as _panel, HTML, Str, HoloViews
+from ..pane.image import ImageBase
 from ..viewable import ServableMixin, Viewable
 from ..widgets import Button
 from ..widgets.indicators import BooleanIndicator, LoadingSpinner
@@ -319,6 +321,10 @@ class BasicTemplate(BaseTemplate):
     modal = param.ClassSelector(class_=ListLike, constant=True, doc="""
         A list-like container which populates the modal""")
 
+    logo = param.String(constant=True, doc="""
+        URI of logo to add to the header (if local file, logo is
+        base64 encoded as URI).""")
+
     title = param.String(doc="A title to show in the header.")
 
     header_background = param.String(doc="Optional header background color override")
@@ -388,6 +394,14 @@ class BasicTemplate(BaseTemplate):
 
     def _update_vars(self, *args):
         self._render_variables['app_title'] = self.title
+        if os.path.isfile(self.logo):
+            img = _panel(self.logo)
+            if not isinstance(img, ImageBase):
+                raise ValueError("Could not determine file type of logo: {self.logo}.")
+            logo = img._b64()
+        else:
+            logo = self.logo
+        self._render_variables['app_logo'] = logo
         self._render_variables['header_background'] = self.header_background
         self._render_variables['header_color'] = self.header_color
 

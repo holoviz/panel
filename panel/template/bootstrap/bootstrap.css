@@ -31,6 +31,13 @@ body {
 
 a.navbar-brand {
   padding-left: 10px;
+  display: flex;
+  align-items: center;
+  font-size: 1.5em;
+}
+
+img.app-logo {
+  padding-right: 10px;
 }
 
 p.bk.card-button {
@@ -75,3 +82,4 @@ p.bk.card-button {
   display: flex;
   margin-left: auto;
 }
+

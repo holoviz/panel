@@ -16,7 +16,12 @@
       <span class="navbar-toggler-icon"></span>
     </button>
     {% endif %}
-    <a class="navbar-brand" href="#">{{ app_title }}</a>
+    <a class="navbar-brand" href="#">
+      {% if app_logo %}
+      <img src="{{ app_logo }}" height="30" class="app-logo"></img>
+      {% endif %}
+      {{ app_title }}
+    </a>
     {% for doc in docs %}
     {% for root in doc.roots %}
     {% if "header" in root.tags %}
