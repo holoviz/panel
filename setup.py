@@ -116,7 +116,8 @@ _tests = [
     'folium',
     'ipympl',
     'twine',
-    'pandas<1.1' # temporary fix for streamz incompatibility
+    'pandas<1.1', # temporary fix for streamz incompatibility
+    'ipython >=7.0'
 ]
 
 extras_require = {
