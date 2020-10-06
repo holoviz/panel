@@ -259,9 +259,9 @@ class NumberInput:
     def __new__(self, **params):
         param_list = ["value", "start", "stop", "step"]
         if all(isinstance(params.get(p, 0), int) for p in param_list):
-            return IntSpinner(**params)
+            return IntInput(**params)
         else:
-            return FloatSpinner(**params)
+            return FloatInput(**params)
 
 
 # Backward compatibility
