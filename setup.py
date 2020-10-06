@@ -116,7 +116,8 @@ _tests = [
     'folium',
     'ipympl',
     'twine',
-    'pandas<1.1' # temporary fix for streamz incompatibility
+    'pandas<1.1', # temporary fix for streamz incompatibility
+    'ipython >=7.0'
 ]
 
 extras_require = {
@@ -227,7 +228,7 @@ if __name__ == "__main__":
         with open('./panel/package.json') as f:
             package_json = json.load(f)
         js_version = package_json['version']
-        if version.split('+')[0] != js_version.replace('-', ''):
+        if version != 'None' and version.split('+')[0] != js_version.replace('-', ''):
             raise ValueError("panel.js version (%s) does not match "
                              "panel version (%s). Cannot build release."
                              % (js_version, version))
