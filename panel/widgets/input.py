@@ -17,7 +17,8 @@ from bokeh.models.widgets import (
     CheckboxGroup as _BkCheckboxGroup, ColorPicker as _BkColorPicker,
     DatePicker as _BkDatePicker, Div as _BkDiv, TextInput as _BkTextInput,
     PasswordInput as _BkPasswordInput, Spinner as _BkSpinner,
-    FileInput as _BkFileInput, TextAreaInput as _BkTextAreaInput)
+    FileInput as _BkFileInput, TextAreaInput as _BkTextAreaInput,
+    NumericInput as _BkNumericInput)
 
 from ..util import as_unicode
 from .base import Widget
@@ -165,30 +166,106 @@ class ColorPicker(Widget):
     _rename = {'value': 'color', 'name': 'title'}
 
 
-class Spinner(Widget):
+class _NumericInputBase(Widget):
 
-    start = param.Number(default=None, doc="""
-        Optional minimum allowable value.""")
-
-    end = param.Number(default=None, doc="""
-        Optional maximum allowable value.""")
-
-    value = param.Number(default=0, doc="""
+    value = param.Number(default=0, allow_None=True, doc="""
         The initial value of the spinner.""")
 
-    step = param.Number(default=1, doc="""
-        The step added or subtracted to the current value.""")
+    placeholder = param.String(default='0', doc="""
+        Placeholder for empty input field.""")
+
+    format = param.String(default=None, allow_None=True, doc="""
+        Number formating : http://numbrojs.com/old-format.html .""")
+
+    _rename = {'name': 'title', 'start': 'low', 'end': 'high'}
+
+    _widget_type = _BkNumericInput
+
+    __abstract = True
+
+
+class _IntInputBase(_NumericInputBase):
+
+    value = param.Integer(default=0, allow_None=True, doc="""
+        The initial value of the spinner.""")
+
+    start = param.Integer(default=None, allow_None=True, doc="""
+        Optional minimum allowable value.""")
+
+    end = param.Integer(default=None, allow_None=True, doc="""
+        Optional maximum allowable value.""")
+
+    mode = param.String(default='int', constant=True, doc="""
+        Define the type of number which can be enter in the input""")
+
+    __abstract = True
+
+
+class _FloatInputBase(_NumericInputBase):
+
+    value = param.Number(default=0, allow_None=True, doc="""
+        The initial value of the spinner.""")
+
+    start = param.Number(default=None, allow_None=True, doc="""
+        Optional minimum allowable value.""")
+
+    end = param.Number(default=None, allow_None=True, doc="""
+        Optional maximum allowable value.""")
+
+    mode = param.String(default='float', constant=True, doc="""
+        Define the type of number which can be enter in the input""")
+
+    __abstract = True
+
+
+class _SpinnerBase(_NumericInputBase):
+
+    page_step_multiplier = param.Integer(default=10, bounds=(0, None), doc="""
+        Defines the multiplication factor applied to step when the page up
+        and page down keys are pressed.""")
+
+    wheel_wait = param.Integer(default=100, doc="""
+        Defines the debounce time in ms before updating `value_throttled` when
+        the mouse wheel is used to change the input.""")
 
     _widget_type = _BkSpinner
 
-    _rename = {'name': 'title', 'start': 'low', 'end': 'high'}
+    __abstract = True
 
     def __init__(self, **params):
         if params.get('value') is None:
             value = params.get('start', self.value)
             if value is not None:
                 params['value'] = value
-        super(Spinner, self).__init__(**params)
+        super(_SpinnerBase, self).__init__(**params)
+
+
+class IntInput(_SpinnerBase, _IntInputBase):
+
+    step = param.Integer(default=1)
+
+    value_throttled = param.Integer(default=None, allow_None=True)
+
+
+class FloatInput(_SpinnerBase, _FloatInputBase):
+
+    step = param.Number(default=0.1)
+
+    value_throttled = param.Number(default=None, allow_None=True)
+
+
+class NumberInput:
+
+    def __new__(self, **params):
+        param_list = ["value", "start", "stop", "step"]
+        if all(isinstance(params.get(p, 0), int) for p in param_list):
+            return IntInput(**params)
+        else:
+            return FloatInput(**params)
+
+
+# Backward compatibility
+Spinner = NumberInput
 
 
 class LiteralInput(Widget):
