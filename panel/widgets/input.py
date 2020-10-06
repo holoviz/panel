@@ -165,6 +165,7 @@ class ColorPicker(Widget):
 
     _rename = {'value': 'color', 'name': 'title'}
 
+
 class _NumericInputBase(Widget):
 
     value = param.Number(default=0, allow_None=True, doc="""
@@ -183,7 +184,7 @@ class _NumericInputBase(Widget):
     __abstract = True
 
 
-class IntInput(_NumericInputBase):
+class _IntInputBase(_NumericInputBase):
 
     value = param.Integer(default=0, allow_None=True, doc="""
         The initial value of the spinner.""")
@@ -197,8 +198,10 @@ class IntInput(_NumericInputBase):
     mode = param.String(default='int', constant=True, doc="""
         Define the type of number which can be enter in the input""")
 
+    __abstract = True
 
-class FloatInput(_NumericInputBase):
+
+class _FloatInputBase(_NumericInputBase):
 
     value = param.Number(default=0, allow_None=True, doc="""
         The initial value of the spinner.""")
@@ -211,6 +214,8 @@ class FloatInput(_NumericInputBase):
 
     mode = param.String(default='float', constant=True, doc="""
         Define the type of number which can be enter in the input""")
+
+    __abstract = True
 
 
 class _SpinnerBase(_NumericInputBase):
@@ -235,29 +240,32 @@ class _SpinnerBase(_NumericInputBase):
         super(_SpinnerBase, self).__init__(**params)
 
 
-class IntSpinner(_SpinnerBase, IntInput):
+class IntInput(_SpinnerBase, _IntInputBase):
 
     step = param.Integer(default=1)
 
     value_throttled = param.Integer(default=None, allow_None=True)
 
 
-class FloatSpinner(_SpinnerBase, FloatInput):
+class FloatInput(_SpinnerBase, _FloatInputBase):
 
     step = param.Number(default=0.1)
 
     value_throttled = param.Number(default=None, allow_None=True)
 
 
-class Spinner:
+class NumberInput:
 
     def __new__(self, **params):
         param_list = ["value", "start", "stop", "step"]
-        
         if all(isinstance(params.get(p, 0), int) for p in param_list):
             return IntSpinner(**params)
         else:
             return FloatSpinner(**params)
+
+
+# Backward compatibility
+Spinner = NumberInput
 
 
 class LiteralInput(Widget):
