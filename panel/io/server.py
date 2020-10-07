@@ -17,6 +17,7 @@ from types import FunctionType, MethodType
 from bokeh.document.events import ModelChangedEvent
 from bokeh.embed.bundle import extension_dirs
 from bokeh.embed.server import server_html_page_for_session
+from bokeh.io import curdoc as curdoc
 from bokeh.server.server import Server
 from bokeh.server.views.session_handler import SessionHandler
 from bokeh.server.views.static_handler import StaticHandler
@@ -54,7 +55,7 @@ def _server_url(url, port):
 
 
 def init_doc(doc):
-    doc = doc or _curdoc()
+    doc = doc or curdoc()
     if not doc.session_context:
         return doc
     session_id = doc.session_context.id

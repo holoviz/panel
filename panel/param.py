@@ -16,7 +16,6 @@ from six import string_types
 
 import param
 
-from bokeh.io import curdoc as _curdoc
 from param.parameterized import classlist
 
 from .io import init_doc, state

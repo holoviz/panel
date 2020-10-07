@@ -8,7 +8,6 @@ from functools import partial
 
 import param
 
-from bokeh.io import curdoc as _curdoc
 from bokeh.models.layouts import GridBox as _BkGridBox
 
 from ..io import init_doc, push, state, unlocked

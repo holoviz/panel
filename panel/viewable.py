@@ -19,7 +19,6 @@ from functools import partial
 import param
 
 from bokeh.document.document import Document as _Document
-from bokeh.io.doc import curdoc as _curdoc
 from pyviz_comms import JupyterCommManager
 
 from .config import config, panel_extension
@@ -305,7 +304,7 @@ class ServableMixin(object):
         -------
         The Panel object itself
         """
-        if _curdoc().session_context:
+        if state.curdoc.session_context:
             logger = logging.getLogger('bokeh')
             for handler in logger.handlers:
                 if isinstance(handler, logging.StreamHandler):
@@ -727,7 +726,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         doc : bokeh.Document
           The bokeh document the panel was attached to
         """
-        doc = doc or _curdoc()
+        doc = init_doc(doc)
         title = title or 'Panel Application'
         doc.title = title
         model = self.get_root(doc)
