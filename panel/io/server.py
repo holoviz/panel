@@ -3,6 +3,7 @@ Utilities for creating bokeh Server instances.
 """
 from __future__ import absolute_import, division, unicode_literals
 
+import datetime as dt
 import os
 import signal
 import sys
@@ -26,9 +27,9 @@ from tornado.websocket import WebSocketHandler
 from tornado.web import RequestHandler, StaticFileHandler, authenticated
 from tornado.wsgi import WSGIContainer
 
+from ..util import bokeh_version
 from .resources import PanelResources
 from .state import state
-
 
 #---------------------------------------------------------------------
 # Private API
@@ -50,6 +51,24 @@ def _server_url(url, port):
         return '%s:%d%s' % (url.rsplit(':', 1)[0], port, "/")
     else:
         return 'http://%s:%d%s' % (url.split(':')[0], port, "/")
+
+
+def init_doc(doc):
+    doc = doc or _curdoc()
+    if not doc.session_context:
+        return doc
+    session_id = doc.session_context.id
+    state.session_info[session_id] = {
+        'live': None,
+        'started': dt.datetime.now(),
+        'rendered': None,
+        'ended': None,
+        'render_duration': None,
+        'session_duration': None
+    }
+    if bokeh_version >= '2.2.0':
+        doc.on_event('document_ready', state._init_session)
+    return doc
 
 
 @contextmanager

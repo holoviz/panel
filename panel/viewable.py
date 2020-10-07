@@ -8,6 +8,7 @@ and become viewable including:
 * Viewable: Defines methods to view the component in the
   notebook, on the server or in static exports
 """
+import datetime as dt
 import logging
 import sys
 import traceback
@@ -29,7 +30,7 @@ from .io.notebook import (
 )
 from .io.save import save
 from .io.state import state
-from .io.server import serve
+from .io.server import init_doc, serve
 from .util import escape, param_reprs
 
 
@@ -441,6 +442,16 @@ class Renderable(param.Parameterized):
         """
         Server lifecycle hook triggered when session is destroyed.
         """
+        session_id = session_context.session.id
+        if session_id in state.session_info:
+            session_info = state.session_info[session_id]
+            now = dt.datetime.now()
+            session_duration = now - session_info['started']
+            session_info.update({
+                'live': False,
+                'ended': now,
+                'session_duration': session_duration
+            })
         doc = session_context._document
         root = self._documents[doc]
         ref = root.ref['id']
@@ -468,7 +479,7 @@ class Renderable(param.Parameterized):
         -------
         Returns the bokeh model corresponding to this panel object
         """
-        doc = doc or _curdoc()
+        doc = init_doc(doc)
         root = self._get_model(doc, comm=comm)
         self._preprocess(root)
         ref = root.ref['id']
