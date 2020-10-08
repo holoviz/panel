@@ -443,8 +443,9 @@ class Renderable(param.Parameterized):
         Server lifecycle hook triggered when session is destroyed.
         """
         session_id = session_context.session.id
-        if session_id in state.session_info:
-            session_info = state.session_info['sessions'][session_id]
+        sessions = state.session_info['sessions']
+        if session_id in sessions and sessions['ended'] is None:
+            session_info = sessions[session_id]
             state.session_info['live'] -= 1
             session_info.update({
                 'ended': dt.datetime.now().timestamp()
