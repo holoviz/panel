@@ -100,6 +100,16 @@ class Serve(_BkServe):
             type    = str,
             help    = "Endpoint to store REST API on.",
             default = 'rest'
+        )),
+        ('--rest-session-info', dict(
+            action  = 'store_true',
+            help    = "Whether to serve session info on the REST API"
+        )),
+        ('--session-history', dict(
+            action  = 'store',
+            type    = int,
+            help    = "The length of the session history to record.",
+            default = 0
         ))
     )
 
@@ -133,6 +143,12 @@ class Serve(_BkServe):
             patterns.extend(pattern)
         elif args.rest_provider is not None:
             raise ValueError("rest-provider %r not recognized." % args.rest_provider)
+
+        config.session_history = args.session_history
+        if args.rest_session_info:
+            pattern = REST_PROVIDERS['param'](files, 'rest')
+            patterns.extend(pattern)
+            state.publish('session_info', state, ['session_info'])
 
         if args.oauth_provider:
             config.oauth_provider = args.oauth_provider
