@@ -3,12 +3,14 @@ Utilities for creating bokeh Server instances.
 """
 from __future__ import absolute_import, division, unicode_literals
 
+import datetime as dt
 import os
 import signal
 import sys
 import threading
 import uuid
 
+from collections import OrderedDict
 from contextlib import contextmanager
 from functools import partial
 from types import FunctionType, MethodType
@@ -16,6 +18,7 @@ from types import FunctionType, MethodType
 from bokeh.document.events import ModelChangedEvent
 from bokeh.embed.bundle import extension_dirs
 from bokeh.embed.server import server_html_page_for_session
+from bokeh.io import curdoc
 from bokeh.server.server import Server
 from bokeh.server.views.session_handler import SessionHandler
 from bokeh.server.views.static_handler import StaticHandler
@@ -26,9 +29,9 @@ from tornado.websocket import WebSocketHandler
 from tornado.web import RequestHandler, StaticFileHandler, authenticated
 from tornado.wsgi import WSGIContainer
 
+from ..util import bokeh_version
 from .resources import PanelResources
 from .state import state
-
 
 #---------------------------------------------------------------------
 # Private API
@@ -50,6 +53,30 @@ def _server_url(url, port):
         return '%s:%d%s' % (url.rsplit(':', 1)[0], port, "/")
     else:
         return 'http://%s:%d%s' % (url.split(':')[0], port, "/")
+
+
+def init_doc(doc):
+    from ..config import config
+
+    doc = doc or curdoc()
+    if not doc.session_context or config.session_history == 0:
+        return doc
+    session_id = doc.session_context.id
+    sessions = state.session_info['sessions']
+    state.session_info['total'] += 1
+    if config.session_history > 0 and len(sessions) >= config.session_history:
+        old_history = list(sessions.items())
+        sessions = OrderedDict(old_history[-(config.session_history-1):])
+        state.session_info['sessions'] = sessions
+    sessions[session_id] = {
+        'started': dt.datetime.now().timestamp(),
+        'rendered': None,
+        'ended': None,
+        'user_agent': state.headers.get('User-Agent')
+    }
+    if bokeh_version >= '2.2.0':
+        doc.on_event('document_ready', state._init_session)
+    return doc
 
 
 @contextmanager

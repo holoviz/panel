@@ -8,10 +8,9 @@ from functools import partial
 
 import param
 
-from bokeh.io import curdoc as _curdoc
 from bokeh.models.layouts import GridBox as _BkGridBox
 
-from ..io import push, state, unlocked
+from ..io import init_doc, push, state, unlocked
 from ..layout import Panel, Row
 from ..links import Link
 from ..reactive import Reactive
@@ -251,7 +250,7 @@ class PaneBase(Reactive):
         -------
         Returns the bokeh model corresponding to this panel object
         """
-        doc = doc or _curdoc()
+        doc = init_doc(doc)
         if self._updates:
             root = self._get_model(doc, comm=comm)
         else:

@@ -16,10 +16,9 @@ from six import string_types
 
 import param
 
-from bokeh.io import curdoc as _curdoc
 from param.parameterized import classlist
 
-from .io import state
+from .io import init_doc, state
 from .layout import Row, Panel, Tabs, Column
 from .pane.base import PaneBase, ReplacementPane
 from .util import (
@@ -591,7 +590,7 @@ class Param(PaneBase):
         -------
         Returns the bokeh model corresponding to this panel object
         """
-        doc = doc or _curdoc()
+        doc = init_doc(doc)
         root = self.layout.get_root(doc, comm)
         ref = root.ref['id']
         self._models[ref] = (root, None)

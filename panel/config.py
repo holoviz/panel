@@ -79,6 +79,12 @@ class _config(param.Parameterized):
         embedded. Useful when only partial updates are made in an
         app, e.g. when working with HoloViews.""")
 
+    session_history = param.Integer(default=0, bounds=(-1, None), doc="""
+        If set to a non-negative value this determines the maximum length
+        of the pn.state.session_info dictionary, which tracks
+        information about user sessions. A value of -1 indicates an
+        unlimited history.""")
+
     sizing_mode = param.ObjectSelector(default=None, objects=[
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
         'scale_width', 'scale_height', 'scale_both', None], doc="""

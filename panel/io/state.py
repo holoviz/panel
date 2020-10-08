@@ -3,9 +3,11 @@ Various utilities for recording and embedding state in a rendered app.
 """
 from __future__ import absolute_import, division, unicode_literals
 
+import datetime as dt
 import json
 import threading
 
+from collections import OrderedDict
 from weakref import WeakKeyDictionary, WeakSet
 
 import param
@@ -35,6 +37,10 @@ class _state(param.Parameterized):
     encryption = param.Parameter(default=None, doc="""
        Object with encrypt and decrypt methods to support encryption
        of secret variables including OAuth information.""")
+
+    session_info = param.Dict(default={'total': 0, 'live': 0,
+                                       'sessions': OrderedDict()}, doc="""
+       Tracks information and statistics about user sessions.""")
 
     webdriver = param.Parameter(default=None, doc="""
       Selenium webdriver used to export bokeh models to pngs.""")
@@ -98,6 +104,16 @@ class _state(param.Parameterized):
     def _update_busy(self):
         for indicator in self._indicators:
             indicator.value = self.busy
+
+    def _init_session(self, event):
+        if not self.curdoc.session_context:
+            return
+        session_id = self.curdoc.session_context.id
+        self.session_info['live'] += 1
+        session_info = self.session_info['sessions'][session_id]
+        session_info.update({
+            'rendered': dt.datetime.now().timestamp(),
+        })
 
     def _get_callback(self, endpoint):
         _updating = {}

@@ -8,6 +8,7 @@ and become viewable including:
 * Viewable: Defines methods to view the component in the
   notebook, on the server or in static exports
 """
+import datetime as dt
 import logging
 import sys
 import traceback
@@ -18,7 +19,7 @@ from functools import partial
 import param
 
 from bokeh.document.document import Document as _Document
-from bokeh.io.doc import curdoc as _curdoc
+from bokeh.io import curdoc as _curdoc
 from pyviz_comms import JupyterCommManager
 
 from .config import config, panel_extension
@@ -29,7 +30,7 @@ from .io.notebook import (
 )
 from .io.save import save
 from .io.state import state
-from .io.server import serve
+from .io.server import init_doc, serve
 from .util import escape, param_reprs
 
 
@@ -441,6 +442,13 @@ class Renderable(param.Parameterized):
         """
         Server lifecycle hook triggered when session is destroyed.
         """
+        session_id = session_context.session.id
+        if session_id in state.session_info:
+            session_info = state.session_info['sessions'][session_id]
+            state.session_info['live'] -= 1
+            session_info.update({
+                'ended': dt.datetime.now().timestamp()
+            })
         doc = session_context._document
         root = self._documents[doc]
         ref = root.ref['id']
@@ -468,7 +476,7 @@ class Renderable(param.Parameterized):
         -------
         Returns the bokeh model corresponding to this panel object
         """
-        doc = doc or _curdoc()
+        doc = init_doc(doc)
         root = self._get_model(doc, comm=comm)
         self._preprocess(root)
         ref = root.ref['id']
@@ -716,7 +724,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         doc : bokeh.Document
           The bokeh document the panel was attached to
         """
-        doc = doc or _curdoc()
+        doc = init_doc(doc)
         title = title or 'Panel Application'
         doc.title = title
         model = self.get_root(doc)
