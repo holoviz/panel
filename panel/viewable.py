@@ -19,6 +19,7 @@ from functools import partial
 import param
 
 from bokeh.document.document import Document as _Document
+from bokeh.io import curdoc as _curdoc
 from pyviz_comms import JupyterCommManager
 
 from .config import config, panel_extension
@@ -304,7 +305,7 @@ class ServableMixin(object):
         -------
         The Panel object itself
         """
-        if state.curdoc.session_context:
+        if _curdoc().session_context:
             logger = logging.getLogger('bokeh')
             for handler in logger.handlers:
                 if isinstance(handler, logging.StreamHandler):
