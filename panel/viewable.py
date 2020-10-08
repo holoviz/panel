@@ -444,7 +444,8 @@ class Renderable(param.Parameterized):
         """
         session_id = session_context.session.id
         if session_id in state.session_info:
-            session_info = state.session_info[session_id]
+            session_info = state.session_info['sessions'][session_id]
+            state.session_info['live'] -= 1
             session_info.update({
                 'ended': dt.datetime.now().timestamp()
             })

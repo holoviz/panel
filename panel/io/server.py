@@ -62,10 +62,13 @@ def init_doc(doc):
     if not doc.session_context or config.session_history == 0:
         return doc
     session_id = doc.session_context.id
-    if config.session_history > 0 and len(state.session_info) >= config.session_history:
-        old_history = list(state.session_info.items())
-        state.session_info = OrderedDict(old_history[-(config.session_history-1):])
-    state.session_info[session_id] = {
+    sessions = state.session_info['sessions']
+    state.session_info['total'] += 1
+    if config.session_history > 0 and len(sessions) >= config.session_history:
+        old_history = list(sessions.items())
+        sessions = OrderedDict(old_history[-(config.session_history-1):])
+        state.session_info['sessions'] = sessions
+    sessions[session_id] = {
         'started': dt.datetime.now().timestamp(),
         'rendered': None,
         'ended': None,

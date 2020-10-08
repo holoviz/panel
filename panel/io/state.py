@@ -38,7 +38,8 @@ class _state(param.Parameterized):
        Object with encrypt and decrypt methods to support encryption
        of secret variables including OAuth information.""")
 
-    session_info = param.Dict(default=OrderedDict(), doc="""
+    session_info = param.Dict(default={'total': 0, 'live': 0,
+                                       'sessions': OrderedDict()}, doc="""
        Tracks information and statistics about user sessions.""")
 
     webdriver = param.Parameter(default=None, doc="""
@@ -108,7 +109,8 @@ class _state(param.Parameterized):
         if not self.curdoc.session_context:
             return
         session_id = self.curdoc.session_context.id
-        session_info = self.session_info[session_id]
+        self.session_info['live'] += 1
+        session_info = self.session_info['sessions'][session_id]
         session_info.update({
             'rendered': dt.datetime.now().timestamp(),
         })
