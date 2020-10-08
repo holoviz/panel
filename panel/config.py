@@ -80,7 +80,7 @@ class _config(param.Parameterized):
         app, e.g. when working with HoloViews.""")
 
     session_history = param.Integer(default=0, bounds=(-1, None), doc="""
-        If set to a non-zero value this determines the maximum length
+        If set to a non-negative value this determines the maximum length
         of the pn.state.session_info dictionary, which tracks
         information about user sessions. A value of -1 indicates an
         unlimited history.""")
