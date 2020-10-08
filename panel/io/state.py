@@ -7,6 +7,7 @@ import datetime as dt
 import json
 import threading
 
+from collections import OrderedDict
 from weakref import WeakKeyDictionary, WeakSet
 
 import param
@@ -37,7 +38,7 @@ class _state(param.Parameterized):
        Object with encrypt and decrypt methods to support encryption
        of secret variables including OAuth information.""")
 
-    session_info = param.Dict(default={}, doc="""
+    session_info = param.Dict(default=OrderedDict(), doc="""
        Tracks information and statistics about user sessions.""")
 
     webdriver = param.Parameter(default=None, doc="""
@@ -108,12 +109,8 @@ class _state(param.Parameterized):
             return
         session_id = self.curdoc.session_context.id
         session_info = self.session_info[session_id]
-        now = dt.datetime.now()
-        render_time = now-session_info['started']
         session_info.update({
-            'live': True,
-            'rendered': now,
-            'render_duration': render_time
+            'rendered': dt.datetime.now().timestamp(),
         })
 
     def _get_callback(self, endpoint):

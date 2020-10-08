@@ -10,6 +10,7 @@ import sys
 import threading
 import uuid
 
+from collections import OrderedDict
 from contextlib import contextmanager
 from functools import partial
 from types import FunctionType, MethodType
@@ -55,17 +56,20 @@ def _server_url(url, port):
 
 
 def init_doc(doc):
+    from ..config import config
+
     doc = doc or curdoc()
-    if not doc.session_context:
+    if not doc.session_context or config.session_history == 0:
         return doc
     session_id = doc.session_context.id
+    if config.session_history > 0 and len(state.session_info) >= config.session_history:
+        old_history = list(state.session_info.items())
+        state.session_info = OrderedDict(old_history[-(config.session_history-1):])
     state.session_info[session_id] = {
-        'live': None,
-        'started': dt.datetime.now(),
+        'started': dt.datetime.now().timestamp(),
         'rendered': None,
         'ended': None,
-        'render_duration': None,
-        'session_duration': None
+        'user_agent': state.headers.get('User-Agent')
     }
     if bokeh_version >= '2.2.0':
         doc.on_event('document_ready', state._init_session)

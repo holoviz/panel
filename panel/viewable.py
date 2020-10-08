@@ -444,12 +444,8 @@ class Renderable(param.Parameterized):
         session_id = session_context.session.id
         if session_id in state.session_info:
             session_info = state.session_info[session_id]
-            now = dt.datetime.now()
-            session_duration = now - session_info['started']
             session_info.update({
-                'live': False,
-                'ended': now,
-                'session_duration': session_duration
+                'ended': dt.datetime.now().timestamp()
             })
         doc = session_context._document
         root = self._documents[doc]
