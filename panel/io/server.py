@@ -56,13 +56,16 @@ def _server_url(url, port):
 
 
 def init_doc(doc):
-    from ..config import config
-
     doc = doc or curdoc()
-    if not doc.session_context or config.session_history == 0:
+    if not doc.session_context:
         return doc
+
+    from ..config import config
     session_id = doc.session_context.id
     sessions = state.session_info['sessions']
+    if config.session_history == 0 or session_id in sessions:
+        return doc
+
     state.session_info['total'] += 1
     if config.session_history > 0 and len(sessions) >= config.session_history:
         old_history = list(sessions.items())
