@@ -17,7 +17,7 @@ class Accordion(NamedListPanel):
     header_color = param.String(doc="""
         A valid CSS color to apply to the expand button.""")
 
-    header_background = param.String(default=None, doc="""
+    header_background = param.String(doc="""
         A valid CSS color for the header background.""")
 
     toggle = param.Boolean(default=False, doc="""
