@@ -10,7 +10,7 @@ class Card(Column):
     collapsible, vertical container with a header bar.
     """
 
-    active_header_background = param.String(default=None, doc="""
+    active_header_background = param.String(default='', doc="""
         A valid CSS color for the header background when not collapsed.""")
 
     button_css_classes = param.List(['card-button'], doc="""
@@ -29,7 +29,7 @@ class Card(Column):
         A Panel component to display in the header bar of the Card.
         Will override the given title if defined.""")
 
-    header_background = param.String(default=None, doc="""
+    header_background = param.String(default='', doc="""
         A valid CSS color for the header background.""")
 
     header_color = param.String(doc="""
