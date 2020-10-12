@@ -3,9 +3,11 @@ import time
 
 from tempfile import NamedTemporaryFile
 
+import param
 import pytest
 import requests
 
+from panel.config import config
 from panel.io import state
 from panel.models import HTML as BkHTML
 from panel.pane import Markdown
@@ -55,6 +57,38 @@ def test_server_static_dirs():
     with open(__file__) as f:
         assert f.read() == r.content.decode('utf-8')
     server.stop()
+
+
+def test_server_session_info():
+    with config.set(session_history=-1):
+        html = Markdown('# Title')
+
+        server = serve(html, port=5009, threaded=True, show=False)
+
+        # Wait for server to start
+        time.sleep(1)
+
+        requests.get("http://localhost:5009/")
+
+        assert state.session_info['total'] == 1
+        assert len(state.session_info['sessions']) == 1
+        sid, session = list(state.session_info['sessions'].items())[0]
+        assert session['user_agent'].startswith('python-requests')
+        assert state.session_info['live'] == 0
+
+        doc = list(html._documents.keys())[0]
+        session_context = param.Parameterized()
+        session_context._document = doc
+        session_context.id = sid
+        doc._session_context = session_context
+        state.curdoc = doc
+        state._init_session(None)
+        assert state.session_info['live'] == 1
+
+    server.stop()
+    state.curdoc = None
+    html._server_destroy(session_context)
+    assert state.session_info['live'] == 0
 
 
 def test_show_server_info(html_server_session, markdown_server_session):
