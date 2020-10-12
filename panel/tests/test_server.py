@@ -7,8 +7,6 @@ import param
 import pytest
 import requests
 
-from bokeh.document import Document
-
 from panel.config import config
 from panel.io import state
 from panel.models import HTML as BkHTML
@@ -70,7 +68,7 @@ def test_server_session_info():
         # Wait for server to start
         time.sleep(1)
 
-        r = requests.get("http://localhost:5009/")
+        requests.get("http://localhost:5009/")
 
         assert state.session_info['total'] == 1
         assert len(state.session_info['sessions']) == 1
