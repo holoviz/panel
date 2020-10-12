@@ -116,7 +116,7 @@ class Syncable(Renderable):
             if isinstance(p, tuple):
                 _, p = p
             if comm:
-                model.on_change(p, partial(self._comm_change, doc, ref))
+                model.on_change(p, partial(self._comm_change, doc, ref, comm))
             else:
                 model.on_change(p, partial(self._server_change, doc, ref))
 
@@ -207,12 +207,12 @@ class Syncable(Renderable):
             state.curdoc = None
             state._thread_id = None
 
-    def _comm_change(self, doc, ref, attr, old, new):
+    def _comm_change(self, doc, ref, comm, attr, old, new):
         if attr in self._changing.get(ref, []):
             self._changing[ref].remove(attr)
             return
 
-        with hold(doc):
+        with hold(doc, comm=comm):
             self._process_events({attr: new})
 
     def _server_change(self, doc, ref, attr, old, new):
