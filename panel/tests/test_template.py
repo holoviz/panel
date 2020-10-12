@@ -69,9 +69,7 @@ def test_template_session_destroy(document, comm):
     tmplt._init_doc(document, comm, notebook=True)
     session_context = param.Parameterized()
     session_context._document = document
-    session = param.Parameterized()
-    session.id = 'Some ID'
-    session_context.session = session
+    session_context.id = 'Some ID'
 
     assert len(widget._models) == 2
     assert len(row._models) == 2
