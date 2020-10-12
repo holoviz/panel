@@ -444,10 +444,9 @@ class Renderable(param.Parameterized):
         """
         session_id = session_context.session.id
         sessions = state.session_info['sessions']
-        if session_id in sessions and sessions['ended'] is None:
-            session_info = sessions[session_id]
+        if session_id in sessions and sessions[session_id]['ended'] is None:
             state.session_info['live'] -= 1
-            session_info.update({
+            sessions[session_id].update({
                 'ended': dt.datetime.now().timestamp()
             })
         doc = session_context._document
