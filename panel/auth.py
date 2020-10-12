@@ -552,8 +552,11 @@ class OktaLoginHandler(OAuthIDTokenLoginHandler, OAuth2Mixin):
     }
 
     _OAUTH_ACCESS_TOKEN_URL_ = 'https://{0}/oauth2/{1}/v1/token'
+    _OAUTH_ACCESS_TOKEN_URL__ = 'https://{0}/oauth2/v1/token'
     _OAUTH_AUTHORIZE_URL_ = 'https://{0}/oauth2/{1}/v1/authorize'
+    _OAUTH_AUTHORIZE_URL__ = 'https://{0}/oauth2/v1/authorize'
     _OAUTH_USER_URL_ = 'https://{0}/oauth2/{1}/v1/userinfo?access_token='
+    _OAUTH_USER_URL__ = 'https://{0}/oauth2/v1/userinfo?access_token='
 
     _USER_KEY = 'email'
 
@@ -563,19 +566,28 @@ class OktaLoginHandler(OAuthIDTokenLoginHandler, OAuth2Mixin):
     def _OAUTH_ACCESS_TOKEN_URL(self):
         url = config.oauth_extra_params.get('url', 'okta.com')
         server = config.oauth_extra_params.get('server', 'default')
-        return self._OAUTH_ACCESS_TOKEN_URL_.format(url, server)
+        if server:
+            return self._OAUTH_ACCESS_TOKEN_URL_.format(url, server)
+        else:
+            return self._OAUTH_ACCESS_TOKEN_URL__.format(url)
 
     @property
     def _OAUTH_AUTHORIZE_URL(self):
         url = config.oauth_extra_params.get('url', 'okta.com')
         server = config.oauth_extra_params.get('server', 'default')
-        return self._OAUTH_AUTHORIZE_URL_.format(url, server)
+        if server:
+            return self._OAUTH_AUTHORIZE_URL_.format(url, server)
+        else:
+            return self._OAUTH_AUTHORIZE_URL__.format(url)
 
     @property
     def _OAUTH_USER_URL(self):
         url = config.oauth_extra_params.get('url', 'okta.com')
         server = config.oauth_extra_params.get('server', 'default')
-        return self._OAUTH_USER_URL_.format(url, server)
+        if server:
+            return self._OAUTH_USER_URL_.format(url, server)
+        else:
+            return self._OAUTH_USER_URL__.format(url, server)
 
 
 class GoogleLoginHandler(OAuthIDTokenLoginHandler, OAuth2Mixin):
