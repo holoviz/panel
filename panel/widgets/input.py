@@ -237,6 +237,8 @@ class _SpinnerBase(_NumericInputBase):
             value = params.get('start', self.value)
             if value is not None:
                 params['value'] = value
+        if 'value' in params and 'value_throttled' in self.param:
+            params['value_throttled'] = params['value']
         super(_SpinnerBase, self).__init__(**params)
 
 
@@ -244,14 +246,14 @@ class IntInput(_SpinnerBase, _IntInputBase):
 
     step = param.Integer(default=1)
 
-    value_throttled = param.Integer(default=None, allow_None=True)
+    value_throttled = param.Integer(default=None, constant=True)
 
 
 class FloatInput(_SpinnerBase, _FloatInputBase):
 
     step = param.Number(default=0.1)
 
-    value_throttled = param.Number(default=None, allow_None=True)
+    value_throttled = param.Number(default=None, constant=True)
 
 
 class NumberInput:
