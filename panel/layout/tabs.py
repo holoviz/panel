@@ -81,7 +81,7 @@ class Tabs(NamedListPanel):
             new = [old[i] for i in inds]
         return old, new
 
-    def _comm_change(self, doc, ref, attr, old, new):
+    def _comm_change(self, doc, ref, comm, attr, old, new):
         if attr in self._changing.get(ref, []):
             self._changing[ref].remove(attr)
             return
@@ -89,7 +89,7 @@ class Tabs(NamedListPanel):
             old, new = self._process_close(ref, attr, old, new)
             if new is None:
                 return
-        super(Tabs, self)._comm_change(doc, ref, attr, old, new)
+        super(Tabs, self)._comm_change(doc, ref, comm, attr, old, new)
 
     def _server_change(self, doc, ref, attr, old, new):
         if attr in self._changing.get(ref, []):

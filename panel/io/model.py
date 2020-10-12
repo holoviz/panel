@@ -63,7 +63,7 @@ def add_to_doc(obj, doc, hold=False):
         doc.hold()
 
 @contextmanager
-def hold(doc, policy='combine'):
+def hold(doc, policy='combine', comm=None):
     held = doc._hold
     try:
         if policy is None:
@@ -75,6 +75,9 @@ def hold(doc, policy='combine'):
         if held:
             doc._hold = held
         else:
+            if comm is not None:
+                from .notebook import push
+                push(doc, comm)
             doc.unhold()
 
 
