@@ -547,6 +547,21 @@ def test_set_parameters(document, comm):
     assert isinstance(text, TextInput)
 
 
+def test_trigger_parameters(document, comm):
+    class Test(param.Parameterized):
+        a = param.ListSelector(objects=[1,2,3,4], default=list())
+
+    t = Test()
+    t.a.append(4)
+
+    pane = Param(t.param.a)
+
+    t.a.append(1)
+    t.param.trigger('a')
+
+    assert pane[0].value == [4, 1]
+
+
 def test_set_display_threshold(document, comm):
     class Test(param.Parameterized):
         a = param.Number(bounds=(0, 10), precedence=1)
