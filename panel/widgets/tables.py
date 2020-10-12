@@ -158,6 +158,7 @@ class DataFrame(Widget):
             else:
                 data = df.index
 
+            col_kwargs = {}
             kind = data.dtype.kind
             if kind == 'i':
                 formatter = NumberFormatter()
@@ -183,16 +184,16 @@ class DataFrame(Widget):
             if str(col) != col:
                 self._renamed_cols[str(col)] = col
             if isinstance(self.widths, int):
-                width = self.widths
-            else:
-                width = self.widths.get(str(col))
+                col_kwargs['width'] = self.widths
+            elif str(col) in self.widths:
+                col_kwargs['width'] = self.widths.get(str(col))
 
             title = str(col)
             if col in indexes and len(indexes) > 1 and self.hierarchical:
                 title = 'Index: %s' % ' | '.join(indexes)
             column = TableColumn(field=str(col), title=title,
                                  editor=editor, formatter=formatter,
-                                 width=width)
+                                 **col_kwargs)
             columns.append(column)
         return columns
 
