@@ -143,7 +143,7 @@ class FileDownload(Widget):
     callback = param.Callable(default=None, doc="""
         A callable that returns the file path or file-like object.""")
 
-    data = param.String(doc="""
+    data = param.String(default=None, doc="""
         The data being transferred.""")
 
     embed = param.Boolean(default=False, doc="""
@@ -154,7 +154,7 @@ class FileDownload(Widget):
         the file is not pointing to a file on disk a filename must
         also be provided.""")
 
-    filename = param.String(doc="""
+    filename = param.String(default=None, doc="""
         A filename which will also be the default name when downloading
         the file.""")
 
