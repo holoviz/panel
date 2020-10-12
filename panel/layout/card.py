@@ -74,7 +74,10 @@ class Card(Column):
     def _update_header(self, *events):
         from ..pane import HTML, panel
         if self.header is None:
-            item = HTML('%s' % (self.title or "&#8203;"), css_classes=self.title_css_classes, sizing_mode='stretch_width')
+            item = HTML('%s' % (self.title or "&#8203;"),
+                        css_classes=self.title_css_classes,
+                        sizing_mode='stretch_width',
+                        margin=(2, 5))
         else:
             item = panel(self.header)
         self._header_layout[:] = [item]
