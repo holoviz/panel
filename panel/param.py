@@ -16,7 +16,7 @@ from six import string_types
 
 import param
 
-from param.parameterized import classlist
+from param.parameterized import classlist, discard_events
 
 from .io import init_doc, state
 from .layout import Row, Panel, Tabs, Column
@@ -467,7 +467,12 @@ class Param(PaneBase):
 
             try:
                 self._updating.append(p_name)
-                widget.param.set_param(**updates)
+                if change.type == 'triggered':
+                    with discard_events(widget):
+                        widget.param.set_param(**updates)
+                    widget.param.trigger(*updates)
+                else:
+                    widget.param.set_param(**updates)
             finally:
                 self._updating.remove(p_name)
 
