@@ -22,7 +22,7 @@ from .io.state import state
 from .util import edit_readonly
 from .viewable import Layoutable, Renderable, Viewable
 
-LinkWatcher = namedtuple("Watcher","inst cls fn mode onlychanged parameter_names what queued target links transformed")
+LinkWatcher = namedtuple("Watcher","inst cls fn mode onlychanged parameter_names what queued target links transformed bidirectional_watcher")
 
 
 class Syncable(Renderable):
@@ -116,7 +116,7 @@ class Syncable(Renderable):
             if isinstance(p, tuple):
                 _, p = p
             if comm:
-                model.on_change(p, partial(self._comm_change, doc, ref))
+                model.on_change(p, partial(self._comm_change, doc, ref, comm))
             else:
                 model.on_change(p, partial(self._server_change, doc, ref))
 
@@ -182,10 +182,12 @@ class Syncable(Renderable):
     def _process_events(self, events):
         with edit_readonly(state):
             state.busy = True
-        with edit_readonly(self):
-            self.param.set_param(**self._process_property_change(events))
-        with edit_readonly(state):
-            state.busy = False
+        try:
+            with edit_readonly(self):
+                self.param.set_param(**self._process_property_change(events))
+        finally:
+            with edit_readonly(state):
+                state.busy = False
 
     @gen.coroutine
     def _change_coroutine(self, doc=None):
@@ -205,12 +207,12 @@ class Syncable(Renderable):
             state.curdoc = None
             state._thread_id = None
 
-    def _comm_change(self, doc, ref, attr, old, new):
+    def _comm_change(self, doc, ref, comm, attr, old, new):
         if attr in self._changing.get(ref, []):
             self._changing[ref].remove(attr)
             return
 
-        with hold(doc):
+        with hold(doc, comm=comm):
             self._process_events({attr: new})
 
     def _server_change(self, doc, ref, attr, old, new):
@@ -277,7 +279,7 @@ class Reactive(Syncable, Viewable):
             cb.start()
         return cb
 
-    def link(self, target, callbacks=None, **links):
+    def link(self, target, callbacks=None, bidirectional=False,  **links):
         """
         Links the parameters on this object to attributes on another
         object in Python. Supports two modes, either specify a mapping
@@ -292,6 +294,8 @@ class Reactive(Syncable, Viewable):
           The target object of the link.
         callbacks: dict
           Maps from a parameter in the source object to a callback.
+        bidirectional: boolean
+          Whether to link source and target bi-directionally
         **links: dict
           Maps between parameters on this object to the parameters
           on the supplied object.
@@ -303,6 +307,10 @@ class Reactive(Syncable, Viewable):
         elif not links and not callbacks:
             raise ValueError('Declare parameters to link or a set of '
                              'callbacks, neither was defined.')
+        elif callbacks and bidirectional:
+            raise ValueError('Bidirectional linking not supported for '
+                             'explicit callbacks. You must define '
+                             'separate callbacks for each direction.')
 
         _updating = []
         def link(*events):
@@ -314,13 +322,26 @@ class Reactive(Syncable, Viewable):
                         callbacks[event.name](target, event)
                     else:
                         setattr(target, links[event.name], event.new)
-                except Exception:
-                    raise
                 finally:
                     _updating.pop(_updating.index(event.name))
         params = list(callbacks) if callbacks else list(links)
         cb = self.param.watch(link, params)
-        link = LinkWatcher(*tuple(cb)+(target, links, callbacks is not None))
+
+        bidirectional_watcher = None
+        if bidirectional:
+            _reverse_updating = []
+            reverse_links = {v: k for k, v in links.items()}
+            def reverse_link(*events):
+                for event in events:
+                    if event.name in _reverse_updating: continue
+                    _reverse_updating.append(event.name)
+                    try:
+                        setattr(self, reverse_links[event.name], event.new)
+                    finally:
+                        _reverse_updating.remove(event.name)
+            bidirectional_watcher = target.param.watch(reverse_link, list(reverse_links))
+
+        link = LinkWatcher(*tuple(cb)+(target, links, callbacks is not None, bidirectional_watcher))
         self._links.append(link)
         return cb
 

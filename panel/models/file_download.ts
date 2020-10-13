@@ -199,7 +199,7 @@ export class FileDownload extends InputWidget {
     this.define<FileDownload.Props>({
       auto:         [ p.Boolean,        false ],
       clicks:       [ p.Number,         0     ],
-      data:         [ p.String,         null  ],
+      data:         [ p.NullString,     null  ],
       label:        [ p.String,   "Download"  ],
       filename:     [ p.String,         null  ],
       button_type:  [ p.ButtonType, "default" ], // TODO (bev)

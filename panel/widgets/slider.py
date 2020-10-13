@@ -51,6 +51,11 @@ class _SliderBase(Widget):
 
     __abstract = True
 
+    def __init__(self, **params):
+        if 'value' in params and 'value_throttled' in self.param:
+            params['value_throttled'] = params['value']
+        super(_SliderBase, self).__init__(**params)
+
 
 class ContinuousSlider(_SliderBase):
 
@@ -109,7 +114,7 @@ class FloatSlider(ContinuousSlider):
 
     value = param.Number(default=0.0)
 
-    value_throttled = param.Number(default=None)
+    value_throttled = param.Number(default=None, constant=True)
 
     step = param.Number(default=0.1)
 
@@ -118,7 +123,7 @@ class IntSlider(ContinuousSlider):
 
     value = param.Integer(default=0)
 
-    value_throttled = param.Integer(default=None)
+    value_throttled = param.Integer(default=None, constant=True)
 
     start = param.Integer(default=0)
 
@@ -140,7 +145,7 @@ class DateSlider(_SliderBase):
 
     value = param.Date(default=None)
 
-    value_throttled = param.Date(default=None)
+    value_throttled = param.Date(default=None, constant=True)
 
     start = param.Date(default=None)
 
@@ -170,7 +175,7 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
 
     value = param.Parameter()
 
-    value_throttled = param.Parameter()
+    value_throttled = param.Parameter(constant=True)
 
     formatter = param.String(default='%.3g')
 
@@ -297,9 +302,9 @@ class RangeSlider(_SliderBase):
     format = param.ClassSelector(class_=string_types+(TickFormatter,), doc="""
         Allows defining a custom format string or bokeh TickFormatter.""")
 
-    value = param.NumericTuple(default=(0, 1), length=2)
+    value = param.Range(default=(0, 1))
 
-    value_throttled = param.NumericTuple(default=None, length=2)
+    value_throttled = param.Range(default=None, constant=True)
 
     start = param.Number(default=0)
 
@@ -351,7 +356,7 @@ class DateRangeSlider(_SliderBase):
 
     value = param.Tuple(default=(None, None), length=2)
 
-    value_throttled = param.Tuple(default=None, length=2)
+    value_throttled = param.Tuple(default=None, length=2, constant=True)
 
     start = param.Date(default=None)
 

@@ -21,6 +21,10 @@ from pyviz_comms import (JupyterCommManager as _JupyterCommManager,
 from .io.notebook import load_notebook
 from .io.state import state
 
+__version__ = str(param.version.Version(
+    fpath=__file__, archive_commit="$Format:%h$", reponame="panel"))
+
+_LOCAL_DEV_VERSION = any(v in __version__ for v in ('post', 'dirty'))
 
 #---------------------------------------------------------------------
 # Public API
@@ -74,6 +78,12 @@ class _config(param.Parameterized):
         Ensure all bokeh property changes trigger events which are
         embedded. Useful when only partial updates are made in an
         app, e.g. when working with HoloViews.""")
+
+    session_history = param.Integer(default=0, bounds=(-1, None), doc="""
+        If set to a non-negative value this determines the maximum length
+        of the pn.state.session_info dictionary, which tracks
+        information about user sessions. A value of -1 indicates an
+        unlimited history.""")
 
     sizing_mode = param.ObjectSelector(default=None, objects=[
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
@@ -135,7 +145,7 @@ class _config(param.Parameterized):
     _oauth_extra_params = param.Dict(default={}, doc="""
         Additional parameters required for OAuth provider.""")
 
-    _inline = param.Boolean(default=True, allow_None=True, doc="""
+    _inline = param.Boolean(default=_LOCAL_DEV_VERSION, allow_None=True, doc="""
         Whether to inline JS and CSS resources. If disabled, resources
         are loaded from CDN if one is available.""")
 
@@ -407,6 +417,17 @@ class panel_extension(_pyviz_extension):
                 'ace': 'panel.models.ace',
                 'echarts': 'panel.models.echarts',
                 'ipywidgets': 'ipywidgets_bokeh.widget'}
+
+    # Check whether these are loaded before rendering
+    _globals = {
+        'deckgl': 'deck',
+        'echarts': 'echarts',
+        'katex': 'katex',
+        'mathjax': 'MathJax',
+        'plotly': 'Plotly',
+        'vega': 'vega',
+        'vtk': 'vtk'
+    }
 
     _loaded_extensions = []
 

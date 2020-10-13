@@ -59,7 +59,7 @@ def test_link_properties_nb(document, comm):
     # Assert callback is set up correctly
     cb = div._callbacks['text'][0]
     assert isinstance(cb, partial)
-    assert cb.args == (document, div.ref['id'])
+    assert cb.args == (document, div.ref['id'], comm)
     assert cb.func == obj._comm_change
 
 

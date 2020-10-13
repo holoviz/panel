@@ -19,7 +19,10 @@ def require_components():
 
     from bokeh.model import Model
     for qual_name, model in Model.model_class_reverse_map.items():
-        if qual_name.split(".")[0] == "panel":
+        # We need to enable Models from Panel as well as Panel extensions
+        # like awesome_panel_extensions.
+        # The Bokeh models do not have "." in the qual_name
+        if "." in qual_name:
             js_requires.append(model)
 
     for export, js in config.js_files.items():

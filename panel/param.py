@@ -16,10 +16,9 @@ from six import string_types
 
 import param
 
-from bokeh.io import curdoc as _curdoc
-from param.parameterized import classlist
+from param.parameterized import classlist, discard_events
 
-from .io import state
+from .io import init_doc, state
 from .layout import Row, Panel, Tabs, Column
 from .pane.base import PaneBase, ReplacementPane
 from .util import (
@@ -28,10 +27,10 @@ from .util import (
 )
 from .viewable import Layoutable
 from .widgets import (
-    Button, Checkbox, ColorPicker, DataFrame, DatePicker, DatetimeInput,
-    DateRangeSlider, FileSelector, FloatSlider, IntSlider, LiteralInput,
-    MultiSelect, RangeSlider, Select, Spinner, StaticText, TextInput,
-    Toggle, Widget
+    Button, Checkbox, ColorPicker, DataFrame, DatePicker,
+    DatetimeInput, DateRangeSlider, FileSelector, FloatSlider,
+    IntInput, IntSlider, LiteralInput, MultiSelect, RangeSlider,
+    Select, FloatInput, StaticText, TextInput, Toggle, Widget
 )
 from .widgets.button import _ButtonBase
 
@@ -98,7 +97,7 @@ class Param(PaneBase):
     name = param.String(default='', doc="""
         Title of the pane.""")
 
-    parameters = param.List(default=[], doc="""
+    parameters = param.List(default=[], allow_None=True, doc="""
         If set this serves as a whitelist of parameters to display on
         the supplied Parameterized object.""")
 
@@ -144,6 +143,9 @@ class Param(PaneBase):
         param.String:            TextInput,
     }
 
+    if hasattr(param, 'Event'):
+        _mapping[param.Event] = Button
+
     _rerender_params = []
 
     def __init__(self, object=None, **params):
@@ -154,8 +156,13 @@ class Param(PaneBase):
             object = object.owner
         if isinstance(object, param.parameterized.Parameters):
             object = object.cls if object.self is None else object.self
+
         if 'parameters' not in params and object is not None:
             params['parameters'] = [p for p in object.param if p != 'name']
+            self._explicit_parameters = False
+        else:
+            self._explicit_parameters = object is not None
+
         if object and 'name' not in params:
             params['name'] = param_name(object.name)
         super(Param, self).__init__(object, **params)
@@ -216,17 +223,28 @@ class Param(PaneBase):
         for event in sorted(events, key=lambda x: x.name):
             if event.name == 'object':
                 if isinstance(event.new, param.parameterized.Parameters):
+                    # Setting object will trigger this method a second time
                     self.object = event.new.cls if event.new.self is None else event.new.self
                     return
-                if event.new is None:
+                
+                if self._explicit_parameters:
+                    parameters = self.parameters
+                elif event.new is None:
                     parameters = []
                 else:
                     parameters = [p for p in event.new.param if p != 'name']
                     self.name = param_name(event.new.name)
             if event.name == 'parameters':
-                parameters = [] if event.new == [] else event.new
+                if event.new is None:
+                    self._explicit_parameters = False
+                    if self.object is not None:
+                        parameters = [p for p in self.object.param if p != 'name']
+                else:
+                    self._explicit_parameters = True
+                    parameters = [] if event.new == [] else event.new
 
         if parameters != [] and parameters != self.parameters:
+            # Setting parameters will trigger this method a second time
             self.parameters = parameters
             return
 
@@ -323,12 +341,14 @@ class Param(PaneBase):
             widget_class_overridden = False
             widget_class = self.widget_type(p_obj)
         elif isinstance(self.widgets[p_name], dict):
-            if 'type' in self.widgets[p_name]:
-                widget_class = self.widgets[p_name].pop('type')
+            kw_widget = dict(self.widgets[p_name])
+            if 'widget_type' in self.widgets[p_name]:
+                widget_class = kw_widget.pop('widget_type')
+            elif 'type' in self.widgets[p_name]:
+                widget_class = kw_widget.pop('type')
             else:
                 widget_class_overridden = False
                 widget_class = self.widget_type(p_obj)
-            kw_widget = self.widgets[p_name]
         else:
             widget_class = self.widgets[p_name]
 
@@ -361,9 +381,9 @@ class Param(PaneBase):
                 if not widget_class_overridden:
                     if (isinstance(p_obj, param.Number) and
                         not isinstance(p_obj, (param.Date, param.CalendarDate))):
-                        widget_class = Spinner
+                        widget_class = FloatInput
                         if isinstance(p_obj, param.Integer):
-                            kw['step'] = 1
+                            widget_class = IntInput
                     elif not issubclass(widget_class, LiteralInput):
                         widget_class = LiteralInput
             if hasattr(widget_class, 'step') and getattr(p_obj, 'step', None):
@@ -388,7 +408,11 @@ class Param(PaneBase):
             finally:
                 self._updating.remove(p_name)
 
-        if isinstance(p_obj, param.Action):
+        if hasattr(param, 'Event') and isinstance(p_obj, param.Event):
+            def event(change):
+                self.object.param.trigger(p_name)
+            watcher = widget.param.watch(event, 'clicks')
+        elif isinstance(p_obj, param.Action):
             def action(change):
                 value(self.object)
             watcher = widget.param.watch(action, 'clicks')
@@ -427,6 +451,8 @@ class Param(PaneBase):
                 updates['name'] = p_obj.label
             elif p_name in self._updating:
                 return
+            elif hasattr(param, 'Event') and isinstance(p_obj, param.Event):
+                return
             elif isinstance(p_obj, param.Action):
                 prev_watcher = watchers[0]
                 widget.param.unwatch(prev_watcher)
@@ -441,7 +467,12 @@ class Param(PaneBase):
 
             try:
                 self._updating.append(p_name)
-                widget.param.set_param(**updates)
+                if change.type == 'triggered':
+                    with discard_events(widget):
+                        widget.param.set_param(**updates)
+                    widget.param.trigger(*updates)
+                else:
+                    widget.param.set_param(**updates)
             finally:
                 self._updating.remove(p_name)
 
@@ -564,7 +595,7 @@ class Param(PaneBase):
         -------
         Returns the bokeh model corresponding to this panel object
         """
-        doc = doc or _curdoc()
+        doc = init_doc(doc)
         root = self.layout.get_root(doc, comm)
         ref = root.ref['id']
         self._models[ref] = (root, None)

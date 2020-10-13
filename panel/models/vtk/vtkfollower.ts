@@ -10,7 +10,6 @@ if(vtk) {
   const vtkActor = vtk.Rendering.Core.vtkActor
 
   function vtkFollower(publicAPI: any, model: any) {
-    console.log("Hello")
     // Set our className
     model.classHierarchy.push('vtkFollower')
 
@@ -113,22 +112,21 @@ if(vtk) {
   Follower = {
     newInstance: macro.newInstance((publicAPI: any, model: any, initialValues = {}) => {
       Object.assign(model, DEFAULT_VALUES, initialValues)
-  
+
       // Inheritance
       vtkActor.extend(publicAPI, model, initialValues)
-  
+
       model.followerMatrix = mat4.create()
       model.camera = vtk.Rendering.Core.vtkCamera.newInstance()
       mat4.identity(model.followerMatrix)
-  
+
       // Build VTK API
       macro.setGet(publicAPI, model, ['useViewUp', 'camera'])
-  
+
       macro.setGetArray(publicAPI, model, ['viewUp'], 3)
-  
+
       // Object methods
       vtkFollower(publicAPI, model);
     }, 'vtkFollower')
   }
-
 }

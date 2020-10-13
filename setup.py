@@ -108,14 +108,16 @@ _recommended = [
 _tests = [
     'flake8',
     'parameterized',
-    'pytest<6.0', # temporary fix for nbval incompatibility
+    'pytest',
     'scipy',
     'nbsmoke >=0.2.0',
     'pytest-cov',
     'codecov',
     'folium',
     'ipympl',
-    'pandas<1.1' # temporary fix for streamz incompatibility
+    'twine',
+    'pandas<1.1', # temporary fix for streamz incompatibility
+    'ipython >=7.0'
 ]
 
 extras_require = {
@@ -220,6 +222,16 @@ if __name__ == "__main__":
 
     if 'develop' not in sys.argv and 'egg_info' not in sys.argv:
         pyct.build.examples(example_path, __file__, force=True)
+
+    version = setup_args['version']
+    if 'post' not in version:
+        with open('./panel/package.json') as f:
+            package_json = json.load(f)
+        js_version = package_json['version']
+        if version != 'None' and version.split('+')[0] != js_version.replace('-', ''):
+            raise ValueError("panel.js version (%s) does not match "
+                             "panel version (%s). Cannot build release."
+                             % (js_version, version))
 
     setup(**setup_args)
 

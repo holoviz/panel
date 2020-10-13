@@ -25,6 +25,9 @@ class DataFrame(Widget):
         aggregators for different columns are required the dictionary
         may be nested as `{index_name: {column_name: aggregator}}`""")
 
+    auto_edit = param.Boolean(default=False, doc="""
+        Whether clicking on a table cell automatically starts edit mode.""")
+
     autosize_mode = param.ObjectSelector(default='force_fit', objects=[
         "none", "fit_columns", "fit_viewport", "force_fit"], doc="""
 
@@ -118,6 +121,7 @@ class DataFrame(Widget):
         self.param.watch(self._validate, 'value')
         self._validate(None)
         self._renamed_cols = {}
+        self._updating = False
 
     def _validate(self, event):
         if self.value is None:
@@ -154,6 +158,7 @@ class DataFrame(Widget):
             else:
                 data = df.index
 
+            col_kwargs = {}
             kind = data.dtype.kind
             if kind == 'i':
                 formatter = NumberFormatter()
@@ -179,16 +184,16 @@ class DataFrame(Widget):
             if str(col) != col:
                 self._renamed_cols[str(col)] = col
             if isinstance(self.widths, int):
-                width = self.widths
-            else:
-                width = self.widths.get(str(col))
+                col_kwargs['width'] = self.widths
+            elif str(col) in self.widths:
+                col_kwargs['width'] = self.widths.get(str(col))
 
             title = str(col)
             if col in indexes and len(indexes) > 1 and self.hierarchical:
                 title = 'Index: %s' % ' | '.join(indexes)
             column = TableColumn(field=str(col), title=title,
                                  editor=editor, formatter=formatter,
-                                 width=width)
+                                 **col_kwargs)
             columns.append(column)
         return columns
 
@@ -243,15 +248,16 @@ class DataFrame(Widget):
             props['frozen_columns'] = self.frozen_columns
             props['frozen_rows'] = self.frozen_rows
             props['autosize_mode'] = self.autosize_mode
+            props['auto_edit'] = self.auto_edit
         props['row_height'] = self.row_height
-        props['editable'] = not self.disabled and len(self.indexes) == 1
+        props['editable'] = not self.disabled and len(self.indexes) <= 1
         props['sortable'] = self.sortable
         props['reorderable'] = self.reorderable
         return props
 
     def _process_param_change(self, msg):
         if 'disabled' in msg:
-            msg['editable'] = not msg.pop('disabled') and len(self.indexes) == 1
+            msg['editable'] = not msg.pop('disabled') and len(self.indexes) <= 1
         return super(DataFrame, self)._process_param_change(msg)
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
@@ -267,7 +273,9 @@ class DataFrame(Widget):
     def _manual_update(self, events, model, doc, root, parent, comm):
         self._validate(None)
         for event in events:
-            if event.name in ('value', 'show_index'):
+            if event.type == 'triggered' and self._updating:
+                continue
+            elif event.name in ('value', 'show_index'):
                 cds = model.source
                 data = {k if isinstance(k, str) else str(k): v
                         for k, v in ColumnDataSource.from_df(self.value).items()}
@@ -309,7 +317,11 @@ class DataFrame(Widget):
                     self.value[k] = v
                     updated = True
             if updated:
-                self.param.trigger('value')
+                self._updating = True
+                try:
+                    self.param.trigger('value')
+                finally:
+                    self._updating = False
         if 'indices' in events:
             self.selection = events.pop('indices')
         super(DataFrame, self)._process_events(events)

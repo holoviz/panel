@@ -3,9 +3,11 @@ Various utilities for recording and embedding state in a rendered app.
 """
 from __future__ import absolute_import, division, unicode_literals
 
+import datetime as dt
 import json
 import threading
 
+from collections import OrderedDict
 from weakref import WeakKeyDictionary, WeakSet
 
 import param
@@ -15,7 +17,7 @@ from bokeh.io import curdoc as _curdoc
 from pyviz_comms import CommManager as _CommManager
 from tornado.web import decode_signed_value
 
-from ..util import base64url_decode
+from ..util import base64url_decode, bokeh_version
 
 
 class _state(param.Parameterized):
@@ -35,6 +37,10 @@ class _state(param.Parameterized):
     encryption = param.Parameter(default=None, doc="""
        Object with encrypt and decrypt methods to support encryption
        of secret variables including OAuth information.""")
+
+    session_info = param.Dict(default={'total': 0, 'live': 0,
+                                       'sessions': OrderedDict()}, doc="""
+       Tracks information and statistics about user sessions.""")
 
     webdriver = param.Parameter(default=None, doc="""
       Selenium webdriver used to export bokeh models to pngs.""")
@@ -99,6 +105,16 @@ class _state(param.Parameterized):
         for indicator in self._indicators:
             indicator.value = self.busy
 
+    def _init_session(self, event):
+        if not self.curdoc.session_context:
+            return
+        session_id = self.curdoc.session_context.id
+        self.session_info['live'] += 1
+        session_info = self.session_info['sessions'][session_id]
+        session_info.update({
+            'rendered': dt.datetime.now().timestamp(),
+        })
+
     def _get_callback(self, endpoint):
         _updating = {}
         def link(*events):
@@ -126,9 +142,42 @@ class _state(param.Parameterized):
                         _updating[id(obj)] = not_updated
         return link
 
+    def _on_load(self, event):
+        for cb in self._onload.pop(self.curdoc, []):
+            cb()
+
     #----------------------------------------------------------------
     # Public Methods
     #----------------------------------------------------------------
+
+    def as_cached(self, key, fn, **kwargs):
+        """
+        Caches the return value of a function, memoizing on the given
+        key and supplied keyword arguments.
+
+        Note: Keyword arguments must be hashable.
+
+        Arguments
+        ---------
+        key: (str)
+          The key to cache the return value under.
+        fn: (callable)
+          The function or callable whose return value will be cached.
+        **kwargs: dict
+          Additional keyword arguments to supply to the function,
+          which will be memoized over as well.
+
+        Returns
+        -------
+        Returns the value returned by the cache or the value in
+        the cache.
+        """
+        key = (key,)+tuple((k, v) for k, v in sorted(kwargs.items()))
+        if key in self.cache:
+            ret = self.cache.get(key)
+        else:
+            ret = self.cache[key] = fn(**kwargs)
+        return ret
 
     def add_periodic_callback(self, callback, period=500, count=None,
                               timeout=None, start=True):
@@ -180,6 +229,8 @@ class _state(param.Parameterized):
             return
         if self.curdoc not in self._onload:
             self._onload[self.curdoc] = []
+            if bokeh_version >= '2.2.0':
+                self.curdoc.on_event('document_ready', self._on_load)
         self._onload[self.curdoc].append(callback)
 
     def publish(self, endpoint, parameterized, parameters=None):
@@ -239,7 +290,7 @@ class _state(param.Parameterized):
         if self.encryption is None:
             return access_token.decode('utf-8')
         return self.encryption.decrypt(access_token).decode('utf-8')
-            
+
     @property
     def curdoc(self):
         if self._curdoc:

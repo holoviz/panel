@@ -127,6 +127,13 @@ class DeckGL(PaneBase):
             tooltip = deck_widget.tooltip
             data = {k: v for k, v in recurse_data(data).items() if v is not None}
 
+        # Delete undefined width and height
+        for view in data.get('views', []):
+            if view.get('width', False) is None:
+                view.pop('width')
+            if view.get('height', False) is None:
+                view.pop('height')
+
         if layout:
             properties = {p: getattr(self, p) for p in Layoutable.param
                           if getattr(self, p) is not None}

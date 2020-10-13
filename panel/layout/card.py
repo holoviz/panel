@@ -10,7 +10,7 @@ class Card(Column):
     collapsible, vertical container with a header bar.
     """
 
-    active_header_background = param.String(default=None, doc="""
+    active_header_background = param.String(doc="""
         A valid CSS color for the header background when not collapsed.""")
 
     button_css_classes = param.List(['card-button'], doc="""
@@ -29,7 +29,7 @@ class Card(Column):
         A Panel component to display in the header bar of the Card.
         Will override the given title if defined.""")
 
-    header_background = param.String(default=None, doc="""
+    header_background = param.String(doc="""
         A valid CSS color for the header background.""")
 
     header_color = param.String(doc="""
@@ -74,7 +74,10 @@ class Card(Column):
     def _update_header(self, *events):
         from ..pane import HTML, panel
         if self.header is None:
-            item = HTML('%s' % (self.title or "&#8203;"), css_classes=self.title_css_classes, sizing_mode='stretch_width')
+            item = HTML('%s' % (self.title or "&#8203;"),
+                        css_classes=self.title_css_classes,
+                        sizing_mode='stretch_width',
+                        margin=(2, 5))
         else:
             item = panel(self.header)
         self._header_layout[:] = [item]

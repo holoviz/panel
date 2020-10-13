@@ -4,7 +4,10 @@ Custom bokeh Widget models.
 from __future__ import absolute_import, division, unicode_literals
 
 from bokeh.core.enums import ButtonType
-from bokeh.core.properties import Int, Float, Override, Enum, Any, Bool, Dict, String
+
+from bokeh.core.properties import (
+    Int, Float, Override, Enum, Any, Bool, Dict, String, List, Either, Tuple
+)
 from bokeh.models.layouts import HTMLBox
 from bokeh.models.widgets import InputWidget, Widget
 
@@ -36,6 +39,27 @@ class Player(Widget):
     width = Override(default=400)
 
     height = Override(default=250)
+
+
+class SingleSelect(InputWidget):
+    ''' Single-select widget.
+
+    '''
+
+    options = List(Either(String, Tuple(String, String)), help="""
+    Available selection options. Options may be provided either as a list of
+    possible string values, or as a list of tuples, each of the form
+    ``(value, label)``. In the latter case, the visible widget text for each
+    value will be corresponding given label.
+    """)
+
+    value = String(help="Initial or selected value.")
+
+    size = Int(default=4, help="""
+    The number of visible options in the dropdown list. (This uses the
+    ``select`` HTML element's ``size`` attribute. Some browsers might not
+    show less than 3 options.)
+    """)
 
 
 class Audio(HTMLBox):

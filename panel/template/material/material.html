@@ -16,7 +16,12 @@
       {% if nav %}
       <button class="material-icons mdc-top-app-bar__navigation-icon mdc-icon-button">menu</button>
       {% endif %}
-      <span class="mdc-top-app-bar__title">{{ app_title }}</span>
+      <span class="mdc-top-app-bar__title">
+		{% if app_logo %}
+        <img src="{{ app_logo }}" height="30" class="app-logo"></img>
+        {% endif %}
+        {{ app_title }}
+	  </span>
 	  {% for doc in docs %}
       {% for root in doc.roots %}
       {% if "header" in root.tags %}

@@ -11,6 +11,16 @@ body {
   position: relative;
 }
 
+.mdc-top-app-bar__title {
+  display: flex;
+  padding-left: 10px;
+  font-size: 1.5em;
+}
+
+img.app-logo {
+  padding-right: 10px;
+}
+
 .main-content {
   height: 100%;
   margin-left: 20px;

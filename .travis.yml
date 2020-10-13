@@ -59,6 +59,13 @@ jobs:
         - conda config --set always_yes True
         # ...and now install doit/pyctdev into miniconda
         - conda install -c pyviz "pyctdev>=0.5" && doit ecosystem_setup
+        - conda install nodejs
+        - echo "//registry.npmjs.org/:_authToken=$NPM_API_TOKEN" > $HOME/.npmrc
+        - npm whoami
+        # Disable non-blocking I/O for stdout, stderr https://github.com/travis-ci/travis-ci/issues/4704#issuecomment-348435959
+        - python -c 'import os,sys,fcntl; flags = fcntl.fcntl(sys.stdout, fcntl.F_GETFL); fcntl.fcntl(sys.stdout, fcntl.F_SETFL, flags&~os.O_NONBLOCK);'
+        # Fail if non-blocking I/O enabled
+        - python -c 'import os,sys,fcntl; flags = fcntl.fcntl(sys.stdout, fcntl.F_GETFL); exit(flags&os.O_NONBLOCK);'
       install:
         - doit env_create $CHANS_DEV --python=$PYTHON_VERSION
         - source activate test-environment
@@ -81,10 +88,14 @@ jobs:
     - &conda_pkg
       <<: *conda_default
       stage: conda_dev_package
-      env: DESC="" TRAVIS_NOCACHE=$TRAVIS_JOB_ID LABELS=$LABELS_DEV CHANS="-c pyviz/label/dev -c bokeh"
+      env: DESC="" TRAVIS_NOCACHE=$TRAVIS_JOB_ID NPM_TAG="--tag dev" LABELS=$LABELS_DEV CHANS="-c pyviz/label/dev -c bokeh"
       install:
         - doit package_build $CHANS $PKG_TEST_PYTHON --test-group=unit_deploy
-      script: doit package_upload --token=$ANACONDA_TOKEN $LABELS
+      script:
+        - doit package_upload --token=$ANACONDA_TOKEN $LABELS
+        - python setup.py develop
+        - cd panel
+        - npm publish $NPM_TAG
 
     - &pip_pkg
       <<: *conda_default
@@ -102,7 +113,7 @@ jobs:
 
     - <<: *conda_pkg
       stage: conda_package
-      env: DESC="" TRAVIS_NOCACHE=$TRAVIS_JOB_ID LABELS=$LABELS_REL CHANS="-c pyviz -c bokeh"
+      env: DESC="" TRAVIS_NOCACHE=$TRAVIS_JOB_ID NPM_TAG="--tag latest" LABELS=$LABELS_REL CHANS="-c pyviz -c bokeh"
 
     - <<: *pip_pkg
       env: PYPI=pypi PYPIUSER=$PPU PYPIPASS=$PPP
@@ -118,7 +129,7 @@ jobs:
         - doit develop_install $CHANS_DEV -o doc -o examples
         - pip install pydeck sphinxcontrib-napoleon
         # note: will vastly simplified in a future version of nbsite
-        - nbsite generate-rst --org pyviz --project-name panel
+        - nbsite generate-rst --org holoviz --project-name panel
         - python ./doc/generate_modules.py panel -d ./doc/api -n panel -e tests
         - nbsite build --what=html --output=builtdocs
         - touch ./builtdocs/.nojekyll

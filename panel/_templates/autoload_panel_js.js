@@ -81,6 +81,7 @@ calls it with the rendered model.
       document.body.appendChild(element);
     }
 
+    var skip = [];
     if (window.requirejs) {
       {%- for conf in configs %}
       window.requirejs.config({{ conf|conffilter }});
@@ -89,29 +90,30 @@ calls it with the rendered model.
         {%- for exp in exports %}
         window.{{ exp }} = {{ exp }};
         {%- endfor %}
-        run_callbacks();
       })
-    } else {
-      var skip = [];
-      {%- for lib, urls in skip_imports.items() %}
-      if ((window['{{ lib }}'] !== undefined) && (!(window['{{ lib }}'] instanceof HTMLElement))) {
-        var urls = {{ urls }};
-        for (var i = 0; i < urls.length; i++) {
-          skip.push(urls[i])
-        }
+    }
+    {%- for lib, urls in skip_imports.items() %}
+    if (((window['{{ lib }}'] !== undefined) && (!(window['{{ lib }}'] instanceof HTMLElement))) || window.requirejs) {
+      var urls = {{ urls }};
+      for (var i = 0; i < urls.length; i++) {
+        skip.push(urls[i])
       }
-      {%- endfor %}
-      for (var i = 0; i < js_urls.length; i++) {
-        var url = js_urls[i];
-        if (skip.indexOf(url) >= 0) { on_load(); continue; }
-        var element = document.createElement('script');
-        element.onload = on_load;
-        element.onerror = on_error;
-        element.async = false;
-        element.src = url;
-        console.debug("Bokeh: injecting script tag for BokehJS library: ", url);
-        document.head.appendChild(element);
-      }
+    }
+    {%- endfor %}
+    for (var i = 0; i < js_urls.length; i++) {
+      var url = js_urls[i];
+      if (skip.indexOf(url) >= 0) { on_load(); continue; }
+	  console.log(url)
+      var element = document.createElement('script');
+      element.onload = on_load;
+      element.onerror = on_error;
+      element.async = false;
+      element.src = url;
+      console.debug("Bokeh: injecting script tag for BokehJS library: ", url);
+      document.head.appendChild(element);
+    }
+	if (!js_urls.length) {
+      on_load()
     }
   };
 

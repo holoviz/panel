@@ -4,10 +4,12 @@ import pkg_resources
 import tempfile
 import traceback
 
-from runpy import run_path
 from unittest.mock import MagicMock
 from urllib.parse import parse_qs
 
+import param
+
+from runpy import run_path
 from tornado import web
 from tornado.wsgi import WSGIContainer
 
@@ -142,7 +144,10 @@ def param_rest_provider(files, endpoint):
     for filename in files:
         extension = filename.split('.')[-1]
         if extension == 'py':
-            run_path(filename)
+            try:
+                run_path(filename)
+            except Exception:
+                param.main.warning("Could not run app script on REST server startup.")
         elif extension == 'ipynb':
             try:
                 import nbconvert # noqa
@@ -155,7 +160,10 @@ def param_rest_provider(files, endpoint):
             with tempfile.NamedTemporaryFile(mode='w', dir=source_dir, delete=True) as tmp:
                 tmp.write(source)
                 tmp.flush()
-                run_path(tmp.name, init_globals={'get_ipython': MagicMock()})
+                try:
+                    run_path(tmp.name, init_globals={'get_ipython': MagicMock()})
+                except Exception:
+                    param.main.warning("Could not run app notebook on REST server startup.")
         else:
             raise ValueError('{} is not a script (.py) or notebook (.ipynb)'.format(filename))
 
