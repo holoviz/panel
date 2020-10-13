@@ -40,10 +40,10 @@ def js_files(self):
     if require_index:
         requirejs = js_files.pop(require_index[0])
         if any('ace' in jsf for jsf in js_files):
-            js_files.append('/panel_dist/pre_require.js')
+            js_files.append('/static/extensions/panel/pre_require.js')
         js_files.append(requirejs)
         if any('ace' in jsf for jsf in js_files):
-            js_files.append('/panel_dist/post_require.js')
+            js_files.append('/static/extensions/panel/post_require.js')
     return js_files
 
 def css_files(self):
