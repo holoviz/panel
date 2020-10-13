@@ -381,9 +381,6 @@ def get_server(panel, port=0, address=None, websocket_origin=None,
     else:
         apps = {'/': partial(_eval_panel, panel, server_id, title, location)}
 
-    dist_dir = os.path.join(os.path.split(os.path.dirname(__file__))[0], 'dist')
-    static_dirs = dict(static_dirs, panel_dist=dist_dir)
-
     extra_patterns += get_static_routes(static_dirs)
 
     opts = dict(kwargs)
