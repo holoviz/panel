@@ -400,7 +400,7 @@ class Dial(ValueIndicator):
         if end>start:
             distance = (pi*2)-distance
         radial_fraction = distance*fraction
-        angle = (start-radial_fraction)
+        angle = start if np.isnan(fraction) else (start-radial_fraction)
         inner_radius = 1-self.annulus_width
 
         color = self.default_color
@@ -409,10 +409,10 @@ class Dial(ValueIndicator):
                 color = clr
 
         annulus_data = {
-            'starts': [start, angle],
-            'ends' :  [angle, end],
+            'starts': np.array([start, angle]),
+            'ends' :  np.array([angle, end]),
             'color':  [color, self.unfilled_color],
-            'radius': [inner_radius, inner_radius]
+            'radius': np.array([inner_radius, inner_radius])
         }
 
         x0s, y0s, x1s, y1s, clrs = [], [], [], [], []
@@ -438,11 +438,11 @@ class Dial(ValueIndicator):
         needle_start = pi+angle-(self.needle_width/2.)
         needle_end = pi+angle+(self.needle_width/2.)
         needle_data = {
-            'x':      [x],
-            'y':      [y],
-            'start':  [needle_start],
-            'end':    [needle_end],
-            'radius': [center_radius]
+            'x':      np.array([x]),
+            'y':      np.array([y]),
+            'start':  np.array([needle_start]),
+            'end':    np.array([needle_end]),
+            'radius': np.array([center_radius])
         }
 
         value = self.format.format(value=self.value)
@@ -457,10 +457,10 @@ class Dial(ValueIndicator):
         tick_size = self.tick_size if self.tick_size else '%spt' % (scale*18)
 
         text_data= {
-            'x':    [0, 0, tminx, tmaxx],
-            'y':    [-.2, -.5, tminy, tmaxy],
+            'x':    np.array([0, 0, tminx, tmaxx]),
+            'y':    np.array([-.2, -.5, tminy, tmaxy]),
             'text': [self.name, value, min_value, max_value],
-            'rot':  [0, 0, tmin_angle, tmax_angle],
+            'rot':  np.array([0, 0, tmin_angle, tmax_angle]),
             'size': [title_size, value_size, tick_size, tick_size],
             'color': ['black', color, 'black', 'black']
         }
