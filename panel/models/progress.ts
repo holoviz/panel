@@ -97,7 +97,7 @@ export class Progress extends HTMLBox {
       bar_color: [ p.String, 'primary' ],
       style:     [ p.Any, {} ],
       max:       [ p.Number, 100 ],
-      value:     [ p.Number, null ],
+      value:     [ p.Any, null ],
     })
   }
 }
