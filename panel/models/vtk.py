@@ -104,6 +104,9 @@ class VTKVolumePlot(AbstractVTKPlot):
 
     colormap = String(help="Colormap Name")
 
+    controller_expanded = Bool(default=True, help="""
+        If True the volume controller panel options is expanded in the view""")
+
     data = Dict(String, Any)
 
     diffuse = Float(default=0.7)
