@@ -190,6 +190,11 @@ export class VTKVolumePlotView extends AbstractVTKView {
   }
 
   _connect_js_controls(): void {
+    const {el: controller_el} = this._controllerWidget.get('el')
+    if(controller_el !== undefined) {
+      const controller_button = (controller_el as HTMLElement).querySelector('.js-button')
+      controller_button!.addEventListener('click', () => this.model.controller_expanded = this._controllerWidget.getExpanded())
+    }
     // Colormap selector
     this.colormap_selector.addEventListener("change", () => {
       this.model.colormap = this.colormap_selector.value
