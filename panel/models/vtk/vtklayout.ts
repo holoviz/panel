@@ -10,7 +10,7 @@ import {vtkns, VolumeType, majorAxis, applyStyle, CSSProperties} from "./util"
 import {VTKColorBar} from "./vtkcolorbar"
 import {VTKAxes} from "./vtkaxes"
 
-const INFO_DIV_STYLE: CSSProperties = {  
+const INFO_DIV_STYLE: CSSProperties = {
   padding: "0px 2px 0px 2px",
   maxHeight: "150px",
   height: "auto",
@@ -35,7 +35,7 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
   protected _vtk_container: HTMLDivElement
   protected _vtk_renwin: any
   protected _widgetManager: any
-  
+
   initialize(): void {
     super.initialize()
     this._camera_callbacks = []
@@ -49,7 +49,7 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
     if (old_info_div)
       this.el.removeChild(old_info_div)
     if (this.model.color_mappers.length < 1) return
-    
+
     const info_div = document.createElement("div")
     const expand_width = "350px"
     const collapsed_width = "30px"
@@ -118,7 +118,7 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
       this.model.renderer_el = this._vtk_renwin
     } else {
       set_size(this._vtk_container, this.model)
-      // warning if _vtk_renwin contain controllers or other elements 
+      // warning if _vtk_renwin contain controllers or other elements
       // we must attach them to the new el
       this.el.appendChild(this._vtk_container)
     }
@@ -146,7 +146,7 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
   abstract init_vtk_renwin(): void
 
   abstract plot(): void //here goes the specific implementation pour all concrete model based on vtk-js
-  
+
   get _vtk_camera_state(): any {
     const vtk_camera = this._vtk_renwin.getRenderer().getActiveCamera()
     let state: any
@@ -256,10 +256,16 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
     this._orientationWidget.setViewportSize(0.15)
     this._orientationWidget.setMinPixelSize(75)
     this._orientationWidget.setMaxPixelSize(300)
+    if (this.model.interactive_orientation_widget)
+      this._make_orientation_widget_interactive()
+    this._orientation_widget_visibility(this.model.orientation_widget)
+  }
 
+  _make_orientation_widget_interactive(): void {
     this._widgetManager = vtkns.WidgetManager.newInstance()
     this._widgetManager.setRenderer(this._orientationWidget.getRenderer())
 
+    const axes = this._orientationWidget.getActor()
     const widget = vtkns.InteractiveOrientationWidget.newInstance()
     widget.placeWidget(axes.getBounds())
     widget.setBounds(axes.getBounds())
@@ -293,8 +299,8 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
       this._vtk_renwin.getRenderer().resetCameraClippingRange()
       this._vtk_render()
     })
-    this._orientation_widget_visibility(this.model.orientation_widget)
   }
+
 
   _delete_axes(): void {
     if (this._axes) {
@@ -323,8 +329,10 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
 
   _orientation_widget_visibility(visibility: boolean): void {
     this._orientationWidget.setEnabled(visibility)
-    if (visibility) this._widgetManager.enablePicking()
-    else this._widgetManager.disablePicking()
+    if (this._widgetManager != null){
+      if (visibility) this._widgetManager.enablePicking()
+      else this._widgetManager.disablePicking()
+    }
     this._vtk_render()
   }
 
@@ -394,6 +402,7 @@ export namespace AbstractVTKPlot {
     enable_keybindings: p.Property<boolean>
     orientation_widget: p.Property<boolean>
     color_mappers: p.Property<ColorMapper[]>
+    interactive_orientation_widget: p.Property<boolean>
   }
 }
 
@@ -415,10 +424,11 @@ export abstract class AbstractVTKPlot extends HTMLBox {
 
   static init_AbstractVTKPlot(): void {
     this.define<AbstractVTKPlot.Props>({
-      axes:               [ p.Instance       ],
-      camera:             [ p.Instance       ],
-      color_mappers:      [ p.Array,      [] ],
-      orientation_widget: [ p.Boolean, false ],
+      axes:                           [ p.Instance       ],
+      camera:                         [ p.Instance       ],
+      color_mappers:                  [ p.Array,      [] ],
+      orientation_widget:             [ p.Boolean, false ],
+      interactive_orientation_widget: [ p.Boolean, false ],
     })
 
     this.override({

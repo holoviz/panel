@@ -66,6 +66,9 @@ class AbstractVTK(PaneBase):
     orientation_widget = param.Boolean(default=False, doc="""
         Activate/Deactivate the orientation widget display.""")
 
+    interactive_orientation_widget = param.Boolean(default=True, constant=True, doc="""
+    """)
+
     def _process_param_change(self, msg):
         msg = super(AbstractVTK, self)._process_param_change(msg)
         if 'axes' in msg and msg['axes'] is not None:
@@ -161,6 +164,8 @@ class VTK:
             if VTKRenderWindow.applies(obj, **params):
                 return VTKRenderWindow(obj, **params)
             else:
+                if params.get('interactive_orientation_widget', False):
+                    param.main.param.warning("""Setting interactive_orientation_widget=True will break synchronization capabilities of the pane""")
                 return VTKRenderWindowSynchronized(obj, **params)
         elif VTKJS.applies(obj):
             return VTKJS(obj, **params)
@@ -387,7 +392,7 @@ class VTKRenderWindow(BaseVTKRenderWindow):
         if root is None:
             root = model
         self._link_props(model,
-                         ['enable_keybindings', 'orientation_widget'],
+                         ['enable_keybindings', 'orientation_widget', 'interactive_orientation_widget'],
                          doc, root, comm)
         self._models[root.ref['id']] = (model, parent)
         return model
@@ -415,6 +420,9 @@ class VTKRenderWindowSynchronized(BaseVTKRenderWindow, SyncHelpers):
     Synchronize a vtkRenderWindow constructs on python side
     with a custom bokeh model on javascript side
     """
+
+    interactive_orientation_widget = param.Boolean(default=False, constant=True, doc="""
+    """)
 
     _one_time_reset = param.Boolean(default=False)
 
@@ -456,7 +464,7 @@ class VTKRenderWindowSynchronized(BaseVTKRenderWindow, SyncHelpers):
             root = model
         self._link_props(model,
                          ['camera', 'color_mappers', 'enable_keybindings', 'one_time_reset',
-                          'orientation_widget'],
+                          'orientation_widget', 'interactive_orientation_widget'],
                          doc, root, comm)
         self._contexts[model.id] =  context
         self._models[root.ref['id']] = (model, parent)

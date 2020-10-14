@@ -9,7 +9,7 @@ from bokeh.core.has_props import abstract
 from bokeh.core.enums import enumeration
 from bokeh.models import HTMLBox, Model, ColorMapper
 
-vtk_cdn = "https://unpkg.com/vtk.js@13.18.0/dist/vtk.js"
+vtk_cdn = "https://unpkg.com/vtk.js@14.16.4/dist/vtk.js"
 
 class VTKAxes(Model):
     """
@@ -63,6 +63,8 @@ class AbstractVTKPlot(HTMLBox):
     height = Override(default=300)
 
     orientation_widget = Bool(default=False)
+
+    interactive_orientation_widget = Bool(default=False)
 
     width = Override(default=300)
 
