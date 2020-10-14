@@ -520,6 +520,9 @@ class VTKVolume(AbstractVTK):
         object gives even in the absence of strong light. It is
         constant in all directions.""")
 
+    controller_expanded = param.Boolean(default=True, doc="""
+        If True the volume controller panel options is expanded in the view""")
+
     colormap = param.Selector(default='erdc_rainbow_bright', objects=PRESET_CMAPS, doc="""
         Name of the colormap used to transform pixel value in color.""")
 
@@ -643,7 +646,7 @@ class VTKVolume(AbstractVTK):
                               **props)
         if root is None:
             root = model
-        self._link_props(model, ['colormap', 'orientation_widget', 'camera', 'mapper'], doc, root, comm)
+        self._link_props(model, ['colormap', 'orientation_widget', 'camera', 'mapper', 'controller_expanded'], doc, root, comm)
         self._models[root.ref['id']] = (model, parent)
         return model
 
