@@ -40,6 +40,12 @@ _server_info = (
 
 class BaseTemplate(param.Parameterized, ServableMixin):
 
+    location = param.Boolean(default=False, doc="""
+        Whether to add a Location component to this Template.
+        Note if this is set to true, the Jinja2 template must
+        either insert all available roots or explicitly embed
+        the location root with : {{ embed(roots.location) }}.""")
+
     # Dictionary of property overrides by bokeh Model type
     _modifiers = {}
 
@@ -124,6 +130,9 @@ class BaseTemplate(param.Parameterized, ServableMixin):
     def _init_doc(self, doc=None, comm=None, title=None, notebook=False, location=True):
         doc = doc or _curdoc()
         title = title or 'Panel Application'
+        if location and self.location:
+            loc = self._add_location(doc, location)
+            doc.on_session_destroyed(loc._server_destroy)
         doc.title = title
         col = Column()
         preprocess_root = col.get_root(doc, comm)
@@ -334,6 +343,8 @@ class BasicTemplate(BaseTemplate):
     theme = param.ClassSelector(class_=Theme, default=DefaultTheme,
                                 constant=True, is_instance=False, instantiate=False)
 
+    location = param.Boolean(default=True, readonly=True)
+
     _css = None
 
     _template = None
@@ -383,9 +394,6 @@ class BasicTemplate(BaseTemplate):
 
     def _init_doc(self, doc=None, comm=None, title=None, notebook=False, location=True):
         doc = super(BasicTemplate, self)._init_doc(doc, comm, title, notebook, location)
-        if location:
-            loc = self._add_location(doc, location)
-            doc.on_session_destroyed(loc._server_destroy)
         if self.theme:
             theme = self.theme.find_theme(type(self))
             if theme and theme.bokeh_theme:
