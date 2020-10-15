@@ -143,6 +143,9 @@ class Number(ValueIndicator):
 
     font_size = param.String(default='54pt')
 
+    nan_format = param.String(default='-', doc="""
+      How to format nan values.""")
+
     title_size = param.String(default='18pt')
 
     _rename = {}
@@ -156,6 +159,7 @@ class Number(ValueIndicator):
         name = msg.pop('name', self.name)
         format = msg.pop('format', self.format)
         value = msg.pop('value', self.value)
+        nan_format = msg.pop('nan_format', self.nan_format)
         color = msg.pop('default_color', self.default_color)
         colors = msg.pop('colors', self.colors)
         for val, clr in (colors or [])[::-1]:
@@ -163,7 +167,7 @@ class Number(ValueIndicator):
                 color = clr
         if value is None:
             value = float('nan')
-        value = format.format(value=value)
+        value = format.format(value=value).replace('nan', self.nan_format)
         text = f'<div style="font-size: {font_size}; color: {color}">{value}</div>'
         if self.name:
             title_font_size = msg.pop('title_size', self.title_size)
@@ -343,6 +347,9 @@ class Dial(ValueIndicator):
 
     height = param.Integer(default=250, bounds=(1, None))
 
+    nan_format = param.String(default='-', doc="""
+      How to format nan values.""")
+
     needle_color = param.String(default='black', doc="""
       Color of the Dial needle.""")
 
@@ -374,10 +381,10 @@ class Dial(ValueIndicator):
         'annulus_width', 'format', 'background', 'needle_width',
         'tick_size', 'title_size', 'value_size', 'colors',
         'default_color', 'unfilled_color', 'height',
-        'width', 'needle_color'
+        'width', 'nan_format', 'needle_color'
     ]
 
-    _data_params = _manual_params[:-1]
+    _data_params = _manual_params
 
     _rename = {'background': 'background_fill_color'}
 
@@ -450,7 +457,7 @@ class Dial(ValueIndicator):
             'radius': np.array([center_radius])
         }
 
-        value = self.format.format(value=value)
+        value = self.format.format(value=value).replace('nan', self.nan_format)
         min_value = self.format.format(value=vmin)
         max_value = self.format.format(value=vmax)
         tminx, tminy = np.cos(start)*center_radius, np.sin(start)*center_radius
