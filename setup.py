@@ -132,6 +132,7 @@ extras_require = {
         'datashader',
         'jupyter_bokeh',
         'django',
+        'channels',
         'pyvista',
         'ipywidgets',
         'ipywidgets_bokeh',
