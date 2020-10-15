@@ -167,7 +167,7 @@ class Number(ValueIndicator):
                 color = clr
         if value is None:
             value = float('nan')
-        value = format.format(value=value).replace('nan', self.nan_format)
+        value = format.format(value=value).replace('nan', nan_format)
         text = f'<div style="font-size: {font_size}; color: {color}">{value}</div>'
         if self.name:
             title_font_size = msg.pop('title_size', self.title_size)
