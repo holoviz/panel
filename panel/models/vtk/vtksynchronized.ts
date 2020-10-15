@@ -86,7 +86,10 @@ export class VTKSynchronizedPlotView extends AbstractVTKView {
     this._decode_arrays()
     const state = clone(this.model.scene)
     Promise.all(this._promises).then(() => {
-      this._sync_plot(state, () => this._on_scene_ready()).then(() => this._set_camera_state())
+      this._sync_plot(state, () => this._on_scene_ready()).then(() => {
+        this._set_camera_state()
+        this._get_camera_state()
+      })
     })
   }
 

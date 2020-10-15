@@ -280,6 +280,7 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
 
       this._vtk_renwin.getRenderer().resetCameraClippingRange()
       this._vtk_render()
+      this._get_camera_state()
     })
   }
 
