@@ -510,12 +510,14 @@ class VTKRenderWindowSynchronized(BaseVTKRenderWindow, SyncHelpers):
         old_camera = self.vtk_camera
         new_camera = vtk.vtkCamera()
         self.vtk_camera = new_camera
+        exclude_properties = ['mtime']
         if self.camera is not None:
             for k, v in self.camera.items():
-                if type(v) is list:
-                    getattr(new_camera, 'Set' + k[0].capitalize() + k[1:])(*v)
-                else:
-                    getattr(new_camera, 'Set' + k[0].capitalize() + k[1:])(v)
+                if k not in exclude_properties:
+                    if type(v) is list:
+                        getattr(new_camera, 'Set' + k[0].capitalize() + k[1:])(*v)
+                    else:
+                        getattr(new_camera, 'Set' + k[0].capitalize() + k[1:])(v)
         else:
             new_camera.DeepCopy(old_camera)
 

@@ -110,7 +110,9 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
       this.init_vtk_renwin()
       set_size(this._vtk_container, this.model)
       this.el.appendChild(this._vtk_container)
-      this._connect_interactions_to_model()
+      // update camera model state only at the end of the interaction
+      // with the scene (avoid bouncing events and large amount of events)
+      this._vtk_renwin.getInteractor().onEndAnimation(() => this._get_camera_state())
       this._remove_default_key_binding()
       this._bind_key_events()
       this.plot()
@@ -159,13 +161,6 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
       delete state.flattenedDepIds
       delete state.managedInstanceId
       delete state.directionOfProjection
-      delete state.projectionMatrix
-      delete state.viewMatrix
-      delete state.physicalTranslation
-      delete state.physicalScale
-      delete state.physicalViewUp
-      delete state.physicalViewNorth
-      delete state.mtime
     }
     return state
   }
@@ -226,19 +221,6 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
         .querySelector("body")!
         .removeEventListener("keyup", interactor.handleKeyUp)
     })
-  }
-
-  _connect_interactions_to_model(): void {
-    // update camera model state only at the end of the interaction
-    // with the scene (avoid bouncing events and large amount of events)
-
-    const update_model_camera = () => {
-      this._get_camera_state()
-      this.model.properties.camera.change.emit()
-    }
-    const interactor = this._vtk_renwin.getInteractor()
-    const event_list = ["LeftButtonRelease", "RightButtonRelease", "EndAnimation"]
-    event_list.forEach((event) => interactor['on' + event](update_model_camera))
   }
 
   _create_orientation_widget(): void {
