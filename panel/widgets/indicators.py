@@ -98,7 +98,7 @@ class ValueIndicator(Indicator):
     value.
     """
 
-    value = param.Number(default=None)
+    value = param.Number(default=None, allow_None=True)
 
     __abstract = True
 
@@ -159,8 +159,10 @@ class Number(ValueIndicator):
         color = msg.pop('default_color', self.default_color)
         colors = msg.pop('colors', self.colors)
         for val, clr in (colors or [])[::-1]:
-            if value <= val:
+            if value is not None and value <= val:
                 color = clr
+        if value is None:
+            value = float('nan')
         value = format.format(value=value)
         text = f'<div style="font-size: {font_size}; color: {color}">{value}</div>'
         if self.name:
@@ -181,7 +183,7 @@ class String(ValueIndicator):
 
     title_size = param.String(default='18pt')
 
-    value = param.String(default=None)
+    value = param.String(default=None, allow_None=True)
 
     _rename = {}
 
@@ -362,7 +364,7 @@ class Dial(ValueIndicator):
     value_size = param.String(default=None, doc="""
       Font size of the Dial value label.""")
 
-    value = param.Number(default=25, doc="""
+    value = param.Number(default=25, allow_None=True, doc="""
       Value to indicate on the dial a value within the declared bounds.""")
 
     width = param.Integer(default=250, bounds=(1, None))
@@ -393,7 +395,10 @@ class Dial(ValueIndicator):
 
     def _get_data(self):
         vmin, vmax = self.bounds
-        fraction = (self.value-vmin)/(vmax-vmin)
+        value = self.value
+        if value is None:
+            value = float('nan')
+        fraction = (value-vmin)/(vmax-vmin)
         start = (np.radians(360-self.start_angle) - pi % (2*pi)) + pi
         end = (np.radians(360-self.end_angle) - pi % (2*pi)) + pi
         distance = (abs(end-start) % (pi*2))
@@ -445,7 +450,7 @@ class Dial(ValueIndicator):
             'radius': np.array([center_radius])
         }
 
-        value = self.format.format(value=self.value)
+        value = self.format.format(value=value)
         min_value = self.format.format(value=vmin)
         max_value = self.format.format(value=vmax)
         tminx, tminy = np.cos(start)*center_radius, np.sin(start)*center_radius
