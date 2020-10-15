@@ -392,7 +392,7 @@ class VTKRenderWindow(BaseVTKRenderWindow):
         if root is None:
             root = model
         self._link_props(model,
-                         ['enable_keybindings', 'orientation_widget', 'interactive_orientation_widget'],
+                         ['enable_keybindings', 'orientation_widget'],
                          doc, root, comm)
         self._models[root.ref['id']] = (model, parent)
         return model
@@ -464,7 +464,7 @@ class VTKRenderWindowSynchronized(BaseVTKRenderWindow, SyncHelpers):
             root = model
         self._link_props(model,
                          ['camera', 'color_mappers', 'enable_keybindings', 'one_time_reset',
-                          'orientation_widget', 'interactive_orientation_widget'],
+                          'orientation_widget'],
                          doc, root, comm)
         self._contexts[model.id] =  context
         self._models[root.ref['id']] = (model, parent)
