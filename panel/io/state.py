@@ -329,7 +329,7 @@ class _state(param.Parameterized):
     def user(self):
         from ..config import config
         user = self.cookies.get('user')
-        if user is None:
+        if user is None or config.cookie_secret is None:
             return None
         return decode_signed_value(config.cookie_secret, 'user', user).decode('utf-8')
 
@@ -337,7 +337,7 @@ class _state(param.Parameterized):
     def user_info(self):
         from ..config import config
         id_token = self.cookies.get('id_token')
-        if id_token is None:
+        if id_token is None or config.cookie_secret is None:
             return None
         id_token = decode_signed_value(config.cookie_secret, 'id_token', id_token)
         if self.encryption is None:
