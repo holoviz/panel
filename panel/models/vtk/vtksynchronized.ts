@@ -49,7 +49,7 @@ export class VTKSynchronizedPlotView extends AbstractVTKView {
       CONTEXT_NAME
     )
   }
-  
+
   connect_signals(): void {
     super.connect_signals()
     this.connect(this.model.properties.arrays.change, () =>
@@ -64,7 +64,6 @@ export class VTKSynchronizedPlotView extends AbstractVTKView {
         Promise.all(this._promises).then(() => {
           this._sync_plot(state, () => {
             this._on_scene_ready()
-            this._connect_interactions_to_model()
           })
         })
       }
@@ -87,7 +86,10 @@ export class VTKSynchronizedPlotView extends AbstractVTKView {
     this._decode_arrays()
     const state = clone(this.model.scene)
     Promise.all(this._promises).then(() => {
-      this._sync_plot(state, () => this._on_scene_ready())
+      this._sync_plot(state, () => this._on_scene_ready()).then(() => {
+        this._set_camera_state()
+        this._get_camera_state()
+      })
     })
   }
 
@@ -131,10 +133,9 @@ export class VTKSynchronizedPlotView extends AbstractVTKView {
     if (!this._axes) this._set_axes()
     this._vtk_renwin.resize()
     this._vtk_render()
-    this._set_camera_state()
   }
 
-  _sync_plot(state: any, onSceneReady: CallableFunction): void {
+  _sync_plot(state: any, onSceneReady: CallableFunction): any {
     // Need to ensure all promises are resolved before calling this function
     this._renderable = false
     this._promises = []
@@ -147,8 +148,7 @@ export class VTKSynchronizedPlotView extends AbstractVTKView {
     )
     if (renderer && !this._vtk_renwin.getRenderer())
       this._vtk_renwin.getRenderWindow().addRenderer(renderer)
-
-    this._vtk_renwin
+    return this._vtk_renwin
       .getRenderWindow()
       .synchronize(state).then(onSceneReady)
   }
