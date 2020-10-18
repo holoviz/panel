@@ -12,9 +12,16 @@ body {
 }
 
 .mdc-top-app-bar__title {
-  display: flex;
+  display: contents;
   padding-left: 10px;
   font-size: 1.5em;
+}
+
+.title-bar {
+  display: contents;
+  justify-content: center;
+  align-content: center;
+  width: 100%;
 }
 
 img.app-logo {
@@ -23,8 +30,8 @@ img.app-logo {
 
 .main-content {
   height: 100%;
-  margin-left: 20px;
-  margin-right: 20px;
+  margin-left: 10px;
+  margin-right: 10px;
 }
 
 #header {
