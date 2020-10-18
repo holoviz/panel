@@ -53,7 +53,11 @@
     </div>
     {% endif %}
 
-    <div class="main" id="main">
+    <div class="main" id="main"
+    {% if not nav %}
+    style="margin-left: 0px;"
+    {% endif %}
+    >
       {% for doc in docs %}
       {% for root in doc.roots %}
       {% if "main" in root.tags %}
