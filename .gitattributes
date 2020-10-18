@@ -1,0 +1,18 @@
+# Line Endings configuration file for Git
+# See https://docs.github.com/en/free-pro-team@latest/github/using-git/configuring-git-to-handle-line-endings
+# Set the default behavior, in case people don't have or can't have core.autocrlf set.
+* text=auto
+
+# Explicitly declare text files you want to always be normalized and converted
+# to native line endings on checkout.
+*.py text
+*.js text
+*.html text
+*.css text
+*.yml text
+*.md text
+
+# Denote all files that are truly binary and should not be modified.
+*.png binary
+*.jpg binary
+*.gif binary
