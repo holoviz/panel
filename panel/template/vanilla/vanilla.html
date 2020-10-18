@@ -5,13 +5,16 @@
 <div class="" id="container">
   <nav class="" style="{% if header_background %}background-color: {{ header_background }} !important;{% endif %}{% if header_color %}color: {{ header_color }}{% endif %}" id="header">
     {% if nav %}
-    <span style="font-size:30px;cursor:pointer" onclick="closeNav()" id="sidebar-button">
-	  <div class="pn-bar"></div>
-	  <div class="pn-bar"></div>
-	  <div class="pn-bar"></div>
-	</span>
+    <span onclick="closeNav()" id="sidebar-button">
+      <div class="pn-bar"></div>
+      <div class="pn-bar"></div>
+      <div class="pn-bar"></div>
+    </span>
     {% endif %}
-    <a class="title" href="#">{{ app_title }}</a>
+    <span id="app-title">
+      <a class="title" href="#" >{{ app_title }}</a>
+    </span>
+    <div id="header-items">
     {% for doc in docs %}
     {% for root in doc.roots %}
     {% if "header" in root.tags %}
@@ -19,7 +22,7 @@
     {% endif %}
     {% endfor %}
     {% endfor %}
-
+    </div>
 	{% if busy %}
 	<div class="pn-busy-container">
 	  {{ embed(roots.busy_indicator) | indent(6) }}
@@ -71,14 +74,14 @@
 <script>
   function openNav() {
     document.getElementById("sidebar").style.left = 0;
-    document.getElementById("main").style.marginLeft = "16.7vw";
+    document.getElementById("main").style.marginLeft = "300px";
     document.getElementById("sidebar-button").onclick = closeNav;
     var interval = setInterval(function () { window.dispatchEvent(new Event('resize')); }, 10);
     setTimeout(function () { clearInterval(interval) }, 210)
   }
 
   function closeNav() {
-    document.getElementById("sidebar").style.left = "-16.7vw";
+    document.getElementById("sidebar").style.left = "-300px";
     document.getElementById("main").style.marginLeft = 0;
     document.getElementById("sidebar-button").onclick = openNav;
     var interval = setInterval(function () { window.dispatchEvent(new Event('resize')); }, 10);

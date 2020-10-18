@@ -2,17 +2,32 @@ body {
   height: 100vh;
   margin: 0px;
   font-family: "Lato", sans-serif;
+  overflow-x: hidden;
+  overflow-y: hidden;
 }
 
 #container {
   padding:0px;
   width: 100vw;
+  max-width: 100vw;
 }
 
 #header{
   display: flex;
   align-items: center;
   padding: 10px;
+  box-shadow: 5px 5px 20px silver;
+}
+
+#header-items {
+  width: 100%;
+  margin-left:15px;
+}
+
+#app-title {
+  min-width:230px;
+  margin-right: 15px;
+  padding-left: 10px;
 }
 
 .title {
@@ -24,6 +39,7 @@ body {
   text-decoration-color: initial;
   font-weight: 400;
   font-size: 28px;
+  width: 200px;
 }
 
 .pn-bar {
@@ -44,21 +60,33 @@ body {
   display: inline-flex;
 }
 
+#sidebar-button {
+  font-size:30px;
+  cursor:pointer;
+  margin-left: 0.25em;
+  margin-right: 0.25em;
+}
+
 #sidebar {
   transition: all 0.2s cubic-bezier(0.945, 0.020, 0.270, 0.665);
   transform-origin: center left; /* Set the transformed position of sidebar to center left side. */
-  width: 16.7vw;
+  width: 290px;
+  height: calc(100vh - 52px);
 }
 
 #sidebar.active {
-  margin-left: -16.7%;
+  margin-left: -300px;
 }
 
 #main {
   transition: all 0.2s cubic-bezier(0.945, 0.020, 0.270, 0.665);
   overflow-y: scroll;
   width: 100vw;
-  margin-left: 16.7vw;
+  height: calc(100vh - 52px);
+  margin-left: 300px;
+  padding-right: 20px;
+  padding-top: 10px;
+  padding-left: 10px;
   overflow-y: scroll;
 }
 
@@ -73,13 +101,14 @@ a.navbar-brand {
 
 p.bk.card-button {
   display: none;
-}  
+}
 
 .sidenav {
   height: 100%;
-  overflow-x: hidden;
-  padding-top: 15px;
+  padding-top: 10px;
+  padding-left: 10px;
   position: absolute;
+  overflow-x: hidden;
   overflow-y: scroll;
 }
 
@@ -87,18 +116,18 @@ p.bk.card-button {
   position: absolute !important;
 }
 
-.sidenav a {
+/* .sidenav a {
   padding: 8px 8px 8px 32px;
   text-decoration: none;
   font-size: 25px;
   color: #818181;
   display: block;
   transition: 0.3s;
-}
+} */
 
-.sidenav a:hover {
+/* .sidenav a:hover {
   color: #f1f1f1;
-}
+} */
 
 .sidenav .closebtn {
   position: absolute;
