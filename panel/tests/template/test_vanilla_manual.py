@@ -58,6 +58,8 @@ Inspect the app and verify that the issues of [Issue 1641]\
             pn.widgets.Button(name="Right", sizing_mode="fixed", width=50),
         )
     ]
+    vanilla.main_max_width = "600px"
+
     return vanilla
 
 def test_vanilla_with_no_sidebar():
@@ -112,9 +114,11 @@ Inspect the app and verify that the issues of [Issue 1641]\
             pn.widgets.Button(name="Right", sizing_mode="fixed", width=50),
         )
     ]
+    vanilla.main_max_width = "600px"
+
     return vanilla
 
 
 if __name__.startswith("bokeh"):
-    # test_vanilla_with_sidebar().servable()
-    test_vanilla_with_no_sidebar().servable()
+    test_vanilla_with_sidebar().servable()
+    # test_vanilla_with_no_sidebar().servable()

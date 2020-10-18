@@ -324,6 +324,11 @@ class BasicTemplate(BaseTemplate):
     main = param.ClassSelector(class_=ListLike, constant=True, doc="""
         A list-like container which populates the main area.""")
 
+    main_max_width = param.String(default="", doc="""
+        The maximum width of the main area. For example '800px' or '80%'.
+        If the string is '' (default) no max width is set.
+    """)
+
     sidebar = param.ClassSelector(class_=ListLike, constant=True, doc="""
         A list-like container which populates the sidebar.""")
 
@@ -379,7 +384,7 @@ class BasicTemplate(BaseTemplate):
         self.header.param.trigger('objects')
         self.modal.param.trigger('objects')
         self.param.watch(self._update_vars, ['title', 'header_background',
-                                             'header_color'])
+                                             'header_color', 'main_max_width'])
 
     @property
     def _css_files(self):
@@ -412,6 +417,7 @@ class BasicTemplate(BaseTemplate):
         self._render_variables['app_logo'] = logo
         self._render_variables['header_background'] = self.header_background
         self._render_variables['header_color'] = self.header_color
+        self._render_variables['main_max_width'] = self.main_max_width
 
     def _update_busy(self):
         if self.busy_indicator:
