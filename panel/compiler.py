@@ -3,6 +3,13 @@ Utilities for building custom models included in panel.
 """
 from __future__ import absolute_import, division, unicode_literals
 
+import os
+import pathlib
+
+import requests
+
+from bokeh.model import Model
+
 #---------------------------------------------------------------------
 # Public API
 #---------------------------------------------------------------------
@@ -68,3 +75,44 @@ def require_components():
                 if export not in exports and export is not None:
                     exports.append(export)
     return configs, requirements, exports, skip_import
+
+
+def bundle_resources():
+    from .config import panel_extension
+    for imp in panel_extension._imports.values():
+        __import__(imp)
+
+    bundle_dir = pathlib.Path(__file__).parent.joinpath('dist', 'bundled')
+
+    js_files = {}
+    for name, model in Model.model_class_reverse_map.items():
+        if not name.startswith('panel.'):
+            continue
+        prev_jsfiles = getattr(model, '__javascript__', None)
+        prev_cls = model
+        for cls in model.__mro__[1:]:
+            jsfiles = getattr(cls, '__javascript__', None)
+            if jsfiles is None:
+                if prev_jsfiles is not None:
+                    js_files[prev_cls.__name__] = prev_jsfiles
+                    prev_cls = cls
+                    break
+            elif jsfiles != prev_jsfiles:
+                js_files[prev_cls] = prev_jsfiles
+                prev_cls = cls
+                break
+            prev_cls = cls
+
+    for name, jsfiles in js_files.items():
+        model_name = name.split('.')[-1].lower()
+        for jsfile in jsfiles:
+            try:
+                response = requests.get(jsfile)
+            except Exception as e:
+                print(f"Failed to fetch {name} dependency: {jsfile}. Errored with {e}.")
+                continue
+            dirname = bundle_dir.joinpath(model_name)
+            dirname.mkdir(parents=True, exist_ok=True)
+            filename = dirname.joinpath(os.path.basename(jsfile))
+            with open(filename, 'w') as f:
+                f.write(response.content.decode('utf-8'))
