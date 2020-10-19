@@ -1,8 +1,6 @@
 import os
 import time
 
-from tempfile import NamedTemporaryFile
-
 import param
 import pytest
 import requests
@@ -12,7 +10,6 @@ from panel.io import state
 from panel.models import HTML as BkHTML
 from panel.pane import Markdown
 from panel.io.server import serve
-from panel.template import Template
 
 
 def test_get_server(html_server_session):
