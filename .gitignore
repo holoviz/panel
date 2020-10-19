@@ -121,3 +121,4 @@ builtdocs/
 discover/
 
 node_modules/
+tmp/
