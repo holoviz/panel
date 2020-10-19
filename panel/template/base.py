@@ -22,12 +22,15 @@ from pyviz_comms import JupyterCommManager as _JupyterCommManager
 from ..config import config, panel_extension
 from ..io.model import add_to_doc
 from ..io.notebook import render_template
+from ..io.resources import CDN_DIST, LOCAL_DIST
 from ..io.save import save
 from ..io.state import state
 from ..layout import Column, ListLike
 from ..models.comm_manager import CommManager
 from ..pane import panel as _panel, HTML, Str, HoloViews
 from ..pane.image import ImageBase
+from ..util import url_path
+
 from ..viewable import ServableMixin, Viewable
 from ..widgets import Button
 from ..widgets.indicators import BooleanIndicator, LoadingSpinner
@@ -172,11 +175,6 @@ class BaseTemplate(param.Parameterized, ServableMixin):
         else:
             doc.template = self.template
         doc._template_variables.update(self._render_variables)
-        doc._template_variables['template_css_files'] = css_files = (
-            doc._template_variables.get('template_css_files', [])
-        )
-        for cssf in self._css_files:
-            css_files.append(str(cssf))
         return doc
 
     def _repr_mimebundle_(self, include=None, exclude=None):
@@ -219,10 +217,6 @@ class BaseTemplate(param.Parameterized, ServableMixin):
             state._handles[ref] = (handle, [])
 
         return render_template(doc, comm, manager)
-
-    @property
-    def _css_files(self):
-        return []
 
     #----------------------------------------------------------------
     # Public API
@@ -394,6 +388,8 @@ class BasicTemplate(BaseTemplate):
 
     _modifiers = {}
 
+    _resources = {'css': {}, 'js': {}}
+
     __abstract = True
 
     def __init__(self, **params):
@@ -424,17 +420,6 @@ class BasicTemplate(BaseTemplate):
         self.param.watch(self._update_vars, ['title', 'header_background',
                                              'header_color', 'main_max_width'])
 
-    @property
-    def _css_files(self):
-        css_files = []
-        if self._css and self._css not in config.css_files:
-            css_files.append(self._css)
-        if self.theme:
-            theme = self.theme.find_theme(type(self))
-            if theme and theme.css and theme.css not in config.css_files:
-                css_files.append(theme.css)
-        return css_files
-
     def _init_doc(self, doc=None, comm=None, title=None, notebook=False, location=True):
         title = title or self.title
         doc = super(BasicTemplate, self)._init_doc(doc, comm, title, notebook, location)
@@ -443,6 +428,31 @@ class BasicTemplate(BaseTemplate):
             if theme and theme.bokeh_theme:
                 doc.theme = theme.bokeh_theme
         return doc
+
+    def _template_resources(self):
+        name = type(self).__name__.lower()
+        resources = _settings.resources(default="server")
+        dist_path = LOCAL_DIST if resources == 'server' else CDN_DIST
+
+        # External resources
+        css_files = dict(self._resources['css'])
+        for cssname, css in css_files.items():
+            css_path = url_path(css)
+            css_files[cssname] = dist_path + f'bundled/{name}/{css_path}'
+        js_files = dict(self._resources['js'])
+        for jsname, js in js_files.items():
+            js_path = url_path(js)
+            js_files[jsname] = dist_path + f'bundled/{name}/{js_path}'
+
+        # CSS files
+        base_css = os.path.basename(self._css)
+        css_files['base'] = dist_path + f'bundled/{name}/{base_css}'
+        if self.theme:
+            theme = self.theme.find_theme(type(self))
+            if theme and theme.css:
+                basename = os.path.basename(theme.css)
+                css_files['theme'] = dist_path + f'bundled/{name}/{basename}'
+        return {'css': css_files, 'js': js_files}
 
     def _update_vars(self, *args):
         self._render_variables['app_title'] = self.title
@@ -468,9 +478,10 @@ class BasicTemplate(BaseTemplate):
             favicon = img._b64()
         else:
             if _settings.resources(default='server') == 'cdn' and self.favicon == FAVICON_URL:
-                favicon = "https://cdn.jsdelivr.net/npm/@holoviz/panel@latest/dist/icons/favicon.ico"
+                favicon = CDN_DIST+"icons/favicon.ico"
             else:
                 favicon = self.favicon
+        self._render_variables['template_resources'] = self._template_resources()
         self._render_variables['app_logo'] = logo
         self._render_variables['app_favicon'] = favicon
         self._render_variables['app_favicon_type'] = self._get_favicon_type(self.favicon)

@@ -320,13 +320,17 @@ class classproperty(object):
         return self.f(owner)
 
 
+def url_path(url):
+    return os.path.join(*os.path.join(*url.split('//')[1:]).split('/')[1:])
+
+
 def bundled_files(model, file_type='javascript'):
     bdir = os.path.join(PANEL_DIR, 'dist', 'bundled', model.__name__.lower())
     name = model.__name__.lower()
     resources = settings.resources(default='server')
     files = []
     for url in getattr(model, f"__{file_type}_raw__", []):
-        filepath = os.path.join(*os.path.join(*url.split('//')[1:]).split('/')[1:])
+        filepath = url_path(url)
         test_filepath = filepath.split('?')[0]
         if resources == 'server' and os.path.isfile(os.path.join(bdir, test_filepath)):
             files.append(f'/static/extensions/panel/bundled/{name}/{filepath}')

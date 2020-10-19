@@ -3,9 +3,14 @@ Utilities for building custom models included in panel.
 """
 from __future__ import absolute_import, division, unicode_literals
 
+
+import glob
+import inspect
 import os
 import pathlib
+import shutil
 
+import param
 import requests
 
 from bokeh.model import Model
@@ -95,6 +100,8 @@ def write_bundled_files(name, files, bundle_dir):
 
 def bundle_resources():
     from .config import panel_extension
+    from .template.base import BasicTemplate
+
     for imp in panel_extension._imports.values():
         __import__(imp)
 
@@ -129,3 +136,13 @@ def bundle_resources():
 
     for name, cssfiles in css_files.items():
         write_bundled_files(name, cssfiles, bundle_dir)
+
+    # Bundle external template dependencies
+    for name, template in param.concrete_descendents(BasicTemplate).items():
+        write_bundled_files(name, list(template._resources['css'].values()), bundle_dir)
+        write_bundled_files(name, list(template._resources['js'].values()), bundle_dir)
+        template_dir = pathlib.Path(inspect.getfile(template)).parent
+        dest_dir = bundle_dir / name.lower()
+        dest_dir.mkdir(parents=True, exist_ok=True)
+        for css in glob.glob(str(template_dir / '*.css')):
+            shutil.copyfile(css, dest_dir / os.path.basename(css))

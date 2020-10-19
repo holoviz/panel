@@ -9,6 +9,9 @@
 {% if meta_refresh %}<meta http-equiv="refresh" content="{{ meta_refresh }}">{% endif %}
 {% if meta_viewport %}<meta name="viewport" content="{{ meta_viewport }}">{% endif %}
 {% if base_url and base_target %}<base href="{{ base_url }}" target="{{ base_target }}">{% endif %}
+
+<link rel="stylesheet" href="{{ template_resources['css']['base] }}">
+<link rel="stylesheet" href="{{ template_resources['css']['theme'] }}">
 {% endblock %}
 
 <!-- goes in body -->

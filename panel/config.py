@@ -31,7 +31,7 @@ _LOCAL_DEV_VERSION = any(v in __version__ for v in ('post', 'dirty'))
 #---------------------------------------------------------------------
 
 _PATH = os.path.abspath(os.path.dirname(__file__))
-_CSS_FILES = glob.glob(os.path.join(_PATH, '_styles', '*.css'))
+
 
 def validate_config(config, parameter, value):
     """
@@ -64,7 +64,7 @@ class _config(param.Parameterized):
         Whether to set custom Signature which allows tab-completion
         in some IDEs and environments.""")
 
-    css_files = param.List(default=_CSS_FILES, doc="""
+    css_files = param.List(default=[], doc="""
         External CSS files to load.""")
 
     js_files = param.Dict(default={}, doc="""

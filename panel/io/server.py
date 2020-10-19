@@ -102,39 +102,6 @@ def _eval_panel(panel, server_id, title, location, doc):
             doc = as_panel(panel)._modify_doc(server_id, title, doc, location)
         return doc
 
-
-class PanelDocHandler(SessionHandler):
-    """
-    Implements a custom Tornado handler for document display page
-    overriding the default bokeh DocHandler to replace the default
-    resources with a Panel resources object.
-    """
-
-    @authenticated
-    async def get(self, *args, **kwargs):
-        session = await self.get_session()
-
-        mode = settings.resources(default="server")
-        css_files = session.document.template_variables.get('template_css_files')
-        resource_opts = dict(mode=mode, extra_css_files=css_files)
-        if mode == "server":
-            resource_opts.update({
-                'root_url': self.application._prefix,
-                'path_versioner': StaticHandler.append_version
-            })
-        resources = PanelResources(**resource_opts)
-
-        page = server_html_page_for_session(
-            session, resources=resources, title=session.document.title,
-            template=session.document.template,
-            template_variables=session.document.template_variables
-        )
-
-        self.set_header("Content-Type", 'text/html')
-        self.write(page)
-
-per_app_patterns[0] = (r'/?', PanelDocHandler)
-
 #---------------------------------------------------------------------
 # Public API
 #---------------------------------------------------------------------

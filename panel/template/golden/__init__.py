@@ -25,6 +25,16 @@ class GoldenTemplate(BasicTemplate):
         },
     }
 
+    _resources = {
+        'css': {
+            'goldenlayout': "https://golden-layout.com/files/latest/css/goldenlayout-base.css",
+        },
+        'js': {
+            'goldenlayout': "https://golden-layout.com/files/latest/js/goldenlayout.js",
+            'jquery': "http://code.jquery.com/jquery-1.11.1.min.js"
+        }
+    }
+
     def _apply_root(self, name, model, tags):
         if 'main' in tags:
             model.margin = (10, 15, 10, 10)
