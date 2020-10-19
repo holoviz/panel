@@ -77,6 +77,21 @@ def require_components():
     return configs, requirements, exports, skip_import
 
 
+def write_bundled_files(name, files, bundle_dir):
+    model_name = name.split('.')[-1].lower()
+    for bundle_file in files:
+        try:
+            response = requests.get(bundle_file)
+        except Exception as e:
+            print(f"Failed to fetch {name} dependency: {bundle_file}. Errored with {e}.")
+            continue
+        dirname = bundle_dir.joinpath(model_name)
+        dirname.mkdir(parents=True, exist_ok=True)
+        filename = dirname.joinpath(os.path.basename(bundle_file))
+        with open(filename, 'w') as f:
+            f.write(response.content.decode('utf-8'))
+
+
 def bundle_resources():
     from .config import panel_extension
     for imp in panel_extension._imports.values():
@@ -85,34 +100,31 @@ def bundle_resources():
     bundle_dir = pathlib.Path(__file__).parent.joinpath('dist', 'bundled')
 
     js_files = {}
+    css_files = {}
     for name, model in Model.model_class_reverse_map.items():
         if not name.startswith('panel.'):
             continue
-        prev_jsfiles = getattr(model, '__javascript__', None)
+        prev_jsfiles = getattr(model, '__javascript_raw__', None)
         prev_cls = model
         for cls in model.__mro__[1:]:
-            jsfiles = getattr(cls, '__javascript__', None)
-            if jsfiles is None:
-                if prev_jsfiles is not None:
-                    js_files[prev_cls.__name__] = prev_jsfiles
-                    prev_cls = cls
-                    break
-            elif jsfiles != prev_jsfiles:
-                js_files[prev_cls] = prev_jsfiles
-                prev_cls = cls
+            jsfiles = getattr(cls, '__javascript_raw__', None)
+            if ((jsfiles is None and prev_jsfiles is not None) or
+                (jsfiles is not None and jsfiles != prev_jsfiles)):
+                js_files[prev_cls.__name__] = prev_jsfiles
+                break
+            prev_cls = cls
+        prev_cssfiles = getattr(model, '__css_raw__', None)
+        prev_cls = model
+        for cls in model.__mro__[1:]:
+            cssfiles = getattr(cls, '__css_raw__', None)
+            if ((cssfiles is None and prev_cssfiles is not None) or
+                (cssfiles is not None and cssfiles != prev_cssfiles)):
+                css_files[prev_cls.__name__] = prev_cssfiles
                 break
             prev_cls = cls
 
     for name, jsfiles in js_files.items():
-        model_name = name.split('.')[-1].lower()
-        for jsfile in jsfiles:
-            try:
-                response = requests.get(jsfile)
-            except Exception as e:
-                print(f"Failed to fetch {name} dependency: {jsfile}. Errored with {e}.")
-                continue
-            dirname = bundle_dir.joinpath(model_name)
-            dirname.mkdir(parents=True, exist_ok=True)
-            filename = dirname.joinpath(os.path.basename(jsfile))
-            with open(filename, 'w') as f:
-                f.write(response.content.decode('utf-8'))
+        write_bundled_files(name, jsfiles, bundle_dir)
+
+    for name, cssfiles in css_files.items():
+        write_bundled_files(name, cssfiles, bundle_dir)
