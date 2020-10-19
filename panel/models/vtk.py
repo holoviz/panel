@@ -2,15 +2,12 @@
 """
 Defines custom VTKPlot bokeh model to render VTK objects.
 """
-import os
-
 from bokeh.core.properties import (String, Bool, Dict, Any, Override,
                                    Instance, Int, Float, PositiveInt,
                                    Enum, List)
 from bokeh.core.has_props import abstract
 from bokeh.core.enums import enumeration
 from bokeh.models import HTMLBox, Model, ColorMapper
-from bokeh.settings import settings
 
 from ..util import classproperty, bundled_files
 
