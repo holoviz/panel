@@ -37,6 +37,9 @@ _server_info = (
     'https://localhost:{port}</a>'
 )
 
+# Should be served from somewhere else!
+FAVICON_URL = "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel/2781d86d4ed141889d633748879a120d7d8e777a/assets/images/favicon.ico"
+
 
 class BaseTemplate(param.Parameterized, ServableMixin):
 
@@ -339,7 +342,36 @@ class BasicTemplate(BaseTemplate):
         URI of logo to add to the header (if local file, logo is
         base64 encoded as URI).""")
 
-    title = param.String(doc="A title to show in the header.")
+    favicon = param.String(default=FAVICON_URL, constant=True, doc="""
+        URI of favicon to add to the document head (if local file, favicon is
+        base64 encoded as URI).""")
+
+    title = param.String(default="Panel Application", doc="""
+        A title to show in the header. Also added to the document head meta settings and as the
+        browser tab title""")
+    # See https://www.w3schools.com/html/html_head.asp#:~:text=The%20element%20is%20a,scripts%2C%20and%20other%20meta%20information.
+    meta_description = param.String(default="""Analytics App made with HoloViz Panel, Python and \
+the tools you know and love.""", doc="""
+        A meta description to add to the document head for search engine optimization. For example
+        'P.A. Nelson'. Default is 'Analytics App made with HoloViz Panel, Python and the tools you
+        know and love.'""")
+    meta_keywords = param.String(default="HoloViz, Panel, Python, Analytics", doc="""
+        Meta keywords to add to the document head for search engine optimization. Default is
+        'HoloViz, Panel, Python, Analytics'""")
+    meta_author = param.String(default="HoloViz Panel", doc="""
+        A meta author to add to the the document head for search engine optimization. For example
+        'P.A. Nelson'. Default is 'HoloViz Panel'""")
+    meta_refresh = param.String(doc="""
+        A meta refresh rate to add to the document head. For example '30' will instruct the
+        browser to refresh every 30 seconds. Default is '', i.e. no automatic refresh.""")
+    meta_viewport = param.String(default="width=device-width, initial-scale=1.0", doc="""
+        A meta viewport to add to the header. Default is 'width=device-width, initial-scale=1.0'""")
+    base_url = param.String(doc="""
+        Specifies the base URL for all relative URLs in a page. Default is '', i.e. not the domain.
+        """)
+    base_target = param.ObjectSelector(default="_self",
+        objects=["_blank", "_self", "_parent", "_top"], doc=
+        """Specifies the base Target for all relative URLs in a page. Default is '_self'""")
 
     header_background = param.String(doc="Optional header background color override")
 
@@ -398,6 +430,7 @@ class BasicTemplate(BaseTemplate):
         return css_files
 
     def _init_doc(self, doc=None, comm=None, title=None, notebook=False, location=True):
+        title = title or self.title
         doc = super(BasicTemplate, self)._init_doc(doc, comm, title, notebook, location)
         if self.theme:
             theme = self.theme.find_theme(type(self))
@@ -407,6 +440,14 @@ class BasicTemplate(BaseTemplate):
 
     def _update_vars(self, *args):
         self._render_variables['app_title'] = self.title
+        self._render_variables['meta_name'] = self.title
+        self._render_variables['meta_description'] = self.meta_description
+        self._render_variables['meta_keywords'] = self.meta_keywords
+        self._render_variables['meta_author'] = self.meta_author
+        self._render_variables['meta_refresh'] = self.meta_refresh
+        self._render_variables['meta_viewport'] = self.meta_viewport
+        self._render_variables['base_url'] = self.base_url
+        self._render_variables['base_target'] = self.base_target
         if os.path.isfile(self.logo):
             img = _panel(self.logo)
             if not isinstance(img, ImageBase):
@@ -414,7 +455,16 @@ class BasicTemplate(BaseTemplate):
             logo = img._b64()
         else:
             logo = self.logo
+        if os.path.isfile(self.favicon):
+            img = _panel(self.favicon)
+            if not isinstance(img, ImageBase):
+                raise ValueError("Could not determine file type of favicon: {self.favicon}.")
+            favicon = img._b64()
+        else:
+            favicon = self.favicon
         self._render_variables['app_logo'] = logo
+        self._render_variables['app_favicon'] = favicon
+        self._render_variables['app_favicon_type'] = self._get_favicon_type(self.favicon)
         self._render_variables['header_background'] = self.header_background
         self._render_variables['header_color'] = self.header_color
         self._render_variables['main_max_width'] = self.main_max_width
@@ -475,6 +525,23 @@ class BasicTemplate(BaseTemplate):
           modal.style.display = "none";
         </script>
         """
+
+    @staticmethod
+    def _get_favicon_type(favicon):
+        if not favicon:
+            return ""
+        elif favicon.endswith(".png"):
+            return "image/png"
+        elif favicon.endswith("jpg"):
+            return "image/jpg"
+        elif favicon.endswith("gif"):
+            return "image/gif"
+        elif favicon.endswith("svg"):
+            return "image/svg"
+        elif favicon.endswith("ico"):
+            return "image/x-icon"
+        else:
+            raise ValueError("favicon type not supported.")
 
 
 

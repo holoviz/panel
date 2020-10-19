@@ -4,6 +4,7 @@ import holoviews as hv
 
 LOGO = "https://panel.holoviz.org/_static/logo_horizontal.png"
 
+
 def test_vanilla_with_sidebar():
     """Returns an app that uses the vanilla template in various ways.
 
@@ -16,7 +17,10 @@ Inspect the app and verify that the issues of [Issue 1641]\
 - Independent scroll for sidebar and main
 - Only vertical scrollbars
 """
-    vanilla = pn.template.VanillaTemplate(title="Vanilla Template", logo=LOGO)
+    vanilla = pn.template.VanillaTemplate(
+        title="Vanilla Template",
+        logo=LOGO,
+    )
 
     pn.config.sizing_mode = "stretch_width"
 
@@ -59,8 +63,8 @@ Inspect the app and verify that the issues of [Issue 1641]\
         )
     ]
     vanilla.main_max_width = "600px"
-
     return vanilla
+
 
 def test_vanilla_with_no_sidebar():
     """Returns an app that uses the vanilla template in various ways.
@@ -74,7 +78,11 @@ Inspect the app and verify that the issues of [Issue 1641]\
 - Independent scroll for sidebar and main
 - Only vertical scrollbars
 """
-    vanilla = pn.template.VanillaTemplate(title="Vanilla Template", logo=LOGO)
+    vanilla = pn.template.VanillaTemplate(
+        title="Vanilla Template",
+        logo=LOGO,
+        favicon="https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel/2781d86d4ed141889d633748879a120d7d8e777a/assets/images/favicon.ico",
+    )
 
     pn.config.sizing_mode = "stretch_width"
 
@@ -115,7 +123,6 @@ Inspect the app and verify that the issues of [Issue 1641]\
         )
     ]
     vanilla.main_max_width = "600px"
-
     return vanilla
 
 
