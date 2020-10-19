@@ -327,7 +327,8 @@ def bundled_files(model, file_type='javascript'):
     files = []
     for url in getattr(model, f"__{file_type}_raw__", []):
         filename = url.split("/")[-1]
-        if resources == 'server' and os.path.isfile(os.path.join(bdir, filename)):
+        test_filename = filename.split('?')[0]
+        if resources == 'server' and os.path.isfile(os.path.join(bdir, test_filename)):
             files.append(f'/static/extensions/panel/bundled/{name}/{filename}')
         else:
             files.append(url)

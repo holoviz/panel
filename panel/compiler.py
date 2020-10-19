@@ -80,6 +80,7 @@ def require_components():
 def write_bundled_files(name, files, bundle_dir):
     model_name = name.split('.')[-1].lower()
     for bundle_file in files:
+        bundle_file = bundle_file.split('?')[0]
         try:
             response = requests.get(bundle_file)
         except Exception as e:
