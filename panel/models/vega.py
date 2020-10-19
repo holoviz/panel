@@ -24,9 +24,9 @@ class VegaPlot(LayoutDOM):
         return bundled_files(cls)
 
     __js_skip__ = {
-        'vega': __javascript__[:1],
-        'vegaLite': __javascript__[1:2],
-        'vegaEmbed': __javascript__[2:]
+        'vega': __javascript_raw__[:1],
+        'vegaLite': __javascript_raw__[1:2],
+        'vegaEmbed': __javascript_raw__[2:]
     }
 
     __js_require__ = {

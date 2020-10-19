@@ -24,7 +24,7 @@ class PlotlyPlot(LayoutDOM):
     def __javascript__(cls):
         return bundled_files(cls)
 
-    __js_skip__ = {'Plotly': __javascript__[1:]}
+    __js_skip__ = {'Plotly': __javascript_raw__[1:]}
 
     __js_require__ = {
         'paths': {

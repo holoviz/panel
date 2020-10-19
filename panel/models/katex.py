@@ -26,8 +26,14 @@ class KaTeX(Markup):
     def __javascript__(cls):
         return bundled_files(cls)
 
-    __js_skip__ = {'katex': __javascript__[:1], 'renderMathInElement': __javascript__[1:]}
+    __js_skip__ = {
+        'katex': __javascript_raw__[:1],
+        'renderMathInElement': __javascript_raw__[1:]
+    }
 
-    __js_require__ = {'paths': {'katex': 'https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.6.0/katex.min',
-                                'autoLoad': 'https://cdn.jsdelivr.net/npm/katex@0.10.1/dist/contrib/auto-render.min'},
-                      'exports': {'katex': 'katex', 'autoLoad': 'renderMathInElement'}}
+    __js_require__ = {
+        'paths': {
+            'katex': 'https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.6.0/katex.min',
+            'autoLoad': 'https://cdn.jsdelivr.net/npm/katex@0.10.1/dist/contrib/auto-render.min'},
+        'exports': {'katex': 'katex', 'autoLoad': 'renderMathInElement'}
+    }
