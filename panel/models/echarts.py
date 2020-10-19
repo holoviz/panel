@@ -4,6 +4,8 @@ Defines custom ECharts bokeh model to render Vega json plots.
 from bokeh.core.properties import Any, Dict, Enum, String
 from bokeh.models import LayoutDOM
 
+from ..util import classproperty, bundled_files
+
 
 class ECharts(LayoutDOM):
     """
@@ -11,7 +13,13 @@ class ECharts(LayoutDOM):
     inside a Bokeh.
     """
 
-    __javascript__ = ["https://cdn.jsdelivr.net/npm/echarts@4.8.0/dist/echarts.min.js"]
+    __javascript_raw__ = [
+        "https://cdn.jsdelivr.net/npm/echarts@4.8.0/dist/echarts.min.js"
+    ]
+
+    @classproperty
+    def __javascript__(cls):
+        return bundled_files(cls)
 
     __js_skip__ = {
         'echarts': __javascript__[:1]}

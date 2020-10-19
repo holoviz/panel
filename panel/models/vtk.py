@@ -2,12 +2,17 @@
 """
 Defines custom VTKPlot bokeh model to render VTK objects.
 """
+import os
+
 from bokeh.core.properties import (String, Bool, Dict, Any, Override,
                                    Instance, Int, Float, PositiveInt,
                                    Enum, List)
 from bokeh.core.has_props import abstract
 from bokeh.core.enums import enumeration
 from bokeh.models import HTMLBox, Model, ColorMapper
+from bokeh.settings import settings
+
+from ..util import classproperty, bundled_files
 
 vtk_cdn = "https://unpkg.com/vtk.js@14.16.4/dist/vtk.js"
 
@@ -42,7 +47,11 @@ class AbstractVTKPlot(HTMLBox):
     renders it inside a Bokeh plot.
     """
 
-    __javascript__ = [vtk_cdn]
+    __javascript_raw__ = [vtk_cdn]
+
+    @classproperty
+    def __javascript__(cls):
+        return bundled_files(AbstractVTKPlot)
 
     __js_skip__ = {'vtk': [vtk_cdn]}
 
