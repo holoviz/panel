@@ -19,7 +19,9 @@ class MathJax(Markup):
     def __javascript__(cls):
         return bundled_files(cls)
 
-    __js_skip__ = {'MathJax': __javascript_raw__}
+    @classproperty
+    def __js_skip__(cls):
+        return {'MathJax': cls.__javascript__}
 
     __js_require__ = {
         'paths': {

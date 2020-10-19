@@ -23,11 +23,13 @@ class VegaPlot(LayoutDOM):
     def __javascript__(cls):
         return bundled_files(cls)
 
-    __js_skip__ = {
-        'vega': __javascript_raw__[:1],
-        'vegaLite': __javascript_raw__[1:2],
-        'vegaEmbed': __javascript_raw__[2:]
-    }
+    @classproperty
+    def __js_skip__(cls):
+        return {
+            'vega': cls.__javascript__[:1],
+            'vegaLite': cls.__javascript__[1:2],
+            'vegaEmbed': cls.__javascript__[2:]
+        }
 
     __js_require__ = {
         'baseUrl': 'https://cdn.jsdelivr.net/npm/',

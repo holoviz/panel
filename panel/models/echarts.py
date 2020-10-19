@@ -21,8 +21,11 @@ class ECharts(LayoutDOM):
     def __javascript__(cls):
         return bundled_files(cls)
 
-    __js_skip__ = {
-        'echarts': __javascript_raw__[:1]}
+    @classproperty
+    def __js_skip__(cls):
+        return {
+            'echarts': cls.__javascript__[:1]
+        }
 
     __js_require__ = {
         'baseUrl': 'https://cdn.jsdelivr.net/npm/',

@@ -26,7 +26,9 @@ class AcePlot(HTMLBox):
     def __javascript__(cls):
         return bundled_files(cls)
 
-    __js_skip__ = {'ace': __javascript__}
+    @classproperty
+    def __js_skip__(cls):
+        return {'ace': cls.__javascript__}
 
     __js_require__ = {
         'paths': {

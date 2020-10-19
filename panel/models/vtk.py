@@ -53,7 +53,9 @@ class AbstractVTKPlot(HTMLBox):
     def __javascript__(cls):
         return bundled_files(AbstractVTKPlot)
 
-    __js_skip__ = {'vtk': [vtk_cdn]}
+    @classproperty
+    def __js_skip__(cls):
+        return {'vtk': cls.__javascript__}
 
     __js_require__ = {
         "paths": {"vtk": vtk_cdn[:-3]},

@@ -41,10 +41,12 @@ class DeckGLPlot(HTMLBox):
     def __javascript__(cls):
         return bundled_files(cls)
 
-    __js_skip__ = {
-        'deck': __javascript_raw__[:-1],
-        'mapboxgl': __javascript_raw__[-1:]
-    }
+    @classproperty
+    def __js_skip__(cls):
+        return {
+            'deck': cls.__javascript__[:-1],
+            'mapboxgl': cls.__javascript__[-1:]
+        }
 
     __js_require__ = {
         'paths': OrderedDict([
