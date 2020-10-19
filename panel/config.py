@@ -6,7 +6,6 @@ components.
 from __future__ import absolute_import, division, unicode_literals
 
 import ast
-import glob
 import inspect
 import os
 import sys

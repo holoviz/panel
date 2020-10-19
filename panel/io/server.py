@@ -17,20 +17,14 @@ from types import FunctionType, MethodType
 
 from bokeh.document.events import ModelChangedEvent
 from bokeh.embed.bundle import extension_dirs
-from bokeh.embed.server import server_html_page_for_session
 from bokeh.io import curdoc
 from bokeh.server.server import Server
-from bokeh.server.views.session_handler import SessionHandler
-from bokeh.server.views.static_handler import StaticHandler
-from bokeh.server.urls import per_app_patterns
-from bokeh.settings import settings
 from tornado.ioloop import IOLoop
 from tornado.websocket import WebSocketHandler
-from tornado.web import RequestHandler, StaticFileHandler, authenticated
+from tornado.web import RequestHandler, StaticFileHandler
 from tornado.wsgi import WSGIContainer
 
 from ..util import bokeh_version
-from .resources import PanelResources
 from .state import state
 
 #---------------------------------------------------------------------
