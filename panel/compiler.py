@@ -3,6 +3,18 @@ Utilities for building custom models included in panel.
 """
 from __future__ import absolute_import, division, unicode_literals
 
+
+import glob
+import inspect
+import os
+import pathlib
+import shutil
+
+import param
+import requests
+
+from bokeh.model import Model
+
 #---------------------------------------------------------------------
 # Public API
 #---------------------------------------------------------------------
@@ -68,3 +80,69 @@ def require_components():
                 if export not in exports and export is not None:
                     exports.append(export)
     return configs, requirements, exports, skip_import
+
+
+def write_bundled_files(name, files, bundle_dir):
+    model_name = name.split('.')[-1].lower()
+    for bundle_file in files:
+        bundle_file = bundle_file.split('?')[0]
+        try:
+            response = requests.get(bundle_file)
+        except Exception as e:
+            print(f"Failed to fetch {name} dependency: {bundle_file}. Errored with {e}.")
+            continue
+        bundle_path = os.path.join(*os.path.join(*bundle_file.split('//')[1:]).split('/')[1:])
+        filename = bundle_dir.joinpath(model_name, bundle_path)
+        filename.parent.mkdir(parents=True, exist_ok=True)
+        with open(filename, 'w') as f:
+            f.write(response.content.decode('utf-8'))
+
+
+def bundle_resources():
+    from .config import panel_extension
+    from .template.base import BasicTemplate
+
+    for imp in panel_extension._imports.values():
+        __import__(imp)
+
+    bundle_dir = pathlib.Path(__file__).parent.joinpath('dist', 'bundled')
+
+    js_files = {}
+    css_files = {}
+    for name, model in Model.model_class_reverse_map.items():
+        if not name.startswith('panel.'):
+            continue
+        prev_jsfiles = getattr(model, '__javascript_raw__', None)
+        prev_cls = model
+        for cls in model.__mro__[1:]:
+            jsfiles = getattr(cls, '__javascript_raw__', None)
+            if ((jsfiles is None and prev_jsfiles is not None) or
+                (jsfiles is not None and jsfiles != prev_jsfiles)):
+                js_files[prev_cls.__name__] = prev_jsfiles
+                break
+            prev_cls = cls
+        prev_cssfiles = getattr(model, '__css_raw__', None)
+        prev_cls = model
+        for cls in model.__mro__[1:]:
+            cssfiles = getattr(cls, '__css_raw__', None)
+            if ((cssfiles is None and prev_cssfiles is not None) or
+                (cssfiles is not None and cssfiles != prev_cssfiles)):
+                css_files[prev_cls.__name__] = prev_cssfiles
+                break
+            prev_cls = cls
+
+    for name, jsfiles in js_files.items():
+        write_bundled_files(name, jsfiles, bundle_dir)
+
+    for name, cssfiles in css_files.items():
+        write_bundled_files(name, cssfiles, bundle_dir)
+
+    # Bundle external template dependencies
+    for name, template in param.concrete_descendents(BasicTemplate).items():
+        write_bundled_files(name, list(template._resources['css'].values()), bundle_dir)
+        write_bundled_files(name, list(template._resources['js'].values()), bundle_dir)
+        template_dir = pathlib.Path(inspect.getfile(template)).parent
+        dest_dir = bundle_dir / name.lower()
+        dest_dir.mkdir(parents=True, exist_ok=True)
+        for css in glob.glob(str(template_dir / '*.css')):
+            shutil.copyfile(css, dest_dir / os.path.basename(css))

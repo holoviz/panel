@@ -24,6 +24,7 @@ from bokeh.embed.util import standalone_docs_json_and_render_items
 from bokeh.embed.wrappers import wrap_in_script_tag
 from bokeh.models import LayoutDOM, Model
 from bokeh.resources import CDN, INLINE
+from bokeh.settings import settings
 from bokeh.util.serialization import make_id
 from pyviz_comms import (
     PYVIZ_PROXY, Comm, JupyterCommManager as _JupyterCommManager, nb_mime_js
@@ -202,10 +203,15 @@ def load_notebook(inline=True, load_timeout=5000):
     from IPython.display import publish_display_data
 
     resources = INLINE if inline else CDN
-    bundle = bundle_for_objs_and_resources(None, resources)
-    configs, requirements, exports, skip_imports = require_components()
+    prev_resources = settings.resources()
+    try:
+        settings.resources = 'cdn'
+        bundle = bundle_for_objs_and_resources(None, resources)
+        configs, requirements, exports, skip_imports = require_components()
+        bokeh_js = _autoload_js(bundle, configs, requirements, exports, skip_imports, load_timeout)
+    finally:
+        settings.resources = prev_resources
 
-    bokeh_js = _autoload_js(bundle, configs, requirements, exports, skip_imports, load_timeout)
     publish_display_data({
         'application/javascript': bokeh_js,
         LOAD_MIME: bokeh_js,

@@ -9,6 +9,8 @@ from bokeh.core.has_props import abstract
 from bokeh.core.enums import enumeration
 from bokeh.models import HTMLBox, Model, ColorMapper
 
+from ..util import classproperty, bundled_files
+
 vtk_cdn = "https://unpkg.com/vtk.js@14.16.4/dist/vtk.js"
 
 class VTKAxes(Model):
@@ -42,9 +44,15 @@ class AbstractVTKPlot(HTMLBox):
     renders it inside a Bokeh plot.
     """
 
-    __javascript__ = [vtk_cdn]
+    __javascript_raw__ = [vtk_cdn]
 
-    __js_skip__ = {'vtk': [vtk_cdn]}
+    @classproperty
+    def __javascript__(cls):
+        return bundled_files(AbstractVTKPlot)
+
+    @classproperty
+    def __js_skip__(cls):
+        return {'vtk': cls.__javascript__}
 
     __js_require__ = {
         "paths": {"vtk": vtk_cdn[:-3]},

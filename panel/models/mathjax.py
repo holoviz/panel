@@ -9,7 +9,9 @@ class MathJax(Markup):
     A bokeh model that renders text using MathJax.
     """
 
-    __javascript__ = ["https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-MML-AM_CHTML"]
+    __javascript__ = [
+        "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML"
+    ]
 
     __js_skip__ = {'MathJax': __javascript__}
 

@@ -35,9 +35,12 @@ def get_setup_version(reponame):
 
 def _build_paneljs():
     from bokeh.ext import build
+    from panel.compiler import bundle_resources
     print("Building custom models:")
     panel_dir = os.path.join(os.path.dirname(__file__), "panel")
     build(panel_dir)
+    print("Bundling custom model resources:")
+    bundle_resources()
 
 
 class CustomDevelopCommand(develop):
