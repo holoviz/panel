@@ -2,6 +2,15 @@
 
 <!-- goes in body -->
 {% block preamble %}
+{% if app_favicon %}<link rel="icon" href="{{ app_favicon }}" type="{{favicon_type}}">{% endif %}
+{% if meta_name %}<meta name="name" content="{{ meta_name }}">{% endif %}
+{% if meta_description %}<meta name="description" content="{{ meta_description }}">{% endif %}
+{% if meta_keywords %}<meta name="keywords" content="{{ meta_keywords }}">{% endif %}
+{% if meta_author %}<meta name="author" content="{{ meta_author }}">{% endif %}
+{% if meta_refresh %}<meta http-equiv="refresh" content="{{ meta_refresh }}">{% endif %}
+{% if meta_viewport %}<meta name="viewport" content="{{ meta_viewport }}">{% endif %}
+{% if base_url and base_target %}<base href="{{ base_url }}" target="{{ base_target }}">{% endif %}
+
 <link href="https://unpkg.com/material-components-web@v4.0.0/dist/material-components-web.min.css" rel="stylesheet">
 <script src="https://unpkg.com/material-components-web@v4.0.0/dist/material-components-web.min.js"></script>
 <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500" rel="stylesheet">

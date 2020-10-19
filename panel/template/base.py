@@ -14,6 +14,7 @@ import param
 
 from bokeh.document.document import Document as _Document
 from bokeh.io import curdoc as _curdoc
+from bokeh.settings import settings as _settings
 from jinja2.environment import Template as _Template
 from six import string_types
 from pyviz_comms import JupyterCommManager as _JupyterCommManager
@@ -37,8 +38,7 @@ _server_info = (
     'https://localhost:{port}</a>'
 )
 
-# Should be served from somewhere else!
-FAVICON_URL = "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel/2781d86d4ed141889d633748879a120d7d8e777a/assets/images/favicon.ico"
+FAVICON_URL = "/static/extensions/panel/icons/favicon.ico"
 
 
 class BaseTemplate(param.Parameterized, ServableMixin):
@@ -329,8 +329,7 @@ class BasicTemplate(BaseTemplate):
 
     main_max_width = param.String(default="", doc="""
         The maximum width of the main area. For example '800px' or '80%'.
-        If the string is '' (default) no max width is set.
-    """)
+        If the string is '' (default) no max width is set.""")
 
     sidebar = param.ClassSelector(class_=ListLike, constant=True, doc="""
         A list-like container which populates the sidebar.""")
@@ -347,35 +346,42 @@ class BasicTemplate(BaseTemplate):
         base64 encoded as URI).""")
 
     title = param.String(default="Panel Application", doc="""
-        A title to show in the header. Also added to the document head meta settings and as the
-        browser tab title""")
-    # See https://www.w3schools.com/html/html_head.asp#:~:text=The%20element%20is%20a,scripts%2C%20and%20other%20meta%20information.
-    meta_description = param.String(default="""Analytics App made with HoloViz Panel, Python and \
-the tools you know and love.""", doc="""
-        A meta description to add to the document head for search engine optimization. For example
-        'P.A. Nelson'. Default is 'Analytics App made with HoloViz Panel, Python and the tools you
-        know and love.'""")
-    meta_keywords = param.String(default="HoloViz, Panel, Python, Analytics", doc="""
-        Meta keywords to add to the document head for search engine optimization. Default is
-        'HoloViz, Panel, Python, Analytics'""")
-    meta_author = param.String(default="HoloViz Panel", doc="""
-        A meta author to add to the the document head for search engine optimization. For example
-        'P.A. Nelson'. Default is 'HoloViz Panel'""")
+        A title to show in the header. Also added to the document head
+        meta settings and as the browser tab title.""")
+
+    meta_description = param.String(doc="""
+        A meta description to add to the document head for search
+        engine optimization. For example 'P.A. Nelson'.""")
+
+    meta_keywords = param.String(doc="""
+        Meta keywords to add to the document head for search engine
+        optimization.""")
+
+    meta_author = param.String(doc="""
+        A meta author to add to the the document head for search
+        engine optimization. For example 'P.A. Nelson'.""")
+
     meta_refresh = param.String(doc="""
-        A meta refresh rate to add to the document head. For example '30' will instruct the
-        browser to refresh every 30 seconds. Default is '', i.e. no automatic refresh.""")
-    meta_viewport = param.String(default="width=device-width, initial-scale=1.0", doc="""
-        A meta viewport to add to the header. Default is 'width=device-width, initial-scale=1.0'""")
+        A meta refresh rate to add to the document head. For example
+        '30' will instruct the browser to refresh every 30
+        seconds. Default is '', i.e. no automatic refresh.""")
+
+    meta_viewport = param.String(doc="""
+        A meta viewport to add to the header.""")
+
     base_url = param.String(doc="""
-        Specifies the base URL for all relative URLs in a page. Default is '', i.e. not the domain.
-        """)
+        Specifies the base URL for all relative URLs in a
+        page. Default is '', i.e. not the domain.""")
+
     base_target = param.ObjectSelector(default="_self",
-        objects=["_blank", "_self", "_parent", "_top"], doc=
-        """Specifies the base Target for all relative URLs in a page. Default is '_self'""")
+        objects=["_blank", "_self", "_parent", "_top"], doc="""
+        Specifies the base Target for all relative URLs in a page.""")
 
-    header_background = param.String(doc="Optional header background color override")
+    header_background = param.String(doc="""
+        Optional header background color override.""")
 
-    header_color = param.String(doc="Optional header text color override")
+    header_color = param.String(doc="""
+        Optional header text color override.""")
 
     theme = param.ClassSelector(class_=Theme, default=DefaultTheme,
                                 constant=True, is_instance=False, instantiate=False)
@@ -461,7 +467,10 @@ the tools you know and love.""", doc="""
                 raise ValueError("Could not determine file type of favicon: {self.favicon}.")
             favicon = img._b64()
         else:
-            favicon = self.favicon
+            if _settings.resources(default='server') == 'cdn' and self.favicon == FAVICON_URL:
+                favicon = "https://cdn.jsdelivr.net/npm/@holoviz/panel@latest/dist/icons/favicon.ico"
+            else:
+                favicon = self.favicon
         self._render_variables['app_logo'] = logo
         self._render_variables['app_favicon'] = favicon
         self._render_variables['app_favicon_type'] = self._get_favicon_type(self.favicon)
