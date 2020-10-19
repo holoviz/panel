@@ -12,7 +12,6 @@ import sys
 from collections import defaultdict
 from contextlib import contextmanager
 from itertools import product
-from tqdm import tqdm
 
 from bokeh.core.property.bases import Property
 from bokeh.models import CustomJS
@@ -211,6 +210,8 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
     states: dict (default={})
       A dictionary specifying the widget values to embed for each widget
     """
+    from tqdm import tqdm
+
     from ..config import config
     from ..layout import Panel
     from ..links import Link
