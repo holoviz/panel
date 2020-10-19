@@ -205,12 +205,12 @@ def load_notebook(inline=True, load_timeout=5000):
     resources = INLINE if inline else CDN
     prev_resources = settings.resources()
     try:
-        settings.resources('cdn')
+        settings.resources = 'cdn'
         bundle = bundle_for_objs_and_resources(None, resources)
         configs, requirements, exports, skip_imports = require_components()
         bokeh_js = _autoload_js(bundle, configs, requirements, exports, skip_imports, load_timeout)
     finally:
-        settings.resources(prev_resources)
+        settings.resources = prev_resources
 
     publish_display_data({
         'application/javascript': bokeh_js,

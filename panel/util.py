@@ -323,7 +323,7 @@ class classproperty(object):
 def bundled_files(model, file_type='javascript'):
     bdir = os.path.join(PANEL_DIR, 'dist', 'bundled', model.__name__.lower())
     name = model.__name__.lower()
-    resources = settings.resources()
+    resources = settings.resources(default='server')
     files = []
     for url in getattr(model, f"__{file_type}_raw__", []):
         filepath = os.path.join(*os.path.join(*url.split('//')[1:]).split('/')[1:])
