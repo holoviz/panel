@@ -99,7 +99,7 @@ class Location(Syncable):
                 pname = mapping[k]
                 try:
                     v = p.param[pname].deserialize(v)
-                except Exception as e:
+                except Exception:
                     pass
                 mapped[pname] = v
             p.param.set_param(**mapped)
