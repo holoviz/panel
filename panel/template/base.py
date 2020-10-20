@@ -508,13 +508,15 @@ class BasicTemplate(BaseTemplate):
         elif event.obj is self.modal:
             tag = 'modal'
 
-        for obj in event.old:
+        old = event.old if isinstance(event.old, list) else event.old.values()
+        for obj in old:
             ref = str(id(obj))
             if obj not in event.new and ref in self._render_items:
                 del self._render_items[ref]
 
         labels = {}
-        for obj in event.new:
+        new = event.new if isinstance(event.new, list) else event.new.values()
+        for obj in new:
             ref = str(id(obj))
             labels[ref] = 'Content' if obj.name.startswith(type(obj).__name__) else obj.name
             if ref not in self._render_items:
@@ -598,7 +600,7 @@ class Template(BaseTemplate):
     """
 
     def __init__(self, template=None, nb_template=None, items=None, **params):
-        super(Template, self).__init__(template, nb_template, **params)
+        super(Template, self).__init__(template=template, nb_template=nb_template, items=items, **params)
         items = {} if items is None else items
         for name, item in items.items():
             self.add_panel(name, item)

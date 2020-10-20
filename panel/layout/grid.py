@@ -169,6 +169,12 @@ class GridSpec(Panel):
     mode = param.ObjectSelector(default='warn', objects=['warn', 'error', 'override'], doc="""
         Whether to warn, error or simply override on overlapping assignment.""")
 
+    ncols = param.Integer(default=None, bounds=(0, None), doc="""
+        Limits the number of columns that can be assigned.""")
+
+    nrows = param.Integer(default=None, bounds=(0, None), doc="""
+        Limits the number of rows that can be assigned.""")
+
     width = param.Integer(default=600)
 
     height = param.Integer(default=600)
@@ -177,12 +183,37 @@ class GridSpec(Panel):
 
     _source_transforms = {'objects': None, 'mode': None}
 
-    _rename = {'objects': 'children', 'mode': None}
+    _rename = {'objects': 'children', 'mode': None, 'ncols': None, 'nrows': None}
 
     def __init__(self, **params):
         if 'objects' not in params:
             params['objects'] = OrderedDict()
         super(GridSpec, self).__init__(**params)
+        self._updating = False
+        self._update_nrows()
+        self._update_ncols()
+        self._update_grid_size()
+
+    @param.depends('nrows', watch=True)
+    def _update_nrows(self):
+        if not self._updating:
+            self._rows_fixed = self.nrows is not None
+
+    @param.depends('ncols', watch=True)
+    def _update_ncols(self):
+        if not self._updating:
+            self._cols_fixed = self.ncols is not None
+
+    @param.depends('objects', watch=True)
+    def _update_grid_size(self):
+        self._updating = True
+        if not self._cols_fixed:
+            max_xidx = [x1 for (_, _, _, x1) in self.objects if x1 is not None]
+            self.ncols = max(max_xidx) if max_xidx else (1 if len(self.objects) else 0)
+        if not self._rows_fixed:
+            max_yidx = [y1 for (_, _, y1, _) in self.objects if y1 is not None]
+            self.nrows = max(max_yidx) if max_yidx else (1 if len(self.objects) else 0)
+        self._updating = False
 
     def _init_properties(self):
         properties = super(GridSpec, self)._init_properties()
@@ -281,23 +312,9 @@ class GridSpec(Panel):
     #----------------------------------------------------------------
 
     @property
-    def nrows(self):
-        max_yidx = [y1 for (_, _, y1, _) in self.objects if y1 is not None]
-        return max(max_yidx) if max_yidx else (1 if len(self.objects) else 0)
-
-    @property
-    def ncols(self):
-        max_xidx = [x1 for (_, _, _, x1) in self.objects if x1 is not None]
-        return max(max_xidx) if max_xidx else (1 if len(self.objects) else 0)
-
-    @property
     def grid(self):
         grid = np.zeros((self.nrows, self.ncols), dtype='uint8')
         for (y0, x0, y1, x1) in self.objects:
-            x0 = 0 if x0 is None else x0
-            x1 = self.ncols if x1 is None else x1
-            y0 = 0 if y0 is None else y0
-            y1 = self.nrows if y1 is None else y1
             grid[y0:y1, x0:x1] += 1
         return grid
 
@@ -314,6 +331,10 @@ class GridSpec(Panel):
         Cloned GridSpec object
         """
         p = dict(self.param.get_param_values(), **params)
+        if not self._cols_fixed:
+            del p['ncols']
+        if not self._rows_fixed:
+            del p['nrows']
         return type(self)(**p)
 
     def __iter__(self):
@@ -391,11 +412,21 @@ class GridSpec(Panel):
         t = 0 if y0 is None else y0
         b = self.ncols if y1 is None else y1
 
+        if self._cols_fixed and (l >= self.ncols or r >= self.ncols):
+            raise IndexError('Assigned object to column(s) out-of-bounds '
+                             'of the grid declared by `ncols`. which '
+                             f'was set to {self.ncols}.')
+        if self._rows_fixed and (l >= self.nrows or r >= self.nrows):
+            raise IndexError('Assigned object to column(s) out-of-bounds '
+                             'of the grid declared by `nrows`, which '
+                             f'was set to {self.nrows}.')
+
         key = (y0, x0, y1, x1)
         overlap = key in self.objects
         clone = self.clone(objects=OrderedDict(self.objects), mode='override')
         if not overlap:
             clone.objects[key] = panel(obj)
+            clone._update_grid_size()
             grid = clone.grid
         else:
             grid = clone.grid
