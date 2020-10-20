@@ -92,8 +92,17 @@ class Location(Syncable):
         query_params = self.query_params
         for p, parameters, _ in self._synced:
             mapping = {v: k for k, v in parameters.items()}
-            p.param.set_param(**{mapping[k]: v for k, v in query_params.items()
-                                 if k in mapping})
+            mapped = {}
+            for k, v in query_params.items():
+                if k not in mapping:
+                    continue
+                pname = mapping[k]
+                try:
+                    v = p.param[pname].deserialize(v)
+                except Exception as e:
+                    pass
+                mapped[pname] = v
+            p.param.set_param(**mapped)
 
     def _update_query(self, *events, query=None):
         if self._syncing:
@@ -103,7 +112,12 @@ class Location(Syncable):
             matches = [ps for o, ps, _ in self._synced if o in (e.cls, e.obj)]
             if not matches:
                 continue
-            query[matches[0][e.name]] = e.new
+            owner = e.cls if e.obj is None else e.obj
+            try:
+                val = owner.param.serialize_value(e.name)
+            except Exception:
+                val = e.new
+            query[matches[0][e.name]] = val
         self._syncing = True
         try:
             self.update_query(**{k: v for k, v in query.items() if v is not None})
