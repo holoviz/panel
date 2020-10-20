@@ -20,7 +20,7 @@ with open(Path(__file__).parent.parent / 'package.json') as f:
     package_json = json.load(f)
     js_version = package_json['version'].split('+')[0]
 
-CDN_DIST = f"https://cdn.jsdelivr.net/npm/@holoviz/panel@{js_version}/dist/"
+CDN_DIST = f"https://unpkg.com/@holoviz/panel@{js_version}/dist/"
 LOCAL_DIST = "/static/extensions/panel/"
 DIST_DIR = Path(__file__).parent.parent / 'dist'
 
