@@ -1,5 +1,4 @@
 body {
-  height: 100vh;
   margin: 0px;
   font-family: "Lato", sans-serif;
   overflow-x: hidden;
@@ -17,7 +16,6 @@ body {
 }
 
 a.navbar-brand {
-  padding-left: 10px;
   display: flex;
   align-items: center;
   font-size: 1.5em;
@@ -50,19 +48,19 @@ img.app-logo {
   margin: 0px;
   width: 100vw;
   display: inline-flex;
+  overflow: auto;
 }
 
 #responsive-grid {
   height: 100%;
   width: 100%;
-  padding: 10px;
 }
 
 #sidebar {
   transition: all 0.2s cubic-bezier(0.945, 0.020, 0.270, 0.665);
   transform-origin: center left; /* Set the transformed position of sidebar to center left side. */
   width: 300px;
-  height: 100vw;
+  height: 100vh;
 }
 
 #sidebar.active {
@@ -74,6 +72,7 @@ img.app-logo {
   width: 100%;
   height: 100vh;
   margin-left: 300px;
+  overflow-y: scroll;
 }
 
 #sidebarCollapse {
@@ -93,7 +92,7 @@ p.bk.card-button {
   overflow-x: hidden;
   padding-top: 15px;
   position: absolute;
-  overflow-y: hidden;
+  overflow-y: scroll;
 }
 
 .bk.card-title {

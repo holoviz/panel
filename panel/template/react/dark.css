@@ -28,11 +28,6 @@ body {
   background-color: #292929 !important;
 }
 
-.react-grid-item{
-  /* background-color: #2f2f2f !important; */
-  background-color: #2f2f2f !important;
-}
-
 .react-grid-item > .react-resizable-handle::after {
   content: "";
   position: absolute;

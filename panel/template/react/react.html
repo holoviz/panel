@@ -58,7 +58,7 @@
 
   </nav>
 
-  <div id="content" style="overflow-x: hide;">
+  <div id="content">
     {% if nav %}
     <div class="sidenav" id="sidebar">
       <ul class="nav flex-column">
@@ -77,22 +77,22 @@
       <div id="responsive-grid"></div>
 
       <div id="pn-Modal" class="pn-modal header-adjust">
-      <div class="pn-modal-content">
-        <span class="pn-modalclose" id="pn-closeModal">&times;</span>
-        {% for doc in docs %}
-        {% for root in doc.roots %}
-        {% if "modal" in root.tags %}
-        {{ embed(root) | indent(10) }}
-        {% endif %}
-        {% endfor %}
-        {% endfor %}
-      </div>
+        <div class="pn-modal-content">
+          <span class="pn-modalclose" id="pn-closeModal">&times;</span>
+          {% for doc in docs %}
+          {% for root in doc.roots %}
+          {% if "modal" in root.tags %}
+          {{ embed(root) | indent(10) }}
+          {% endif %}
+          {% endfor %}
+          {% endfor %}
+        </div>
 	  </div>
-    </div>
+	</div>
   </div>
 </div>
 
-co<script>
+<script>
   function openNav() {
     document.getElementById("sidebar").style.left = 0;
     document.getElementById("main").style.marginLeft = "300px";
