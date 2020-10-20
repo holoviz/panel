@@ -600,7 +600,7 @@ class Template(BaseTemplate):
     """
 
     def __init__(self, template=None, nb_template=None, items=None, **params):
-        super(Template, self).__init__(template, nb_template, **params)
+        super(Template, self).__init__(template=template, nb_template=nb_template, items=items, **params)
         items = {} if items is None else items
         for name, item in items.items():
             self.add_panel(name, item)
