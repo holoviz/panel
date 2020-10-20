@@ -103,7 +103,8 @@ def bundle_resources():
     from .template.base import BasicTemplate
 
     for imp in panel_extension._imports.values():
-        __import__(imp)
+        if imp.startswith('panel.'):
+            __import__(imp)
 
     bundle_dir = pathlib.Path(__file__).parent.joinpath('dist', 'bundled')
 
