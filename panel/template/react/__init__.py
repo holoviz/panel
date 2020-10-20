@@ -35,6 +35,19 @@ class ReactTemplate(BasicTemplate):
         }
     }
 
+    _resources = {
+        'js': {
+            'react': "https://unpkg.com/react@16/umd/react.development.js",
+            'react-dom': "https://unpkg.com/react-dom@16/umd/react-dom.development.js",
+            'babel': "https://unpkg.com/babel-standalone@latest/babel.min.js",
+            'react-grid': "https://cdnjs.cloudflare.com/ajax/libs/react-grid-layout/1.1.1/react-grid-layout.min.js"
+        },
+        'css': {
+            'bootstrap': "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css",
+            'font-awesome': "https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"
+        }
+    }
+
     def __init__(self, **params):
         if 'main' not in params:
             params['main'] = GridSpec()
@@ -55,8 +68,6 @@ class ReactTemplate(BasicTemplate):
         self._render_variables['breakpoints'] = self.breakpoints
         self._render_variables['cols'] = self.cols
         self._render_variables['rowHeight'] = self.row_height
-
-
 
 
 class ReactDefaultTheme(DefaultTheme):
