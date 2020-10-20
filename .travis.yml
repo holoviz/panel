@@ -60,8 +60,6 @@ jobs:
         # ...and now install doit/pyctdev into miniconda
         - conda install -c pyviz "pyctdev>=0.5" && doit ecosystem_setup
         - conda install nodejs
-        - echo "//registry.npmjs.org/:_authToken=$NPM_API_TOKEN" > $HOME/.npmrc
-        - npm whoami
         # Disable non-blocking I/O for stdout, stderr https://github.com/travis-ci/travis-ci/issues/4704#issuecomment-348435959
         - python -c 'import os,sys,fcntl; flags = fcntl.fcntl(sys.stdout, fcntl.F_GETFL); fcntl.fcntl(sys.stdout, fcntl.F_SETFL, flags&~os.O_NONBLOCK);'
         # Fail if non-blocking I/O enabled
@@ -95,6 +93,8 @@ jobs:
         - doit package_upload --token=$ANACONDA_TOKEN $LABELS
         - python setup.py develop
         - cd panel
+        - echo "//registry.npmjs.org/:_authToken=$NPM_API_TOKEN" > $HOME/.npmrc
+        - npm whoami
         - npm publish $NPM_TAG
 
     - &pip_pkg
