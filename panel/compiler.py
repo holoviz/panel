@@ -94,7 +94,7 @@ def write_bundled_files(name, files, bundle_dir):
         bundle_path = os.path.join(*os.path.join(*bundle_file.split('//')[1:]).split('/')[1:])
         filename = bundle_dir.joinpath(model_name, bundle_path)
         filename.parent.mkdir(parents=True, exist_ok=True)
-        with open(filename, 'w') as f:
+        with open(filename, 'w', encoding="utf-8") as f:
             f.write(response.content.decode('utf-8'))
 
 
@@ -103,7 +103,8 @@ def bundle_resources():
     from .template.base import BasicTemplate
 
     for imp in panel_extension._imports.values():
-        __import__(imp)
+        if imp.startswith('panel.'):
+            __import__(imp)
 
     bundle_dir = pathlib.Path(__file__).parent.joinpath('dist', 'bundled')
 

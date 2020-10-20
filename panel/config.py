@@ -407,15 +407,17 @@ class panel_extension(_pyviz_extension):
 
     _loaded = False
 
-    _imports = {'katex': 'panel.models.katex',
-                'mathjax': 'panel.models.mathjax',
-                'plotly': 'panel.models.plotly',
-                'deckgl': 'panel.models.deckgl',
-                'vega': 'panel.models.vega',
-                'vtk': 'panel.models.vtk',
-                'ace': 'panel.models.ace',
-                'echarts': 'panel.models.echarts',
-                'ipywidgets': 'ipywidgets_bokeh.widget'}
+    _imports = {
+        'katex': 'panel.models.katex',
+        'mathjax': 'panel.models.mathjax',
+        'plotly': 'panel.models.plotly',
+        'deckgl': 'panel.models.deckgl',
+        'vega': 'panel.models.vega',
+        'vtk': 'panel.models.vtk',
+        'ace': 'panel.models.ace',
+        'echarts': 'panel.models.echarts',
+        'ipywidgets': 'ipywidgets_bokeh.widget'
+    }
 
     # Check whether these are loaded before rendering
     _globals = {
