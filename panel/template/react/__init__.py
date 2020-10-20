@@ -23,7 +23,7 @@ class ReactTemplate(BasicTemplate):
     main = param.ClassSelector(class_=GridSpec, constant=True, doc="""
         A list-like container which populates the main area.""")
 
-    row_height = param.Integer(default=300)
+    row_height = param.Integer(default=150)
 
     _css = pathlib.Path(__file__).parent / 'react.css'
 
@@ -50,7 +50,7 @@ class ReactTemplate(BasicTemplate):
 
     def __init__(self, **params):
         if 'main' not in params:
-            params['main'] = GridSpec()
+            params['main'] = GridSpec(ncols=12)
         super().__init__(**params)
         self._update_render_vars()
 
@@ -60,6 +60,10 @@ class ReactTemplate(BasicTemplate):
             return
         layouts = []
         for i, ((y0, x0, y1, x1), v) in enumerate(self.main.objects.items()):
+            if x0 is None: x0 = 0
+            if x1 is None: x1 = 12
+            if y0 is None: y0 = 0
+            if y1 is None: y1 = self.main.nrows
             layouts.append({'x': x0, 'y': y0, 'w': x1-x0, 'h': y1-y0, 'i': str(i+1)})
         self._render_variables['layouts'] = {'lg': layouts, 'md': layouts}
 
