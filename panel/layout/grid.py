@@ -315,10 +315,6 @@ class GridSpec(Panel):
     def grid(self):
         grid = np.zeros((self.nrows, self.ncols), dtype='uint8')
         for (y0, x0, y1, x1) in self.objects:
-            x0 = 0 if x0 is None else x0
-            x1 = self.ncols if x1 is None else x1
-            y0 = 0 if y0 is None else y0
-            y1 = self.nrows if y1 is None else y1
             grid[y0:y1, x0:x1] += 1
         return grid
 
@@ -335,6 +331,10 @@ class GridSpec(Panel):
         Cloned GridSpec object
         """
         p = dict(self.param.get_param_values(), **params)
+        if not self._cols_fixed:
+            del p['ncols']
+        if not self._rows_fixed:
+            del p['nrows']
         return type(self)(**p)
 
     def __iter__(self):
@@ -426,6 +426,7 @@ class GridSpec(Panel):
         clone = self.clone(objects=OrderedDict(self.objects), mode='override')
         if not overlap:
             clone.objects[key] = panel(obj)
+            clone._update_grid_size()
             grid = clone.grid
         else:
             grid = clone.grid
