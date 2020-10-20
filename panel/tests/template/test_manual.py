@@ -6,6 +6,19 @@ import pytest
 LOGO = "https://panel.holoviz.org/_static/logo_horizontal.png"
 
 
+TEMPLATES_NAMES = {
+    "vanilla": pn.template.VanillaTemplate,
+    "golden": pn.template.GoldenTemplate,
+    "material": pn.template.MaterialTemplate,
+}
+
+def _get_template_class(template_class=pn.template.VanillaTemplate):
+    template_name=pn.state.session_args.get("template", None)
+    if template_name:
+        template_name=template_name[0].decode("utf-8")
+        template_class=TEMPLATES_NAMES[template_name]
+    return template_class
+
 def test_template_with_sidebar(template_class=pn.template.VanillaTemplate):
     """Returns an app that uses the vanilla template in various ways.
 
@@ -18,8 +31,10 @@ Inspect the app and verify that the issues of [Issue 1641]\
 - Independent scroll for sidebar and main
 - Only vertical scrollbars
 """
+    template_class = _get_template_class(template_class)
+
     vanilla = template_class(
-        title="Vanilla Template",
+        title=template_class.__name__,
         logo=LOGO,
     )
 
@@ -142,5 +157,8 @@ def test_all_templates_with_no_sidebar(template_class):
     test_template_with_no_sidebar(template_class=template_class)
 
 if __name__.startswith("bokeh"):
-    test_template_with_sidebar(template_class=pn.template.GoldenTemplate).servable()
+    # test_template_with_sidebar().servable()
+    template_class=pn.template.GoldenTemplate
+    # template_class=pn.template.VanillaTemplate
+    test_template_with_sidebar(template_class=template_class).servable()
     # test_template_with_no_sidebar().servable()
