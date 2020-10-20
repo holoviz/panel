@@ -92,7 +92,7 @@ except Exception:
 ########## dependencies ##########
 
 install_requires = [
-    'bokeh >=2.1',
+    'bokeh >=2.2',
     'param >=1.9.3',
     'pyviz_comms >=0.7.4',
     'markdown',
