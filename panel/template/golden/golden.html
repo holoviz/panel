@@ -74,7 +74,8 @@
               title: "Sidebar",
               model: '{% for doc in docs %}{% for root in doc.roots %}{% if "nav" in root.tags %} {{ embed(root) }} {% endif %}{% endfor %}{% endfor %}'
             },
-            width: 20
+            width: 20,
+            isClosable: false
           },
           {
             type: 'stack',
