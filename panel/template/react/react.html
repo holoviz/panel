@@ -153,9 +153,9 @@ function ResponsiveGrid(props) {
           rowHeight={ {{rowHeight}} }
           layouts={layouts}
           verticalCompact={true}
-		  compactType={"horizontal"}
+          compactType={"horizontal"}
           containerPadding={[20, 20]}
-		>
+        >
           {% set count = [] %}
           {% for doc in docs %}{% for root in doc.roots %}{% if "main" in root.tags %}
             <div key="{{count|length + 1 }}" style={divStyle} >
