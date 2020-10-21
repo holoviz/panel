@@ -19,7 +19,7 @@ def _get_template_class(template_class=pn.template.VanillaTemplate):
         template_class=TEMPLATES_NAMES[template_name]
     return template_class
 
-def test_template_with_sidebar(template_class=pn.template.VanillaTemplate):
+def test_template_with_sidebar(template_class=pn.template.VanillaTemplate, theme=pn.template.DefaultTheme):
     """Returns an app that uses the vanilla template in various ways.
 
 Inspect the app and verify that the issues of [Issue 1641]\
@@ -34,6 +34,7 @@ Inspect the app and verify that the issues of [Issue 1641]\
     vanilla = template_class(
         title=template_class.__name__,
         logo=LOGO,
+        theme=theme
     )
 
     pn.config.sizing_mode = "stretch_width"
@@ -76,11 +77,10 @@ Inspect the app and verify that the issues of [Issue 1641]\
             pn.widgets.Button(name="Right", sizing_mode="fixed", width=50),
         )
     ]
-    vanilla.main_max_width = "600px"
     return vanilla
 
 
-def test_template_with_no_sidebar(template_class=pn.template.VanillaTemplate):
+def test_template_with_no_sidebar(template_class=pn.template.VanillaTemplate, theme=pn.template.DefaultTheme):
     """Returns an app that uses the vanilla template in various ways.
 
 Inspect the app and verify that the issues of [Issue 1641]\
@@ -96,6 +96,7 @@ Inspect the app and verify that the issues of [Issue 1641]\
         title="Vanilla Template",
         logo=LOGO,
         favicon="https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel/2781d86d4ed141889d633748879a120d7d8e777a/assets/images/favicon.ico",
+        theme=theme
     )
 
     pn.config.sizing_mode = "stretch_width"
@@ -136,7 +137,6 @@ Inspect the app and verify that the issues of [Issue 1641]\
             pn.widgets.Button(name="Right", sizing_mode="fixed", width=50),
         )
     ]
-    vanilla.main_max_width = "600px"
     return vanilla
 
 TEMPLATES = [
@@ -155,19 +155,30 @@ def test_all_templates_with_no_sidebar(template_class):
     test_template_with_no_sidebar(template_class=template_class)
 
 def _get_template_func(template_func=test_template_with_sidebar):
-    app_name=pn.state.session_args.get("app", None)
+    app_name = pn.state.session_args.get("app", None)
     if app_name:
-        app_name=app_name[0].decode("utf-8")
-        if app_name=="no_sidebar":
+        app_name = app_name[0].decode("utf-8")
+        if app_name == "no_sidebar":
             return test_template_with_no_sidebar
-        elif app_name=="sidebar":
+        elif app_name == "sidebar":
             return test_template_with_sidebar
     return template_func
+
+def _get_theme():
+    theme_name = pn.state.session_args.get("theme", None)
+    if theme_name:
+        theme_name = theme_name[0].decode("utf-8")
+        if theme_name == "dark":
+            return pn.template.DarkTheme
+        else:
+            return pn.template.DefaultTheme
+    return pn.template.DefaultTheme
 
 def _get_app():
     template_class = _get_template_class()
     template_func = _get_template_func()
-    return template_func(template_class=template_class)
+    theme = _get_theme()
+    return template_func(template_class=template_class, theme=theme)
 
 if __name__.startswith("bokeh"):
     _get_app().servable()
