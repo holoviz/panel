@@ -63,10 +63,8 @@ img.app-logo {
 }
 
 .main-content {
-  height: 100%;
-  min-height: calc(100vw - 64px);
   overflow-y: scroll;
-  overflow-x: scroll;
+  overflow-x: hidden;
 }
 
 #header {
@@ -91,6 +89,8 @@ img.app-logo {
 }
 
 .main-content {
+  height: calc(100vh - 88px);
+  max-height: calc(100vh - 88px);
   padding-right: 32px;
 }
 
