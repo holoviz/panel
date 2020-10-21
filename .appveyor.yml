@@ -2,19 +2,18 @@ environment:
   global:
     CHANS_DEV: "-c pyviz/label/dev -c bokeh/label/dev -c conda-forge"
   matrix:
-    - PY: "3.6"
-      CONDA: "C:\\Miniconda36-x64"
+    - PY: "3.7"
+      CONDA: "C:\\Miniconda37-x64"
 
 install:
   - "SET PATH=%CONDA%;%CONDA%\\Scripts;%PATH%"
   - "conda install -y -c pyviz pyctdev && doit ecosystem_setup"
   - "doit env_create %CHANS_DEV% --name=test --python=%PY%"
   - "activate test"
-  - "doit develop_install -o recommended -o tests %CHANS_DEV%"
+  - "doit develop_install -o examples -o recommended -o tests -o build %CHANS_DEV%"
   - "bokeh sampledata"
 
 build: off
   
 test_script: 
   - "doit test_all_recommended"
-
