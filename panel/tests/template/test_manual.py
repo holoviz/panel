@@ -10,6 +10,8 @@ TEMPLATES_NAMES = {
     "vanilla": pn.template.VanillaTemplate,
     "golden": pn.template.GoldenTemplate,
     "material": pn.template.MaterialTemplate,
+    "bootstrap": pn.template.BootstrapTemplate,
+    "react": pn.template.ReactTemplate
 }
 
 def _get_template_class(template_class=pn.template.VanillaTemplate):
@@ -37,37 +39,48 @@ Inspect the app and verify that the issues of [Issue 1641]\
         theme=theme
     )
 
-    pn.config.sizing_mode = "stretch_width"
+    pn.config.sizing_mode = "stretch_both"
 
     xs = np.linspace(0, np.pi)
-    freq = pn.widgets.FloatSlider(name="Frequency", start=0, end=10, value=2)
-    phase = pn.widgets.FloatSlider(name="Phase", start=0, end=np.pi)
+    freq = pn.widgets.FloatSlider(name="Frequency", start=0, end=10, value=2,
+                                  sizing_mode='stretch_width')
+    phase = pn.widgets.FloatSlider(name="Phase", start=0, end=np.pi,
+                                   sizing_mode='stretch_width')
 
     @pn.depends(freq=freq, phase=phase)
     def sine(freq, phase):
-        return hv.Curve((xs, np.sin(xs * freq + phase))).opts(responsive=True, min_height=400)
+        return hv.Curve((xs, np.sin(xs * freq + phase))).opts(responsive=True, min_height=150)
 
     @pn.depends(freq=freq, phase=phase)
     def cosine(freq, phase):
-        return hv.Curve((xs, np.cos(xs * freq + phase))).opts(responsive=True, min_height=400)
+        return hv.Curve((xs, np.cos(xs * freq + phase))).opts(responsive=True, min_height=150)
 
     vanilla.sidebar.append(freq)
     vanilla.sidebar.append(phase)
-    vanilla.sidebar.append(pn.pane.Markdown(test_template_with_sidebar.__doc__))
+    vanilla.sidebar.append(pn.pane.Markdown(test_template_with_sidebar.__doc__, height=280,
+                                            sizing_mode='stretch_width'))
     vanilla.sidebar.append(pn.pane.Markdown("## Sidebar Item\n" * 50))
 
-    vanilla.main.append(
-        pn.Row(
-            pn.Card(hv.DynamicMap(sine), title="Sine"),
-            pn.Card(hv.DynamicMap(cosine), title="Cosine"),
-        )
+    row1 = pn.Row(
+        pn.Card(hv.DynamicMap(sine), title="Sine"),
+        pn.Card(hv.DynamicMap(cosine), title="Cosine"),
     )
-    vanilla.main.append(
-        pn.Row(
-            pn.Card(hv.DynamicMap(sine), title="Sine"),
-            pn.Card(hv.DynamicMap(cosine), title="Cosine"),
-        )
+    row2 = pn.Row(
+        pn.Card(hv.DynamicMap(sine), title="Sine"),
+        pn.Card(hv.DynamicMap(cosine), title="Cosine"),
     )
+    row3 = pn.Row(
+        pn.Card(hv.DynamicMap(sine), title="Sine"),
+        pn.Card(hv.DynamicMap(cosine), title="Cosine"),
+    )
+    if issubclass(template_class, pn.template.ReactTemplate):
+        vanilla.main[0:2, :] = row1
+        vanilla.main[2:4, :] = row2
+        vanilla.main[4:6, :] = row3
+    else:
+        vanilla.main.append(row1)
+        vanilla.main.append(row2)
+
     vanilla.header[:] = [
         pn.Row(
             pn.widgets.Button(name="Left", sizing_mode="fixed", width=50),
@@ -99,7 +112,7 @@ Inspect the app and verify that the issues of [Issue 1641]\
         theme=theme
     )
 
-    pn.config.sizing_mode = "stretch_width"
+    pn.config.sizing_mode = "stretch_both"
 
     xs = np.linspace(0, np.pi)
     freq = pn.widgets.FloatSlider(name="Frequency", start=0, end=10, value=2)
@@ -113,21 +126,28 @@ Inspect the app and verify that the issues of [Issue 1641]\
     def cosine(freq, phase):
         return hv.Curve((xs, np.cos(xs * freq + phase))).opts(responsive=True, min_height=400)
 
-    vanilla.main.append(freq)
-    vanilla.main.append(phase)
-    vanilla.main.append(pn.pane.Markdown(test_template_with_no_sidebar.__doc__))
-    vanilla.main.append(
-        pn.Row(
-            pn.Card(hv.DynamicMap(sine), title="Sine"),
-            pn.Card(hv.DynamicMap(cosine), title="Cosine"),
-        )
+    markdown = pn.pane.Markdown(test_template_with_no_sidebar.__doc__)
+    row1 = pn.Row(
+        pn.Card(hv.DynamicMap(sine), title="Sine"),
+        pn.Card(hv.DynamicMap(cosine), title="Cosine"),
     )
-    vanilla.main.append(
-        pn.Row(
-            pn.Card(hv.DynamicMap(sine), title="Sine"),
-            pn.Card(hv.DynamicMap(cosine), title="Cosine"),
-        )
+    row2 = pn.Row(
+        pn.Card(hv.DynamicMap(sine), title="Sine"),
+        pn.Card(hv.DynamicMap(cosine), title="Cosine"),
     )
+    if issubclass(template_class, pn.template.ReactTemplate):
+        vanilla.main[0, :] = freq
+        vanilla.main[1, :] = phase
+        vanilla.main[2, :] = markdown
+        vanilla.main[3:5, :] = row1
+        vanilla.main[5:7, :] = row2
+    else:
+        vanilla.main.append(freq)
+        vanilla.main.append(phase)
+        vanilla.main.append(markdown)
+        vanilla.main.append(row1)
+        vanilla.main.append(row2)
+
     vanilla.header[:] = [
         pn.Row(
             pn.widgets.Button(name="Left", sizing_mode="fixed", width=50),
