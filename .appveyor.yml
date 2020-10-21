@@ -6,7 +6,7 @@ environment:
       CONDA: "C:\\Miniconda37-x64"
 
 install:
-  - "SET PATH=%CONDA%;%CONDA%\\Scripts;%PATH%"
+  - "SET PATH=%CONDA%;%CONDA%\\Scripts;%CONDA%\\Library\\bin;%PATH%"
   - "conda install -y -c pyviz pyctdev && doit ecosystem_setup"
   - "doit env_create %CHANS_DEV% --name=test --python=%PY%"
   - "activate test"
