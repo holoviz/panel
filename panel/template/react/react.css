@@ -79,6 +79,7 @@ img.app-logo {
   width: 100%;
   height: 100vh;
   margin-left: 300px;
+  padding-bottom: 20px;
 }
 
 #sidebarCollapse {
