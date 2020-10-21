@@ -160,10 +160,10 @@ Inspect the app and verify that the issues of [Issue 1641]\
     return vanilla
 
 TEMPLATES = [
-    pn.template.VanillaTemplate,
-    pn.template.MaterialTemplate,
-    pn.template.BootstrapTemplate,
-    pn.template.GoldenTemplate,
+    (pn.template.VanillaTemplate,),
+    (pn.template.MaterialTemplate,),
+    (pn.template.BootstrapTemplate,),
+    (pn.template.GoldenTemplate,),
 ]
 
 @pytest.mark.parametrize(["template_class"], TEMPLATES)
