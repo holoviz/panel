@@ -6,6 +6,7 @@ from __future__ import absolute_import, division, unicode_literals
 
 import json
 import uuid
+import sys
 
 from contextlib import contextmanager
 from collections import OrderedDict
@@ -69,7 +70,7 @@ DOC_NB_JS = _env.get_template("doc_nb_js.js")
 AUTOLOAD_NB_JS = _env.get_template("autoload_panel_js.js")
 NB_TEMPLATE_BASE = _env.get_template('nb_template.html')
 
-def _autoload_js(bundle, configs, requirements, exports, skip_imports, load_timeout=5000):
+def _autoload_js(bundle, configs, requirements, exports, skip_imports, ipywidget, load_timeout=5000):
     return AUTOLOAD_NB_JS.render(
         bundle    = bundle,
         force     = True,
@@ -77,7 +78,8 @@ def _autoload_js(bundle, configs, requirements, exports, skip_imports, load_time
         configs   = configs,
         requirements = requirements,
         exports   = exports,
-        skip_imports = skip_imports
+        skip_imports = skip_imports,
+        ipywidget = ipywidget
     )
 
 
@@ -139,10 +141,13 @@ def render_model(model, comm=None):
     render_item = render_item.to_json()
     requirements = [pnext._globals[ext] for ext in pnext._loaded_extensions
                     if ext in pnext._globals]
+    ipywidget = 'ipywidgets_bokeh' in sys.modules
+
     script = DOC_NB_JS.render(
         docs_json=serialize_json(docs_json),
         render_items=serialize_json([render_item]),
-        requirements=requirements
+        requirements=requirements,
+        ipywidget=ipywidget
     )
     bokeh_script, bokeh_div = script, div
     html = "<div id='{id}'>{html}</div>".format(id=target, html=bokeh_div)
@@ -208,7 +213,9 @@ def load_notebook(inline=True, load_timeout=5000):
         settings.resources = 'cdn'
         bundle = bundle_for_objs_and_resources(None, resources)
         configs, requirements, exports, skip_imports = require_components()
-        bokeh_js = _autoload_js(bundle, configs, requirements, exports, skip_imports, load_timeout)
+        ipywidget = 'ipywidgets_bokeh' in sys.modules
+        bokeh_js = _autoload_js(bundle, configs, requirements, exports,
+                                skip_imports, ipywidget, load_timeout)
     finally:
         settings.resources = prev_resources
 
