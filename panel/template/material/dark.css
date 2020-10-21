@@ -45,4 +45,5 @@ div.bk.card-header-row {
   --mdc-shape-medium:  4px;
   --mdc-shape-large:  0px;
   --mdc-typography--font-family:  "Roboto";
+  --mdc-theme-text-primary-on-background: #ffffff !important;
 }

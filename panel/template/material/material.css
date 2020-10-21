@@ -70,7 +70,6 @@ img.app-logo {
 #header {
   position: absolute;
   z-index: 7;
-  box-shadow: 5px 5px 20px silver;
 }
 
 #header-items {
