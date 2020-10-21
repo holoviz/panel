@@ -22,7 +22,8 @@ class VanillaTemplate(BasicTemplate):
 
     _modifiers = {
         Card: {
-            'children': {'margin': (0, 10)}
+            'children': {'margin': (10, 10)},
+            'margin': (5, 5)
         }
     }
 

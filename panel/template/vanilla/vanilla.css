@@ -96,6 +96,7 @@ img.app-logo {
   height: calc(100vh - 68px);
   margin-left: 300px;
   padding-right: 20px;
+  padding-bottom: 20px;
   padding-top: 10px;
   padding-left: 10px;
   overflow-y: scroll;

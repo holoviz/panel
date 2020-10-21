@@ -412,11 +412,11 @@ class GridSpec(Panel):
         t = 0 if y0 is None else y0
         b = self.ncols if y1 is None else y1
 
-        if self._cols_fixed and (l >= self.ncols or r >= self.ncols):
+        if self._cols_fixed and (l >= self.ncols or r > self.ncols):
             raise IndexError('Assigned object to column(s) out-of-bounds '
                              'of the grid declared by `ncols`. which '
                              f'was set to {self.ncols}.')
-        if self._rows_fixed and (l >= self.nrows or r >= self.nrows):
+        if self._rows_fixed and (t >= self.nrows or b > self.nrows):
             raise IndexError('Assigned object to column(s) out-of-bounds '
                              'of the grid declared by `nrows`, which '
                              f'was set to {self.nrows}.')
