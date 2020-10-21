@@ -18,7 +18,8 @@ body {
   background-color: #121212;
 }
 
-div.bk.card-header-row {
+div.bk.mdc-card__primary-action {
+  color: white;
   background-color: #292929 !important;
 }
 

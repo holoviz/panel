@@ -31,7 +31,8 @@ class ReactTemplate(BasicTemplate):
 
     _modifiers = {
         Card: {
-            'children': {'margin': (20, 20)}
+            'children': {'margin': (20, 20)},
+            'margin': (10, 5)
         }
     }
 

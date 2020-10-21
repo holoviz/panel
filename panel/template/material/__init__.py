@@ -22,11 +22,12 @@ class MaterialTemplate(BasicTemplate):
 
     _modifiers = {
         Card: {
-            'children': {'margin': (0, 10)},
+            'children': {'margin': (5, 10)},
             'title_css_classes': ['mdc-card-title'],
             'css_classes': ['mdc-card'],
             'header_css_classes': ['mdc-card__primary-action'],
-            'button_css_classes': ['mdc-button', 'mdc-card-button']
+            'button_css_classes': ['mdc-button', 'mdc-card-button'],
+            'margin': (10, 5)
         },
     }
 

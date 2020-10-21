@@ -107,8 +107,12 @@ div.bk.mdc-card {
 }
 
 .bk.mdc-card-title {
-  font-size: 1.5em;
+  font-size: 1.4em;
   font-weight: bold;
+  align-items: center;
+  display: flex !important;
+  padding: 0.25em;
+  position: relative !important;
 }
 
 .pn-modal {

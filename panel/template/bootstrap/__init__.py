@@ -21,8 +21,9 @@ class BootstrapTemplate(BasicTemplate):
 
     _modifiers = {
         Card: {
-            'children': {'margin': (0, 10)},
-            'button_css_classes': ['card-button']
+            'children': {'margin': (10, 10)},
+            'button_css_classes': ['card-button'],
+            'margin': (10, 5)
         },
     }
 

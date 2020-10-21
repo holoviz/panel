@@ -42,6 +42,7 @@
       {% endif %}
       {{ app_title }}
     </a>
+    <div id="header-items">
     {% for doc in docs %}
     {% for root in doc.roots %}
     {% if "header" in root.tags %}
@@ -49,7 +50,7 @@
     {% endif %}
     {% endfor %}
     {% endfor %}
-
+	</div>
 	{% if busy %}
 	<div class="pn-busy-container">
 	  {{ embed(roots.busy_indicator) | indent(6) }}
@@ -153,7 +154,8 @@ function ResponsiveGrid(props) {
           layouts={layouts}
           verticalCompact={true}
 		  compactType={"horizontal"}
-        >
+          containerPadding={[20, 20]}
+		>
           {% set count = [] %}
           {% for doc in docs %}{% for root in doc.roots %}{% if "main" in root.tags %}
             <div key="{{count|length + 1 }}" style={divStyle} >
