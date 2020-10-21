@@ -103,7 +103,6 @@ calls it with the rendered model.
     for (var i = 0; i < js_urls.length; i++) {
       var url = js_urls[i];
       if (skip.indexOf(url) >= 0) { on_load(); continue; }
-	  console.log(url)
       var element = document.createElement('script');
       element.onload = on_load;
       element.onerror = on_error;
