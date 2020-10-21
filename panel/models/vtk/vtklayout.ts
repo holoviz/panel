@@ -345,7 +345,7 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
   }
 
   _set_camera_state(): void {
-    if (!this._setting_camera) {
+    if (!this._setting_camera && this._vtk_renwin.getRenderer() !== undefined) {
       this._setting_camera = true
         if (
           this.model.camera &&
