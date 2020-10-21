@@ -74,7 +74,7 @@
     </div>
     {% endif %}
 
-    <div class="main" id="main">
+    <div class="main" id="main"{% if nav %} style="margin-left: 300px;"{% endif %}>
       <div id="responsive-grid"></div>
 
       <div id="pn-Modal" class="pn-modal header-adjust">
@@ -152,8 +152,14 @@ function ResponsiveGrid(props) {
 		  draggableCancel={".bk-root"}
           rowHeight={ {{rowHeight}} }
           layouts={layouts}
-          verticalCompact={true}
+          {% if compact == "both" %}
           compactType={"horizontal"}
+          {% elif compact == "horizontal" %}
+          verticalCompact={false}
+          compactType={"horizontal"}
+          {% elif compact is none %}
+          verticalCompact={false}
+          {% endif %}
         >
           {% set count = [] %}
           {% for doc in docs %}{% for root in doc.roots %}{% if "main" in root.tags %}

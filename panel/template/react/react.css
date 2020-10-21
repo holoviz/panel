@@ -32,6 +32,7 @@ a.navbar-brand {
   text-decoration-style: initial;
   text-decoration-color: initial;
   font-weight: 400;
+  white-space: nowrap;
 }
 
 img.app-logo {
@@ -53,7 +54,7 @@ img.app-logo {
   height: 100%;
   margin: 0px;
   width: 100vw;
-  display: inline-flex;
+  display: flex;
   overflow: auto;
 }
 

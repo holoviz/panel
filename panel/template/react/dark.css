@@ -23,6 +23,10 @@ body {
   background-color: #2f2f2f;
 }
 
+#header-items {
+  color: white;
+}
+
 .bk.card-header {
   color: white;
   background-color: #292929 !important;
