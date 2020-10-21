@@ -29,6 +29,11 @@ body {
   border: none;
 }
 
+#header-items {
+  width: 100%;
+  margin-left: 15px;
+}
+
 a.navbar-brand {
   padding-left: 10px;
   display: flex;
