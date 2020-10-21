@@ -22,6 +22,7 @@ body {
 
 #main {
   overflow-y: scroll;
+  padding-bottom: 20px;
 }
 
 #sidebarCollapse {
