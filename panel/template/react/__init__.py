@@ -16,6 +16,8 @@ class ReactTemplate(BasicTemplate):
     ReactTemplate is built on top of React Grid Layout web components.
     """
 
+    compact = param.ObjectSelector(default=None, objects=[None, 'vertical', 'horizontal', 'both'])
+
     cols = param.Dict(default={'lg': 12, 'md': 10, 'sm': 6, 'xs': 4, 'xxs': 2})
 
     breakpoints = param.Dict(default={'lg': 1200, 'md': 996, 'sm': 768, 'xs': 480, 'xxs': 0})
@@ -68,11 +70,12 @@ class ReactTemplate(BasicTemplate):
             layouts.append({'x': x0, 'y': y0, 'w': x1-x0, 'h': y1-y0, 'i': str(i+1)})
         self._render_variables['layouts'] = {'lg': layouts, 'md': layouts}
 
-    @depends('cols', 'breakpoints', 'row_height', watch=True)
+    @depends('cols', 'breakpoints', 'row_height', 'compact', watch=True)
     def _update_render_vars(self):
         self._render_variables['breakpoints'] = self.breakpoints
         self._render_variables['cols'] = self.cols
         self._render_variables['rowHeight'] = self.row_height
+        self._render_variables['compact'] = self.compact
 
 
 class ReactDefaultTheme(DefaultTheme):
