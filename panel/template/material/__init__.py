@@ -7,9 +7,7 @@ import param
 
 from ...layout import Card
 from ..base import BasicTemplate
-from ..theme import DarkTheme, DefaultTheme
-
-
+from ..theme import MaterialDarkTheme, MaterialTheme
 
 class MaterialTemplate(BasicTemplate):
     """
@@ -40,14 +38,14 @@ class MaterialTemplate(BasicTemplate):
     }
 
 
-class MaterialDefaultTheme(DefaultTheme):
+class MaterialDefaultTheme(MaterialTheme):
 
     css = param.Filename(default=pathlib.Path(__file__).parent / 'default.css')
 
     _template = MaterialTemplate
 
 
-class MaterialDarkTheme(DarkTheme):
+class MaterialDarkTheme(MaterialDarkTheme):
 
     css = param.Filename(default=pathlib.Path(__file__).parent / 'dark.css')
 
