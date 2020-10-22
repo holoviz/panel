@@ -211,7 +211,7 @@ def load_notebook(inline=True, load_timeout=5000):
     prev_resources = settings.resources(default="server")
     user_resources = settings.resources._user_value is not _Unset
     try:
-        settings.resources = 'cdn'
+        settings.resources = 'inline' if inline else 'cdn'
         bundle = bundle_for_objs_and_resources(None, resources)
         configs, requirements, exports, skip_imports = require_components()
         ipywidget = 'ipywidgets_bokeh' in sys.modules
