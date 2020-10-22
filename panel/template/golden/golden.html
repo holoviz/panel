@@ -72,7 +72,7 @@
             componentName: 'view',
             componentState: {
               title: "Sidebar",
-              model: '{% for doc in docs %}{% for root in doc.roots %}{% if "nav" in root.tags %} {{ embed(root) }} {% endif %}{% endfor %}{% endfor %}'
+              model: '<div class="sidebar-contents">{% for doc in docs %}{% for root in doc.roots %}{% if "nav" in root.tags %} {{ embed(root) }} {% endif %}{% endfor %}{% endfor %}</div>'
             },
             width: 20,
             isClosable: false

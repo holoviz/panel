@@ -49,11 +49,13 @@ Inspect the app and verify that the issues of [Issue 1641]\
 
     @pn.depends(freq=freq, phase=phase)
     def sine(freq, phase):
-        return hv.Curve((xs, np.sin(xs * freq + phase))).opts(responsive=True, min_height=150)
+        return hv.Curve((xs, np.sin(xs * freq + phase))).opts(
+            responsive=True, min_height=150, max_height=450)
 
     @pn.depends(freq=freq, phase=phase)
     def cosine(freq, phase):
-        return hv.Curve((xs, np.cos(xs * freq + phase))).opts(responsive=True, min_height=150)
+        return hv.Curve((xs, np.cos(xs * freq + phase))).opts(
+            responsive=True, min_height=150, max_height=450)
 
     vanilla.sidebar.append(freq)
     vanilla.sidebar.append(phase)

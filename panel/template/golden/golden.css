@@ -39,6 +39,11 @@ body, .main-area, .main-content, .lm_goldenlayout {
   color: white;
 }
 
+.sidebar-contents {
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
 .header-contents {
   overflow: hidden;
   width: 100%;
