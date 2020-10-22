@@ -12,6 +12,8 @@ install:
   - "activate test"
   - "doit develop_install -o examples -o recommended -o tests -o build %CHANS_DEV%"
   - "bokeh sampledata"
+  - "git clone --depth 1 git://github.com/pyvista/gl-ci-helpers.git"
+  - "powershell gl-ci-helpers/appveyor/install_opengl.ps1"
 
 build: off
   
