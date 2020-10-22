@@ -5,6 +5,9 @@ body {
   overflow-x: hidden;
   overflow-y: hidden;
 }
+img {
+  max-width: 100%;
+}
 
 #container {
   padding:0px;
