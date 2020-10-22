@@ -8,6 +8,9 @@ body {
 .bk-root .bk, .bk-root .bk:before, .bk-root .bk:after {
   font-family: inherit;
 }
+img {
+  max-width: 100%;
+}
 
 #container {
   padding:0px;
