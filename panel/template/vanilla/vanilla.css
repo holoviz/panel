@@ -24,7 +24,7 @@ img {
 
 #header-items {
   width: 100%;
-  margin-left:15px;
+  padding-left:15px;
 }
 
 #app-title {
@@ -45,7 +45,7 @@ img {
 }
 
 .app-header {
-  display: flex;
+  display: contents;
 }
 
 img.app-logo {
