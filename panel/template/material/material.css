@@ -28,12 +28,6 @@ img {
   background: #FAFAFA; /* GRAY 50 */
 }
 
-.mdc-top-app-bar__title {
-  display: contents;
-  padding-left: 10px;
-  font-size: 1.5em;
-}
-
 .title-bar {
   display: contents;
   justify-content: center;
@@ -41,12 +35,18 @@ img {
   width: 100%;
 }
 
+.app-header {
+  display: contents;
+  padding-left: 10px;
+  font-size: 1.25em;
+}
+
 img.app-logo {
   padding-right: 10px;
   font-size: 28px;
   height: 30px;
-  padding-top: 14px;
-  padding-bottom: 4px;
+  padding-top: 10px;
+  padding-bottom: 8px;
 }
 
 #app-title {

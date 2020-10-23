@@ -46,14 +46,15 @@ img {
 
 .app-header {
   display: contents;
+  padding-left: 10px;
 }
 
 img.app-logo {
   padding-right: 10px;
   font-size: 28px;
   height: 30px;
-  padding-top:9px;
-  padding-bottom:9px
+  padding-top:11px;
+  padding-bottom: 7px;
 }
 
 .pn-bar {

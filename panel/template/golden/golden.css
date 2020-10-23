@@ -47,6 +47,7 @@ body, .main-area, .main-content, .lm_goldenlayout {
 
 .app-header {
   display: flex;
+  padding-left: 10px;
 }
 
 img.app-logo {
@@ -55,7 +56,7 @@ img.app-logo {
   height: 30px;
   padding-top:9px;
   padding-bottom:9px;
-  padding-left: 10px;
+
 }
 
 .header-adjust {
