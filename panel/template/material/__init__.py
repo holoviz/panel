@@ -33,10 +33,10 @@ class MaterialTemplate(BasicTemplate):
 
     _resources = {
         'css': {
-            'material': "https://unpkg.com/material-components-web@v4.0.0/dist/material-components-web.min.css",
+            'material': "https://unpkg.com/material-components-web@7.0.0/dist/material-components-web.min.css",
         },
         'js': {
-            'material': "https://unpkg.com/material-components-web@v4.0.0/dist/material-components-web.min.js"
+            'material': "https://unpkg.com/material-components-web@7.0.0/dist/material-components-web.min.js"
         }
     }
 

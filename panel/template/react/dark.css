@@ -46,3 +46,22 @@ body {
 .drag-handle {
   background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0Ij48cGF0aCBmaWxsPSJub25lIiBkPSJNMCAwaDI0djI0SDB6Ii8+PHBhdGggZmlsbD0id2hpdGUiIGQ9Ik0xNiAxM2w2Ljk2NCA0LjA2Mi0yLjk3My44NSAyLjEyNSAzLjY4MS0xLjczMiAxLTIuMTI1LTMuNjgtMi4yMjMgMi4xNUwxNiAxM3ptLTItN2gydjJoNWExIDEgMCAwIDEgMSAxdjRoLTJ2LTNIMTB2MTBoNHYySDlhMSAxIDAgMCAxLTEtMXYtNUg2di0yaDJWOWExIDEgMCAwIDEgMS0xaDVWNnpNNCAxNHYySDJ2LTJoMnptMC00djJIMnYtMmgyem0wLTR2MkgyVjZoMnptMC00djJIMlYyaDJ6bTQgMHYySDZWMmgyem00IDB2MmgtMlYyaDJ6bTQgMHYyaC0yVjJoMnoiLz48L3N2Zz4=');
 }
+
+html {
+  scrollbar-face-color: #646464;
+  scrollbar-base-color: #646464;
+  scrollbar-3dlight-color: #646464;
+  scrollbar-highlight-color: #646464;
+  scrollbar-track-color: #000;
+  scrollbar-arrow-color: #000;
+  scrollbar-shadow-color: #646464;
+  scrollbar-dark-shadow-color: #646464;
+}
+
+::-webkit-scrollbar { width: 12px; height: 3px;}
+::-webkit-scrollbar-button {  background-color: #666; }
+::-webkit-scrollbar-track {  background-color: #646464;}
+::-webkit-scrollbar-track-piece { background-color: #000;}
+::-webkit-scrollbar-thumb { height: 50px; background-color: #666; border-radius: 3px;}
+::-webkit-scrollbar-corner { background-color: #646464;}}
+::-webkit-resizer { background-color: #666;}
