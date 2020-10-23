@@ -67,7 +67,7 @@ class ReactTemplate(BasicTemplate):
             if x1 is None: x1 = 12
             if y0 is None: y0 = 0
             if y1 is None: y1 = self.main.nrows
-            layouts.append({'x': x0, 'y': y0, 'w': x1-x0, 'h': y1-y0, 'i': str(i+1)})
+            layouts.append({'x': x0, 'y': y0, 'w': x1-x0, 'h': y1-y0, 'i': str(i+1), 'minH':4})
         self._render_variables['layouts'] = {'lg': layouts, 'md': layouts}
 
     @depends('cols', 'breakpoints', 'row_height', 'compact', watch=True)
