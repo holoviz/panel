@@ -23,10 +23,10 @@
 <header class="app-bar" id="header">
   <div style="display: contents;">
     <div class="app-header">
-      {% if app_logo %}
-      <img src="{{ app_logo }}" height="30" class="app-logo"></img>
-      {% endif %}
-      <span class="header-title">{{ app_title }}</span>
+      {% if app_logo %}<a href="/"><img src="{{ app_logo }}" class="app-logo"></a>{% endif %}
+      {% if site_title %}<a class="title" href="/" >{{ site_title }}</a>{% endif %}
+      {% if site_title and app_title%}<span class="title">&nbsp;-&nbsp;</span>{% endif %}
+      {% if app_title %}<a class="title" href="" >{{ app_title }}</a>{% endif %}
     </div>
 	<section class="header-contents">
 	  {% for doc in docs %}

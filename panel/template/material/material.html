@@ -29,13 +29,11 @@
       <button class="material-icons mdc-top-app-bar__navigation-icon mdc-icon-button">menu</button>
       {% endif %}
       <div class="title-bar">
-        <span class="mdc-top-app-bar__title">
-          {% if app_logo %}
-          <img src="{{ app_logo }}" height="30" class="app-logo"></img>
-          {% endif %}
-          <span id="app-title">
-            <a class="title" href="#" >{{ app_title }}</a>
-          </span>
+        <span class="mdc-top-app-bar__title app-header">
+          {% if app_logo %}<a href="/"><img src="{{ app_logo }}" class="app-logo"></a>{% endif %}
+          {% if site_title %}<a class="title" href="/" >&nbsp;{{ site_title }}</a>{% endif %}
+          {% if site_title and app_title%}<span class="title">&nbsp;-</span>{% endif %}
+          {% if app_title %}<a class="title" href="" >&nbsp;{{ app_title }}</a>{% endif %}
         </span>
         <div id="header-items">
           {% for doc in docs %}

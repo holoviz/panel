@@ -45,12 +45,6 @@ img {
 	margin-left: 300px !important;
 }
 
-.mdc-top-app-bar__title {
-  display: contents;
-  padding-left: 10px;
-  font-size: 1.5em;
-}
-
 .title-bar {
   display: contents;
   justify-content: center;
@@ -58,11 +52,18 @@ img {
   width: 100%;
 }
 
+.app-header {
+  display: contents;
+  padding-left: 10px;
+  font-size: 1.25em;
+}
+
 img.app-logo {
-  padding-left: 12px;
-  padding-right: 12px;
+  padding-right: 10px;
   font-size: 28px;
   height: 30px;
+  padding-top: 10px;
+  padding-bottom: 8px;
 }
 
 #app-title {

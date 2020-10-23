@@ -14,6 +14,7 @@ body {
 #sidebar {
   transition: all 0.2s cubic-bezier(0.945, 0.020, 0.270, 0.665);
   transform-origin: center left; /* Set the transformed position of sidebar to center left side. */
+  overflow-y: scroll;
 }
 
 #sidebar.active {
@@ -23,6 +24,7 @@ body {
 #main {
   overflow-y: scroll;
   padding-bottom: 20px;
+  padding-right: 30px;
 }
 
 #sidebarCollapse {
@@ -42,8 +44,27 @@ a.navbar-brand {
   font-size: 1.5em;
 }
 
+.title {
+  color: #fff;
+  text-decoration: none;
+  text-decoration-line: none;
+  text-decoration-style: initial;
+  text-decoration-color: initial;
+  font-weight: 400;
+  font-size: 1.5em;
+  line-height: 2em;
+  white-space: nowrap;
+}
+
+.app-header {
+  display: contents;
+  padding-left: 10px;
+}
+
 img.app-logo {
   padding-right: 10px;
+  font-size: 28px;
+  height: 30px;
 }
 
 p.bk.card-button {

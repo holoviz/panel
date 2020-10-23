@@ -343,6 +343,10 @@ class BasicTemplate(BaseTemplate):
         A title to show in the header. Also added to the document head
         meta settings and as the browser tab title.""")
 
+    site = param.String(default="", doc="""
+        The name of the site. Will be shown in the header and link to the
+        root of the site. Default is '', i.e. not shown.""")
+
     meta_description = param.String(doc="""
         A meta description to add to the document head for search
         engine optimization. For example 'P.A. Nelson'.""")
@@ -417,7 +421,7 @@ class BasicTemplate(BaseTemplate):
         self.sidebar.param.trigger('objects')
         self.header.param.trigger('objects')
         self.modal.param.trigger('objects')
-        self.param.watch(self._update_vars, ['title', 'header_background',
+        self.param.watch(self._update_vars, ['title', 'site', 'header_background',
                                              'header_color', 'main_max_width'])
 
     def _init_doc(self, doc=None, comm=None, title=None, notebook=False, location=True):
@@ -457,6 +461,7 @@ class BasicTemplate(BaseTemplate):
     def _update_vars(self, *args):
         self._render_variables['app_title'] = self.title
         self._render_variables['meta_name'] = self.title
+        self._render_variables['site_title'] = self.site
         self._render_variables['meta_description'] = self.meta_description
         self._render_variables['meta_keywords'] = self.meta_keywords
         self._render_variables['meta_author'] = self.meta_author
