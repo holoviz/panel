@@ -206,7 +206,7 @@ class ResponsiveGrid extends React.Component {
                       if (resizedWidgets[newLayout.i]) {
                           console.log('int', parseInt(window.innerHeight/ROW_HEIGHT));
                           newLayout.h = N_viewport_rows ;
-                          newLayout.w = 12;
+                          newLayout.w = N_COLS['lg'];
                           newLayout.y= 0;
                       }
                       else {
@@ -223,7 +223,7 @@ class ResponsiveGrid extends React.Component {
                       if (resizedWidgets[newLayout.i]) {
                           console.log('int', parseInt(window.innerHeight/ROW_HEIGHT));
                           newLayout.h = N_viewport_rows ;
-                          newLayout.w = 12;
+                          newLayout.w = N_COLS['md'];
                           newLayout.y= 0;
                       }
                       else {
