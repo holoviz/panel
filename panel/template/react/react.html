@@ -1,20 +1,29 @@
 {% extends base %}
 
 {% block preamble %}
+{% if app_favicon %}<link rel="icon" href="{{ app_favicon }}" type="{{favicon_type}}">{% endif %}
+{% if meta_name %}<meta name="name" content="{{ meta_name }}">{% endif %}
+{% if meta_description %}<meta name="description" content="{{ meta_description }}">{% endif %}
+{% if meta_keywords %}<meta name="keywords" content="{{ meta_keywords }}">{% endif %}
+{% if meta_author %}<meta name="author" content="{{ meta_author }}">{% endif %}
+{% if meta_refresh %}<meta http-equiv="refresh" content="{{ meta_refresh }}">{% endif %}
+{% if meta_viewport %}<meta name="viewport" content="{{ meta_viewport }}">{% endif %}
+{% if base_url and base_target %}<base href="{{ base_url }}" target="{{ base_target }}">{% endif %}
+
+<!-- Template CSS -->
+<link rel="stylesheet" href="{{ template_resources['css']['base'] }}">
+<link rel="stylesheet" href="{{ template_resources['css']['theme'] }}">
 <!-- Bootstrap -->
-<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+<link rel="stylesheet" href="{{ template_resources['css']['bootstrap'] }}">
 <!-- Font Awesome -->
-<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+<link rel="stylesheet" href="{{ template_resources['css']['font-awesome'] }}">
 
 <!-- React-grid-layout script -->
-<script src="https://unpkg.com/react@16/umd/react.development.js" crossorigin></script>
-<script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js" crossorigin></script>
-<script src="https://unpkg.com/babel-standalone@latest/babel.min.js" crossorigin></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react-grid-layout/1.0.0/react-grid-layout.min.js" crossorigin></script>
-
+<script src="{{ template_resources['js']['react'] }}" crossorigin></script>
+<script src="{{ template_resources['js']['react-dom'] }}" crossorigin></script>
+<script src="{{ template_resources['js']['babel'] }}" crossorigin></script>
+<script src="{{ template_resources['js']['react-grid'] }}" crossorigin></script>
 {% endblock %}
-
-
 
 <!-- goes in body -->
 {% block contents %}
@@ -27,7 +36,13 @@
 	  <div class="pn-bar"></div>
 	</span>
     {% endif %}
-    <a class="title" href="#">{{ app_title }}</a>
+    <a class="navbar-brand" href="#">
+      {% if app_logo %}
+      <img src="{{ app_logo }}" height="30" class="app-logo"></img>
+      {% endif %}
+      {{ app_title }}
+    </a>
+    <div id="header-items">
     {% for doc in docs %}
     {% for root in doc.roots %}
     {% if "header" in root.tags %}
@@ -35,7 +50,7 @@
     {% endif %}
     {% endfor %}
     {% endfor %}
-
+	</div>
 	{% if busy %}
 	<div class="pn-busy-container">
 	  {{ embed(roots.busy_indicator) | indent(6) }}
@@ -44,7 +59,7 @@
 
   </nav>
 
-  <div id="content" style="overflow-x: hide;">
+  <div id="content">
     {% if nav %}
     <div class="sidenav" id="sidebar">
       <ul class="nav flex-column">
@@ -59,39 +74,36 @@
     </div>
     {% endif %}
 
-    <div class="main" id="main" style=" height: 100vh; ">
+    <div class="main" id="main"{% if nav %} style="margin-left: 300px;"{% endif %}>
+      <div id="responsive-grid"></div>
 
-      <div id="mydiv" style="overflow-x: hide; overflow-y: hide"></div>  
-      
       <div id="pn-Modal" class="pn-modal header-adjust">
-      <div class="pn-modal-content">
-        <span class="pn-modalclose" id="pn-closeModal">&times;</span>
-        {% for doc in docs %}
-        {% for root in doc.roots %}
-        {% if "modal" in root.tags %}
-        {{ embed(root) | indent(10) }}
-        {% endif %}
-        {% endfor %}
-        {% endfor %}
-          
-
-      </div>
+        <div class="pn-modal-content">
+          <span class="pn-modalclose" id="pn-closeModal">&times;</span>
+          {% for doc in docs %}
+          {% for root in doc.roots %}
+          {% if "modal" in root.tags %}
+          {{ embed(root) | indent(10) }}
+          {% endif %}
+          {% endfor %}
+          {% endfor %}
+        </div>
 	  </div>
-    </div>
+	</div>
   </div>
 </div>
 
 <script>
   function openNav() {
     document.getElementById("sidebar").style.left = 0;
-    document.getElementById("main").style.marginLeft = "16.7vw";
+    document.getElementById("main").style.marginLeft = "300px";
     document.getElementById("sidebar-button").onclick = closeNav;
     var interval = setInterval(function () { window.dispatchEvent(new Event('resize')); }, 10);
     setTimeout(function () { clearInterval(interval) }, 210)
   }
 
   function closeNav() {
-    document.getElementById("sidebar").style.left = "-16.7vw";
+    document.getElementById("sidebar").style.left = "-300px";
     document.getElementById("main").style.marginLeft = 0;
     document.getElementById("sidebar-button").onclick = openNav;
     var interval = setInterval(function () { window.dispatchEvent(new Event('resize')); }, 10);
@@ -112,72 +124,57 @@
   }
 </script>
 
-
 <script type="text/babel">
-
-const divStyle = { borderRadius: '5px',
-                    margin: '10px' };  
-                    
+const divStyle = {borderRadius: '5px'};
 
 const ResponsiveGridLayout = ReactGridLayout.WidthProvider(ReactGridLayout.Responsive)
 
-   class MyFirstGrid extends React.Component {
-    constructor(props) {
-    super(props);
-  }
+function resize_layout(obj, old_, new_, p, e, element) {
+  window.dispatchEvent(new Event("resize"))
+}
 
-
-
-  resize_layout(obj, old_, new_, p, e, element) {
+function resize_layout_stop(obj, old_, new_, p, e, element) {
+  setTimeout(function(){
     window.dispatchEvent(new Event("resize"))
-  }  
+  }, 50);
+}
 
-  resize_layout_stop(obj, old_, new_, p, e, element) {
-    setTimeout(function(){
-        window.dispatchEvent(new Event("resize"))
-   },50);
-  }
-
-    render() {
-      const layouts = {{layouts}};
-      return (
-        <div>
-        
-        <ResponsiveGridLayout className="layout" 
-            cols={ {{cols}} }
-            breakpoints ={ {{breakpoints}} }
-            width = {window.screen.width}
-            onResize = {this.resize_layout} 
-            onResizeStop = {this.resize_layout_stop}
-            margin={[10,10]}   draggableCancel='.bk-root' 
-            rowHeight={ {{rowHeight}} }
-            layouts={layouts}
+function ResponsiveGrid(props) {
+    const layouts = {{layouts}};
+    return (
+        <ResponsiveGridLayout
+		  className={"layout"}
+          cols={ {{cols}} }
+          breakpoints={ {{breakpoints}} }
+          draggableHandle={".drag-handle"}
+          onResize={resize_layout}
+          onResizeStop={resize_layout_stop}
+		  draggableCancel={".bk-root"}
+          rowHeight={ {{rowHeight}} }
+          layouts={layouts}
+          {% if compact == "both" %}
+          compactType={"horizontal"}
+          {% elif compact == "horizontal" %}
+          verticalCompact={false}
+          compactType={"horizontal"}
+          {% elif compact is none %}
+          verticalCompact={false}
+          {% endif %}
         >
-  
-              {% set count = [] %} 
-              {% for doc in docs %}
-              {% for root in doc.roots %}
-                {% if "main" in root.tags %}
-
-              
-                  <div key="{{count|length + 1 }}" style={divStyle} >
-                          {{ embed(root) | indent(4) }} 
-                  </div>
-               
-                  
-                  {% set __ = count.append(1) %}
-                {% endif %}
-              {% endfor %}
-              {% endfor %}
-                    
+          {% set count = [] %}
+          {% for doc in docs %}{% for root in doc.roots %}{% if "main" in root.tags %}
+            <div key="{{count|length + 1 }}" style={divStyle} >
+			  <span className="drag-handle"></span>
+              {{ embed(root) | indent(4) | replace("class", "className") }}
+            </div>
+            {% set __ = count.append(1) %}
+          {% endif %}{% endfor %}{% endfor %}
         </ResponsiveGridLayout>
-      </div>
-      );
-    }
- }
- 
-ReactDOM.render(<MyFirstGrid />, document.getElementById('mydiv'))
- </script>
+    );
+}
+
+ReactDOM.render(<ResponsiveGrid />, document.getElementById('responsive-grid'))
+</script>
 
 {{ embed(roots.js_area) }}
 {{ embed(roots.location) }}

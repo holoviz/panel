@@ -71,19 +71,19 @@ export class VTKVolumePlotView extends AbstractVTKView {
       this._vtk_renwin.getRenderWindow().render()
     })
     this.connect(this.model.properties.slice_i.change, () => {
-      if(this.image_actor_i !== undefined){
+      if (this.image_actor_i !== undefined) {
         this.image_actor_i.getMapper().setISlice(this.model.slice_i)
         this._vtk_renwin.getRenderWindow().render()
       }
     })
     this.connect(this.model.properties.slice_j.change, () => {
-      if(this.image_actor_j !== undefined){
+      if (this.image_actor_j !== undefined) {
         this.image_actor_j.getMapper().setJSlice(this.model.slice_j)
         this._vtk_renwin.getRenderWindow().render()
       }
     })
     this.connect(this.model.properties.slice_k.change, () => {
-      if(this.image_actor_k !== undefined){
+      if (this.image_actor_k !== undefined) {
         this.image_actor_k.getMapper().setKSlice(this.model.slice_k)
         this._vtk_renwin.getRenderWindow().render()
       }
@@ -98,8 +98,12 @@ export class VTKVolumePlotView extends AbstractVTKView {
       this._set_interpolation(this.model.interpolation)
       this._vtk_renwin.getRenderWindow().render()
     })
+    this.connect(this.model.properties.controller_expanded.change, () => {
+      if (this._controllerWidget != null)
+        this._controllerWidget.setExpanded(this.model.controller_expanded)
+    })
   }
-  
+
   render(): void {
     this._vtk_renwin = null
     this._orientationWidget = null
@@ -109,13 +113,16 @@ export class VTKVolumePlotView extends AbstractVTKView {
     this._set_axes()
     if (!this.model.camera)
       this._vtk_renwin.getRenderer().resetCamera()
+    else
+      this._set_camera_state()
+    this._get_camera_state()
   }
 
   invalidate_render(): void {
     this._vtk_renwin = null
     super.invalidate_render()
   }
-  
+
   init_vtk_renwin(): void {
     this._vtk_renwin = vtkns.FullScreenRenderWindow.newInstance({
       rootContainer: this.el,
@@ -136,6 +143,7 @@ export class VTKVolumePlotView extends AbstractVTKView {
       true
     )
     this._controllerWidget.setContainer(this.el)
+    this._controllerWidget.setExpanded(this.model.controller_expanded)
     this._connect_js_controls()
     this._vtk_renwin.getRenderWindow().getInteractor()
     this._vtk_renwin.getRenderWindow().getInteractor().setDesiredUpdateRate(45)
@@ -186,6 +194,11 @@ export class VTKVolumePlotView extends AbstractVTKView {
   }
 
   _connect_js_controls(): void {
+    const {el: controller_el} = this._controllerWidget.get('el')
+    if(controller_el !== undefined) {
+      const controller_button = (controller_el as HTMLElement).querySelector('.js-button')
+      controller_button!.addEventListener('click', () => this.model.controller_expanded = this._controllerWidget.getExpanded())
+    }
     // Colormap selector
     this.colormap_selector.addEventListener("change", () => {
       this.model.colormap = this.colormap_selector.value
@@ -193,7 +206,7 @@ export class VTKVolumePlotView extends AbstractVTKView {
     if (!this.model.colormap) this.model.colormap = this.colormap_selector.value
     else this.model.properties.colormap.change.emit()
 
-      // Shadow selector
+    // Shadow selector
     this.shadow_selector.addEventListener("change", () => {
       this.model.shadow = !!Number(this.shadow_selector.value)
     })
@@ -351,11 +364,10 @@ export class VTKVolumePlotView extends AbstractVTKView {
       .getActors()
       .map((actor: any) => actor.setVisibility(visibility))
   }
-  
+
   _set_volume_visibility(visibility: boolean): void {
     this.volume.setVisibility(visibility)
   }
-
 }
 
 export namespace VTKVolumePlot {
@@ -378,6 +390,7 @@ export namespace VTKVolumePlot {
     slice_k: p.Property<number>
     specular: p.Property<number>
     specular_power: p.Property<number>
+    controller_expanded: p.Property<boolean>
   }
 }
 
@@ -394,24 +407,25 @@ export class VTKVolumePlot extends AbstractVTKPlot {
     this.prototype.default_view = VTKVolumePlotView
 
     this.define<VTKVolumePlot.Props>({
-      ambient:           [ p.Number,            0.2 ],
-      colormap:          [ p.String                 ],
-      data:              [ p.Instance               ],
-      diffuse:           [ p.Number,            0.7 ],
-      display_slices:    [ p.Boolean,         false ],
-      display_volume:    [ p.Boolean,          true ],
-      edge_gradient:     [ p.Number,            0.2 ],
-      interpolation:     [ p.Any,      'fast_linear'],
-      mapper:            [ p.Instance               ],
-      render_background: [ p.String,      '#52576e' ],
-      rescale:           [ p.Boolean,         false ],
-      sampling:          [ p.Number,            0.4 ],
-      shadow:            [ p.Boolean,          true ],
-      slice_i:           [ p.Int,               0   ],
-      slice_j:           [ p.Int,               0   ],
-      slice_k:           [ p.Int,               0   ],
-      specular:          [ p.Number,            0.3 ],
-      specular_power:    [ p.Number,            8.0 ],
+      ambient:              [ p.Number,            0.2 ],
+      colormap:             [ p.String                 ],
+      data:                 [ p.Instance               ],
+      diffuse:              [ p.Number,            0.7 ],
+      display_slices:       [ p.Boolean,         false ],
+      display_volume:       [ p.Boolean,          true ],
+      edge_gradient:        [ p.Number,            0.2 ],
+      interpolation:        [ p.Any,      'fast_linear'],
+      mapper:               [ p.Instance               ],
+      render_background:    [ p.String,      '#52576e' ],
+      rescale:              [ p.Boolean,         false ],
+      sampling:             [ p.Number,            0.4 ],
+      shadow:               [ p.Boolean,          true ],
+      slice_i:              [ p.Int,               0   ],
+      slice_j:              [ p.Int,               0   ],
+      slice_k:              [ p.Int,               0   ],
+      specular:             [ p.Number,            0.3 ],
+      specular_power:       [ p.Number,            8.0 ],
+      controller_expanded:  [ p.Boolean,          true ],
     })
   }
 }

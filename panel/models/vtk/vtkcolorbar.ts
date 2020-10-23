@@ -35,8 +35,8 @@ export class VTKColorBar {
   }
 
   get values(): number[] {
-    const {high, low} = this.mapper as ContinuousColorMapper
-    return linspace(low, high, this.options.ticksNum!)
+    const {min, max} = (this.mapper as ContinuousColorMapper).metrics
+    return linspace(min, max, this.options.ticksNum!)
   }
 
   get ticks(): string[] {

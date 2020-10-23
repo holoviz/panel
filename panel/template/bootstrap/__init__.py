@@ -21,9 +21,20 @@ class BootstrapTemplate(BasicTemplate):
 
     _modifiers = {
         Card: {
-            'children': {'margin': (0, 10)},
-            'button_css_classes': ['card-button']
+            'children': {'margin': (10, 10)},
+            'button_css_classes': ['card-button'],
+            'margin': (10, 5)
         },
+    }
+
+    _resources = {
+        'css': {
+            'bootstrap': "https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+        },
+        'js': {
+            'bootstrap': "https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js",
+            'jquery': "https://code.jquery.com/jquery-3.4.1.slim.min.js"
+        }
     }
 
 

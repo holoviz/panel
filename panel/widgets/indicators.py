@@ -98,7 +98,7 @@ class ValueIndicator(Indicator):
     value.
     """
 
-    value = param.Number(default=None)
+    value = param.Number(default=None, allow_None=True)
 
     __abstract = True
 
@@ -143,6 +143,9 @@ class Number(ValueIndicator):
 
     font_size = param.String(default='54pt')
 
+    nan_format = param.String(default='-', doc="""
+      How to format nan values.""")
+
     title_size = param.String(default='18pt')
 
     _rename = {}
@@ -156,12 +159,15 @@ class Number(ValueIndicator):
         name = msg.pop('name', self.name)
         format = msg.pop('format', self.format)
         value = msg.pop('value', self.value)
+        nan_format = msg.pop('nan_format', self.nan_format)
         color = msg.pop('default_color', self.default_color)
         colors = msg.pop('colors', self.colors)
         for val, clr in (colors or [])[::-1]:
-            if value <= val:
+            if value is not None and value <= val:
                 color = clr
-        value = format.format(value=value)
+        if value is None:
+            value = float('nan')
+        value = format.format(value=value).replace('nan', nan_format)
         text = f'<div style="font-size: {font_size}; color: {color}">{value}</div>'
         if self.name:
             title_font_size = msg.pop('title_size', self.title_size)
@@ -181,7 +187,7 @@ class String(ValueIndicator):
 
     title_size = param.String(default='18pt')
 
-    value = param.String(default=None)
+    value = param.String(default=None, allow_None=True)
 
     _rename = {}
 
@@ -341,6 +347,9 @@ class Dial(ValueIndicator):
 
     height = param.Integer(default=250, bounds=(1, None))
 
+    nan_format = param.String(default='-', doc="""
+      How to format nan values.""")
+
     needle_color = param.String(default='black', doc="""
       Color of the Dial needle.""")
 
@@ -362,7 +371,7 @@ class Dial(ValueIndicator):
     value_size = param.String(default=None, doc="""
       Font size of the Dial value label.""")
 
-    value = param.Number(default=25, doc="""
+    value = param.Number(default=25, allow_None=True, doc="""
       Value to indicate on the dial a value within the declared bounds.""")
 
     width = param.Integer(default=250, bounds=(1, None))
@@ -372,10 +381,10 @@ class Dial(ValueIndicator):
         'annulus_width', 'format', 'background', 'needle_width',
         'tick_size', 'title_size', 'value_size', 'colors',
         'default_color', 'unfilled_color', 'height',
-        'width', 'needle_color'
+        'width', 'nan_format', 'needle_color'
     ]
 
-    _data_params = _manual_params[:-1]
+    _data_params = _manual_params
 
     _rename = {'background': 'background_fill_color'}
 
@@ -393,14 +402,17 @@ class Dial(ValueIndicator):
 
     def _get_data(self):
         vmin, vmax = self.bounds
-        fraction = (self.value-vmin)/(vmax-vmin)
+        value = self.value
+        if value is None:
+            value = float('nan')
+        fraction = (value-vmin)/(vmax-vmin)
         start = (np.radians(360-self.start_angle) - pi % (2*pi)) + pi
         end = (np.radians(360-self.end_angle) - pi % (2*pi)) + pi
         distance = (abs(end-start) % (pi*2))
         if end>start:
             distance = (pi*2)-distance
         radial_fraction = distance*fraction
-        angle = (start-radial_fraction)
+        angle = start if np.isnan(fraction) else (start-radial_fraction)
         inner_radius = 1-self.annulus_width
 
         color = self.default_color
@@ -409,10 +421,10 @@ class Dial(ValueIndicator):
                 color = clr
 
         annulus_data = {
-            'starts': [start, angle],
-            'ends' :  [angle, end],
+            'starts': np.array([start, angle]),
+            'ends' :  np.array([angle, end]),
             'color':  [color, self.unfilled_color],
-            'radius': [inner_radius, inner_radius]
+            'radius': np.array([inner_radius, inner_radius])
         }
 
         x0s, y0s, x1s, y1s, clrs = [], [], [], [], []
@@ -438,14 +450,14 @@ class Dial(ValueIndicator):
         needle_start = pi+angle-(self.needle_width/2.)
         needle_end = pi+angle+(self.needle_width/2.)
         needle_data = {
-            'x':      [x],
-            'y':      [y],
-            'start':  [needle_start],
-            'end':    [needle_end],
-            'radius': [center_radius]
+            'x':      np.array([x]),
+            'y':      np.array([y]),
+            'start':  np.array([needle_start]),
+            'end':    np.array([needle_end]),
+            'radius': np.array([center_radius])
         }
 
-        value = self.format.format(value=self.value)
+        value = self.format.format(value=value).replace('nan', self.nan_format)
         min_value = self.format.format(value=vmin)
         max_value = self.format.format(value=vmax)
         tminx, tminy = np.cos(start)*center_radius, np.sin(start)*center_radius
@@ -457,10 +469,10 @@ class Dial(ValueIndicator):
         tick_size = self.tick_size if self.tick_size else '%spt' % (scale*18)
 
         text_data= {
-            'x':    [0, 0, tminx, tmaxx],
-            'y':    [-.2, -.5, tminy, tmaxy],
+            'x':    np.array([0, 0, tminx, tmaxx]),
+            'y':    np.array([-.2, -.5, tminy, tmaxy]),
             'text': [self.name, value, min_value, max_value],
-            'rot':  [0, 0, tmin_angle, tmax_angle],
+            'rot':  np.array([0, 0, tmin_angle, tmax_angle]),
             'size': [title_size, value_size, tick_size, tick_size],
             'color': ['black', color, 'black', 'black']
         }

@@ -48,7 +48,7 @@ export class VTKJSPlotView extends AbstractVTKView {
             setTimeout(() => {
               if (this._axes == null && this.model.axes) this._set_axes()
               this._set_camera_state()
-              this.model.properties.camera.change.emit()
+              this._get_camera_state()
             }, 100),
           100
         )

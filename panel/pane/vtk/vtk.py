@@ -66,6 +66,9 @@ class AbstractVTK(PaneBase):
     orientation_widget = param.Boolean(default=False, doc="""
         Activate/Deactivate the orientation widget display.""")
 
+    interactive_orientation_widget = param.Boolean(default=True, constant=True, doc="""
+    """)
+
     def _process_param_change(self, msg):
         msg = super(AbstractVTK, self)._process_param_change(msg)
         if 'axes' in msg and msg['axes'] is not None:
@@ -161,6 +164,8 @@ class VTK:
             if VTKRenderWindow.applies(obj, **params):
                 return VTKRenderWindow(obj, **params)
             else:
+                if params.get('interactive_orientation_widget', False):
+                    param.main.param.warning("""Setting interactive_orientation_widget=True will break synchronization capabilities of the pane""")
                 return VTKRenderWindowSynchronized(obj, **params)
         elif VTKJS.applies(obj):
             return VTKJS(obj, **params)
@@ -416,6 +421,9 @@ class VTKRenderWindowSynchronized(BaseVTKRenderWindow, SyncHelpers):
     with a custom bokeh model on javascript side
     """
 
+    interactive_orientation_widget = param.Boolean(default=False, constant=True, doc="""
+    """)
+
     _one_time_reset = param.Boolean(default=False)
 
     _rename = dict(_one_time_reset='one_time_reset',
@@ -502,12 +510,14 @@ class VTKRenderWindowSynchronized(BaseVTKRenderWindow, SyncHelpers):
         old_camera = self.vtk_camera
         new_camera = vtk.vtkCamera()
         self.vtk_camera = new_camera
+        exclude_properties = ['mtime']
         if self.camera is not None:
             for k, v in self.camera.items():
-                if type(v) is list:
-                    getattr(new_camera, 'Set' + k[0].capitalize() + k[1:])(*v)
-                else:
-                    getattr(new_camera, 'Set' + k[0].capitalize() + k[1:])(v)
+                if k not in exclude_properties:
+                    if type(v) is list:
+                        getattr(new_camera, 'Set' + k[0].capitalize() + k[1:])(*v)
+                    else:
+                        getattr(new_camera, 'Set' + k[0].capitalize() + k[1:])(v)
         else:
             new_camera.DeepCopy(old_camera)
 
@@ -519,6 +529,9 @@ class VTKVolume(AbstractVTK):
         Value to control the ambient lighting. It is the light an
         object gives even in the absence of strong light. It is
         constant in all directions.""")
+
+    controller_expanded = param.Boolean(default=True, doc="""
+        If True the volume controller panel options is expanded in the view""")
 
     colormap = param.Selector(default='erdc_rainbow_bright', objects=PRESET_CMAPS, doc="""
         Name of the colormap used to transform pixel value in color.""")
@@ -643,7 +656,7 @@ class VTKVolume(AbstractVTK):
                               **props)
         if root is None:
             root = model
-        self._link_props(model, ['colormap', 'orientation_widget', 'camera', 'mapper'], doc, root, comm)
+        self._link_props(model, ['colormap', 'orientation_widget', 'camera', 'mapper', 'controller_expanded'], doc, root, comm)
         self._models[root.ref['id']] = (model, parent)
         return model
 

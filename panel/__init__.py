@@ -18,3 +18,4 @@ from .layout import ( # noqa
 from .pane import panel, Pane # noqa
 from .param import Param # noqa
 from .template import Template # noqa
+from .widgets import indicators # noqa

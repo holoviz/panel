@@ -1,13 +1,17 @@
 body {
   display: flex;
   height: 100vh;
-  font-family: roboto;
+  font-family: "Lato", sans-serif;
   margin: 0px;
+}
+
+body, .main-area, .main-content, .lm_goldenlayout {
+  overflow: hidden;
 }
 
 .main-area {
   flex: auto;
-  overflow: auto;
+  overflow: hidden;
   position: relative;
   border-color: rgba(64, 64, 64);
   border-left-width: 1px;
@@ -16,6 +20,7 @@ body {
 
 .main-content {
   height: 100%;
+  overflow: hidden;
 }
 
 #header {
@@ -23,7 +28,7 @@ body {
   height: 64px;
   z-index: 7;
   background-color: black;
-  width: 100%;
+  width: 100vw;
   color: white;
   display: flex;
   align-items: center;
@@ -32,6 +37,17 @@ body {
 #sidebar {
   background-color:rgb(34, 34, 34);
   color: white;
+}
+
+.sidebar-contents {
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.header-contents {
+  overflow: hidden;
+  width: 100%;
+  padding-left: 10px;
 }
 
 .app-header {
@@ -47,12 +63,17 @@ img.app-logo {
 }
 
 .header-title {
+  text-decoration: none;
+  text-decoration-line: none;
+  text-decoration-style: initial;
+  text-decoration-color: initial;
   font-size: 1.5em;
   line-height: 2em;
   padding-left: 1em;
   font: 1.5em Arial, sans-serif;
   color: white;
   text-align: center;
+  white-space: nowrap;
 }
 
 p.bk.golden-card-button {
@@ -76,6 +97,17 @@ p.bk.golden-card-button {
   padding-right: 2px !important;
 }
 
+.lm_content {
+  overflow-y: scroll !important;
+}
+
+.lm_item_container {
+  overflow: hidden;
+}
+
+.lm_goldenlayout {
+  overflow: auto;
+}
 
 .pn-modal {
   overflow-y: scroll;

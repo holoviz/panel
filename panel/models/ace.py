@@ -6,6 +6,7 @@ from __future__ import absolute_import, division, unicode_literals
 from bokeh.core.properties import String, Override, Dict, Any, List, Bool, Enum
 from bokeh.models import HTMLBox
 
+from ..util import classproperty, bundled_files
 from .enums import ace_themes
 
 
@@ -15,13 +16,19 @@ class AcePlot(HTMLBox):
     a Bokeh plot.
     """
 
-    __javascript__ = [
+    __javascript_raw__ = [
         'https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.11/ace.js',
         'https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.11/ext-language_tools.js',
         'https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.11/ext-modelist.min.js'
     ]
 
-    __js_skip__ = {'ace': __javascript__}
+    @classproperty
+    def __javascript__(cls):
+        return bundled_files(cls)
+
+    @classproperty
+    def __js_skip__(cls):
+        return {'ace': cls.__javascript__}
 
     __js_require__ = {
         'paths': {

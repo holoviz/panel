@@ -7,7 +7,7 @@ class Theme(param.Parameterized):
     """
     A Theme customizes the look and feel of a Template by providing
     custom CSS and bokeh Theme class.
-   
+
     When adding a new theme a generic Theme class should be created,
     which is what users will important and set on the Template.theme
     parameter. Additionally a concrete implementation of the Theme

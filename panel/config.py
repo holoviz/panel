@@ -6,7 +6,6 @@ components.
 from __future__ import absolute_import, division, unicode_literals
 
 import ast
-import glob
 import inspect
 import os
 import sys
@@ -31,7 +30,7 @@ _LOCAL_DEV_VERSION = any(v in __version__ for v in ('post', 'dirty'))
 #---------------------------------------------------------------------
 
 _PATH = os.path.abspath(os.path.dirname(__file__))
-_CSS_FILES = glob.glob(os.path.join(_PATH, '_styles', '*.css'))
+
 
 def validate_config(config, parameter, value):
     """
@@ -64,7 +63,7 @@ class _config(param.Parameterized):
         Whether to set custom Signature which allows tab-completion
         in some IDEs and environments.""")
 
-    css_files = param.List(default=_CSS_FILES, doc="""
+    css_files = param.List(default=[], doc="""
         External CSS files to load.""")
 
     js_files = param.Dict(default={}, doc="""
@@ -408,15 +407,17 @@ class panel_extension(_pyviz_extension):
 
     _loaded = False
 
-    _imports = {'katex': 'panel.models.katex',
-                'mathjax': 'panel.models.mathjax',
-                'plotly': 'panel.models.plotly',
-                'deckgl': 'panel.models.deckgl',
-                'vega': 'panel.models.vega',
-                'vtk': 'panel.models.vtk',
-                'ace': 'panel.models.ace',
-                'echarts': 'panel.models.echarts',
-                'ipywidgets': 'ipywidgets_bokeh.widget'}
+    _imports = {
+        'katex': 'panel.models.katex',
+        'mathjax': 'panel.models.mathjax',
+        'plotly': 'panel.models.plotly',
+        'deckgl': 'panel.models.deckgl',
+        'vega': 'panel.models.vega',
+        'vtk': 'panel.models.vtk',
+        'ace': 'panel.models.ace',
+        'echarts': 'panel.models.echarts',
+        'ipywidgets': 'ipywidgets_bokeh.widget'
+    }
 
     # Check whether these are loaded before rendering
     _globals = {

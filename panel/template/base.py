@@ -14,6 +14,7 @@ import param
 
 from bokeh.document.document import Document as _Document
 from bokeh.io import curdoc as _curdoc
+from bokeh.settings import settings as _settings
 from jinja2.environment import Template as _Template
 from six import string_types
 from pyviz_comms import JupyterCommManager as _JupyterCommManager
@@ -21,12 +22,15 @@ from pyviz_comms import JupyterCommManager as _JupyterCommManager
 from ..config import config, panel_extension
 from ..io.model import add_to_doc
 from ..io.notebook import render_template
+from ..io.resources import CDN_DIST, LOCAL_DIST
 from ..io.save import save
 from ..io.state import state
 from ..layout import Column, ListLike
 from ..models.comm_manager import CommManager
 from ..pane import panel as _panel, HTML, Str, HoloViews
 from ..pane.image import ImageBase
+from ..util import url_path
+
 from ..viewable import ServableMixin, Viewable
 from ..widgets import Button
 from ..widgets.indicators import BooleanIndicator, LoadingSpinner
@@ -37,8 +41,16 @@ _server_info = (
     'https://localhost:{port}</a>'
 )
 
+FAVICON_URL = "/static/extensions/panel/icons/favicon.ico"
+
 
 class BaseTemplate(param.Parameterized, ServableMixin):
+
+    location = param.Boolean(default=False, doc="""
+        Whether to add a Location component to this Template.
+        Note if this is set to true, the Jinja2 template must
+        either insert all available roots or explicitly embed
+        the location root with : {{ embed(roots.location) }}.""")
 
     # Dictionary of property overrides by bokeh Model type
     _modifiers = {}
@@ -124,6 +136,9 @@ class BaseTemplate(param.Parameterized, ServableMixin):
     def _init_doc(self, doc=None, comm=None, title=None, notebook=False, location=True):
         doc = doc or _curdoc()
         title = title or 'Panel Application'
+        if location and self.location:
+            loc = self._add_location(doc, location)
+            doc.on_session_destroyed(loc._server_destroy)
         doc.title = title
         col = Column()
         preprocess_root = col.get_root(doc, comm)
@@ -160,11 +175,6 @@ class BaseTemplate(param.Parameterized, ServableMixin):
         else:
             doc.template = self.template
         doc._template_variables.update(self._render_variables)
-        doc._template_variables['template_css_files'] = css_files = (
-            doc._template_variables.get('template_css_files', [])
-        )
-        for cssf in self._css_files:
-            css_files.append(str(cssf))
         return doc
 
     def _repr_mimebundle_(self, include=None, exclude=None):
@@ -207,10 +217,6 @@ class BaseTemplate(param.Parameterized, ServableMixin):
             state._handles[ref] = (handle, [])
 
         return render_template(doc, comm, manager)
-
-    @property
-    def _css_files(self):
-        return []
 
     #----------------------------------------------------------------
     # Public API
@@ -315,6 +321,10 @@ class BasicTemplate(BaseTemplate):
     main = param.ClassSelector(class_=ListLike, constant=True, doc="""
         A list-like container which populates the main area.""")
 
+    main_max_width = param.String(default="", doc="""
+        The maximum width of the main area. For example '800px' or '80%'.
+        If the string is '' (default) no max width is set.""")
+
     sidebar = param.ClassSelector(class_=ListLike, constant=True, doc="""
         A list-like container which populates the sidebar.""")
 
@@ -325,20 +335,60 @@ class BasicTemplate(BaseTemplate):
         URI of logo to add to the header (if local file, logo is
         base64 encoded as URI).""")
 
-    title = param.String(doc="A title to show in the header.")
+    favicon = param.String(default=FAVICON_URL, constant=True, doc="""
+        URI of favicon to add to the document head (if local file, favicon is
+        base64 encoded as URI).""")
 
-    header_background = param.String(doc="Optional header background color override")
+    title = param.String(default="Panel Application", doc="""
+        A title to show in the header. Also added to the document head
+        meta settings and as the browser tab title.""")
 
-    header_color = param.String(doc="Optional header text color override")
+    meta_description = param.String(doc="""
+        A meta description to add to the document head for search
+        engine optimization. For example 'P.A. Nelson'.""")
+
+    meta_keywords = param.String(doc="""
+        Meta keywords to add to the document head for search engine
+        optimization.""")
+
+    meta_author = param.String(doc="""
+        A meta author to add to the the document head for search
+        engine optimization. For example 'P.A. Nelson'.""")
+
+    meta_refresh = param.String(doc="""
+        A meta refresh rate to add to the document head. For example
+        '30' will instruct the browser to refresh every 30
+        seconds. Default is '', i.e. no automatic refresh.""")
+
+    meta_viewport = param.String(doc="""
+        A meta viewport to add to the header.""")
+
+    base_url = param.String(doc="""
+        Specifies the base URL for all relative URLs in a
+        page. Default is '', i.e. not the domain.""")
+
+    base_target = param.ObjectSelector(default="_self",
+        objects=["_blank", "_self", "_parent", "_top"], doc="""
+        Specifies the base Target for all relative URLs in a page.""")
+
+    header_background = param.String(doc="""
+        Optional header background color override.""")
+
+    header_color = param.String(doc="""
+        Optional header text color override.""")
 
     theme = param.ClassSelector(class_=Theme, default=DefaultTheme,
                                 constant=True, is_instance=False, instantiate=False)
+
+    location = param.Boolean(default=True, readonly=True)
 
     _css = None
 
     _template = None
 
     _modifiers = {}
+
+    _resources = {'css': {}, 'js': {}}
 
     __abstract = True
 
@@ -368,32 +418,52 @@ class BasicTemplate(BaseTemplate):
         self.header.param.trigger('objects')
         self.modal.param.trigger('objects')
         self.param.watch(self._update_vars, ['title', 'header_background',
-                                             'header_color'])
-
-    @property
-    def _css_files(self):
-        css_files = []
-        if self._css and self._css not in config.css_files:
-            css_files.append(self._css)
-        if self.theme:
-            theme = self.theme.find_theme(type(self))
-            if theme and theme.css and theme.css not in config.css_files:
-                css_files.append(theme.css)
-        return css_files
+                                             'header_color', 'main_max_width'])
 
     def _init_doc(self, doc=None, comm=None, title=None, notebook=False, location=True):
+        title = title or self.title
         doc = super(BasicTemplate, self)._init_doc(doc, comm, title, notebook, location)
-        if location:
-            loc = self._add_location(doc, location)
-            doc.on_session_destroyed(loc._server_destroy)
         if self.theme:
             theme = self.theme.find_theme(type(self))
             if theme and theme.bokeh_theme:
                 doc.theme = theme.bokeh_theme
         return doc
 
+    def _template_resources(self):
+        name = type(self).__name__.lower()
+        resources = _settings.resources(default="server")
+        dist_path = LOCAL_DIST if resources == 'server' else CDN_DIST
+
+        # External resources
+        css_files = dict(self._resources['css'])
+        for cssname, css in css_files.items():
+            css_path = url_path(css)
+            css_files[cssname] = dist_path + f'bundled/{name}/{css_path}'
+        js_files = dict(self._resources['js'])
+        for jsname, js in js_files.items():
+            js_path = url_path(js)
+            js_files[jsname] = dist_path + f'bundled/{name}/{js_path}'
+
+        # CSS files
+        base_css = os.path.basename(self._css)
+        css_files['base'] = dist_path + f'bundled/{name}/{base_css}'
+        if self.theme:
+            theme = self.theme.find_theme(type(self))
+            if theme and theme.css:
+                basename = os.path.basename(theme.css)
+                css_files['theme'] = dist_path + f'bundled/{name}/{basename}'
+        return {'css': css_files, 'js': js_files}
+
     def _update_vars(self, *args):
         self._render_variables['app_title'] = self.title
+        self._render_variables['meta_name'] = self.title
+        self._render_variables['meta_description'] = self.meta_description
+        self._render_variables['meta_keywords'] = self.meta_keywords
+        self._render_variables['meta_author'] = self.meta_author
+        self._render_variables['meta_refresh'] = self.meta_refresh
+        self._render_variables['meta_viewport'] = self.meta_viewport
+        self._render_variables['base_url'] = self.base_url
+        self._render_variables['base_target'] = self.base_target
         if os.path.isfile(self.logo):
             img = _panel(self.logo)
             if not isinstance(img, ImageBase):
@@ -401,9 +471,23 @@ class BasicTemplate(BaseTemplate):
             logo = img._b64()
         else:
             logo = self.logo
+        if os.path.isfile(self.favicon):
+            img = _panel(self.favicon)
+            if not isinstance(img, ImageBase):
+                raise ValueError("Could not determine file type of favicon: {self.favicon}.")
+            favicon = img._b64()
+        else:
+            if _settings.resources(default='server') == 'cdn' and self.favicon == FAVICON_URL:
+                favicon = CDN_DIST+"icons/favicon.ico"
+            else:
+                favicon = self.favicon
+        self._render_variables['template_resources'] = self._template_resources()
         self._render_variables['app_logo'] = logo
+        self._render_variables['app_favicon'] = favicon
+        self._render_variables['app_favicon_type'] = self._get_favicon_type(self.favicon)
         self._render_variables['header_background'] = self.header_background
         self._render_variables['header_color'] = self.header_color
+        self._render_variables['main_max_width'] = self.main_max_width
 
     def _update_busy(self):
         if self.busy_indicator:
@@ -424,13 +508,15 @@ class BasicTemplate(BaseTemplate):
         elif event.obj is self.modal:
             tag = 'modal'
 
-        for obj in event.old:
+        old = event.old if isinstance(event.old, list) else event.old.values()
+        for obj in old:
             ref = str(id(obj))
             if obj not in event.new and ref in self._render_items:
                 del self._render_items[ref]
 
         labels = {}
-        for obj in event.new:
+        new = event.new if isinstance(event.new, list) else event.new.values()
+        for obj in new:
             ref = str(id(obj))
             labels[ref] = 'Content' if obj.name.startswith(type(obj).__name__) else obj.name
             if ref not in self._render_items:
@@ -461,6 +547,23 @@ class BasicTemplate(BaseTemplate):
           modal.style.display = "none";
         </script>
         """
+
+    @staticmethod
+    def _get_favicon_type(favicon):
+        if not favicon:
+            return ""
+        elif favicon.endswith(".png"):
+            return "image/png"
+        elif favicon.endswith("jpg"):
+            return "image/jpg"
+        elif favicon.endswith("gif"):
+            return "image/gif"
+        elif favicon.endswith("svg"):
+            return "image/svg"
+        elif favicon.endswith("ico"):
+            return "image/x-icon"
+        else:
+            raise ValueError("favicon type not supported.")
 
 
 
@@ -497,7 +600,7 @@ class Template(BaseTemplate):
     """
 
     def __init__(self, template=None, nb_template=None, items=None, **params):
-        super(Template, self).__init__(template, nb_template, **params)
+        super(Template, self).__init__(template=template, nb_template=nb_template, items=items, **params)
         items = {} if items is None else items
         for name, item in items.items():
             self.add_panel(name, item)

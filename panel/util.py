@@ -30,6 +30,10 @@ import bokeh
 import param
 import numpy as np
 
+from bokeh.settings import settings
+
+PANEL_DIR = os.path.abspath(os.path.dirname(__file__))
+
 datetime_types = (np.datetime64, dt.datetime, dt.date)
 
 if sys.version_info.major > 2:
@@ -305,6 +309,34 @@ def base64url_decode(input):
         input += b"=" * (4 - rem)
 
     return base64.urlsafe_b64decode(input)
+
+
+class classproperty(object):
+
+    def __init__(self, f):
+        self.f = f
+
+    def __get__(self, obj, owner):
+        return self.f(owner)
+
+
+def url_path(url):
+    return os.path.join(*os.path.join(*url.split('//')[1:]).split('/')[1:])
+
+
+def bundled_files(model, file_type='javascript'):
+    bdir = os.path.join(PANEL_DIR, 'dist', 'bundled', model.__name__.lower())
+    name = model.__name__.lower()
+    resources = settings.resources(default='server')
+    files = []
+    for url in getattr(model, f"__{file_type}_raw__", []):
+        filepath = url_path(url)
+        test_filepath = filepath.split('?')[0]
+        if resources == 'server' and os.path.isfile(os.path.join(bdir, test_filepath)):
+            files.append(f'/static/extensions/panel/bundled/{name}/{filepath}')
+        else:
+            files.append(url)
+    return files
 
 
 # This functionality should be contributed to param

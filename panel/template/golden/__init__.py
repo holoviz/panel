@@ -20,9 +20,19 @@ class GoldenTemplate(BasicTemplate):
 
     _modifiers = {
         Card: {
-            'children': {'margin': (0, 10)},
+            'children': {'margin': (10, 10)},
             'button_css_classes': ['golden-card-button']
         },
+    }
+
+    _resources = {
+        'css': {
+            'goldenlayout': "https://golden-layout.com/files/latest/css/goldenlayout-base.css",
+        },
+        'js': {
+            'goldenlayout': "https://golden-layout.com/files/latest/js/goldenlayout.js",
+            'jquery': "http://code.jquery.com/jquery-1.11.1.min.js"
+        }
     }
 
     def _apply_root(self, name, model, tags):

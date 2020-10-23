@@ -1,8 +1,5 @@
 import {linspace} from "@bokehjs/core/util/array"
 
-import {Follower} from "./vtkfollower"
-import {RenderWindowInteractor} from "./vtkrenderwindowinteractor"
-
 export const ARRAY_TYPES = {
   uint8:   Uint8Array,
   int8:    Int8Array,
@@ -30,7 +27,7 @@ if (vtk) {
   vtkns["CubeSource"] = vtk.Filters.Sources.vtkCubeSource
   vtkns["DataAccessHelper"] = vtk.IO.Core.DataAccessHelper
   vtkns["DataArray"] = vtk.Common.Core.vtkDataArray
-  vtkns["Follower"] = Follower
+  vtkns["Follower"] = vtk.Rendering.Core.vtkFollower
   vtkns["FullScreenRenderWindow"] = vtk.Rendering.Misc.vtkFullScreenRenderWindow
   vtkns["Glyph3DMapper"] = vtk.Rendering.Core.vtkGlyph3DMapper
   vtkns["HttpSceneLoader"] = vtk.IO.Core.vtkHttpSceneLoader
@@ -60,7 +57,7 @@ if (vtk) {
   vtkns["Property"] = vtk.Rendering.Core.vtkProperty
   vtkns["Renderer"] = vtk.Rendering.Core.vtkRenderer
   vtkns["RenderWindow"] = vtk.Rendering.Core.vtkRenderWindow
-  vtkns["RenderWindowInteractor"] = RenderWindowInteractor
+  vtkns["RenderWindowInteractor"] = vtk.Rendering.Core.vtkRenderWindowInteractor
   vtkns["SphereMapper"] = vtk.Rendering.Core.vtkSphereMapper
   vtkns["SynchronizableRenderWindow"] =
     vtk.Rendering.Misc.vtkSynchronizableRenderWindow
@@ -86,7 +83,7 @@ if (vtk) {
   )
   vtkObjectManager.setTypeMapping(
     "vtkFollower",
-    Follower.newInstance,
+    vtkns.Follower.newInstance,
     vtkObjectManager.genericUpdater
   )
 }

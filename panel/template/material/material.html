@@ -1,34 +1,52 @@
 {% extends base %}
-
+<!-- change coming -->
 <!-- goes in body -->
 {% block preamble %}
-<link href="https://unpkg.com/material-components-web@v4.0.0/dist/material-components-web.min.css" rel="stylesheet">
-<script src="https://unpkg.com/material-components-web@v4.0.0/dist/material-components-web.min.js"></script>
+{% if app_favicon %}<link rel="icon" href="{{ app_favicon }}" type="{{favicon_type}}">{% endif %}
+{% if meta_name %}<meta name="name" content="{{ meta_name }}">{% endif %}
+{% if meta_description %}<meta name="description" content="{{ meta_description }}">{% endif %}
+{% if meta_keywords %}<meta name="keywords" content="{{ meta_keywords }}">{% endif %}
+{% if meta_author %}<meta name="author" content="{{ meta_author }}">{% endif %}
+{% if meta_refresh %}<meta http-equiv="refresh" content="{{ meta_refresh }}">{% endif %}
+{% if meta_viewport %}<meta name="viewport" content="{{ meta_viewport }}">{% endif %}
+{% if base_url and base_target %}<base href="{{ base_url }}" target="{{ base_target }}">{% endif %}
+
+<link rel="stylesheet" href="{{ template_resources['css']['base'] }}">
+<link rel="stylesheet" href="{{ template_resources['css']['theme'] }}">
+<link href="{{ template_resources['css']['material'] }}" rel="stylesheet">
+<script src="{{ template_resources['js']['material'] }}"></script>
 <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css?family=Material+Icons&display=block" rel="stylesheet">
 {% endblock %}
 
 <!-- goes in body -->
 {% block contents %}
-<header class="mdc-top-app-bar app-bar" style="{% if header_background %}background-color: {{ header_background }} !important;{% endif %}{% if header_color %}color: {{ header_color }}{% endif %}" id="header">
+<div class="mdc-typography" id="container">
+<header class="mdc-top-app-bar app-bar mdc-top-app-bar--fixed" style="{% if header_background %}background-color: {{ header_background }} !important;{% endif %}{% if header_color %}color: {{ header_color }}{% endif %}" id="header">
   <div class="mdc-top-app-bar__row">
     <section class="mdc-top-app-bar__section mdc-top-app-bar__section--align-start">
       {% if nav %}
       <button class="material-icons mdc-top-app-bar__navigation-icon mdc-icon-button">menu</button>
       {% endif %}
-      <span class="mdc-top-app-bar__title">
-		{% if app_logo %}
-        <img src="{{ app_logo }}" height="30" class="app-logo"></img>
-        {% endif %}
-        {{ app_title }}
-	  </span>
-	  {% for doc in docs %}
-      {% for root in doc.roots %}
-      {% if "header" in root.tags %}
-      {{ embed(root) | indent(8) }}
-      {% endif %}
-      {% endfor %}
-      {% endfor %}
+      <div class="title-bar">
+        <span class="mdc-top-app-bar__title">
+          {% if app_logo %}
+          <img src="{{ app_logo }}" height="30" class="app-logo"></img>
+          {% endif %}
+          <span id="app-title">
+            <a class="title" href="#" >{{ app_title }}</a>
+          </span>
+        </span>
+        <div id="header-items">
+          {% for doc in docs %}
+          {% for root in doc.roots %}
+          {% if "header" in root.tags %}
+          {{ embed(root) | indent(8) }}
+          {% endif %}
+          {% endfor %}
+          {% endfor %}
+        </div>
+        </div>
     </section>
     {% if busy %}
 	<div class="pn-busy-container">
@@ -56,6 +74,9 @@
 
 <div class="mdc-drawer-app-content mdc-top-app-bar--fixed-adjust">
 <main class="main-content" id="main">
+  {% if main_max_width %}
+    <div style="margin-left: auto; margin-right: auto;max-width: {{main_max_width}}">
+  {% endif %}
   {% for doc in docs %}
   {% for root in doc.roots %}
   {% if "main" in root.tags %}
@@ -63,6 +84,9 @@
   {% endif %}
   {% endfor %}
   {% endfor %}
+  {% if main_max_width %}
+    </div>
+  {% endif %}
 </main>
 
 <div id="pn-Modal" class="pn-modal mdc-top-app-bar--fixed-adjust">
@@ -76,6 +100,7 @@
 	{% endfor %}
 	{% endfor %}
   </div>
+</div>
 </div>
 </div>
 
