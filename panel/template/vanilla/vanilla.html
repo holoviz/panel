@@ -26,16 +26,10 @@
     </span>
     {% endif %}
 	  <div class="app-header">
-      {% if app_logo %}
-      <a href="/">
-        <img src="{{ app_logo }}" class="app-logo">
-      </a>
-      {% endif %}
-      {% if app_title %}
-      <span id="app-title">
-        <a class="title" href="" >{{ app_title }}</a>
-      </span>
-      {% endif %}
+      {% if app_logo %}<a href="/"><img src="{{ app_logo }}" class="app-logo"></a>{% endif %}
+      {% if site_title %}<a class="title" href="/" >&nbsp;{{ site_title }}</a>{% endif %}
+      {% if site_title and app_title%}<span class="title">&nbsp;-</span>{% endif %}
+      {% if app_title %}<a class="title" href="" >&nbsp;{{ app_title }}</a>{% endif %}
     </div>
     <div id="header-items">
     {% for doc in docs %}

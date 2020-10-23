@@ -38,7 +38,7 @@ Inspect the app and verify that the issues of [Issue 1641]\
         logo=LOGO,
         theme=theme
     )
-
+    vanilla.site="My Site"
     pn.config.sizing_mode = "stretch_both"
 
     xs = np.linspace(0, np.pi)
