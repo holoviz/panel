@@ -42,10 +42,11 @@ img {
 }
 
 img.app-logo {
-  padding-left: 12px;
-  padding-right: 12px;
+  padding-right: 10px;
   font-size: 28px;
   height: 30px;
+  padding-top: 14px;
+  padding-bottom: 4px;
 }
 
 #app-title {

@@ -31,10 +31,12 @@
       <div class="title-bar">
         <span class="mdc-top-app-bar__title">
           {% if app_logo %}
-          <img src="{{ app_logo }}" height="30" class="app-logo"></img>
+          <a href="/" target="_self">
+            <img src="{{ app_logo }}" class="app-logo">
+          </a>
           {% endif %}
           <span id="app-title">
-            <a class="title" href="#" >{{ app_title }}</a>
+            <a class="title" href="" >{{ app_title }}</a>
           </span>
         </span>
         <div id="header-items">

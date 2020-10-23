@@ -24,9 +24,13 @@
   <div style="display: contents;">
     <div class="app-header">
       {% if app_logo %}
-      <img src="{{ app_logo }}" height="30" class="app-logo"></img>
+      <a href="/" target="_self">
+        <img src="{{ app_logo }}" class="app-logo">
+      </a>
       {% endif %}
-      <span class="header-title">{{ app_title }}</span>
+      <span class="app-title">
+        <a class="title" href="" >{{ app_title }}</a>
+      </span>
     </div>
 	<section class="header-contents">
 	  {% for doc in docs %}

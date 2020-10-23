@@ -50,6 +50,11 @@ body, .main-area, .main-content, .lm_goldenlayout {
 }
 
 img.app-logo {
+  padding-right: 10px;
+  font-size: 28px;
+  height: 30px;
+  padding-top:9px;
+  padding-bottom:9px;
   padding-left: 10px;
 }
 
@@ -57,17 +62,20 @@ img.app-logo {
   padding-top: 64px;
 }
 
-.header-title {
+#app-title {
+  margin-right: 15px;
+  padding-left: 10px;
+}
+
+.title {
+  color: #fff;
   text-decoration: none;
   text-decoration-line: none;
   text-decoration-style: initial;
   text-decoration-color: initial;
+  font-weight: 400;
   font-size: 1.5em;
   line-height: 2em;
-  padding-left: 1em;
-  font: 1.5em Arial, sans-serif;
-  color: white;
-  text-align: center;
   white-space: nowrap;
 }
 

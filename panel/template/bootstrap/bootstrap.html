@@ -29,9 +29,15 @@
     {% endif %}
     <a class="navbar-brand" href="#">
       {% if app_logo %}
-      <img src="{{ app_logo }}" height="30" class="app-logo"></img>
+      <a href="/">
+        <img src="{{ app_logo }}" height="30" class="app-logo">
+      </a>
       {% endif %}
-      {{ app_title }}
+      {% if app_title %}
+      <span id="app-title">
+        <a class="title" href="" >{{ app_title }}</a>
+      </span>
+      {% endif %}
     </a>
     <div id="header-items">
     {% for doc in docs %}
