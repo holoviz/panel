@@ -127,7 +127,7 @@
   myLayout.init()
   window.addEventListener('resize', (event) => {
     if (!resizing) {
-      myLayout.updateSize(window.innerWidth, window.innerHeight)
+      myLayout.updateSize($('#main-content').width(), $('#main-content').height())
     }
   });
 
