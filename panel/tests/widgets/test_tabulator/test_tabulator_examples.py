@@ -304,14 +304,66 @@ class TabulatorDataFrameApp(pn.Column):
 if __name__.startswith("bokeh"):
     configuration = {
         "layout": "fitColumns",
-        "initialSort": [{"column": "y", "dir": "desc"},],
+        "responsiveLayout": "hide",
+        "tooltips": True,
+        "addRowPos": "top",
+        "history": True,
+        "pagination": "local",
+        "paginationSize": 20,
+        "movableColumns": True,
+        "resizableRows": True,
+        "initialSort": [{"column": "name", "dir": "asc"},],
+        "selectable": True,
         "columns": [
-            {"title": "Value", "field": "x"},
-            {"title": "Item", "field": "y", "hozAlign": "right", "formatter": "money"},
+            {"title": "Name", "field": "name", },
+            {
+                "title": "Task Progress",
+                "field": "progress",
+                "hozAlign": "left",
+                "formatter": "progress",
+            },
+            {
+                "title": "Gender",
+                "field": "gender",
+                "width": 95,
+            },
+            {
+                "title": "Rating",
+                "field": "rating",
+                "formatter": "star",
+                "hozAlign": "center",
+                "width": 100,
+                "editor": True,
+
+            },
+            {"title": "Color", "field": "col", "width": 130},
+            {
+                "title": "Date Of Birth",
+                "field": "dob",
+                "width": 130,
+                "sorter": "date",
+                "hozAlign": "center",
+            },
+            {
+                "title": "Driver",
+                "field": "car",
+                "width": 90,
+                "hozAlign": "center",
+                "formatter": "tickCross",
+                "sorter": "boolean",
+            },
+            {
+                "title": "Index",
+                "field": "index",
+                "width": 90,
+                "hozAlign": "right",
+            },
         ],
     }
-    value = pd.DataFrame([{"x": [1], "y": "a"}, {"x": [2], "y": "b"}])
+    TABULATOR_DATA_URL = "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel-extensions/master/tests/widgets/test_tabulator/tabulator_data.csv"
+    data = pd.read_csv(TABULATOR_DATA_URL)
+    data = data.fillna("nan") # Clean up the data. Tabulator does not work with NaN values.
     TabulatorDataFrameApp(
         configuration=configuration,
-        data=value,
+        data=data,
     ).servable()
