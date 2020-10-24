@@ -418,6 +418,7 @@ class panel_extension(_pyviz_extension):
         'echarts': 'panel.models.echarts',
         'ipywidgets': 'ipywidgets_bokeh.widget',
         'perspective': "panel.models.perspective_viewer",
+        "pivottable": "panel.models.pivot_table",
         'tabulator': "panel.models.tabulator_model",
     }
 

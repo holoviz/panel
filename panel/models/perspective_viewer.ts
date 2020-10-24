@@ -107,8 +107,6 @@ export class PerspectiveViewerView extends HTMLBoxView {
   }
 
     setData(): void {
-      console.log("setData")
-      console.log(this.model.source.data)
       let data = transform_cds_to_records(this.model.source);
       this.perspective_element.load(data)
     }
@@ -116,14 +114,12 @@ export class PerspectiveViewerView extends HTMLBoxView {
     addData(): void {
       // I need to find out how to only load the streamed data
       // using this.perspective_element.update
-      console.log("addData")
       this.setData();
     }
 
     updateOrAddData(): void {
       // I need to find out how to only load the patched data
       // using this.perspective_element.update
-      console.log("updateOrAddData")
       this.setData();
     }
 
