@@ -101,7 +101,6 @@ export class TabulatorModelView extends HTMLBoxView {
 
     render(): void {
         super.render()
-        console.log("render");
         const container = div({class: "pnx-tabulator"});
         set_size(container, this.model)
         let configuration = this.getConfiguration();
@@ -113,7 +112,6 @@ export class TabulatorModelView extends HTMLBoxView {
           // Tabulator=requirejs("https://unpkg.com/tabulator-tables");
           console.log("Tabulator not loaded. See https://github.com/holoviz/panel/issues/15299");
         }
-        console.log(Tabulator);
         this.tabulator = new Tabulator(container, configuration)
         this.el.appendChild(container)
     }
@@ -123,7 +121,6 @@ export class TabulatorModelView extends HTMLBoxView {
       let _view = this;
 
       function rowSelectionChanged(data: any, _: any): void {
-        console.log("rowSelectionChanged")
         let indices: any = data.map((row: any) => row.index)
         _view.model.source.selected.indices = indices;
       }
@@ -135,7 +132,6 @@ export class TabulatorModelView extends HTMLBoxView {
         _view._tabulator_cell_updating = false;
       }
       function cellEdited(cell: any){
-        console.log("cellEdited");
         const field = cell._cell.column.field;
         const index = cell._cell.row.data.index;
         const value = cell._cell.value;
@@ -159,7 +155,6 @@ export class TabulatorModelView extends HTMLBoxView {
         return configuration;
       }
       else {
-        console.log("adding data to configuration");
         data = transform_cds_to_records(data)
         return {
           ...configuration,
@@ -169,19 +164,16 @@ export class TabulatorModelView extends HTMLBoxView {
     }
 
     after_layout(): void {
-        console.log("after_layout");
         super.after_layout()
         this.tabulator.redraw(true);
     }
 
     setData(): void {
-      console.log("setData");
       let data = transform_cds_to_records(this.model.source);
       this.tabulator.setData(data);
     }
 
     addData(): void {
-      console.log("addData");
       let data = transform_cds_to_records(this.model.source);
       this.tabulator.setData(data);
     }
@@ -190,13 +182,11 @@ export class TabulatorModelView extends HTMLBoxView {
       // To avoid double updating the tabulator data
       if (this._tabulator_cell_updating===true){return;}
 
-      console.log("updateData");
       let data = transform_cds_to_records(this.model.source);
       this.tabulator.setData(data);
     }
 
     updateSelection(): void {
-      console.log("updateSelection");
       if (this.tabulator==null){return}
 
       let indices: number[]= this.model.source.selected.indices;
@@ -235,7 +225,7 @@ export class TabulatorModel extends HTMLBox {
         super(attrs)
     }
 
-    static __module__ = "awesome_panel_extensions.bokeh_extensions.tabulator_model"
+    static __module__ = "panel.models.tabulator_model"
 
     static init_TabulatorModel(): void {
         this.prototype.default_view = TabulatorModelView;

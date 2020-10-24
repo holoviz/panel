@@ -10,11 +10,6 @@ from panel.models.perspective_viewer import (
 )
 from panel.widgets.dataframe_base import DataFrameWithStreamAndPatchBaseWidget
 
-# This is need to be able to use Perspective in notebook via pn.extension("perspective")
-pn.extension._imports[  # pylint: disable=protected-access
-    "perspective"
-] = "awesome_panel_extensions.bokeh_extensions.perspective_viewer"
-
 DEFAULT_THEME = "material"
 THEMES_MAP = {
     "material": "perspective-viewer-material",

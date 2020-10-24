@@ -388,7 +388,7 @@ class _config(param.Parameterized):
         validate_config(self, '_oauth_extra_params', value)
         self._oauth_extra_params_ = value
 
-        
+
 
 if hasattr(_config.param, 'objects'):
     _params = _config.param.objects()
@@ -416,7 +416,9 @@ class panel_extension(_pyviz_extension):
         'vtk': 'panel.models.vtk',
         'ace': 'panel.models.ace',
         'echarts': 'panel.models.echarts',
-        'ipywidgets': 'ipywidgets_bokeh.widget'
+        'ipywidgets': 'ipywidgets_bokeh.widget',
+        'perspective': "panel.models.perspective_viewer",
+        'tabulator': "panel.models.tabulator_model",
     }
 
     # Check whether these are loaded before rendering

@@ -203,5 +203,7 @@ def test_reference_notebook_example():
     )
 
 
-if __name__.startswith("bokeh") or __name__ == "__main__":
+if __name__.startswith("bokeh"):
+    test_reference_notebook_example().servable()
+elif __name__ == "__main__":
     test_reference_notebook_example().show(port=5007)

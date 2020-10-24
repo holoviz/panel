@@ -8,7 +8,6 @@ You can
 - Select rows in the browser or in code.
 - `stream` (append) to the `value`.
 - `patch` (update) the `value`.
-- Change the (css) style using the TabulatorStylesheet.
 """
 from typing import Any, Dict, List, Optional, Union
 
@@ -565,43 +564,3 @@ Tabulator(...)
         if "indices" in events:
             self.selection = events.pop("indices")
         super()._process_events(events)
-
-
-class TabulatorStylesheet(pn.pane.HTML):
-    """The TabulatorStyleSheet provides methods to dynamically change the (css) style of the
-    Tabulator widget"""
-
-    theme = param.ObjectSelector(default="site", objects=sorted(list(CSS_HREFS.keys())))
-
-    # In order to not be selected by the `pn.panel` selection process
-    # Cf. https://github.com/holoviz/panel/issues/1494#issuecomment-663219654
-    priority = 0
-    # The _rename dict is used to keep track of Panel parameters to sync to Bokeh properties.
-    # As value is not a property on the Bokeh model we should set it to None
-    _rename = {
-        **pn.pane.HTML._rename,
-        "theme": None,
-    }
-
-    def __init__(self, **params):
-        params["height"] = 0
-        params["width"] = 0
-        params["sizing_mode"] = "fixed"
-        params["margin"] = 0
-        super().__init__(**params)
-
-        self._update_object_from_parameters()
-
-    # Don't name the function
-    # `_update`, `_update_object`, `_update_model` or `_update_pane`
-    # as this will override a function in the parent class.
-    @param.depends("theme", watch=True)
-    def _update_object_from_parameters(self, *_):
-        href = CSS_HREFS[self.theme]
-        self.object = f'<link rel="stylesheet" href="{href}">'
-
-    def __repr__(self, depth=0):  # pylint: disable=unused-argument
-        return f"Tabulator({self.name})"
-
-    def __str__(self):
-        return f"Tabulator({self.name})"

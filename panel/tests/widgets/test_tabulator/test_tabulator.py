@@ -13,7 +13,7 @@ import pytest
 from _pytest._code.code import TerminalRepr
 from bokeh.models import ColumnDataSource
 
-from panel.widgets.tabulator import CSS_HREFS, Tabulator, TabulatorStylesheet
+from panel.widgets.tabulator import CSS_HREFS, Tabulator
 
 
 def _data_records():
@@ -233,19 +233,6 @@ def test_source_selection_change(tabulator):
     tabulator._process_events({"indices": [2, 4, 6]})
     # Then
     assert tabulator.selection == [2, 4, 6]
-
-
-def test_tabulator_style_sheet():
-    # When
-    stylesheet = TabulatorStylesheet(theme="materialize")
-    # Then
-    assert stylesheet.object.startswith("<link rel=")
-    assert CSS_HREFS["materialize"] in stylesheet.object
-    assert stylesheet.object.endswith(">")
-
-    # When
-    stylesheet.theme = "site"
-    assert CSS_HREFS["site"] in stylesheet.object
 
 
 def test_cell_change_when_dataframe():

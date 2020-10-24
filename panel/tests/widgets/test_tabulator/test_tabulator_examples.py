@@ -6,7 +6,7 @@ import panel as pn
 import param
 from bokeh.models import ColumnDataSource
 
-from awesome_panel_extensions.widgets.tabulator import Tabulator, TabulatorStylesheet
+from panel.widgets.tabulator import Tabulator, CSS_HREFS
 
 
 def tabulator_data_specified_in_configuration():
@@ -47,6 +47,44 @@ def tabulator_data_specified_as_column_data_source_value():
     value = ColumnDataSource({"x": [1, 2], "y": ["a", "b"]})
     return Tabulator(configuration=configuration, value=value)
 
+class TabulatorStylesheet(pn.pane.HTML):
+    """The TabulatorStyleSheet provides methods to dynamically change the (css) style of the
+    Tabulator widget"""
+
+    theme = param.ObjectSelector(default="site", objects=sorted(list(CSS_HREFS.keys())))
+
+    # In order to not be selected by the `pn.panel` selection process
+    # Cf. https://github.com/holoviz/panel/issues/1494#issuecomment-663219654
+    priority = 0
+    # The _rename dict is used to keep track of Panel parameters to sync to Bokeh properties.
+    # As value is not a property on the Bokeh model we should set it to None
+    _rename = {
+        **pn.pane.HTML._rename,
+        "theme": None,
+    }
+
+    def __init__(self, **params):
+        params["height"] = 0
+        params["width"] = 0
+        params["sizing_mode"] = "fixed"
+        params["margin"] = 0
+        super().__init__(**params)
+
+        self._update_object_from_parameters()
+
+    # Don't name the function
+    # `_update`, `_update_object`, `_update_model` or `_update_pane`
+    # as this will override a function in the parent class.
+    @param.depends("theme", watch=True)
+    def _update_object_from_parameters(self, *_):
+        href = CSS_HREFS[self.theme]
+        self.object = f'<link rel="stylesheet" href="{href}">'
+
+    def __repr__(self, depth=0):  # pylint: disable=unused-argument
+        return f"Tabulator({self.name})"
+
+    def __str__(self):
+        return f"Tabulator({self.name})"
 
 class TabulatorDataCDSApp(pn.Column):
     """Extension Implementation"""
@@ -262,3 +300,18 @@ class TabulatorDataFrameApp(pn.Column):
 
     def __str__(self):
         return f"Tabulator({self.name})"
+
+if __name__.startswith("bokeh"):
+    configuration = {
+        "layout": "fitColumns",
+        "initialSort": [{"column": "y", "dir": "desc"},],
+        "columns": [
+            {"title": "Value", "field": "x"},
+            {"title": "Item", "field": "y", "hozAlign": "right", "formatter": "money"},
+        ],
+    }
+    value = pd.DataFrame([{"x": [1], "y": "a"}, {"x": [2], "y": "b"}])
+    TabulatorDataFrameApp(
+        configuration=configuration,
+        data=value,
+    ).servable()

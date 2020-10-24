@@ -217,7 +217,7 @@ export class PerspectiveViewer extends HTMLBox {
         super(attrs)
     }
 
-    static __module__ = "awesome_panel_extensions.bokeh_extensions.perspective_viewer"
+    static __module__ = "panel.models.perspective_viewer"
 
     static init_PerspectiveViewer(): void {
         this.prototype.default_view = PerspectiveViewerView;

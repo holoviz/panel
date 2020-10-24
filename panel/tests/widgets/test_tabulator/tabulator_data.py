@@ -6,7 +6,7 @@ import panel as pn
 import param
 from bokeh.models import ColumnDataSource
 
-from awesome_panel_extensions.widgets.tabulator import Tabulator
+from panel.widgets.tabulator import Tabulator
 
 TABULATOR_DATA_PATH = pathlib.Path(__file__).parent / "tabulator_data.csv"
 

@@ -33,6 +33,7 @@ from .input import (  # noqa
     TextAreaInput,
 )
 from .misc import Audio, FileDownload, VideoStream # noqa
+from .perspective_viewer import PerspectiveViewer
 from .player import DiscretePlayer, Player # noqa
 from .slider import ( # noqa
     DateSlider, DateRangeSlider, DiscreteSlider, FloatSlider,
@@ -44,3 +45,4 @@ from .select import ( # noqa
     ToggleGroup
 )
 from .tables import DataFrame  # noqa
+from .tabulator import Tabulator
