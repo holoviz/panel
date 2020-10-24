@@ -12,7 +12,7 @@ from bokeh.models.layouts import HTMLBox
 JS_SRC = "https://unpkg.com/tabulator-tables@4.7.2/dist/js/tabulator.min.js"
 MOMENT_SRC = "https://unpkg.com/moment@2.27.0/moment.js"
 
-CSS_HREFS = {
+TABULATOR_CSS_THEMES = {
     "default": "https://unpkg.com/tabulator-tables@4.7.2/dist/css/tabulator.min.css",
     "site": "https://unpkg.com/tabulator-tables@4.7.2/dist/css/tabulator_site.min.css",
     "simple": "https://unpkg.com/tabulator-tables@4.7.2/dist/css/tabulator_simple.min.css",
@@ -50,7 +50,7 @@ class TabulatorModel(HTMLBox):
         "exports": {"tabulator": "Tabulator"},
     }
 
-    # __css__ = [CSS_HREFS["default"]]
+    # __css__ = [TABULATOR_CSS_THEMES["default"]]
 
     configuration = properties.Dict(properties.String, properties.Any)
     source = properties.Instance(ColumnDataSource)

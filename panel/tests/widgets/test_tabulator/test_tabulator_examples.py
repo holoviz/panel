@@ -6,8 +6,8 @@ import panel as pn
 import param
 from bokeh.models import ColumnDataSource
 
-from panel.widgets.tabulator import Tabulator, CSS_HREFS
-
+from panel.widgets.tabulator import Tabulator, TABULATOR_CSS_THEMES
+pn.config.css_files.append(TABULATOR_CSS_THEMES["site"])
 
 def tabulator_data_specified_in_configuration():
     configuration = {
@@ -51,7 +51,7 @@ class TabulatorStylesheet(pn.pane.HTML):
     """The TabulatorStyleSheet provides methods to dynamically change the (css) style of the
     Tabulator widget"""
 
-    theme = param.ObjectSelector(default="site", objects=sorted(list(CSS_HREFS.keys())))
+    theme = param.ObjectSelector(default="site", objects=sorted(list(TABULATOR_CSS_THEMES.keys())))
 
     # In order to not be selected by the `pn.panel` selection process
     # Cf. https://github.com/holoviz/panel/issues/1494#issuecomment-663219654
@@ -77,7 +77,7 @@ class TabulatorStylesheet(pn.pane.HTML):
     # as this will override a function in the parent class.
     @param.depends("theme", watch=True)
     def _update_object_from_parameters(self, *_):
-        href = CSS_HREFS[self.theme]
+        href = TABULATOR_CSS_THEMES[self.theme]
         self.object = f'<link rel="stylesheet" href="{href}">'
 
     def __repr__(self, depth=0):  # pylint: disable=unused-argument

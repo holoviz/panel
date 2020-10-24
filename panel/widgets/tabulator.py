@@ -17,7 +17,7 @@ import param
 from bokeh.models.sources import ColumnDataSource
 from panel.widgets.base import Widget
 
-from panel.models.tabulator_model import CSS_HREFS
+from panel.models.tabulator_model import TABULATOR_CSS_THEMES
 from panel.models.tabulator_model import TabulatorModel as _BkTabulator
 
 _DEFAULT_CONFIGURATION = {"autoColumns": True}
@@ -519,7 +519,7 @@ Tabulator(...)
             css (Optional[str], optional): [description]. Defaults to "default".
         """
         if css:
-            href = CSS_HREFS[css]
+            href = TABULATOR_CSS_THEMES[css]
             if href not in pn.config.css_files:
                 pn.config.css_files.append(href)
 

@@ -13,7 +13,7 @@ import pytest
 from _pytest._code.code import TerminalRepr
 from bokeh.models import ColumnDataSource
 
-from panel.widgets.tabulator import CSS_HREFS, Tabulator
+from panel.widgets.tabulator import TABULATOR_CSS_THEMES, Tabulator
 
 
 def _data_records():
@@ -150,7 +150,7 @@ def test_config_default():
     # When
     Tabulator.config()
     # Then
-    assert CSS_HREFS["default"] in pn.config.css_files
+    assert TABULATOR_CSS_THEMES["default"] in pn.config.css_files
 
 
 def test_config_none():
@@ -167,7 +167,7 @@ def test_config_custom():
     # When
     Tabulator.config(css="materialize")
     # Then
-    assert CSS_HREFS["materialize"] in pn.config.css_files
+    assert TABULATOR_CSS_THEMES["materialize"] in pn.config.css_files
 
 
 def test_selection_dataframe(data_records, dataframe):
