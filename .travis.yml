@@ -18,7 +18,7 @@ addons:
 
 env:
   global:
-    - CHANS_DEV="-c pyviz/label/dev -c bokeh/label/dev -c conda-forge"
+    - CHANS_DEV="-c pyviz/label/dev -c conda-forge"
     - CHANS_REL="-c pyviz -c bokeh -c conda-forge"
     - LABELS_DEV="--label dev"
     - LABELS_REL="--label dev --label main"
