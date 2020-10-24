@@ -1,5 +1,69 @@
 # Releases 
 
+## Version 0.10
+
+Date: 2020-10-23
+
+This is a major release of Panel, with a slew of new features and enhancements, plus a wide array of minor fixes and improvements to the documentation, and website.
+Many thanks to the people who contributed to this release, including @philippjfr, @MarkSkovMadsen (alert pane, templates, docs), @xavArtley (VTK improvements, templates, input/spinner widgets), @maximlt (panel serve), @jbednar (docs, reviewing), @kebowen (templates), @ahuang11 (datepicker), @nghenzi (react template, bugfixes), @nritsche (panel serve), @ltalirz (autocomplete input), @BoBednar (docs), @tmikolajczyk, @halilbay, @Hoxbro, and @ceball (testing and automation).
+
+Features:
+
+- Add `Card` and `Accordion` layout ([#1262](https://github.com/holoviz/panel/pull/1262), [#1266](https://github.com/holoviz/panel/pull/1266), [#1267](https://github.com/holoviz/panel/pull/1267), [#1616](https://github.com/holoviz/panel/pull/1616), [#1619](https://github.com/holoviz/panel/pull/1619))
+- Location component ([#1150](https://github.com/holoviz/panel/pull/1150), [#1297](https://github.com/holoviz/panel/pull/1297), [#1357](https://github.com/holoviz/panel/pull/1357), [#1407](https://github.com/holoviz/panel/pull/1407), [#1498](https://github.com/holoviz/panel/pull/1498), [#1519](https://github.com/holoviz/panel/pull/1519), [#1532](https://github.com/holoviz/panel/pull/1532), [#1638](https://github.com/holoviz/panel/pull/1638), [#1658](https://github.com/holoviz/panel/pull/1658))
+- VTK improvements: colorbars ([#1270](https://github.com/holoviz/panel/pull/1270)), synchronization ([#1248](https://github.com/holoviz/panel/pull/1248), [#1637](https://github.com/holoviz/panel/pull/1637)), orientation widget ([#1635](https://github.com/holoviz/panel/pull/1635)), volume controller ([#1631](https://github.com/holoviz/panel/pull/1631)), serialization ([#1596](https://github.com/holoviz/panel/pull/1596)), follower ([#1451](https://github.com/holoviz/panel/pull/1451))
+- Add default templates ([#1277](https://github.com/holoviz/panel/pull/1277), [#1374](https://github.com/holoviz/panel/pull/1374), [#1419](https://github.com/holoviz/panel/pull/1419), [#1421](https://github.com/holoviz/panel/pull/1421), [#1459](https://github.com/holoviz/panel/pull/1459), [#1472](https://github.com/holoviz/panel/pull/1472), [#1473](https://github.com/holoviz/panel/pull/1473), [#1479](https://github.com/holoviz/panel/pull/1479), [#1530](https://github.com/holoviz/panel/pull/1530), [#1535](https://github.com/holoviz/panel/pull/1535), [#1608](https://github.com/holoviz/panel/pull/1608), [#1617](https://github.com/holoviz/panel/pull/1617), [#1645](https://github.com/holoviz/panel/pull/1645), [#1647](https://github.com/holoviz/panel/pull/1647), [#1650](https://github.com/holoviz/panel/pull/1650), [#1660](https://github.com/holoviz/panel/pull/1660), [#1661](https://github.com/holoviz/panel/pull/1661), [#1662](https://github.com/holoviz/panel/pull/1662), [#1677](https://github.com/holoviz/panel/pull/1677), [#1682](https://github.com/holoviz/panel/pull/1682), [#1685](https://github.com/holoviz/panel/pull/1685), [#1687](https://github.com/holoviz/panel/pull/1687))
+- Improvements for ipywidgets support ([#1285](https://github.com/holoviz/panel/pull/1285), [#1389](https://github.com/holoviz/panel/pull/1389), [#1476](https://github.com/holoviz/panel/pull/1476), [#1675](https://github.com/holoviz/panel/pull/1675))
+- Add `pn.state.busy` and `pn.state.onload` callback ([#1392](https://github.com/holoviz/panel/pull/1392), [#1518](https://github.com/holoviz/panel/pull/1518))
+- Add support for serving static files ([#1319](https://github.com/holoviz/panel/pull/1319), [#1492](https://github.com/holoviz/panel/pull/1492))
+- Add an `Alert` pane ([#1181](https://github.com/holoviz/panel/pull/1181), [#1422](https://github.com/holoviz/panel/pull/1422))
+- Add ability to declare OAuth provider ([#820](https://github.com/holoviz/panel/pull/820), [#1468](https://github.com/holoviz/panel/pull/1468), [#1470](https://github.com/holoviz/panel/pull/1470), [#1474](https://github.com/holoviz/panel/pull/1474), [#1475](https://github.com/holoviz/panel/pull/1475), [#1480](https://github.com/holoviz/panel/pull/1480), [#1508](https://github.com/holoviz/panel/pull/1508), [#1594](https://github.com/holoviz/panel/pull/1594), [#1625](https://github.com/holoviz/panel/pull/1625))
+- Add `ECharts` pane ([#1484](https://github.com/holoviz/panel/pull/1484), [#1691](https://github.com/holoviz/panel/pull/1691))
+- Add busy/loading indicators and enable on Template ([#1493](https://github.com/holoviz/panel/pull/1493))
+- Allow serving REST APIs as part of panel serve ([#1164](https://github.com/holoviz/panel/pull/1164))
+- Add `pn.state.as_cached` function ([#1526](https://github.com/holoviz/panel/pull/1526))
+- Add MenuButton widget ([#1533](https://github.com/holoviz/panel/pull/1533))
+- Add a number of `ValueIndicators` ([#1528](https://github.com/holoviz/panel/pull/1528), [#1590](https://github.com/holoviz/panel/pull/1590), [#1627](https://github.com/holoviz/panel/pull/1627), [#1628](https://github.com/holoviz/panel/pull/1628), [#1633](https://github.com/holoviz/panel/pull/1633))
+- Add support for `param.Event` ([#1600](https://github.com/holoviz/panel/pull/1600))
+- Add `IntInput` and `FloatInput` widgets ([#1513](https://github.com/holoviz/panel/pull/1513))
+- Record session statistics on `pn.state.session_info` ([#1615](https://github.com/holoviz/panel/pull/1615), [#1620](https://github.com/holoviz/panel/pull/1620), [#1634](https://github.com/holoviz/panel/pull/1634))
+- Bundle external JS dependencies for custom models and templates ([#1651](https://github.com/holoviz/panel/pull/1651), [#1655](https://github.com/holoviz/panel/pull/1655))
+- Add support for ipympl (interactive mode) on Matplotlib ([#1469](https://github.com/holoviz/panel/pull/1469))
+
+Enhancements:
+
+- Allow defining explicit embed states ([#1274](https://github.com/holoviz/panel/pull/1274))
+- Implement `__add__` and `__iadd__` on layouts ([#1282](https://github.com/holoviz/panel/pull/1282))
+- Add support for hierarchical multi-indexed DataFrame ([#1383](https://github.com/holoviz/panel/pull/1383))
+- Add `show_index` option to `DataFrame` widget ([#1488](https://github.com/holoviz/panel/pull/1488))
+- Link widgets with same name during embed ([#1543](https://github.com/holoviz/panel/pull/1543))
+- Wait until JS dependency is loaded before rendering ([#1577](https://github.com/holoviz/panel/pull/1577))
+- For `AutocompleteInput`, allow user-defined values ([#1588](https://github.com/holoviz/panel/pull/1588)) and case-insensitivity ([#1548](https://github.com/holoviz/panel/pull/1548)) 
+- Allow dates to be disabled in DatePicker ([#1524](https://github.com/holoviz/panel/pull/1524))
+- Enable new features for a Bokeh DataTable ([#1512](https://github.com/holoviz/panel/pull/1512))
+- Panel serve improvements: MethodType parameter ([#1450](https://github.com/holoviz/panel/pull/1450)), title per app ([#1354](https://github.com/holoviz/panel/pull/1354)) 
+- Server deployment guide for Azure ([#1350](https://github.com/holoviz/panel/pull/1350))
+- Add Widget.from_param classmethod ([#1344](https://github.com/holoviz/panel/pull/1344))
+- More options for ACE widget ([#1391](https://github.com/holoviz/panel/pull/1391))
+
+Bugfixes and minor improvements:
+
+- VTK model compilation ([#1669](https://github.com/holoviz/panel/pull/1669)), findPokedRenderer ([#1456](https://github.com/holoviz/panel/pull/1456)), misc ([#1406](https://github.com/holoviz/panel/pull/1406), [#1409](https://github.com/holoviz/panel/pull/1409))
+- Fix parameterized parameter handling ([#1584](https://github.com/holoviz/panel/pull/1584))
+- Theming improvements ([#1670](https://github.com/holoviz/panel/pull/1670))
+- JS dependency handling ([#1626](https://github.com/holoviz/panel/pull/1626))
+- Parameterized: explicit triggering ([#1623](https://github.com/holoviz/panel/pull/1623)), strings with None default ([#1622](https://github.com/holoviz/panel/pull/1622))
+- Docs and examples ([#1242](https://github.com/holoviz/panel/pull/1242), [#1435](https://github.com/holoviz/panel/pull/1435), [#1448](https://github.com/holoviz/panel/pull/1448), [#1467](https://github.com/holoviz/panel/pull/1467), [#1540](https://github.com/holoviz/panel/pull/1540), [#1541](https://github.com/holoviz/panel/pull/1541), [#1558](https://github.com/holoviz/panel/pull/1558), [#1570](https://github.com/holoviz/panel/pull/1570), [#1576](https://github.com/holoviz/panel/pull/1576), [#1609](https://github.com/holoviz/panel/pull/1609))
+- Many other minor fixes and improvements ([#1284](https://github.com/holoviz/panel/pull/1284), [#1384](https://github.com/holoviz/panel/pull/1384), [#1423](https://github.com/holoviz/panel/pull/1423), [#1489](https://github.com/holoviz/panel/pull/1489), [#1495](https://github.com/holoviz/panel/pull/1495), [#1502](https://github.com/holoviz/panel/pull/1502), [#1503](https://github.com/holoviz/panel/pull/1503), [#1507](https://github.com/holoviz/panel/pull/1507), [#1520](https://github.com/holoviz/panel/pull/1520), [#1521](https://github.com/holoviz/panel/pull/1521), [#1536](https://github.com/holoviz/panel/pull/1536), [#1539](https://github.com/holoviz/panel/pull/1539), [#1546](https://github.com/holoviz/panel/pull/1546), [#1547](https://github.com/holoviz/panel/pull/1547), [#1553](https://github.com/holoviz/panel/pull/1553), [#1562](https://github.com/holoviz/panel/pull/1562), [#1595](https://github.com/holoviz/panel/pull/1595), [#1621](https://github.com/holoviz/panel/pull/1621), [#1639](https://github.com/holoviz/panel/pull/1639))
+
+Backwards compatibility:
+
+- Switch away from inline resources in notebook ([#1538](https://github.com/holoviz/panel/pull/1538), [#1678](https://github.com/holoviz/panel/pull/1678))
+- `Viewable.add_periodic_callback` is deprecated; use pn.state.add_periodic_callback ([#1542](https://github.com/holoviz/panel/pull/1542))
+- Use `widget_type` instead of `type` to override Param widget type in Param pane ([#1614](https://github.com/holoviz/panel/pull/1614)) 
+- `Spinner` widget is now called `NumberInput` ([#1513](https://github.com/holoviz/panel/pull/1513))
+
+
 ## Version 0.9.7
 
 The 0.9.6 release unfortunately caused a major regression in layout performance due to the way optimizations in Bokeh and Panel interacted. This release fixes this regression.
