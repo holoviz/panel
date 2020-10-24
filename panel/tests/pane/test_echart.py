@@ -1,4 +1,3 @@
-from panel.models.echarts import ECharts
 import panel as pn
 
 ECHART = {
@@ -21,7 +20,7 @@ def test_echart():
     assert pane.object == echart
     return pane
 
-def test_pyechart():
+def get_pyechart():
     from pyecharts.charts import Bar
     from pyecharts import options as opts
 
@@ -37,6 +36,8 @@ def test_pyechart():
     return pane
 
 if __name__.startswith("bokeh"):
-    test_pyechart().servable()
+    # test_echart().servable()
+    get_pyechart().servable()
 if __name__.startswith("__main__"):
-    test_pyechart().show(port=5007)
+    test_echart().show(port=5007)
+    get_pyechart().show(port=5007)
