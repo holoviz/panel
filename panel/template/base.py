@@ -5,10 +5,12 @@ documents.
 from __future__ import absolute_import, division, unicode_literals
 
 import os
+from panel.layout.grid import GridSpec
 import sys
 import uuid
 
 from functools import partial
+from holoviews.core.spaces import GridSpace
 
 import param
 
@@ -400,12 +402,20 @@ class BasicTemplate(BaseTemplate):
         template = self._template.read_text()
         if 'header' not in params:
             params['header'] = ListLike()
+        else:
+            params['header'] = self._get_params(params['header'], self.param.header.class_)
         if 'main' not in params:
             params['main'] = ListLike()
+        else:
+            params['main'] = self._get_params(params['main'], self.param.main.class_)
         if 'sidebar' not in params:
             params['sidebar'] = ListLike()
+        else:
+            params['sidebar'] = self._get_params(params['sidebar'], self.param.sidebar.class_)
         if 'modal' not in params:
             params['modal'] = ListLike()
+        else:
+            params['sidebar'] = self._get_params(params['modal'], self.param.modal.class_)
         super(BasicTemplate, self).__init__(template=template, **params)
         if self.busy_indicator:
             state.sync_busy(self.busy_indicator)
@@ -569,6 +579,25 @@ class BasicTemplate(BaseTemplate):
             return "image/x-icon"
         else:
             raise ValueError("favicon type not supported.")
+
+    @staticmethod
+    def _get_params(value, class_):
+        if isinstance(value, class_):
+            return value
+        if isinstance(value, tuple):
+            value = [*value]
+        elif not isinstance(value, list):
+            value = [value]
+
+        if class_==ListLike:
+            return ListLike(objects=value)
+        if class_==GridSpec:
+            grid = GridSpec(ncols=12)
+            for index, item in enumerate(value):
+                grid[index, :]=item
+            return grid
+
+
 
 
 

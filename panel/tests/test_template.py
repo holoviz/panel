@@ -18,11 +18,13 @@ latest_param = pytest.mark.skipif(LooseVersion(param.__version__) < '1.10.0a4',
 
 from panel.layout import Row
 from panel.pane import HoloViews, Markdown
-from panel.template import Template, ReactTemplate
+from panel.template import Template, BootstrapTemplate, GoldenTemplate, MaterialTemplate, ReactTemplate, VanillaTemplate
 from panel.template.base import BasicTemplate
 from panel.widgets import FloatSlider
 
 from .util import hv_available
+
+TEMPLATES = [BootstrapTemplate, GoldenTemplate, MaterialTemplate, ReactTemplate, VanillaTemplate]
 
 template = """
 {% extends base %}
@@ -62,7 +64,7 @@ def test_template_session_destroy(document, comm):
 
     widget = FloatSlider()
     row = Row('A', 'B')
-    
+
     tmplt.add_panel('A', widget)
     tmplt.add_panel('B', row)
 
@@ -118,7 +120,7 @@ def test_basic_template(template, document, comm):
 
     assert titems[str(id(slider))] == (slider, ['nav'])
     assert tvars['nav'] == True
-    
+
     tmplt.sidebar[:] = []
     assert tvars['nav'] == False
     assert str(id(slider)) not in titems
@@ -133,7 +135,7 @@ def test_basic_template(template, document, comm):
     assert str(id(subtitle)) not in titems
     assert tvars['header'] == False
 
-    
+
 def test_react_template(document, comm):
     tmplt = ReactTemplate(title='BasicTemplate', header_background='blue', header_color='red')
 
@@ -161,3 +163,10 @@ def test_react_template(document, comm):
         'md': [{'h': 4, 'i': '1', 'w': 6, 'x': 0, 'y': 0},
                {'h': 4, 'i': '2', 'w': 6, 'x': 6, 'y': 0}]
     }
+
+@pytest.mark.parametrize(["template_class"], [(item,) for item in TEMPLATES])
+def test_constructor(template_class):
+    item = Markdown("Hello World")
+    items = [item]
+    template_class(header=item, sidebar=item, main=item)
+    template_class(header=items, sidebar=items, main=items)
