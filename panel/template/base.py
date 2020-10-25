@@ -597,6 +597,8 @@ class BasicTemplate(BaseTemplate):
                 grid[index, :]=item
             return grid
 
+        return value
+
 
 
 
