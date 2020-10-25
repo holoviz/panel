@@ -96,7 +96,6 @@ img.app-logo {
   transition: all 0.2s cubic-bezier(0.945, 0.020, 0.270, 0.665);
   width: 100%;
   height: 100%;
-  margin-left: 300px;
   padding-bottom: 20px;
   overflow-y: scroll;
 }
