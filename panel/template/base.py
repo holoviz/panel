@@ -10,7 +10,6 @@ import sys
 import uuid
 
 from functools import partial
-from holoviews.core.spaces import GridSpace
 
 import param
 
