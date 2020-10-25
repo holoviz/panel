@@ -75,19 +75,25 @@
     {% endif %}
 
     <div class="main" id="main"{% if nav %} style="margin-left: 300px;"{% endif %}>
-      <div id="responsive-grid"></div>
+      {% if main_max_width %}
+      <div style="margin-left: auto; margin-right: auto;max-width: {{main_max_width}}">
+      {% endif %}
+        <div id="responsive-grid"></div>
 
-      <div id="pn-Modal" class="pn-modal header-adjust">
-        <div class="pn-modal-content">
-          <span class="pn-modalclose" id="pn-closeModal">&times;</span>
-          {% for doc in docs %}
-          {% for root in doc.roots %}
-          {% if "modal" in root.tags %}
-          {{ embed(root) | indent(10) }}
-          {% endif %}
-          {% endfor %}
-          {% endfor %}
-        </div>
+        <div id="pn-Modal" class="pn-modal header-adjust">
+          <div class="pn-modal-content">
+            <span class="pn-modalclose" id="pn-closeModal">&times;</span>
+            {% for doc in docs %}
+            {% for root in doc.roots %}
+            {% if "modal" in root.tags %}
+            {{ embed(root) | indent(10) }}
+            {% endif %}
+            {% endfor %}
+            {% endfor %}
+          </div>
+        {% if main_max_width %}
+          </div>
+        {% endif %}
 	  </div>
 	</div>
   </div>
