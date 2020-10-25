@@ -414,7 +414,7 @@ class BasicTemplate(BaseTemplate):
         if 'modal' not in params:
             params['modal'] = ListLike()
         else:
-            params['sidebar'] = self._get_params(params['modal'], self.param.modal.class_)
+            params['modal'] = self._get_params(params['modal'], self.param.modal.class_)
         super(BasicTemplate, self).__init__(template=template, **params)
         if self.busy_indicator:
             state.sync_busy(self.busy_indicator)
