@@ -4,6 +4,7 @@ These that verify Templates are working correctly.
 from __future__ import absolute_import, division, unicode_literals
 
 from distutils.version import LooseVersion
+from panel.layout.grid import GridSpec
 
 try:
     import holoviews as hv
@@ -170,3 +171,9 @@ def test_constructor(template_class):
     items = [item]
     template_class(header=item, sidebar=item, main=item)
     template_class(header=items, sidebar=items, main=items)
+
+def test_constructor_grid_spec():
+    item = Markdown("Hello World")
+    grid = GridSpec(ncols=12)
+    grid[0:2, 3:4]=item
+    ReactTemplate(main=grid)
