@@ -512,7 +512,7 @@ class BasicTemplate(BaseTemplate):
         self._render_variables['busy'] = self.busy_indicator is not None
 
     def _update_render_items(self, event):
-        if event and event.obj is self and event.name == 'busy_indicator':
+        if event.obj is self and event.name == 'busy_indicator':
             return self._update_busy()
         if event.obj is self.main:
             tag = 'main'
