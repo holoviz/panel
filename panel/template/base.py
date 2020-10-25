@@ -588,6 +588,9 @@ class BasicTemplate(BaseTemplate):
         elif not isinstance(value, list):
             value = [value]
 
+        # Important to fx. convert @param.depends functions
+        value = [_panel(item) for item in value]
+
         if class_==ListLike:
             return ListLike(objects=value)
         if class_==GridSpec:
