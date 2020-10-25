@@ -1,7 +1,7 @@
 body {
   margin: 0px;
   font-family: "Lato", sans-serif;
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
 #container {
@@ -22,21 +22,33 @@ body {
 }
 
 a.navbar-brand {
+  padding-left: 10px;
+  padding-right: 10px;
   display: flex;
   align-items: center;
   font-size: 1.5em;
+}
+
+.title {
   color: #fff;
-  padding-left: 10px;
   text-decoration: none;
   text-decoration-line: none;
   text-decoration-style: initial;
   text-decoration-color: initial;
   font-weight: 400;
+  font-size: 1.5em;
+  line-height: 2em;
   white-space: nowrap;
 }
 
+.app-header {
+  display: contents;
+  padding-left: 10px;
+}
+
 img.app-logo {
-  padding-right: 10px;
+  font-size: 28px;
+  height: 30px;
 }
 
 .pn-bar {
@@ -51,24 +63,29 @@ img.app-logo {
 }
 
 #content {
-  height: 100%;
+  height: calc(100vh - 70px);
   margin: 0px;
   width: 100vw;
   display: flex;
-  overflow: auto;
 }
 
 #responsive-grid {
   height: 100%;
   width: 100%;
-  overflow-y: scroll;
+}
+
+#sidebar-button {
+  margin-left: 10px;
+  margin-right:  10px;
 }
 
 #sidebar {
   transition: all 0.2s cubic-bezier(0.945, 0.020, 0.270, 0.665);
   transform-origin: center left; /* Set the transformed position of sidebar to center left side. */
   width: 300px;
-  height: 100%;
+  height: calc(100vh - 70px);
+  overflow-y: scroll;
+  padding: 10px;
 }
 
 #sidebar.active {
@@ -78,9 +95,10 @@ img.app-logo {
 #main {
   transition: all 0.2s cubic-bezier(0.945, 0.020, 0.270, 0.665);
   width: 100%;
-  height: 100vh;
+  height: 100%;
   margin-left: 300px;
   padding-bottom: 20px;
+  overflow-y: scroll;
 }
 
 #sidebarCollapse {
@@ -88,16 +106,11 @@ img.app-logo {
   border: none;
 }
 
-a.navbar-brand {
-  padding-left: 10px;
-}
-
 p.bk.card-button {
   display: none;
-}  
+}
 
 .sidenav {
-  overflow-x: hidden;
   padding-top: 15px;
   position: absolute;
   overflow-y: scroll;
