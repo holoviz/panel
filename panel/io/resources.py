@@ -37,7 +37,7 @@ def css_raw(self):
     for cssf in config.css_files:
         if not os.path.isfile(cssf):
             continue
-        with open(cssf) as f:
+        with open(cssf, encoding='utf-8') as f:
             css_txt = f.read()
             if css_txt not in raw:
                 raw.append(css_txt)
@@ -45,7 +45,7 @@ def css_raw(self):
     for cssf in glob.glob(str(DIST_DIR / 'css' / '*.css')):
         if resources != 'inline':
             break
-        with open(cssf) as f:
+        with open(cssf, encoding='utf-8') as f:
             css_txt = f.read()
         if css_txt not in raw:
             raw.append(css_txt)
