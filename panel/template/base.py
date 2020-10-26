@@ -5,7 +5,6 @@ documents.
 from __future__ import absolute_import, division, unicode_literals
 
 import os
-from panel.layout.grid import GridSpec
 import sys
 import uuid
 
@@ -26,7 +25,7 @@ from ..io.notebook import render_template
 from ..io.resources import CDN_DIST, LOCAL_DIST
 from ..io.save import save
 from ..io.state import state
-from ..layout import Column, ListLike
+from ..layout import Column, ListLike, GridSpec
 from ..models.comm_manager import CommManager
 from ..pane import panel as _panel, HTML, Str, HoloViews
 from ..pane.image import ImageBase
@@ -591,19 +590,15 @@ class BasicTemplate(BaseTemplate):
         # Important to fx. convert @param.depends functions
         value = [_panel(item) for item in value]
 
-        if class_==ListLike:
+        if class_ is ListLike:
             return ListLike(objects=value)
-        if class_==GridSpec:
+        if class_ is GridSpec:
             grid = GridSpec(ncols=12)
             for index, item in enumerate(value):
                 grid[index, :]=item
             return grid
 
         return value
-
-
-
-
 
 class Template(BaseTemplate):
     """
