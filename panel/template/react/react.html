@@ -36,12 +36,12 @@
 	  <div class="pn-bar"></div>
 	</span>
     {% endif %}
-    <a class="navbar-brand" href="#">
-      {% if app_logo %}
-      <img src="{{ app_logo }}" height="30" class="app-logo"></img>
-      {% endif %}
-      {{ app_title }}
-    </a>
+    <div class="app-header">
+      {% if app_logo %}<a class="navbar-brand app-logo" href="/"><img src="{{ app_logo }}" class="app-logo"></a>{% endif %}
+      {% if site_title %}<a class="title" href="/" >&nbsp;{{ site_title }}</a>{% endif %}
+      {% if site_title and app_title%}<span class="title">&nbsp;-</span>{% endif %}
+      {% if app_title %}<a class="title" href="" >&nbsp;{{ app_title }}</a>{% endif %}
+    </div>
     <div id="header-items">
     {% for doc in docs %}
     {% for root in doc.roots %}
@@ -59,35 +59,41 @@
 
   </nav>
 
-  <div id="content">
+  <div class="row" id="content">
     {% if nav %}
     <div class="sidenav" id="sidebar">
       <ul class="nav flex-column">
-        {% for doc in docs %}
-        {% for root in doc.roots %}
-        {% if "nav" in root.tags %}
+      {% for doc in docs %}
+	    {% for root in doc.roots %}
+	    {% if "nav" in root.tags %}
         {{ embed(root) | indent(8) }}
-        {% endif %}
-        {% endfor %}
-        {% endfor %}
+	    {% endif %}
+	    {% endfor %}
+	    {% endfor %}
       </ul>
     </div>
     {% endif %}
 
     <div class="main" id="main"{% if nav %} style="margin-left: 300px;"{% endif %}>
-      <div id="responsive-grid"></div>
+      {% if main_max_width %}
+      <div style="margin-left: auto; margin-right: auto;max-width: {{main_max_width}}">
+      {% endif %}
+        <div id="responsive-grid"></div>
 
-      <div id="pn-Modal" class="pn-modal header-adjust">
-        <div class="pn-modal-content">
-          <span class="pn-modalclose" id="pn-closeModal">&times;</span>
-          {% for doc in docs %}
-          {% for root in doc.roots %}
-          {% if "modal" in root.tags %}
-          {{ embed(root) | indent(10) }}
-          {% endif %}
-          {% endfor %}
-          {% endfor %}
-        </div>
+        <div id="pn-Modal" class="pn-modal header-adjust">
+          <div class="pn-modal-content">
+            <span class="pn-modalclose" id="pn-closeModal">&times;</span>
+            {% for doc in docs %}
+            {% for root in doc.roots %}
+            {% if "modal" in root.tags %}
+            {{ embed(root) | indent(10) }}
+            {% endif %}
+            {% endfor %}
+            {% endfor %}
+          </div>
+        {% if main_max_width %}
+          </div>
+        {% endif %}
 	  </div>
 	</div>
   </div>

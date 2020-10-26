@@ -41,6 +41,7 @@ Inspect the app and verify that the issues of [Issue 1641]\
     vanilla.site="My Site"
     pn.config.sizing_mode = "stretch_both"
 
+
     xs = np.linspace(0, np.pi)
     freq = pn.widgets.FloatSlider(name="Frequency", start=0, end=10, value=2,
                                   sizing_mode='stretch_width')
@@ -113,7 +114,7 @@ Inspect the app and verify that the issues of [Issue 1641]\
         favicon="https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel/2781d86d4ed141889d633748879a120d7d8e777a/assets/images/favicon.ico",
         theme=theme
     )
-
+    vanilla.main_max_width="1100px"
     pn.config.sizing_mode = "stretch_both"
 
     xs = np.linspace(0, np.pi)
