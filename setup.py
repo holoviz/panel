@@ -96,6 +96,7 @@ install_requires = [
     'param >=1.9.3',
     'pyviz_comms >=0.7.4',
     'markdown',
+    'requests',
     'tqdm',
     'pyct >=0.4.4'
 ]
