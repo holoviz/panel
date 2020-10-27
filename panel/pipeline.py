@@ -614,6 +614,7 @@ class Pipeline(param.Parameterized):
             raise ValueError('Graph is not fully traversable from stage: %s.'
                              % root)
 
+        reinit = root is not self._stage
         self._stage = root
         self._graph = graph
         self._route = [root]
@@ -622,6 +623,7 @@ class Pipeline(param.Parameterized):
                 Column(self.prev_selector, self.prev_button),
                 Column(self.next_selector, self.next_button)
             ]
-        self.stage[:] = [self._init_stage()]
+        if reinit:
+            self.stage[:] = [self._init_stage()]
         self._update_progress()
         self._update_button()
