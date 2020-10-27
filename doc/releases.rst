@@ -12,7 +12,7 @@ and @philippjfr for contributing fixes to this release.
 
 Enhancements:
 
-- Add pn.binds function to bind parameters to a function (`#1702 <https://github.com/holoviz/panel/pull/1702>`__)
+- Add pn.bind function to bind parameters to a function (`#1702 <https://github.com/holoviz/panel/pull/1702>`__)
 
 Bug fixes:
 
