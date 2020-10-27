@@ -104,6 +104,9 @@ img.app-logo {
   display: flex;
 }
 
+.mdc-drawer__content {
+  overflow-y: hidden;
+}
 .mdc-drawer__content, .main-content {
   padding: 12px;
 }
