@@ -61,7 +61,7 @@ img.app-logo {
   height: 30px;
   padding-top:9px;
   padding-bottom:9px;
-
+  max-width: inherit;
 }
 
 .header-adjust {

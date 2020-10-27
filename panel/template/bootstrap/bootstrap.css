@@ -65,6 +65,7 @@ img.app-logo {
   padding-right: 10px;
   font-size: 28px;
   height: 30px;
+  max-width: inherit;
 }
 
 p.bk.card-button {

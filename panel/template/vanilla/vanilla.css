@@ -5,9 +5,6 @@ body {
   overflow-x: hidden;
   overflow-y: hidden;
 }
-img {
-  max-width: 100%;
-}
 
 #container {
   padding:0px;
@@ -55,6 +52,7 @@ img.app-logo {
   height: 30px;
   padding-top:11px;
   padding-bottom: 7px;
+  max-width: inherit;
 }
 
 .pn-bar {
@@ -86,7 +84,9 @@ img.app-logo {
   transition: all 0.2s cubic-bezier(0.945, 0.020, 0.270, 0.665);
   transform-origin: center left; /* Set the transformed position of sidebar to center left side. */
   width: 290px;
-  height: calc(100vh - 68px);
+  height: calc(100vh - 102px);
+  padding-top: 10px;
+  padding-bottom: 20px;
 }
 
 #sidebar.active {
@@ -97,7 +97,7 @@ img.app-logo {
   transition: all 0.2s cubic-bezier(0.945, 0.020, 0.270, 0.665);
   overflow-y: scroll;
   width: 100vw;
-  height: calc(100vh - 68px);
+  height: calc(100vh - 102px);
   margin-left: 300px;
   padding-right: 20px;
   padding-bottom: 20px;

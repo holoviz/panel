@@ -62,8 +62,9 @@ img.app-logo {
   padding-right: 10px;
   font-size: 28px;
   height: 30px;
-  padding-top: 10px;
-  padding-bottom: 8px;
+  max-width: inherit;
+  padding-top: 12px;
+  padding-bottom: 6px;
 }
 
 #app-title {
@@ -104,6 +105,9 @@ img.app-logo {
   display: flex;
 }
 
+.mdc-drawer__content {
+  overflow-x: hidden;
+}
 .mdc-drawer__content, .main-content {
   padding: 12px;
 }
