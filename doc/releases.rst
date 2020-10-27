@@ -1,6 +1,27 @@
 Releases
 ========
 
+Version 0.10.1
+--------------
+
+Date: 2020-10-27
+
+This is a micro release of Paanel primarily containing bug fixes
+following the 0.10.0 release. Many thanks to @MarcSkovMadsen, @jbednar
+and @philippjfr for contributing fixes to this release.
+
+Enhancements:
+
+- Add pn.binds function to bind parameters to a function (`#1702 <https://github.com/holoviz/panel/pull/1702>`__)
+
+Bug fixes:
+
+- Fix CSS load order in Templates (`#1698 <https://github.com/holoviz/panel/pull/1698>`__)
+- Allow setting DiscreteSlider orientation (`#1704 <https://github.com/holoviz/panel/pull/1704>`__)
+- Ensure JS callbacks and links are only set up once on templates (`#1703 <https://github.com/holoviz/panel/pull/1703>`__)
+- Initialize pipeline only once (`#1705 <https://github.com/holoviz/panel/pull/1705>`__)
+- Fix widget CSS override example (`#1706 <https://github.com/holoviz/panel/pull/1706>`__)
+
 Version 0.10.0
 --------------
 

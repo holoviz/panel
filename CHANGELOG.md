@@ -1,10 +1,29 @@
-# Releases 
+# Releases
 
-## Version 0.10
+## Version 0.10.1
+
+Date: 2020-10-27
+
+This is a micro release of Paanel primarily containing bug fixes following the 0.10.0 release. Many thanks to @MarcSkovMadsen, @jbednar and @philippjfr for contributing fixes to this release.
+
+Enhancements:
+
+- Add pn.binds function to bind parameters to a function ([#1702](https://github.com/holoviz/panel/pull/1702))
+
+Bug fixes:
+
+- Fix CSS load order in Templates ([#1698](https://github.com/holoviz/panel/pull/1698))
+- Allow setting DiscreteSlider orientation ([#1704](https://github.com/holoviz/panel/pull/1704))
+- Ensure JS callbacks and links are only set up once on templates ([#1703](https://github.com/holoviz/panel/pull/1703))
+- Initialize pipeline only once ([#1705](https://github.com/holoviz/panel/pull/1705))
+- Fix widget CSS override example ([#1706](https://github.com/holoviz/panel/pull/1706))
+
+
+## Version 0.10.0
 
 Date: 2020-10-23
 
-This is a major release of Panel, with a slew of new features and enhancements, plus a wide array of minor fixes and improvements to the documentation, and website.
+This is a minor release of Panel, with a slew of new features and enhancements, plus a wide array of minor fixes and improvements to the documentation, and website.
 Many thanks to the people who contributed to this release, including @philippjfr, @MarkSkovMadsen (alert pane, templates, docs), @xavArtley (VTK improvements, templates, input/spinner widgets), @maximlt (panel serve), @jbednar (docs, reviewing), @kebowen (templates), @ahuang11 (datepicker), @nghenzi (react template, bugfixes), @nritsche (panel serve), @ltalirz (autocomplete input), @BoBednar (docs), @tmikolajczyk, @halilbay, @Hoxbro, and @ceball (testing and automation).
 
 Features:
