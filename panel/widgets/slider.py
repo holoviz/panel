@@ -190,6 +190,8 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
     target.text = labels[source.value]
     """
 
+    _style_params = [p for p in list(Layoutable.param) if p != 'name'] + ['orientation']
+
     def __init__(self, **params):
         self._syncing = False
         super(DiscreteSlider, self).__init__(**params)
@@ -209,7 +211,7 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
         self._update_options()
         self.param.watch(self._update_options, ['options', 'formatter'])
         self.param.watch(self._update_value, ['value'])
-        self.param.watch(self._update_style, [p for p in Layoutable.param if p !='name'])
+        self.param.watch(self._update_style, self._style_params)
 
     def _update_options(self, *events):
         values, labels = self.values, self.labels
@@ -221,7 +223,9 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
 
         self._slider = IntSlider(
             start=0, end=len(self.options)-1, value=value, tooltips=False,
-            show_value=False, margin=(0, 5, 5, 5), _supports_embed=False
+            show_value=False, margin=(0, 5, 5, 5),
+            orientation=self.orientation,
+            _supports_embed=False
         )
         self._update_style()
         js_code = self._text_link.format(
@@ -247,7 +251,7 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
             self._syncing = False
 
     def _update_style(self, *events):
-        style = {p: getattr(self, p) for p in Layoutable.param if p != 'name'}
+        style = {p: getattr(self, p) for p in self._style_params}
         margin = style.pop('margin')
         if isinstance(margin, tuple):
             if len(margin) == 2:
@@ -259,12 +263,15 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
             t = r = b = l = margin
         text_margin = (t, 0, 0, l)
         slider_margin = (0, r, b, l)
-        self._text.param.set_param(
-            margin=text_margin, **{k: v for k, v in style.items() if k != 'style'})
+        text_style = {k: v for k, v in style.items()
+                      if k not in ('style', 'orientation')}
+        self._text.param.set_param(margin=text_margin, **text_style)
         self._slider.param.set_param(margin=slider_margin, **style)
         if self.width:
             style['width'] = self.width + l + r
-        self._composite.param.set_param(**style)
+        col_style = {k: v for k, v in style.items()
+                     if k != 'orientation'}
+        self._composite.param.set_param(**col_style)
 
     def _sync_value(self, event):
         if self._syncing:
