@@ -55,6 +55,7 @@ img.app-logo {
   height: 30px;
   padding-top:11px;
   padding-bottom: 7px;
+  max-width: inherit;
 }
 
 .pn-bar {

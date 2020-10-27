@@ -62,6 +62,7 @@ img.app-logo {
   padding-right: 10px;
   font-size: 28px;
   height: 30px;
+  max-width: inherit;
   padding-top: 10px;
   padding-bottom: 8px;
 }
