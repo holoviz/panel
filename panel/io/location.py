@@ -97,10 +97,13 @@ class Location(Syncable):
                 if k not in mapping:
                     continue
                 pname = mapping[k]
-                try:
-                    v = p.param[pname].deserialize(v)
-                except Exception:
-                    pass
+                if isinstance(v, str) and v.startswith('"') and v.endswith('"'):
+                    v = v[1:-1]
+                else:
+                    try:
+                        v = p.param[pname].deserialize(v)
+                    except Exception:
+                        pass
                 mapped[pname] = v
             p.param.set_param(**mapped)
 

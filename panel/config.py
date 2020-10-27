@@ -458,6 +458,13 @@ class panel_extension(_pyviz_extension):
 
         loaded = self._loaded
 
+        # Short circuit pyvista extension load if VTK is already initialized
+        if loaded and args == ('vtk',) and 'vtk' in self._loaded_extensions:
+            curframe = inspect.currentframe()
+            calframe = inspect.getouterframes(curframe, 2)
+            if len(calframe) >= 3 and 'pyvista' in calframe[2].filename:
+                return
+
         if 'holoviews' in sys.modules:
             import holoviews as hv
             import holoviews.plotting.bokeh # noqa

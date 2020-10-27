@@ -25,7 +25,7 @@ from ..io.notebook import render_template
 from ..io.resources import CDN_DIST, LOCAL_DIST
 from ..io.save import save
 from ..io.state import state
-from ..layout import Column, ListLike
+from ..layout import Column, ListLike, GridSpec
 from ..models.comm_manager import CommManager
 from ..pane import panel as _panel, HTML, Str, HoloViews
 from ..pane.image import ImageBase
@@ -400,12 +400,20 @@ class BasicTemplate(BaseTemplate):
         template = self._template.read_text()
         if 'header' not in params:
             params['header'] = ListLike()
+        else:
+            params['header'] = self._get_params(params['header'], self.param.header.class_)
         if 'main' not in params:
             params['main'] = ListLike()
+        else:
+            params['main'] = self._get_params(params['main'], self.param.main.class_)
         if 'sidebar' not in params:
             params['sidebar'] = ListLike()
+        else:
+            params['sidebar'] = self._get_params(params['sidebar'], self.param.sidebar.class_)
         if 'modal' not in params:
             params['modal'] = ListLike()
+        else:
+            params['modal'] = self._get_params(params['modal'], self.param.modal.class_)
         super(BasicTemplate, self).__init__(template=template, **params)
         if self.busy_indicator:
             state.sync_busy(self.busy_indicator)
@@ -570,7 +578,27 @@ class BasicTemplate(BaseTemplate):
         else:
             raise ValueError("favicon type not supported.")
 
+    @staticmethod
+    def _get_params(value, class_):
+        if isinstance(value, class_):
+            return value
+        if isinstance(value, tuple):
+            value = [*value]
+        elif not isinstance(value, list):
+            value = [value]
 
+        # Important to fx. convert @param.depends functions
+        value = [_panel(item) for item in value]
+
+        if class_ is ListLike:
+            return ListLike(objects=value)
+        if class_ is GridSpec:
+            grid = GridSpec(ncols=12)
+            for index, item in enumerate(value):
+                grid[index, :]=item
+            return grid
+
+        return value
 
 class Template(BaseTemplate):
     """
