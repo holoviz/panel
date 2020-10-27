@@ -580,7 +580,7 @@ class Param(PaneBase):
         """
         return super().select(selector) + self.layout.select(selector)
 
-    def get_root(self, doc=None, comm=None):
+    def get_root(self, doc=None, comm=None, preprocess=True):
         """
         Returns the root model and applies pre-processing hooks
 
@@ -590,13 +590,15 @@ class Param(PaneBase):
           Bokeh document the bokeh model will be attached to.
         comm: pyviz_comms.Comm
           Optional pyviz_comms when working in notebook
+        preprocess: boolean (default=True)
+          Whether to run preprocessing hooks
 
         Returns
         -------
         Returns the bokeh model corresponding to this panel object
         """
         doc = init_doc(doc)
-        root = self.layout.get_root(doc, comm)
+        root = self.layout.get_root(doc, comm, preprocess)
         ref = root.ref['id']
         self._models[ref] = (root, None)
         state._views[ref] = (self, root, doc, comm)

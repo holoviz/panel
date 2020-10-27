@@ -461,7 +461,7 @@ class Renderable(param.Parameterized):
             loc._cleanup(root)
             del state._locations[doc]
 
-    def get_root(self, doc=None, comm=None):
+    def get_root(self, doc=None, comm=None, preprocess=True):
         """
         Returns the root model and applies pre-processing hooks
 
@@ -471,6 +471,8 @@ class Renderable(param.Parameterized):
           Bokeh document the bokeh model will be attached to.
         comm: pyviz_comms.Comm
           Optional pyviz_comms when working in notebook
+        preprocess: boolean (default=True)
+          Whether to run preprocessing hooks
 
         Returns
         -------
@@ -478,7 +480,8 @@ class Renderable(param.Parameterized):
         """
         doc = init_doc(doc)
         root = self._get_model(doc, comm=comm)
-        self._preprocess(root)
+        if preprocess:
+            self._preprocess(root)
         ref = root.ref['id']
         state._views[ref] = (self, root, doc, comm)
         return root

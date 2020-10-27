@@ -146,7 +146,7 @@ class BaseTemplate(param.Parameterized, ServableMixin):
         for name, (obj, tags) in self._render_items.items():
             if self._apply_hooks not in obj._hooks:
                 obj._hooks.append(self._apply_hooks)
-            model = obj.get_root(doc, comm)
+            model = obj.get_root(doc, comm, preprocess=False)
             mref = model.ref['id']
             doc.on_session_destroyed(obj._server_destroy)
             for sub in obj.select(Viewable):
