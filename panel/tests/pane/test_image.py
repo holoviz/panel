@@ -70,7 +70,7 @@ def test_load_from_byteio():
     path = os.path.dirname(__file__)
     with open(os.path.join(path, '../test_data/logo.png'), 'rb') as image_file:
         memory.write(image_file.read())
-    memory.seek(0)
+
     image_pane = PNG(memory)
     image_data = image_pane._img()
     assert b'PNG' in image_data
@@ -79,11 +79,11 @@ def test_load_from_byteio():
 def test_load_from_stringio():
     """Testing a loading a image from a StringIO"""
     memory = StringIO()
-    
+
     path = os.path.dirname(__file__)
     with open(os.path.join(path, '../test_data/logo.png'), 'rb') as image_file:
         memory.write(str(image_file.read()))
-    memory.seek(0)
+
     image_pane = PNG(memory)
     image_data = image_pane._img()
     assert 'PNG' in image_data

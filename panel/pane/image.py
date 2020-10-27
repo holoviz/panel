@@ -78,6 +78,8 @@ class ImageBase(DivPaneBase):
                 with open(self.object, 'rb') as f:
                     return f.read()
         if hasattr(self.object, 'read'):
+            if hasattr(self.object, 'seek'):
+                self.object.seek(0)
             return self.object.read()
         if isurl(self.object, None):
             import requests
