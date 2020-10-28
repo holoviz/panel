@@ -375,7 +375,7 @@ class ReplacementPane(PaneBase):
             # Replace pane entirely
             pane = panel(object, **{k: v for k, v in kwargs.items()
                                     if k in pane_type.param})
-            if object is old_object:
+            if pane is object:
                 # If all watchers on the object are internal watchers
                 # we can make a clone of the object and update this
                 # clone going forward, otherwise we have replace the
@@ -386,7 +386,7 @@ class ReplacementPane(PaneBase):
                 else:
                     internal = False
             else:
-                internal = True
+                internal = object is not old_object
         return pane, internal
 
     def _update_inner(self, new_object):
