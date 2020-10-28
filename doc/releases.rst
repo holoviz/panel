@@ -12,15 +12,16 @@ and @philippjfr for contributing fixes to this release.
 
 Enhancements:
 
-- Add pn.bind function to bind parameters to a function (`#1702 <https://github.com/holoviz/panel/pull/1702>`__, `#1710 <https://github.com/holoviz/panel/pull/1710>`__)
+- Add pn.bind function to bind parameters to a function (`#1629 <https://github.com/holoviz/panel/issues/1629>`__)
 
 Bug fixes:
 
+- Fix `WidgetBox` CSS (`#855 <https://github.com/holoviz/panel/pull/855>`__)
 - Fix CSS load order in Templates (`#1698 <https://github.com/holoviz/panel/pull/1698>`__)
-- Allow setting DiscreteSlider orientation (`#1704 <https://github.com/holoviz/panel/pull/1704>`__)
-- Ensure JS callbacks and links are only set up once on templates (`#1703 <https://github.com/holoviz/panel/pull/1703>`__)
+- Allow setting `DiscreteSlider` orientation (`#1683 <https://github.com/holoviz/panel/pull/1683>`__)
+- Ensure JS callbacks and links are only set up once on templates (`#1700 <https://github.com/holoviz/panel/pull/1700>`__)
 - Initialize pipeline only once (`#1705 <https://github.com/holoviz/panel/pull/1705>`__)
-- Fix widget CSS override example (`#1706 <https://github.com/holoviz/panel/pull/1706>`__)
+- Allow using `NumberInput` as `Param` pane widget (`#1708 <https://github.com/holoviz/panel/issues/1708>`__)
 
 Version 0.10.0
 --------------
@@ -294,8 +295,8 @@ Bug fixes:
 Documentation:
 
 - Add guidance about developing custom models (`#1220 <https://github.com/holoviz/panel/pull/1220>`_)
-- Add Folium example to gallery (`#1189 <https://github.com/holoviz/panel/pull/1189>`_))
-- Add `FileDownload` and `FileInput` example to gallery (`#1193 <https://github.com/holoviz/panel/pull/1193>`_))
+- Add Folium example to gallery (`#1189 <https://github.com/holoviz/panel/pull/1189>`_)
+- Add `FileDownload` and `FileInput` example to gallery (`#1193 <https://github.com/holoviz/panel/pull/1193>`_)
 
 
 Version 0.9.4

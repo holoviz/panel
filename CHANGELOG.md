@@ -8,16 +8,16 @@ This is a micro release of Paanel primarily containing bug fixes following the 0
 
 Enhancements:
 
-- Add pn.bind function to bind parameters to a function ([#1702](https://github.com/holoviz/panel/pull/1702), [#1710](https://github.com/holoviz/panel/pull/1710))
+- Add pn.bind function to bind parameters to a function ([#1629](https://github.com/holoviz/panel/issues/1629))
 
 Bug fixes:
 
+- Fix `WidgetBox` CSS ([#855](https://github.com/holoviz/panel/pull/855))
 - Fix CSS load order in Templates ([#1698](https://github.com/holoviz/panel/pull/1698))
-- Allow setting DiscreteSlider orientation ([#1704](https://github.com/holoviz/panel/pull/1704))
-- Ensure JS callbacks and links are only set up once on templates ([#1703](https://github.com/holoviz/panel/pull/1703))
+- Allow setting `DiscreteSlider` orientation ([#1683](https://github.com/holoviz/panel/pull/1683))
+- Ensure JS callbacks and links are only set up once on templates ([#1700](https://github.com/holoviz/panel/pull/1700))
 - Initialize pipeline only once ([#1705](https://github.com/holoviz/panel/pull/1705))
-- Fix widget CSS override example ([#1706](https://github.com/holoviz/panel/pull/1706))
-
+- Allow using `NumberInput` as `Param` pane widget ([#1708](https://github.com/holoviz/panel/issues/1708))
 
 ## Version 0.10.0
 
