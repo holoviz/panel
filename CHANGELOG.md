@@ -8,7 +8,7 @@ This is a micro release of Paanel primarily containing bug fixes following the 0
 
 Enhancements:
 
-- Add pn.bind function to bind parameters to a function ([#1702](https://github.com/holoviz/panel/pull/1702))
+- Add pn.bind function to bind parameters to a function ([#1702](https://github.com/holoviz/panel/pull/1702), [#1710](https://github.com/holoviz/panel/pull/1710))
 
 Bug fixes:
 
@@ -299,7 +299,6 @@ Date: 2019-11-18T21:22:16Z
 This major release includes significant new functionality along with important bug and documentation fixes, including contributions from @philippjfr (maintainer and lead developer), @xavArtley (VTK support), @jbednar (docs), @DancingQuanta (FileInput), @a-recknagel (Python 3.8 support, misc), @julwin (TextAreaInput, PasswordInput), @rs2 (example notebooks), @xtaje (default values), @Karamya (Audio widget), @ceball, @ahuang11 , @eddienko, @Jacob-Barhak, @jlstevens, @jsignell, @kleavor, @lsetiawan, @mattpap, @maxibor, and @RedBeardCode.
 
 Major enhancements:
-d
 - Added pn.ipywidget() function for using panels and panes as ipwidgets, e.g. in voila ([#745](https://github.com/holoviz/panel/issues/745), [#755](https://github.com/holoviz/panel/issues/755), [#771](https://github.com/holoviz/panel/issues/771))
 - Greatly expanded and improved Pipeline, which now allows branching graphs ([#712](https://github.com/holoviz/panel/issues/712), [#735](https://github.com/holoviz/panel/issues/735), [#737](https://github.com/holoviz/panel/issues/737), [#770](https://github.com/holoviz/panel/issues/770))
 - Added streaming helper objects, including for the streamz package ([#767](https://github.com/holoviz/panel/issues/767), [#769](https://github.com/holoviz/panel/issues/769))

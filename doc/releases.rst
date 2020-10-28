@@ -6,13 +6,13 @@ Version 0.10.1
 
 Date: 2020-10-27
 
-This is a micro release of Paanel primarily containing bug fixes
+This is a micro release of Panel primarily containing bug fixes
 following the 0.10.0 release. Many thanks to @MarcSkovMadsen, @jbednar
 and @philippjfr for contributing fixes to this release.
 
 Enhancements:
 
-- Add pn.bind function to bind parameters to a function (`#1702 <https://github.com/holoviz/panel/pull/1702>`__)
+- Add pn.bind function to bind parameters to a function (`#1702 <https://github.com/holoviz/panel/pull/1702>`__, `#1710 <https://github.com/holoviz/panel/pull/1710>`__)
 
 Bug fixes:
 
