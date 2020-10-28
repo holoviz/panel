@@ -1,10 +1,29 @@
-# Releases 
+# Releases
 
-## Version 0.10
+## Version 0.10.1
+
+Date: 2020-10-27
+
+This is a micro release of Paanel primarily containing bug fixes following the 0.10.0 release. Many thanks to @MarcSkovMadsen, @jbednar and @philippjfr for contributing fixes to this release.
+
+Enhancements:
+
+- Add pn.bind function to bind parameters to a function ([#1629](https://github.com/holoviz/panel/issues/1629))
+
+Bug fixes:
+
+- Fix `WidgetBox` CSS ([#855](https://github.com/holoviz/panel/pull/855))
+- Fix CSS load order in Templates ([#1698](https://github.com/holoviz/panel/pull/1698))
+- Allow setting `DiscreteSlider` orientation ([#1683](https://github.com/holoviz/panel/pull/1683))
+- Ensure JS callbacks and links are only set up once on templates ([#1700](https://github.com/holoviz/panel/pull/1700))
+- Initialize pipeline only once ([#1705](https://github.com/holoviz/panel/pull/1705))
+- Allow using `NumberInput` as `Param` pane widget ([#1708](https://github.com/holoviz/panel/issues/1708))
+
+## Version 0.10.0
 
 Date: 2020-10-23
 
-This is a major release of Panel, with a slew of new features and enhancements, plus a wide array of minor fixes and improvements to the documentation, and website.
+This is a minor but jam-packed release of Panel, with a slew of new features and enhancements, plus a wide array of minor fixes and improvements to the documentation, and website.
 Many thanks to the people who contributed to this release, including @philippjfr, @MarkSkovMadsen (alert pane, templates, docs), @xavArtley (VTK improvements, templates, input/spinner widgets), @maximlt (panel serve), @jbednar (docs, reviewing), @kebowen (templates), @ahuang11 (datepicker), @nghenzi (react template, bugfixes), @nritsche (panel serve), @ltalirz (autocomplete input), @BoBednar (docs), @tmikolajczyk, @halilbay, @Hoxbro, and @ceball (testing and automation).
 
 Features:
@@ -279,7 +298,7 @@ Date: 2019-11-18T21:22:16Z
 
 This major release includes significant new functionality along with important bug and documentation fixes, including contributions from @philippjfr (maintainer and lead developer), @xavArtley (VTK support), @jbednar (docs), @DancingQuanta (FileInput), @a-recknagel (Python 3.8 support, misc), @julwin (TextAreaInput, PasswordInput), @rs2 (example notebooks), @xtaje (default values), @Karamya (Audio widget), @ceball, @ahuang11 , @eddienko, @Jacob-Barhak, @jlstevens, @jsignell, @kleavor, @lsetiawan, @mattpap, @maxibor, and @RedBeardCode.
 
-Major enhancements:d
+Major enhancements:
 - Added pn.ipywidget() function for using panels and panes as ipwidgets, e.g. in voila ([#745](https://github.com/holoviz/panel/issues/745), [#755](https://github.com/holoviz/panel/issues/755), [#771](https://github.com/holoviz/panel/issues/771))
 - Greatly expanded and improved Pipeline, which now allows branching graphs ([#712](https://github.com/holoviz/panel/issues/712), [#735](https://github.com/holoviz/panel/issues/735), [#737](https://github.com/holoviz/panel/issues/737), [#770](https://github.com/holoviz/panel/issues/770))
 - Added streaming helper objects, including for the streamz package ([#767](https://github.com/holoviz/panel/issues/767), [#769](https://github.com/holoviz/panel/issues/769))
@@ -502,4 +521,3 @@ Bug fixes:
 ## Version 0.1.3
 
 Date: 2018-10-23T12:09:07Z
-
