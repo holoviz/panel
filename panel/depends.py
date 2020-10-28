@@ -27,17 +27,29 @@ def param_value_if_widget(arg):
 
 def depends(*args, **kwargs):
     """
-    Annotates a function or Parameterized method to express its
-    dependencies on a set of parameters. This allows libraries
-    such as Panel to watch those dependencies for changes and update
-    the output of the annotated function when one of the dependencies
-    changes.
+    Python decorator annotating a function or Parameterized method to
+    express its dependencies on a set of Parameters. This declaration
+    allows Panel to watch those dependencies and then invoke the
+    function or method to get an updated output when one of the
+    dependencies changes.
 
-    The specified dependencies can be either be Parameter instances,
-    widgets, or, if a method is supplied, they can be defined
-    as strings referring to Parameters of the class, or Parameters of
-    subobjects (Parameterized objects that are values of this object's
-    parameters).
+    This function is the same as the corresponding param.depends
+    decorator, but extended so that if widgets are provided as
+    dependencies, the underlying `value` Parameter of the widget is
+    extracted as the actual dependency. This extension is solely for
+    syntactic convenience, allowing the widget to be passed in as a
+    synonym for the underlying parameter. Apart from that extension,
+    this decorator otherwise behaves the same as the underlying Param
+    depends decorator.
+    
+    For the Panel version of the decorator, the specified dependencies
+    can either be Parameter instances, Panel or ipywidgets widgets,
+    or, if a Parameterized method is supplied rather than a function,
+    they can be defined either as string names of Parameters of this
+    object or as Parameter objects of this object's subobjects (i.e.,
+    Parameterized objects that are values of this object's
+    Parameters). See the docs for the corresponding param.depends
+    decorator for further details.
     """
     updated_args = [param_value_if_widget(a) for a in  args]
     updated_kwargs = {k: param_value_if_widget(v) for k, v in kwargs.items()}
@@ -46,23 +58,34 @@ def depends(*args, **kwargs):
 
 def bind(function, *args, **kwargs):
     """
-    The bind function allows binding dynamic widget parameters to a
-    function, such that when it is evaluated it will automatically
-    reflect the current value of those parameters, e.g. when binding
-    a Panel widget to a function the current widget value will be
-    bound to the function. Constant values can also be bound to a
-    function just like using functools.partial. In addition to binding
-    the parameters to the function the returned function is also
-    annotated with the parameter dependencies allowing libraries
-    such as Panel to watch those dependencies for changes and update
-    the output of the annotated function when one of the dependencies
-    changes.
+    Given a function, returns a wrapper function that binds the values
+    of some or all arguments to Parameter values and expresses Param
+    dependencies on those values, so that the function can be invoked
+    whenever the underlying values change.
+
+    This function is the same as param.bind, but extended so that if
+    widgets are provided as values, the underlying `value` Parameter
+    of the widget is extracted as the actual argument value and
+    dependency. This extension is solely for syntactic convenience,
+    allowing the widget to be passed in as a synonym for the
+    underlying parameter. Apart from that extension, this function
+    otherwise behaves the same as the corresponding Param function.
+    
+    This function allows dynamically recomputing the output of the
+    provided function whenever one of the bound parameters
+    changes. For Panel, the parameters are typically values of
+    widgets, making it simple to have output that reacts to changes in
+    the widgets. Arguments an also be bound to other parameters (not
+    part of widgets) or even to constants (as for functools.partial).
 
     Arguments
     ---------
-    function: The function to bind constant or dynamic args and kwargs to.
-    args: The arguments to bind to the function.
-    kwargs: The keyword arguments to bind to the function.
+    function: callable
+        The function to bind constant or dynamic args and kwargs to.
+    args: object, param.Parameter, panel.widget.Widget, or ipywidget
+        Positional arguments to bind to the function.
+    kwargs: object, param.Parameter, panel.widget.Widget, or ipywidget
+        Keyword arguments to bind to the function.
 
     Returns
     -------
@@ -71,33 +94,63 @@ def bind(function, *args, **kwargs):
     """
     updated_args = [param_value_if_widget(a) for a in args]
     updated_kwargs = {k: param_value_if_widget(v) for k, v in kwargs.items()}
+    return _param_bind(function, *updated_args, **updated_kwargs)
 
+
+# Temporary; to move to Param
+def _param_bind(function, *args, **kwargs):
+    """
+    Given a function, returns a wrapper function that binds the values
+    of some or all arguments to Parameter values and expresses Param
+    dependencies on those values, so that the function can be invoked
+    whenever the underlying values change and the output will reflect
+    those updated values.
+
+    As for functools.partial, arguments can also be bound to constants, 
+    which allows all of the arguments to be bound, leaving a simple
+    callable object.
+
+    Arguments
+    ---------
+    function: callable
+        The function to bind constant or dynamic args and kwargs to.
+    args: object, param.Parameter
+        Positional arguments to bind to the function.
+    kwargs: object, param.Parameter
+        Keyword arguments to bind to the function.
+
+    Returns
+    -------
+    Returns a new function with the args and kwargs bound to it and
+    annotated with all dependencies.
+    """
     dependencies = {}
-    for i, arg in enumerate(updated_args):
+    for i, arg in enumerate(args):
         p = param_value_if_widget(arg)
         if isinstance(p, param.Parameter):
             dependencies[f'__arg{i}'] = p
-    for kw, v in updated_kwargs.items():
+    for kw, v in kwargs.items():
         p = param_value_if_widget(v)
         if isinstance(p, param.Parameter):
             dependencies[kw] = p
 
     @depends(**dependencies)
-    def wrapped(*args, **kwargs):
+    def wrapped(*wargs, **wkwargs):
         combined_args = []
-        for arg in updated_args:
+        for arg in args:
             if isinstance(arg, param.Parameter):
                 combined_args.append(getattr(arg.owner, arg.name))
             else:
                 combined_args.append(arg)
-        combined_args += list(args)
+        combined_args += list(wargs)
         combined_kwargs = {}
-        for kw, arg in updated_kwargs.items():
-            if kw.startswith('__arg'):
-                continue
-            elif isinstance(arg, param.Parameter):
+        for kw, arg in kwargs.items():
+            if isinstance(arg, param.Parameter):
                 arg = getattr(arg.owner, arg.name)
             combined_kwargs[kw] = arg
-        combined_kwargs.update(kwargs)
+        for kw, arg in wkwargs.items():
+            if kw.startswith('__arg'):
+                continue
+            combined_kwargs[kw] = arg
         return function(*combined_args, **combined_kwargs)
     return wrapped
