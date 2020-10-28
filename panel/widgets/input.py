@@ -256,7 +256,7 @@ class FloatInput(_SpinnerBase, _FloatInputBase):
     value_throttled = param.Number(default=None, constant=True)
 
 
-class NumberInput:
+class NumberInput(_SpinnerBase):
 
     def __new__(self, **params):
         param_list = ["value", "start", "stop", "step"]
