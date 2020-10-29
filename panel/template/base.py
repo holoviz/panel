@@ -549,6 +549,7 @@ class BasicTemplate(BaseTemplate):
           modal.style.display = "block";
         </script>
         """
+        self._js_area.object = ""
 
     def close_modal(self):
         """
@@ -560,6 +561,7 @@ class BasicTemplate(BaseTemplate):
           modal.style.display = "none";
         </script>
         """
+        self._js_area.object = ""
 
     @staticmethod
     def _get_favicon_type(favicon):
