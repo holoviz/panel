@@ -39,14 +39,25 @@ def test_all_view():
         text = f"""\
             This is a **{alert_type}** alert with [an example link](https://panel.holoviz.org/).
             Give it a click if you like."""
-        alert = Alert(text=text, alert_type=alert_type)
-        alerts.append(alert)
+        alert = Alert(object=text, alert_type=alert_type)
+        alert_app = pn.Column(
+            alert,
+            pn.Param(
+                alert,
+                parameters=["object", "alert_type"],
+                widgets={"object":
+                pn.widgets.TextAreaInput},
+            ),
+        )
+        alerts.append(alert_app)
 
         assert "alert" in alert.css_classes
         assert f"alert-{alert_type}" in alert.css_classes
 
-    return pn.Column(*alerts, sizing_mode="stretch_width")
+    return pn.Column(*alerts, margin=50)
 
 
-if __name__.startswith("bk"):
+if __name__.startswith("bokeh"):
+    pn.config.sizing_mode="stretch_width"
     test_all_view().servable()
+    print("served")

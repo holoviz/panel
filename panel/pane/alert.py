@@ -19,6 +19,10 @@ class Alert(Markdown):
 
     alert_type = param.ObjectSelector("primary", objects=ALERT_TYPES)
 
+    priority = 0
+
+    _rename=dict(Markdown._rename, alert_type=None)
+
     @classmethod
     def applies(cls, obj):
         priority = Markdown.applies(obj)
