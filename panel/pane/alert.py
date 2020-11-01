@@ -21,7 +21,7 @@ class Alert(Markdown):
 
     priority = 0
 
-    _rename=dict(Markdown._rename, alert_type=None)
+    _rename = dict(Markdown._rename, alert_type=None)
 
     @classmethod
     def applies(cls, obj):

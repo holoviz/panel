@@ -269,7 +269,7 @@ class Markdown(DivPaneBase):
 
     _target_transforms = {'object': None}
 
-    _rerender_params = ['object', 'dedent', 'extensions']
+    _rerender_params = ['object', 'dedent', 'extensions', 'css_classes']
 
     @classmethod
     def applies(cls, obj):

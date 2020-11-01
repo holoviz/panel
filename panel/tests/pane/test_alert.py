@@ -16,13 +16,17 @@ def test_constructor():
 
 
 @pytest.mark.parametrize(["alert_type"], [(alert_type,) for alert_type in ALERT_TYPES])
-def test_alert_type_change(alert_type):
+def test_alert_type_change(alert_type, document, comm):
     """Test that an alert can change alert_type"""
     alert = Alert(text="This is some text")
 
+    model = alert.get_root(document, comm)
+
     alert.alert_type = alert_type
     assert set(alert.css_classes) == {"alert", f"alert-{alert_type}"}
+    assert set(model.css_classes) == {"alert", f"alert-{alert_type}", "markdown"}
 
+    
 def test_existing_css_classes():
     """Test that an alert can change alert_type"""
     alert = Alert(text="This is some text", css_classes=["important"])
