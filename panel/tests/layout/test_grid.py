@@ -274,3 +274,15 @@ def test_gridbox_nrows(document, comm):
     ]
     for child, coord in zip(model.children, coords):
         assert child[1:] == coord
+
+
+def test_gridspec_fixed_ncols():
+    grid = GridSpec(ncols=3)
+    for index in range(5):
+        grid[index, :] = "Hello World"
+
+
+def test_gridspec_fixed_nrows():
+    grid = GridSpec(nrows=3)
+    for index in range(5):
+        grid[:, index] = "Hello World"
