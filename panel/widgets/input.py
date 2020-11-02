@@ -353,7 +353,7 @@ class LiteralInput(Widget):
             if isinstance(value, string_types):
                 value = repr(value)
             elif self.serializer == 'json':
-                value = json.dumps(value, sort_keys=True)
+                value = json.dumps(value)
             else:
                 value = '' if value is None else as_unicode(value)
             msg['value'] = value
