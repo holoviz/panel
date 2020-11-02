@@ -8,6 +8,7 @@ import os
 import sys
 import uuid
 
+from collections import OrderedDict
 from functools import partial
 
 import param
@@ -68,7 +69,7 @@ class BaseTemplate(param.Parameterized, ServableMixin):
         if isinstance(nb_template, string_types):
             nb_template = _Template(nb_template)
         self.nb_template = nb_template or template
-        self._render_items = {}
+        self._render_items = OrderedDict()
         self._render_variables = {}
         self._server = None
         self._layout = self._build_layout()
@@ -524,16 +525,18 @@ class BasicTemplate(BaseTemplate):
         old = event.old if isinstance(event.old, list) else event.old.values()
         for obj in old:
             ref = str(id(obj))
-            if obj not in event.new and ref in self._render_items:
+            if ref in self._render_items:
                 del self._render_items[ref]
 
         labels = {}
         new = event.new if isinstance(event.new, list) else event.new.values()
         for obj in new:
             ref = str(id(obj))
-            labels[ref] = 'Content' if obj.name.startswith(type(obj).__name__) else obj.name
-            if ref not in self._render_items:
-                self._render_items[ref] = (obj, [tag])
+            if obj.name.startswith(type(obj).__name__):
+                labels[ref] = 'Content'
+            else:
+                labels[ref] = obj.name
+            self._render_items[ref] = (obj, [tag])
         tags = [tags for _, tags in self._render_items.values()]
         self._render_variables['nav'] = any('nav' in ts for ts in tags)
         self._render_variables['header'] = any('header' in ts for ts in tags)
