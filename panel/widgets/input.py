@@ -349,13 +349,13 @@ class LiteralInput(Widget):
     def _process_param_change(self, msg):
         msg = super(LiteralInput, self)._process_param_change(msg)
         if 'value' in msg:
-            value = '' if msg['value'] is None else msg['value']
+            value = msg['value']
             if isinstance(value, string_types):
                 value = repr(value)
             elif self.serializer == 'json':
-                value = json.dumps(value, sort_keys=True)
+                value = json.dumps(value)
             else:
-                value = as_unicode(value)
+                value = '' if value is None else as_unicode(value)
             msg['value'] = value
         msg['title'] = self.name
         return msg
