@@ -8,6 +8,7 @@ import os
 import sys
 import uuid
 
+from collections import OrderedDict
 from functools import partial
 
 import param
@@ -68,7 +69,7 @@ class BaseTemplate(param.Parameterized, ServableMixin):
         if isinstance(nb_template, string_types):
             nb_template = _Template(nb_template)
         self.nb_template = nb_template or template
-        self._render_items = {}
+        self._render_items = OrderedDict()
         self._render_variables = {}
         self._server = None
         self._layout = self._build_layout()
