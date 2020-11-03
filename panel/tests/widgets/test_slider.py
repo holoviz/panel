@@ -134,6 +134,7 @@ def test_discrete_slider(document, comm):
     assert isinstance(label, BkDiv)
     assert isinstance(widget, BkSlider)
     assert widget.value == 1
+    assert widget.value_throttled == 1
     assert widget.start == 0
     assert widget.end == 3
     assert widget.step == 1
@@ -142,9 +143,13 @@ def test_discrete_slider(document, comm):
     widget.value = 2
     discrete_slider._slider._process_events({'value': 2})
     assert discrete_slider.value == 10
+    discrete_slider._slider._process_events({'value_throttled': 2})
+    assert discrete_slider.value_throttled == 10
 
     discrete_slider.value = 100
     assert widget.value == 3
+    discrete_slider.value_throttled = 100
+    assert widget.value_throttled == 3
 
 
 def test_discrete_date_slider(document, comm):
@@ -161,6 +166,7 @@ def test_discrete_date_slider(document, comm):
     assert isinstance(label, BkDiv)
     assert isinstance(widget, BkSlider)
     assert widget.value == 1
+    assert widget.value_throttled == 1
     assert widget.start == 0
     assert widget.end == 2
     assert widget.step == 1
@@ -169,9 +175,13 @@ def test_discrete_date_slider(document, comm):
     widget.value = 2
     discrete_slider._slider._process_events({'value': 2})
     assert discrete_slider.value == dates['2016-01-03']
+    discrete_slider._slider._process_events({'value_throttled': 2})
+    assert discrete_slider.value_throttled == dates['2016-01-03']
 
     discrete_slider.value = dates['2016-01-01']
     assert widget.value == 0
+    discrete_slider.value_throttled = dates['2016-01-01']
+    assert widget.value_throttled == 0
 
 
 def test_discrete_slider_options_dict(document, comm):
@@ -186,6 +196,7 @@ def test_discrete_slider_options_dict(document, comm):
     assert isinstance(label, BkDiv)
     assert isinstance(widget, BkSlider)
     assert widget.value == 1
+    assert widget.value_throttled == 1
     assert widget.start == 0
     assert widget.end == 3
     assert widget.step == 1
@@ -194,6 +205,10 @@ def test_discrete_slider_options_dict(document, comm):
     widget.value = 2
     discrete_slider._slider._process_events({'value': 2})
     assert discrete_slider.value == 10
+    discrete_slider._slider._process_events({'value_throttled': 2})
+    assert discrete_slider.value_throttled == 10
 
     discrete_slider.value = 100
     assert widget.value == 3
+    discrete_slider.value_throttled = 100
+    assert widget.value_throttled == 3

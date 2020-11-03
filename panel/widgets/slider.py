@@ -254,12 +254,12 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
         if getattr(self, event.name) not in values:
             setattr(self, event.name, values[0])
             return
-        index = self.values.index(self.value)
+        index = self.values.index(getattr(self, event.name))
         if self._syncing:
             return
         try:
             self._syncing = True
-            self._slider.value = index
+            setattr(self._slider, event.name, index)
         finally:
             self._syncing = False
 
