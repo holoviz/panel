@@ -51,7 +51,7 @@ def test_server_static_dirs():
     time.sleep(1)
 
     r = requests.get("http://localhost:5008/tests/test_server.py")
-    with open(__file__) as f:
+    with open(__file__, encoding='utf-8') as f:
         assert f.read() == r.content.decode('utf-8')
     server.stop()
 
