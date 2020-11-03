@@ -54,12 +54,12 @@ jobs:
           echo "-----"
           git describe
       - name: windows_opengl
-        if: contains(matrix.os, windows) 
+        if: contains(matrix.os, 'windows') 
         run: |
           git clone --depth 1 git://github.com/pyvista/gl-ci-helpers.git
           powershell gl-ci-helpers/appveyor/install_opengl.ps1
       - name: nix_opengl
-        if: contains(matrix.os, ubuntu) || contains(matrix.os, macos) 
+        if: contains(matrix.os, 'ubuntu') || contains(matrix.os, 'macos') 
         run: |
           export DISPLAY=":99.0"
           /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -ac -screen 0 1280x1024x24
