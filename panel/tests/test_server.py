@@ -52,7 +52,7 @@ def test_server_static_dirs():
 
     r = requests.get("http://localhost:5008/tests/test_server.py")
     with open(__file__, encoding='utf-8') as f:
-        assert f.read() == r.content.decode('utf-8')
+        assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
     server.stop()
 
 
