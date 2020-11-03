@@ -241,7 +241,15 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
         self._composite[1] = self._slider
 
     def _update_value(self, event):
-        # event.name is either value or value_throttled
+        """
+        This will update the IntSlider (behind the scene)
+        based on changes to the DiscreteSlider (front).
+
+        _syncing options is to avoid infinite loop.
+
+        event.name is either value or value_throttled.
+        """
+
         values = self.values
         if getattr(self, event.name) not in values:
             setattr(self, event.name, values[0])
@@ -279,7 +287,15 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
         self._composite.param.set_param(**col_style)
 
     def _sync_value(self, event):
-        # event.name is either value or value_throttled
+        """
+        This will update the DiscreteSlider (front)
+        based on changes to the IntSlider (behind the scene).
+
+        _syncing options is to avoid infinite loop.
+
+        event.name is either value or value_throttled.
+        """
+
         if self._syncing:
             return
         try:
