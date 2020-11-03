@@ -1,0 +1,85 @@
+name: pytest
+on:
+  pull_request:
+    branches:
+    - '*'
+
+jobs:
+  test_suite:
+    name: Pytest on ${{ matrix.os }} with Python ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
+        python-version: [3.6, 3.7, 3.8]
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash -l {0} 
+    env:
+      DESC: "Python ${{ matrix.python-version }} tests"
+      HV_REQUIREMENTS: "unit_tests"
+      PYTHON_VERSION: ${{ matrix.python-version }}
+      CHANS_DEV: "-c pyviz/label/dev -c bokeh -c conda-forge"
+      CHANS: "-c pyviz -c bokeh -c conda-forge"
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: "100"
+      - uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - uses: goanpeca/setup-miniconda@v1
+        with:
+          miniconda-version: "latest"
+      - name: Fetch unshallow
+        run: git fetch --prune --tags --unshallow
+      - name: conda setup
+        run: |
+          conda config --set always_yes True
+          conda install -c pyviz "pyctdev>=0.5"
+          doit ecosystem_setup
+          conda install nodejs
+          doit env_create ${{ env.CHANS_DEV}} --python=${{ matrix.python-version }}
+      - name: doit develop_install
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          conda list
+          conda install -c conda-forge mesalib
+          doit develop_install ${{ env.CHANS_DEV}} -o examples -o recommended -o tests -o build
+          bokeh sampledata
+          echo "-----"
+          git describe
+      - name: windows_opengl
+        if: contains(matrix.os, windows) 
+        run: |
+          git clone --depth 1 git://github.com/pyvista/gl-ci-helpers.git
+          powershell gl-ci-helpers/appveyor/install_opengl.ps1
+      - name: nix_opengl
+        if: contains(matrix.os, ubuntu) || contains(matrix.os, macos) 
+        run: |
+          export DISPLAY=":99.0"
+          /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -ac -screen 0 1280x1024x24
+      - name: doit env_capture
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          doit env_capture
+      - name: doit test_flakes
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          doit test_flakes
+      - name: doit test_unit
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          doit test_unit
+      - name: test examples
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          doit test_examples
