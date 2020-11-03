@@ -48,7 +48,6 @@ jobs:
           eval "$(conda shell.bash hook)"
           conda activate test-environment
           conda list
-          conda install -c conda-forge mesalib
           doit develop_install ${{ env.CHANS_DEV}} -o examples -o recommended -o tests -o build
           bokeh sampledata
           echo "-----"
@@ -61,6 +60,7 @@ jobs:
       - name: nix_opengl
         if: contains(matrix.os, 'ubuntu') || contains(matrix.os, 'macos') 
         run: |
+          conda install -c conda-forge mesalib
           export DISPLAY=":99.0"
           /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -ac -screen 0 1280x1024x24
       - name: doit env_capture
