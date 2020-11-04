@@ -36,7 +36,7 @@ a.navbar-brand {
   text-decoration-style: initial;
   text-decoration-color: initial;
   font-weight: 400;
-  font-size: 1.5em;
+  font-size: 2.0em;
   line-height: 2em;
   white-space: nowrap;
 }
@@ -64,7 +64,7 @@ img.app-logo {
 }
 
 #content {
-  height: calc(100vh - 70px);
+  height: calc(100vh - 76px);
   margin: 0px;
   width: 100vw;
   display: flex;
@@ -84,7 +84,7 @@ img.app-logo {
   transition: all 0.2s cubic-bezier(0.945, 0.020, 0.270, 0.665);
   transform-origin: center left; /* Set the transformed position of sidebar to center left side. */
   width: 300px;
-  height: calc(100vh - 70px);
+  height: calc(100vh - 76px);
   overflow-y: scroll;
   padding: 10px;
 }
