@@ -28,6 +28,7 @@ env:
 
 stages:
   - test
+    if: (tag =~ ^v(\d+|\.)+[^a-z]\d+$) OR (tag =~ ^v(\d+|\.)+[^a-z]\d+))
   - name: conda_dev_package
     if: tag =~ ^v(\d+|\.)+([a-z]|rc)\d+$
   - name: conda_package
