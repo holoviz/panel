@@ -20,8 +20,9 @@ from bokeh.models.widgets import (
     FileInput as _BkFileInput, TextAreaInput as _BkTextAreaInput,
     NumericInput as _BkNumericInput)
 
+from ..layout import Column
 from ..util import as_unicode
-from .base import Widget
+from .base import Widget, CompositeWidget
 
 
 class TextInput(Widget):
@@ -432,6 +433,47 @@ class DatetimeInput(LiteralInput):
             msg['value'] = value
         msg['title'] = self.name
         return msg
+
+
+class DatetimeRangeInput(CompositeWidget):
+
+    value = param.Tuple(default=(None, None), length=2)
+
+    start = param.Date(default=None)
+
+    end = param.Date(default=None)
+
+    _composite_type = Column
+
+    def __init__(self, **params):
+        self._start = DatetimeInput(sizing_mode='stretch_width')
+        self._end = DatetimeInput(sizing_mode='stretch_width')
+        super().__init__(**params)
+        self._start.name = self.name
+        self._composite.extend([self._start, self._end])
+        self._updating = False
+        self._update_widgets()
+
+    @param.depends('_start.value', '_end.value', watch=True)
+    def _update_start(self):
+        if self._updating:
+            return
+        try:
+            self._updating = True
+            self.value = (self._start.value, self._end.value)
+        finally:
+            self._updating = False
+
+    @param.depends('value', 'start', 'end', 'name', watch=True)
+    def _update_widgets(self):
+        if self._updating:
+            return
+        try:
+            self._updating = True
+            self._start.param.set_param(value=self.value[0], start=self.start, end=self.end, name=self.name)
+            self._end.param.set_param(value=self.value[1], start=self.start, end=self.end)
+        finally:
+            self._updating = False
 
 
 class Checkbox(Widget):
