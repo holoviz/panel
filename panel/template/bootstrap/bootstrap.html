@@ -65,13 +65,19 @@
     {% endif %}
 
     <div class="col mh-100 float-left" id="main">
-      {% for doc in docs %}
-      {% for root in doc.roots %}
-      {% if "main" in root.tags %}
-      {{ embed(root) | indent(4) }}
+      {% if main_max_width %}
+        <div style="margin-left: auto; margin-right: auto;max-width: {{main_max_width}}">
       {% endif %}
-      {% endfor %}
-      {% endfor %}
+          {% for doc in docs %}
+          {% for root in doc.roots %}
+          {% if "main" in root.tags %}
+          {{ embed(root) | indent(6) }}
+          {% endif %}
+          {% endfor %}
+          {% endfor %}
+      {% if main_max_width %}
+        </div>
+      {% endif %}
 	  <div id="pn-Modal" class="pn-modal mdc-top-app-bar--fixed-adjust">
 		<div class="pn-modal-content">
 		  <span class="pn-modalclose" id="pn-closeModal">&times;</span>
