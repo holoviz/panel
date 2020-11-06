@@ -21,6 +21,7 @@ from .input import (  # noqa
     Checkbox,
     DatetimeInput,
     DatePicker,
+    DatetimeRangeInput,
     FileInput,
     LiteralInput,
     StaticText,
