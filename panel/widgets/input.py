@@ -446,9 +446,9 @@ class DatetimeRangeInput(CompositeWidget):
     _composite_type = Column
 
     def __init__(self, **params):
-        self._text = StaticText(margin=(5, 0, 0, 5), style={'white-space': 'nowrap'})
-        self._start = DatetimeInput(sizing_mode='stretch_width')
-        self._end = DatetimeInput(sizing_mode='stretch_width')
+        self._text = StaticText(margin=(5, 0, 0, 0), style={'white-space': 'nowrap'})
+        self._start = DatetimeInput(sizing_mode='stretch_width', margin=(5, 0, 0, 0))
+        self._end = DatetimeInput(sizing_mode='stretch_width', margin=(5, 0, 0, 0))
         super().__init__(**params)
         self._msg = ''
         self._composite.extend([self._text, self._start, self._end])

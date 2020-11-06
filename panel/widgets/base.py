@@ -171,13 +171,15 @@ class CompositeWidget(Widget):
         super(CompositeWidget, self).__init__(**params)
         layout = {p: getattr(self, p) for p in Layoutable.param
                   if getattr(self, p) is not None}
+        if layout.get('width', self.width) is None and not 'sizing_mode' in layout:
+            layout['sizing_mode'] = 'stretch_width'
         self._composite = self._composite_type(**layout)
         self._models = self._composite._models
         self.param.watch(self._update_layout_params, list(Layoutable.param))
 
     def _update_layout_params(self, *events):
-        for event in events:
-            setattr(self._composite, event.name, event.new)
+        updates = {event.name: event.new for event in events}
+        self._composite.param.set_param(**updates)
 
     def select(self, selector=None):
         """
