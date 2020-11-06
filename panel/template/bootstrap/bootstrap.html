@@ -71,7 +71,7 @@
           {% for doc in docs %}
           {% for root in doc.roots %}
           {% if "main" in root.tags %}
-          {{ embed(root) | indent(4) }}
+          {{ embed(root) | indent(6) }}
           {% endif %}
           {% endfor %}
           {% endfor %}
