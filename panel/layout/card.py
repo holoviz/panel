@@ -88,5 +88,5 @@ class Card(Column):
             header = self._header_layout._models[ref][0]
         else:
             header = self._header_layout._get_model(doc, root, model, comm)
-        objects = super(Card, self)._get_objects(model, old_objects, doc, root)
+        objects = super(Card, self)._get_objects(model, old_objects, doc, root, comm)
         return [header]+objects
