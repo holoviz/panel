@@ -175,7 +175,7 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
 
     value = param.Parameter()
 
-    value_throttled = param.Parameter()
+    value_throttled = param.Parameter(constant=True)
 
     formatter = param.String(default='%.3g')
 
@@ -204,8 +204,6 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
                              'ensure that the supplied value '
                              'is one of the declared options.'
                              % self.value)
-        if self.value_throttled is None:
-            self.value_throttled = self.value
 
         self._text = StaticText(margin=(5, 0, 0, 5), style={'white-space': 'nowrap'})
         self._slider = None
@@ -252,14 +250,16 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
 
         values = self.values
         if getattr(self, event.name) not in values:
-            setattr(self, event.name, values[0])
+            with param.edit_constant(self):
+                setattr(self, event.name, values[0])
             return
         index = self.values.index(getattr(self, event.name))
         if self._syncing:
             return
         try:
             self._syncing = True
-            setattr(self._slider, event.name, index)
+            with param.edit_constant(self._slider):
+                setattr(self._slider, event.name, index)
         finally:
             self._syncing = False
 
@@ -300,7 +300,8 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
             return
         try:
             self._syncing = True
-            setattr(self, event.name, self.values[event.new])
+            with param.edit_constant(self):
+                setattr(self, event.name, self.values[event.new])
         finally:
             self._syncing = False
 
