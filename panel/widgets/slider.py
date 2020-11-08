@@ -210,7 +210,8 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
         self._composite = Column(self._text, self._slider)
         self._update_options()
         self.param.watch(self._update_options, ['options', 'formatter'])
-        self.param.watch(self._update_value, ['value'])
+        self.param.watch(self._update_value, 'value')
+        self.param.watch(self._update_value, 'value_throttled')
         self.param.watch(self._update_style, self._style_params)
 
     def _update_options(self, *events):
@@ -233,20 +234,32 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
         )
         self._jslink = self._slider.jslink(self._text, code={'value': js_code})
         self._slider.param.watch(self._sync_value, 'value')
+        self._slider.param.watch(self._sync_value, 'value_throttled')
         self._text.value = labels[value]
         self._composite[1] = self._slider
 
     def _update_value(self, event):
+        """
+        This will update the IntSlider (behind the scene)
+        based on changes to the DiscreteSlider (front).
+
+        _syncing options is to avoid infinite loop.
+
+        event.name is either value or value_throttled.
+        """
+
         values = self.values
-        if self.value not in values:
-            self.value = values[0]
+        if getattr(self, event.name) not in values:
+            with param.edit_constant(self):
+                setattr(self, event.name, values[0])
             return
-        index = self.values.index(self.value)
+        index = self.values.index(getattr(self, event.name))
         if self._syncing:
             return
         try:
             self._syncing = True
-            self._slider.value = index
+            with param.edit_constant(self._slider):
+                setattr(self._slider, event.name, index)
         finally:
             self._syncing = False
 
@@ -274,11 +287,21 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
         self._composite.param.set_param(**col_style)
 
     def _sync_value(self, event):
+        """
+        This will update the DiscreteSlider (front)
+        based on changes to the IntSlider (behind the scene).
+
+        _syncing options is to avoid infinite loop.
+
+        event.name is either value or value_throttled.
+        """
+
         if self._syncing:
             return
         try:
             self._syncing = True
-            self.value = self.values[event.new]
+            with param.edit_constant(self):
+                setattr(self, event.name, self.values[event.new])
         finally:
             self._syncing = False
 
