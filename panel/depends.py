@@ -7,10 +7,9 @@ from .widgets import Widget
 ipywidget_classes = {}
 
 
-def param_value_if_widget(arg, throttled):
+def param_value_if_widget(arg, throttled=False):
     if isinstance(arg, Widget):
         if throttled is True and hasattr(arg, 'value_throttled'):
-            arg.value = arg.value_throttled
             return arg.param.value_throttled
         else:
             return arg.param.value
@@ -61,7 +60,7 @@ def depends(*args, throttled=False, **kwargs):
     return param.depends(*updated_args, **updated_kwargs)
 
 
-def bind(function, *args, **kwargs):
+def bind(function, *args, throttled=False, **kwargs):
     """
     Given a function, returns a wrapper function that binds the values
     of some or all arguments to Parameter values and expresses Param
@@ -97,8 +96,8 @@ def bind(function, *args, **kwargs):
     Returns a new function with the args and kwargs bound to it and
     annotated with all dependencies.
     """
-    updated_args = [param_value_if_widget(a) for a in args]
-    updated_kwargs = {k: param_value_if_widget(v) for k, v in kwargs.items()}
+    updated_args = [param_value_if_widget(a, throttled) for a in args]
+    updated_kwargs = {k: param_value_if_widget(v, throttled) for k, v in kwargs.items()}
     return _param_bind(function, *updated_args, **updated_kwargs)
 
 
