@@ -200,8 +200,7 @@ class interactive(PaneBase):
                 self._inner_layout[0] = new_pane
                 self._internal = internal
 
-            if self.throttled is True and hasattr(widget, 'value_throttled'):
-                widget.value = widget.value_throttled
+            if self.throttled and hasattr(widget, 'value_throttled'):
                 v = 'value_throttled'
             else:
                 v = 'value'
@@ -470,7 +469,6 @@ class _InteractFactory(object):
             self = type(self)(self.cls, opts, kw)
 
         f = __interact_f
-
         if f is None:
             # This branch handles the case 3
             # @interact(a=30, b=40)
@@ -481,7 +479,6 @@ class _InteractFactory(object):
             return self
         elif 'throttled' in check_argspec(f).args:
             raise ValueError('A function cannot have "throttled" as an argument')
-
 
         # positional arg support in: https://gist.github.com/8851331
         # Handle the cases 1 and 2
