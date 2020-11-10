@@ -26,8 +26,29 @@ SPINNERS = {
     "Panel Breath": "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel/master/assets/images/spinners/spinner_panel_breath_light_400_340.gif",
     "Panel Rotating": "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel/master/assets/images/spinners/spinner_panel_rotate_400_400.gif",
     "Super": "https://csf.com.au/tools/retirement-modeller/images/loading.gif",
+    "Material Blue gif": "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel-assets/master/spinners/material/bar_chart_blue.gif",
+    "Material Blue svg": "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel-assets/master/spinners/material/bar_chart_blue.svg",
+    "Material Cyan gif": "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel-assets/master/spinners/material/bar_chart_cyan.gif",
+    "Material Cyan svg": "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel-assets/master/spinners/material/bar_chart_cyan.svg",
+    "Material Deep_purple gif": "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel-assets/master/spinners/material/bar_chart_deep_purple.gif",
+    "Material Deep_purple svg": "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel-assets/master/spinners/material/bar_chart_deep_purple.svg",
+    "Material Gray gif": "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel-assets/master/spinners/material/bar_chart_gray.gif",
+    "Material Gray svg": "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel-assets/master/spinners/material/bar_chart_gray.svg",
+    "Material Green gif": "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel-assets/master/spinners/material/bar_chart_green.gif",
+    "Material Green svg": "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel-assets/master/spinners/material/bar_chart_green.svg",
+    "Material Indigo gif": "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel-assets/master/spinners/material/bar_chart_indigo.gif",
+    "Material Indigo svg": "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel-assets/master/spinners/material/bar_chart_indigo.svg",
+    "Material Light_blue gif": "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel-assets/master/spinners/material/bar_chart_light_blue.gif",
+    "Material Light_blue svg": "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel-assets/master/spinners/material/bar_chart_light_blue.svg",
+    "Material Pink gif": "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel-assets/master/spinners/material/bar_chart_pink.gif",
+    "Material Pink svg": "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel-assets/master/spinners/material/bar_chart_pink.svg",
+    "Material Purple gif": "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel-assets/master/spinners/material/bar_chart_purple.gif",
+    "Material Purple svg": "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel-assets/master/spinners/material/bar_chart_purple.svg",
+    "Material Red gif": "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel-assets/master/spinners/material/bar_chart_red.gif",
+    "Material Red svg": "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel-assets/master/spinners/material/bar_chart_red.svg",
+    "Material Teal gif": "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel-assets/master/spinners/material/bar_chart_teal.gif",
+    "Material Teal svg": "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel-assets/master/spinners/material/bar_chart_teal.svg",
 }
-
 
 def test_add_css_class():
     # Given
