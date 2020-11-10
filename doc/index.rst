@@ -85,10 +85,10 @@ Usage
 
 Panel can be used in a wide range of environments:
 
-Command line
-============
+Editor + Server
+===============
 
-When working on the command line, just put your Panel code in a simple .py script, mark the objects you want to render as `.servable()`, and launch a server with `panel serve my_script.py --show` to open a browser tab showing your app or dashboard and backed by a live Python process.
+You can edit your Panel code as a .py file in any text editor, marking the objects you want to render as `.servable()`, then launch a server with `panel serve my_script.py --show` to open a browser tab showing your app or dashboard and backed by a live Python process.
 
 JupyterLab and Classic notebook
 ===============================
@@ -110,7 +110,11 @@ nteract
 
 nteract is another notebook environment which supports rendering ipywidgets, so just like VSCode you can make use of that to get fully interactive Panel output. Install `jupyter_bokeh` and then use `pn.extension(comms='ipywidgets')`.
 
-Notebooks created with either `comms='vscode'` or `comms='colab'` will still work outside of those environments, but less efficiently, so it's best to remove those options when sharing such notebooks.
+Other environments
+==================
+
+Panel widgets may also work interactively in other notebook environments or other editors with embedded Python processes, using either `pn.extension()` or `pn.extension(comms='ipywidgets')`. However, if the environment does not support Jupyter "comms" (communication channels) and/or ipywidgets, you will notice that some or all interactive functionality is missing, typically because events in JavaScript have no way to reach Python and vice versa. In such cases you can either request ipywidgets support from the editor or environment, or else use the Editor + Server approach above.
+
 
 Sponsors
 --------
