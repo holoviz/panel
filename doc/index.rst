@@ -61,7 +61,7 @@ or using PyPI::
 
   pip install panel
 
-Support for classic Jupyter Notebook is included with Panel. If you want to work with JupyterLab, you will also need to install the optional PyViz JupyterLab extension::
+Support for classic Jupyter Notebook is included with Panel. If you want to work with JupyterLab, you will also need to install the PyViz JupyterLab extension::
 
   conda install -c conda-forge jupyterlab
   jupyter labextension install @pyviz/jupyterlab_pyviz
@@ -75,10 +75,42 @@ Once you've installed Panel, you can get your own copy of all the notebooks used
   panel examples
   cd panel-examples
 
-And then you can launch Jupyter to explore them yourself using either Jupyter Notebook or JupyterLab::
+And then you can launch Jupyter to explore them yourself using either Jupyter Notebook or JupyterLab (having first installed the extension!)::
 
   jupyter notebook
   jupyter lab
+
+Usage
+-----
+
+Panel can be used in a wide range of environments:
+
+Command line
+============
+
+When working on the command line, just put your Panel code in a simple .py script, mark the objects you want to render as `.servable()`, and launch a server with `panel serve my_script.py --show` to open a browser tab showing your app or dashboard and backed by a live Python process.
+
+JupyterLab and Classic notebook
+===============================
+
+In the classic Jupyter notebook environment and JupyterLab, first make sure to load the `pn.extension()`. Panel objects will then render themselves if they are the last item in a notebook cell.
+
+Google Colab
+============
+
+In Google Colaboratory, rendering for each notebook cell is isolated, which means that every cell must reload the Panel extension code separately. Panel can do this automatically when you first load the extension if you declare that you are running in Colab: `pn.extension(comms='colab')`. Otherwise you will need to put `pn.extension()` in each cell where you want to display Panel output. Either way, you should be able to have access to all of Panel's functionality, though with a larger notebook size than with other notebook technologies that allow display code to be shared across cells.
+
+VSCode
+======
+
+Visual Studio Code (VSCode) versions 2020.4.74986 and later support ipywidgets, and Panel objects can be used as ipywidgets since Panel 0.10 thanks to `jupyter_bokeh`, which means that you can now use Panel components interactively in VSCode.  Ensure you install `jupyter_bokeh` with `pip install jupyter_bokeh` or `conda install -c bokeh jupyter_bokeh` and then enable the extension with `pn.extension(comms='vscode')`.
+
+nteract
+=======
+
+nteract is another notebook environment which supports rendering ipywidgets, so just like VSCode you can make use of that to get fully interactive Panel output. Install `jupyter_bokeh` and then use `pn.extension(comms='ipywidgets')`.
+
+Notebooks created with either `comms='vscode'` or `comms='colab'` will still work outside of those environments, but less efficiently, so it's best to remove those options when sharing such notebooks.
 
 Sponsors
 --------
