@@ -52,7 +52,6 @@ If used in JupyterLab, Panel requires the pyviz labextension to be installed:
 jupyter labextension install @pyviz/jupyterlab_pyviz
 ```
 
-
 ## Usage
 
 Panel can be used in a wide range of environments:
@@ -71,11 +70,13 @@ In Google Colaboratory, rendering for each notebook cell is isolated, which mean
 
 ### VSCode
 
-Visual Studio Code (VSCode) versions 2020.4.74986 and later support ipywidgets, and Panel objects can be used as ipywidgets since Panel 0.10 thanks to `jupyter_bokeh`, which means that you can now use Panel components interactively in VSCode.  Ensure you install `jupyter_bokeh` with `pip install jupyter_bokeh` or `conda install -c bokeh jupyter_bokeh` and then enable the extension with  `pn.extension(comms='vscode')`.
+Visual Studio Code (VSCode) versions 2020.4.74986 and later support ipywidgets, and Panel objects can be used as ipywidgets since Panel 0.10 thanks to `jupyter_bokeh`, which means that you can now use Panel components interactively in VSCode.  Ensure you install `jupyter_bokeh` with `pip install jupyter_bokeh` or `conda install -c bokeh jupyter_bokeh` and then enable the extension with `pn.extension(comms='vscode')`.
 
+### nteract
 
-Notebooks created with either `comms='vscode'` or `comms='colab')` will still work outside of those environments, but less efficiently, so it's best to remove those options when sharing such notebooks.
+nteract is another notebook environment which supports rendering ipywidgets, so just like VSCode you can make use of that to get fully interactive Panel output. Install `jupyter_bokeh` and then use `pn.extension(comms='ipywidgets')`.
 
+Notebooks created with either `comms='vscode'` or `comms='colab'` will still work outside of those environments, but less efficiently, so it's best to remove those options when sharing such notebooks.
 
 ## Sponsors
 
