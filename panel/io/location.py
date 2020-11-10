@@ -53,14 +53,6 @@ class Location(Syncable):
         self._synced = []
         self._syncing = False
         self.param.watch(self._update_synced, ['search'])
-        self.param.watch(self._onload, ['href'])
-
-    def _onload(self, event):
-        # Skip if href was not previously empty or not in a server context
-        if event.old or not state.curdoc:
-            return
-        for cb in state._onload.get(state.curdoc, []):
-            cb()
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         model = _BkLocation(**self._process_param_change(self._init_properties()))

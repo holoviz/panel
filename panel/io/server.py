@@ -24,7 +24,6 @@ from tornado.websocket import WebSocketHandler
 from tornado.web import RequestHandler, StaticFileHandler
 from tornado.wsgi import WSGIContainer
 
-from ..util import bokeh_version
 from .state import state
 
 #---------------------------------------------------------------------
@@ -71,8 +70,7 @@ def init_doc(doc):
         'ended': None,
         'user_agent': state.headers.get('User-Agent')
     }
-    if bokeh_version >= '2.2.0':
-        doc.on_event('document_ready', state._init_session)
+    doc.on_event('document_ready', state._init_session)
     return doc
 
 
