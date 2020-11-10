@@ -53,7 +53,7 @@ class ReactTemplate(BasicTemplate):
 
     def __init__(self, **params):
         if 'main' not in params:
-            params['main'] = GridSpec(ncols=12)
+            params['main'] = GridSpec(ncols=12, mode='override')
         super().__init__(**params)
         self._update_render_vars()
 

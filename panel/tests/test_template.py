@@ -200,3 +200,17 @@ def test_constructor_grid_spec():
     grid = GridSpec(ncols=12)
     grid[0:2, 3:4]=item
     ReactTemplate(main=grid)
+
+def test_grid_template_override():
+    item = Markdown("First")
+    override = Markdown("Second")
+    template = ReactTemplate()
+    template.main[0, 0] = item
+    template.main[0, 0] = override
+
+    objs = list(template._render_items.values())[2:]
+    assert len(objs) == 1
+    ((obj, tags),) = objs
+
+    assert obj.object == "Second"
+    assert tags == ['main']

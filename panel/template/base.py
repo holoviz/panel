@@ -184,10 +184,12 @@ class BaseTemplate(param.Parameterized, ServableMixin):
             import holoviews as hv
             loaded = hv.extension._loaded
         if not loaded:
-            param.main.warning('Displaying Panel objects in the notebook '
-                               'requires the panel extension to be loaded. '
-                               'Ensure you run pn.extension() before '
-                               'displaying objects in the notebook.')
+            param.main.param.warning(
+                'Displaying Panel objects in the notebook requires '
+                'the panel extension to be loaded. Ensure you run '
+                'pn.extension() before displaying objects in the '
+                'notebook.'
+            )
             return None
 
         try:
@@ -598,7 +600,7 @@ class BasicTemplate(BaseTemplate):
         if class_ is ListLike:
             return ListLike(objects=value)
         if class_ is GridSpec:
-            grid = GridSpec(ncols=12)
+            grid = GridSpec(ncols=12, mode='override')
             for index, item in enumerate(value):
                 grid[index, :]=item
             return grid
