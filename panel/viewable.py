@@ -521,7 +521,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         if config.comms in ('vscode', 'ipywidgets'):
             widget = ipywidget(self)
             if hasattr(widget, '_repr_mimebundle_'):
-                return widget._repr_mimebundle(include, exclude)
+                return widget._repr_mimebundle_(include, exclude)
             plaintext = repr(widget)
             if len(plaintext) > 110:
                 plaintext = plaintext[:110] + '…'
@@ -537,8 +537,8 @@ class Viewable(Renderable, Layoutable, ServableMixin):
             if config.comms == 'vscode':
                 from IPython.display import display
                 display(data, raw=True)
-                return {'text/html': '<div style="display: none"></div>'}
-            return data
+                return {'text/html': '<div style="display: none"></div>'}, {}
+            return data, {}
 
         if not loaded:
             self.param.warning('Displaying Panel objects in the notebook '
