@@ -52,6 +52,26 @@ Panel requires the pyviz labextension installed to be working in JupyterLab:
 jupyter labextension install @pyviz/jupyterlab_pyviz
 ```
 
+## Usage
+
+Panel can be used in a wide range of environments from basic commandline usage by serving a script to usage in a notebook environment.
+
+### Commandline
+
+When working on the commandline put your Panel code in a simple script, mark the objects you want to render as `.servable()` and launch a server with `panel serve my_script.py --show` to open a browser with your app or dashboard.
+
+### JupyterLab and Classic notebook
+
+In the classic notebook environment and JupyterLab make sure to load the `pn.extension()`. Once loaded Panel objects will render themselves.
+
+### Google Colab
+
+In Google Colab rendering each cell is isolated so each cell must load the extension separately. However if you use `pn.extension(comms='colab')` this will happen automatically.
+
+### VSCode
+
+In Visual Studio Code (VSCode) ipywidgets are now supported, which means that thanks to ipywidgets support in `jupyter_bokeh` we can now use interactive Panel components. Ensure you install `jupyter_bokeh` with `pip install jupyter_bokeh` or `conda install -c bokeh jupyter_bokeh` and then enable the extension with  `pn.extension(comms='vscode')`.
+
 ## Sponsors
 
 The Panel project is grateful for the sponsorship by the organizations and companies below:
