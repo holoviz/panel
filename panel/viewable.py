@@ -518,7 +518,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
             loaded = hv.extension._loaded
 
 
-        if config.comms != 'default':
+        if config.comms in ('vscode', 'ipywidgets'):
             widget = ipywidget(self)
             if hasattr(widget, '_repr_mimebundle_'):
                 return widget._repr_mimebundle(include, exclude)
@@ -546,6 +546,10 @@ class Viewable(Renderable, Layoutable, ServableMixin):
                                'Ensure you run pn.extension() before '
                                'displaying objects in the notebook.')
             return None
+
+        if config.comms == 'colab':
+            from .io.notebook import load_notebook
+            load_notebook(config.inline)
 
         try:
             from IPython import get_ipython

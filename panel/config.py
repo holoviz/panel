@@ -90,7 +90,7 @@ class _config(param.Parameterized):
         Specify the default sizing mode behavior of panels.""")
 
     _comms = param.ObjectSelector(
-        default='default', objects=['default', 'ipywidgets', 'vscode'], doc="""
+        default='default', objects=['default', 'ipywidgets', 'vscode', 'colab'], doc="""
         Whether to render output in Jupyter with the default Jupyter
         extension or use the jupyter_bokeh ipywidget model.""")
 
