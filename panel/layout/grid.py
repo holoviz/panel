@@ -433,6 +433,7 @@ class GridSpec(Panel):
             grid[t:b, l:r] += 1
 
         overlap_grid = grid>1
+        new_objects = OrderedDict(self.objects)
         if (overlap_grid).any():
             overlapping = ''
             objects = []
@@ -460,6 +461,6 @@ class GridSpec(Panel):
             else:
                 objects = [list(o)[0][0] for o in subgrid.flatten()]
             for dkey in objects:
-                del self.objects[dkey]
-        self.objects[key] = panel(obj)
-        self.param.trigger('objects')
+                del new_objects[dkey]
+        new_objects[key] = panel(obj)
+        self.objects = new_objects
