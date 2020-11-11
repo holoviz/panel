@@ -27,8 +27,8 @@ env:
     - PYTHON_VERSION=3.7
 
 stages:
-  - test
-    if: ((tag =~ ^v(\d+|\.)+[^a-z]\d+$) OR (tag =~ ^v(\d+|\.)+([a-z]|rc)\d+$))
+  - name: test
+    if: tag =~ ^v(\d+|\.)+([a-z]|rc)?\d?$
   - name: conda_dev_package
     if: tag =~ ^v(\d+|\.)+([a-z]|rc)\d+$
   - name: conda_package
