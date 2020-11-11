@@ -524,14 +524,20 @@ class BasicTemplate(BaseTemplate):
         elif event.obj is self.modal:
             tag = 'modal'
 
-        old = event.old if isinstance(event.old, list) else event.old.values()
+        old = event.old if isinstance(event.old, list) else list(event.old.values())
         for obj in old:
             ref = str(id(obj))
             if ref in self._render_items:
                 del self._render_items[ref]
 
-        labels = {}
         new = event.new if isinstance(event.new, list) else event.new.values()
+        for o in new:
+            if o not in old:
+                for hvpane in o.select(HoloViews):
+                    if self.theme.bokeh_theme:
+                        hvpane.theme = self.theme.bokeh_theme
+
+        labels = {}
         for obj in new:
             ref = str(id(obj))
             if obj.name.startswith(type(obj).__name__):
@@ -606,6 +612,7 @@ class BasicTemplate(BaseTemplate):
             return grid
 
         return value
+
 
 class Template(BaseTemplate):
     """
