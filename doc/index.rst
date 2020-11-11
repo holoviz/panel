@@ -83,7 +83,7 @@ And then you can launch Jupyter to explore them yourself using either Jupyter No
 Usage
 -----
 
-Panel can be used in a wide range of environments:
+Panel can be used in a wide range of development environments:
 
 Editor + Server
 ===============
@@ -103,17 +103,16 @@ In Google Colaboratory, rendering for each notebook cell is isolated, which mean
 VSCode
 ======
 
-Visual Studio Code (VSCode) versions 2020.4.74986 and later support ipywidgets, and Panel objects can be used as ipywidgets since Panel 0.10 thanks to `jupyter_bokeh`, which means that you can now use Panel components interactively in VSCode.  Ensure you install `jupyter_bokeh` with `pip install jupyter_bokeh` or `conda install -c bokeh jupyter_bokeh` and then enable the extension with `pn.extension(comms='vscode')`.
+Visual Studio Code (VSCode) versions 2020.4.74986 and later support ipywidgets, and Panel objects can be used as ipywidgets since Panel 0.10 thanks to `jupyter_bokeh`, which means that you can now use Panel components interactively in VSCode. Ensure you install `jupyter_bokeh` with `pip install jupyter_bokeh` or `conda install -c bokeh jupyter_bokeh` and then enable the extension with `pn.extension(comms='vscode')`.
 
-nteract
-=======
+nteract and other ipywidgets notebooks
+======================================
 
-nteract is another notebook environment which supports rendering ipywidgets, so just like VSCode you can make use of that to get fully interactive Panel output. Install `jupyter_bokeh` and then use `pn.extension(comms='ipywidgets')`.
+In other notebook environments that support rendering ipywidgets interactively, such as nteract, you can use the same underlying ipywidgets support as for vscode: Install `jupyter_bokeh` and then use `pn.extension(comms='ipywidgets')`.
 
 Other environments
 ==================
-
-Panel widgets may also work interactively in other notebook environments or other editors with embedded Python processes, using either `pn.extension()` or `pn.extension(comms='ipywidgets')`. However, if the environment does not support Jupyter "comms" (communication channels) and/or ipywidgets, you will notice that some or all interactive functionality is missing, typically because events in JavaScript have no way to reach Python and vice versa. In such cases you can either request ipywidgets support from the editor or environment, or else use the Editor + Server approach above.
+If your development environment offers embedded Python processes but does not support ipywidgets or Jupyter "comms" (communication channels), you will notice that some or all interactive functionality is missing. Some widgets that operate only in JavaScript will work fine, but others require communication channels between JavaScript and Python. In such cases you can either request ipywidgets or Panel support from the editor or environment, or else use the Editor + Server approach above.
 
 
 Sponsors
