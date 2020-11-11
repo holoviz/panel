@@ -99,7 +99,6 @@ def write_bundled_files(name, files, bundle_dir):
             f.write(response.content.decode('utf-8'))
 
 def write_bundled_tarball(name, tarball, bundle_dir):
-    print(tarball)
     model_name = name.split('.')[-1].lower()
     response = requests.get(tarball['tar'])
     f = io.BytesIO()
@@ -144,7 +143,6 @@ def bundle_resources():
             jsbundle = getattr(cls, '__tarball__', None)
             if ((jsfiles is None and prev_jsfiles is not None) or
                 (jsfiles is not None and jsfiles != prev_jsfiles)):
-                print(prev_cls, prev_jsbundle)
                 if prev_jsbundle:
                     js_files[prev_cls.__name__] = prev_jsbundle
                 else:
@@ -161,7 +159,6 @@ def bundle_resources():
                 break
             prev_cls = cls
 
-    print(js_files)
     for name, jsfiles in js_files.items():
         if isinstance(jsfiles, dict):
             write_bundled_tarball(name, jsfiles, bundle_dir)
