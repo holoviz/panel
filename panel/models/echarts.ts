@@ -10,12 +10,14 @@ export class EChartsView extends HTMLBoxView {
     this.connect(this.model.properties.data.change, () => this._plot())
     const {width, height, renderer, theme} = this.model.properties
     this.on_change([width, height], () => this._resize())
-    this.on_change([theme, renderer], () => this._rerender())
+    this.on_change([theme, renderer], () => this.render())
   }
 
   render(): void {
     super.render()
     const config = {width: this.model.width, height: this.model.height, renderer: this.model.renderer}
+    if (this._chart != null)
+      (window as any).echarts.dispose(this._chart);
     this._chart = (window as any).echarts.init(this.el, this.model.theme, config);
     this._plot()
   }
@@ -29,11 +31,6 @@ export class EChartsView extends HTMLBoxView {
     if ((window as any).echarts == null)
       return
     this._chart.setOption(this.model.data);
-  }
-
-  _rerender(): void {
-    (window as any).echarts.dispose(this._chart);
-    this.render();
   }
 
   _resize(): void {
