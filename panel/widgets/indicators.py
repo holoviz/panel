@@ -431,7 +431,7 @@ class Dial(ValueIndicator):
         colors = self.colors or []
         for (val, _), (_, clr) in zip(colors[:-1], colors[1:]):
             tangle = start-(distance*val)
-            if (vmin + val * (vmax-vmin)) <= self.value:
+            if (vmin + val * (vmax-vmin)) <= value:
                 continue
             x0, y0 = np.cos(tangle), np.sin(tangle)
             x1, y1 = x0*inner_radius, y0*inner_radius
