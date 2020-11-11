@@ -13,6 +13,7 @@ from functools import partial
 import param
 
 from bokeh.models import Spacer as _BkSpacer, Range1d
+from bokeh.themes.theme import Theme
 
 from ..io import state, unlocked
 from ..layout import Column, WidgetBox, HSpacer, VSpacer, Row
@@ -45,6 +46,10 @@ class HoloViews(PaneBase):
         Explicit renderer instance to use for rendering the HoloViews
         plot. Overrides the backend.""")
 
+    theme = param.ClassSelector(default=None, class_=(Theme, str),
+                                allow_None=True, doc="""
+        Bokeh theme to apply to the HoloViews plot.""")
+
     widget_location = param.ObjectSelector(default='right_top', objects=[
         'left', 'bottom', 'right', 'top', 'top_left', 'top_right',
         'bottom_left', 'bottom_right', 'left_top', 'left_bottom',
@@ -71,8 +76,9 @@ class HoloViews(PaneBase):
 
     _rename = {
         'backend': None, 'center': None, 'linked_axes': None,
-        'renderer': None, 'widgets': None, 'widget_layout': None,
-        'widget_location': None, 'widget_type': None
+        'renderer': None, 'theme': None, 'widgets': None,
+        'widget_layout': None, 'widget_location': None,
+        'widget_type': None
     }
 
     _rerender_params = ['object', 'backend']
@@ -138,6 +144,14 @@ class HoloViews(PaneBase):
     #----------------------------------------------------------------
     # Callback API
     #----------------------------------------------------------------
+
+    @param.depends('theme', watch=True)
+    def _update_theme(self, *events):
+        if self.theme is None:
+            return
+        for (model, _) in self._models.values():
+            if model.document:
+                model.document.theme = self.theme
 
     @param.depends('widget_type', 'widgets', watch=True)
     def _update_widgets(self, *events):
@@ -273,8 +287,14 @@ class HoloViews(PaneBase):
             backend = self.backend or Store.current_backend
             renderer = Store.renderers[backend]
         mode = 'server' if comm is None else 'default'
-        if backend == 'bokeh' and mode != renderer.mode:
-            renderer = renderer.instance(mode=mode)
+        if backend == 'bokeh':
+            params = {}
+            if self.theme is not None:
+                params['theme'] = self.theme
+            if mode != renderer.mode:
+                params['mode'] = mode
+            if params:
+                renderer = renderer.instance(**params)
 
         kwargs = {'margin': self.margin}
         if backend == 'bokeh' or LooseVersion(str(hv.__version__)) >= str('1.13.0'):
