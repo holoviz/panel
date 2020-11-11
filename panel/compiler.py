@@ -140,7 +140,6 @@ def bundle_resources():
         prev_cls = model
         for cls in model.__mro__[1:]:
             jsfiles = getattr(cls, '__javascript_raw__', None)
-            jsbundle = getattr(cls, '__tarball__', None)
             if ((jsfiles is None and prev_jsfiles is not None) or
                 (jsfiles is not None and jsfiles != prev_jsfiles)):
                 if prev_jsbundle:
