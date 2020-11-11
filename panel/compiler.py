@@ -3,12 +3,13 @@ Utilities for building custom models included in panel.
 """
 from __future__ import absolute_import, division, unicode_literals
 
-
 import glob
 import inspect
+import io
 import os
 import pathlib
 import shutil
+import tarfile
 
 import param
 import requests
@@ -97,7 +98,28 @@ def write_bundled_files(name, files, bundle_dir):
         with open(filename, 'w', encoding="utf-8") as f:
             f.write(response.content.decode('utf-8'))
 
+def write_bundled_tarball(name, tarball, bundle_dir):
+    model_name = name.split('.')[-1].lower()
+    response = requests.get(tarball['tar'])
+    f = io.BytesIO()
+    f.write(response.content)
+    f.seek(0)
+    tar_obj = tarfile.open(fileobj=f)
+    for tarf in tar_obj:
+        if not tarf.name.startswith(tarball['src']) or not tarf.isfile():
+            continue
+        path = tarf.name.replace(tarball['src'], '')
+        bundle_path = os.path.join(*path.split('/'))
+        dest_path = os.path.join(*tarball['dest'].split('/'))
+        filename = bundle_dir.joinpath(model_name, dest_path, bundle_path)
+        filename.parent.mkdir(parents=True, exist_ok=True)
+        fobj = tar_obj.extractfile(tarf.name)
+        content = fobj.read().decode('utf-8')
+        with open(filename, 'w', encoding="utf-8") as f:
+            f.write(content)
+    tar_obj.close()
 
+            
 def bundle_resources():
     from .config import panel_extension
     from .template.base import BasicTemplate
@@ -114,12 +136,16 @@ def bundle_resources():
         if not name.startswith('panel.'):
             continue
         prev_jsfiles = getattr(model, '__javascript_raw__', None)
+        prev_jsbundle = getattr(model, '__tarball__', None)
         prev_cls = model
         for cls in model.__mro__[1:]:
             jsfiles = getattr(cls, '__javascript_raw__', None)
             if ((jsfiles is None and prev_jsfiles is not None) or
                 (jsfiles is not None and jsfiles != prev_jsfiles)):
-                js_files[prev_cls.__name__] = prev_jsfiles
+                if prev_jsbundle:
+                    js_files[prev_cls.__name__] = prev_jsbundle
+                else:
+                    js_files[prev_cls.__name__] = prev_jsfiles
                 break
             prev_cls = cls
         prev_cssfiles = getattr(model, '__css_raw__', None)
@@ -133,7 +159,10 @@ def bundle_resources():
             prev_cls = cls
 
     for name, jsfiles in js_files.items():
-        write_bundled_files(name, jsfiles, bundle_dir)
+        if isinstance(jsfiles, dict):
+            write_bundled_tarball(name, jsfiles, bundle_dir)
+        else:
+            write_bundled_files(name, jsfiles, bundle_dir)
 
     for name, cssfiles in css_files.items():
         write_bundled_files(name, cssfiles, bundle_dir)

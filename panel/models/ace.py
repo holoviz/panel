@@ -19,8 +19,14 @@ class AcePlot(HTMLBox):
     __javascript_raw__ = [
         'https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.11/ace.js',
         'https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.11/ext-language_tools.js',
-        'https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.11/ext-modelist.min.js'
+        'https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.11/ext-modelist.js'
     ]
+
+    __tarball__ = {
+        'tar': 'https://registry.npmjs.org/ace-builds/-/ace-builds-1.4.11.tgz',
+        'src': 'package/src-min/',
+        'dest': 'ajax/libs/1.4.11'
+    }
 
     @classproperty
     def __javascript__(cls):
