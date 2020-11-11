@@ -16,19 +16,13 @@ class AcePlot(HTMLBox):
     a Bokeh plot.
     """
 
-    __javascript_raw__ = [
+    __javascript__ = [
         'https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.11/ace.js',
         'https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.11/ext-language_tools.js',
         'https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.11/ext-modelist.min.js'
     ]
 
-    @classproperty
-    def __javascript__(cls):
-        return bundled_files(cls)
-
-    @classproperty
-    def __js_skip__(cls):
-        return {'ace': cls.__javascript__}
+    __js_skip__ = __javascript__
 
     __js_require__ = {
         'paths': {
