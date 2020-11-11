@@ -190,7 +190,13 @@ class Serve(_BkServe):
                 )
             elif args.oauth_encryption_key:
                 encryption_key = args.oauth_encryption_key.encode('ascii')
-                key = base64.urlsafe_b64decode(encryption_key)
+                try:
+                    key = base64.urlsafe_b64decode(encryption_key)
+                except Exception:
+                    raise ValueError("OAuth encryption key was not a valid base64 "
+                                     "string. Generate an encryption key with "
+                                     "`panel oauth-secret` and ensure you did not "
+                                     "truncate the returned string.")
                 if len(key) != 32:
                     raise ValueError(
                         "OAuth encryption key must be 32 url-safe "
