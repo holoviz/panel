@@ -68,7 +68,8 @@ def pyvista_render_window():
     uniform = examples.load_uniform() #test structured grid
 
     scalars=sphere.points[:, 2]
-    sphere._add_point_array(scalars, 'test', set_active=True) #allow to test scalars
+    sphere.point_arrays['test'] = scalars #allow to test scalars
+    sphere.set_active_scalars('test')
 
     uniform.set_active_scalars("Spatial Cell Data")
 
