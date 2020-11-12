@@ -120,7 +120,7 @@ _tests = [
     'folium',
     'ipympl',
     'twine',
-    'pandas<1.1', # temporary fix for streamz incompatibility
+    'pandas',
     'ipython >=7.0'
 ]
 
@@ -137,7 +137,7 @@ extras_require = {
         'jupyter_bokeh',
         'django',
         'channels',
-        'pyvista',
+        'pyvista <0.27', # temporary fix for tests 
         'ipywidgets',
         'ipywidgets_bokeh',
         'ipyvolume',
