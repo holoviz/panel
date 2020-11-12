@@ -261,7 +261,7 @@ class ResponsiveGrid extends React.Component {
 
               {% set count = [] %}
               {% for doc in docs %}{% for root in doc.roots %}{% if "main" in root.tags %}
-                <div key="{{count|length + 1 }}" style={divStyle} >
+                <div key="{{count|length + 1 }}" id = {'reactcard' + "{{ count|length + 1}}"} style={divStyle} >
                   <span className="drag-handle"></span>
                   <span className="maximize"   onClick={() =>
                         this.toggleWidget("{{count|length + 1 }}")}></span>
