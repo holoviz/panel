@@ -85,11 +85,6 @@ jobs:
       stage: conda_dev_package
       env: DESC="" TRAVIS_NOCACHE=$TRAVIS_JOB_ID NPM_TAG="--tag dev" LABELS=$LABELS_DEV CHANS="-c pyviz/label/dev -c bokeh"
       install:
-        - cd panel
-        - npm install
-        - cd ..
-        - python -c 'import os,sys,fcntl; flags = fcntl.fcntl(sys.stdout, fcntl.F_GETFL); fcntl.fcntl(sys.stdout, fcntl.F_SETFL, flags&~os.O_NONBLOCK);'
-        - python -c 'import os,sys,fcntl; flags = fcntl.fcntl(sys.stdout, fcntl.F_GETFL); print(flags&os.O_NONBLOCK);'
         - doit package_build $CHANS $PKG_TEST_PYTHON --test-group=unit_deploy
       script:
         - doit package_upload --token=$ANACONDA_TOKEN $LABELS
