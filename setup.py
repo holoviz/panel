@@ -137,7 +137,7 @@ extras_require = {
         'jupyter_bokeh',
         'django',
         'channels',
-        'pyvista <0.27', # temporary fix for tests 
+        'pyvista',
         'ipywidgets',
         'ipywidgets_bokeh',
         'ipyvolume',
