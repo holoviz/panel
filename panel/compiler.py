@@ -105,10 +105,13 @@ def write_bundled_tarball(name, tarball, bundle_dir):
     f.write(response.content)
     f.seek(0)
     tar_obj = tarfile.open(fileobj=f)
+    exclude = tarball.get('exclude', [])
     for tarf in tar_obj:
         if not tarf.name.startswith(tarball['src']) or not tarf.isfile():
             continue
         path = tarf.name.replace(tarball['src'], '')
+        if any(path.startswith(exc) for exc in exclude):
+            continue
         bundle_path = os.path.join(*path.split('/'))
         dest_path = os.path.join(*tarball['dest'].split('/'))
         filename = bundle_dir.joinpath(model_name, dest_path, bundle_path)

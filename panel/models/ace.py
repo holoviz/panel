@@ -25,7 +25,8 @@ class AcePlot(HTMLBox):
     __tarball__ = {
         'tar': 'https://registry.npmjs.org/ace-builds/-/ace-builds-1.4.11.tgz',
         'src': 'package/src-min/',
-        'dest': 'ajax/libs/1.4.11'
+        'dest': 'ajax/libs/1.4.11',
+        'exclude': ['snippets']
     }
 
     @classproperty
