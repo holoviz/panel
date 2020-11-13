@@ -713,10 +713,10 @@ class Viewable(Renderable, Layoutable, ServableMixin):
            The path to save json files to
         load_path: str (default=None)
            The path or URL the json files will be loaded from.
-        embed_states: dict (default={})
-          A dictionary specifying the widget values to embed for each widget
         progress: boolean (default=True)
           Whether to report progress
+        embed_states: dict (default={})
+          A dictionary specifying the widget values to embed for each widget
         """
         return save(self, filename, title, resources, template,
                     template_variables, embed, max_states, max_opts,
