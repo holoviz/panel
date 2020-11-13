@@ -1,6 +1,32 @@
 Releases
 ========
 
+Version 0.10.2
+--------------
+
+Date: 2020-11-13
+
+This is another micro-release primarily fixing various minor bugs in functionality introduced as part of the 0.10.0 release. Many thanks to @MarcSkovMadsen, @ahuang11, @xavArtley, @Hoxbro, @jbednar and @philippjfr.
+
+Bug fixes:
+
+- Fix various issues with Template CSS (`#1663 <https://github.com/holoviz/panel/pull/1663>`__, `#1742 <https://github.com/holoviz/panel/pull/1742>`__)
+- Fix BytesIO/StringIO buffers as input to image xpanes (`#1711 <https://github.com/holoviz/panel/issues/1711>`__)
+- Fix out-of-bounds errors when assigning to `GridSpec` with fixed ncols (`#1721 <https://github.com/holoviz/panel/pull/1721>`__)
+- Fix deserialization issues for `Plotly.hover_data` (`#1722 <https://github.com/holoviz/panel/pull/>`__)
+- Fixed updating of `Alert` parameters after initialization (`#1725 <https://github.com/holoviz/panel/pull/1725>`__)
+- Fix ordering of items added to Template areas (`#1736 <https://github.com/holoviz/panel/pull/1736>`__)
+- Fix interactivity for items in Card (`#1750 <https://github.com/holoviz/panel/pull/1750>`__)
+- Ensure onload callbacks are only run once (`#1746 <https://github.com/holoviz/panel/pull/1746>`__)
+- Allow overriding items in grid based templates (`#1741 <https://github.com/holoviz/panel/pull/1741>`__)
+- Ensure `ECharts` and `ipywidget` rerender when in `Card` (`#1765 <https://github.com/holoviz/panel/pull/1765>`__)
+- Ensure template dark theme persists on HoloViews plots (`#1764 <https://github.com/holoviz/panel/pull/1764>`__)
+
+Enhancements:
+
+- Improved OAuth encryption key validation (`#1762 <https://github.com/holoviz/panel/pull/1762>`__)
+- Add `progress` option to `.save` method (`#1776 <https://github.com/holoviz/panel/pull/1776>`__)
+
 Version 0.10.1
 --------------
 
