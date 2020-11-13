@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import fcntl
 import os
 import shutil
 import sys
@@ -42,9 +41,11 @@ def _build_paneljs():
     build(panel_dir)
     print("Bundling custom model resources:")
     bundle_resources()
-    # npm can cause non-blocking stdout; so reset it just in case 
-    flags = fcntl.fcntl(sys.stdout, fcntl.F_GETFL)
-    fcntl.fcntl(sys.stdout, fcntl.F_SETFL, flags&~os.O_NONBLOCK)
+    if sys.platform != "win32":
+        # npm can cause non-blocking stdout; so reset it just in case
+        import fcntl
+        flags = fcntl.fcntl(sys.stdout, fcntl.F_GETFL)
+        fcntl.fcntl(sys.stdout, fcntl.F_SETFL, flags&~os.O_NONBLOCK)
 
 
 class CustomDevelopCommand(develop):
