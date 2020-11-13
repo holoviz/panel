@@ -227,8 +227,7 @@ class BaseTemplate(param.Parameterized, ServableMixin):
 
     def save(self, filename, title=None, resources=None, embed=False,
              max_states=1000, max_opts=3, embed_json=False,
-             json_prefix='', save_path='./', load_path=None,
-             progress=True):
+             json_prefix='', save_path='./', load_path=None):
         """
         Saves Panel objects to file.
 
@@ -254,15 +253,13 @@ class BaseTemplate(param.Parameterized, ServableMixin):
            The path to save json files to
         load_path: str (default=None)
            The path or URL the json files will be loaded from.
-        progress: boolean (default=True)
-          Whether to report progress
         """
         if embed:
             raise ValueError("Embedding is not yet supported on Template.")
 
         return save(self, filename, title, resources, self.template,
                     self._render_variables, embed, max_states, max_opts,
-                    embed_json, json_prefix, save_path, load_path, progress)
+                    embed_json, json_prefix, save_path, load_path)
 
     def server_doc(self, doc=None, title=None, location=True):
         """
