@@ -9,7 +9,7 @@ This is another micro-release primarily fixing various minor bugs in functionali
 Bug fixes:
 
 - Fix various issues with Template CSS ([#1663](https://github.com/holoviz/panel/pull/1663), [#1742](https://github.com/holoviz/panel/pull/1742))
-- Fix BytesIO/StringIO buffers as input to image xpanes ([#1711](https://github.com/holoviz/panel/issues/1711))
+- Fix BytesIO/StringIO buffers as input to image panes ([#1711](https://github.com/holoviz/panel/issues/1711))
 - Fix out-of-bounds errors when assigning to `GridSpec` with fixed ncols ([#1721](https://github.com/holoviz/panel/pull/1721))
 - Fix deserialization issues for `Plotly.hover_data` ([#1722](https://github.com/holoviz/panel/pull/))
 - Fixed updating of `Alert` parameters after initialization ([#1725](https://github.com/holoviz/panel/pull/1725))
