@@ -1,3 +1,4 @@
+from panel.layout.base import WidgetBox
 import random
 import time
 
@@ -5,50 +6,35 @@ import holoviews as hv
 import param
 
 import panel as pn
-from panel.loading_indicator import (
+from panel.io.loading import (
     _LOADING_INDICATOR_CSS_CLASS,
     _add_css_class,
     _remove_css_class,
     start_loading_indicator,
     stop_loading_indicator,
 )
+from panel.tests.io import loading_indicators
 
 DEFAULT_LOADING_INDICATOR = (
-    "https://raw.githubusercontent.com/holoviz/panel/master/panel/assets/spinner.gif"
+    "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel-assets/e6cb56375bb1c436975e09739a231fb31e628a63/spinners/default.svg"
 )
+DARK_LOADING_INDICATOR = (
+    "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel-assets/e6cb56375bb1c436975e09739a231fb31e628a63/spinners/dark.svg"
+)
+
 SPINNERS = {
     "Default": DEFAULT_LOADING_INDICATOR,
-    "Aqua": "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel/master/assets/images/spinners/spinner_aqua.png",
-    "Bricks": "https://www.inspiredled.com/wp-content/plugins/fyrelazyload/assets/img/loader.gif",
-    "Circles": "https://siegroup1.github.io/SIEGroup-Report.io/pic/login-gif-11.gif",
-    "Circles Simple": "https://ruciart.com/wp-content/themes/ruciart/assets/img/spinner.gif",
-    "Facebook": "https://www.viptogo.com/wp-content/themes/viptogo-theme/img/loader.gif",
-    "Panel Breath": "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel/master/assets/images/spinners/spinner_panel_breath_light_400_340.gif",
-    "Panel Rotating": "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel/master/assets/images/spinners/spinner_panel_rotate_400_400.gif",
-    "Super": "https://csf.com.au/tools/retirement-modeller/images/loading.gif",
-    "Material Blue gif": "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel-assets/master/spinners/material/bar_chart_blue.gif",
-    "Material Blue svg": "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel-assets/master/spinners/material/bar_chart_blue.svg",
-    "Material Cyan gif": "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel-assets/master/spinners/material/bar_chart_cyan.gif",
-    "Material Cyan svg": "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel-assets/master/spinners/material/bar_chart_cyan.svg",
-    "Material Deep_purple gif": "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel-assets/master/spinners/material/bar_chart_deep_purple.gif",
-    "Material Deep_purple svg": "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel-assets/master/spinners/material/bar_chart_deep_purple.svg",
-    "Material Gray gif": "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel-assets/master/spinners/material/bar_chart_gray.gif",
-    "Material Gray svg": "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel-assets/master/spinners/material/bar_chart_gray.svg",
-    "Material Green gif": "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel-assets/master/spinners/material/bar_chart_green.gif",
-    "Material Green svg": "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel-assets/master/spinners/material/bar_chart_green.svg",
-    "Material Indigo gif": "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel-assets/master/spinners/material/bar_chart_indigo.gif",
-    "Material Indigo svg": "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel-assets/master/spinners/material/bar_chart_indigo.svg",
-    "Material Light_blue gif": "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel-assets/master/spinners/material/bar_chart_light_blue.gif",
-    "Material Light_blue svg": "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel-assets/master/spinners/material/bar_chart_light_blue.svg",
-    "Material Pink gif": "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel-assets/master/spinners/material/bar_chart_pink.gif",
-    "Material Pink svg": "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel-assets/master/spinners/material/bar_chart_pink.svg",
-    "Material Purple gif": "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel-assets/master/spinners/material/bar_chart_purple.gif",
-    "Material Purple svg": "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel-assets/master/spinners/material/bar_chart_purple.svg",
-    "Material Red gif": "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel-assets/master/spinners/material/bar_chart_red.gif",
-    "Material Red svg": "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel-assets/master/spinners/material/bar_chart_red.svg",
-    "Material Teal gif": "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel-assets/master/spinners/material/bar_chart_teal.gif",
-    "Material Teal svg": "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel-assets/master/spinners/material/bar_chart_teal.svg",
+    "Dark": DARK_LOADING_INDICATOR,
+    "Bar Chart": loading_indicators.bar_chart_url,
+    "Bars": loading_indicators.bars_url,
+    "Dual Ring": loading_indicators.dual_ring_url,
+    "Message": loading_indicators.message_url,
+    "Pulse": loading_indicators.pulse_url,
+    "Rolling": loading_indicators.rolling_url,
+    "Spin": loading_indicators.spin_url,
+    "Spinner": loading_indicators.spinner_url,
 }
+
 
 def test_add_css_class():
     # Given
@@ -115,18 +101,18 @@ def test_app():
         start_loading = param.Action()
         stop_loading = param.Action()
         sleep = param.Number(1, bounds=(0.1, 10), label="Update Data Time")
-        spinner = param.ObjectSelector(
-            default=DEFAULT_LOADING_INDICATOR, objects=SPINNERS
-        )
-        spinner_height = param.Integer(40, bounds=(1, 150))
         load_main = param.Boolean(default=False, label="Mark all as loading")
 
+        spinner = param.ObjectSelector(default=DEFAULT_LOADING_INDICATOR, objects=SPINNERS)
+        spinner_height = param.Integer(50, bounds=(1, 100))
         loading = param.Boolean(default=False)
         update_data = param.Action()
 
         panels = param.List()
 
         view = param.Parameter()
+        color = param.Color(loading_indicators.DEFAULT_COLOR)
+        style = param.String("")
 
         def __init__(self, **params):
             super().__init__(**params)
@@ -157,16 +143,21 @@ def test_app():
                         "spinner",
                         "spinner_height",
                         "load_main",
+                        "color",
+                        "style",
                     ],
+                    widgets={
+                        "style": {"type": pn.widgets.TextAreaInput, "sizing_mode": "stretch_both", "disabled": True}
+                    },
                 ),
                 width=300,
                 sizing_mode="stretch_height",
             )
             self.main = pn.Column(*self.panels)
-            self.css_pane = pn.pane.HTML(
-                sizing_mode="fixed", width=0, height=0, margin=0
-            )
+            self.css_pane = pn.pane.HTML(sizing_mode="fixed", width=0, height=0, margin=0)
             self.view = pn.Row(self.settings, self.main, self.css_pane)
+
+            self._toggle_color()
 
         def _start_loading(self, *_):
             self.loading = True
@@ -209,15 +200,35 @@ def test_app():
             #     panel.css_classes=[]
             stop_loading_indicator(self.main, *self.panels)
 
-        @param.depends("spinner", "spinner_height", watch=True)
-        def _update_loading_indicator_css(self):
-            self.css_pane.object = f"""<style>
-.bk.panel-loading:before {{
-    background-image: url('{self.spinner}');
-    background-size: {self.spinner_height}px auto;
-}}
-</style>"""
+        @property
+        def spinner_url(self):
+            spinner = self.spinner
+            if callable(spinner):
+                return spinner(self.color)
+            return spinner
 
+        @param.depends("spinner", watch=True)
+        def _toggle_color(self):
+            color_picker: pn.widgets.ColorPicker = [
+                widget
+                for widget in self.settings[0]
+                if isinstance(widget, pn.widgets.ColorPicker)
+            ][0]
+            color_picker.disabled = not callable(self.spinner)
+
+        @param.depends("spinner", "spinner_height", "color", watch=True)
+        def _update_style(self):
+            self.style = f"""
+.bk.pn-loading:before {{
+    background-image: url('{self.spinner_url}');
+    background-size: auto {self.spinner_height}%;
+}}"""
+
+        @param.depends("style", watch=True)
+        def _update_loading_indicator_css(self):
+            self.css_pane.object = f"""<style>{self.style}</style>"""
+
+    # background-image: url('{self.spinner}');
     return App()
 
 

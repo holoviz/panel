@@ -7,25 +7,28 @@ be in doubt if the page has stopped working.
 """
 import panel as pn
 
-_LOADING_INDICATOR_CSS_CLASS = "panel-loading"
+_LOADING_INDICATOR_CSS_CLASS = "pn-loading"
+
+DEFAULT_URL = "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel-assets/e6cb56375bb1c436975e09739a231fb31e628a63/spinners/default.svg"
+DARK_URL = "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel-assets/e6cb56375bb1c436975e09739a231fb31e628a63/spinners/dark.svg"
 
 STYLE = """
-.bk.panel-loading:before {
-position: absolute;
-height: 100%;
-width: 100%;
-content: '';
-z-index: 1000;
-background-color: rgb(255,255,255,0.50);
-border-color: lightgray;
-background-image: url('https://raw.githubusercontent.com/holoviz/panel/master/panel/assets/spinner.gif');
-background-repeat: no-repeat;
-background-position: center;
-background-size: 40px 40px;
-border-width: 1px;
+.bk.pn-loading:before {
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    content: '';
+    z-index: 1000;
+    background-color: rgb(255,255,255,0.50);
+    border-color: lightgray;
+    background-image: url('https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel-assets/e6cb56375bb1c436975e09739a231fb31e628a63/spinners/default.svg');
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: auto 50%;
+    border-width: 1px;
 
 }
-.bk.panel-loading:hover:before {
+.bk.pn-loading:hover:before {
     cursor: progress;
 }
 """
