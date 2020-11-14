@@ -9,8 +9,8 @@ import panel as pn
 
 _LOADING_INDICATOR_CSS_CLASS = "pn-loading"
 
-DEFAULT_URL = "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel-assets/e6cb56375bb1c436975e09739a231fb31e628a63/spinners/default.svg"
-DARK_URL = "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel-assets/e6cb56375bb1c436975e09739a231fb31e628a63/spinners/dark.svg"
+DEFAULT_URL = "https://raw.githubusercontent.com/holoviz/panel/5ea166fdda6e1f958d2d9929ae2ed2b8e962156c/panel/assets/spinner_default.svg"
+DARK_URL = "https://raw.githubusercontent.com/holoviz/panel/5ea166fdda6e1f958d2d9929ae2ed2b8e962156c/panel/assets/spinner_dark.svg"
 
 STYLE = """
 .bk.pn-loading:before {

@@ -111,6 +111,7 @@ def test_app():
         panels = param.List()
 
         view = param.Parameter()
+        background_alpha = param.Number(0.5, bounds=(0.0,1.0), step=0.01, doc="The background alpha")
         color = param.Color(loading_indicators.DEFAULT_COLOR)
         style = param.String("")
 
@@ -143,6 +144,7 @@ def test_app():
                         "spinner",
                         "spinner_height",
                         "load_main",
+                        "background_alpha",
                         "color",
                         "style",
                     ],
@@ -216,12 +218,13 @@ def test_app():
             ][0]
             color_picker.disabled = not callable(self.spinner)
 
-        @param.depends("spinner", "spinner_height", "color", watch=True)
+        @param.depends("spinner", "spinner_height", "color", "background_alpha", watch=True)
         def _update_style(self):
             self.style = f"""
 .bk.pn-loading:before {{
     background-image: url('{self.spinner_url}');
     background-size: auto {self.spinner_height}%;
+    background-color: rgb(255,255,255,{self.background_alpha});
 }}"""
 
         @param.depends("style", watch=True)
