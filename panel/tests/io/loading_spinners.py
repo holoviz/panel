@@ -1,3 +1,4 @@
+from panel.io.loading import DEFAULT_URL, DARK_URL
 DEFAULT_COLOR = "#757575"
 DARK_COLOR = "#BDBDBD"
 
@@ -220,3 +221,16 @@ data:image/svg+xml,
 </g>
 </g></svg>
 """.replace("\n", "")
+
+SPINNERS = {
+    "Default": DEFAULT_URL,
+    "Dark": DARK_URL,
+    "Bar Chart": bar_chart_url,
+    "Bars": bars_url,
+    "Dual Ring": dual_ring_url,
+    "Message": message_url,
+    "Pulse": pulse_url,
+    "Rolling": rolling_url,
+    "Spin": spin_url,
+    "Spinner": spinner_url,
+}

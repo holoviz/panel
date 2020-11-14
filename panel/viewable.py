@@ -221,7 +221,7 @@ class Layoutable(param.Parameterized):
         super().__init__(**params)
 
         # self.param.watch(self._update_loading, "loading")
-        self._loading = False
+        self._loading = params.get("loading", False)
 
     @property
     def loading(self):

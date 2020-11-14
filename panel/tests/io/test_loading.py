@@ -11,20 +11,6 @@ from panel.io.loading import (_LOADING_INDICATOR_CSS_CLASS, DARK_URL,
 from panel.tests.io import loading_spinners
 import pytest
 pn.config.raw_css.append(STYLE)
-SPINNERS = {
-    "Default": DEFAULT_URL,
-    "Dark": DARK_URL,
-    "Bar Chart": loading_spinners.bar_chart_url,
-    "Bars": loading_spinners.bars_url,
-    "Dual Ring": loading_spinners.dual_ring_url,
-    "Message": loading_spinners.message_url,
-    "Pulse": loading_spinners.pulse_url,
-    "Rolling": loading_spinners.rolling_url,
-    "Spin": loading_spinners.spin_url,
-    "Spinner": loading_spinners.spinner_url,
-}
-
-
 def test_add_css_class():
     # Given
     css_class = "test-class"
