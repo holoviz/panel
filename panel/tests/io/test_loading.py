@@ -1,38 +1,27 @@
-from panel.layout.base import WidgetBox
+"""Test of the loading functionality"""
 import random
 import time
 
 import holoviews as hv
-import param
-
 import panel as pn
-from panel.io.loading import (
-    _LOADING_INDICATOR_CSS_CLASS,
-    _add_css_class,
-    _remove_css_class,
-    start_loading_indicator,
-    stop_loading_indicator,
-)
-from panel.tests.io import loading_indicators
-
-DEFAULT_LOADING_INDICATOR = (
-    "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel-assets/e6cb56375bb1c436975e09739a231fb31e628a63/spinners/default.svg"
-)
-DARK_LOADING_INDICATOR = (
-    "https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel-assets/e6cb56375bb1c436975e09739a231fb31e628a63/spinners/dark.svg"
-)
-
+import param
+from panel.io.loading import (_LOADING_INDICATOR_CSS_CLASS, DARK_URL,
+                              DEFAULT_URL, STYLE, _add_css_class, _remove_css_class,
+                              start_loading_spinner, stop_loading_spinner)
+from panel.tests.io import loading_spinners
+import pytest
+pn.config.raw_css.append(STYLE)
 SPINNERS = {
-    "Default": DEFAULT_LOADING_INDICATOR,
-    "Dark": DARK_LOADING_INDICATOR,
-    "Bar Chart": loading_indicators.bar_chart_url,
-    "Bars": loading_indicators.bars_url,
-    "Dual Ring": loading_indicators.dual_ring_url,
-    "Message": loading_indicators.message_url,
-    "Pulse": loading_indicators.pulse_url,
-    "Rolling": loading_indicators.rolling_url,
-    "Spin": loading_indicators.spin_url,
-    "Spinner": loading_indicators.spinner_url,
+    "Default": DEFAULT_URL,
+    "Dark": DARK_URL,
+    "Bar Chart": loading_spinners.bar_chart_url,
+    "Bars": loading_spinners.bars_url,
+    "Dual Ring": loading_spinners.dual_ring_url,
+    "Message": loading_spinners.message_url,
+    "Pulse": loading_spinners.pulse_url,
+    "Rolling": loading_spinners.rolling_url,
+    "Spin": loading_spinners.spin_url,
+    "Spinner": loading_spinners.spinner_url,
 }
 
 
@@ -83,29 +72,34 @@ def test_remove_css_class():
     assert panel2.css_classes is None  # [] won't work in the browser!
 
 
-def test_start__and_stop_loading_indicator():
+def test_start__and_stop_loading_spinner():
     panel1 = pn.Column()
     panel2 = pn.Column(css_classes=["other"])
 
-    start_loading_indicator(panel1, panel2)
+    start_loading_spinner(panel1, panel2)
     assert _LOADING_INDICATOR_CSS_CLASS in panel1.css_classes
     assert _LOADING_INDICATOR_CSS_CLASS in panel2.css_classes
 
-    stop_loading_indicator(panel1, panel2)
+    stop_loading_spinner(panel1, panel2)
     assert panel1.css_classes is None
     assert _LOADING_INDICATOR_CSS_CLASS not in panel2.css_classes
 
-
 def test_app():
-    class LoadingIndicatorStyler(param.Parameterized):
-        spinner = param.ObjectSelector(default=DEFAULT_LOADING_INDICATOR, objects=SPINNERS)
-        spinner_height = param.Integer(50, bounds=(1, 100))
-        background_alpha = param.Number(0.5, bounds=(0.0,1.0), step=0.01, doc="The background alpha")
-        color = param.Color(loading_indicators.DEFAULT_COLOR)
-        style = param.String("")
+    class LoadingStyler(param.Parameterized):
+        """A utility that can be used to select and style the loading spinner"""
 
-        settings_panel = param.Parameter()
-        style_panel = param.Parameter()
+        spinner = param.ObjectSelector(
+            default=DEFAULT_URL, objects=SPINNERS, doc="The loading spinner to use"
+        )
+        spinner_height = param.Integer(50, bounds=(1, 100))
+        background_alpha = param.Number(
+            0.5, bounds=(0.0, 1.0), step=0.01, doc="The background alpha"
+        )
+        color = param.Color(loading_spinners.DEFAULT_COLOR)
+        style = param.String("", doc="The CSS Style applied to the loading spinner")
+
+        settings_panel = param.Parameter(doc="A panel containing the settings of the LoadingStyler")
+        style_panel = param.Parameter(doc="An 'invisible' HTML pane containing the css style")
 
         def __init__(self, **params):
             super().__init__(**params)
@@ -120,7 +114,11 @@ def test_app():
                     "style",
                 ],
                 widgets={
-                    "style": {"type": pn.widgets.TextAreaInput, "sizing_mode": "stretch_both", "disabled": True}
+                    "style": {
+                        "type": pn.widgets.TextAreaInput,
+                        "sizing_mode": "stretch_both",
+                        "disabled": True,
+                    }
                 },
             )
 
@@ -128,7 +126,7 @@ def test_app():
             self._toggle_color()
 
         @property
-        def spinner_url(self):
+        def _spinner_url(self):
             spinner = self.spinner
             if callable(spinner):
                 return spinner(self.color)
@@ -147,28 +145,37 @@ def test_app():
         def _update_style(self):
             self.style = f"""
 .bk.pn-loading:before {{
-    background-image: url('{self.spinner_url}');
+    background-image: url('{self._spinner_url}');
     background-size: auto {self.spinner_height}%;
     background-color: rgb(255,255,255,{self.background_alpha});
 }}"""
 
         @param.depends("style", watch=True)
-        def _update_loading_indicator_css(self):
+        def _update_loading_spinner_css(self):
             self.style_panel.object = f"""<style>{self.style}</style>"""
 
-    class LoadingIndicatorApp(param.Parameterized):
-        start_loading = param.Action(doc="Start the loading indicator")
-        stop_loading = param.Action(doc="Stop the loading indicator")
-        sleep = param.Number(1, bounds=(0.1, 10), label="Time to update plot", doc="The time it takes to update the plot")
-        load_main = param.Boolean(default=False, label="Show common loading indicator?")
+    class LoadingApp(param.Parameterized):
+        """An app which show cases the loading spinner and enables the user to style it."""
 
-        loading = param.Boolean(default=False)
-        update_data = param.Action(doc="Update the plot")
+        start_loading = param.Action(label="START LOADING", doc="Start the loading spinner")
+        stop_loading = param.Action(label="STOP LOADING", doc="Stop the loading spinner")
+        sleep = param.Number(
+            1,
+            bounds=(0.1, 10),
+            label="Update time in seconds",
+            doc="The time it takes to update the plot",
+        )
+        show_shared_spinner = param.Boolean(default=False, label="Show one shared loading spinner?")
+
+        loading = param.Boolean(
+            default=False, doc="""Whether or not to show the loading indicator"""
+        )
+        update_plot = param.Action(label="UPDATE PLOT", doc="Update the plot")
 
         panels = param.List()
 
         view = param.Parameter()
-        styler = param.ClassSelector(class_=LoadingIndicatorStyler)
+        styler = param.ClassSelector(class_=LoadingStyler)
 
         def __init__(self, **params):
             super().__init__(**params)
@@ -176,16 +183,16 @@ def test_app():
             self.start_loading = self._start_loading
             self.stop_loading = self._stop_loading
 
-            self.update_data = self._update_data
+            self.update_plot = self._update_plot
 
             hv_plot = self._get_plot()
             self.hv_plot_panel = pn.pane.HoloViews(hv_plot, height=500)
-            self.styler = LoadingIndicatorStyler(name="Styles")
+            self.styler = LoadingStyler(name="Styles")
 
             self.panels = [
                 pn.Param(
-                    self.param.update_data,
-                    widgets={"update_data": {"button_type": "success"}},
+                    self.param.update_plot,
+                    widgets={"update_plot": {"button_type": "success"}},
                 ),
                 self.hv_plot_panel,
             ]
@@ -197,10 +204,14 @@ def test_app():
                         "start_loading",
                         "stop_loading",
                         "sleep",
-                        "load_main",
+                        "show_shared_spinner",
                     ],
                     widgets={
-                        "style": {"type": pn.widgets.TextAreaInput, "sizing_mode": "stretch_both", "disabled": True}
+                        "style": {
+                            "type": pn.widgets.TextAreaInput,
+                            "sizing_mode": "stretch_both",
+                            "disabled": True,
+                        }
                     },
                 ),
                 self.styler.settings_panel,
@@ -224,36 +235,34 @@ def test_app():
                 data.append((item, random.randint(0, 10)))
             return hv.Bars(data, hv.Dimension("Car occupants"), "Count")
 
-        def _update_data(self, *_):
+        def _update_plot(self, *_):
             self.loading = True
             time.sleep(self.sleep)
             self.hv_plot_panel.object = self._get_plot()
             self.loading = False
 
-        @param.depends("loading", "load_main", watch=True)
-        def _update_loading_indicator(self):
+        @param.depends("loading", "show_shared_spinner", watch=True)
+        def _update_loading_spinner(self):
             if self.loading:
-                self._start_loading_indicator()
+                self._start_loading_spinner()
             else:
-                self._stop_loading_indicator()
+                self._stop_loading_spinner()
 
-        def _start_loading_indicator(self, *_):
-            # Only nescessary in this demo app to be able to toggle load_main
-            self._stop_loading_indicator()
-            if self.load_main:
-                start_loading_indicator(self.main)
+        def _start_loading_spinner(self, *_):
+            # Only nescessary in this demo app to be able to toggle show_shared_spinner
+            self._stop_loading_spinner()
+            if self.show_shared_spinner:
+                self.main.loading=True
             else:
-                start_loading_indicator(*self.panels)
+                for panel in self.panels:
+                    panel.loading=True
 
-        def _stop_loading_indicator(self, *_):
-            # self.main.css_classes=[]
-            # for panel in self.panels:
-            #     panel.css_classes=[]
-            stop_loading_indicator(self.main, *self.panels)
+        def _stop_loading_spinner(self, *_):
+            self.main.loading=False
+            for panel in self.panels:
+                panel.loading=False
 
-
-
-    return LoadingIndicatorApp(name="Loading Indicator App")
+    return LoadingApp(name="Loading Indicator App")
 
 
 if __name__.startswith("bokeh"):

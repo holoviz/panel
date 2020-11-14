@@ -24,6 +24,7 @@ from pyviz_comms import JupyterCommManager
 
 from .config import config, panel_extension
 from .io.embed import embed_state
+from .io.loading import start_loading_spinner, stop_loading_spinner
 from .io.model import add_to_doc, patch_cds_msg
 from .io.notebook import (
     ipywidget, render_mimebundle, render_model, show_embed, show_server
@@ -201,6 +202,10 @@ class Layoutable(param.Parameterized):
             provided aspect ratio.
     """)
 
+    # Raises 'unexpected attribute 'loading' to ...
+    # loading = param.Boolean(doc="""Whether or not the Viewable is loading.
+    #     If True a loading spinner is shown on top of the Viewable.""")
+
     __abstract = True
 
     def __init__(self, **params):
@@ -214,6 +219,24 @@ class Layoutable(param.Parameterized):
               type(self).sizing_mode is None):
             params['sizing_mode'] = params.get('sizing_mode', config.sizing_mode)
         super().__init__(**params)
+
+        # self.param.watch(self._update_loading, "loading")
+        self._loading = False
+
+    @property
+    def loading(self):
+        return self._loading
+
+    @loading.setter
+    def loading(self, value):
+        self._loading = value
+        self._update_loading()
+
+    def _update_loading(self, *_):
+        if self._loading:
+            start_loading_spinner(self)
+        else:
+            stop_loading_spinner(self)
 
 
 class ServableMixin(object):
@@ -754,3 +777,5 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         add_to_doc(model, doc)
         if location: self._add_location(doc, location, model)
         return doc
+
+

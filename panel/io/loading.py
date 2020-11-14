@@ -12,6 +12,7 @@ _LOADING_INDICATOR_CSS_CLASS = "pn-loading"
 DEFAULT_URL = "https://raw.githubusercontent.com/holoviz/panel/5ea166fdda6e1f958d2d9929ae2ed2b8e962156c/panel/assets/spinner_default.svg"
 DARK_URL = "https://raw.githubusercontent.com/holoviz/panel/5ea166fdda6e1f958d2d9929ae2ed2b8e962156c/panel/assets/spinner_dark.svg"
 
+# Todo: Find the place to add this style
 STYLE = """
 .bk.pn-loading:before {
     position: absolute;
@@ -32,7 +33,6 @@ STYLE = """
     cursor: progress;
 }
 """
-pn.config.raw_css.append(STYLE)
 
 
 def _add_css_class(*objects, css_class):
@@ -54,7 +54,7 @@ def _remove_css_class(*objects, css_class):
                     item.css_classes.remove(css_class)
 
 
-def start_loading_indicator(*objects):
+def start_loading_spinner(*objects):
     """
     Changes the appearance of the specified panel objects to indicate that they are loading.
 
@@ -72,6 +72,6 @@ def start_loading_indicator(*objects):
     _add_css_class(*objects, css_class=_LOADING_INDICATOR_CSS_CLASS)
 
 
-def stop_loading_indicator(*objects):
+def stop_loading_spinner(*objects):
     """Removes the loading indicating from the specified panel objects"""
     _remove_css_class(*objects, css_class=_LOADING_INDICATOR_CSS_CLASS)
