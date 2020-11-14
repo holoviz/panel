@@ -97,23 +97,78 @@ def test_start__and_stop_loading_indicator():
 
 
 def test_app():
-    class App(param.Parameterized):
-        start_loading = param.Action()
-        stop_loading = param.Action()
-        sleep = param.Number(1, bounds=(0.1, 10), label="Update Data Time")
-        load_main = param.Boolean(default=False, label="Mark all as loading")
-
+    class LoadingIndicatorStyler(param.Parameterized):
         spinner = param.ObjectSelector(default=DEFAULT_LOADING_INDICATOR, objects=SPINNERS)
         spinner_height = param.Integer(50, bounds=(1, 100))
+        background_alpha = param.Number(0.5, bounds=(0.0,1.0), step=0.01, doc="The background alpha")
+        color = param.Color(loading_indicators.DEFAULT_COLOR)
+        style = param.String("")
+
+        settings_panel = param.Parameter()
+        style_panel = param.Parameter()
+
+        def __init__(self, **params):
+            super().__init__(**params)
+
+            self.settings_panel = pn.Param(
+                self,
+                parameters=[
+                    "spinner",
+                    "spinner_height",
+                    "background_alpha",
+                    "color",
+                    "style",
+                ],
+                widgets={
+                    "style": {"type": pn.widgets.TextAreaInput, "sizing_mode": "stretch_both", "disabled": True}
+                },
+            )
+
+            self.style_panel = pn.pane.HTML(sizing_mode="fixed", width=0, height=0, margin=0)
+            self._toggle_color()
+
+        @property
+        def spinner_url(self):
+            spinner = self.spinner
+            if callable(spinner):
+                return spinner(self.color)
+            return spinner
+
+        @param.depends("spinner", watch=True)
+        def _toggle_color(self):
+            color_picker: pn.widgets.ColorPicker = [
+                widget
+                for widget in self.settings_panel
+                if isinstance(widget, pn.widgets.ColorPicker)
+            ][0]
+            color_picker.disabled = not callable(self.spinner)
+
+        @param.depends("spinner", "spinner_height", "color", "background_alpha", watch=True)
+        def _update_style(self):
+            self.style = f"""
+.bk.pn-loading:before {{
+    background-image: url('{self.spinner_url}');
+    background-size: auto {self.spinner_height}%;
+    background-color: rgb(255,255,255,{self.background_alpha});
+}}"""
+
+        @param.depends("style", watch=True)
+        def _update_loading_indicator_css(self):
+            self.style_panel.object = f"""<style>{self.style}</style>"""
+
+    class LoadingIndicatorApp(param.Parameterized):
+        start_loading = param.Action(doc="Start the loading indicator")
+        stop_loading = param.Action(doc="Stop the loading indicator")
+        sleep = param.Number(1, bounds=(0.1, 10), label="Time to update plot", doc="The time it takes to update the plot")
+        load_main = param.Boolean(default=False, label="Show common loading indicator?")
+
         loading = param.Boolean(default=False)
-        update_data = param.Action()
+        update_data = param.Action(doc="Update the plot")
 
         panels = param.List()
 
         view = param.Parameter()
-        background_alpha = param.Number(0.5, bounds=(0.0,1.0), step=0.01, doc="The background alpha")
-        color = param.Color(loading_indicators.DEFAULT_COLOR)
-        style = param.String("")
+        styler = param.ClassSelector(class_=LoadingIndicatorStyler)
 
         def __init__(self, **params):
             super().__init__(**params)
@@ -125,6 +180,7 @@ def test_app():
 
             hv_plot = self._get_plot()
             self.hv_plot_panel = pn.pane.HoloViews(hv_plot, height=500)
+            self.styler = LoadingIndicatorStyler(name="Styles")
 
             self.panels = [
                 pn.Param(
@@ -134,32 +190,25 @@ def test_app():
                 self.hv_plot_panel,
             ]
 
-            self.settings = pn.WidgetBox(
+            self.settings_panel = pn.WidgetBox(
                 pn.Param(
                     self,
                     parameters=[
                         "start_loading",
                         "stop_loading",
                         "sleep",
-                        "spinner",
-                        "spinner_height",
                         "load_main",
-                        "background_alpha",
-                        "color",
-                        "style",
                     ],
                     widgets={
                         "style": {"type": pn.widgets.TextAreaInput, "sizing_mode": "stretch_both", "disabled": True}
                     },
                 ),
+                self.styler.settings_panel,
                 width=300,
                 sizing_mode="stretch_height",
             )
             self.main = pn.Column(*self.panels)
-            self.css_pane = pn.pane.HTML(sizing_mode="fixed", width=0, height=0, margin=0)
-            self.view = pn.Row(self.settings, self.main, self.css_pane)
-
-            self._toggle_color()
+            self.view = pn.Row(self.settings_panel, self.main, self.styler.style_panel)
 
         def _start_loading(self, *_):
             self.loading = True
@@ -202,37 +251,9 @@ def test_app():
             #     panel.css_classes=[]
             stop_loading_indicator(self.main, *self.panels)
 
-        @property
-        def spinner_url(self):
-            spinner = self.spinner
-            if callable(spinner):
-                return spinner(self.color)
-            return spinner
 
-        @param.depends("spinner", watch=True)
-        def _toggle_color(self):
-            color_picker: pn.widgets.ColorPicker = [
-                widget
-                for widget in self.settings[0]
-                if isinstance(widget, pn.widgets.ColorPicker)
-            ][0]
-            color_picker.disabled = not callable(self.spinner)
 
-        @param.depends("spinner", "spinner_height", "color", "background_alpha", watch=True)
-        def _update_style(self):
-            self.style = f"""
-.bk.pn-loading:before {{
-    background-image: url('{self.spinner_url}');
-    background-size: auto {self.spinner_height}%;
-    background-color: rgb(255,255,255,{self.background_alpha});
-}}"""
-
-        @param.depends("style", watch=True)
-        def _update_loading_indicator_css(self):
-            self.css_pane.object = f"""<style>{self.style}</style>"""
-
-    # background-image: url('{self.spinner}');
-    return App()
+    return LoadingIndicatorApp(name="Loading Indicator App")
 
 
 if __name__.startswith("bokeh"):
