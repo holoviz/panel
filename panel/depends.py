@@ -7,12 +7,9 @@ from .widgets import Widget
 ipywidget_classes = {}
 
 
-def param_value_if_widget(arg, throttled=False):
+def param_value_if_widget(arg):
     if isinstance(arg, Widget):
-        if throttled is True and hasattr(arg, 'value_throttled'):
-            return arg.param.value_throttled
-        else:
-            return arg.param.value
+        return arg.param.value
 
     from .pane.ipywidget import IPyWidget
     if IPyWidget.applies(arg) and hasattr(arg, 'value'):
@@ -28,7 +25,7 @@ def param_value_if_widget(arg, throttled=False):
     return arg
 
 
-def depends(*args, throttled=False, **kwargs):
+def depends(*args, **kwargs):
     """
     Python decorator annotating a function or Parameterized method to
     express its dependencies on a set of Parameters. This declaration
@@ -54,13 +51,12 @@ def depends(*args, throttled=False, **kwargs):
     Parameters). See the docs for the corresponding param.depends
     decorator for further details.
     """
-    updated_args = [param_value_if_widget(a, throttled) for a in args]
-    updated_kwargs = {k: param_value_if_widget(v, throttled) for k, v in kwargs.items()}
-
+    updated_args = [param_value_if_widget(a) for a in  args]
+    updated_kwargs = {k: param_value_if_widget(v) for k, v in kwargs.items()}
     return param.depends(*updated_args, **updated_kwargs)
 
 
-def bind(function, *args, throttled=False, **kwargs):
+def bind(function, *args, **kwargs):
     """
     Given a function, returns a wrapper function that binds the values
     of some or all arguments to Parameter values and expresses Param
@@ -96,8 +92,8 @@ def bind(function, *args, throttled=False, **kwargs):
     Returns a new function with the args and kwargs bound to it and
     annotated with all dependencies.
     """
-    updated_args = [param_value_if_widget(a, throttled) for a in args]
-    updated_kwargs = {k: param_value_if_widget(v, throttled) for k, v in kwargs.items()}
+    updated_args = [param_value_if_widget(a) for a in args]
+    updated_kwargs = {k: param_value_if_widget(v) for k, v in kwargs.items()}
     return _param_bind(function, *updated_args, **updated_kwargs)
 
 
