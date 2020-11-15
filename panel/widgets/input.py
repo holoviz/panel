@@ -149,11 +149,19 @@ class DatePicker(Widget):
 
     _widget_type = _BkDatePicker
 
+    @staticmethod
+    def _validate_value(x):
+        if isinstance(x, string_types):
+            try:
+                x = datetime.date(datetime.strptime(x, '%Y-%m-%d'))
+            except ValueError:
+                x = None
+        return x
+
     def _process_property_change(self, msg):
         msg = super(DatePicker, self)._process_property_change(msg)
         if 'value' in msg:
-            if isinstance(msg['value'], string_types):
-                msg['value'] = datetime.date(datetime.strptime(msg['value'], '%Y-%m-%d'))
+            msg['value'] = self._validate_value(msg['value'])
         return msg
 
 

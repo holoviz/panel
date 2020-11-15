@@ -96,6 +96,8 @@ class Location(Syncable):
                         v = p.param[pname].deserialize(v)
                     except Exception:
                         pass
+                if hasattr(p, '_validate_value'):
+                    v = p._validate_value(v)
                 mapped[pname] = v
             p.param.set_param(**mapped)
 
