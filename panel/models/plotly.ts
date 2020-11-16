@@ -103,6 +103,12 @@ const filterEventData = (gd: any, eventData: any, event: string) => {
 };
 
 
+const _isHidden = (gd: any) => {
+  var display = window.getComputedStyle(gd).display;
+  return !display || display === 'none';
+};
+
+
 export class PlotlyPlotView extends PanelHTMLBoxView {
   model: PlotlyPlot
   _setViewport: Function
@@ -231,7 +237,8 @@ export class PlotlyPlotView extends PanelHTMLBoxView {
         }
         this._plotInitialized = true;
         this._reacting = false;
-        (window as any).Plotly.Plots.resize(this._layout_wrapper);
+        if(!_isHidden(this._layout_wrapper))
+          (window as any).Plotly.Plots.resize(this._layout_wrapper);
       }
     );
   }
