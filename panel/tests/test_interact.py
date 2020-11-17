@@ -1,3 +1,5 @@
+from datetime import date
+
 from bokeh.models import Div as BkDiv, Column as BkColumn
 
 from panel.interact import interactive
@@ -232,3 +234,33 @@ def test_interact_replaces_model(document, comm):
 
     interact_pane._cleanup(column)
     assert len(interact_pane._callbacks) == 2
+
+
+def test_interact_throttled():
+    slider_dict = {
+        "DateSlider": dict(start=date(2018, 9, 1), end=date(2018, 9, 10)),
+        "DateRangeSlider": dict(
+            start=date(2018, 9, 1),
+            end=date(2018, 9, 10),
+            value=(date(2018, 9, 2), date(2018, 9, 4)),
+        ),
+        "DiscreteSlider": dict(
+            options=[0.1, 1, 10, 100],
+            value=1,
+        ),
+        "FloatSlider": dict(start=1, end=10, value=5),
+        "IntSlider": dict(start=1, end=10, value=5),
+        "IntRangeSlider": dict(start=1, end=10, value=(2, 5)),
+        "RangeSlider": dict(start=1, end=10, value=(2, 5)),
+    }
+
+    func = lambda x: repr(x)
+    throttled = True
+
+    for slider, kwargs in slider_dict.items():
+        widget = getattr(widgets, slider)(**kwargs)
+        try:
+            interactive(func, x=widget, throttled=throttled)
+            assert True
+        except Exception as e:
+            assert False, e
