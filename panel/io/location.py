@@ -100,7 +100,18 @@ class Location(Syncable):
     def _update_query(self, *events, query=None):
         if self._syncing:
             return
-        query = query or {}
+        serialized = {}
+        for k, v in (query or {}).items():
+            matches = [(o, ps) for o, ps, _ in self._synced if k in list(ps.values())]
+            if not matches:
+                continue
+            owner, ps = matches[0]
+            reverse = {p: r for r, p in ps.items()}
+            try:
+                v = owner.param[reverse[k]].serialize(v)
+            except Exception:
+                pass
+            serialized[k] = v
         for e in events:
             matches = [ps for o, ps, _ in self._synced if o in (e.cls, e.obj)]
             if not matches:
@@ -112,10 +123,10 @@ class Location(Syncable):
                 val = e.new
             if not isinstance(val, str):
                 val = json.dumps(val)
-            query[matches[0][e.name]] = val
+            serialized[matches[0][e.name]] = val
         self._syncing = True
         try:
-            self.update_query(**{k: v for k, v in query.items() if v is not None})
+            self.update_query(**{k: v for k, v in serialized.items() if v is not None})
         finally:
             self._syncing = False
 
