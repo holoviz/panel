@@ -2,6 +2,7 @@
 Defines the Location  widget which allows changing the href of the window.
 """
 
+import json
 import urllib.parse as urlparse
 
 import param
@@ -89,33 +90,32 @@ class Location(Syncable):
                 if k not in mapping:
                     continue
                 pname = mapping[k]
-                if isinstance(v, str) and v.startswith('"') and v.endswith('"'):
-                    v = v[1:-1]
-                else:
-                    try:
-                        v = p.param[pname].deserialize(v)
-                    except Exception:
-                        pass
+                try:
+                    v = p.param[pname].deserialize(v)
+                except Exception:
+                    pass
                 mapped[pname] = v
             p.param.set_param(**mapped)
 
     def _update_query(self, *events, query=None):
         if self._syncing:
             return
-        query = query or {}
+        serialized = query or {}
         for e in events:
             matches = [ps for o, ps, _ in self._synced if o in (e.cls, e.obj)]
             if not matches:
                 continue
             owner = e.cls if e.obj is None else e.obj
             try:
-                val = owner.param.serialize_value(e.name)
+                val = owner.param[e.name].serialize(e.new)
             except Exception:
                 val = e.new
-            query[matches[0][e.name]] = val
+            if not isinstance(val, str):
+                val = json.dumps(val)
+            serialized[matches[0][e.name]] = val
         self._syncing = True
         try:
-            self.update_query(**{k: v for k, v in query.items() if v is not None})
+            self.update_query(**{k: v for k, v in serialized.items() if v is not None})
         finally:
             self._syncing = False
 
@@ -150,8 +150,19 @@ class Location(Syncable):
         watcher = parameterized.param.watch(self._update_query, list(parameters))
         self._synced.append((parameterized, parameters, watcher))
         self._update_synced()
-        self._update_query(query={v: getattr(parameterized, k)
-                                  for k, v in parameters.items()})
+        query = {}
+        for p, name in parameters.items():
+            v = getattr(parameterized, p)
+            if v is None:
+                continue
+            try:
+                parameterized.param[p].serialize(v)
+            except Exception:
+                pass
+            if not isinstance(v, str):
+                v = json.dumps(v)
+            query[name] = v
+        self._update_query(query=query)
 
     def unsync(self, parameterized, parameters=None):
         """
