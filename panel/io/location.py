@@ -107,7 +107,7 @@ class Location(Syncable):
                 continue
             owner = e.cls if e.obj is None else e.obj
             try:
-                val = owner.param[e.name].serialize(getattr(owner, e.name))
+                val = owner.param[e.name].serialize(e.new)
             except Exception:
                 val = e.new
             if not isinstance(val, str):
