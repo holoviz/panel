@@ -2,6 +2,7 @@
 Defines the Location  widget which allows changing the href of the window.
 """
 
+import json
 import urllib.parse as urlparse
 
 import param
@@ -89,13 +90,10 @@ class Location(Syncable):
                 if k not in mapping:
                     continue
                 pname = mapping[k]
-                if isinstance(v, str) and v.startswith('"') and v.endswith('"'):
-                    v = v[1:-1]
-                else:
-                    try:
-                        v = p.param[pname].deserialize(v)
-                    except Exception:
-                        pass
+                try:
+                    v = p.param[pname].deserialize(v)
+                except Exception:
+                    pass
                 mapped[pname] = v
             p.param.set_param(**mapped)
 
@@ -109,9 +107,11 @@ class Location(Syncable):
                 continue
             owner = e.cls if e.obj is None else e.obj
             try:
-                val = owner.param.serialize_value(e.name)
+                val = owner.param[e.name].serialize(getattr(owner, e.name))
             except Exception:
                 val = e.new
+            if not isinstance(val, str):
+                val = json.dumps(val)
             query[matches[0][e.name]] = val
         self._syncing = True
         try:
