@@ -153,6 +153,8 @@ class Location(Syncable):
         query = {}
         for p, name in parameters.items():
             v = getattr(parameterized, p)
+            if v is None:
+                continue
             try:
                 parameterized.param[p].serialize(v)
             except Exception:
