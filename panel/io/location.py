@@ -100,18 +100,7 @@ class Location(Syncable):
     def _update_query(self, *events, query=None):
         if self._syncing:
             return
-        serialized = {}
-        for k, v in (query or {}).items():
-            matches = [(o, ps) for o, ps, _ in self._synced if k in list(ps.values())]
-            if not matches:
-                continue
-            owner, ps = matches[0]
-            reverse = {p: r for r, p in ps.items()}
-            try:
-                v = owner.param[reverse[k]].serialize(v)
-            except Exception:
-                pass
-            serialized[k] = v
+        serialized = query or {}
         for e in events:
             matches = [ps for o, ps, _ in self._synced if o in (e.cls, e.obj)]
             if not matches:
@@ -161,8 +150,17 @@ class Location(Syncable):
         watcher = parameterized.param.watch(self._update_query, list(parameters))
         self._synced.append((parameterized, parameters, watcher))
         self._update_synced()
-        self._update_query(query={v: getattr(parameterized, k)
-                                  for k, v in parameters.items()})
+        query = {}
+        for p, name in parameters.items():
+            v = getattr(parameterized, p)
+            try:
+                parameterized.param[p].serialize(v)
+            except Exception:
+                pass
+            if not isinstance(v, str):
+                v = json.dumps(v)
+            query[name] = v
+        self._update_query(query=query)
 
     def unsync(self, parameterized, parameters=None):
         """
