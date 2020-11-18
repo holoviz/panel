@@ -19,6 +19,11 @@ Bug fixes:
 - Allow overriding items in grid based templates ([#1741](https://github.com/holoviz/panel/pull/1741))
 - Ensure `ECharts` and `ipywidget` rerender when in `Card` ([#1765](https://github.com/holoviz/panel/pull/1765))
 - Ensure template dark theme persists on HoloViews plots ([#1764](https://github.com/holoviz/panel/pull/1764))
+- Fix responsive height in Plotly pane ([#1770](https://github.com/holoviz/panel/pull/1770))
+- Ensure image panes resize in width and height ([#1777](https://github.com/holoviz/panel/pull/1777))
+- Fix issues with Location.sync serialization ([#1784](https://github.com/holoviz/panel/pull/1784))
+- Add throttled argument to interact ([#1259](https://github.com/holoviz/panel/pull/1259))
+- ECharts pane now loads echarts-gl for 3D support ([#1785](https://github.com/holoviz/panel/pull/1785)) 
 
 Enhancements:
 
