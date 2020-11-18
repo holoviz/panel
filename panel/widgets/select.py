@@ -256,7 +256,7 @@ class _RadioGroupBase(SingleSelectBase):
                 msg['active'] = None
 
         if 'labels' in msg:
-            msg['labels'] = list(msg['labels'])
+            msg['labels'] = self.labels
             value = self.value
             if not isIn(value, values):
                 self.value = None
@@ -325,7 +325,7 @@ class _CheckGroupBase(SingleSelectBase):
             msg['active'] = [indexOf(v, values) for v in msg['active']
                              if isIn(v, values)]
         if 'labels' in msg:
-            msg['labels'] = list(msg['labels'])
+            msg['labels'] = self.labels
             if any(not isIn(v, values) for v in self.value):
                 self.value = [v for v in self.value if isIn(v, values)]
         msg.pop('title', None)
