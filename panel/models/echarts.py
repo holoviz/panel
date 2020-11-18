@@ -14,7 +14,8 @@ class ECharts(LayoutDOM):
     """
 
     __javascript_raw__ = [
-        "https://cdn.jsdelivr.net/npm/echarts@4.8.0/dist/echarts.min.js"
+        "https://cdn.jsdelivr.net/npm/echarts@4.8.0/dist/echarts.min.js",
+        "https://cdn.jsdelivr.net/npm/echarts-gl@1.1.1/dist/echarts-gl.min.js"
     ]
 
     @classproperty
@@ -30,7 +31,8 @@ class ECharts(LayoutDOM):
     __js_require__ = {
         'baseUrl': 'https://cdn.jsdelivr.net/npm/',
         'paths': {
-            "echarts":  "echarts@4.8.0/dist/echarts.min"
+            "echarts":  "echarts@4.8.0/dist/echarts.min",
+            "echarts-gl": "echarts-gl@1.1.1/dist/echarts-gl.min.js"
         },
         'exports': {}
     }
