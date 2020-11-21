@@ -75,7 +75,7 @@ def test_app():
         """A utility that can be used to select and style the loading spinner"""
 
         spinner = param.ObjectSelector(
-            default=DEFAULT_URL, objects=SPINNERS, doc="The loading spinner to use"
+            default=DEFAULT_URL, objects=loading_spinners.SPINNERS, doc="The loading spinner to use"
         )
         spinner_height = param.Integer(50, bounds=(1, 100))
         background_alpha = param.Number(
