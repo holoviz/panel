@@ -114,6 +114,10 @@ class Param(PaneBase):
         Dictionary of widget overrides, mapping from parameter name
         to widget class.""")
 
+    throttled = param.Boolean(default=False, doc="""
+        If a widget has value_throttled as a param it will only report
+        on mouse up.""")
+
     priority = 0.1
 
     _unpack = True
@@ -416,6 +420,8 @@ class Param(PaneBase):
             def action(change):
                 value(self.object)
             watcher = widget.param.watch(action, 'clicks')
+        elif self.throttled and hasattr(widget, 'value_throttled'):
+            watcher = widget.param.watch(link_widget, 'value_throttled')
         else:
             watcher = widget.param.watch(link_widget, 'value')
         watchers.append(watcher)
