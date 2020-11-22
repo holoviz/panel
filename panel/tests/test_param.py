@@ -626,6 +626,44 @@ def test_set_widgets(document, comm):
     assert number.height == 100
     assert isinstance(text, TextInput)
 
+
+def test_set_widgets_throttled(document, comm):
+    class Test(param.Parameterized):
+        a = param.Number(default=0, bounds=(0, 10), precedence=1)
+
+    test = Test()
+    pane = Param(test)
+
+    model = pane.get_root(document, comm=comm)
+
+    pane.widgets = {"a": {"throttled": False}}
+    assert len(model.children) == 2
+    _, number = model.children
+
+    number.value = 1
+    assert number.value == 1
+    # assert number.value_throttled == 1  # Should this work?
+    assert test.a == 1
+
+    test.a = 2
+    assert number.value == 2
+    assert number.value_throttled == 2
+    assert test.a == 2
+
+    pane.widgets = {"a": {"throttled": True}}
+    _, number = model.children
+
+    number.value_throttled = 3
+    # assert number.value == 3  # Should this work?
+    assert number.value_throttled == 3
+    assert test.a == 3
+
+    test.a = 4
+    assert number.value == 4
+    assert number.value_throttled == 4
+    assert test.a == 4
+
+
 def test_set_show_name(document, comm):
     class Test(param.Parameterized):
         a = param.Number(bounds=(0, 10))
