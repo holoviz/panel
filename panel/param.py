@@ -466,6 +466,8 @@ class Param(PaneBase):
                 return
             else:
                 updates['value'] = change.new
+                if hasattr(widget, 'value_throttled'):
+                    updates['value_throttled'] = change.new
 
             try:
                 self._updating.append(p_name)
@@ -474,7 +476,8 @@ class Param(PaneBase):
                         widget.param.set_param(**updates)
                     widget.param.trigger(*updates)
                 else:
-                    widget.param.set_param(**updates)
+                    with param.edit_constant(widget):
+                        widget.param.set_param(**updates)
             finally:
                 self._updating.remove(p_name)
 
