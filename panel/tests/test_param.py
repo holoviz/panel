@@ -633,7 +633,6 @@ def test_set_widgets_throttled(document, comm):
 
     test = Test()
     pane = Param(test)
-
     model = pane.get_root(document, comm=comm)
 
     pane.widgets = {"a": {"throttled": False}}
@@ -642,24 +641,28 @@ def test_set_widgets_throttled(document, comm):
 
     number.value = 1
     assert number.value == 1
-    # assert number.value_throttled == 1  # Should this work?
+    assert number.value_throttled != 1
     assert test.a == 1
 
     test.a = 2
     assert number.value == 2
-    assert number.value_throttled == 2
+    assert number.value_throttled != 2
     assert test.a == 2
 
+    # By setting throttled to true,
+    # `test.a` is linked to `number.value_throttled`
+    # instead of `number.value`.
     pane.widgets = {"a": {"throttled": True}}
+    assert len(model.children) == 2
     _, number = model.children
 
     number.value_throttled = 3
-    # assert number.value == 3  # Should this work?
+    assert number.value != 3
     assert number.value_throttled == 3
     assert test.a == 3
 
     test.a = 4
-    assert number.value == 4
+    assert number.value != 4
     assert number.value_throttled == 4
     assert test.a == 4
 

@@ -464,10 +464,10 @@ class Param(PaneBase):
                 idx = self._callbacks.index(prev_watcher)
                 self._callbacks[idx] = watchers[0]
                 return
+            elif kw_widget.get('throttled', False) and hasattr(widget, 'value_throttled'):
+                updates['value_throttled'] = change.new
             else:
                 updates['value'] = change.new
-                if hasattr(widget, 'value_throttled'):
-                    updates['value_throttled'] = change.new
 
             try:
                 self._updating.append(p_name)
@@ -476,8 +476,7 @@ class Param(PaneBase):
                         widget.param.set_param(**updates)
                     widget.param.trigger(*updates)
                 else:
-                    with param.edit_constant(widget):
-                        widget.param.set_param(**updates)
+                    widget.param.set_param(**updates)
             finally:
                 self._updating.remove(p_name)
 
