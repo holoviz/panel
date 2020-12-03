@@ -1,0 +1,108 @@
+name: packages
+on:
+  push:
+    tags:
+    - 'v[0-9]+.[0-9]+.[0-9]+'
+    - 'v[0-9]+.[0-9]+.[0-9]+a[0-9]+'
+    - 'v[0-9]+.[0-9]+.[0-9]+b[0-9]+'
+    - 'v[0-9]+.[0-9]+.[0-9]+rc[0-9]+'
+
+jobs:
+  conda_build:
+    name: Build Conda Packages
+    runs-on: 'ubuntu-latest'
+    defaults:
+      run:
+        shell: bash -l {0}
+    env:
+      CHANS_DEV: "-c pyviz/label/dev"
+      PKG_TEST_PYTHON: "--test-python=py37"
+      PYTHON_VERSION: "3.7"
+      MPLBACKEND: "Agg"
+      CONDA_UPLOAD_TOKEN: ${{ secrets.CONDA_UPLOAD_TOKEN }}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: "100"
+      - uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          miniconda-version: "latest"
+      - name: Fetch unshallow
+        run: git fetch --prune --tags --unshallow -f
+      - name: Set output
+        id: vars
+        run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
+      - name: conda setup
+        run: |
+          conda config --set always_yes True
+          conda install -c pyviz "pyctdev>=0.5"
+          doit ecosystem_setup
+      - name: conda build
+        run: doit package_build $CHANS_DEV $PKG_TEST_PYTHON --test-group=unit_deploy
+      - name: npm setup
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_API_TOKEN }}" > $HOME/.npmrc
+          npm whoami
+      - name: dev deploy
+        if: (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc'))
+        run: |
+          doit package_upload --token=$CONDA_UPLOAD_TOKEN --label=dev
+          npm publish --tag dev
+      - name: main deploy
+        if: (!(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
+        run: |
+          doit package_upload --token=$CONDA_UPLOAD_TOKEN --label=dev --label=main
+          npm publish --tag latest
+  pip_build:
+    name: Build PyPI Packages
+    runs-on: 'ubuntu-latest'
+    defaults:
+      run:
+        shell: bash -l {0}
+    env:
+      CHANS_DEV: "-c pyviz/label/dev -c bokeh"
+      PKG_TEST_PYTHON: "--test-python=py37 --test-python=py27"
+      PYTHON_VERSION: "3.7"
+      CHANS: "-c pyviz"
+      MPLBACKEND: "Agg"
+      PPU: ${{ secrets.PPU }}
+      PPP: ${{ secrets.PPP }}
+      PYPI: "https://upload.pypi.org/legacy/"
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: "100"
+      - uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          miniconda-version: "latest"
+      - name: Fetch unshallow
+        run: git fetch --prune --tags --unshallow -f
+      - name: conda setup
+        run: |
+          conda config --set always_yes True
+          conda install -c pyviz "pyctdev>=0.5"
+          doit ecosystem_setup
+          doit env_create $CHANS_DEV --python=$PYTHON_VERSION
+      - name: env setup
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          doit develop_install $CHANS_DEV -o unit_tests
+          pip uninstall -y panel
+          doit pip_on_conda
+      - name: pip build
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          doit ecosystem=pip package_build $PKG_TEST_PYTHON --test-group=unit_deploy
+      - name: pip upload
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          doit ecosystem=pip package_upload -u $PPU -p $PPP -r $PYPI
