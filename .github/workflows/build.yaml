@@ -50,11 +50,13 @@ jobs:
         if: (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc'))
         run: |
           doit package_upload --token=$CONDA_UPLOAD_TOKEN --label=dev
+          cd ../panel
           npm publish --tag dev
       - name: main deploy
         if: (!(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
         run: |
           doit package_upload --token=$CONDA_UPLOAD_TOKEN --label=dev --label=main
+          cd ../panel
           npm publish --tag latest
   pip_build:
     name: Build PyPI Packages
