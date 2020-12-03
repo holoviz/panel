@@ -15,7 +15,7 @@ jobs:
       run:
         shell: bash -l {0}
     env:
-      CHANS_DEV: "-c pyviz/label/dev"
+      CHANS_DEV: "-c pyviz/label/dev -c conda-forge"
       PKG_TEST_PYTHON: "--test-python=py37"
       PYTHON_VERSION: "3.7"
       MPLBACKEND: "Agg"
