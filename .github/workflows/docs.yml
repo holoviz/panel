@@ -80,6 +80,7 @@ jobs:
           touch ./builtdocs/.nojekyll
       - name: Deploy dev
         uses: JamesIves/github-pages-deploy-action@3.7.1
+        if: (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc'))
         with:
           ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -88,7 +89,7 @@ jobs:
           CLEAN: true
           REPOSITORY_NAME: pyviz-dev/panel
       - name: Deploy main
-        if: startsWith(github.ref, 'ref/tags/') && !(contains(github.ref, 'a') || contains(github.ref, 'b') || contains(github.ref, 'rc'))
+        if: (!(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
         uses: JamesIves/github-pages-deploy-action@3.7.1
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
