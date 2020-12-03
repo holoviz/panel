@@ -93,7 +93,7 @@ jobs:
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
-          doit develop_install $CHANS_DEV -o unit_tests
+          doit develop_install $CHANS_DEV -o build
           pip uninstall -y panel
           doit pip_on_conda
       - name: pip build
