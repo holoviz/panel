@@ -1,0 +1,95 @@
+name: docs
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+a[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+b[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+rc[0-9]+'
+
+jobs:
+  build_docs:
+    name: Documentation
+    runs-on: 'ubuntu-latest'
+    strategy:
+      fail-fast: false
+    timeout-minutes: 120
+    defaults:
+      run:
+        shell: bash -l {0}
+    env:
+      DESC: "Documentation build"
+      CHANS_DEV: "-c pyviz/label/dev -c bokeh -c conda-forge"
+      MPLBACKEND: "Agg"
+      MOZ_HEADLESS: 1
+      DISPLAY: ":99.0"
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: "100"
+      - uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          miniconda-version: "latest"
+      - name: Fetch unshallow
+        run: git fetch --prune --tags --unshallow -f
+      - name: conda setup
+        run: |
+          conda config --set always_yes True
+          conda install -c pyviz "pyctdev>=0.5"
+          doit ecosystem_setup
+          doit env_create ${{ env.CHANS_DEV}} --python=3.7
+      - name: doit develop_install
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          conda list
+          doit develop_install ${{ env.CHANS_DEV}} -o doc -o examples
+          pip install pydeck sphinxcontrib-napoleon
+      - name: opengl
+        run: |
+          sudo apt-get install libglu1-mesa
+          conda install -c conda-forge mesalib
+          /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -ac -screen 0 1280x1024x24
+          sleep 3
+      - name: bokeh sampledata
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          bokeh sampledata
+      - name: generate rst
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          nbsite generate-rst --org holoviz --project-name panel
+      - name: refmanual
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          python ./doc/generate_modules.py panel -d ./doc/api -n panel -e tests
+      - name: build docs
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          nbsite build --what=html --output=builtdocs
+          touch ./builtdocs/.nojekyll
+      - name: Deploy dev
+        uses: JamesIves/github-pages-deploy-action@3.7.1
+        if: (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc'))
+        with:
+          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH: gh-pages
+          FOLDER: builtdocs
+          CLEAN: true
+          REPOSITORY_NAME: pyviz-dev/panel
+      - name: Deploy main
+        if: (!(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
+        uses: JamesIves/github-pages-deploy-action@3.7.1
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH: gh-pages
+          FOLDER: builtdocs
+          CLEAN: true
