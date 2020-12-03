@@ -63,7 +63,7 @@ jobs:
       run:
         shell: bash -l {0}
     env:
-      CHANS_DEV: "-c pyviz/label/dev -c bokeh"
+      CHANS_DEV: "-c pyviz/label/dev -c bokeh -c conda-forge"
       PKG_TEST_PYTHON: "--test-python=py37 --test-python=py27"
       PYTHON_VERSION: "3.7"
       CHANS: "-c pyviz"
