@@ -16,76 +16,134 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   model: DataTabulator;
   tabulator: any;
   _tabulator_cell_updating: boolean=false;
-  // objectElement: any // Element
+  _selection_updating: boolean=false;
+  _styled_cells: any[] = []
+  _initializing: boolean
 
   connect_signals(): void {
     super.connect_signals()
 
-    this.connect(this.model.properties.configuration.change, () => {
-      this.render();
+    const resize = () => {
+      this.render()
+      this.root.compute_layout() // XXX: invalidate_layout?
+    }
+
+    const {configuration, layout, columns} = this.model.properties;
+    this.on_change([configuration, layout, columns], () => resize())
+
+    this.connect(this.model.properties.page_size.change, () => {
+      this.setPageSize();
     })
 
-    this.connect(this.model.properties.columns.change, () => {
-      this.tabulator.setColumns(this.model.columns);
+    this.connect(this.model.properties.page.change, () => {
+      this.setPage();
     })
 
-    // this.connect(this.model.source.change, () => this.setData())
+    this.connect(this.model.properties.max_page.change, () => {
+      this.setMaxPage();
+    })
+
+    this.connect(this.model.properties.frozen_rows.change, () => {
+      this.freezeRows()
+    })
+
+    this.connect(this.model.properties.styles.change, () => {
+      this.updateStyles()
+    })
+
     this.connect(this.model.source.properties.data.change, () => {
       this.setData();
     })
     this.connect(this.model.source.streaming, () => this.addData())
     this.connect(this.model.source.patching, () => this.updateOrAddData())
-
-    // this.connect(this.model.source.selected.change, () => this.updateSelection())
+    this.connect(this.model.source.selected.change, () => this.updateSelection())
     this.connect(this.model.source.selected.properties.indices.change, () => this.updateSelection())
   }
 
   render(): void {
     super.render()
+    this._initializing = true
     const container = div({class: "pnx-tabulator"});
     set_size(container, this.model)
     let configuration = this.getConfiguration();
     this.tabulator = new Tabulator(container, configuration)
+
+    // Patch the ajax request method
+    const ajax = this.tabulator.modules.ajax
+    this.tabulator.modules.ajax.sendRequest = () => this.requestPage(ajax.params.page)
+
+    // Set up page
+    if (this.model.pagination) {
+      this.setMaxPage()
+      this.setData()
+    } else {
+      this.freezeRows()
+      this.updateSelection()
+    }
     this.el.appendChild(container)
-    // this.objectElement.addEventListener("click", () => {this.model.clicks+=1;}, false)
+  }
+
+  requestPage(page: number): Promise<void> {
+    return new Promise((resolve: any, reject: any) => {
+      try {
+        this.model.page = page || 1
+        resolve({data: [], last_page: this.model.max_page})
+      } catch(err) {
+        reject(err)
+      }
+    })
+  }
+
+  renderComplete(): void {
+    // Only have to set up styles after initial render subsequent
+    // styling is handled by change event on styles property
+    if (this._initializing)
+      this.updateStyles()
+    this._initializing = false
+  }
+
+  freezeRows(): void {
+    const rows = this.tabulator.getRows();
+    for (const row of this.model.frozen_rows) {
+      rows[row].freeze()
+    }    
+  }
+
+  getLayout(): string {
+    let layout = this.model.layout
+    switch (layout) {
+      case "fit_data":
+        return "fitData"
+      case "fit_data_fill":
+        return "fitDataFill"
+      case "fit_data_stretch":
+        return "fitDataStretch"
+      case "fit_data_table":
+        return "fitDataTable"
+      case "fit_columns":
+        return "fitColumns"
+    }
   }
 
   getConfiguration(): any {
-    // I refer to this via _view because this is the tabulator element when cellEdited is used
-    let _view = this;
-
-    function rowSelectionChanged(data: any, _: any): void {
-      let indices: any = data.map((row: any) => row.index)
-      _view.model.source.selected.indices = indices;
-    }
-
-    function startUpdating(): void {
-      _view._tabulator_cell_updating = true;
-    }
-    function endUpdating(): void {
-      _view._tabulator_cell_updating = false;
-    }
-    function cellEdited(cell: any){
-      const field = cell._cell.column.field;
-      const index = cell._cell.row.data.index;
-      const value = cell._cell.value;
-      startUpdating();
-      _view.model.source.patch({[field]: [[index, value]]});
-      endUpdating();
-    }
     let configuration = {
       ...this.model.configuration,
-	  rowSelectionChanged: rowSelectionChanged,
-      cellEdited: cellEdited,
+      index: "_index",
+      renderComplete: () => this.renderComplete(),
+      rowSelectionChanged: (data: any, rows: any) => this.rowSelectionChanged(data, rows),
+      cellEdited: (cell: any) => this.cellEdited(cell),
       columns: this.getColumns(),
-      layout: this.model.layout
+      layout: this.getLayout(),
+      ajaxURL: "http://panel.pyviz.org",
+      pagination: this.model.pagination,
+      paginationSize: this.model.page_size,
+      paginationInitialPage: null,
     }
-    console.log(configuration)
     let data = this.model.source;
     if (data === null || Object.keys(data.data).length===0)
       return configuration;
     else {
-      data = transform_cds_to_records(data)
+      data = transform_cds_to_records(data, true)
       return {
         ...configuration,
         "data": data,
@@ -94,43 +152,54 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   }
 
   getColumns(): any {
-	let columns = []
-	let ordered = false
-    if (this.model.configuration.columns != null) {
-      columns = this.model.configuration.columns
-	  ordered = true
+    const config_columns: (any[] | undefined) = this.model.configuration?.columns;
+    let columns = []
+    if (config_columns != null) {
+      for (const column of config_columns)
+        if (column.columns != null) {
+          const group_columns = []
+          for (const col of column.columns)
+            group_columns.push({...col})
+          columns.push({...column, columns: group_columns})
+        } else {
+          columns.push({...column})
+        }
     }
     for (const column of this.model.columns) {
       let tab_column: any = null
-      for (const col of columns) {
-        if (col.columns != null) {
-          for (const c of col.columns) {
-            if (column.field === c.field)
-              tab_column = c
+      if (config_columns != null) {
+        for (const col of columns) {
+          if (col.columns != null) {
+            for (const c of col.columns) {
+              if (column.field === c.field) {
+                tab_column = c
+                break
+              }
+            }
+            if (tab_column != null)
               break
-          }
-          if (tab_column != null)
+          } else if (column.field === col.field) {
+            tab_column = col
             break
-        } else if (column.field === col.field) {
-          tab_column = col
-          break
+          }
         }
       }
-      if (tab_column == null) {
-        tab_column = {
-          field: column.field,
-          title: column.title,
-          width: column.width,
-        }
-      }
-      if (column.formatter != null && tab_column.formatter == null) {
+      if (tab_column == null)
+        tab_column = {field: column.field}
+      if (tab_column.title == null)
+        tab_column.title = column.title
+      if (tab_column.width == null && column.width != null)
+        tab_column.width = column.width
+      if (tab_column.formatter == null && column.formatter != null) {
         tab_column.formatter = (cell: any) => {
           return column.formatter.doFormat(cell.getRow(), cell, cell.getValue(), null, null)
         }
       }
+
       const editor: any = column.editor
       const ctype = editor.type
-      if (ctype === "StringEditor") {
+      if (tab_column.editor != null) {
+      } else if (ctype === "StringEditor") {
         if (editor.completions) {
           tab_column.editor = "autocomplete"
           tab_column.editorParams = {values: editor.completions}
@@ -147,7 +216,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
         tab_column.editor = "select"
         tab_column.editorParams = {values: editor.options}
       }
-      if (!ordered)
+      if (config_columns == nmagull)
         columns.push(tab_column)
     }
     return columns
@@ -156,16 +225,62 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   after_layout(): void {
     super.after_layout()
     this.tabulator.redraw(true);
+    this.updateStyles()
   }
 
+  // Update table
+
   setData(): void {
-    let data = transform_cds_to_records(this.model.source);
-    this.tabulator.setData(data);
+    const data = transform_cds_to_records(this.model.source, true);
+    if (this.model.pagination != null)
+      this.tabulator.rowManager.setData(data, true, false)
+    else
+      this.tabulator.setData(data);
+    this.freezeRows()
+    this.updateSelection()
+  }
+
+  updateStyles(): void {
+    for (const cell_el of this._styled_cells)
+      cell_el.cssText = ""
+    this._styled_cells = []
+    if (this.model.styles == null || this.tabulator.getDataCount() == 0)
+      return
+    for (const r in this.model.styles) {
+      const row_style = this.model.styles[r]
+      const row = this.tabulator.getRow(r)
+      if (!row)
+        continue
+      const cells = row._row.cells
+      for (const c in row_style) {
+        const style = row_style[c]
+        const cell = cells[c]
+        if (cell == null || !style.length)
+          continue
+        const element = cell.element
+        this._styled_cells.push(element)
+        element.cssText = ""
+        for (const s of style) {
+          if (!s.includes(':'))
+            continue
+          const [prop, value] = s.split(':')
+          element.style.setProperty(prop, value.trimLeft())
+        }
+      }
+    }
   }
 
   addData(): void {
-    let data = transform_cds_to_records(this.model.source);
+    const rows = this.tabulator.rowManager.getRows();
+    const last_row = rows[rows.length-1]
+
+    let data = transform_cds_to_records(this.model.source, true);
     this.tabulator.setData(data);
+    if (this.model.follow) {
+      this.tabulator.scrollToRow((last_row.data._index || 0)+1, "top", false);
+    }
+    this.freezeRows()
+    this.updateSelection()
   }
 
   updateOrAddData(): void {
@@ -173,37 +288,71 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     if (this._tabulator_cell_updating)
       return
 
-    let data = transform_cds_to_records(this.model.source);
+    let data = transform_cds_to_records(this.model.source, true);
     this.tabulator.setData(data);
+    this.freezeRows()
+    this.updateSelection()
+  }
+
+  setMaxPage(): void {
+    this.tabulator.setMaxPage(this.model.max_page)
+  }
+
+  setPage(): void {
+    this.tabulator.setPage(this.model.page)
+  }
+
+  setPageSize(): void {
+    this.tabulator.setPageSize(this.model.page_size)
   }
 
   updateSelection(): void {
-    if (this.tabulator==null)
+    if (this.tabulator == null || this._selection_updating)
       return
 
-    let indices: number[]= this.model.source.selected.indices;
-    let selectedRows: any = this.tabulator.getSelectedRows();
-
-    for (let row of selectedRows){
-      if (!indices.includes(row.getData().index))
-        row.toggleSelect();
-    }
-
-    for (let index of indices){
-    // Improve this
-    // Maybe tabulator should use id as index?
-      this.tabulator.selectRow(index);
-    }
+    const indices = this.model.source.selected.indices;
+    this._selection_updating = true
+    this.tabulator.deselectRow()
+    this.tabulator.selectRow(indices)
+    this._selection_updating = false
   }
+
+  // Update model
+
+  rowSelectionChanged(data: any, _: any): void {
+    if (this._selection_updating)
+      return
+    this._selection_updating = true
+    const indices: any = data.map((row: any) => row._index)
+    this.model.source.selected.indices = indices;
+    this._selection_updating = false
+  }
+
+  cellEdited(cell: any): void {
+    const field = cell._cell.column.field;
+    const index = cell._cell.row.data._index;
+    const value = cell._cell.value;
+    this._tabulator_cell_updating = true
+    this.model.source.patch({[field]: [[index, value]]});
+    this._tabulator_cell_updating = false
+  }
+
 }
 
 export namespace DataTabulator {
   export type Attrs = p.AttrsOf<Props>
   export type Props = HTMLBox.Props & {
-  columns: p.Property<TableColumn[]>
-  configuration: p.Property<any>
-  layout: p.Property<"fit_data" | "fit_data_fill" | "fit_data_stretch" | "fit_data_table" | "fit_columns">
-  source: p.Property<ColumnDataSource>,
+    columns: p.Property<TableColumn[]>
+    configuration: p.Property<any>
+    follow: p.Property<boolean>
+    frozen_rows: p.Property<number[]>
+    layout: p.Property<"fit_data" | "fit_data_fill" | "fit_data_stretch" | "fit_data_table" | "fit_columns">
+    max_page: p.Property<number>
+    page: p.Property<number>
+    page_size: p.Property<number>
+    pagination: p.Property<string | null>
+    source: p.Property<ColumnDataSource>,
+    styles: p.Property<any>
   }
 }
 
@@ -225,8 +374,15 @@ export class DataTabulator extends HTMLBox {
     this.define<DataTabulator.Props>({
       configuration: [p.Any, ],
       columns: [ p.Array, [] ],
-      layout: [ p.Any, "fit_columns" ],
+      follow: [p.Boolean, ],
+      frozen_rows: [ p.Array, []],
+      layout: [ p.Any, "fit_data" ],
+      max_page: [ p.Number, 0 ],
+      pagination: [ p.String, null ],
+      page: [ p.Number, 0],
+      page_size: [ p.Number, 0],
       source: [ p.Any, ],
+      styles: [ p.Any, ],
     })
   }
 }

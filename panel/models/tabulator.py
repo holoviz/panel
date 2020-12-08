@@ -3,7 +3,9 @@ Implementation of the Tabulator model.
 
 See http://tabulator.info/
 """
-from bokeh.core.properties import Any, Dict, Enum, Instance, List, String
+from bokeh.core.properties import (
+    Any, Bool, Dict, Enum, Instance, Int, List, String
+)
 from bokeh.models import ColumnDataSource
 from bokeh.models.layouts import HTMLBox
 from bokeh.models.widgets.tables import TableColumn
@@ -37,15 +39,28 @@ class DataTabulator(HTMLBox):
     The list of child column widgets.
     """)
 
-    layout = Enum('fit_data', 'fit_data_fill', 'fit_data_stretch', 'fit_data_table', 'fit_columns')
+    follow = Bool()
+
+    frozen_rows = List(Int)
+
+    layout = Enum('fit_data', 'fit_data_fill', 'fit_data_stretch', 'fit_data_table', 'fit_columns', default="fit_data")
 
     source = Instance(ColumnDataSource)
 
-    __css__ = [CSS_HREFS["default"]]
+    styles = Dict(Int, Dict(Int, List(String)))
+
+    pagination = String()
+
+    page = Int()
+
+    max_page = Int()
+
+    __css__ = [CSS_HREFS["simple"]]
 
     __javascript__ = [
         JS_SRC,
         MOMENT_SRC,
+        SPARKLINE_SRC
     ]
 
     __js_require__ = {

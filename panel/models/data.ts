@@ -1,6 +1,6 @@
 import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source";
 
-export function transform_cds_to_records(cds: ColumnDataSource): any {
+export function transform_cds_to_records(cds: ColumnDataSource, addId: boolean = false): any {
   const data: any = []
   const columns = cds.columns()
   const cdsLength = cds.get_length()
@@ -17,6 +17,8 @@ export function transform_cds_to_records(cds: ColumnDataSource): any {
       else
         item[column] = array[i]
     }
+    if (addId)
+      item['_index'] = i
     data.push(item)
   }
   return data
