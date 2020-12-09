@@ -78,7 +78,6 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       this.setData()
     } else {
       this.freezeRows()
-      this.updateSelection()
     }
     this.el.appendChild(container)
   }
@@ -97,16 +96,17 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   renderComplete(): void {
     // Only have to set up styles after initial render subsequent
     // styling is handled by change event on styles property
-    if (this._initializing)
+    if (this._initializing) {
       this.updateStyles()
+      this.updateSelection()
+    }
     this._initializing = false
   }
 
   freezeRows(): void {
-    const rows = this.tabulator.getRows();
     for (const row of this.model.frozen_rows) {
-      rows[row].freeze()
-    }    
+      this.tabulator.getRow(row).freeze()
+    }
   }
 
   getLayout(): string {
@@ -191,8 +191,14 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       if (tab_column.width == null && column.width != null)
         tab_column.width = column.width
       if (tab_column.formatter == null && column.formatter != null) {
-        tab_column.formatter = (cell: any) => {
-          return column.formatter.doFormat(cell.getRow(), cell, cell.getValue(), null, null)
+        const formatter: any = column.formatter
+        const ftype = formatter.type
+        if (ftype === "BooleanFormatter")
+          tab_column.formatter = "tickCross"
+        else {
+          tab_column.formatter = (cell: any) => {
+            return column.formatter.doFormat(cell.getRow(), cell, cell.getValue(), null, null)
+          }
         }
       }
 
@@ -215,16 +221,42 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       } else if (ctype === "SelectEditor") {
         tab_column.editor = "select"
         tab_column.editorParams = {values: editor.options}
+      } else {
+        tab_column.editor = (cell: any, onRendered: any, success: any, cancel: any) => this.renderEditor(column, cell, onRendered, success, cancel)
       }
-      if (config_columns == nmagull)
+      if (config_columns == null)
         columns.push(tab_column)
     }
     return columns
   }
 
+  renderEditor(column: any, cell: any, onRendered: any, success: any, error: any): any {
+    const editor = column.editor
+    const view = new editor.default_view({column: column, model: editor, parent: this, container: cell._cell.element})
+    view.initialize()
+    view.connect_signals()
+    onRendered(() => {
+      view.setValue(cell.getValue())
+    })
+
+    view.inputEl.addEventListener('change', () => {
+      const value = view.serializeValue()
+      const old_value = cell.getValue()
+      const validation = view.validate()
+      if (!validation.valid)
+        error(validation.msg)
+      if (old_value != null && typeof value != typeof old_value)
+        error("Mismatching type")
+      else
+        success(view.serializeValue())
+    });
+
+    return view.inputEl
+  }
+
   after_layout(): void {
     super.after_layout()
-    this.tabulator.redraw(true);
+    this.tabulator.redraw(true)
     this.updateStyles()
   }
 
@@ -296,6 +328,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
 
   setMaxPage(): void {
     this.tabulator.setMaxPage(this.model.max_page)
+    this.tabulator.modules.page._setPageButtons()
   }
 
   setPage(): void {
@@ -320,7 +353,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   // Update model
 
   rowSelectionChanged(data: any, _: any): void {
-    if (this._selection_updating)
+    if (this._selection_updating || this._initializing)
       return
     this._selection_updating = true
     const indices: any = data.map((row: any) => row._index)

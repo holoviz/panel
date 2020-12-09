@@ -59,8 +59,7 @@ class DataTabulator(HTMLBox):
 
     __javascript__ = [
         JS_SRC,
-        MOMENT_SRC,
-        SPARKLINE_SRC
+        MOMENT_SRC
     ]
 
     __js_require__ = {

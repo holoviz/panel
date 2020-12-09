@@ -2,6 +2,8 @@ from __future__ import absolute_import, division, unicode_literals
 
 import datetime as dt
 
+from types import FunctionType, MethodType
+
 import numpy as np
 import param
 
@@ -15,6 +17,7 @@ from bokeh.models.widgets.tables import (
 )
 
 from ..config import config
+from ..depends import param_value_if_widget
 from ..io.state import state
 from ..io.notebook import push_on_root
 from ..models.tabulator import DataTabulator as _BkTabulator, CSS_HREFS
@@ -71,8 +74,10 @@ class BaseTable(Widget):
     def __init__(self, value=None, **params):
         super(BaseTable, self).__init__(value=value, **params)
         self._renamed_cols = {}
+        self._filters = []
         self._updating = False
         self._data = None
+        self._filtered = None
         self.param.watch(self._validate, 'value')
         self.param.watch(self._update_cds, self._data_params)
         self.param.watch(self._update_selected, 'selection')
@@ -128,13 +133,13 @@ class BaseTable(Widget):
                 formatter = StringFormatter()
                 editor = StringEditor()
 
-            if col in self.editors and not isinstance(self.editors[col], dict):
+            if col in self.editors and not isinstance(self.editors[col], (dict, str)):
                 editor = self.editors[col]
 
             if col in indexes or editor is None:
                 editor = CellEditor()
 
-            if col in self.formatters and not isinstance(self.formatters[col], dict):
+            if col in self.formatters and not isinstance(self.formatters[col], (dict, str)):
                 formatter = self.formatters[col]
 
             if str(col) != col:
@@ -158,6 +163,7 @@ class BaseTable(Widget):
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         source = ColumnDataSource(data=self._data)
+        source.selected.indices = self.selection
         model = self._widget_type(**self._get_properties(source))
         if root is None:
             root = model
@@ -166,7 +172,7 @@ class BaseTable(Widget):
         self._models[root.ref['id']] = (model, parent)
         return model
 
-    def _update_columns(self, model):
+    def _update_columns(self, event, model):
         model.columns = self._get_columns()
 
     def _manual_update(self, events, model, doc, root, parent, comm):
@@ -180,21 +186,125 @@ class BaseTable(Widget):
             elif hasattr(self, '_update_' + event.name):
                 getattr(self, '_update_' + event.name)(model)
             else:
-                self._update_columns(model)
+                self._update_columns(event, model)
+
+    def _filter_dataframe(self, df, ):
+        """
+        Filter the DataFrame.
+
+        Parameters
+        ----------
+        df : DataFrame
+           The DataFrame to filter
+        query : dict
+            A dictionary containing all the query parameters
+
+        Returns
+        -------
+        DataFrame
+            The filtered DataFrame
+        """
+        filters = []
+        for col_name, filt in self._filters:
+            if isinstance(filt, FunctionType):
+                df = filt(df)
+                continue
+            val = getattr(filt.owner, filt.name)
+            column = df[col_name]
+            if np.isscalar(val):
+                mask = column == val
+            elif isinstance(val, list):
+                if not val:
+                    continue
+                mask = column.isin(val)
+            elif isinstance(val, tuple):
+                start, end = val
+                if start is None and end is None:
+                    continue
+                elif start is None:
+                    mask = column<=end
+                elif end is None:
+                    mask = column>=start
+                else:
+                    mask = (column>=start) & (column<=end)
+            else:
+                raise ValueError(f"'{col_name} filter value not "
+                                 "understood. Must be either a scalar, "
+                                 "tuple or list.")
+            filters.append(mask)
+        if filters:
+            mask = filters[0]
+            for f in filters:
+                mask &= f
+            df = df[mask]
+        return df
+
+    def add_filter(self, filter, column=None):
+        """
+        Adds a filter to the table which will trigger updates when changed.
+
+        When a widget or parameter is supplied the filtering will follow
+        a few well defined behvaiors:
+
+            - scalar: Filters by checking for equality
+            - tuple: A tuple will be interpreted as range.
+            - list: A list will be interpreted as a set of discrete
+                    scalars and the filter will check if the values
+                    in the column match any of the items in the list.
+
+        Arguments
+        ---------
+        filter: Widget, param.Parameter or FunctionType
+            The filter which will provide the value to filter the
+            DataFrame along the declared column or a function which
+            will be passed the DataFrame and should return a filtered
+            copy of the DataFrame.
+        column: str or None
+            If the filter is a widget or parameter the column declares
+            the value will filter on.
+
+        Raises
+        ------
+        ValueError: If the filter type is not supported or no column
+                    was declared.
+        """
+        if isinstance(filter, FunctionType):
+            deps = list(filter._dinfo['kw'].values()) if hasattr(filter, '_dinfo') else []
+        else:
+            filter = param_value_if_widget(filter)
+            if not isinstance(filter, param.Parameter):
+                raise ValueError(f'{type(self).__name__} filter must be '
+                                 'a parameter, widget or function.')
+            elif column is None:
+                raise ValueError('When filtering with a parameter or '
+                                 'widget a column to filter on must be '
+                                 'declared.')
+            deps = [filter]
+        for dep in deps:
+            dep.owner.param.watch(self._update_cds, dep.name)
+        self._filters.append((column, filter))
+        self._update_cds()
+
+    def remove_filter(self, filter):
+        """
+        Removes a filter which was previously added.
+        """
+        self._filters = [(column, filt) for (column, filt) in self._filters
+                         if filt is not filter]
 
     def _get_data(self):
-        df = self.value
+        df = self._filter_dataframe(self.value)
         if df is None:
             return {}
         elif len(self.indexes) > 1:
             df = df.reset_index()
         data = ColumnDataSource.from_df(df).items()
-        return {k if isinstance(k, str) else str(k): v for k, v in data}
+        return df, {k if isinstance(k, str) else str(k): v for k, v in data}
 
     def _update_cds(self, *events):
         if self._updating:
             return
-        self._data = self._get_data()
+        self._filtered, self._data = self._get_data()
         for ref, (m, _) in self._models.items():
             m.source.data = self._data
             push_on_root(ref)
@@ -228,7 +338,7 @@ class BaseTable(Widget):
     def _process_events(self, events):
         if 'data' in events:
             data = events.pop('data')
-            old_data = self._get_data()
+            _, old_data = self._get_data()
             updated = False
             for k, v in data.items():
                 if k in self.indexes:
@@ -610,20 +720,19 @@ class Tabulator(BaseTable):
     """
 
     frozen_columns = param.List(default=[], doc="""
-        List indicating the columns to freeze. If set the
-        first N columns will be frozen which prevents them from
-        scrolling out of frame.""")
+        List indicating the columns to freeze. The column(s) may be
+        selected by name or index.""")
 
     frozen_rows = param.List(default=[], doc="""
-       List indicating the rows to freeze. If set the
-       first N rows will be frozen which prevents them from scrolling
-       out of frame, if set to a negative value last N rows will be
-       frozen.""")
+        List indicating the rows to freeze. If set the
+        first N rows will be frozen which prevents them from scrolling
+        out of frame, if set to a negative value last N rows will be
+        frozen.""")
 
     groups = param.Dict(default={}, doc="""
         Dictionary mapping defining the groups.""")
 
-    layout = param.ObjectSelector(default='fit_data', objects=[
+    layout = param.ObjectSelector(default='fit_data_table', objects=[
         'fit_data', 'fit_data_fill', 'fit_data_stretch', 'fit_data_table',
         'fit_columns'])
 
@@ -649,6 +758,10 @@ class Tabulator(BaseTable):
 
     _data_params = ['value', 'page', 'page_size', 'pagination']
 
+    _config_params = ['frozen_columns', 'groups', 'selectable']
+
+    _manual_params = BaseTable._manual_params + _config_params
+
     def __init__(self, value=None, **params):
         configuration = params.pop('configuration', {})
         self.style = None
@@ -664,19 +777,42 @@ class Tabulator(BaseTable):
             self.style = self.value.style
             self.style._todo = todo
 
+    def _process_param_change(self, msg):
+        msg = super()._process_param_change(msg)
+        if 'frozen_rows' in msg:
+            length = max(self._data.values(), default=0)
+            msg['frozen_rows'] = [length+r if r < 0 else r
+                                  for r in msg['frozen_rows']]
+        return msg
+
+    def _update_columns(self, event, model):
+        if event.name not in self._config_params:
+            super()._update_columns(event, model)
+            if (event.name in ('editors', 'formatters') and
+                not any(isinstance(v, (str, dict)) for v in event.new.values())):
+                # If no tabulator editor/formatter was changed we can skip
+                # update to config
+                return
+        model.configuration = self._get_configuration(model.columns)
+
     def _get_data(self):
         if self.pagination != 'remote' or self.value is None:
             return super()._get_data()
-        length = 0 if self.value is None else len(self.value)
+        df = self._filter_dataframe(self.value)
+        length = len(df)
         nrows = self.page_size
         start = (self.page-1)*nrows
-        df = self.value.iloc[start: start+nrows]
-        data = ColumnDataSource.from_df(df).items()
-        return {k if isinstance(k, str) else str(k): v for k, v in data}
+        page_df = df.iloc[start: start+nrows]
+        data = ColumnDataSource.from_df(page_df).items()
+        return df, {k if isinstance(k, str) else str(k): v for k, v in data}
+
+    @property
+    def _length(self):
+        return len(self._filtered)
 
     def _get_style_data(self):
         if self.pagination == 'remote':
-            length = 0 if self.value is None else len(self.value)
+            length = self._length
             nrows = self.page_size
             start = (self.page-1)*nrows
             df = self.value.iloc[start: start+nrows]
@@ -704,7 +840,7 @@ class Tabulator(BaseTable):
     @updating
     def _stream(self, stream, follow=True):
         if self.pagination == 'remote':
-            length = 0 if self.value is None else len(self.value)
+            length = self._length
             nrows = self.page_size
             max_page = length//nrows + bool(length%nrows)
             if self.page != max_page:
@@ -716,6 +852,10 @@ class Tabulator(BaseTable):
         for ref, (m, _) in self._models.items():
             m.follow = follow
             push_on_root(ref)
+        if follow and pagination:
+            length = self._length
+            nrows = self.page_size
+            self.page = length//nrows + bool(length%nrows)
         super().stream(stream_value, reset_index)
         
     @updating
@@ -740,15 +880,14 @@ class Tabulator(BaseTable):
     def _update_cds(self, *events):
         if self._updating:
             return
-        if self.pagination:
-            self._update_max_page()
         super()._update_cds(*events)
         if self.pagination:
+            self._update_max_page()
             self._update_selected()
         self._update_style()
 
     def _update_max_page(self):
-        length = 0 if self.value is None else len(self.value)
+        length = self._length
         nrows = self.page_size
         max_page = length//nrows + bool(length%nrows)
         self.param.page.bounds = (1, max_page)
@@ -787,26 +926,22 @@ class Tabulator(BaseTable):
     def _get_properties(self, source):
         props = {p : getattr(self, p) for p in list(Layoutable.param)
                  if getattr(self, p) is not None}
+        if self.pagination:
+            length = self.page_size
+        else:
+            length = self._length
         if props.get('height', None) is None:
-            if self.pagination:
-                length = self.page_size
-            elif not self._data:
-                length = 0
-            else:
-                length = max([len(v) for v in self._data.values()])
             props['height'] = length * self.row_height + 30
         props['source'] = source
         props['styles'] = self._get_style_data()
-        props['frozen_rows'] = self.frozen_rows
+        props['frozen_rows'] = [length+r if r < 0 else r for r in self.frozen_rows]
         props['columns'] = columns = self._get_columns()
-        props['configuration'] = self.configuration(columns)
+        props['configuration'] = self._get_configuration(columns)
         props['page'] = self.page
         props['pagination'] = self.pagination
         props['layout'] = self.layout
         if self.pagination:
-            length = 0 if self.value is None else len(self.value)
-            nrows = self.page_size
-            props['max_page'] = length//nrows + bool(length%nrows)
+            props['max_page'] = length//self.page_size + bool(length%self.page_size)
         return props
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
@@ -817,6 +952,7 @@ class Tabulator(BaseTable):
         return model
 
     def _config_columns(self, column_objs):
+        column_objs = list(column_objs)
         groups = {}
         columns = []
         if self.selectable == 'checkbox':
@@ -827,23 +963,39 @@ class Tabulator(BaseTable):
                 "headerSort": False,
                 "frozen": True
             })
-        for column in column_objs:
+        
+        ordered = []
+        for col in self.frozen_columns:
+            if isinstance(col, int):
+                ordered.append(column_objs.pop(col))
+            else:
+                cols = [c for c in column_objs if c.field == col]
+                if cols:
+                    ordered.append(cols[0])
+                    column_objs.remove(cols[0])
+        ordered += column_objs
+
+        for i, column in enumerate(ordered):
             matching_groups = [
                 group for group, group_cols in self.groups.items()
                 if column.field in group_cols
             ]
             col_dict = {'field': column.field}
             formatter = self.formatters.get(column.field)
-            if isinstance(formatter, dict):
+            if isinstance(formatter, str):
+                col_dict['formatter'] = formatter
+            elif isinstance(formatter, dict):
                 formatter = dict(formatter)
                 col_dict['formatter'] = formatter.pop('type')
                 col_dict['formatterParams'] = formatter
             editor = self.editors.get(column.field)
-            if isinstance(editor, dict):
+            if isinstance(editor, str):
+                col_dict['editor'] = editor
+            elif isinstance(editor, dict):
                 editor = dict(editor)
                 col_dict['editor'] = editor.pop('type')
                 col_dict['editorParams'] = editor
-            if column.field in self.frozen_columns:
+            if column.field in self.frozen_columns or i in self.frozen_columns:
                 col_dict['frozen'] = True
             if matching_groups:
                 group = matching_groups[0]
@@ -860,7 +1012,7 @@ class Tabulator(BaseTable):
                 columns.append(col_dict)
         return columns
 
-    def configuration(self, columns):
+    def _get_configuration(self, columns):
         """
         Returns the Tabulator configuration.
         """
