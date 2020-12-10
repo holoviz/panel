@@ -11,18 +11,17 @@ from bokeh.models import ColumnDataSource
 from bokeh.models.widgets.tables import (
     DataTable, DataCube, TableColumn, GroupingInfo, RowAggregator,
     NumberEditor, NumberFormatter, DateFormatter, CellEditor,
-    DateEditor, StringFormatter, StringEditor, IntEditor, TextEditor,
+    DateEditor, StringFormatter, StringEditor, IntEditor,
     AvgAggregator, MaxAggregator, MinAggregator, SumAggregator,
-    CheckboxEditor, SelectEditor
+    CheckboxEditor
 )
 
 from ..config import config
 from ..depends import param_value_if_widget
-from ..io.state import state
 from ..io.notebook import push_on_root
 from ..models.tabulator import DataTabulator as _BkTabulator, CSS_HREFS
 from ..viewable import Layoutable
-from ..util import edit_readonly, isdatetime
+from ..util import isdatetime
 from .base import Widget
 
 
@@ -119,6 +118,9 @@ class BaseTable(Widget):
             if kind == 'i':
                 formatter = NumberFormatter()
                 editor = IntEditor()
+            elif kind == 'b':
+                formatter = StringFormatter()
+                editor = CheckboxEditor()
             elif kind == 'f':
                 formatter = NumberFormatter(format='0,0.0[00000]')
                 editor = NumberEditor()
@@ -206,7 +208,7 @@ class BaseTable(Widget):
         """
         filters = []
         for col_name, filt in self._filters:
-            if isinstance(filt, FunctionType):
+            if isinstance(filt, (FunctionType, MethodType)):
                 df = filt(df)
                 continue
             if isinstance(filt, param.Parameter):
@@ -275,7 +277,7 @@ class BaseTable(Widget):
         """
         if isinstance(filter, (tuple, list, set)) or np.isscalar(filter):
             deps = []
-        elif isinstance(filter, FunctionType):
+        elif isinstance(filter, (FunctionType, MethodType)):
             deps = list(filter._dinfo['kw'].values()) if hasattr(filter, '_dinfo') else []
         else:
             filter = param_value_if_widget(filter)
@@ -806,7 +808,6 @@ class Tabulator(BaseTable):
         if self.pagination != 'remote' or self.value is None:
             return super()._get_data()
         df = self._filter_dataframe(self.value)
-        length = len(df)
         nrows = self.page_size
         start = (self.page-1)*nrows
         page_df = df.iloc[start: start+nrows]
@@ -819,7 +820,6 @@ class Tabulator(BaseTable):
 
     def _get_style_data(self):
         if self.pagination == 'remote':
-            length = self._length
             nrows = self.page_size
             start = (self.page-1)*nrows
             df = self.value.iloc[start: start+nrows]
@@ -859,7 +859,7 @@ class Tabulator(BaseTable):
         for ref, (m, _) in self._models.items():
             m.follow = follow
             push_on_root(ref)
-        if follow and pagination:
+        if follow and self.pagination:
             length = self._length
             nrows = self.page_size
             self.page = length//nrows + bool(length%nrows)
@@ -870,7 +870,7 @@ class Tabulator(BaseTable):
         if self.pagination == 'remote':
             nrows = self.page_size
             start = (self.page-1)*nrows
-            start = start+nrows
+            end = start+nrows
             filtered = {}
             for c, values in patch.items():
                 values = [(ind, val) for (ind, val) in values
