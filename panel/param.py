@@ -416,6 +416,8 @@ class Param(PaneBase):
             def action(change):
                 value(self.object)
             watcher = widget.param.watch(action, 'clicks')
+        elif kw_widget.get('throttled', False) and hasattr(widget, 'value_throttled'):
+            watcher = widget.param.watch(link_widget, 'value_throttled')
         else:
             watcher = widget.param.watch(link_widget, 'value')
         watchers.append(watcher)
@@ -462,6 +464,8 @@ class Param(PaneBase):
                 idx = self._callbacks.index(prev_watcher)
                 self._callbacks[idx] = watchers[0]
                 return
+            elif kw_widget.get('throttled', False) and hasattr(widget, 'value_throttled'):
+                updates['value_throttled'] = change.new
             else:
                 updates['value'] = change.new
 
