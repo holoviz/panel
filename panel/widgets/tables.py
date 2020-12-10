@@ -277,7 +277,7 @@ class BaseTable(Widget):
                                  'a parameter, widget or function.')
             elif column is None:
                 raise ValueError('When filtering with a parameter or '
-                                 'widget a column to filter on must be '
+                                 'widget, a column to filter on must be '
                                  'declared.')
             deps = [filter]
         for dep in deps:
@@ -390,8 +390,8 @@ class BaseTable(Widget):
         stream_value (Union[pd.DataFrame, pd.Series, Dict])
           The new value(s) to append to the existing value.
         reset_index (bool, default=True):
-          If the stream_value is a DataFrame and `reset_index` is True
-          then the index of it is reset if True. Helps to keep the
+          If True and the stream_value is a DataFrame, 
+          then its index is reset. Helps to keep the
           index unique and named `index`
 
         Raises
@@ -460,8 +460,7 @@ class BaseTable(Widget):
 
     def patch(self, patch_value):
         """
-        Patches (updates) the existing value with the `patch_value` in
-        an efficient manner.
+        Efficiently patches (updates) the existing value with the `patch_value`.
 
         Arguments
         ---------
@@ -491,7 +490,7 @@ class BaseTable(Widget):
         >>> tabulator.value.to_dict("list")
         {'x': [3, 4], 'y': ['a', 'd']}
 
-        Patch a DataFrame with a Series. Please note the index is used in the update
+        Patch a DataFrame with a Series. Please note the index is used in the update.
         >>> value = pd.DataFrame({"x": [1, 2], "y": ["a", "b"]})
         >>> tabulator = Tabulator(value=value)
         >>> patch_value = pd.Series({"index": 1, "x": 4, "y": "d"})
@@ -573,16 +572,16 @@ class DataFrame(BaseTable):
     autosize_mode = param.ObjectSelector(default='force_fit', objects=[
         "none", "fit_columns", "fit_viewport", "force_fit"], doc="""
 
-        Describes the column autosizing mode with one of the following options:
+        Determines the column autosizing mode, as one of the following options:
 
         ``"fit_columns"``
-          Compute columns widths based on cell contents but ensure the
+          Compute column widths based on cell contents while ensuring the
           table fits into the available viewport. This results in no
           horizontal scrollbar showing up, but data can get unreadable
           if there is not enough space available.
 
         ``"fit_viewport"``
-          Adjust the viewport size after computing columns widths based
+          Adjust the viewport size after computing column widths based
           on cell contents.
 
         ``"force_fit"``
@@ -603,14 +602,14 @@ class DataFrame(BaseTable):
         get unreadable if there is no enough space available.""")
 
     frozen_columns = param.Integer(default=None, doc="""
-        Integer indicating the number of columns to freeze. If set the
-        first N columns will be frozen which prevents them from
+        Integer indicating the number of columns to freeze. If set, the
+        first N columns will be frozen, which prevents them from
         scrolling out of frame.""")
 
     frozen_rows = param.Integer(default=None, doc="""
-       Integer indicating the number of rows to freeze. If set the
-       first N rows will be frozen which prevents them from scrolling
-       out of frame, if set to a negative value last N rows will be
+       Integer indicating the number of rows to freeze. If set, the
+       first N rows will be frozen, which prevents them from scrolling
+       out of frame; if set to a negative value the last N rows will be
        frozen.""")
 
     reorderable = param.Boolean(default=True, doc="""
@@ -621,7 +620,7 @@ class DataFrame(BaseTable):
 
     sortable = param.Boolean(default=True, doc="""
         Allows to sort table's contents. By default natural order is
-        preserved.  To sort a column, click on it's header. Clicking
+        preserved.  To sort a column, click on its header. Clicking
         one more time changes sort direction. Use Ctrl + click to
         return to natural order. Use Shift + click to sort multiple
         columns simultaneously.""")
@@ -716,7 +715,7 @@ class DataFrame(BaseTable):
 class Tabulator(BaseTable):
     """
     The Tabulator Pane wraps the [Tabulator](http://tabulator.info/)
-    table to provide an awesome interactive table.
+    table to provide a full-featured interactive table.
     """
 
     frozen_columns = param.List(default=[], doc="""
@@ -724,9 +723,9 @@ class Tabulator(BaseTable):
         selected by name or index.""")
 
     frozen_rows = param.List(default=[], doc="""
-        List indicating the rows to freeze. If set the
-        first N rows will be frozen which prevents them from scrolling
-        out of frame, if set to a negative value last N rows will be
+        List indicating the rows to freeze. If set, the
+        first N rows will be frozen, which prevents them from scrolling
+        out of frame; if set to a negative value the last N rows will be
         frozen.""")
 
     groups = param.Dict(default={}, doc="""
@@ -1028,7 +1027,7 @@ class Tabulator(BaseTable):
     @staticmethod
     def config(css="default"):
         """
-        Adds the specified css theme to pn.config.css_files
+        Adds the specified CSS theme to pn.config.css_files
 
         Arguments
         ---------
