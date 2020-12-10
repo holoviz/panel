@@ -19,7 +19,9 @@ from bokeh.models.widgets.tables import (
 from ..config import config
 from ..depends import param_value_if_widget
 from ..io.notebook import push_on_root
-from ..models.tabulator import DataTabulator as _BkTabulator, CSS_HREFS
+from ..models.tabulator import (
+    DataTabulator as _BkTabulator, TABULATOR_THEMES, THEME_URL
+)
 from ..viewable import Layoutable
 from ..util import isdatetime
 from .base import Widget
@@ -266,10 +268,9 @@ class BaseTable(Widget):
         Arguments
         ---------
         filter: Widget, param.Parameter or FunctionType
-            The value to filter DataFrame with along the declared
-            column, or a function that should accept the DataFrame to
-            be filtered as the first argument and should return a
-            filtered copy of the DataFrame.
+            The value by which to filter the DataFrame along the
+            declared column, or a function accepting the DataFrame to
+            be filtered and returning a filtered copy of the DataFrame.
         column: str or None
             Column to which the filter will be applied, if the filter
             is a constant value, widget or parameter.
@@ -770,6 +771,10 @@ class Tabulator(BaseTable):
         multiple checkboxes (if enabled) or using Shift + click on
         rows.""")
 
+    theme = param.ObjectSelector(
+        default="simple", objects=TABULATOR_THEMES, doc="""
+        Tabulator CSS theme to apply to table.""")
+
     _widget_type = _BkTabulator
 
     _data_params = ['value', 'page', 'page_size', 'pagination']
@@ -796,9 +801,22 @@ class Tabulator(BaseTable):
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
         if 'frozen_rows' in msg:
-            length = max(self._data.values(), default=0)
+            length = self._length
             msg['frozen_rows'] = [length+r if r < 0 else r
                                   for r in msg['frozen_rows']]
+        if 'theme' in msg:
+            if 'bootstrap' in self.theme:
+                msg['theme_url'] = THEME_URL + 'bootstrap/'
+            elif 'materialize' in self.theme:
+                msg['theme_url'] = THEME_URL + 'materialize/'
+            elif 'semantic-ui' in self.theme:
+                msg['theme_url'] = THEME_URL + 'semantic-ui/'
+            elif 'bulma' in self.theme:
+                msg['theme_url'] = THEME_URL + 'bulma/'
+            else:
+                msg['theme_url'] = THEME_URL
+            theme = 'tabulator' if self.theme == 'default' else 'tabulator_'+self.theme 
+            _BkTabulator.__css__ = [msg['theme_url'] + theme + '.min.css']
         return msg
 
     def _update_columns(self, event, model):
@@ -948,13 +966,14 @@ class Tabulator(BaseTable):
             props['height'] = length * self.row_height + 30
         props['source'] = source
         props['styles'] = self._get_style_data()
-        props['frozen_rows'] = [length+r if r < 0 else r for r in self.frozen_rows]
         props['columns'] = columns = self._get_columns()
         props['configuration'] = self._get_configuration(columns)
         props['page'] = self.page
         props['pagination'] = self.pagination
         props['page_size'] = self.page_size
         props['layout'] = self.layout
+        process = {'theme': self.theme, 'frozen_rows': self.frozen_rows}
+        props.update(self._process_param_change(process))
         if self.pagination:
             length = 0 if self._filtered is None else len(self._filtered)
             props['max_page'] = length//self.page_size + bool(length%self.page_size)
@@ -1040,18 +1059,3 @@ class Tabulator(BaseTable):
                              "or via the configuration, not both.")
         configuration['columns'] = self._config_columns(columns)
         return configuration
-
-    @staticmethod
-    def config(css="default"):
-        """
-        Adds the specified CSS theme to pn.config.css_files
-
-        Arguments
-        ---------
-        css: (Optional[str], optional)
-          Defaults to "default".
-        """
-        if css:
-            href = CSS_HREFS[css]
-            if href not in config.css_files:
-                config.css_files.append(href)

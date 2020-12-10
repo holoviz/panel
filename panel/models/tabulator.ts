@@ -25,11 +25,20 @@ export class DataTabulatorView extends PanelHTMLBoxView {
 
     const resize = () => {
       this.render()
-      this.root.compute_layout() // XXX: invalidate_layout?
+      this.update_layout()
+	  if (this.root == this) {
+        this.compute_viewport()
+        this.compute_layout()
+      } else {
+        this.compute_layout()
+        this.root.resize_layout()
+      }
     }
 
-    const {configuration, layout, columns} = this.model.properties;
+    const {configuration, layout, columns, theme, theme_url} = this.model.properties;
     this.on_change([configuration, layout, columns], () => resize())
+
+    this.on_change([theme, theme_url], () => this.setCSS())
 
     this.connect(this.model.properties.page_size.change, () => {
       this.setPageSize();
@@ -62,6 +71,9 @@ export class DataTabulatorView extends PanelHTMLBoxView {
 
   render(): void {
     super.render()
+    const wait = this.setCSS()
+    if (wait)
+      return
     this._initializing = true
     const container = div({class: "pnx-tabulator"});
     set_size(container, this.model)
@@ -256,7 +268,8 @@ export class DataTabulatorView extends PanelHTMLBoxView {
 
   after_layout(): void {
     super.after_layout()
-    this.tabulator.redraw(true)
+    if (this.tabulator != null)
+      this.tabulator.redraw(true)
     this.updateStyles()
   }
 
@@ -270,6 +283,57 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       this.tabulator.setData(data);
     this.freezeRows()
     this.updateSelection()
+  }
+
+  setCSS(): boolean {
+    let theme: string
+    if (this.model.theme == "default")
+      theme = "tabulator"
+    else
+      theme = "tabulator_" + this.model.theme
+    const css = this.model.theme_url + theme + ".min.css"
+
+    let old_node: any = null
+    const links = document.getElementsByTagName("link")
+    const dist_index = this.model.theme_url.indexOf('dist/')
+    for (const link of links) {
+      if (link.href.startsWith(this.model.theme_url.slice(0, dist_index))) {
+        old_node = link
+        break
+      }
+    }
+
+    let parent_node = document.getElementsByTagName("head")[0]
+    if (old_node != null) {
+      if (old_node.href == css)
+        return false
+      if (old_node.parentNode != null)
+        parent_node = old_node.parentNode
+    }
+
+    const css_node: any = document.createElement('link')
+    css_node.type = 'text/css'
+    css_node.rel = 'stylesheet'
+    css_node.media = 'screen'
+    css_node.href = css
+
+    css_node.onload = () => {
+      if (old_node != null && old_node.parentNode != null) {
+        parent_node = old_node.parentNode
+        parent_node.removeChild(old_node)
+      }
+      this.render()
+      this.update_layout()
+      if (this.root == this) {
+        this.compute_viewport()
+        this.compute_layout()
+      } else {
+        this.compute_layout()
+        this.root.resize_layout()
+      }
+    }
+    parent_node.appendChild(css_node)
+    return true
   }
 
   updateStyles(): void {
@@ -386,6 +450,8 @@ export namespace DataTabulator {
     pagination: p.Property<string | null>
     source: p.Property<ColumnDataSource>,
     styles: p.Property<any>
+    theme: p.Property<string>
+    theme_url: p.Property<string>
   }
 }
 
@@ -416,6 +482,8 @@ export class DataTabulator extends HTMLBox {
       page_size: [ p.Number, 0],
       source: [ p.Any, ],
       styles: [ p.Any, ],
+      theme: [ p.String, "simple"],
+      theme_url: [p.String, "https://unpkg.com/tabulator-tables@4.9/dist/css/"]
     })
   }
 }
