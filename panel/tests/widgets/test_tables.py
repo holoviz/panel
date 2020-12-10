@@ -291,13 +291,17 @@ def test_tabulator_frozen_cols(document, comm):
     ]
     
     
-def test_tabulator_frozen_cols(document, comm):
+def test_tabulator_frozen_rows(document, comm):
     df = makeMixedDataFrame()
     table = Tabulator(df, frozen_rows=[0, -1])
 
     model = table.get_root(document, comm)
 
     assert model.frozen_rows == [0, 4]
+
+    table.frozen_rows = [1, -2]
+
+    assert model.frozen_rows == [1, 3]
 
 
 def test_tabulator_pagination(document, comm):
