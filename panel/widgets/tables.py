@@ -261,12 +261,12 @@ class BaseTable(Widget):
         ---------
         filter: Widget, param.Parameter or FunctionType
             The value to filter DataFrame with along the declared
-            column or a function that should accept the DataFrame to
+            column, or a function that should accept the DataFrame to
             be filtered as the first argument and should return a
             filtered copy of the DataFrame.
         column: str or None
-            If the filter is a constant value, widget or parameter the
-            column declares the value will filter on.
+            Column to which the filter will be applied, if the filter
+            is a constant value, widget or parameter.
 
         Raises
         ------
