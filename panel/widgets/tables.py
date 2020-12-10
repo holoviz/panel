@@ -65,6 +65,8 @@ class BaseTable(Widget):
 
     value = param.Parameter(default=None)
 
+    __abstract = True
+
     _data_params = ['value']
 
     _manual_params = ['formatters', 'editors', 'widths', 'titles', 'value', 'show_index']
