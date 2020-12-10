@@ -16,7 +16,6 @@ from bokeh.models.widgets.tables import (
     CheckboxEditor
 )
 
-from ..config import config
 from ..depends import param_value_if_widget
 from ..io.notebook import push_on_root
 from ..models.tabulator import (
