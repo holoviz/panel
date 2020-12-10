@@ -105,6 +105,7 @@ class BaseTable(Widget):
         return self._get_column_definitions(col_names, df)
 
     def _get_column_definitions(self, col_names, df):
+        import pandas as pd
         indexes = self.indexes
         columns = []
         for col in col_names:
@@ -112,6 +113,9 @@ class BaseTable(Widget):
                 data = df[col]
             else:
                 data = df.index
+
+            if isinstance(data, pd.DataFrame):
+                raise ValueError("DataFrame contains duplicate column names.")
 
             col_kwargs = {}
             kind = data.dtype.kind
@@ -301,11 +305,12 @@ class BaseTable(Widget):
         """
         self._filters = [(column, filt) for (column, filt) in self._filters
                          if filt is not filter]
+        self._update_cds()
 
     def _get_data(self):
         df = self._filter_dataframe(self.value)
         if df is None:
-            return {}
+            return [], {}
         elif len(self.indexes) > 1:
             df = df.reset_index()
         data = ColumnDataSource.from_df(df).items()
@@ -400,7 +405,7 @@ class BaseTable(Widget):
         stream_value (Union[pd.DataFrame, pd.Series, Dict])
           The new value(s) to append to the existing value.
         reset_index (bool, default=True):
-          If True and the stream_value is a DataFrame, 
+          If True and the stream_value is a DataFrame,
           then its index is reset. Helps to keep the
           index unique and named `index`
 
@@ -453,10 +458,12 @@ class BaseTable(Widget):
             with param.discard_events(self):
                 self.value = pd.concat([self.value, stream_value])
             self.param.trigger('value')
+            stream_value = self._filter_dataframe(stream_value)
             self._stream(stream_value)
             self._updating = False
         elif isinstance(stream_value, pd.Series):
             self.value.loc[value_index_start] = stream_value
+            stream_value = self._filter_dataframe(self.value.iloc[-1:])
             self._stream(stream_value)
         elif isinstance(stream_value, dict):
             if stream_value:
@@ -864,7 +871,7 @@ class Tabulator(BaseTable):
             nrows = self.page_size
             self.page = length//nrows + bool(length%nrows)
         super().stream(stream_value, reset_index)
-        
+
     @updating
     def _patch(self, patch):
         if self.pagination == 'remote':
@@ -883,7 +890,7 @@ class Tabulator(BaseTable):
         super()._patch(patch)
         if self.pagination == 'remote':
             self._update_style()
-            
+
     def _update_cds(self, *events):
         if self._updating:
             return
@@ -946,8 +953,10 @@ class Tabulator(BaseTable):
         props['configuration'] = self._get_configuration(columns)
         props['page'] = self.page
         props['pagination'] = self.pagination
+        props['page_size'] = self.page_size
         props['layout'] = self.layout
         if self.pagination:
+            length = 0 if self._filtered is None else len(self._filtered)
             props['max_page'] = length//self.page_size + bool(length%self.page_size)
         return props
 
@@ -970,7 +979,7 @@ class Tabulator(BaseTable):
                 "headerSort": False,
                 "frozen": True
             })
-        
+
         ordered = []
         for col in self.frozen_columns:
             if isinstance(col, int):

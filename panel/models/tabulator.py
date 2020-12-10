@@ -53,6 +53,8 @@ class DataTabulator(HTMLBox):
 
     page = Int()
 
+    page_size = Int()
+
     max_page = Int()
 
     __css__ = [CSS_HREFS["simple"]]
