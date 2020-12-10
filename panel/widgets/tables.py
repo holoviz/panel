@@ -209,11 +209,14 @@ class BaseTable(Widget):
             if isinstance(filt, FunctionType):
                 df = filt(df)
                 continue
-            val = getattr(filt.owner, filt.name)
+            if isinstance(filt, param.Parameter):
+                val = getattr(filt.owner, filt.name)
+            else:
+                val = filt
             column = df[col_name]
             if np.isscalar(val):
                 mask = column == val
-            elif isinstance(val, list):
+            elif isinstance(val, (list, set)):
                 if not val:
                     continue
                 mask = column.isin(val)
@@ -241,40 +244,45 @@ class BaseTable(Widget):
 
     def add_filter(self, filter, column=None):
         """
-        Adds a filter to the table which will trigger updates when changed.
+        Adds a filter to the table which can be a static value or
+        dynamic parameter based object which will automatically
+        update the table when changed..
 
-        When a widget or parameter is supplied the filtering will follow
-        a few well defined behvaiors:
+        When a static value, widget or parameter is supplied the
+        filtering will follow a few well defined behaviors:
 
-            - scalar: Filters by checking for equality
-            - tuple: A tuple will be interpreted as range.
-            - list: A list will be interpreted as a set of discrete
-                    scalars and the filter will check if the values
-                    in the column match any of the items in the list.
+          * scalar: Filters by checking for equality
+          * tuple: A tuple will be interpreted as range.
+          * list: A list will be interpreted as a set of discrete
+                  scalars and the filter will check if the values
+                  in the column match any of the items in the list.
 
         Arguments
         ---------
         filter: Widget, param.Parameter or FunctionType
-            The filter which will provide the value to filter the
-            DataFrame along the declared column or a function which
-            will be passed the DataFrame and should return a filtered
-            copy of the DataFrame.
+            The value to filter DataFrame with along the declared
+            column or a function that should accept the DataFrame to
+            be filtered as the first argument and should return a
+            filtered copy of the DataFrame.
         column: str or None
-            If the filter is a widget or parameter the column declares
-            the value will filter on.
+            If the filter is a constant value, widget or parameter the
+            column declares the value will filter on.
 
         Raises
         ------
         ValueError: If the filter type is not supported or no column
                     was declared.
         """
-        if isinstance(filter, FunctionType):
+        if isinstance(filter, (tuple, list, set)) or np.isscalar(filter):
+            deps = []
+        elif isinstance(filter, FunctionType):
             deps = list(filter._dinfo['kw'].values()) if hasattr(filter, '_dinfo') else []
         else:
             filter = param_value_if_widget(filter)
             if not isinstance(filter, param.Parameter):
                 raise ValueError(f'{type(self).__name__} filter must be '
-                                 'a parameter, widget or function.')
+                                 'a constant value, parameter, widget '
+                                 'or function.')
             elif column is None:
                 raise ValueError('When filtering with a parameter or '
                                  'widget, a column to filter on must be '
