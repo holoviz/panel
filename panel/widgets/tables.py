@@ -195,7 +195,6 @@ class BaseTable(Widget):
     def _manual_update(self, events, model, doc, root, parent, comm):
         for event in events:
             if event.type == 'triggered' and self._updating:
-                self._updating = False
                 continue
             elif event.name in ('value', 'show_index'):
                 model.columns = self._get_columns()
@@ -465,17 +464,27 @@ class BaseTable(Widget):
             if reset_index:
                 stream_value = stream_value.reset_index(drop=True)
                 stream_value.index += value_index_start
-            self._updating = True
             with param.discard_events(self):
                 self.value = pd.concat([self.value, stream_value])
-            self.param.trigger('value')
+            try:
+                self._updating = True
+                self.param.trigger('value')
+            finally:
+                self._updating = False
             stream_value = self._filter_dataframe(stream_value)
-            self._stream(stream_value)
-            self._updating = False
+            try:
+                self._updating = True
+                self._stream(stream_value)
+            finally:
+                self._updating = False
         elif isinstance(stream_value, pd.Series):
             self.value.loc[value_index_start] = stream_value
             stream_value = self._filter_dataframe(self.value.iloc[-1:])
-            self._stream(stream_value)
+            try:
+                self._updating = True
+                self._stream(stream_value)
+            finally:
+                self._updating = False
         elif isinstance(stream_value, dict):
             if stream_value:
                 try:
