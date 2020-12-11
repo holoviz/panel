@@ -15,8 +15,6 @@ from bokeh.resources import Resources
 from bokeh.settings import settings
 from jinja2 import Environment, Markup, FileSystemLoader
 
-from .state import state
-
 with open(Path(__file__).parent.parent / 'package.json') as f:
     package_json = json.load(f)
     js_version = package_json['version'].split('+')[0]
