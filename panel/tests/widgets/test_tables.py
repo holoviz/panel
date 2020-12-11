@@ -87,7 +87,7 @@ def test_dataframe_editors(dataframe, document, comm):
 
     assert model.columns[-1].editor is editor
 
-    
+
 def test_dataframe_formatter(dataframe, document, comm):
     formatter = NumberFormatter(format='0.0000')
     table = DataFrame(dataframe, formatters={'float': formatter})
@@ -100,19 +100,19 @@ def test_dataframe_triggers(dataframe):
 
     def increment(event, events=events):
         events.append(event)
-    
+
     table = DataFrame(dataframe)
     table.param.watch(increment, 'value')
     table._process_events({'data': {'str': ['C', 'B', 'A']}})
     assert len(events) == 1
-    
-    
+
+
 def test_dataframe_does_not_trigger(dataframe):
     events = []
 
     def increment(event, events=events):
         events.append(event)
-    
+
     table = DataFrame(dataframe)
     table.param.watch(increment, 'value')
     table._process_events({'data': {'str': ['A', 'B', 'C']}})
@@ -152,7 +152,7 @@ def test_dataframe_duplicate_column_name(document, comm):
     table = DataFrame(df)
     with pytest.raises(ValueError):
         table.value = table.value.rename(columns={'a': 'b'})
-    
+
     df = pd.DataFrame([[1, 1], [2, 2]], columns=['a', 'b'])
     table = DataFrame(df)
     table.get_root(document, comm)
@@ -289,8 +289,8 @@ def test_tabulator_frozen_cols(document, comm):
         {'field': 'C'},
         {'field': 'D'}
     ]
-    
-    
+
+
 def test_tabulator_frozen_rows(document, comm):
     df = makeMixedDataFrame()
     table = Tabulator(df, frozen_rows=[0, -1])
@@ -359,6 +359,21 @@ def test_tabulator_pagination(document, comm):
         np.testing.assert_array_equal(values, expected[col])
 
 
+def test_tabulator_pagination_selection(document, comm):
+    df = makeMixedDataFrame()
+    table = Tabulator(df, pagination='remote', page_size=2)
+
+    model = table.get_root(document, comm)
+
+    table.selection = [2, 3]
+
+    assert model.source.selected.indices == []
+
+    table.page = 2
+
+    assert model.source.selected.indices == [0, 1]
+
+
 def test_tabulator_styling(document, comm):
     df = makeMixedDataFrame()
     table = Tabulator(df)
@@ -405,7 +420,6 @@ def test_tabulator_stream_series(document, comm):
     }
     for col, values in model.source.data.items():
         np.testing.assert_array_equal(values, expected[col])
-
 
 
 def test_tabulator_stream_scalars(document, comm):
@@ -609,7 +623,7 @@ def test_tabulator_widget_scalar_filter(document, comm):
         np.testing.assert_array_equal(values, expected[col])
 
     widget.value = 'foo1'
-    
+
     expected = {
         'index': np.array([0]),
         'A': np.array([0]),
@@ -632,7 +646,7 @@ def test_tabulator_function_filter(document, comm):
 
     def filter_c(df, value):
         return df[df.C.str.contains(value)]
-        
+
     table.add_filter(bind(filter_c, value=widget), 'C')
 
     expected = {
@@ -647,7 +661,7 @@ def test_tabulator_function_filter(document, comm):
         np.testing.assert_array_equal(values, expected[col])
 
     widget.value = 'foo1'
-    
+
     expected = {
         'index': np.array([0]),
         'A': np.array([0]),
