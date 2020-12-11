@@ -44,4 +44,4 @@ from .select import ( # noqa
     MultiChoice, MultiSelect, RadioButtonGroup, RadioBoxGroup, Select,
     ToggleGroup
 )
-from .tables import DataFrame  # noqa
+from .tables import DataFrame, Tabulator  # noqa

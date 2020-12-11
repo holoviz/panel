@@ -66,6 +66,12 @@ def push(doc, comm, binary=True):
         comm.send(json.dumps(header))
         comm.send(buffers=[payload])
 
+
+def push_on_root(ref):
+    (self, root, doc, comm) = state._views[ref]
+    if comm and 'embedded' not in root.tags:
+        push(doc, comm)
+
 DOC_NB_JS = _env.get_template("doc_nb_js.js")
 AUTOLOAD_NB_JS = _env.get_template("autoload_panel_js.js")
 NB_TEMPLATE_BASE = _env.get_template('nb_template.html')

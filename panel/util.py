@@ -66,6 +66,13 @@ def is_dataframe(obj):
     return isinstance(obj, pd.DataFrame)
 
 
+def is_series(obj):
+    if 'pandas' not in sys.modules:
+        return False
+    import pandas as pd
+    return isinstance(obj, pd.Series)
+
+
 def hashable(x):
     if isinstance(x, MutableSequence):
         return tuple(x)
@@ -241,7 +248,9 @@ def isdatetime(value):
     """
     Whether the array or scalar is recognized datetime type.
     """
-    if isinstance(value, np.ndarray):
+    if is_series(value) and len(value):
+        return isinstance(value.iloc[0], datetime_types)
+    elif isinstance(value, np.ndarray):
         return (value.dtype.kind == "M" or
                 (value.dtype.kind == "O" and len(value) and
                  isinstance(value[0], datetime_types)))
