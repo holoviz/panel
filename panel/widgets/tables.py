@@ -71,7 +71,7 @@ class BaseTable(Widget):
 
     _manual_params = ['formatters', 'editors', 'widths', 'titles', 'value', 'show_index']
 
-    _rename = {'disabled': None, 'selection': None}
+    _rename = {'disabled': 'editable', 'selection': None}
 
     def __init__(self, value=None, **params):
         super(BaseTable, self).__init__(value=value, **params)
@@ -93,6 +93,12 @@ class BaseTable(Widget):
         if len(cols) != len(cols.drop_duplicates()):
             raise ValueError('Cannot display a pandas.DataFrame with '
                              'duplicate column names.')
+
+    def _process_param_change(self, msg):
+        msg = super(BaseTable, self)._process_param_change(msg)
+        if 'editable' in msg:
+            msg['editable'] = not msg.pop('editable') and len(self.indexes) <= 1
+        return msg
 
     def _get_columns(self):
         if self.value is None:
@@ -719,11 +725,6 @@ class DataFrame(BaseTable):
         props['reorderable'] = self.reorderable
         return props
 
-    def _process_param_change(self, msg):
-        if 'disabled' in msg:
-            msg['editable'] = not msg.pop('disabled') and len(self.indexes) <= 1
-        return super(DataFrame, self)._process_param_change(msg)
-
     def _update_aggregators(self, model):
         for g in model.grouping:
             group = self._renamed_cols.get(g.getter, g.getter)
@@ -754,7 +755,8 @@ class Tabulator(BaseTable):
         'fit_data', 'fit_data_fill', 'fit_data_stretch', 'fit_data_table',
         'fit_columns'])
 
-    pagination = param.ObjectSelector(default=None, objects=['local', 'remote'])
+    pagination = param.ObjectSelector(default=None, allow_None=True,
+                                      objects=['local', 'remote'])
 
     page = param.Integer(default=1, doc="""
         Currently selected page (indexed starting at 1).""")
@@ -845,6 +847,8 @@ class Tabulator(BaseTable):
         return len(self._filtered)
 
     def _get_style_data(self):
+        if self.value is None:
+            return {}
         if self.pagination == 'remote':
             nrows = self.page_size
             start = (self.page-1)*nrows

@@ -214,6 +214,8 @@ export class DataTabulatorView extends PanelHTMLBoxView {
         }
       }
 
+	  tab_column.editable = () => this.model.editable
+
       const editor: any = column.editor
       const ctype = editor.type
       if (tab_column.editor != null) {
@@ -441,6 +443,7 @@ export namespace DataTabulator {
   export type Props = HTMLBox.Props & {
     columns: p.Property<TableColumn[]>
     configuration: p.Property<any>
+    editable: p.Property<boolean>
     follow: p.Property<boolean>
     frozen_rows: p.Property<number[]>
     layout: p.Property<"fit_data" | "fit_data_fill" | "fit_data_stretch" | "fit_data_table" | "fit_columns">
@@ -473,6 +476,7 @@ export class DataTabulator extends HTMLBox {
     this.define<DataTabulator.Props>({
       configuration: [p.Any, ],
       columns: [ p.Array, [] ],
+	  editable: [ p.Boolean, true ],
       follow: [p.Boolean, ],
       frozen_rows: [ p.Array, []],
       layout: [ p.Any, "fit_data" ],

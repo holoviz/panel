@@ -31,6 +31,8 @@ class DataTabulator(HTMLBox):
     The list of child column widgets.
     """)
 
+    editable = Bool(default=True)
+
     follow = Bool()
 
     frozen_rows = List(Int)
