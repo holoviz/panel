@@ -407,6 +407,58 @@ def test_tabulator_stream_series(document, comm):
         np.testing.assert_array_equal(values, expected[col])
 
 
+
+def test_tabulator_stream_scalars(document, comm):
+    df = makeMixedDataFrame()
+    table = Tabulator(df)
+
+    model = table.get_root(document, comm)
+
+    table.patch({'A': [(0, 2), (4, 1)], 'C': [(0, 'foo0')]})
+
+    expected = {
+        'index': np.array([0, 1, 2, 3, 4]),
+        'A': np.array([2, 1, 2, 3, 1]),
+        'B': np.array([0, 1, 0, 1, 0]),
+        'C': np.array(['foo0', 'foo2', 'foo3', 'foo4', 'foo5']),
+        'D': np.array(['2009-01-01T00:00:00.000000000',
+                       '2009-01-02T00:00:00.000000000',
+                       '2009-01-05T00:00:00.000000000',
+                       '2009-01-06T00:00:00.000000000',
+                       '2009-01-07T00:00:00.000000000'],
+                      dtype='datetime64[ns]')
+    }
+    for col, values in model.source.data.items():
+        np.testing.assert_array_equal(values, expected[col])
+
+
+def test_tabulator_stream_ranges(document, comm):
+    df = makeMixedDataFrame()
+    table = Tabulator(df)
+
+    model = table.get_root(document, comm)
+
+    table.patch({
+        'A': [(slice(0, 5), [5, 4, 3, 2, 1])],
+        'C': [(slice(0, 3), ['foo3', 'foo2', 'foo1'])]
+    })
+
+    expected = {
+        'index': np.array([0, 1, 2, 3, 4]),
+        'A': np.array([5, 4, 3, 2, 1]),
+        'B': np.array([0, 1, 0, 1, 0]),
+        'C': np.array(['foo3', 'foo2', 'foo1', 'foo4', 'foo5']),
+        'D': np.array(['2009-01-01T00:00:00.000000000',
+                       '2009-01-02T00:00:00.000000000',
+                       '2009-01-05T00:00:00.000000000',
+                       '2009-01-06T00:00:00.000000000',
+                       '2009-01-07T00:00:00.000000000'],
+                      dtype='datetime64[ns]')
+    }
+    for col, values in model.source.data.items():
+        np.testing.assert_array_equal(values, expected[col])
+
+
 def test_tabulator_stream_series_paginated_not_follow(document, comm):
     df = makeMixedDataFrame()
     table = Tabulator(df, pagination='remote', page_size=2)
