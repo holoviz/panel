@@ -35,14 +35,18 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       }
     }
 
-    const {configuration, layout, columns, theme, theme_url} = this.model.properties;
-    this.on_change([configuration, layout, columns], () => resize())
+    const {configuration, layout, columns, theme, theme_url, groupby} = this.model.properties;
+    this.on_change([configuration, layout, columns, groupby], () => resize())
 
     this.on_change([theme, theme_url], () => this.setCSS())
 
     this.connect(this.model.properties.download.change, () => {
       const ftype = this.model.filename.endsWith('.json') ? "json" : "csv"
       this.tabulator.download(ftype, this.model.filename)
+    })
+
+    this.connect(this.model.properties.hidden_columns.change, () => {
+      this.hideColumns()
     })
 
     this.connect(this.model.properties.page_size.change, () => {
@@ -88,6 +92,9 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     // Patch the ajax request method
     const ajax = this.tabulator.modules.ajax
     this.tabulator.modules.ajax.sendRequest = () => this.requestPage(ajax.params.page)
+
+    this.setGroupBy()
+    this.hideColumns()
 
     // Set up page
     if (this.model.pagination) {
@@ -292,6 +299,22 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     this.updateSelection()
   }
 
+  setGroupBy(): void {
+    if (this.model.groupby.length == 0) {
+      this.tabulator.setGroupBy(false)
+      return
+    }
+    const groupby = (data: any) => {
+      const groups = []
+      for (const g of this.model.groupby) {
+        const group = g + ': ' + data[g]
+        groups.push(group)
+      }
+      return groups.join(', ')
+    }
+    this.tabulator.setGroupBy(groupby)
+  }
+
   setCSS(): boolean {
     let theme: string
     if (this.model.theme == "default")
@@ -397,6 +420,15 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     this.updateSelection()
   }
 
+  hideColumns(): void {
+    for (const column of this.tabulator.getColumns()) {
+      if (this.model.hidden_columns.indexOf(column._column.field) > -1)
+        column.hide()
+      else
+        column.show()
+    }
+  }
+
   setMaxPage(): void {
     this.tabulator.setMaxPage(this.model.max_page)
     this.tabulator.modules.page._setPageButtons()
@@ -453,6 +485,8 @@ export namespace DataTabulator {
     editable: p.Property<boolean>
     follow: p.Property<boolean>
     frozen_rows: p.Property<number[]>
+    groupby: p.Property<string[]>
+    hidden_columns: p.Property<string[]>
     layout: p.Property<"fit_data" | "fit_data_fill" | "fit_data_stretch" | "fit_data_table" | "fit_columns">
     max_page: p.Property<number>
     page: p.Property<number>
@@ -488,6 +522,8 @@ export class DataTabulator extends HTMLBox {
       filename: [ p.String, 'table.csv'],
       follow: [p.Boolean, ],
       frozen_rows: [ p.Array, []],
+      groupby: [ p.Array, [] ],
+      hidden_columns: [ p.Array, [] ],
       layout: [ p.Any, "fit_data" ],
       max_page: [ p.Number, 0 ],
       pagination: [ p.String, null ],

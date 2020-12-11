@@ -753,6 +753,12 @@ class Tabulator(BaseTable):
     groups = param.Dict(default={}, doc="""
         Dictionary mapping defining the groups.""")
 
+    groupby = param.List(default=[], doc="""
+        Groups rows in the table by one or more columns.""")
+
+    hidden_columns = param.List(default=[], doc="""
+        List of columns to hide.""")
+
     layout = param.ObjectSelector(default='fit_data_table', objects=[
         'fit_data', 'fit_data_fill', 'fit_data_stretch', 'fit_data_table',
         'fit_columns'])
@@ -979,6 +985,8 @@ class Tabulator(BaseTable):
         props['pagination'] = self.pagination
         props['page_size'] = self.page_size
         props['layout'] = self.layout
+        props['groupby'] = self.groupby
+        props['hidden_columns'] = self.hidden_columns
         process = {'theme': self.theme, 'frozen_rows': self.frozen_rows}
         props.update(self._process_param_change(process))
         if self.pagination:

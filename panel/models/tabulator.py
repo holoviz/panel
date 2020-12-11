@@ -41,6 +41,10 @@ class DataTabulator(HTMLBox):
 
     frozen_rows = List(Int)
 
+    groupby = List(String)
+
+    hidden_columns = List(String)
+
     layout = Enum('fit_data', 'fit_data_fill', 'fit_data_stretch', 'fit_data_table', 'fit_columns', default="fit_data")
 
     source = Instance(ColumnDataSource)
