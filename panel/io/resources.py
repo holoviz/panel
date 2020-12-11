@@ -15,6 +15,7 @@ from bokeh.resources import Resources
 from bokeh.settings import settings
 from jinja2 import Environment, Markup, FileSystemLoader
 
+from .state import state
 
 with open(Path(__file__).parent.parent / 'package.json') as f:
     package_json = json.load(f)
@@ -59,7 +60,12 @@ def js_files(self):
     # Load requirejs last to avoid interfering with other libraries
     require_index = [i for i, jsf in enumerate(js_files) if 'require' in jsf]
     resources = settings.resources(default='server')
-    dist_dir = LOCAL_DIST if resources == 'server' else CDN_DIST
+    if resources == 'server':
+        root_url = self.root_url
+        root_url = root_url[:-1] if root_url.endswith('/') else root_url
+        dist_dir = (self.root_url or '/') + LOCAL_DIST
+    else:
+        dist_dir = CDN_DIST
     if require_index:
         requirejs = js_files.pop(require_index[0])
         if any('ace' in jsf for jsf in js_files):
@@ -78,7 +84,12 @@ def css_files(self):
             continue
         files.append(cssf)
     resources = settings.resources(default='server')
-    dist_dir = LOCAL_DIST if resources == 'server' else CDN_DIST
+    if resources == 'server':
+        root_url = self.root_url
+        root_url = root_url[:-1] if root_url.endswith('/') else root_url
+        dist_dir = root_url + LOCAL_DIST
+    else:
+        dist_dir = CDN_DIST
     for cssf in glob.glob(str(DIST_DIR / 'css' / '*.css')):
         if resources == 'inline':
             break
