@@ -195,6 +195,7 @@ class BaseTable(Widget):
     def _manual_update(self, events, model, doc, root, parent, comm):
         for event in events:
             if event.type == 'triggered' and self._updating:
+                self._updating = False
                 continue
             elif event.name in ('value', 'show_index'):
                 model.columns = self._get_columns()
