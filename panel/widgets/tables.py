@@ -24,6 +24,8 @@ from ..models.tabulator import (
 from ..viewable import Layoutable
 from ..util import isdatetime
 from .base import Widget
+from .button import Button
+from .input import TextInput
 
 
 def updating(fn):
@@ -1064,3 +1066,57 @@ class Tabulator(BaseTable):
                              "or via the configuration, not both.")
         configuration['columns'] = self._config_columns(columns)
         return configuration
+
+    def download(self, filename='table.csv'):
+        """
+        Triggers downloading of the table as a CSV or JSON.
+
+        Arguments
+        ---------
+        filename: str
+            The filename to save the table as.
+        """
+        for ref, (m, _) in self._models.items():
+            m.filename = m.filename
+            push_on_root(ref)
+        for ref, (m, _) in self._models.items():
+            m.download = not m.download
+            push_on_root(ref)
+
+    def download_menu(self, text_kwargs={}, button_kwargs={}):
+        """
+        Returns a menu containing a TextInput and Button widget to set
+        the filename and trigger a client-side download of the data.
+
+        Arguments
+        ---------
+        text_kwargs: dict
+            Keyword arguments passed to the TextInput constructor
+        button_kwargs: dict
+            Keyword arguments passed to the Button constructor
+
+        Returns
+        -------
+        filename: TextInput
+            The TextInput widget setting a filename.
+        button: Button
+            The Button that triggers a download.
+        """
+        button_kwargs = dict(button_kwargs)
+        if 'name' not in button_kwargs:
+            button_kwargs['name'] = 'Download'
+        button = Button(**button_kwargs)
+        button.js_on_click({'table': self}, code="""
+        table.download = !table.download
+        """)
+
+        text_kwargs = dict(text_kwargs)
+        if 'name' not in text_kwargs:
+            text_kwargs['name'] = 'Filename'
+        if 'value' not in text_kwargs:
+            text_kwargs['value'] = 'table.csv'
+        filename = TextInput(name='Filename', value='table.csv')
+        filename.jscallback({'table': self}, value="""
+        table.filename = cb_obj.value
+        """)
+        return filename, button

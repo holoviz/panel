@@ -26,7 +26,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     const resize = () => {
       this.render()
       this.update_layout()
-	  if (this.root == this) {
+      if (this.root == this) {
         this.compute_viewport()
         this.compute_layout()
       } else {
@@ -39,6 +39,11 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     this.on_change([configuration, layout, columns], () => resize())
 
     this.on_change([theme, theme_url], () => this.setCSS())
+
+    this.connect(this.model.properties.download.change, () => {
+      const ftype = this.model.filename.endsWith('.json') ? "json" : "csv"
+      this.tabulator.download(ftype, this.model.filename)
+    })
 
     this.connect(this.model.properties.page_size.change, () => {
       this.setPageSize();
@@ -214,7 +219,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
         }
       }
 
-	  tab_column.editable = () => this.model.editable
+      tab_column.editable = () => this.model.editable
 
       const editor: any = column.editor
       const ctype = editor.type
@@ -443,6 +448,8 @@ export namespace DataTabulator {
   export type Props = HTMLBox.Props & {
     columns: p.Property<TableColumn[]>
     configuration: p.Property<any>
+    download: p.Property<boolean>
+    filename: p.Property<string>
     editable: p.Property<boolean>
     follow: p.Property<boolean>
     frozen_rows: p.Property<number[]>
@@ -476,7 +483,9 @@ export class DataTabulator extends HTMLBox {
     this.define<DataTabulator.Props>({
       configuration: [p.Any, ],
       columns: [ p.Array, [] ],
-	  editable: [ p.Boolean, true ],
+      download: [ p.Boolean, true ],
+      editable: [ p.Boolean, true ],
+      filename: [ p.String, 'table.csv'],
       follow: [p.Boolean, ],
       frozen_rows: [ p.Array, []],
       layout: [ p.Any, "fit_data" ],

@@ -31,7 +31,11 @@ class DataTabulator(HTMLBox):
     The list of child column widgets.
     """)
 
+    download = Bool(default=False)
+
     editable = Bool(default=True)
+
+    filename = String(default="table.csv")
 
     follow = Bool()
 
