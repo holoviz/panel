@@ -240,10 +240,14 @@ if __name__ == "__main__":
         with open('./panel/package.json') as f:
             package_json = json.load(f)
         js_version = package_json['version']
-        if version != 'None' and version.split('+')[0] != js_version.replace('-', ''):
-            raise ValueError("panel.js version (%s) does not match "
-                             "panel version (%s). Cannot build release."
-                             % (js_version, version))
+        version = version.split('+')[0]
+        if any(dev in version for dev in ('a', 'b', 'rc')) and not '-' in js_version:
+            raise ValueError(f"panel.js dev versions ({js_version}) must "
+                             "must separate dev suffix with a dash, e.g. "
+                             "v1.0.0rc1 should be v1.0.0-rc1.")
+        if version != 'None' and version != js_version.replace('-', ''):
+            raise ValueError(f"panel.js version ({js_version}) does not match "
+                             f"panel version ({version}). Cannot build release.")
 
     setup(**setup_args)
 
