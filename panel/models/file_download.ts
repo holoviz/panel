@@ -101,9 +101,12 @@ export class FileDownloadView extends InputWidgetView {
     }
     this.group_el.appendChild(this.anchor_el)
 
+    // If this is not added it will give the following error
+    // "Uncaught TypeError: t is undefined"
+    // This seems to be related to button do not have a value
+    // property.
     this.input_el = input({
       type: "bk_btn, bk_btn_type",
-      disabled: this.model.disabled,
     })
     this.input_el.addEventListener("change", () => this.change_input())
   }
