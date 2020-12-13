@@ -9,6 +9,7 @@ import threading
 
 from collections import OrderedDict
 from weakref import WeakKeyDictionary, WeakSet
+from urllib.parse import urljoin
 
 import param
 
