@@ -9,6 +9,7 @@ import threading
 
 from collections import OrderedDict
 from weakref import WeakKeyDictionary, WeakSet
+from urllib.parse import urljoin
 
 import param
 
@@ -25,6 +26,9 @@ class _state(param.Parameterized):
     Holds global state associated with running apps, allowing running
     apps to indicate their state to a user.
     """
+
+    base_url = param.String(default='/', readonly=True, doc="""
+       Base URL for all server paths.""")
 
     busy = param.Boolean(default=False, readonly=True, doc="""
        Whether the application is currently busy processing a user
@@ -289,6 +293,14 @@ class _state(param.Parameterized):
         if self.encryption is None:
             return access_token.decode('utf-8')
         return self.encryption.decrypt(access_token).decode('utf-8')
+
+    @property
+    def app_url(self):
+        if not self.curdoc:
+            return
+        app_url = self.curdoc.session_context.server_context.application_context.url
+        app_url = app_url[1:] if app_url.startswith('/') else app_url
+        return urljoin(self.base_url, app_url)
 
     @property
     def curdoc(self):
