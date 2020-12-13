@@ -66,7 +66,7 @@ def js_files(self):
     if require_index:
         requirejs = js_files.pop(require_index[0])
         if any('ace' in jsf for jsf in js_files):
-            js_files.append(dist_dir, 'pre_require.js')
+            js_files.append(dist_dir + 'pre_require.js')
         js_files.append(requirejs)
         if any('ace' in jsf for jsf in js_files):
             js_files.append(dist_dir + 'post_require.js')
