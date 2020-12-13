@@ -10,6 +10,7 @@ import os
 
 from collections import OrderedDict
 from pathlib import Path
+from urllib.parse import urljoin
 
 from bokeh.resources import Resources
 from bokeh.settings import settings
@@ -20,7 +21,7 @@ with open(Path(__file__).parent.parent / 'package.json') as f:
     js_version = package_json['version'].split('+')[0]
 
 CDN_DIST = f"https://unpkg.com/@holoviz/panel@{js_version}/dist/"
-LOCAL_DIST = "/static/extensions/panel/"
+LOCAL_DIST = "static/extensions/panel/"
 DIST_DIR = Path(__file__).parent.parent / 'dist'
 
 
@@ -59,18 +60,16 @@ def js_files(self):
     require_index = [i for i, jsf in enumerate(js_files) if 'require' in jsf]
     resources = settings.resources(default='server')
     if resources == 'server':
-        root_url = self.root_url
-        root_url = root_url[:-1] if root_url.endswith('/') else root_url
-        dist_dir = (self.root_url or '/') + LOCAL_DIST
+        dist_dir = urljoin(self.root_url, LOCAL_DIST)
     else:
         dist_dir = CDN_DIST
     if require_index:
         requirejs = js_files.pop(require_index[0])
         if any('ace' in jsf for jsf in js_files):
-            js_files.append(dist_dir+'pre_require.js')
+            js_files.append(dist_dir, 'pre_require.js')
         js_files.append(requirejs)
         if any('ace' in jsf for jsf in js_files):
-            js_files.append(dist_dir+'post_require.js')
+            js_files.append(dist_dir + 'post_require.js')
     return js_files
 
 def css_files(self):
@@ -83,9 +82,7 @@ def css_files(self):
         files.append(cssf)
     resources = settings.resources(default='server')
     if resources == 'server':
-        root_url = self.root_url
-        root_url = root_url[:-1] if root_url.endswith('/') else root_url
-        dist_dir = root_url + LOCAL_DIST
+        dist_dir = urljoin(self.root_url, LOCAL_DIST)
     else:
         dist_dir = CDN_DIST
     for cssf in glob.glob(str(DIST_DIR / 'css' / '*.css')):

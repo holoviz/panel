@@ -10,6 +10,7 @@ import uuid
 
 from collections import OrderedDict
 from functools import partial
+from urllib.parse import urljoin
 
 import param
 
@@ -447,7 +448,10 @@ class BasicTemplate(BaseTemplate):
     def _template_resources(self):
         name = type(self).__name__.lower()
         resources = _settings.resources(default="server")
-        dist_path = LOCAL_DIST if resources == 'server' else CDN_DIST
+        if resources == 'server':
+            dist_path = urljoin(state.base_url, LOCAL_DIST)
+        else:
+            dist_path = CDN_DIST
 
         # External resources
         css_files = dict(self._resources['css'])
