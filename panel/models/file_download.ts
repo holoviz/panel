@@ -1,6 +1,7 @@
 import {InputWidget, InputWidgetView} from "@bokehjs/models/widgets/input_widget"
 
 import {bk_btn, bk_btn_type} from "@bokehjs/styles/buttons"
+import {input} from "@bokehjs/core/dom"
 
 import {ButtonType} from "@bokehjs/core/enums"
 import * as p from "@bokehjs/core/properties"
@@ -34,6 +35,8 @@ export class FileDownloadView extends InputWidgetView {
   _prev_href: string | null = ""
   _prev_download: string | null = ""
 
+  protected input_el: HTMLInputElement
+
   initialize(): void {
     super.initialize()
     if ( this.model.data && this.model.filename ) {
@@ -47,6 +50,7 @@ export class FileDownloadView extends InputWidgetView {
     this.connect(this.model.properties.filename.change, () => this._update_download())
     this.connect(this.model.properties._transfers.change, () => this._handle_click())
     this.connect(this.model.properties.label.change, () => this._update_label())
+    this.connect(this.model.properties.disabled.change, () => this.set_disabled())
   }
 
   render(): void {
@@ -96,6 +100,15 @@ export class FileDownloadView extends InputWidgetView {
       this.anchor_el.addEventListener("click", this._click_listener)
     }
     this.group_el.appendChild(this.anchor_el)
+
+    // If this is not added it will give the following error
+    // "Uncaught TypeError: t is undefined"
+    // This seems to be related to button do not have a value
+    // property.
+    this.input_el = input({
+      type: "bk_btn, bk_btn_type",
+    })
+    this.input_el.addEventListener("change", () => this.change_input())
   }
 
   _increment_clicks() : void {
@@ -164,6 +177,14 @@ export class FileDownloadView extends InputWidgetView {
       if ( prev_button_type ) {
         this.anchor_el.classList.replace(prev_button_type, bk_btn_type(this.model.button_type))
       }
+    }
+  }
+
+  set_disabled(): void {
+    if (this.model.disabled){
+      this.anchor_el.setAttribute("disabled", "")
+    } else {
+      this.anchor_el.removeAttribute("disabled")
     }
   }
 }
