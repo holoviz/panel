@@ -17,6 +17,7 @@ from ..config import config
 from ..io.rest import REST_PROVIDERS
 from ..io.server import INDEX_HTML, get_static_routes
 from ..io.state import state
+from ..util import edit_readonly
 
 log = logging.getLogger(__name__)
 
@@ -139,7 +140,8 @@ class Serve(_BkServe):
         prefix = args.prefix or ''
         if not prefix.endswith('/'):
             prefix += '/'
-        state.base_url = urljoin('/', prefix)
+        with edit_readonly(state):
+            state.base_url = urljoin('/', prefix)
 
         # Handle tranquilized functions in the supplied functions
         if args.rest_provider in REST_PROVIDERS:
