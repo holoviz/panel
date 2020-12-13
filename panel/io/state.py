@@ -300,7 +300,7 @@ class _state(param.Parameterized):
             return
         app_url = self.curdoc.session_context.server_context.application_context.url
         app_url = app_url[1:] if app_url.startswith('/') else app_url
-        return urljoin(self.base_url + app_url)
+        return urljoin(self.base_url, app_url)
 
     @property
     def curdoc(self):
