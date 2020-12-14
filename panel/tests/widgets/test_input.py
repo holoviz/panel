@@ -3,6 +3,8 @@ from __future__ import absolute_import, division, unicode_literals
 import pytest
 from datetime import datetime, date
 
+import param
+import panel as pn
 from bokeh.models.widgets import FileInput as BkFileInput
 from panel.widgets import (
     Checkbox, DatePicker, DatetimeInput, DatetimeRangeInput, FileInput,
@@ -204,3 +206,13 @@ def test_datetime_range_input(document, comm):
     dt_input._start._process_events({'value': '2018-01-01 00:00:00'})
     assert dt_input.value == (datetime(2018, 1, 1), datetime(2018, 1, 3))
     assert label.text == 'Datetime'
+
+
+def test_number_input():
+    class Test(param.Parameterized) :
+        number = param.Number(default=0, allow_None=True)
+        none = param.Number(default=None, allow_None=True)
+
+    test_widget = pn.panel(Test())
+    assert test_widget[1].value == 0
+    assert test_widget[2].value is None
