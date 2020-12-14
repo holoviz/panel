@@ -359,7 +359,7 @@ class Param(PaneBase):
         kw = dict(disabled=p_obj.constant, name=label)
 
         value = getattr(self.object, p_name)
-        if value is not None:
+        if value is not None or getattr(p_obj, 'allow_None', False):
             kw['value'] = value
 
         # Update kwargs
