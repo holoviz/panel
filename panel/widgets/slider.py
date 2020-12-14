@@ -105,7 +105,7 @@ class ContinuousSlider(_SliderBase):
     __abstract = True
 
     def __init__(self, **params):
-        if 'value' not in params:
+        if params.get('value') is None:
             params['value'] = params.get('start', self.start)
         super().__init__(**params)
 
