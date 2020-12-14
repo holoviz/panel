@@ -105,7 +105,7 @@ class ContinuousSlider(_SliderBase):
     __abstract = True
 
     def __init__(self, **params):
-        if params.get('value') is None:
+        if 'value' not in params:
             params['value'] = params.get('start', self.start)
         super().__init__(**params)
 
@@ -156,21 +156,19 @@ class FloatSlider(ContinuousSlider):
     >>> FloatSlider(value=0.5, start=0.0, end=1.0, step=0.1, name="Float value")
     """
 
-    value = param.Number(default=0.0, doc="""
-        The selected floating-point value of the slider. Updated when the handle is dragged.
-        """)
+    start = param.Number(default=0.0, doc="The lower bound.")
+
+    end = param.Number(default=1.0, doc="The upper bound.")
+
+    step = param.Number(default=0.1, doc="The step size.")
+
+    value = param.Number(default=0.0, allow_None=True, doc="""
+        The selected floating-point value of the slider. Updated when
+        the handle is dragged."""
+    )
 
     value_throttled = param.Number(default=None, constant=True, doc="""
          The value of the slider. Updated when the handle is released.""")
-
-    start = param.Number(default=0.0, doc="""
-        The lower bound.""")
-
-    end = param.Number(default=1.0, doc="""
-        The upper bound.""")
-
-    step = param.Number(default=0.1, doc="""
-        The step size.""")
 
     _rename: ClassVar[Mapping[str, str | None]] = {'name': 'title'}
 
@@ -187,9 +185,6 @@ class IntSlider(ContinuousSlider):
     >>> IntSlider(value=5, start=0, end=10, step=1, name="Integer Value")
     """
 
-    value = param.Integer(default=0, doc="""
-        The selected integer value of the slider. Updated when the handle is dragged.""")
-
     start = param.Integer(default=0, doc="""
         The lower bound.""")
 
@@ -198,6 +193,9 @@ class IntSlider(ContinuousSlider):
 
     step = param.Integer(default=1, doc="""
         The step size.""")
+
+    value = param.Integer(default=0, allow_None=True, doc="""
+        The selected integer value of the slider. Updated when the handle is dragged.""")
 
     value_throttled = param.Integer(default=None, constant=True, doc="""
         The value of the slider. Updated when the handle is released""")
