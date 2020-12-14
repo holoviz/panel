@@ -524,7 +524,7 @@ class _SpinnerBase(_NumericInputBase):
     __abstract = True
 
     def __init__(self, **params):
-        if params.get('value') is None:
+        if 'value' not in params:
             value = params.get('start', self.value)
             if value is not None:
                 params['value'] = value
