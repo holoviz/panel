@@ -633,7 +633,7 @@ class DataFrame(BaseTable):
     hierarchical = param.Boolean(default=False, constant=True, doc="""
         Whether to generate a hierachical index.""")
 
-    fit_columns = param.Boolean(default=None, doc="""
+    fit_columns = param.Boolean(default=True, doc="""
         Whether columns should expand to the available width. This
         results in no horizontal scrollbar showing up, but data can
         get unreadable if there is no enough space available.""")
