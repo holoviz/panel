@@ -138,9 +138,12 @@ export function toText(jsonValue: any) {
 export function substituteIn(template: any, json: any) {
   let output = template;
   for (const key in json) {
+    if (typeof json[key] === 'object') {
+      for (const subkey in json[key])
+        output = output.replace(`{${key}.${subkey}}`, json[key][subkey]);
+    }
     output = output.replace(`{${key}}`, json[key]);
   }
-
   return output;
 }
 
@@ -160,7 +163,7 @@ export function makeTooltip(tooltips: any, layers: any[]) {
   for (let i = 0; i < layers.length; i++) {
     const layer = layers[i]
     const layer_id = (layer.id as string)
-    if (i.toString() in tooltips || layer_id in tooltips) {
+    if (typeof tooltips !== "boolean" && (i.toString() in tooltips || layer_id in tooltips)) {
       layer_tooltips[layer_id] = layer_id in tooltips ? tooltips[layer_id]: tooltips[i.toString()]
       per_layer = true
     }
@@ -173,6 +176,11 @@ export function makeTooltip(tooltips: any, layers: any[]) {
       }
 
       const tooltip = (per_layer) ? layer_tooltips[pickedInfo.layer.id]: tooltips
+      if (tooltip == null)
+        return
+      else if (typeof tooltip === "boolean")
+        return tooltip ? getTooltipDefault(pickedInfo) : null
+
       const formattedTooltip: any = {
         style: tooltip.style || DEFAULT_STYLE
       };
