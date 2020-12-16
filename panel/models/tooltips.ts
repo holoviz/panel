@@ -144,23 +144,35 @@ export function substituteIn(template: any, json: any) {
   return output;
 }
 
-export function makeTooltip(tooltip: any) {
+export function makeTooltip(tooltips: any, layers: any[]) {
   /*
    * If explictly no tooltip passed by user, return null
    * If a JSON object passed, return a tooltip based on that object
    *   We expect the user has passed a string template that will take pickedInfo keywords
    * If a boolean passed, return the default tooltip
    */
-  if (!tooltip) {
+  if (!tooltips) {
     return null;
   }
 
-  if (tooltip.html || tooltip.text) {
+  let per_layer = false
+  const layer_tooltips: any = {}
+  for (let i = 0; i < layers.length; i++) {
+    const layer = layers[i]
+    const layer_id = (layer.id as string)
+    if (i.toString() in tooltips || layer_id in tooltips) {
+      layer_tooltips[layer_id] = layer_id in tooltips ? tooltips[layer_id]: tooltips[i.toString()]
+      per_layer = true
+    }
+  }
+
+  if (tooltips.html || tooltips.text || per_layer) {
     return (pickedInfo: any) => {
       if (!pickedInfo.picked) {
         return null;
       }
 
+      const tooltip = (per_layer) ? layer_tooltips[pickedInfo.layer.id]: tooltips
       const formattedTooltip: any = {
         style: tooltip.style || DEFAULT_STYLE
       };

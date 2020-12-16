@@ -66,7 +66,7 @@ class DeckGLPlot(HTMLBox):
 
     mapbox_api_key = String()
 
-    tooltip = Either(Bool, Dict(String, String))
+    tooltip = Either(Bool, Dict(Any, Any))
 
     clickState = Dict(String, Any)
 
