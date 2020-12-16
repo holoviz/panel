@@ -124,7 +124,7 @@ class DeckGL(PaneBase):
             data = dict(self.object.__dict__)
             mapbox_api_key = data.pop('mapbox_key', self.mapbox_api_key)
             deck_widget = data.pop('deck_widget', None)
-            tooltip = deck_widget.tooltip
+            tooltip = self.tooltips if isinstance(self.tooltips, dict) else deck_widget.tooltip
             data = {k: v for k, v in recurse_data(data).items() if v is not None}
 
         # Delete undefined width and height

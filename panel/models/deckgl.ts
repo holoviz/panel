@@ -144,7 +144,7 @@ export class DeckGLPlotView extends PanelHTMLBoxView {
     let deckgl;
     try {
       const props = this.jsonConverter.convert(jsonInput);
-      const getTooltip = makeTooltip(tooltip);
+      const getTooltip = makeTooltip(tooltip, props.layers);
       deckgl = new (window as any).deck.DeckGL({
         ...props,
         map: (window as any).mapboxgl,
