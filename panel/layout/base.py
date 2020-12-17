@@ -32,6 +32,8 @@ class Panel(Reactive):
 
     _linked_props = []
 
+    _batch_update = False
+
     def __repr__(self, depth=0, max_depth=10):
         if depth > max_depth:
             return '...'
@@ -62,11 +64,18 @@ class Panel(Reactive):
             msg[self._rename['objects']] = self._get_objects(model, old, doc, root, comm)
 
         with hold(doc):
-            super(Panel, self)._update_model(events, msg, root, model, doc, comm)
-            from ..io import state
-            ref = root.ref['id']
-            if ref in state._views:
-                state._views[ref][0]._preprocess(root)
+            update = Panel._batch_update
+            Panel._batch_update = True
+            try:
+                super(Panel, self)._update_model(events, msg, root, model, doc, comm)
+                if update:
+                    return
+                from ..io import state
+                ref = root.ref['id']
+                if ref in state._views:
+                    state._views[ref][0]._preprocess(root)
+            finally:
+                Panel._batch_update = False
 
     #----------------------------------------------------------------
     # Model API

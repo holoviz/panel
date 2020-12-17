@@ -155,10 +155,17 @@ class GridBox(ListPanel):
 
         with hold(doc):
             msg = {k: v for k, v in msg.items() if k not in ('nrows', 'ncols')}
-            super(Panel, self)._update_model(events, msg, root, model, doc, comm)
-            ref = root.ref['id']
-            if ref in state._views:
-                state._views[ref][0]._preprocess(root)
+            update = Panel._batch_update
+            Panel._batch_update = True
+            try:
+                super(Panel, self)._update_model(events, msg, root, model, doc, comm)
+                if update:
+                    return
+                ref = root.ref['id']
+                if ref in state._views:
+                    state._views[ref][0]._preprocess(root)
+            finally:
+                Panel._batch_update = True
 
 
 class GridSpec(Panel):
