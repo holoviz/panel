@@ -165,7 +165,7 @@ class GridBox(ListPanel):
                 if ref in state._views:
                     state._views[ref][0]._preprocess(root)
             finally:
-                Panel._batch_update = True
+                Panel._batch_update = update
 
 
 class GridSpec(Panel):

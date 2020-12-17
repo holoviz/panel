@@ -75,7 +75,7 @@ class Panel(Reactive):
                 if ref in state._views:
                     state._views[ref][0]._preprocess(root)
             finally:
-                Panel._batch_update = False
+                Panel._batch_update = update
 
     #----------------------------------------------------------------
     # Model API
