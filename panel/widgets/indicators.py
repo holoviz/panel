@@ -127,6 +127,10 @@ class Progress(ValueIndicator):
     @param.depends('max', watch=True)
     def _update_value_bounds(self):
         self.param.value.bounds = (0, self.max)
+               
+    def __init__(self,**params):
+        super().__init__(**params)
+        self._update_value_bounds()
 
 
 class Number(ValueIndicator):
