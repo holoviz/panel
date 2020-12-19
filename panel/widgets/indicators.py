@@ -115,7 +115,7 @@ class Progress(ValueIndicator):
 
     max = param.Integer(default=100, doc="The maximum value of the progress bar.")
 
-    value = param.Integer(default=None, bounds=(0, 100), doc="""
+    value = param.Integer(default=None, bounds=(0, None), doc="""
         The current value of the progress bar. If set to None the progress
         bar will be indeterminate and animate depending on the active
         parameter.""")
