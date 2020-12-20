@@ -1,6 +1,15 @@
 from bokeh.core.properties import String, List, Bool
 
-from bokeh.models import Column
+from bokeh.models import Column as BkColumn, Row as BkRow
+
+
+class Column(BkColumn):
+    """Adds layout caching"""
+
+
+class Row(BkRow):
+    """Adds layout caching"""
+
 
 class Card(Column):
 

@@ -6,7 +6,7 @@ files.
 """
 
 from .ipywidget import IPyWidget # noqa
-from .layout import Card # noqa
+from .layout import Card, Column, Row # noqa
 from .location import Location # noqa
 from .markup import JSON, HTML # noqa
 from .state import State # noqa

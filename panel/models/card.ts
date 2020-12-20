@@ -2,16 +2,21 @@ import {Column, ColumnView} from "@bokehjs/models/layouts/column"
 import * as DOM from "@bokehjs/core/dom"
 import {classes, empty} from "@bokehjs/core/dom"
 import {Layoutable} from "@bokehjs/core/layout/layoutable"
-import {Column as ColumnLayout} from "@bokehjs/core/layout/grid"
+import {CachedColumn as CachedColumnLayout} from "./layout"
 import {Size} from "@bokehjs/core/layout/types"
 import * as p from "@bokehjs/core/properties"
 
-export class CollapseableColumnLayout extends ColumnLayout {
+export class CollapseableColumnLayout extends CachedColumnLayout {
   collapsed: boolean
 
-  constructor(items: Layoutable[], collapsed: boolean = false) {
-    super(items)
+  constructor(items: Layoutable[], readonly sizing_mode: string | null, readonly changed: boolean, collapsed: boolean = false) {
+    super(items, sizing_mode, changed)
     this.collapsed = collapsed
+  }
+
+  _cache_key(viewport: Size): string {
+    const key = [viewport.width, viewport.height, this.sizing_mode, this.collapsed]
+	return key.toString()
   }
 
   protected _measure_totals(row_heights: number[], col_widths: number[]): Size {
@@ -27,6 +32,7 @@ export class CollapseableColumnLayout extends ColumnLayout {
 export class CardView extends ColumnView {
   model: Card
   button_el: HTMLButtonElement
+  _prev_sizing_mode: string | null
 
   connect_signals(): void {
     super.connect_signals()
@@ -37,7 +43,10 @@ export class CardView extends ColumnView {
 
   _update_layout(): void {
     const items = this.child_views.map((child) => child.layout)
-    this.layout = new CollapseableColumnLayout(items, this.model.collapsed)
+	let changed = ((this._prev_sizing_mode !== undefined) &&
+                   (this._prev_sizing_mode !== this.model.sizing_mode))
+    this._prev_sizing_mode = this.model.sizing_mode;
+    this.layout = new CollapseableColumnLayout(items, this.model.sizing_mode, changed, this.model.collapsed)
     this.layout.rows = this.model.rows
     this.layout.spacing = [this.model.spacing, 0]
     const sizing = this.box_sizing()

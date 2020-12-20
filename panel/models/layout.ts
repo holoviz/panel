@@ -1,4 +1,6 @@
+import {GridItem, Grid} from "@bokehjs/core/layout/grid"
 import {VariadicBox} from "@bokehjs/core/layout/html"
+import {Layoutable} from "@bokehjs/core/layout/layoutable"
 import {Size, SizeHint, Sizeable} from "@bokehjs/core/layout/types"
 import {sized, content_size, extents} from "@bokehjs/core/dom"
 
@@ -48,40 +50,95 @@ export function set_size(el: HTMLElement, model: HTMLBox): void {
     el.style.height = "100%";
 }
 
+function cache_measure(viewport: Size, layout: CachedVariadicBox | CachedGrid): SizeHint {
+  const key_str = layout._cache_key(viewport)
+
+  // If sizing mode is responsive and has changed since last render
+  // we have to wait until second rerender to use cached value
+  const min_count = (!layout.changed || (layout.sizing_mode == 'fixed') || (layout.sizing_mode == null)) ? 0 : 1;
+  const cached = layout._cache.get(key_str);
+  const cache_count = layout._cache_count.get(key_str)
+  if (cached != null && cache_count != null && (cache_count >= min_count)) {
+	console.log("HIT", key_str, layout)
+    layout._cache_count.set(key_str, cache_count + 1);
+    return cached
+  }
+
+  const size = layout._measure_size(viewport)
+
+  layout._cache.set(key_str, size);
+  layout._cache_count.set(key_str, 0);
+  return size;
+}
+
+
 export class CachedVariadicBox extends VariadicBox {
-  private readonly _cache: Map<string, SizeHint> = new Map()
-  private readonly _cache_count: Map<string, number> = new Map()
+  public readonly _cache: Map<string, SizeHint> = new Map()
+  public readonly _cache_count: Map<string, number> = new Map()
 
   constructor(readonly el: HTMLElement, readonly sizing_mode: string | null, readonly changed: boolean) {
     super(el)
   }
 
-  protected _measure(viewport: Size): SizeHint {
+  _cache_key(viewport: Size): string {
     const key = [viewport.width, viewport.height, this.sizing_mode]
-    const key_str = key.toString()
+	return key.toString()
+  }
 
-    // If sizing mode is responsive and has changed since last render
-    // we have to wait until second rerender to use cached value
-    const min_count = (!this.changed || (this.sizing_mode == 'fixed') || (this.sizing_mode == null)) ? 0 : 1;
-    const cached = this._cache.get(key_str);
-    const cache_count = this._cache_count.get(key_str)
-    if (cached != null && cache_count != null && (cache_count >= min_count)) {
-      this._cache_count.set(key_str, cache_count + 1);
-      return cached
-    }
-
-    const bounded = new Sizeable(viewport).bounded_to(this.sizing.size)
+  _measure_size(viewport: Size): SizeHint {
+	const bounded = new Sizeable(viewport).bounded_to(this.sizing.size)
     const size = sized(this.el, bounded, () => {
       const content = new Sizeable(content_size(this.el))
       const {border, padding} = extents(this.el)
       return content.grow_by(border).grow_by(padding).map(Math.ceil)
     })
-    this._cache.set(key_str, size);
-    this._cache_count.set(key_str, 0);
-    return size;
+	return size
+  }
+
+  protected _measure(viewport: Size): SizeHint {
+    return cache_measure(viewport, this)
   }
 
   invalidate_cache(): void {
+  }
+}
+
+export class CachedGrid extends Grid {
+  public readonly _cache: Map<string, SizeHint> = new Map()
+  public readonly _cache_count: Map<string, number> = new Map()
+
+  constructor(public items: GridItem[] = [], readonly sizing_mode: string | null = null, readonly changed: boolean = false) {
+    super(items)
+  }
+
+  _cache_key(viewport: Size): string {
+    const key = [viewport.width, viewport.height, this.sizing_mode]
+	return key.toString()
+  }
+
+  public _measure_size(viewport: Size): SizeHint {
+    const {size} = this._measure_grid(viewport)
+    return size
+  }
+
+  protected _measure(viewport: Size): SizeHint {
+    return cache_measure(viewport, this)
+  }
+}
+
+export class CachedRow extends CachedGrid {
+  constructor(items: Layoutable[], readonly sizing_mode: string | null, readonly changed: boolean) {
+    super()
+    this.items = items.map((item, i) => ({layout: item, row: 0, col: i}))
+    this.rows = "fit"
+  }
+}
+
+export class CachedColumn extends CachedGrid {
+  constructor(items: Layoutable[], readonly sizing_mode: string | null, readonly changed: boolean) {
+    super()
+    this.items = items.map((item, i) => ({layout: item, row: i, col: 0}))
+    this.cols = "fit"
   }
 }
 

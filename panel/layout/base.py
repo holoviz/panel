@@ -8,7 +8,7 @@ from collections import defaultdict, namedtuple
 
 import param
 
-from bokeh.models import Column as BkColumn, Row as BkRow
+from ..models import Column as ColumnModel, Row as RowModel
 
 from ..io.model import hold
 from ..io.state import state
@@ -637,7 +637,7 @@ class Row(ListPanel):
 
     col_sizing = param.Parameter()
 
-    _bokeh_model = BkRow
+    _bokeh_model = RowModel
 
     _rename = dict(ListPanel._rename, col_sizing='cols')
 
@@ -649,7 +649,7 @@ class Column(ListPanel):
 
     row_sizing = param.Parameter()
 
-    _bokeh_model = BkColumn
+    _bokeh_model = ColumnModel
 
     _rename = dict(ListPanel._rename, row_sizing='rows')
 
@@ -680,7 +680,7 @@ class WidgetBox(ListPanel):
 
     @property
     def _bokeh_model(self):
-        return BkRow if self.horizontal else BkColumn
+        return RowModel if self.horizontal else ColumnModel
 
     @param.depends('disabled', 'objects', watch=True)
     def _disable_widgets(self):
