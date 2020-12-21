@@ -100,15 +100,29 @@ def _eval_panel(panel, server_id, title, location, doc):
 
 def async_execute(func):
     """
-    Wrap async event loop scheduling to ensure that `nolock` is
-    propagated from function to partial wrapping it.
+    Wrap async event loop scheduling to ensure that with_lock flag
+    is propagated from function to partial wrapping it.
     """
-    if isinstance(func, partial) and hasattr(func.func, 'nolock'):
-        func.nolock = func.func.nolock
-    if state.curdoc:
-        state.curdoc.add_next_tick_callback(func)
+    if isinstance(func, partial) and hasattr(func.func, 'lock'):
+        unlock = not func.func.lock
     else:
-        IOLoop.current().add_callback(func)
+        unlock = not getattr(func, 'lock', False)
+    if unlock:
+        if inspect.iscoroutinefunction(func):
+            @wraps(func)
+            async def wrapper(*args, **kw):
+              return await func(*args, **kw)
+        else:
+            @wraps(func)
+            def wrapper(*args, **kw):
+                return func(*args, **kw)
+        wrapper.nolock = True
+    else:
+        wrapper = func
+    if state.curdoc:
+        state.curdoc.add_next_tick_callback(wrapper)
+    else:
+        IOLoop.current().add_callback(wrapper)
 
 
 param.parameterized.async_executor = async_execute
@@ -119,12 +133,10 @@ param.parameterized.async_executor = async_execute
 #---------------------------------------------------------------------
 
 
-def without_document_lock(func):
+def with_lock(func):
     """
-    Wrap a callback function to execute without first obtaining the
-    document lock. This allows coroutines to run asynchronously but
-    only works as long as no Bokeh model is modified directly in the
-    callback.
+    Wrap a callback function to execute with a lock allowing the
+    function to modify bokeh models directly.
 
     Arguments
     ---------
@@ -144,7 +156,7 @@ def without_document_lock(func):
         @wraps(func)
         def wrapper(*args, **kw):
             return func(*args, **kw)
-    wrapper.nolock = True
+    wrapper.lock = True
     return wrapper
 
 
