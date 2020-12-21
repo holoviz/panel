@@ -103,6 +103,15 @@ def async_execute(func):
     Wrap async event loop scheduling to ensure that with_lock flag
     is propagated from function to partial wrapping it.
     """
+    if not state.curdoc or not state.curdoc.session_context:
+        import asyncio
+        if asyncio.get_event_loop().is_running():
+            IOLoop.current().add_callback(func)
+        else:
+            loop = asyncio.new_event_loop()
+            loop.run_until_complete(func())
+        return
+
     if isinstance(func, partial) and hasattr(func.func, 'lock'):
         unlock = not func.func.lock
     else:
@@ -114,10 +123,7 @@ def async_execute(func):
         wrapper.nolock = True
     else:
         wrapper = func
-    if state.curdoc:
-        state.curdoc.add_next_tick_callback(wrapper)
-    else:
-        IOLoop.current().add_callback(wrapper)
+    state.curdoc.add_next_tick_callback(wrapper)
 
 
 param.parameterized.async_executor = async_execute
