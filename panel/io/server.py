@@ -108,14 +108,9 @@ def async_execute(func):
     else:
         unlock = not getattr(func, 'lock', False)
     if unlock:
-        if inspect.iscoroutinefunction(func):
-            @wraps(func)
-            async def wrapper(*args, **kw):
-              return await func(*args, **kw)
-        else:
-            @wraps(func)
-            def wrapper(*args, **kw):
-                return func(*args, **kw)
+        @wraps(func)
+        async def wrapper(*args, **kw):
+            return await func(*args, **kw)
         wrapper.nolock = True
     else:
         wrapper = func
