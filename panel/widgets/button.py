@@ -98,7 +98,7 @@ class Button(_ClickButton):
         if not self._processing:
             self._processing = True
             if doc.session_context:
-                doc.add_timeout_callback(partial(self._change_event, doc), self._debounce)
+                doc.add_timeout_callback(partial(self._change_coroutine, doc), self._debounce)
             else:
                 self._change_event(doc)
 
@@ -154,6 +154,6 @@ class MenuButton(_ClickButton):
         if not self._processing:
             self._processing = True
             if doc.session_context:
-                doc.add_timeout_callback(partial(self._change_event, doc), self._debounce)
+                doc.add_timeout_callback(partial(self._change_coroutine, doc), self._debounce)
             else:
                 self._change_event(doc)

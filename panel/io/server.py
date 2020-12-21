@@ -4,6 +4,7 @@ Utilities for creating bokeh Server instances.
 from __future__ import absolute_import, division, unicode_literals
 
 import datetime as dt
+import inspect
 import os
 import signal
 import sys
@@ -12,8 +13,10 @@ import uuid
 
 from collections import OrderedDict
 from contextlib import contextmanager
-from functools import partial
+from functools import partial, wraps
 from types import FunctionType, MethodType
+
+import param
 
 from bokeh.document.events import ModelChangedEvent
 from bokeh.embed.bundle import extension_dirs
@@ -94,9 +97,55 @@ def _eval_panel(panel, server_id, title, location, doc):
             doc = as_panel(panel)._modify_doc(server_id, title, doc, location)
         return doc
 
+
+def async_execute(func):
+    """
+    Wrap async event loop scheduling to ensure that `nolock` is
+    propagated from function to partial wrapping it.
+    """
+    if isinstance(func, partial) and hasattr(func.func, 'nolock'):
+        func.nolock = func.func.nolock
+    if state.curdoc:
+        state.curdoc.add_next_tick_callback(func)
+    else:
+        IOLoop.current().add_callback(func)
+
+
+param.parameterized.async_executor = async_execute
+
+
 #---------------------------------------------------------------------
 # Public API
 #---------------------------------------------------------------------
+
+
+def without_document_lock(func):
+    """
+    Wrap a callback function to execute without first obtaining the
+    document lock. This allows coroutines to run asynchronously but
+    only works as long as no Bokeh model is modified directly in the
+    callback.
+
+    Arguments
+    ---------
+    func: callable
+      The callable to wrap
+
+    Returns
+    -------
+    wrapper: callable
+      Function wrapped to execute without a Document lock.
+    """
+    if inspect.iscoroutinefunction(func):
+        @wraps(func)
+        async def wrapper(*args, **kw):
+            return await func(*args, **kw)
+    else:
+        @wraps(func)
+        def wrapper(*args, **kw):
+            return func(*args, **kw)
+    wrapper.nolock = True
+    return wrapper
 
 
 @contextmanager
