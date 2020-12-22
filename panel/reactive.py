@@ -1,7 +1,7 @@
 """
 Declares Syncable and Reactive classes which provides baseclasses
 for Panel components which sync their state with one or more bokeh
-models rendered on the frontend. 
+models rendered on the frontend.
 """
 
 import difflib

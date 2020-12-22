@@ -4,6 +4,7 @@ Utilities for creating bokeh Server instances.
 from __future__ import absolute_import, division, unicode_literals
 
 import datetime as dt
+import inspect
 import os
 import signal
 import sys
@@ -12,8 +13,10 @@ import uuid
 
 from collections import OrderedDict
 from contextlib import contextmanager
-from functools import partial
+from functools import partial, wraps
 from types import FunctionType, MethodType
+
+import param
 
 from bokeh.document.events import ModelChangedEvent
 from bokeh.embed.bundle import extension_dirs
@@ -94,9 +97,68 @@ def _eval_panel(panel, server_id, title, location, doc):
             doc = as_panel(panel)._modify_doc(server_id, title, doc, location)
         return doc
 
+
+def async_execute(func):
+    """
+    Wrap async event loop scheduling to ensure that with_lock flag
+    is propagated from function to partial wrapping it.
+    """
+    if not state.curdoc or not state.curdoc.session_context:
+        ioloop = IOLoop.current()
+        event_loop = ioloop.asyncio_loop
+        if event_loop.is_running():
+            ioloop.add_callback(func)
+        else:
+            event_loop.run_until_complete(func())
+        return
+
+    if isinstance(func, partial) and hasattr(func.func, 'lock'):
+        unlock = not func.func.lock
+    else:
+        unlock = not getattr(func, 'lock', False)
+    if unlock:
+        @wraps(func)
+        async def wrapper(*args, **kw):
+            return await func(*args, **kw)
+        wrapper.nolock = True
+    else:
+        wrapper = func
+    state.curdoc.add_next_tick_callback(wrapper)
+
+
+param.parameterized.async_executor = async_execute
+
+
 #---------------------------------------------------------------------
 # Public API
 #---------------------------------------------------------------------
+
+
+def with_lock(func):
+    """
+    Wrap a callback function to execute with a lock allowing the
+    function to modify bokeh models directly.
+
+    Arguments
+    ---------
+    func: callable
+      The callable to wrap
+
+    Returns
+    -------
+    wrapper: callable
+      Function wrapped to execute without a Document lock.
+    """
+    if inspect.iscoroutinefunction(func):
+        @wraps(func)
+        async def wrapper(*args, **kw):
+            return await func(*args, **kw)
+    else:
+        @wraps(func)
+        def wrapper(*args, **kw):
+            return func(*args, **kw)
+    wrapper.lock = True
+    return wrapper
 
 
 @contextmanager
