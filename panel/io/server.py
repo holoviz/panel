@@ -105,11 +105,12 @@ def async_execute(func):
     """
     if not state.curdoc or not state.curdoc.session_context:
         import asyncio
-        if asyncio.get_event_loop().is_running():
-            IOLoop.current().add_callback(func)
+        ioloop = IOLoop.current()
+        event_loop = ioloop.asyncio_loop
+        if event_loop.is_running():
+            ioloop.add_callback(func)
         else:
-            loop = asyncio.new_event_loop()
-            loop.run_until_complete(func())
+            loop = event_loop.run_until_complete(func())
         return
 
     if isinstance(func, partial) and hasattr(func.func, 'lock'):
