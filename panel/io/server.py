@@ -104,13 +104,12 @@ def async_execute(func):
     is propagated from function to partial wrapping it.
     """
     if not state.curdoc or not state.curdoc.session_context:
-        import asyncio
         ioloop = IOLoop.current()
         event_loop = ioloop.asyncio_loop
         if event_loop.is_running():
             ioloop.add_callback(func)
         else:
-            loop = event_loop.run_until_complete(func())
+            event_loop.run_until_complete(func())
         return
 
     if isinstance(func, partial) and hasattr(func.func, 'lock'):
