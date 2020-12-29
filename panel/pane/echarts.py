@@ -79,6 +79,13 @@ class ECharts(PaneBase):
         props['data'] = echart
         model.update(**props)
 
+    def _update_model(self, events, msg, root, model, doc, comm):
+        # Needed to enable replacing the object
+        # cf. https://discourse.holoviz.org/t/pyecharts-working-example/1590
+        if "data" in msg:
+            msg["data"]=self._get_echart_dict(msg["data"])
+        return super()._update_model(events, msg, root, model, doc, comm)
+
     @classmethod
     def _get_echart_dict(cls, object):
         if object is None:
