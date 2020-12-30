@@ -15,8 +15,8 @@ function toVoicesList(voices: SpeechSynthesisVoice[]) {
   }
   return voicesList;
 }
-export class SpeechSynthesisModelView extends HTMLBoxView {
-  model: SpeechSynthesisModel
+export class TextToSpeechView extends HTMLBoxView {
+  model: TextToSpeech
   voices: SpeechSynthesisVoice[]
 
   initialize(): void {
@@ -115,7 +115,7 @@ export class SpeechSynthesisModelView extends HTMLBoxView {
 
 }
 
-export namespace SpeechSynthesisModel {
+export namespace TextToSpeech {
   export type Attrs = p.AttrsOf<Props>
   export type Props = HTMLBox.Props & {
     paused: p.Property<boolean>
@@ -130,21 +130,21 @@ export namespace SpeechSynthesisModel {
   }
 }
 
-export interface SpeechSynthesisModel extends SpeechSynthesisModel.Attrs {}
+export interface TextToSpeech extends TextToSpeech.Attrs {}
 
-export class SpeechSynthesisModel extends HTMLBox {
-  properties: SpeechSynthesisModel.Props
+export class TextToSpeech extends HTMLBox {
+  properties: TextToSpeech.Props
 
-  constructor(attrs?: Partial<SpeechSynthesisModel.Attrs>) {
+  constructor(attrs?: Partial<TextToSpeech.Attrs>) {
     super(attrs)
   }
 
-  static __module__ = "panel.models.speech_synthesis_model"
+  static __module__ = "panel.models.text_to_speech"
 
-  static init_SpeechSynthesisModel(): void {
-    this.prototype.default_view = SpeechSynthesisModelView
+  static init_TextToSpeech(): void {
+    this.prototype.default_view = TextToSpeechView
 
-    this.define<SpeechSynthesisModel.Props>({
+    this.define<TextToSpeech.Props>({
       paused: [ p.Boolean,   false ],
       pending: [ p.Boolean,   false ],
       speaking: [ p.Boolean,   false ],

@@ -3,7 +3,7 @@ from typing import Any, Dict, List
 import panel as pn
 import param
 import pytest
-from panel.widgets import SpeechSynthesis, SpeechSynthesisUtterance, SpeechSynthesisVoice
+from panel.widgets import TextToSpeech, Utterance, Voice
 
 TEXT = """By Aesop
 
@@ -193,33 +193,33 @@ _VOICES_CHROME_WIN10: List[Dict[str, Any]] = [
 
 @pytest.fixture
 def voices():
-    return SpeechSynthesisVoice.to_voices_list(_VOICES_FIREFOX_WIN10)
+    return Voice.to_voices_list(_VOICES_FIREFOX_WIN10)
 
 
 def test_to_voices_dict_firefox_win10():
     # Given
-    voices = SpeechSynthesisVoice.to_voices_list(_VOICES_FIREFOX_WIN10)
+    voices = Voice.to_voices_list(_VOICES_FIREFOX_WIN10)
     # When
-    actual = SpeechSynthesisVoice.group_by_lang(voices)
+    actual = Voice.group_by_lang(voices)
     # Then
     assert "en-US" in actual
     assert len(actual["en-US"]) == 2
 
 
-def test_speech_synthesis_can_speak():
+def test_can_speak():
     text = "Give me back my money!"
     # When
-    speaker = SpeechSynthesis()
+    speaker = TextToSpeech()
     utterance = speaker.speak(text)
     # Then
-    assert isinstance(utterance, SpeechSynthesisUtterance)
+    assert isinstance(utterance, Utterance)
     assert utterance.text == text
     assert speaker._speaks == utterance.to_dict()
 
 
-def test_speech_synthesis_can_speak_same_utterance_multiple_times():
+def test_can_speak_same_utterance_multiple_times():
     text = "Give me back my money!"
-    speaker = SpeechSynthesis()
+    speaker = TextToSpeech()
     utterance = speaker.speak(text)
     # When
     new_utterance = speaker.speak(utterance)
@@ -230,8 +230,8 @@ def test_speech_synthesis_can_speak_same_utterance_multiple_times():
 
 def test_can_set_voices():
     # Given
-    voices = SpeechSynthesisVoice.to_voices_list(_VOICES_CHROME_WIN10)
-    utterance = SpeechSynthesisUtterance()
+    voices = Voice.to_voices_list(_VOICES_CHROME_WIN10)
+    utterance = Utterance()
     # When
     utterance.set_voices(voices)
     # Then
@@ -243,11 +243,11 @@ def test_can_set_voices():
 
 
 def test_get_app():
-    speaker = SpeechSynthesis(name="Speech Synthesis")
-    utterance = SpeechSynthesisUtterance(text=TEXT, name="Utterance")
+    speaker = TextToSpeech(name="Speaker")
+    utterance = Utterance(text=TEXT, name="Utterance")
 
     @param.depends(speaker.param.voices, watch=True)
-    def update_voices(voices: List[SpeechSynthesisVoice]):
+    def update_voices(voices: List[Voice]):
         utterance.set_voices(voices)
 
     speak_button = pn.widgets.Button(name="Speak", button_type="success")
@@ -274,7 +274,7 @@ def test_get_app():
 
     speak_button.on_click(click_handler)
     return pn.Column(
-        pn.pane.Markdown("# Speach Synthesis App"),
+        pn.pane.Markdown("# Text To Speech App"),
         speak_button,
         speaker,
         utterance_settings,

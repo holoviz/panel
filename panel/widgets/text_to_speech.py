@@ -1,19 +1,23 @@
-"""The Panel SpeechSynthesis Widget provides functionality for *text to speech*. It's a wrapper of
+"""The Panel TextToSpeak Widget provides functionality for *text to speech* via the
 the HTML5 SpeechSynthesis API.
 
 See https://developer.mozilla.org/en-US/docs/Web/API/SpeechSynthesis
 
-Please note an *utterance* is the smallest unit of speech in spoken language analysis.
+The term *utterance* is used throughout the API. It is the smallest unit of speech in spoken
+language analysis.
 """
 from typing import Any, Dict, List, Optional, Union
 
 import param
-from panel.models.speech_synthesis_model import SpeechSynthesisModel as _BkSpeechSynthesis
+from panel.models.text_to_speech import TextToSpeech as _BkTextToSpeech
 from panel.widgets import Widget
 
 
-class SpeechSynthesisVoice(param.Parameterized):
-    """Wrapper of the HTML5 SpeecSynthesisVoice API
+class Voice(param.Parameterized):
+    """The current device (i.e. OS and Browser) provides a list of Voices. Each with a
+    unique name and speaking a specific language.
+
+    Wraps the HTML5 SpeecSynthesisVoice API
 
     See https://developer.mozilla.org/en-US/docs/Web/API/SpeechSynthesisVoice
     """
@@ -42,38 +46,38 @@ class SpeechSynthesisVoice(param.Parameterized):
     )
 
     @staticmethod
-    def to_voices_list(voices: List[Dict[str, Any]]) -> List["SpeechSynthesisVoice"]:
-        """Returns a list of SpeechSynthesisVoice objects from the list of dicts provided
+    def to_voices_list(voices: List[Dict[str, Any]]) -> List["Voice"]:
+        """Returns a list of Voice objects from the list of dicts provided
         """
         result = []
         for _voice in voices:  # pylint: disable=not-an-iterable
-            voice = SpeechSynthesisVoice(**_voice)
+            voice = Voice(**_voice)
             result.append(voice)
         return result
 
     @staticmethod
     def group_by_lang(
-        voices: List["SpeechSynthesisVoice"],
-    ) -> Dict[str, List["SpeechSynthesisVoice"]]:
+        voices: List["Voice"],
+    ) -> Dict[str, List["Voice"]]:
         """Returns a dictionary where the key is the `lang` and the value is a list of voices
         for that language."""
         if not voices:
             return {}
 
         sorted_lang = sorted(list(set(voice.lang for voice in voices)))
-        result: Dict[str, List[SpeechSynthesisUtterance]] = {lang: [] for lang in sorted_lang}
+        result: Dict[str, List[Utterance]] = {lang: [] for lang in sorted_lang}
         for voice in voices:
             result[voice.lang].append(voice)
         result = {key: sorted(value, key=lambda x: x.name) for key, value in result.items()}
         return result
 
 
-class SpeechSynthesisUtterance(param.Parameterized):
-    """Wrapper of the HTML5 SpeechSynthesisUtterance API
+class Utterance(param.Parameterized):
+    """An *utterance* is the smallest unit of speech in spoken language analysis.
+
+    The Utterance Model wraps the HTML5 SpeechSynthesisUtterance API
 
     See https://developer.mozilla.org/en-US/docs/Web/API/SpeechSynthesisUtterance
-
-    Please note an *utterance* is the smallest unit of speech in spoken language analysis.
     """
 
     uid = param.String(
@@ -108,11 +112,11 @@ class SpeechSynthesisUtterance(param.Parameterized):
         is 1""",
     )
 
-    def __init__(self, voices: List[SpeechSynthesisVoice] = None, **params):
+    def __init__(self, voices: List[Voice] = None, **params):
         params["uid"] = params.get("uid", str(id(self)))
         super().__init__(**params)
 
-        self._voices_by_language: Dict[str, List[SpeechSynthesisVoice]] = {}
+        self._voices_by_language: Dict[str, List[Voice]] = {}
         if voices:
             self.set_voices(voices)
 
@@ -134,9 +138,9 @@ class SpeechSynthesisUtterance(param.Parameterized):
             result["voice"] = self.voice.name
         return result
 
-    def clone(self) -> "SpeechSynthesisUtterance":
+    def clone(self) -> "Utterance":
         """Returns a copy with a different uid"""
-        return SpeechSynthesisUtterance(
+        return Utterance(
             lang=self.lang,
             pitch=self.pitch,
             rate=self.rate,
@@ -145,7 +149,7 @@ class SpeechSynthesisUtterance(param.Parameterized):
             volume=self.volume,
         )
 
-    def set_voices(self, voices: List[SpeechSynthesisVoice]):
+    def set_voices(self, voices: List[Voice]):
         """Updates the `lang` and `voice` parameter objects, default and value"""
         if not voices:
             self.param.lang.objects = ["en-US"]
@@ -153,7 +157,7 @@ class SpeechSynthesisUtterance(param.Parameterized):
             self.lang = "en-US"
             return
 
-        self._voices_by_language = SpeechSynthesisVoice.group_by_lang(voices)
+        self._voices_by_language = Voice.group_by_lang(voices)
         self.param.lang.objects = list(self._voices_by_language.keys())
         if "en-US" in self._voices_by_language:
             default_lang = "en-US"
@@ -186,23 +190,21 @@ class SpeechSynthesisUtterance(param.Parameterized):
         self.voice = default_voice
 
 
-class SpeechSynthesis(Widget):  # pylint: disable=too-many-ancestors, too-many-instance-attributes
-    """Wrapper of the HTML5 SpeechSynthesis API
+class TextToSpeech(Widget):  # pylint: disable=too-many-ancestors, too-many-instance-attributes
+    """The TextToSpeech widget wraps the HTML5 SpeechSynthesis API
 
     See https://developer.mozilla.org/en-US/docs/Web/API/SpeechSynthesis
-
-    Please note an *utterance* is the smallest unit of speech in spoken language analysis.
     """
 
     cancel = param.Action(doc="""Removes all utterances from the utterance queue.""")
-    pause = param.Action(doc="""Puts the SpeechSynthesis object into a paused state.""")
+    pause = param.Action(doc="""Puts the TextToSpeak object into a paused state.""")
     resume = param.Action(
-        doc="""Puts the SpeechSynthesis object into a non-paused state: resumes it if it was
+        doc="""Puts the TextToSpeak object into a non-paused state: resumes it if it was
         already paused."""
     )
     paused = param.Boolean(
         constant=True,
-        doc="""A Boolean that returns true if the SpeechSynthesis object is in a paused state.""",
+        doc="""A Boolean that returns true if the TextToSpeak object is in a paused state.""",
     )
     pending = param.Boolean(
         constant=True,
@@ -212,11 +214,11 @@ class SpeechSynthesis(Widget):  # pylint: disable=too-many-ancestors, too-many-i
     speaking = param.Boolean(
         constant=True,
         doc="""A Boolean that returns true if an utterance is currently in the process of being
-        spoken — even if SpeechSynthesis is in a paused state.""",
+        spoken — even if TextToSpeak is in a paused state.""",
     )
     voices = param.List(
         constant=True,
-        doc="""Returns a list of SpeechSynthesisVoice objects representing all the available
+        doc="""Returns a list of Voice objects representing all the available
         voices on the current device.""",
     )
 
@@ -226,7 +228,7 @@ class SpeechSynthesis(Widget):  # pylint: disable=too-many-ancestors, too-many-i
     _resumes = param.Integer()
     _voices = param.List()
 
-    _widget_type = _BkSpeechSynthesis
+    _widget_type = _BkTextToSpeech
     _rename: Dict[str, Optional[str]] = {
         "paused": "paused",
         "pending": "pending",
@@ -250,20 +252,20 @@ class SpeechSynthesis(Widget):  # pylint: disable=too-many-ancestors, too-many-i
         self.resume = self._resume
         self.cancel = self._cancel
 
-    def speak(self, utterance: Union[str, SpeechSynthesisUtterance]) -> SpeechSynthesisUtterance:
+    def speak(self, utterance: Union[str, Utterance]) -> Utterance:
         """Speaks the utterance
 
         Args:
-            utterance (Union[str, SpeechSynthesisUtterance]): The utterance containing the text,
+            utterance (Union[str, Utterance]): The utterance containing the text,
                 pitch etc.
 
         Returns:
-            SpeechSynthesisUtterance: The original or a new utterance. If a string or a previously
+            Utterance: The original or a new utterance. If a string or a previously
                 spoken utterance is provided a new utterance is returned. Otherwise the provided
                 utterance is returned.
         """
         if isinstance(utterance, str):
-            utterance = SpeechSynthesisUtterance(
+            utterance = Utterance(
                 text=utterance,
             )
         if utterance.uid in self._utterances:
@@ -285,14 +287,14 @@ class SpeechSynthesis(Widget):  # pylint: disable=too-many-ancestors, too-many-i
     def _update_voices(self):
         voices = []
         for _voice in self._voices:  # pylint: disable=not-an-iterable
-            voice = SpeechSynthesisVoice(**_voice)
+            voice = Voice(**_voice)
             voices.append(voice)
         self.voices = voices
 
     def __repr__(self, depth=None):
         # We need to do this because otherwise a error is raised when used in notebook
         # due to infinite recursion
-        return f"SpeechSynthesis(name={self.name})"
+        return f"TextToSpeak(name={self.name})"
 
     def __str__(self):
-        return f"SpeechSynthesis(name={self.name})"
+        return f"TextToSpeak(name={self.name})"
