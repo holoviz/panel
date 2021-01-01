@@ -285,7 +285,6 @@ class SpeechToText(Widget): # pylint: disable=too-many-ancestors
     def _update_results(self):
         with param.edit_constant(self):
             self.results = SpeechRecognitionResult.create_from_list(self._results)
-            print(self.results)
 
     @property
     def results_as_html(self) -> str:
@@ -313,5 +312,4 @@ class SpeechToText(Widget): # pylint: disable=too-many-ancestors
 </p>
 """
         html += "</div>"
-        print(html)
         return html
