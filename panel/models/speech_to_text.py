@@ -19,7 +19,7 @@ class SpeechToText(Widget):
 
     grammars = List(Dict(String,Any))
     lang = String()
-    continous = Bool()
+    continuous = Bool()
     interim_results = Bool()
     max_alternatives = Int()
     service_uri = String()
