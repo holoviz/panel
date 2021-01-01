@@ -1,6 +1,6 @@
 """The SpeechToText widget controls the speech recognition service of the browser.
 
-Wraps the HTML5 SpeechRecognition API.
+It wraps the HTML5 SpeechRecognition API.
 See https://developer.mozilla.org/en-US/docs/Web/API/SpeechRecognition
 
 This functionality is **experimental** and only supported by Chrome and a few other browsers.
@@ -22,12 +22,12 @@ from panel.widgets import Widget
 from panel.widgets.speech_to_text_config import LANGUAGE_CODES
 
 
-class SpeechGrammar(param.Parameterized):
-    """A set of words or patterns of words that we want the recognition service to recognize
+class Grammar(param.Parameterized):
+    """A set of words or patterns of words that we want the speech recognition service to recognize
 
     For example
 
-    grammar = SpeechGrammar(
+    grammar = Grammar(
         src='#JSGF V1.0; grammar colors; public <color> = aqua | azure | beige;',
         weight=0.7
     )
@@ -50,7 +50,7 @@ class SpeechGrammar(param.Parameterized):
         default=1,
         bounds=(0.0, 1.0),
         step=0.01,
-        doc="""The weight of the grammar. A number in the range 0.0–1.0. Default is 1.""",
+        doc="""The weight of the grammar. A number in the range 0–1. Default is 1.""",
     )
 
     def serialize(self) -> Dict[str, Any]:
@@ -62,43 +62,43 @@ class SpeechGrammar(param.Parameterized):
         raise ValueError("One of src or uri must be set")
 
 
-class SpeechGrammarList(list):
-    """A list of SpeechGrammar objects containing words or patterns of words that we want the
+class GrammarList(list):
+    """A list of Grammar objects containing words or patterns of words that we want the
     recognition service to recognize.
 
     Example:
 
     grammar = '#JSGF V1.0; grammar colors; public <color> = aqua | azure | beige | bisque ;'
-    speechRecognitionList = SpeechGrammarList()
-    speechRecognitionList.add_from_string(grammar, 1)
+    grammar_list = GrammarList()
+    grammar_list.add_from_string(grammar, 1)
 
     Wraps the HTML 5 SpeechGrammarList API
 
     See https://developer.mozilla.org/en-US/docs/Web/API/SpeechGrammarList
     """
 
-    def add_from_string(self, src: str, weight: float = 1.0) -> SpeechGrammar:
-        """Takes a grammar and adds it to the SpeechGrammarList as a new SpeechGrammar object. The
-        new speechGrammar object is returned."""
-        grammar = SpeechGrammar(src=src, weight=weight)
+    def add_from_string(self, src: str, weight: float = 1.0) -> Grammar:
+        """Takes a src and weight and adds it to the GrammarList as a new Grammar object. The
+        new Grammar object is returned."""
+        grammar = Grammar(src=src, weight=weight)
         self.append(grammar)
         return grammar
 
-    def add_from_uri(self, uri: str, weight: float = 1.0) -> SpeechGrammar:
-        """Takes a grammar present at a specific URI, and adds it to the SpeechGrammarList as a new
-        SpeechGrammar object. The new SpeechGrammar object is returned.
+    def add_from_uri(self, uri: str, weight: float = 1.0) -> Grammar:
+        """Takes a grammar present at a specific uri, and adds it to the GrammarList as a new
+        Grammar object. The new Grammar object is returned.
         """
-        grammar = SpeechGrammar(uri=uri, weight=weight)
+        grammar = Grammar(uri=uri, weight=weight)
         self.append(grammar)
         return grammar
 
     def serialize(self) -> List[Dict]:
-        """Returns the grammar list as a list of serialized grammars"""
+        """Returns a list of serialized grammars"""
         return [grammar.serialize() for grammar in self]
 
 
-class SpeechRecognitionAlternative(param.Parameterized):
-    """The SpeechRecognitionAlternative represents a word or
+class RecognitionAlternative(param.Parameterized):
+    """The RecognitionAlternative represents a word or
     sentence that has been recognised by the speech recognition service.
 
     Wraps the HTML5 SpeechRecognitionAlternative API
@@ -109,17 +109,18 @@ class SpeechRecognitionAlternative(param.Parameterized):
     confidence = param.Number(
         constant=True,
         bounds=(0.0, 1.0),
-        doc="""A numeric estimate of how confident the speech recognition
+        doc="""A numeric estimate between 0 and 1 of how confident the speech recognition
         system is that the recognition is correct.""",
     )
-    transcript = param.String(constant=True, doc="the transcript of the recognised word.")
+    transcript = param.String(constant=True, doc="""The transcript of the recognised word or
+    sentence.""")
 
 
-class SpeechRecognitionResult(param.Parameterized):
-    """The SpeechRecognitionResult represents a single recognition match, which may contain
-    multiple SpeechRecognitionAlternative objects.
+class RecognitionResult(param.Parameterized):
+    """The Result represents a single recognition match, which may contain
+    multiple RecognitionAlternative objects.
 
-    Wraps the HTML5 SpeechRecognitionResult.
+    Wraps the HTML5 SpeechRecognitionResult API.
 
     See https://developer.mozilla.org/en-US/docs/Web/API/SpeechRecognitionResult
     """
@@ -131,30 +132,30 @@ class SpeechRecognitionResult(param.Parameterized):
     )
     alternatives = param.List(
         constant=True,
-        doc="""The list of the best alternatives""",
-        class_=SpeechRecognitionAlternative,
+        doc="""The list of the n-best alternatives""",
+        class_=RecognitionAlternative,
     )
 
     @classmethod
-    def create_from_dict(cls, result: Dict) -> "SpeechRecognitionResult":
-        """Deserializes a serialized SpeechRecognitionResult"""
+    def create_from_dict(cls, result: Dict) -> "RecognitionResult":
+        """Deserializes a serialized RecognitionResult"""
         alternatives = result.get("alternatives", [])
         _alternatives = []
         for alternative in alternatives:
-            _alternatives.append(SpeechRecognitionAlternative(**alternative))
+            _alternatives.append(RecognitionAlternative(**alternative))
         result["alternatives"] = _alternatives
         return cls(**result)
 
     @classmethod
-    def create_from_list(cls, results: List) -> List["SpeechRecognitionResult"]:
-        """Deserializes a list of serialized SpeechRecognitionResult"""
+    def create_from_list(cls, results: List) -> List["RecognitionResult"]:
+        """Deserializes a list of serialized RecognitionResults"""
         return [cls.create_from_dict(result) for result in results]
 
 
 class SpeechToText(Widget): # pylint: disable=too-many-ancestors
     """The SpeechToText widget controls the speech recognition service of the browser.
 
-    Wraps the HTML5 SpeechRecognition API.
+    It wraps the HTML5 SpeechRecognition API.
     See https://developer.mozilla.org/en-US/docs/Web/API/SpeechRecognition
 
     This functionality is **experimental** and only supported by Chrome and a few other browsers.
@@ -166,6 +167,10 @@ class SpeechToText(Widget): # pylint: disable=too-many-ancestors
     recognition engine. Your audio is sent to a web service for recognition processing, so it won't
     work offline. Whether this is secure and confidential enough for your use case is up to you
     to evaluate."""
+    button_type = param.ObjectSelector(default="light", objects=[
+        'default', 'primary', 'success', 'warning', 'danger', 'light'],
+        doc="""One of 'default', 'primary', 'success', 'warning', 'danger' and'light'.""")
+
     lang = param.ObjectSelector(
         default="",
         objects=[""] + LANGUAGE_CODES,
@@ -176,7 +181,7 @@ class SpeechToText(Widget): # pylint: disable=too-many-ancestors
         attribute value, or the user agent's language setting if that isn't set either.
         """,
     )
-    continous = param.Boolean(
+    continuous = param.Boolean(
         default=False,
         doc="""Controls whether continuous results are returned for each recognition, or only a
         single result. Defaults to False""",
@@ -184,14 +189,14 @@ class SpeechToText(Widget): # pylint: disable=too-many-ancestors
     interim_results = param.Boolean(
         default=False,
         doc="""Controls whether interim results should be returned (True) or not (False.) Interim
-        results are results that are not yet final (e.g. the SpeechRecognitionResult.isFinal
-        property is False.""",
+        results are results that are not yet final (e.g. the RecognitionResult.is_final
+        property is False).""",
     )
     max_alternatives = param.Integer(
         default=1,
-        bounds=(1, 10),
-        doc="""Sets the maximum number of SpeechRecognitionAlternatives provided per result.
-        A number between 1 and 10. The default value is 1.""",
+        bounds=(1, 5),
+        doc="""Sets the maximum number of RecognitionAlternatives provided per result.
+        A number between 1 and 5. The default value is 1.""",
     )
     service_uri = param.String(
         doc="""Specifies the location of the speech recognition service used by the current
@@ -199,10 +204,11 @@ class SpeechToText(Widget): # pylint: disable=too-many-ancestors
         default speech service."""
     )
     grammars = param.ClassSelector(
-        class_=SpeechGrammarList,
-        doc="""A collection of SpeechGrammar objects that represent the grammars that will be
-        understood by the current SpeechRecognition""",
+        class_=GrammarList,
+        doc="""A GrammarList object that represents the grammars that will be
+        understood by the current SpeechRecognition service""",
     )
+
     started = param.Boolean(
         constant=True,
         doc="""Returns True if the Speech Recognition Service is started and False otherwise.""",
@@ -217,16 +223,24 @@ class SpeechToText(Widget): # pylint: disable=too-many-ancestors
         constant=True,
         doc="""Returns True if the the User has started speaking and False otherwise""",
     )
-    button_type = param.ObjectSelector(default="light", objects=[
-        'default', 'primary', 'success', 'warning', 'danger', 'light'])
-    results = param.List(class_=SpeechRecognitionResult, constant=True)
+
+    results = param.List(
+        class_=RecognitionResult,
+        constant=True,
+        doc="""The results recognized. A list of RecognitionResult objects""",
+    )
+    result = param.String(
+        constant=True,
+        doc="""The transcript of the first RecognitionAlternative with the highest confidence.""",
+    )
+
     stop = param.Action(
         doc="""Stops the speech recognition service from listening to incoming audio, and attempts
-        to return a SpeechRecognitionResult using the audio captured so far."""
+        to return a RecognitionResult using the audio captured so far."""
     )
     abort = param.Action(
         doc="""Stops the speech recognition service from listening to incoming audio, and doesn't
-        attempt to return a SpeechRecognitionResult."""
+        attempt to return a RecognitionResult."""
     )
 
     _stops = param.Integer(constant=True, doc="""Integer used to signal the stop action""")
@@ -234,7 +248,7 @@ class SpeechToText(Widget): # pylint: disable=too-many-ancestors
     _grammars = param.List(constant=True, doc="""List used to transfer the serialized grammars from
     server to browser""")
     _results = param.List(
-        constant=True, doc="""List used to transfer the serialized SpeechRecognitionResults from
+        constant=True, doc="""List used to transfer the serialized RecognitionResults from
         browser to server"""
     )
 
@@ -245,6 +259,7 @@ class SpeechToText(Widget): # pylint: disable=too-many-ancestors
         "abort": None,
         "grammars": None,
         "results": None,
+        "result": None,
         "_stops": "stops",
         "_aborts": "aborts",
         "_grammars": "grammars",
@@ -284,7 +299,11 @@ class SpeechToText(Widget): # pylint: disable=too-many-ancestors
     @param.depends("_results", watch=True)
     def _update_results(self):
         with param.edit_constant(self):
-            self.results = SpeechRecognitionResult.create_from_list(self._results)
+            self.results = RecognitionResult.create_from_list(self._results)
+            if self.results and self.results[0].alternatives:
+                self.result = self.results[0].alternatives[0].transcript
+            else:
+                self.result = ""
 
     @property
     def results_as_html(self) -> str:

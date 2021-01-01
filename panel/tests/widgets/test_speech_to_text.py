@@ -1,14 +1,14 @@
 import panel as pn
 import pytest
-from panel.widgets import SpeechGrammar, SpeechGrammarList, SpeechToText
-from panel.widgets.speech_to_text import SpeechRecognitionAlternative, SpeechRecognitionResult
+from panel.widgets import Grammar, GrammarList, SpeechToText
+from panel.widgets.speech_to_text import RecognitionAlternative, RecognitionResult
 
 CLASSES = [
-    SpeechGrammar,
-    SpeechGrammarList,
+    Grammar,
+    GrammarList,
     SpeechToText,
-    SpeechRecognitionAlternative,
-    SpeechRecognitionResult,
+    RecognitionAlternative,
+    RecognitionResult,
 ]
 
 
@@ -22,7 +22,7 @@ def test_can_construct_speech_grammar_from_src():
     src = "#JSGF V1.0; grammar colors; public <color> = aqua | azure | beige;"
     weight = 0.7
     # When
-    grammar = SpeechGrammar(
+    grammar = Grammar(
         src=src,
         weight=weight,
     )
@@ -36,7 +36,7 @@ def test_can_construct_speech_grammar_from_uri():
     uri = "http://www.example.com/grammar.txt"
     weight = 0.7
     # When
-    grammar = SpeechGrammar(
+    grammar = Grammar(
         uri=uri,
         weight=weight,
     )
@@ -49,12 +49,12 @@ def test_add_from_string_to_speech_grammar_list():
     # Given
     src = "#JSGF V1.0; grammar colors; public <color> = aqua | azure | beige | bisque | black | blue | brown | chocolate | coral | crimson | cyan | fuchsia | ghostwhite | gold | goldenrod | gray | green | indigo | ivory | khaki | lavender | lime | linen | magenta | maroon | moccasin | navy | olive | orange | orchid | peru | pink | plum | purple | red | salmon | sienna | silver | snow | tan | teal | thistle | tomato | turquoise | violet | white | yellow ;"
     weight = 0.5
-    grammar_list = SpeechGrammarList()
+    grammar_list = GrammarList()
     # When
     result = grammar_list.add_from_string(src, weight)
     serialized = grammar_list.serialize()
     # Then
-    assert isinstance(result, SpeechGrammar)
+    assert isinstance(result, Grammar)
     assert result in grammar_list
     assert serialized == [{"src": src, "weight": weight}]
 
@@ -63,12 +63,12 @@ def test_add_from_uri_to_speech_grammar_list():
     # Given
     uri = "http://www.example.com/grammar.txt"
     weight = 0.5
-    grammar_list = SpeechGrammarList()
+    grammar_list = GrammarList()
     # When
     result = grammar_list.add_from_uri(uri, weight)
     serialized = grammar_list.serialize()
     # Then
-    assert isinstance(result, SpeechGrammar)
+    assert isinstance(result, Grammar)
     assert result in grammar_list
     assert serialized == [{"uri": uri, "weight": weight}]
 
@@ -77,7 +77,7 @@ def test_can_deserialize_alternative():
     # Given
     alternative = {"confidence": 0.9190853834152222, "transcript": "but why"}
     # When
-    actual = SpeechRecognitionAlternative(**alternative)
+    actual = RecognitionAlternative(**alternative)
     # Then
     assert actual.confidence == alternative["confidence"]
     assert actual.transcript == alternative["transcript"]
@@ -90,7 +90,7 @@ def test_can_create_result_from_dict():
         "alternatives": [{"confidence": 0.9190853834152222, "transcript": "and why"}],
     }
     # When
-    actual = SpeechRecognitionResult.create_from_dict(result)
+    actual = RecognitionResult.create_from_dict(result)
     # Then
     assert actual.is_final == result["is_final"]
     assert len(actual.alternatives) == 1
@@ -107,7 +107,7 @@ def test_can_create_result_from_list():
         }
     ]
     # When
-    actual = SpeechRecognitionResult.create_from_list(results)
+    actual = RecognitionResult.create_from_list(results)
     # Then
     assert len(actual) == 1
     assert actual[0].is_final == results[0]["is_final"]
@@ -118,9 +118,9 @@ def test_can_create_result_from_list():
 
 def test_get_app():
     src = "#JSGF V1.0; grammar colors; public <color> = aqua | azure | beige | bisque | black | blue | brown | chocolate | coral | crimson | cyan | fuchsia | ghostwhite | gold | goldenrod | gray | green | indigo | ivory | khaki | lavender | lime | linen | magenta | maroon | moccasin | navy | olive | orange | orchid | peru | pink | plum | purple | red | salmon | sienna | silver | snow | tan | teal | thistle | tomato | turquoise | violet | white | yellow ;"
-    speech_to_text = SpeechToText(button_type="success")
+    speech_to_text = SpeechToText(button_type="success", continuous=True)
 
-    grammar_list = SpeechGrammarList()
+    grammar_list = GrammarList()
     grammar_list.add_from_string(src, 1)
     speech_to_text.grammars = grammar_list
     result_panel = pn.pane.Markdown()
@@ -138,7 +138,7 @@ def test_get_app():
                 "abort",
                 "grammars",
                 "lang",
-                "continous",
+                "continuous",
                 "interim_results",
                 "max_alternatives",
                 "service_uri",

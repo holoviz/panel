@@ -43,13 +43,17 @@ function deserializeGrammars(grammars: any[]){
     }
 }
 
+function round(value: number){
+    return Math.round((value + Number.EPSILON) * 100) / 100
+}
+
 function serializeResults(results_: any) {
     const results = [];
     for (let result of results_) {
         let alternatives: { confidence: number; transcript: string; }[] = [];
         let item = { is_final: result.isFinal, alternatives: alternatives };
         for (let i = 0; i < result.length; i++) {
-            let alternative = { confidence: result[i].confidence, transcript: result[i].transcript };
+            let alternative = { confidence: round(result[i].confidence), transcript: result[i].transcript };
             alternatives.push(alternative);
         }
         item.alternatives = alternatives;
@@ -67,7 +71,15 @@ export class SpeechToTextView extends HTMLBoxView {
         super.initialize()
 
         this.recognition = new webkitSpeechRecognition();
+        console.log(this.recognition);
+        this.recognition.lang = this.model.lang;
+        this.recognition.continuous = this.model.continuous;
+        this.recognition.interimResults = this.model.interim_results;
+        this.recognition.maxAlternatives = this.model.max_alternatives;
+        this.recognition.serviceURI = this.model.service_uri;
         this.setGrammars()
+        console.log(this.recognition);
+
         const this_ = this;
 
         this.recognition.onresult = function(event: any) {
@@ -90,7 +102,7 @@ export class SpeechToTextView extends HTMLBoxView {
         this.recognition.onspeechend = () => {this_.model.speech_started=false}
 
         this.recognition.onstart = function(){
-            this_.buttonEl.onclick = () => {this_.recognition.end()}
+            this_.buttonEl.onclick = () => {this_.recognition.stop()}
             this_.buttonEl.innerHTML = iconStarted;
             this_.buttonEl.setAttribute("title", titleStarted);
             this_.model.started = true;
@@ -100,21 +112,20 @@ export class SpeechToTextView extends HTMLBoxView {
             this_.buttonEl.innerHTML = iconNotStarted;
             this_.buttonEl.setAttribute("title", titleNotStarted);
             this_.model.started = false;
-
         }
     }
 
     connect_signals(): void {
         super.connect_signals()
 
-        this.connect(this.model.properties.stops.change, () => {this.recognition.stops=this.model.stops;console.log("stops");})
-        this.connect(this.model.properties.aborts.change, () => {this.recognition.aborts=this.model.aborts;console.log("aborts");})
+        this.connect(this.model.properties.stops.change, () => {this.recognition.stops=this.model.stops})
+        this.connect(this.model.properties.aborts.change, () => {this.recognition.aborts=this.model.aborts})
         this.connect(this.model.properties.grammars.change, () => {this.setGrammars})
-        this.connect(this.model.properties.lang.change, () => {this.recognition.lang=this.model.lang;console.log("lang");})
-        this.connect(this.model.properties.continous.change, () => {this.recognition.continous=this.model.continous;console.log("continous");})
-        this.connect(this.model.properties.interim_results.change, () => {this.recognition.interim_results=this.model.interim_results;console.log("interim_results");})
-        this.connect(this.model.properties.max_alternatives.change, () => {this.recognition.max_alternatives=this.model.max_alternatives;console.log("max_alternatives");})
-        this.connect(this.model.properties.service_uri.change, () => {this.recognition.service_uri=this.model.service_uri;console.log("service_uri");})
+        this.connect(this.model.properties.lang.change, () => {this.recognition.lang=this.model.lang})
+        this.connect(this.model.properties.continuous.change, () => {this.recognition.continuous=this.model.continuous})
+        this.connect(this.model.properties.interim_results.change, () => {this.recognition.interimResults=this.model.interim_results})
+        this.connect(this.model.properties.max_alternatives.change, () => {this.recognition.maxAlternatives=this.model.max_alternatives})
+        this.connect(this.model.properties.service_uri.change, () => {this.recognition.serviceURI=this.model.service_uri})
         this.connect(this.model.properties.button_type.change, () => {this.buttonEl.className=`bk bk-btn bk-btn-${this.model.button_type}`})
     }
 
@@ -140,7 +151,7 @@ export namespace SpeechToText {
 
     grammars: p.Property<any[]>
     lang: p.Property<string>
-    continous: p.Property<boolean>
+    continuous: p.Property<boolean>
     interim_results: p.Property<boolean>
     max_alternatives: p.Property<number>
     service_uri: p.Property<string>
@@ -173,8 +184,8 @@ export class SpeechToText extends HTMLBox {
         aborts: [ p.Number, 0     ],
 
         grammars: [p.Array, []],
-        lang: [p.String, ],
-        continous: [ p.Boolean,   false ],
+        lang: [p.String, ""],
+        continuous: [ p.Boolean,   false ],
         interim_results: [ p.Boolean,   false ],
         max_alternatives: [ p.Number,   1 ],
         service_uri: [p.String, ],
