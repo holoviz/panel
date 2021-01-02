@@ -7,7 +7,6 @@ import param
 
 from pyviz_comms import JupyterComm
 
-from ..viewable import Layoutable
 from .base import PaneBase
 
 
