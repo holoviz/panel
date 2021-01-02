@@ -79,9 +79,7 @@ class ECharts(PaneBase):
 
     @classmethod
     def _get_echart_dict(cls, object):
-        if object is None:
-            return {}
-        elif isinstance(object, dict):
+        if isinstance(object, dict):
             return dict(object)
         elif "pyecharts" in sys.modules:
             import pyecharts  # pylint: disable=import-outside-toplevel,import-error
