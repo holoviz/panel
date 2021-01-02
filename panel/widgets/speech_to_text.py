@@ -237,7 +237,7 @@ class SpeechToText(Widget): # pylint: disable=too-many-ancestors
     results_last = param.String(
         constant=True,
         doc="""The transcipt of the highest confidence RecognitionAlternative of the last
-        RecognitionResult""",
+        RecognitionResult. Please note we strip the transcript for leading spaces.""",
         label="Last Result",
     )
     stop = param.Action(
@@ -303,7 +303,7 @@ class SpeechToText(Widget): # pylint: disable=too-many-ancestors
         with param.edit_constant(self):
             self.results = RecognitionResult.create_from_list(self.results_serialized)
             if self.results and self.results[-1].alternatives:
-                self.results_last = self.results[-1].alternatives[0].transcript
+                self.results_last = (self.results[-1].alternatives[0].transcript).lstrip()
             else:
                 self.results_last = ""
 

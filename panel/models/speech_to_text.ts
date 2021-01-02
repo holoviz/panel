@@ -71,14 +71,12 @@ export class SpeechToTextView extends HTMLBoxView {
         super.initialize()
 
         this.recognition = new webkitSpeechRecognition();
-        console.log(this.recognition);
         this.recognition.lang = this.model.lang;
         this.recognition.continuous = this.model.continuous;
         this.recognition.interimResults = this.model.interim_results;
         this.recognition.maxAlternatives = this.model.max_alternatives;
         this.recognition.serviceURI = this.model.service_uri;
         this.setGrammars()
-        console.log(this.recognition);
 
         const this_ = this;
 
@@ -106,13 +104,19 @@ export class SpeechToTextView extends HTMLBoxView {
             this_.buttonEl.innerHTML = iconStarted;
             this_.buttonEl.setAttribute("title", titleStarted);
             this_.model.started = true;
+            console.log("onstart")
         }
         this.recognition.onend = function(){
             this_.buttonEl.onclick = () => {this_.recognition.start()}
             this_.buttonEl.innerHTML = iconNotStarted;
             this_.buttonEl.setAttribute("title", titleNotStarted);
             this_.model.started = false;
+            console.log("onend")
         }
+
+        this.buttonEl = htmlToElement(`<button class="bk bk-btn bk-btn-${this.model.button_type}" type="button" title="${titleNotStarted}"></button>`)
+        this.buttonEl.innerHTML = iconNotStarted
+        this.buttonEl.onclick = () => {this.recognition.start()}
     }
 
     connect_signals(): void {
@@ -129,16 +133,13 @@ export class SpeechToTextView extends HTMLBoxView {
         this.connect(this.model.properties.button_type.change, () => {this.buttonEl.className=`bk bk-btn bk-btn-${this.model.button_type}`})
     }
 
-    render(): void {
-        super.render()
-        this.buttonEl = htmlToElement(`<button class="bk bk-btn bk-btn-${this.model.button_type}" type="button" title="${titleNotStarted}"></button>`)
-        this.buttonEl.innerHTML = iconNotStarted
-        this.buttonEl.onclick = () => {this.recognition.start()}
-        this.el.appendChild(this.buttonEl)
-    }
-
     setGrammars(): void {
         this.recognition.grammars=deserializeGrammars(this.model.grammars);
+    }
+
+    render(): void {
+        super.render()
+        this.el.appendChild(this.buttonEl)
     }
 }
 
