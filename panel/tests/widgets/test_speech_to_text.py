@@ -125,14 +125,15 @@ def test_get_advanced_app():
     speech_to_text.grammars = grammar_list
     results_as_html_panel = pn.pane.Markdown(margin=(0, 15, 0, 15))
 
-    @pn.depends(speech_to_text.param.results_serialized, watch=True)
-    def update_results_html_panel(results_serialized):
+    @pn.depends(speech_to_text.param.results, watch=True)
+    def update_results_html_panel(results):
         results_as_html_panel.object = speech_to_text.results_as_html
 
     speech_to_text_settings = pn.WidgetBox(
         pn.Param(
             speech_to_text,
             parameters=[
+                "start",
                 "stop",
                 "abort",
                 "grammars",
@@ -144,12 +145,14 @@ def test_get_advanced_app():
                 "started",
                 "results",
                 "results_last",
-                "results_serialized",
                 "started",
                 "audio_started",
                 "sound_started",
                 "speech_started",
                 "button_type",
+                "button_hide",
+                "button_started",
+                "button_not_started",
             ],
         ),
     )
@@ -270,5 +273,5 @@ def test_get_color_app():
 
 if __name__.startswith("bokeh"):
     pn.config.sizing_mode = "stretch_width"
-    test_get_advanced_app().servable()
-    # test_get_color_app().servable()
+    # test_get_advanced_app().servable()
+    test_get_color_app().servable()

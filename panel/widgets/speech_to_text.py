@@ -112,8 +112,11 @@ class RecognitionAlternative(param.Parameterized):
         doc="""A numeric estimate between 0 and 1 of how confident the speech recognition
         system is that the recognition is correct.""",
     )
-    transcript = param.String(constant=True, doc="""The transcript of the recognised word or
-    sentence.""")
+    transcript = param.String(
+        constant=True,
+        doc="""The transcript of the recognised word or
+    sentence.""",
+    )
 
 
 class RecognitionResult(param.Parameterized):
@@ -124,6 +127,7 @@ class RecognitionResult(param.Parameterized):
 
     See https://developer.mozilla.org/en-US/docs/Web/API/SpeechRecognitionResult
     """
+
     is_final = param.Boolean(
         constant=True,
         doc="""A Boolean that states whether this result is final (True) or not (False)
@@ -153,7 +157,7 @@ class RecognitionResult(param.Parameterized):
         return [cls.create_from_dict(result) for result in results]
 
 
-class SpeechToText(Widget): # pylint: disable=too-many-ancestors
+class SpeechToText(Widget):  # pylint: disable=too-many-ancestors, too-many-instance-attributes
     """The SpeechToText widget controls the speech recognition service of the browser.
 
     It wraps the HTML5 SpeechRecognition API.
@@ -168,10 +172,19 @@ class SpeechToText(Widget): # pylint: disable=too-many-ancestors
     recognition engine. Your audio is sent to a web service for recognition processing, so it won't
     work offline. Whether this is secure and confidential enough for your use case is up to you
     to evaluate."""
-    button_type = param.ObjectSelector(default="light", objects=[
-        'default', 'primary', 'success', 'warning', 'danger', 'light'],
-        doc="""One of 'default', 'primary', 'success', 'warning', 'danger' and'light'.""")
 
+    start = param.Action(
+        doc="""Starts the speech recognition service listening to incoming audio with intent to
+        recognize grammars associated with the current SpeechRecognition."""
+    )
+    stop = param.Action(
+        doc="""Stops the speech recognition service from listening to incoming audio, and attempts
+        to return a RecognitionResult using the audio captured so far."""
+    )
+    abort = param.Action(
+        doc="""Stops the speech recognition service from listening to incoming audio, and doesn't
+        attempt to return a RecognitionResult."""
+    )
     lang = param.ObjectSelector(
         default="",
         objects=[""] + LANGUAGE_CODES,
@@ -209,7 +222,27 @@ class SpeechToText(Widget): # pylint: disable=too-many-ancestors
         doc="""A GrammarList object that represents the grammars that will be
         understood by the current SpeechRecognition service""",
     )
+    button_hide = param.Boolean(
+        default=False,
+        label="Hide the Button",
+        doc="If True no button is shown. If False a toggle Start/ Stop button is shown.",
+    )
+    button_type = param.ObjectSelector(
+        default="light",
+        objects=["default", "primary", "success", "warning", "danger", "light"],
+        doc="""One of 'default', 'primary', 'success', 'warning', 'danger' and'light'.""",
+    )
 
+    button_not_started = param.String(
+        label="Button Text when not started",
+        doc="""The text to show on the button when the SpeechRecognition service is NOT started.
+        If '' a *muted microphone* icon is shown.""",
+    )
+    button_started = param.String(
+        label="Button Text when started",
+        doc="""The text to show on the button when the SpeechRecognition service is started. If
+        '' a *muted microphone* icon is shown.""",
+    )
     started = param.Boolean(
         constant=True,
         doc="""Returns True if the Speech Recognition Service is started and False otherwise.""",
@@ -224,13 +257,7 @@ class SpeechToText(Widget): # pylint: disable=too-many-ancestors
         constant=True,
         doc="""Returns True if the the User has started speaking and False otherwise""",
     )
-
     results = param.List(
-        class_=RecognitionResult,
-        constant=True,
-        doc="""The results recognized. A list of RecognitionResult objects""",
-    )
-    results_serialized = param.List(
         constant=True,
         doc="""The `results` as a list of Dictionaries""",
     )
@@ -240,42 +267,43 @@ class SpeechToText(Widget): # pylint: disable=too-many-ancestors
         RecognitionResult. Please note we strip the transcript for leading spaces.""",
         label="Last Result",
     )
-    stop = param.Action(
-        doc="""Stops the speech recognition service from listening to incoming audio, and attempts
-        to return a RecognitionResult using the audio captured so far."""
-    )
-    abort = param.Action(
-        doc="""Stops the speech recognition service from listening to incoming audio, and doesn't
-        attempt to return a RecognitionResult."""
-    )
 
+    _starts = param.Integer(constant=True, doc="""Integer used to signal the start action""")
     _stops = param.Integer(constant=True, doc="""Integer used to signal the stop action""")
     _aborts = param.Integer(constant=True, doc="""Integer used to signal the abort action""")
-    _grammars = param.List(constant=True, doc="""List used to transfer the serialized grammars from
-    server to browser""")
+    _grammars = param.List(
+        constant=True,
+        doc="""List used to transfer the serialized grammars from
+    server to browser""",
+    )
 
     _widget_type = _BkSpeechToText
 
     _rename = {
+        "start": None,
         "stop": None,
         "abort": None,
         "grammars": None,
-        "results": None,
         "results_last": None,
+        "_starts": "starts",
         "_stops": "stops",
         "_aborts": "aborts",
         "_grammars": "grammars",
-        "results_serialized": "results",
     }
 
     def __init__(self, **params):
         super().__init__(**params)
 
+        self.start = self._start
         self.stop = self._stop
         self.abort = self._abort
 
         if self.grammars:
             self._update_grammars()
+
+    def _start(self, *_):
+        with param.edit_constant(self):
+            self._starts += 1
 
     def _stop(self, *_):
         with param.edit_constant(self):
@@ -294,18 +322,23 @@ class SpeechToText(Widget): # pylint: disable=too-many-ancestors
     def _update_grammars(self):
         with param.edit_constant(self):
             if self.grammars:
-                self._grammars = self.grammars.serialize() # pylint: disable=no-member
+                self._grammars = self.grammars.serialize()  # pylint: disable=no-member
             else:
                 self._grammars = []
 
-    @param.depends("results_serialized", watch=True)
+    @param.depends("results", watch=True)
     def _update_results(self):
+        # pylint: disable=unsubscriptable-object
         with param.edit_constant(self):
-            self.results = RecognitionResult.create_from_list(self.results_serialized)
-            if self.results and self.results[-1].alternatives:
-                self.results_last = (self.results[-1].alternatives[0].transcript).lstrip()
+            if self.results and "alternatives" in self.results[-1]:
+                self.results_last = (self.results[-1]["alternatives"][0]["transcript"]).lstrip()
             else:
                 self.results_last = ""
+
+    @property
+    def results_deserialized(self) -> List[RecognitionResult]:
+        """Returns the results as a List of RecognitionResults"""
+        return RecognitionResult.create_from_list(self.results)
 
     @property
     def results_as_html(self) -> str:
@@ -315,15 +348,15 @@ class SpeechToText(Widget): # pylint: disable=too-many-ancestors
         if not self.results:
             return "No results"
         html = "<div class='pn-speech-recognition-result'>"
-        total=len(self.results)-1
-        for index, result in enumerate(reversed(self.results)):
-            if len(self.results)>1:
+        total = len(self.results) - 1
+        for index, result in enumerate(reversed(self.results_deserialized)):
+            if len(self.results) > 1:
                 html += f"<h3>Result {total-index}</h3>"
             html += f"""
 <span>Is Final: {result.is_final}</span><br/>
 """
             for index2, alternative in enumerate(result.alternatives):
-                if len(result.alternatives)>1:
+                if len(result.alternatives) > 1:
                     html += f"""
 <h4>Alternative {index2}</h4>
 """
