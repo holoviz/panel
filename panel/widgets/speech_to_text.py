@@ -139,6 +139,7 @@ class RecognitionResult(param.Parameterized):
     @classmethod
     def create_from_dict(cls, result: Dict) -> "RecognitionResult":
         """Deserializes a serialized RecognitionResult"""
+        result = result.copy()
         alternatives = result.get("alternatives", [])
         _alternatives = []
         for alternative in alternatives:
@@ -229,11 +230,16 @@ class SpeechToText(Widget): # pylint: disable=too-many-ancestors
         constant=True,
         doc="""The results recognized. A list of RecognitionResult objects""",
     )
-    result = param.String(
+    results_serialized = param.List(
         constant=True,
-        doc="""The transcript of the first RecognitionAlternative with the highest confidence.""",
+        doc="""The `results` as a list of Dictionaries""",
     )
-
+    results_last = param.String(
+        constant=True,
+        doc="""The transcipt of the highest confidence RecognitionAlternative of the last
+        RecognitionResult""",
+        label="Last Result",
+    )
     stop = param.Action(
         doc="""Stops the speech recognition service from listening to incoming audio, and attempts
         to return a RecognitionResult using the audio captured so far."""
@@ -247,10 +253,6 @@ class SpeechToText(Widget): # pylint: disable=too-many-ancestors
     _aborts = param.Integer(constant=True, doc="""Integer used to signal the abort action""")
     _grammars = param.List(constant=True, doc="""List used to transfer the serialized grammars from
     server to browser""")
-    _results = param.List(
-        constant=True, doc="""List used to transfer the serialized RecognitionResults from
-        browser to server"""
-    )
 
     _widget_type = _BkSpeechToText
 
@@ -259,11 +261,11 @@ class SpeechToText(Widget): # pylint: disable=too-many-ancestors
         "abort": None,
         "grammars": None,
         "results": None,
-        "result": None,
+        "results_last": None,
         "_stops": "stops",
         "_aborts": "aborts",
         "_grammars": "grammars",
-        "_results": "results",
+        "results_serialized": "results",
     }
 
     def __init__(self, **params):
@@ -296,14 +298,14 @@ class SpeechToText(Widget): # pylint: disable=too-many-ancestors
             else:
                 self._grammars = []
 
-    @param.depends("_results", watch=True)
+    @param.depends("results_serialized", watch=True)
     def _update_results(self):
         with param.edit_constant(self):
-            self.results = RecognitionResult.create_from_list(self._results)
-            if self.results and self.results[0].alternatives:
-                self.result = self.results[0].alternatives[0].transcript
+            self.results = RecognitionResult.create_from_list(self.results_serialized)
+            if self.results and self.results[-1].alternatives:
+                self.results_last = self.results[-1].alternatives[0].transcript
             else:
-                self.result = ""
+                self.results_last = ""
 
     @property
     def results_as_html(self) -> str:
@@ -313,9 +315,10 @@ class SpeechToText(Widget): # pylint: disable=too-many-ancestors
         if not self.results:
             return "No results"
         html = "<div class='pn-speech-recognition-result'>"
-        for index, result in enumerate(self.results):
+        total=len(self.results)-1
+        for index, result in enumerate(reversed(self.results)):
             if len(self.results)>1:
-                html += f"<h3>Result {index}</h3>"
+                html += f"<h3>Result {total-index}</h3>"
             html += f"""
 <span>Is Final: {result.is_final}</span><br/>
 """
