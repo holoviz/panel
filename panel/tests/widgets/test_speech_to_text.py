@@ -116,7 +116,7 @@ def test_can_create_result_from_list():
     assert actual[0].alternatives[0].transcript == "and why"
 
 
-def test_get_app():
+def test_get_advanced_app():
     src = "#JSGF V1.0; grammar colors; public <color> = aqua | azure | beige | bisque | black | blue | brown | chocolate | coral | crimson | cyan | fuchsia | ghostwhite | gold | goldenrod | gray | green | indigo | ivory | khaki | lavender | lime | linen | magenta | maroon | moccasin | navy | olive | orange | orchid | peru | pink | plum | purple | red | salmon | sienna | silver | snow | tan | teal | thistle | tomato | turquoise | violet | white | yellow ;"
     speech_to_text = SpeechToText(button_type="success", continuous=True)
 
@@ -175,6 +175,100 @@ def test_get_app():
     return app
 
 
+def test_get_color_app():
+    speech_to_text_color = SpeechToText(button_type="light", continuous=True)
+
+    colors = [
+        "aqua",
+        "azure",
+        "beige",
+        "bisque",
+        "black",
+        "blue",
+        "brown",
+        "chocolate",
+        "coral",
+        "crimson",
+        "cyan",
+        "fuchsia",
+        "ghostwhite",
+        "gold",
+        "goldenrod",
+        "gray",
+        "green",
+        "indigo",
+        "ivory",
+        "khaki",
+        "lavender",
+        "lime",
+        "linen",
+        "magenta",
+        "maroon",
+        "moccasin",
+        "navy",
+        "olive",
+        "orange",
+        "orchid",
+        "peru",
+        "pink",
+        "plum",
+        "purple",
+        "red",
+        "salmon",
+        "sienna",
+        "silver",
+        "snow",
+        "tan",
+        "teal",
+        "thistle",
+        "tomato",
+        "turquoise",
+        "violet",
+        "white",
+        "yellow",
+    ]
+    src = "#JSGF V1.0; grammar colors; public <color> = " + " | ".join(colors) + " ;"
+    grammar_list = GrammarList()
+    grammar_list.add_from_string(src, 1)
+
+    speech_to_text_color.grammars = grammar_list
+
+    colors_html = ", ".join(
+        [f"<span style='background:{color};'>{color}</span>" for color in colors]
+    )
+    content_html = f"""
+    <h1>Speech Color Changer</h1>
+
+    <p>Tap/click the microphone icon and say a color to change the background color of the app. Try {colors_html}
+    """
+
+    content_panel = pn.pane.HTML(content_html, sizing_mode="stretch_width")
+
+    app = pn.Column(sizing_mode="stretch_width", height=500, css_classes=["color-app"])
+    style_panel = pn.pane.HTML(width=0, height=0, sizing_mode="fixed")
+
+    result_panel = pn.pane.Markdown(sizing_mode="stretch_width")
+
+    @pn.depends(speech_to_text_color.param.results_last, watch=True)
+    def update_result_panel(results_last):
+        results_last = results_last.lower()
+        if results_last in colors:
+            app.background = results_last
+            result_panel.object = "Result received: " + results_last
+        else:
+            app.background = "white"
+            result_panel.object = "Result received: " + results_last + " (Not recognized)"
+
+    app[:] = [
+        style_panel,
+        content_panel,
+        speech_to_text_color,
+        result_panel,
+    ]
+    return app
+
+
 if __name__.startswith("bokeh"):
     pn.config.sizing_mode = "stretch_width"
-    test_get_app().servable()
+    test_get_advanced_app().servable()
+    # test_get_color_app().servable()
