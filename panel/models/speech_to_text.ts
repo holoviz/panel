@@ -98,32 +98,52 @@ export class SpeechToTextView extends HTMLBoxView {
         this.recognition.onsoundend = () => {this_.model.sound_started=false}
         this.recognition.onspeechstart = () => {this_.model.speech_started=true}
         this.recognition.onspeechend = () => {this_.model.speech_started=false}
-
         this.recognition.onstart = function(){
             this_.buttonEl.onclick = () => {this_.recognition.stop()}
-            this_.buttonEl.innerHTML = iconStarted;
+            this_.buttonEl.innerHTML = this_.iconStarted();
             this_.buttonEl.setAttribute("title", titleStarted);
             this_.model.started = true;
-            console.log("onstart")
         }
         this.recognition.onend = function(){
             this_.buttonEl.onclick = () => {this_.recognition.start()}
-            this_.buttonEl.innerHTML = iconNotStarted;
+            this_.buttonEl.innerHTML = this_.iconNotStarted();
             this_.buttonEl.setAttribute("title", titleNotStarted);
             this_.model.started = false;
-            console.log("onend")
         }
 
         this.buttonEl = htmlToElement(`<button class="bk bk-btn bk-btn-${this.model.button_type}" type="button" title="${titleNotStarted}"></button>`)
-        this.buttonEl.innerHTML = iconNotStarted
+        this.buttonEl.innerHTML = this.iconNotStarted()
         this.buttonEl.onclick = () => {this.recognition.start()}
+    }
+
+    iconStarted(): string {
+        if (this.model.button_started!==''){
+            return this.model.button_started;
+        } else {
+            return iconStarted;
+        }
+    }
+    iconNotStarted(): string {
+        if (this.model.button_not_started!==''){
+            return this.model.button_not_started;
+        } else {
+            return iconNotStarted;
+        }
+    }
+    setIcon(): void {
+        if (this.model.started){
+            this.buttonEl.innerHTML = this.iconStarted();
+        } else {
+            this.buttonEl.innerHTML = this.iconNotStarted();
+        }
     }
 
     connect_signals(): void {
         super.connect_signals()
 
-        this.connect(this.model.properties.stops.change, () => {this.recognition.stops=this.model.stops})
-        this.connect(this.model.properties.aborts.change, () => {this.recognition.aborts=this.model.aborts})
+        this.connect(this.model.properties.starts.change, () => {this.recognition.start()})
+        this.connect(this.model.properties.stops.change, () => {this.recognition.stop()})
+        this.connect(this.model.properties.aborts.change, () => {this.recognition.abort()})
         this.connect(this.model.properties.grammars.change, () => {this.setGrammars})
         this.connect(this.model.properties.lang.change, () => {this.recognition.lang=this.model.lang})
         this.connect(this.model.properties.continuous.change, () => {this.recognition.continuous=this.model.continuous})
@@ -131,6 +151,10 @@ export class SpeechToTextView extends HTMLBoxView {
         this.connect(this.model.properties.max_alternatives.change, () => {this.recognition.maxAlternatives=this.model.max_alternatives})
         this.connect(this.model.properties.service_uri.change, () => {this.recognition.serviceURI=this.model.service_uri})
         this.connect(this.model.properties.button_type.change, () => {this.buttonEl.className=`bk bk-btn bk-btn-${this.model.button_type}`})
+
+        this.connect(this.model.properties.button_hide.change, () => {this.render()})
+        this.connect(this.model.properties.button_not_started.change, () => {this.setIcon()})
+        this.connect(this.model.properties.button_started.change, () => {this.setIcon()})
     }
 
     setGrammars(): void {
@@ -139,7 +163,9 @@ export class SpeechToTextView extends HTMLBoxView {
 
     render(): void {
         super.render()
-        this.el.appendChild(this.buttonEl)
+        if (!this.model.button_hide){
+            this.el.appendChild(this.buttonEl)
+        }
     }
 }
 
@@ -160,7 +186,12 @@ export namespace SpeechToText {
     audio_started: p.Property<boolean>
     sound_started: p.Property<boolean>
     speech_started: p.Property<boolean>
+
     button_type: p.Property<string>
+    button_hide: p.Property<boolean>
+    button_not_started: p.Property<string>
+    button_started: p.Property<string>
+
     results: p.Property<any[]>
   }
 }
@@ -194,7 +225,12 @@ export class SpeechToText extends HTMLBox {
         audio_started: [ p.Boolean,   false ],
         sound_started: [ p.Boolean,   false ],
         speech_started: [ p.Boolean,   false ],
+
         button_type: [p.String, 'light'],
+        button_hide: [ p.Boolean,   false ],
+        button_not_started: [ p.String,   '' ],
+        button_started: [ p.String,   '' ],
+
         results: [ p.Array, []],
     })
   }

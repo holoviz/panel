@@ -1,7 +1,8 @@
 """Bokeh Model of the Panel SpeechToText widget"""
-from bokeh.core.properties import Int, String, List, Dict, Any
+from bokeh.core.properties import Any, Dict, Int, List, String
 from bokeh.core.property.primitive import Bool
 from bokeh.models.widgets.widget import Widget
+
 
 class SpeechToText(Widget):
     """Bokeh Model of the Panel SpeechToText widget
@@ -14,6 +15,7 @@ class SpeechToText(Widget):
 
     Wraps the HTML5 SpeechRecognition API.
     See https://developer.mozilla.org/en-US/docs/Web/API/SpeechRecognition"""
+    starts = Int()
     stops = Int()
     aborts = Int()
 
@@ -28,6 +30,10 @@ class SpeechToText(Widget):
     audio_started = Bool()
     sound_started = Bool()
     speech_started = Bool()
+
     button_type = String()
+    button_hide = Bool()
+    button_not_started = String()
+    button_started = String()
 
     results = List(Dict(String, Any))
