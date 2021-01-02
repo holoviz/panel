@@ -123,12 +123,11 @@ def test_get_app():
     grammar_list = GrammarList()
     grammar_list.add_from_string(src, 1)
     speech_to_text.grammars = grammar_list
-    result_panel = pn.pane.Markdown()
+    results_as_html_panel = pn.pane.Markdown(margin=(0, 15, 0, 15))
 
-    @pn.depends(speech_to_text.param.results, watch=True)
-    def _update_result_panel(results=None):
-        result_panel.object = speech_to_text.results_as_html
-    _update_result_panel()
+    @pn.depends(speech_to_text.param.results_serialized, watch=True)
+    def update_results_html_panel(results_serialized):
+        results_as_html_panel.object = speech_to_text.results_as_html
 
     speech_to_text_settings = pn.WidgetBox(
         pn.Param(
@@ -144,6 +143,8 @@ def test_get_app():
                 "service_uri",
                 "started",
                 "results",
+                "results_last",
+                "results_serialized",
                 "started",
                 "audio_started",
                 "sound_started",
@@ -153,14 +154,22 @@ def test_get_app():
         ),
     )
     app = pn.Column(
-        pn.pane.HTML("<h1>Speech to Text <img style='float:right;height:40px;width:164px;margin-right:40px' src='https://panel.holoviz.org/_static/logo_horizontal.png'></h1>", background="black", style={"color": "white", "margin-left": "20px"}, margin=(0,0,15,0)),
+        pn.pane.HTML(
+            "<h1>Speech to Text <img style='float:right;height:40px;width:164px;margin-right:40px' src='https://panel.holoviz.org/_static/logo_horizontal.png'></h1>",
+            background="black",
+            style={"color": "white", "margin-left": "20px"},
+            margin=(0, 0, 15, 0),
+        ),
         speech_to_text,
         pn.Row(
             pn.Column(pn.pane.Markdown("## Settings"), speech_to_text_settings),
             pn.layout.VSpacer(width=25),
-            pn.Column(pn.pane.Markdown("## Results"), result_panel)
+            pn.Column(
+                pn.pane.Markdown("## Results"),
+                results_as_html_panel,
+            ),
         ),
-        width=600,
+        width=800,
         sizing_mode="fixed",
     )
     return app
