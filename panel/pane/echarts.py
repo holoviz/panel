@@ -24,7 +24,7 @@ class ECharts(PaneBase):
     theme = param.ObjectSelector(default="default", objects=["default", "light", "dark"], doc="""
        Theme to apply to plots.""")
 
-    priority = 0
+    priority = None
 
     _rename = {"object": "data"}
 
@@ -32,18 +32,19 @@ class ECharts(PaneBase):
 
     _updates = True
 
-    def __init__(self, object=None, **params):
-        super().__init__(object=object, **params)
+    @classmethod
+    def applies(cls, obj, **params):
+        if isinstance(obj, dict):
+            return 0
+        elif "pyecharts." in repr(obj.__class__):
+            return 0.8
+        return None
 
     @classmethod
-    def applies(cls, obj):
-        return isinstance(obj, dict) or "pyecharts." in repr(obj.__class__)
-
-    @classmethod
-    def _get_dimensions(cls, json, props):
+    def _get_dimensions(cls, props):
         if json is None:
             return
-        responsive = json.get('responsive')
+        responsive = props.get('data', {}).get('responsive')
         if responsive:
             props['sizing_mode'] = 'stretch_both'
         else:
@@ -61,10 +62,10 @@ class ECharts(PaneBase):
         else:
             ECharts = getattr(sys.modules['panel.models.echarts'], 'ECharts')
 
-        props = self._process_param_change(self._init_properties())
-        echart = self._get_echart_dict(self.object)
-        self._get_dimensions(echart, props)
-        model = ECharts(data=echart, **props)
+        props = self._get_echart_dict(self.object)
+        props.update(self._process_param_change(self._init_properties()))
+        self._get_dimensions(props)
+        model = ECharts(**props)
         if root is None:
             root = model
         self._models[root.ref['id']] = (model, parent)
@@ -73,15 +74,20 @@ class ECharts(PaneBase):
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
         if 'data' in msg:
-            msg['data'] = self._get_echart_dict(msg['data'])
+            msg.update(self._get_echart_dict(msg['data']))
         return msg
 
-    @classmethod
-    def _get_echart_dict(cls, object):
+    def _get_echart_dict(self, object):
         if isinstance(object, dict):
-            return dict(object)
+            return {'data': dict(object)}
         elif "pyecharts" in sys.modules:
             import pyecharts  # pylint: disable=import-outside-toplevel,import-error
             if isinstance(object, pyecharts.charts.chart.Chart):
-                return json.loads(object.dump_options())
+                w, h = object.width, object.height
+                params = {'data': json.loads(object.dump_options())}
+                if not self.height and h:
+                    params['height'] = int(h.replace('px', ''))
+                if not self.width and w:
+                    params['width'] = int(w.replace('px', ''))
+                return params
         return {}
