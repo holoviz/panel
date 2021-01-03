@@ -7,15 +7,14 @@ import param
 
 from pyviz_comms import JupyterComm
 
-from ..viewable import Layoutable
 from .base import PaneBase
-
 
 
 class ECharts(PaneBase):
     """
     ECharts panes allow rendering echarts.js plots.
     """
+
     object = param.Parameter(default=None, doc="""
         The Echarts object being wrapped. Can be an Echarts dictionary or a pyecharts chart""")
 
@@ -71,24 +70,18 @@ class ECharts(PaneBase):
         self._models[root.ref['id']] = (model, parent)
         return model
 
-    def _update(self, ref=None, model=None):
-        props = {p : getattr(self, p) for p in list(Layoutable.param)
-                 if getattr(self, p) is not None}
-        echart = self._get_echart_dict(self.object)
-        self._get_dimensions(echart, props)
-        props['data'] = echart
-        model.update(**props)
+    def _process_param_change(self, msg):
+        msg = super()._process_param_change(msg)
+        if 'data' in msg:
+            msg['data'] = self._get_echart_dict(msg['data'])
+        return msg
 
     @classmethod
     def _get_echart_dict(cls, object):
-        if object is None:
-            return {}
         if isinstance(object, dict):
             return dict(object)
-        if "pyecharts" in sys.modules:
+        elif "pyecharts" in sys.modules:
             import pyecharts  # pylint: disable=import-outside-toplevel,import-error
-
             if isinstance(object, pyecharts.charts.chart.Chart):
                 return json.loads(object.dump_options())
-
         return {}

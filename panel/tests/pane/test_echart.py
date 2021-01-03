@@ -35,9 +35,25 @@ def get_pyechart():
     assert pane.object == bar
     return pane
 
+def get_pyechart2():
+    from pyecharts.charts import Bar
+    import panel as pn
+
+    bar1 = pn.widgets.IntSlider(start=1, end=100, value=50)
+    bar2 = pn.widgets.IntSlider(start=1, end=100, value=50)
+
+    @pn.depends(bar1.param.value, bar2.param.value)
+    def plot(bar1, bar2):
+        my_plot= (Bar()
+            .add_xaxis(['Bar1', 'Bar2'])
+            .add_yaxis('Values', [bar1, bar2])
+        )
+        return pn.pane.ECharts(my_plot, width=500, height=250)
+    return pn.Row(pn.Column(bar1, bar2), plot)
+
 if __name__.startswith("bokeh"):
     # test_echart().servable()
-    get_pyechart().servable()
+    get_pyechart2().servable()
 if __name__.startswith("__main__"):
     test_echart().show(port=5007)
     get_pyechart().show(port=5007)
