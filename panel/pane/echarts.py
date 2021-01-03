@@ -46,13 +46,15 @@ class ECharts(PaneBase):
 
     @param.depends("object", watch=True)
     def _update_size(self):
-        try:
-            if not self.height:
-                self.height = int(self.object.height.replace("px",""))
-            if not self.width:
-                self.width = int(self.object.width.replace("px",""))
-        except:
-            pass
+        if not "pyecharts." in repr(self.object.__class__):
+            return
+        w, h = self.object.width, self.object.height
+        params = {}
+        if not self.height and h:
+            params['height'] = int(h.replace('px', ''))
+        if not self.width and w:
+            params['weight'] = int(w.replace('px', ''))
+        #self.param.set_param(**params)
 
     @classmethod
     def _get_dimensions(cls, json, props):
@@ -90,13 +92,6 @@ class ECharts(PaneBase):
         if 'data' in msg:
             msg['data'] = self._get_echart_dict(msg['data'])
         return msg
-
-    def _update_model(self, events, msg, root, model, doc, comm):
-        # Needed to enable replacing the object
-        # cf. https://discourse.holoviz.org/t/pyecharts-working-example/1590
-        if "data" in msg:
-            msg["data"]=self._get_echart_dict(msg["data"])
-        return super()._update_model(events, msg, root, model, doc, comm)
 
     @classmethod
     def _get_echart_dict(cls, object):
