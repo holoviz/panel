@@ -24,7 +24,7 @@ class ECharts(PaneBase):
     theme = param.ObjectSelector(default="default", objects=["default", "light", "dark"], doc="""
        Theme to apply to plots.""")
 
-    priority = 0.8
+    priority = None
 
     _rename = {"object": "data"}
 
@@ -34,12 +34,15 @@ class ECharts(PaneBase):
 
     def __init__(self, object=None, **params):
         super().__init__(object=object, **params)
-
         self._update_size()
 
     @classmethod
-    def applies(cls, obj):
-        return "pyecharts." in repr(obj.__class__)
+    def applies(cls, obj, **params):
+        if isinstance(obj, dict):
+            return 0
+        elif "pyecharts." in repr(obj.__class__):
+            return 0.8
+        return None
 
     @param.depends("object", watch=True)
     def _update_size(self):
