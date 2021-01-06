@@ -792,13 +792,16 @@ class Tabulator(BaseTable):
         multiple checkboxes (if enabled) or using Shift + click on
         rows.""")
 
+    sorters = param.List(default=[], doc="""
+        A list of sorters to apply during pagination.""")
+
     theme = param.ObjectSelector(
         default="simple", objects=TABULATOR_THEMES, doc="""
         Tabulator CSS theme to apply to table.""")
 
     _widget_type = _BkTabulator
 
-    _data_params = ['value', 'page', 'page_size', 'pagination']
+    _data_params = ['value', 'page', 'page_size', 'pagination', 'sorters']
 
     _config_params = ['frozen_columns', 'groups', 'selectable']
 
@@ -850,10 +853,19 @@ class Tabulator(BaseTable):
                 return
         model.configuration = self._get_configuration(model.columns)
 
+    def _sort_df(self, df):
+        if not self.sorters:
+            return df
+        return df.sort_values(
+            [s['field'] for s in self.sorters],
+            ascending=[s['dir'] == 'asc' for s in self.sorters]
+        )
+
     def _get_data(self):
         if self.pagination != 'remote' or self.value is None:
             return super()._get_data()
         df = self._filter_dataframe(self.value)
+        df = self._sort_df(df)
         nrows = self.page_size
         start = (self.page-1)*nrows
         page_df = df.iloc[start: start+nrows]
@@ -969,7 +981,11 @@ class Tabulator(BaseTable):
         nrows = self.page_size
         start = (self.page-1)*nrows
         end = start+nrows
-        self.value[column].iloc[start:end] = array
+        if self.sorters:
+            index = self._filtered.iloc[start:end].index.values
+            self.value[column].loc[index] = array
+        else:
+            self.value[column].iloc[start:end] = array
 
     def _update_selection(self, indices):
         if self.pagination != 'remote':
@@ -1008,7 +1024,7 @@ class Tabulator(BaseTable):
         model = super()._get_model(doc, root, parent, comm)
         if root is None:
             root = model
-        self._link_props(model, ['page'], doc, root, comm)
+        self._link_props(model, ['page', 'sorters'], doc, root, comm)
         return model
 
     def _config_columns(self, column_objs):
