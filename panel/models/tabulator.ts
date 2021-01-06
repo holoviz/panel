@@ -245,7 +245,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       const ctype = editor.type
       if (tab_column.editor != null) {
       } else if (ctype === "StringEditor") {
-        if (editor.completions) {
+        if (editor.completions.length > 0) {
           tab_column.editor = "autocomplete"
           tab_column.editorParams = {values: editor.completions}
         } else
