@@ -59,6 +59,8 @@ class DataTabulator(HTMLBox):
 
     max_page = Int()
 
+    sorters = List(Dict(String, String))
+
     theme = Enum(*TABULATOR_THEMES, default="simple")
 
     theme_url = String(default=THEME_URL)
