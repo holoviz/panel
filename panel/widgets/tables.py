@@ -981,7 +981,11 @@ class Tabulator(BaseTable):
         nrows = self.page_size
         start = (self.page-1)*nrows
         end = start+nrows
-        self.value[column].iloc[start:end] = array
+        if self.sorters:
+            index = self._filtered.iloc[start:end].index.values
+            self.value[column].loc[index] = array
+        else:
+            self.value[column].iloc[start:end] = array
 
     def _update_selection(self, indices):
         if self.pagination != 'remote':
