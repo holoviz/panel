@@ -449,7 +449,7 @@ class BasicTemplate(BaseTemplate):
         name = type(self).__name__.lower()
         resources = _settings.resources(default="server")
         if resources == 'server':
-            dist_path = urljoin(state.base_url, LOCAL_DIST)
+            dist_path = urljoin(state.app_url, LOCAL_DIST)
         else:
             dist_path = CDN_DIST
 

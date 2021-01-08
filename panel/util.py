@@ -342,7 +342,7 @@ def bundled_files(model, file_type='javascript'):
         filepath = url_path(url)
         test_filepath = filepath.split('?')[0]
         if resources == 'server' and os.path.isfile(os.path.join(bdir, test_filepath)):
-            files.append(f'/static/extensions/panel/bundled/{name}/{filepath}')
+            files.append(f'static/extensions/panel/bundled/{name}/{filepath}')
         else:
             files.append(url)
     return files
