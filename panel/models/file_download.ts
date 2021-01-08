@@ -1,6 +1,6 @@
 import {InputWidget, InputWidgetView} from "@bokehjs/models/widgets/input_widget"
 
-import {bk_btn, bk_btn_type} from "@bokehjs/styles/buttons"
+import * as buttons from "@bokehjs/styles/buttons.css"
 import {input} from "@bokehjs/core/dom"
 
 import {ButtonType} from "@bokehjs/core/enums"
@@ -170,12 +170,12 @@ export class FileDownloadView extends InputWidgetView {
 
   _update_button_style(): void{
     if ( !this.anchor_el.hasAttribute("class") ){ // When the widget is rendered.
-      this.anchor_el.classList.add(bk_btn)
-      this.anchor_el.classList.add(bk_btn_type(this.model.button_type))
+      this.anchor_el.classList.add(buttons.btn)
+      this.anchor_el.classList.add(buttons.btn_type(this.model.button_type))
     } else {  // When the button type is changed.
       const prev_button_type = this.anchor_el.classList.item(1)
       if ( prev_button_type ) {
-        this.anchor_el.classList.replace(prev_button_type, bk_btn_type(this.model.button_type))
+        this.anchor_el.classList.replace(prev_button_type, buttons.btn_type(this.model.button_type))
       }
     }
   }
@@ -227,7 +227,7 @@ export class FileDownload extends InputWidget {
       _transfers:   [ p.Number,          0    ],
     })
 
-    this.override({
+    this.override<FileDownload.Props>({
       title: "",
     })
   }

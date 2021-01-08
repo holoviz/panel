@@ -145,7 +145,7 @@ export class AcePlot extends HTMLBox {
       print_margin: [ p.Boolean, false    ]
     })
 
-    this.override({
+    this.override<AcePlot.Props>({
       height: 300,
       width: 300
     })

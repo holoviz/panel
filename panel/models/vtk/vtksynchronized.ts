@@ -207,7 +207,7 @@ export class VTKSynchronizedPlot extends AbstractVTKPlot {
       scene:              [ p.Any,        {} ],
     })
 
-    this.override({
+    this.override<VTKSynchronizedPlot.Props>({
       height: 300,
       width: 300,
     })

@@ -125,7 +125,7 @@ export class VideoStream extends HTMLBox {
       value:    [ p.Any,           ]
     })
 
-    this.override({
+    this.override<VideoStream.Props>({
       height: 240,
       width: 320
     });
