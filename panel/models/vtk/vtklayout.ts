@@ -414,7 +414,7 @@ export abstract class AbstractVTKPlot extends HTMLBox {
       interactive_orientation_widget: [ p.Boolean, false ],
     })
 
-    this.override({
+    this.override<AbstractVTKPlot.Props>({
       height: 300,
       width: 300,
     })

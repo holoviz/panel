@@ -3,7 +3,7 @@ import {isString} from "@bokehjs/core/util/types"
 import * as p from "@bokehjs/core/properties"
 
 import {InputWidget, InputWidgetView} from "@bokehjs/models/widgets/input_widget"
-import {bk_input} from "@bokehjs/styles/widgets/inputs"
+import * as inputs from "@bokehjs/styles/widgets/inputs.css"
 
 export class SingleSelectView extends InputWidgetView {
   model: SingleSelect
@@ -35,7 +35,7 @@ export class SingleSelectView extends InputWidgetView {
 
     this.select_el = select({
       multiple: false,
-      class: bk_input,
+      class: inputs.input,
       name: this.model.name,
       disabled: this.model.disabled,
     }, options)

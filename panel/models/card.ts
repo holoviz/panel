@@ -51,7 +51,7 @@ export class CardView extends ColumnView {
 
     const {background, button_css_classes, header_color, header_tag, header_css_classes} = this.model
 
-    this.el.style.backgroundColor = background != null ? background : ""
+    this.el.style.backgroundColor = (background != null ? background : "" as any)
     classes(this.el).clear().add(...this.css_classes())
 
     let header_background = this.model.header_background
