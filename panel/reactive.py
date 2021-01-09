@@ -953,7 +953,7 @@ class CustomReactive(Reactive):
     def _get_model(self, doc, root=None, parent=None, comm=None):
         data_model = construct_data_model(self, ignore=list(Reactive.param))
         model = self._bokeh_model(model=data_model, **self._get_properties(),
-                                  events=self._event, html=self._html)
+                                  events=self._event_map, html=self._html)
         if root is None:
             root = model
         model.on_event('dom_event', self._process_event)
@@ -974,6 +974,12 @@ class CustomReactive(Reactive):
     def on_event(self, obj, event, callback):
         self._event_callbacks[f'_{obj}_{event}'].append(callback)
 
-    def _update(self, ref=None, model=None):
-        model.update(**self._get_properties())
-        model.model.update(**self._get_data_properties())
+    def _update_model(self, events, msg, root, model, doc, comm):
+        self._changing[root.ref['id']] = [
+            attr for attr, value in msg.items()
+            if not model.model.lookup(attr).property.matches(getattr(model.model, attr), value)
+        ]
+        try:
+            model.model.update(**msg)
+        finally:
+            del self._changing[root.ref['id']]
