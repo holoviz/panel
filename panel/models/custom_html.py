@@ -3,7 +3,9 @@ import re
 
 from collections import defaultdict
 
-from bokeh.core.properties import Instance, String, Dict, List, Tuple
+import bokeh.core.properties as bp
+import param as pm
+
 from bokeh.models.layouts import HTMLBox
 from bokeh.model import DataModel
 from bokeh.events import ModelEvent
@@ -34,27 +36,56 @@ def find_attrs(html):
     return p.attrs
 
 
-class CustomEvent(ModelEvent):
+PARAM_MAPPING = {
+    pm.String: lambda p, kwargs: bp.String(**kwargs),
+    pm.Boolean: lambda p, kwargs: bp.Bool(**kwargs),
+    pm.Integer: lambda p, kwargs: bp.Int(**kwargs),
+    pm.Number: lambda p, kwargs: bp.Float(**kwargs),
+    pm.List: lambda p, kwargs: bp.List(bp.Any, **kwargs),
+    pm.Dict: lambda p, kwargs: bp.Dict(bp.String, bp.Any, **kwargs),
+    pm.Tuple: lambda p, kwargs: bp.Tuple(*(bp.Any for p in p.length), **kwargs)
+}
 
-    event_name = 'custom'
 
-    def __init__(self, model, event=None):
+def construct_data_model(parameterized, ignore=['name']):
+    properties = {}
+    for pname in parameterized.param:
+        if pname in ignore:
+            continue
+        p = parameterized.param[pname]
+        prop = PARAM_MAPPING.get(type(p))
+        value = getattr(parameterized, pname)
+        kwargs = {'default': p.default, 'help': p.doc}
+        if prop is None:
+            properties[pname] = bp.Any(**kwargs)
+        else:
+            properties[pname] = prop(p, kwargs)
+    values = {k: v for k, v in parameterized.param.get_param_values()
+              if k not in ignore}
+    return type(parameterized.name, (DataModel,), properties)(**values)
+
+
+class DOMEvent(ModelEvent):
+
+    event_name = 'dom_event'
+
+    def __init__(self, model, element=None, event=None):
         self.event = event
+        self.element = element
         super().__init__(model=model)
 
 
 class CustomHTML(HTMLBox):
 
-    attrs = Dict(String, List(Tuple(String, String)))
+    attrs = bp.Dict(bp.String, bp.List(bp.Tuple(bp.String, bp.String)))
 
-    events = Dict(String, List(String))
+    events = bp.Dict(bp.String, bp.List(bp.String))
 
-    html = String()
+    html = bp.String()
 
-    model = Instance(DataModel)
+    model = bp.Instance(DataModel)
 
     def __init__(self, **props):
         if 'attrs' not in props and 'html' in props:
             props['attrs'] = find_attrs(props['html'])
         super().__init__(**props)
-
