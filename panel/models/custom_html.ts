@@ -51,7 +51,6 @@ export class CustomHTMLView extends HTMLBoxView {
     this.connect(this.model.properties.width_policy.change, resize)
     this.connect(this.model.properties.sizing_mode.change, resize)
     this.connect(this.model.properties.html.change, () => this.render())
-	this.connect(this.model.properties.change, () => this.render())
   }
 
   private _render_html(literal: string, params: any): string {
@@ -66,8 +65,18 @@ export class CustomHTMLView extends HTMLBoxView {
     set_size(this.divEl, this.model)
     this.el.appendChild(this.divEl)
 
-    const model = this.model.model
-    const id = model.id
+    const id = this.model.model.id
+	for (const name in this.model.attrs) {
+	  const el: any = document.getElementById(`${name}-${id}`)
+      if (el == null) {
+        console.warn(`DOM node '${name}-${id}' could not be found.`)
+        continue
+      }
+	  const observer = new MutationObserver(() => {
+		this._update_model(el, name)
+	  })
+	  observer.observe(el, {characterData: true, attributes: true, childList: true, subtree: true});
+    }
     for (const name in this.model.events) {
       const el: any = document.getElementById(`${name}-${id}`)
       if (el == null) {
@@ -78,22 +87,22 @@ export class CustomHTMLView extends HTMLBoxView {
       const elname = names.slice(0, names.length-1).join('-')
       for (const event_name of this.model.events[name]) {
         el.addEventListener(event_name, (event: any) => {
-		  console.log(elname, event_name, event)
           this.model.trigger_event(new DOMEvent(elname, simplify(event)))
-          const attrs = this.model.attrs[elname]
-          if (attrs != null) {
-            for (const attr of attrs) {
-              let value = el[attr[0]]
-              if (isNumeric(value))
-                value = Number(value)
-              else if (value === 'false' || value === 'true')
-                value = value === 'true' ? true : false
-              model[attr[1]] = value 
-            }
-          }
+		  this._update_model(el, name)
         })
       }
     }
+  }
+
+  private _update_model(el: any, name: string): void {
+	for (const attr of this.model.attrs[name]) {
+	  let value = el[attr[0]]
+      if (isNumeric(value))
+        value = Number(value)
+      else if (value === 'false' || value === 'true')
+        value = value === 'true' ? true : false
+      this.model.model[attr[1]] = value
+	}
   }
 
   _update_layout(): void {
