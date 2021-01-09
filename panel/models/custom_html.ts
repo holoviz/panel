@@ -12,17 +12,17 @@ class CustomEvent extends ModelEvent {
   }
 
   protected _to_json(): JSON {
-	return {model: this.origin, event: this.event}
+    return {model: this.origin, event: this.event}
   }
 }
 
 function simplify(event: any): any {
   const copy: any = {}
   for (const property in event) {
-	const ptype = typeof event[property] 
-	if(ptype === "function" || ptype === 'object')
-	  continue
-    copy[property] = event[property];
+    const ptype = typeof event[property] 
+    if(ptype === "function" || ptype === 'object')
+      continue
+    copy[property] = event[property];    
   }
   return copy
 }
@@ -65,32 +65,32 @@ export class CustomHTMLView extends HTMLBoxView {
     set_size(this.divEl, this.model)
     this.el.appendChild(this.divEl)
 
-	const model = this.model.model
-	const id = model.id
+    const model = this.model.model
+    const id = model.id
     for (const name in this.model.events) {
-	  const el: any = document.getElementById(`${name}-${id}`)
-	  if (el == null) {
-		console.warn(`DOM node '${name}-${id}' could not be found.`)
+      const el: any = document.getElementById(`${name}-${id}`)
+      if (el == null) {
+        console.warn(`DOM node '${name}-${id}' could not be found.`)
         continue
       }
-	  const names = el.id.split('-')
-	  const elname = names.slice(0, names.length-1).join('-')
-	  for (const event of this.model.events[name]) {
-		el.addEventListener(event, (event: any) => {
-		  this.model.trigger_event(new CustomEvent(simplify(event)))
-		  const attrs = this.model.attrs[elname]
-		  if (attrs != null) {
-			for (const attr of attrs) {
-			  let value = el[attr[0]]
-			  if (isNumeric(value))
-				value = Number(value)
-			  else if (value === 'false' || value === 'true')
-				value = value === 'true' ? true : false
-			  model[attr[1]] = value 
-			}
-		  }
-		})
-	  }
+      const names = el.id.split('-')
+      const elname = names.slice(0, names.length-1).join('-')
+      for (const event of this.model.events[name]) {
+        el.addEventListener(event, (event: any) => {
+          this.model.trigger_event(new CustomEvent(simplify(event)))
+          const attrs = this.model.attrs[elname]
+          if (attrs != null) {
+            for (const attr of attrs) {
+              let value = el[attr[0]]
+              if (isNumeric(value))
+                value = Number(value)
+              else if (value === 'false' || value === 'true')
+                value = value === 'true' ? true : false
+              model[attr[1]] = value 
+            }
+          }
+        })
+      }
     }
   }
 
@@ -107,7 +107,7 @@ export namespace CustomHTML {
   export type Attrs = p.AttrsOf<Props>
 
   export type Props = HTMLBox.Props & {
-	attrs: p.Property<any>  
+    attrs: p.Property<any>  
     events: p.Property<any>
     html: p.Property<string>
     model: p.Property<any>
@@ -128,7 +128,7 @@ export class CustomHTML extends HTMLBox {
   static init_CustomHTML(): void {
     this.prototype.default_view = CustomHTMLView
     this.define<CustomHTML.Props>({
-	  attrs:   [ p.Any, {} ],
+      attrs:   [ p.Any, {} ],
       events:  [ p.Any, {}  ],
       html:    [ p.String, "" ],
       model:   [ p.Any,  ]
