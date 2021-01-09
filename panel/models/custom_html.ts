@@ -36,6 +36,7 @@ function isNumeric(str: any): any {
 export class CustomHTMLView extends HTMLBoxView {
   model: CustomHTML
   _prev_sizing_mode: string | null
+  _changing: boolean = false
   protected divEl: HTMLElement
 
   connect_signals(): void {
@@ -51,6 +52,10 @@ export class CustomHTMLView extends HTMLBoxView {
     this.connect(this.model.properties.width_policy.change, resize)
     this.connect(this.model.properties.sizing_mode.change, resize)
     this.connect(this.model.properties.html.change, () => this.render())
+	this.connect(this.model.model.change, () => {
+	  if (!this._changing)
+	    this.render()
+	})
   }
 
   private _render_html(literal: string, params: any): string {
@@ -101,7 +106,9 @@ export class CustomHTMLView extends HTMLBoxView {
         value = Number(value)
       else if (value === 'false' || value === 'true')
         value = value === 'true' ? true : false
+      this._changing = true
       this.model.model[attr[1]] = value
+      this._changing = false
 	}
   }
 
