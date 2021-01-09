@@ -4,15 +4,15 @@ import {HTMLBox, HTMLBoxView} from "@bokehjs/models/layouts/html_box"
 
 import {CachedVariadicBox, set_size} from "./layout"
 
-class CustomEvent extends ModelEvent {
-  event_name: string = "custom"
+class DOMEvent extends ModelEvent {
+  event_name: string = "dom_event"
 
-  constructor(readonly event: any) {
+  constructor(readonly element: string, readonly event: any) {
     super()
   }
 
   protected _to_json(): JSON {
-    return {model: this.origin, event: this.event}
+    return {model: this.origin, element: this.element, event: this.event}
   }
 }
 
@@ -51,6 +51,7 @@ export class CustomHTMLView extends HTMLBoxView {
     this.connect(this.model.properties.width_policy.change, resize)
     this.connect(this.model.properties.sizing_mode.change, resize)
     this.connect(this.model.properties.html.change, () => this.render())
+	this.connect(this.model.properties.change, () => this.render())
   }
 
   private _render_html(literal: string, params: any): string {
@@ -75,9 +76,10 @@ export class CustomHTMLView extends HTMLBoxView {
       }
       const names = el.id.split('-')
       const elname = names.slice(0, names.length-1).join('-')
-      for (const event of this.model.events[name]) {
-        el.addEventListener(event, (event: any) => {
-          this.model.trigger_event(new CustomEvent(simplify(event)))
+      for (const event_name of this.model.events[name]) {
+        el.addEventListener(event_name, (event: any) => {
+		  console.log(elname, event_name, event)
+          this.model.trigger_event(new DOMEvent(elname, simplify(event)))
           const attrs = this.model.attrs[elname]
           if (attrs != null) {
             for (const attr of attrs) {

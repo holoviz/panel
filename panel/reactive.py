@@ -8,7 +8,7 @@ import difflib
 import sys
 import threading
 
-from collections import namedtuple
+from collections import defaultdict, namedtuple
 from functools import partial
 
 import numpy as np
@@ -23,8 +23,9 @@ from .io.model import hold
 from .io.notebook import push, push_on_root
 from .io.server import unlocked
 from .io.state import state
+from .models.custom_html import CustomHTML as _BkCustomHTML, construct_data_model
 from .util import edit_readonly, updating
-from .viewable import Renderable, Viewable
+from .viewable import Layoutable, Renderable, Viewable
 
 LinkWatcher = namedtuple("Watcher","inst cls fn mode onlychanged parameter_names what queued target links transformed bidirectional_watcher")
 
@@ -927,3 +928,52 @@ class ReactiveData(SyncableData):
             finally:
                 self._updating = False
         super(ReactiveData, self)._process_events(events)
+
+
+class CustomReactive(Reactive):
+
+    _bokeh_model = _BkCustomHTML
+
+    _html = ""
+
+    _event_map = {}
+
+    def __init__(self, **params):
+        super().__init__(**params)
+        self._event_callbacks = defaultdict(list)
+
+    def _get_properties(self):
+        return {p : getattr(self, p) for p in list(Layoutable.param)
+                if getattr(self, p) is not None}
+
+    def _get_data_properties(self):
+        return {p : getattr(self, p) for p in list(self.param)
+                if p not in list(Reactive.param) and getattr(self, p) is not None}
+
+    def _get_model(self, doc, root=None, parent=None, comm=None):
+        data_model = construct_data_model(self, ignore=list(Reactive.param))
+        model = self._bokeh_model(model=data_model, **self._get_properties(),
+                                  events=self._event, html=self._html)
+        if root is None:
+            root = model
+        model.on_event('dom_event', self._process_event)
+        self._link_props(data_model, list(self._get_data_properties()), doc, root, comm)
+        if root is None:
+            root = model
+        self._models[root.ref['id']] = (model, parent)
+        return model
+
+    def _process_event(self, event):
+        name = f"_{event.element}_{event.event['type']}"
+        cb = getattr(self, name, None)
+        if cb is not None:
+            cb(event)
+        for cb in self._event_callbacks.get(name, []):
+            cb(event)
+
+    def on_event(self, obj, event, callback):
+        self._event_callbacks[f'_{obj}_{event}'].append(callback)
+
+    def _update(self, ref=None, model=None):
+        model.update(**self._get_properties())
+        model.model.update(**self._get_data_properties())
