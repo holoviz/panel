@@ -14,11 +14,13 @@
     "@types/gl-matrix": "^2.4.5",
     "debounce": "^1.2.0",
     "gl-matrix": "^3.1.0",
-    "json-formatter-js": "^2.2.1"
+    "htm": "^3.0.4",
+    "json-formatter-js": "^2.2.1",
+    "preact": "^10.5.9"
   },
   "devDependencies": {},
   "files": [
     "dist/**/*.{js,js.map,d.ts,json,css}"
   ],
-  "main": "dist/panel.min.js"
+  "main": "dist/panel.js"
 }

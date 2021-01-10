@@ -1,3 +1,5 @@
+import {render} from 'preact';
+import {html} from 'htm/preact';
 
 import * as p from "@bokehjs/core/properties"
 import {ModelEvent, JSON} from "@bokehjs/core/bokeh_events"
@@ -6,7 +8,6 @@ import {HTMLBox, HTMLBoxView} from "@bokehjs/models/layouts/html_box"
 
 import {htmlDecode} from "./html"
 import {CachedVariadicBox, set_size} from "./layout"
-
 
 class DOMEvent extends ModelEvent {
   event_name: string = "dom_event"
@@ -58,12 +59,13 @@ export class ReactiveHTMLView extends HTMLBoxView {
     this.connect(this.model.properties.html.change, () => this.render())
 	this.connect(this.model.model.change, () => {
 	  if (!this._changing)
-	    this.render()
+	    this._update()
 	})
   }
 
-  private _render_html(literal: string, params: any): string {
-    return new Function("ns", "with (ns) { return `"+literal+"`; }")(params)
+  private _render_html(literal: any, params: any): string {
+	const htm = literal.replaceAll('${', '${params.')
+	return new Function("params, html", "return html`"+htm+"`;")(params, html)
   }
 
   async _render_children(id: string): Promise<void> {
@@ -92,7 +94,7 @@ export class ReactiveHTMLView extends HTMLBoxView {
 	  const observer = new MutationObserver(() => {
 		this._update_model(el, name)
 	  })
-	  observer.observe(el, {characterData: true, attributes: true, childList: true, subtree: true});
+	  observer.observe(el, {attributes: true});
     }
   }
 
@@ -115,13 +117,17 @@ export class ReactiveHTMLView extends HTMLBoxView {
     }
   }
 
-  async render(): Promise<void> {
-    super.render()
-    this.divEl = document.createElement('div')
+  _update(): void {
 	const decoded = htmlDecode(this.model.html)
     const html = decoded || this.model.html
 	const rendered = this._render_html(html, this.model.model)
-	this.divEl.innerHTML = rendered
+	render(rendered, this.divEl)
+  }
+
+  async render(): Promise<void> {
+    super.render()
+    this.divEl = document.createElement('div')
+	this._update()
 
     set_size(this.divEl, this.model)
     this.el.appendChild(this.divEl)
