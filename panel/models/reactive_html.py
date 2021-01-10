@@ -11,7 +11,7 @@ from bokeh.model import DataModel
 from bokeh.events import ModelEvent
 
 
-class CustomHTMLParser(html.parser.HTMLParser):
+class ReactiveHTMLParser(html.parser.HTMLParser):
     
     def __init__(self):
         super().__init__()
@@ -31,7 +31,7 @@ class CustomHTMLParser(html.parser.HTMLParser):
 
 
 def find_attrs(html):
-    p = CustomHTMLParser()
+    p = ReactiveHTMLParser()
     p.feed(html)
     return p.attrs
 
@@ -75,7 +75,7 @@ class DOMEvent(ModelEvent):
         super().__init__(model=model)
 
 
-class CustomHTML(HTMLBox):
+class ReactiveHTML(HTMLBox):
 
     attrs = bp.Dict(bp.String, bp.List(bp.Tuple(bp.String, bp.String)))
 

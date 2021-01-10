@@ -33,8 +33,8 @@ function isNumeric(str: any): any {
   return !isNaN(str) && !isNaN(parseFloat(str))
 }
 
-export class CustomHTMLView extends HTMLBoxView {
-  model: CustomHTML
+export class ReactiveHTMLView extends HTMLBoxView {
+  model: ReactiveHTML
   _prev_sizing_mode: string | null
   _changing: boolean = false
   protected divEl: HTMLElement
@@ -121,7 +121,7 @@ export class CustomHTMLView extends HTMLBoxView {
   }
 }
 
-export namespace CustomHTML {
+export namespace ReactiveHTML {
   export type Attrs = p.AttrsOf<Props>
 
   export type Props = HTMLBox.Props & {
@@ -132,20 +132,20 @@ export namespace CustomHTML {
   }
 }
 
-export interface CustomHTML extends CustomHTML.Attrs {}
+export interface ReactiveHTML extends ReactiveHTML.Attrs {}
 
-export class CustomHTML extends HTMLBox {
-  properties: CustomHTML.Props
+export class ReactiveHTML extends HTMLBox {
+  properties: ReactiveHTML.Props
 
-  constructor(attrs?: Partial<CustomHTML.Attrs>) {
+  constructor(attrs?: Partial<ReactiveHTML.Attrs>) {
     super(attrs)
   }
 
   static __module__ = "panel.models.custom_html"
 
-  static init_CustomHTML(): void {
-    this.prototype.default_view = CustomHTMLView
-    this.define<CustomHTML.Props>({
+  static init_ReactiveHTML(): void {
+    this.prototype.default_view = ReactiveHTMLView
+    this.define<ReactiveHTML.Props>({
       attrs:   [ p.Any, {} ],
       events:  [ p.Any, {}  ],
       html:    [ p.String, "" ],

@@ -23,7 +23,7 @@ from .io.model import hold
 from .io.notebook import push, push_on_root
 from .io.server import unlocked
 from .io.state import state
-from .models.custom_html import CustomHTML as _BkCustomHTML, construct_data_model
+from .models.custom_html import ReactiveHTML as _BkReactiveHTML, construct_data_model
 from .util import edit_readonly, updating
 from .viewable import Layoutable, Renderable, Viewable
 
@@ -573,7 +573,6 @@ class Reactive(Syncable, Viewable):
                     bidirectional=bidirectional)
 
 
-
 class SyncableData(Reactive):
     """
     A baseclass for components which sync one or more data parameters
@@ -930,13 +929,14 @@ class ReactiveData(SyncableData):
         super(ReactiveData, self)._process_events(events)
 
 
-class CustomReactive(Reactive):
 
-    _bokeh_model = _BkCustomHTML
+class ReactiveHTML(Reactive):
+
+    _bokeh_model = _BkReactiveHTML
 
     _html = ""
 
-    _event_map = {}
+    _dom_events = {}
 
     def __init__(self, **params):
         super().__init__(**params)
@@ -953,7 +953,7 @@ class CustomReactive(Reactive):
     def _get_model(self, doc, root=None, parent=None, comm=None):
         data_model = construct_data_model(self, ignore=list(Reactive.param))
         model = self._bokeh_model(model=data_model, **self._get_properties(),
-                                  events=self._event_map, html=self._html)
+                                  events=self._dom_events, html=self._html)
         if root is None:
             root = model
         model.on_event('dom_event', self._process_event)
