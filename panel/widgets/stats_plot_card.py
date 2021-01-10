@@ -9,6 +9,9 @@ The card can be layout out as
 
 - a column (text and plot on top of each other) or
 - a row (text and plot after each other)
+
+The card enables performant streaming.
+The text section is responsive and resizes on window resize.
 """
 import param
 from bokeh.models.sources import ColumnDataSource
@@ -28,6 +31,9 @@ class StatsPlotCard(Widget):
 
     - a column (text and plot on top of each other) or
     - a row (text and plot after each other)
+
+    The card enables performant streaming.
+    The text section is responsive and resizes on window resize.
     """
     _widget_type = _BkStatsPlotCard
 
