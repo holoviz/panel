@@ -94,9 +94,9 @@ class Button(_ClickButton):
     _widget_type = _BkButton
 
     def _server_click(self, doc, ref, event):
-        self._events.update({"clicks": self.clicks+1})
-        if not self._processing:
-            self._processing = True
+        processing = bool(self._current_events)
+        self._current_events.update({"clicks": self.clicks+1})
+        if not processing:
             if doc.session_context:
                 doc.add_timeout_callback(partial(self._change_coroutine, doc), self._debounce)
             else:
@@ -150,9 +150,9 @@ class MenuButton(_ClickButton):
         self.param.watch(callback, 'clicked', onlychanged=False)
 
     def _server_click(self, doc, ref, event):
-        self._events.update({"clicked": event.item})
-        if not self._processing:
-            self._processing = True
+        processing = bool(self._current_events)
+        self._current_events.update({"clicked": event.item})
+        if not processing:
             if doc.session_context:
                 doc.add_timeout_callback(partial(self._change_coroutine, doc), self._debounce)
             else:

@@ -19,7 +19,7 @@ from .io.model import hold
 from .io.notebook import push
 from .io.server import unlocked
 from .io.state import state
-from .models.custom_html import CustomHTML as _BkCustomHTML, construct_data_model
+from .models.custom_html import ReactiveHTML as _BkReactiveHTML, construct_data_model
 from .util import edit_readonly
 from .viewable import Layoutable, Renderable, Viewable
 
@@ -52,12 +52,9 @@ class Syncable(Renderable):
 
     __abstract = True
 
-    events = []
-
     def __init__(self, **params):
         super(Syncable, self).__init__(**params)
-        self._processing = False
-        self._events = {}
+        self._current_events = {}
         self._callbacks = []
         self._links = []
         self._link_params()
@@ -200,11 +197,10 @@ class Syncable(Renderable):
             thread = threading.current_thread()
             thread_id = thread.ident if thread else None
             state._thread_id = thread_id
-            events = self._events
-            self._events = {}
+            events = self._current_events
+            self._current_events = {}
             self._process_events(events)
         finally:
-            self._processing = False
             state.curdoc = None
             state._thread_id = None
 
@@ -222,9 +218,9 @@ class Syncable(Renderable):
             return
 
         state._locks.clear()
-        self._events.update({attr: new})
-        if not self._processing:
-            self._processing = True
+        processing = bool(self._current_events)
+        self._current_events.update({attr: new})
+        if not processing:
             if doc.session_context:
                 doc.add_timeout_callback(partial(self._change_coroutine, doc), self._debounce)
             else:
@@ -519,13 +515,13 @@ class Reactive(Syncable, Viewable):
                     bidirectional=bidirectional)
 
 
-class CustomReactive(Reactive):
+class ReactiveHTML(Reactive):
 
-    _bokeh_model = _BkCustomHTML
+    _bokeh_model = _BkReactiveHTML
 
     _html = ""
 
-    _event_map = {}
+    _dom_events = {}
 
     def __init__(self, **params):
         super().__init__(**params)
@@ -542,7 +538,7 @@ class CustomReactive(Reactive):
     def _get_model(self, doc, root=None, parent=None, comm=None):
         data_model = construct_data_model(self, ignore=list(Reactive.param))
         model = self._bokeh_model(model=data_model, **self._get_properties(),
-                                  events=self._event_map, html=self._html)
+                                  events=self._dom_events, html=self._html)
         if root is None:
             root = model
         model.on_event('dom_event', self._process_event)
