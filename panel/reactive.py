@@ -942,7 +942,12 @@ class ReactiveHTML(Reactive):
 
     def __init__(self, **params):
         super().__init__(**params)
-        self._event_callbacks = defaultdict(list)
+        self._event_callbacks = defaultdict(lambda: defaultdict(list))
+        self._update_parser()
+
+    def _update_parser(self, *args):
+        self._parser = ReactiveHTMLParser()
+        self._parser.feed(self._html)
 
     def _get_properties(self):
         return {p : getattr(self, p) for p in list(Layoutable.param)
@@ -952,60 +957,55 @@ class ReactiveHTML(Reactive):
         return {p : getattr(self, p) for p in list(self.param)
                 if p not in list(Reactive.param) and getattr(self, p) is not None}
 
-    def _get_model(self, doc, root=None, parent=None, comm=None):
-
-        # Parse HTML
+    def _get_children(self, doc, root, model, comm):
         html = self._html
-        parser = ReactiveHTMLParser()
-        parser.feed(html)
+        children, child_models = {}, {}
+        for parent, child_name in self._parser.children.items():
+            child_panes = getattr(self, child_name)
+            models = None
+            if isinstance(child_panes, Reactive):
+                models = [child_panes._get_model(doc, root, model, comm)]
+            elif isinstance(child_panes, list) and all(isinstance(c, Reactive) for c in child_panes):
+                models = [c._get_model(doc, root, parent, comm) for c in child_panes]
+            if models:
+                child_models[child_name] = models
+                children[parent] = child_name
+                html = html.replace('${%s}' % child_name, '')
+        return html, children, child_models
 
-        # Get model
+    def _get_model(self, doc, root=None, parent=None, comm=None):
         model = self._bokeh_model()
         if not root:
             root = model
 
-        # Get children
-        real_children = {}
-        child_models = {}
-        for parent, child_name in parser.children.items():
-            child = getattr(self, child_name)
-            child_model = None
-            if isinstance(child, Reactive):
-                child_model = [child._get_model(doc, root, model, comm)]
-            elif isinstance(child, list) and all(isinstance(c, Reactive) for c in child):
-                child_model = [c._get_model(doc, root, parent, comm) for c in child]
-            if child_model:
-                child_models[child_name] = child_model
-                real_children[parent] = child_name
-                html = html.replace('${%s}' % child_name, '')
+        html, children, models = self._get_children(doc, root, parent, comm)
 
-        # Construct models
-        ignored = list(Reactive.param)+list(real_children.values())
+        # Populate model
+        ignored = list(Reactive.param)+list(children.values())
         data_model = construct_data_model(self, ignore=ignored)
+        events = dict(self._dom_events)
+        for node, evs in self._event_callbacks:
+            events[node] = list(events.get(node, set()) | set(evs))
         model.update(
-            attrs=parser.attrs, children=real_children, events=self._dom_events,
-            html=escape(html), model=data_model, models=child_models,
+            attrs=self._parser.attrs, children=children, events=events,
+            html=escape(html), model=data_model, models=models,
             **self._get_properties()
         )
 
         # Set up callbacks
         model.on_event('dom_event', self._process_event)
-        linked_properties = [p for ps in parser.attrs.values() for _, p in ps]
+        linked_properties = [p for ps in self._parser.attrs.values() for _, p in ps]
         self._link_props(data_model, linked_properties, doc, root, comm)
 
         self._models[root.ref['id']] = (model, parent)
         return model
 
     def _process_event(self, event):
-        name = f"_{event.element}_{event.event['type']}"
-        cb = getattr(self, name, None)
+        cb = getattr(self, f"_{event.node}_{event.event['type']}", None)
         if cb is not None:
             cb(event)
-        for cb in self._event_callbacks.get(name, []):
+        for cb in self._event_callbacks.get(event.node, {}).get(event, []):
             cb(event)
-
-    def on_event(self, obj, event, callback):
-        self._event_callbacks[f'_{obj}_{event}'].append(callback)
 
     def _update_model(self, events, msg, root, model, doc, comm):
         self._changing[root.ref['id']] = [
@@ -1016,3 +1016,25 @@ class ReactiveHTML(Reactive):
             model.model.update(**msg)
         finally:
             del self._changing[root.ref['id']]
+
+    def on_event(self, node, event, callback):
+        """
+        Registers a callback to be executed when the specified DOM
+        event is triggered on the named node. Note that the named node
+        must be declared in the HTML. To create a named node you must
+        give it an id of the form `id=name-${id}`, where `name` will
+        be the node identifier.
+
+        Arguments
+        ---------
+        node: str
+          Named node in the HTML identifiable via id of the form `id=name-${id}`.
+        event: str
+          Name of the DOM event to add an event listener to.
+        callback: callable
+          A callable which will be given the DOMEvent object.
+        """
+        if node not in self._parser.nodes:
+            raise ValueError(f"Named node '{node}' not found. Available "
+                             f"nodes include: {self._parser.nodes}.")
+        self._event_callbacks[node][event].append(callback)

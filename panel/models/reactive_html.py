@@ -17,6 +17,7 @@ class ReactiveHTMLParser(HTMLParser):
         super().__init__()
         self.attrs = defaultdict(list)
         self.children = {}
+        self.nodes = []
         self._template_re = re.compile('\$\{.+\}$')
         self._current_node = None
     
@@ -29,6 +30,7 @@ class ReactiveHTMLParser(HTMLParser):
 
         name = '-'.join(dom_id.split('-')[:-1])
         self._current_node = name
+        self.nodes.append(name)
         for attr, value in attrs.items():
             if self._template_re.match(value):
                 self.attrs[name].append((attr, value[2:-1]))
@@ -80,9 +82,9 @@ class DOMEvent(ModelEvent):
 
     event_name = 'dom_event'
 
-    def __init__(self, model, element=None, event=None):
+    def __init__(self, model, node=None, event=None):
         self.event = event
-        self.element = element
+        self.node = node
         super().__init__(model=model)
 
 

@@ -11,12 +11,12 @@ import {CachedVariadicBox, set_size} from "./layout"
 class DOMEvent extends ModelEvent {
   event_name: string = "dom_event"
 
-  constructor(readonly element: string, readonly event: any) {
+  constructor(readonly node: string, readonly event: any) {
     super()
   }
 
   protected _to_json(): JSON {
-    return {model: this.origin, element: this.element, event: this.event}
+    return {model: this.origin, node: this.node, event: this.event}
   }
 }
 
@@ -66,18 +66,7 @@ export class ReactiveHTMLView extends HTMLBoxView {
     return new Function("ns", "with (ns) { return `"+literal+"`; }")(params)
   }
 
-  async render(): Promise<void> {
-    super.render()
-    this.divEl = document.createElement('div')
-	const decoded = htmlDecode(this.model.html)
-    const html = decoded || this.model.html
-	const rendered = this._render_html(html, this.model.model)
-	this.divEl.innerHTML = rendered
-
-    set_size(this.divEl, this.model)
-    this.el.appendChild(this.divEl)
-
-    const id = this.model.model.id
+  async _render_children(id: string): Promise<void> {
 	for (const name in this.model.children) {
 	  const el: any = document.getElementById(`${name}-${id}`)
       if (el == null) {
@@ -91,7 +80,9 @@ export class ReactiveHTMLView extends HTMLBoxView {
 		view.renderTo(el)
 	  }
 	}
+  }
 
+  _setup_mutation_observers(id: string): void {
 	for (const name in this.model.attrs) {
 	  const el: any = document.getElementById(`${name}-${id}`)
       if (el == null) {
@@ -103,6 +94,9 @@ export class ReactiveHTMLView extends HTMLBoxView {
 	  })
 	  observer.observe(el, {characterData: true, attributes: true, childList: true, subtree: true});
     }
+  }
+
+  _setup_event_listeners(id: string): void {
     for (const name in this.model.events) {
       const el: any = document.getElementById(`${name}-${id}`)
       if (el == null) {
@@ -119,6 +113,23 @@ export class ReactiveHTMLView extends HTMLBoxView {
         })
       }
     }
+  }
+
+  async render(): Promise<void> {
+    super.render()
+    this.divEl = document.createElement('div')
+	const decoded = htmlDecode(this.model.html)
+    const html = decoded || this.model.html
+	const rendered = this._render_html(html, this.model.model)
+	this.divEl.innerHTML = rendered
+
+    set_size(this.divEl, this.model)
+    this.el.appendChild(this.divEl)
+
+    const id = this.model.model.id
+	await this._render_children(id)
+	this._setup_mutation_observers(id)
+	this._setup_event_listeners(id)
   }
 
   private _update_model(el: any, name: string): void {
