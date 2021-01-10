@@ -141,7 +141,7 @@ export class ReactiveHTML extends HTMLBox {
     super(attrs)
   }
 
-  static __module__ = "panel.models.custom_html"
+  static __module__ = "panel.models.reactive_html"
 
   static init_ReactiveHTML(): void {
     this.prototype.default_view = ReactiveHTMLView
