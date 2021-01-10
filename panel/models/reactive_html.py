@@ -1,33 +1,44 @@
-import html.parser
 import re
 
 from collections import defaultdict
+from html.parser import HTMLParser
 
 import bokeh.core.properties as bp
 import param as pm
 
-from bokeh.models.layouts import HTMLBox
+from bokeh.models import HTMLBox, LayoutDOM
 from bokeh.model import DataModel
 from bokeh.events import ModelEvent
 
 
-class ReactiveHTMLParser(html.parser.HTMLParser):
+class ReactiveHTMLParser(HTMLParser):
     
     def __init__(self):
         super().__init__()
         self.attrs = defaultdict(list)
-        self._template_re = re.compile('^\$\{.+\}$')
+        self.children = {}
+        self._template_re = re.compile('\$\{.+\}$')
+        self._current_node = None
     
     def handle_starttag(self, tags, attrs):
         attrs = dict(attrs)
         dom_id = attrs.pop('id', None)
+        self._current_node = None
         if not dom_id or not dom_id.endswith('-${id}'):
             return
-        
+
         name = '-'.join(dom_id.split('-')[:-1])
+        self._current_node = name
         for attr, value in attrs.items():
             if self._template_re.match(value):
                 self.attrs[name].append((attr, value[2:-1]))
+
+    def handle_endtag(self, tag):
+        self._current_node = None
+
+    def handle_data(self, data):
+        if self._current_node and self._template_re.match(data):
+            self.children[self._current_node] = data[2:-1]
 
 
 def find_attrs(html):
@@ -79,11 +90,15 @@ class ReactiveHTML(HTMLBox):
 
     attrs = bp.Dict(bp.String, bp.List(bp.Tuple(bp.String, bp.String)))
 
+    children = bp.Dict(bp.String, bp.String)
+
     events = bp.Dict(bp.String, bp.List(bp.String))
 
     html = bp.String()
 
     model = bp.Instance(DataModel)
+
+    models = bp.Dict(bp.String, bp.List(bp.Instance(LayoutDOM)))
 
     def __init__(self, **props):
         if 'attrs' not in props and 'html' in props:
