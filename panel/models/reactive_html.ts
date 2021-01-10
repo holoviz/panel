@@ -1,8 +1,12 @@
+
 import * as p from "@bokehjs/core/properties"
 import {ModelEvent, JSON} from "@bokehjs/core/bokeh_events"
+import {build_view} from "@bokehjs/core/build_views"
 import {HTMLBox, HTMLBoxView} from "@bokehjs/models/layouts/html_box"
 
+import {htmlDecode} from "./html"
 import {CachedVariadicBox, set_size} from "./layout"
+
 
 class DOMEvent extends ModelEvent {
   event_name: string = "dom_event"
@@ -62,19 +66,36 @@ export class ReactiveHTMLView extends HTMLBoxView {
     return new Function("ns", "with (ns) { return `"+literal+"`; }")(params)
   }
 
-  render(): void {
+  async render(): Promise<void> {
     super.render()
     this.divEl = document.createElement('div')
-    this.divEl.innerHTML = this._render_html(this.model.html, this.model.model)
+	const decoded = htmlDecode(this.model.html)
+    const html = decoded || this.model.html
+	const rendered = this._render_html(html, this.model.model)
+	this.divEl.innerHTML = rendered
 
     set_size(this.divEl, this.model)
     this.el.appendChild(this.divEl)
 
     const id = this.model.model.id
+	for (const name in this.model.children) {
+	  const el: any = document.getElementById(`${name}-${id}`)
+      if (el == null) {
+        console.warn(`DOM node '${name}-${id}' could not be found. Cannot render children.`)
+        continue
+      }
+	  const child_name = this.model.children[name]
+	  let child_models = this.model.models[child_name]
+	  for (const cm of child_models) {
+		const view = await build_view(cm)
+		view.renderTo(el)
+	  }
+	}
+
 	for (const name in this.model.attrs) {
 	  const el: any = document.getElementById(`${name}-${id}`)
       if (el == null) {
-        console.warn(`DOM node '${name}-${id}' could not be found.`)
+        console.warn(`DOM node '${name}-${id}' could not be found. Cannot set up MutationObserver.`)
         continue
       }
 	  const observer = new MutationObserver(() => {
@@ -85,7 +106,7 @@ export class ReactiveHTMLView extends HTMLBoxView {
     for (const name in this.model.events) {
       const el: any = document.getElementById(`${name}-${id}`)
       if (el == null) {
-        console.warn(`DOM node '${name}-${id}' could not be found.`)
+        console.warn(`DOM node '${name}-${id}' could not be found. Cannot subscribe to DOM events.`)
         continue
       }
       const names = el.id.split('-')
@@ -93,7 +114,8 @@ export class ReactiveHTMLView extends HTMLBoxView {
       for (const event_name of this.model.events[name]) {
         el.addEventListener(event_name, (event: any) => {
           this.model.trigger_event(new DOMEvent(elname, simplify(event)))
-		  this._update_model(el, name)
+		  if (name in this.model.attrs)
+		    this._update_model(el, name)
         })
       }
     }
@@ -125,10 +147,12 @@ export namespace ReactiveHTML {
   export type Attrs = p.AttrsOf<Props>
 
   export type Props = HTMLBox.Props & {
-    attrs: p.Property<any>  
+    attrs: p.Property<any>
+    children: p.Property<any>
     events: p.Property<any>
     html: p.Property<string>
     model: p.Property<any>
+	models: p.Property<any>
   }
 }
 
@@ -146,10 +170,12 @@ export class ReactiveHTML extends HTMLBox {
   static init_ReactiveHTML(): void {
     this.prototype.default_view = ReactiveHTMLView
     this.define<ReactiveHTML.Props>({
-      attrs:   [ p.Any, {} ],
-      events:  [ p.Any, {}  ],
-      html:    [ p.String, "" ],
-      model:   [ p.Any,  ]
+      attrs:    [ p.Any, {} ],
+	  children: [ p.Any, {} ],
+      events:   [ p.Any, {}  ],
+      html:     [ p.String, "" ],
+      model:    [ p.Any,  ],
+	  models:   [ p.Any, {} ]
     })
   }
 }

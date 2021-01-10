@@ -24,9 +24,9 @@ from .io.notebook import push, push_on_root
 from .io.server import unlocked
 from .io.state import state
 from .models.reactive_html import (
-    ReactiveHTML as _BkReactiveHTML, construct_data_model
+    ReactiveHTML as _BkReactiveHTML, ReactiveHTMLParser, construct_data_model
 )
-from .util import edit_readonly, updating
+from .util import edit_readonly, escape, updating
 from .viewable import Layoutable, Renderable, Viewable
 
 LinkWatcher = namedtuple("Watcher","inst cls fn mode onlychanged parameter_names what queued target links transformed bidirectional_watcher")
@@ -953,15 +953,46 @@ class ReactiveHTML(Reactive):
                 if p not in list(Reactive.param) and getattr(self, p) is not None}
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        data_model = construct_data_model(self, ignore=list(Reactive.param))
-        model = self._bokeh_model(model=data_model, **self._get_properties(),
-                                  events=self._dom_events, html=self._html)
-        if root is None:
+
+        # Parse HTML
+        html = self._html
+        parser = ReactiveHTMLParser()
+        parser.feed(html)
+
+        # Get model
+        model = self._bokeh_model()
+        if not root:
             root = model
+
+        # Get children
+        real_children = {}
+        child_models = {}
+        for parent, child_name in parser.children.items():
+            child = getattr(self, child_name)
+            child_model = None
+            if isinstance(child, Reactive):
+                child_model = [child._get_model(doc, root, model, comm)]
+            elif isinstance(child, list) and all(isinstance(c, Reactive) for c in child):
+                child_model = [c._get_model(doc, root, parent, comm) for c in child]
+            if child_model:
+                child_models[child_name] = child_model
+                real_children[parent] = child_name
+                html = html.replace('${%s}' % child_name, '')
+
+        # Construct models
+        ignored = list(Reactive.param)+list(real_children.values())
+        data_model = construct_data_model(self, ignore=ignored)
+        model.update(
+            attrs=parser.attrs, children=real_children, events=self._dom_events,
+            html=escape(html), model=data_model, models=child_models,
+            **self._get_properties()
+        )
+
+        # Set up callbacks
         model.on_event('dom_event', self._process_event)
-        self._link_props(data_model, list(self._get_data_properties()), doc, root, comm)
-        if root is None:
-            root = model
+        linked_properties = [p for ps in parser.attrs.values() for _, p in ps]
+        self._link_props(data_model, linked_properties, doc, root, comm)
+
         self._models[root.ref['id']] = (model, parent)
         return model
 
