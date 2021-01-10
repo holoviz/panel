@@ -19,7 +19,9 @@ from .io.model import hold
 from .io.notebook import push
 from .io.server import unlocked
 from .io.state import state
-from .models.custom_html import ReactiveHTML as _BkReactiveHTML, construct_data_model
+from .models.reactive_html import (
+    ReactiveHTML as _BkReactiveHTML, construct_data_model
+)
 from .util import edit_readonly
 from .viewable import Layoutable, Renderable, Viewable
 
