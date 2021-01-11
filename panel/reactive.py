@@ -987,8 +987,8 @@ class ReactiveHTML(Reactive):
         for node, evs in self._event_callbacks.items():
             events[node] = list(events.get(node, set()) | set(evs))
         model.update(
-            attrs=self._parser.attrs, children=children, events=events,
-            html=escape(html), model=data_model, models=models,
+            attrs=self._parser.attrs, children=children, data=data_model,
+            events=events, html=escape(html), models=models,
             **self._get_properties()
         )
 
@@ -1014,10 +1014,10 @@ class ReactiveHTML(Reactive):
     def _update_model(self, events, msg, root, model, doc, comm):
         self._changing[root.ref['id']] = [
             attr for attr, value in msg.items()
-            if not model.model.lookup(attr).property.matches(getattr(model.model, attr), value)
+            if not model.data.lookup(attr).property.matches(getattr(model.data, attr), value)
         ]
         try:
-            model.model.update(**msg)
+            model.data.update(**msg)
         finally:
             del self._changing[root.ref['id']]
 
