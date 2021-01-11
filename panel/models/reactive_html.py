@@ -32,7 +32,7 @@ class ReactiveHTMLParser(HTMLParser):
         self._current_node = name
         self.nodes.append(name)
         for attr, value in attrs.items():
-            if self._template_re.match(value):
+            if self._template_re.match(value) and not value[2:-1].startswith('model.'):
                 self.attrs[name].append((attr, value[2:-1]))
 
     def handle_endtag(self, tag):
@@ -94,11 +94,11 @@ class ReactiveHTML(HTMLBox):
 
     children = bp.Dict(bp.String, bp.String)
 
+    data = bp.Instance(DataModel)
+
     events = bp.Dict(bp.String, bp.List(bp.String))
 
     html = bp.String()
-
-    model = bp.Instance(DataModel)
 
     models = bp.Dict(bp.String, bp.List(bp.Instance(LayoutDOM)))
 

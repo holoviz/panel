@@ -8,7 +8,7 @@ import {build_view} from "@bokehjs/core/build_views"
 
 import {serializeEvent} from "./event-to-object";
 import {htmlDecode} from "./html"
-import {PanelHTMLBoxView} from "./layout"
+import {PanelHTMLBoxView, set_size} from "./layout"
 
 class DOMEvent extends ModelEvent {
   event_name: string = "dom_event"
@@ -22,15 +22,29 @@ class DOMEvent extends ModelEvent {
   }
 }
 
-function isNumeric(str: any): any {
-  if (typeof str != "string")
-    return false  
-  return !isNaN(str) && !isNaN(parseFloat(str))
+function serialize_attrs(attrs: any, model: any): any {
+  const serialized: any = {}
+  for (const attr in attrs) {
+    let value = attrs[attr]
+    const property = model.properties[attr]
+    if (!property.valid(value)) {
+      if (typeof value !== "string") {
+        console.warn(`Model property '${attr}' value of ${value} could not be serialized.`)
+        continue
+      } else if (value === "NaN" || !isNaN(Number(value)))
+        value = Number(value)
+      else if (value === 'false' || value === 'true')
+        value = value === 'true' ? true : false
+      }
+    serialized[attr] = value
+  }
+  return serialized
 }
 
 export class ReactiveHTMLView extends PanelHTMLBoxView {
   model: ReactiveHTML
   _changing: boolean = false
+  _render_node: any = null
 
   connect_signals(): void {
     super.connect_signals()
@@ -44,16 +58,16 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
     this.connect(this.model.properties.height_policy.change, resize)
     this.connect(this.model.properties.width_policy.change, resize)
     this.connect(this.model.properties.sizing_mode.change, resize)
-    this.connect(this.model.properties.html.change, () => this.render())
-    this.connect(this.model.model.change, () => {
+    this.connect(this.model.properties.html.change, resize)
+    this.connect(this.model.data.change, () => {
       if (!this._changing)
         this._update()
     })
   }
 
-  private _render_html(literal: any, params: any): string {
-    const htm = literal.replaceAll('${', '${params.')
-    return new Function("params, html", "return html`"+htm+"`;")(params, html)
+  private _render_html(literal: any): string {
+    let htm = literal.replaceAll('${model.', '$-{model.').replaceAll('${', '${data.').replaceAll('$-{model.', '${model.')
+    return new Function("model, data, html", "return html`"+htm+"`;")(this.model, this.model.data, html)
   }
 
   async _render_children(id: string): Promise<void> {
@@ -108,31 +122,30 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
   _update(): void {
     const decoded = htmlDecode(this.model.html)
     const html = decoded || this.model.html
-    const rendered = this._render_html(html, this.model.model)
-    render(rendered, this.el)
+    const rendered = this._render_html(html)
+    render(rendered, this.el, this._render_node)
+    this._render_node = this.el.children[0]
+    set_size(this._render_node, this.model)
   }
 
   async render(): Promise<void> {
     super.render()
     this._update()
 
-    const id = this.model.model.id
+    const id = this.model.data.id
     await this._render_children(id)
     this._setup_mutation_observers(id)
     this._setup_event_listeners(id)
   }
 
   private _update_model(el: any, name: string): void {
-    for (const attr of this.model.attrs[name]) {
-      let value = el[attr[0]]
-      if (isNumeric(value))
-        value = Number(value)
-      else if (value === 'false' || value === 'true')
-        value = value === 'true' ? true : false
-      this._changing = true
-      this.model.model[attr[1]] = value
-      this._changing = false
-    }
+    const data_model = this.model.data
+    const attrs: any = {}
+    for (const attr of this.model.attrs[name])
+      attrs[attr[1]] = el[attr[0]]
+    this._changing = true
+    data_model.setv(serialize_attrs(attrs, data_model))
+    this._changing = false
   }
 }
 
@@ -142,9 +155,9 @@ export namespace ReactiveHTML {
   export type Props = Markup.Props & {
     attrs: p.Property<any>
     children: p.Property<any>
+    data: p.Property<any>
     events: p.Property<any>
     html: p.Property<string>
-    model: p.Property<any>
     models: p.Property<any>
   }
 }
@@ -165,9 +178,9 @@ export class ReactiveHTML extends Markup {
     this.define<ReactiveHTML.Props>({
       attrs:    [ p.Any, {} ],
       children: [ p.Any, {} ],
+      data:    [ p.Any,  ],
       events:   [ p.Any, {}  ],
       html:     [ p.String, "" ],
-      model:    [ p.Any,  ],
       models:   [ p.Any, {} ]
     })
   }
