@@ -15,6 +15,7 @@ from .deckgl import DeckGL # noqa
 from .echarts import ECharts # noqa
 from .holoviews import HoloViews # noqa
 from .ipywidget import IPyWidget # noqa
+from .idom import IDOM # noqa
 from .image import GIF, JPG, PNG, SVG # noqa
 from .markup import DataFrame, HTML, JSON, Markdown, Str # noqa
 from .media import Audio, Video # noqa
