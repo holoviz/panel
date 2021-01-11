@@ -67,7 +67,6 @@ def construct_data_model(parameterized, ignore=['name']):
             continue
         p = parameterized.param[pname]
         prop = PARAM_MAPPING.get(type(p))
-        value = getattr(parameterized, pname)
         kwargs = {'default': p.default, 'help': p.doc}
         if prop is None:
             properties[pname] = bp.Any(**kwargs)

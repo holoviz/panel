@@ -1,11 +1,9 @@
 import sys
 import asyncio
 
-from functools import wraps
+from functools import partial
 from threading import Thread
 from queue import Queue as SyncQueue
-
-from idom.core.layout import Layout, LayoutEvent, LayoutUpdate
 
 from ..io.notebook import push_on_root
 from ..io.state import state
@@ -63,8 +61,8 @@ class IDOM(PaneBase):
         return False
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        from idom.core.layout import Layout, LayoutUpdate
-        
+        from idom.core.layout import LayoutUpdate
+
         update = LayoutUpdate.create_from({}, self._idom_model)
         model = self._bokeh_model(event={'data': update._asdict()})
         self._link_props(model, ['msg'], doc, root, comm)
