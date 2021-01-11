@@ -984,7 +984,7 @@ class ReactiveHTML(Reactive):
         ignored = list(Reactive.param)+list(children.values())
         data_model = construct_data_model(self, ignore=ignored)
         events = dict(self._dom_events)
-        for node, evs in self._event_callbacks:
+        for node, evs in self._event_callbacks.items():
             events[node] = list(events.get(node, set()) | set(evs))
         model.update(
             attrs=self._parser.attrs, children=children, events=events,
@@ -1004,7 +1004,11 @@ class ReactiveHTML(Reactive):
         cb = getattr(self, f"_{event.node}_{event.event['type']}", None)
         if cb is not None:
             cb(event)
-        for cb in self._event_callbacks.get(event.node, {}).get(event, []):
+        star_cbs = self._event_callbacks.get('*', {})
+        node_cbs = self._event_callbacks.get(event.node, {})
+        event_cbs = (node_cbs.get(event, []) + node_cbs.get('*', []) +
+                     star_cbs.get(event, []) + star_cbs.get('*', []))
+        for cb in event_cbs:
             cb(event)
 
     def _update_model(self, events, msg, root, model, doc, comm):
@@ -1034,7 +1038,7 @@ class ReactiveHTML(Reactive):
         callback: callable
           A callable which will be given the DOMEvent object.
         """
-        if node not in self._parser.nodes:
+        if node not in self._parser.nodes and node != '*':
             raise ValueError(f"Named node '{node}' not found. Available "
                              f"nodes include: {self._parser.nodes}.")
         self._event_callbacks[node][event].append(callback)
