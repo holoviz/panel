@@ -79,7 +79,7 @@ function ImportedElement({ model }: { model: any }) {
       case "string":
         return html`<div>${fallback}</div>`;
       default:
-	    return null
+        return null
     }
   }
 }
@@ -105,8 +105,8 @@ function elementChildren(model: any) {
           return html`<${Element} model=${child} />`;
         case "string":
           return child;
-	    default:
-		  return null;
+        default:
+          return null;
       }
     });
   }
@@ -128,7 +128,7 @@ function elementAttributes(model: any, sendEvent: any) {
 function eventHandler(sendEvent: any, eventSpec: any) {
   return function (): Promise<void> {
     const data = Array.from(arguments).map((value) => {
-	  if (typeof value === "object") {
+      if (typeof value === "object") {
         if (eventSpec["preventDefault"]) {
           value.preventDefault();
         }
@@ -177,7 +177,7 @@ function useInplaceJsonPatch(doc: any) {
 
   const applyPatch = useCallback(
     (path: any, patch: any) => {
-	  applyPatchInplace(ref.current, path, patch);
+      applyPatchInplace(ref.current, path, patch);
       forceUpdate();
     },
     [ref, forceUpdate]
@@ -222,25 +222,25 @@ export class IDOMView extends PanelHTMLBoxView {
 
   connect_signals(): void {
     super.connect_signals()
-	this.connect(this.model.properties.event.change, () => {
-	  this._update(this.model.event.data.path, this.model.event.data.changes);
+    this.connect(this.model.properties.event.change, () => {
+      this._update(this.model.event.data.path, this.model.event.data.changes);
     })
   }
 
   render(): void {
     super.render()
-	mountLayout(
-	  this.el,
-	  (update: any) => this._save_update(update),
-	  (event: any) => this._send(event),
-	  this.model.importSourceUrl
-	);
+    mountLayout(
+      this.el,
+      (update: any) => this._save_update(update),
+      (event: any) => this._send(event),
+      this.model.importSourceUrl
+    );
   }
 
   _save_update(update: any): any {
-	this._update = update
-	console.log(this.model.event.data)
-	update(this.model.event.data.path, this.model.event.data.changes);
+    this._update = update
+    console.log(this.model.event.data)
+    update(this.model.event.data.path, this.model.event.data.changes);
   }
 
   _send(event: any): any {
@@ -254,7 +254,7 @@ export namespace IDOM {
   export type Props = Markup.Props & {
     event: p.Property<any>
     importSourceUrl: p.Property<string>
-	msg: p.Property<any>
+    msg: p.Property<any>
   }
 }
 
@@ -271,10 +271,10 @@ export class IDOM extends Markup {
 
   static init_IDOM(): void {
     this.prototype.default_view = IDOMView
-	  this.define<IDOM.Props>({
+      this.define<IDOM.Props>({
       importSourceUrl: [ p.String, '' ],
-	  event:    [ p.Any, {} ],
-	  msg:      [ p.Any, {} ],
-	})
+      event:    [ p.Any, {} ],
+      msg:      [ p.Any, {} ],
+    })
   }
 }
