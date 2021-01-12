@@ -1,4 +1,5 @@
 import {render} from 'preact';
+import {useCallback} from 'preact/hooks';
 import {html} from 'htm/preact';
 
 import * as p from "@bokehjs/core/properties"
@@ -69,14 +70,33 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
 	}
   }
 
+  _send_event(elname: string, attr: string, event: any) {
+	let serialized = serializeEvent(event)
+	serialized.type = attr
+	this.model.trigger_event(new DOMEvent(elname, serialized))
+  }
+
   private _render_html(literal: any): string {
-    let htm = literal.replaceAll('${model.', '$-{model.').replaceAll('${', '${data.').replaceAll('$-{model.', '${model.')
-    return new Function("model, data, html", "return html`"+htm+"`;")(this.model, this.model.data, html)
+	let htm = literal
+	let callbacks = ''
+	for (const elname in this.model.callbacks) {
+	  for (const callback of this.model.callbacks[elname]) {
+		const [cb, method] = callback;
+		callbacks = `
+        const ${method} = (event) => {
+          view._send_event("${elname}", "${cb}", event)
+        }
+        `
+		htm = htm.replace('${'+method, '$--{'+method)
+	  }
+	}
+    htm = htm.replaceAll('${model.', '$-{model.').replaceAll('${', '${data.').replaceAll('$-{model.', '${model.').replaceAll('$--{', '${')
+	return new Function("view, model, data, html, useCallback", callbacks+"return html`"+htm+"`;")(this, this.model, this.model.data, html, useCallback)
   }
 
   private _render_script(literal: any): string {
-    let htm = literal.replaceAll('${model.', '$-{model.').replaceAll('${', '${data.').replaceAll('$-{model.', '${model.')
-    return new Function("model, data, html", "return `"+htm+"`;")(this.model, this.model.data, html)
+    let js = literal.replaceAll('${model.', '$-{model.').replaceAll('${', '${data.').replaceAll('$-{model.', '${model.')
+    return new Function("model, data, html", "return `<script>"+js+"</script>`;")(this.model, this.model.data, html)
   }
 
   async _render_children(id: string): Promise<void> {
@@ -131,7 +151,7 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
   _update(property: string | null = null, js: boolean = true, html: boolean = true): void {
     if (html) {
       const decoded = htmlDecode(this.model.html) || this.model.html
-	  if (property == null || decoded.indexOf(`\${property}`) > -1) {
+	  if (property == null || (decoded.indexOf(`\${${property}}`) > -1)) {
 		const rendered = this._render_html(decoded)
 		render(rendered, this.el, this._render_el)
 		this._render_el = this.el.children[0]
@@ -156,6 +176,7 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
 
 		const script_el = this._script_els[name]
         if (script_el.innerHTML !== rendered_script) {
+		  console.log("Execute", name)
           script_el.innerHTML = rendered_script
           runScripts(script_el)
         }
@@ -189,6 +210,7 @@ export namespace ReactiveHTML {
 
   export type Props = Markup.Props & {
     attrs: p.Property<any>
+    callbacks: p.Property<any>
     children: p.Property<any>
     data: p.Property<any>
     events: p.Property<any>
@@ -213,6 +235,7 @@ export class ReactiveHTML extends Markup {
     this.prototype.default_view = ReactiveHTMLView
     this.define<ReactiveHTML.Props>({
       attrs:    [ p.Any, {} ],
+	  callbacks: [ p.Any, {} ],
       children: [ p.Any, {} ],
       data:    [ p.Any,  ],
       events:   [ p.Any, {}  ],
