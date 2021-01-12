@@ -7,7 +7,7 @@ import {Markup} from "@bokehjs/models/widgets/markup"
 import {build_view} from "@bokehjs/core/build_views"
 
 import {serializeEvent} from "./event-to-object";
-import {htmlDecode} from "./html"
+import {htmlDecode, runScripts} from "./html"
 import {PanelHTMLBoxView, set_size} from "./layout"
 
 class DOMEvent extends ModelEvent {
@@ -44,7 +44,8 @@ function serialize_attrs(attrs: any, model: any): any {
 export class ReactiveHTMLView extends PanelHTMLBoxView {
   model: ReactiveHTML
   _changing: boolean = false
-  _render_node: any = null
+  _render_el: any = null
+  _script_els: any = {}
 
   connect_signals(): void {
     super.connect_signals()
@@ -59,15 +60,23 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
     this.connect(this.model.properties.width_policy.change, resize)
     this.connect(this.model.properties.sizing_mode.change, resize)
     this.connect(this.model.properties.html.change, resize)
-    this.connect(this.model.data.change, () => {
-      if (!this._changing)
-        this._update()
-    })
+    this.connect(this.model.properties.scripts.change, () => this._update(null, false, true))
+	for (const prop in this.model.data.properties) {
+      this.connect(this.model.data.properties[prop].change, () => {
+		if (!this._changing)
+          this._update(prop)
+      })
+	}
   }
 
   private _render_html(literal: any): string {
     let htm = literal.replaceAll('${model.', '$-{model.').replaceAll('${', '${data.').replaceAll('$-{model.', '${model.')
     return new Function("model, data, html", "return html`"+htm+"`;")(this.model, this.model.data, html)
+  }
+
+  private _render_script(literal: any): string {
+    let htm = literal.replaceAll('${model.', '$-{model.').replaceAll('${', '${data.').replaceAll('$-{model.', '${model.')
+    return new Function("model, data, html", "return `"+htm+"`;")(this.model, this.model.data, html)
   }
 
   async _render_children(id: string): Promise<void> {
@@ -119,13 +128,39 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
     }
   }
 
-  _update(): void {
-    const decoded = htmlDecode(this.model.html)
-    const html = decoded || this.model.html
-    const rendered = this._render_html(html)
-    render(rendered, this.el, this._render_node)
-    this._render_node = this.el.children[0]
-    set_size(this._render_node, this.model)
+  _update(property: string | null = null, js: boolean = true, html: boolean = true): void {
+    if (html) {
+      const decoded = htmlDecode(this.model.html) || this.model.html
+	  if (property == null || decoded.indexOf(`\${property}`) > -1) {
+		const rendered = this._render_html(decoded)
+		render(rendered, this.el, this._render_el)
+		this._render_el = this.el.children[0]
+		set_size(this._render_el, this.model)
+	  }
+    }
+
+    if (js) {
+      for (const script_obj of this.model.scripts) {
+		const name = script_obj[0] 
+        if (!(name in this._script_els)) {
+          const script_el = document.createElement('div')
+          this._script_els[name] = script_el
+          this.el.appendChild(script_el)
+        }
+      }
+
+      for (const script_obj of this.model.scripts) {
+		const [name, script] = script_obj
+        const decoded_script = htmlDecode(script) || script
+        const rendered_script = this._render_script(decoded_script)
+
+		const script_el = this._script_els[name]
+        if (script_el.innerHTML !== rendered_script) {
+          script_el.innerHTML = rendered_script
+          runScripts(script_el)
+        }
+      }
+    }
   }
 
   async render(): Promise<void> {
@@ -159,6 +194,7 @@ export namespace ReactiveHTML {
     events: p.Property<any>
     html: p.Property<string>
     models: p.Property<any>
+    scripts: p.Property<string[][]>
   }
 }
 
@@ -181,6 +217,7 @@ export class ReactiveHTML extends Markup {
       data:    [ p.Any,  ],
       events:   [ p.Any, {}  ],
       html:     [ p.String, "" ],
+      scripts:  [ p.Array, [] ],
       models:   [ p.Any, {} ]
     })
   }

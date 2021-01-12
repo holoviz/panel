@@ -936,9 +936,11 @@ class ReactiveHTML(Reactive):
 
     _bokeh_model = _BkReactiveHTML
 
+    _dom_events = {}
+
     _html = ""
 
-    _dom_events = {}
+    _scripts = {}
 
     def __init__(self, **params):
         super().__init__(**params)
@@ -984,12 +986,13 @@ class ReactiveHTML(Reactive):
         ignored = list(Reactive.param)+list(children.values())
         data_model = construct_data_model(self, ignore=ignored)
         events = dict(self._dom_events)
+        scripts = [(k, escape(v)) for k, v in self._scripts.items()]
         for node, evs in self._event_callbacks.items():
             events[node] = list(events.get(node, set()) | set(evs))
         model.update(
             attrs=self._parser.attrs, children=children, data=data_model,
             events=events, html=escape(html), models=models,
-            **self._get_properties()
+            scripts=scripts, **self._get_properties()
         )
 
         # Set up callbacks
