@@ -1,5 +1,6 @@
 import * as p from "@bokehjs/core/properties"
 import {Markup} from "@bokehjs/models/widgets/markup"
+import {ModelEvent, JSON} from "@bokehjs/core/bokeh_events"
 import {PanelMarkupView} from "./layout"
 import {serializeEvent} from "./event-to-object";
 
@@ -84,7 +85,7 @@ export class HTML extends Markup {
 
   static init_HTML(): void {
     this.prototype.default_view = HTMLView
-    this.define<ReactiveHTML.Props>({
+    this.define<HTML.Props>({
 	  events: [p.Any, {} ]
 	})
   }
