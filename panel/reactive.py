@@ -1025,7 +1025,7 @@ class ReactiveHTML(Reactive):
         cb = getattr(self, f"_{event.node}_{event.data['type']}", None)
         if cb is not None:
             cb(event)
-        event_type = event.event['type']
+        event_type = event.data['type']
         star_cbs = self._event_callbacks.get('*', {})
         node_cbs = self._event_callbacks.get(event.node, {})
         event_cbs = (node_cbs.get(event_type, []) + node_cbs.get('*', []) +
