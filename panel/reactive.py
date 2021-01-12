@@ -950,6 +950,18 @@ class ReactiveHTML(Reactive):
     def _update_parser(self, *args):
         self._parser = ReactiveHTMLParser()
         self._parser.feed(self._html)
+        self._attrs, self._callbacks = {}, {}
+        for name, attrs in self._parser.attrs.items():
+            self._attrs[name] = []
+            self._callbacks[name] = []
+            for (attr, param) in attrs:
+                if param in self.param:
+                    self._attrs[name].append((attr, param))
+                elif hasattr(self, param):
+                    self._callbacks[name].append((attr, param))
+                    self.on_event(name, attr, getattr(self, param))
+                else:
+                    raise ValueError(f'HTML template reference unknown parameter or method {param}')
 
     def _get_properties(self):
         return {p : getattr(self, p) for p in list(Layoutable.param)
@@ -990,14 +1002,14 @@ class ReactiveHTML(Reactive):
         for node, evs in self._event_callbacks.items():
             events[node] = list(events.get(node, set()) | set(evs))
         model.update(
-            attrs=self._parser.attrs, children=children, data=data_model,
-            events=events, html=escape(html), models=models,
+            attrs=self._attrs, callbacks=self._callbacks, children=children,
+            data=data_model, events=events, html=escape(html), models=models,
             scripts=scripts, **self._get_properties()
         )
 
         # Set up callbacks
         model.on_event('dom_event', self._process_event)
-        linked_properties = [p for ps in self._parser.attrs.values() for _, p in ps]
+        linked_properties = [p for ps in self._attrs.values() for _, p in ps]
         self._link_props(data_model, linked_properties, doc, root, comm)
 
         self._models[root.ref['id']] = (model, parent)
@@ -1007,10 +1019,11 @@ class ReactiveHTML(Reactive):
         cb = getattr(self, f"_{event.node}_{event.event['type']}", None)
         if cb is not None:
             cb(event)
+        event_type = event.event['type']
         star_cbs = self._event_callbacks.get('*', {})
         node_cbs = self._event_callbacks.get(event.node, {})
-        event_cbs = (node_cbs.get(event, []) + node_cbs.get('*', []) +
-                     star_cbs.get(event, []) + star_cbs.get('*', []))
+        event_cbs = (node_cbs.get(event_type, []) + node_cbs.get('*', []) +
+                     star_cbs.get(event_type, []) + star_cbs.get('*', []))
         for cb in event_cbs:
             cb(event)
 

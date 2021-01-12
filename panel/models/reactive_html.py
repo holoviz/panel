@@ -93,6 +93,8 @@ class ReactiveHTML(HTMLBox):
 
     attrs = bp.Dict(bp.String, bp.List(bp.Tuple(bp.String, bp.String)))
 
+    callbacks = bp.Dict(bp.String, bp.List(bp.Tuple(bp.String, bp.String)))
+
     children = bp.Dict(bp.String, bp.String)
 
     data = bp.Instance(DataModel)
