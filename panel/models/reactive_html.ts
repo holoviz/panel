@@ -8,20 +8,9 @@ import {Markup} from "@bokehjs/models/widgets/markup"
 import {build_view} from "@bokehjs/core/build_views"
 
 import {serializeEvent} from "./event-to-object";
-import {htmlDecode, runScripts} from "./html"
+import {DOMEvent, htmlDecode, runScripts} from "./html"
 import {PanelHTMLBoxView, set_size} from "./layout"
 
-class DOMEvent extends ModelEvent {
-  event_name: string = "dom_event"
-
-  constructor(readonly node: string, readonly event: any) {
-    super()
-  }
-
-  protected _to_json(): JSON {
-    return {model: this.origin, node: this.node, event: this.event}
-  }
-}
 
 function serialize_attrs(attrs: any, model: any): any {
   const serialized: any = {}

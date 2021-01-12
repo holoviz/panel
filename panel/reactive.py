@@ -945,12 +945,16 @@ class ReactiveHTML(Reactive):
     def __init__(self, **params):
         super().__init__(**params)
         self._event_callbacks = defaultdict(lambda: defaultdict(list))
+        self._inline_callbacks = []
         self._update_parser()
 
     def _update_parser(self, *args):
         self._parser = ReactiveHTMLParser()
         self._parser.feed(self._html)
         self._attrs, self._callbacks = {}, {}
+        for (name, attr, cb) in self._inline_callbacks:
+            self._event_callbacks[name][attr].remove(cb)
+        self._inline_callbacks = []
         for name, attrs in self._parser.attrs.items():
             self._attrs[name] = []
             self._callbacks[name] = []
@@ -959,9 +963,11 @@ class ReactiveHTML(Reactive):
                     self._attrs[name].append((attr, param))
                 elif hasattr(self, param):
                     self._callbacks[name].append((attr, param))
-                    self.on_event(name, attr, getattr(self, param))
+                    cb = getattr(self, param)
+                    self.on_event(name, attr, cb)
+                    self._inline_callbacks.append((name, attr, cb))
                 else:
-                    raise ValueError(f'HTML template reference unknown parameter or method {param}')
+                    raise ValueError(f'HTML template reference unknown parameter or method {param}.')
 
     def _get_properties(self):
         return {p : getattr(self, p) for p in list(Layoutable.param)
@@ -1016,7 +1022,7 @@ class ReactiveHTML(Reactive):
         return model
 
     def _process_event(self, event):
-        cb = getattr(self, f"_{event.node}_{event.event['type']}", None)
+        cb = getattr(self, f"_{event.node}_{event.data['type']}", None)
         if cb is not None:
             cb(event)
         event_type = event.event['type']

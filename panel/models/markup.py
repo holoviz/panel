@@ -10,6 +10,9 @@ class HTML(Markup):
     A bokeh model to render HTML markup including embedded script tags.
     """
 
+    events = bp.Dict(bp.String, bp.List(bp.String))
+
+
 
 class JSON(Markup):
     """
