@@ -3,7 +3,6 @@ import {useCallback} from 'preact/hooks';
 import {html} from 'htm/preact';
 
 import * as p from "@bokehjs/core/properties"
-import {ModelEvent, JSON} from "@bokehjs/core/bokeh_events"
 import {Markup} from "@bokehjs/models/widgets/markup"
 import {build_view} from "@bokehjs/core/build_views"
 
