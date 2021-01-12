@@ -450,6 +450,23 @@ class HoloViews(PaneBase):
         return widgets, dim_values
 
 
+class Interactive(PaneBase):
+
+    priority = None
+
+    @classmethod
+    def applies(cls, object):
+        if 'hvplot.interactive' not in sys.modules:
+            return False
+        from hvplot.interactive import Interactive
+        return 0.8 if isinstance(object, Interactive) else False
+
+    def _get_model(self, doc, root=None, parent=None, comm=None):
+        if root is None:
+            return self.get_root(doc, comm)
+        return self.object.layout()._get_model(doc, root, parent, comm)
+
+
 def is_bokeh_element_plot(plot):
     """
     Checks whether plotting instance is a HoloViews ElementPlot rendered
