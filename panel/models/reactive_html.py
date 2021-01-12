@@ -32,6 +32,8 @@ class ReactiveHTMLParser(HTMLParser):
         self._current_node = name
         self.nodes.append(name)
         for attr, value in attrs.items():
+            if value is None:
+                continue
             if self._template_re.match(value) and not value[2:-1].startswith('model.'):
                 self.attrs[name].append((attr, value[2:-1]))
 
@@ -100,6 +102,8 @@ class ReactiveHTML(HTMLBox):
     html = bp.String()
 
     models = bp.Dict(bp.String, bp.List(bp.Instance(LayoutDOM)))
+
+    scripts = bp.List(bp.Tuple(bp.String, bp.String))
 
     def __init__(self, **props):
         if 'attrs' not in props and 'html' in props:

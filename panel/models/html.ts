@@ -7,6 +7,17 @@ export function htmlDecode(input: string): string | null {
   return doc.documentElement.textContent;
 }
 
+export function runScripts(node: any): void {
+  Array.from(node.querySelectorAll("script")).forEach((oldScript: any) => {
+    const newScript = document.createElement("script");
+    Array.from(oldScript.attributes)
+      .forEach((attr: any) => newScript.setAttribute(attr.name, attr.value) );
+    newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+    if (oldScript.parentNode)
+      oldScript.parentNode.replaceChild(newScript, oldScript);
+  });
+}
+
 export class HTMLView extends PanelMarkupView {
   model: HTML
 
@@ -19,14 +30,7 @@ export class HTMLView extends PanelMarkupView {
       return;
     }
     this.markup_el.innerHTML = html
-    Array.from(this.markup_el.querySelectorAll("script")).forEach( oldScript => {
-      const newScript = document.createElement("script");
-      Array.from(oldScript.attributes)
-        .forEach( attr => newScript.setAttribute(attr.name, attr.value) );
-      newScript.appendChild(document.createTextNode(oldScript.innerHTML));
-      if (oldScript.parentNode)
-        oldScript.parentNode.replaceChild(newScript, oldScript);
-    });
+	runScripts(this.markup_el)
   }
 }
 
