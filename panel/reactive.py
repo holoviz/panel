@@ -967,7 +967,11 @@ class ReactiveHTML(Reactive):
                     self.on_event(name, attr, cb)
                     self._inline_callbacks.append((name, attr, cb))
                 else:
-                    raise ValueError(f'HTML template reference unknown parameter or method {param}.')
+                    matches = difflib.get_close_matches(param, dir(self))
+                    raise ValueError("HTML template reference unknown "
+                                     f"parameter or method '{param}', "
+                                     "similar parameters and methods "
+                                     f"include {matches}.")
 
     def _get_properties(self):
         return {p : getattr(self, p) for p in list(Layoutable.param)
