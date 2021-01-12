@@ -159,7 +159,7 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
         const rendered_script = this._render_script(decoded_script)
 
         const script_el = this._script_els[name]
-        if (script_el.innerHTML !== rendered_script) {
+        if (script_el.innerHTML !== rendered_script || name === property) {
           script_el.innerHTML = rendered_script
           runScripts(script_el)
         }
