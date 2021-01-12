@@ -32,7 +32,9 @@ class ReactiveHTMLParser(HTMLParser):
         self._current_node = name
         self.nodes.append(name)
         for attr, value in attrs.items():
-            if self._template_re.match(value):
+            if value is None:
+                continue
+            if self._template_re.match(value) and not value[2:-1].startswith('model.'):
                 self.attrs[name].append((attr, value[2:-1]))
 
     def handle_endtag(self, tag):
@@ -67,7 +69,6 @@ def construct_data_model(parameterized, ignore=['name']):
             continue
         p = parameterized.param[pname]
         prop = PARAM_MAPPING.get(type(p))
-        value = getattr(parameterized, pname)
         kwargs = {'default': p.default, 'help': p.doc}
         if prop is None:
             properties[pname] = bp.Any(**kwargs)
@@ -82,8 +83,8 @@ class DOMEvent(ModelEvent):
 
     event_name = 'dom_event'
 
-    def __init__(self, model, node=None, event=None):
-        self.event = event
+    def __init__(self, model, node=None, data=None):
+        self.data = data
         self.node = node
         super().__init__(model=model)
 
@@ -92,15 +93,19 @@ class ReactiveHTML(HTMLBox):
 
     attrs = bp.Dict(bp.String, bp.List(bp.Tuple(bp.String, bp.String)))
 
+    callbacks = bp.Dict(bp.String, bp.List(bp.Tuple(bp.String, bp.String)))
+
     children = bp.Dict(bp.String, bp.String)
+
+    data = bp.Instance(DataModel)
 
     events = bp.Dict(bp.String, bp.List(bp.String))
 
     html = bp.String()
 
-    model = bp.Instance(DataModel)
-
     models = bp.Dict(bp.String, bp.List(bp.Instance(LayoutDOM)))
+
+    scripts = bp.List(bp.Tuple(bp.String, bp.String))
 
     def __init__(self, **props):
         if 'attrs' not in props and 'html' in props:
