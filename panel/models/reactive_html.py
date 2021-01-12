@@ -83,8 +83,8 @@ class DOMEvent(ModelEvent):
 
     event_name = 'dom_event'
 
-    def __init__(self, model, node=None, event=None):
-        self.event = event
+    def __init__(self, model, node=None, data=None):
+        self.data = data
         self.node = node
         super().__init__(model=model)
 
