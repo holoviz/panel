@@ -448,8 +448,9 @@ class BasicTemplate(BaseTemplate):
     def _template_resources(self):
         name = type(self).__name__.lower()
         resources = _settings.resources(default="server")
+        base_url = state.base_url[1:] if state.base_url.startswith('/') else state.base_url        
         if resources == 'server':
-            dist_path = urljoin(state.base_url, LOCAL_DIST)
+            dist_path = urljoin(base_url, LOCAL_DIST)
         else:
             dist_path = CDN_DIST
 
