@@ -967,10 +967,17 @@ class Tabulator(BaseTable):
             return
         kwargs = {}
         if self.pagination == 'remote':
+            index = self.value.iloc[self.selection].index
+            indices = []
+            for v in index.values:
+                try:
+                    indices.append(self._filtered.index.get_loc(v))
+                except KeyError:
+                    continue
             nrows = self.page_size
             start = (self.page-1)*nrows
             end = start+nrows
-            kwargs['indices'] = [ind-start for ind in self.selection
+            kwargs['indices'] = [ind-start for ind in indices
                                  if ind>=start and ind<end]
         super()._update_selected(*events, **kwargs)
 
@@ -992,7 +999,14 @@ class Tabulator(BaseTable):
             return indices
         nrows = self.page_size
         start = (self.page-1)*nrows
-        return [start+ind for ind in indices]
+        index = self._filtered.iloc[[start+ind for ind in indices]].index
+        indices = []
+        for v in index.values:
+            try:
+                indices.append(self.value.index.get_loc(v))
+            except KeyError:
+                continue
+        return indices
 
     def _get_properties(self, source):
         props = {p : getattr(self, p) for p in list(Layoutable.param)
