@@ -521,18 +521,42 @@ class ReactiveHTML(Reactive):
 
     _bokeh_model = _BkReactiveHTML
 
+    _dom_events = {}
+
     _html = ""
 
-    _dom_events = {}
+    _scripts = {}
 
     def __init__(self, **params):
         super().__init__(**params)
         self._event_callbacks = defaultdict(lambda: defaultdict(list))
+        self._inline_callbacks = []
         self._update_parser()
 
     def _update_parser(self, *args):
         self._parser = ReactiveHTMLParser()
         self._parser.feed(self._html)
+        self._attrs, self._callbacks = {}, {}
+        for (name, attr, cb) in self._inline_callbacks:
+            self._event_callbacks[name][attr].remove(cb)
+        self._inline_callbacks = []
+        for name, attrs in self._parser.attrs.items():
+            self._attrs[name] = []
+            self._callbacks[name] = []
+            for (attr, param) in attrs:
+                if param in self.param:
+                    self._attrs[name].append((attr, param))
+                elif hasattr(self, param):
+                    self._callbacks[name].append((attr, param))
+                    cb = getattr(self, param)
+                    self.on_event(name, attr, cb)
+                    self._inline_callbacks.append((name, attr, cb))
+                else:
+                    matches = difflib.get_close_matches(param, dir(self))
+                    raise ValueError("HTML template reference unknown "
+                                     f"parameter or method '{param}', "
+                                     "similar parameters and methods "
+                                     f"include {matches}.")
 
     def _get_properties(self):
         return {p : getattr(self, p) for p in list(Layoutable.param)
@@ -569,40 +593,42 @@ class ReactiveHTML(Reactive):
         ignored = list(Reactive.param)+list(children.values())
         data_model = construct_data_model(self, ignore=ignored)
         events = dict(self._dom_events)
+        scripts = [(k, escape(v)) for k, v in self._scripts.items()]
         for node, evs in self._event_callbacks.items():
             events[node] = list(events.get(node, set()) | set(evs))
         model.update(
-            attrs=self._parser.attrs, children=children, events=events,
-            html=escape(html), model=data_model, models=models,
-            **self._get_properties()
+            attrs=self._attrs, callbacks=self._callbacks, children=children,
+            data=data_model, events=events, html=escape(html), models=models,
+            scripts=scripts, **self._get_properties()
         )
 
         # Set up callbacks
         model.on_event('dom_event', self._process_event)
-        linked_properties = [p for ps in self._parser.attrs.values() for _, p in ps]
+        linked_properties = [p for ps in self._attrs.values() for _, p in ps]
         self._link_props(data_model, linked_properties, doc, root, comm)
 
         self._models[root.ref['id']] = (model, parent)
         return model
 
     def _process_event(self, event):
-        cb = getattr(self, f"_{event.node}_{event.event['type']}", None)
+        cb = getattr(self, f"_{event.node}_{event.data['type']}", None)
         if cb is not None:
             cb(event)
+        event_type = event.data['type']
         star_cbs = self._event_callbacks.get('*', {})
         node_cbs = self._event_callbacks.get(event.node, {})
-        event_cbs = (node_cbs.get(event, []) + node_cbs.get('*', []) +
-                     star_cbs.get(event, []) + star_cbs.get('*', []))
+        event_cbs = (node_cbs.get(event_type, []) + node_cbs.get('*', []) +
+                     star_cbs.get(event_type, []) + star_cbs.get('*', []))
         for cb in event_cbs:
             cb(event)
 
     def _update_model(self, events, msg, root, model, doc, comm):
         self._changing[root.ref['id']] = [
             attr for attr, value in msg.items()
-            if not model.model.lookup(attr).property.matches(getattr(model.model, attr), value)
+            if not model.data.lookup(attr).property.matches(getattr(model.data, attr), value)
         ]
         try:
-            model.model.update(**msg)
+            model.data.update(**msg)
         finally:
             del self._changing[root.ref['id']]
 

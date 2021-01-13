@@ -1,36 +1,36 @@
 import {render} from 'preact';
+import {useCallback} from 'preact/hooks';
 import {html} from 'htm/preact';
 
 import * as p from "@bokehjs/core/properties"
-import {ModelEvent, JSON} from "@bokehjs/core/bokeh_events"
 import {Markup} from "@bokehjs/models/widgets/markup"
 import {build_view} from "@bokehjs/core/build_views"
 
 import {serializeEvent} from "./event-to-object";
-import {htmlDecode} from "./html"
-import {PanelHTMLBoxView} from "./layout"
+import {DOMEvent, htmlDecode, runScripts} from "./html"
+import {PanelHTMLBoxView, set_size} from "./layout"
 
-class DOMEvent extends ModelEvent {
-  event_name: string = "dom_event"
 
-  constructor(readonly node: string, readonly event: any) {
-    super()
+function serialize_attrs(attrs: any): any {
+  const serialized: any = {}
+  for (const attr in attrs) {
+    let value = attrs[attr]
+    if (typeof value !== "string")
+      value = value
+    else if (value !== "" && (value === "NaN" || !isNaN(Number(value))))
+      value = Number(value)
+    else if (value === 'false' || value === 'true')
+      value = value === 'true' ? true : false
+    serialized[attr] = value
   }
-
-  protected _to_json(): JSON {
-    return {model: this.origin, node: this.node, event: this.event}
-  }
-}
-
-function isNumeric(str: any): any {
-  if (typeof str != "string")
-    return false  
-  return !isNaN(str) && !isNaN(parseFloat(str))
+  return serialized
 }
 
 export class ReactiveHTMLView extends PanelHTMLBoxView {
   model: ReactiveHTML
   _changing: boolean = false
+  _render_el: any = null
+  _script_els: any = {}
 
   connect_signals(): void {
     super.connect_signals()
@@ -44,16 +44,43 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
     this.connect(this.model.properties.height_policy.change, resize)
     this.connect(this.model.properties.width_policy.change, resize)
     this.connect(this.model.properties.sizing_mode.change, resize)
-    this.connect(this.model.properties.html.change, () => this.render())
-    this.connect(this.model.model.change, () => {
-      if (!this._changing)
-        this._update()
-    })
+    this.connect(this.model.properties.html.change, resize)
+    this.connect(this.model.properties.scripts.change, () => this._update(null, false, true))
+    for (const prop in this.model.data.properties) {
+      this.connect(this.model.data.properties[prop].change, () => {
+        if (!this._changing)
+          this._update(prop)
+      })
+    }
   }
 
-  private _render_html(literal: any, params: any): string {
-    const htm = literal.replaceAll('${', '${params.')
-    return new Function("params, html", "return html`"+htm+"`;")(params, html)
+  _send_event(elname: string, attr: string, event: any) {
+    let serialized = serializeEvent(event)
+    serialized.type = attr
+    this.model.trigger_event(new DOMEvent(elname, serialized))
+  }
+
+  private _render_html(literal: any): string {
+    let htm = literal
+    let callbacks = ''
+    for (const elname in this.model.callbacks) {
+      for (const callback of this.model.callbacks[elname]) {
+        const [cb, method] = callback;
+        callbacks = `
+        const ${method} = (event) => {
+          view._send_event("${elname}", "${cb}", event)
+        }
+        `
+        htm = htm.replace('${'+method, '$--{'+method)
+      }
+    }
+    htm = htm.replaceAll('${model.', '$-{model.').replaceAll('${', '${data.').replaceAll('$-{model.', '${model.').replaceAll('$--{', '${')
+    return new Function("view, model, data, html, useCallback", callbacks+"return html`"+htm+"`;")(this, this.model, this.model.data, html, useCallback)
+  }
+
+  private _render_script(literal: any): string {
+    let js = literal.replaceAll('${model.', '$-{model.').replaceAll('${', '${data.').replaceAll('$-{model.', '${model.')
+    return new Function("model, data, html", "return `<script>"+js+"</script>`;")(this.model, this.model.data, html)
   }
 
   async _render_children(id: string): Promise<void> {
@@ -105,34 +132,58 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
     }
   }
 
-  _update(): void {
-    const decoded = htmlDecode(this.model.html)
-    const html = decoded || this.model.html
-    const rendered = this._render_html(html, this.model.model)
-    render(rendered, this.el)
+  _update(property: string | null = null, js: boolean = true, html: boolean = true): void {
+    if (html) {
+      const decoded = htmlDecode(this.model.html) || this.model.html
+      if (property == null || (decoded.indexOf(`\${${property}}`) > -1)) {
+        const rendered = this._render_html(decoded)
+        render(rendered, this.el, this._render_el)
+        this._render_el = this.el.children[0]
+        set_size(this._render_el, this.model)
+      }
+    }
+
+    if (js) {
+      for (const script_obj of this.model.scripts) {
+        const name = script_obj[0]
+        if (!(name in this._script_els)) {
+          const script_el = document.createElement('div')
+          this._script_els[name] = script_el
+          this.el.appendChild(script_el)
+        }
+      }
+
+      for (const script_obj of this.model.scripts) {
+        const [name, script] = script_obj
+        const decoded_script = htmlDecode(script) || script
+        const rendered_script = this._render_script(decoded_script)
+
+        const script_el = this._script_els[name]
+        if (script_el.innerHTML !== rendered_script || name === property) {
+          script_el.innerHTML = rendered_script
+          runScripts(script_el)
+        }
+      }
+    }
   }
 
   async render(): Promise<void> {
     super.render()
     this._update()
 
-    const id = this.model.model.id
+    const id = this.model.data.id
     await this._render_children(id)
     this._setup_mutation_observers(id)
     this._setup_event_listeners(id)
   }
 
   private _update_model(el: any, name: string): void {
-    for (const attr of this.model.attrs[name]) {
-      let value = el[attr[0]]
-      if (isNumeric(value))
-        value = Number(value)
-      else if (value === 'false' || value === 'true')
-        value = value === 'true' ? true : false
-      this._changing = true
-      this.model.model[attr[1]] = value
-      this._changing = false
-    }
+    const attrs: any = {}
+    for (const attr of this.model.attrs[name])
+      attrs[attr[1]] = el[attr[0]]
+    this._changing = true
+    this.model.data.setv(serialize_attrs(attrs))
+    this._changing = false
   }
 }
 
@@ -141,11 +192,13 @@ export namespace ReactiveHTML {
 
   export type Props = Markup.Props & {
     attrs: p.Property<any>
+    callbacks: p.Property<any>
     children: p.Property<any>
+    data: p.Property<any>
     events: p.Property<any>
     html: p.Property<string>
-    model: p.Property<any>
     models: p.Property<any>
+    scripts: p.Property<string[][]>
   }
 }
 
@@ -164,10 +217,12 @@ export class ReactiveHTML extends Markup {
     this.prototype.default_view = ReactiveHTMLView
     this.define<ReactiveHTML.Props>({
       attrs:    [ p.Any, {} ],
+      callbacks: [ p.Any, {} ],
       children: [ p.Any, {} ],
+      data:    [ p.Any,  ],
       events:   [ p.Any, {}  ],
       html:     [ p.String, "" ],
-      model:    [ p.Any,  ],
+      scripts:  [ p.Array, [] ],
       models:   [ p.Any, {} ]
     })
   }
