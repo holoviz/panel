@@ -171,11 +171,11 @@ export class FileDownloadView extends InputWidgetView {
   _update_button_style(): void{
     if ( !this.anchor_el.hasAttribute("class") ){ // When the widget is rendered.
       this.anchor_el.classList.add(buttons.btn)
-      this.anchor_el.classList.add(buttons.btn_type(this.model.button_type))
+      this.anchor_el.classList.add(buttons[`btn_${this.model.button_type}` as const])
     } else {  // When the button type is changed.
       const prev_button_type = this.anchor_el.classList.item(1)
       if ( prev_button_type ) {
-        this.anchor_el.classList.replace(prev_button_type, buttons.btn_type(this.model.button_type))
+        this.anchor_el.classList.replace(prev_button_type, buttons[`btn_${this.model.button_type}` as const])
       }
     }
   }
