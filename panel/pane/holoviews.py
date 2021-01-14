@@ -479,7 +479,7 @@ class Interactive(PaneBase):
             model = _BkSpacer()
         else:
             model = self._layout_panel._get_model(doc, root, parent, comm)
-        self._models[ref] = (model, parent)
+        self._models[root.ref['id']] = (model, parent)
         return model
 
     def _cleanup(self, root):
