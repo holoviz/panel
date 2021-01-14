@@ -455,7 +455,6 @@ class Interactive(PaneBase):
     priority = None
 
     def __init__(self, object=None, **params):
-        self.param.watch(self._update_layout, 'object')
         super().__init__(object, **params)
         self._update_layout()
 
@@ -466,6 +465,7 @@ class Interactive(PaneBase):
         from hvplot.interactive import Interactive
         return 0.8 if isinstance(object, Interactive) else False
 
+    @param.depends('object')
     def _update_layout(self):
         if self.object is None:
             self._layout_panel = None
