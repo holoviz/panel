@@ -454,6 +454,11 @@ class Interactive(PaneBase):
 
     priority = None
 
+    def __init__(self, object=None, **params):
+        self.param.watch(self._update_layout, 'object')
+        super().__init__(object, **params)
+        self._update_layout()
+
     @classmethod
     def applies(cls, object):
         if 'hvplot.interactive' not in sys.modules:
@@ -461,10 +466,26 @@ class Interactive(PaneBase):
         from hvplot.interactive import Interactive
         return 0.8 if isinstance(object, Interactive) else False
 
+    def _update_layout(self):
+        if self.object is None:
+            self._layout_panel = None
+        else:
+            self._layout_panel = self.object.layout()
+
     def _get_model(self, doc, root=None, parent=None, comm=None):
         if root is None:
             return self.get_root(doc, comm)
-        return self.object.layout()._get_model(doc, root, parent, comm)
+        if self._layout_panel is None:
+            model = _BkSpacer()
+        else:
+            model = self._layout_panel._get_model(doc, root, parent, comm)
+        self._models[ref] = (model, parent)
+        return model
+
+    def _cleanup(self, root):
+        if self._layout_panel is not None:
+            self._layout_panel._cleanup(root)
+        super()._cleanup(root)
 
 
 def is_bokeh_element_plot(plot):
