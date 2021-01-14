@@ -457,6 +457,7 @@ class Interactive(PaneBase):
     def __init__(self, object=None, **params):
         super().__init__(object, **params)
         self._update_layout()
+        self.param.watch(self._update_layout_properties, list(Layoutable.param))
 
     @classmethod
     def applies(cls, object):
@@ -471,12 +472,22 @@ class Interactive(PaneBase):
             self._layout_panel = None
         else:
             self._layout_panel = self.object.layout()
+            self._layout_panel.param.set_param(**{
+                p: getattr(self, p) for p in Layoutable.param if p != 'name'
+            })
+
+    def _update_layout_properties(self, *events):
+        if self._layout_panel is None:
+            return
+        self._layout_panel.param.set_param(**{e.name: e.new for e in events})
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         if root is None:
             return self.get_root(doc, comm)
         if self._layout_panel is None:
-            model = _BkSpacer()
+            model = _BkSpacer(**{
+                p: getattr(self, p) for p in Layoutable.param if p != 'name'
+            })
         else:
             model = self._layout_panel._get_model(doc, root, parent, comm)
         self._models[root.ref['id']] = (model, parent)
