@@ -338,7 +338,7 @@ def get_server(panel, port=0, address=None, websocket_origin=None,
                verbose=False, location=True, static_dirs={},
                oauth_provider=None, oauth_key=None, oauth_secret=None,
                oauth_extra_params={}, cookie_secret=None,
-               oauth_encryption_key=None, session_history=0, **kwargs):
+               oauth_encryption_key=None, session_history=None, **kwargs):
     """
     Returns a Server instance with this panel attached as the root
     app.
@@ -389,6 +389,11 @@ def get_server(panel, port=0, address=None, websocket_origin=None,
     oauth_encryption_key: str (optional, default=False)
       A random encryption key used for encrypting OAuth user
       information and access tokens.
+    session_history: int (optional, default=None)
+      The amount of session history to accumulate. If set to non-zero
+      and non-None value will launch a REST endpoint at
+      /rest/session_info, which returns information about the session
+      history.
     kwargs: dict
       Additional keyword arguments to pass to Server instance.
 
