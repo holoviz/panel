@@ -60,6 +60,13 @@ def init_doc(doc):
     if not doc.session_context:
         return doc
 
+    from ..config import config
+    session_id = doc.session_context.id
+    sessions = state.session_info['sessions']
+    if session_id not in sessions:
+        return doc
+
+    sessions[session_id].update({'executed': dt.datetime.now().timestamp()})
     doc.on_event('document_ready', state._init_session)
     return doc
 
@@ -140,6 +147,7 @@ def _initialize_session_info(session_context):
         state.session_info['sessions'] = sessions
     sessions[session_id] = {
         'started': dt.datetime.now().timestamp(),
+        'executed': None,
         'rendered': None,
         'ended': None,
         'user_agent': None
