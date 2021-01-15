@@ -66,7 +66,7 @@ def init_doc(doc):
     if session_id not in sessions:
         return doc
 
-    sessions[session_id].update({'executed': dt.datetime.now().timestamp()})
+    sessions[session_id].update({'started': dt.datetime.now().timestamp()})
     doc.on_event('document_ready', state._init_session)
     return doc
 
@@ -146,8 +146,8 @@ def _initialize_session_info(session_context):
         sessions = OrderedDict(old_history[-(config.session_history-1):])
         state.session_info['sessions'] = sessions
     sessions[session_id] = {
-        'started': dt.datetime.now().timestamp(),
-        'executed': None,
+        'launched': dt.datetime.now().timestamp(),
+        'started': None,
         'rendered': None,
         'ended': None,
         'user_agent': None
