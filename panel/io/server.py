@@ -60,7 +60,6 @@ def init_doc(doc):
     if not doc.session_context:
         return doc
 
-    from ..config import config
     session_id = doc.session_context.id
     sessions = state.session_info['sessions']
     if session_id not in sessions:
