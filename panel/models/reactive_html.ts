@@ -63,10 +63,14 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
   private _render_html(literal: any): string {
     let htm = literal
     let callbacks = ''
+    const methods: string[] = []
     for (const elname in this.model.callbacks) {
       for (const callback of this.model.callbacks[elname]) {
         const [cb, method] = callback;
-        callbacks = `
+        if (methods.indexOf(method) > -1)
+          continue
+        methods.push(method)
+        callbacks = callbacks + `
         const ${method} = (event) => {
           view._send_event("${elname}", "${cb}", event)
         }
@@ -137,7 +141,7 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
       const decoded = htmlDecode(this.model.html) || this.model.html
       if (property == null || (decoded.indexOf(`\${${property}}`) > -1)) {
         const rendered = this._render_html(decoded)
-        render(rendered, this.el, this._render_el)
+        render(rendered, this.el)
         this._render_el = this.el.children[0]
         set_size(this._render_el, this.model)
       }
