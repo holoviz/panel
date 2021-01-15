@@ -61,11 +61,6 @@ or using PyPI::
 
   pip install panel
 
-Support for classic Jupyter Notebook is included with Panel. If you want to work with JupyterLab, you will also need to install the PyViz JupyterLab extension::
-
-  conda install -c conda-forge jupyterlab
-  jupyter labextension install @pyviz/jupyterlab_pyviz
-
 
 Getting Started
 ---------------
@@ -93,7 +88,9 @@ You can edit your Panel code as a .py file in any text editor, marking the objec
 JupyterLab and Classic notebook
 ===============================
 
-In the classic Jupyter notebook environment and JupyterLab, first make sure to load the `pn.extension()`. Panel objects will then render themselves if they are the last item in a notebook cell.
+In the classic Jupyter notebook environment and JupyterLab, first make sure to load the `pn.extension()`. Panel objects will then render themselves if they are the last item in a notebook cell. For versions of `jupyterlab>=3.0` the necessary extension is automatically bundled in the `pyviz_comms` package, which must be >=2.0. However note that for version of `jupyterlab<3.0` you must also manually install the JupyterLab extension with:
+
+  jupyter labextension install @pyviz/jupyterlab_pyviz
 
 Google Colab
 ============
