@@ -2,18 +2,17 @@ import random
 
 import panel as pn
 from bokeh.models.sources import ColumnDataSource
-from panel.widgets.stats_plot_card import StatsPlotCard
 
 
 def test_constructor():
-    return StatsPlotCard(title="Test")
+    return pn.indicators.StatsPlotCard(title="Test")
 
 
 def test_app():
     data = {"x": [1, 2, 3, 4, 5], "y": [3800, 3700, 3800, 3900, 4000]}
     source = ColumnDataSource(data)
 
-    stats_plot_card = StatsPlotCard(
+    stats_plot_card = pn.indicators.StatsPlotCard(
         title="Panel Users",
         value="4,000",
         value2="+5.1%",
