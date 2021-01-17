@@ -92,7 +92,6 @@ export class CardView extends ColumnView {
 
   _collapse(): void {
     this.invalidate_render()
-    this.resize_layout()
   }
 
   protected _createElement(): HTMLElement {
