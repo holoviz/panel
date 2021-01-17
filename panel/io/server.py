@@ -65,7 +65,9 @@ def init_doc(doc):
     if session_id not in sessions:
         return doc
 
-    sessions[session_id].update({'started': dt.datetime.now().timestamp()})
+    sessions[session_id].update({
+        'started': dt.datetime.now().timestamp()
+    })
     doc.on_event('document_ready', state._init_session)
     return doc
 
@@ -149,7 +151,7 @@ def _initialize_session_info(session_context):
         'started': None,
         'rendered': None,
         'ended': None,
-        'user_agent': None
+        'user_agent': session_context.request.headers.get('User-Agent')
     }
 
 state.on_session_created(_initialize_session_info)

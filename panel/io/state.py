@@ -119,8 +119,7 @@ class _state(param.Parameterized):
             return
         self.session_info['live'] += 1
         session_info.update({
-            'rendered': dt.datetime.now().timestamp(),
-            'user_agent': state.headers.get('User-Agent')
+            'rendered': dt.datetime.now().timestamp()
         })
 
     def _get_callback(self, endpoint):
