@@ -89,12 +89,15 @@ class Button(_ClickButton):
 
     clicks = param.Integer(default=0)
 
-    _rename = {'clicks': None, 'name': 'label'}
+    value = param.Event()
+
+    _rename = {'clicks': None, 'name': 'label', 'value': None}
 
     _widget_type = _BkButton
 
     def _server_click(self, doc, ref, event):
         self._events.update({"clicks": self.clicks+1})
+        self.param.trigger('value')
         if not self._processing:
             self._processing = True
             if doc.session_context:
