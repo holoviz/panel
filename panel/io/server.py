@@ -17,7 +17,11 @@ from functools import partial, wraps
 from types import FunctionType, MethodType
 
 import param
+import bokeh
+import bokeh.command.util
 
+from bokeh.application import Application as BkApplication
+from bokeh.application.handlers.function import FunctionHandler
 from bokeh.document.events import ModelChangedEvent
 from bokeh.embed.bundle import extension_dirs
 from bokeh.io import curdoc
@@ -56,23 +60,14 @@ def init_doc(doc):
     if not doc.session_context:
         return doc
 
-    from ..config import config
     session_id = doc.session_context.id
     sessions = state.session_info['sessions']
-    if config.session_history == 0 or session_id in sessions:
+    if session_id not in sessions:
         return doc
 
-    state.session_info['total'] += 1
-    if config.session_history > 0 and len(sessions) >= config.session_history:
-        old_history = list(sessions.items())
-        sessions = OrderedDict(old_history[-(config.session_history-1):])
-        state.session_info['sessions'] = sessions
-    sessions[session_id] = {
-        'started': dt.datetime.now().timestamp(),
-        'rendered': None,
-        'ended': None,
-        'user_agent': state.headers.get('User-Agent')
-    }
+    sessions[session_id].update({
+        'started': dt.datetime.now().timestamp()
+    })
     doc.on_event('document_ready', state._init_session)
     return doc
 
@@ -128,6 +123,38 @@ def async_execute(func):
 
 param.parameterized.async_executor = async_execute
 
+
+class Application(BkApplication):
+
+    async def on_session_created(self, session_context):
+        for cb in state._on_session_created:
+            cb(session_context)
+        await super().on_session_created(session_context)
+
+bokeh.command.util.Application = Application
+
+
+def _initialize_session_info(session_context):
+    from ..config import config
+    session_id = session_context.id
+    sessions = state.session_info['sessions']
+    if config.session_history == 0 or session_id in sessions:
+        return
+
+    state.session_info['total'] += 1
+    if config.session_history > 0 and len(sessions) >= config.session_history:
+        old_history = list(sessions.items())
+        sessions = OrderedDict(old_history[-(config.session_history-1):])
+        state.session_info['sessions'] = sessions
+    sessions[session_id] = {
+        'launched': dt.datetime.now().timestamp(),
+        'started': None,
+        'rendered': None,
+        'ended': None,
+        'user_agent': session_context.request.headers.get('User-Agent')
+    }
+
+state.on_session_created(_initialize_session_info)
 
 #---------------------------------------------------------------------
 # Public API
@@ -312,7 +339,7 @@ def get_server(panel, port=0, address=None, websocket_origin=None,
                verbose=False, location=True, static_dirs={},
                oauth_provider=None, oauth_key=None, oauth_secret=None,
                oauth_extra_params={}, cookie_secret=None,
-               oauth_encryption_key=None, **kwargs):
+               oauth_encryption_key=None, session_history=None, **kwargs):
     """
     Returns a Server instance with this panel attached as the root
     app.
@@ -363,6 +390,11 @@ def get_server(panel, port=0, address=None, websocket_origin=None,
     oauth_encryption_key: str (optional, default=False)
       A random encryption key used for encrypting OAuth user
       information and access tokens.
+    session_history: int (optional, default=None)
+      The amount of session history to accumulate. If set to non-zero
+      and non-None value will launch a REST endpoint at
+      /rest/session_info, which returns information about the session
+      history.
     kwargs: dict
       Additional keyword arguments to pass to Server instance.
 
@@ -371,6 +403,9 @@ def get_server(panel, port=0, address=None, websocket_origin=None,
     server : bokeh.server.server.Server
       Bokeh Server instance running this panel
     """
+    from ..config import config
+    from .rest import REST_PROVIDERS
+
     server_id = kwargs.pop('server_id', uuid.uuid4().hex)
     kwargs['extra_patterns'] = extra_patterns = kwargs.get('extra_patterns', [])
     if isinstance(panel, dict):
@@ -398,11 +433,18 @@ def get_server(panel, port=0, address=None, websocket_origin=None,
                     extra_patterns.append(('^'+slug+'.*', ProxyFallbackHandler,
                                            dict(fallback=wsgi, proxy=slug)))
                     continue
-            apps[slug] = partial(_eval_panel, app, server_id, title_, location)
+            apps[slug] = Application(FunctionHandler(partial(_eval_panel, app, server_id, title_, location)))
     else:
-        apps = {'/': partial(_eval_panel, panel, server_id, title, location)}
+        apps = {'/': Application(FunctionHandler(partial(_eval_panel, panel, server_id, title, location)))}
 
     extra_patterns += get_static_routes(static_dirs)
+
+    if session_history is not None:
+        config.session_history = session_history
+    if config.session_history != 0:
+        pattern = REST_PROVIDERS['param']([], 'rest')
+        extra_patterns.extend(pattern)
+        state.publish('session_info', state, ['session_info'])
 
     opts = dict(kwargs)
     if loop:
