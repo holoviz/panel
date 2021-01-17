@@ -12,6 +12,10 @@ from ..models import HTML, Progress as _BkProgress, StatsPlotCard as _BkStatsPlo
 from ..util import escape
 from .base import Widget
 
+RED ="#d9534f"
+GREEN="#5cb85c"
+BLUE="#428bca"
+
 class Indicator(Widget):
     """
     Indicator is a baseclass for widgets which indicate some state.
@@ -568,7 +572,18 @@ class StatsPlotCard(Indicator):
     title = param.String(doc="""The title or a short description of the card""")
     layout = param.ObjectSelector(default="column", objects=["column"])
     value = param.String(doc="""The primary value to be displayed""")
-    value2 = param.String(doc="""A secondary value to display together with the primary value""")
+    value_change = param.String(doc="""A secondary value. For example the change in percent""")
+    value_change_sign = param.Integer(
+        default=0,
+        bounds=(-1,1),
+        doc="The sign of the change: -1, 0 or 1. If 0 no change will be indicated on the card. Default is 0"
+    )
+    value_change_pos_color = param.String(GREEN,
+        label="Positive Change Color",
+        doc="The color used to indicate a positive change")
+    value_change_neg_color = param.String(RED,
+        label="Negative Change Color",
+        doc="The color used to indicate a negative change")
     plot_data = param.ClassSelector(
         class_=ColumnDataSource,
         doc="""A ColumnDataSource on the form
@@ -581,7 +596,7 @@ class StatsPlotCard(Indicator):
     plot_y = param.String(
         default="y", doc="The name of the key in the plot_data to use on the y-axis"
     )
-    plot_color = param.String(default="firebrick", doc="the color to use in the plot")
+    plot_color = param.String(default=BLUE, doc="the color to use in the plot")
     plot_type = param.ObjectSelector(
         default="bar", objects=["line", "step", "area", "bar"], doc="the color to use in the plot"
     )

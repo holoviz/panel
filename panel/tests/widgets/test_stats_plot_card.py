@@ -19,6 +19,7 @@ def test_app():
         plot_data=source,
         height=200,
         width=200,
+        background="lightgray"
     )
 
     def update_datasource():
@@ -29,7 +30,12 @@ def test_app():
 
         y = source.data["y"]
         stats_plot_card.value = f"{y[-1]:,.0f}"
-        stats_plot_card.value2 = f"{y[-1]/y[0]-1:.0%}"
+        change = y[-1]/y[-2]-1
+        stats_plot_card.value_change = f"{change:.0%}"
+        if change>0:
+            stats_plot_card.value_change_sign=1
+        else:
+            stats_plot_card.value_change_sign=-1
 
     settings_panel = pn.Param(
         stats_plot_card,
@@ -41,6 +47,8 @@ def test_app():
             "title",
             "plot_color",
             "plot_type",
+            "value_change_pos_color",
+            "value_change_neg_color",
         ],
         widgets={
             "height": {"widget_type": pn.widgets.IntSlider, "start": 0, "end": 800, "step": 1},

@@ -9,12 +9,17 @@ import * as p from "@bokehjs/core/properties"
 import {div} from "@bokehjs/core/dom"
 import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source"
 
+const red: string="#d9534f";
+const green: string="#5cb85c";
+const blue: string="#428bca";
+
 export class StatsPlotCardView extends HTMLBoxView {
     model: StatsPlotCard
     textDiv: HTMLDivElement
     titleDiv: HTMLDivElement
     valueDiv: HTMLDivElement
     value2Div: HTMLDivElement
+    changeDiv: HTMLElement
     plotDiv: HTMLDivElement
     plot: Plot
 
@@ -22,12 +27,14 @@ export class StatsPlotCardView extends HTMLBoxView {
         super.initialize()
         this.titleDiv = div({style: "font-size: 1em"})
         this.valueDiv = div({style: "font-size: 2em"})
-        this.value2Div = div({style: "font-size: 1em; opacity: 0.5"})
-        this.textDiv = div({style: "height: 50%; width: 100%;"}, this.titleDiv, this.valueDiv, this.value2Div)
+        this.value2Div = div({style: "font-size: 1em; opacity: 0.5;display: inline"})
+        this.changeDiv = div({style: "font-size: 1em; opacity: 0.5;display: inline"})
+        this.textDiv = div({style: "height: 50%; width: 100%;"}, this.titleDiv, this.valueDiv, div({}, this.changeDiv, this.value2Div))
 
         this.updateTitle()
         this.updateValue()
         this.updateValue2()
+        this.updateValueChange()
         this.updateTextFontSize()
 
         this.plotDiv = div({style: "height: 50%; width: 100%;"})
@@ -42,8 +49,17 @@ export class StatsPlotCardView extends HTMLBoxView {
         this.connect(this.model.properties.value.change, () => {
             this.updateValue();this.updateTextFontSize();
         })
-        this.connect(this.model.properties.value2.change, () => {
+        this.connect(this.model.properties.value_change.change, () => {
             this.updateValue2();this.updateTextFontSize();
+        })
+        this.connect(this.model.properties.value_change_sign.change, () => {
+            this.updateValueChange()
+        })
+        this.connect(this.model.properties.value_change_pos_color.change, () => {
+            this.updateValueChange()
+        })
+        this.connect(this.model.properties.value_change_neg_color.change, () => {
+            this.updateValueChange()
         })
         this.connect(this.model.properties.plot_color.change, () => {
             this.render();
@@ -143,7 +159,7 @@ export class StatsPlotCardView extends HTMLBoxView {
 
         const widthTitle = 1*this.model.title.length
         const widthValue = 2*this.model.value.length
-        const widthValue2 = 1*this.model.value2.length
+        const widthValue2 = 1*this.model.value_change.length+1
 
         const widthConstraint1 = elWidth/widthTitle*2.0
         const widthConstraint2 = elWidth/widthValue*1.8
@@ -161,7 +177,21 @@ export class StatsPlotCardView extends HTMLBoxView {
         this.valueDiv.innerText=this.model.value
     }
     updateValue2(): void {
-        this.value2Div.innerText=this.model.value2
+        this.value2Div.innerText=this.model.value_change
+    }
+    updateValueChange(): void {
+        if (this.model.value_change_sign===1){
+            this.changeDiv.innerHTML="&#9650;"
+            this.changeDiv.style.color = this.model.value_change_pos_color
+        }
+        else if (this.model.value_change_sign===-1){
+            this.changeDiv.innerHTML="&#9660;"
+            this.changeDiv.style.color = this.model.value_change_neg_color
+        }
+        else{
+            this.changeDiv.innerHTML="&nbsp;"
+            this.changeDiv.style.color = "inherit"
+        }
     }
 }
 
@@ -172,7 +202,10 @@ export namespace StatsPlotCard {
         description: p.Property<string>,
         layout: p.Property<string>,
         value: p.Property<string>,
-        value2: p.Property<string>,
+        value_change: p.Property<string>,
+        value_change_sign: p.Property<number>,
+        value_change_pos_color: p.Property<string>,
+        value_change_neg_color: p.Property<string>,
         plot_data: p.Property<any>,
         plot_x: p.Property<string>,
         plot_y: p.Property<string>,
@@ -202,11 +235,14 @@ export class StatsPlotCard extends HTMLBox {
             description: [p.String, ""],
             layout: [p.String, "column"],
             value: [p.String, ""],
-            value2: [p.String, ""],
+            value_change: [p.String, ""],
+            value_change_sign: [p.Int, 0],
+            value_change_pos_color: [p.String, green],
+            value_change_neg_color: [p.String, red],
             plot_data: [ p.Any, ],
             plot_x: [p.String, "x"],
             plot_y: [p.String, "y"],
-            plot_color: [p.String, "firebrick"],
+            plot_color: [p.String, blue],
             plot_type: [p.String, "bar"],
         })
     }
