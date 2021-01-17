@@ -19,23 +19,22 @@ def test_app():
         plot_data=source,
         height=200,
         width=200,
-        background="lightgray"
     )
 
     def update_datasource():
         new_x = max(source.data["x"]) + 1
         old_y = source.data["y"][-1]
-        new_y = random.uniform(-old_y * 0.05, old_y * 0.05) + old_y * 1.02
+        new_y = random.uniform(-old_y * 0.05, old_y * 0.05) + old_y * 1.01
         source.stream({"x": [new_x], "y": [new_y]}, rollover=30)
 
-        y = source.data["y"]
-        stats_plot_card.value = f"{y[-1]:,.0f}"
-        change = y[-1]/y[-2]-1
+        y_series = source.data["y"]
+        stats_plot_card.value = f"{y_series[-1]:,.0f}"
+        change = y_series[-1] / y_series[-2] - 1
         stats_plot_card.value_change = f"{change:.0%}"
-        if change>0:
-            stats_plot_card.value_change_sign=1
+        if change > 0:
+            stats_plot_card.value_change_sign = 1
         else:
-            stats_plot_card.value_change_sign=-1
+            stats_plot_card.value_change_sign = -1
 
     settings_panel = pn.Param(
         stats_plot_card,

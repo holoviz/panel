@@ -15,6 +15,7 @@ const blue: string="#428bca";
 
 export class StatsPlotCardView extends HTMLBoxView {
     model: StatsPlotCard
+    containerDiv: HTMLDivElement
     textDiv: HTMLDivElement
     titleDiv: HTMLDivElement
     valueDiv: HTMLDivElement
@@ -25,11 +26,12 @@ export class StatsPlotCardView extends HTMLBoxView {
 
     initialize(): void {
         super.initialize()
+        this.containerDiv = div({style: "height:100%;width:100%;"})
         this.titleDiv = div({style: "font-size: 1em"})
         this.valueDiv = div({style: "font-size: 2em"})
         this.value2Div = div({style: "font-size: 1em; opacity: 0.5;display: inline"})
         this.changeDiv = div({style: "font-size: 1em; opacity: 0.5;display: inline"})
-        this.textDiv = div({style: "height: 50%; width: 100%;"}, this.titleDiv, this.valueDiv, div({}, this.changeDiv, this.value2Div))
+        this.textDiv = div({}, this.titleDiv, this.valueDiv, div({}, this.changeDiv, this.value2Div))
 
         this.updateTitle()
         this.updateValue()
@@ -37,7 +39,9 @@ export class StatsPlotCardView extends HTMLBoxView {
         this.updateValueChange()
         this.updateTextFontSize()
 
-        this.plotDiv = div({style: "height: 50%; width: 100%;"})
+        this.plotDiv = div({})
+        this.containerDiv = div({style: "height:100%;width:100%"}, this.textDiv, this.plotDiv)
+        this.updateLayout()
       }
 
     connect_signals(): void {
@@ -76,13 +80,15 @@ export class StatsPlotCardView extends HTMLBoxView {
         this.connect(this.model.properties.sizing_mode.change, () => {
             this.render();
         })
+        this.connect(this.model.properties.layout.change, () => {
+            this.updateLayout()
+        })
     }
 
     async render(): Promise<void> {
         super.render()
         this.el.innerHTML=""
-        this.el.appendChild(this.textDiv)
-        this.el.appendChild(this.plotDiv)
+        this.el.appendChild(this.containerDiv)
         await this.setPlot()
     }
     private async setPlot() {
@@ -138,9 +144,6 @@ export class StatsPlotCardView extends HTMLBoxView {
             this.plot.add_glyph(vbar, source)
         }
 
-        // hover = p.select(dict(type=HoverTool))
-        // hover.tooltips = [("x", "@x"), ("top", "@top"),]
-        // hover.mode = 'mouse'
         const view = await build_view(this.plot)
         this.plotDiv.innerHTML=""
         view.renderTo(this.plotDiv)
@@ -154,8 +157,13 @@ export class StatsPlotCardView extends HTMLBoxView {
         this.updateTextFontSizeColumn();
     }
     updateTextFontSizeColumn(): void {
-        const elWidth = this.el.clientWidth;
-        const elHeight = this.el.clientHeight;
+        let elWidth = this.containerDiv.clientWidth;
+        let elHeight = this.containerDiv.clientHeight;
+        if (this.model.layout==="column"){
+            elHeight = Math.round(elHeight/2)
+        } else {
+            elWidth = Math.round(elWidth/2)
+        }
 
         const widthTitle = 1*this.model.title.length
         const widthValue = 2*this.model.value.length
@@ -164,7 +172,7 @@ export class StatsPlotCardView extends HTMLBoxView {
         const widthConstraint1 = elWidth/widthTitle*2.0
         const widthConstraint2 = elWidth/widthValue*1.8
         const widthConstraint3 = elWidth/widthValue2*2.0
-        const heightConstraint = elHeight/10
+        const heightConstraint = elHeight/6
 
         const fontSize = Math.min(widthConstraint1, widthConstraint2, widthConstraint3, heightConstraint)
         this.textDiv.style.fontSize = Math.trunc(fontSize) + "px";
@@ -192,6 +200,24 @@ export class StatsPlotCardView extends HTMLBoxView {
             this.changeDiv.innerHTML="&nbsp;"
             this.changeDiv.style.color = "inherit"
         }
+    }
+    updateLayout(): void {
+        if (this.model.layout==="column"){
+            this.containerDiv.style.display="block"
+            this.textDiv.style.height="50%";
+            this.textDiv.style.width="100%";
+            this.plotDiv.style.height="50%";
+            this.plotDiv.style.width="100%";
+        } else {
+            this.containerDiv.style.display="flex"
+            this.textDiv.style.height="100%";
+            this.textDiv.style.width="";
+            this.plotDiv.style.height="100%";
+            this.plotDiv.style.width="";
+            this.textDiv.style.flex="1"
+            this.plotDiv.style.flex="1"
+        }
+        window.dispatchEvent(new Event('resize'));
     }
 }
 

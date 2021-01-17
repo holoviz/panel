@@ -570,7 +570,7 @@ class StatsPlotCard(Indicator):
     _rename = {}
 
     title = param.String(doc="""The title or a short description of the card""")
-    layout = param.ObjectSelector(default="column", objects=["column"])
+    layout = param.ObjectSelector(default="column", objects=["column", "row"])
     value = param.String(doc="""The primary value to be displayed""")
     value_change = param.String(doc="""A secondary value. For example the change in percent""")
     value_change_sign = param.Integer(
