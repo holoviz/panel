@@ -15,6 +15,23 @@ def test_button(document, comm):
     assert button.clicks == 1
 
 
+def test_button_event(document, comm):
+    button = Button(name='Button')
+
+    widget = button.get_root(document, comm=comm)
+
+    events = []
+    def callback(event):
+        events.append(event.new)
+
+    button.param.watch(callback, 'value')
+
+    assert button.value == False
+    button._server_click(document, widget.ref['id'], None)
+    assert events == [True]
+    assert button.value == False
+
+
 def test_button_jscallback_clicks(document, comm):
     button = Button(name='Button')
     code = 'console.log("Clicked!")'
