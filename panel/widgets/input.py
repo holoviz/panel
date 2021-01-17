@@ -58,11 +58,15 @@ class FileInput(Widget):
 
     accept = param.String(default=None)
 
-    filename = param.String(default=None)
+    filename = param.ClassSelector(default=None, class_=(str, list),
+                               is_instance=True)
 
-    mime_type = param.String(default=None)
+    mime_type = param.ClassSelector(default=None, class_=(str, list),
+                               is_instance=True)
 
     value = param.Parameter(default=None)
+    
+    multiple = param.Boolean(default=True)
 
     _widget_type = _BkFileInput
 
@@ -85,7 +89,10 @@ class FileInput(Widget):
     def _process_property_change(self, msg):
         msg = super(FileInput, self)._process_property_change(msg)
         if 'value' in msg:
-            msg['value'] = b64decode(msg['value'])
+            if isinstance(msg['value'], string_types):
+                msg['value'] = b64decode(msg['value'])
+            else:
+                msg['value'] = [b64decode(content) for content in msg['value']]
         return msg
 
     def save(self, filename):
