@@ -79,6 +79,7 @@ class _state(param.Parameterized):
 
     # Dictionary of callbacks to be triggered on app load
     _onload = WeakKeyDictionary()
+    _on_session_created = []
 
     # Stores a set of locked Websockets, reset after every change event
     _locks = WeakSet()
@@ -113,10 +114,12 @@ class _state(param.Parameterized):
         if not self.curdoc.session_context:
             return
         session_id = self.curdoc.session_context.id
+        session_info = self.session_info['sessions'].get(session_id, {})
+        if session_info.get('rendered') is not None:
+            return
         self.session_info['live'] += 1
-        session_info = self.session_info['sessions'][session_id]
         session_info.update({
-            'rendered': dt.datetime.now().timestamp(),
+            'rendered': dt.datetime.now().timestamp()
         })
 
     def _get_callback(self, endpoint):
@@ -235,6 +238,12 @@ class _state(param.Parameterized):
             self._onload[self.curdoc] = []
             self.curdoc.on_event('document_ready', self._on_load)
         self._onload[self.curdoc].append(callback)
+
+    def on_session_created(self, callback):
+        """
+        Callback that is triggered when a session is created.
+        """
+        self._on_session_created.append(callback)
 
     def publish(self, endpoint, parameterized, parameters=None):
         """
