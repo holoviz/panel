@@ -12,6 +12,8 @@ from bokeh.models import (
     Button as _BkButton, Toggle as _BkToggle, Dropdown as _BkDropdown
 )
 
+from bokeh.events import (MenuItemClick, ButtonClick)
+
 from .base import Widget
 
 
@@ -153,6 +155,11 @@ class MenuButton(_ClickButton):
         self.param.watch(callback, 'clicked', onlychanged=False)
 
     def _server_click(self, doc, ref, event):
+        if isinstance(event, MenuItemClick):
+            self._events.update({"clicked": event.item})
+        elif isinstance(event, ButtonClick):
+            self._events.update({"clicked": self.name})
+            
         self._events.update({"clicked": event.item})
         if not self._processing:
             self._processing = True
