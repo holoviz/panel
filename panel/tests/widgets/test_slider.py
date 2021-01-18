@@ -181,10 +181,20 @@ def test_discrete_slider(document, comm):
 
     discrete_slider.value = 100
     assert widget.value == 3
-    assert label.text == 'DiscreteSlider: <b>100</b>'
     with param.edit_constant(discrete_slider):
         discrete_slider.value_throttled = 100
     assert widget.value_throttled == 3
+
+
+def test_discrete_slider_label_update(document, comm):
+    discrete_slider = DiscreteSlider(name='DiscreteSlider', value=1,
+                                     options=[0.1, 1, 10, 100])
+
+    discrete_slider.value = 100
+
+    box = discrete_slider.get_root(document, comm=comm)
+
+    assert box.children[0].text == 'DiscreteSlider: <b>100</b>'
 
 
 def test_discrete_date_slider(document, comm):
