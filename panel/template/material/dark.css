@@ -69,6 +69,24 @@ table.panel-df {
     cursor: pointer;
 }
 
+/* Tabs layout */
+.bk-root .bk-tabs-header .bk-tab {
+  color: white;
+  background: #2f2f2f;
+  border: none;
+}
+
+.bk-root .bk-tabs-header .bk-tab:hover {
+  color: white;
+  background: #4f4f4f;
+}
+
+.bk-root .bk-tabs-header .bk-tab.bk-active {
+  color: white;
+  background: #3f3f3f;
+  border: none;
+}
+
 :root {
   --mdc-theme-primary: #2f2f2f !important;
   --mdc-theme-on-primary: #ffffff !important;
