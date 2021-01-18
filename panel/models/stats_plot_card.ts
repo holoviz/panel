@@ -100,6 +100,8 @@ export class StatsPlotCardView extends HTMLBoxView {
             min_border: 0,
             sizing_mode: "stretch_both"
         })
+        const x_range = <any>this.plot.x_range
+        x_range.range_padding=0
         var source = <ColumnDataSource>this.model.plot_data
         if (this.model.plot_type==="line"){
             var line = new Line({
