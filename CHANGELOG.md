@@ -15,9 +15,11 @@ Bug fixes:
 - Fix issues with scroll behavior when expanding/collapsing Card/Accordion ([#1833](https://github.com/holoviz/panel/issues/1833), [#1884](https://github.com/holoviz/panel/issues/1884))
 - Ensure DiscreSlider label is correctly linked to value ([#1906](https://github.com/holoviz/panel/issues/1906))
 - Fix support for setting header_color and header_background on all templates ([#1872](https://github.com/holoviz/panel/issues/1872))
+- Ensure that Template preprocessors are applied during initialization ([#1922](https://github.com/holoviz/panel/issues/1922))
 
 Enhancements:
 
+- Support throttled in Param widget ([#1800](https://github.com/holoviz/panel/pull/1800))
 - Support rendering of hvPlot Interactive objects ([#1824](https://github.com/holoviz/panel/issues/1824))
 - Allow recording session launch time in server session_info ([#1909](https://github.com/holoviz/panel/pull/1909))
 - Add Button.value parameter ([#1910](https://github.com/holoviz/panel/issues/1910))
@@ -28,6 +30,7 @@ Documentation:
 
 - Fixed IntSlider and FloatSlider example ([#1825](https://github.com/holoviz/panel/pull/1825))
 - Updated instructions for using Panel in JupyterLab ([#1908](https://github.com/holoviz/panel/pull/1908))
+
 ## Version 0.10.2
 
 Date: 2020-11-13
