@@ -181,6 +181,7 @@ def test_discrete_slider(document, comm):
 
     discrete_slider.value = 100
     assert widget.value == 3
+    assert label.text == 'DiscreteSlider: <b>100</b>'
     with param.edit_constant(discrete_slider):
         discrete_slider.value_throttled = 100
     assert widget.value_throttled == 3
