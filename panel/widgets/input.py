@@ -64,7 +64,7 @@ class FileInput(Widget):
     mime_type = param.ClassSelector(default=None, class_=(str, list),
                                is_instance=True)
 
-    multiple = param.Boolean(default=True)
+    multiple = param.Boolean(default=False)
     
     value = param.Parameter(default=None)
     
