@@ -260,6 +260,9 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
             self._syncing = True
             with param.edit_constant(self._slider):
                 setattr(self._slider, event.name, index)
+            if event.name == 'value':
+                with param.discard_events(self._text):
+                    self._text.value = self.labels[index]
         finally:
             self._syncing = False
 
