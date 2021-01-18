@@ -30,18 +30,42 @@ body {
   background-color: #292929 !important;
 }
 
-.bk-root .bk-data-table {
-  color: black;
-}
 
+/* DataFrame Widget */
 .bk-root .slick-header-columns {
   color: white;
   font-weight: bold;
-  background: #292929;
+  background: none;
 }
 
 .bk-root .slick-header-column:hover {
+  background: #292929;
+}
+
+.bk-root .slick-row.even {
+  background: none;
+}
+
+.bk-root .slick-row.odd {
   background: #3f3f3f;
+}
+
+.bk-root .slick-cell.selected {
+  background: #3f3f80;
+}
+
+/* DataFrame Pane */
+table.panel-df {
+  color: white;
+}
+
+.panel-df tbody tr:nth-child(odd) {
+  background: #3f3f3f;
+}
+
+.panel-df tr:hover {
+    background: #3f3f80 !important;
+    cursor: pointer;
 }
 
 .lm_content {
