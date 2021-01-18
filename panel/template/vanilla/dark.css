@@ -28,6 +28,20 @@ body {
   background-color: #292929 !important;
 }
 
+.bk-root .bk-data-table {
+  color: black;
+}
+
+.bk-root .slick-header-columns {
+  color: white;
+  font-weight: bold;
+  background: #292929;
+}
+
+.bk-root .slick-header-column:hover {
+  background: #3f3f3f;
+}
+
 html {
   scrollbar-face-color: #646464;
   scrollbar-base-color: #646464;

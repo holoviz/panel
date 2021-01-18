@@ -31,6 +31,20 @@ button.bk.mdc-card__primary-action {
   color: white;
 }
 
+.bk-root .bk-data-table {
+  color: black;
+}
+
+.bk-root .slick-header-columns {
+  color: white;
+  font-weight: bold;
+  background: #292929;
+}
+
+.bk-root .slick-header-column:hover {
+  background: #3f3f3f;
+}
+
 :root {
   --mdc-theme-primary: #2f2f2f !important;
   --mdc-theme-on-primary: #ffffff !important;
