@@ -20,7 +20,7 @@
 
 <!-- goes in body -->
 {% block contents %}
-<header class="app-bar" id="header">
+<header class="app-bar" id="header" style="{% if header_background %}background-color: {{ header_background }} !important;{% endif %}{% if header_color %}color: {{ header_color }} !important;{% endif %}">
   <div style="display: contents;">
     <div class="app-header">
       {% if app_logo %}<a href="/"><img src="{{ app_logo }}" class="app-logo"></a>{% endif %}
