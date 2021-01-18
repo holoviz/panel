@@ -143,16 +143,18 @@ class BaseTemplate(param.Parameterized, ServableMixin):
             doc.on_session_destroyed(loc._server_destroy)
         doc.title = title
 
-        # Initialize fake root
+        # Initialize fake root. This is needed to ensure preprocessors
+        # which assume that all models are owned by a single root can
+        # link objects across multiple roots in a template.
         col = Column()
         preprocess_root = col.get_root(doc, comm)
         col._hooks.append(self._apply_hooks)
         ref = preprocess_root.ref['id']
 
-        # Process real roots
         for name, (obj, tags) in self._render_items.items():
             if self._apply_hooks not in obj._hooks:
                 obj._hooks.append(self._apply_hooks)
+            # We skip preprocessing on the individual roots
             model = obj.get_root(doc, comm, preprocess=False)
             mref = model.ref['id']
             doc.on_session_destroyed(obj._server_destroy)
@@ -170,7 +172,8 @@ class BaseTemplate(param.Parameterized, ServableMixin):
             self._apply_root(name, model, tags)
             add_to_doc(model, doc, hold=bool(comm))
 
-        # Process fake root
+        # Here we ensure that the preprocessor is run across all roots
+        # and set up session cleanup hooks for the fake root.
         state._fake_roots.append(ref)
         state._views[ref] = (col, preprocess_root, doc, comm)
         col._preprocess(preprocess_root)
