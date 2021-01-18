@@ -28,7 +28,7 @@
 <!-- goes in body -->
 {% block contents %}
 <div class="" id="container">
-  <nav class="" style="{% if header_background %}background-color: {{ header_background }} !important;{% endif %}{% if header_color %}color: {{ header_color }}{% endif %}" id="header">
+  <nav class="" style="{% if header_background %}background-color: {{ header_background }} !important;{% endif %}{% if header_color %}color: {{ header_color }} !important;{% endif %}" id="header">
     {% if nav %}
     <span style="font-size:30px;cursor:pointer" onclick="closeNav()" id="sidebar-button">
 	  <div class="pn-bar"></div>
