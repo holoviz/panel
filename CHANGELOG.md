@@ -11,7 +11,7 @@ Bug fixes:
 - Fix inverted axes on HoloViews plots ([#1732](https://github.com/holoviz/panel/issues/1732))
 - Fix enabling/disabling of FileDownload widget ([#1510](https://github.com/holoviz/panel/issues/1510), [#1820](https://github.com/holoviz/panel/issues/1820))
 - Fix issues serving template resources on server with route prefix ([#1821](https://github.com/holoviz/panel/issues/1821))
-- Fixes for rendering ECharts from pyecharts ([#1874](https://github.com/holoviz/panel/issues/1874), [#1876](https://github.com/holoviz/panel/issues/1876)
+- Fixes for rendering ECharts from pyecharts ([#1874](https://github.com/holoviz/panel/issues/1874), [#1876](https://github.com/holoviz/panel/issues/1876))
 - Fix issues with scroll behavior when expanding/collapsing Card/Accordion ([#1833](https://github.com/holoviz/panel/issues/1833), [#1884](https://github.com/holoviz/panel/issues/1884))
 - Ensure DiscreSlider label is correctly linked to value ([#1906](https://github.com/holoviz/panel/issues/1906))
 - Fix support for setting header_color and header_background on all templates ([#1872](https://github.com/holoviz/panel/issues/1872))

@@ -1,6 +1,39 @@
 Releases
 ========
 
+Version 0.10.3
+--------------
+
+Date: 2021-01-18
+
+Another micro-release in the 0.10.x series focusing primarily on bug and regression fixes. Many thanks to @miliante, @MarcSkovMadsen, @Hoxbro, @jlstevens, @jbednar and @philippjfr.
+
+Bug fixes:
+
+- Fix inverted axes on HoloViews plots (`#1732 <https://github.com/holoviz/panel/issues/1732>`__)
+- Fix enabling/disabling of FileDownload widget (`#1510 <https://github.com/holoviz/panel/issues/1510>`__, `#1820 <https://github.com/holoviz/panel/issues/1820>`__)
+- Fix issues serving template resources on server with route prefix (`#1821 <https://github.com/holoviz/panel/issues/1821>`__)
+- Fixes for rendering ECharts from pyecharts (`#1874 <https://github.com/holoviz/panel/issues/1874>`__, `#1876 <https://github.com/holoviz/panel/issues/1876>`__)
+- Fix issues with scroll behavior when expanding/collapsing Card/Accordion (`#1833 <https://github.com/holoviz/panel/issues/1833>`__, `#1884 <https://github.com/holoviz/panel/issues/1884>`__)
+- Ensure DiscreSlider label is correctly linked to value (`#1906 <https://github.com/holoviz/panel/issues/1906>`__)
+- Fix support for setting header_color and header_background on all templates (`#1872 <https://github.com/holoviz/panel/issues/1872>`__)
+- Ensure that Template preprocessors are applied during initialization (`#1922 <https://github.com/holoviz/panel/issues/1922>`__)
+
+Enhancements:
+
+- Support throttled in Param widget (`#1800 <https://github.com/holoviz/panel/pull/1800>`__)
+- Support rendering of hvPlot Interactive objects (`#1824 <https://github.com/holoviz/panel/issues/1824>`__)
+- Allow recording session launch time in server session_info (`#1909 <https://github.com/holoviz/panel/pull/1909>`__)
+- Add Button.value parameter (`#1910 <https://github.com/holoviz/panel/issues/1910>`__)
+- Support upload of multiple parameters on FileInput (`#1911 <https://github.com/holoviz/panel/pull/1911>`__)
+- Improve support for DarkTheme in templates (`#1855 <https://github.com/holoviz/panel/pull/1855>`__, `#1856 <https://github.com/holoviz/panel/pull/1856>`__)
+
+Documentation:
+
+- Fixed IntSlider and FloatSlider example (`#1825 <https://github.com/holoviz/panel/pull/1825>`__)
+- Updated instructions for using Panel in JupyterLab (`#1908 <https://github.com/holoviz/panel/pull/1908>`__)
+
+
 Version 0.10.2
 --------------
 
