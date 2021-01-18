@@ -159,8 +159,7 @@ class MenuButton(_ClickButton):
             self._events.update({"clicked": event.item})
         elif isinstance(event, ButtonClick):
             self._events.update({"clicked": self.name})
-            
-        self._events.update({"clicked": event.item})
+
         if not self._processing:
             self._processing = True
             if doc.session_context:
