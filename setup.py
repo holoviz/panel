@@ -173,9 +173,7 @@ extras_require['build'] = [
     'pyct >=0.4.4',
     'setuptools >=30.3.0',
     'bokeh >=2.0.0',
-    'pyviz_comms >=0.6.0',
-    # non-python dependency
-    'nodejs >=10.13.0',
+    'pyviz_comms >=0.6.0'
 ]
 
 setup_args = dict(
