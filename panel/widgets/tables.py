@@ -197,7 +197,7 @@ class BaseTable(Widget):
             if event.type == 'triggered' and self._updating:
                 continue
             elif event.name in ('value', 'show_index'):
-                model.columns = self._get_columns()
+                self._update_columns(event, model)
                 if isinstance(model, DataCube):
                     model.groupings = self._get_groupings()
             elif hasattr(self, '_update_' + event.name):
