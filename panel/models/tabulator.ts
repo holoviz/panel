@@ -547,7 +547,7 @@ export class DataTabulator extends HTMLBox {
       sorters: [ p.Array, []],
       styles: [ p.Any, ],
       theme: [ p.String, "simple"],
-      theme_url: [p.String, "https://unpkg.com/tabulator-tables@4.9/dist/css/"]
+      theme_url: [p.String, "https://unpkg.com/tabulator-tables@4.9.3/dist/css/"]
     })
   }
 }
