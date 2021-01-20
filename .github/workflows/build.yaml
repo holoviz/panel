@@ -106,7 +106,9 @@ jobs:
           conda activate test-environment
           doit ecosystem=pip package_build $PKG_TEST_PYTHON --test-group=unit_deploy
       - name: git status
-        run: git status
+        run: |
+          git status
+          git diff
       - name: pip upload
         run: |
           eval "$(conda shell.bash hook)"
