@@ -50,7 +50,7 @@ jobs:
           conda config --set always_yes True
           conda install -c pyviz "pyctdev>=0.5"
           doit ecosystem_setup
-          conda install nodejs
+          conda install -c conda-forge "nodejs=15.3.0"
           doit env_create ${{ env.CHANS_DEV}} --python=${{ matrix.python-version }}
       - name: nix_opengl
         if: contains(matrix.os, 'ubuntu')
@@ -68,7 +68,6 @@ jobs:
           conda list
           doit develop_install ${{ env.CHANS_DEV}} -o examples -o recommended -o tests -o build
           bokeh sampledata
-          panel build panel
           echo "-----"
           git describe
       - name: windows_opengl
