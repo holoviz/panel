@@ -68,6 +68,7 @@ jobs:
           conda list
           doit develop_install ${{ env.CHANS_DEV}} -o examples -o recommended -o tests -o build
           bokeh sampledata
+          panel build panel
           echo "-----"
           git describe
       - name: windows_opengl
