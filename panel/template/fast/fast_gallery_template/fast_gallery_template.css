@@ -1,0 +1,127 @@
+html {
+    height:100%;
+}
+html, #body-design-provider {
+    min-height: 100vh;
+}
+body {
+    margin: 0px;
+    padding: 0;
+    font-style: normal;
+    font-variant-ligatures: normal;
+    font-variant-caps: normal;
+    font-variant-numeric: normal;
+    font-variant-east-asian: normal;
+    font-weight: normal;
+    font-stretch: normal;
+    font-size: 16px;
+    line-height: normal;
+    font-family: aktiv-grotesk, "Segoe UI", Arial, Helvetica, sans-serif;
+    overflow-y: scroll;
+}
+
+.header {
+  /* Photo by mnm.all on Unsplash */
+  background-image: url('https://preview.redd.it/9oi428ohy7t21.png?auto=webp&s=5051b77d33e85446b6492a1e02725c6729777d4f') center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+.header-grid {
+  /* Grid styles */
+  padding: 4rem 2rem;
+  display: grid;
+  align-items: center;
+  grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
+}
+.header article {
+    margin-right: 1.0em;
+    padding-left: 1.0em;
+    padding-right: 1.0em;
+    opacity: 0.8;
+}
+
+#title, #divider, #subtitle {
+    background: transparent;
+    font-size: 1.5em;
+    color: white;
+}
+
+#search-input {
+    margin-top: 1em;
+    margin-left:2em;
+    margin-bottom:0em;
+    width: calc(100% - 4em);
+}
+.theme-toggle-icon {
+    height: 25px;
+    width: 25px;
+    margin-top: 5px;
+}
+
+/* The grid layout is inspired by
+https://css-tricks.com/look-ma-no-media-queries-responsive-layouts-using-css-grid/
+https://codepen.io/andybelldesign/pen/vMMYKJ */
+/*
+  AUTO GRID
+  Set the minimum item size with `--cards-grid-min-size` and you'll
+  get a fully responsive grid with no media queries.
+*/
+.cards-grid {
+  --cards-grid-min-size: 16rem;
+
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--cards-grid-min-size), 1fr));
+  grid-gap: 2rem;
+  list-style: none;
+}
+/* Presentational styles */
+.card {
+  padding: 0px;
+}
+
+.cards-grid {
+    margin: 2rem;
+    padding: 0px;
+}
+
+.avatar {
+    vertical-align: middle;
+    float: right;
+    width: 30px;
+    height: 30px;
+    margin-top: 5px;
+    margin-right: 3px;
+    margin-left: 3px;
+    border-radius: 50%;
+}
+.card-action svg {
+    vertical-align: middle;
+    float: right;
+    height: 20px;
+    color: white;
+    margin-top: 10px;
+    margin-right: 10px;
+    fill: var(--neutral-foreground-rest);
+}
+
+.card-image {
+    height: 200px;
+    width: 100%;
+}
+.card-content {
+    padding: 10px 10px 10px;
+    color: var(--neutral-foreground-rest);
+}
+.card-text {
+    height: 100px;
+}
+.card-header {
+    height: 2em;
+}
+
+footer {
+    padding: .50rem;
+    text-align: center;
+    font-size: .75rem;
+}

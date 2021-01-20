@@ -1,0 +1,173 @@
+{% from macros import embed %}
+
+<!DOCTYPE html>
+<html lang="en">
+{% block head %}
+<head>
+    {% block inner_head %}
+    <meta charset="utf-8">
+    {% if favicon %}<link rel="icon" href="{{ favicon }}" type="{{favicon_type}}">{% endif %}
+    <title>{% block title %}{{ title_name | e if title_name else "Panel App" }}{% endblock %}</title>
+    {% block preamble %}{% endblock %}
+    {% block resources %}
+        {% block css_resources %}
+        {{ bokeh_css | indent(8) if bokeh_css }}
+        {% endblock %}
+        {% block js_resources %}
+        {{ bokeh_js | indent(8) if bokeh_js }}
+        {% endblock %}
+    {% endblock %}
+    {% block postamble %}
+        <style>*:not(:defined){visibility:hidden}</style>
+        <style>
+            {{ gallery_css }}
+            :root { --body-font: {{ font_family }}; }
+            body { font-family: var(--body-font); }
+            {% if background_image_url %}
+            .header {
+                /* Photo by mnm.all on Unsplash */
+                background-image: url('{{ background_image_url }}');
+            }
+            {% endif %}
+        </style>
+        {% if font_url %}
+        <link rel="stylesheet" type="text/css" href="{{ font_url }}" />
+        {% endif %}
+        <link href="https://use.typekit.net/spx2dgm.css" rel="stylesheet">
+        <script type="module" src="https://unpkg.com/@microsoft/fast-colors@5.1.0"></script>
+        <script type="module" src="https://unpkg.com/@microsoft/fast-components@1.13.0"></script>
+        <script type="text/javascript">{{ gallery_js }}</script>
+        <script type="module">
+            import { parseColorHexRGB } from "https://unpkg.com/@microsoft/fast-colors@5.1.0";
+            import { createColorPalette } from "https://unpkg.com/@microsoft/fast-components@1.13.0";
+
+            function setAccentColor(color, selector){
+                const accent = color;
+                const palette = createColorPalette(parseColorHexRGB(accent));
+                const provider = document.querySelector(selector);
+                provider.accentBaseColor = accent;
+                provider.accentPalette = palette;
+            }
+            setAccentColor("{{ accent_base_color }}", "#body-design-provider");
+            setAccentColor("#ffffff", "#header-design-provider");
+
+            function setNeutralColor(color, selector){
+                const palette = createColorPalette(parseColorHexRGB(color));
+                const provider = document.querySelector(selector);
+
+                provider.neutralPalette = palette;
+            }
+            setNeutralColor("#ffffff", "#header-design-provider");
+            setNeutralColor("#000000", "#body-design-provider");
+          </script>
+    {% endblock %}
+    {% endblock %}
+</head>
+{% endblock %}
+{% block body %}
+<body>
+    <fast-design-system-provider id="body-design-provider" use-defaults background-color="#000000">
+        {% block inner_body %}
+        {% block contents %}
+            <fast-design-system-provider id="header-design-provider" use-defaults background-color="#000000">
+            <section class="header">
+            <fast-switch style="float: right; padding-top: 1em; padding-right: 2em;" onChange="toggleLightDarkTheme()">
+                <span slot="checked-message">
+                    <svg class="theme-toggle-icon" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25 25"><path d="M0 0h24v24H0z" fill="none"/><path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.79 1.42-1.41zM4 10.5H1v2h3v-2zm9-9.95h-2V3.5h2V.55zm7.45 3.91l-1.41-1.41-1.79 1.79 1.41 1.41 1.79-1.79zm-3.21 13.7l1.79 1.8 1.41-1.41-1.8-1.79-1.4 1.4zM20 10.5v2h3v-2h-3zm-8-5c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm-1 16.95h2V19.5h-2v2.95zm-7.45-3.91l1.41 1.41 1.79-1.8-1.41-1.41-1.79 1.8z"/></svg>
+                  </span>
+                  <span slot="unchecked-message">
+                    <svg class="theme-toggle-icon" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25 25"><path d="M0 0h24v24H0z" fill="none"/><path d="M10 2c-1.82 0-3.53.5-5 1.35C7.99 5.08 10 8.3 10 12s-2.01 6.92-5 8.65C6.47 21.5 8.18 22 10 22c5.52 0 10-4.48 10-10S15.52 2 10 2z"/></svg>
+                  </span>
+            </fast-switch>
+            <div class="header-grid">
+            <h1>
+                <fast-anchor id="title" href="{{ site_url }}" appearance="neutral" target="{{ target }}">{{ site_name }} </fast-anchor>
+                <fast-anchor id="divider" appearance="neutral">/</fast-anchor>
+                <fast-anchor id="subtitle" href="{{ url }}" appearance="neutral" target="{{ target }}">{{ name }}</fast-anchor>
+            </h1>
+            <article>
+                <p>{{ description}}</p>
+            </article>
+            </div>
+            </section>
+            </fast-design-system-provider>
+            <section class="search">
+                <fast-text-field id="search-input" placeholder="search" onInput="hideCards(event.target.value)"></fast-text-field>
+            </section>
+            <section id="cards">
+            <ul class="cards-grid">
+            {% for app in items %}
+            <li class="card">
+                <fast-card>
+                    <img class="card-image" src="{{ app.thumbnail_url }}"/>
+                    <div class="card-content">
+                        <h2 class="card-header">{{ app.name }}</h2>
+                        <p class="card-text">{{ app.introduction }}</p>
+                        <div class="card-actions">
+                            <fast-anchor class="card-action open-action" href="{{ app.url }}" target="{{ target }}">Open</fast-anchor>
+                            {% if app.owner.url %}
+                            <a class="card-action owner-action" href="{{ app.owner.url }}" target="{{ target }}">
+                                <img src="{{ app.owner.avatar_url }}" alt="Avatar" class="avatar" title="Owner: {{ app.owner.name}}">
+                            </a>
+                            {% endif %}
+                            {% if app.author.url %}
+                            <a class="card-action author-action" href="{{ app.author.url }}" target="{{ target }}">
+                                <img src="{{ app.author.avatar_url }}" alt="Avatar" class="avatar" title="Author: {{ app.author.name}}">
+                            </a>
+                            {% endif %}
+                            {% if app.gif_url %}
+                            <a title="gif" appearance="hypertext" class="card-action gif-action" href="{{ app.gif_url }}" target="{{ target }}">
+                                <svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd" d="M12.002 4h-10a1 1 0 0 0-1 1v8l2.646-2.354a.5.5 0 0 1 .63-.062l2.66 1.773 3.71-3.71a.5.5 0 0 1 .577-.094l1.777 1.947V5a1 1 0 0 0-1-1zm-10-1a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-10zm4 4.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/>
+                                    <path fill-rule="evenodd" d="M4 2h10a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1v1a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2h1a1 1 0 0 1 1-1z"/>
+                                  </svg>
+                            </a>
+                            {% endif %}
+                            {% if app.mp4_url %}
+                            <a title="mp4" appearance="hypertext" class="card-action mp4-action" href="{{ app.mp4_url }}" target="{{ target }}">
+                                <svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd" d="M0 1a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H1a1 1 0 0 1-1-1V1zm4 0h8v6H4V1zm8 8H4v6h8V9zM1 1h2v2H1V1zm2 3H1v2h2V4zM1 7h2v2H1V7zm2 3H1v2h2v-2zm-2 3h2v2H1v-2zM15 1h-2v2h2V1zm-2 3h2v2h-2V4zm2 3h-2v2h2V7zm-2 3h2v2h-2v-2zm2 3h-2v2h2v-2z"/>
+                                </svg>
+                            </a>
+                            {% endif %}
+                            {% if app.youtube_url %}
+                            <a title="Youtube" appearance="hypertext" class="card-action youtube-action" href="{{ app.youtube_url }}" target="{{ target }}">
+                                <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" role="img" viewBox="0 0 576 512">
+                                    <path d="M549.655 124.083c-6.281-23.65-24.787-42.276-48.284-48.597C458.781 64 288 64 288 64S117.22 64 74.629 75.486c-23.497 6.322-42.003 24.947-48.284 48.597-11.412 42.867-11.412 132.305-11.412 132.305s0 89.438 11.412 132.305c6.281 23.65 24.787 41.5 48.284 47.821C117.22 448 288 448 288 448s170.78 0 213.371-11.486c23.497-6.321 42.003-24.171 48.284-47.821 11.412-42.867 11.412-132.305 11.412-132.305s0-89.438-11.412-132.305zm-317.51 213.508V175.185l142.739 81.205-142.739 81.201z"/>
+                                </svg>
+                            </a>
+                            {% endif %}
+                            {% if app.documentation_url %}
+                            <a title="Documentation" appearance="neutral" class="card-action documentation-action" href="{{ app.documentation_url }}" target="{{ target }}">
+                                <svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd" d="M1 2.828v9.923c.918-.35 2.107-.692 3.287-.81 1.094-.111 2.278-.039 3.213.492V2.687c-.654-.689-1.782-.886-3.112-.752-1.234.124-2.503.523-3.388.893zm7.5-.141v9.746c.935-.53 2.12-.603 3.213-.493 1.18.12 2.37.461 3.287.811V2.828c-.885-.37-2.154-.769-3.388-.893-1.33-.134-2.458.063-3.112.752zM8 1.783C7.015.936 5.587.81 4.287.94c-1.514.153-3.042.672-3.994 1.105A.5.5 0 0 0 0 2.5v11a.5.5 0 0 0 .707.455c.882-.4 2.303-.881 3.68-1.02 1.409-.142 2.59.087 3.223.877a.5.5 0 0 0 .78 0c.633-.79 1.814-1.019 3.222-.877 1.378.139 2.8.62 3.681 1.02A.5.5 0 0 0 16 13.5v-11a.5.5 0 0 0-.293-.455c-.952-.433-2.48-.952-3.994-1.105C10.413.809 8.985.936 8 1.783z"/>
+                                </svg>
+                            </a>
+                            {% endif %}
+                            {% if app.code_url %}
+                            <a title="Code" appearance="neutral" class="card-action code-action" href="{{ app.code_url }}" target="{{ target }}">
+                                <svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+                                <path fill-rule="evenodd" d="M4.854 4.146a.5.5 0 0 1 0 .708L1.707 8l3.147 3.146a.5.5 0 0 1-.708.708l-3.5-3.5a.5.5 0 0 1 0-.708l3.5-3.5a.5.5 0 0 1 .708 0zm6.292 0a.5.5 0 0 0 0 .708L14.293 8l-3.147 3.146a.5.5 0 0 0 .708.708l3.5-3.5a.5.5 0 0 0 0-.708l-3.5-3.5a.5.5 0 0 0-.708 0zm-.999-3.124a.5.5 0 0 1 .33.625l-4 13a.5.5 0 0 1-.955-.294l4-13a.5.5 0 0 1 .625-.33z"/>
+                                </svg>
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </fast-card>
+            </li>
+            {% endfor %}
+            </ul>
+            </section>
+            <section>
+            <fast-divider></fast-divider>
+            <footer>
+                <p>Made with &#x1f40d;, &#10084;&#65039;, <fast-anchor href="https://fast.design" appearance="hypertext" target="_blank">Fast</fast-anchor> and <fast-anchor href="https://panel.holoviz.org" appearance="hypertext" target="_blank">Panel</fast-anchor>.</p>
+            </footer>
+            </section>
+        {% endblock %}
+        {{ plot_script | indent(8) }}
+        {% endblock %}
+    </fast-design-system-provider>
+</body>
+{% endblock %}
+</html>

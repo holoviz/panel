@@ -1,0 +1,32 @@
+/* fast_root_default.css */
+:root {
+    --accent-fill-active: #C01754;
+    --accent-fill-hover: #86103B;
+    --accent-fill-rest: #A01346;
+    --accent-foreground-active: #BA1651;
+    --accent-foreground-cut-rest: #FFFFFF;
+    --accent-foreground-hover: #7A0F35;
+    --accent-foreground-rest: #A01346;
+    --background-color: #F7F7F7;
+    --container-background: #D1D1D1;
+    --neutral-divider-rest:#838383;
+    --neutral-fill-active: #EAEAEA;
+    --neutral-fill-hover: #DDDDDD;
+    --neutral-fill-input-active: #FFFFFF;
+    --neutral-fill-input-hover: #FFFFFF;
+    --neutral-fill-input-rest: #FFFFFF;
+    --neutral-fill-rest: #E5E5E5;
+    --neutral-fill-stealth-active: #EFEFEF;
+    --neutral-fill-stealth-hover: #EAEAEA;
+    --neutral-fill-stealth-rest: #F7F7F7;
+    --neutral-focus: #838383;
+    --neutral-focus-inner-accent: #FFFFFF;
+    --neutral-foreground-active: #2B2B2B;
+    --neutral-foreground-focus: #2B2B2B;
+    --neutral-foreground-hover: #2B2B2B;
+    --neutral-foreground-rest: #262626;
+    --neutral-layer-floating: #FFFFFF;
+    --neutral-outline-active: #D6D6D6;
+    --neutral-outline-hover: #979797;
+    --neutral-outline-rest: #BEBEBE;
+}
