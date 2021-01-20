@@ -227,7 +227,7 @@ export class DeckGLPlot extends HTMLBox {
       viewState: [ p.Any ],
     })
 
-    this.override({
+    this.override<DeckGLPlot.Props>({
       height: 400,
       width: 600
     });
