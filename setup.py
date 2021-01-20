@@ -135,6 +135,7 @@ extras_require = {
         'plotly',
         'altair',
         'streamz',
+        'pyecharts',
         'vega_datasets',
         'vtk',
         'scikit-learn',
