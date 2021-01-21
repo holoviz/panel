@@ -7,7 +7,8 @@ import param
 import weakref
 import sys
 
-from .viewable import Viewable, Reactive
+from .reactive import Reactive
+from .viewable import Viewable
 
 from bokeh.models import (CustomJS, Model as BkModel)
 

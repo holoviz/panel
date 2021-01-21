@@ -31,8 +31,8 @@ def test_layouts_are_in_reference_gallery():
 
 @docs_available
 def test_widgets_are_in_reference_gallery():
-    exceptions = set(['CompositeWidget', 'Widget', 'ToggleGroup'])
-    docs = {os.path.splitext(f)[0] for f in os.listdir(os.path.join(ref, 'widgets'))}
+    exceptions = set(['CompositeWidget', 'Widget', 'ToggleGroup', 'NumberInput', 'Spinner'])
+    docs = {os.path.splitext(f)[0] for g in ('indicators', 'widgets') for f in os.listdir(os.path.join(ref, g))}
 
     def is_panel_widget(attr):
         widget = getattr(pn.widgets, attr)
@@ -44,7 +44,7 @@ def test_widgets_are_in_reference_gallery():
 
 @docs_available
 def test_panes_are_in_reference_gallery():
-    exceptions = set(['PaneBase', 'YT', 'RGGPlot'])
+    exceptions = set(['PaneBase', 'YT', 'RGGPlot', 'Interactive'])
     docs = {os.path.splitext(f)[0] for f in os.listdir(os.path.join(ref, 'panes'))}
 
     def is_panel_pane(attr):

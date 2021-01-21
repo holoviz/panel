@@ -51,6 +51,11 @@ class _SliderBase(Widget):
 
     __abstract = True
 
+    def __init__(self, **params):
+        if 'value' in params and 'value_throttled' in self.param:
+            params['value_throttled'] = params['value']
+        super(_SliderBase, self).__init__(**params)
+
 
 class ContinuousSlider(_SliderBase):
 
@@ -66,23 +71,27 @@ class ContinuousSlider(_SliderBase):
             params['value'] = params.get('start', self.start)
         super(ContinuousSlider, self).__init__(**params)
 
-    def _get_embed_state(self, root, max_opts=3):
+    def _get_embed_state(self, root, values=None, max_opts=3):
         ref = root.ref['id']
         w_model, parent = self._models[ref]
         _, _, doc, comm = state._views[ref]
 
         # Compute sampling
         start, end, step = w_model.start, w_model.end, w_model.step
-        span = end-start
-        dtype = int if isinstance(step, int) else float
-        if (span/step) > (max_opts-1):
-            step = dtype(span/(max_opts-1))
-        vals = [dtype(v) for v in np.arange(start, end+step, step)]
+        if values is None:
+            span = end-start
+            dtype = int if isinstance(step, int) else float
+            if (span/step) > (max_opts-1):
+                step = dtype(span/(max_opts-1))
+            values = [dtype(v) for v in np.arange(start, end+step, step)]
+        elif any(v < start or v > end for v in values):
+            raise ValueError('Supplied embed states for %s widget outside '
+                             'of valid range.' % type(self).__name__)
 
         # Replace model
         layout_opts = {k: v for k, v in self.param.get_param_values()
                        if k in Layoutable.param and k != 'name'}
-        dw = DiscreteSlider(options=vals, name=self.name, **layout_opts)
+        dw = DiscreteSlider(options=values, name=self.name, **layout_opts)
         dw.link(self, value='value')
         self._models.pop(ref)
         index = parent.children.index(w_model)
@@ -94,7 +103,7 @@ class ContinuousSlider(_SliderBase):
         w_model = w_model.children[1]
         w_model.js_on_change('value', link)
 
-        return (dw, w_model, vals, lambda x: x.value, 'value', 'cb_obj.value')
+        return (dw, w_model, values, lambda x: x.value, 'value', 'cb_obj.value')
 
 
 class FloatSlider(ContinuousSlider):
@@ -105,7 +114,7 @@ class FloatSlider(ContinuousSlider):
 
     value = param.Number(default=0.0)
 
-    value_throttled = param.Number(default=None)
+    value_throttled = param.Number(default=None, constant=True)
 
     step = param.Number(default=0.1)
 
@@ -114,7 +123,7 @@ class IntSlider(ContinuousSlider):
 
     value = param.Integer(default=0)
 
-    value_throttled = param.Integer(default=None)
+    value_throttled = param.Integer(default=None, constant=True)
 
     start = param.Integer(default=0)
 
@@ -136,7 +145,7 @@ class DateSlider(_SliderBase):
 
     value = param.Date(default=None)
 
-    value_throttled = param.Date(default=None)
+    value_throttled = param.Date(default=None, constant=True)
 
     start = param.Date(default=None)
 
@@ -166,7 +175,7 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
 
     value = param.Parameter()
 
-    value_throttled = param.Parameter()
+    value_throttled = param.Parameter(constant=True)
 
     formatter = param.String(default='%.3g')
 
@@ -180,6 +189,8 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
     var labels = {labels}
     target.text = labels[source.value]
     """
+
+    _style_params = [p for p in list(Layoutable.param) if p != 'name'] + ['orientation']
 
     def __init__(self, **params):
         self._syncing = False
@@ -199,8 +210,9 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
         self._composite = Column(self._text, self._slider)
         self._update_options()
         self.param.watch(self._update_options, ['options', 'formatter'])
-        self.param.watch(self._update_value, ['value'])
-        self.param.watch(self._update_style, [p for p in Layoutable.param if p !='name'])
+        self.param.watch(self._update_value, 'value')
+        self.param.watch(self._update_value, 'value_throttled')
+        self.param.watch(self._update_style, self._style_params)
 
     def _update_options(self, *events):
         values, labels = self.values, self.labels
@@ -212,7 +224,9 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
 
         self._slider = IntSlider(
             start=0, end=len(self.options)-1, value=value, tooltips=False,
-            show_value=False, margin=(0, 5, 5, 5), _supports_embed=False
+            show_value=False, margin=(0, 5, 5, 5),
+            orientation=self.orientation,
+            _supports_embed=False
         )
         self._update_style()
         js_code = self._text_link.format(
@@ -220,25 +234,40 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
         )
         self._jslink = self._slider.jslink(self._text, code={'value': js_code})
         self._slider.param.watch(self._sync_value, 'value')
+        self._slider.param.watch(self._sync_value, 'value_throttled')
         self._text.value = labels[value]
         self._composite[1] = self._slider
 
     def _update_value(self, event):
+        """
+        This will update the IntSlider (behind the scene)
+        based on changes to the DiscreteSlider (front).
+
+        _syncing options is to avoid infinite loop.
+
+        event.name is either value or value_throttled.
+        """
+
         values = self.values
-        if self.value not in values:
-            self.value = values[0]
+        if getattr(self, event.name) not in values:
+            with param.edit_constant(self):
+                setattr(self, event.name, values[0])
             return
-        index = self.values.index(self.value)
+        index = self.values.index(getattr(self, event.name))
         if self._syncing:
             return
         try:
             self._syncing = True
-            self._slider.value = index
+            with param.edit_constant(self._slider):
+                setattr(self._slider, event.name, index)
+            if event.name == 'value':
+                with param.discard_events(self._text):
+                    self._text.value = self.labels[index]
         finally:
             self._syncing = False
 
     def _update_style(self, *events):
-        style = {p: getattr(self, p) for p in Layoutable.param if p != 'name'}
+        style = {p: getattr(self, p) for p in self._style_params}
         margin = style.pop('margin')
         if isinstance(margin, tuple):
             if len(margin) == 2:
@@ -250,25 +279,43 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
             t = r = b = l = margin
         text_margin = (t, 0, 0, l)
         slider_margin = (0, r, b, l)
-        self._text.param.set_param(
-            margin=text_margin, **{k: v for k, v in style.items() if k != 'style'})
+        text_style = {k: v for k, v in style.items()
+                      if k not in ('style', 'orientation')}
+        self._text.param.set_param(margin=text_margin, **text_style)
         self._slider.param.set_param(margin=slider_margin, **style)
         if self.width:
             style['width'] = self.width + l + r
-        self._composite.param.set_param(**style)
+        col_style = {k: v for k, v in style.items()
+                     if k != 'orientation'}
+        self._composite.param.set_param(**col_style)
 
     def _sync_value(self, event):
+        """
+        This will update the DiscreteSlider (front)
+        based on changes to the IntSlider (behind the scene).
+
+        _syncing options is to avoid infinite loop.
+
+        event.name is either value or value_throttled.
+        """
+
         if self._syncing:
             return
         try:
             self._syncing = True
-            self.value = self.values[event.new]
+            with param.edit_constant(self):
+                setattr(self, event.name, self.values[event.new])
         finally:
             self._syncing = False
 
-    def _get_embed_state(self, root, max_opts=3):
+    def _get_embed_state(self, root, values=None, max_opts=3):
         model = self._composite[1]._models[root.ref['id']][0]
-        return self, model, self.values, lambda x: x.value, 'value', 'cb_obj.value'
+        if values is None:
+            values = self.values
+        elif any(v not in self.values for v in values):
+            raise ValueError("Supplieed embed states were not found "
+                             "in the %s widgets' values list." % type(self).__name__)
+        return self, model, values, lambda x: x.value, 'value', 'cb_obj.value'
 
     @property
     def labels(self):
@@ -288,9 +335,9 @@ class RangeSlider(_SliderBase):
     format = param.ClassSelector(class_=string_types+(TickFormatter,), doc="""
         Allows defining a custom format string or bokeh TickFormatter.""")
 
-    value = param.NumericTuple(default=(0, 1), length=2)
+    value = param.Range(default=(0, 1))
 
-    value_throttled = param.NumericTuple(default=None, length=2)
+    value_throttled = param.Range(default=None, constant=True)
 
     start = param.Number(default=0)
 
@@ -342,7 +389,7 @@ class DateRangeSlider(_SliderBase):
 
     value = param.Tuple(default=(None, None), length=2)
 
-    value_throttled = param.Tuple(default=None, length=2)
+    value_throttled = param.Tuple(default=None, length=2, constant=True)
 
     start = param.Date(default=None)
 

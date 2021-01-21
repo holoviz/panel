@@ -6,6 +6,7 @@ from __future__ import absolute_import, division, unicode_literals
 from bokeh.core.properties import String, Override, Dict, Any, List, Bool, Enum
 from bokeh.models import HTMLBox
 
+from ..util import classproperty, bundled_files
 from .enums import ace_themes
 
 
@@ -15,19 +16,34 @@ class AcePlot(HTMLBox):
     a Bokeh plot.
     """
 
-    __javascript__ = [
-        'https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.7/ace.js',
-        'https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.7/ext-language_tools.js'
+    __javascript_raw__ = [
+        'https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.11/ace.js',
+        'https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.11/ext-language_tools.js',
+        'https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.11/ext-modelist.js'
     ]
 
-    __js_skip__ = {'ace': __javascript__}
+    __tarball__ = {
+        'tar': 'https://registry.npmjs.org/ace-builds/-/ace-builds-1.4.11.tgz',
+        'src': 'package/src-min/',
+        'dest': 'ajax/libs/1.4.11',
+        'exclude': ['snippets']
+    }
+
+    @classproperty
+    def __javascript__(cls):
+        return bundled_files(cls)
+
+    @classproperty
+    def __js_skip__(cls):
+        return {'ace': cls.__javascript__}
 
     __js_require__ = {
         'paths': {
             ('ace', ('ace/ace', 'ace/ext-language_tools')): '//cdnjs.cloudflare.com/ajax/libs/ace/1.4.7'},
         'exports': {'ace': 'ace'},
         'shim': {
-            'ace/ext-language_tools': { 'deps': ["ace/ace"] }
+            'ace/ext-language_tools': { 'deps': ["ace/ace"] },
+            'ace/ext-modelist': { 'deps': ["ace/ace"] }
         }
     }
 
@@ -35,11 +51,15 @@ class AcePlot(HTMLBox):
 
     theme = Enum(ace_themes, default='chrome')
 
-    language = String(default='python')
+    filename = String()
+
+    language = String()
 
     annotations = List(Dict(String, Any), default=[])
 
     readonly = Bool(default=False)
+
+    print_margin = Bool(default=False)
 
     height = Override(default=300)
 

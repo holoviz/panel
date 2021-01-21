@@ -8,7 +8,7 @@ import ast
 import json
 
 from base64 import b64decode
-from datetime import datetime
+from datetime import datetime, date
 from six import string_types
 
 import param
@@ -17,10 +17,12 @@ from bokeh.models.widgets import (
     CheckboxGroup as _BkCheckboxGroup, ColorPicker as _BkColorPicker,
     DatePicker as _BkDatePicker, Div as _BkDiv, TextInput as _BkTextInput,
     PasswordInput as _BkPasswordInput, Spinner as _BkSpinner,
-    FileInput as _BkFileInput, TextAreaInput as _BkTextAreaInput)
+    FileInput as _BkFileInput, TextAreaInput as _BkTextAreaInput,
+    NumericInput as _BkNumericInput)
 
+from ..layout import Column
 from ..util import as_unicode
-from .base import Widget
+from .base import Widget, CompositeWidget
 
 
 class TextInput(Widget):
@@ -56,9 +58,13 @@ class FileInput(Widget):
 
     accept = param.String(default=None)
 
-    filename = param.String(default=None)
+    filename = param.ClassSelector(default=None, class_=(str, list),
+                               is_instance=True)
 
-    mime_type = param.String(default=None)
+    mime_type = param.ClassSelector(default=None, class_=(str, list),
+                               is_instance=True)
+
+    multiple = param.Boolean(default=False)
 
     value = param.Parameter(default=None)
 
@@ -83,7 +89,10 @@ class FileInput(Widget):
     def _process_property_change(self, msg):
         msg = super(FileInput, self)._process_property_change(msg)
         if 'value' in msg:
-            msg['value'] = b64decode(msg['value'])
+            if isinstance(msg['value'], string_types):
+                msg['value'] = b64decode(msg['value'])
+            else:
+                msg['value'] = [b64decode(content) for content in msg['value']]
         return msg
 
     def save(self, filename):
@@ -131,13 +140,17 @@ class StaticText(Widget):
 
 class DatePicker(Widget):
 
-    value = param.Date(default=None)
+    value = param.CalendarDate(default=None)
 
-    start = param.Date(default=None)
+    start = param.CalendarDate(default=None)
 
-    end = param.Date(default=None)
+    end = param.CalendarDate(default=None)
 
-    _source_transforms = {'value': None, 'start': None, 'end': None}
+    disabled_dates = param.List(default=None, class_=(date, str))
+
+    enabled_dates = param.List(default=None, class_=(date, str))
+
+    _source_transforms = {}
 
     _rename = {'start': 'min_date', 'end': 'max_date', 'name': 'title'}
 
@@ -161,30 +174,108 @@ class ColorPicker(Widget):
     _rename = {'value': 'color', 'name': 'title'}
 
 
-class Spinner(Widget):
+class _NumericInputBase(Widget):
 
-    start = param.Number(default=None, doc="""
-        Optional minimum allowable value.""")
-
-    end = param.Number(default=None, doc="""
-        Optional maximum allowable value.""")
-
-    value = param.Number(default=0, doc="""
+    value = param.Number(default=0, allow_None=True, doc="""
         The initial value of the spinner.""")
 
-    step = param.Number(default=1, doc="""
-        The step added or subtracted to the current value.""")
+    placeholder = param.String(default='0', doc="""
+        Placeholder for empty input field.""")
+
+    format = param.String(default=None, allow_None=True, doc="""
+        Number formating : http://numbrojs.com/old-format.html .""")
+
+    _rename = {'name': 'title', 'start': 'low', 'end': 'high'}
+
+    _widget_type = _BkNumericInput
+
+    __abstract = True
+
+
+class _IntInputBase(_NumericInputBase):
+
+    value = param.Integer(default=0, allow_None=True, doc="""
+        The initial value of the spinner.""")
+
+    start = param.Integer(default=None, allow_None=True, doc="""
+        Optional minimum allowable value.""")
+
+    end = param.Integer(default=None, allow_None=True, doc="""
+        Optional maximum allowable value.""")
+
+    mode = param.String(default='int', constant=True, doc="""
+        Define the type of number which can be enter in the input""")
+
+    __abstract = True
+
+
+class _FloatInputBase(_NumericInputBase):
+
+    value = param.Number(default=0, allow_None=True, doc="""
+        The initial value of the spinner.""")
+
+    start = param.Number(default=None, allow_None=True, doc="""
+        Optional minimum allowable value.""")
+
+    end = param.Number(default=None, allow_None=True, doc="""
+        Optional maximum allowable value.""")
+
+    mode = param.String(default='float', constant=True, doc="""
+        Define the type of number which can be enter in the input""")
+
+    __abstract = True
+
+
+class _SpinnerBase(_NumericInputBase):
+
+    page_step_multiplier = param.Integer(default=10, bounds=(0, None), doc="""
+        Defines the multiplication factor applied to step when the page up
+        and page down keys are pressed.""")
+
+    wheel_wait = param.Integer(default=100, doc="""
+        Defines the debounce time in ms before updating `value_throttled` when
+        the mouse wheel is used to change the input.""")
 
     _widget_type = _BkSpinner
 
-    _rename = {'name': 'title', 'start': 'low', 'end': 'high'}
+    __abstract = True
 
     def __init__(self, **params):
         if params.get('value') is None:
             value = params.get('start', self.value)
             if value is not None:
                 params['value'] = value
-        super(Spinner, self).__init__(**params)
+        if 'value' in params and 'value_throttled' in self.param:
+            params['value_throttled'] = params['value']
+        super(_SpinnerBase, self).__init__(**params)
+
+
+class IntInput(_SpinnerBase, _IntInputBase):
+
+    step = param.Integer(default=1)
+
+    value_throttled = param.Integer(default=None, constant=True)
+
+
+class FloatInput(_SpinnerBase, _FloatInputBase):
+
+    step = param.Number(default=0.1)
+
+    value_throttled = param.Number(default=None, constant=True)
+
+
+class NumberInput(_SpinnerBase):
+
+    def __new__(self, **params):
+        param_list = ["value", "start", "stop", "step"]
+        if all(isinstance(params.get(p, 0), int) for p in param_list):
+            return IntInput(**params)
+        else:
+            return FloatInput(**params)
+
+
+# Backward compatibility
+Spinner = NumberInput
 
 
 class LiteralInput(Widget):
@@ -266,13 +357,13 @@ class LiteralInput(Widget):
     def _process_param_change(self, msg):
         msg = super(LiteralInput, self)._process_param_change(msg)
         if 'value' in msg:
-            value = '' if msg['value'] is None else msg['value']
+            value = msg['value']
             if isinstance(value, string_types):
                 value = repr(value)
             elif self.serializer == 'json':
-                value = json.dumps(value, sort_keys=True)
+                value = json.dumps(value)
             else:
-                value = as_unicode(value)
+                value = '' if value is None else as_unicode(value)
             msg['value'] = value
         msg['title'] = self.name
         return msg
@@ -351,6 +442,64 @@ class DatetimeInput(LiteralInput):
         return msg
 
 
+class DatetimeRangeInput(CompositeWidget):
+
+    value = param.Tuple(default=(None, None), length=2)
+
+    start = param.Date(default=None)
+
+    end = param.Date(default=None)
+
+    _composite_type = Column
+
+    def __init__(self, **params):
+        self._text = StaticText(margin=(5, 0, 0, 0), style={'white-space': 'nowrap'})
+        self._start = DatetimeInput(sizing_mode='stretch_width', margin=(5, 0, 0, 0))
+        self._end = DatetimeInput(sizing_mode='stretch_width', margin=(5, 0, 0, 0))
+        if 'value' not in params:
+            params['value'] = (params['start'], params['end'])
+        super().__init__(**params)
+        self._msg = ''
+        self._composite.extend([self._text, self._start, self._end])
+        self._updating = False
+        self._update_widgets()
+        self._update_label()
+
+    @param.depends('name', '_start.name', '_end.name', watch=True)
+    def _update_label(self):
+        self._text.value = f'{self.name}{self._start.name}{self._end.name}{self._msg}'
+
+    @param.depends('_start.value', '_end.value', watch=True)
+    def _update(self):
+        if self._updating:
+            return
+        if (self._start.value is not None and
+            self._end.value is not None and
+            self._start.value > self._end.value):
+            self._msg = ' (start of range must be <= end)'
+            self._update_label()
+            return
+        elif self._msg:
+            self._msg = ''
+            self._update_label()
+        try:
+            self._updating = True
+            self.value = (self._start.value, self._end.value)
+        finally:
+            self._updating = False
+
+    @param.depends('value', 'start', 'end', 'name', watch=True)
+    def _update_widgets(self):
+        if self._updating:
+            return
+        try:
+            self._updating = True
+            self._start.param.set_param(value=self.value[0], start=self.start, end=self.end)
+            self._end.param.set_param(value=self.value[1], start=self.start, end=self.end)
+        finally:
+            self._updating = False
+
+
 class Checkbox(Widget):
 
     value = param.Boolean(default=False)
@@ -381,7 +530,7 @@ class Checkbox(Widget):
             msg['labels'] = [msg.pop('labels')]
         return msg
 
-    def _get_embed_state(self, root, max_opts=3):
+    def _get_embed_state(self, root, values=None, max_opts=3):
         return (self, self._models[root.ref['id']][0], [False, True],
                 lambda x: str(0 in x.active).lower(), 'active',
                 "String(cb_obj.active.indexOf(0) >= 0)")

@@ -1,0 +1,19 @@
+#header {
+  box-shadow: 5px 5px 20px silver;
+}
+
+:root {
+  --mdc-theme-primary: #00aa41 !important;
+  --mdc-theme-on-primary:  #ffffff !important;
+  --mdc-theme-secondary: #424342 !important;
+  --mdc-theme-on-secondary:  #ffffff !important;
+  --mdc-theme-error:  #b00020 !important;
+  --mdc-theme-on-error:  #ffffff !important;
+  --mdc-theme-surface:  #ffffff !important;
+  --mdc-theme-on-surface:  #000000 !important;
+  --mdc-theme-background:  #ffffff !important;
+  --mdc-shape-small:  4px;
+  --mdc-shape-medium:  4px;
+  --mdc-shape-large:  0px;
+  --mdc-typography--font-family:  "Roboto";
+}

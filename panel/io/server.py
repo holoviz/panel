@@ -3,28 +3,42 @@ Utilities for creating bokeh Server instances.
 """
 from __future__ import absolute_import, division, unicode_literals
 
+import datetime as dt
+import inspect
 import os
 import signal
 import sys
 import threading
 import uuid
 
+from collections import OrderedDict
 from contextlib import contextmanager
-from functools import partial
-from types import FunctionType
+from functools import partial, wraps
+from types import FunctionType, MethodType
 
+import param
+import bokeh
+import bokeh.command.util
+
+from bokeh.application import Application as BkApplication
+from bokeh.application.handlers.function import FunctionHandler
 from bokeh.document.events import ModelChangedEvent
+from bokeh.embed.bundle import extension_dirs
+from bokeh.io import curdoc
 from bokeh.server.server import Server
+from tornado.ioloop import IOLoop
 from tornado.websocket import WebSocketHandler
-from tornado.web import RequestHandler
+from tornado.web import RequestHandler, StaticFileHandler
 from tornado.wsgi import WSGIContainer
 
 from .state import state
 
-
 #---------------------------------------------------------------------
 # Private API
 #---------------------------------------------------------------------
+
+# Handle serving of the panel extension before session is loaded
+extension_dirs['panel'] = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'dist'))
 
 INDEX_HTML = os.path.join(os.path.dirname(__file__), '..', '_templates', "index.html")
 
@@ -40,19 +54,138 @@ def _server_url(url, port):
     else:
         return 'http://%s:%d%s' % (url.split(':')[0], port, "/")
 
-def _eval_panel(panel, server_id, title, doc):
-    from ..template import Template
+
+def init_doc(doc):
+    doc = doc or curdoc()
+    if not doc.session_context:
+        return doc
+
+    session_id = doc.session_context.id
+    sessions = state.session_info['sessions']
+    if session_id not in sessions:
+        return doc
+
+    sessions[session_id].update({
+        'started': dt.datetime.now().timestamp()
+    })
+    doc.on_event('document_ready', state._init_session)
+    return doc
+
+
+@contextmanager
+def set_curdoc(doc):
+    state.curdoc = doc
+    yield
+    state.curdoc = None
+
+
+def _eval_panel(panel, server_id, title, location, doc):
+    from ..template import BaseTemplate
     from ..pane import panel as as_panel
 
-    if isinstance(panel, FunctionType):
-        panel = panel()
-    if isinstance(panel, Template):
-        return panel._modify_doc(server_id, title, doc)
-    return as_panel(panel)._modify_doc(server_id, title, doc)
+    with set_curdoc(doc):
+        if isinstance(panel, (FunctionType, MethodType)):
+            panel = panel()
+        if isinstance(panel, BaseTemplate):
+            doc = panel._modify_doc(server_id, title, doc, location)
+        else:
+            doc = as_panel(panel)._modify_doc(server_id, title, doc, location)
+        return doc
+
+
+def async_execute(func):
+    """
+    Wrap async event loop scheduling to ensure that with_lock flag
+    is propagated from function to partial wrapping it.
+    """
+    if not state.curdoc or not state.curdoc.session_context:
+        ioloop = IOLoop.current()
+        event_loop = ioloop.asyncio_loop
+        if event_loop.is_running():
+            ioloop.add_callback(func)
+        else:
+            event_loop.run_until_complete(func())
+        return
+
+    if isinstance(func, partial) and hasattr(func.func, 'lock'):
+        unlock = not func.func.lock
+    else:
+        unlock = not getattr(func, 'lock', False)
+    if unlock:
+        @wraps(func)
+        async def wrapper(*args, **kw):
+            return await func(*args, **kw)
+        wrapper.nolock = True
+    else:
+        wrapper = func
+    state.curdoc.add_next_tick_callback(wrapper)
+
+
+param.parameterized.async_executor = async_execute
+
+
+class Application(BkApplication):
+
+    async def on_session_created(self, session_context):
+        for cb in state._on_session_created:
+            cb(session_context)
+        await super().on_session_created(session_context)
+
+bokeh.command.util.Application = Application
+
+
+def _initialize_session_info(session_context):
+    from ..config import config
+    session_id = session_context.id
+    sessions = state.session_info['sessions']
+    if config.session_history == 0 or session_id in sessions:
+        return
+
+    state.session_info['total'] += 1
+    if config.session_history > 0 and len(sessions) >= config.session_history:
+        old_history = list(sessions.items())
+        sessions = OrderedDict(old_history[-(config.session_history-1):])
+        state.session_info['sessions'] = sessions
+    sessions[session_id] = {
+        'launched': dt.datetime.now().timestamp(),
+        'started': None,
+        'rendered': None,
+        'ended': None,
+        'user_agent': session_context.request.headers.get('User-Agent')
+    }
+
+state.on_session_created(_initialize_session_info)
 
 #---------------------------------------------------------------------
 # Public API
 #---------------------------------------------------------------------
+
+
+def with_lock(func):
+    """
+    Wrap a callback function to execute with a lock allowing the
+    function to modify bokeh models directly.
+
+    Arguments
+    ---------
+    func: callable
+      The callable to wrap
+
+    Returns
+    -------
+    wrapper: callable
+      Function wrapped to execute without a Document lock.
+    """
+    if inspect.iscoroutinefunction(func):
+        @wraps(func)
+        async def wrapper(*args, **kw):
+            return await func(*args, **kw)
+    else:
+        @wraps(func)
+        def wrapper(*args, **kw):
+            return func(*args, **kw)
+    wrapper.lock = True
+    return wrapper
 
 
 @contextmanager
@@ -63,7 +196,7 @@ def unlocked():
     on current sessions.
     """
     curdoc = state.curdoc
-    if curdoc is None or curdoc.session_context is None:
+    if curdoc is None or curdoc.session_context is None or curdoc.session_context.session is None:
         yield
         return
     connections = curdoc.session_context.session._subscribed_connections
@@ -100,8 +233,9 @@ def unlocked():
             curdoc.unhold()
 
 
-def serve(panels, port=0, websocket_origin=None, loop=None, show=True,
-          start=True, title=None, verbose=True, **kwargs):
+def serve(panels, port=0, address=None, websocket_origin=None, loop=None,
+          show=True, start=True, title=None, verbose=True, location=True,
+          threaded=False, **kwargs):
     """
     Allows serving one or more panel objects on a single server.
     The panels argument should be either a Panel object or a function
@@ -112,11 +246,13 @@ def serve(panels, port=0, websocket_origin=None, loop=None, show=True,
 
     Arguments
     ---------
-    panel: Viewable, function or {str: Viewable}
+    panel: Viewable, function or {str: Viewable or function}
       A Panel object, a function returning a Panel object or a
       dictionary mapping from the URL slug to either.
     port: int (optional, default=0)
       Allows specifying a specific port
+    address : str
+      The address the server should listen on for HTTP requests.
     websocket_origin: str or list(str) (optional)
       A list of hosts that can connect to the websocket.
 
@@ -130,15 +266,34 @@ def serve(panels, port=0, websocket_origin=None, loop=None, show=True,
       Whether to open the server in a new browser tab on start
     start : boolean(optional, default=False)
       Whether to start the Server
-    title: str (optional, default=None)
-      An HTML title for the application
+    title: str or {str: str} (optional, default=None)
+      An HTML title for the application or a dictionary mapping
+      from the URL slug to a customized title
     verbose: boolean (optional, default=True)
       Whether to print the address and port
+    location : boolean or panel.io.location.Location
+      Whether to create a Location component to observe and
+      set the URL location.
+    threaded: boolean (default=False)
+      Whether to start the server on a new Thread
     kwargs: dict
       Additional keyword arguments to pass to Server instance
     """
-    return get_server(panels, port, websocket_origin, loop, show, start,
-                      title, verbose, **kwargs)
+    kwargs = dict(kwargs, **dict(
+        port=port, address=address, websocket_origin=websocket_origin,
+        loop=loop, show=show, start=start, title=title, verbose=verbose,
+        location=location
+    ))
+    if threaded:
+        from tornado.ioloop import IOLoop
+        kwargs['loop'] = loop = IOLoop() if loop is None else loop
+        server = StoppableThread(
+            target=get_server, io_loop=loop, args=(panels,), kwargs=kwargs
+        )
+        server.start()
+    else:
+        server = get_server(panels, **kwargs)
+    return server
 
 
 class ProxyFallbackHandler(RequestHandler):
@@ -158,8 +313,33 @@ class ProxyFallbackHandler(RequestHandler):
         self.on_finish()
 
 
-def get_server(panel, port=0, websocket_origin=None, loop=None,
-               show=False, start=False, title=None, verbose=False, **kwargs):
+def get_static_routes(static_dirs):
+    """
+    Returns a list of tornado routes of StaticFileHandlers given a
+    dictionary of slugs and file paths to serve.
+    """
+    patterns = []
+    for slug, path in static_dirs.items():
+        if not slug.startswith('/'):
+            slug = '/' + slug
+        if slug == '/static':
+            raise ValueError("Static file route may not use /static "
+                             "this is reserved for internal use.")
+        path = os.path.abspath(path)
+        if not os.path.isdir(path):
+            raise ValueError("Cannot serve non-existent path %s" % path)
+        patterns.append(
+            (r"%s/(.*)" % slug, StaticFileHandler, {"path": path})
+        )
+    return patterns
+
+
+def get_server(panel, port=0, address=None, websocket_origin=None,
+               loop=None, show=False, start=False, title=None,
+               verbose=False, location=True, static_dirs={},
+               oauth_provider=None, oauth_key=None, oauth_secret=None,
+               oauth_extra_params={}, cookie_secret=None,
+               oauth_encryption_key=None, session_history=None, **kwargs):
     """
     Returns a Server instance with this panel attached as the root
     app.
@@ -171,6 +351,8 @@ def get_server(panel, port=0, websocket_origin=None, loop=None,
       dictionary mapping from the URL slug to either.
     port: int (optional, default=0)
       Allows specifying a specific port
+    address : str
+      The address the server should listen on for HTTP requests.
     websocket_origin: str or list(str) (optional)
       A list of hosts that can connect to the websocket.
 
@@ -179,30 +361,66 @@ def get_server(panel, port=0, websocket_origin=None, loop=None,
 
       If None, "localhost" is used.
     loop : tornado.ioloop.IOLoop (optional, default=IOLoop.current())
-      The tornado IOLoop to run the Server on
+      The tornado IOLoop to run the Server on.
     show : boolean (optional, default=False)
-      Whether to open the server in a new browser tab on start
+      Whether to open the server in a new browser tab on start.
     start : boolean(optional, default=False)
-      Whether to start the Server
-    title: str (optional, default=None)
-      An HTML title for the application
+      Whether to start the Server.
+    title : str or {str: str} (optional, default=None)
+      An HTML title for the application or a dictionary mapping
+      from the URL slug to a customized title.
     verbose: boolean (optional, default=False)
-      Whether to report the address and port
+      Whether to report the address and port.
+    location : boolean or panel.io.location.Location
+      Whether to create a Location component to observe and
+      set the URL location.
+    static_dirs: dict (optional, default={})
+      A dictionary of routes and local paths to serve as static file
+      directories on those routes.
+    oauth_provider: str
+      One of the available OAuth providers
+    oauth_key: str (optional, default=None)
+      The public OAuth identifier
+    oauth_secret: str (optional, default=None)
+      The client secret for the OAuth provider
+    oauth_extra_params: dict (optional, default={})
+      Additional information for the OAuth provider
+    cookie_secret: str (optional, default=None)
+      A random secret string to sign cookies (required for OAuth)
+    oauth_encryption_key: str (optional, default=False)
+      A random encryption key used for encrypting OAuth user
+      information and access tokens.
+    session_history: int (optional, default=None)
+      The amount of session history to accumulate. If set to non-zero
+      and non-None value will launch a REST endpoint at
+      /rest/session_info, which returns information about the session
+      history.
     kwargs: dict
-      Additional keyword arguments to pass to Server instance
+      Additional keyword arguments to pass to Server instance.
 
     Returns
     -------
     server : bokeh.server.server.Server
       Bokeh Server instance running this panel
     """
-    from tornado.ioloop import IOLoop
+    from ..config import config
+    from .rest import REST_PROVIDERS
 
     server_id = kwargs.pop('server_id', uuid.uuid4().hex)
     kwargs['extra_patterns'] = extra_patterns = kwargs.get('extra_patterns', [])
     if isinstance(panel, dict):
         apps = {}
         for slug, app in panel.items():
+            if isinstance(title, dict):
+                try:
+                    title_ = title[slug]
+                except KeyError:
+                    raise KeyError(
+                        "Keys of the title dictionnary and of the apps "
+                        f"dictionary must match. No {slug} key found in the "
+                        "title dictionnary.") 
+            else:
+                title_ = title
             slug = slug if slug.startswith('/') else '/'+slug
             if 'flask' in sys.modules:
                 from flask import Flask
@@ -215,24 +433,51 @@ def get_server(panel, port=0, websocket_origin=None, loop=None,
                     extra_patterns.append(('^'+slug+'.*', ProxyFallbackHandler,
                                            dict(fallback=wsgi, proxy=slug)))
                     continue
-            apps[slug] = partial(_eval_panel, app, server_id, title)
+            apps[slug] = Application(FunctionHandler(partial(_eval_panel, app, server_id, title_, location)))
     else:
-        apps = {'/': partial(_eval_panel, panel, server_id, title)}
+        apps = {'/': Application(FunctionHandler(partial(_eval_panel, panel, server_id, title, location)))}
+
+    extra_patterns += get_static_routes(static_dirs)
+
+    if session_history is not None:
+        config.session_history = session_history
+    if config.session_history != 0:
+        pattern = REST_PROVIDERS['param']([], 'rest')
+        extra_patterns.extend(pattern)
+        state.publish('session_info', state, ['session_info'])
 
     opts = dict(kwargs)
     if loop:
         loop.make_current()
         opts['io_loop'] = loop
-    else:
+    elif opts.get('num_procs', 1) == 1:
         opts['io_loop'] = IOLoop.current()
 
     if 'index' not in opts:
         opts['index'] = INDEX_HTML
 
+    if address is not None:
+        opts['address'] = address
+
     if websocket_origin:
         if not isinstance(websocket_origin, list):
             websocket_origin = [websocket_origin]
         opts['allow_websocket_origin'] = websocket_origin
+
+    # Configure OAuth
+    from ..config import config
+    if config.oauth_provider:
+        from ..auth import OAuthProvider
+        opts['auth_provider'] = OAuthProvider()
+    if oauth_provider:
+        config.oauth_provider = oauth_provider
+    if oauth_key:
+        config.oauth_key = oauth_key
+    if oauth_extra_params:
+        config.oauth_extra_params = oauth_extra_params
+    if cookie_secret:
+        config.cookie_secret = cookie_secret
+    opts['cookie_secret'] = config.cookie_secret
 
     server = Server(apps, port=port, **opts)
     if verbose:
@@ -243,7 +488,7 @@ def get_server(panel, port=0, websocket_origin=None, loop=None,
 
     if show:
         def show_callback():
-            server.show('/')
+            server.show('/login' if config.oauth_provider else '/')
         server.io_loop.add_callback(show_callback)
 
     def sig_exit(*args, **kwargs):
@@ -269,18 +514,9 @@ def get_server(panel, port=0, websocket_origin=None, loop=None,
 class StoppableThread(threading.Thread):
     """Thread class with a stop() method."""
 
-    def __init__(self, io_loop=None, timeout=1000, **kwargs):
-        from tornado import ioloop
+    def __init__(self, io_loop=None, **kwargs):
         super(StoppableThread, self).__init__(**kwargs)
-        self._stop_event = threading.Event()
         self.io_loop = io_loop
-        self._cb = ioloop.PeriodicCallback(self._check_stopped, timeout)
-        self._cb.start()
-
-    def _check_stopped(self):
-        if self.stopped:
-            self._cb.stop()
-            self.io_loop.stop()
 
     def run(self):
         if hasattr(self, '_target'):
@@ -301,8 +537,4 @@ class StoppableThread(threading.Thread):
                 del self._Thread__target, self._Thread__args, self._Thread__kwargs
 
     def stop(self):
-        self._stop_event.set()
-
-    @property
-    def stopped(self):
-        return self._stop_event.is_set()
+        self.io_loop.add_callback(self.io_loop.stop)

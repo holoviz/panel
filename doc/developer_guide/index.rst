@@ -51,7 +51,7 @@ source repository, issue the following command:
 
 .. code-block:: sh
 
-    git clone https://github.com/pyviz/panel.git
+    git clone https://github.com/holoviz/panel.git
 
 This will create a ``panel`` directory at your file system
 location. This ``panel`` directory is referred to as the *source
@@ -106,7 +106,6 @@ following:
 The above command installs Panel's dependencies using conda, then
 performs a pip editable install of Panel.
 
-
 Developing custom models
 ------------------------
 
@@ -124,6 +123,17 @@ Just like any other Javascript (or Typescript) library Panel defines a
 removing a dependency in the package.json file ensure you commit the
 changes to the `package-lock.json` after running `npm install`.
 
+Bundling resources
+------------------
+
+Panel bundles external resources required for custom models and templates
+into the `panel/dist` directory. The bundled resources have to be collected
+whenever they change, so rerun `pip
+install -e .` or `python setup.py develop` whenever you change one of the following:
+
+* A new model is added with a `__javascript_raw__` declaration or an existing model is updated
+* A new template with a `_resources` declaration is added or an existing template is updated
+* A CSS file in one of template directories (`panel/template/*/`) is added or modified
 
 Next Steps
 ----------

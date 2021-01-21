@@ -6,6 +6,7 @@ from __future__ import absolute_import, division, unicode_literals
 
 import json
 import uuid
+import sys
 
 from contextlib import contextmanager
 from collections import OrderedDict
@@ -24,6 +25,7 @@ from bokeh.embed.util import standalone_docs_json_and_render_items
 from bokeh.embed.wrappers import wrap_in_script_tag
 from bokeh.models import LayoutDOM, Model
 from bokeh.resources import CDN, INLINE
+from bokeh.settings import settings, _Unset
 from bokeh.util.serialization import make_id
 from pyviz_comms import (
     PYVIZ_PROXY, Comm, JupyterCommManager as _JupyterCommManager, nb_mime_js
@@ -64,11 +66,17 @@ def push(doc, comm, binary=True):
         comm.send(json.dumps(header))
         comm.send(buffers=[payload])
 
+
+def push_on_root(ref):
+    (self, root, doc, comm) = state._views[ref]
+    if comm and 'embedded' not in root.tags:
+        push(doc, comm)
+
 DOC_NB_JS = _env.get_template("doc_nb_js.js")
 AUTOLOAD_NB_JS = _env.get_template("autoload_panel_js.js")
 NB_TEMPLATE_BASE = _env.get_template('nb_template.html')
 
-def _autoload_js(bundle, configs, requirements, exports, skip_imports, load_timeout=5000):
+def _autoload_js(bundle, configs, requirements, exports, skip_imports, ipywidget, load_timeout=5000):
     return AUTOLOAD_NB_JS.render(
         bundle    = bundle,
         force     = True,
@@ -76,7 +84,8 @@ def _autoload_js(bundle, configs, requirements, exports, skip_imports, load_time
         configs   = configs,
         requirements = requirements,
         exports   = exports,
-        skip_imports = skip_imports
+        skip_imports = skip_imports,
+        ipywidget = ipywidget
     )
 
 
@@ -129,15 +138,22 @@ def render_template(document, comm=None, manager=None):
 def render_model(model, comm=None):
     if not isinstance(model, Model):
         raise ValueError("notebook_content expects a single Model instance")
+    from ..config import panel_extension as pnext
 
     target = model.ref['id']
 
     (docs_json, [render_item]) = standalone_docs_json_and_render_items([model], True)
     div = div_for_render_item(render_item)
     render_item = render_item.to_json()
+    requirements = [pnext._globals[ext] for ext in pnext._loaded_extensions
+                    if ext in pnext._globals]
+    ipywidget = 'ipywidgets_bokeh' in sys.modules
+
     script = DOC_NB_JS.render(
         docs_json=serialize_json(docs_json),
         render_items=serialize_json([render_item]),
+        requirements=requirements,
+        ipywidget=ipywidget
     )
     bokeh_script, bokeh_div = script, div
     html = "<div id='{id}'>{html}</div>".format(id=target, html=bokeh_div)
@@ -147,7 +163,7 @@ def render_model(model, comm=None):
             {EXEC_MIME: {'id': target}})
 
 
-def render_mimebundle(model, doc, comm, manager=None):
+def render_mimebundle(model, doc, comm, manager=None, location=None):
     """
     Displays bokeh output inside a notebook using the PyViz display
     and comms machinery.
@@ -157,6 +173,9 @@ def render_mimebundle(model, doc, comm, manager=None):
     add_to_doc(model, doc, True)
     if manager is not None:
         doc.add_root(manager)
+    if location is not None:
+        loc = location._get_model(doc, model, model, comm)
+        doc.add_root(loc)
     return render_model(model, comm)
 
 
@@ -195,10 +214,21 @@ def load_notebook(inline=True, load_timeout=5000):
     from IPython.display import publish_display_data
 
     resources = INLINE if inline else CDN
-    bundle = bundle_for_objs_and_resources(None, resources)
-    configs, requirements, exports, skip_imports = require_components()
+    prev_resources = settings.resources(default="server")
+    user_resources = settings.resources._user_value is not _Unset
+    try:
+        settings.resources = 'inline' if inline else 'cdn'
+        bundle = bundle_for_objs_and_resources(None, resources)
+        configs, requirements, exports, skip_imports = require_components()
+        ipywidget = 'ipywidgets_bokeh' in sys.modules
+        bokeh_js = _autoload_js(bundle, configs, requirements, exports,
+                                skip_imports, ipywidget, load_timeout)
+    finally:
+        if user_resources:
+            settings.resources = prev_resources
+        else:
+            settings.resources.unset_value()
 
-    bokeh_js = _autoload_js(bundle, configs, requirements, exports, skip_imports, load_timeout)
     publish_display_data({
         'application/javascript': bokeh_js,
         LOAD_MIME: bokeh_js,
@@ -236,8 +266,8 @@ def show_server(panel, notebook_url, port):
     else:
         origin = _origin_url(notebook_url)
     server_id = uuid.uuid4().hex
-    server = get_server(panel, port, origin, start=True, show=False,
-                        server_id=server_id)
+    server = get_server(panel, port=port, websocket_origin=origin,
+                        start=True, show=False, server_id=server_id)
 
     if callable(notebook_url):
         url = notebook_url(server.port)
@@ -256,7 +286,8 @@ def show_server(panel, notebook_url, port):
 
 
 def show_embed(panel, max_states=1000, max_opts=3, json=False,
-               save_path='./', load_path=None, progress=True):
+               json_prefix='', save_path='./', load_path=None,
+               progress=True, states={}):
     """
     Renders a static version of a panel in a notebook by evaluating
     the set of states defined by the widgets in the model. Note
@@ -271,12 +302,16 @@ def show_embed(panel, max_states=1000, max_opts=3, json=False,
       The maximum number of states for a single widget
     json: boolean (default=True)
       Whether to export the data to json files
+    json_prefix: str (default='')
+      Prefix for JSON filename
     save_path: str (default='./')
       The path to save json files to
     load_path: str (default=None)
       The path or URL the json files will be loaded from.
     progress: boolean (default=False)
       Whether to report progress
+    states: dict (default={})
+      A dictionary specifying the widget values to embed for each widget
     """
     from IPython.display import publish_display_data
     from ..config import config
@@ -286,7 +321,8 @@ def show_embed(panel, max_states=1000, max_opts=3, json=False,
     with config.set(embed=True):
         model = panel.get_root(doc, comm)
         embed_state(panel, model, doc, max_states, max_opts,
-                    json, save_path, load_path)
+                    json, json_prefix, save_path, load_path, progress,
+                    states)
     publish_display_data(*render_model(model))
 
 
@@ -309,7 +345,7 @@ def ipywidget(obj, **kwargs):
     from jupyter_bokeh import BokehModel
     from ..pane import panel
     model = panel(obj, **kwargs).get_root()
-    widget = BokehModel(model)
+    widget = BokehModel(model, combine_events=True)
     if hasattr(widget, '_view_count'):
         widget._view_count = 0
         def view_count_changed(change, current=[model]):

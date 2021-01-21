@@ -91,7 +91,7 @@ def test_markdown_pane_extensions(document, comm):
     assert model.text.startswith('&lt;div class=&quot;codehilite')
 
     pane.extensions = ["extra", "smarty"]
-    assert model.text.startswith('&lt;pre&gt;&lt;code class=&quot;python')
+    assert model.text.startswith('&lt;pre&gt;&lt;code class=&quot;language-python')
 
 
 def test_html_pane(document, comm):
@@ -210,3 +210,13 @@ def test_json_pane(document, comm):
     # Cleanup
     pane._cleanup(model)
     assert pane._models == {}
+
+
+def test_json_pane_rerenders_on_depth_change(document, comm):
+    pane = JSON({'a': 2}, depth=2)
+
+    model = pane.get_root(document, comm=comm)
+
+    pane.depth = -1
+
+    assert model.depth is None

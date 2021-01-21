@@ -1,0 +1,123 @@
+body {
+  color: white;
+  background-color: #121212;
+}
+
+#header {
+  background-color: #2f2f2f;
+}
+
+#main {
+  color: white;
+  background-color: #121212;
+}
+
+#sidebar {
+  color: white;
+  border-color: #292929 !important;
+  background-color: #292929!important;
+}
+
+.bk.card {
+  color: white;
+  background-color: #2f2f2f;
+}
+
+#header-items {
+  color: white;
+}
+
+.bk.card-header {
+  color: white;
+  background-color: #292929 !important;
+}
+
+
+/* DataFrame Widget */
+.bk-root .slick-header-columns {
+  color: white;
+  font-weight: bold;
+  background: none;
+}
+
+.bk-root .slick-header-column:hover {
+  background: #292929;
+}
+
+.bk-root .slick-row.even {
+  background: none;
+}
+
+.bk-root .slick-row.odd {
+  background: #3f3f3f;
+}
+
+.bk-root .slick-cell.selected {
+  background: #3f3f80;
+}
+
+/* DataFrame Pane */
+table.panel-df {
+  color: white;
+}
+
+.panel-df tbody tr:nth-child(odd) {
+  background: #3f3f3f;
+}
+
+.panel-df tr:hover {
+    background: #3f3f80 !important;
+    cursor: pointer;
+}
+
+/* Tabs layout */
+.bk-root .bk-tabs-header .bk-tab {
+  color: white;
+  background: #2f2f2f;
+  border: none;
+}
+
+.bk-root .bk-tabs-header .bk-tab:hover {
+  color: white;
+  background: #4f4f4f;
+}
+
+.bk-root .bk-tabs-header .bk-tab.bk-active {
+  color: white;
+  background: #3f3f3f;
+  border: none;
+}
+
+.react-grid-item > .react-resizable-handle::after {
+  content: "";
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  width: 5px;
+  height: 5px;
+  border-right: 2px solid rgb(255, 255, 255,0.95);
+  border-bottom: 2px solid rgb(252, 252, 252,0.95);  // Update rgba values for color and transparency.
+}
+
+.drag-handle {
+  background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0Ij48cGF0aCBmaWxsPSJub25lIiBkPSJNMCAwaDI0djI0SDB6Ii8+PHBhdGggZmlsbD0id2hpdGUiIGQ9Ik0xNiAxM2w2Ljk2NCA0LjA2Mi0yLjk3My44NSAyLjEyNSAzLjY4MS0xLjczMiAxLTIuMTI1LTMuNjgtMi4yMjMgMi4xNUwxNiAxM3ptLTItN2gydjJoNWExIDEgMCAwIDEgMSAxdjRoLTJ2LTNIMTB2MTBoNHYySDlhMSAxIDAgMCAxLTEtMXYtNUg2di0yaDJWOWExIDEgMCAwIDEgMS0xaDVWNnpNNCAxNHYySDJ2LTJoMnptMC00djJIMnYtMmgyem0wLTR2MkgyVjZoMnptMC00djJIMlYyaDJ6bTQgMHYySDZWMmgyem00IDB2MmgtMlYyaDJ6bTQgMHYyaC0yVjJoMnoiLz48L3N2Zz4=');
+}
+
+html {
+  scrollbar-face-color: #646464;
+  scrollbar-base-color: #646464;
+  scrollbar-3dlight-color: #646464;
+  scrollbar-highlight-color: #646464;
+  scrollbar-track-color: #000;
+  scrollbar-arrow-color: #000;
+  scrollbar-shadow-color: #646464;
+  scrollbar-dark-shadow-color: #646464;
+}
+
+::-webkit-scrollbar { width: 12px; height: 3px;}
+::-webkit-scrollbar-button {  background-color: #666; }
+::-webkit-scrollbar-track {  background-color: #646464;}
+::-webkit-scrollbar-track-piece { background-color: #000;}
+::-webkit-scrollbar-thumb { height: 50px; background-color: #666; border-radius: 3px;}
+::-webkit-scrollbar-corner { background-color: #646464;}}
+::-webkit-resizer { background-color: #666;}

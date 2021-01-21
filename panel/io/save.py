@@ -71,7 +71,7 @@ def save_png(model, filename, template=None, template_variables=None):
 def save(panel, filename, title=None, resources=None, template=None,
          template_variables=None, embed=False, max_states=1000,
          max_opts=3, embed_json=False, json_prefix='', save_path='./',
-         load_path=None, progress=True):
+         load_path=None, progress=True, embed_states={}):
     """
     Saves Panel objects to file.
 
@@ -105,6 +105,8 @@ def save(panel, filename, title=None, resources=None, template=None,
       The path or URL the json files will be loaded from.
     progress: boolean (default=True)
       Whether to report progress
+    embed_states: dict (default={})
+      A dictionary specifying the widget values to embed for each widget
     """
     from ..pane import PaneBase
     from ..template import Template
@@ -131,7 +133,7 @@ def save(panel, filename, title=None, resources=None, template=None,
             if embed:
                 embed_state(
                     panel, model, doc, max_states, max_opts, embed_json,
-                    json_prefix, save_path, load_path, progress
+                    json_prefix, save_path, load_path, progress, embed_states
                 )
             else:
                 add_to_doc(model, doc, True)

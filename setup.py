@@ -35,9 +35,17 @@ def get_setup_version(reponame):
 
 def _build_paneljs():
     from bokeh.ext import build
+    from panel.compiler import bundle_resources
     print("Building custom models:")
     panel_dir = os.path.join(os.path.dirname(__file__), "panel")
     build(panel_dir)
+    print("Bundling custom model resources:")
+    bundle_resources()
+    if sys.platform != "win32":
+        # npm can cause non-blocking stdout; so reset it just in case
+        import fcntl
+        flags = fcntl.fcntl(sys.stdout, fcntl.F_GETFL)
+        fcntl.fcntl(sys.stdout, fcntl.F_SETFL, flags&~os.O_NONBLOCK)
 
 
 class CustomDevelopCommand(develop):
@@ -89,10 +97,11 @@ except Exception:
 ########## dependencies ##########
 
 install_requires = [
-    'bokeh >=2.0.0',
-    'param >=1.9.3',
+    'bokeh >=2.3.0dev11',
+    'param >=1.10.0',
     'pyviz_comms >=0.7.4',
     'markdown',
+    'requests',
     'tqdm',
     'pyct >=0.4.4'
 ]
@@ -114,6 +123,10 @@ _tests = [
     'pytest-cov',
     'codecov',
     'folium',
+    'ipympl',
+    'twine',
+    'pandas',
+    'ipython >=7.0'
 ]
 
 extras_require = {
@@ -128,12 +141,18 @@ extras_require = {
         'datashader',
         'jupyter_bokeh',
         'django',
+        'channels',
         'pyvista',
+        'ipywidgets',
+        'ipywidgets_bokeh',
+        'ipyvolume',
+        'ipyleaflet'
     ],
     'tests': _tests,
     'recommended': _recommended,
     'doc': _recommended + [
         'nbsite >=0.6.1',
+        'nbconvert <6.0',
         'sphinx_holoviz_theme',
         'selenium',
         'phantomjs',
@@ -154,9 +173,7 @@ extras_require['build'] = [
     'pyct >=0.4.4',
     'setuptools >=30.3.0',
     'bokeh >=2.0.0',
-    'pyviz_comms >=0.6.0',
-    # non-python dependency
-    'nodejs >=9.11.1',
+    'pyviz_comms >=0.6.0'
 ]
 
 setup_args = dict(
@@ -201,8 +218,9 @@ setup_args = dict(
     python_requires=">=3.6",
     entry_points={
         'console_scripts': [
-            'panel = panel.cli:main'
-        ]},
+            'panel = panel.command:main'
+        ]
+    },
     install_requires=install_requires,
     extras_require=extras_require,
     tests_require=extras_require['tests']
@@ -214,6 +232,20 @@ if __name__ == "__main__":
 
     if 'develop' not in sys.argv and 'egg_info' not in sys.argv:
         pyct.build.examples(example_path, __file__, force=True)
+
+    version = setup_args['version']
+    if 'post' not in version:
+        with open('./panel/package.json') as f:
+            package_json = json.load(f)
+        js_version = package_json['version']
+        version = version.split('+')[0]
+        if any(dev in version for dev in ('a', 'b', 'rc')) and not '-' in js_version:
+            raise ValueError(f"panel.js dev versions ({js_version}) must "
+                             "must separate dev suffix with a dash, e.g. "
+                             "v1.0.0rc1 should be v1.0.0-rc1.")
+        if version != 'None' and version != js_version.replace('-', ''):
+            raise ValueError(f"panel.js version ({js_version}) does not match "
+                             f"panel version ({version}). Cannot build release.")
 
     setup(**setup_args)
 

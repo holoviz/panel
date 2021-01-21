@@ -4,7 +4,8 @@ import param
 
 from bokeh.models import Div
 from panel.layout import Tabs, WidgetBox
-from panel.viewable import Layoutable, Reactive
+from panel.reactive import Reactive
+from panel.viewable import Layoutable
 from panel.widgets import Checkbox, StaticText, TextInput
 
 
@@ -58,7 +59,7 @@ def test_link_properties_nb(document, comm):
     # Assert callback is set up correctly
     cb = div._callbacks['text'][0]
     assert isinstance(cb, partial)
-    assert cb.args == (document, div.ref['id'])
+    assert cb.args == (document, div.ref['id'], comm)
     assert cb.func == obj._comm_change
 
 

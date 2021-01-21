@@ -8,13 +8,13 @@ from functools import partial
 
 import param
 
-from bokeh.io import curdoc as _curdoc
 from bokeh.models.layouts import GridBox as _BkGridBox
 
-from ..io import push, state, unlocked
+from ..io import init_doc, push, state, unlocked
 from ..layout import Panel, Row
 from ..links import Link
-from ..viewable import Viewable, Reactive, Layoutable
+from ..reactive import Reactive
+from ..viewable import Layoutable, Viewable
 from ..util import param_reprs
 
 
@@ -150,7 +150,7 @@ class PaneBase(Reactive):
     def _update_object(self, ref, doc, root, parent, comm):
         old_model = self._models[ref][0]
         if self._updates:
-            self._update(old_model)
+            self._update(ref, old_model)
         else:
             new_model = self._get_model(doc, root, parent, comm)
             try:
@@ -195,7 +195,7 @@ class PaneBase(Reactive):
                 else:
                     cb()
 
-    def _update(self, model):
+    def _update(self, ref=None, model=None):
         """
         If _updates=True this method is used to update an existing
         Bokeh model instead of replacing the model entirely. The
@@ -235,7 +235,7 @@ class PaneBase(Reactive):
             object = old_object
         return type(self)(object, **params)
 
-    def get_root(self, doc=None, comm=None):
+    def get_root(self, doc=None, comm=None, preprocess=True):
         """
         Returns the root model and applies pre-processing hooks
 
@@ -245,17 +245,20 @@ class PaneBase(Reactive):
           Bokeh document the bokeh model will be attached to.
         comm: pyviz_comms.Comm
           Optional pyviz_comms when working in notebook
+        preprocess: boolean (default=True)
+          Whether to run preprocessing hooks
 
         Returns
         -------
         Returns the bokeh model corresponding to this panel object
         """
-        doc = doc or _curdoc()
+        doc = init_doc(doc)
         if self._updates:
             root = self._get_model(doc, comm=comm)
         else:
             root = self.layout._get_model(doc, comm=comm)
-        self._preprocess(root)
+        if preprocess:
+            self._preprocess(root)
         ref = root.ref['id']
         state._views[ref] = (self, root, doc, comm)
         return root
@@ -342,49 +345,62 @@ class ReplacementPane(PaneBase):
         Updating of the object should be handled manually.
         """
 
-    def _update_inner(self, new_object):
-        pane_type = self.get_pane_type(new_object)
+    @classmethod
+    def _update_from_object(cls, object, old_object, was_internal, **kwargs):
+        pane_type = cls.get_pane_type(object)
         try:
-            links = Link.registry.get(new_object)
+            links = Link.registry.get(object)
         except TypeError:
             links = []
         custom_watchers = False
-        if isinstance(new_object, Reactive):
+        if isinstance(object, Reactive):
             watchers = [
-                w for pwatchers in new_object._param_watchers.values()
+                w for pwatchers in object._param_watchers.values()
                 for awatchers in pwatchers.values() for w in awatchers
             ]
-            custom_watchers = [wfn for wfn in watchers if wfn not in new_object._callbacks]
+            custom_watchers = [wfn for wfn in watchers if wfn not in object._callbacks]
 
-        if type(self._pane) is pane_type and not links and not custom_watchers and self._internal:
+        pane, internal = None, was_internal
+        if type(old_object) is pane_type and not links and not custom_watchers and was_internal:
             # If the object has not external referrers we can update
             # it inplace instead of replacing it
-            if isinstance(new_object, Reactive):
-                pvals = dict(self._pane.param.get_param_values())
-                new_params = {k: v for k, v in new_object.param.get_param_values()
+            if isinstance(object, Reactive):
+                pvals = dict(old_object.param.get_param_values())
+                new_params = {k: v for k, v in object.param.get_param_values()
                               if k != 'name' and v is not pvals[k]}
-                self._pane.param.set_param(**new_params)
+                old_object.param.set_param(**new_params)
             else:
-                self._pane.object = new_object
+                old_object.object = object
         else:
             # Replace pane entirely
-            kwargs = dict(self.param.get_param_values(), **self._kwargs)
-            del kwargs['object']
-            self._pane = panel(new_object, **{k: v for k, v in kwargs.items()
-                                              if k in pane_type.param})
-            if new_object is self._pane:
+            pane = panel(object, **{k: v for k, v in kwargs.items()
+                                    if k in pane_type.param})
+            if pane is object:
                 # If all watchers on the object are internal watchers
                 # we can make a clone of the object and update this
                 # clone going forward, otherwise we have replace the
                 # model entirely which is more expensive.
                 if not (custom_watchers or links):
-                    self._pane = self._pane.clone()
-                    self._internal = True
+                    pane = object.clone()
+                    internal = True
                 else:
-                    self._internal = False
+                    internal = False
             else:
-                self._internal = new_object is not self._pane
-            self._inner_layout[0] = self._pane
+                internal = object is not old_object
+        return pane, internal
+
+    def _update_inner(self, new_object):
+        kwargs = dict(self.param.get_param_values(), **self._kwargs)
+        del kwargs['object']
+        new_pane, internal = self._update_from_object(
+            new_object, self._pane, self._internal, **kwargs
+        )
+        if new_pane is None:
+            return
+
+        self._pane = new_pane
+        self._inner_layout[0] = self._pane
+        self._internal = internal
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         if root:

@@ -2,18 +2,37 @@ import * as p from "@bokehjs/core/properties"
 import {div} from "@bokehjs/core/dom"
 import {Widget, WidgetView} from "@bokehjs/models/widgets/widget"
 
+
+function press(btn_list: HTMLButtonElement[]): void {
+  btn_list.forEach((btn) => btn.style.borderStyle = 'inset')
+}
+
+function unpress(btn_list: HTMLButtonElement[]): void {
+  btn_list.forEach((btn) => btn.style.borderStyle = 'outset')
+}
+
 export class PlayerView extends WidgetView {
   model: Player
 
+  protected groupEl: HTMLDivElement
   protected sliderEl: HTMLInputElement
   protected loop_state: HTMLFormElement
   protected timer: any
+  protected _toggle_reverse: CallableFunction
+  protected _toogle_pause: CallableFunction
+  protected _toggle_play: CallableFunction
 
   connect_signals(): void {
     super.connect_signals()
     this.connect(this.model.change, () => this.render())
     this.connect(this.model.properties.value.change, () => this.render())
     this.connect(this.model.properties.loop_policy.change, () => this.set_loop_state(this.model.loop_policy))
+    this.connect(this.model.properties.show_loop_controls.change, () => {
+      if (this.model.show_loop_controls && this.loop_state.parentNode != this.groupEl)
+        this.groupEl.appendChild(this.loop_state)
+      else if (!this.model.show_loop_controls && this.loop_state.parentNode == this.groupEl)
+        this.el.removeChild(this.loop_state)
+    })
   }
 
   get_height(): number {
@@ -24,29 +43,36 @@ export class PlayerView extends WidgetView {
     if (this.sliderEl == null) {
       super.render()
     } else {
-      this.sliderEl.style.width = `{this.model.width}px`
-      this.sliderEl.min = String(this.model.start);
-      this.sliderEl.max = String(this.model.end);
-      this.sliderEl.value = String(this.model.value);
+      this.sliderEl.min = String(this.model.start)
+      this.sliderEl.max = String(this.model.end)
+      this.sliderEl.value = String(this.model.value)
       return
     }
 
+    // Layout to group the elements
+    this.groupEl = div()
+    this.groupEl.style.display = "flex"
+    this.groupEl.style.flexDirection = "column"
+    this.groupEl.style.alignItems = "center"
+
     // Slider
     this.sliderEl = document.createElement('input')
-    this.sliderEl.setAttribute("type", "range");
-    this.sliderEl.style.width = this.model.width+'px'
-    this.sliderEl.value = String(this.model.value);
-    this.sliderEl.min = String(this.model.start);
-    this.sliderEl.max = String(this.model.end);
+    this.sliderEl.style.width = "100%"
+    this.sliderEl.setAttribute("type", "range")
+    this.sliderEl.value = String(this.model.value)
+    this.sliderEl.min = String(this.model.start)
+    this.sliderEl.max = String(this.model.end)
     this.sliderEl.onchange = (ev) => this.set_frame(parseInt((ev.target as HTMLInputElement).value))
 
     // Buttons
-    const button_div = div() as any;
-    button_div.style.cssText = "margin: 0 auto; display: table; padding: 5px"
-    const button_style = "text-align: center; min-width: 40px; margin: 2px";
+    const button_div = div() as any
+    button_div.style.cssText = "margin: 0 auto; display: flex; padding: 5px; align-items: stretch; width: 100%;"
+
+    const button_style_small = "text-align: center; min-width: 20px; flex-grow: 1; margin: 2px";
+    const button_style = "text-align: center; min-width: 40px; flex-grow: 2; margin: 2px";
 
     const slower = document.createElement('button')
-    slower.style.cssText = "text-align: center; min-width: 20px"
+    slower.style.cssText = button_style_small
     slower.appendChild(document.createTextNode('–'))
     slower.onclick = () => this.slower()
     button_div.appendChild(slower)
@@ -94,10 +120,24 @@ export class PlayerView extends WidgetView {
     button_div.appendChild(last)
 
     const faster = document.createElement('button')
-    faster.style.cssText = "text-align: center; min-width: 20px"
+    faster.style.cssText = button_style_small
     faster.appendChild(document.createTextNode('+'))
     faster.onclick = () => this.faster()
     button_div.appendChild(faster)
+
+    // toggle
+    this._toggle_reverse = () => {
+      unpress([pause, play])
+      press([reverse])
+    }
+    this._toogle_pause = () => {
+      unpress([reverse, play])
+      press([pause])
+    }
+    this._toggle_play = () => {
+      unpress([reverse, pause])
+      press([play])
+    }
 
     // Loop control
     this.loop_state = document.createElement('form')
@@ -142,9 +182,13 @@ export class PlayerView extends WidgetView {
     this.loop_state.appendChild(reflect)
     this.loop_state.appendChild(reflect_label)
 
-    this.el.appendChild(this.sliderEl)
-    this.el.appendChild(button_div)
-    this.el.appendChild(this.loop_state)
+
+
+    this.groupEl.appendChild(this.sliderEl)
+    this.groupEl.appendChild(button_div)
+    if (this.model.show_loop_controls)
+      this.groupEl.appendChild(this.loop_state)
+    this.el.appendChild(this.groupEl)
   }
 
   set_frame(frame: number): void {
@@ -240,6 +284,7 @@ export class PlayerView extends WidgetView {
   }
 
   pause_animation(): void {
+    this._toogle_pause()
     this.model.direction = 0;
     if (this.timer) {
       clearInterval(this.timer);
@@ -249,6 +294,7 @@ export class PlayerView extends WidgetView {
 
   play_animation(): void {
     this.pause_animation();
+    this._toggle_play()
     this.model.direction = 1;
     if (!this.timer)
       this.timer = setInterval(() => this.anim_step_forward(), this.model.interval);
@@ -256,6 +302,7 @@ export class PlayerView extends WidgetView {
 
   reverse_animation(): void {
     this.pause_animation();
+    this._toggle_reverse()
     this.model.direction = -1;
     if (!this.timer)
       this.timer = setInterval(() => this.anim_step_reverse(), this.model.interval);
@@ -272,6 +319,7 @@ export namespace Player {
     step: p.Property<number>
     loop_policy: p.Property<any>
     value: p.Property<any>
+    show_loop_controls: p.Property<boolean>
   }
 }
 
@@ -291,15 +339,16 @@ export class Player extends Widget {
     this.prototype.default_view = PlayerView
 
     this.define<Player.Props>({
-      direction:         [ p.Number,      0            ],
-      interval:          [ p.Number,      500          ],
-      start:             [ p.Number,                   ],
-      end:               [ p.Number,                   ],
-      step:              [ p.Number,      1            ],
-      loop_policy:       [ p.Any,         "once"       ],
-      value:             [ p.Any,         0            ],
+      direction:          [ p.Number,      0            ],
+      interval:           [ p.Number,      500          ],
+      start:              [ p.Number,                   ],
+      end:                [ p.Number,                   ],
+      step:               [ p.Number,      1            ],
+      loop_policy:        [ p.Any,         "once"       ],
+      value:              [ p.Any,         0            ],
+      show_loop_controls: [ p.Boolean,     true         ],
     })
 
-    this.override({width: 400})
+    this.override<Player.Props>({width: 400})
   }
 }

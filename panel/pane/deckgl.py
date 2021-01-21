@@ -124,8 +124,15 @@ class DeckGL(PaneBase):
             data = dict(self.object.__dict__)
             mapbox_api_key = data.pop('mapbox_key', self.mapbox_api_key)
             deck_widget = data.pop('deck_widget', None)
-            tooltip = deck_widget.tooltip
-            data = recurse_data(data)
+            tooltip = self.tooltips if isinstance(self.tooltips, dict) else deck_widget.tooltip
+            data = {k: v for k, v in recurse_data(data).items() if v is not None}
+
+        # Delete undefined width and height
+        for view in data.get('views', []):
+            if view.get('width', False) is None:
+                view.pop('width')
+            if view.get('height', False) is None:
+                view.pop('height')
 
         if layout:
             properties = {p: getattr(self, p) for p in Layoutable.param
@@ -212,7 +219,7 @@ class DeckGL(PaneBase):
         self._models[root.ref["id"]] = (model, parent)
         return model
 
-    def _update(self, model):
+    def _update(self, ref=None, model=None):
         data, properties = self._get_properties(layout=False)
         self._update_sources(data, model.data_sources)
         properties['data'] = data

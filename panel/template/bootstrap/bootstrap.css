@@ -1,0 +1,114 @@
+body {
+  height: 100vh
+}
+
+#container {
+  padding:0px;
+}
+
+#content {
+  height: 100vh;
+  margin: 0px;
+}
+
+#sidebar {
+  padding: 15px;
+  transition: all 0.2s cubic-bezier(0.945, 0.020, 0.270, 0.665);
+  transform-origin: center left; /* Set the transformed position of sidebar to center left side. */
+  overflow-y: scroll;
+}
+
+#sidebar.active {
+  margin-left: -16.7%;
+}
+
+#main {
+  overflow-y: scroll;
+  padding-bottom: 20px;
+  padding-right: 30px;
+}
+
+#sidebarCollapse {
+  background: none;
+  border: none;
+}
+
+#header-items {
+  width: 100%;
+  margin-left: 15px;
+}
+
+a.navbar-brand {
+  padding-left: 10px;
+  display: flex;
+  align-items: center;
+  font-size: 1.5em;
+}
+
+.title {
+  color: #fff;
+  text-decoration: none;
+  text-decoration-line: none;
+  text-decoration-style: initial;
+  text-decoration-color: initial;
+  font-weight: 400;
+  font-size: 1.5em;
+  line-height: 2em;
+  white-space: nowrap;
+}
+
+.app-header {
+  display: contents;
+  padding-left: 10px;
+}
+
+img.app-logo {
+  padding-right: 10px;
+  font-size: 28px;
+  height: 30px;
+  max-width: inherit;
+}
+
+p.bk.card-button {
+  display: none;
+}
+
+.pn-modal {
+  overflow-y: scroll;
+  width: 100%;
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.pn-modal-content {
+  background-color: #fefefe;
+  margin: auto;
+  margin-top: 25px;
+  margin-bottom: 25px;
+  padding: 15px 20px 20px 20px;
+  border: 1px solid #888;
+  width: 80% !important;
+}
+
+.pn-modal-close {
+  position: absolute;
+  right: 25px;
+  z-index: 100;
+}
+
+.pn-modal-close:hover,
+.pn-modal-close:focus {
+  color: #000;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.pn-busy-container {
+  align-items: center;
+  justify-content: center;
+  display: flex;
+  margin-left: auto;
+}
+

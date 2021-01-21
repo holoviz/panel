@@ -36,7 +36,6 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'django.contrib.staticfiles',
     # These are required to connect bokeh
     'channels',
     'bokeh.server.django',
@@ -122,7 +121,3 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 STATICFILES_DIRS = [bokehjsdir()]
-
-# Ensure that bokeh resources are loaded from CDN
-# (loading from server broken as of Bokeh 2.0.1 so only CDN and INLINE will work)
-settings.resources = 'cdn'

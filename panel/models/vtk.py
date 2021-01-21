@@ -3,12 +3,39 @@
 Defines custom VTKPlot bokeh model to render VTK objects.
 """
 from bokeh.core.properties import (String, Bool, Dict, Any, Override,
-                                   Instance, Int, Float, PositiveInt, Enum)
+                                   Instance, Int, Float, PositiveInt,
+                                   Enum, List)
 from bokeh.core.has_props import abstract
 from bokeh.core.enums import enumeration
-from bokeh.models import HTMLBox, Model
+from bokeh.models import HTMLBox, Model, ColorMapper
 
-vtk_cdn = "https://unpkg.com/vtk.js"
+from ..util import classproperty, bundled_files
+
+vtk_cdn = "https://unpkg.com/vtk.js@14.16.4/dist/vtk.js"
+
+class VTKAxes(Model):
+    """
+    A Bokeh model for axes
+    """
+
+    axes_opacity = Float(default=1)
+
+    digits = Int(default=1)
+
+    fontsize = PositiveInt(default=12)
+
+    grid_opacity = Float(default=0.1)
+
+    origin = Any()
+
+    show_grid = Bool(default=True)
+
+    xticker = Dict(String, Any)
+
+    yticker = Dict(String, Any)
+
+    zticker = Dict(String, Any)
+
 
 @abstract
 class AbstractVTKPlot(HTMLBox):
@@ -17,63 +44,63 @@ class AbstractVTKPlot(HTMLBox):
     renders it inside a Bokeh plot.
     """
 
-    __javascript__ = [vtk_cdn]
+    __javascript_raw__ = [vtk_cdn]
 
-    __js_skip__ = {'vtk': [vtk_cdn]}
+    @classproperty
+    def __javascript__(cls):
+        return bundled_files(AbstractVTKPlot)
+
+    @classproperty
+    def __js_skip__(cls):
+        return {'vtk': cls.__javascript__}
 
     __js_require__ = {
         "paths": {"vtk": vtk_cdn[:-3]},
         "exports": {"vtk": None},
         "shim": {
-            "vtk": {"exports": "vtk"}
+            "vtk": {"exports": "vtk"},
         }
     }
 
-    renderer_el = Any(readonly=True)
-
-    orientation_widget = Bool(default=False)
+    axes = Instance(VTKAxes)
 
     camera = Dict(String, Any)
 
+    color_mappers = List(Instance(ColorMapper))
+
     height = Override(default=300)
+
+    orientation_widget = Bool(default=False)
+
+    interactive_orientation_widget = Bool(default=False)
 
     width = Override(default=300)
 
 
-class VTKAxes(Model):
+class VTKSynchronizedPlot(AbstractVTKPlot):
     """
-    A Bokeh model for axes
+    Bokeh model for plotting a VTK render window
     """
 
-    xticker = Dict(String, Any)
+    arrays = Dict(String, Any)
 
-    yticker = Dict(String, Any)
+    arrays_processed = List(String)
 
-    zticker = Dict(String, Any)
+    enable_keybindings = Bool(default=False)
 
-    origin = Any()
+    one_time_reset = Bool(default=False)
 
-    digits = Int(default=1)
+    rebuild = Bool(default=False, help="""If true when scene change all the render is rebuilt from scratch""")
 
-    show_grid = Bool(default=True)
-
-    grid_opacity = Float(default=0.1)
-
-    axes_opacity = Float(default=1)
-
-    fontsize = PositiveInt(default=12)
+    scene = Dict(String, Any, help="""The serialized vtk.js scene on json format""")
 
 
-
-class VTKPlot(AbstractVTKPlot):
+class VTKJSPlot(AbstractVTKPlot):
     """
-    Bokeh model dedicated to plot a vtk render window with only 3D geometry objects
-    (Volumes are not suported)
+    Bokeh model for plotting a 3D scene saved in the `.vtk-js` format
     """
 
     data = String(help="""The serialized vtk.js data""")
-
-    axes = Instance(VTKAxes)
 
     enable_keybindings = Bool(default=False)
 
@@ -81,28 +108,36 @@ class VTKPlot(AbstractVTKPlot):
 class VTKVolumePlot(AbstractVTKPlot):
     """
     Bokeh model dedicated to plot a volumetric object with the help of vtk-js
-    (3D geometry objects are not suported)
     """
-
-    data = Dict(String, Any)
-
-    colormap = String(help="Colormap Name")
-
-    rescale = Bool(default=False)
-
-    shadow = Bool(default=True)
-
-    sampling = Float(default=0.4)
-
-    edge_gradient = Float(default=0.2)
 
     ambient = Float(default=0.2)
 
+    colormap = String(help="Colormap Name")
+
+    controller_expanded = Bool(default=True, help="""
+        If True the volume controller panel options is expanded in the view""")
+
+    data = Dict(String, Any)
+
     diffuse = Float(default=0.7)
 
-    specular = Float(default=0.3)
+    display_slices = Bool(default=False)
 
-    specular_power = Float(default=8.)
+    display_volume = Bool(default=True)
+
+    edge_gradient = Float(default=0.2)
+
+    interpolation = Enum(enumeration('fast_linear','linear','nearest'))
+
+    mapper = Dict(String, Any)
+
+    render_background = String(default='#52576e')
+
+    rescale = Bool(default=False)
+
+    sampling = Float(default=0.4)
+
+    shadow = Bool(default=True)
 
     slice_i = Int(default=0)
 
@@ -110,12 +145,6 @@ class VTKVolumePlot(AbstractVTKPlot):
 
     slice_k = Int(default=0)
 
-    display_volume = Bool(default=True)
+    specular = Float(default=0.3)
 
-    display_slices = Bool(default=False)
-
-    render_background = String(default='#52576e')
-
-    interpolation = Enum(enumeration('fast_linear','linear','nearest'))
-
-    mapper = Dict(String, Any)
+    specular_power = Float(default=8.)

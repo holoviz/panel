@@ -1,0 +1,201 @@
+body {
+  height: 100vh;
+  margin: 0px;
+  font-family: "Lato", sans-serif;
+  overflow-x: hidden;
+  overflow-y: hidden;
+}
+
+#container {
+  padding:0px;
+  width: 100vw;
+  max-width: 100vw;
+}
+
+#header{
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  box-shadow: 5px 5px 20px silver;
+}
+
+#header-items {
+  width: 100%;
+  padding-left:15px;
+}
+
+#app-title {
+  margin-right: 15px;
+  padding-left: 10px;
+}
+
+.title {
+  color: #fff;
+  text-decoration: none;
+  text-decoration-line: none;
+  text-decoration-style: initial;
+  text-decoration-color: initial;
+  font-weight: 400;
+  font-size: 1.5em;
+  line-height: 2em;
+  white-space: nowrap;
+}
+
+.app-header {
+  display: contents;
+  padding-left: 10px;
+}
+
+img.app-logo {
+  padding-right: 10px;
+  font-size: 28px;
+  height: 30px;
+  padding-top:11px;
+  padding-bottom: 7px;
+  max-width: inherit;
+}
+
+.pn-bar {
+  width: 20px;
+  height: 2px;
+  background-color: white;
+  margin: 4px 0;
+}
+
+.bk-canvas {
+  padding-right: 2px !important;
+}
+
+#content {
+  height: 100%;
+  margin: 0px;
+  width: 100vw;
+  display: inline-flex;
+}
+
+#sidebar-button {
+  font-size:30px;
+  cursor:pointer;
+  margin-left: 0.25em;
+  margin-right: 0.25em;
+}
+
+#sidebar {
+  transition: all 0.2s cubic-bezier(0.945, 0.020, 0.270, 0.665);
+  transform-origin: center left; /* Set the transformed position of sidebar to center left side. */
+  width: 290px;
+  height: calc(100vh - 101px);
+  padding-top: 10px;
+  padding-bottom: 20px;
+}
+
+#sidebar.active {
+  margin-left: -300px;
+}
+
+#main {
+  transition: all 0.2s cubic-bezier(0.945, 0.020, 0.270, 0.665);
+  overflow-y: scroll;
+  width: 100vw;
+  height: calc(100vh - 101px);
+  margin-left: 300px;
+  padding-right: 20px;
+  padding-bottom: 20px;
+  padding-top: 10px;
+  padding-left: 10px;
+  overflow-y: scroll;
+}
+
+#sidebar-button {
+  padding-right: 10px;
+}
+
+a.navbar-brand {
+  padding-left: 10px;
+}
+
+p.bk.card-button {
+  display: none;
+}
+
+.sidenav {
+  height: 100%;
+  padding-top: 10px;
+  padding-left: 10px;
+  position: absolute;
+  overflow-x: hidden;
+  overflow-y: scroll;
+}
+
+.bk.card-title {
+  position: absolute !important;
+}
+
+/* .sidenav a {
+  padding: 8px 8px 8px 32px;
+  text-decoration: none;
+  font-size: 25px;
+  color: #818181;
+  display: block;
+  transition: 0.3s;
+} */
+
+/* .sidenav a:hover {
+  color: #f1f1f1;
+} */
+
+.sidenav .closebtn {
+  position: absolute;
+  top: 0;
+  right: 25px;
+  font-size: 36px;
+  margin-left: 50px;
+}
+
+@media screen and (max-height: 450px) {
+  .sidenav {padding-top: 15px;}
+  .sidenav a {font-size: 1.2em;}
+}
+
+.nav.flex-column {
+  padding-inline-start: 0px;
+}
+
+.pn-modal {
+  overflow-y: scroll;
+  width: 100%;
+  position: absolute;
+  display: none;
+  top: 0;
+  left: 0;
+}
+
+.pn-modal-content {
+  background-color: #fefefe;
+  margin: auto;
+  margin-top: 25px;
+  margin-bottom: 25px;
+  padding: 15px 20px 20px 20px;
+  border: 1px solid #888;
+  width: 80% !important;
+}
+
+.pn-modal-close {
+  position: absolute;
+  right: 25px;
+  z-index: 100;
+}
+
+.pn-modal-close:hover,
+.pn-modal-close:focus {
+  color: #000;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.pn-busy-container {
+  align-items: center;
+  justify-content: center;
+  display: flex;
+  margin-left: auto;
+}

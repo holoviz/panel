@@ -53,7 +53,7 @@ def find_route(graph, current, target):
 
 def get_root(graph):
     """
-    Search for the root not by finding nodes without inputs.
+    Search for the root node by finding nodes without inputs.
     """
     # Find root node
     roots = []
@@ -107,7 +107,7 @@ def get_breadths(node, graph, depth=0, breadths=None):
 class Pipeline(param.Parameterized):
     """
     A Pipeline represents a directed graph of stages, which each
-    returns a panel object to render. A pipeline therefore represents
+    return a panel object to render. A pipeline therefore represents
     a UI workflow of multiple linear or branching stages.
 
     The Pipeline layout consists of a number of sub-components:
@@ -134,7 +134,7 @@ class Pipeline(param.Parameterized):
 
     The stages are declared using the add_stage method and must each
     be given a unique name. By default any stages will simply be
-    connected linearly, however an explicit graph can be declared using
+    connected linearly, but an explicit graph can be declared using
     the define_graph method.
     """
 
@@ -510,21 +510,22 @@ class Pipeline(param.Parameterized):
 
         nodes = hv.Nodes(nodes, ['x', 'y', 'Stage'], 'State').opts(
             alpha=0, default_tools=['tap'], hooks=[tap_renderer],
-            hover_alpha=0, selection_alpha=0, nonselection_alpha=0, size=10,
-            backend='bokeh')
+            hover_alpha=0, selection_alpha=0, nonselection_alpha=0,
+            axiswise=True, size=10, backend='bokeh'
+        )
         self._progress_sel.source = nodes
         graph = hv.Graph((edges, nodes)).opts(
             edge_hover_line_color='black', node_color='State', cmap=cmap,
             tools=[], default_tools=['hover'], selection_policy=None,
-            node_hover_fill_color='gray', backend='bokeh')
+            node_hover_fill_color='gray', axiswise=True, backend='bokeh')
         labels = hv.Labels(nodes, ['x', 'y'], 'Stage').opts(
-            yoffset=-.30, default_tools=[], backend='bokeh')
+            yoffset=-.30, default_tools=[], axiswise=True, backend='bokeh'
+        )
         plot = (graph * labels * nodes) if self._linear else (graph * nodes)
         plot.opts(
             xaxis=None, yaxis=None, min_width=400, responsive=True,
-            show_frame=False, height=height, xlim=(-0.25, depth+0.25), ylim=(0, 1),
-            default_tools=['hover'], toolbar=None,
-            backend='bokeh'
+            show_frame=False, height=height, xlim=(-0.25, depth+0.25),
+            ylim=(0, 1), default_tools=['hover'], toolbar=None, backend='bokeh'
         )
         return plot
 
@@ -613,6 +614,7 @@ class Pipeline(param.Parameterized):
             raise ValueError('Graph is not fully traversable from stage: %s.'
                              % root)
 
+        reinit = root is not self._stage
         self._stage = root
         self._graph = graph
         self._route = [root]
@@ -621,6 +623,7 @@ class Pipeline(param.Parameterized):
                 Column(self.prev_selector, self.prev_button),
                 Column(self.next_selector, self.next_button)
             ]
-        self.stage[:] = [self._init_stage()]
+        if reinit:
+            self.stage[:] = [self._init_stage()]
         self._update_progress()
         self._update_button()

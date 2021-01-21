@@ -2,18 +2,16 @@ import {div} from "@bokehjs/core/dom"
 import * as p from "@bokehjs/core/properties"
 import {HTMLBox} from "@bokehjs/models/layouts/html_box"
 
+import {transform_cds_to_records} from "./data"
 import {PanelHTMLBoxView, set_size} from "./layout"
 import {makeTooltip} from "./tooltips"
 
 import GL from '@luma.gl/constants';
 
-const deck = (window as any).deck;
-const mapboxgl = (window as any).mapboxgl;
-const loaders = (window as any).loaders;
-
 function extractClasses() {
   // Get classes for registration from standalone deck.gl
   const classesDict: any = {};
+  const deck = (window as any).deck;
   const classes = Object.keys(deck).filter(x => x.charAt(0) === x.charAt(0).toUpperCase());
   for (const cls of classes) {
     classesDict[cls] = deck[cls];
@@ -57,14 +55,14 @@ export class DeckGLPlotView extends PanelHTMLBoxView {
 
   initialize(): void {
     super.initialize()
-    if (deck.JSONConverter) {
-      const {CSVLoader, Tile3DLoader} = loaders
-      loaders.registerLoaders([Tile3DLoader, CSVLoader]);
+    if ((window as any).deck.JSONConverter) {
+      const {CSVLoader, Tile3DLoader} = (window as any).loaders;
+      (window as any).loaders.registerLoaders([Tile3DLoader, CSVLoader]);
       const jsonConverterConfiguration: any = {
         classes: extractClasses(),
         // Will be resolved as `<enum-name>.<enum-value>`
         enumerations: {
-          COORDINATE_SYSTEM: deck.COORDINATE_SYSTEM,
+          COORDINATE_SYSTEM: (window as any).deck.COORDINATE_SYSTEM,
           GL
         },
         // Constants that should be resolved with the provided values by JSON converter
@@ -72,7 +70,7 @@ export class DeckGLPlotView extends PanelHTMLBoxView {
           Tile3DLoader
         }
       };
-      this.jsonConverter = new deck.JSONConverter({
+      this.jsonConverter = new (window as any).deck.JSONConverter({
         configuration: jsonConverterConfiguration
       });
     }
@@ -91,20 +89,7 @@ export class DeckGLPlotView extends PanelHTMLBoxView {
         this._layer_map[n-1] = layer.data
         cds = this.model.data_sources[layer.data]
       }
-      const data: any = []
-      const columns = cds.columns()
-      for (let i = 0; i < cds.data[columns[0]].length; i++) {
-        const item: any = {}
-        for (const column of columns) {
-          const shape = cds._shapes[column]
-          if ((shape !== undefined) && (shape.length > 1) && (typeof shape[0] == "number"))
-            item[column] = cds.data[column].slice(i*shape[1], i*shape[1]+shape[1])
-          else
-            item[column] = cds.data[column][i]
-        }
-        data.push(item)
-      }
-      layer.data = data;
+      layer.data = transform_cds_to_records(cds);
     }
     if (render)
       this.updateDeck()
@@ -147,8 +132,8 @@ export class DeckGLPlotView extends PanelHTMLBoxView {
   updateDeck(): void {
     if (!this.deckGL) { this.render(); return; }
     const data = this.getData()
-    if (deck.updateDeck) {
-      deck.updateDeck(data, this.deckGL)
+    if ((window as any).deck.updateDeck) {
+      (window as any).deck.updateDeck(data, this.deckGL)
     } else {
       const results = this.jsonConverter.convert(data);
       this.deckGL.setProps(results);
@@ -159,10 +144,10 @@ export class DeckGLPlotView extends PanelHTMLBoxView {
     let deckgl;
     try {
       const props = this.jsonConverter.convert(jsonInput);
-      const getTooltip = makeTooltip(tooltip);
-      deckgl = new deck.DeckGL({
+      const getTooltip = makeTooltip(tooltip, props.layers);
+      deckgl = new (window as any).deck.DeckGL({
         ...props,
-        map: mapboxgl,
+        map: (window as any).mapboxgl,
         mapboxApiAccessToken: mapboxApiKey,
         container,
         getTooltip
@@ -182,8 +167,8 @@ export class DeckGLPlotView extends PanelHTMLBoxView {
     const tooltip = this.model.tooltip;
     const data = this.getData();
 
-    if (deck.createDeck) {
-      this.deckGL = deck.createDeck({
+    if ((window as any).deck.createDeck) {
+      this.deckGL = (window as any).deck.createDeck({
         mapboxApiKey: MAPBOX_API_KEY,
         container: container,
         jsonInput: data,
@@ -242,7 +227,7 @@ export class DeckGLPlot extends HTMLBox {
       viewState: [ p.Any ],
     })
 
-    this.override({
+    this.override<DeckGLPlot.Props>({
       height: 400,
       width: 600
     });

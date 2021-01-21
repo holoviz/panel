@@ -1,6 +1,7 @@
 import {InputWidget, InputWidgetView} from "@bokehjs/models/widgets/input_widget"
 
-import {bk_btn, bk_btn_type} from "@bokehjs/styles/buttons"
+import * as buttons from "@bokehjs/styles/buttons.css"
+import {input} from "@bokehjs/core/dom"
 
 import {ButtonType} from "@bokehjs/core/enums"
 import * as p from "@bokehjs/core/properties"
@@ -27,48 +28,164 @@ function dataURItoBlob(dataURI: string) {
 
 export class FileDownloadView extends InputWidgetView {
   model: FileDownload
-
   anchor_el: HTMLAnchorElement
+  _downloadable: boolean = false
+  _click_listener: any
+  _embed: boolean = false 
+  _prev_href: string | null = ""
+  _prev_download: string | null = ""
 
-  _initialized: boolean = false
+  protected input_el: HTMLInputElement
+
+  initialize(): void {
+    super.initialize()
+    if ( this.model.data && this.model.filename ) {
+      this._embed = true
+    }
+  }
 
   connect_signals(): void {
     super.connect_signals()
-    this.connect(this.model.properties.button_type.change, () => this.render())
-    this.connect(this.model.properties.data.change, () => this.render())
-    this.connect(this.model.properties.filename.change, () => this.render())
+    this.connect(this.model.properties.button_type.change, () => this._update_button_style())
+    this.connect(this.model.properties.filename.change, () => this._update_download())
+    this.connect(this.model.properties._transfers.change, () => this._handle_click())
     this.connect(this.model.properties.label.change, () => this._update_label())
+    this.connect(this.model.properties.disabled.change, () => this.set_disabled())
   }
-  
+
   render(): void {
     super.render()
+    this.group_el.style.display = "flex"
+    this.group_el.style.alignItems = "stretch"
+    // Create an anchor HTML element that is styled as a bokeh button.
+    // When its 'href' and 'download' attributes are set, it's a downloadable link:
+    // * A click triggers a download
+    // * A right click allows to "Save as" the file
+
+    // There are three main cases:
+    // 1. embed=True: The widget is a download link
+    // 2. auto=False: The widget is first a button and becomes a download link after the first click
+    // 3. auto=True: The widget is a button, i.e right click to "Save as..." won't work
     this.anchor_el = document.createElement('a')
-    this.anchor_el.classList.add(bk_btn)
-    this.anchor_el.classList.add(bk_btn_type(this.model.button_type))
-    this.anchor_el.textContent = this.model.label
-    if (this.model.data === null || this.model.filename === null) {
-      this.anchor_el.addEventListener("click", () => this.click())
-      this.group_el.appendChild(this.anchor_el)  
-      this._initialized = true
+    this._update_button_style()
+    this._update_label()
+
+    // Changing the disabled property calls render() so it needs to be handled here.
+    // This callback is inherited from ControlView in bokehjs.
+    if ( this.model.disabled ) {
+      this.anchor_el.setAttribute("disabled", "")
+      this._downloadable = false
+    } else {
+      this.anchor_el.removeAttribute("disabled")
+      // auto=False + toggle Disabled ==> Needs to reset the link as it was.
+      if ( this._prev_download ) {
+        this.anchor_el.download = this._prev_download
+      }
+      if ( this._prev_href ) {
+        this.anchor_el.href = this._prev_href
+      }
+      if ( this.anchor_el.download && this.anchor_el.download ) {
+        this._downloadable = true
+      }
+    }
+
+    // If embedded the button is just a download link.
+    // Otherwise clicks will be handled by the code itself, allowing for more interactivity.
+    if ( this._embed ) {
+      this._make_link_downloadable()
+    } else {
+      // Add a "click" listener, note that it's not going to
+      // handle right clicks (they won't increment 'clicks')
+      this._click_listener = this._increment_clicks.bind(this)
+      this.anchor_el.addEventListener("click", this._click_listener)
+    }
+    this.group_el.appendChild(this.anchor_el)
+
+    // If this is not added it will give the following error
+    // "Uncaught TypeError: t is undefined"
+    // This seems to be related to button do not have a value
+    // property.
+    this.input_el = input({
+      type: "bk_btn, bk_btn_type",
+    })
+    this.input_el.addEventListener("change", () => this.change_input())
+  }
+
+  _increment_clicks() : void {
+    this.model.clicks = this.model.clicks + 1
+  }
+
+  _handle_click() : void {
+
+    // When auto=False the button becomes a link which no longer
+    // requires being updated.
+    if ( !this.model.auto && this._downloadable) {
       return
     }
-    const blob = dataURItoBlob(this.model.data)
-    const uriContent = (URL as any).createObjectURL(blob)
-    this.anchor_el.href = uriContent
-    this.anchor_el.download = this.model.filename
-    //this.group_el.classList.add(bk_btn_group)
-    this.group_el.appendChild(this.anchor_el)
-    if (this.model.auto && this._initialized)
+
+    this._make_link_downloadable()
+ 
+    if ( !this._embed && this.model.auto ) {
+      // Temporarily removing the event listener to emulate a click
+      // event on the anchor link which will trigger a download.
+      this.anchor_el.removeEventListener("click", this._click_listener)
       this.anchor_el.click()
-    this._initialized = true
+
+      // In this case #3 the widget is not a link so these attributes are removed.
+      this.anchor_el.removeAttribute("href")
+      this.anchor_el.removeAttribute("download")
+
+      this.anchor_el.addEventListener("click", this._click_listener)
+    }
+
+    // Store the current state for handling changes of the disabled property.
+    this._prev_href = this.anchor_el.getAttribute("href")
+    this._prev_download = this.anchor_el.getAttribute("download")
+  }
+
+  _make_link_downloadable() : void {
+    this._update_href()
+    this._update_download()
+    if ( this.anchor_el.download && this.anchor_el.href ){
+      this._downloadable = true
+    }
+  }
+
+  _update_href() : void {
+    if ( this.model.data ) {
+      const blob = dataURItoBlob(this.model.data)
+      this.anchor_el.href = (URL as any).createObjectURL(blob)
+    }
+  }
+
+  _update_download() : void {
+    if ( this.model.filename ) {
+      this.anchor_el.download = this.model.filename
+    }
   }
 
   _update_label(): void {
     this.anchor_el.textContent = this.model.label
   }
 
-  click(): void {
-    this.model.clicks = this.model.clicks + 1
+  _update_button_style(): void{
+    if ( !this.anchor_el.hasAttribute("class") ){ // When the widget is rendered.
+      this.anchor_el.classList.add(buttons.btn)
+      this.anchor_el.classList.add(buttons[`btn_${this.model.button_type}` as const])
+    } else {  // When the button type is changed.
+      const prev_button_type = this.anchor_el.classList.item(1)
+      if ( prev_button_type ) {
+        this.anchor_el.classList.replace(prev_button_type, buttons[`btn_${this.model.button_type}` as const])
+      }
+    }
+  }
+
+  set_disabled(): void {
+    if (this.model.disabled){
+      this.anchor_el.setAttribute("disabled", "")
+    } else {
+      this.anchor_el.removeAttribute("disabled")
+    }
   }
 }
 
@@ -82,6 +199,7 @@ export namespace FileDownload {
     data: p.Property<string | null>
     label: p.Property<string>
     filename: p.Property<string | null>
+    _transfers: p.Property<number>
   }
 }
 
@@ -100,15 +218,16 @@ export class FileDownload extends InputWidget {
     this.prototype.default_view = FileDownloadView
 
     this.define<FileDownload.Props>({
-      auto:     [ p.Boolean, false ],
-      clicks:   [ p.Number,  0     ],
-      data:     [ p.String,  null  ],
-      label:    [ p.String,  "Download"  ],
-      filename: [ p.String,  null  ],
-      button_type: [ p.ButtonType, "default" ], // TODO (bev)
+      auto:         [ p.Boolean,        false ],
+      clicks:       [ p.Number,         0     ],
+      data:         [ p.NullString,     null  ],
+      label:        [ p.String,   "Download"  ],
+      filename:     [ p.String,         null  ],
+      button_type:  [ p.ButtonType, "default" ], // TODO (bev)
+      _transfers:   [ p.Number,          0    ],
     })
 
-    this.override({
+    this.override<FileDownload.Props>({
       title: "",
     })
   }

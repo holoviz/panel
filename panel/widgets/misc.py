@@ -12,14 +12,13 @@ from six import string_types
 import param
 import numpy as np
 
-from ..depends import depends
 from ..io.notebook import push
 from ..io.state import state
 from ..models import (
-    Audio as _BkAudio, VideoStream as _BkVideoStream, Progress as _BkProgress,
-    FileDownload as _BkFileDownload
+    Audio as _BkAudio, VideoStream as _BkVideoStream, FileDownload as _BkFileDownload
 )
 from .base import Widget
+from .indicators import Progress # noqa
 
 
 class _MediaBase(Widget):
@@ -132,32 +131,6 @@ class VideoStream(Widget):
                 push(doc, comm)
 
 
-class Progress(Widget):
-
-    active = param.Boolean(default=True, doc="""
-        If no value is set the active property toggles animation of the
-        progress bar on and off.""")
-
-    bar_color = param.ObjectSelector(default='success', objects=[
-        'primary', 'secondary', 'success', 'info', 'danger', 'warning',
-        'light', 'dark'])
-
-    max = param.Integer(default=100, doc="The maximum value of the progress bar.")
-
-    value = param.Integer(default=None, bounds=(0, 100), doc="""
-        The current value of the progress bar. If set to None the progress
-        bar will be indeterminate and animate depending on the active
-        parameter.""")
-
-    _rename = {'name': None}
-
-    _widget_type = _BkProgress
-
-    @depends('max', watch=True)
-    def _update_value_bounds(self):
-        self.param.value.bounds = (0, self.max)
-
-
 class FileDownload(Widget):
 
     auto = param.Boolean(default=True, doc="""
@@ -189,6 +162,8 @@ class FileDownload(Widget):
         The label of the download button""")
 
     _clicks = param.Integer(default=0)
+
+    _transfers = param.Integer(default=0)
 
     _mime_types = {
         'application': {
@@ -230,6 +205,11 @@ class FileDownload(Widget):
     def _update_default(self):
         self._default_label = False
 
+    @param.depends('file', watch=True)
+    def _update_filename(self):
+        if isinstance(self.file, str):
+            self.filename = os.path.basename(self.file)
+
     @param.depends('auto', 'file', 'filename', watch=True)
     def _update_label(self):
         label = 'Download' if self._synced or self.auto else 'Transfer'
@@ -254,15 +234,20 @@ class FileDownload(Widget):
     @param.depends('_clicks', watch=True)
     def _transfer(self):
         if self.file is None and self.callback is None:
+            if self.embed:
+                raise ValueError('Must provide a file or a callback '
+                                 'if it is to be embedded.')
             return
 
         from ..param import ParamFunction
-        filename = self.filename
         if self.callback is None:
             fileobj = self.file
         else:
             fileobj = ParamFunction.eval(self.callback)
-        if isinstance(fileobj, str) and os.path.isfile(fileobj):
+        filename = self.filename
+        if isinstance(fileobj, str):
+            if not os.path.isfile(fileobj):
+                raise FileNotFoundError('File "%s" not found.' % fileobj)
             with open(fileobj, 'rb') as f:
                 b64 = b64encode(f.read()).decode("utf-8")
             if filename is None:
@@ -276,7 +261,7 @@ class FileDownload(Widget):
                 raise ValueError('Must provide filename if file-like '
                                  'object is provided.')
         else:
-            raise ValueError('Cannot transfer unknown file type %s' %
+            raise ValueError('Cannot transfer unknown object of type %s' %
                              type(fileobj).__name__)
 
         ext = filename.split('.')[-1]
@@ -295,3 +280,4 @@ class FileDownload(Widget):
 
         self.param.set_param(data=data, filename=filename)
         self._update_label()
+        self._transfers += 1

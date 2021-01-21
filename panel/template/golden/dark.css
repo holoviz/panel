@@ -1,0 +1,131 @@
+@import url("https://golden-layout.com/assets/css/goldenlayout-dark-theme.css");
+
+body {
+  color: white;
+  background-color: #121212;
+}
+
+#header {
+  background-color: #2f2f2f;
+}
+
+#main {
+  color: white;
+  background-color: #121212;
+}
+
+#sidebar {
+  color: white;
+  border-color: #2f2f2f !important;
+  background-color: #121212;
+}
+
+.bk.card {
+  color: white;
+  background-color: #2f2f2f;
+}
+
+.bk.card-header {
+  color: white;
+  background-color: #292929 !important;
+}
+
+
+/* DataFrame Widget */
+.bk-root .slick-header-columns {
+  color: white;
+  font-weight: bold;
+  background: none;
+}
+
+.bk-root .slick-header-column:hover {
+  background: #292929;
+}
+
+.bk-root .slick-row.even {
+  background: none;
+}
+
+.bk-root .slick-row.odd {
+  background: #3f3f3f;
+}
+
+.bk-root .slick-cell.selected {
+  background: #3f3f80;
+}
+
+/* DataFrame Pane */
+table.panel-df {
+  color: white;
+}
+
+.panel-df tbody tr:nth-child(odd) {
+  background: #3f3f3f;
+}
+
+.panel-df tr:hover {
+    background: #3f3f80 !important;
+    cursor: pointer;
+}
+
+/* Tabs layout */
+.bk-root .bk-tabs-header .bk-tab {
+  color: white;
+  background: #2f2f2f;
+  border: none;
+}
+
+.bk-root .bk-tabs-header .bk-tab:hover {
+  color: white;
+  background: #4f4f4f;
+}
+
+.bk-root .bk-tabs-header .bk-tab.bk-active {
+  color: white;
+  background: #3f3f3f;
+  border: none;
+}
+
+.lm_content {
+  border: 1px solid black;
+    border-top-color: black;
+    border-top-style: solid;
+    border-top-width: 1px;
+    border-right-color: black;
+    border-right-style: solid;
+    border-right-width: 1px;
+    border-bottom-color: black;
+    border-bottom-style: solid;
+    border-bottom-width: 1px;
+    border-left-color: black;
+    border-left-style: solid;
+    border-left-width: 1px;
+    border-image-source: initial;
+    border-image-slice: initial;
+    border-image-width: initial;
+    border-image-outset: initial;
+    border-image-repeat: initial;
+}
+
+.lm_header .lm_tab.lm_active {
+  padding-bottom: 6px;
+}
+
+html {
+  scrollbar-face-color: #646464;
+  scrollbar-base-color: #646464;
+  scrollbar-3dlight-color: #646464;
+  scrollbar-highlight-color: #646464;
+  scrollbar-track-color: #000;
+  scrollbar-arrow-color: #000;
+  scrollbar-shadow-color: #646464;
+  scrollbar-dark-shadow-color: #646464;
+}
+
+::-webkit-scrollbar { width: 12px; height: 3px;}
+::-webkit-scrollbar-button {  background-color: #666; }
+::-webkit-scrollbar-track {  background-color: #646464;}
+::-webkit-scrollbar-track-piece { background-color: #000;}
+::-webkit-scrollbar-thumb { height: 50px; background-color: #666; border-radius: 3px;}
+::-webkit-scrollbar-corner { background-color: #646464;}}
+::-webkit-resizer { background-color: #666;}

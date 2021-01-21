@@ -76,6 +76,10 @@ class Vega(PaneBase):
             if name in sources or isinstance(datasets[name], dict):
                 continue
             data = datasets.pop(name)
+            if isinstance(data, list) and any(isinstance(d, dict) and 'geometry' in d for d in data):
+                # Handle geometry records types
+                datasets[name] = data
+                continue
             columns = set(data[0]) if data else []
             if self.is_altair(self.object):
                 import altair as alt
@@ -158,7 +162,7 @@ class Vega(PaneBase):
         self._models[root.ref['id']] = (model, parent)
         return model
 
-    def _update(self, model):
+    def _update(self, ref=None, model=None):
         if self.object is None:
             json = None
         else:

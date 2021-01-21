@@ -42,7 +42,7 @@ class ImageBase(DivPaneBase):
 
     imgtype = 'None'
 
-    _rerender_params = ['alt_text', 'link_url', 'embed', 'object', 'style']
+    _rerender_params = ['alt_text', 'link_url', 'embed', 'object', 'style', 'width', 'height']
 
     _target_transforms = {'object': """'<img src="' + value + '"></img>'"""}
 
@@ -58,6 +58,8 @@ class ImageBase(DivPaneBase):
                 return True
             if isurl(obj, [cls.imgtype]):
                 return True
+            elif isurl(obj, None):
+                return 0
         if hasattr(obj, 'read'):  # Check for file like object
             return True
         return False
@@ -76,11 +78,20 @@ class ImageBase(DivPaneBase):
                 with open(self.object, 'rb') as f:
                     return f.read()
         if hasattr(self.object, 'read'):
+            if hasattr(self.object, 'seek'):
+                self.object.seek(0)
             return self.object.read()
-        if isurl(self.object, [self.imgtype]):
+        if isurl(self.object, None):
             import requests
             r = requests.request(url=self.object, method='GET')
             return r.content
+
+    def _b64(self):
+        data = self._img()
+        if not isinstance(data, bytes):
+            data = data.encode('utf-8')
+        b64 = base64.b64encode(data).decode("utf-8")
+        return "data:image/"+self.imgtype+f";base64,{b64}"
 
     def _imgshape(self, data):
         """Calculate and return image width,height"""
@@ -204,6 +215,13 @@ class SVG(ImageBase):
             self.object.lstrip().startswith('<svg')):
             return self.object
         return super(SVG, self)._img()
+
+    def _b64(self):
+        data = self._img()
+        if not isinstance(data, bytes):
+            data = data.encode('utf-8')
+        b64 = base64.b64encode(data).decode("utf-8")
+        return f"data:image/svg+xml;base64,{b64}"
 
     def _imgshape(self, data):
         return (self.width, self.height)

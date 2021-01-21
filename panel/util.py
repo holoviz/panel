@@ -3,15 +3,20 @@ Various general utilities used in the panel codebase.
 """
 from __future__ import absolute_import, division, unicode_literals
 
+import base64
 import datetime as dt
 import inspect
+import json
 import numbers
 import os
 import re
 import sys
+import urllib.parse as urlparse
 
 from collections import defaultdict, OrderedDict
+from contextlib import contextmanager
 from datetime import datetime
+from distutils.version import LooseVersion
 from six import string_types
 
 try:  # python >= 3.3
@@ -21,14 +26,20 @@ except ImportError:
 
 from html import escape # noqa
 
+import bokeh
 import param
 import numpy as np
+
+from bokeh.settings import settings
+
+PANEL_DIR = os.path.abspath(os.path.dirname(__file__))
 
 datetime_types = (np.datetime64, dt.datetime, dt.date)
 
 if sys.version_info.major > 2:
     unicode = str
 
+bokeh_version = LooseVersion(bokeh.__version__)
 
 def isfile(path):
     """Safe version of os.path.isfile robust to path length issues on Windows"""
@@ -45,7 +56,7 @@ def isurl(obj, formats):
     return (
         lower_string.startswith('http://')
         or lower_string.startswith('https://')
-    ) and any(lower_string.endswith('.'+fmt) for fmt in formats)
+    ) and (formats is None or any(lower_string.endswith('.'+fmt) for fmt in formats))
 
 
 def is_dataframe(obj):
@@ -53,6 +64,13 @@ def is_dataframe(obj):
         return False
     import pandas as pd
     return isinstance(obj, pd.DataFrame)
+
+
+def is_series(obj):
+    if 'pandas' not in sys.modules:
+        return False
+    import pandas as pd
+    return isinstance(obj, pd.Series)
 
 
 def hashable(x):
@@ -230,7 +248,9 @@ def isdatetime(value):
     """
     Whether the array or scalar is recognized datetime type.
     """
-    if isinstance(value, np.ndarray):
+    if is_series(value) and len(value):
+        return isinstance(value.iloc[0], datetime_types)
+    elif isinstance(value, np.ndarray):
         return (value.dtype.kind == "M" or
                 (value.dtype.kind == "O" and len(value) and
                  isinstance(value[0], datetime_types)))
@@ -254,3 +274,100 @@ def value_as_date(value):
     elif isinstance(value, datetime):
         value = value.date()
     return value
+
+
+def is_number(s):
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False
+
+
+def parse_query(query):
+    """
+    Parses a url query string, e.g. ?a=1&b=2.1&c=string, converting
+    numeric strings to int or float types.
+    """
+    query = dict(urlparse.parse_qsl(query[1:]))
+    for k, v in list(query.items()):
+        if v.isdigit():
+            query[k] = int(v)
+        elif is_number(v):
+            query[k] = float(v)
+        elif v.startswith('[') or v.startswith('{'):
+            query[k] = json.loads(v)
+    return query
+
+
+def base64url_encode(input):
+    if isinstance(input, str):
+        input = input.encode("utf-8")
+    encoded = base64.urlsafe_b64encode(input).decode('ascii')
+    # remove padding '=' chars that cause trouble
+    return str(encoded.rstrip('='))
+
+
+def base64url_decode(input):
+    if isinstance(input, str):
+        input = input.encode("ascii")
+
+    rem = len(input) % 4
+
+    if rem > 0:
+        input += b"=" * (4 - rem)
+
+    return base64.urlsafe_b64decode(input)
+
+
+class classproperty(object):
+
+    def __init__(self, f):
+        self.f = f
+
+    def __get__(self, obj, owner):
+        return self.f(owner)
+
+
+def url_path(url):
+    return os.path.join(*os.path.join(*url.split('//')[1:]).split('/')[1:])
+
+
+def bundled_files(model, file_type='javascript'):
+    bdir = os.path.join(PANEL_DIR, 'dist', 'bundled', model.__name__.lower())
+    name = model.__name__.lower()
+    resources = settings.resources(default='server')
+    files = []
+    for url in getattr(model, f"__{file_type}_raw__", []):
+        filepath = url_path(url)
+        test_filepath = filepath.split('?')[0]
+        if resources == 'server' and os.path.isfile(os.path.join(bdir, test_filepath)):
+            files.append(f'static/extensions/panel/bundled/{name}/{filepath}')
+        else:
+            files.append(url)
+    return files
+
+
+# This functionality should be contributed to param
+# See https://github.com/holoviz/param/issues/379
+@contextmanager
+def edit_readonly(parameterized):
+    """
+    Temporarily set parameters on Parameterized object to readonly=False
+    to allow editing them.
+    """
+    params = parameterized.param.objects("existing").values()
+    readonlys = [p.readonly for p in params]
+    constants = [p.constant for p in params]
+    for p in params:
+        p.readonly = False
+        p.constant = False
+    try:
+        yield
+    except Exception:
+        raise
+    finally:
+        for (p, readonly) in zip(params, readonlys):
+            p.readonly = readonly
+        for (p, constant) in zip(params, constants):
+            p.constant = constant

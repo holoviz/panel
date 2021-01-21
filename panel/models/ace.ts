@@ -17,6 +17,7 @@ export class AcePlotView extends PanelHTMLBoxView {
   protected _ace: any
   protected _editor: any
   protected _langTools: any
+  protected _modelist: any
   protected _container: HTMLDivElement
 
   initialize(): void {
@@ -36,6 +37,8 @@ export class AcePlotView extends PanelHTMLBoxView {
     this.connect(this.model.properties.code.change, () => this._update_code_from_model())
     this.connect(this.model.properties.theme.change, () => this._update_theme())
     this.connect(this.model.properties.language.change, () => this._update_language())
+    this.connect(this.model.properties.filename.change, () => this._update_filename())
+    this.connect(this.model.properties.print_margin.change, () => this._update_print_margin())
     this.connect(this.model.properties.annotations.change, () => this._add_annotations())
     this.connect(this.model.properties.readonly.change, () => {
       this._editor.setReadOnly(this.model.readonly)
@@ -48,15 +51,18 @@ export class AcePlotView extends PanelHTMLBoxView {
       this.el.appendChild(this._container)
       this._container.textContent = this.model.code
       this._editor = this._ace.edit(this._container.id)
-      this._editor.setTheme("ace/theme/" + `${this.model.theme}`)
-      this._editor.session.setMode("ace/mode/" + `${this.model.language}`)
-      this._editor.setReadOnly(this.model.readonly)
       this._langTools = this._ace.require('ace/ext/language_tools')
+      this._modelist = this._ace.require("ace/ext/modelist")
       this._editor.setOptions({
         enableBasicAutocompletion: true,
         enableSnippets: true,
         fontFamily: "monospace", //hack for cursor position
       });
+      this._update_theme()
+      this._update_filename()
+      this._update_language()
+      this._editor.setReadOnly(this.model.readonly)
+      this._editor.setShowPrintMargin(this.model.print_margin);
       this._editor.on('change', () => this._update_code_from_editor())
   }
 
@@ -65,18 +71,31 @@ export class AcePlotView extends PanelHTMLBoxView {
       this._editor.setValue(this.model.code)
   }
 
+  _update_print_margin(): void {
+    this._editor.setShowPrintMargin(this.model.print_margin);
+  }
+
   _update_code_from_editor(): void {
     if(this._editor.getValue() !=  this.model.code){
       this.model.code = this._editor.getValue()
     }
   }
 
-  _update_theme(): void{
+  _update_theme(): void {
     this._editor.setTheme("ace/theme/" + `${this.model.theme}`)
   }
 
+  _update_filename(): void {
+    if (this.model.filename) {
+      const mode = this._modelist.getModeForPath(this.model.filename).mode
+      this.model.language = mode.slice(9)
+    }
+  }
+
   _update_language(): void{
-    this._editor.session.setMode("ace/mode/" + `${this.model.language}`)
+    if (this.model.language != null) {
+      this._editor.session.setMode("ace/mode/" + `${this.model.language}`)
+    }
   }
 
   _add_annotations(): void{
@@ -87,7 +106,6 @@ export class AcePlotView extends PanelHTMLBoxView {
     super.after_layout()
     this._editor.resize()
   }
-
 }
 
 export namespace AcePlot {
@@ -95,8 +113,10 @@ export namespace AcePlot {
   export type Props = HTMLBox.Props & {
     code: p.Property<string>
     language: p.Property<string>
+    filename: p.Property<string>
     theme: p.Property<string>
     annotations: p.Property<any[]>
+    print_margin: p.Property<boolean> 
     readonly: p.Property<boolean>
   }
 }
@@ -116,14 +136,16 @@ export class AcePlot extends HTMLBox {
     this.prototype.default_view = AcePlotView
 
     this.define<AcePlot.Props>({
-      code:        [ p.String            ],
-      language:    [ p.String,  'python' ],
-      theme:       [ p.String,  'chrome' ],
-      annotations: [ p.Array,   []       ],
-      readonly:    [ p.Boolean, false    ]
+      code:         [ p.String            ],
+      filename:     [ p.String            ],
+      language:     [ p.String            ],
+      theme:        [ p.String,  'chrome' ],
+      annotations:  [ p.Array,   []       ],
+      readonly:     [ p.Boolean, false    ],
+      print_margin: [ p.Boolean, false    ]
     })
 
-    this.override({
+    this.override<AcePlot.Props>({
       height: 300,
       width: 300
     })

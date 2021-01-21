@@ -5,7 +5,7 @@ components.
 """
 from __future__ import absolute_import, division, unicode_literals
 
-import glob
+import ast
 import inspect
 import os
 import sys
@@ -20,13 +20,17 @@ from pyviz_comms import (JupyterCommManager as _JupyterCommManager,
 from .io.notebook import load_notebook
 from .io.state import state
 
+__version__ = str(param.version.Version(
+    fpath=__file__, archive_commit="$Format:%h$", reponame="panel"))
+
+_LOCAL_DEV_VERSION = any(v in __version__ for v in ('post', 'dirty'))
 
 #---------------------------------------------------------------------
 # Public API
 #---------------------------------------------------------------------
 
 _PATH = os.path.abspath(os.path.dirname(__file__))
-_CSS_FILES = glob.glob(os.path.join(_PATH, '_styles', '*.css'))
+
 
 def validate_config(config, parameter, value):
     """
@@ -59,7 +63,7 @@ class _config(param.Parameterized):
         Whether to set custom Signature which allows tab-completion
         in some IDEs and environments.""")
 
-    css_files = param.List(default=_CSS_FILES, doc="""
+    css_files = param.List(default=[], doc="""
         External CSS files to load.""")
 
     js_files = param.Dict(default={}, doc="""
@@ -74,13 +78,19 @@ class _config(param.Parameterized):
         embedded. Useful when only partial updates are made in an
         app, e.g. when working with HoloViews.""")
 
+    session_history = param.Integer(default=0, bounds=(-1, None), doc="""
+        If set to a non-negative value this determines the maximum length
+        of the pn.state.session_info dictionary, which tracks
+        information about user sessions. A value of -1 indicates an
+        unlimited history.""")
+
     sizing_mode = param.ObjectSelector(default=None, objects=[
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
         'scale_width', 'scale_height', 'scale_both', None], doc="""
         Specify the default sizing mode behavior of panels.""")
 
     _comms = param.ObjectSelector(
-        default='default', objects=['default', 'ipywidgets'], doc="""
+        default='default', objects=['default', 'ipywidgets', 'vscode', 'colab'], doc="""
         Whether to render output in Jupyter with the default Jupyter
         extension or use the jupyter_bokeh ipywidget model.""")
 
@@ -89,6 +99,9 @@ class _config(param.Parameterized):
                                           False], doc="""
         How to log errors and stdout output triggered by callbacks
         from Javascript in the notebook.""")
+
+    _cookie_secret = param.String(default=None, doc="""
+        Configure to enable getting/setting secure cookies.""")
 
     _embed = param.Boolean(default=False, allow_None=True, doc="""
         Whether plot data will be embedded.""")
@@ -105,7 +118,33 @@ class _config(param.Parameterized):
     _embed_save_path = param.String(default='./', doc="""
         Where to save json files for embedded state.""")
 
-    _inline = param.Boolean(default=True, allow_None=True, doc="""
+    _log_level = param.Selector(
+        default=None, objects=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+        doc="Log level of Panel loggers")
+
+    _oauth_provider = param.ObjectSelector(
+        default=None, allow_None=True, objects=[], doc="""
+        Select between a list of authentification providers.""")
+
+    _oauth_key = param.String(default=None, doc="""
+        A client key to provide to the OAuth provider.""")
+
+    _oauth_secret = param.String(default=None, doc="""
+        A client secret to provide to the OAuth provider.""")
+
+    _oauth_jwt_user = param.String(default=None, doc="""
+        The key in the ID JWT token to consider the user.""")
+
+    _oauth_redirect_uri = param.String(default=None, doc="""
+        A redirect URI to provide to the OAuth provider.""")
+
+    _oauth_encryption_key = param.ClassSelector(default=None, class_=bytes, doc="""
+        A random string used to encode OAuth related user information.""")
+
+    _oauth_extra_params = param.Dict(default={}, doc="""
+        Additional parameters required for OAuth provider.""")
+
+    _inline = param.Boolean(default=_LOCAL_DEV_VERSION, allow_None=True, doc="""
         Whether to inline JS and CSS resources. If disabled, resources
         are loaded from CDN if one is available.""")
 
@@ -232,6 +271,124 @@ class _config(param.Parameterized):
         validate_config(self, '_inline', value)
         self._inline_ = value
 
+    @property
+    def log_level(self):
+        if self._log_level_ is not None:
+            return self._log_level_
+        elif 'PANEL_LOG_LEVEL' in os.environ:
+            return os.environ['PANEL_LOG_LEVEL'].upper()
+        else:
+            return self._log_level
+
+    @log_level.setter
+    def log_level(self, value):
+        validate_config(self, '_log_level', value)
+        self._log_level_ = value
+
+    @property
+    def oauth_provider(self):
+        if self._oauth_provider_ is not None:
+            return self._oauth_provider_
+        else:
+            provider = os.environ.get('PANEL_OAUTH_PROVIDER', _config._oauth_provider)
+            return provider.lower() if provider else None
+
+    @oauth_provider.setter
+    def oauth_provider(self, value):
+        validate_config(self, '_oauth_provider', value.lower())
+        self._oauth_provider_ = value.lower()
+
+    @property
+    def oauth_key(self):
+        if self._oauth_key_ is not None:
+            return self._oauth_key_
+        else:
+            return os.environ.get('PANEL_OAUTH_KEY', _config._oauth_key)
+
+    @oauth_key.setter
+    def oauth_key(self, value):
+        validate_config(self, '_oauth_key', value)
+        self._oauth_key_ = value
+
+    @property
+    def cookie_secret(self):
+        if self._cookie_secret_ is not None:
+            return self._cookie_secret_
+        else:
+            return os.environ.get(
+                'PANEL_COOKIE_SECRET',
+                os.environ.get('BOKEH_COOKIE_SECRET', _config._cookie_secret)
+            )
+
+    @cookie_secret.setter
+    def cookie_secret(self, value):
+        validate_config(self, '_cookie_secret', value)
+        self._cookie_secret_ = value
+
+    @property
+    def oauth_secret(self):
+        if self._oauth_secret_ is not None:
+            return self._oauth_secret_
+        else:
+            return os.environ.get('PANEL_OAUTH_SECRET', _config._oauth_secret)
+
+    @oauth_secret.setter
+    def oauth_secret(self, value):
+        validate_config(self, '_oauth_secret', value)
+        self._oauth_secret_ = value
+
+    @property
+    def oauth_redirect_uri(self):
+        if self._oauth_redirect_uri_ is not None:
+            return self._oauth_redirect_uri_
+        else:
+            return os.environ.get('PANEL_OAUTH_REDIRECT_URI', _config._oauth_redirect_uri)
+
+    @oauth_redirect_uri.setter
+    def oauth_redirect_uri(self, value):
+        validate_config(self, '_oauth_redirect_uri', value)
+        self._oauth_redirect_uri_ = value
+
+    @property
+    def oauth_jwt_user(self):
+        if self._oauth_jwt_user_ is not None:
+            return self._oauth_jwt_user_
+        else:
+            return os.environ.get('PANEL_OAUTH_JWT_USER', _config._oauth_jwt_user)
+
+    @oauth_jwt_user.setter
+    def oauth_jwt_user(self, value):
+        validate_config(self, '_oauth_jwt_user', value)
+        self._oauth_jwt_user_ = value
+
+    @property
+    def oauth_encryption_key(self):
+        if self._oauth_encryption_key_ is not None:
+            return self._oauth_encryption_key_
+        else:
+            return os.environ.get('PANEL_OAUTH_ENCRYPTION', _config._oauth_encryption_key)
+
+    @oauth_encryption_key.setter
+    def oauth_encryption_key(self, value):
+        validate_config(self, '_oauth_encryption_key', value)
+        self._oauth_encryption_key_ = value
+
+    @property
+    def oauth_extra_params(self):
+        if self._oauth_extra_params_ is not None:
+            return self._oauth_extra_params_
+        else:
+            if 'PANEL_OAUTH_EXTRA_PARAMS' in os.environ:
+                return ast.literal_eval(os.environ['PANEL_OAUTH_EXTRA_PARAMS'])
+            else:
+                return _config._oauth_extra_params
+
+    @oauth_extra_params.setter
+    def oauth_extra_params(self, value):
+        validate_config(self, '_oauth_extra_params', value)
+        self._oauth_extra_params_ = value
+
+        
 
 if hasattr(_config.param, 'objects'):
     _params = _config.param.objects()
@@ -250,13 +407,30 @@ class panel_extension(_pyviz_extension):
 
     _loaded = False
 
-    _imports = {'katex': 'panel.models.katex',
-                'mathjax': 'panel.models.mathjax',
-                'plotly': 'panel.models.plotly',
-                'deckgl': 'panel.models.deckgl',
-                'vega': 'panel.models.vega',
-                'vtk': 'panel.models.vtk',
-                'ace': 'panel.models.ace'}
+    _imports = {
+        'katex': 'panel.models.katex',
+        'mathjax': 'panel.models.mathjax',
+        'plotly': 'panel.models.plotly',
+        'deckgl': 'panel.models.deckgl',
+        'vega': 'panel.models.vega',
+        'vtk': 'panel.models.vtk',
+        'ace': 'panel.models.ace',
+        'echarts': 'panel.models.echarts',
+        'ipywidgets': 'ipywidgets_bokeh.widget'
+    }
+
+    # Check whether these are loaded before rendering
+    _globals = {
+        'deckgl': 'deck',
+        'echarts': 'echarts',
+        'katex': 'katex',
+        'mathjax': 'MathJax',
+        'plotly': 'Plotly',
+        'vega': 'vega',
+        'vtk': 'vtk'
+    }
+
+    _loaded_extensions = []
 
     def __call__(self, *args, **params):
         # Abort if IPython not found
@@ -282,19 +456,45 @@ class panel_extension(_pyviz_extension):
         if config.apply_signatures and sys.version_info.major >= 3:
             self._apply_signatures()
 
+        loaded = self._loaded
+
+        # Short circuit pyvista extension load if VTK is already initialized
+        if loaded and args == ('vtk',) and 'vtk' in self._loaded_extensions:
+            curframe = inspect.currentframe()
+            calframe = inspect.getouterframes(curframe, 2)
+            if len(calframe) >= 3 and 'pyvista' in calframe[2].filename:
+                return
+
         if 'holoviews' in sys.modules:
             import holoviews as hv
             import holoviews.plotting.bokeh # noqa
-            if not getattr(hv.extension, '_loaded', False):
-                if hasattr(hv.Store, 'set_current_backend'):
-                    hv.Store.set_current_backend('bokeh')
-                else:
-                    hv.Store.current_backend = 'bokeh'
+            loaded = loaded or getattr(hv.extension, '_loaded', False)
+
+            if hv.Store.current_backend in hv.Store.renderers:
+                backend = hv.Store.current_backend
+            else:
+                backend = 'bokeh'
+            if hasattr(hv.Store, 'set_current_backend'):
+                hv.Store.set_current_backend(backend)
+            else:
+                hv.Store.current_backend = backend
 
         try:
             ip = params.pop('ip', None) or get_ipython() # noqa (get_ipython)
         except Exception:
             return
+
+        newly_loaded = [arg for arg in args if arg not in panel_extension._loaded_extensions]
+        if loaded and newly_loaded:
+            self.param.warning(
+                "A HoloViz extension was loaded previously. This means "
+                "the extension is already initialized and the following "
+                "Panel extensions could not be properly loaded: %s. "
+                "If you are loading custom extensions with pn.extension(...) "
+                "ensure that this is called before any other HoloViz "
+                "extension such as hvPlot or HoloViews." % newly_loaded)
+        else:
+            panel_extension._loaded_extensions += newly_loaded
 
         if hasattr(ip, 'kernel') and not self._loaded and not config._doc_build:
             # TODO: JLab extension and pyviz_comms should be changed
@@ -302,6 +502,10 @@ class panel_extension(_pyviz_extension):
             _JupyterCommManager.get_client_comm(self._process_comm_msg,
                                                 "hv-extension-comm")
             state._comm_manager = _JupyterCommManager
+
+        if 'ipywidgets' in sys.modules and config.embed:
+            # In embedded mode the ipywidgets_bokeh model must be loaded
+            __import__(self._imports['ipywidgets'])
 
         nb_load = False
         if 'holoviews' in sys.modules:

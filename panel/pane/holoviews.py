@@ -12,7 +12,8 @@ from functools import partial
 
 import param
 
-from bokeh.models import Spacer as _BkSpacer
+from bokeh.models import Spacer as _BkSpacer, Range1d
+from bokeh.themes.theme import Theme
 
 from ..io import state, unlocked
 from ..layout import Column, WidgetBox, HSpacer, VSpacer, Row
@@ -45,6 +46,10 @@ class HoloViews(PaneBase):
         Explicit renderer instance to use for rendering the HoloViews
         plot. Overrides the backend.""")
 
+    theme = param.ClassSelector(default=None, class_=(Theme, str),
+                                allow_None=True, doc="""
+        Bokeh theme to apply to the HoloViews plot.""")
+
     widget_location = param.ObjectSelector(default='right_top', objects=[
         'left', 'bottom', 'right', 'top', 'top_left', 'top_right',
         'bottom_left', 'bottom_right', 'left_top', 'left_bottom',
@@ -71,8 +76,9 @@ class HoloViews(PaneBase):
 
     _rename = {
         'backend': None, 'center': None, 'linked_axes': None,
-        'renderer': None, 'widgets': None, 'widget_layout': None,
-        'widget_location': None, 'widget_type': None
+        'renderer': None, 'theme': None, 'widgets': None,
+        'widget_layout': None, 'widget_location': None,
+        'widget_type': None
     }
 
     _rerender_params = ['object', 'backend']
@@ -138,6 +144,14 @@ class HoloViews(PaneBase):
     #----------------------------------------------------------------
     # Callback API
     #----------------------------------------------------------------
+
+    @param.depends('theme', watch=True)
+    def _update_theme(self, *events):
+        if self.theme is None:
+            return
+        for (model, _) in self._models.values():
+            if model.document:
+                model.document.theme = self.theme
 
     @param.depends('widget_type', 'widgets', watch=True)
     def _update_widgets(self, *events):
@@ -273,15 +287,21 @@ class HoloViews(PaneBase):
             backend = self.backend or Store.current_backend
             renderer = Store.renderers[backend]
         mode = 'server' if comm is None else 'default'
-        if backend == 'bokeh' and mode != renderer.mode:
-            renderer = renderer.instance(mode=mode)
+        if backend == 'bokeh':
+            params = {}
+            if self.theme is not None:
+                params['theme'] = self.theme
+            if mode != renderer.mode:
+                params['mode'] = mode
+            if params:
+                renderer = renderer.instance(**params)
 
+        kwargs = {'margin': self.margin}
         if backend == 'bokeh' or LooseVersion(str(hv.__version__)) >= str('1.13.0'):
-            kwargs = {'doc': doc, 'root': root}
+            kwargs['doc'] = doc
+            kwargs['root'] = root
             if comm:
                 kwargs['comm'] = comm
-        else:
-            kwargs = {}
 
         return renderer.get_plot(self.object, **kwargs)
 
@@ -430,6 +450,55 @@ class HoloViews(PaneBase):
         return widgets, dim_values
 
 
+class Interactive(PaneBase):
+
+    priority = None
+
+    def __init__(self, object=None, **params):
+        super().__init__(object, **params)
+        self._update_layout()
+        self.param.watch(self._update_layout_properties, list(Layoutable.param))
+
+    @classmethod
+    def applies(cls, object):
+        if 'hvplot.interactive' not in sys.modules:
+            return False
+        from hvplot.interactive import Interactive
+        return 0.8 if isinstance(object, Interactive) else False
+
+    @param.depends('object')
+    def _update_layout(self):
+        if self.object is None:
+            self._layout_panel = None
+        else:
+            self._layout_panel = self.object.layout()
+            self._layout_panel.param.set_param(**{
+                p: getattr(self, p) for p in Layoutable.param if p != 'name'
+            })
+
+    def _update_layout_properties(self, *events):
+        if self._layout_panel is None:
+            return
+        self._layout_panel.param.set_param(**{e.name: e.new for e in events})
+
+    def _get_model(self, doc, root=None, parent=None, comm=None):
+        if root is None:
+            return self.get_root(doc, comm)
+        if self._layout_panel is None:
+            model = _BkSpacer(**{
+                p: getattr(self, p) for p in Layoutable.param if p != 'name'
+            })
+        else:
+            model = self._layout_panel._get_model(doc, root, parent, comm)
+        self._models[root.ref['id']] = (model, parent)
+        return model
+
+    def _cleanup(self, root):
+        if self._layout_panel is not None:
+            self._layout_panel._cleanup(root)
+        super()._cleanup(root)
+
+
 def is_bokeh_element_plot(plot):
     """
     Checks whether plotting instance is a HoloViews ElementPlot rendered
@@ -520,7 +589,7 @@ def link_axes(root_view, root_model):
         return
 
     from holoviews.core.options import Store
-    from holoviews.core.util import unique_iterator
+    from holoviews.core.util import unique_iterator, max_range
     from holoviews.plotting.bokeh.element import ElementPlot
 
     ref = root_model.ref['id']
@@ -548,6 +617,15 @@ def link_axes(root_view, root_model):
 
     for (tag), axes in range_map.items():
         fig, p, ax, axis = axes[0]
+        if isinstance(axis, Range1d):
+            start, end = max_range([
+                (ax[-1].start, ax[-1].end) for ax in axes
+                if isinstance(ax[-1], Range1d)
+            ])
+            if axis.start > axis.end:
+                end, start = start, end
+            axis.start = start
+            axis.end = end
         for fig, p, pax, _ in axes[1:]:
             changed = []
             if  type(ax) is not type(pax):

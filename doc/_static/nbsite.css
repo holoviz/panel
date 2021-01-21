@@ -496,3 +496,11 @@ div.logo-block {
 div.bk-root {
   min-height: 50px
 }
+
+.bk.accordion-header {
+  color: black;
+}
+
+.bk.card-header {
+  color: black;
+}
