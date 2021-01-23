@@ -10,7 +10,7 @@ from panel.template.base import BasicTemplate as _PnBasicTemplate
 
 # pylint: disable=unused-variable, invalid-name, line-too-long
 class TemplateConfig(param.Parameterized):
-    """Configuration similar but improved compared to panel.config"""
+    """Configuration similar to panel.config"""
 
     css_files = param.Dict(constant=True)
 
@@ -22,11 +22,11 @@ class TemplateConfig(param.Parameterized):
 class BasicTemplate(_PnBasicTemplate):
     """Improvement of Panel BasicTemplate"""
 
-    _theme = "dark"
+    _theme = "default"
 
     sidebar_footer = param.String("", doc="""A HTML string appended to the sidebar""")
     enable_theme_toggle = param.Boolean(
-        default=True, doc="If True a switch is to toggle the Theme. Default is True"
+        default=True, doc="If True a switch to toggle the Theme is shown. Default is True"
     )
     config = param.ClassSelector(class_=TemplateConfig, doc="Similar to panel.config")
 
@@ -36,6 +36,8 @@ class BasicTemplate(_PnBasicTemplate):
                 self._theme = self._get_theme_from_query_args(default=self._theme)
             params["theme"] = self._get_theme(self._theme)
         else:
+            if isinstance(params["theme"], str):
+                params["theme"] = self._get_theme(params["theme"])
             if "dark" in str(params["theme"]).lower():
                 self._theme = "dark"
             else:

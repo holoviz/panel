@@ -5,9 +5,14 @@ import numpy as np
 import panel as pn
 from holoviews import opts
 
-from panel.template.fast.fast_list_template import FastListTemplate
+from panel.template.fast import FastListTemplate
 
-from panel.tests.template.fast.test_fast_grid_template import _create_hvplot, _fast_button_card, _sidebar_items, INFO
+from panel.tests.template.fast.test_fast_grid_template import (
+    _create_hvplot,
+    _fast_button_card,
+    _sidebar_items,
+    INFO,
+)
 
 
 def test_app():

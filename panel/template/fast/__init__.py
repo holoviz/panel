@@ -5,5 +5,8 @@ from .fast_grid_template import (
     FastGridTemplate,
 )
 from .fast_list_template import (
-    FastListTemplate,
+    FastListTemplate
+)
+from .fast_gallery_template import (
+    FastGalleryTemplate
 )

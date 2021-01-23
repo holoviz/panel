@@ -24,11 +24,11 @@ class FastListTemplate(BasicTemplate):
 
     def _get_theme(self, name: str = "default"):
         if name == "dark":
-            return FastDarkTheme
-        return FastDefaultTheme
+            return DarkTheme
+        return DefaultTheme
 
 
-class FastDefaultTheme(DefaultTheme):
+class DefaultTheme(DefaultTheme):
     """The Default Theme of the FastListTemplate"""
 
     css = param.Filename(default=pathlib.Path(__file__).parent / "default.css")
@@ -42,7 +42,7 @@ class FastDefaultTheme(DefaultTheme):
     )
 
 
-class FastDarkTheme(DarkTheme):
+class DarkTheme(DarkTheme):
     """The Dark Theme of the FastListTemplate"""
 
     css = param.Filename(default=pathlib.Path(__file__).parent / "dark.css")

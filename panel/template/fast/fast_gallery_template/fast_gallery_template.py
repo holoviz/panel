@@ -2,7 +2,7 @@
 import pathlib
 
 import param
-from panel import Template
+from ....template import Template
 from ..models import Resource
 
 ROOT = pathlib.Path(__file__).parent
