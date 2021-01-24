@@ -15,6 +15,7 @@ from collections import OrderedDict
 from contextlib import contextmanager
 from functools import partial, wraps
 from types import FunctionType, MethodType
+import pathlib
 
 import param
 import bokeh
@@ -22,6 +23,7 @@ import bokeh.command.util
 
 from bokeh.application import Application as BkApplication
 from bokeh.application.handlers.function import FunctionHandler
+from bokeh.command.util import build_single_handler_application
 from bokeh.document.events import ModelChangedEvent
 from bokeh.embed.bundle import extension_dirs
 from bokeh.io import curdoc
@@ -239,7 +241,7 @@ def serve(panels, port=0, address=None, websocket_origin=None, loop=None,
     """
     Allows serving one or more panel objects on a single server.
     The panels argument should be either a Panel object or a function
-    returning a Panel object or a dictionary of these two. If a 
+    returning a Panel object or a dictionary of these two. If a
     dictionary is supplied the keys represent the slugs at which
     each app is served, e.g. `serve({'app': panel1, 'app2': panel2})`
     will serve apps at /app and /app2 on the server.
@@ -418,7 +420,7 @@ def get_server(panel, port=0, address=None, websocket_origin=None,
                     raise KeyError(
                         "Keys of the title dictionnary and of the apps "
                         f"dictionary must match. No {slug} key found in the "
-                        "title dictionnary.") 
+                        "title dictionnary.")
             else:
                 title_ = title
             slug = slug if slug.startswith('/') else '/'+slug
@@ -433,7 +435,12 @@ def get_server(panel, port=0, address=None, websocket_origin=None,
                     extra_patterns.append(('^'+slug+'.*', ProxyFallbackHandler,
                                            dict(fallback=wsgi, proxy=slug)))
                     continue
-            apps[slug] = Application(FunctionHandler(partial(_eval_panel, app, server_id, title_, location)))
+            if isinstance(app, pathlib.Path):
+                app = str(app) # enables serving apps from Paths
+            if isinstance(app, str) and (app.endswith(".py") or app.endswith(".ipynb")):
+                apps[slug] = build_single_handler_application(app)
+            else:
+                apps[slug] = Application(FunctionHandler(partial(_eval_panel, app, server_id, title_, location)))
     else:
         apps = {'/': Application(FunctionHandler(partial(_eval_panel, panel, server_id, title, location)))}
 
