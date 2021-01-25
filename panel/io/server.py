@@ -420,7 +420,7 @@ def get_server(panel, port=0, address=None, websocket_origin=None,
                     raise KeyError(
                         "Keys of the title dictionnary and of the apps "
                         f"dictionary must match. No {slug} key found in the "
-                        "title dictionnary.")
+                        "title dictionary.")
             else:
                 title_ = title
             slug = slug if slug.startswith('/') else '/'+slug
