@@ -74,8 +74,8 @@ export class IPyWidget extends HTMLBox {
   static init_IPyWidget(): void {
     this.prototype.default_view = IPyWidgetView
 
-    this.define<IPyWidget.Props>({
-      bundle: [ p.Any, {} ],
-    })
+    this.define<IPyWidget.Props>(({Any}) => ({
+      bundle: [ Any, {} ],
+    }))
   }
 }

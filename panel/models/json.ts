@@ -1,3 +1,4 @@
+import {Enum} from "@bokehjs/core/kinds"
 import * as p from "@bokehjs/core/properties"
 import {Markup} from "@bokehjs/models/widgets/markup"
 import JSONFormatter from "json-formatter-js"
@@ -35,15 +36,14 @@ export class JSONView extends PanelMarkupView {
   }
 }
 
-type Theme = "light" | "dark"
-const Theme: Theme[] = ["dark", "light"]
+export const JSONTheme = Enum("dark", "light")
 
 export namespace JSON {
   export type Attrs = p.AttrsOf<Props>
   export type Props = Markup.Props & {
     depth: p.Property<number | null>
     hover_preview: p.Property<boolean> 
-    theme: p.Property<"light" | "dark">
+    theme: p.Property<typeof JSONTheme["__type__"]>
   }
 }
 
@@ -60,10 +60,10 @@ export class JSON extends Markup {
 
   static init_JSON(): void {
     this.prototype.default_view = JSONView
-    this.define<JSON.Props>({
-      depth: [ p.Number, 1 ],
-      hover_preview: [ p.Boolean, false ],
-      theme: [ p.Enum(Theme), "dark" ],
-    })
+    this.define<JSON.Props>(({Boolean, Int, Nullable}) => ({
+      depth:         [ Nullable(Int),  1 ],
+      hover_preview: [ Boolean,    false ],
+      theme:         [ JSONTheme, "dark" ],
+    }))
   }
 }

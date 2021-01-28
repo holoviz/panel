@@ -217,15 +217,15 @@ export class FileDownload extends InputWidget {
   static init_FileDownload(): void {
     this.prototype.default_view = FileDownloadView
 
-    this.define<FileDownload.Props>({
-      auto:         [ p.Boolean,        false ],
-      clicks:       [ p.Number,         0     ],
-      data:         [ p.NullString,     null  ],
-      label:        [ p.String,   "Download"  ],
-      filename:     [ p.NullString,         null  ],
-      button_type:  [ p.ButtonType, "default" ], // TODO (bev)
-      _transfers:   [ p.Number,          0    ],
-    })
+    this.define<FileDownload.Props>(({Boolean, Int, Nullable, String}) => ({
+      auto:         [ Boolean,          false ],
+      clicks:       [ Int,                  0 ],
+      data:         [ Nullable(String),  null ],
+      label:        [ String,      "Download" ],
+      filename:     [ Nullable(String),  null ],
+      button_type:  [ ButtonType,   "default" ], // TODO (bev)
+      _transfers:   [ Int,                  0 ],
+    }))
 
     this.override<FileDownload.Props>({
       title: "",

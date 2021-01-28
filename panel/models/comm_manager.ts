@@ -135,12 +135,12 @@ export class CommManager extends Model {
   static init_CommManager(): void {
     this.prototype.default_view = CommManagerView
 
-    this.define<CommManager.Props>({
-      plot_id: [ p.String, null ],
-      comm_id: [ p.String, null ],
-      client_comm_id: [ p.String, null],
-      timeout: [ p.Number, 5000 ],
-      debounce: [ p.Number, 50],
-    })
+    this.define<CommManager.Props>(({Int, String}) => ({
+      plot_id:        [ String    ],
+      comm_id:        [ String    ],
+      client_comm_id: [ String    ],
+      timeout:        [ Int, 5000 ],
+      debounce:       [ Int,   50 ],
+    }))
   }
 }

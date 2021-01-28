@@ -37,7 +37,7 @@ class DataTabulator(HTMLBox):
 
     filename = String(default="table.csv")
 
-    follow = Bool()
+    follow = Bool(True)
 
     frozen_rows = List(Int)
 

@@ -93,7 +93,7 @@ class Video(HTMLBox):
 
     value = Any(help="Encoded file data")
 
-    volume = Int(0, help="""The volume of the video player.""")
+    volume = Int(help="""The volume of the video player.""")
 
 
 class VideoStream(HTMLBox):

@@ -14,7 +14,7 @@ class Card(Column):
 
     header_background = Nullable(String, help="Background color of the Card header.")
 
-    header_color = Nullable(String, "Color of the header text and button.")
+    header_color = Nullable(String, help="Color of the header text and button.")
 
     header_css_classes = List(String, help="CSS classes to add to the Card header.")
 

@@ -2,15 +2,16 @@ import * as p from "@bokehjs/core/properties"
 
 import {AbstractVTKPlot, AbstractVTKView} from "./vtklayout"
 import {
+  ColorMapper,
+  Interpolation,
   VolumeType,
   vtkns,
   data2VTKImageData,
   hexToRGB,
   vtkLutToMapper,
-  ColorMapper,
 } from "./util"
 
-declare type InterpolationType = "fast_linear" | "linear" | "nearest"
+
 export class VTKVolumePlotView extends AbstractVTKView {
   model: VTKVolumePlot
   protected _controllerWidget: any
@@ -344,7 +345,7 @@ export class VTKVolumePlotView extends AbstractVTKView {
     this._vtk_renwin.getRenderer().addVolume(actor)
   }
 
-  _set_interpolation(interpolation: InterpolationType): void {
+  _set_interpolation(interpolation: Interpolation): void {
     if (interpolation == "fast_linear") {
       this.volume.getProperty().setInterpolationTypeToFastLinear()
       this.image_actor_i.getProperty().setInterpolationTypeToLinear()
@@ -379,7 +380,7 @@ export namespace VTKVolumePlot {
     display_slices: p.Property<boolean>
     display_volume: p.Property<boolean>
     edge_gradient: p.Property<number>
-    interpolation: p.Property<InterpolationType>
+    interpolation: p.Property<Interpolation>
     mapper: p.Property<ColorMapper>
     render_background: p.Property<string>
     rescale: p.Property<boolean>
@@ -406,26 +407,26 @@ export class VTKVolumePlot extends AbstractVTKPlot {
   static init_VTKVolumePlot(): void {
     this.prototype.default_view = VTKVolumePlotView
 
-    this.define<VTKVolumePlot.Props>({
-      ambient:              [ p.Number,            0.2 ],
-      colormap:             [ p.String                 ],
-      data:                 [ p.Instance               ],
-      diffuse:              [ p.Number,            0.7 ],
-      display_slices:       [ p.Boolean,         false ],
-      display_volume:       [ p.Boolean,          true ],
-      edge_gradient:        [ p.Number,            0.2 ],
-      interpolation:        [ p.Any,      'fast_linear'],
-      mapper:               [ p.Instance               ],
-      render_background:    [ p.String,      '#52576e' ],
-      rescale:              [ p.Boolean,         false ],
-      sampling:             [ p.Number,            0.4 ],
-      shadow:               [ p.Boolean,          true ],
-      slice_i:              [ p.Int,               0   ],
-      slice_j:              [ p.Int,               0   ],
-      slice_k:              [ p.Int,               0   ],
-      specular:             [ p.Number,            0.3 ],
-      specular_power:       [ p.Number,            8.0 ],
-      controller_expanded:  [ p.Boolean,          true ],
-    })
+    this.define<VTKVolumePlot.Props>(({Any, Array, Boolean, Int, Number, String, Struct}) => ({
+      ambient:              [ Number,            0.2 ],
+      colormap:             [ String                 ],
+      data:                 [ Any                    ],
+      diffuse:              [ Number,            0.7 ],
+      display_slices:       [ Boolean,         false ],
+      display_volume:       [ Boolean,          true ],
+      edge_gradient:        [ Number,            0.2 ],
+      interpolation:        [ Interpolation, 'fast_linear'],
+      mapper:               [ Struct({palette: Array(String), low: Number, high: Number}) ],
+      render_background:    [ String,      '#52576e' ],
+      rescale:              [ Boolean,         false ],
+      sampling:             [ Number,            0.4 ],
+      shadow:               [ Boolean,          true ],
+      slice_i:              [ Int,               0   ],
+      slice_j:              [ Int,               0   ],
+      slice_k:              [ Int,               0   ],
+      specular:             [ Number,            0.3 ],
+      specular_power:       [ Number,            8.0 ],
+      controller_expanded:  [ Boolean,          true ],
+    }))
   }
 }
