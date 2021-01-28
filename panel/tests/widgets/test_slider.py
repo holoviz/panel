@@ -5,7 +5,6 @@ from collections import OrderedDict
 
 from bokeh.models import Div as BkDiv, Slider as BkSlider, Column as BkColumn
 
-import param
 from panel.widgets import (DateSlider, DateRangeSlider, DiscreteSlider,
                            FloatSlider, IntSlider, RangeSlider)
 
