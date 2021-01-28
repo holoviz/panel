@@ -381,7 +381,7 @@ export namespace AbstractVTKPlot {
   export type Props = HTMLBox.Props & {
     axes: p.Property<VTKAxes>
     camera: p.Property<any>
-    data: p.Property<string | VolumeType>
+    data: p.Property<string | VolumeType | null>
     enable_keybindings: p.Property<boolean>
     orientation_widget: p.Property<boolean>
     color_mappers: p.Property<ColorMapper[]>

@@ -656,14 +656,12 @@ def test_set_widgets_throttled(document, comm):
     assert len(model.children) == 2
     _, number = model.children
 
-    number.value_throttled = 3
+    pane._widgets['a']._process_events({'value_throttled': 3})
     assert number.value != 3
-    assert number.value_throttled == 3
     assert test.a == 3
 
     test.a = 4
     assert number.value != 4
-    assert number.value_throttled == 4
     assert test.a == 4
 
 

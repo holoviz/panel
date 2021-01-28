@@ -1,3 +1,4 @@
+import {Enum} from "@bokehjs/core/kinds"
 import * as p from "@bokehjs/core/properties"
 import {div} from "@bokehjs/core/dom"
 import {Widget, WidgetView} from "@bokehjs/models/widgets/widget"
@@ -182,8 +183,6 @@ export class PlayerView extends WidgetView {
     this.loop_state.appendChild(reflect)
     this.loop_state.appendChild(reflect_label)
 
-
-
     this.groupEl.appendChild(this.sliderEl)
     this.groupEl.appendChild(button_div)
     if (this.model.show_loop_controls)
@@ -309,6 +308,8 @@ export class PlayerView extends WidgetView {
   }
 }
 
+export const LoopPolicy = Enum("once", "loop", "reflect")
+
 export namespace Player {
   export type Attrs = p.AttrsOf<Props>
   export type Props = Widget.Props & {
@@ -317,11 +318,12 @@ export namespace Player {
     start: p.Property<number>
     end: p.Property<number>
     step: p.Property<number>
-    loop_policy: p.Property<any>
+    loop_policy: p.Property<typeof LoopPolicy["__type__"]>
     value: p.Property<any>
     show_loop_controls: p.Property<boolean>
   }
 }
+
 
 export interface Player extends Player.Attrs {}
 
@@ -338,16 +340,16 @@ export class Player extends Widget {
   static init_Player(): void {
     this.prototype.default_view = PlayerView
 
-    this.define<Player.Props>({
-      direction:          [ p.Number,      0            ],
-      interval:           [ p.Number,      500          ],
-      start:              [ p.Number,                   ],
-      end:                [ p.Number,                   ],
-      step:               [ p.Number,      1            ],
-      loop_policy:        [ p.Any,         "once"       ],
-      value:              [ p.Any,         0            ],
-      show_loop_controls: [ p.Boolean,     true         ],
-    })
+    this.define<Player.Props>(({Boolean, Int}) => ({
+      direction:          [ Int,             0 ],
+      interval:           [ Int,           500 ],
+      start:              [ Int                ],
+      end:                [ Int                ],
+      step:               [ Int,             1 ],
+      loop_policy:        [ LoopPolicy, "once" ],
+      value:              [ Int,             0 ],
+      show_loop_controls: [ Boolean,      true ],
+    }))
 
     this.override<Player.Props>({width: 400})
   }

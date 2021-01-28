@@ -36,7 +36,7 @@ class AbstractVTK(PaneBase):
 
     __abstract = True
 
-    axes = param.Dict(doc="""
+    axes = param.Dict(default={}, doc="""
         Parameters of the axes to construct in the 3d view.
 
         Must contain at least ``xticker``, ``yticker`` and ``zticker``.
@@ -650,10 +650,10 @@ class VTKVolume(AbstractVTK):
             VTKVolumePlot = getattr(sys.modules['panel.models.vtk'], 'VTKVolumePlot')
 
         props = self._process_param_change(self._init_properties())
-        volume_data = self._volume_data
+        if self._volume_data is not None:
+            props['data'] = self._volume_data
 
-        model = VTKVolumePlot(data=volume_data,
-                              **props)
+        model = VTKVolumePlot(**props)
         if root is None:
             root = model
         self._link_props(model, ['colormap', 'orientation_widget', 'camera', 'mapper', 'controller_expanded'], doc, root, comm)
@@ -820,10 +820,11 @@ class VTKJS(AbstractVTK):
         else:
             VTKJSPlot = getattr(sys.modules['panel.models.vtk'], 'VTKJSPlot')
 
-        vtkjs = self._get_vtkjs()
-        data = base64encode(vtkjs) if vtkjs is not None else vtkjs
         props = self._process_param_change(self._init_properties())
-        model = VTKJSPlot(data=data, **props)
+        vtkjs = self._get_vtkjs()
+        if vtkjs is not None:
+            props['data'] = base64encode(vtkjs)
+        model = VTKJSPlot(**props)
         if root is None:
             root = model
         self._link_props(model, ['camera', 'enable_keybindings', 'orientation_widget'], doc, root, comm)

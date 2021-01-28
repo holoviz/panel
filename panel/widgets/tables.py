@@ -166,8 +166,6 @@ class BaseTable(Widget):
                 col_kwargs['width'] = self.widths
             elif str(col) in self.widths:
                 col_kwargs['width'] = self.widths.get(str(col))
-            else:
-                col_kwargs['width'] = None
 
             title = self.titles.get(col, str(col))
             if col in indexes and len(indexes) > 1 and self.hierarchical:

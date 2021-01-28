@@ -138,13 +138,13 @@ export class Video extends HTMLBox {
   static init_Video(): void {
     this.prototype.default_view = VideoView
 
-    this.define<Video.Props>({
-      loop:     [ p.Boolean,   false ],
-      paused:   [ p.Boolean,   true  ],
-      time:     [ p.Number, 0     ],
-      throttle: [ p.Number, 250   ],
-      value:    [ p.Any,    ''    ],
-      volume:   [ p.Number, null  ],
-    })
+    this.define<Video.Props>(({Any, Boolean, Int, Number}) => ({
+      loop:     [ Boolean, false ],
+      paused:   [ Boolean,  true ],
+      time:     [ Number,      0 ],
+      throttle: [ Int,       250 ],
+      value:    [ Any,        '' ],
+      volume:   [ Int            ],
+    }))
   }
 }

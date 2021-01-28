@@ -73,8 +73,9 @@ class SingleSelectBase(SelectBase):
                 msg['value'] = unicode_values[indexOf(val, values)]
             elif values:
                 self.value = self.values[0]
-            elif self.value is not None:
+            else:
                 self.value = None
+                msg['value'] = ''
 
         if 'options' in msg:
             if isinstance(self.options, dict):
@@ -89,7 +90,7 @@ class SingleSelectBase(SelectBase):
             if values:
                 if not isIn(val, values):
                     self.value = values[0]
-            elif val is not None:
+            else:
                 self.value = None
         return msg
 
@@ -102,8 +103,8 @@ class SingleSelectBase(SelectBase):
         if 'value' in msg:
             if not self.values:
                 pass
-            elif msg['value'] is None:
-                msg['value'] = self.values[0]
+            elif msg['value'] == '':
+                msg['value'] = self.values[0] if self.values else None
             else:
                 if isIn(msg['value'], self.unicode_values):
                     idx = indexOf(msg['value'], self.unicode_values)
