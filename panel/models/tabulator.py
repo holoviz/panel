@@ -51,9 +51,9 @@ class DataTabulator(HTMLBox):
 
     styles = Dict(Int, Dict(Int, List(String)))
 
-    pagination = Nullable(String())
+    pagination = Nullable(String)
 
-    page = Nullable(Int())
+    page = Nullable(Int)
 
     page_size = Int()
 

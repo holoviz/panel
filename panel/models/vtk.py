@@ -101,7 +101,7 @@ class VTKJSPlot(AbstractVTKPlot):
     Bokeh model for plotting a 3D scene saved in the `.vtk-js` format
     """
 
-    data = Nullable(String(help="""The serialized vtk.js data"""))
+    data = Nullable(String, help="""The serialized vtk.js data""")
 
     enable_keybindings = Bool(default=False)
 
