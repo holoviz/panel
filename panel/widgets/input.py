@@ -256,12 +256,17 @@ class IntInput(_SpinnerBase, _IntInputBase):
 
     value_throttled = param.Integer(default=None, constant=True)
 
+    _rename = dict(_NumericInputBase._rename, value_throttled=None)
+
+
 
 class FloatInput(_SpinnerBase, _FloatInputBase):
 
     step = param.Number(default=0.1)
 
     value_throttled = param.Number(default=None, constant=True)
+
+    _rename = dict(_NumericInputBase._rename, value_throttled=None)
 
 
 class NumberInput(_SpinnerBase):

@@ -214,8 +214,9 @@ class Plotly(PaneBase):
             properties['sizing_mode'] = 'stretch_both'
 
         model = PlotlyPlot(
-            data=data, layout=layout, config=self.config, data_sources=sources,
-            _render_count=self._render_count, **properties
+            data=data, layout=layout, config=self.config or {},
+            data_sources=sources, _render_count=self._render_count,
+            **properties
         )
 
         if root is None:

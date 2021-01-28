@@ -118,6 +118,8 @@ class FloatSlider(ContinuousSlider):
 
     step = param.Number(default=0.1)
 
+    _rename = {'name': 'title', 'value_throttled': None}
+
 
 class IntSlider(ContinuousSlider):
 
@@ -130,6 +132,8 @@ class IntSlider(ContinuousSlider):
     end = param.Integer(default=1)
 
     step = param.Integer(default=1)
+
+    _rename = {'name': 'title', 'value_throttled': None}
 
     def _process_property_change(self, msg):
         msg = super(_SliderBase, self)._process_property_change(msg)
@@ -150,6 +154,8 @@ class DateSlider(_SliderBase):
     start = param.Date(default=None)
 
     end = param.Date(default=None)
+
+    _rename = {'name': 'title', 'value_throttled': None}
 
     _source_transforms = {'value': None, 'value_throttled': None, 'start': None, 'end': None}
 
@@ -345,6 +351,8 @@ class RangeSlider(_SliderBase):
 
     step = param.Number(default=0.1)
 
+    _rename = {'name': 'title', 'value_throttled': None}
+
     _widget_type = _BkRangeSlider
 
     def __init__(self, **params):
@@ -400,6 +408,8 @@ class DateRangeSlider(_SliderBase):
     _source_transforms = {'value': None, 'value_throttled': None,
                          'start': None, 'end': None, 'step': None}
 
+    _rename = {'name': 'title', 'value_throttled': None}
+
     _widget_type = _BkDateRangeSlider
 
     def __init__(self, **params):
@@ -407,6 +417,12 @@ class DateRangeSlider(_SliderBase):
             params['value'] = (params.get('start', self.start),
                                params.get('end', self.end))
         super(DateRangeSlider, self).__init__(**params)
+
+    def _process_param_change(self, msg):
+        msg = super()._process_param_change(msg)
+        if msg.get('value') == (None, None):
+            del msg['value']
+        return msg
 
     def _process_property_change(self, msg):
         msg = super(DateRangeSlider, self)._process_property_change(msg)

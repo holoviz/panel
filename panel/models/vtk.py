@@ -2,9 +2,10 @@
 """
 Defines custom VTKPlot bokeh model to render VTK objects.
 """
-from bokeh.core.properties import (String, Bool, Dict, Any, Override,
-                                   Instance, Int, Float, PositiveInt,
-                                   Enum, List)
+from bokeh.core.properties import (
+    String, Bool, Dict, Any, Override, Instance, Int, Float, PositiveInt,
+    Enum, List, Nullable
+)
 from bokeh.core.has_props import abstract
 from bokeh.core.enums import enumeration
 from bokeh.models import HTMLBox, Model, ColorMapper
@@ -100,7 +101,7 @@ class VTKJSPlot(AbstractVTKPlot):
     Bokeh model for plotting a 3D scene saved in the `.vtk-js` format
     """
 
-    data = String(help="""The serialized vtk.js data""")
+    data = Nullable(String(help="""The serialized vtk.js data"""))
 
     enable_keybindings = Bool(default=False)
 
@@ -117,7 +118,7 @@ class VTKVolumePlot(AbstractVTKPlot):
     controller_expanded = Bool(default=True, help="""
         If True the volume controller panel options is expanded in the view""")
 
-    data = Dict(String, Any)
+    data = Nullable(Dict(String, Any))
 
     diffuse = Float(default=0.7)
 

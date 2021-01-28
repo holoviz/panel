@@ -73,7 +73,7 @@ export class VTKJSPlot extends AbstractVTKPlot {
     this.prototype.default_view = VTKJSPlotView
 
     this.define<VTKJSPlot.Props>({
-      data:               [ p.String         ],
+      data:               [ p.NullString         ],
       enable_keybindings: [ p.Boolean, false ],
     })
   }

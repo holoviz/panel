@@ -41,7 +41,7 @@ const Theme: Theme[] = ["dark", "light"]
 export namespace JSON {
   export type Attrs = p.AttrsOf<Props>
   export type Props = Markup.Props & {
-    depth: p.Property<number>
+    depth: p.Property<number | null>
     hover_preview: p.Property<boolean> 
     theme: p.Property<"light" | "dark">
   }
@@ -61,9 +61,9 @@ export class JSON extends Markup {
   static init_JSON(): void {
     this.prototype.default_view = JSONView
     this.define<JSON.Props>({
-      depth: [p.Number, 1],
-      hover_preview: [p.Boolean, false],
-      theme: [p.Enum(Theme), "dark"],
+      depth: [ p.Number, 1 ],
+      hover_preview: [ p.Boolean, false ],
+      theme: [ p.Enum(Theme), "dark" ],
     })
   }
 }
