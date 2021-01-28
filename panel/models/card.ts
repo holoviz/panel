@@ -131,12 +131,12 @@ export class Card extends Column {
     this.prototype.default_view = CardView
 
     this.define<Card.Props>({
-      active_header_background:  [ p.String,  null  ],
+      active_header_background:  [ p.NullString,  null  ],
       button_css_classes: [ p.Array,   []    ],
       collapsed:          [ p.Boolean, true  ],
       collapsible:        [ p.Boolean, true  ],
-      header_background:  [ p.String,  null  ],
-      header_color:       [ p.String,  null  ],
+      header_background:  [ p.NullString,  null  ],
+      header_color:       [ p.NullString,  null  ],
       header_css_classes: [ p.Array,   []    ],
       header_tag:         [ p.String,  "div" ],
       tag:                [ p.String,  "div" ],

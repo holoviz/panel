@@ -540,7 +540,7 @@ export class DataTabulator extends HTMLBox {
       hidden_columns: [ p.Array, [] ],
       layout: [ p.Any, "fit_data" ],
       max_page: [ p.Number, 0 ],
-      pagination: [ p.String, null ],
+      pagination: [ p.NullString, null ],
       page: [ p.Number, 0],
       page_size: [ p.Number, 0],
       source: [ p.Any, ],

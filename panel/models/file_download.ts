@@ -222,7 +222,7 @@ export class FileDownload extends InputWidget {
       clicks:       [ p.Number,         0     ],
       data:         [ p.NullString,     null  ],
       label:        [ p.String,   "Download"  ],
-      filename:     [ p.String,         null  ],
+      filename:     [ p.NullString,         null  ],
       button_type:  [ p.ButtonType, "default" ], // TODO (bev)
       _transfers:   [ p.Number,          0    ],
     })

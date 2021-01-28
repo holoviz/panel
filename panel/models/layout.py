@@ -1,10 +1,10 @@
-from bokeh.core.properties import String, List, Bool
+from bokeh.core.properties import Bool, List, Nullable, String
 
 from bokeh.models import Column
 
 class Card(Column):
 
-    active_header_background = String(help="Background color of active Card header.")
+    active_header_background = Nullable(String(help="Background color of active Card header."))
 
     button_css_classes = List(String, help="CSS classes to add to the Card collapse button.")
 
@@ -12,9 +12,9 @@ class Card(Column):
 
     collapsible = Bool(True, help="Whether the Card should have a button to collapse it.")
 
-    header_background = String(help="Background color of the Card header.")
+    header_background = Nullable(String(help="Background color of the Card header."))
 
-    header_color = String(help="Color of the header text and butotn.")
+    header_color = Nullable(String(help="Color of the header text and button."))
 
     header_css_classes = List(String, help="CSS classes to add to the Card header.")
 
