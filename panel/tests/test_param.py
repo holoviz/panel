@@ -660,9 +660,9 @@ def test_set_widgets_throttled(document, comm):
     assert number.value != 3
     assert test.a == 3
 
-    test.a = 4
-    assert number.value != 4
-    assert test.a == 4
+    pane._widgets['a']._process_events({'value': 4})
+    assert test.a == 3
+    assert number.value == 4
 
 
 def test_set_show_name(document, comm):
