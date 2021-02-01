@@ -427,6 +427,7 @@ class Param(PaneBase):
 
         def link(change, watchers=[watcher]):
             updates = {}
+            widget = self._widgets[p_name]
             if change.what == 'constant':
                 updates['disabled'] = change.new
             elif change.what == 'precedence':
@@ -434,22 +435,23 @@ class Param(PaneBase):
                     widget in self._widget_box.objects):
                     self._widget_box.pop(widget)
                 elif change.new >= self.display_threshold:
-                    precedence = lambda k: self.object.param['name' if k == '_title' else k].precedence
-                    params = self._ordered_params
-                    if self.show_name:
-                        params.insert(0, '_title')
-                    widgets = []
-                    for k in params:
-                        if precedence(k) is None or precedence(k) >= self.display_threshold:
-                            widgets.append(self._widgets[k])
-                    self._widget_box.objects = widgets
+                    self._rerender()
                 return
             elif change.what == 'objects':
                 updates['options'] = p_obj.get_range()
             elif change.what == 'bounds':
                 start, end = p_obj.get_soft_bounds()
-                updates['start'] = start
-                updates['end'] = end
+                supports_bounds = hasattr(widget, 'start')
+                if start is None or end is None:
+                    rerender = supports_bounds
+                else:
+                    rerender = not supports_bounds
+                if supports_bounds:
+                    updates['start'] = start
+                    updates['end'] = end
+                if rerender:
+                    self._rerender_widget(p_name)
+                    return
             elif change.what == 'step':
                 updates['step'] = p_obj.step
             elif change.what == 'label':
@@ -530,6 +532,27 @@ class Param(PaneBase):
     # Model API
     #----------------------------------------------------------------
 
+    def _rerender(self):
+        precedence = lambda k: self.object.param['name' if k == '_title' else k].precedence
+        params = self._ordered_params
+        if self.show_name:
+            params.insert(0, '_title')
+        widgets = []
+        for k in params:
+            if precedence(k) is None or precedence(k) >= self.display_threshold:
+                widgets.append(self._widgets[k])
+        self._widget_box.objects = widgets
+
+    def _rerender_widget(self, p_name):
+        watchers = []
+        for w in self._callbacks:
+            if w.inst is self._widgets[p_name]:
+                w.inst.param.unwatch(w)
+            else:
+                watchers.append(w)
+        self._widgets[p_name] = self.widget(p_name)
+        self._rerender()
+    
     def _get_widgets(self):
         """Return name,widget boxes for all parameters (i.e., a property sheet)"""
         # Format name specially
