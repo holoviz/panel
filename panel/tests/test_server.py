@@ -1,4 +1,5 @@
 import os
+import pathlib
 import time
 
 import param
@@ -9,7 +10,7 @@ from panel.config import config
 from panel.io import state
 from panel.models import HTML as BkHTML
 from panel.pane import Markdown
-from panel.io.server import serve, set_curdoc
+from panel.io.server import get_server, serve, set_curdoc
 from panel.widgets import Button
 
 
@@ -153,3 +154,14 @@ def test_multiple_titles(multiple_apps_server_sessions):
     with pytest.raises(KeyError):
         session1, session2 = multiple_apps_server_sessions(
             slugs=('app1', 'app2'), titles={'badkey': 'APP1', 'app2': 'APP2'})
+
+
+def test_serve_can_serve_panel_app_from_file():
+    path = pathlib.Path(__file__).parent / "io"/"panel_app.py"
+    server = get_server({"panel-app": path})
+    assert "/panel-app" in server._tornado.applications
+
+def test_serve_can_serve_bokeh_app_from_file():
+    path = pathlib.Path(__file__).parent / "io"/"bk_app.py"
+    server = get_server({"bk-app": path})
+    assert "/bk-app" in server._tornado.applications
