@@ -6,6 +6,7 @@ from __future__ import absolute_import, division, unicode_literals
 import datetime as dt
 import inspect
 import os
+import pathlib
 import signal
 import sys
 import threading
@@ -15,7 +16,6 @@ from collections import OrderedDict
 from contextlib import contextmanager
 from functools import partial, wraps
 from types import FunctionType, MethodType
-import pathlib
 
 import param
 import bokeh
@@ -437,12 +437,15 @@ def get_server(panel, port=0, address=None, websocket_origin=None,
                     continue
             if isinstance(app, pathlib.Path):
                 app = str(app) # enables serving apps from Paths
-            if isinstance(app, str) and (app.endswith(".py") or app.endswith(".ipynb")):
+            if (isinstance(app, str) and (app.endswith(".py") or app.endswith(".ipynb"))
+                and os.path.isfile(app)):
                 apps[slug] = build_single_handler_application(app)
             else:
-                apps[slug] = Application(FunctionHandler(partial(_eval_panel, app, server_id, title_, location)))
+                handler = FunctionHandler(partial(_eval_panel, app, server_id, title_, location))
+                apps[slug] = Application(handler)
     else:
-        apps = {'/': Application(FunctionHandler(partial(_eval_panel, panel, server_id, title, location)))}
+        handler = FunctionHandler(partial(_eval_panel, panel, server_id, title, location))
+        apps = {'/': Application(handler)}
 
     extra_patterns += get_static_routes(static_dirs)
 
