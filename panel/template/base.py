@@ -476,12 +476,12 @@ class BasicTemplate(BaseTemplate):
         if self.theme:
             theme = self.theme.find_theme(type(self))
             if theme:
+                if theme.base_css:
+                    basename = os.path.basename(theme.base_css)
+                    css_files['base_theme'] = dist_path + f'bundled/theme/{basename}'
                 if theme.css:
                     basename = os.path.basename(theme.css)
                     css_files['theme'] = dist_path + f'bundled/{name}/{basename}'
-                elif theme.base_css:
-                    basename = os.path.basename(theme.base_css)
-                    css_files['theme'] = dist_path + f'bundled/theme/{basename}'
         return {'css': css_files, 'js': js_files}
 
     def _update_vars(self, *args):

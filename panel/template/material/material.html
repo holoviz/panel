@@ -16,7 +16,12 @@
 <link href="{{ template_resources['css']['material'] }}" rel="stylesheet">
 <script src="{{ template_resources['js']['material'] }}"></script>
 <link rel="stylesheet" href="{{ template_resources['css']['base'] }}">
+{% if 'base_theme' in template_resources['css'] %}
+<link rel="stylesheet" href="{{ template_resources['css']['base_theme'] }}">
+{% endif %}
+{% if 'theme' in template_resources['css'] %}
 <link rel="stylesheet" href="{{ template_resources['css']['theme'] }}">
+{% endif %}
 <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css?family=Material+Icons&display=block" rel="stylesheet">
 {% endblock %}

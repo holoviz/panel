@@ -15,7 +15,12 @@
 {% block postamble %}
 <link type="text/css" rel="stylesheet" href="{{ template_resources['css']['goldenlayout'] }}" />
 <link rel="stylesheet" href="{{ template_resources['css']['base'] }}">
+{% if 'base_theme' in template_resources['css'] %}
+<link rel="stylesheet" href="{{ template_resources['css']['base_theme'] }}">
+{% endif %}
+{% if 'theme' in template_resources['css'] %}
 <link rel="stylesheet" href="{{ template_resources['css']['theme'] }}">
+{% endif %}
 <script type="text/javascript" src="{{ template_resources['js']['jquery'] }}"></script>
 <script type="text/javascript" src="{{ template_resources['js']['goldenlayout'] }}"></script>
 {% endblock %}
