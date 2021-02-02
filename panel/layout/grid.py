@@ -158,7 +158,7 @@ class GridBox(ListPanel):
             update = Panel._batch_update
             Panel._batch_update = True
             try:
-                super()._update_model(events, msg, root, model, doc, comm)
+                super(Panel, self)._update_model(events, msg, root, model, doc, comm)
                 if update:
                     return
                 ref = root.ref['id']
