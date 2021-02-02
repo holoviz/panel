@@ -39,9 +39,8 @@ def css_raw(self):
             css_txt = f.read()
             if css_txt not in raw:
                 raw.append(css_txt)
-    resources = settings.resources(default='server')
     for cssf in glob.glob(str(DIST_DIR / 'css' / '*.css')):
-        if resources != 'inline':
+        if self.mode != 'inline':
             break
         with open(cssf, encoding='utf-8') as f:
             css_txt = f.read()
@@ -56,8 +55,7 @@ def js_files(self):
 
     # Load requirejs last to avoid interfering with other libraries
     require_index = [i for i, jsf in enumerate(js_files) if 'require' in jsf]
-    resources = settings.resources(default='server')
-    if resources == 'server':
+    if self.mode == 'server':
         dist_dir = urljoin(self.root_url, LOCAL_DIST)
     else:
         dist_dir = CDN_DIST
@@ -78,13 +76,12 @@ def css_files(self):
         if os.path.isfile(cssf) or cssf in files:
             continue
         files.append(cssf)
-    resources = settings.resources(default='server')
-    if resources == 'server':
+    if self.mode == 'server':
         dist_dir = urljoin(self.root_url, LOCAL_DIST)
     else:
         dist_dir = CDN_DIST
     for cssf in glob.glob(str(DIST_DIR / 'css' / '*.css')):
-        if resources == 'inline':
+        if self.mode == 'inline':
             break
         files.append(dist_dir + f'css/{os.path.basename(cssf)}')
     return files
