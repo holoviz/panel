@@ -68,13 +68,25 @@ class Syncable(Renderable):
 
     def __init__(self, **params):
         super().__init__(**params)
-        self._processing = False
+
+        # Useful when updating model properties which trigger potentially
+        # recursive events
         self._updating = False
+
+        # A dictionary of current property change events
         self._events = {}
+
+        # All parameter watchers on the component
         self._callbacks = []
+
+        # Any watchers associated with links between two objects
         self._links = []
         self._link_params()
+
+        # A dictionary of bokeh property changes being processed
         self._changing = {}
+
+        # Sets up watchers to process manual updates to models
         if self._manual_params:
             self.param.watch(self._update_manual, self._manual_params)
 
@@ -109,8 +121,25 @@ class Syncable(Renderable):
             properties['min_height'] = properties['height']
         return properties
 
+    @property
+    def _linkable_params(self):
+        """
+        Parameters that can be linked in JavaScript via source
+        transforms.
+        """
+        return [p for p in self._synced_params if self._rename.get(p, False) is not None
+                and self._source_transforms.get(p, False) is not None]
+
+    @property
+    def _synced_params(self):
+        """
+        Parameters which are synced with properties using transforms
+        applied in the _process_param_change method.
+        """
+        return [p for p in self.param if p not in self._manual_params]
+
     def _link_params(self):
-        params = self._synced_params()
+        params = self._synced_params
         if params:
             watcher = self.param.watch(self._param_change, params)
             self._callbacks.append(watcher)
@@ -127,14 +156,6 @@ class Syncable(Renderable):
                 model.on_change(p, partial(self._comm_change, doc, ref, comm))
             else:
                 model.on_change(p, partial(self._server_change, doc, ref))
-
-    @property
-    def _linkable_params(self):
-        return [p for p in self._synced_params() if self._rename.get(p, False) is not None
-                and self._source_transforms.get(p, False) is not None]
-
-    def _synced_params(self):
-        return [p for p in self.param if p not in self._manual_params]
 
     def _manual_update(self, events, model, doc, root, parent, comm):
         """
@@ -234,7 +255,6 @@ class Syncable(Renderable):
             self._events = {}
             self._process_events(events)
         finally:
-            self._processing = False
             state.curdoc = None
             state._thread_id = None
 
@@ -252,9 +272,9 @@ class Syncable(Renderable):
             return
 
         state._locks.clear()
+        processing = bool(self._events)
         self._events.update({attr: new})
-        if not self._processing:
-            self._processing = True
+        if not processing:
             if doc.session_context:
                 doc.add_timeout_callback(partial(self._change_coroutine, doc), self._debounce)
             else:
@@ -559,22 +579,41 @@ class SyncableData(Reactive):
     selection = param.List(default=[], doc="""
         The currently selected rows in the data.""")
 
-    _data_param = None
-
+    # Parameters which when changed require an update of the data 
     _data_params = []
 
     _rename = {'selection': None}
 
+    __abstract = True
+
     def __init__(self, **params):
         super().__init__(**params)
         self._data = None
+        self._processed = None
+        self.param.watch(self._validate, self._data_params)
         if self._data_params:
             self.param.watch(self._update_cds, self._data_params)
+        self.param.watch(self._update_selected, 'selection')
+        self._validate(None)
+        self._update_cds()
+
+    def _validate(self, event):
+        """
+        Allows implementing validation for the data parameters.
+        """
 
     def _get_data(self):
         """
         Implemented by subclasses converting data parameter(s) into
         a ColumnDataSource compatible data dictionary.
+
+        Returns
+        -------
+        processed: object
+          Raw data after pre-processing (e.g. after filtering)
+        data: dict
+          Dictionary of columns used to instantiate and update the
+          ColumnDataSource
         """
 
     def _manual_update(self, events, model, doc, root, parent, comm):
@@ -587,7 +626,7 @@ class SyncableData(Reactive):
     def _update_cds(self, *events):
         if self._updating:
             return
-        self._data = self._get_data()
+        self._processed, self._data = self._get_data()
         for ref, (m, _) in self._models.items():
             m.source.data = self._data
             push_on_root(ref)
@@ -795,9 +834,6 @@ class ReactiveData(SyncableData):
     parameter between frontend and backend using a ColumnDataSource.
     """
 
-    def _update_selection(self, indices):
-        return indices
-
     def _update_column(self, column, array):
         """
         Implemented by subclasses converting changes in columns to
@@ -810,6 +846,9 @@ class ReactiveData(SyncableData):
         array: numpy.ndarray
           The array data to update the column with.
         """
+
+    def _update_selection(self, indices):
+        self.selection = indices
 
     def _process_events(self, events):
         if 'data' in events:
@@ -838,7 +877,7 @@ class ReactiveData(SyncableData):
         if 'indices' in events:
             self._updating = True
             try:
-                self.selection = self._update_selection(events.pop('indices'))
+                self._update_selection(events.pop('indices'))
             finally:
                 self._updating = False
         super(ReactiveData, self)._process_events(events)

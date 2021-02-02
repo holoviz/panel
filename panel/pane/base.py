@@ -135,8 +135,9 @@ class PaneBase(Reactive):
 
     @property
     def _linkable_params(self):
-        return [p for p in self._synced_params() if self._rename.get(p, False) is not None]
+        return [p for p in self._synced_params if self._rename.get(p, False) is not None]
 
+    @property
     def _synced_params(self):
         ignored_params = ['name', 'default_layout']+self._rerender_params
         return [p for p in self.param if p not in ignored_params]

@@ -212,6 +212,7 @@ class Param(PaneBase):
     # Callback API
     #----------------------------------------------------------------
 
+    @property
     def _synced_params(self):
         ignored_params = ['default_layout']
         return [p for p in Layoutable.param if p not in ignored_params]

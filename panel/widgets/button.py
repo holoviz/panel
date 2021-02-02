@@ -96,10 +96,10 @@ class Button(_ClickButton):
     _widget_type = _BkButton
 
     def _server_click(self, doc, ref, event):
+        processing = bool(self._events)
         self._events.update({"clicks": self.clicks+1})
         self.param.trigger('value')
-        if not self._processing:
-            self._processing = True
+        if not processing:
             if doc.session_context:
                 doc.add_timeout_callback(partial(self._change_coroutine, doc), self._debounce)
             else:
@@ -153,13 +153,12 @@ class MenuButton(_ClickButton):
         self.param.watch(callback, 'clicked', onlychanged=False)
 
     def _server_click(self, doc, ref, event):
+        processing = bool(self._events)
         if isinstance(event, MenuItemClick):
             self._events.update({"clicked": event.item})
         elif isinstance(event, ButtonClick):
             self._events.update({"clicked": self.name})
-
-        if not self._processing:
-            self._processing = True
+        if not processing:
             if doc.session_context:
                 doc.add_timeout_callback(partial(self._change_coroutine, doc), self._debounce)
             else:

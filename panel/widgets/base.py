@@ -176,5 +176,6 @@ class CompositeWidget(Widget):
     def __contains__(self, object):
         return object in self._composite.objects
 
+    @property
     def _synced_params(self):
         return []
