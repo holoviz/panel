@@ -373,12 +373,13 @@ def lazy_load(module, model, notebook=False):
         return getattr(sys.modules[module], model)
     if notebook:
         ext = module.split('.')[-1]
-        extension.param.warning('AcePlot was not imported on instantiation '
-                                'and may not render in a notebook. Restart '
-                                'the notebook kernel and ensure you load '
-                                'it as part of the extension using:'
-                                f'\n\npn.extension(\'{ext}\')\n')
+        param.main..param.warning(f'{model} was not imported on instantiation '
+                                  'and may not render in a notebook. Restart '
+                                  'the notebook kernel and ensure you load '
+                                  'it as part of the extension using:'
+                                  f'\n\npn.extension(\'{ext}\')\n')
     return getattr(import_module(module), model)
+
 
 def updating(fn):
     def wrapped(self, *args, **kwargs):

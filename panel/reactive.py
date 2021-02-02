@@ -5,6 +5,7 @@ models rendered on the frontend.
 """
 
 import difflib
+import sys
 import threading
 
 from collections import namedtuple
@@ -759,7 +760,7 @@ class SyncableData(Reactive):
                     raise ValueError("Stream update must append to all columns.")
                 for col, array in stream_value.items():
                     combined = np.concatenate([self._data[col], array])
-                    self._update_column(col, array)
+                    self._update_column(col, combined)
                 self._updating = True
                 try:
                     self._stream(stream_value)

@@ -2,8 +2,6 @@
 Defines a PlotlyPane which renders a plotly plot using PlotlyPlot
 bokeh model.
 """
-import sys
-
 import numpy as np
 import param
 
