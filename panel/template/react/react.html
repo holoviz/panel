@@ -18,7 +18,12 @@
 <link rel="stylesheet" href="{{ template_resources['css']['font-awesome'] }}">
 <!-- Template CSS -->
 <link rel="stylesheet" href="{{ template_resources['css']['base'] }}">
+{% if 'base_theme' in template_resources['css'] %}
+<link rel="stylesheet" href="{{ template_resources['css']['base_theme'] }}">
+{% endif %}
+{% if 'theme' in template_resources['css'] %}
 <link rel="stylesheet" href="{{ template_resources['css']['theme'] }}">
+{% endif %}
 
 <!-- React-grid-layout script -->
 <script src="{{ template_resources['js']['react'] }}" crossorigin></script>

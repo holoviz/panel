@@ -13,7 +13,12 @@
 
 {% block postamble %}
 <link rel="stylesheet" href="{{ template_resources['css']['base'] }}">
+{% if 'base_theme' in template_resources['css'] %}
+<link rel="stylesheet" href="{{ template_resources['css']['base_theme'] }}">
+{% endif %}
+{% if 'theme' in template_resources['css'] %}
 <link rel="stylesheet" href="{{ template_resources['css']['theme'] }}">
+{% endif %}
 {% endblock %}
 
 <!-- goes in body -->

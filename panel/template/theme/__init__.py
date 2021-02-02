@@ -1,3 +1,5 @@
+import pathlib
+
 import param
 
 from bokeh.themes import Theme as _BkTheme, _dark_minimal
@@ -19,6 +21,8 @@ class Theme(param.Parameterized):
     the generic Theme but the actual CSS and bokeh Theme will depend
     on the exact Template being used.
     """
+
+    base_css = param.Filename()
 
     css = param.Filename()
 
@@ -56,6 +60,8 @@ class DarkTheme(Theme):
     """
     The DefaultTheme uses the standard Panel color palette.
     """
+
+    base_css = param.Filename(default=pathlib.Path(__file__).parent / 'dark.css')
 
     bokeh_theme = param.ClassSelector(class_=(_BkTheme, str),
                                       default=_BkTheme(json=BOKEH_DARK))
