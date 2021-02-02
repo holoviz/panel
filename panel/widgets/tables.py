@@ -69,8 +69,6 @@ class BaseTable(ReactiveData, Widget):
         super().__init__(value=value, **params)
         self._renamed_cols = {}
         self._filters = []
-        self._updating = False
-        self._data = None
         self._filtered = None
         self.param.watch(self._validate, 'value')
         self.param.watch(self._update_cds, self._data_params)
@@ -313,6 +311,14 @@ class BaseTable(ReactiveData, Widget):
             df = df.reset_index()
         data = ColumnDataSource.from_df(df).items()
         return df, {k if isinstance(k, str) else str(k): v for k, v in data}
+
+    def _update_cds(self, *events):
+        if self._updating:
+            return
+        self._filtered, self._data = self._get_data()
+        for ref, (m, _) in self._models.items():
+            m.source.data = self._data
+            push_on_root(ref)
 
     def _update_column(self, column, array):
         self.value[column] = array
