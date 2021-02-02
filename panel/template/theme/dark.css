@@ -14,7 +14,7 @@ body {
 
 #sidebar {
   color: white;
-  border-right: 1px solid #1f1f1f;
+  border-color: #2f2f2f !important;
   background-color: #121212;
 }
 
@@ -27,7 +27,6 @@ body {
   color: white;
   background-color: #292929 !important;
 }
-
 
 /* DataFrame Widget */
 .bk-root .slick-header-columns {
