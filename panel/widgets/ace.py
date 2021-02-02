@@ -2,7 +2,6 @@
 Defines various Select widgets which allow choosing one or more items
 from a list of options.
 """
-import sys
 import param
 
 from pyviz_comms import JupyterComm

@@ -3,7 +3,6 @@ Defines a PyDeck Pane which renders a PyDeck plot using a PyDeckPlot
 bokeh model.
 """
 import json
-import sys
 
 from collections import defaultdict
 

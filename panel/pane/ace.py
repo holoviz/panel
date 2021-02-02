@@ -1,5 +1,3 @@
-import sys
-
 import param
 
 from six import string_types

@@ -19,25 +19,15 @@ from ..io.notebook import push_on_root
 from ..models.tabulator import (
     DataTabulator as _BkTabulator, TABULATOR_THEMES, THEME_URL
 )
+from ..reactive import ReactiveData
 from ..viewable import Layoutable
-from ..util import isdatetime
+from ..util import isdatetime, updating
 from .base import Widget
 from .button import Button
 from .input import TextInput
 
 
-def updating(fn):
-    def wrapped(self, *args, **kwargs):
-        updating = self._updating
-        self._updating = True
-        try:
-            fn(self, *args, **kwargs)
-        finally:
-            self._updating = updating
-    return wrapped
-
-
-class BaseTable(Widget):
+class BaseTable(ReactiveData, Widget):
 
     editors = param.Dict(default={}, doc="""
         Bokeh CellEditor to use for a particular column
@@ -65,26 +55,18 @@ class BaseTable(Widget):
 
     value = param.Parameter(default=None)
 
-    __abstract = True
-
     _data_params = ['value']
 
     _manual_params = ['formatters', 'editors', 'widths', 'titles', 'value', 'show_index']
 
     _rename = {'disabled': 'editable', 'selection': None}
 
+    __abstract = True
+
     def __init__(self, value=None, **params):
-        super().__init__(value=value, **params)
         self._renamed_cols = {}
         self._filters = []
-        self._updating = False
-        self._data = None
-        self._filtered = None
-        self.param.watch(self._validate, 'value')
-        self.param.watch(self._update_cds, self._data_params)
-        self.param.watch(self._update_selected, 'selection')
-        self._validate(None)
-        self._update_cds()
+        super().__init__(value=value, **params)
 
     def _validate(self, event):
         if self.value is None:
@@ -322,71 +304,8 @@ class BaseTable(Widget):
         data = ColumnDataSource.from_df(df).items()
         return df, {k if isinstance(k, str) else str(k): v for k, v in data}
 
-    def _update_cds(self, *events):
-        if self._updating:
-            return
-        self._filtered, self._data = self._get_data()
-        for ref, (m, _) in self._models.items():
-            m.source.data = self._data
-            push_on_root(ref)
-
-    def _update_selected(self, *events, indices=None):
-        if self._updating:
-            return
-        indices = self.selection if indices is None else indices
-        for ref, (m, _) in self._models.items():
-            m.source.selected.indices = indices
-            push_on_root(ref)
-
-    @updating
-    def _stream(self, stream):
-        for ref, (m, _) in self._models.items():
-            m.source.stream(stream)
-            push_on_root(ref)
-
-    @updating
-    def _patch(self, patch):
-        for ref, (m, _) in self._models.items():
-            m.source.patch(patch)
-            push_on_root(ref)
-
     def _update_column(self, column, array):
         self.value[column] = array
-
-    def _update_selection(self, indices):
-        return indices
-
-    def _process_events(self, events):
-        if 'data' in events:
-            data = events.pop('data')
-            _, old_data = self._get_data()
-            updated = False
-            for k, v in data.items():
-                if k in self.indexes:
-                    continue
-                k = self._renamed_cols.get(k, k)
-                if isinstance(v, dict):
-                    v = [v for _, v in sorted(v.items(), key=lambda it: int(it[0]))]
-                try:
-                    isequal = (old_data[k] == np.asarray(v)).all()
-                except Exception:
-                    isequal = False
-                if not isequal:
-                    self._update_column(k, v)
-                    updated = True
-            if updated:
-                self._updating = True
-                try:
-                    self.param.trigger('value')
-                finally:
-                    self._updating = False
-        if 'indices' in events:
-            self._updating = True
-            try:
-                self.selection = self._update_selection(events.pop('indices'))
-            finally:
-                self._updating = False
-        super(BaseTable, self)._process_events(events)
 
     #----------------------------------------------------------------
     # Public API
@@ -870,7 +789,7 @@ class Tabulator(BaseTable):
 
     @property
     def _length(self):
-        return len(self._filtered)
+        return len(self._processed)
 
     def _get_style_data(self):
         if self.value is None:
@@ -967,7 +886,7 @@ class Tabulator(BaseTable):
             indices = []
             for v in index.values:
                 try:
-                    indices.append(self._filtered.index.get_loc(v))
+                    indices.append(self._processed.index.get_loc(v))
                 except KeyError:
                     continue
             nrows = self.page_size
@@ -985,24 +904,24 @@ class Tabulator(BaseTable):
         start = (self.page-1)*nrows
         end = start+nrows
         if self.sorters:
-            index = self._filtered.iloc[start:end].index.values
+            index = self._processed.iloc[start:end].index.values
             self.value[column].loc[index] = array
         else:
             self.value[column].iloc[start:end] = array
 
     def _update_selection(self, indices):
         if self.pagination != 'remote':
-            return indices
+            self.selection = indices
         nrows = self.page_size
         start = (self.page-1)*nrows
-        index = self._filtered.iloc[[start+ind for ind in indices]].index
+        index = self._processed.iloc[[start+ind for ind in indices]].index
         indices = []
         for v in index.values:
             try:
                 indices.append(self.value.index.get_loc(v))
             except KeyError:
                 continue
-        return indices
+        self.selection = indices
 
     def _get_properties(self, source):
         props = {p : getattr(self, p) for p in list(Layoutable.param)
@@ -1026,7 +945,7 @@ class Tabulator(BaseTable):
         process = {'theme': self.theme, 'frozen_rows': self.frozen_rows}
         props.update(self._process_param_change(process))
         if self.pagination:
-            length = 0 if self._filtered is None else len(self._filtered)
+            length = 0 if self._processed is None else len(self._processed)
             props['max_page'] = length//self.page_size + bool(length%self.page_size)
         return props
 
