@@ -379,3 +379,13 @@ def lazy_load(module, model, notebook=False):
                                 'it as part of the extension using:'
                                 f'\n\npn.extension(\'{ext}\')\n')
     return getattr(import_module(module), model)
+
+def updating(fn):
+    def wrapped(self, *args, **kwargs):
+        updating = self._updating
+        self._updating = True
+        try:
+            fn(self, *args, **kwargs)
+        finally:
+            self._updating = updating
+    return wrapped

@@ -33,10 +33,6 @@ class Widget(Reactive):
         be specified as a two-tuple of the form (vertical, horizontal)
         or a four-tuple (top, right, bottom, left).""")
 
-    # Any parameters that require manual updates handling for the models
-    # e.g. parameters which affect some sub-model
-    _manual_params = []
-
     _rename = {'name': 'title'}
     
     # Whether the widget supports embedding
@@ -57,7 +53,6 @@ class Widget(Reactive):
         else:
             self._param_pane = None
         super().__init__(**params)
-        self.param.watch(self._update_widget, self._manual_params)
 
     @classmethod
     def from_param(cls, parameter, **params):
@@ -80,28 +75,6 @@ class Widget(Reactive):
         layout = Param(parameter, widgets={parameter.name: dict(type=cls, **params)})
         return layout[0]
 
-    def _manual_update(self, events, model, doc, root, parent, comm):
-        """
-        Method for handling any manual update events, i.e. events triggered
-        by changes in the manual params.
-        """
-
-    def _update_widget(self, *events):
-        for ref, (model, parent) in self._models.items():
-            if ref not in state._views or ref in state._fake_roots:
-                continue
-            viewable, root, doc, comm = state._views[ref]
-            if comm or state._unblocked(doc):
-                with unlocked():
-                    self._manual_update(events, model, doc, root, parent, comm)
-                if comm and 'embedded' not in root.tags:
-                    push(doc, comm)
-            else:
-                cb = partial(self._manual_update, events, model, doc, root, parent, comm)
-                if doc.session_context:
-                    doc.add_next_tick_callback(cb)
-                else:
-                    cb()
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         model = self._widget_type(**self._process_param_change(self._init_params()))
@@ -113,14 +86,6 @@ class Widget(Reactive):
         self._models[root.ref['id']] = (model, parent)
         self._link_props(model, properties, doc, root, comm)
         return model
-
-    @property
-    def _linkable_params(self):
-        return [p for p in self._synced_params() if self._rename.get(p, False) is not None
-                and self._source_transforms.get(p, False) is not None]
-
-    def _synced_params(self):
-        return [p for p in self.param if p not in self._manual_params]
 
     def _filter_properties(self, properties):
         return [p for p in properties if p not in Layoutable.param]

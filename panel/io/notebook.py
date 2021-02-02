@@ -66,6 +66,8 @@ def push(doc, comm, binary=True):
 
 
 def push_on_root(ref):
+    if ref not in state._views:
+        return
     (self, root, doc, comm) = state._views[ref]
     if comm and 'embedded' not in root.tags:
         push(doc, comm)

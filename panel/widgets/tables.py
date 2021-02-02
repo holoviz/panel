@@ -19,25 +19,15 @@ from ..io.notebook import push_on_root
 from ..models.tabulator import (
     DataTabulator as _BkTabulator, TABULATOR_THEMES, THEME_URL
 )
+from ..reactive import ReactiveData
 from ..viewable import Layoutable
-from ..util import isdatetime
+from ..util import isdatetime, updating
 from .base import Widget
 from .button import Button
 from .input import TextInput
 
 
-def updating(fn):
-    def wrapped(self, *args, **kwargs):
-        updating = self._updating
-        self._updating = True
-        try:
-            fn(self, *args, **kwargs)
-        finally:
-            self._updating = updating
-    return wrapped
-
-
-class BaseTable(Widget):
+class BaseTable(ReactiveData, Widget):
 
     editors = param.Dict(default={}, doc="""
         Bokeh CellEditor to use for a particular column
@@ -68,6 +58,8 @@ class BaseTable(Widget):
     __abstract = True
 
     _data_params = ['value']
+
+    _data_param = 'value'
 
     _manual_params = ['formatters', 'editors', 'widths', 'titles', 'value', 'show_index']
 
@@ -322,71 +314,8 @@ class BaseTable(Widget):
         data = ColumnDataSource.from_df(df).items()
         return df, {k if isinstance(k, str) else str(k): v for k, v in data}
 
-    def _update_cds(self, *events):
-        if self._updating:
-            return
-        self._filtered, self._data = self._get_data()
-        for ref, (m, _) in self._models.items():
-            m.source.data = self._data
-            push_on_root(ref)
-
-    def _update_selected(self, *events, indices=None):
-        if self._updating:
-            return
-        indices = self.selection if indices is None else indices
-        for ref, (m, _) in self._models.items():
-            m.source.selected.indices = indices
-            push_on_root(ref)
-
-    @updating
-    def _stream(self, stream):
-        for ref, (m, _) in self._models.items():
-            m.source.stream(stream)
-            push_on_root(ref)
-
-    @updating
-    def _patch(self, patch):
-        for ref, (m, _) in self._models.items():
-            m.source.patch(patch)
-            push_on_root(ref)
-
     def _update_column(self, column, array):
         self.value[column] = array
-
-    def _update_selection(self, indices):
-        return indices
-
-    def _process_events(self, events):
-        if 'data' in events:
-            data = events.pop('data')
-            _, old_data = self._get_data()
-            updated = False
-            for k, v in data.items():
-                if k in self.indexes:
-                    continue
-                k = self._renamed_cols.get(k, k)
-                if isinstance(v, dict):
-                    v = [v for _, v in sorted(v.items(), key=lambda it: int(it[0]))]
-                try:
-                    isequal = (old_data[k] == np.asarray(v)).all()
-                except Exception:
-                    isequal = False
-                if not isequal:
-                    self._update_column(k, v)
-                    updated = True
-            if updated:
-                self._updating = True
-                try:
-                    self.param.trigger('value')
-                finally:
-                    self._updating = False
-        if 'indices' in events:
-            self._updating = True
-            try:
-                self.selection = self._update_selection(events.pop('indices'))
-            finally:
-                self._updating = False
-        super(BaseTable, self)._process_events(events)
 
     #----------------------------------------------------------------
     # Public API
