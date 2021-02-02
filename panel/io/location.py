@@ -50,13 +50,13 @@ class Location(Syncable):
     _rename = {"name": None}
 
     def __init__(self, **params):
-        super(Location, self).__init__(**params)
+        super().__init__(**params)
         self._synced = []
         self._syncing = False
         self.param.watch(self._update_synced, ['search'])
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        model = _BkLocation(**self._process_param_change(self._init_properties()))
+        model = _BkLocation(**self._process_param_change(self._init_params()))
         root = root or model
         values = dict(self.param.get_param_values())
         properties = list(self._process_param_change(values))

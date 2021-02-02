@@ -2,8 +2,6 @@
 These tests verify that all of the panes, layouts, and widgets defined by panel are
 represented in the reference gallery.
 """
-from __future__ import absolute_import, division, unicode_literals
-
 import os
 
 from inspect import isclass

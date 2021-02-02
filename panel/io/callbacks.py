@@ -2,8 +2,6 @@
 Defines callbacks to be executed on a thread or by scheduling it
 on a running bokeh server.
 """
-from __future__ import absolute_import, division, unicode_literals
-
 import time
 import param
 
@@ -40,7 +38,7 @@ class PeriodicCallback(param.Parameterized):
         Toggles whether the periodic callback is currently running.""")
 
     def __init__(self, **params):
-        super(PeriodicCallback, self).__init__(**params)
+        super().__init__(**params)
         self._counter = 0
         self._start_time = None
         self._cb = None

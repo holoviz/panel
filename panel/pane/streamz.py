@@ -1,8 +1,6 @@
 """
 Renders Streamz Stream objects.
 """
-from __future__ import absolute_import, division, unicode_literals
-
 import sys
 
 import param
@@ -21,7 +19,7 @@ class Streamz(ReplacementPane):
     _rename = {'rate_limit': None, 'always_watch': None}
 
     def __init__(self, object=None, **params):
-        super(Streamz, self).__init__(object, **params)
+        super().__init__(object, **params)
         self._stream = None
         if self.always_watch:
             self._setup_stream()
@@ -38,12 +36,12 @@ class Streamz(ReplacementPane):
             self._stream.sink(self._update_inner)
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        model = super(Streamz, self)._get_model(doc, root, parent, comm)
+        model = super()._get_model(doc, root, parent, comm)
         self._setup_stream()
         return model
 
     def _cleanup(self, root=None):
-        super(Streamz, self)._cleanup(root)
+        super()._cleanup(root)
         if not self._pane._models and self._stream:
             self._stream.destroy()
             self._stream = None

@@ -1,8 +1,6 @@
 """
 Utilities for creating bokeh Server instances.
 """
-from __future__ import absolute_import, division, unicode_literals
-
 import datetime as dt
 import inspect
 import os
@@ -525,7 +523,7 @@ class StoppableThread(threading.Thread):
     """Thread class with a stop() method."""
 
     def __init__(self, io_loop=None, **kwargs):
-        super(StoppableThread, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.io_loop = io_loop
 
     def run(self):

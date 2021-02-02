@@ -2,8 +2,6 @@
 Renders objects representing equations including LaTeX strings and
 SymPy objects.
 """
-from __future__ import absolute_import, division, unicode_literals
-
 import sys
 
 from six import string_types
@@ -12,6 +10,7 @@ import param
 
 from pyviz_comms import JupyterComm
 
+from ..util import lazy_load
 from .markup import DivPaneBase
 
 
@@ -52,16 +51,7 @@ class LaTeX(DivPaneBase):
             else:
                 module = 'katex'
         model = 'KaTeX' if module == 'katex' else 'MathJax'
-        if 'panel.models.'+module not in sys.modules:
-            if isinstance(comm, JupyterComm):
-                self.param.warning('{model} model was not imported on instantiation '
-                                   'and may not render in a notebook. Restart '
-                                   'the notebook kernel and ensure you load '
-                                   'it as part of the extension using:'
-                                   '\n\npn.extension(\'{module}\')\n'.format(
-                                       module=module, model=model))
-            __import__('panel.models.'+module)
-        return getattr(sys.modules['panel.models.'+module], model)
+        return lazy_load(f'panel.models.{module}', model, isinstance(comm, JupyterComm))
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         model = self._get_model_type(comm)(**self._get_properties())
@@ -71,7 +61,7 @@ class LaTeX(DivPaneBase):
         return model
 
     def _get_properties(self):
-        properties = super(LaTeX, self)._get_properties()
+        properties = super()._get_properties()
         obj = self.object
         if obj is None:
             obj = ''

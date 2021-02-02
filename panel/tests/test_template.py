@@ -1,8 +1,6 @@
 """
 These that verify Templates are working correctly.
 """
-from __future__ import absolute_import, division, unicode_literals
-
 from distutils.version import LooseVersion
 from panel.layout.grid import GridSpec
 

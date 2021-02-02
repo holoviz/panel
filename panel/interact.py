@@ -8,8 +8,6 @@ code were copied directly from ipywidgets:
 Copyright (c) Jupyter Development Team and PyViz Development Team.
 Distributed under the terms of the Modified BSD License.
 """
-from __future__ import absolute_import, division, unicode_literals
-
 import types
 
 from collections import OrderedDict
@@ -131,7 +129,7 @@ class interactive(PaneBase):
             raise ImportError('interact requires either recent Python version '
                               '(>=3.3 or IPython to inspect function signatures.')
 
-        super(interactive, self).__init__(object, **params)
+        super().__init__(object, **params)
 
         self.throttled = kwargs.pop('throttled', False)
         new_kwargs = self.find_abbreviations(kwargs)
@@ -211,7 +209,7 @@ class interactive(PaneBase):
 
     def _cleanup(self, root):
         self._inner_layout._cleanup(root)
-        super(interactive, self)._cleanup(root)
+        super()._cleanup(root)
 
     #----------------------------------------------------------------
     # Public API
@@ -522,7 +520,7 @@ class fixed(param.Parameterized):
     description = param.String(default='')
 
     def __init__(self, value, **kwargs):
-        super(fixed, self).__init__(value=value, **kwargs)
+        super().__init__(value=value, **kwargs)
 
     def get_interact_value(self):
         """Return the value for this widget which should be passed to

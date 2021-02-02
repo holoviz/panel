@@ -1,8 +1,6 @@
 """
 Custom bokeh Markup models.
 """
-from __future__ import absolute_import, division, unicode_literals
-
 from bokeh.core.properties import Bool, Either, Int, Float, Nullable, String
 from bokeh.models.widgets import Markup
 

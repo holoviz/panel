@@ -2,8 +2,6 @@
 Defines the PaneBase class defining the API for panes which convert
 objects to a visual representation expressed as a bokeh model.
 """
-from __future__ import absolute_import, division, unicode_literals
-
 from functools import partial
 
 import param
@@ -108,7 +106,7 @@ class PaneBase(Reactive):
         if (isinstance(applies, bool) and not applies) and object is not None :
             self._type_error(object)
 
-        super(PaneBase, self).__init__(object=object, **params)
+        super().__init__(object=object, **params)
         kwargs = {k: v for k, v in params.items() if k in Layoutable.param}
         self.layout = self.default_layout(self, **kwargs)
         watcher = self.param.watch(self._update_pane, self._rerender_params)
@@ -143,7 +141,7 @@ class PaneBase(Reactive):
         ignored_params = ['name', 'default_layout']+self._rerender_params
         return [p for p in self.param if p not in ignored_params]
 
-    def _init_properties(self):
+    def _init_params(self):
         return {k: v for k, v in self.param.get_param_values()
                 if v is not None and k not in ['default_layout', 'object']}
 
@@ -328,7 +326,7 @@ class ReplacementPane(PaneBase):
     def __init__(self, object=None, **params):
         self._kwargs =  {p: params.pop(p) for p in list(params)
                          if p not in self.param}
-        super(ReplacementPane, self).__init__(object, **params)
+        super().__init__(object, **params)
         self._pane = Pane(None)
         self._internal = True
         self._inner_layout = Row(self._pane, **{k: v for k, v in params.items() if k in Row.param})
@@ -415,7 +413,7 @@ class ReplacementPane(PaneBase):
 
     def _cleanup(self, root=None):
         self._inner_layout._cleanup(root)
-        super(ReplacementPane, self)._cleanup(root)
+        super()._cleanup(root)
 
     def select(self, selector=None):
         """
@@ -432,6 +430,6 @@ class ReplacementPane(PaneBase):
         -------
         viewables: list(Viewable)
         """
-        selected = super(ReplacementPane, self).select(selector)
+        selected = super().select(selector)
         selected += self._pane.select(selector)
         return selected

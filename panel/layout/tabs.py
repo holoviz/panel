@@ -45,21 +45,21 @@ class Tabs(NamedListPanel):
     """}
 
     def __init__(self, *objects, **params):
-        super(Tabs, self).__init__(*objects, **params)
+        super().__init__(*objects, **params)
         self.param.active.bounds = (0, len(self)-1)
         self.param.watch(self._update_active, ['dynamic', 'active'])
 
-    def _init_properties(self):
+    def _init_params(self):
         return {k: v for k, v in self.param.get_param_values()
                 if v is not None and k != 'closable'}
 
 
     def _update_names(self, event):
         self.param.active.bounds = (0, len(event.new)-1)
-        super(Tabs, self)._update_names(event)
+        super()._update_names(event)
 
     def _cleanup(self, root):
-        super(Tabs, self)._cleanup(root)
+        super()._cleanup(root)
         if root.ref['id'] in self._panels:
             del self._panels[root.ref['id']]
 
@@ -89,7 +89,7 @@ class Tabs(NamedListPanel):
             old, new = self._process_close(ref, attr, old, new)
             if new is None:
                 return
-        super(Tabs, self)._comm_change(doc, ref, comm, attr, old, new)
+        super()._comm_change(doc, ref, comm, attr, old, new)
 
     def _server_change(self, doc, ref, attr, old, new):
         if attr in self._changing.get(ref, []):
@@ -99,7 +99,7 @@ class Tabs(NamedListPanel):
             old, new = self._process_close(ref, attr, old, new)
             if new is None:
                 return
-        super(Tabs, self)._server_change(doc, ref, attr, old, new)
+        super()._server_change(doc, ref, attr, old, new)
 
     def _update_active(self, *events):
         for event in events:
@@ -117,7 +117,7 @@ class Tabs(NamedListPanel):
             closable = msg.pop('closable')
             for child in model.tabs:
                 child.closable = closable
-        super(Tabs, self)._update_model(events, msg, root, model, doc, comm)
+        super()._update_model(events, msg, root, model, doc, comm)
 
     def _get_objects(self, model, old_objects, doc, root, comm=None):
         """

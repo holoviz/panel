@@ -2,8 +2,6 @@
 Patches bokeh resources to make it easy to add external JS and CSS
 resources via the panel.config object.
 """
-from __future__ import absolute_import, division, unicode_literals
-
 import glob
 import json
 import os
@@ -33,7 +31,7 @@ def get_env():
 
 def css_raw(self):
     from ..config import config
-    raw = super(Resources, self).css_raw
+    raw = super().css_raw
     for cssf in config.css_files:
         if not os.path.isfile(cssf):
             continue
@@ -53,7 +51,7 @@ def css_raw(self):
 
 def js_files(self):
     from ..config import config
-    files = super(Resources, self).js_files
+    files = super().js_files
     js_files = files + list(config.js_files.values())
 
     # Load requirejs last to avoid interfering with other libraries
@@ -75,7 +73,7 @@ def js_files(self):
 def css_files(self):
     from ..config import config
 
-    files = super(Resources, self).css_files
+    files = super().css_files
     for cssf in config.css_files:
         if os.path.isfile(cssf) or cssf in files:
             continue

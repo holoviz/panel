@@ -1,8 +1,6 @@
 """
 Defines utilities to save panel objects to files as HTML or PNG.
 """
-from __future__ import absolute_import, division, unicode_literals
-
 import io
 
 from six import string_types

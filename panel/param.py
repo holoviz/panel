@@ -2,8 +2,6 @@
 Defines the Param pane which converts Parameterized classes into a
 set of widgets.
 """
-from __future__ import absolute_import, division, unicode_literals
-
 import os
 import sys
 import json
@@ -165,7 +163,7 @@ class Param(PaneBase):
 
         if object and 'name' not in params:
             params['name'] = param_name(object.name)
-        super(Param, self).__init__(object, **params)
+        super().__init__(object, **params)
         self._updating = []
 
         # Construct Layout
@@ -572,7 +570,7 @@ class Param(PaneBase):
 
     def _cleanup(self, root):
         self.layout._cleanup(root)
-        super(Param, self)._cleanup(root)
+        super()._cleanup(root)
 
     #----------------------------------------------------------------
     # Public API
@@ -646,7 +644,7 @@ class ParamMethod(ReplacementPane):
     """
 
     def __init__(self, object=None, **params):
-        super(ParamMethod, self).__init__(object, **params)
+        super().__init__(object, **params)
         self._link_object_params()
         if object is not None:
             self._validate_object()

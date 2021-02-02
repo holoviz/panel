@@ -151,7 +151,7 @@ class _config(param.Parameterized):
     _truthy = ['True', 'true', '1', True, 1]
 
     def __init__(self, **params):
-        super(_config, self).__init__(**params)
+        super().__init__(**params)
         for p in self.param:
             if p.startswith('_'):
                 setattr(self, p+'_', None)

@@ -2,8 +2,6 @@
 Templates allow multiple Panel objects to be embedded into custom HTML
 documents.
 """
-from __future__ import absolute_import, division, unicode_literals
-
 import os
 import sys
 import uuid
@@ -60,7 +58,7 @@ class BaseTemplate(param.Parameterized, ServableMixin):
     __abstract = True
 
     def __init__(self, template=None, items=None, nb_template=None, **params):
-        super(BaseTemplate, self).__init__(**params)
+        super().__init__(**params)
         if isinstance(template, string_types):
             self._code = template
             template = _Template(template)
@@ -426,7 +424,7 @@ class BasicTemplate(BaseTemplate):
             params['modal'] = ListLike()
         else:
             params['modal'] = self._get_params(params['modal'], self.param.modal.class_)
-        super(BasicTemplate, self).__init__(template=template, **params)
+        super().__init__(template=template, **params)
         if self.busy_indicator:
             state.sync_busy(self.busy_indicator)
         self._js_area = HTML(margin=0, width=0, height=0)
@@ -446,7 +444,7 @@ class BasicTemplate(BaseTemplate):
 
     def _init_doc(self, doc=None, comm=None, title=None, notebook=False, location=True):
         title = title or self.title
-        doc = super(BasicTemplate, self)._init_doc(doc, comm, title, notebook, location)
+        doc = super()._init_doc(doc, comm, title, notebook, location)
         if self.theme:
             theme = self.theme.find_theme(type(self))
             if theme and theme.bokeh_theme:
@@ -660,7 +658,7 @@ class Template(BaseTemplate):
     """
 
     def __init__(self, template=None, nb_template=None, items=None, **params):
-        super(Template, self).__init__(template=template, nb_template=nb_template, items=items, **params)
+        super().__init__(template=template, nb_template=nb_template, items=items, **params)
         items = {} if items is None else items
         for name, item in items.items():
             self.add_panel(name, item)

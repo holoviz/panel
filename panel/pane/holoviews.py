@@ -2,8 +2,6 @@
 HoloViews integration for Panel including a Pane to render HoloViews
 objects and their widgets and support for Links
 """
-from __future__ import absolute_import, division, unicode_literals
-
 import sys
 
 from collections import OrderedDict, defaultdict
@@ -84,7 +82,7 @@ class HoloViews(PaneBase):
     _rerender_params = ['object', 'backend']
 
     def __init__(self, object=None, **params):
-        super(HoloViews, self).__init__(object, **params)
+        super().__init__(object, **params)
         self._initialized = False
         self._responsive_content = False
         self._restore_plot = None
@@ -315,7 +313,7 @@ class HoloViews(PaneBase):
             old_plot.cleanup()
         if old_pane:
             old_pane._cleanup(root)
-        super(HoloViews, self)._cleanup(root)
+        super()._cleanup(root)
 
     #----------------------------------------------------------------
     # Public API

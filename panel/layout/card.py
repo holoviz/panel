@@ -54,12 +54,12 @@ class Card(Column):
     def __init__(self, *objects, **params):
         self._header_layout = Row(css_classes=['card-header-row'],
                                   sizing_mode='stretch_width')
-        super(Card, self).__init__(*objects, **params)
+        super().__init__(*objects, **params)
         self.param.watch(self._update_header, ['title', 'header', 'title_css_classes'])
         self._update_header()
 
     def _cleanup(self, root):
-        super(Card, self)._cleanup(root)
+        super()._cleanup(root)
         self._header_layout._cleanup(root)
 
     def _process_param_change(self, params):
@@ -88,5 +88,5 @@ class Card(Column):
             header = self._header_layout._models[ref][0]
         else:
             header = self._header_layout._get_model(doc, root, model, comm)
-        objects = super(Card, self)._get_objects(model, old_objects, doc, root, comm)
+        objects = super()._get_objects(model, old_objects, doc, root, comm)
         return [header]+objects

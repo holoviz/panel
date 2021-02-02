@@ -1,8 +1,6 @@
 """
 A module containing testing utilities and fixtures.
 """
-from __future__ import absolute_import, division, unicode_literals
-
 import os
 import re
 import shutil

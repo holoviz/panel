@@ -133,7 +133,7 @@ class GridBox(ListPanel):
             root = model
         objects = self._get_objects(model, [], doc, root, comm)
         model.children = self._get_children(objects, self.nrows, self.ncols)
-        props = {k: v for k, v in self._init_properties().items()
+        props = {k: v for k, v in self._init_params().items()
                  if k not in ('nrows', 'ncols')}
         model.update(**self._process_param_change(props))
         self._models[root.ref['id']] = (model, parent)
@@ -158,7 +158,7 @@ class GridBox(ListPanel):
             update = Panel._batch_update
             Panel._batch_update = True
             try:
-                super(Panel, self)._update_model(events, msg, root, model, doc, comm)
+                super()._update_model(events, msg, root, model, doc, comm)
                 if update:
                     return
                 ref = root.ref['id']
@@ -195,7 +195,7 @@ class GridSpec(Panel):
     def __init__(self, **params):
         if 'objects' not in params:
             params['objects'] = OrderedDict()
-        super(GridSpec, self).__init__(**params)
+        super().__init__(**params)
         self._updating = False
         self._update_nrows()
         self._update_ncols()
@@ -222,8 +222,8 @@ class GridSpec(Panel):
             self.nrows = max(max_yidx) if max_yidx else (1 if len(self.objects) else 0)
         self._updating = False
 
-    def _init_properties(self):
-        properties = super(GridSpec, self)._init_properties()
+    def _init_params(self):
+        properties = super()._init_params()
         if self.sizing_mode not in ['fixed', None]:
             if 'min_width' not in properties and 'width' in properties:
                 properties['min_width'] = properties['width']
@@ -310,7 +310,7 @@ class GridSpec(Panel):
         return grid
 
     def _cleanup(self, root):
-        super(GridSpec, self)._cleanup(root)
+        super()._cleanup(root)
         for p in self.objects.values():
             p._cleanup(root)
 

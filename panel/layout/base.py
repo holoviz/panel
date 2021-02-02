@@ -2,8 +2,6 @@
 Defines Layout classes which may be used to arrange panes and widgets
 in flexible ways to build complex dashboards.
 """
-from __future__ import absolute_import, division, unicode_literals
-
 from collections import defaultdict, namedtuple
 
 import param
@@ -42,7 +40,7 @@ class Panel(Reactive):
         params = param_reprs(self, ['objects'])
         objs = ['[%d] %s' % (i, obj.__repr__(depth+1)) for i, obj in enumerate(self)]
         if not params and not objs:
-            return super(Panel, self).__repr__(depth+1)
+            return super().__repr__(depth+1)
         elif not params:
             template = '{cls}{spacer}{objs}'
         elif not objs:
@@ -67,7 +65,7 @@ class Panel(Reactive):
             update = Panel._batch_update
             Panel._batch_update = True
             try:
-                super(Panel, self)._update_model(events, msg, root, model, doc, comm)
+                super()._update_model(events, msg, root, model, doc, comm)
                 if update:
                     return
                 from ..io import state
@@ -81,7 +79,7 @@ class Panel(Reactive):
     # Model API
     #----------------------------------------------------------------
 
-    def _init_properties(self):
+    def _init_params(self):
         properties = {k: v for k, v in self.param.get_param_values()
                       if v is not None}
         del properties['objects']
@@ -119,7 +117,7 @@ class Panel(Reactive):
         if root is None:
             root = model
         objects = self._get_objects(model, [], doc, root, comm)
-        props = dict(self._init_properties(), objects=objects)
+        props = dict(self._init_params(), objects=objects)
         model.update(**self._process_param_change(props))
         self._models[root.ref['id']] = (model, parent)
         self._link_props(model, self._linked_props, doc, root, comm)
@@ -144,7 +142,7 @@ class Panel(Reactive):
         -------
         viewables: list(Viewable)
         """
-        objects = super(Panel, self).select(selector)
+        objects = super().select(selector)
         for obj in self:
             objects += obj.select(selector)
         return objects
@@ -378,12 +376,12 @@ class ListPanel(ListLike, Panel):
             params['css_classes'] = css_classes + ['scrollable']
         elif scroll == False:
             params['css_classes'] = css_classes
-        return super(ListPanel, self)._process_param_change(params)
+        return super()._process_param_change(params)
 
     def _cleanup(self, root):
         if root.ref['id'] in state._fake_roots:
             state._fake_roots.remove(root.ref['id'])
-        super(ListPanel, self)._cleanup(root)
+        super()._cleanup(root)
         for p in self.objects:
             p._cleanup(root)
 
@@ -404,7 +402,7 @@ class NamedListPanel(ListPanel):
                                  'not both.' % type(self).__name__)
             items = params['objects']
         objects, self._names = self._to_objects_and_names(items)
-        super(NamedListPanel, self).__init__(*objects, **params)
+        super().__init__(*objects, **params)
         self._panels = defaultdict(dict)
         self.param.watch(self._update_names, 'objects')
         # ALERT: Ensure that name update happens first, should be
@@ -689,6 +687,6 @@ class WidgetBox(ListPanel):
                 obj.disabled = self.disabled
 
     def __init__(self, *objects, **params):
-        super(WidgetBox, self).__init__(*objects, **params)
+        super().__init__(*objects, **params)
         if self.disabled:
             self._disable_widgets()

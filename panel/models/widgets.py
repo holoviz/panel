@@ -1,8 +1,6 @@
 """
 Custom bokeh Widget models.
 """
-from __future__ import absolute_import, division, unicode_literals
-
 from bokeh.core.enums import ButtonType
 
 from bokeh.core.properties import (

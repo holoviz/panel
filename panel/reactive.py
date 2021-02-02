@@ -54,7 +54,7 @@ class Syncable(Renderable):
     events = []
 
     def __init__(self, **params):
-        super(Syncable, self).__init__(**params)
+        super().__init__(**params)
         self._processing = False
         self._events = {}
         self._callbacks = []
@@ -139,7 +139,7 @@ class Syncable(Renderable):
             del self._changing[root.ref['id']]
 
     def _cleanup(self, root):
-        super(Syncable, self)._cleanup(root)
+        super()._cleanup(root)
         ref = root.ref['id']
         self._models.pop(ref, None)
         comm, client_comm = self._comms.pop(ref, (None, None))

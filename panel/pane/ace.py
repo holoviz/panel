@@ -5,6 +5,7 @@ import param
 from six import string_types
 from pyviz_comms import JupyterComm
 
+from ..util import lazy_load
 from .base import PaneBase
 
 
@@ -35,27 +36,12 @@ class Ace(PaneBase):
 
     @classmethod
     def applies(cls, obj):
-        if isinstance(obj, string_types):
-            return None
-        else:
-            return False
+        return None if isinstance(obj, string_types) else False
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        """
-        Should return the bokeh model to be rendered.
-        """
-        if 'panel.models.ace' not in sys.modules:
-            if isinstance(comm, JupyterComm):
-                self.param.warning('AcePlot was not imported on instantiation '
-                                   'and may not render in a notebook. Restart '
-                                   'the notebook kernel and ensure you load '
-                                   'it as part of the extension using:'
-                                   '\n\npn.extension(\'ace\')\n')
-            from ..models.ace import AcePlot
-        else:
-            AcePlot = getattr(sys.modules['panel.models.ace'], 'AcePlot')
-
-        props = self._process_param_change(self._init_properties())
+        AcePlot = lazy_load('panel.models.ace', 'AcePlot', isinstance(comm, JupyterComm))
+        print(AcePlot)
+        props = self._process_param_change(self._init_params())
         model = AcePlot(code=self.object or '', **props)
         if root is None:
             root = model

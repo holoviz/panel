@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import datetime as dt
 
 from types import FunctionType, MethodType
@@ -76,7 +74,7 @@ class BaseTable(Widget):
     _rename = {'disabled': 'editable', 'selection': None}
 
     def __init__(self, value=None, **params):
-        super(BaseTable, self).__init__(value=value, **params)
+        super().__init__(value=value, **params)
         self._renamed_cols = {}
         self._filters = []
         self._updating = False
@@ -97,7 +95,7 @@ class BaseTable(Widget):
                              'duplicate column names.')
 
     def _process_param_change(self, msg):
-        msg = super(BaseTable, self)._process_param_change(msg)
+        msg = super()._process_param_change(msg)
         if 'editable' in msg:
             msg['editable'] = not msg.pop('editable') and len(self.indexes) <= 1
         return msg

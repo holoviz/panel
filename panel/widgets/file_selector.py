@@ -3,8 +3,6 @@
 Defines a FileSelector widget which allows selecting files and
 directories on the server.
 """
-from __future__ import absolute_import, division, unicode_literals
-
 import os
 
 from collections import OrderedDict
@@ -90,7 +88,7 @@ class FileSelector(CompositeWidget):
         if params.get('width') and params.get('height') and 'sizing_mode' not in params:
             params['sizing_mode'] = None
 
-        super(FileSelector, self).__init__(**params)
+        super().__init__(**params)
 
         # Set up layout
         layout = {p: getattr(self, p) for p in Layoutable.param

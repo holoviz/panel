@@ -2,8 +2,6 @@
 Defines various Select widgets which allow choosing one or more items
 from a list of options.
 """
-from __future__ import absolute_import, division, unicode_literals
-
 import re
 
 from collections import OrderedDict
@@ -57,13 +55,13 @@ class SingleSelectBase(SelectBase):
     __abstract = True
 
     def __init__(self, **params):
-        super(SingleSelectBase, self).__init__(**params)
+        super().__init__(**params)
         values = self.values
         if self.value is None and None not in values and values:
             self.value = values[0]
 
     def _process_param_change(self, msg):
-        msg = super(SingleSelectBase, self)._process_param_change(msg)
+        msg = super()._process_param_change(msg)
         labels, values = self.labels, self.values
         unique = len(set(self.unicode_values)) == len(labels)
         if 'value' in msg:
@@ -99,7 +97,7 @@ class SingleSelectBase(SelectBase):
         return [as_unicode(v) for v in self.values]
 
     def _process_property_change(self, msg):
-        msg = super(SingleSelectBase, self)._process_property_change(msg)
+        msg = super()._process_property_change(msg)
         if 'value' in msg:
             if not self.values:
                 pass
@@ -137,12 +135,12 @@ class Select(SingleSelectBase):
         return _BkSelect if self.size == 1 else _BkSingleSelect
 
     def __init__(self, **params):
-        super(Select, self).__init__(**params)
+        super().__init__(**params)
         if self.size == 1:
             self.param.size.constant = True
 
     def _process_param_change(self, msg):
-        msg = super(Select, self)._process_param_change(msg)
+        msg = super()._process_param_change(msg)
         if msg.get('size') == 1:
             msg.pop('size')
         return msg
@@ -432,7 +430,7 @@ class CrossSelector(CompositeWidget, MultiSelect):
        selected list.""")
 
     def __init__(self, **params):
-        super(CrossSelector, self).__init__(**params)
+        super().__init__(**params)
         # Compute selected and unselected values
 
         labels, values = self.labels, self.values

@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import os
 import sys
 import traceback as tb
@@ -170,7 +168,7 @@ class Pipeline(param.Parameterized):
         except Exception:
             raise ImportError('Pipeline requires holoviews to be installed')
 
-        super(Pipeline, self).__init__(**params)
+        super().__init__(**params)
 
         # Initialize internal state
         self._stage = None

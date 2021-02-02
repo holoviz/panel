@@ -2,8 +2,6 @@
 Defines Button and button-like widgets which allow triggering events
 or merely toggling between on-off states.
 """
-from __future__ import absolute_import, division, unicode_literals
-
 from functools import partial
 
 import param
@@ -34,7 +32,7 @@ class _ClickButton(_ButtonBase):
     _event = 'button_click'
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        model = super(_ClickButton, self)._get_model(doc, root, parent, comm)
+        model = super()._get_model(doc, root, parent, comm)
         ref = (root or model).ref['id']
         model.on_click(partial(self._server_click, doc, ref))
         return model
@@ -108,7 +106,7 @@ class Button(_ClickButton):
                 self._change_event(doc)
 
     def _process_property_change(self, msg):
-        msg = super(Button, self)._process_property_change(msg)
+        msg = super()._process_property_change(msg)
         if 'clicks' in msg:
             msg['clicks'] = self.clicks + 1
         return msg

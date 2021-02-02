@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 from panel.models import Player as BkPlayer
 from panel.widgets import DiscretePlayer
 

@@ -7,34 +7,25 @@ import json
 import base64
 import zipfile
 
-try:
-    from urllib.request import urlopen
-except ImportError: # python 2
-    from urllib import urlopen
-
+from abc import abstractmethod
 from six import string_types
+from urllib.request import urlopen
 
 import param
 import numpy as np
 
-from pyviz_comms import JupyterComm
-
-from .enums import PRESET_CMAPS
-from ..base import PaneBase, Pane
-from ...util import isfile
-
-if sys.version_info >= (2, 7):
-    base64encode = lambda x: base64.b64encode(x).decode('utf-8')
-else:
-    base64encode = lambda x: x.encode('base64')
-
 from bokeh.util.serialization import make_globally_unique_id
 from bokeh.models import LinearColorMapper
-from abc import abstractmethod
+from pyviz_comms import JupyterComm
+
+from ...util import isfile, lazy_load
+from ..base import PaneBase, Pane
+from .enums import PRESET_CMAPS
+
+base64encode = lambda x: base64.b64encode(x).decode('utf-8')
+
 
 class AbstractVTK(PaneBase):
-
-    __abstract = True
 
     axes = param.Dict(default={}, doc="""
         Parameters of the axes to construct in the 3d view.
@@ -59,18 +50,21 @@ class AbstractVTK(PaneBase):
                 Defines the axes lines opacity.
     """)
 
-    camera = param.Dict(doc="""State of the rendered VTK camera.""")
+    camera = param.Dict(doc="""
+      State of the rendered VTK camera.""")
 
-    color_mappers = param.List(doc="""Color mapper of the actor in the scene""")
+    color_mappers = param.List(doc="""
+      Color mapper of the actor in the scene""")
 
     orientation_widget = param.Boolean(default=False, doc="""
-        Activate/Deactivate the orientation widget display.""")
+      Activate/Deactivate the orientation widget display.""")
 
-    interactive_orientation_widget = param.Boolean(default=True, constant=True, doc="""
-    """)
+    interactive_orientation_widget = param.Boolean(default=True, constant=True)
+
+    __abstract = True
 
     def _process_param_change(self, msg):
-        msg = super(AbstractVTK, self)._process_param_change(msg)
+        msg = super()._process_param_change(msg)
         if 'axes' in msg and msg['axes'] is not None:
             VTKAxes = getattr(sys.modules['panel.models.vtk'], 'VTKAxes')
             axes = msg['axes']
@@ -85,7 +79,7 @@ class AbstractVTK(PaneBase):
                 msg['axes'] = VTKAxes(**axes)
             elif isinstance(axes, VTKAxes):
                 msg['axes'] = VTKAxes(**axes.properties_with_values())
-        super(AbstractVTK, self)._update_model(events, msg, root, model, doc, comm)
+        super()._update_model(events, msg, root, model, doc, comm)
 
 
 class SyncHelpers:
@@ -187,7 +181,6 @@ class VTK:
 
 class BaseVTKRenderWindow(AbstractVTK):
 
-    __abstract = True
 
     enable_keybindings = param.Boolean(default=False, doc="""
         Activate/Deactivate keys binding.
@@ -220,13 +213,15 @@ class BaseVTKRenderWindow(AbstractVTK):
         by using some custom javascript functions.
     """)
 
+    _applies_kw = True
+
     _rename = {'serialize_on_instantiation': None, 'serialize_all_data_arrays': None}
 
-    _applies_kw = True
+    __abstract = True
 
     def __init__(self, object, **params):
         self._debug_serializer = params.pop('debug_serializer', False)
-        super(BaseVTKRenderWindow, self).__init__(object, **params)
+        super().__init__(object, **params)
         import panel.pane.vtk.synchronizable_serializer as rws
         rws.initializeSerializers()
 
@@ -296,7 +291,6 @@ class BaseVTKRenderWindow(AbstractVTK):
         else:
             return Pane(self._construct_colorbars)
 
-
     def export_scene(self, filename='vtk_scene', all_data_arrays=False):
         if '.' not in filename:
             filename += '.synch'
@@ -314,23 +308,6 @@ class BaseVTKRenderWindow(AbstractVTK):
         color_mappers = self.get_color_mappers()
         if self.color_mappers != color_mappers:
             self.color_mappers = color_mappers
-
-    def _get_model(self, doc, root=None, parent=None, comm=None):
-        """
-        Should return the bokeh model to be rendered.
-        """
-        if 'panel.models.vtk' not in sys.modules:
-            if isinstance(comm, JupyterComm):
-                self.param.warning('VTKSynchronizedPlot was not imported on instantiation '
-                                   'and may not render in a notebook. Restart '
-                                   'the notebook kernel and ensure you load '
-                                   'it as part of the extension using:'
-                                   '\n\npn.extension(\'vtk\')\n')
-            from ...models.vtk import VTKSynchronizedPlot
-        else:
-            VTKSynchronizedPlot = getattr(sys.modules['panel.models.vtk'], 'VTKSynchronizedPlot')
-
-        return VTKSynchronizedPlot
 
     def _serialize_ren_win(self, ren_win, context, binary=False, compression=True, exclude_arrays=None):
         import panel.pane.vtk.synchronizable_serializer as rws
@@ -372,7 +349,7 @@ class VTKRenderWindow(BaseVTKRenderWindow):
     @classmethod
     def applies(cls, obj, **kwargs):
         serialize_on_instantiation = kwargs.get('serialize_on_instantiation', False)
-        return (super(VTKRenderWindow, cls).applies(obj, **kwargs) and
+        return (super().applies(obj, **kwargs) and
                 serialize_on_instantiation)
 
     def __init__(self, object=None, **params):
@@ -382,9 +359,10 @@ class VTKRenderWindow(BaseVTKRenderWindow):
             self._update()
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        VTKSynchronizedPlot = super(VTKRenderWindow, self)._get_model(doc, root=None, parent=None, comm=None)
-
-        props = self._process_param_change(self._init_properties())
+        VTKSynchronizedPlot = lazy_load(
+            'panel.models.vtk', 'VTKSynchronizedPlot', isinstance(comm, JupyterComm)
+        )
+        props = self._process_param_change(self._init_params())
         if self.object is not None:
             props.update(scene=self._scene, arrays=self._arrays, color_mappers=self.color_mappers)
         model = VTKSynchronizedPlot(**props)
@@ -434,20 +412,18 @@ class VTKRenderWindowSynchronized(BaseVTKRenderWindow, SyncHelpers):
     @classmethod
     def applies(cls, obj, **kwargs):
         serialize_on_instantiation = kwargs.get('serialize_on_instantiation', False)
-        return (super(VTKRenderWindowSynchronized, cls).applies(obj, **kwargs) and
-                not serialize_on_instantiation)
+        return super().applies(obj, **kwargs) and not serialize_on_instantiation
 
     def __init__(self, object=None, **params):
         if object is None:
             object = self.make_ren_win()
-        super(VTKRenderWindowSynchronized, self).__init__(object, **params)
+        super().__init__(object, **params)
         self._contexts = {}
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        """
-        Should return the bokeh model to be rendered.
-        """
-        VTKSynchronizedPlot = super(VTKRenderWindowSynchronized, self)._get_model(doc, root=None, parent=None, comm=None)
+        VTKSynchronizedPlot = lazy_load(
+            'panel.models.vtk', 'VTKSynchronizedPlot', isinstance(comm, JupyterComm)
+        )
         import panel.pane.vtk.synchronizable_serializer as rws
         context = rws.SynchronizationContext(
             id_root=make_globally_unique_id(),
@@ -456,7 +432,7 @@ class VTKRenderWindowSynchronized(BaseVTKRenderWindow, SyncHelpers):
         )
         scene, arrays = self._serialize_ren_win(self.object, context)
         self._update_color_mappers()
-        props = self._process_param_change(self._init_properties())
+        props = self._process_param_change(self._init_params())
         props.update(scene=scene, arrays=arrays, color_mappers=self.color_mappers)
         model = VTKSynchronizedPlot(**props)
 
@@ -473,7 +449,7 @@ class VTKRenderWindowSynchronized(BaseVTKRenderWindow, SyncHelpers):
     def _cleanup(self, root):
         ref = root.ref['id']
         self._contexts.pop(ref, None)
-        super(VTKRenderWindowSynchronized, self)._cleanup(root)
+        super()._cleanup(root)
 
     def _update(self, ref=None, model=None):
         context = self._contexts[model.id]
@@ -619,7 +595,7 @@ class VTKVolume(AbstractVTK):
     _updates = True
 
     def __init__(self, object=None, **params):
-        super(VTKVolume, self).__init__(object, **params)
+        super().__init__(object, **params)
         self._sub_spacing = self.spacing
         self._update()
 
@@ -635,21 +611,10 @@ class VTKVolume(AbstractVTK):
             return isinstance(obj, vtk.vtkImageData)
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        """
-        Should return the bokeh model to be rendered.
-        """
-        if 'panel.models.vtk' not in sys.modules:
-            if isinstance(comm, JupyterComm):
-                self.param.warning('VTKVolumePlot was not imported on instantiation '
-                                   'and may not render in a notebook. Restart '
-                                   'the notebook kernel and ensure you load '
-                                   'it as part of the extension using:'
-                                   '\n\npn.extension(\'vtk\')\n')
-            from ...models.vtk import VTKVolumePlot
-        else:
-            VTKVolumePlot = getattr(sys.modules['panel.models.vtk'], 'VTKVolumePlot')
-
-        props = self._process_param_change(self._init_properties())
+        VTKVolumePlot = lazy_load(
+            'panel.models.vtk', 'VTKVolumePlot', isinstance(comm, JupyterComm)
+        )
+        props = self._process_param_change(self._init_params())
         if self._volume_data is not None:
             props['data'] = self._volume_data
 
@@ -662,9 +627,9 @@ class VTKVolume(AbstractVTK):
 
     def _update_object(self, ref, doc, root, parent, comm):
         self._legend = None
-        super(VTKVolume, self)._update_object(ref, doc, root, parent, comm)
+        super()._update_object(ref, doc, root, parent, comm)
 
-    def _init_properties(self):
+    def _init_params(self):
         return {k: v for k, v in self.param.get_param_values()
                 if v is not None and k not in [
                     'default_layout', 'object', 'max_data_size', 'spacing', 'origin'
@@ -677,7 +642,7 @@ class VTKVolume(AbstractVTK):
             return self.object.GetDimensions()
 
     def _process_param_change(self, msg):
-        msg = super(VTKVolume, self)._process_param_change(msg)
+        msg = super()._process_param_change(msg)
         if self.object is not None:
             slice_params = {'slice_i':0, 'slice_j':1, 'slice_k':2}
             for k, v in msg.items():
@@ -689,7 +654,7 @@ class VTKVolume(AbstractVTK):
         return msg
 
     def _process_property_change(self, msg):
-        msg = super(VTKVolume, self)._process_property_change(msg)
+        msg = super()._process_property_change(msg)
         if self.object is not None:
             slice_params = {'slice_i':0, 'slice_j':1, 'slice_k':2}
             for k, v in msg.items():
@@ -797,7 +762,7 @@ class VTKJS(AbstractVTK):
 
 
     def __init__(self, object=None, **params):
-        super(VTKJS, self).__init__(object, **params)
+        super().__init__(object, **params)
         self._vtkjs = None
 
     @classmethod
@@ -809,18 +774,8 @@ class VTKJS(AbstractVTK):
         """
         Should return the bokeh model to be rendered.
         """
-        if 'panel.models.vtk' not in sys.modules:
-            if isinstance(comm, JupyterComm):
-                self.param.warning('VTKPlot was not imported on instantiation '
-                                   'and may not render in a notebook. Restart '
-                                   'the notebook kernel and ensure you load '
-                                   'it as part of the extension using:'
-                                   '\n\npn.extension(\'vtk\')\n')
-            from ...models.vtk import VTKJSPlot
-        else:
-            VTKJSPlot = getattr(sys.modules['panel.models.vtk'], 'VTKJSPlot')
-
-        props = self._process_param_change(self._init_properties())
+        VTKJSPlot = lazy_load('panel.models.vtk', 'VTKJSPlot', isinstance(comm, JupyterComm))
+        props = self._process_param_change(self._init_params())
         vtkjs = self._get_vtkjs()
         if vtkjs is not None:
             props['data'] = base64encode(vtkjs)

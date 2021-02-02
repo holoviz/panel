@@ -2,8 +2,6 @@
 Various utilities for loading JS dependencies and rendering plots
 inside the Jupyter notebook.
 """
-from __future__ import absolute_import, division, unicode_literals
-
 import json
 import uuid
 import sys
