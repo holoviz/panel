@@ -3,12 +3,9 @@ Defines the Widget base class which provides bi-directional
 communication between the rendered dashboard and the Widget
 parameters.
 """
-from functools import partial
-
 import param
 
 from ..layout import Row
-from ..io import push, state, unlocked
 from ..reactive import Reactive
 from ..viewable import Layoutable
 

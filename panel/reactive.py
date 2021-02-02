@@ -10,6 +10,7 @@ import threading
 from collections import namedtuple
 from functools import partial
 
+import numpy as np
 import param
 
 from bokeh.models import LayoutDOM
