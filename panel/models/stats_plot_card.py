@@ -1,5 +1,5 @@
 """A Bokeh Model of a Stats Card with a Plot"""
-from bokeh.core.properties import Instance, Int, Float, String
+from bokeh.core.properties import Instance, Float, String
 from bokeh.models import HTMLBox, TickFormatter, BasicTickFormatter
 from bokeh.models.sources import ColumnDataSource
 
