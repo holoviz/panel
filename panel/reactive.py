@@ -631,7 +631,7 @@ class SyncableData(Reactive):
         array: numpy.ndarray
           The array data to update the column with.
         """
-        data = getattr(self, self.data_params[0])
+        data = getattr(self, self._data_params[0])
         data[column] = array
 
     def _manual_update(self, events, model, doc, root, parent, comm):

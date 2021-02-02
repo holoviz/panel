@@ -607,12 +607,12 @@ class StatsPlotCard(SyncableData, Indicator):
 
     def _get_data(self):
         if self.data is None:
-            return {self.plot_x: [], self.plot_y: []}
+            return None, {self.plot_x: [], self.plot_y: []}
         elif isinstance(self.data, dict):
-            return self.data
-        return ColumnDataSource.from_df(self.data)
+            return self.data, self.data
+        return self.data, ColumnDataSource.from_df(self.data)
 
-    def _init_properties(self):
-        props = super()._init_properties()
-        props['source'] = ColumnDataSource(data=self._get_data())
+    def _init_params(self):
+        props = super()._init_params()
+        props['source'] = ColumnDataSource(data=self._get_data()[1])
         return props
