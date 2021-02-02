@@ -16,6 +16,7 @@ RED ="#d9534f"
 GREEN="#5cb85c"
 BLUE="#428bca"
 
+
 class Indicator(Widget):
     """
     Indicator is a baseclass for widgets which indicate some state.
@@ -549,54 +550,50 @@ class Dial(ValueIndicator):
         model.select(name='threshold_source').data.update(threshold)
         model.select(name='label_source').data.update(labels)
 
-class StatsPlotCard(Indicator):
-    """The StatsPlotCard enables the user to display a Dashboard KPI Card with
 
-    - Title: The name or a short title
-    - Value: Primary Value to display. For example an absolute value.
-    - Value2: A secondary value. For example a percentage change.
-    - Plot: A plot. One of line", "step", "area", "bar
+class StatsPlotCard(Indicator):
+    """
+    The StatsPlotCard enables the user to display a Dashboard KPI Card with
 
     The card can be layout out as
 
     - a column (text and plot on top of each other) or
     - a row (text and plot after each other)
 
-    The card enables performant streaming.
     The text section is responsive and resizes on window resize.
     """
+
+    layout = param.ObjectSelector(default="column", objects=["column", "row"])
+
+    plot_data = param.ClassSelector(class_=ColumnDataSource, doc="""
+      The plot data declared as a ColumnDataSource.""")
+
+    plot_x = param.String(default="x", doc="""
+      The name of the key in the plot_data to use on the x-axis.""")
+
+    plot_y = param.String(default="y", doc="""
+      The name of the key in the plot_data to use on the y-axis.""")
+
+    plot_color = param.String(default=BLUE, doc="""
+      The color to use in the plot.""")
+
+    plot_type = param.ObjectSelector(default="bar", objects=["line", "step", "area", "bar"], doc="""
+      The plot type to render the plot data as.""")
+
+    pos_color = param.String(GREEN, doc="""
+      The color used to indicate a positive change.""")
+
+    neg_color = param.String(RED, doc="""
+      The color used to indicate a negative change.""")
+
+    title = param.String(doc="""The title or a short description of the card""")
+
+    value = param.Number(doc="""
+      The primary value to be displayed.""")
+
+    value_change = param.Number(doc="""
+      A secondary value. For example the change in percent.""")
+
     _widget_type = _BkStatsPlotCard
 
     _rename = {}
-
-    title = param.String(doc="""The title or a short description of the card""")
-    layout = param.ObjectSelector(default="column", objects=["column", "row"])
-    value = param.String(doc="""The primary value to be displayed""")
-    value_change = param.String(doc="""A secondary value. For example the change in percent""")
-    value_change_sign = param.Integer(
-        default=0,
-        bounds=(-1,1),
-        doc="The sign of the change: -1, 0 or 1. If 0 no change will be indicated on the card. Default is 0"
-    )
-    value_change_pos_color = param.String(GREEN,
-        label="Positive Change Color",
-        doc="The color used to indicate a positive change")
-    value_change_neg_color = param.String(RED,
-        label="Negative Change Color",
-        doc="The color used to indicate a negative change")
-    plot_data = param.ClassSelector(
-        class_=ColumnDataSource,
-        doc="""A ColumnDataSource on the form
-            ColumnDataSource(data=dict(x=[10, 20, 30], y=[100, 200, 300]))
-        """,
-    )
-    plot_x = param.String(
-        default="x", doc="The name of the key in the plot_data to use on the x-axis"
-    )
-    plot_y = param.String(
-        default="y", doc="The name of the key in the plot_data to use on the y-axis"
-    )
-    plot_color = param.String(default=BLUE, doc="the color to use in the plot")
-    plot_type = param.ObjectSelector(
-        default="bar", objects=["line", "step", "area", "bar"], doc="the color to use in the plot"
-    )
