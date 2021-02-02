@@ -75,7 +75,7 @@ export class StatsPlotCardView extends HTMLBoxView {
     });
 
     console.log(this.plot)
-    var source = this.model.plot_data
+    var source = this.model.source
     if (this.model.plot_type === "line"){
       var line = new Line({
         x: { field: this.model.plot_x },
@@ -217,7 +217,7 @@ export namespace StatsPlotCard {
     description: p.Property<string>
     formatter: p.Property<TickFormatter>
     layout: p.Property<string>
-    plot_data: p.Property<any>
+    source: p.Property<any>
     plot_x: p.Property<string>
     plot_y: p.Property<string>
     plot_color: p.Property<string>
@@ -248,7 +248,7 @@ export class StatsPlotCard extends HTMLBox {
       description:  [ String,              "" ],
       formatter:    [ Ref(TickFormatter), () => new BasicTickFormatter() ],
       layout:       [ String,        "column" ],
-      plot_data:    [ Ref(ColumnDataSource)   ],
+      source:       [ Ref(ColumnDataSource)   ],
       plot_x:       [ String,             "x" ],
       plot_y:       [ String,             "y" ],
       plot_color:   [ String,            blue ],

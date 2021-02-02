@@ -8,7 +8,10 @@ import param
 from bokeh.plotting import figure
 from bokeh.models import ColumnDataSource
 
-from ..models import HTML, Progress as _BkProgress, StatsPlotCard as _BkStatsPlotCard
+from ..models import (
+    HTML, Progress as _BkProgress, StatsPlotCard as _BkStatsPlotCard
+)
+from ..reactive import SyncableData
 from ..util import escape
 from .base import Widget
 
@@ -551,7 +554,7 @@ class Dial(ValueIndicator):
         model.select(name='label_source').data.update(labels)
 
 
-class StatsPlotCard(Indicator):
+class StatsPlotCard(SyncableData, Indicator):
     """
     The StatsPlotCard enables the user to display a Dashboard KPI Card with
 
@@ -565,7 +568,7 @@ class StatsPlotCard(Indicator):
 
     layout = param.ObjectSelector(default="column", objects=["column", "row"])
 
-    plot_data = param.ClassSelector(class_=ColumnDataSource, doc="""
+    data = param.Parameter(doc="""
       The plot data declared as a ColumnDataSource.""")
 
     plot_x = param.String(default="x", doc="""
@@ -594,6 +597,22 @@ class StatsPlotCard(Indicator):
     value_change = param.Number(doc="""
       A secondary value. For example the change in percent.""")
 
+    _data_params = ['data']
+
+    _manual_params = ['data']
+
+    _rename = {'data': None, 'selection': None}
+
     _widget_type = _BkStatsPlotCard
 
-    _rename = {}
+    def _get_data(self):
+        if self.data is None:
+            return {self.plot_x: [], self.plot_y: []}
+        elif isinstance(self.data, dict):
+            return self.data
+        return ColumnDataSource.from_df(self.data)
+
+    def _init_properties(self):
+        props = super()._init_properties()
+        props['source'] = ColumnDataSource(data=self._get_data())
+        return props

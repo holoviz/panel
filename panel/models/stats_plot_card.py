@@ -10,7 +10,7 @@ class StatsPlotCard(HTMLBox):
     description = String()
     formatter = Instance(TickFormatter, default=lambda: BasicTickFormatter())
     layout = String()
-    plot_data = Instance(ColumnDataSource)
+    source = Instance(ColumnDataSource)
     plot_x = String()
     plot_y = String()
     plot_color = String()
