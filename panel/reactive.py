@@ -616,6 +616,21 @@ class SyncableData(Reactive):
           ColumnDataSource
         """
 
+    def _update_column(self, column, array):
+        """
+        Implemented by subclasses converting changes in columns to
+        changes in the data parameter.
+
+        Parameters
+        ----------
+        column: str
+          The name of the column to update.
+        array: numpy.ndarray
+          The array data to update the column with.
+        """
+        data = getattr(self, self.data_params[0])
+        data[column] = array
+
     def _manual_update(self, events, model, doc, root, parent, comm):
         for event in events:
             if event.type == 'triggered' and self._updating:
@@ -674,7 +689,7 @@ class SyncableData(Reactive):
 
         Stream a Series to a DataFrame
         >>> value = pd.DataFrame({"x": [1, 2], "y": ["a", "b"]})
-        >>> obj = DataComponent(...)
+        >>> obj = DataComponent(value)
         >>> stream_value = pd.Series({"x": 4, "y": "d"})
         >>> obj.stream(stream_value)
         >>> obj.value.to_dict("list")
@@ -682,7 +697,7 @@ class SyncableData(Reactive):
 
         Stream a Dataframe to a Dataframe
         >>> value = pd.DataFrame({"x": [1, 2], "y": ["a", "b"]})
-        >>> obj = DataComponent(...)
+        >>> obj = DataComponent(value)
         >>> stream_value = pd.DataFrame({"x": [3, 4], "y": ["c", "d"]})
         >>> obj.stream(stream_value)
         >>> obj.value.to_dict("list")
@@ -690,7 +705,7 @@ class SyncableData(Reactive):
 
         Stream a Dictionary row to a DataFrame
         >>> value = pd.DataFrame({"x": [1, 2], "y": ["a", "b"]})
-        >>> tabulator = DataComponent(...)
+        >>> tabulator = DataComponent(value)
         >>> stream_value = {"x": 4, "y": "d"}
         >>> obj.stream(stream_value)
         >>> obj.value.to_dict("list")
@@ -698,15 +713,21 @@ class SyncableData(Reactive):
 
         Stream a Dictionary of Columns to a Dataframe
         >>> value = pd.DataFrame({"x": [1, 2], "y": ["a", "b"]})
-        >>> obj = DataComponent(...)
+        >>> obj = DataComponent(value)
         >>> stream_value = {"x": [3, 4], "y": ["c", "d"]}
         >>> obj.stream(stream_value)
         >>> obj.value.to_dict("list")
         {'x': [1, 2, 3, 4], 'y': ['a', 'b', 'c', 'd']}
         """
-        import pandas as pd
-        value_index_start = self._data.index.max() + 1
-        if isinstance(stream_value, pd.DataFrame):
+        if 'pandas' in sys.modules:
+            import pandas as pd
+        else:
+            pd = None
+        if pd and isinstance(stream_value, pd.DataFrame):
+            if isinstance(self._processed, dict):
+                self.stream(stream_value.to_dict())
+                return
+            value_index_start = self._data.index.max() + 1
             if reset_index:
                 stream_value = stream_value.reset_index(drop=True)
                 stream_value.index += value_index_start
@@ -722,15 +743,29 @@ class SyncableData(Reactive):
                 self._stream(stream_value)
             finally:
                 self._updating = False
-        elif isinstance(stream_value, pd.Series):
+        elif pd and isinstance(stream_value, pd.Series):
+            if isinstance(self._processed, dict):
+                self.stream({k: [v] for k, v in stream_value.to_dict().items()})
+                return
             self.value.loc[value_index_start] = stream_value
+            self._updating = True
             try:
-                self._updating = True
                 self._stream(self.value.iloc[-1:])
             finally:
                 self._updating = False
         elif isinstance(stream_value, dict):
-            if stream_value:
+            if isinstance(self._processed, dict):
+                if not all(col in stream_value for col in self._data):
+                    raise ValueError("Stream update must append to all columns.")
+                for col, array in stream_value.items():
+                    combined = np.concatenate([self._data[col], array])
+                    self._update_column(col, array)
+                self._updating = True
+                try:
+                    self._stream(stream_value)
+                finally:
+                    self._updating = False
+            else:
                 try:
                     stream_value = pd.DataFrame(stream_value)
                 except ValueError:
@@ -757,7 +792,7 @@ class SyncableData(Reactive):
 
         Patch a DataFrame with a Dictionary row.
         >>> value = pd.DataFrame({"x": [1, 2], "y": ["a", "b"]})
-        >>> obj = DataComponent(...)
+        >>> obj = DataComponent(value)
         >>> patch_value = {"x": [(0, 3)]}
         >>> obj.patch(patch_value)
         >>> obj.value.to_dict("list")
@@ -765,7 +800,7 @@ class SyncableData(Reactive):
 
         Patch a Dataframe with a Dictionary of Columns.
         >>> value = pd.DataFrame({"x": [1, 2], "y": ["a", "b"]})
-        >>> obj = DataComponent(...)
+        >>> obj = DataComponent(value)
         >>> patch_value = {"x": [(slice(2), (3,4))], "y": [(1,'d')]}
         >>> obj.patch(patch_value)
         >>> obj.value.to_dict("list")
@@ -773,7 +808,7 @@ class SyncableData(Reactive):
 
         Patch a DataFrame with a Series. Please note the index is used in the update.
         >>> value = pd.DataFrame({"x": [1, 2], "y": ["a", "b"]})
-        >>> obj = DataComponent(...)
+        >>> obj = DataComponent(value)
         >>> patch_value = pd.Series({"index": 1, "x": 4, "y": "d"})
         >>> obj.patch(patch_value)
         >>> obj.value.to_dict("list")
@@ -781,31 +816,29 @@ class SyncableData(Reactive):
 
         Patch a Dataframe with a Dataframe. Please note the index is used in the update.
         >>> value = pd.DataFrame({"x": [1, 2], "y": ["a", "b"]})
-        >>> obj = DataComponent(...)
+        >>> obj = DataComponent(value)
         >>> patch_value = pd.DataFrame({"x": [3, 4], "y": ["c", "d"]})
         >>> obj.patch(patch_value)
         >>> obj.value.to_dict("list")
         {'x': [3, 4], 'y': ['c', 'd']}
         """
-        if self.value is None or isinstance(patch_value, dict):
+        if self._processed is None or isinstance(patch_value, dict):
             self._patch(patch_value)
             return
 
-        import pandas as pd
-        if not isinstance(self.value, pd.DataFrame):
-            raise ValueError(
-                f"Patching an object of type {type(self.value).__name__} "
-                "is not supported. Please provide a dict."
-            )
-
-        if isinstance(patch_value, pd.DataFrame):
+        if 'pandas' in sys.modules:
+            import pandas as pd
+        else:
+            pd = None
+        data = getattr(self, self._data_params[0])
+        if pd and isinstance(patch_value, pd.DataFrame):
             patch_value_dict = {}
             for column in patch_value.columns:
                 patch_value_dict[column] = []
                 for index in patch_value.index:
                     patch_value_dict[column].append((index, patch_value.loc[index, column]))
             self.patch(patch_value_dict)
-        elif isinstance(patch_value, pd.Series):
+        elif pd and isinstance(patch_value, pd.Series):
             if "index" in patch_value:  # Series orient is row
                 patch_value_dict = {
                     k: [(patch_value["index"], v)] for k, v in patch_value.items()
@@ -818,9 +851,16 @@ class SyncableData(Reactive):
             self.patch(patch_value_dict)
         elif isinstance(patch_value, dict):
             for k, v in patch_value.items():
-                for update in v:
-                    self.value.loc[update[0], k] = update[1]
+                for index, patch  in v:
+                    if pd and isinstance(self._processed, pd.DataFrame):
+                        data.loc[index, k] = patch
+                    else:
+                        data[k][index] = patch
+            self._updating = True
+            try:
                 self._patch(patch_value)
+            finally:
+                self._updating = False
         else:
             raise ValueError(
                 f"Patching with a patch_value of type {type(patch_value).__name__} "
@@ -833,19 +873,6 @@ class ReactiveData(SyncableData):
     An extension of SyncableData which bi-directionally syncs a data
     parameter between frontend and backend using a ColumnDataSource.
     """
-
-    def _update_column(self, column, array):
-        """
-        Implemented by subclasses converting changes in columns to
-        changes in the data parameter.
-
-        Parameters
-        ----------
-        column: str
-          The name of the column to update.
-        array: numpy.ndarray
-          The array data to update the column with.
-        """
 
     def _update_selection(self, indices):
         self.selection = indices
