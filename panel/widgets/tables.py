@@ -55,26 +55,18 @@ class BaseTable(ReactiveData, Widget):
 
     value = param.Parameter(default=None)
 
-    __abstract = True
-
     _data_params = ['value']
-
-    _data_param = 'value'
 
     _manual_params = ['formatters', 'editors', 'widths', 'titles', 'value', 'show_index']
 
     _rename = {'disabled': 'editable', 'selection': None}
 
+    __abstract = True
+
     def __init__(self, value=None, **params):
-        super().__init__(value=value, **params)
         self._renamed_cols = {}
         self._filters = []
-        self._filtered = None
-        self.param.watch(self._validate, 'value')
-        self.param.watch(self._update_cds, self._data_params)
-        self.param.watch(self._update_selected, 'selection')
-        self._validate(None)
-        self._update_cds()
+        super().__init__(value=value, **params)
 
     def _validate(self, event):
         if self.value is None:
@@ -311,14 +303,6 @@ class BaseTable(ReactiveData, Widget):
             df = df.reset_index()
         data = ColumnDataSource.from_df(df).items()
         return df, {k if isinstance(k, str) else str(k): v for k, v in data}
-
-    def _update_cds(self, *events):
-        if self._updating:
-            return
-        self._filtered, self._data = self._get_data()
-        for ref, (m, _) in self._models.items():
-            m.source.data = self._data
-            push_on_root(ref)
 
     def _update_column(self, column, array):
         self.value[column] = array
@@ -805,7 +789,7 @@ class Tabulator(BaseTable):
 
     @property
     def _length(self):
-        return len(self._filtered)
+        return len(self._processed)
 
     def _get_style_data(self):
         if self.value is None:
@@ -902,7 +886,7 @@ class Tabulator(BaseTable):
             indices = []
             for v in index.values:
                 try:
-                    indices.append(self._filtered.index.get_loc(v))
+                    indices.append(self._processed.index.get_loc(v))
                 except KeyError:
                     continue
             nrows = self.page_size
@@ -920,24 +904,24 @@ class Tabulator(BaseTable):
         start = (self.page-1)*nrows
         end = start+nrows
         if self.sorters:
-            index = self._filtered.iloc[start:end].index.values
+            index = self._processed.iloc[start:end].index.values
             self.value[column].loc[index] = array
         else:
             self.value[column].iloc[start:end] = array
 
     def _update_selection(self, indices):
         if self.pagination != 'remote':
-            return indices
+            self.selection = indices
         nrows = self.page_size
         start = (self.page-1)*nrows
-        index = self._filtered.iloc[[start+ind for ind in indices]].index
+        index = self._processed.iloc[[start+ind for ind in indices]].index
         indices = []
         for v in index.values:
             try:
                 indices.append(self.value.index.get_loc(v))
             except KeyError:
                 continue
-        return indices
+        self.selection = indices
 
     def _get_properties(self, source):
         props = {p : getattr(self, p) for p in list(Layoutable.param)
@@ -961,7 +945,7 @@ class Tabulator(BaseTable):
         process = {'theme': self.theme, 'frozen_rows': self.frozen_rows}
         props.update(self._process_param_change(process))
         if self.pagination:
-            length = 0 if self._filtered is None else len(self._filtered)
+            length = 0 if self._processed is None else len(self._processed)
             props['max_page'] = length//self.page_size + bool(length%self.page_size)
         return props
 
