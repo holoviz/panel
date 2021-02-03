@@ -11,7 +11,6 @@ from pathlib import Path
 from urllib.parse import urljoin
 
 from bokeh.resources import Resources
-from bokeh.settings import settings
 from jinja2 import Environment, Markup, FileSystemLoader
 
 with open(Path(__file__).parent.parent / 'package.json') as f:
