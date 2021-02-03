@@ -214,7 +214,7 @@ class Param(PaneBase):
 
     @property
     def _synced_params(self):
-        ignored_params = ['default_layout']
+        ignored_params = ['default_layout', 'loading']
         return [p for p in Layoutable.param if p not in ignored_params]
 
     def _update_widgets(self, *events):

@@ -629,12 +629,6 @@ class VTKVolume(AbstractVTK):
         self._legend = None
         super()._update_object(ref, doc, root, parent, comm)
 
-    def _init_params(self):
-        return {k: v for k, v in self.param.get_param_values()
-                if v is not None and k not in [
-                    'default_layout', 'object', 'max_data_size', 'spacing', 'origin'
-                ]}
-
     def _get_object_dimensions(self):
         if isinstance(self.object, np.ndarray):
             return self.object.shape

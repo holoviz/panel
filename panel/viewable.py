@@ -435,12 +435,7 @@ class Renderable(param.Parameterized):
         return model
 
     def _init_params(self):
-        params = {}
-        for k, v in self.param.get_param_values():
-            if v is None:
-                continue
-            params[k] = v
-        return params
+        return {k: v for k, v in self.param.get_param_values() if v is not None}
 
     def _server_destroy(self, session_context):
         """

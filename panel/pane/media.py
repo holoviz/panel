@@ -58,10 +58,6 @@ class _MediaBase(PaneBase):
             return True
         return False
 
-    def _init_params(self):
-        return {k: v for k, v in self.param.get_param_values()
-                if v is not None and k not in ['default_layout']}
-
     def _get_model(self, doc, root=None, parent=None, comm=None):
         props = self._process_param_change(self._init_params())
         model = self._bokeh_model(**props)

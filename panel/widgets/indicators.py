@@ -400,10 +400,6 @@ class Dial(ValueIndicator):
     def _update_value_bounds(self):
         self.param.value.bounds = self.bounds
 
-    def _init_params(self):
-        return {k: v for k, v in self.param.get_param_values()
-                if v is not None and k not in self._manual_params}
-
     def _get_data(self):
         vmin, vmax = self.bounds
         value = self.value
