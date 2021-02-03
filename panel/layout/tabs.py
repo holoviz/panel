@@ -32,27 +32,24 @@ class Tabs(NamedListPanel):
 
     _bokeh_model = BkTabs
 
-    _source_transforms = {'dynamic': None, 'objects': None}
-
-    _rename = {'name': None, 'objects': 'tabs', 'dynamic': None}
-
-    _linked_props = ['active', 'tabs']
-
     _js_transforms = {'tabs': """
     var ids = [];
     for (var t of value) {{ ids.push(t.id) }};
     var value = ids;
     """}
 
+    _linked_props = ['active', 'tabs']
+
+    _manual_params = ['closable']
+
+    _rename = {'name': None, 'objects': 'tabs', 'dynamic': None}
+
+    _source_transforms = {'dynamic': None, 'objects': None}
+
     def __init__(self, *objects, **params):
         super().__init__(*objects, **params)
         self.param.active.bounds = (0, len(self)-1)
         self.param.watch(self._update_active, ['dynamic', 'active'])
-
-    def _init_params(self):
-        return {k: v for k, v in self.param.get_param_values()
-                if v is not None and k != 'closable'}
-
 
     def _update_names(self, event):
         self.param.active.bounds = (0, len(event.new)-1)
@@ -111,13 +108,11 @@ class Tabs(NamedListPanel):
     # Model API
     #----------------------------------------------------------------
 
-    def _update_model(self, events, msg, root, model, doc, comm=None):
-        msg = dict(msg)
-        if 'closable' in msg:
-            closable = msg.pop('closable')
-            for child in model.tabs:
-                child.closable = closable
-        super()._update_model(events, msg, root, model, doc, comm)
+    def _manual_update(self, events, model, doc, root, parent, comm):
+        for event in events:
+            if event.name == 'closable':
+                for child in model.tabs:
+                    child.closable = closable
 
     def _get_objects(self, model, old_objects, doc, root, comm=None):
         """

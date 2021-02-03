@@ -139,12 +139,8 @@ class PaneBase(Reactive):
 
     @property
     def _synced_params(self):
-        ignored_params = ['name', 'default_layout']+self._rerender_params
+        ignored_params = ['name', 'default_layout', 'loading']+self._rerender_params
         return [p for p in self.param if p not in ignored_params]
-
-    def _init_params(self):
-        return {k: v for k, v in self.param.get_param_values()
-                if v is not None and k not in ['default_layout', 'object']}
 
     def _update_object(self, ref, doc, root, parent, comm):
         old_model = self._models[ref][0]

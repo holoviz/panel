@@ -72,7 +72,6 @@ class Widget(Reactive):
         layout = Param(parameter, widgets={parameter.name: dict(type=cls, **params)})
         return layout[0]
 
-
     def _get_model(self, doc, root=None, parent=None, comm=None):
         model = self._widget_type(**self._process_param_change(self._init_params()))
         if root is None:
