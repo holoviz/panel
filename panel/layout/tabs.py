@@ -112,7 +112,7 @@ class Tabs(NamedListPanel):
         for event in events:
             if event.name == 'closable':
                 for child in model.tabs:
-                    child.closable = closable
+                    child.closable = event.new
 
     def _get_objects(self, model, old_objects, doc, root, comm=None):
         """
