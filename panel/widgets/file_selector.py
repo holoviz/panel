@@ -100,9 +100,10 @@ class FileSelector(CompositeWidget):
         self._forward = Button(name='▶', width=25, margin=(5, 10), disabled=True)
         self._up = Button(name='⬆', width=25, margin=(5, 10), disabled=True)
         self._directory = TextInput(value=self.directory, margin=(5, 10), width_policy='max')
-        self._go = Button(name='⬇', disabled=True, width=25, margin=(5, 15, 0, 0))
+        self._go = Button(name='⬇', disabled=True, width=25, margin=(5, 10, 0, 0))
+        self._reload = Button(name='↻', width=25, margin=(5, 15, 0, 10))
         self._nav_bar = Row(
-            self._back, self._forward, self._up, self._directory, self._go,
+            self._back, self._forward, self._up, self._directory, self._go, self._reload,
             **dict(layout, width=None, margin=0, width_policy='max')
         )
         self._composite[:] = [self._nav_bar, Divider(margin=0), self._selector]
@@ -120,6 +121,7 @@ class FileSelector(CompositeWidget):
         self.link(self._directory, directory='value')
         self._selector.param.watch(self._update_value, 'value')
         self._go.on_click(self._update_files)
+        self._reload.on_click(self._update_files)
         self._up.on_click(self._go_up)
         self._back.on_click(self._go_back)
         self._forward.on_click(self._go_forward)
@@ -143,7 +145,9 @@ class FileSelector(CompositeWidget):
 
     def _update_files(self, event=None):
         path = os.path.abspath(self._directory.value)
-        if not os.path.isdir(path):
+        if event and getattr(event, 'obj', None) is self._reload:
+            path = self._cwd
+        elif not os.path.isdir(path):
             self._selector.options = ['Entered path is not valid']
             self._selector.disabled = True
             return
