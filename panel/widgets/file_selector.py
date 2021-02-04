@@ -10,6 +10,7 @@ from fnmatch import fnmatch
 
 import param
 
+from ..io import PeriodicCallback
 from ..layout import Column, Divider, Row
 from ..viewable import Layoutable
 from .base import CompositeWidget
@@ -76,6 +77,10 @@ class FileSelector(CompositeWidget):
         The number of options shown at once (note this is the only
         way to control the height of this widget)""")
 
+    refresh_period = param.Integer(default=None, doc="""
+        If set to non-None value indicates how frequently to refresh
+        the directory contents in milliseconds.""")
+
     value = param.List(default=[], doc="""
         List of selected files.""")
 
@@ -128,6 +133,18 @@ class FileSelector(CompositeWidget):
         self._directory.param.watch(self._dir_change, 'value')
         self._selector._lists[False].param.watch(self._select, 'value')
         self._selector._lists[False].param.watch(self._filter_blacklist, 'options')
+        self._periodic = PeriodicCallback(callback=self._refresh, period=self.refresh_period or 0)
+        self.param.watch(self._update_periodic, 'refresh_period')
+        if self.refresh_period:
+            self._periodic.start()
+
+    def _update_periodic(self, event):
+        if event.new:
+            self._periodic.period = event.new
+            if not self._periodic.running:
+                self._periodic.start()
+        elif self._periodic.running:
+            self._periodic.stop()
 
     def _update_value(self, event):
         value = [v for v in event.new if not self.only_files or os.path.isfile(v)]
@@ -143,9 +160,13 @@ class FileSelector(CompositeWidget):
             self._directory.value = path
         self._go.disabled = path == self._cwd
 
-    def _update_files(self, event=None):
+    def _refresh(self):
+        self._update_files(refresh=True)
+
+    def _update_files(self, event=None, refresh=False):
         path = os.path.abspath(self._directory.value)
-        if event and getattr(event, 'obj', None) is self._reload:
+        refresh = refresh or (event and getattr(event, 'obj', None) is self._reload)
+        if refresh:
             path = self._cwd
         elif not os.path.isdir(path):
             self._selector.options = ['Entered path is not valid']
@@ -156,7 +177,8 @@ class FileSelector(CompositeWidget):
             self._position += 1
 
         self._cwd = path
-        self._go.disabled = True
+        if not refresh:
+            self._go.disabled = True
         self._up.disabled = path == self.directory
         if self._position == len(self._stack)-1:
             self._forward.disabled = True
