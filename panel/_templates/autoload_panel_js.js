@@ -109,7 +109,7 @@ calls it with the rendered model.
       element.async = false;
       element.src = url;
       if (!url.endsWith('.js')) {
-      element.type = "module"
+        element.type = "module"
       }
       console.debug("Bokeh: injecting script tag for BokehJS library: ", url);
       document.head.appendChild(element);
