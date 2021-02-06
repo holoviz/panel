@@ -33,16 +33,16 @@ img {
 }
 
 .mdc-drawer {
-	background: #FAFAFA; /* GRAY 50 */
-	width: 300px !important;
+  background: #FAFAFA; /* GRAY 50 */
+  width: 300px !important;
 }
 
 .mdc-drawer-app-content {
-	margin-left: 0 !important;
+  margin-left: 0 !important;
 }
 
 .mdc-drawer.mdc-drawer--open:not(.mdc-drawer--closing)+.mdc-drawer-app-content {
-	margin-left: 300px !important;
+  margin-left: 300px !important;
 }
 
 .title-bar {
@@ -50,6 +50,10 @@ img {
   justify-content: center;
   align-content: center;
   width: 100%;
+}
+
+.mdc-top-app-bar .bk-menu {
+  color: black
 }
 
 .app-header {

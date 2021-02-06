@@ -46,6 +46,8 @@ class DefaultTheme(Theme):
     The DefaultTheme uses the standard Panel color palette.
     """
 
+    base_css = param.Filename(default=pathlib.Path(__file__).parent / 'default.css')
+
 
 
 BOKEH_DARK = dict(_dark_minimal.json)
@@ -53,7 +55,6 @@ BOKEH_DARK = dict(_dark_minimal.json)
 BOKEH_DARK['attrs']['Figure'].update({
     "background_fill_color": "#3f3f3f",
     "border_fill_color": "#2f2f2f",
-
 })
 
 class DarkTheme(Theme):

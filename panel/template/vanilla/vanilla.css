@@ -29,6 +29,14 @@ body {
   padding-left: 10px;
 }
 
+#header .bk.bk-btn-default {
+  color: black;
+}
+
+#header .bk.bk-menu {
+  color: black;
+}
+
 .title {
   color: #fff;
   text-decoration: none;

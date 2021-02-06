@@ -18,12 +18,12 @@ body {
   background-color: #121212;
 }
 
-.bk.card {
+.bk.card, .bk.accordion {
   color: white;
   background-color: #2f2f2f;
 }
 
-.bk.card-header {
+.bk.card-header, .bk.accordion-header {
   color: white;
   background-color: #292929 !important;
 }

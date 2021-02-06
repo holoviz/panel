@@ -38,6 +38,10 @@ body {
   margin-left: 15px;
 }
 
+.navbar .bk-menu {
+  color: black
+}
+
 a.navbar-brand {
   padding-left: 10px;
   display: flex;
