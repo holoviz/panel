@@ -30,7 +30,7 @@ from .io.notebook import (
 )
 from .io.save import save
 from .io.state import state
-from .io.server import init_doc, serve
+from .io.server import BASE_TEMPLATE, init_doc, serve
 from .util import escape, param_reprs
 
 
@@ -745,6 +745,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         doc = init_doc(doc)
         title = title or 'Panel Application'
         doc.title = title
+        doc.template = BASE_TEMPLATE
         model = self.get_root(doc)
         if hasattr(doc, 'on_session_destroyed'):
             doc.on_session_destroyed(self._server_destroy)

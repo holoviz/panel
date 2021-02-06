@@ -108,10 +108,13 @@ calls it with the rendered model.
       element.onerror = on_error;
       element.async = false;
       element.src = url;
+      if (!url.endsWith('.js')) {
+	element.type = "module"
+      }
       console.debug("Bokeh: injecting script tag for BokehJS library: ", url);
       document.head.appendChild(element);
     }
-	if (!js_urls.length) {
+    if (!js_urls.length) {
       on_load()
     }
   };
@@ -124,7 +127,6 @@ calls it with the rendered model.
 
   var js_urls = {{ bundle.js_urls|json }};
   var css_urls = {{ bundle.css_urls|json }};
-
   var inline_js = [
     {%- for css in bundle.css_raw %}
     function(Bokeh) {

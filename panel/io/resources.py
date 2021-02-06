@@ -10,6 +10,7 @@ from collections import OrderedDict
 from pathlib import Path
 from urllib.parse import urljoin
 
+from bokeh.embed.bundle import Bundle
 from bokeh.resources import Resources
 from jinja2 import Environment, Markup, FileSystemLoader
 
@@ -50,7 +51,7 @@ def css_raw(self):
 def js_files(self):
     from ..config import config
     files = super(Resources, self).js_files
-    js_files = files + list(config.js_files.values())
+    js_files = files + list(config.js_files.values()) + list(config.js_modules.values())
 
     # Load requirejs last to avoid interfering with other libraries
     require_index = [i for i, jsf in enumerate(js_files) if 'require' in jsf]
@@ -85,6 +86,9 @@ def css_files(self):
         files.append(dist_dir + f'css/{os.path.basename(cssf)}')
     return files
 
+def render_js(self):
+    return JS_RESOURCES.render(js_raw=self.js_raw, js_files=self.js_files, hashes=self.hashes)
+
 def conffilter(value):
     return json.dumps(OrderedDict(value)).replace('"', '\'')
 
@@ -92,6 +96,10 @@ _env = get_env()
 _env.filters['json'] = lambda obj: Markup(json.dumps(obj))
 _env.filters['conffilter'] = conffilter
 
+JS_RESOURCES = _env.get_template('js_resources.html')
+
 Resources.css_raw = property(css_raw)
 Resources.js_files = property(js_files)
 Resources.css_files = property(css_files)
+Resources.render_js = render_js
+Bundle._render_js = render_js
