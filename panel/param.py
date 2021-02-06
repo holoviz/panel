@@ -671,15 +671,20 @@ class ParamMethod(ReplacementPane):
     return any object which itself can be rendered as a Pane.
     """
 
+    lazy = param.Boolean(default=False, doc="""
+        Whether to lazily evaluate the contents of the object
+        only when it is required for rendering.""")
+
     loading_indicator = param.Boolean(default=False, doc="""
         Whether to show loading indicator while pane is updating.""")
 
     def __init__(self, object=None, **params):
         super().__init__(object, **params)
+        self._evaled = not self.lazy
         self._link_object_params()
         if object is not None:
             self._validate_object()
-            self._update_inner(self.eval(object))
+            self._replace_pane(not self.lazy)
 
     @param.depends('object', watch=True)
     def _validate_object(self):
@@ -714,6 +719,16 @@ class ParamMethod(ReplacementPane):
                 kwargs = {n: getattr(dep.owner, dep.name) for n, dep in kw_deps.items()}
         return function(*args, **kwargs)
 
+    def _replace_pane(self, *args, force=False):
+        self._evaled = bool(self._models) or force or not self.lazy
+        if self._evaled:
+            self._inner_layout.loading = self.loading_indicator
+            try:
+                new_object = self.eval(self.object)
+                self._update_inner(new_object)
+            finally:
+                self._inner_layout.loading = False
+
     def _update_pane(self, *events):
         callbacks = []
         for watcher in self._callbacks:
@@ -724,8 +739,7 @@ class ParamMethod(ReplacementPane):
             obj.param.unwatch(watcher)
         self._callbacks = callbacks
         self._link_object_params()
-        if object is not None:
-            self._update_inner(self.eval(self.object))
+        self._replace_pane()
 
     def _link_object_params(self):
         parameterized = get_method_owner(self.object)
@@ -756,12 +770,7 @@ class ParamMethod(ReplacementPane):
                     self._callbacks.append(watcher)
                     for p in params:
                         deps.append(p)
-            self._inner_layout.loading = self.loading_indicator
-            try:
-                new_object = self.eval(self.object)
-                self._update_inner(new_object)
-            finally:
-                self._inner_layout.loading = False
+            self._replace_pane()
 
         for _, params in full_groupby(params, lambda x: (x.inst or x.cls, x.what)):
             p = params[0]
@@ -773,6 +782,11 @@ class ParamMethod(ReplacementPane):
                     pobj.jslink(self._inner_layout, **props)
             watcher = pobj.param.watch(update_pane, ps, p.what)
             self._callbacks.append(watcher)
+
+    def _get_model(self, doc, root=None, parent=None, comm=None):
+        if not self._evaled:
+            self._replace_pane(force=True)
+        return super()._get_model(doc, root, parent, comm)
 
     #----------------------------------------------------------------
     # Public API
@@ -794,14 +808,6 @@ class ParamFunction(ParamMethod):
     """
 
     priority = 0.6
-
-    def _replace_pane(self, *args):
-        self._inner_layout.loading = self.loading_indicator
-        try:
-            new_object = self.eval(self.object)
-            self._update_inner(new_object)
-        finally:
-            self._inner_layout.loading = False
 
     def _link_object_params(self):
         deps = self.object._dinfo
