@@ -434,7 +434,6 @@ class BasicTemplate(BaseTemplate):
             state.sync_busy(self.busy_indicator)
         self._js_area = HTML(margin=0, width=0, height=0)
         self._render_items['js_area'] = (self._js_area, [])
-        self._update_vars()
         self._update_busy()
         self.main.param.watch(self._update_render_items, ['objects'])
         self.modal.param.watch(self._update_render_items, ['objects'])
@@ -444,12 +443,10 @@ class BasicTemplate(BaseTemplate):
         self.sidebar.param.trigger('objects')
         self.header.param.trigger('objects')
         self.modal.param.trigger('objects')
-        self.param.watch(self._update_vars, ['title', 'site', 'header_background',
-                                             'header_color', 'main_max_width'])
-        self.config.param.watch(self._update_vars, list(self.config.param))
 
     def _init_doc(self, doc=None, comm=None, title=None, notebook=False, location=True):
         title = title or self.title
+        self._update_vars()
         doc = super()._init_doc(doc, comm, title, notebook, location)
         if self.theme:
             theme = self.theme.find_theme(type(self))
