@@ -78,3 +78,5 @@ class DataTabulator(HTMLBox):
         },
         'exports': {'tabulator': 'Tabulator'}
     }
+
+    __js_skip__ = {'tabulator': __javascript__}
