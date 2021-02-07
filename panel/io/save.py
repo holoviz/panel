@@ -8,7 +8,6 @@ from six import string_types
 import bokeh
 
 from bokeh.document.document import Document
-from bokeh.embed import file_html
 from bokeh.embed.bundle import bundle_for_objs_and_resources
 from bokeh.embed.elements import html_page_for_render_items
 from bokeh.embed.util import OutputDocumentFor, standalone_docs_json_and_render_items
@@ -65,30 +64,22 @@ def save_png(model, filename, template=None, template_variables=None):
         if template:
             bokeh.io.export.get_layout_html = old_layout_fn
 
-
-
 def _title_from_models(models, title):
-    # use override title
     if title is not None:
         return title
 
-    # use title from any listed document
     for p in models:
         if isinstance(p, Document):
             return p.title
 
-    # use title from any model's document
     for p in models:
         if p.document is not None:
             return p.document.title
 
-    # use default title
     return DEFAULT_TITLE
 
-
 def file_html(models, resources, title=None, template=BASE_TEMPLATE,
-              template_variables={}, theme=None,
-              suppress_callback_warning=False, _always_new=False):
+              template_variables={}, theme=None):
     models_seq = []
     if isinstance(models, Model):
         models_seq = [models]
@@ -97,8 +88,10 @@ def file_html(models, resources, title=None, template=BASE_TEMPLATE,
     else:
         models_seq = models
 
-    with OutputDocumentFor(models_seq, apply_theme=theme, always_new=_always_new) as doc:
-        (docs_json, render_items) = standalone_docs_json_and_render_items(models_seq, suppress_callback_warning=suppress_callback_warning)
+    with OutputDocumentFor(models_seq, apply_theme=theme, always_new=False):
+        (docs_json, render_items) = standalone_docs_json_and_render_items(
+            models_seq, suppress_callback_warning=True
+        )
         title = _title_from_models(models_seq, title)
         bundle = bundle_for_objs_and_resources(None, resources)
         bundle = Bundle.from_bokeh(bundle)
