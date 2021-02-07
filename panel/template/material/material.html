@@ -26,7 +26,7 @@
 {% for src in template_resources['extra_css'] %}
 <link rel="stylesheet"  href="{{ src }}" crossorigin="anonymous"></script>
 
-g{% endfor %}
+{% endfor %}
 {% for raw_css in template_resources['raw_css'] %}
 <style type="text/css">
 {{ raw_css }}
