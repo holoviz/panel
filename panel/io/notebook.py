@@ -37,7 +37,7 @@ except Exception:
 from ..compiler import require_components
 from .embed import embed_state
 from .model import add_to_doc, diff
-from .resources import _env
+from .resources import Bundle, Resources, _env
 from .server import _server_url, _origin_url, get_server
 from .state import state
 
@@ -216,9 +216,11 @@ def load_notebook(inline=True, load_timeout=5000):
     resources = INLINE if inline else CDN
     prev_resources = settings.resources(default="server")
     user_resources = settings.resources._user_value is not _Unset
+    resources = Resources.from_bokeh(resources)
     try:
         settings.resources = 'inline' if inline else 'cdn'
         bundle = bundle_for_objs_and_resources(None, resources)
+        bundle = Bundle.from_bokeh(bundle)
         configs, requirements, exports, skip_imports = require_components()
         ipywidget = 'ipywidgets_bokeh' in sys.modules
         bokeh_js = _autoload_js(bundle, configs, requirements, exports,
