@@ -19,18 +19,27 @@ import param
 import bokeh
 import bokeh.command.util
 
+# Bokeh imports
 from bokeh.application import Application as BkApplication
 from bokeh.application.handlers.function import FunctionHandler
 from bokeh.command.util import build_single_handler_application
 from bokeh.document.events import ModelChangedEvent
-from bokeh.embed.bundle import extension_dirs
+from bokeh.embed.bundle import bundle_for_objs_and_resources, extension_dirs
+from bokeh.embed.elements import html_page_for_render_items
+from bokeh.embed.util import RenderItem
 from bokeh.io import curdoc
 from bokeh.server.server import Server
+from bokeh.server.urls import per_app_patterns
+from bokeh.server.views.doc_handler import DocHandler as BkDocHandler
+
+# Tornado imports
 from tornado.ioloop import IOLoop
 from tornado.websocket import WebSocketHandler
-from tornado.web import RequestHandler, StaticFileHandler
+from tornado.web import RequestHandler, StaticFileHandler, authenticated
 from tornado.wsgi import WSGIContainer
 
+# Internal imports
+from .resources import BASE_TEMPLATE, Bundle, Resources
 from .state import state
 
 #---------------------------------------------------------------------
@@ -47,37 +56,11 @@ def _origin_url(url):
         url = url.split("//")[1]
     return url
 
-
 def _server_url(url, port):
     if url.startswith("http"):
         return '%s:%d%s' % (url.rsplit(':', 1)[0], port, "/")
     else:
         return 'http://%s:%d%s' % (url.split(':')[0], port, "/")
-
-
-def init_doc(doc):
-    doc = doc or curdoc()
-    if not doc.session_context:
-        return doc
-
-    session_id = doc.session_context.id
-    sessions = state.session_info['sessions']
-    if session_id not in sessions:
-        return doc
-
-    sessions[session_id].update({
-        'started': dt.datetime.now().timestamp()
-    })
-    doc.on_event('document_ready', state._init_session)
-    return doc
-
-
-@contextmanager
-def set_curdoc(doc):
-    state.curdoc = doc
-    yield
-    state.curdoc = None
-
 
 def _eval_panel(panel, server_id, title, location, doc):
     from ..template import BaseTemplate
@@ -91,7 +74,6 @@ def _eval_panel(panel, server_id, title, location, doc):
         else:
             doc = as_panel(panel)._modify_doc(server_id, title, doc, location)
         return doc
-
 
 def async_execute(func):
     """
@@ -120,19 +102,7 @@ def async_execute(func):
         wrapper = func
     state.curdoc.add_next_tick_callback(wrapper)
 
-
 param.parameterized.async_executor = async_execute
-
-
-class Application(BkApplication):
-
-    async def on_session_created(self, session_context):
-        for cb in state._on_session_created:
-            cb(session_context)
-        await super().on_session_created(session_context)
-
-bokeh.command.util.Application = Application
-
 
 def _initialize_session_info(session_context):
     from ..config import config
@@ -157,9 +127,78 @@ def _initialize_session_info(session_context):
 state.on_session_created(_initialize_session_info)
 
 #---------------------------------------------------------------------
+# Bokeh patches
+#---------------------------------------------------------------------
+
+def server_html_page_for_session(session, resources, title, template=BASE_TEMPLATE,
+                                 template_variables=None):
+    render_item = RenderItem(
+        token = session.token,
+        roots = session.document.roots,
+        use_for_title = False,
+    )
+
+    if template_variables is None:
+        template_variables = {}
+
+    bundle = bundle_for_objs_and_resources(None, resources)
+    bundle = Bundle.from_bokeh(bundle)
+    return html_page_for_render_items(bundle, {}, [render_item], title,
+        template=template, template_variables=template_variables)
+
+# Patch Application to handle session callbacks
+class Application(BkApplication):
+
+    async def on_session_created(self, session_context):
+        for cb in state._on_session_created:
+            cb(session_context)
+        await super().on_session_created(session_context)
+
+bokeh.command.util.Application = Application
+
+# Patch Bokeh DocHandler URL
+class DocHandler(BkDocHandler):
+
+    @authenticated
+    async def get(self, *args, **kwargs):
+        session = await self.get_session()
+        resources = Resources.from_bokeh(self.application.resources())
+        page = server_html_page_for_session(
+            session, resources=resources, title=session.document.title,
+            template=session.document.template,
+            template_variables=session.document.template_variables
+        )
+
+        self.set_header("Content-Type", 'text/html')
+        self.write(page)
+
+per_app_patterns[0] = (r'/?', DocHandler)
+
+#---------------------------------------------------------------------
 # Public API
 #---------------------------------------------------------------------
 
+def init_doc(doc):
+    doc = doc or curdoc()
+    if not doc.session_context:
+        return doc
+
+    session_id = doc.session_context.id
+    sessions = state.session_info['sessions']
+    if session_id not in sessions:
+        return doc
+
+    sessions[session_id].update({
+        'started': dt.datetime.now().timestamp()
+    })
+    doc.on_event('document_ready', state._init_session)
+    return doc
+
+@contextmanager
+def set_curdoc(doc):
+    state.curdoc = doc
+    yield
+    state.curdoc = None
 
 def with_lock(func):
     """
