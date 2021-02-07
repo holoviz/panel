@@ -39,7 +39,7 @@ from tornado.web import RequestHandler, StaticFileHandler, authenticated
 from tornado.wsgi import WSGIContainer
 
 # Internal imports
-from .resources import Bundle, Resources, _env
+from .resources import BASE_TEMPLATE, Bundle, Resources
 from .state import state
 
 #---------------------------------------------------------------------
@@ -50,8 +50,6 @@ from .state import state
 extension_dirs['panel'] = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'dist'))
 
 INDEX_HTML = os.path.join(os.path.dirname(__file__), '..', '_templates', "index.html")
-
-BASE_TEMPLATE = _env.get_template('base.html')
 
 def _origin_url(url):
     if url.startswith("http"):
