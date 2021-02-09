@@ -10,7 +10,6 @@ from ..base import BasicTemplate
 from ..theme import DarkTheme, DefaultTheme
 
 
-
 class VanillaTemplate(BasicTemplate):
     """
     VanillaTemplate is built on top of Vanilla web components.

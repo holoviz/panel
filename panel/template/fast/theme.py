@@ -1,67 +1,37 @@
-"""Functionality for styling according to Fast.design"""
+"""
+Functionality for styling according to Fast.design
+"""
 import pathlib
-from typing import Dict
-
 import param
 
-_ROOT = pathlib.Path(__file__).parent / "assets/css"
-_CSS_FILES = [
-    _ROOT / "fast_bokeh.css",
-    _ROOT / "fast_bokeh_slickgrid.css",
-    _ROOT / "fast_panel.css",
-    _ROOT / "fast_panel_dataframe.css",
-    _ROOT / "fast_panel_widgets.css",
-    _ROOT / "fast_panel_markdown.css",
-    _ROOT / "fast_awesome.css",
-]
-_ROOT_FILE = _ROOT / "fast_root.css"
-_DEFAULT_ROOT_FILE = _ROOT / "fast_root_default.css"
-_DARK_ROOT_FILE = _ROOT / "fast_root_dark.css"
+from bokeh.themes import Theme as _BkTheme
+
+from ..theme import DarkTheme, DefaultTheme
+
+_ROOT = pathlib.Path(__file__).parent / "css"
 
 COLLAPSED_SVG_ICON = """
 <svg style="stroke: #E62F63" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" slot="collapsed-icon">
-            <path d="M15.2222 1H2.77778C1.79594 1 1 1.79594 1 2.77778V15.2222C1 16.2041 1.79594 17 2.77778 17H15.2222C16.2041 17 17 16.2041 17 15.2222V2.77778C17 1.79594 16.2041 1 15.2222 1Z" stroke-linecap="round" stroke-linejoin="round"></path>
-            <path d="M9 5.44446V12.5556" stroke-linecap="round" stroke-linejoin="round"></path>
-            <path d="M5.44446 9H12.5556" stroke-linecap="round" stroke-linejoin="round"></path>
-        </svg>
-""".replace(
-    "\n", ""
-)
+  <path d="M15.2222 1H2.77778C1.79594 1 1 1.79594 1 2.77778V15.2222C1 16.2041 1.79594 17 2.77778 17H15.2222C16.2041 17 17 16.2041 17 15.2222V2.77778C17 1.79594 16.2041 1 15.2222 1Z" stroke-linecap="round" stroke-linejoin="round"></path>
+  <path d="M9 5.44446V12.5556" stroke-linecap="round" stroke-linejoin="round"></path>
+  <path d="M5.44446 9H12.5556" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+"""
 
 EXPANDED_SVG_ICON = """
 <svg style="stroke: #E62F63" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" slot="expanded-icon">
-    <path d="M15.2222 1H2.77778C1.79594 1 1 1.79594 1 2.77778V15.2222C1 16.2041 1.79594 17 2.77778 17H15.2222C16.2041 17 17 16.2041 17 15.2222V2.77778C17 1.79594 16.2041 1 15.2222 1Z" stroke-linecap="round" stroke-linejoin="round"></path>
-    <path d="M5.44446 9H12.5556" stroke-linecap="round" stroke-linejoin="round"></path>
+  <path d="M15.2222 1H2.77778C1.79594 1 1 1.79594 1 2.77778V15.2222C1 16.2041 1.79594 17 2.77778 17H15.2222C16.2041 17 17 16.2041 17 15.2222V2.77778C17 1.79594 16.2041 1 15.2222 1Z" stroke-linecap="round" stroke-linejoin="round"></path>
+  <path d="M5.44446 9H12.5556" stroke-linecap="round" stroke-linejoin="round"></path>
 </svg>
-""".replace(
-    "\n", ""
-)
+"""
 
-
-def read_fast_css(
-    root_file: pathlib.Path = _ROOT_FILE, style_root_file: pathlib.Path = _DEFAULT_ROOT_FILE
-) -> str:
-    """Returns the Fast Base CSS
-
-    Args:
-        root_file (pathlib.Path): A Path to a css file used across styles
-        style_root_file (pathlib.Path): A Path to a css file used for a specific style
-    Returns:
-        str: [description]
-    """
-    css_files = [root_file, *_CSS_FILES, style_root_file]
-    css_list = [file.read_text() for file in css_files]
-    return "\n".join(css_list)
-
-
-DEFAULT_CSS = read_fast_css(_ROOT_FILE, _DEFAULT_ROOT_FILE)
-DARK_CSS = read_fast_css(_ROOT_FILE, _DARK_ROOT_FILE)
 FONT_URL = "//fonts.googleapis.com/css?family=Open+Sans"
 
-
 class FastStyle(param.Parameterized):
-    """The FastStyle class provides the different colors and icons used to style the Fast
-    Templates"""
+    """
+    The FastStyle class provides the different colors and icons used
+    to style the Fast Templates.
+    """
 
     accent_fill_active = param.Color(default="#E45A8C")
     accent_fill_hover = param.Color(default="#DF3874")
@@ -86,11 +56,10 @@ class FastStyle(param.Parameterized):
 
     header_background = param.Color(default="#1B5E20")
     header_color = param.Color(default="#ffffff")
-    css = param.String(default=DEFAULT_CSS)
     font = param.String(default="Open Sans, sans-serif")
     font_url = param.String(default=FONT_URL)
 
-    def create_bokeh_theme(self) -> Dict:
+    def create_bokeh_theme(self):
         """Returns a custom bokeh theme based on the style parameters
 
         Returns:
@@ -177,7 +146,25 @@ DARK_STYLE = FastStyle(
     neutral_fill_card_rest="#212121",
     neutral_focus="#717171",
     neutral_foreground_rest="#e5e5e5",
-    css=DARK_CSS,
 )
-DEFAULT_BOKEH_THEME = DEFAULT_STYLE.create_bokeh_theme()
-DARK_BOKEH_THEME = DARK_STYLE.create_bokeh_theme()
+
+class FastDefaultTheme(DefaultTheme):
+
+    base_css = param.Filename(default=_ROOT / 'fast_root_default.css')
+
+    style = param.ClassSelector(default=DEFAULT_STYLE, class_=FastStyle)
+
+    @property
+    def bokeh_theme(self):
+        return self.style.create_bokeh_theme()
+
+
+class FastDarkTheme(DarkTheme):
+
+    base_css = param.Filename(default=_ROOT / 'fast_root_dark.css')
+
+    style = param.ClassSelector(default=DARK_STYLE, class_=FastStyle)
+
+    @property
+    def bokeh_theme(self):
+        return self.style.create_bokeh_theme()

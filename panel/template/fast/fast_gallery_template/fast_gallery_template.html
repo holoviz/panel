@@ -36,7 +36,26 @@
         <link href="https://use.typekit.net/spx2dgm.css" rel="stylesheet">
         <script type="module" src="https://unpkg.com/@microsoft/fast-colors@5.1.0"></script>
         <script type="module" src="https://unpkg.com/@microsoft/fast-components@1.13.0"></script>
-        <script type="text/javascript">{{ gallery_js }}</script>
+        <script type="text/javascript">
+          function hideCards(text) {
+              text=text.toLowerCase();
+              const cards = document.getElementsByTagName("li")
+              for (const card of cards){
+                  if (text==="" || card.innerHTML.toLowerCase().includes(text)){
+                      card.style.display=""
+                  } else {card.style.display="none"}
+              }
+          }
+          function toggleLightDarkTheme(){
+              el = document.getElementById("body-design-provider")
+              backgroundColor = el.getAttribute("background-color")
+              if (backgroundColor === "#000000"){
+                  el.setAttribute("background-color", "#ffffff")
+              } else {
+                  el.setAttribute("background-color", "#000000")
+              }
+          }
+	</script>
         <script type="module">
             import { parseColorHexRGB } from "https://unpkg.com/@microsoft/fast-colors@5.1.0";
             import { createColorPalette } from "https://unpkg.com/@microsoft/fast-components@1.13.0";

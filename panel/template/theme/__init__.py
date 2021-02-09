@@ -66,3 +66,9 @@ class DarkTheme(Theme):
 
     bokeh_theme = param.ClassSelector(class_=(_BkTheme, str),
                                       default=_BkTheme(json=BOKEH_DARK))
+
+
+THEMES = {
+    'default': DefaultTheme,
+    'dark': DarkTheme
+}

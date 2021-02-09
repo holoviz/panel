@@ -12,20 +12,12 @@
 {% endblock %}
 
 {% block postamble %}
-<!-- Bootstrap -->
-<link rel="stylesheet" href="{{ template_resources['css']['bootstrap'] }}">
-<!-- Font Awesome -->
-<link rel="stylesheet" href="{{ template_resources['css']['font-awesome'] }}">
 <!-- Template CSS -->
-<link rel="stylesheet" href="{{ template_resources['css']['base'] }}">
-{% if 'base_theme' in template_resources['css'] %}
-<link rel="stylesheet" href="{{ template_resources['css']['base_theme'] }}">
-{% endif %}
-{% if 'theme' in template_resources['css'] %}
-<link rel="stylesheet" href="{{ template_resources['css']['theme'] }}">
-{% endif %}
+{% for css in template_resources['css'].values() %}
+<link rel="stylesheet" href="{{ css }}">
+{% endfor %}
 {% for src in template_resources['extra_css'] %}
-<link rel="stylesheet"  href="{{ src }}" crossorigin="anonymous"></script>
+<link rel="stylesheet"  href="{{ src }}"
 {% endfor %}
 {% for raw_css in template_resources['raw_css'] %}
 <style type="text/css">
@@ -33,16 +25,12 @@
 </style>
 {% endfor %}
 
-<!-- React-grid-layout script -->
-<script src="{{ template_resources['js']['react'] }}" crossorigin></script>
-<script src="{{ template_resources['js']['react-dom'] }}" crossorigin></script>
-<script src="{{ template_resources['js']['babel'] }}" crossorigin></script>
-<script src="{{ template_resources['js']['react-grid'] }}" crossorigin></script>
-{% for src in template_resources['extra_js'] %}
-<script src="{{ src }}" crossorigin="anonymous"></script>
+<!-- Template JS -->
+{% for src in template_resources['js'].values() %}
+<script src="{{ src }}"></script>
 {% endfor %}
-{% for src in template_resources['js_modules'] %}
-<script src="{{ src }}" type="module" crossorigin="anonymous"></script>
+{% for src in template_resources['js_modules'].values() %}
+<script src="{{ src }}" type="module"></script>
 {% endfor %}
 {% endblock %}
 

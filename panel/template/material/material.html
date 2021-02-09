@@ -11,21 +11,14 @@
 {% if base_url and base_target %}<base href="{{ base_url }}" target="{{ base_target }}">{% endif %}
 {% endblock %}
 
+
 {% block postamble %}
 <!-- Template CSS -->
-<link href="{{ template_resources['css']['material'] }}" rel="stylesheet">
-<link rel="stylesheet" href="{{ template_resources['css']['base'] }}">
-{% if 'base_theme' in template_resources['css'] %}
-<link rel="stylesheet" href="{{ template_resources['css']['base_theme'] }}">
-{% endif %}
-{% if 'theme' in template_resources['css'] %}
-<link rel="stylesheet" href="{{ template_resources['css']['theme'] }}">
-{% endif %}
-<link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css?family=Material+Icons&display=block" rel="stylesheet">
+{% for css in template_resources['css'].values() %}
+<link rel="stylesheet" href="{{ css }}">
+{% endfor %}
 {% for src in template_resources['extra_css'] %}
-<link rel="stylesheet"  href="{{ src }}" crossorigin="anonymous"></script>
-
+<link rel="stylesheet"  href="{{ src }}"
 {% endfor %}
 {% for raw_css in template_resources['raw_css'] %}
 <style type="text/css">
@@ -33,13 +26,15 @@
 </style>
 {% endfor %}
 
+<link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Material+Icons&display=block" rel="stylesheet">
+
 <!-- Template JS -->
-<script src="{{ template_resources['js']['material'] }}"></script>
-{% for src in template_resources['extra_js'] %}
-<script src="{{ src }}" crossorigin="anonymous"></script>
+{% for src in template_resources['js'].values() %}
+<script src="{{ src }}"></script>
 {% endfor %}
-{% for src in template_resources['js_modules'] %}
-<script src="{{ src }}" type="module" crossorigin="anonymous"></script>
+{% for src in template_resources['js_modules'].values() %}
+<script src="{{ src }}" type="module"></script>
 {% endfor %}
 {% endblock %}
 

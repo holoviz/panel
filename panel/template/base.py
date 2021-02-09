@@ -449,10 +449,13 @@ class BasicTemplate(BaseTemplate):
         self._update_vars()
         doc = super()._init_doc(doc, comm, title, notebook, location)
         if self.theme:
-            theme = self.theme.find_theme(type(self))
+            theme = self._get_theme()
             if theme and theme.bokeh_theme:
                 doc.theme = theme.bokeh_theme
         return doc
+
+    def _get_theme(self):
+        return self.theme.find_theme(type(self))
 
     def _template_resources(self):
         name = type(self).__name__.lower()
@@ -472,26 +475,36 @@ class BasicTemplate(BaseTemplate):
         for jsname, js in js_files.items():
             js_path = url_path(js)
             js_files[jsname] = dist_path + f'bundled/{name}/{js_path}'
-        extra_js = list(self.config.js_files.values())
-        js_modules = list(self.config.js_modules.values())
+        js_modules = dict(self._resources['js_modules'])
+        for jsname, js in js_files.items():
+            js_path = url_path(js)
+            js_modules[jsname] = dist_path + f'bundled/{name}/{js_path}'
+        js_files.update(self.config.js_files)
+        js_modules.update(self.config.js_modules)
         extra_css = list(self.config.css_files)
         raw_css = list(self.config.raw_css)
 
         # CSS files
-        base_css = os.path.basename(self._css)
-        css_files['base'] = dist_path + f'bundled/{name}/{base_css}'
+        base_css = self._css if isinstance(self._css, list) else [self._css]
+        for css in base_css:
+            css = os.path.basename(css)
+            css_files[f'base_{css}'] = dist_path + f'bundled/{name}/{css}'
         if self.theme:
             theme = self.theme.find_theme(type(self))
             if theme:
                 if theme.base_css:
                     basename = os.path.basename(theme.base_css)
-                    css_files['base_theme'] = dist_path + f'bundled/theme/{basename}'
+                    css_files['theme_base'] = dist_path + f'bundled/theme/{basename}'
                 if theme.css:
                     basename = os.path.basename(theme.css)
                     css_files['theme'] = dist_path + f'bundled/{name}/{basename}'
-        return {'css': css_files, 'js': js_files, 'extra_js': extra_js,
-                'extra_css': extra_css, 'js_modules': js_modules,
-                'raw_css': raw_css}
+        return {
+            'css': css_files,
+            'extra_css': extra_css,
+            'raw_css': raw_css,
+            'js': js_files,
+            'js_modules': js_modules
+        }
 
     def _update_vars(self, *args):
         self._render_variables['app_title'] = self.title

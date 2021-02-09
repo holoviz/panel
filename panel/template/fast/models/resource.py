@@ -1,6 +1,5 @@
 """The Resource contains meta data like name, description and url"""
 import pathlib
-from typing import Dict, List
 
 import markdown
 import panel as pn
@@ -58,21 +57,17 @@ class Resource(BaseModel):
     gif_url = param.String(doc="A link to a .gif video")
     binder_url = param.String(doc="""A link to a notebook on binder""")
 
-    all: List["Resource"] = []
+    all = []
 
     def __init__(self, **params):
         super().__init__(**params)
-
         self.all.append(self)
 
     @staticmethod
-    def _get_url_icon_html(
-        title,
-        url,
-    ):
+    def _get_url_icon_html(title, url):
         return (
-            f"""<a title="{ title }" appearance="hypertext" href="{ url }" target="_blank">"""
-            f"""{ ICONS[title] }</a>"""
+            f'<a title="{ title }" appearance="hypertext" href="{ url }" target="_blank">'
+            f'{ ICONS[title] }</a>'
         )
 
     @staticmethod
@@ -123,11 +118,8 @@ class Resource(BaseModel):
         html += "</div>"
         return html
 
-        # author = _to_avatar_icon(resource.author)
-
-    # pylint: disable=arguments-differ
     @classmethod
-    def create_from_toml(cls, path: pathlib.Path, persons: Dict) -> Dict:  # type: ignore
+    def create_from_toml(cls, path, persons):
         def clean_func(value):
             value["author"] = persons[value["author"]]
             value["owner"] = persons[value["owner"]]
