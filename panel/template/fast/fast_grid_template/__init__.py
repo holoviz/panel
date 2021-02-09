@@ -16,7 +16,7 @@ class FastGridTemplate(FastGridBaseTemplate):
     The FastGridTemplate is build on top of Fast.design and the React Grid Layout.
     """
 
-    _css = FastBaseTemplate._css + [
+    _css = FastGridBaseTemplate._css + [
         pathlib.Path(__file__).parent / "fast_grid_template.css"
     ]
 

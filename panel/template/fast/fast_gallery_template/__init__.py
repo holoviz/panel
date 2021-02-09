@@ -3,7 +3,7 @@ import pathlib
 
 import param
 
-from ...template import Template
+from ...base import Template
 from ..models import Resource
 
 ROOT = pathlib.Path(__file__).parent
