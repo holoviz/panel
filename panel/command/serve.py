@@ -11,6 +11,7 @@ from glob import glob
 from urllib.parse import urljoin
 
 from bokeh.command.subcommands.serve import Serve as _BkServe
+from bokeh.command.util import build_single_handler_applications
 
 from ..auth import OAuthProvider
 from ..config import config
@@ -111,6 +112,10 @@ class Serve(_BkServe):
             type    = int,
             help    = "The length of the session history to record.",
             default = 0
+        )),
+        ('--warm-cache', dict(
+            action  = 'store_true',
+            help    = "Whether to execute scripts on load to warm up cache"
         ))
     )
 
@@ -142,6 +147,12 @@ class Serve(_BkServe):
             prefix += '/'
         with edit_readonly(state):
             state.base_url = urljoin('/', prefix)
+
+        if args.warm_cache:
+            argvs = {f: args.args for f in files}
+            applications = build_single_handler_applications(files, argvs)
+            for app in applications.values():
+                app.create_document()
 
         # Handle tranquilized functions in the supplied functions
         if args.rest_provider in REST_PROVIDERS:
