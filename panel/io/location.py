@@ -191,14 +191,14 @@ class Location(Syncable):
             raise ValueError(f"Cannot unsync {ptype} object since it "
                              "was never synced in the first place.")
         synced = []
-        for p, params, watcher, _ in self._synced:
+        for p, params, watcher, on_error in self._synced:
             if parameterized is p:
                 parameterized.param.unwatch(watcher)
                 if parameters is not None:
                     new_params = {p: q for p, q in params.items()
                                   if p not in parameters}
                     new_watcher = parameterized.param.watch(watcher.fn, list(new_params))
-                    synced.append((p, new_params, new_watcher))
+                    synced.append((p, new_params, new_watcher, on_error))
             else:
-                synced.append((p, params, watcher))
+                synced.append((p, params, watcher, on_error))
         self._synced = synced
