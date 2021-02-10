@@ -94,7 +94,12 @@ class Location(Syncable):
                     v = p.param[pname].deserialize(v)
                 except Exception:
                     pass
-                mapped[pname] = v
+                try:
+                    equal = v == getattr(p, pname)
+                except Exception:
+                    equal = False
+                if not equal:
+                    mapped[pname] = v
             try:
                 p.param.set_param(**mapped)
             except Exception:
