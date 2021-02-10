@@ -403,11 +403,13 @@ class BasicTemplate(BaseTemplate):
 
     _css = None
 
+    _js = None
+
     _template = None
 
     _modifiers = {}
 
-    _resources = {'css': {}, 'js': {}}
+    _resources = {'css': {}, 'js': {}, 'js_modules': {}, 'tarball': {}}
 
     __abstract = True
 
@@ -455,7 +457,7 @@ class BasicTemplate(BaseTemplate):
         return doc
 
     def _get_theme(self):
-        return self.theme.find_theme(type(self))
+        return self.theme.find_theme(type(self))()
 
     def _template_resources(self):
         name = type(self).__name__.lower()
@@ -467,18 +469,25 @@ class BasicTemplate(BaseTemplate):
             dist_path = CDN_DIST
 
         # External resources
-        css_files = dict(self._resources['css'])
+        css_files = dict(self._resources.get('css', {}))
         for cssname, css in css_files.items():
             css_path = url_path(css)
-            css_files[cssname] = dist_path + f'bundled/{name}/{css_path}'
-        js_files = dict(self._resources['js'])
+            css_files[cssname] = dist_path + f'bundled/css/{css_path}'
+        js_files = dict(self._resources.get('js', {}))
         for jsname, js in js_files.items():
             js_path = url_path(js)
-            js_files[jsname] = dist_path + f'bundled/{name}/{js_path}'
+            js_files[jsname] = dist_path + f'bundled/js/{js_path}'
+        if self._js:
+            js_file = os.path.basename(self._js)
+            js_files[f'base_{js_file}'] = dist_path + f'bundled/{name}/{js_file}'
         js_modules = dict(self._resources['js_modules'])
-        for jsname, js in js_files.items():
+        for jsname, js in js_modules.items():
             js_path = url_path(js)
-            js_modules[jsname] = dist_path + f'bundled/{name}/{js_path}'
+            if jsname in self._resources.get('tarball'):
+                js_path += '/index.mjs'
+            else:
+                js_path += '.mjs'
+            js_modules[jsname] = dist_path + f'bundled/js/{js_path}'
         js_files.update(self.config.js_files)
         js_modules.update(self.config.js_modules)
         extra_css = list(self.config.css_files)
@@ -487,14 +496,20 @@ class BasicTemplate(BaseTemplate):
         # CSS files
         base_css = self._css if isinstance(self._css, list) else [self._css]
         for css in base_css:
+            tmpl_name = name
+            for cls in type(self).__mro__[2:-5]:
+                tmpl_css = cls._css if isinstance(cls._css, list) else [cls._css]
+                if css in tmpl_css:
+                    tmpl_name = cls.__name__.lower()
             css = os.path.basename(css)
-            css_files[f'base_{css}'] = dist_path + f'bundled/{name}/{css}'
+            css_files[f'base_{css}'] = dist_path + f'bundled/{tmpl_name}/{css}'
         if self.theme:
             theme = self.theme.find_theme(type(self))
             if theme:
                 if theme.base_css:
                     basename = os.path.basename(theme.base_css)
-                    css_files['theme_base'] = dist_path + f'bundled/theme/{basename}'
+                    owner = theme.param.base_css.owner.__name__.lower()
+                    css_files['theme_base'] = dist_path + f'bundled/{owner}/{basename}'
                 if theme.css:
                     basename = os.path.basename(theme.css)
                     css_files['theme'] = dist_path + f'bundled/{name}/{basename}'

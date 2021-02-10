@@ -55,8 +55,8 @@ a.navbar-brand {
   text-decoration-style: initial;
   text-decoration-color: initial;
   font-weight: 400;
-  font-size: var(--type-ramp-plus-4-font-size);
-  line-height: var(--type-ramp-plus-4-line-height);
+  font-size: var(--type-ramp-plus-3-font-size);
+  line-height: var(--type-ramp-plus-3-line-height);
   white-space: nowrap;
   margin-left: 0.5em;
 }

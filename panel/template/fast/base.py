@@ -37,6 +37,14 @@ class FastBaseTemplate(BasicTemplate):
         'js_modules': {
             'fast-colors': 'https://unpkg.com/@microsoft/fast-colors@5.1.0',
             'fast': 'https://unpkg.com/@microsoft/fast-components@1.13.0'
+        },
+        'tarball': {
+            'fast-colors': {
+                'tar': 'https://registry.npmjs.org/@microsoft/fast-colors/-/fast-colors-5.1.0.tgz',
+                'src': 'package/dist/',
+                'dest': '@microsoft/fast-colors@5.1.0/',
+                'exclude': []
+            }
         }
     }
 
@@ -75,13 +83,6 @@ class FastGridBaseTemplate(FastBaseTemplate, ReactTemplate):
     Combines the FastTemplate and the React template.
     """
 
-    _resources = {
-        'css': ReactTemplate._resources['css'],
-        'js': ReactTemplate._resources['js'],
-        'js_modules': {
-            'fast-colors': 'https://unpkg.com/@microsoft/fast-colors@5.1.0',
-            'fast': 'https://unpkg.com/@microsoft/fast-components@1.13.0'
-        }
-    }
+    _resources = dict(FaseBaseTemplate._resources, **ReactTemplate._resources)
 
     __abstract = True

@@ -54,7 +54,7 @@ class FastStyle(param.Parameterized):
     neutral_focus = param.Color(default="#888888")
     neutral_foreground_rest = param.Color(default="#2B2B2B")
 
-    header_background = param.Color(default="#1B5E20")
+    header_background = param.Color(default="#00aa41")
     header_color = param.Color(default="#ffffff")
     font = param.String(default="Open Sans, sans-serif")
     font_url = param.String(default=FONT_URL)
@@ -154,9 +154,11 @@ class FastDefaultTheme(DefaultTheme):
 
     style = param.ClassSelector(default=DEFAULT_STYLE, class_=FastStyle)
 
+    __abstract = True
+
     @property
     def bokeh_theme(self):
-        return self.style.create_bokeh_theme()
+        return _BkTheme(json=self.style.create_bokeh_theme())
 
 
 class FastDarkTheme(DarkTheme):
@@ -165,6 +167,8 @@ class FastDarkTheme(DarkTheme):
 
     style = param.ClassSelector(default=DARK_STYLE, class_=FastStyle)
 
+    __abstract = True
+
     @property
     def bokeh_theme(self):
-        return self.style.create_bokeh_theme()
+        return _BkTheme(json=self.style.create_bokeh_theme())
