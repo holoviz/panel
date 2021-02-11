@@ -7,11 +7,14 @@ from base64 import b64encode
 
 import param
 
-from ..io.notebook import push
+from pyviz_comms import JupyterComm
+
+from ..io.notebook import push, push_on_root
 from ..io.state import state
 from ..models import (
     VideoStream as _BkVideoStream, FileDownload as _BkFileDownload
 )
+from ..util import lazy_load, updating
 from .base import Widget
 from .indicators import Progress # noqa
 
@@ -197,3 +200,58 @@ class FileDownload(Widget):
         self.param.update(data=data, filename=filename)
         self._update_label()
         self._transfers += 1
+
+
+
+class JSONEditor(Widget):
+
+    autocomplete = param.Callable()
+
+    add_item = param.Callable()
+
+    search = param.Boolean(default=True, doc="""
+        Whether to add a search widget.""")
+
+    selection = param.List(default=[], doc="""
+        Current selection.""")
+
+    templates = param.List(doc="""
+        Templates of objects.""")
+
+    value = param.Parameter(default={}, doc="""
+        JSON data to be edited.""")
+
+    _rename = {'value': 'data', 'autocomplete': None, 'add_item': None}
+
+    def _get_model(self, doc, root=None, parent=None, comm=None):
+        if self._widget_type is None:
+            self._widget_type = lazy_load(
+                'panel.models.json_editor', 'JSONEditor', isinstance(comm, JupyterComm)
+            )
+        return super()._get_model(doc, root, parent, comm)
+
+    def _filter_properties(self, properties):
+        return super()._filter_properties(properties) + ['query']
+
+    def _process_events(self, events):
+        if 'query' in events:
+            self._process_query(events.pop('query'))
+        if not events:
+            return
+        super()._process_events(events)
+
+    @updating
+    def _process_query(self, query):
+        if query is None:
+            return []
+        qtype = query.pop('type')
+        if qtype == 'autocomplete':
+            result = self.autocomplete(**query)
+        elif qtype == 'append':
+            result = self.add_item(query['node']['path'])
+        for ref, (m, _) in self._models.items():
+            if qtype == 'append':
+                m.templates = result
+            else:
+                m.result = result
+            push_on_root(ref)
