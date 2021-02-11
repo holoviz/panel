@@ -113,9 +113,9 @@ class Serve(_BkServe):
             help    = "The length of the session history to record.",
             default = 0
         )),
-        ('--warm-cache', dict(
+        ('--warm', dict(
             action  = 'store_true',
-            help    = "Whether to execute scripts on load to warm up cache"
+            help    = "Whether to execute scripts on startup to warm up the server."
         ))
     )
 
@@ -148,7 +148,7 @@ class Serve(_BkServe):
         with edit_readonly(state):
             state.base_url = urljoin('/', prefix)
 
-        if args.warm_cache:
+        if args.warm:
             argvs = {f: args.args for f in files}
             applications = build_single_handler_applications(files, argvs)
             for app in applications.values():
