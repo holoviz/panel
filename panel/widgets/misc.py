@@ -205,9 +205,11 @@ class FileDownload(Widget):
 
 class JSONEditor(Widget):
 
-    autocomplete = param.Callable()
+    append_suggestions = param.Callable()
 
-    add_item = param.Callable()
+    value_autocomplete = param.Callable()
+
+    key_autocomplete = param.Callable()
 
     search = param.Boolean(default=True, doc="""
         Whether to add a search widget.""")
@@ -221,7 +223,12 @@ class JSONEditor(Widget):
     value = param.Parameter(default={}, doc="""
         JSON data to be edited.""")
 
-    _rename = {'value': 'data', 'autocomplete': None, 'add_item': None}
+    _rename = {
+        'value': 'data',
+        'key_autocomplete': None,
+        'value_autocomplete': None,
+        'append_suggestions': None
+    }
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         if self._widget_type is None:
@@ -246,9 +253,14 @@ class JSONEditor(Widget):
             return []
         qtype = query.pop('type')
         if qtype == 'autocomplete':
-            result = self.autocomplete(**query)
+            inp = query.pop('input')
+            if inp == 'key':
+                cb = self.key_autocomplete
+            else:
+                cb = self.value_autocomplete
+            result = cb(tuple(query['path']), query['text'])
         elif qtype == 'append':
-            result = self.add_item(query['node']['path'])
+            result = self.append_suggestions(tuple(query['node']['path']))
         for ref, (m, _) in self._models.items():
             if qtype == 'append':
                 m.templates = result
