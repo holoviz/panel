@@ -44,5 +44,5 @@ from .select import ( # noqa
     MultiChoice, MultiSelect, RadioButtonGroup, RadioBoxGroup, Select,
     ToggleGroup
 )
-from .speech_to_text import SpeechToText, Grammar, GrammarList
+from .speech_to_text import SpeechToText, Grammar, GrammarList # noqa
 from .tables import DataFrame, Tabulator  # noqa

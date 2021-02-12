@@ -14,185 +14,185 @@ const titleNotStarted = "Click to START the speech recognition.";
 
 // Hack inspired by https://stackoverflow.com/questions/38087013/angular2-web-speech-api-voice-recognition
 interface IWindow extends Window {
-    webkitSpeechRecognition: any;
-    webkitSpeechGrammarList: any;
+  webkitSpeechRecognition: any;
+  webkitSpeechGrammarList: any;
 }
 const {webkitSpeechRecognition} : IWindow = <IWindow><unknown>window;
 const {webkitSpeechGrammarList} : IWindow = <IWindow><unknown>window;
 
 function htmlToElement(html: string) {
-    var template = document.createElement('template');
-    html = html.trim(); // Never return a text node of whitespace as the result
-    template.innerHTML = html;
-    return <HTMLElement>template.content.firstChild;
+  var template = document.createElement('template');
+  html = html.trim(); // Never return a text node of whitespace as the result
+  template.innerHTML = html;
+  return <HTMLElement>template.content.firstChild;
 }
 
 function deserializeGrammars(grammars: any[]){
-    if (grammars){
-        var speechRecognitionList = new webkitSpeechGrammarList();
-        for (let grammar of grammars){
-            if (grammar.src){
-                speechRecognitionList.addFromString(grammar.src, grammar.weight)
-            } else if (grammar.uri) {
-                speechRecognitionList.addFromURI(grammar.uri, grammar.weight)
-            }
-        }
-        return speechRecognitionList
-    } else {
-        return null;
+  if (grammars){
+    var speechRecognitionList = new webkitSpeechGrammarList();
+    for (let grammar of grammars){
+      if (grammar.src){
+        speechRecognitionList.addFromString(grammar.src, grammar.weight)
+      } else if (grammar.uri) {
+        speechRecognitionList.addFromURI(grammar.uri, grammar.weight)
+      }
     }
+    return speechRecognitionList
+  } else {
+    return null;
+  }
 }
 
 function round(value: number){
-    return Math.round((value + Number.EPSILON) * 100) / 100
+  return Math.round((value + Number.EPSILON) * 100) / 100
 }
 
 function serializeResults(results_: any) {
-    const results = [];
-    for (let result of results_) {
-        let alternatives: { confidence: number; transcript: string; }[] = [];
-        let item = { is_final: result.isFinal, alternatives: alternatives };
-        for (let i = 0; i < result.length; i++) {
-            let alternative = { confidence: round(result[i].confidence), transcript: result[i].transcript };
-            alternatives.push(alternative);
-        }
-        item.alternatives = alternatives;
-        results.push(item);
+  const results = [];
+  for (let result of results_) {
+    let alternatives: { confidence: number; transcript: string; }[] = [];
+    let item = { is_final: result.isFinal, alternatives: alternatives };
+    for (let i = 0; i < result.length; i++) {
+      let alternative = { confidence: round(result[i].confidence), transcript: result[i].transcript };
+      alternatives.push(alternative);
     }
-    return results;
+    item.alternatives = alternatives;
+    results.push(item);
+  }
+  return results;
 }
 
 export class SpeechToTextView extends HTMLBoxView {
-    model: SpeechToText
-    recognition: any
-    buttonEl: HTMLElement
+  model: SpeechToText
+  recognition: any
+  buttonEl: HTMLElement
 
-    initialize(): void {
-        super.initialize()
+  initialize(): void {
+    super.initialize()
 
-        this.recognition = new webkitSpeechRecognition();
-        this.recognition.lang = this.model.lang;
-        this.recognition.continuous = this.model.continuous;
-        this.recognition.interimResults = this.model.interim_results;
-        this.recognition.maxAlternatives = this.model.max_alternatives;
-        this.recognition.serviceURI = this.model.service_uri;
-        this.setGrammars()
+    this.recognition = new webkitSpeechRecognition();
+    this.recognition.lang = this.model.lang;
+    this.recognition.continuous = this.model.continuous;
+    this.recognition.interimResults = this.model.interim_results;
+    this.recognition.maxAlternatives = this.model.max_alternatives;
+    this.recognition.serviceURI = this.model.service_uri;
+    this.setGrammars()
 
-        const this_ = this;
+    const this_ = this;
 
-        this.recognition.onresult = function(event: any) {
-            this_.model.results=serializeResults(event.results);
-          }
-        this.recognition.onerror = function(event: any) {
-            console.log("SpeechToText Error")
-            console.log(event);
-        }
-        this.recognition.onnomatch = function(event: any){
-            console.log("SpeechToText No Match")
-            console.log(event)
-        }
-
-        this.recognition.onaudiostart = () => {this_.model.audio_started=true}
-        this.recognition.onaudioend = () => {this_.model.audio_started=false}
-        this.recognition.onsoundstart = () => {this.model.sound_started=true}
-        this.recognition.onsoundend = () => {this_.model.sound_started=false}
-        this.recognition.onspeechstart = () => {this_.model.speech_started=true}
-        this.recognition.onspeechend = () => {this_.model.speech_started=false}
-        this.recognition.onstart = function(){
-            this_.buttonEl.onclick = () => {this_.recognition.stop()}
-            this_.buttonEl.innerHTML = this_.iconStarted();
-            this_.buttonEl.setAttribute("title", titleStarted);
-            this_.model.started = true;
-        }
-        this.recognition.onend = function(){
-            this_.buttonEl.onclick = () => {this_.recognition.start()}
-            this_.buttonEl.innerHTML = this_.iconNotStarted();
-            this_.buttonEl.setAttribute("title", titleNotStarted);
-            this_.model.started = false;
-        }
-
-        this.buttonEl = htmlToElement(`<button class="bk bk-btn bk-btn-${this.model.button_type}" type="button" title="${titleNotStarted}"></button>`)
-        this.buttonEl.innerHTML = this.iconNotStarted()
-        this.buttonEl.onclick = () => {this.recognition.start()}
+    this.recognition.onresult = function(event: any) {
+      this_.model.results=serializeResults(event.results);
+      }
+    this.recognition.onerror = function(event: any) {
+      console.log("SpeechToText Error")
+      console.log(event);
+    }
+    this.recognition.onnomatch = function(event: any){
+      console.log("SpeechToText No Match")
+      console.log(event)
     }
 
-    iconStarted(): string {
-        if (this.model.button_started!==''){
-            return this.model.button_started;
-        } else {
-            return iconStarted;
-        }
+    this.recognition.onaudiostart = () => {this_.model.audio_started=true}
+    this.recognition.onaudioend = () => {this_.model.audio_started=false}
+    this.recognition.onsoundstart = () => {this.model.sound_started=true}
+    this.recognition.onsoundend = () => {this_.model.sound_started=false}
+    this.recognition.onspeechstart = () => {this_.model.speech_started=true}
+    this.recognition.onspeechend = () => {this_.model.speech_started=false}
+    this.recognition.onstart = function(){
+      this_.buttonEl.onclick = () => {this_.recognition.stop()}
+      this_.buttonEl.innerHTML = this_.iconStarted();
+      this_.buttonEl.setAttribute("title", titleStarted);
+      this_.model.started = true;
     }
-    iconNotStarted(): string {
-        if (this.model.button_not_started!==''){
-            return this.model.button_not_started;
-        } else {
-            return iconNotStarted;
-        }
-    }
-    setIcon(): void {
-        if (this.model.started){
-            this.buttonEl.innerHTML = this.iconStarted();
-        } else {
-            this.buttonEl.innerHTML = this.iconNotStarted();
-        }
+    this.recognition.onend = function(){
+      this_.buttonEl.onclick = () => {this_.recognition.start()}
+      this_.buttonEl.innerHTML = this_.iconNotStarted();
+      this_.buttonEl.setAttribute("title", titleNotStarted);
+      this_.model.started = false;
     }
 
-    connect_signals(): void {
-        super.connect_signals()
+    this.buttonEl = htmlToElement(`<button class="bk bk-btn bk-btn-${this.model.button_type}" type="button" title="${titleNotStarted}"></button>`)
+    this.buttonEl.innerHTML = this.iconNotStarted()
+    this.buttonEl.onclick = () => {this.recognition.start()}
+  }
 
-        this.connect(this.model.properties.starts.change, () => {this.recognition.start()})
-        this.connect(this.model.properties.stops.change, () => {this.recognition.stop()})
-        this.connect(this.model.properties.aborts.change, () => {this.recognition.abort()})
-        this.connect(this.model.properties.grammars.change, () => {this.setGrammars})
-        this.connect(this.model.properties.lang.change, () => {this.recognition.lang=this.model.lang})
-        this.connect(this.model.properties.continuous.change, () => {this.recognition.continuous=this.model.continuous})
-        this.connect(this.model.properties.interim_results.change, () => {this.recognition.interimResults=this.model.interim_results})
-        this.connect(this.model.properties.max_alternatives.change, () => {this.recognition.maxAlternatives=this.model.max_alternatives})
-        this.connect(this.model.properties.service_uri.change, () => {this.recognition.serviceURI=this.model.service_uri})
-        this.connect(this.model.properties.button_type.change, () => {this.buttonEl.className=`bk bk-btn bk-btn-${this.model.button_type}`})
-
-        this.connect(this.model.properties.button_hide.change, () => {this.render()})
-        this.connect(this.model.properties.button_not_started.change, () => {this.setIcon()})
-        this.connect(this.model.properties.button_started.change, () => {this.setIcon()})
+  iconStarted(): string {
+    if (this.model.button_started!==''){
+      return this.model.button_started;
+    } else {
+      return iconStarted;
     }
-
-    setGrammars(): void {
-        this.recognition.grammars=deserializeGrammars(this.model.grammars);
+  }
+  iconNotStarted(): string {
+    if (this.model.button_not_started!==''){
+      return this.model.button_not_started;
+    } else {
+      return iconNotStarted;
     }
-
-    render(): void {
-        super.render()
-        if (!this.model.button_hide){
-            this.el.appendChild(this.buttonEl)
-        }
+  }
+  setIcon(): void {
+    if (this.model.started){
+      this.buttonEl.innerHTML = this.iconStarted();
+    } else {
+      this.buttonEl.innerHTML = this.iconNotStarted();
     }
+  }
+
+  connect_signals(): void {
+    super.connect_signals()
+
+    this.connect(this.model.properties.starts.change, () => {this.recognition.start()})
+    this.connect(this.model.properties.stops.change, () => {this.recognition.stop()})
+    this.connect(this.model.properties.aborts.change, () => {this.recognition.abort()})
+    this.connect(this.model.properties.grammars.change, () => {this.setGrammars})
+    this.connect(this.model.properties.lang.change, () => {this.recognition.lang=this.model.lang})
+    this.connect(this.model.properties.continuous.change, () => {this.recognition.continuous=this.model.continuous})
+    this.connect(this.model.properties.interim_results.change, () => {this.recognition.interimResults=this.model.interim_results})
+    this.connect(this.model.properties.max_alternatives.change, () => {this.recognition.maxAlternatives=this.model.max_alternatives})
+    this.connect(this.model.properties.service_uri.change, () => {this.recognition.serviceURI=this.model.service_uri})
+    this.connect(this.model.properties.button_type.change, () => {this.buttonEl.className=`bk bk-btn bk-btn-${this.model.button_type}`})
+
+    this.connect(this.model.properties.button_hide.change, () => {this.render()})
+    this.connect(this.model.properties.button_not_started.change, () => {this.setIcon()})
+    this.connect(this.model.properties.button_started.change, () => {this.setIcon()})
+  }
+
+  setGrammars(): void {
+    this.recognition.grammars=deserializeGrammars(this.model.grammars);
+  }
+
+  render(): void {
+    super.render()
+    if (!this.model.button_hide){
+      this.el.appendChild(this.buttonEl)
+    }
+  }
 }
 
 export namespace SpeechToText {
   export type Attrs = p.AttrsOf<Props>
   export type Props = HTMLBox.Props & {
-    starts: p.Property<number>
-    stops: p.Property<number>
-    aborts: p.Property<any>
+  starts: p.Property<number>
+  stops: p.Property<number>
+  aborts: p.Property<any>
 
-    grammars: p.Property<any[]>
-    lang: p.Property<string>
-    continuous: p.Property<boolean>
-    interim_results: p.Property<boolean>
-    max_alternatives: p.Property<number>
-    service_uri: p.Property<string>
-    started: p.Property<boolean>
-    audio_started: p.Property<boolean>
-    sound_started: p.Property<boolean>
-    speech_started: p.Property<boolean>
+  grammars: p.Property<any[]>
+  lang: p.Property<string>
+  continuous: p.Property<boolean>
+  interim_results: p.Property<boolean>
+  max_alternatives: p.Property<number>
+  service_uri: p.Property<string>
+  started: p.Property<boolean>
+  audio_started: p.Property<boolean>
+  sound_started: p.Property<boolean>
+  speech_started: p.Property<boolean>
 
-    button_type: p.Property<string>
-    button_hide: p.Property<boolean>
-    button_not_started: p.Property<string>
-    button_started: p.Property<string>
+  button_type: p.Property<string>
+  button_hide: p.Property<boolean>
+  button_not_started: p.Property<string>
+  button_started: p.Property<string>
 
-    results: p.Property<any[]>
+  results: p.Property<any[]>
   }
 }
 
@@ -202,36 +202,36 @@ export class SpeechToText extends HTMLBox {
   properties: SpeechToText.Props
 
   constructor(attrs?: Partial<SpeechToText.Attrs>) {
-    super(attrs)
+  super(attrs)
   }
 
   static __module__ = "panel.models.speech_to_text"
 
   static init_SpeechToText(): void {
-    this.prototype.default_view = SpeechToTextView
+  this.prototype.default_view = SpeechToTextView
 
-    this.define<SpeechToText.Props>({
-        starts: [ p.Number, 0     ],
-        stops: [ p.Number, 0     ],
-        aborts: [ p.Number, 0     ],
+  this.define<SpeechToText.Props>({
+    starts: [ p.Number, 0   ],
+    stops: [ p.Number, 0   ],
+    aborts: [ p.Number, 0   ],
 
-        grammars: [p.Array, []],
-        lang: [p.String, ""],
-        continuous: [ p.Boolean,   false ],
-        interim_results: [ p.Boolean,   false ],
-        max_alternatives: [ p.Number,   1 ],
-        service_uri: [p.String, ],
-        started: [ p.Boolean,   false ],
-        audio_started: [ p.Boolean,   false ],
-        sound_started: [ p.Boolean,   false ],
-        speech_started: [ p.Boolean,   false ],
+    grammars: [p.Array, []],
+    lang: [p.String, ""],
+    continuous: [ p.Boolean,   false ],
+    interim_results: [ p.Boolean,   false ],
+    max_alternatives: [ p.Number,   1 ],
+    service_uri: [p.String, ],
+    started: [ p.Boolean,   false ],
+    audio_started: [ p.Boolean,   false ],
+    sound_started: [ p.Boolean,   false ],
+    speech_started: [ p.Boolean,   false ],
 
-        button_type: [p.String, 'light'],
-        button_hide: [ p.Boolean,   false ],
-        button_not_started: [ p.String,   '' ],
-        button_started: [ p.String,   '' ],
+    button_type: [p.String, 'light'],
+    button_hide: [ p.Boolean,   false ],
+    button_not_started: [ p.String,   '' ],
+    button_started: [ p.String,   '' ],
 
-        results: [ p.Array, []],
-    })
+    results: [ p.Array, []],
+  })
   }
 }
