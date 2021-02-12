@@ -186,6 +186,17 @@ def test_discrete_slider(document, comm):
     assert widget.value_throttled == 3
 
 
+def test_discrete_slider_label_update(document, comm):
+    discrete_slider = DiscreteSlider(name='DiscreteSlider', value=1,
+                                     options=[0.1, 1, 10, 100])
+
+    discrete_slider.value = 100
+
+    box = discrete_slider.get_root(document, comm=comm)
+
+    assert box.children[0].text == 'DiscreteSlider: <b>100</b>'
+
+
 def test_discrete_date_slider(document, comm):
     dates = OrderedDict([('2016-01-0%d' % i, datetime(2016, 1, i)) for i in range(1, 4)])
     discrete_slider = DiscreteSlider(name='DiscreteSlider', value=dates['2016-01-02'],

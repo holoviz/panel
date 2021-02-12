@@ -197,7 +197,7 @@ class BaseTable(Widget):
             if event.type == 'triggered' and self._updating:
                 continue
             elif event.name in ('value', 'show_index'):
-                model.columns = self._get_columns()
+                self._update_columns(event, model)
                 if isinstance(model, DataCube):
                     model.groupings = self._get_groupings()
             elif hasattr(self, '_update_' + event.name):
@@ -792,13 +792,16 @@ class Tabulator(BaseTable):
         multiple checkboxes (if enabled) or using Shift + click on
         rows.""")
 
+    sorters = param.List(default=[], doc="""
+        A list of sorters to apply during pagination.""")
+
     theme = param.ObjectSelector(
         default="simple", objects=TABULATOR_THEMES, doc="""
         Tabulator CSS theme to apply to table.""")
 
     _widget_type = _BkTabulator
 
-    _data_params = ['value', 'page', 'page_size', 'pagination']
+    _data_params = ['value', 'page', 'page_size', 'pagination', 'sorters']
 
     _config_params = ['frozen_columns', 'groups', 'selectable']
 
@@ -850,10 +853,19 @@ class Tabulator(BaseTable):
                 return
         model.configuration = self._get_configuration(model.columns)
 
+    def _sort_df(self, df):
+        if not self.sorters:
+            return df
+        return df.sort_values(
+            [s['field'] for s in self.sorters],
+            ascending=[s['dir'] == 'asc' for s in self.sorters]
+        )
+
     def _get_data(self):
         if self.pagination != 'remote' or self.value is None:
             return super()._get_data()
         df = self._filter_dataframe(self.value)
+        df = self._sort_df(df)
         nrows = self.page_size
         start = (self.page-1)*nrows
         page_df = df.iloc[start: start+nrows]
@@ -955,10 +967,17 @@ class Tabulator(BaseTable):
             return
         kwargs = {}
         if self.pagination == 'remote':
+            index = self.value.iloc[self.selection].index
+            indices = []
+            for v in index.values:
+                try:
+                    indices.append(self._filtered.index.get_loc(v))
+                except KeyError:
+                    continue
             nrows = self.page_size
             start = (self.page-1)*nrows
             end = start+nrows
-            kwargs['indices'] = [ind-start for ind in self.selection
+            kwargs['indices'] = [ind-start for ind in indices
                                  if ind>=start and ind<end]
         super()._update_selected(*events, **kwargs)
 
@@ -969,14 +988,25 @@ class Tabulator(BaseTable):
         nrows = self.page_size
         start = (self.page-1)*nrows
         end = start+nrows
-        self.value[column].iloc[start:end] = array
+        if self.sorters:
+            index = self._filtered.iloc[start:end].index.values
+            self.value[column].loc[index] = array
+        else:
+            self.value[column].iloc[start:end] = array
 
     def _update_selection(self, indices):
         if self.pagination != 'remote':
             return indices
         nrows = self.page_size
         start = (self.page-1)*nrows
-        return [start+ind for ind in indices]
+        index = self._filtered.iloc[[start+ind for ind in indices]].index
+        indices = []
+        for v in index.values:
+            try:
+                indices.append(self.value.index.get_loc(v))
+            except KeyError:
+                continue
+        return indices
 
     def _get_properties(self, source):
         props = {p : getattr(self, p) for p in list(Layoutable.param)
@@ -1008,7 +1038,7 @@ class Tabulator(BaseTable):
         model = super()._get_model(doc, root, parent, comm)
         if root is None:
             root = model
-        self._link_props(model, ['page'], doc, root, comm)
+        self._link_props(model, ['page', 'sorters'], doc, root, comm)
         return model
 
     def _config_columns(self, column_objs):

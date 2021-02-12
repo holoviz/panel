@@ -11,10 +11,10 @@ from bokeh.models.layouts import HTMLBox
 from bokeh.models.widgets.tables import TableColumn
 
 
-JS_SRC = "https://unpkg.com/tabulator-tables@4.9/dist/js/tabulator.min.js"
+JS_SRC = "https://unpkg.com/tabulator-tables@4.9.3/dist/js/tabulator.js"
 MOMENT_SRC = "https://unpkg.com/moment@2.27.0/moment.js"
 
-THEME_URL = "https://unpkg.com/tabulator-tables@4.9/dist/css/"
+THEME_URL = "https://unpkg.com/tabulator-tables@4.9.3/dist/css/"
 TABULATOR_THEMES = [
     'default', 'site', 'simple', 'midnight', 'modern', 'bootstrap',
     'bootstrap4', 'materialize', 'bulma', 'semantic-ui'
@@ -58,6 +58,8 @@ class DataTabulator(HTMLBox):
     page_size = Int()
 
     max_page = Int()
+
+    sorters = List(Dict(String, String))
 
     theme = Enum(*TABULATOR_THEMES, default="simple")
 

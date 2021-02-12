@@ -87,7 +87,7 @@ def test_server_async_callbacks():
             button.clicks += 1
 
     # Wait for callbacks to be scheduled
-    time.sleep(1)
+    time.sleep(2)
 
     # Ensure multiple callbacks started concurrently
     try:

@@ -120,6 +120,5 @@ builtdocs/
 .vscode/panel.code-workspace
 discover/
 
-node_modules/
-tmp/
-.pytest_cache/*
+node_modules/*
+/tmp

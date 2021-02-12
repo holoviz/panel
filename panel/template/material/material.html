@@ -10,7 +10,9 @@
 {% if meta_refresh %}<meta http-equiv="refresh" content="{{ meta_refresh }}">{% endif %}
 {% if meta_viewport %}<meta name="viewport" content="{{ meta_viewport }}">{% endif %}
 {% if base_url and base_target %}<base href="{{ base_url }}" target="{{ base_target }}">{% endif %}
+{% endblock %}
 
+{% block postamble %}
 <link href="{{ template_resources['css']['material'] }}" rel="stylesheet">
 <script src="{{ template_resources['js']['material'] }}"></script>
 <link rel="stylesheet" href="{{ template_resources['css']['base'] }}">
@@ -22,7 +24,7 @@
 <!-- goes in body -->
 {% block contents %}
 <div class="mdc-typography" id="container">
-<header class="mdc-top-app-bar app-bar mdc-top-app-bar--fixed" style="{% if header_background %}background-color: {{ header_background }} !important;{% endif %}{% if header_color %}color: {{ header_color }}{% endif %}" id="header">
+<header class="mdc-top-app-bar app-bar mdc-top-app-bar--fixed" style="{% if header_background %}background-color: {{ header_background }} !important;{% endif %}{% if header_color %}color: {{ header_color }} !important;{% endif %}" id="header">
   <div class="mdc-top-app-bar__row">
     <section class="mdc-top-app-bar__section mdc-top-app-bar__section--align-start">
       {% if nav %}

@@ -5,6 +5,7 @@ import {Layoutable} from "@bokehjs/core/layout/layoutable"
 import {Column as ColumnLayout} from "@bokehjs/core/layout/grid"
 import {Size} from "@bokehjs/core/layout/types"
 import * as p from "@bokehjs/core/properties"
+import {color2css} from "@bokehjs/core/util/color"
 
 export class CollapseableColumnLayout extends ColumnLayout {
   collapsed: boolean
@@ -51,7 +52,7 @@ export class CardView extends ColumnView {
 
     const {background, button_css_classes, header_color, header_tag, header_css_classes} = this.model
 
-    this.el.style.backgroundColor = background != null ? background : ""
+    this.el.style.backgroundColor = background != null ? color2css(background) : ""
     classes(this.el).clear().add(...this.css_classes())
 
     let header_background = this.model.header_background
@@ -92,7 +93,6 @@ export class CardView extends ColumnView {
 
   _collapse(): void {
     this.invalidate_render()
-    this.resize_layout()
   }
 
   protected _createElement(): HTMLElement {

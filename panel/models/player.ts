@@ -349,6 +349,6 @@ export class Player extends Widget {
       show_loop_controls: [ p.Boolean,     true         ],
     })
 
-    this.override({width: 400})
+    this.override<Player.Props>({width: 400})
   }
 }

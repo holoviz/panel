@@ -206,7 +206,11 @@ class CompositeWidget(Widget):
         super(CompositeWidget, self)._cleanup(root)
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        return self._composite._get_model(doc, root, parent, comm)
+        model = self._composite._get_model(doc, root, parent, comm)
+        if root is None:
+            root = parent = model
+        self._models[root.ref['id']] = (model, parent)
+        return model
 
     def __contains__(self, object):
         return object in self._composite.objects

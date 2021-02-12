@@ -16,8 +16,8 @@ jobs:
         shell: bash -l {0}
     env:
       CHANS_DEV: "-c pyviz/label/dev -c conda-forge"
-      PKG_TEST_PYTHON: "--test-python=py37"
-      PYTHON_VERSION: "3.7"
+      PKG_TEST_PYTHON: "--test-python=py38"
+      PYTHON_VERSION: "3.8"
       MPLBACKEND: "Agg"
       CONDA_UPLOAD_TOKEN: ${{ secrets.CONDA_UPLOAD_TOKEN }}
     steps:
@@ -68,8 +68,8 @@ jobs:
         shell: bash -l {0}
     env:
       CHANS_DEV: "-c pyviz/label/dev -c bokeh -c conda-forge"
-      PKG_TEST_PYTHON: "--test-python=py37 --test-python=py27"
-      PYTHON_VERSION: "3.7"
+      PKG_TEST_PYTHON: "--test-python=py38"
+      PYTHON_VERSION: "3.8"
       CHANS: "-c pyviz"
       MPLBACKEND: "Agg"
       PPU: ${{ secrets.PPU }}
@@ -105,6 +105,10 @@ jobs:
           eval "$(conda shell.bash hook)"
           conda activate test-environment
           doit ecosystem=pip package_build $PKG_TEST_PYTHON --test-group=unit_deploy
+      - name: git status
+        run: |
+          git status
+          git diff
       - name: pip upload
         run: |
           eval "$(conda shell.bash hook)"
