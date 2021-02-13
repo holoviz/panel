@@ -2,8 +2,6 @@
 HoloViews integration for Panel including a Pane to render HoloViews
 objects and their widgets and support for Links
 """
-from __future__ import absolute_import, division, unicode_literals
-
 import sys
 
 from collections import OrderedDict, defaultdict
@@ -84,7 +82,7 @@ class HoloViews(PaneBase):
     _rerender_params = ['object', 'backend']
 
     def __init__(self, object=None, **params):
-        super(HoloViews, self).__init__(object, **params)
+        super().__init__(object, **params)
         self._initialized = False
         self._responsive_content = False
         self._restore_plot = None
@@ -315,7 +313,7 @@ class HoloViews(PaneBase):
             old_plot.cleanup()
         if old_pane:
             old_pane._cleanup(root)
-        super(HoloViews, self)._cleanup(root)
+        super()._cleanup(root)
 
     #----------------------------------------------------------------
     # Public API
@@ -448,6 +446,55 @@ class HoloViews(PaneBase):
         if widgets_type == 'scrubber':
             widgets = [Player(length=nframes, width=550)]
         return widgets, dim_values
+
+
+class Interactive(PaneBase):
+
+    priority = None
+
+    def __init__(self, object=None, **params):
+        super().__init__(object, **params)
+        self._update_layout()
+        self.param.watch(self._update_layout_properties, list(Layoutable.param))
+
+    @classmethod
+    def applies(cls, object):
+        if 'hvplot.interactive' not in sys.modules:
+            return False
+        from hvplot.interactive import Interactive
+        return 0.8 if isinstance(object, Interactive) else False
+
+    @param.depends('object')
+    def _update_layout(self):
+        if self.object is None:
+            self._layout_panel = None
+        else:
+            self._layout_panel = self.object.layout()
+            self._layout_panel.param.set_param(**{
+                p: getattr(self, p) for p in Layoutable.param if p != 'name'
+            })
+
+    def _update_layout_properties(self, *events):
+        if self._layout_panel is None:
+            return
+        self._layout_panel.param.set_param(**{e.name: e.new for e in events})
+
+    def _get_model(self, doc, root=None, parent=None, comm=None):
+        if root is None:
+            return self.get_root(doc, comm)
+        if self._layout_panel is None:
+            model = _BkSpacer(**{
+                p: getattr(self, p) for p in Layoutable.param if p != 'name'
+            })
+        else:
+            model = self._layout_panel._get_model(doc, root, parent, comm)
+        self._models[root.ref['id']] = (model, parent)
+        return model
+
+    def _cleanup(self, root):
+        if self._layout_panel is not None:
+            self._layout_panel._cleanup(root)
+        super()._cleanup(root)
 
 
 def is_bokeh_element_plot(plot):

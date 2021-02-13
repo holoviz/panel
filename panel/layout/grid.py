@@ -30,10 +30,9 @@ class GridBox(ListPanel):
 
     _bokeh_model = BkGridBox
 
-    _rename = {'objects': 'children'}
+    _rename = {'objects': 'children', 'nrows': None, 'ncols': None}
 
-    _source_transforms = {'scroll': None, 'objects': None,
-                         'nrows': None, 'ncols': None}
+    _source_transforms = {'scroll': None, 'objects': None}
 
     @classmethod
     def _flatten_grid(cls, layout, nrows=None, ncols=None):
@@ -132,10 +131,9 @@ class GridBox(ListPanel):
         if root is None:
             root = model
         objects = self._get_objects(model, [], doc, root, comm)
-        model.children = self._get_children(objects, self.nrows, self.ncols)
-        props = {k: v for k, v in self._init_properties().items()
-                 if k not in ('nrows', 'ncols')}
-        model.update(**self._process_param_change(props))
+        properties = self._process_param_change(self._init_params())
+        properties['children'] = self._get_children(objects, self.nrows, self.ncols)
+        model.update(**properties)
         self._models[root.ref['id']] = (model, parent)
         self._link_props(model, self._linked_props, doc, root, comm)
         return model
@@ -195,7 +193,7 @@ class GridSpec(Panel):
     def __init__(self, **params):
         if 'objects' not in params:
             params['objects'] = OrderedDict()
-        super(GridSpec, self).__init__(**params)
+        super().__init__(**params)
         self._updating = False
         self._update_nrows()
         self._update_ncols()
@@ -222,14 +220,14 @@ class GridSpec(Panel):
             self.nrows = max(max_yidx) if max_yidx else (1 if len(self.objects) else 0)
         self._updating = False
 
-    def _init_properties(self):
-        properties = super(GridSpec, self)._init_properties()
+    def _init_params(self):
+        params = super()._init_params()
         if self.sizing_mode not in ['fixed', None]:
-            if 'min_width' not in properties and 'width' in properties:
-                properties['min_width'] = properties['width']
-            if 'min_height' not in properties and 'height' in properties:
-                properties['min_height'] = properties['height']
-        return properties
+            if 'min_width' not in params and 'width' in params:
+                params['min_width'] = params['width']
+            if 'min_height' not in params and 'height' in params:
+                params['min_height'] = params['height']
+        return params
 
     def _get_objects(self, model, old_objects, doc, root, comm=None):
         from ..pane.base import RerenderError
@@ -310,7 +308,7 @@ class GridSpec(Panel):
         return grid
 
     def _cleanup(self, root):
-        super(GridSpec, self)._cleanup(root)
+        super()._cleanup(root)
         for p in self.objects.values():
             p._cleanup(root)
 

@@ -2,8 +2,6 @@
 Pane class which render various markup languages including HTML,
 Markdown, and also regular strings.
 """
-from __future__ import absolute_import, division, unicode_literals
-
 import json
 import textwrap
 
@@ -74,7 +72,7 @@ class HTML(DivPaneBase):
             return False
 
     def _get_properties(self):
-        properties = super(HTML, self)._get_properties()
+        properties = super()._get_properties()
         text = '' if self.object is None else self.object
         if hasattr(text, '_repr_html_'):
             text = text._repr_html_()
@@ -161,7 +159,7 @@ class DataFrame(HTML):
     ]
 
     def __init__(self, object=None, **params):
-        super(DataFrame, self).__init__(object, **params)
+        super().__init__(object, **params)
         self._stream = None
         self._setup_stream()
 
@@ -189,12 +187,12 @@ class DataFrame(HTML):
         self._stream.sink(self._set_object)
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        model = super(DataFrame, self)._get_model(doc, root, parent, comm)
+        model = super()._get_model(doc, root, parent, comm)
         self._setup_stream()
         return model
 
     def _cleanup(self, model):
-        super(DataFrame, self)._cleanup(model)
+        super()._cleanup(model)
         if not self._models and self._stream:
             self._stream.destroy()
             self._stream = None
@@ -241,7 +239,7 @@ class Str(DivPaneBase):
         return True
 
     def _get_properties(self):
-        properties = super(Str, self)._get_properties()
+        properties = super()._get_properties()
         if self.object is None:
             text = ''
         else:
@@ -289,7 +287,7 @@ class Markdown(DivPaneBase):
             data = data._repr_markdown_()
         if self.dedent:
             data = textwrap.dedent(data)
-        properties = super(Markdown, self)._get_properties()
+        properties = super()._get_properties()
         properties['style'] = properties.get('style', {})
         css_classes = properties.pop('css_classes', []) + ['markdown']
         html = markdown.markdown(data, extensions=self.extensions,
@@ -340,7 +338,7 @@ class JSON(DivPaneBase):
             return None
 
     def _get_properties(self):
-        properties = super(JSON, self)._get_properties()
+        properties = super()._get_properties()
         if isinstance(self.object, string_types):
             text = self.object
         else:

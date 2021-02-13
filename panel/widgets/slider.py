@@ -3,8 +3,6 @@ Defines the Widget base class which provides bi-directional
 communication between the rendered dashboard and the Widget
 parameters.
 """
-from __future__ import absolute_import, division, unicode_literals
-
 from six import string_types
 
 import param
@@ -54,7 +52,7 @@ class _SliderBase(Widget):
     def __init__(self, **params):
         if 'value' in params and 'value_throttled' in self.param:
             params['value_throttled'] = params['value']
-        super(_SliderBase, self).__init__(**params)
+        super().__init__(**params)
 
 
 class ContinuousSlider(_SliderBase):
@@ -69,7 +67,7 @@ class ContinuousSlider(_SliderBase):
     def __init__(self, **params):
         if 'value' not in params:
             params['value'] = params.get('start', self.start)
-        super(ContinuousSlider, self).__init__(**params)
+        super().__init__(**params)
 
     def _get_embed_state(self, root, values=None, max_opts=3):
         ref = root.ref['id']
@@ -118,6 +116,8 @@ class FloatSlider(ContinuousSlider):
 
     step = param.Number(default=0.1)
 
+    _rename = {'name': 'title', 'value_throttled': None}
+
 
 class IntSlider(ContinuousSlider):
 
@@ -130,6 +130,8 @@ class IntSlider(ContinuousSlider):
     end = param.Integer(default=1)
 
     step = param.Integer(default=1)
+
+    _rename = {'name': 'title', 'value_throttled': None}
 
     def _process_property_change(self, msg):
         msg = super(_SliderBase, self)._process_property_change(msg)
@@ -151,6 +153,8 @@ class DateSlider(_SliderBase):
 
     end = param.Date(default=None)
 
+    _rename = {'name': 'title', 'value_throttled': None}
+
     _source_transforms = {'value': None, 'value_throttled': None, 'start': None, 'end': None}
 
     _widget_type = _BkDateSlider
@@ -158,7 +162,7 @@ class DateSlider(_SliderBase):
     def __init__(self, **params):
         if 'value' not in params:
             params['value'] = params.get('start', self.start)
-        super(DateSlider, self).__init__(**params)
+        super().__init__(**params)
 
     def _process_property_change(self, msg):
         msg = super(_SliderBase, self)._process_property_change(msg)
@@ -194,7 +198,7 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
 
     def __init__(self, **params):
         self._syncing = False
-        super(DiscreteSlider, self).__init__(**params)
+        super().__init__(**params)
         if 'formatter' not in params and all(isinstance(v, (int, np.int_)) for v in self.values):
             self.formatter = '%d'
         if self.value is None and None not in self.values and self.options:
@@ -260,6 +264,9 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
             self._syncing = True
             with param.edit_constant(self._slider):
                 setattr(self._slider, event.name, index)
+            if event.name == 'value':
+                with param.discard_events(self._text):
+                    self._text.value = self.labels[index]
         finally:
             self._syncing = False
 
@@ -342,20 +349,22 @@ class RangeSlider(_SliderBase):
 
     step = param.Number(default=0.1)
 
+    _rename = {'name': 'title', 'value_throttled': None}
+
     _widget_type = _BkRangeSlider
 
     def __init__(self, **params):
         if 'value' not in params:
             params['value'] = (params.get('start', self.start),
                                params.get('end', self.end))
-        super(RangeSlider, self).__init__(**params)
+        super().__init__(**params)
         values = [self.value[0], self.value[1], self.start, self.end]
         if (all(v is None or isinstance(v, int) for v in values) and
             'step' not in params):
             self.step = 1
 
     def _process_property_change(self, msg):
-        msg = super(RangeSlider, self)._process_property_change(msg)
+        msg = super()._process_property_change(msg)
         if 'value' in msg:
             msg['value'] = tuple(msg['value'])
         if 'value_throttled' in msg:
@@ -397,16 +406,24 @@ class DateRangeSlider(_SliderBase):
     _source_transforms = {'value': None, 'value_throttled': None,
                          'start': None, 'end': None, 'step': None}
 
+    _rename = {'name': 'title', 'value_throttled': None}
+
     _widget_type = _BkDateRangeSlider
 
     def __init__(self, **params):
         if 'value' not in params:
             params['value'] = (params.get('start', self.start),
                                params.get('end', self.end))
-        super(DateRangeSlider, self).__init__(**params)
+        super().__init__(**params)
+
+    def _process_param_change(self, msg):
+        msg = super()._process_param_change(msg)
+        if msg.get('value') == (None, None):
+            del msg['value']
+        return msg
 
     def _process_property_change(self, msg):
-        msg = super(DateRangeSlider, self)._process_property_change(msg)
+        msg = super()._process_property_change(msg)
         if 'value' in msg:
             v1, v2 = msg['value']
             msg['value'] = (value_as_datetime(v1), value_as_datetime(v2))

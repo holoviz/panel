@@ -1,8 +1,6 @@
 """
 Custom bokeh Widget models.
 """
-from __future__ import absolute_import, division, unicode_literals
-
 from bokeh.core.enums import ButtonType
 
 from bokeh.core.properties import (
@@ -93,7 +91,7 @@ class Video(HTMLBox):
 
     value = Any(help="Encoded file data")
 
-    volume = Int(0, help="""The volume of the video player.""")
+    volume = Int(help="""The volume of the video player.""")
 
 
 class VideoStream(HTMLBox):

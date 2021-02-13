@@ -1,8 +1,6 @@
 """
 Utilities for manipulating bokeh models.
 """
-from __future__ import absolute_import, division, unicode_literals
-
 import textwrap
 from contextlib import contextmanager
 

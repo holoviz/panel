@@ -400,10 +400,6 @@ class Dial(ValueIndicator):
     def _update_value_bounds(self):
         self.param.value.bounds = self.bounds
 
-    def _init_properties(self):
-        return {k: v for k, v in self.param.get_param_values()
-                if v is not None and k not in self._manual_params}
-
     def _get_data(self):
         vmin, vmax = self.bounds
         value = self.value
@@ -483,7 +479,7 @@ class Dial(ValueIndicator):
         return annulus_data, needle_data, threshold_data, text_data
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        params = self._process_param_change(self._init_properties())
+        params = self._process_param_change(self._init_params())
         model = figure(
             x_range=(-1,1), y_range=(-1,1), tools=[],
             outline_line_color=None, toolbar_location=None,

@@ -1,8 +1,6 @@
 """
 Contains Media panes including renderers for Audio and Video content.
 """
-from __future__ import absolute_import, division, unicode_literals
-
 import os
 
 from base64 import b64encode
@@ -60,12 +58,8 @@ class _MediaBase(PaneBase):
             return True
         return False
 
-    def _init_properties(self):
-        return {k: v for k, v in self.param.get_param_values()
-                if v is not None and k not in ['default_layout']}
-
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        props = self._process_param_change(self._init_properties())
+        props = self._process_param_change(self._init_params())
         model = self._bokeh_model(**props)
         if root is None:
             root = model
@@ -80,7 +74,7 @@ class _MediaBase(PaneBase):
         return buffer
 
     def _process_param_change(self, msg):
-        msg = super(_MediaBase, self)._process_param_change(msg)
+        msg = super()._process_param_change(msg)
         if 'value' in msg:
             value = msg['value']
             if isinstance(value, np.ndarray):
@@ -124,7 +118,7 @@ class Audio(_MediaBase):
 
     @classmethod
     def applies(cls, obj):
-        return (super(Audio, cls).applies(obj) or 
+        return (super().applies(obj) or 
                 (isinstance(obj, np.ndarray) and obj.ndim==1 and obj.dtype in [np.int16, np.uint16]))
 
 

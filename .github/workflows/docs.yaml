@@ -50,7 +50,7 @@ jobs:
           conda activate test-environment
           conda list
           doit develop_install ${{ env.CHANS_DEV}} -o doc -o examples
-          pip install pydeck sphinxcontrib-napoleon
+          pip install pydeck sphinxcontrib-napoleon pyecharts
       - name: opengl
         run: |
           sudo apt-get install libglu1-mesa

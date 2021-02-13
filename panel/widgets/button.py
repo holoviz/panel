@@ -2,8 +2,6 @@
 Defines Button and button-like widgets which allow triggering events
 or merely toggling between on-off states.
 """
-from __future__ import absolute_import, division, unicode_literals
-
 from functools import partial
 
 import param
@@ -11,6 +9,8 @@ import param
 from bokeh.models import (
     Button as _BkButton, Toggle as _BkToggle, Dropdown as _BkDropdown
 )
+
+from bokeh.events import (MenuItemClick, ButtonClick)
 
 from .base import Widget
 
@@ -32,7 +32,7 @@ class _ClickButton(_ButtonBase):
     _event = 'button_click'
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        model = super(_ClickButton, self)._get_model(doc, root, parent, comm)
+        model = super()._get_model(doc, root, parent, comm)
         ref = (root or model).ref['id']
         model.on_click(partial(self._server_click, doc, ref))
         return model
@@ -89,21 +89,24 @@ class Button(_ClickButton):
 
     clicks = param.Integer(default=0)
 
-    _rename = {'clicks': None, 'name': 'label'}
+    value = param.Event()
+
+    _rename = {'clicks': None, 'name': 'label', 'value': None}
 
     _widget_type = _BkButton
 
     def _server_click(self, doc, ref, event):
+        processing = bool(self._events)
         self._events.update({"clicks": self.clicks+1})
-        if not self._processing:
-            self._processing = True
+        self.param.trigger('value')
+        if not processing:
             if doc.session_context:
                 doc.add_timeout_callback(partial(self._change_coroutine, doc), self._debounce)
             else:
                 self._change_event(doc)
 
     def _process_property_change(self, msg):
-        msg = super(Button, self)._process_property_change(msg)
+        msg = super()._process_property_change(msg)
         if 'clicks' in msg:
             msg['clicks'] = self.clicks + 1
         return msg
@@ -150,9 +153,12 @@ class MenuButton(_ClickButton):
         self.param.watch(callback, 'clicked', onlychanged=False)
 
     def _server_click(self, doc, ref, event):
-        self._events.update({"clicked": event.item})
-        if not self._processing:
-            self._processing = True
+        processing = bool(self._events)
+        if isinstance(event, MenuItemClick):
+            self._events.update({"clicked": event.item})
+        elif isinstance(event, ButtonClick):
+            self._events.update({"clicked": self.name})
+        if not processing:
             if doc.session_context:
                 doc.add_timeout_callback(partial(self._change_coroutine, doc), self._debounce)
             else:

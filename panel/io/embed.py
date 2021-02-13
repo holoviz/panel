@@ -1,8 +1,6 @@
 """
 Various utilities for recording and embedding state in a rendered app.
 """
-from __future__ import absolute_import, division, unicode_literals
-
 import os
 import json
 import uuid

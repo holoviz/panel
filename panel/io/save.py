@@ -1,8 +1,6 @@
 """
 Defines utilities to save panel objects to files as HTML or PNG.
 """
-from __future__ import absolute_import, division, unicode_literals
-
 import io
 
 from six import string_types
@@ -10,16 +8,19 @@ from six import string_types
 import bokeh
 
 from bokeh.document.document import Document
-from bokeh.embed import file_html
+from bokeh.embed.bundle import bundle_for_objs_and_resources
+from bokeh.embed.elements import html_page_for_render_items
+from bokeh.embed.util import OutputDocumentFor, standalone_docs_json_and_render_items
 from bokeh.io.export import export_png
+from bokeh.model import Model
 from bokeh.resources import CDN, INLINE
 from pyviz_comms import Comm
 
 from ..config import config
 from .embed import embed_state
 from .model import add_to_doc
+from .resources import BASE_TEMPLATE, DEFAULT_TITLE, Bundle, Resources
 from .state import state
-
 
 #---------------------------------------------------------------------
 # Private API
@@ -63,6 +64,41 @@ def save_png(model, filename, template=None, template_variables=None):
         if template:
             bokeh.io.export.get_layout_html = old_layout_fn
 
+def _title_from_models(models, title):
+    if title is not None:
+        return title
+
+    for p in models:
+        if isinstance(p, Document):
+            return p.title
+
+    for p in models:
+        if p.document is not None:
+            return p.document.title
+
+    return DEFAULT_TITLE
+
+def file_html(models, resources, title=None, template=BASE_TEMPLATE,
+              template_variables={}, theme=None):
+    models_seq = []
+    if isinstance(models, Model):
+        models_seq = [models]
+    elif isinstance(models, Document):
+        models_seq = models.roots
+    else:
+        models_seq = models
+
+    with OutputDocumentFor(models_seq, apply_theme=theme, always_new=False):
+        (docs_json, render_items) = standalone_docs_json_and_render_items(
+            models_seq, suppress_callback_warning=True
+        )
+        title = _title_from_models(models_seq, title)
+        bundle = bundle_for_objs_and_resources(None, resources)
+        bundle = Bundle.from_bokeh(bundle)
+        return html_page_for_render_items(
+            bundle, docs_json, render_items, title=title, template=template,
+            template_variables=template_variables
+        )
 
 #---------------------------------------------------------------------
 # Public API
@@ -157,11 +193,13 @@ def save(panel, filename, title=None, resources=None, template=None,
         else:
             raise ValueError("Resources %r not recognized, specify one "
                              "of 'CDN' or 'INLINE'." % resources)
-        
+
     if template:
         kwargs['template'] = template
     if template_variables:
         kwargs['template_variables'] = template_variables
+
+    resources = Resources.from_bokeh(resources)
 
     html = file_html(doc, resources, title, **kwargs)
     if hasattr(filename, 'write'):

@@ -1,8 +1,6 @@
 """
 These that verify Templates are working correctly.
 """
-from __future__ import absolute_import, division, unicode_literals
-
 from distutils.version import LooseVersion
 from panel.layout.grid import GridSpec
 
@@ -102,6 +100,7 @@ list_templates = [
 def test_basic_template(template, document, comm):
     tmplt = template(title='BasicTemplate', header_background='blue', header_color='red')
 
+    tmplt._update_vars()
     tvars = tmplt._render_variables
 
     assert tvars['app_title'] == 'BasicTemplate'
@@ -144,6 +143,7 @@ def test_basic_template(template, document, comm):
 def test_react_template(document, comm):
     tmplt = ReactTemplate(title='BasicTemplate', header_background='blue', header_color='red')
 
+    tmplt._update_vars()
     tvars = tmplt._render_variables
 
     assert tvars['app_title'] == 'BasicTemplate'

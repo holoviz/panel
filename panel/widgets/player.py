@@ -1,8 +1,6 @@
 """
 Defines Player widgets which offer media-player like controls.
 """
-from __future__ import absolute_import, division, unicode_literals
-
 import param
 
 from ..models.widgets import Player as _BkPlayer
@@ -60,7 +58,7 @@ class Player(PlayerBase):
             params['end'] = params.pop('length')-1
         elif params.get('start', 0) > 0 and not 'value' in params:
             params['value'] = params['start']
-        super(Player, self).__init__(**params)
+        super().__init__(**params)
 
     def _get_embed_state(self, root, values=None, max_opts=3):
         if values is None:
@@ -99,7 +97,7 @@ class DiscretePlayer(PlayerBase, SelectBase):
                 msg['value'] = indexOf(value, values)
             elif values:
                 self.value = values[0]
-        return super(DiscretePlayer, self)._process_param_change(msg)
+        return super()._process_param_change(msg)
 
     def _process_property_change(self, msg):
         if 'value' in msg:

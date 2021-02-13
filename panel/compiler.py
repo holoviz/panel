@@ -1,8 +1,6 @@
 """
 Utilities for building custom models included in panel.
 """
-from __future__ import absolute_import, division, unicode_literals
-
 import glob
 import inspect
 import io
@@ -126,6 +124,7 @@ def write_bundled_tarball(name, tarball, bundle_dir):
 def bundle_resources():
     from .config import panel_extension
     from .template.base import BasicTemplate
+    from .template.theme import Theme
 
     for imp in panel_extension._imports.values():
         if imp.startswith('panel.'):
@@ -179,3 +178,11 @@ def bundle_resources():
         dest_dir.mkdir(parents=True, exist_ok=True)
         for css in glob.glob(str(template_dir / '*.css')):
             shutil.copyfile(css, dest_dir / os.path.basename(css))
+
+    # Bundle base themes
+    dest_dir = bundle_dir / 'theme'
+    theme_dir = pathlib.Path(inspect.getfile(Theme)).parent
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    for css in glob.glob(str(theme_dir / '*.css')):
+        shutil.copyfile(css, dest_dir / os.path.basename(css))
+

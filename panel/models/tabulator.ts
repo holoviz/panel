@@ -1,5 +1,6 @@
 import {HTMLBox} from "@bokehjs/models/layouts/html_box"
 import {div} from "@bokehjs/core/dom"
+import {Enum} from "@bokehjs/core/kinds"
 import * as p from "@bokehjs/core/properties";
 import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source";
 import {TableColumn} from "@bokehjs/models/widgets/tables"
@@ -87,11 +88,21 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     const container = div({class: "pnx-tabulator"});
     set_size(container, this.model)
     let configuration = this.getConfiguration();
+
     this.tabulator = new Tabulator(container, configuration)
 
     // Patch the ajax request method
+    this.tabulator.modules = {...this.tabulator.modules}
     const ajax = this.tabulator.modules.ajax
-    this.tabulator.modules.ajax.sendRequest = () => this.requestPage(ajax.params.page)
+    this.tabulator.modules.ajax.sendRequest = () => {
+      this.requestPage(ajax.params.page, ajax.params.sorters)
+    }
+
+    // Swap pagination mode
+    if (this.model.pagination === 'remote') {
+      this.tabulator.options.pagination = this.model.pagination
+      this.tabulator.modules.page.mode = 'remote'
+    }
 
     this.setGroupBy()
     this.hideColumns()
@@ -99,6 +110,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     // Set up page
     if (this.model.pagination) {
       this.setMaxPage()
+      this.tabulator.setPage(this.model.page)
       this.setData()
     } else {
       this.freezeRows()
@@ -106,10 +118,11 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     this.el.appendChild(container)
   }
 
-  requestPage(page: number): Promise<void> {
+  requestPage(page: number, sorters: any[]): Promise<void> {
     return new Promise((resolve: any, reject: any) => {
       try {
         this.model.page = page || 1
+        this.model.sorters = sorters
         resolve({data: [], last_page: this.model.max_page})
       } catch(err) {
         reject(err)
@@ -159,9 +172,10 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       columns: this.getColumns(),
       layout: this.getLayout(),
       ajaxURL: "http://panel.pyviz.org",
-      pagination: this.model.pagination,
+      ajaxSorting: true,
+      pagination: this.model.pagination == 'remote' ? 'local': this.model.pagination,
       paginationSize: this.model.page_size,
-      paginationInitialPage: null,
+      paginationInitialPage: 1,
     }
     let data = this.model.source;
     if (data === null || Object.keys(data.data).length===0)
@@ -232,7 +246,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       const ctype = editor.type
       if (tab_column.editor != null) {
       } else if (ctype === "StringEditor") {
-        if (editor.completions) {
+        if (editor.completions.length > 0) {
           tab_column.editor = "autocomplete"
           tab_column.editorParams = {values: editor.completions}
         } else
@@ -430,7 +444,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   }
 
   setMaxPage(): void {
-    this.tabulator.setMaxPage(this.model.max_page)
+    this.tabulator.setMaxPage(Math.max(this.model.page, this.model.max_page))
     this.tabulator.modules.page._setPageButtons()
   }
 
@@ -472,8 +486,9 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     this.model.source.patch({[field]: [[index, value]]});
     this._tabulator_cell_updating = false
   }
-
 }
+
+export const TableLayout = Enum("fit_data", "fit_data_fill", "fit_data_stretch", "fit_data_table", "fit_columns")
 
 export namespace DataTabulator {
   export type Attrs = p.AttrsOf<Props>
@@ -487,12 +502,13 @@ export namespace DataTabulator {
     frozen_rows: p.Property<number[]>
     groupby: p.Property<string[]>
     hidden_columns: p.Property<string[]>
-    layout: p.Property<"fit_data" | "fit_data_fill" | "fit_data_stretch" | "fit_data_table" | "fit_columns">
+    layout: p.Property<typeof TableLayout["__type__"]>
     max_page: p.Property<number>
     page: p.Property<number>
     page_size: p.Property<number>
     pagination: p.Property<string | null>
-    source: p.Property<ColumnDataSource>,
+    source: p.Property<ColumnDataSource>
+    sorters: p.Property<any[]>
     styles: p.Property<any>
     theme: p.Property<string>
     theme_url: p.Property<string>
@@ -514,25 +530,26 @@ export class DataTabulator extends HTMLBox {
   static init_DataTabulator(): void {
     this.prototype.default_view = DataTabulatorView;
 
-    this.define<DataTabulator.Props>({
-      configuration: [p.Any, ],
-      columns: [ p.Array, [] ],
-      download: [ p.Boolean, true ],
-      editable: [ p.Boolean, true ],
-      filename: [ p.String, 'table.csv'],
-      follow: [p.Boolean, ],
-      frozen_rows: [ p.Array, []],
-      groupby: [ p.Array, [] ],
-      hidden_columns: [ p.Array, [] ],
-      layout: [ p.Any, "fit_data" ],
-      max_page: [ p.Number, 0 ],
-      pagination: [ p.String, null ],
-      page: [ p.Number, 0],
-      page_size: [ p.Number, 0],
-      source: [ p.Any, ],
-      styles: [ p.Any, ],
-      theme: [ p.String, "simple"],
-      theme_url: [p.String, "https://unpkg.com/tabulator-tables@4.9/dist/css/"]
-    })
+    this.define<DataTabulator.Props>(({Any, Array, Boolean, Nullable, Number, Ref, String}) => ({
+      configuration:  [ Any,                     {} ],
+      columns:        [ Array(Ref(TableColumn)), [] ],
+      download:       [ Boolean,               true ],
+      editable:       [ Boolean,               true ],
+      filename:       [ String,         "table.csv" ],
+      follow:         [ Boolean,               true ],
+      frozen_rows:    [ Array(Number),           [] ],
+      groupby:        [ Array(String),           [] ],
+      hidden_columns: [ Array(String),           [] ],
+      layout:         [ TableLayout,     "fit_data" ],
+      max_page:       [ Number,                   0 ],
+      pagination:     [ Nullable(String),      null ],
+      page:           [ Number,                   0 ],
+      page_size:      [ Number,                   0 ],
+      source:         [ Ref(ColumnDataSource)       ],
+      sorters:        [ Array(Any),              [] ],
+      styles:         [ Any,                     {} ],
+      theme:          [ String,            "simple" ],
+      theme_url:      [ String, "https://unpkg.com/tabulator-tables@4.9.3/dist/css/"]
+    }))
   }
 }

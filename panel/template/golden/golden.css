@@ -39,6 +39,14 @@ body, .main-area, .main-content, .lm_goldenlayout {
   color: white;
 }
 
+#header .bk.bk-btn-default {
+  color: black;
+}
+
+#header .bk.bk-menu {
+  color: black;
+}
+
 .sidebar-contents {
   padding-left: 10px;
   padding-right: 10px;

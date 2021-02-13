@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 from collections import OrderedDict
 
 import numpy as np
@@ -74,7 +72,7 @@ def test_select_change_options(document, comm):
 
     select.options = {}
     assert select.value == None
-    assert widget.value == None
+    assert widget.value == ''
 
 
 def test_select_non_hashable_options(document, comm):

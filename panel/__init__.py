@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 from . import layout # noqa
 from . import links # noqa
 from . import pane # noqa

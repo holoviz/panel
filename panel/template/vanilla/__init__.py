@@ -41,6 +41,4 @@ class VanillaDefaultTheme(DefaultTheme):
 
 class VanillaDarkTheme(DarkTheme):
 
-    css = param.Filename(default=pathlib.Path(__file__).parent / 'dark.css')
-
     _template = VanillaTemplate

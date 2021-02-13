@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import datetime as dt
 
 from types import FunctionType, MethodType
@@ -21,25 +19,15 @@ from ..io.notebook import push_on_root
 from ..models.tabulator import (
     DataTabulator as _BkTabulator, TABULATOR_THEMES, THEME_URL
 )
+from ..reactive import ReactiveData
 from ..viewable import Layoutable
-from ..util import isdatetime
+from ..util import isdatetime, updating
 from .base import Widget
 from .button import Button
 from .input import TextInput
 
 
-def updating(fn):
-    def wrapped(self, *args, **kwargs):
-        updating = self._updating
-        self._updating = True
-        try:
-            fn(self, *args, **kwargs)
-        finally:
-            self._updating = updating
-    return wrapped
-
-
-class BaseTable(Widget):
+class BaseTable(ReactiveData, Widget):
 
     editors = param.Dict(default={}, doc="""
         Bokeh CellEditor to use for a particular column
@@ -67,26 +55,18 @@ class BaseTable(Widget):
 
     value = param.Parameter(default=None)
 
-    __abstract = True
-
     _data_params = ['value']
 
     _manual_params = ['formatters', 'editors', 'widths', 'titles', 'value', 'show_index']
 
     _rename = {'disabled': 'editable', 'selection': None}
 
+    __abstract = True
+
     def __init__(self, value=None, **params):
-        super(BaseTable, self).__init__(value=value, **params)
         self._renamed_cols = {}
         self._filters = []
-        self._updating = False
-        self._data = None
-        self._filtered = None
-        self.param.watch(self._validate, 'value')
-        self.param.watch(self._update_cds, self._data_params)
-        self.param.watch(self._update_selected, 'selection')
-        self._validate(None)
-        self._update_cds()
+        super().__init__(value=value, **params)
 
     def _validate(self, event):
         if self.value is None:
@@ -97,7 +77,7 @@ class BaseTable(Widget):
                              'duplicate column names.')
 
     def _process_param_change(self, msg):
-        msg = super(BaseTable, self)._process_param_change(msg)
+        msg = super()._process_param_change(msg)
         if 'editable' in msg:
             msg['editable'] = not msg.pop('editable') and len(self.indexes) <= 1
         return msg
@@ -166,8 +146,6 @@ class BaseTable(Widget):
                 col_kwargs['width'] = self.widths
             elif str(col) in self.widths:
                 col_kwargs['width'] = self.widths.get(str(col))
-            else:
-                col_kwargs['width'] = None
 
             title = self.titles.get(col, str(col))
             if col in indexes and len(indexes) > 1 and self.hierarchical:
@@ -197,7 +175,7 @@ class BaseTable(Widget):
             if event.type == 'triggered' and self._updating:
                 continue
             elif event.name in ('value', 'show_index'):
-                model.columns = self._get_columns()
+                self._update_columns(event, model)
                 if isinstance(model, DataCube):
                     model.groupings = self._get_groupings()
             elif hasattr(self, '_update_' + event.name):
@@ -326,71 +304,8 @@ class BaseTable(Widget):
         data = ColumnDataSource.from_df(df).items()
         return df, {k if isinstance(k, str) else str(k): v for k, v in data}
 
-    def _update_cds(self, *events):
-        if self._updating:
-            return
-        self._filtered, self._data = self._get_data()
-        for ref, (m, _) in self._models.items():
-            m.source.data = self._data
-            push_on_root(ref)
-
-    def _update_selected(self, *events, indices=None):
-        if self._updating:
-            return
-        indices = self.selection if indices is None else indices
-        for ref, (m, _) in self._models.items():
-            m.source.selected.indices = indices
-            push_on_root(ref)
-
-    @updating
-    def _stream(self, stream):
-        for ref, (m, _) in self._models.items():
-            m.source.stream(stream)
-            push_on_root(ref)
-
-    @updating
-    def _patch(self, patch):
-        for ref, (m, _) in self._models.items():
-            m.source.patch(patch)
-            push_on_root(ref)
-
     def _update_column(self, column, array):
         self.value[column] = array
-
-    def _update_selection(self, indices):
-        return indices
-
-    def _process_events(self, events):
-        if 'data' in events:
-            data = events.pop('data')
-            _, old_data = self._get_data()
-            updated = False
-            for k, v in data.items():
-                if k in self.indexes:
-                    continue
-                k = self._renamed_cols.get(k, k)
-                if isinstance(v, dict):
-                    v = [v for _, v in sorted(v.items(), key=lambda it: int(it[0]))]
-                try:
-                    isequal = (old_data[k] == np.asarray(v)).all()
-                except Exception:
-                    isequal = False
-                if not isequal:
-                    self._update_column(k, v)
-                    updated = True
-            if updated:
-                self._updating = True
-                try:
-                    self.param.trigger('value')
-                finally:
-                    self._updating = False
-        if 'indices' in events:
-            self._updating = True
-            try:
-                self.selection = self._update_selection(events.pop('indices'))
-            finally:
-                self._updating = False
-        super(BaseTable, self)._process_events(events)
 
     #----------------------------------------------------------------
     # Public API
@@ -792,13 +707,16 @@ class Tabulator(BaseTable):
         multiple checkboxes (if enabled) or using Shift + click on
         rows.""")
 
+    sorters = param.List(default=[], doc="""
+        A list of sorters to apply during pagination.""")
+
     theme = param.ObjectSelector(
         default="simple", objects=TABULATOR_THEMES, doc="""
         Tabulator CSS theme to apply to table.""")
 
     _widget_type = _BkTabulator
 
-    _data_params = ['value', 'page', 'page_size', 'pagination']
+    _data_params = ['value', 'page', 'page_size', 'pagination', 'sorters']
 
     _config_params = ['frozen_columns', 'groups', 'selectable']
 
@@ -850,10 +768,19 @@ class Tabulator(BaseTable):
                 return
         model.configuration = self._get_configuration(model.columns)
 
+    def _sort_df(self, df):
+        if not self.sorters:
+            return df
+        return df.sort_values(
+            [s['field'] for s in self.sorters],
+            ascending=[s['dir'] == 'asc' for s in self.sorters]
+        )
+
     def _get_data(self):
         if self.pagination != 'remote' or self.value is None:
             return super()._get_data()
         df = self._filter_dataframe(self.value)
+        df = self._sort_df(df)
         nrows = self.page_size
         start = (self.page-1)*nrows
         page_df = df.iloc[start: start+nrows]
@@ -862,7 +789,7 @@ class Tabulator(BaseTable):
 
     @property
     def _length(self):
-        return len(self._filtered)
+        return len(self._processed)
 
     def _get_style_data(self):
         if self.value is None:
@@ -955,10 +882,17 @@ class Tabulator(BaseTable):
             return
         kwargs = {}
         if self.pagination == 'remote':
+            index = self.value.iloc[self.selection].index
+            indices = []
+            for v in index.values:
+                try:
+                    indices.append(self._processed.index.get_loc(v))
+                except KeyError:
+                    continue
             nrows = self.page_size
             start = (self.page-1)*nrows
             end = start+nrows
-            kwargs['indices'] = [ind-start for ind in self.selection
+            kwargs['indices'] = [ind-start for ind in indices
                                  if ind>=start and ind<end]
         super()._update_selected(*events, **kwargs)
 
@@ -969,14 +903,25 @@ class Tabulator(BaseTable):
         nrows = self.page_size
         start = (self.page-1)*nrows
         end = start+nrows
-        self.value[column].iloc[start:end] = array
+        if self.sorters:
+            index = self._processed.iloc[start:end].index.values
+            self.value[column].loc[index] = array
+        else:
+            self.value[column].iloc[start:end] = array
 
     def _update_selection(self, indices):
         if self.pagination != 'remote':
-            return indices
+            self.selection = indices
         nrows = self.page_size
         start = (self.page-1)*nrows
-        return [start+ind for ind in indices]
+        index = self._processed.iloc[[start+ind for ind in indices]].index
+        indices = []
+        for v in index.values:
+            try:
+                indices.append(self.value.index.get_loc(v))
+            except KeyError:
+                continue
+        self.selection = indices
 
     def _get_properties(self, source):
         props = {p : getattr(self, p) for p in list(Layoutable.param)
@@ -1000,7 +945,7 @@ class Tabulator(BaseTable):
         process = {'theme': self.theme, 'frozen_rows': self.frozen_rows}
         props.update(self._process_param_change(process))
         if self.pagination:
-            length = 0 if self._filtered is None else len(self._filtered)
+            length = 0 if self._processed is None else len(self._processed)
             props['max_page'] = length//self.page_size + bool(length%self.page_size)
         return props
 
@@ -1008,7 +953,7 @@ class Tabulator(BaseTable):
         model = super()._get_model(doc, root, parent, comm)
         if root is None:
             root = model
-        self._link_props(model, ['page'], doc, root, comm)
+        self._link_props(model, ['page', 'sorters'], doc, root, comm)
         return model
 
     def _config_columns(self, column_objs):

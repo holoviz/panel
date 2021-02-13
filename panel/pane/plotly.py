@@ -2,18 +2,14 @@
 Defines a PlotlyPane which renders a plotly plot using PlotlyPlot
 bokeh model.
 """
-from __future__ import absolute_import, division, unicode_literals
-
-import sys
-
 import numpy as np
+import param
 
 from bokeh.models import ColumnDataSource
 from pyviz_comms import JupyterComm
-import param
 
 from .base import PaneBase
-from ..util import isdatetime
+from ..util import isdatetime, lazy_load
 from ..viewable import Layoutable
 
 
@@ -71,7 +67,7 @@ class Plotly(PaneBase):
                                                    and 'data' in obj and 'layout' in obj))
 
     def __init__(self, object=None, **params):
-        super(Plotly, self).__init__(object, **params)
+        super().__init__(object, **params)
         self._figure = None
         self._update_figure()
 
@@ -185,17 +181,7 @@ class Plotly(PaneBase):
         """
         Should return the bokeh model to be rendered.
         """
-        if 'panel.models.plotly' not in sys.modules:
-            if isinstance(comm, JupyterComm):
-                self.param.warning('PlotlyPlot was not imported on instantiation '
-                                   'and may not render in a notebook. Restart '
-                                   'the notebook kernel and ensure you load '
-                                   'it as part of the extension using:'
-                                   '\n\npn.extension(\'plotly\')\n')
-            from ..models.plotly import PlotlyPlot
-        else:
-            PlotlyPlot = getattr(sys.modules['panel.models.plotly'], 'PlotlyPlot')
-
+        PlotlyPlot = lazy_load('panel.models.plotly', 'PlotlyPlot', isinstance(comm, JupyterComm))
         viewport_params = [p for p in self.param if 'viewport' in p]
         params = list(Layoutable.param)+viewport_params
         properties = {p : getattr(self, p) for p in params
@@ -214,8 +200,9 @@ class Plotly(PaneBase):
             properties['sizing_mode'] = 'stretch_both'
 
         model = PlotlyPlot(
-            data=data, layout=layout, config=self.config, data_sources=sources,
-            _render_count=self._render_count, **properties
+            data=data, layout=layout, config=self.config or {},
+            data_sources=sources, _render_count=self._render_count,
+            **properties
         )
 
         if root is None:

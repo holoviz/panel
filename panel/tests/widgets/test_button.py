@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 from panel.widgets import Button, Toggle
 
 
@@ -13,6 +11,23 @@ def test_button(document, comm):
 
     button._process_events({'clicks': 1})
     assert button.clicks == 1
+
+
+def test_button_event(document, comm):
+    button = Button(name='Button')
+
+    widget = button.get_root(document, comm=comm)
+
+    events = []
+    def callback(event):
+        events.append(event.new)
+
+    button.param.watch(callback, 'value')
+
+    assert button.value == False
+    button._server_click(document, widget.ref['id'], None)
+    assert events == [True]
+    assert button.value == False
 
 
 def test_button_jscallback_clicks(document, comm):

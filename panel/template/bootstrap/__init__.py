@@ -40,8 +40,6 @@ class BootstrapTemplate(BasicTemplate):
 
 class BootstrapDefaultTheme(DefaultTheme):
 
-    css = param.Filename(default=pathlib.Path(__file__).parent / 'default.css')
-
     _template = BootstrapTemplate
 
 

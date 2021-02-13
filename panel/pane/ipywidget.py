@@ -34,7 +34,7 @@ class IPyWidget(PaneBase):
     def _get_model(self, doc, root=None, parent=None, comm=None):
         if root is None:
             return self.get_root(doc, comm)
-        kwargs = self._process_param_change(self._init_properties())
+        kwargs = self._process_param_change(self._init_params())
         model = self._get_ipywidget(self.object, doc, root, comm, **kwargs)
         self._models[root.ref['id']] = (model, parent)
         return model

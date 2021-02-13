@@ -135,17 +135,17 @@ export class AcePlot extends HTMLBox {
   static init_AcePlot(): void {
     this.prototype.default_view = AcePlotView
 
-    this.define<AcePlot.Props>({
-      code:         [ p.String            ],
-      filename:     [ p.String            ],
-      language:     [ p.String            ],
-      theme:        [ p.String,  'chrome' ],
-      annotations:  [ p.Array,   []       ],
-      readonly:     [ p.Boolean, false    ],
-      print_margin: [ p.Boolean, false    ]
-    })
+    this.define<AcePlot.Props>(({Any, Array, Boolean, String}) => ({
+      code:         [ String,       '' ],
+      filename:     [ String           ],
+      language:     [ String           ],
+      theme:        [ String, 'chrome' ],
+      annotations:  [ Array(Any),   [] ],
+      readonly:     [ Boolean,   false ],
+      print_margin: [ Boolean,   false ]
+    }))
 
-    this.override({
+    this.override<AcePlot.Props>({
       height: 300,
       width: 300
     })

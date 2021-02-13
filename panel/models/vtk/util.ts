@@ -1,4 +1,5 @@
 import {linspace} from "@bokehjs/core/util/array"
+import {Enum} from "@bokehjs/core/kinds"
 
 export const ARRAY_TYPES = {
   uint8:   Uint8Array,
@@ -95,11 +96,16 @@ declare type RGBnode = {
   b: number
 }
 
-export declare type ColorMapper = {
+export type ColorMapper = {
   palette: string[]
   low: number
   high: number
 }
+
+
+export const Interpolation = Enum("fast_linear", "linear", "nearest")
+export type Interpolation = typeof Interpolation["__type__"]
+
 export declare type CSSProperties = {[key: string]: string}
 
 export declare type VolumeType = {

@@ -1,6 +1,7 @@
 import {div} from "@bokehjs/core/dom"
 import * as p from "@bokehjs/core/properties"
 import {HTMLBox} from "@bokehjs/models/layouts/html_box"
+import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source"
 
 import {transform_cds_to_records} from "./data"
 import {PanelHTMLBoxView, set_size} from "./layout"
@@ -190,7 +191,7 @@ export namespace DeckGLPlot {
   export type Attrs = p.AttrsOf<Props>
   export type Props = HTMLBox.Props & {
     data: p.Property<any>
-    data_sources: p.Property<any[]>
+    data_sources: p.Property<ColumnDataSource[]>
     initialViewState: p.Property<any>
     layers: p.Property<any[]>
     mapbox_api_key: p.Property<string>
@@ -215,19 +216,19 @@ export class DeckGLPlot extends HTMLBox {
   static init_DeckGLPlot(): void {
     this.prototype.default_view = DeckGLPlotView;      
 
-    this.define<DeckGLPlot.Props>({
-      data: [p.Any],
-      data_sources: [ p.Array, [] ],
-      clickState: [ p.Any ],
-      hoverState: [ p.Any ],
-      initialViewState: [p.Any],
-      layers: [ p.Array, [] ],
-      mapbox_api_key: [p.String],
-      tooltip: [ p.Any ],
-      viewState: [ p.Any ],
-    })
+    this.define<DeckGLPlot.Props>(({Any, Array, String, Ref}) => ({
+      data:             [ Any                              ],
+      data_sources:     [ Array(Ref(ColumnDataSource)), [] ],
+      clickState:       [ Any,                          {} ],
+      hoverState:       [ Any,                          {} ],
+      initialViewState: [ Any,                          {} ],
+      layers:           [ Array(Any),                   [] ],
+      mapbox_api_key:   [ String,                       '' ],
+      tooltip:          [ Any,                          {} ],
+      viewState:        [ Any,                          {} ],
+    }))
 
-    this.override({
+    this.override<DeckGLPlot.Props>({
       height: 400,
       width: 600
     });

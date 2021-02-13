@@ -45,7 +45,24 @@ def validate_config(config, parameter, value):
         setattr(config, parameter, orig)
 
 
-class _config(param.Parameterized):
+class _base_config(param.Parameterized):
+
+    css_files = param.List(default=[], doc="""
+        External CSS files to load.""")
+
+    js_files = param.Dict(default={}, doc="""
+        External JS files to load. Dictionary should map from exported
+        name to the URL of the JS file.""")
+
+    js_modules = param.Dict(default={}, doc="""
+        External JS fils to load as modules. Dictionary should map from
+        exported name to the URL of the JS file.""")
+
+    raw_css = param.List(default=[], doc="""
+        List of raw CSS strings to add to load.""")
+
+
+class _config(_base_config):
     """
     Holds global configuration options for Panel. The options can be
     set directly on the global config instance, via keyword arguments
@@ -62,16 +79,6 @@ class _config(param.Parameterized):
     apply_signatures = param.Boolean(default=True, doc="""
         Whether to set custom Signature which allows tab-completion
         in some IDEs and environments.""")
-
-    css_files = param.List(default=[], doc="""
-        External CSS files to load.""")
-
-    js_files = param.Dict(default={}, doc="""
-        External JS files to load. Dictionary should map from exported
-        name to the URL of the JS file.""")
-
-    raw_css = param.List(default=[], doc="""
-        List of raw CSS strings to add to load.""")
 
     safe_embed = param.Boolean(default=False, doc="""
         Ensure all bokeh property changes trigger events which are
@@ -151,7 +158,7 @@ class _config(param.Parameterized):
     _truthy = ['True', 'true', '1', True, 1]
 
     def __init__(self, **params):
-        super(_config, self).__init__(**params)
+        super().__init__(**params)
         for p in self.param:
             if p.startswith('_'):
                 setattr(self, p+'_', None)

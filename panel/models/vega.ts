@@ -94,9 +94,9 @@ export class VegaPlot extends HTMLBox {
   static init_VegaPlot(): void {
     this.prototype.default_view = VegaPlotView
 
-    this.define<VegaPlot.Props>({
-      data: [ p.Any         ],
-      data_sources: [ p.Any  ],
-    })
+    this.define<VegaPlot.Props>(({Any}) => ({
+      data:         [ Any, {} ],
+      data_sources: [ Any, {} ],
+    }))
   }
 }

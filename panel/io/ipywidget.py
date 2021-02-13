@@ -10,7 +10,7 @@ class PanelSessionWebsocket(SessionWebsocket):
     def __init__(self, *args, **kwargs):
         self._document = kwargs.pop('document', None)
         self._queue = []
-        super(PanelSessionWebsocket, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def send(self, stream, msg_type, content=None, parent=None, ident=None, buffers=None, track=False, header=None, metadata=None):
         msg = self.msg(msg_type, content=content, parent=parent, header=header, metadata=metadata)

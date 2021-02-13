@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import datetime as dt
 import pytest
 
@@ -7,7 +5,9 @@ import numpy as np
 
 try:
     import pandas as pd
-    from pandas.util.testing import makeTimeDataFrame, makeMixedDataFrame
+    from pandas.util.testing import (
+        makeCustomDataframe, makeMixedDataFrame, makeTimeDataFrame
+    )
 except ImportError:
     pytestmark = pytest.mark.skip('pandas not available')
 
@@ -526,6 +526,37 @@ def test_tabulator_stream_series_paginated_follow(document, comm):
         np.testing.assert_array_equal(values, expected[col])
 
 
+def test_tabulator_paginated_sorted_selection(document, comm):
+    df = makeMixedDataFrame()
+    table = Tabulator(df, pagination='remote', page_size=2)
+
+    table.sorters = [{'field': 'A', 'dir': 'dec'}]
+
+    model = table.get_root(document, comm)
+
+    table.selection = [3]
+    assert model.source.selected.indices == [1]
+
+    table.selection = [0, 1]
+    assert model.source.selected.indices == []
+
+    table.selection = [3, 4]
+    assert model.source.selected.indices == [1, 0]
+
+    table.selection = []
+    assert model.source.selected.indices == []
+
+    table._process_events({'indices': [0, 1]})
+    assert table.selection == [4, 3]
+
+    table._process_events({'indices': [1]})
+    assert table.selection == [3]
+
+    table.sorters = [{'field': 'A', 'dir': 'asc'}]
+    table._process_events({'indices': [1]})
+    assert table.selection == [1]
+
+
 def test_tabulator_stream_dataframe(document, comm):
     df = makeMixedDataFrame()
     table = Tabulator(df)
@@ -722,6 +753,32 @@ def test_tabulator_stream_dataframe_with_filter(document, comm):
         'D': np.array(['2009-01-02T00:00:00.000000000',
                        '2009-01-09T00:00:00.000000000'],
                       dtype='datetime64[ns]')
+    }
+    for col, values in model.source.data.items():
+        np.testing.assert_array_equal(values, expected[col])
+
+
+def test_tabulator_dataframe_replace_data(document, comm):
+    df = makeMixedDataFrame()
+    table = Tabulator(df)
+
+    model = table.get_root(document, comm)
+
+    table.value = makeCustomDataframe(2, 2)
+
+    assert len(model.columns) == 3
+    c1, c2, c3 = model.columns
+    assert c1.field == 'R0'
+    assert c2.field == 'C_l0_g0'
+    assert c3.field == 'C_l0_g1'
+    assert model.configuration == {
+        'columns': [{'field': 'R0'}, {'field': 'C_l0_g0'}, {'field': 'C_l0_g1'}],
+        'selectable': True
+    }
+    expected = {
+        'C_l0_g0': np.array(['R0C0', 'R1C0'], dtype=object),
+        'C_l0_g1': np.array(['R0C1', 'R1C1'], dtype=object),
+        'R0': np.array(['R_l0_g0', 'R_l0_g1'], dtype=object)
     }
     for col, values in model.source.data.items():
         np.testing.assert_array_equal(values, expected[col])

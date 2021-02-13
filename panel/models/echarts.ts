@@ -61,10 +61,10 @@ export class ECharts extends HTMLBox {
   static init_ECharts(): void {
     this.prototype.default_view = EChartsView
 
-    this.define<ECharts.Props>({
-      data:  [ p.Any               ],
-      theme: [ p.String, "default" ],
-      renderer: [ p.String, "canvas"]
-    })
+    this.define<ECharts.Props>(({Any, String}) => ({
+      data:     [ Any,           {} ],
+      theme:    [ String, "default" ],
+      renderer: [ String,  "canvas" ]
+    }))
   }
 }

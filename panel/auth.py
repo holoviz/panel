@@ -313,6 +313,38 @@ class BitbucketLoginHandler(OAuthLoginHandler, OAuth2Mixin):
     _USER_KEY = 'username'
 
 
+class Auth0Handler(OAuthLoginHandler, OAuth2Mixin):
+
+    _EXTRA_AUTHORIZE_PARAMS = {
+        'subdomain'
+    }
+
+    _OAUTH_ACCESS_TOKEN_URL_ = 'https://{0}.auth0.com/oauth/token'
+    _OAUTH_AUTHORIZE_URL_ = 'https://{0}.auth0.com/authorize'
+    _OAUTH_USER_URL_ = 'https://{0}.auth0.com/userinfo?access_token='
+
+    @property
+    def _OAUTH_ACCESS_TOKEN_URL(self):
+        url = config.oauth_extra_params.get('subdomain', 'example')
+        return self._OAUTH_ACCESS_TOKEN_URL_.format(url)
+
+    @property
+    def _OAUTH_AUTHORIZE_URL(self):
+        url = config.oauth_extra_params.get('subdomain', 'example')
+        return self._OAUTH_AUTHORIZE_URL_.format(url)
+
+    @property
+    def _OAUTH_USER_URL(self):
+        url = config.oauth_extra_params.get('subdomain', 'example')
+        return self._OAUTH_USER_URL_.format(url)
+
+    _USER_KEY = 'email'
+
+    _EXTRA_TOKEN_PARAMS = {
+        'grant_type':    'authorization_code'
+    }
+
+
 class GitLabLoginHandler(OAuthLoginHandler, OAuth2Mixin):
 
     _API_BASE_HEADERS = {
@@ -639,6 +671,7 @@ class OAuthProvider(AuthProvider):
 
 
 AUTH_PROVIDERS = {
+    'auth0': Auth0Handler,
     'azure': AzureAdLoginHandler,
     'bitbucket': BitbucketLoginHandler,
     'google': GoogleLoginHandler,

@@ -1,8 +1,6 @@
 """
 Various general utilities used in the panel codebase.
 """
-from __future__ import absolute_import, division, unicode_literals
-
 import base64
 import datetime as dt
 import inspect
@@ -13,18 +11,14 @@ import re
 import sys
 import urllib.parse as urlparse
 
+from collections.abc import MutableSequence, MutableMapping
 from collections import defaultdict, OrderedDict
 from contextlib import contextmanager
 from datetime import datetime
 from distutils.version import LooseVersion
-from six import string_types
-
-try:  # python >= 3.3
-    from collections.abc import MutableSequence, MutableMapping
-except ImportError:
-    from collections import MutableSequence, MutableMapping
-
 from html import escape # noqa
+from importlib import import_module
+from six import string_types
 
 import bokeh
 import param
@@ -40,6 +34,7 @@ if sys.version_info.major > 2:
     unicode = str
 
 bokeh_version = LooseVersion(bokeh.__version__)
+
 
 def isfile(path):
     """Safe version of os.path.isfile robust to path length issues on Windows"""
@@ -342,7 +337,7 @@ def bundled_files(model, file_type='javascript'):
         filepath = url_path(url)
         test_filepath = filepath.split('?')[0]
         if resources == 'server' and os.path.isfile(os.path.join(bdir, test_filepath)):
-            files.append(f'/static/extensions/panel/bundled/{name}/{filepath}')
+            files.append(f'static/extensions/panel/bundled/{name}/{filepath}')
         else:
             files.append(url)
     return files
@@ -371,3 +366,27 @@ def edit_readonly(parameterized):
             p.readonly = readonly
         for (p, constant) in zip(params, constants):
             p.constant = constant
+
+
+def lazy_load(module, model, notebook=False):
+    if module in sys.modules:
+        return getattr(sys.modules[module], model)
+    if notebook:
+        ext = module.split('.')[-1]
+        param.main.param.warning(f'{model} was not imported on instantiation '
+                                 'and may not render in a notebook. Restart '
+                                 'the notebook kernel and ensure you load '
+                                 'it as part of the extension using:'
+                                 f'\n\npn.extension(\'{ext}\')\n')
+    return getattr(import_module(module), model)
+
+
+def updating(fn):
+    def wrapped(self, *args, **kwargs):
+        updating = self._updating
+        self._updating = True
+        try:
+            fn(self, *args, **kwargs)
+        finally:
+            self._updating = updating
+    return wrapped

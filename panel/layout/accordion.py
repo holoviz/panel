@@ -43,7 +43,7 @@ class Accordion(NamedListPanel):
     ]
 
     def __init__(self, *objects, **params):
-        super(Accordion, self).__init__(*objects, **params)
+        super().__init__(*objects, **params)
         self.param.watch(self._update_active, ['active'])
         self.param.watch(self._update_cards, self._synced_properties)
 
@@ -103,7 +103,7 @@ class Accordion(NamedListPanel):
     def _cleanup(self, root):
         for panel in self._panels.values():
             panel._cleanup(root)
-        super(Accordion, self)._cleanup(root)
+        super()._cleanup(root)
 
     def _apply_style(self, i):
         if i == 0:

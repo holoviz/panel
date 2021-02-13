@@ -117,15 +117,15 @@ export class VideoStream extends HTMLBox {
   static init_VideoStream(): void {
     this.prototype.default_view = VideoStreamView
 
-    this.define<VideoStream.Props>({
-      format:   [ p.String, 'png'  ],
-      paused:   [ p.Boolean, false ],
-      snapshot: [ p.Boolean, false ],
-      timeout:  [ p.Number,  0     ],
-      value:    [ p.Any,           ]
-    })
+    this.define<VideoStream.Props>(({Any, Boolean, Number, String}) => ({
+      format:   [ String,  'png' ],
+      paused:   [ Boolean, false ],
+      snapshot: [ Boolean, false ],
+      timeout:  [ Number,      0 ],
+      value:    [ Any            ]
+    }))
 
-    this.override({
+    this.override<VideoStream.Props>({
       height: 240,
       width: 320
     });

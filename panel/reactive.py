@@ -5,10 +5,14 @@ models rendered on the frontend.
 """
 
 import difflib
+import sys
 import threading
 
 from collections import namedtuple
 from functools import partial
+
+import numpy as np
+import param
 
 from bokeh.models import LayoutDOM
 from tornado import gen
@@ -16,10 +20,10 @@ from tornado import gen
 from .config import config
 from .io.callbacks import PeriodicCallback
 from .io.model import hold
-from .io.notebook import push
+from .io.notebook import push, push_on_root
 from .io.server import unlocked
 from .io.state import state
-from .util import edit_readonly
+from .util import edit_readonly, updating
 from .viewable import Layoutable, Renderable, Viewable
 
 LinkWatcher = namedtuple("Watcher","inst cls fn mode onlychanged parameter_names what queued target links transformed bidirectional_watcher")
@@ -46,21 +50,12 @@ class Syncable(Renderable):
     # Timeout before the first event is processed
     _debounce = 50
 
+    # Any parameters that require manual updates handling for the models
+    # e.g. parameters which affect some sub-model
+    _manual_params = []
+
     # Mapping from parameter name to bokeh model property name
     _rename = {}
-
-    __abstract = True
-
-    events = []
-
-    def __init__(self, **params):
-        super(Syncable, self).__init__(**params)
-        self._processing = False
-        self._events = {}
-        self._callbacks = []
-        self._links = []
-        self._link_params()
-        self._changing = {}
 
     # Allows defining a mapping from model property name to a JS code
     # snippet that transforms the object before serialization
@@ -69,6 +64,32 @@ class Syncable(Renderable):
     # Transforms from input value to bokeh property value
     _source_transforms = {}
     _target_transforms = {}
+
+    __abstract = True
+
+    def __init__(self, **params):
+        super().__init__(**params)
+
+        # Useful when updating model properties which trigger potentially
+        # recursive events
+        self._updating = False
+
+        # A dictionary of current property change events
+        self._events = {}
+
+        # All parameter watchers on the component
+        self._callbacks = []
+
+        # Any watchers associated with links between two objects
+        self._links = []
+        self._link_params()
+
+        # A dictionary of bokeh property changes being processed
+        self._changing = {}
+
+        # Sets up watchers to process manual updates to models
+        if self._manual_params:
+            self.param.watch(self._update_manual, self._manual_params)
 
     #----------------------------------------------------------------
     # Model API
@@ -101,8 +122,30 @@ class Syncable(Renderable):
             properties['min_height'] = properties['height']
         return properties
 
+    @property
+    def _linkable_params(self):
+        """
+        Parameters that can be linked in JavaScript via source
+        transforms.
+        """
+        return [p for p in self._synced_params if self._rename.get(p, False) is not None
+                and self._source_transforms.get(p, False) is not None]
+
+    @property
+    def _synced_params(self):
+        """
+        Parameters which are synced with properties using transforms
+        applied in the _process_param_change method.
+        """
+        ignored = ['default_layout', 'loading']
+        return [p for p in self.param if p not in self._manual_params+ignored]
+
+    def _init_params(self):
+        return {k: v for k, v in self.param.get_param_values()
+                if k in self._synced_params and v is not None}
+
     def _link_params(self):
-        params = self._synced_params()
+        params = self._synced_params
         if params:
             watcher = self.param.watch(self._param_change, params)
             self._callbacks.append(watcher)
@@ -120,13 +163,28 @@ class Syncable(Renderable):
             else:
                 model.on_change(p, partial(self._server_change, doc, ref))
 
-    @property
-    def _linkable_params(self):
-        return [p for p in self._synced_params()
-                if self._source_transforms.get(p, False) is not None]
+    def _manual_update(self, events, model, doc, root, parent, comm):
+        """
+        Method for handling any manual update events, i.e. events triggered
+        by changes in the manual params.
+        """
 
-    def _synced_params(self):
-        return list(self.param)
+    def _update_manual(self, *events):
+        for ref, (model, parent) in self._models.items():
+            if ref not in state._views or ref in state._fake_roots:
+                continue
+            viewable, root, doc, comm = state._views[ref]
+            if comm or state._unblocked(doc):
+                with unlocked():
+                    self._manual_update(events, model, doc, root, parent, comm)
+                if comm and 'embedded' not in root.tags:
+                    push(doc, comm)
+            else:
+                cb = partial(self._manual_update, events, model, doc, root, parent, comm)
+                if doc.session_context:
+                    doc.add_next_tick_callback(cb)
+                else:
+                    cb()
 
     def _update_model(self, events, msg, root, model, doc, comm):
         self._changing[root.ref['id']] = [
@@ -139,7 +197,7 @@ class Syncable(Renderable):
             del self._changing[root.ref['id']]
 
     def _cleanup(self, root):
-        super(Syncable, self)._cleanup(root)
+        super()._cleanup(root)
         ref = root.ref['id']
         self._models.pop(ref, None)
         comm, client_comm = self._comms.pop(ref, (None, None))
@@ -203,7 +261,6 @@ class Syncable(Renderable):
             self._events = {}
             self._process_events(events)
         finally:
-            self._processing = False
             state.curdoc = None
             state._thread_id = None
 
@@ -221,9 +278,9 @@ class Syncable(Renderable):
             return
 
         state._locks.clear()
+        processing = bool(self._events)
         self._events.update({attr: new})
-        if not self._processing:
-            self._processing = True
+        if not processing:
             if doc.session_context:
                 doc.add_timeout_callback(partial(self._change_coroutine, doc), self._debounce)
             else:
@@ -516,3 +573,344 @@ class Reactive(Syncable, Viewable):
         from .links import Link
         return Link(self, target, properties=links, code=code, args=args,
                     bidirectional=bidirectional)
+
+
+
+class SyncableData(Reactive):
+    """
+    A baseclass for components which sync one or more data parameters
+    with the frontend via a ColumnDataSource.
+    """
+
+    selection = param.List(default=[], doc="""
+        The currently selected rows in the data.""")
+
+    # Parameters which when changed require an update of the data 
+    _data_params = []
+
+    _rename = {'selection': None}
+
+    __abstract = True
+
+    def __init__(self, **params):
+        super().__init__(**params)
+        self._data = None
+        self._processed = None
+        self.param.watch(self._validate, self._data_params)
+        if self._data_params:
+            self.param.watch(self._update_cds, self._data_params)
+        self.param.watch(self._update_selected, 'selection')
+        self._validate(None)
+        self._update_cds()
+
+    def _validate(self, event):
+        """
+        Allows implementing validation for the data parameters.
+        """
+
+    def _get_data(self):
+        """
+        Implemented by subclasses converting data parameter(s) into
+        a ColumnDataSource compatible data dictionary.
+
+        Returns
+        -------
+        processed: object
+          Raw data after pre-processing (e.g. after filtering)
+        data: dict
+          Dictionary of columns used to instantiate and update the
+          ColumnDataSource
+        """
+
+    def _update_column(self, column, array):
+        """
+        Implemented by subclasses converting changes in columns to
+        changes in the data parameter.
+
+        Parameters
+        ----------
+        column: str
+          The name of the column to update.
+        array: numpy.ndarray
+          The array data to update the column with.
+        """
+        data = getattr(self, self.data_params[0])
+        data[column] = array
+
+    def _manual_update(self, events, model, doc, root, parent, comm):
+        for event in events:
+            if event.type == 'triggered' and self._updating:
+                continue
+            elif hasattr(self, '_update_' + event.name):
+                getattr(self, '_update_' + event.name)(model)
+
+    def _update_cds(self, *events):
+        if self._updating:
+            return
+        self._processed, self._data = self._get_data()
+        for ref, (m, _) in self._models.items():
+            m.source.data = self._data
+            push_on_root(ref)
+
+    def _update_selected(self, *events, indices=None):
+        if self._updating:
+            return
+        indices = self.selection if indices is None else indices
+        for ref, (m, _) in self._models.items():
+            m.source.selected.indices = indices
+            push_on_root(ref)
+
+    @updating
+    def _stream(self, stream):
+        for ref, (m, _) in self._models.items():
+            m.source.stream(stream)
+            push_on_root(ref)
+
+    @updating
+    def _patch(self, patch):
+        for ref, (m, _) in self._models.items():
+            m.source.patch(patch)
+            push_on_root(ref)
+
+    def stream(self, stream_value, reset_index=True):
+        """
+        Streams (appends) the `stream_value` provided to the existing
+        value in an efficient manner.
+
+        Arguments
+        ---------
+        stream_value (Union[pd.DataFrame, pd.Series, Dict])
+          The new value(s) to append to the existing value.
+        reset_index (bool, default=True):
+          If True and the stream_value is a DataFrame,
+          then its index is reset. Helps to keep the
+          index unique and named `index`
+
+        Raises
+        ------
+        ValueError: Raised if the stream_value is not a supported type.
+
+        Examples
+        --------
+
+        Stream a Series to a DataFrame
+        >>> value = pd.DataFrame({"x": [1, 2], "y": ["a", "b"]})
+        >>> obj = DataComponent(value)
+        >>> stream_value = pd.Series({"x": 4, "y": "d"})
+        >>> obj.stream(stream_value)
+        >>> obj.value.to_dict("list")
+        {'x': [1, 2, 4], 'y': ['a', 'b', 'd']}
+
+        Stream a Dataframe to a Dataframe
+        >>> value = pd.DataFrame({"x": [1, 2], "y": ["a", "b"]})
+        >>> obj = DataComponent(value)
+        >>> stream_value = pd.DataFrame({"x": [3, 4], "y": ["c", "d"]})
+        >>> obj.stream(stream_value)
+        >>> obj.value.to_dict("list")
+        {'x': [1, 2, 3, 4], 'y': ['a', 'b', 'c', 'd']}
+
+        Stream a Dictionary row to a DataFrame
+        >>> value = pd.DataFrame({"x": [1, 2], "y": ["a", "b"]})
+        >>> tabulator = DataComponent(value)
+        >>> stream_value = {"x": 4, "y": "d"}
+        >>> obj.stream(stream_value)
+        >>> obj.value.to_dict("list")
+        {'x': [1, 2, 4], 'y': ['a', 'b', 'd']}
+
+        Stream a Dictionary of Columns to a Dataframe
+        >>> value = pd.DataFrame({"x": [1, 2], "y": ["a", "b"]})
+        >>> obj = DataComponent(value)
+        >>> stream_value = {"x": [3, 4], "y": ["c", "d"]}
+        >>> obj.stream(stream_value)
+        >>> obj.value.to_dict("list")
+        {'x': [1, 2, 3, 4], 'y': ['a', 'b', 'c', 'd']}
+        """
+        if 'pandas' in sys.modules:
+            import pandas as pd
+        else:
+            pd = None
+        if pd and isinstance(stream_value, pd.DataFrame):
+            if isinstance(self._processed, dict):
+                self.stream(stream_value.to_dict())
+                return
+            value_index_start = self._data.index.max() + 1
+            if reset_index:
+                stream_value = stream_value.reset_index(drop=True)
+                stream_value.index += value_index_start
+            with param.discard_events(self):
+                self.value = pd.concat([self.value, stream_value])
+            try:
+                self._updating = True
+                self.param.trigger('value')
+            finally:
+                self._updating = False
+            try:
+                self._updating = True
+                self._stream(stream_value)
+            finally:
+                self._updating = False
+        elif pd and isinstance(stream_value, pd.Series):
+            if isinstance(self._processed, dict):
+                self.stream({k: [v] for k, v in stream_value.to_dict().items()})
+                return
+            self.value.loc[value_index_start] = stream_value
+            self._updating = True
+            try:
+                self._stream(self.value.iloc[-1:])
+            finally:
+                self._updating = False
+        elif isinstance(stream_value, dict):
+            if isinstance(self._processed, dict):
+                if not all(col in stream_value for col in self._data):
+                    raise ValueError("Stream update must append to all columns.")
+                for col, array in stream_value.items():
+                    combined = np.concatenate([self._data[col], array])
+                    self._update_column(col, combined)
+                self._updating = True
+                try:
+                    self._stream(stream_value)
+                finally:
+                    self._updating = False
+            else:
+                try:
+                    stream_value = pd.DataFrame(stream_value)
+                except ValueError:
+                    stream_value = pd.Series(stream_value)
+                self.stream(stream_value)
+        else:
+            raise ValueError("The stream value provided is not a DataFrame, Series or Dict!")
+
+    def patch(self, patch_value):
+        """
+        Efficiently patches (updates) the existing value with the `patch_value`.
+
+        Arguments
+        ---------
+        patch_value: (Union[pd.DataFrame, pd.Series, Dict])
+          The value(s) to patch the existing value with.
+
+        Raises
+        ------
+        ValueError: Raised if the patch_value is not a supported type.
+
+        Examples
+        --------
+
+        Patch a DataFrame with a Dictionary row.
+        >>> value = pd.DataFrame({"x": [1, 2], "y": ["a", "b"]})
+        >>> obj = DataComponent(value)
+        >>> patch_value = {"x": [(0, 3)]}
+        >>> obj.patch(patch_value)
+        >>> obj.value.to_dict("list")
+        {'x': [3, 2], 'y': ['a', 'b']}
+
+        Patch a Dataframe with a Dictionary of Columns.
+        >>> value = pd.DataFrame({"x": [1, 2], "y": ["a", "b"]})
+        >>> obj = DataComponent(value)
+        >>> patch_value = {"x": [(slice(2), (3,4))], "y": [(1,'d')]}
+        >>> obj.patch(patch_value)
+        >>> obj.value.to_dict("list")
+        {'x': [3, 4], 'y': ['a', 'd']}
+
+        Patch a DataFrame with a Series. Please note the index is used in the update.
+        >>> value = pd.DataFrame({"x": [1, 2], "y": ["a", "b"]})
+        >>> obj = DataComponent(value)
+        >>> patch_value = pd.Series({"index": 1, "x": 4, "y": "d"})
+        >>> obj.patch(patch_value)
+        >>> obj.value.to_dict("list")
+        {'x': [1, 4], 'y': ['a', 'd']}
+
+        Patch a Dataframe with a Dataframe. Please note the index is used in the update.
+        >>> value = pd.DataFrame({"x": [1, 2], "y": ["a", "b"]})
+        >>> obj = DataComponent(value)
+        >>> patch_value = pd.DataFrame({"x": [3, 4], "y": ["c", "d"]})
+        >>> obj.patch(patch_value)
+        >>> obj.value.to_dict("list")
+        {'x': [3, 4], 'y': ['c', 'd']}
+        """
+        if self._processed is None or isinstance(patch_value, dict):
+            self._patch(patch_value)
+            return
+
+        if 'pandas' in sys.modules:
+            import pandas as pd
+        else:
+            pd = None
+        data = getattr(self, self._data_params[0])
+        if pd and isinstance(patch_value, pd.DataFrame):
+            patch_value_dict = {}
+            for column in patch_value.columns:
+                patch_value_dict[column] = []
+                for index in patch_value.index:
+                    patch_value_dict[column].append((index, patch_value.loc[index, column]))
+            self.patch(patch_value_dict)
+        elif pd and isinstance(patch_value, pd.Series):
+            if "index" in patch_value:  # Series orient is row
+                patch_value_dict = {
+                    k: [(patch_value["index"], v)] for k, v in patch_value.items()
+                }
+                patch_value_dict.pop("index")
+            else:  # Series orient is column
+                patch_value_dict = {
+                    patch_value.name: [(index, value) for index, value in patch_value.items()]
+                }
+            self.patch(patch_value_dict)
+        elif isinstance(patch_value, dict):
+            for k, v in patch_value.items():
+                for index, patch  in v:
+                    if pd and isinstance(self._processed, pd.DataFrame):
+                        data.loc[index, k] = patch
+                    else:
+                        data[k][index] = patch
+            self._updating = True
+            try:
+                self._patch(patch_value)
+            finally:
+                self._updating = False
+        else:
+            raise ValueError(
+                f"Patching with a patch_value of type {type(patch_value).__name__} "
+                "is not supported. Please provide a DataFrame, Series or Dict."
+            )
+
+
+class ReactiveData(SyncableData):
+    """
+    An extension of SyncableData which bi-directionally syncs a data
+    parameter between frontend and backend using a ColumnDataSource.
+    """
+
+    def _update_selection(self, indices):
+        self.selection = indices
+
+    def _process_events(self, events):
+        if 'data' in events:
+            data = events.pop('data')
+            _, old_data = self._get_data()
+            updated = False
+            for k, v in data.items():
+                if k in self.indexes:
+                    continue
+                k = self._renamed_cols.get(k, k)
+                if isinstance(v, dict):
+                    v = [v for _, v in sorted(v.items(), key=lambda it: int(it[0]))]
+                try:
+                    isequal = (old_data[k] == np.asarray(v)).all()
+                except Exception:
+                    isequal = False
+                if not isequal:
+                    self._update_column(k, v)
+                    updated = True
+            if updated:
+                self._updating = True
+                try:
+                    self.param.trigger('value')
+                finally:
+                    self._updating = False
+        if 'indices' in events:
+            self._updating = True
+            try:
+                self._update_selection(events.pop('indices'))
+            finally:
+                self._updating = False
+        super(ReactiveData, self)._process_events(events)

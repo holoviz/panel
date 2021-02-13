@@ -2,8 +2,6 @@
 These tests verify that all of the panes, layouts, and widgets defined by panel are
 represented in the reference gallery.
 """
-from __future__ import absolute_import, division, unicode_literals
-
 import os
 
 from inspect import isclass
@@ -44,7 +42,7 @@ def test_widgets_are_in_reference_gallery():
 
 @docs_available
 def test_panes_are_in_reference_gallery():
-    exceptions = set(['PaneBase', 'YT', 'RGGPlot'])
+    exceptions = set(['PaneBase', 'YT', 'RGGPlot', 'Interactive'])
     docs = {os.path.splitext(f)[0] for f in os.listdir(os.path.join(ref, 'panes'))}
 
     def is_panel_pane(attr):

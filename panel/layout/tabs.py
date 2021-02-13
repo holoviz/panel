@@ -32,34 +32,31 @@ class Tabs(NamedListPanel):
 
     _bokeh_model = BkTabs
 
-    _source_transforms = {'dynamic': None, 'objects': None}
-
-    _rename = {'name': None, 'objects': 'tabs', 'dynamic': None}
-
-    _linked_props = ['active', 'tabs']
-
     _js_transforms = {'tabs': """
     var ids = [];
     for (var t of value) {{ ids.push(t.id) }};
     var value = ids;
     """}
 
+    _linked_props = ['active', 'tabs']
+
+    _manual_params = ['closable']
+
+    _rename = {'name': None, 'objects': 'tabs', 'dynamic': None}
+
+    _source_transforms = {'dynamic': None, 'objects': None}
+
     def __init__(self, *objects, **params):
-        super(Tabs, self).__init__(*objects, **params)
+        super().__init__(*objects, **params)
         self.param.active.bounds = (0, len(self)-1)
         self.param.watch(self._update_active, ['dynamic', 'active'])
 
-    def _init_properties(self):
-        return {k: v for k, v in self.param.get_param_values()
-                if v is not None and k != 'closable'}
-
-
     def _update_names(self, event):
         self.param.active.bounds = (0, len(event.new)-1)
-        super(Tabs, self)._update_names(event)
+        super()._update_names(event)
 
     def _cleanup(self, root):
-        super(Tabs, self)._cleanup(root)
+        super()._cleanup(root)
         if root.ref['id'] in self._panels:
             del self._panels[root.ref['id']]
 
@@ -89,7 +86,7 @@ class Tabs(NamedListPanel):
             old, new = self._process_close(ref, attr, old, new)
             if new is None:
                 return
-        super(Tabs, self)._comm_change(doc, ref, comm, attr, old, new)
+        super()._comm_change(doc, ref, comm, attr, old, new)
 
     def _server_change(self, doc, ref, attr, old, new):
         if attr in self._changing.get(ref, []):
@@ -99,7 +96,7 @@ class Tabs(NamedListPanel):
             old, new = self._process_close(ref, attr, old, new)
             if new is None:
                 return
-        super(Tabs, self)._server_change(doc, ref, attr, old, new)
+        super()._server_change(doc, ref, attr, old, new)
 
     def _update_active(self, *events):
         for event in events:
@@ -111,13 +108,11 @@ class Tabs(NamedListPanel):
     # Model API
     #----------------------------------------------------------------
 
-    def _update_model(self, events, msg, root, model, doc, comm=None):
-        msg = dict(msg)
-        if 'closable' in msg:
-            closable = msg.pop('closable')
-            for child in model.tabs:
-                child.closable = closable
-        super(Tabs, self)._update_model(events, msg, root, model, doc, comm)
+    def _manual_update(self, events, model, doc, root, parent, comm):
+        for event in events:
+            if event.name == 'closable':
+                for child in model.tabs:
+                    child.closable = event.new
 
     def _get_objects(self, model, old_objects, doc, root, comm=None):
         """
@@ -151,7 +146,7 @@ class Tabs(NamedListPanel):
                 continue
             elif self.dynamic and i != self.active:
                 child = BkSpacer(**{k: v for k, v in pane.param.get_param_values()
-                                    if k in Layoutable.param})
+                                    if k in Layoutable.param and v is not None})
             else:
                 try:
                     child = pane._get_model(doc, root, model, comm)

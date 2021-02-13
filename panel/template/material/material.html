@@ -1,6 +1,5 @@
 {% extends base %}
-<!-- change coming -->
-<!-- goes in body -->
+
 {% block preamble %}
 {% if app_favicon %}<link rel="icon" href="{{ app_favicon }}" type="{{favicon_type}}">{% endif %}
 {% if meta_name %}<meta name="name" content="{{ meta_name }}">{% endif %}
@@ -10,19 +9,44 @@
 {% if meta_refresh %}<meta http-equiv="refresh" content="{{ meta_refresh }}">{% endif %}
 {% if meta_viewport %}<meta name="viewport" content="{{ meta_viewport }}">{% endif %}
 {% if base_url and base_target %}<base href="{{ base_url }}" target="{{ base_target }}">{% endif %}
+{% endblock %}
 
+{% block postamble %}
+<!-- Template CSS -->
 <link href="{{ template_resources['css']['material'] }}" rel="stylesheet">
-<script src="{{ template_resources['js']['material'] }}"></script>
 <link rel="stylesheet" href="{{ template_resources['css']['base'] }}">
+{% if 'base_theme' in template_resources['css'] %}
+<link rel="stylesheet" href="{{ template_resources['css']['base_theme'] }}">
+{% endif %}
+{% if 'theme' in template_resources['css'] %}
 <link rel="stylesheet" href="{{ template_resources['css']['theme'] }}">
+{% endif %}
 <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css?family=Material+Icons&display=block" rel="stylesheet">
+{% for src in template_resources['extra_css'] %}
+<link rel="stylesheet"  href="{{ src }}" crossorigin="anonymous"></script>
+
+{% endfor %}
+{% for raw_css in template_resources['raw_css'] %}
+<style type="text/css">
+{{ raw_css }}
+</style>
+{% endfor %}
+
+<!-- Template JS -->
+<script src="{{ template_resources['js']['material'] }}"></script>
+{% for src in template_resources['extra_js'] %}
+<script src="{{ src }}" crossorigin="anonymous"></script>
+{% endfor %}
+{% for src in template_resources['js_modules'] %}
+<script src="{{ src }}" type="module" crossorigin="anonymous"></script>
+{% endfor %}
 {% endblock %}
 
 <!-- goes in body -->
 {% block contents %}
 <div class="mdc-typography" id="container">
-<header class="mdc-top-app-bar app-bar mdc-top-app-bar--fixed" style="{% if header_background %}background-color: {{ header_background }} !important;{% endif %}{% if header_color %}color: {{ header_color }}{% endif %}" id="header">
+<header class="mdc-top-app-bar app-bar mdc-top-app-bar--fixed" style="{% if header_background %}background-color: {{ header_background }} !important;{% endif %}{% if header_color %}color: {{ header_color }} !important;{% endif %}" id="header">
   <div class="mdc-top-app-bar__row">
     <section class="mdc-top-app-bar__section mdc-top-app-bar__section--align-start">
       {% if nav %}

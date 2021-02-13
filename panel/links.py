@@ -1,8 +1,6 @@
 """
 Defines Links which allow declaring links between bokeh properties.
 """
-from __future__ import absolute_import, division, unicode_literals
-
 import param
 import weakref
 import sys
@@ -45,7 +43,7 @@ class Callback(param.Parameterized):
             raise ValueError('%s must define a source' % type(self).__name__)
         # Source is stored as a weakref to allow it to be garbage collected
         self._source = None if source is None else weakref.ref(source)
-        super(Callback, self).__init__(**params)
+        super().__init__(**params)
         self.init()
 
     def init(self):
@@ -159,7 +157,7 @@ class Link(Callback):
             raise ValueError('%s must define a target.' % type(self).__name__)
         # Source is stored as a weakref to allow it to be garbage collected
         self._target = None if target is None else weakref.ref(target)
-        super(Link, self).__init__(source, **params)
+        super().__init__(source, **params)
 
     @property
     def target(self):
@@ -413,7 +411,7 @@ class JSLinkCallbackGenerator(JSCallbackGenerator):
 
     def _get_specs(self, link, source, target):
         if link.code:
-            return super(JSLinkCallbackGenerator, self)._get_specs(link, source, target)
+            return super()._get_specs(link, source, target)
 
         specs = []
         for src_spec, tgt_spec in link.properties.items():

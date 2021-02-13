@@ -213,7 +213,7 @@ class Layoutable(param.Parameterized):
         elif (not (self.param.sizing_mode.constant or self.param.sizing_mode.readonly) and
               type(self).sizing_mode is None):
             params['sizing_mode'] = params.get('sizing_mode', config.sizing_mode)
-        super(Layoutable, self).__init__(**params)
+        super().__init__(**params)
 
 
 class ServableMixin(object):
@@ -366,7 +366,7 @@ class Renderable(param.Parameterized):
     __abstract = True
 
     def __init__(self, **params):
-        super(Renderable, self).__init__(**params)
+        super().__init__(**params)
         self._documents = {}
         self._models = {}
         self._comms = {}
@@ -434,9 +434,8 @@ class Renderable(param.Parameterized):
             add_to_doc(model, doc)
         return model
 
-    def _init_properties(self):
-        return {k: v for k, v in self.param.get_param_values()
-                if v is not None}
+    def _init_params(self):
+        return {k: v for k, v in self.param.get_param_values() if v is not None}
 
     def _server_destroy(self, session_context):
         """

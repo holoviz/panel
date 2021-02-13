@@ -1,8 +1,6 @@
 """
 Miscellaneous widgets which do not fit into the other main categories.
 """
-from __future__ import absolute_import, division, unicode_literals
-
 import os
 
 from io import BytesIO
@@ -51,7 +49,7 @@ class _MediaBase(Widget):
     def __init__(self, **params):
         self.param.warning('%s widget is deprecated, use the equivalent '
                            'Pane type instead.' % type(self).__name__)
-        super(_MediaBase, self).__init__(**params)
+        super().__init__(**params)
 
     def _from_numpy(self, data):
         from scipy.io import wavfile
@@ -60,7 +58,7 @@ class _MediaBase(Widget):
         return buffer
 
     def _process_param_change(self, msg):
-        msg = super(_MediaBase, self)._process_param_change(msg)
+        msg = super()._process_param_change(msg)
 
         if 'value' in msg:
             value =  msg['value']
@@ -196,7 +194,7 @@ class FileDownload(Widget):
     def __init__(self, file=None, **params):
         self._default_label = 'label' not in params
         self._synced = False
-        super(FileDownload, self).__init__(file=file, **params)
+        super().__init__(file=file, **params)
         if self.embed:
             self._transfer()
         self._update_label()

@@ -1,8 +1,6 @@
 """
 Declares enumerations for various model properties.
 """
-from __future__ import absolute_import, division, unicode_literals
-
 from bokeh.core.enums import enumeration
 
 ace_themes = enumeration(

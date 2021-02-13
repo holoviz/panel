@@ -93,6 +93,18 @@ def test_location_sync_param_init(location):
     location.unsync(p)
     assert location._synced == []
 
+def test_location_sync_on_error(location):
+    p = SyncParameterized(string='abc')
+    changes = []
+    def on_error(change):
+        print(change)
+        changes.append(change)
+    location.sync(p, on_error=on_error)
+    location.search = "?integer=a&string=abc"
+    assert changes == [{'integer': 'a'}]
+    location.unsync(p)
+    assert location._synced == []
+
 def test_location_sync_param_init_partial(location):
     p = SyncParameterized()
     location.search = "?integer=1&string=abc"

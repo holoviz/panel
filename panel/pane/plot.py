@@ -1,8 +1,6 @@
 """
 Pane class which render plots from different libraries
 """
-from __future__ import absolute_import, division, unicode_literals
-
 import sys
 
 from io import BytesIO
@@ -149,7 +147,7 @@ class Matplotlib(PNG, IPyWidget):
         return is_fig
 
     def __init__(self, object=None, **params):
-        super(Matplotlib, self).__init__(object, **params)
+        super().__init__(object, **params)
         self._managers = {}
 
     def _get_widget(self, fig):
@@ -179,7 +177,7 @@ class Matplotlib(PNG, IPyWidget):
             return PNG._get_model(self, doc, root, parent, comm)
         self.object.set_dpi(self.dpi)
         manager = self._get_widget(self.object)
-        props = self._process_param_change(self._init_properties())
+        props = self._process_param_change(self._init_params())
         kwargs = {k: v for k, v in props.items()
                   if k not in self._rerender_params+['interactive']}
         model = self._get_ipywidget(manager.canvas, doc, root, comm,
@@ -268,7 +266,7 @@ class YT(HTML):
                 hasattr(obj, "_repr_html_"))
 
     def _get_properties(self):
-        p = super(YT, self)._get_properties()
+        p = super()._get_properties()
         if self.object is None:
             return p
 
