@@ -6,17 +6,11 @@ from bokeh.core.properties import (
     Any,
     Bool,
     Dict,
-    Either,
-    Enum,
-    Float,
     Int,
     List,
-    Override,
     String,
-    Tuple,
 )
-from bokeh.models.layouts import HTMLBox
-from bokeh.models.widgets import InputWidget, Widget
+from bokeh.models.widgets import Widget
 
 
 class TextToSpeech(Widget):
