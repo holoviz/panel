@@ -43,4 +43,4 @@ from .select import ( # noqa
     ToggleGroup
 )
 from .tables import DataFrame, Tabulator  # noqa
-from .text_to_speech import TextToSpeech, Utterance, Voice
+from .text_to_speech import TextToSpeech, Utterance, Voice # noqa
