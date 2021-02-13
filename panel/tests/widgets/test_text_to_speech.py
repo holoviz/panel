@@ -210,22 +210,10 @@ def test_can_speak():
     text = "Give me back my money!"
     # When
     speaker = TextToSpeech()
-    utterance = speaker.speak(text)
+    speaker.value = text
+    utterance = speaker._speaks
     # Then
-    assert isinstance(utterance, Utterance)
-    assert utterance.text == text
-    assert speaker._speaks == utterance.to_dict()
-
-
-def test_can_speak_same_utterance_multiple_times():
-    text = "Give me back my money!"
-    speaker = TextToSpeech()
-    utterance = speaker.speak(text)
-    # When
-    new_utterance = speaker.speak(utterance)
-    # Then
-    assert new_utterance.uid != utterance.uid
-    assert speaker._speaks == new_utterance.to_dict()
+    assert utterance["text"] == text
 
 
 def test_can_set_voices():
@@ -243,45 +231,43 @@ def test_can_set_voices():
 
 
 def test_get_app():
-    speaker = TextToSpeech(name="Speaker")
-    utterance = Utterance(text=TEXT, name="Utterance")
-
-    @param.depends(speaker.param.voices, watch=True)
-    def update_voices(voices: List[Voice]):
-        utterance.set_voices(voices)
-
-    speak_button = pn.widgets.Button(name="Speak", button_type="success")
-    utterance_settings = pn.Param(
-        utterance,
-        widgets={"text": {"widget_type": pn.widgets.TextAreaInput, "height": 300}},
-        expand_button=False,
-    )
+    text_to_speech = TextToSpeech(name="Speaker", value=TEXT, auto_speak=False)
     speaker_settings = pn.Param(
-        speaker,
+        text_to_speech,
         parameters=[
+            "value",
+            "speak",
             "paused",
             "speaking",
             "pending",
             "pause",
             "resume",
             "cancel",
+            "lang",
+            "voice",
+            "pitch",
+            "rate",
+            "volume",
+            "speak",
+            "value",
         ],
-        widgets={"cancel": {"button_type": "success"}},
+        widgets={
+            "speak": {"button_type": "success"},
+            "value": {"widget_type": pn.widgets.TextAreaInput, "height": 300},
+        },
+        expand_button=False,
+        show_name=False,
     )
 
-    def click_handler(*_):
-        speaker.speak(utterance)
-
-    speak_button.on_click(click_handler)
-    return pn.Column(
-        pn.pane.Markdown("# Text To Speech App"),
-        speak_button,
-        speaker,
-        utterance_settings,
+    component = pn.Column(
+        text_to_speech,
         speaker_settings,
         width=500,
         sizing_mode="fixed",
     )
+    template = pn.template.MaterialTemplate(title="Panel - TextToSpeech Widget")
+    template.main.append(component)
+    return template
 
 
 if __name__.startswith("bokeh"):
