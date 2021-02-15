@@ -53,10 +53,7 @@ Installation
 |CondaPyViz|_ |CondaDefaults|_ |PyPI|_ |License|_
 
 
-Panel works with `Python 3 <https://github.com/holoviz/panel/actions?query=workflow%3Apytest>`_ on Linux, Windows, or Mac. The recommended way to install Panel is using the
-`conda <https://docs.conda.io/projects/conda/en/latest/index.html>`_ command provided by
-`Anaconda <https://docs.anaconda.com/anaconda/install/>`_ or
-`Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_::
+Panel works with `Python 3 <https://github.com/holoviz/panel/actions?query=workflow%3Apytest>`_ on Linux, Windows, or Mac. The recommended way to install Panel is using the `conda <https://docs.conda.io/projects/conda/en/latest/index.html>`_ command provided by `Anaconda <https://docs.anaconda.com/anaconda/install/>`_ or `Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_::
 
   conda install -c pyviz panel
 
