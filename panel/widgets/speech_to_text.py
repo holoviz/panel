@@ -220,7 +220,7 @@ class RecognitionAlternative(param.Parameterized):
     See https://developer.mozilla.org/en-US/docs/Web/API/SpeechRecognitionAlternative
     """
 
-    confidence = param.Number(bounds=(0.0, 1.0), constant=True doc="""
+    confidence = param.Number(bounds=(0.0, 1.0), constant=True, doc="""
         A numeric estimate between 0 and 1 of how confident the speech recognition
         system is that the recognition is correct.""")
 
@@ -424,7 +424,7 @@ class SpeechToText(Widget):
     def __repr__(self, depth=None):
         # Custom repr needed to avoid infinite recursion because this Parameterized class has
         # multiple actions
-        return f"TextToSpeech(name='{self.name}')"
+        return f"SpeechToText(name='{self.name}')"
 
     @param.depends("grammars", watch=True)
     def _update_grammars(self):
@@ -444,7 +444,7 @@ class SpeechToText(Widget):
                 self.results_last = ""
 
     @property
-    def results_deserialized(self) -> List[RecognitionResult]:
+    def results_deserialized(self):
         """Returns the results as a List of RecognitionResults"""
         return RecognitionResult.create_from_list(self.results)
 

@@ -17,10 +17,11 @@ from bokeh.events import (MenuItemClick, ButtonClick)
 from .base import Widget
 
 
+BUTTON_TYPES = ['default', 'primary', 'success', 'warning', 'danger', 'light', 'dark']
+
 class _ButtonBase(Widget):
 
-    button_type = param.ObjectSelector(default='default', objects=[
-        'default', 'primary', 'success', 'warning', 'danger'])
+    button_type = param.ObjectSelector(default='default', objects=BUTTON_TYPES)
 
     _rename = {'name': 'label'}
 
