@@ -125,7 +125,7 @@ def test_get_advanced_app():
     speech_to_text.grammars = grammar_list
     results_as_html_panel = pn.pane.Markdown(margin=(0, 15, 0, 15))
 
-    @pn.depends(speech_to_text.param.results, watch=True)
+    @pn.depends(speech_to_text, watch=True)
     def update_results_html_panel(results):
         results_as_html_panel.object = speech_to_text.results_as_html
 
@@ -144,7 +144,7 @@ def test_get_advanced_app():
                 "service_uri",
                 "started",
                 "results",
-                "results_last",
+                "value",
                 "started",
                 "audio_started",
                 "sound_started",
@@ -252,7 +252,7 @@ def test_get_color_app():
 
     result_panel = pn.pane.Markdown(sizing_mode="stretch_width")
 
-    @pn.depends(speech_to_text_color.param.results_last, watch=True)
+    @pn.depends(speech_to_text_color, watch=True)
     def update_result_panel(results_last):
         results_last = results_last.lower()
         if results_last in colors:
