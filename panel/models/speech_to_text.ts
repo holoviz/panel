@@ -139,24 +139,32 @@ export class SpeechToTextView extends HTMLBoxView {
   connect_signals(): void {
     super.connect_signals()
 
-    this.connect(this.model.properties.starts.change, () => this.recognition.start())
-    this.connect(this.model.properties.stops.change, () => this.recognition.stop())
-    this.connect(this.model.properties.aborts.change, () => this.recognition.abort())
-    this.connect(this.model.properties.grammars.change, () => this.setGrammars)
+    this.connect(this.model.properties.start.change, () => {
+      this.model.start = false
+      this.recognition.start()
+    })
+    this.connect(this.model.properties.stop.change, () => {
+      this.model.stop = false
+      this.recognition.stop()
+    })
+    this.connect(this.model.properties.abort.change, () => {
+      this.model.abort = false
+      this.recognition.abort()
+    })
+    this.connect(this.model.properties.grammars.change, () => this.setGrammars())
     this.connect(this.model.properties.lang.change, () => this.recognition.lang = this.model.lang)
     this.connect(this.model.properties.continuous.change, () => this.recognition.continuous = this.model.continuous)
     this.connect(this.model.properties.interim_results.change, () => this.recognition.interimResults = this.model.interim_results)
     this.connect(this.model.properties.max_alternatives.change, () => this.recognition.maxAlternatives = this.model.max_alternatives)
     this.connect(this.model.properties.service_uri.change, () => this.recognition.serviceURI = this.model.service_uri)
     this.connect(this.model.properties.button_type.change, () => this.buttonEl.className = `bk bk-btn bk-btn-${this.model.button_type}`)
-
     this.connect(this.model.properties.button_hide.change, () => this.render())
-    this.connect(this.model.properties.button_not_started.change, () => this.setIcon())
-    this.connect(this.model.properties.button_started.change, () => this.setIcon())
+    const {button_not_started, button_started} = this.model.properties
+    this.on_change([button_not_started, button_started], () => this.setIcon())
   }
 
   setGrammars(): void {
-    this.recognition.grammars=deserializeGrammars(this.model.grammars);
+    this.recognition.grammars = deserializeGrammars(this.model.grammars);
   }
 
   render(): void {
@@ -169,9 +177,9 @@ export class SpeechToTextView extends HTMLBoxView {
 export namespace SpeechToText {
   export type Attrs = p.AttrsOf<Props>
   export type Props = HTMLBox.Props & {
-    starts: p.Property<number>
-    stops: p.Property<number>
-    aborts: p.Property<any>
+    start: p.Property<boolean>
+    stop: p.Property<boolean>
+    abort: p.Property<boolean>
     grammars: p.Property<any[]>
     lang: p.Property<string>
     continuous: p.Property<boolean>
@@ -196,7 +204,7 @@ export class SpeechToText extends HTMLBox {
   properties: SpeechToText.Props
 
   constructor(attrs?: Partial<SpeechToText.Attrs>) {
-  super(attrs)
+    super(attrs)
   }
 
   static __module__ = "panel.models.speech_to_text"
@@ -205,9 +213,9 @@ export class SpeechToText extends HTMLBox {
     this.prototype.default_view = SpeechToTextView
 
     this.define<SpeechToText.Props>({
-      starts: [ p.Number, 0   ],
-      stops: [ p.Number, 0   ],
-      aborts: [ p.Number, 0   ],
+      start: [ p.Boolean, false   ],
+      stop: [ p.Boolean, false   ],
+      abort: [ p.Boolean, false   ],
       grammars: [p.Array, []],
       lang: [p.String, ""],
       continuous: [ p.Boolean,   false ],

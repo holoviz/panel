@@ -288,17 +288,17 @@ class SpeechToText(Widget):
     use case is up to you to evaluate.
     """
 
-    abort = param.Action(doc="""
+    abort = param.Event(doc="""
         Stops the speech recognition service from listening to
         incoming audio, and doesn't attempt to return a
         RecognitionResult.""")
 
-    start = param.Action(doc="""
+    start = param.Event(doc="""
         Starts the speech recognition service listening to incoming
         audio with intent to recognize grammars associated with the
         current SpeechRecognition.""")
 
-    stop = param.Action(doc="""
+    stop = param.Event(doc="""
         Stops the speech recognition service from listening to
         incoming audio, and attempts to return a RecognitionResult
         using the audio captured so far.""")
@@ -367,19 +367,10 @@ class SpeechToText(Widget):
     results = param.List(constant=True, doc="""
         The `results` as a list of Dictionaries.""")
 
-    results_last = param.String(constant=True, label="Last Result", doc="""
+    value = param.String(constant=True, label="Last Result", doc="""
         The transcipt of the highest confidence RecognitionAlternative
         of the last RecognitionResult. Please note we strip the
         transcript for leading spaces.""")
-
-    _starts = param.Integer(constant=True, doc="""
-        Integer used to signal the start action.""")
-
-    _stops = param.Integer(constant=True, doc="""
-        Integer used to signal the stop action.""")
-
-    _aborts = param.Integer(constant=True, doc="""
-        Integer used to signal the abort action""")
 
     _grammars = param.List(constant=True, doc="""
         List used to transfer the serialized grammars from server to
@@ -388,38 +379,15 @@ class SpeechToText(Widget):
     _widget_type = _BkSpeechToText
 
     _rename = {
-        "start": None,
-        "stop": None,
-        "abort": None,
+        "value": None,
         "grammars": None,
-        "results_last": None,
-        "_starts": "starts",
-        "_stops": "stops",
-        "_aborts": "aborts",
         "_grammars": "grammars",
     }
 
     def __init__(self, **params):
         super().__init__(**params)
-
-        self.start = self._start
-        self.stop = self._stop
-        self.abort = self._abort
-
         if self.grammars:
             self._update_grammars()
-
-    def _start(self, *_):
-        with param.edit_constant(self):
-            self._starts += 1
-
-    def _stop(self, *_):
-        with param.edit_constant(self):
-            self._stops += 1
-
-    def _abort(self, *_):
-        with param.edit_constant(self):
-            self._aborts += 1
 
     def __repr__(self, depth=None):
         # Custom repr needed to avoid infinite recursion because this Parameterized class has
@@ -439,20 +407,24 @@ class SpeechToText(Widget):
         # pylint: disable=unsubscriptable-object
         with param.edit_constant(self):
             if self.results and "alternatives" in self.results[-1]:
-                self.results_last = (self.results[-1]["alternatives"][0]["transcript"]).lstrip()
+                self.value = (self.results[-1]["alternatives"][0]["transcript"]).lstrip()
             else:
-                self.results_last = ""
+                self.value = ""
 
     @property
     def results_deserialized(self):
-        """Returns the results as a List of RecognitionResults"""
+        """
+        Returns the results as a List of RecognitionResults
+        """
         return RecognitionResult.create_from_list(self.results)
 
     @property
     def results_as_html(self) -> str:
-        """Returns the `results` formatted as html
+        """
+        Returns the `results` formatted as html
 
-        Convenience method for ease of use"""
+        Convenience method for ease of use
+        """
         if not self.results:
             return "No results"
         html = "<div class='pn-speech-recognition-result'>"

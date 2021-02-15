@@ -1,23 +1,26 @@
 """Bokeh Model of the Panel SpeechToText widget"""
-from bokeh.core.properties import Any, Dict, Int, List, String
-from bokeh.core.property.primitive import Bool
+from bokeh.core.properties import Any, Bool, Dict, Int, List, String
 from bokeh.models.widgets.widget import Widget
 
 
 class SpeechToText(Widget):
-    """Bokeh Model of the Panel SpeechToText widget
+    """
+    Bokeh Model of the Panel SpeechToText widget
 
     Controls the speech recognition service.
 
-    On some browsers, like Chrome, using Speech Recognition on a web page involves a server-based
-    recognition engine. Your audio is sent to a web service for recognition processing, so it won't
-    work offline.
+    On some browsers, like Chrome, using Speech Recognition on a web
+    page involves a server-based recognition engine. Your audio is
+    sent to a web service for recognition processing, so it won't work
+    offline.
 
-    Wraps the HTML5 SpeechRecognition API.
-    See https://developer.mozilla.org/en-US/docs/Web/API/SpeechRecognition"""
-    starts = Int()
-    stops = Int()
-    aborts = Int()
+    Wraps the HTML5 SpeechRecognition API.  See
+    https://developer.mozilla.org/en-US/docs/Web/API/SpeechRecognition
+    """
+
+    start = Bool()
+    stop = Bool()
+    abort = Bool()
 
     grammars = List(Dict(String,Any))
     lang = String()
