@@ -83,6 +83,6 @@ class FastGridBaseTemplate(FastBaseTemplate, ReactTemplate):
     Combines the FastTemplate and the React template.
     """
 
-    _resources = dict(FaseBaseTemplate._resources, **ReactTemplate._resources)
+    _resources = dict(FastBaseTemplate._resources, **ReactTemplate._resources)
 
     __abstract = True
