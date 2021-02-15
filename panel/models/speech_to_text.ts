@@ -28,22 +28,20 @@ function htmlToElement(html: string) {
 }
 
 function deserializeGrammars(grammars: any[]){
-  if (grammars){
+  if (grammars) {
     var speechRecognitionList = new webkitSpeechGrammarList();
     for (let grammar of grammars){
-      if (grammar.src){
+      if (grammar.src)
         speechRecognitionList.addFromString(grammar.src, grammar.weight)
-      } else if (grammar.uri) {
+      else if (grammar.uri)
         speechRecognitionList.addFromURI(grammar.uri, grammar.weight)
-      }
     }
     return speechRecognitionList
-  } else {
-    return null;
-  }
+  } else
+    return null
 }
 
-function round(value: number){
+function round(value: number) {
   return Math.round((value + Number.EPSILON) * 100) / 100
 }
 
@@ -53,13 +51,16 @@ function serializeResults(results_: any) {
     let alternatives: { confidence: number; transcript: string; }[] = [];
     let item = { is_final: result.isFinal, alternatives: alternatives };
     for (let i = 0; i < result.length; i++) {
-      let alternative = { confidence: round(result[i].confidence), transcript: result[i].transcript };
-      alternatives.push(alternative);
+      let alternative = {
+	confidence: round(result[i].confidence),
+	transcript: result[i].transcript
+      };
+      alternatives.push(alternative)
     }
-    item.alternatives = alternatives;
-    results.push(item);
+    item.alternatives = alternatives
+    results.push(item)
   }
-  return results;
+  return results
 }
 
 export class SpeechToTextView extends HTMLBoxView {
@@ -78,83 +79,80 @@ export class SpeechToTextView extends HTMLBoxView {
     this.recognition.serviceURI = this.model.service_uri;
     this.setGrammars()
 
-    const this_ = this;
-
-    this.recognition.onresult = function(event: any) {
-      this_.model.results=serializeResults(event.results);
-      }
-    this.recognition.onerror = function(event: any) {
+    this.recognition.onresult = (event: any) => {
+      this.model.results = serializeResults(event.results)
+    }
+    this.recognition.onerror = (event: any) => {
       console.log("SpeechToText Error")
       console.log(event);
     }
-    this.recognition.onnomatch = function(event: any){
+    this.recognition.onnomatch = (event: any) => {
       console.log("SpeechToText No Match")
       console.log(event)
     }
 
-    this.recognition.onaudiostart = () => {this_.model.audio_started=true}
-    this.recognition.onaudioend = () => {this_.model.audio_started=false}
-    this.recognition.onsoundstart = () => {this.model.sound_started=true}
-    this.recognition.onsoundend = () => {this_.model.sound_started=false}
-    this.recognition.onspeechstart = () => {this_.model.speech_started=true}
-    this.recognition.onspeechend = () => {this_.model.speech_started=false}
-    this.recognition.onstart = function(){
-      this_.buttonEl.onclick = () => {this_.recognition.stop()}
-      this_.buttonEl.innerHTML = this_.iconStarted();
-      this_.buttonEl.setAttribute("title", titleStarted);
-      this_.model.started = true;
+    this.recognition.onaudiostart = () => this.model.audio_started = true
+    this.recognition.onaudioend = () => this.model.audio_started = false
+    this.recognition.onsoundstart = () => this.model.sound_started = true
+    this.recognition.onsoundend = () => this.model.sound_started = false
+    this.recognition.onspeechstart = () => this.model.speech_started=true
+    this.recognition.onspeechend = () => this.model.speech_started=false
+    this.recognition.onstart = () => {
+      this.buttonEl.onclick = () => {this.recognition.stop()}
+      this.buttonEl.innerHTML = this.iconStarted();
+      this.buttonEl.setAttribute("title", titleStarted);
+      this.model.started = true;
     }
-    this.recognition.onend = function(){
-      this_.buttonEl.onclick = () => {this_.recognition.start()}
-      this_.buttonEl.innerHTML = this_.iconNotStarted();
-      this_.buttonEl.setAttribute("title", titleNotStarted);
-      this_.model.started = false;
+    this.recognition.onend = () => {
+      this.buttonEl.onclick = () => { this.recognition.start() }
+      this.buttonEl.innerHTML = this.iconNotStarted();
+      this.buttonEl.setAttribute("title", titleNotStarted);
+      this.model.started = false;
     }
 
     this.buttonEl = htmlToElement(`<button class="bk bk-btn bk-btn-${this.model.button_type}" type="button" title="${titleNotStarted}"></button>`)
     this.buttonEl.innerHTML = this.iconNotStarted()
-    this.buttonEl.onclick = () => {this.recognition.start()}
+    this.buttonEl.onclick = () => this.recognition.start()
   }
 
   iconStarted(): string {
-    if (this.model.button_started!==''){
-      return this.model.button_started;
-    } else {
-      return iconStarted;
-    }
+    if (this.model.button_started!=='')
+      return this.model.button_started
+    else
+      return iconStarted
   }
+
   iconNotStarted(): string {
-    if (this.model.button_not_started!==''){
-      return this.model.button_not_started;
-    } else {
-      return iconNotStarted;
-    }
+    if (this.model.button_not_started!=='')
+      return this.model.button_not_started
+    else
+      return iconNotStarted
   }
+
   setIcon(): void {
-    if (this.model.started){
-      this.buttonEl.innerHTML = this.iconStarted();
-    } else {
-      this.buttonEl.innerHTML = this.iconNotStarted();
-    }
+    if (this.model.started)
+      this.buttonEl.innerHTML = this.iconStarted()
+    else
+      this.buttonEl.innerHTML = this.iconNotStarted()
   }
 
   connect_signals(): void {
     super.connect_signals()
 
-    this.connect(this.model.properties.starts.change, () => {this.recognition.start()})
-    this.connect(this.model.properties.stops.change, () => {this.recognition.stop()})
-    this.connect(this.model.properties.aborts.change, () => {this.recognition.abort()})
-    this.connect(this.model.properties.grammars.change, () => {this.setGrammars})
-    this.connect(this.model.properties.lang.change, () => {this.recognition.lang=this.model.lang})
-    this.connect(this.model.properties.continuous.change, () => {this.recognition.continuous=this.model.continuous})
-    this.connect(this.model.properties.interim_results.change, () => {this.recognition.interimResults=this.model.interim_results})
-    this.connect(this.model.properties.max_alternatives.change, () => {this.recognition.maxAlternatives=this.model.max_alternatives})
-    this.connect(this.model.properties.service_uri.change, () => {this.recognition.serviceURI=this.model.service_uri})
-    this.connect(this.model.properties.button_type.change, () => {this.buttonEl.className=`bk bk-btn bk-btn-${this.model.button_type}`})
+    this.connect(this.model.properties.starts.change, () => this.recognition.start())
+    this.connect(this.model.properties.stops.change, () => this.recognition.stop())
+    this.connect(this.model.properties.aborts.change, () => this.recognition.abort())
+    this.connect(this.model.properties.grammars.change, () => this.setGrammars)
+    this.connect(this.model.properties.lang.change, () => this.recognition.lang = this.model.lang)
+    this.connect(this.model.properties.continuous.change, () => this.recognition.continuous = this.model.continuous)
+    this.connect(this.model.properties.interim_results.change, () => this.recognition.interimResults = this.model.interim_results)
+    this.connect(this.model.properties.max_alternatives.change, () => this.recognition.maxAlternatives = this.model.max_alternatives)
+    this.connect(this.model.properties.service_uri.change, () => this.recognition.serviceURI = this.model.service_uri)
+    this.connect(this.model.properties.button_type.change, () => this.buttonEl.className = `bk bk-btn bk-btn-${this.model.button_type}`)
 
-    this.connect(this.model.properties.button_hide.change, () => {this.render()})
-    this.connect(this.model.properties.button_not_started.change, () => {this.setIcon()})
-    this.connect(this.model.properties.button_started.change, () => {this.setIcon()})
+    this.connect(this.model.properties.button_hide.change, () => this.render())
+    this.connect(this.model.properties.button_not_started.change, () => this.setIcon())
+    this.connect(this.model.properties.button_started.change, () => this.setIcon())
   }
 
   setGrammars(): void {
@@ -163,36 +161,32 @@ export class SpeechToTextView extends HTMLBoxView {
 
   render(): void {
     super.render()
-    if (!this.model.button_hide){
+    if (!this.model.button_hide)
       this.el.appendChild(this.buttonEl)
-    }
   }
 }
 
 export namespace SpeechToText {
   export type Attrs = p.AttrsOf<Props>
   export type Props = HTMLBox.Props & {
-  starts: p.Property<number>
-  stops: p.Property<number>
-  aborts: p.Property<any>
-
-  grammars: p.Property<any[]>
-  lang: p.Property<string>
-  continuous: p.Property<boolean>
-  interim_results: p.Property<boolean>
-  max_alternatives: p.Property<number>
-  service_uri: p.Property<string>
-  started: p.Property<boolean>
-  audio_started: p.Property<boolean>
-  sound_started: p.Property<boolean>
-  speech_started: p.Property<boolean>
-
-  button_type: p.Property<string>
-  button_hide: p.Property<boolean>
-  button_not_started: p.Property<string>
-  button_started: p.Property<string>
-
-  results: p.Property<any[]>
+    starts: p.Property<number>
+    stops: p.Property<number>
+    aborts: p.Property<any>
+    grammars: p.Property<any[]>
+    lang: p.Property<string>
+    continuous: p.Property<boolean>
+    interim_results: p.Property<boolean>
+    max_alternatives: p.Property<number>
+    service_uri: p.Property<string>
+    started: p.Property<boolean>
+    audio_started: p.Property<boolean>
+    sound_started: p.Property<boolean>
+    speech_started: p.Property<boolean>
+    button_type: p.Property<string>
+    button_hide: p.Property<boolean>
+    button_not_started: p.Property<string>
+    button_started: p.Property<string>
+    results: p.Property<any[]>
   }
 }
 
@@ -208,30 +202,27 @@ export class SpeechToText extends HTMLBox {
   static __module__ = "panel.models.speech_to_text"
 
   static init_SpeechToText(): void {
-  this.prototype.default_view = SpeechToTextView
+    this.prototype.default_view = SpeechToTextView
 
-  this.define<SpeechToText.Props>({
-    starts: [ p.Number, 0   ],
-    stops: [ p.Number, 0   ],
-    aborts: [ p.Number, 0   ],
-
-    grammars: [p.Array, []],
-    lang: [p.String, ""],
-    continuous: [ p.Boolean,   false ],
-    interim_results: [ p.Boolean,   false ],
-    max_alternatives: [ p.Number,   1 ],
-    service_uri: [p.String, ],
-    started: [ p.Boolean,   false ],
-    audio_started: [ p.Boolean,   false ],
-    sound_started: [ p.Boolean,   false ],
-    speech_started: [ p.Boolean,   false ],
-
-    button_type: [p.String, 'light'],
-    button_hide: [ p.Boolean,   false ],
-    button_not_started: [ p.String,   '' ],
-    button_started: [ p.String,   '' ],
-
-    results: [ p.Array, []],
-  })
+    this.define<SpeechToText.Props>({
+      starts: [ p.Number, 0   ],
+      stops: [ p.Number, 0   ],
+      aborts: [ p.Number, 0   ],
+      grammars: [p.Array, []],
+      lang: [p.String, ""],
+      continuous: [ p.Boolean,   false ],
+      interim_results: [ p.Boolean,   false ],
+      max_alternatives: [ p.Number,   1 ],
+      service_uri: [p.String, ],
+      started: [ p.Boolean,   false ],
+      audio_started: [ p.Boolean,   false ],
+      sound_started: [ p.Boolean,   false ],
+      speech_started: [ p.Boolean,   false ],
+      button_type: [p.String, 'light'],
+      button_hide: [ p.Boolean,   false ],
+      button_not_started: [ p.String,   '' ],
+      button_started: [ p.String,   '' ],
+      results: [ p.Array, []],
+    })
   }
 }
