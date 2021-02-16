@@ -192,6 +192,17 @@ setup_args = dict(
     cmdclass=_COMMANDS,
     packages=find_packages(),
     include_package_data=True,
+    data_files=[
+        (
+            "etc/jupyter/nbconfig/notebook.d",
+            ["jupyter-config/notebook.d/panel-client-jupyter.json"],
+        ),
+        # like `jupyter serverextension enable --sys-prefix`
+        (
+            "etc/jupyter/jupyter_notebook_config.d",
+            ["jupyter-config/jupyter_notebook_config.d/panel-client-jupyter.json"],
+        ),
+    ],
     classifiers=[
         "License :: OSI Approved :: BSD License",
         "Development Status :: 5 - Production/Stable",
