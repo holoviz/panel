@@ -1,12 +1,9 @@
 from urllib.parse import urljoin
 
-from notebook.notebookapp import NotebookApp
 from tornado.web import StaticFileHandler
-from tornado.web import Application
 
-from .server import PANEL_DIST_DIR
+from .resources import DIST_DIR
 
-print('ABC')
 
 def load_jupyter_server_extension(notebook_app):
     web_app = notebook_app.web_app
@@ -14,6 +11,10 @@ def load_jupyter_server_extension(notebook_app):
     web_app.add_handlers(
         host_pattern=".*$",
         host_handlers=[
-            (route_pattern, StaticFileHandler, {"path": PANEL_DIST_DIR}),
+            (
+                route_pattern,
+                StaticFileHandler,
+                {"path": DIST_DIR}
+            ),
         ]
     )
