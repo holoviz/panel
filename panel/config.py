@@ -80,6 +80,9 @@ class _config(_base_config):
         Whether to set custom Signature which allows tab-completion
         in some IDEs and environments.""")
 
+    autoreload = param.Boolean(default=False, doc="""
+        Whether to autoreload server when script changes.""")
+
     safe_embed = param.Boolean(default=False, doc="""
         Ensure all bokeh property changes trigger events which are
         embedded. Useful when only partial updates are made in an
