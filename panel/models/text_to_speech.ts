@@ -15,104 +15,114 @@ function toVoicesList(voices: SpeechSynthesisVoice[]) {
   }
   return voicesList;
 }
+
 export class TextToSpeechView extends HTMLBoxView {
   model: TextToSpeech
   voices: SpeechSynthesisVoice[]
+  _callback: any
 
   initialize(): void {
     super.initialize()
 
-    this.model.paused = speechSynthesis.paused;
-    this.model.pending = speechSynthesis.pending;
-    this.model.speaking = speechSynthesis.speaking;
-
-    const this_=this;
-
-    // Hack: The only way to get these parameters updated
-    window.setInterval(function(){
-      // Without checking for diffs I can see from notebook activity indicator that communication is sent from
-      // browser to server all the time.
-      if (this_.model.paused !== speechSynthesis.paused){
-        this_.model.paused = speechSynthesis.paused;
-      }
-      if (this_.model.pending !== speechSynthesis.pending){
-        this_.model.pending = speechSynthesis.pending;
-      }
-      if (this_.model.speaking !== speechSynthesis.speaking){
-        this_.model.speaking !== speechSynthesis.speaking;
-      }
-    }, 1000);
+    this.model.paused = speechSynthesis.paused
+    this.model.pending = speechSynthesis.pending
+    this.model.speaking = speechSynthesis.speaking
 
     // Hack: Keeps speeking for longer texts
     // https://stackoverflow.com/questions/21947730/chrome-speech-synthesis-with-longer-texts
-    window.setInterval(function(){
+    this._callback = window.setInterval(function(){
       if (!speechSynthesis.paused && speechSynthesis.speaking){
         window.speechSynthesis.resume();
       }
     }, 10000)
 
-    function populateVoiceList() {
-      if(typeof speechSynthesis === 'undefined') {
-        return;
-      }
+    const populateVoiceList = () => {
+      if(typeof speechSynthesis === 'undefined')
+        return
 
       // According to https://talkrapp.com/speechSynthesis.html not all voices are available
       // The article includes code for ios to handle this. Might be useful.
-      this_.voices = speechSynthesis.getVoices();
-      if (!this_.voices){
-        return;
-      }
+      this.voices = speechSynthesis.getVoices();
+      if (!this.voices)
+        return
 
-      this_.model.voices = toVoicesList(this_.voices);
+      this.model.voices = toVoicesList(this.voices);
     }
     populateVoiceList();
-    if (typeof speechSynthesis !== 'undefined' && speechSynthesis.onvoiceschanged !== undefined) {
-      speechSynthesis.onvoiceschanged = populateVoiceList;
-    }
+    if (typeof speechSynthesis !== 'undefined' && speechSynthesis.onvoiceschanged !== undefined)
+      speechSynthesis.onvoiceschanged = populateVoiceList
+  }
+
+  
+  remove(): void {
+    if (this._callback != null)
+      clearInterval(this._callback)
+    speechSynthesis.cancel()
+    super.remove()
   }
 
   connect_signals(): void {
-      super.connect_signals()
+    super.connect_signals()
 
-      this.connect(this.model.properties.speaks.change, () => {
-        let utterance = new SpeechSynthesisUtterance(this.model.speaks.text);
-        utterance.pitch=this.model.speaks.pitch
-        utterance.volume=this.model.speaks.volume
-        utterance.rate=this.model.speaks.rate
-        if (this.model.voices){
-          for (let voice of this.voices){
-            if (voice.name===this.model.speaks.voice){
-              utterance.voice = voice;
-            }
+    this.connect(this.model.properties.speak.change, () => {
+      this.speak()
+    })
+    this.connect(this.model.properties.pause.change, () => {
+      this.model.pause = false
+      speechSynthesis.pause();
+    })
+    this.connect(this.model.properties.resume.change, () => {
+      this.model.resume = false
+      speechSynthesis.resume()
+    })
+    this.connect(this.model.properties.cancel.change, () => {
+      this.model.cancel = false
+      speechSynthesis.cancel()
+    })
+  }
 
-          }
-        }
-        speechSynthesis.speak(utterance);
-        this.model.paused = speechSynthesis.paused;
-      })
-      this.connect(this.model.properties.pauses.change, () => {
-        speechSynthesis.pause();
-      })
-      this.connect(this.model.properties.resumes.change, () => {
-        // Hack: Two times resume seems to work better in Win10 Chrome
-        speechSynthesis.resume();
-      })
-      this.connect(this.model.properties.cancels.change, () => {
-        speechSynthesis.cancel();
-      })
+  speak(): void {
+    let utterance = new SpeechSynthesisUtterance(this.model.speak.text)
+    utterance.pitch = this.model.speak.pitch
+    utterance.volume = this.model.speak.volume
+    utterance.rate = this.model.speak.rate
+    if (this.model.voices) {
+      for (let voice of this.voices) {
+        if (voice.name === this.model.speak.voice)
+          utterance.voice = voice
+      }
+    }
+
+    utterance.onpause = () => this.model.paused = true
+
+    utterance.onstart = () => {
+      this.model.speaking = true
+      this.model.paused = false
+      this.model.pending = speechSynthesis.pending
+    }
+
+    utterance.onresume = () => this.model.paused = false
+
+    utterance.onend = () => {
+      this.model.speaking = false
+      this.model.paused = false
+      this.model.pending = speechSynthesis.pending
+    }
+
+    speechSynthesis.speak(utterance)
+    this.model.paused = speechSynthesis.paused
+    this.model.pending = speechSynthesis.pending
   }
 
   render(): void {
     super.render()
-
     // Hack: This will make sure voices are assigned when
     // Bokeh/ Panel is served first time with --show option.
-    if (!this.model.voices){
-      this.model.voices = toVoicesList(this.voices);
-    }
+    if (!this.model.voices)
+      this.model.voices = toVoicesList(this.voices)
+    if (this.model.speak != null && this.model.speak.text)
+      this.speak()
   }
-
-
 }
 
 export namespace TextToSpeech {
@@ -122,11 +132,10 @@ export namespace TextToSpeech {
     pending: p.Property<boolean>
     speaking: p.Property<boolean>
     voices: p.Property<any[]>
-
-    cancels: p.Property<number>
-    pauses: p.Property<number>
-    resumes: p.Property<number>
-    speaks: p.Property<any>
+    cancel: p.Property<boolean>
+    pause: p.Property<boolean>
+    resume: p.Property<boolean>
+    speak: p.Property<any>
   }
 }
 
@@ -144,15 +153,15 @@ export class TextToSpeech extends HTMLBox {
   static init_TextToSpeech(): void {
     this.prototype.default_view = TextToSpeechView
 
-    this.define<TextToSpeech.Props>({
-      paused: [ p.Boolean,   false ],
-      pending: [ p.Boolean,   false ],
-      speaking: [ p.Boolean,   false ],
-      voices: [p.Array, []],
-      cancels: [ p.Number, 0     ],
-      pauses: [ p.Number, 0     ],
-      resumes: [ p.Number, 0     ],
-      speaks: [ p.Any,    {}    ],
-    })
+    this.define<TextToSpeech.Props>(({Any, Array, Boolean}) => ({
+      paused:   [ Boolean,    false ],
+      pending:  [ Boolean,    false ],
+      speaking: [ Boolean,    false ],
+      voices:   [ Array(Any),    [] ],
+      cancel:   [ Boolean,    false ],
+      pause:    [ Boolean,    false ],
+      resume:   [ Boolean,    false ],
+      speak:    [ Any,        {}    ],
+    }))
   }
 }
