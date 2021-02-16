@@ -236,9 +236,9 @@ def test_can_speak():
     # When
     speaker = TextToSpeech()
     speaker.value = text
-    utterance = speaker._speaks
-    # Then
-    assert utterance["text"] == text
+
+    model = speaker.get_root()
+    assert model.speak["text"] == text
 
 
 def test_can_set_voices():

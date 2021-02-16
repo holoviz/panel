@@ -100,11 +100,10 @@ class Utterance(param.Parameterized):
         volume that the utterance will be spoken at expressed as a
         number between 0 and 1.""")
 
-    def __init__(self, voices=None, **params):
+    def __init__(self, **params):
+        voices = params.pop('voices', [])
         super().__init__(**params)
         self._voices_by_language = {}
-        if not voices:
-            voices = []
         self.set_voices(voices)
 
     def to_dict(self, include_uuid=True):
