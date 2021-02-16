@@ -480,7 +480,7 @@ class BasicTemplate(BaseTemplate):
         if self._js:
             js_file = os.path.basename(self._js)
             js_files[f'base_{js_file}'] = dist_path + f'bundled/{name}/{js_file}'
-        js_modules = dict(self._resources['js_modules'])
+        js_modules = dict(self._resources.get('js_modules', {}))
         for jsname, js in js_modules.items():
             js_path = url_path(js)
             if jsname in self._resources.get('tarball'):
