@@ -9,13 +9,13 @@ from panel.io.state import state
 
 def test_record_modules():
     with record_modules():
-        import panel.tests.io.reload_module
+        import panel.tests.io.reload_module # noqa
     assert _modules == {'panel.tests.io.reload_module'}
     _modules.clear()
     
 def test_record_modules_not_stdlib():
     with record_modules():
-        import audioop
+        import audioop # noqa
     assert _modules == set()
     _modules.clear()
 
