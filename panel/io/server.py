@@ -177,7 +177,7 @@ class DocHandler(BkDocHandler):
 per_app_patterns[0] = (r'/?', DocHandler)
 
 def modify_document(self, doc):
-    from bokeh.io.doc import set_curdoc
+    from bokeh.io.doc import set_curdoc as bk_set_curdoc
     from ..config import config
 
     if config.autoreload:
@@ -202,10 +202,11 @@ def modify_document(self, doc):
     doc._modules.append(module)
 
     old_doc = curdoc()
-    set_curdoc(doc)
+    bk_set_curdoc(doc)
     old_io = self._monkeypatch_io()
 
     if config.autoreload:
+        set_curdoc(doc)
         state.onload(autoreload_watcher)
 
     try:
