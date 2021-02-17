@@ -218,7 +218,7 @@ def modify_document(self, doc):
         self._runner.run(module, post_check)
     finally:
         self._unmonkeypatch_io(old_io)
-        set_curdoc(old_doc)
+        bk_set_curdoc(old_doc)
 
 CodeHandler.modify_document = modify_document
 
