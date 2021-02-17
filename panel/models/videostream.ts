@@ -42,7 +42,7 @@ export class VideoStreamView extends PanelHTMLBoxView {
       clearInterval(this.timer)
       this.timer = null
     }
-    if (this.model.timeout > 0)
+    if (this.model.timeout != null && this.model.timeout > 0)
       this.timer = setInterval(() => this.snapshot(), this.model.timeout as any)
   }
 
@@ -98,7 +98,7 @@ export namespace VideoStream {
     format: p.Property<string>
     paused: p.Property<boolean>
     snapshot: p.Property<boolean>
-    timeout: p.Property<number>
+    timeout: p.Property<number | null>
     value: p.Property<any>
   }
 }
@@ -117,12 +117,12 @@ export class VideoStream extends HTMLBox {
   static init_VideoStream(): void {
     this.prototype.default_view = VideoStreamView
 
-    this.define<VideoStream.Props>(({Any, Boolean, Number, String}) => ({
-      format:   [ String,  'png' ],
-      paused:   [ Boolean, false ],
-      snapshot: [ Boolean, false ],
-      timeout:  [ Number,      0 ],
-      value:    [ Any            ]
+    this.define<VideoStream.Props>(({Any, Boolean, Int, Nullable, String}) => ({
+      format:   [ String,       'png' ],
+      paused:   [ Boolean,      false ],
+      snapshot: [ Boolean,      false ],
+      timeout:  [ Nullable(Int), null ],
+      value:    [ Any                 ]
     }))
 
     this.override<VideoStream.Props>({
