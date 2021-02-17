@@ -24,6 +24,8 @@ from ..models.speech_to_text import SpeechToText as _BkSpeechToText
 from .base import Widget
 from .button import BUTTON_TYPES
 
+BUTTON_TYPES = BUTTON_TYPES+['light', 'dark']
+
 
 class Language(param.Parameterized):
 
