@@ -16,6 +16,7 @@ from bokeh.command.util import build_single_handler_applications
 from ..auth import OAuthProvider
 from ..config import config
 from ..io.rest import REST_PROVIDERS
+from ..io.reload import record_modules, watch
 from ..io.server import INDEX_HTML, get_static_routes
 from ..io.state import state
 from ..util import edit_readonly
@@ -116,6 +117,10 @@ class Serve(_BkServe):
         ('--warm', dict(
             action  = 'store_true',
             help    = "Whether to execute scripts on startup to warm up the server."
+        )),
+        ('--autoreload', dict(
+            action  = 'store_true',
+            help    = "Whether to autoreload source when script changes."
         ))
     )
 
@@ -148,18 +153,25 @@ class Serve(_BkServe):
         with edit_readonly(state):
             state.base_url = urljoin('/', prefix)
 
-        if args.warm:
-            argvs = {f: args.args for f in files}
-            applications = build_single_handler_applications(files, argvs)
-            for app in applications.values():
-                app.create_document()
-
         # Handle tranquilized functions in the supplied functions
         if args.rest_provider in REST_PROVIDERS:
             pattern = REST_PROVIDERS[args.rest_provider](files, args.rest_endpoint)
             patterns.extend(pattern)
         elif args.rest_provider is not None:
             raise ValueError("rest-provider %r not recognized." % args.rest_provider)
+
+        config.autoreload = args.autoreload
+
+        if config.autoreload:
+            for f in files:
+                watch(f)
+
+        if args.warm or args.autoreload:
+            argvs = {f: args.args for f in files}
+            applications = build_single_handler_applications(files, argvs)
+            with record_modules():
+                for app in applications.values():
+                    app.create_document()
 
         config.session_history = args.session_history
         if args.rest_session_info:

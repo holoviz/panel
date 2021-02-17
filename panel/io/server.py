@@ -2,11 +2,13 @@
 Utilities for creating bokeh Server instances.
 """
 import datetime as dt
+import html
 import inspect
 import os
 import pathlib
 import signal
 import sys
+import traceback
 import threading
 import uuid
 
@@ -21,6 +23,7 @@ import bokeh.command.util
 
 # Bokeh imports
 from bokeh.application import Application as BkApplication
+from bokeh.application.handlers.code import CodeHandler
 from bokeh.application.handlers.function import FunctionHandler
 from bokeh.command.util import build_single_handler_application
 from bokeh.document.events import ModelChangedEvent
@@ -39,6 +42,7 @@ from tornado.web import RequestHandler, StaticFileHandler, authenticated
 from tornado.wsgi import WSGIContainer
 
 # Internal imports
+from .reload import autoreload_watcher
 from .resources import BASE_TEMPLATE, Bundle, Resources
 from .state import state
 
@@ -173,6 +177,71 @@ class DocHandler(BkDocHandler):
         self.write(page)
 
 per_app_patterns[0] = (r'/?', DocHandler)
+
+def modify_document(self, doc):
+    from bokeh.io.doc import set_curdoc as bk_set_curdoc
+    from ..config import config
+
+    if config.autoreload:
+        path = self._runner.path
+        argv = self._runner._argv
+        handler = type(self)(filename=path, argv=argv)
+        self._runner = handler._runner
+
+    module = self._runner.new_module()
+
+    # If no module was returned it means the code runner has some permanent
+    # unfixable problem, e.g. the configured source code has a syntax error
+    if module is None:
+        return
+
+    # One reason modules are stored is to prevent the module
+    # from being gc'd before the document is. A symptom of a
+    # gc'd module is that its globals become None. Additionally
+    # stored modules are used to provide correct paths to
+    # custom models resolver.
+    sys.modules[module.__name__] = module
+    doc._modules.append(module)
+
+    old_doc = curdoc()
+    bk_set_curdoc(doc)
+    old_io = self._monkeypatch_io()
+
+    if config.autoreload:
+        set_curdoc(doc)
+        state.onload(autoreload_watcher)
+
+    try:
+        def post_check():
+            newdoc = curdoc()
+            # script is supposed to edit the doc not replace it
+            if newdoc is not doc:
+                raise RuntimeError("%s at '%s' replaced the output document" % (self._origin, self._runner.path))
+
+        def handle_exception(handler, e):
+            from bokeh.application.handlers.handler import handle_exception
+            from ..pane import HTML
+
+            # Clean up
+            del sys.modules[module.__name__]
+            doc._modules.remove(module)
+            bokeh.application.handlers.code_runner.handle_exception = handle_exception
+            tb = html.escape(traceback.format_exc())
+
+            # Serve error
+            HTML(
+                f'<b>{type(e).__name__}</b>: {e}</br><pre style="overflow-y: scroll">{tb}</pre>',
+                css_classes=['alert', 'alert-danger'], sizing_mode='stretch_width'
+            ).servable()
+
+        if config.autoreload:
+            bokeh.application.handlers.code_runner.handle_exception = handle_exception
+        self._runner.run(module, post_check)
+    finally:
+        self._unmonkeypatch_io(old_io)
+        bk_set_curdoc(old_doc)
+
+CodeHandler.modify_document = modify_document
 
 #---------------------------------------------------------------------
 # Public API
