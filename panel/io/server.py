@@ -21,7 +21,7 @@ import bokeh.command.util
 
 # Bokeh imports
 from bokeh.application import Application as BkApplication
-from bokeh.application.handlers.code import CodeHandler, CodeRunner
+from bokeh.application.handlers.code import CodeHandler
 from bokeh.application.handlers.function import FunctionHandler
 from bokeh.command.util import build_single_handler_application
 from bokeh.document.events import ModelChangedEvent

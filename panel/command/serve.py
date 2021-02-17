@@ -16,7 +16,7 @@ from bokeh.command.util import build_single_handler_applications
 from ..auth import OAuthProvider
 from ..config import config
 from ..io.rest import REST_PROVIDERS
-from ..io.reload import autoreload_watcher, record_modules, watch
+from ..io.reload import record_modules, watch
 from ..io.server import INDEX_HTML, get_static_routes
 from ..io.state import state
 from ..util import edit_readonly

@@ -106,9 +106,8 @@ def record_modules():
             if not os.path.isfile(filepath): # e.g. built-in
                 continue
             _modules.add(module_name)
-        except Exception as e:
+        except Exception:
             continue
-
 
 def _reload(module=None):
     if module is not None:
@@ -118,7 +117,6 @@ def _reload(module=None):
         _callbacks[state.curdoc].stop()
         del _callbacks[state.curdoc]
     state.location.reload = True
-
 
 def _check_file(modify_times, path, module=None):
     try:
