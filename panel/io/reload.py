@@ -116,7 +116,8 @@ def _reload(module=None):
     if state.curdoc in _callbacks:
         _callbacks[state.curdoc].stop()
         del _callbacks[state.curdoc]
-    state.location.reload = True
+    if state.location:
+        state.location.reload = True
 
 def _check_file(modify_times, path, module=None):
     try:

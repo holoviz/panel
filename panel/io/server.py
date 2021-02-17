@@ -2,11 +2,13 @@
 Utilities for creating bokeh Server instances.
 """
 import datetime as dt
+import html
 import inspect
 import os
 import pathlib
 import signal
 import sys
+import traceback
 import threading
 import uuid
 
@@ -215,6 +217,25 @@ def modify_document(self, doc):
             # script is supposed to edit the doc not replace it
             if newdoc is not doc:
                 raise RuntimeError("%s at '%s' replaced the output document" % (self._origin, self._runner.path))
+
+        def handle_exception(handler, e):
+            from bokeh.application.handlers.handler import handle_exception
+            from ..pane import HTML
+
+            # Clean up
+            del sys.modules[module.__name__]
+            doc._modules.remove(module)
+            bokeh.application.handlers.code_runner.handle_exception = handle_exception
+            tb = html.escape(traceback.format_exc())
+
+            # Serve error
+            HTML(
+                f'<b>{type(e).__name__}</b>: {e}</br><pre style="overflow-y: scroll">{tb}</pre>',
+                css_classes=['alert', 'alert-danger'], sizing_mode='stretch_width'
+            ).servable()
+
+        if config.autoreload:
+            bokeh.application.handlers.code_runner.handle_exception = handle_exception
         self._runner.run(module, post_check)
     finally:
         self._unmonkeypatch_io(old_io)
