@@ -8,13 +8,6 @@ from panel.io.reload import (
 )
 from panel.io.state import state
 
-def test_record_modules():
-    if 'panel.tests.io.reload_module' in sys.modules:
-        del sys.modules['panel.tests.io.reload_module']
-    with record_modules():
-        import panel.tests.io.reload_module # noqa
-    assert _modules == {'panel.tests.io.reload_module'}
-    _modules.clear()
     
 def test_record_modules_not_stdlib():
     with record_modules():
