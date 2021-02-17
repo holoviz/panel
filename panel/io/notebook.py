@@ -50,6 +50,10 @@ LOAD_MIME = 'application/vnd.holoviews_load.v0+json'
 EXEC_MIME = 'application/vnd.holoviews_exec.v0+json'
 HTML_MIME = 'text/html'
 
+def _jupyter_server_extension_paths():
+    return [{"module": "panel.io.jupyter_server_extension"}]
+
+
 def push(doc, comm, binary=True):
     """
     Pushes events stored on the document across the provided comm.
