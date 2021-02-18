@@ -79,6 +79,10 @@ jobs:
       PPP: ${{ secrets.PPP }}
       PYPI: "https://upload.pypi.org/legacy/"
     steps:
+      - name: remove nodejs
+        run: |
+          sudo rm /usr/local/bin/node
+          sudo rm /usr/local/bin/npm
       - uses: actions/checkout@v2
         with:
           fetch-depth: "100"
@@ -90,7 +94,7 @@ jobs:
           miniconda-version: "latest"
       - uses: actions/setup-node@v2
         with:
-          node-version: '14'
+          node-version: '15'
       - name: Fetch unshallow
         run: git fetch --prune --tags --unshallow -f
       - name: conda setup
@@ -106,16 +110,6 @@ jobs:
           doit develop_install $CHANS_DEV -o build
           pip uninstall -y panel
           doit pip_on_conda
-      - name: npm check
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
-          npm install -g npm@latest
-          python -c "import bokeh.util.compiler; print(bokeh.util.compiler._nodejs_path())" | xargs which
-          python -c "import bokeh.util.compiler; print(bokeh.util.compiler._npmjs_path())" | xargs which
-          which node
-          which npm
-          npm -v
       - name: pip build
         run: |
           eval "$(conda shell.bash hook)"
