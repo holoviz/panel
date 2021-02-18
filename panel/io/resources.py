@@ -121,7 +121,6 @@ class Resources(BkResources):
 
     @property
     def render_js(self):
-        print('>>>>')
         return JS_RESOURCES.render(
             js_raw=self.js_raw, js_files=self.js_files,
             js_modules=self.js_modules, hashes=self.hashes
@@ -131,7 +130,8 @@ class Resources(BkResources):
 class Bundle(BkBundle):
 
     def __init__(self, **kwargs):
-        self.js_modules = kwargs.pop("js_modules", [])
+        from ..config import config
+        self.js_modules = kwargs.pop("js_modules", list(config.js_modules.values()))
         super().__init__(**kwargs)
 
     @classmethod
