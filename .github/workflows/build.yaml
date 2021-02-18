@@ -96,6 +96,11 @@ jobs:
           conda install -c pyviz "pyctdev>=0.5"
           doit ecosystem_setup
           doit env_create $CHANS_DEV --python=$PYTHON_VERSION
+      - name: npm setup
+        run: |
+          conda install -c conda-forge "nodejs=15.3.0"
+          npm install -g npm@latest
+          npm -v
       - name: env setup
         run: |
           eval "$(conda shell.bash hook)"
@@ -103,13 +108,6 @@ jobs:
           doit develop_install $CHANS_DEV -o build
           pip uninstall -y panel
           doit pip_on_conda
-      - name: npm setup
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
-          conda install -c conda-forge "nodejs=15.3.0"
-          npm install -g npm@latest
-          npm -v
       - name: pip build
         run: |
           eval "$(conda shell.bash hook)"
