@@ -1,5 +1,4 @@
 import os
-import sys
 
 from panel.io.location import Location
 from panel.io.reload import (
