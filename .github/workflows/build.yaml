@@ -88,6 +88,9 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v2
         with:
           miniconda-version: "latest"
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '14'
       - name: Fetch unshallow
         run: git fetch --prune --tags --unshallow -f
       - name: conda setup
@@ -96,11 +99,6 @@ jobs:
           conda install -c pyviz "pyctdev>=0.5"
           doit ecosystem_setup
           doit env_create $CHANS_DEV --python=$PYTHON_VERSION
-      - name: npm setup
-        run: |
-          conda install -c conda-forge "nodejs=15.3.0"
-          npm install -g npm@latest
-          npm -v
       - name: env setup
         run: |
           eval "$(conda shell.bash hook)"
@@ -108,6 +106,16 @@ jobs:
           doit develop_install $CHANS_DEV -o build
           pip uninstall -y panel
           doit pip_on_conda
+      - name: npm check
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          npm install -g npm@latest
+          python -c "import bokeh.util.compiler; print(bokeh.util.compiler._nodejs_path())" | xargs which
+          python -c "import bokeh.util.compiler; print(bokeh.util.compiler._npmjs_path())" | xargs which
+          which node
+          which npm
+          npm -v
       - name: pip build
         run: |
           eval "$(conda shell.bash hook)"
