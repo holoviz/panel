@@ -40,14 +40,13 @@ jobs:
           conda config --set always_yes True
           conda install -c pyviz "pyctdev>=0.5"
           doit ecosystem_setup
-      - name: npm setup
-        run: |
-          conda install -c conda-forge "nodejs=15.3.0"
-          npm install -g npm@latest
       - name: conda build
         run: doit package_build $CHANS_DEV $PKG_TEST_PYTHON --test-group=unit_deploy
       - name: npm setup
         run: |
+          conda install -c conda-forge "nodejs=15.3.0"
+          npm install -g npm@latest
+          npm -v
           echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_API_TOKEN }}" > $HOME/.npmrc
           npm whoami
       - name: dev deploy
@@ -110,6 +109,7 @@ jobs:
           conda activate test-environment
           conda install -c conda-forge "nodejs=15.3.0"
           npm install -g npm@latest
+          npm -v
       - name: pip build
         run: |
           eval "$(conda shell.bash hook)"
