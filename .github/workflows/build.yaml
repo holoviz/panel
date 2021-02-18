@@ -21,6 +21,10 @@ jobs:
       MPLBACKEND: "Agg"
       CONDA_UPLOAD_TOKEN: ${{ secrets.CONDA_UPLOAD_TOKEN }}
     steps:
+      - name: remove nodejs
+        run: |
+          sudo rm /usr/local/bin/node
+          sudo rm /usr/local/bin/npm
       - uses: actions/checkout@v2
         with:
           fetch-depth: "100"
@@ -30,6 +34,9 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v2
         with:
           miniconda-version: "latest"
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '15'
       - name: Fetch unshallow
         run: git fetch --prune --tags --unshallow -f
       - name: Set output
@@ -44,11 +51,9 @@ jobs:
         run: doit package_build $CHANS_DEV $PKG_TEST_PYTHON --test-group=unit_deploy
       - name: npm setup
         run: |
-          conda install -c conda-forge "nodejs=15.3.0"
-          npm install -g npm@latest
-          npm -v
           echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_API_TOKEN }}" > $HOME/.npmrc
           npm whoami
+          npm -v
       - name: dev deploy
         if: (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc'))
         run: |
