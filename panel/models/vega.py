@@ -4,7 +4,8 @@ Defines custom VegaPlot bokeh model to render Vega json plots.
 from bokeh.core.properties import Any, Dict, Instance, Nullable, String
 from bokeh.models import LayoutDOM, ColumnDataSource
 
-from ..util import classproperty, bundled_files
+from ..io.resources import bundled_files
+from ..util import classproperty
 
 
 class VegaPlot(LayoutDOM):

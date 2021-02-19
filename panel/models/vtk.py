@@ -10,7 +10,8 @@ from bokeh.core.has_props import abstract
 from bokeh.core.enums import enumeration
 from bokeh.models import HTMLBox, Model, ColorMapper
 
-from ..util import classproperty, bundled_files
+from ..io.resources import bundled_files
+from ..util import classproperty
 
 vtk_cdn = "https://unpkg.com/vtk.js@14.16.4/dist/vtk.js"
 

@@ -18,6 +18,9 @@ from bokeh.embed.bundle import (
 from bokeh.resources import Resources as BkResources
 from jinja2 import Environment, Markup, FileSystemLoader
 
+from ..util import url_path
+
+
 with open(Path(__file__).parent.parent / 'package.json') as f:
     package_json = json.load(f)
     js_version = package_json['version'].split('+')[0]
@@ -36,8 +39,8 @@ _env.filters['json'] = lambda obj: Markup(json.dumps(obj))
 _env.filters['conffilter'] = conffilter
 
 # Handle serving of the panel extension before session is loaded
-extension_dirs['panel'] = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'dist'))
-
+RESOURCE_MODE = 'server'
+PANEL_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 BASE_TEMPLATE = _env.get_template('base.html')
 DEFAULT_TITLE = "Panel Application"
 JS_RESOURCES = _env.get_template('js_resources.html')
@@ -45,9 +48,28 @@ CDN_DIST = f"https://unpkg.com/@holoviz/panel@{js_version}/dist/"
 LOCAL_DIST = "static/extensions/panel/"
 DIST_DIR = Path(__file__).parent.parent / 'dist'
 
+extension_dirs['panel'] = os.path.abspath(os.path.join(PANEL_DIR, 'dist'))
+
+
+def bundled_files(model, file_type='javascript'):
+    bdir = os.path.join(PANEL_DIR, 'dist', 'bundled', model.__name__.lower())
+    name = model.__name__.lower()
+    
+    files = []
+    for url in getattr(model, f"__{file_type}_raw__", []):
+        filepath = url_path(url)
+        test_filepath = filepath.split('?')[0]
+        if RESOURCE_MODE0 == 'server' and os.path.isfile(os.path.join(bdir, test_filepath)):
+            files.append(f'static/extensions/panel/bundled/{name}/{filepath}')
+        else:
+            files.append(url)
+    return files
+
 
 def bundle_resources(resources):
+    global RESOURCE_MODE
     js_resources = css_resources = resources
+    RESOURCE_MODE = mode = js_resources.mode if resources is not None else "inline"
 
     js_files = []
     js_raw = []
@@ -61,7 +83,6 @@ def bundle_resources(resources):
     css_raw.extend(css_resources.css_raw)
 
     extensions = _bundle_extensions(None, js_resources)
-    mode = js_resources.mode if resources is not None else "inline"
     if mode == "inline":
         js_raw.extend([ Resources._inline(bundle.artifact_path) for bundle in extensions ])
     elif mode == "server":
