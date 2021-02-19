@@ -24,8 +24,6 @@ import bokeh
 import param
 import numpy as np
 
-from bokeh.settings import settings
-
 datetime_types = (np.datetime64, dt.datetime, dt.date)
 
 if sys.version_info.major > 2:
