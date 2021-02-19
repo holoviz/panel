@@ -1,29 +1,9 @@
 import {Column, ColumnView} from "@bokehjs/models/layouts/column"
 import * as DOM from "@bokehjs/core/dom"
 import {classes, empty} from "@bokehjs/core/dom"
-import {Layoutable} from "@bokehjs/core/layout/layoutable"
 import {Column as ColumnLayout} from "@bokehjs/core/layout/grid"
-import {Size} from "@bokehjs/core/layout/types"
 import * as p from "@bokehjs/core/properties"
 import {color2css} from "@bokehjs/core/util/color"
-
-export class CollapseableColumnLayout extends ColumnLayout {
-  collapsed: boolean
-
-  constructor(items: Layoutable[], collapsed: boolean = false) {
-    super(items)
-    this.collapsed = collapsed
-  }
-
-  protected _measure_totals(row_heights: number[], col_widths: number[]): Size {
-    // Do not count height of collapsed height
-    const heights = this.collapsed ? row_heights.slice(0, 1) : row_heights
-    const last = heights.length-1
-    if (!this.collapsed)
-      heights[last] = heights[last] + 5
-    return super._measure_totals(heights, col_widths)
-  }
-}
 
 export class CardView extends ColumnView {
   model: Card
@@ -37,14 +17,12 @@ export class CardView extends ColumnView {
   }
 
   _update_layout(): void {
-    const items = this.child_views.map((child) => child.layout)
-    this.layout = new CollapseableColumnLayout(items, this.model.collapsed)
+    const views = this.model.collapsed ? this.child_views.slice(0, 1) : this.child_views
+    const items = views.map((child) => child.layout)
+    this.layout = new ColumnLayout(items)
     this.layout.rows = this.model.rows
     this.layout.spacing = [this.model.spacing, 0]
-    const sizing = this.box_sizing()
-    if (this.model.collapsed)
-      sizing.height = undefined
-    this.layout.set_sizing(sizing)
+    this.layout.set_sizing(this.box_sizing())
   }
 
   render(): void {
