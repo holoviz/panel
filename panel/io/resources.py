@@ -59,7 +59,7 @@ def bundled_files(model, file_type='javascript'):
     for url in getattr(model, f"__{file_type}_raw__", []):
         filepath = url_path(url)
         test_filepath = filepath.split('?')[0]
-        if RESOURCE_MODE0 == 'server' and os.path.isfile(os.path.join(bdir, test_filepath)):
+        if RESOURCE_MODE == 'server' and os.path.isfile(os.path.join(bdir, test_filepath)):
             files.append(f'static/extensions/panel/bundled/{name}/{filepath}')
         else:
             files.append(url)
