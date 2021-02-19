@@ -220,7 +220,7 @@ class Layoutable(param.Parameterized):
             params['sizing_mode'] = params.get('sizing_mode', config.sizing_mode)
         super().__init__(**params)
 
-    @pn.depends('loading', watch=True)
+    @param.depends('loading', watch=True)
     def _update_loading(self, *_):
         if self.loading:
             start_loading_spinner(self)

@@ -133,7 +133,7 @@ class DeckGL(PaneBase):
 
         if layout:
             properties = {p: getattr(self, p) for p in Layoutable.param
-                          if getattr(self, p) is not None}
+                          if getattr(self, p) is not None and p != 'loading'}
         else:
             properties = {}
         return data, dict(properties, tooltip=tooltip, mapbox_api_key=mapbox_api_key or "")
