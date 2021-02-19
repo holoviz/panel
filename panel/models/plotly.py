@@ -6,7 +6,8 @@ from bokeh.core.properties import (
 )
 from bokeh.models import LayoutDOM, ColumnDataSource
 
-from ..util import classproperty, bundled_files
+from ..io.resources import bundled_files
+from ..util import classproperty
 
 
 class PlotlyPlot(LayoutDOM):
