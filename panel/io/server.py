@@ -27,9 +27,6 @@ from bokeh.application.handlers.code import CodeHandler
 from bokeh.application.handlers.function import FunctionHandler
 from bokeh.command.util import build_single_handler_application
 from bokeh.document.events import ModelChangedEvent
-from bokeh.embed.bundle import (
-    _bundle_extensions, extension_dirs, bundle_models
-)
 from bokeh.embed.elements import html_page_for_render_items
 from bokeh.embed.util import RenderItem
 from bokeh.io import curdoc
@@ -45,15 +42,12 @@ from tornado.wsgi import WSGIContainer
 
 # Internal imports
 from .reload import autoreload_watcher
-from .resources import BASE_TEMPLATE, Bundle, Resources
+from .resources import BASE_TEMPLATE, Resources, bundle_resources
 from .state import state
 
 #---------------------------------------------------------------------
 # Private API
 #---------------------------------------------------------------------
-
-# Handle serving of the panel extension before session is loaded
-extension_dirs['panel'] = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'dist'))
 
 INDEX_HTML = os.path.join(os.path.dirname(__file__), '..', '_templates', "index.html")
 
@@ -136,41 +130,6 @@ state.on_session_created(_initialize_session_info)
 # Bokeh patches
 #---------------------------------------------------------------------
 
-def _bundle_resources(resources):
-    js_resources = css_resources = resources
-
-    js_files = []
-    js_raw = []
-    css_files = []
-    css_raw = []
-
-    js_files.extend(js_resources.js_files)
-    js_raw.extend(js_resources.js_raw)
-
-    css_files.extend(css_resources.css_files)
-    css_raw.extend(css_resources.css_raw)
-
-    extensions = _bundle_extensions(None, js_resources)
-    mode = js_resources.mode if resources is not None else "inline"
-    if mode == "inline":
-        js_raw.extend([ Resources._inline(bundle.artifact_path) for bundle in extensions ])
-    elif mode == "server":
-        js_files.extend([ bundle.server_url for bundle in extensions ])
-    elif mode == "cdn":
-        for bundle in extensions:
-            if bundle.cdn_url is not None:
-                js_files.append(bundle.cdn_url)
-            else:
-                js_raw.append(Resources._inline(bundle.artifact_path))
-    else:
-        js_files.extend([ bundle.artifact_path for bundle in extensions ])
-
-    ext = bundle_models(None)
-    if ext is not None:
-        js_raw.append(ext)
-
-    return Bundle.of(js_files, js_raw, css_files, css_raw, js_resources.hashes if js_resources else {})
-
 def server_html_page_for_session(session, resources, title, template=BASE_TEMPLATE,
                                  template_variables=None):
     render_item = RenderItem(
@@ -182,7 +141,7 @@ def server_html_page_for_session(session, resources, title, template=BASE_TEMPLA
     if template_variables is None:
         template_variables = {}
 
-    bundle = _bundle_resources(resources)
+    bundle = bundle_resources(resources)
     return html_page_for_render_items(bundle, {}, [render_item], title,
         template=template, template_variables=template_variables)
 

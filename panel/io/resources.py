@@ -10,7 +10,11 @@ from collections import OrderedDict
 from pathlib import Path
 from urllib.parse import urljoin
 
-from bokeh.embed.bundle import Bundle as BkBundle
+from bokeh.embed.bundle import (
+    Bundle as BkBundle, _bundle_extensions, extension_dirs,
+    bundle_models
+)
+
 from bokeh.resources import Resources as BkResources
 from jinja2 import Environment, Markup, FileSystemLoader
 
@@ -31,12 +35,51 @@ _env = get_env()
 _env.filters['json'] = lambda obj: Markup(json.dumps(obj))
 _env.filters['conffilter'] = conffilter
 
+# Handle serving of the panel extension before session is loaded
+extension_dirs['panel'] = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'dist'))
+
 BASE_TEMPLATE = _env.get_template('base.html')
 DEFAULT_TITLE = "Panel Application"
 JS_RESOURCES = _env.get_template('js_resources.html')
 CDN_DIST = f"https://unpkg.com/@holoviz/panel@{js_version}/dist/"
 LOCAL_DIST = "static/extensions/panel/"
 DIST_DIR = Path(__file__).parent.parent / 'dist'
+
+
+def bundle_resources(resources):
+    js_resources = css_resources = resources
+
+    js_files = []
+    js_raw = []
+    css_files = []
+    css_raw = []
+
+    js_files.extend(js_resources.js_files)
+    js_raw.extend(js_resources.js_raw)
+
+    css_files.extend(css_resources.css_files)
+    css_raw.extend(css_resources.css_raw)
+
+    extensions = _bundle_extensions(None, js_resources)
+    mode = js_resources.mode if resources is not None else "inline"
+    if mode == "inline":
+        js_raw.extend([ Resources._inline(bundle.artifact_path) for bundle in extensions ])
+    elif mode == "server":
+        js_files.extend([ bundle.server_url for bundle in extensions ])
+    elif mode == "cdn":
+        for bundle in extensions:
+            if bundle.cdn_url is not None:
+                js_files.append(bundle.cdn_url)
+            else:
+                js_raw.append(Resources._inline(bundle.artifact_path))
+    else:
+        js_files.extend([ bundle.artifact_path for bundle in extensions ])
+
+    ext = bundle_models(None)
+    if ext is not None:
+        js_raw.append(ext)
+
+    return Bundle.of(js_files, js_raw, css_files, css_raw, js_resources.hashes if js_resources else {})
 
 
 class Resources(BkResources):
