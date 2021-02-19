@@ -3,6 +3,7 @@ include LICENSE.txt
 include panel/.version
 include panel/*.json
 include panel/assets/*.gif
+include panel/assets/*.svg
 include panel/index.ts
 include panel/models/*.ts
 include panel/models/vtk/*.ts

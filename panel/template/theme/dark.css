@@ -105,5 +105,4 @@ html {
 .bk.pn-loading:before {
   background-color: inherit;
   border-color: inherit;
-  background-image: url('../../images/spinner_dark.svg');
 }

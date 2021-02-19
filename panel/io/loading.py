@@ -3,21 +3,24 @@ This module contains functionality to make any Panel component look
 like it is loading and disabled.
 """
 
+from ..config import config
+
 LOADING_INDICATOR_CSS_CLASS = "pn-loading"
 
-def _add_css_class(item, css_class):
+def _add_css_classes(item, css_classes):
     if not item.css_classes:
-        item.css_classes = [css_class]
+        item.css_classes = css_classes
     elif not css_class in item.css_classes:
-        item.css_classes.append(css_class)
+        new_classes = [css_class for css_class in css_classes
+                       if css_class not in item.css_classes]
+        item.css_classes = item.css_classes + new_classes
 
 
-def _remove_css_class(item, css_class):
-    if item.css_classes:
-        if item.css_classes == [css_class]:
-            item.css_classes = []
-        elif css_class in item.css_classes:
-            item.css_classes.remove(css_class)
+def _remove_css_classes(item, css_classes):
+    if not item.css_classes:
+        return
+    item.css_classes = [css_class for css_class in item.css_classes
+                        if css_class not in css_classes]
 
 
 def start_loading_spinner(*objects):
@@ -37,10 +40,10 @@ def start_loading_spinner(*objects):
     objects: tuple
         The panels to add the loading indicator to.
     """
+    css_classes = [LOADING_INDICATOR_CSS_CLASS, config.loading_spinner]
     for item in objects:
         if hasattr(item, "css_classes"):
-            _add_css_class(item, css_class=LOADING_INDICATOR_CSS_CLASS)
-
+            _add_css_classes(item, css_classes)
 
 def stop_loading_spinner(*objects):
     """
@@ -51,6 +54,8 @@ def stop_loading_spinner(*objects):
     objects: tuple
         The panels to remove the loading indicator from.
     """
+    css_classes = [LOADING_INDICATOR_CSS_CLASS, config.loading_spinner]
     for item in objects:
         if hasattr(item, "css_classes"):
-            _remove_css_class(item, css_class=LOADING_INDICATOR_CSS_CLASS)
+            _remove_css_classes(item, css_classes)
+
