@@ -106,6 +106,8 @@ export class DeckGLPlotView extends PanelHTMLBoxView {
   }
 
   _on_hover_event(event: any): void {
+    if (event.coordinate == null)
+      return
     const hoverState = {
       coordinate: event.coordinate,
       lngLat: event.lngLat,
