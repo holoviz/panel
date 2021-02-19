@@ -17,7 +17,6 @@ from bokeh.core.json_encoder import serialize_json
 from bokeh.core.templates import MACROS
 from bokeh.document import Document
 from bokeh.embed import server_document
-from bokeh.embed.bundle import bundle_for_objs_and_resources
 from bokeh.embed.elements import div_for_render_item, script_for_render_items
 from bokeh.embed.util import standalone_docs_json_and_render_items
 from bokeh.embed.wrappers import wrap_in_script_tag

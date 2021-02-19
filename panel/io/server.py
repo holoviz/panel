@@ -42,7 +42,7 @@ from tornado.wsgi import WSGIContainer
 
 # Internal imports
 from .reload import autoreload_watcher
-from .resources import BASE_TEMPLATE, Bundle, Resources, bundle_resources
+from .resources import BASE_TEMPLATE, Resources, bundle_resources
 from .state import state
 
 #---------------------------------------------------------------------
@@ -141,7 +141,7 @@ def server_html_page_for_session(session, resources, title, template=BASE_TEMPLA
     if template_variables is None:
         template_variables = {}
 
-    bundle = _bundle_resources(resources)
+    bundle = bundle_resources(resources)
     return html_page_for_render_items(bundle, {}, [render_item], title,
         template=template, template_variables=template_variables)
 
