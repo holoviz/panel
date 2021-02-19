@@ -69,10 +69,6 @@ class Layoutable(param.Parameterized):
         The height of the component (in pixels).  This can be either
         fixed or preferred height, depending on height sizing policy.""")
 
-    loading = param.Boolean(doc="""
-        Whether or not the Viewable is loading. If True a loading spinner
-        is shown on top of the Viewable.""")
-
     min_width = param.Integer(default=None, bounds=(0, None), doc="""
         Minimal width of the component (in pixels) if width is adjustable.""")
 
@@ -219,13 +215,6 @@ class Layoutable(param.Parameterized):
               type(self).sizing_mode is None):
             params['sizing_mode'] = params.get('sizing_mode', config.sizing_mode)
         super().__init__(**params)
-
-    @param.depends('loading', watch=True)
-    def _update_loading(self, *_):
-        if self.loading:
-            start_loading_spinner(self)
-        else:
-            stop_loading_spinner(self)
 
 
 class ServableMixin(object):
@@ -508,12 +497,23 @@ class Viewable(Renderable, Layoutable, ServableMixin):
     objects to be displayed in the notebook and on bokeh server.
     """
 
+    loading = param.Boolean(doc="""
+        Whether or not the Viewable is loading. If True a loading spinner
+        is shown on top of the Viewable.""")
+
     _preprocessing_hooks = []
 
     def __init__(self, **params):
         hooks = params.pop('hooks', [])
         super().__init__(**params)
         self._hooks = hooks
+
+    @param.depends('loading', watch=True)
+    def _update_loading(self, *_):
+        if self.loading:
+            start_loading_spinner(self)
+        else:
+            stop_loading_spinner(self)
 
     def __repr__(self, depth=0):
         return '{cls}({params})'.format(cls=type(self).__name__,
@@ -766,5 +766,3 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         add_to_doc(model, doc)
         if location: self._add_location(doc, location, model)
         return doc
-
-

@@ -27,7 +27,7 @@ class DivPaneBase(PaneBase):
 
     _bokeh_model = _BkHTML
 
-    _rename = {'object': 'text', 'loading': None}
+    _rename = {'object': 'text'}
 
     _updates = True
 
