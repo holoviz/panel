@@ -62,13 +62,30 @@ def loading_css():
     .bk.pn-loading.arcs:before {{
       background-image: url("data:image/svg+xml;base64,{b64}")
     }}
+    .bk.pn-loading.arcs:before {{
+        position: absolute;
+        height: 100%;
+        width: 100%;
+        content: '';
+        z-index: 1000;
+        background-color: rgb(255,255,255,0.50);
+        border-color: lightgray;
+        background-repeat: no-repeat;
+        background-position: center;
+        background-size: auto 50%;
+        border-width: 1px;
+
+    }}
+    .bk.pn-loading.arcs:hover:before {{
+        cursor: progress;
+    }}
     """
 
 
 def bundled_files(model, file_type='javascript'):
     bdir = os.path.join(PANEL_DIR, 'dist', 'bundled', model.__name__.lower())
     name = model.__name__.lower()
-    
+
     files = []
     for url in getattr(model, f"__{file_type}_raw__", []):
         filepath = url_path(url)
