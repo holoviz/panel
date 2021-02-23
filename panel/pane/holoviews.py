@@ -609,9 +609,11 @@ def link_axes(root_view, root_model):
 
             fig = p.state
             if fig.x_range.tags:
-                range_map[fig.x_range.tags[0]].append((fig, p, fig.xaxis[0], fig.x_range))
+                tag = tuple(tuple(t) if isinstance(t, list) else t for t in fig.x_range.tags[0])
+                range_map[tag].append((fig, p, fig.xaxis[0], fig.x_range))
             if fig.y_range.tags:
-                range_map[fig.y_range.tags[0]].append((fig, p, fig.yaxis[0], fig.y_range))
+                tag = tuple(tuple(t) if isinstance(t, list) else t for t in fig.y_range.tags[0])
+                range_map[tag].append((fig, p, fig.yaxis[0], fig.y_range))
 
     for (tag), axes in range_map.items():
         fig, p, ax, axis = axes[0]
