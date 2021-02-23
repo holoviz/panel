@@ -1,43 +1,37 @@
 import random
 
 import panel as pn
-from bokeh.models.sources import ColumnDataSource
 
 
 def test_constructor():
-    return pn.indicators.StatsPlotCard(title="Test")
+    return pn.indicators.TrendIndicator(title="Test")
 
 
 def test_app():
     data = {"x": [1, 2, 3, 4, 5], "y": [3800, 3700, 3800, 3900, 4000]}
-    source = ColumnDataSource(data)
 
-    stats_plot_card = pn.indicators.StatsPlotCard(
+    trend = pn.indicators.TrendIndicator(
         title="Panel Users",
-        value="4,000",
-        value2="+5.1%",
-        plot_data=source,
+        value=4000,
+        value_change=0.51,
+        data=data,
         height=200,
         width=200,
     )
 
     def update_datasource():
-        new_x = max(source.data["x"]) + 1
-        old_y = source.data["y"][-1]
+        new_x = max(data["x"]) + 1
+        old_y = data["y"][-1]
         new_y = random.uniform(-old_y * 0.05, old_y * 0.05) + old_y * 1.01
-        source.stream({"x": [new_x], "y": [new_y]}, rollover=30)
+        trend.stream({"x": [new_x], "y": [new_y]}, rollover=50)
 
-        y_series = source.data["y"]
-        stats_plot_card.value = f"{y_series[-1]:,.0f}"
+        y_series = data["y"]
+        trend.value = y_series[-1]
         change = y_series[-1] / y_series[-2] - 1
-        stats_plot_card.value_change = f"{change:.0%}"
-        if change > 0:
-            stats_plot_card.value_change_sign = 1
-        else:
-            stats_plot_card.value_change_sign = -1
+        trend.value_change = change
 
     settings_panel = pn.Param(
-        stats_plot_card,
+        trend,
         parameters=[
             "height",
             "width",
@@ -58,15 +52,15 @@ def test_app():
     )
     app = pn.Column(
         pn.pane.HTML(
-            "<h1>Panel - Streaming to StatsPlotCard<h1>",
+            "<h1>Panel - Streaming to TrendIndicator<h1>",
             sizing_mode="stretch_width",
             background="black",
             style={"color": "white", "padding": "15px"},
         ),
-        pn.Row(pn.WidgetBox(settings_panel), stats_plot_card, sizing_mode="stretch_both"),
+        pn.Row(pn.WidgetBox(settings_panel), trend, sizing_mode="stretch_both"),
         sizing_mode="stretch_both",
     )
-    pn.state.add_periodic_callback(update_datasource, period=250)
+    pn.state.add_periodic_callback(update_datasource, period=50)
     return app
 
 
