@@ -24,6 +24,7 @@ from .util import (
     abbreviated_repr, full_groupby, get_method_owner, is_parameterized,
     param_name, recursive_parameterized
 )
+from .reactive import Reactive
 from .viewable import Layoutable
 from .widgets import (
     Button, Checkbox, ColorPicker, DataFrame, DatePicker,
@@ -766,6 +767,8 @@ class ParamMethod(ReplacementPane):
             p = params[0]
             pobj = (p.inst or p.cls)
             ps = [_p.name for _p in params]
+            if isinstance(pobj, Reactive):
+                pobj.jslink(self._inner_layout, **{p: 'loading' for p in ps})
             watcher = pobj.param.watch(update_pane, ps, p.what)
             self._callbacks.append(watcher)
 

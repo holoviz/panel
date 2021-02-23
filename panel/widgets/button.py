@@ -96,6 +96,12 @@ class Button(_ClickButton):
 
     _widget_type = _BkButton
 
+    def jslink(self, target, code=None, args=None, bidirectional=False, **links):
+        links = {'event:'+self._event if p == 'value' else p: v for p, v in links.items()}
+        super().jslink(target, code, args, bidirectional, **links)
+
+    jslink.__doc__ = Widget.jslink.__doc__
+
     def _server_click(self, doc, ref, event):
         processing = bool(self._events)
         self._events.update({"clicks": self.clicks+1})
