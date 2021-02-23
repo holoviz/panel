@@ -10,6 +10,7 @@ import inspect
 import itertools
 
 from collections import OrderedDict, defaultdict, namedtuple
+from contextlib import contextmanager
 from six import string_types
 
 import param
@@ -53,6 +54,31 @@ def LiteralInputTyped(pobj):
     elif isinstance(pobj, param.List):
         return type(str('ListInput'), (LiteralInput,), {'type': list})
     return LiteralInput
+
+
+@contextmanager
+def set_values(*parameterizeds, **param_values):
+    """
+    Temporarily sets parameter values to the specified values on all
+    supplied Parameterized objects.
+
+    Arguments
+    ---------
+    parameterizeds: tuple(param.Parameterized)
+        Any number of parameterized objects.
+    param_values: dict
+        A dictionary of parameter names and temporary values.
+    """
+    old = []
+    for parameterized in parameterizeds:
+        old_values = {p: getattr(parameterized, p) for p in param_values}
+        old.append((parameterized, old_values))
+        parameterized.param.set_param(**param_values)
+    try:
+        yield
+    finally:
+        for parameterized, old_values in old:
+            parameterized.param.set_param(**old_values)
 
 
 class Param(PaneBase):
@@ -644,6 +670,9 @@ class ParamMethod(ReplacementPane):
     return any object which itself can be rendered as a Pane.
     """
 
+    loading_indicator = param.Boolean(default=False, doc="""
+        Whether to show loading indicator while pane is updating.""")
+
     def __init__(self, object=None, **params):
         super().__init__(object, **params)
         self._link_object_params()
@@ -726,8 +755,12 @@ class ParamMethod(ReplacementPane):
                     self._callbacks.append(watcher)
                     for p in params:
                         deps.append(p)
-            new_object = self.eval(self.object)
-            self._update_inner(new_object)
+            self._inner_layout.loading = self.loading_indicator
+            try:
+                new_object = self.eval(self.object)
+                self._update_inner(new_object)
+            finally:
+                self._inner_layout.loading = False
 
         for _, params in full_groupby(params, lambda x: (x.inst or x.cls, x.what)):
             p = params[0]
@@ -758,8 +791,12 @@ class ParamFunction(ParamMethod):
     priority = 0.6
 
     def _replace_pane(self, *args):
-        new_object = self.eval(self.object)
-        self._update_inner(new_object)
+        self._inner_layout.loading = self.loading_indicator
+        try:
+            new_object = self.eval(self.object)
+            self._update_inner(new_object)
+        finally:
+            self._inner_layout.loading = False
 
     def _link_object_params(self):
         deps = self.object._dinfo

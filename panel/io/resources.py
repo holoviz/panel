@@ -59,25 +59,8 @@ def loading_css():
         svg = f.read().replace('\n', '').format(color=config.loading_color)
     b64 = b64encode(svg.encode('utf-8')).decode('utf-8')
     return f"""
-    .bk.pn-loading.arcs:before {{
+    .bk.pn-loading.{config.loading_spinner}:before {{
       background-image: url("data:image/svg+xml;base64,{b64}")
-    }}
-    .bk.pn-loading.arcs:before {{
-        position: absolute;
-        height: 100%;
-        width: 100%;
-        content: '';
-        z-index: 1000;
-        background-color: rgb(255,255,255,0.50);
-        border-color: lightgray;
-        background-repeat: no-repeat;
-        background-position: center;
-        background-size: auto 50%;
-        border-width: 1px;
-
-    }}
-    .bk.pn-loading.arcs:hover:before {{
-        cursor: progress;
     }}
     """
 
