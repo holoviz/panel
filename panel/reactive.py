@@ -77,9 +77,6 @@ class Syncable(Renderable):
         # A dictionary of current property change events
         self._events = {}
 
-        # All parameter watchers on the component
-        self._callbacks = []
-
         # Any watchers associated with links between two objects
         self._links = []
         self._link_params()

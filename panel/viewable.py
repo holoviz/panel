@@ -368,6 +368,7 @@ class Renderable(param.Parameterized):
 
     def __init__(self, **params):
         super().__init__(**params)
+        self._callbacks = []
         self._documents = {}
         self._models = {}
         self._comms = {}
@@ -508,8 +509,9 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         super().__init__(**params)
         self._hooks = hooks
         self._update_loading()
+        watcher = self.param.watch(self._update_loading, 'loading')
+        self._callbacks.append(watcher)
 
-    @param.depends('loading', watch=True)
     def _update_loading(self, *_):
         if self.loading:
             start_loading_spinner(self)
