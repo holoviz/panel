@@ -507,6 +507,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         hooks = params.pop('hooks', [])
         super().__init__(**params)
         self._hooks = hooks
+        self._update_loading()
 
     @param.depends('loading', watch=True)
     def _update_loading(self, *_):
