@@ -768,7 +768,8 @@ class ParamMethod(ReplacementPane):
             pobj = (p.inst or p.cls)
             ps = [_p.name for _p in params]
             if isinstance(pobj, Reactive):
-                pobj.jslink(self._inner_layout, **{p: 'loading' for p in ps})
+                props = {p: 'loading' for p in ps if p in pobj._linkable_params}
+                pobj.jslink(self._inner_layout, **props)
             watcher = pobj.param.watch(update_pane, ps, p.what)
             self._callbacks.append(watcher)
 
@@ -808,7 +809,12 @@ class ParamFunction(ParamMethod):
         for dep in dep_params:
             grouped[id(dep.owner)].append(dep)
         for group in grouped.values():
-            watcher = group[0].owner.param.watch(self._replace_pane, [dep.name for dep in group])
+            pobj = group[0].owner
+            watcher = pobj.param.watch(self._replace_pane, [dep.name for dep in group])
+            if isinstance(pobj, Reactive):
+                props = {dep.name: 'loading' for dep in group
+                         if dep.name in pobj._linkable_params}
+                link = pobj.jslink(self._inner_layout, **props)
             self._callbacks.append(watcher)
 
     #----------------------------------------------------------------

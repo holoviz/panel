@@ -260,7 +260,8 @@ class CallbackGenerator(object):
         src_model = self._resolve_model(root_model, source, src_spec[0])
         ref = root_model.ref['id']
         link_id = id(link)
-        if any(link_id in cb.tags for cbs in src_model.js_property_callbacks.values() for cb in cbs):
+        if (any(link_id in cb.tags for cbs in src_model.js_property_callbacks.values() for cb in cbs) or
+            any(link_id in cb.tags for cbs in src_model.js_event_callbacks.values() for cb in cbs)):
             # Skip registering callback if already registered
             return
         references['source'] = src_model

@@ -428,5 +428,5 @@ class ReplacementPane(PaneBase):
         viewables: list(Viewable)
         """
         selected = super().select(selector)
-        selected += self._pane.select(selector)
+        selected += self._inner_layout.select(selector)
         return selected
