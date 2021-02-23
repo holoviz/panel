@@ -116,7 +116,8 @@ def _param_bind(function, *args, **kwargs):
         Positional arguments to bind to the function.
     kwargs: object, param.Parameter
         Keyword arguments to bind to the function. The keyword watch is special. If set to True the
-        function is always run.
+        function is always run when a parameter changes. If not specified (default) or set to False
+        the function is only run automatically when embedded in a panel.
 
     Returns
     -------
