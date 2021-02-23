@@ -24,7 +24,7 @@ from .io.notebook import push, push_on_root
 from .io.server import unlocked
 from .io.state import state
 from .util import edit_readonly, updating
-from .viewable import Layoutable, Renderable, Viewable
+from .viewable import Renderable, Viewable
 
 LinkWatcher = namedtuple("Watcher","inst cls fn mode onlychanged parameter_names what queued target links transformed bidirectional_watcher")
 
@@ -77,9 +77,6 @@ class Syncable(Renderable):
         # A dictionary of current property change events
         self._events = {}
 
-        # All parameter watchers on the component
-        self._callbacks = []
-
         # Any watchers associated with links between two objects
         self._links = []
         self._link_params()
@@ -129,7 +126,7 @@ class Syncable(Renderable):
         transforms.
         """
         return [p for p in self._synced_params if self._rename.get(p, False) is not None
-                and self._source_transforms.get(p, False) is not None]
+                and self._source_transforms.get(p, False) is not None] + ['loading']
 
     @property
     def _synced_params(self):
@@ -428,14 +425,14 @@ class Reactive(Syncable, Viewable):
         if parameters:
             linkable = parameters
         elif jslink:
-            linkable = self._linkable_params
+            linkable = self._linkable_params + ['loading']
         else:
             linkable = list(self.param)
 
-        params = [p for p in linkable if p not in Layoutable.param]
+        params = [p for p in linkable if p not in Viewable.param]
         controls = Param(self.param, parameters=params, default_layout=WidgetBox,
                          name='Controls')
-        layout_params = [p for p in linkable if p in Layoutable.param]
+        layout_params = [p for p in linkable if p in Viewable.param]
         if 'name' not in layout_params and self._rename.get('name', False) is not None and not parameters:
             layout_params.insert(0, 'name')
         style = Param(self.param, parameters=layout_params, default_layout=WidgetBox,
@@ -448,7 +445,7 @@ class Reactive(Syncable, Viewable):
                     widget.serializer = 'json'
             for p in layout_params:
                 widget = style._widgets[p]
-                widget.jslink(self, value=p, bidirectional=True)
+                widget.jslink(self, value=p, bidirectional=p != 'loading')
                 if isinstance(widget, LiteralInput):
                     widget.serializer = 'json'
 

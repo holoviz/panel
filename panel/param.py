@@ -10,6 +10,7 @@ import inspect
 import itertools
 
 from collections import OrderedDict, defaultdict, namedtuple
+from contextlib import contextmanager
 from six import string_types
 
 import param
@@ -23,6 +24,7 @@ from .util import (
     abbreviated_repr, full_groupby, get_method_owner, is_parameterized,
     param_name, recursive_parameterized
 )
+from .reactive import Reactive
 from .viewable import Layoutable
 from .widgets import (
     Button, Checkbox, ColorPicker, DataFrame, DatePicker,
@@ -53,6 +55,31 @@ def LiteralInputTyped(pobj):
     elif isinstance(pobj, param.List):
         return type(str('ListInput'), (LiteralInput,), {'type': list})
     return LiteralInput
+
+
+@contextmanager
+def set_values(*parameterizeds, **param_values):
+    """
+    Temporarily sets parameter values to the specified values on all
+    supplied Parameterized objects.
+
+    Arguments
+    ---------
+    parameterizeds: tuple(param.Parameterized)
+        Any number of parameterized objects.
+    param_values: dict
+        A dictionary of parameter names and temporary values.
+    """
+    old = []
+    for parameterized in parameterizeds:
+        old_values = {p: getattr(parameterized, p) for p in param_values}
+        old.append((parameterized, old_values))
+        parameterized.param.set_param(**param_values)
+    try:
+        yield
+    finally:
+        for parameterized, old_values in old:
+            parameterized.param.set_param(**old_values)
 
 
 class Param(PaneBase):
@@ -644,6 +671,9 @@ class ParamMethod(ReplacementPane):
     return any object which itself can be rendered as a Pane.
     """
 
+    loading_indicator = param.Boolean(default=False, doc="""
+        Whether to show loading indicator while pane is updating.""")
+
     def __init__(self, object=None, **params):
         super().__init__(object, **params)
         self._link_object_params()
@@ -726,13 +756,21 @@ class ParamMethod(ReplacementPane):
                     self._callbacks.append(watcher)
                     for p in params:
                         deps.append(p)
-            new_object = self.eval(self.object)
-            self._update_inner(new_object)
+            self._inner_layout.loading = self.loading_indicator
+            try:
+                new_object = self.eval(self.object)
+                self._update_inner(new_object)
+            finally:
+                self._inner_layout.loading = False
 
         for _, params in full_groupby(params, lambda x: (x.inst or x.cls, x.what)):
             p = params[0]
             pobj = (p.inst or p.cls)
             ps = [_p.name for _p in params]
+            if isinstance(pobj, Reactive) and self.loading_indicator:
+                props = {p: 'loading' for p in ps if p in pobj._linkable_params}
+                if props:
+                    pobj.jslink(self._inner_layout, **props)
             watcher = pobj.param.watch(update_pane, ps, p.what)
             self._callbacks.append(watcher)
 
@@ -758,8 +796,12 @@ class ParamFunction(ParamMethod):
     priority = 0.6
 
     def _replace_pane(self, *args):
-        new_object = self.eval(self.object)
-        self._update_inner(new_object)
+        self._inner_layout.loading = self.loading_indicator
+        try:
+            new_object = self.eval(self.object)
+            self._update_inner(new_object)
+        finally:
+            self._inner_layout.loading = False
 
     def _link_object_params(self):
         deps = self.object._dinfo
@@ -768,7 +810,13 @@ class ParamFunction(ParamMethod):
         for dep in dep_params:
             grouped[id(dep.owner)].append(dep)
         for group in grouped.values():
-            watcher = group[0].owner.param.watch(self._replace_pane, [dep.name for dep in group])
+            pobj = group[0].owner
+            watcher = pobj.param.watch(self._replace_pane, [dep.name for dep in group])
+            if isinstance(pobj, Reactive) and self.loading_indicator:
+                props = {dep.name: 'loading' for dep in group
+                         if dep.name in pobj._linkable_params}
+                if props:
+                    pobj.jslink(self._inner_layout, **props)
             self._callbacks.append(watcher)
 
     #----------------------------------------------------------------

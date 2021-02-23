@@ -6,6 +6,7 @@ import glob
 import json
 import os
 
+from base64 import b64encode
 from collections import OrderedDict
 from pathlib import Path
 from urllib.parse import urljoin
@@ -40,21 +41,34 @@ _env.filters['conffilter'] = conffilter
 
 # Handle serving of the panel extension before session is loaded
 RESOURCE_MODE = 'server'
-PANEL_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+PANEL_DIR = Path(__file__).parent.parent
+DIST_DIR = PANEL_DIR / 'dist'
+ASSETS_DIR = PANEL_DIR / 'assets'
 BASE_TEMPLATE = _env.get_template('base.html')
 DEFAULT_TITLE = "Panel Application"
 JS_RESOURCES = _env.get_template('js_resources.html')
 CDN_DIST = f"https://unpkg.com/@holoviz/panel@{js_version}/dist/"
 LOCAL_DIST = "static/extensions/panel/"
-DIST_DIR = Path(__file__).parent.parent / 'dist'
 
-extension_dirs['panel'] = os.path.abspath(os.path.join(PANEL_DIR, 'dist'))
+extension_dirs['panel'] = str(DIST_DIR)
+
+
+def loading_css():
+    from ..config import config
+    with open(ASSETS_DIR / f'{config.loading_spinner}_spinner.svg', encoding='utf-8') as f:
+        svg = f.read().replace('\n', '').format(color=config.loading_color)
+    b64 = b64encode(svg.encode('utf-8')).decode('utf-8')
+    return f"""
+    .bk.pn-loading.{config.loading_spinner}:before {{
+      background-image: url("data:image/svg+xml;base64,{b64}")
+    }}
+    """
 
 
 def bundled_files(model, file_type='javascript'):
     bdir = os.path.join(PANEL_DIR, 'dist', 'bundled', model.__name__.lower())
     name = model.__name__.lower()
-    
+
     files = []
     for url in getattr(model, f"__{file_type}_raw__", []):
         filepath = url_path(url)
@@ -136,6 +150,9 @@ class Resources(BkResources):
                 css_txt = f.read()
             if css_txt not in raw:
                 raw.append(css_txt)
+
+        if config.loading_spinner:
+            raw.append(loading_css())
         return raw + config.raw_css
 
     @property

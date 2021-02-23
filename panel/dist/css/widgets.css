@@ -1,12 +1,12 @@
 .bk.panel-widget-box {
-	min-height: 20px;
-	background-color: #f5f5f5;
-	border: 1px solid #e3e3e3;
-	border-radius: 4px;
-	-webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.05);
-	box-shadow: inset 0 1px 1px rgba(0,0,0,.05);
-	overflow-x: hidden;
-	overflow-y: hidden;
+  min-height: 20px;
+  background-color: #f5f5f5;
+  border: 1px solid #e3e3e3;
+  border-radius: 4px;
+  -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.05);
+  box-shadow: inset 0 1px 1px rgba(0,0,0,.05);
+  overflow-x: hidden;
+  overflow-y: hidden;
 }
 
 .scrollable {
@@ -14,67 +14,63 @@
 }
 
 progress {
-	appearance: none;
-	-moz-appearance: none;
-	-webkit-appearance: none;
-
-	border: none;
-	height: 20px;
-	background-color: whiteSmoke;
-	border-radius: 3px;
-	box-shadow: 0 2px 3px rgba(0,0,0,.5) inset;
-	color: royalblue;
-	position: relative;
-	margin: 0 0 1.5em;
+  appearance: none;
+  -moz-appearance: none;
+  -webkit-appearance: none;
+  border: none;
+  height: 20px;
+  background-color: whiteSmoke;
+  border-radius: 3px;
+  box-shadow: 0 2px 3px rgba(0,0,0,.5) inset;
+  color: royalblue;
+  position: relative;
+  margin: 0 0 1.5em;
 }
 
 progress[value]::-webkit-progress-bar {
-	background-color: whiteSmoke;
-	border-radius: 3px;
-	box-shadow: 0 2px 3px rgba(0,0,0,.5) inset;
+  background-color: whiteSmoke;
+  border-radius: 3px;
+  box-shadow: 0 2px 3px rgba(0,0,0,.5) inset;
 }
 
 progress[value]::-webkit-progress-value {
-	position: relative;
-
-	background-size: 35px 20px, 100% 100%, 100% 100%;
-	border-radius:3px;
+  position: relative;
+  background-size: 35px 20px, 100% 100%, 100% 100%;
+  border-radius:3px;
 }
 
 progress.active:not([value])::before {
-	background-position: 10%;
-	animation-name: stripes;
-	animation-duration: 3s;
-	animation-timing-function: linear;
-	animation-iteration-count: infinite;
+  background-position: 10%;
+  animation-name: stripes;
+  animation-duration: 3s;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
 }
 
 progress[value]::-moz-progress-bar {
-	background-size: 35px 20px, 100% 100%, 100% 100%;
-	border-radius:3px;
+  background-size: 35px 20px, 100% 100%, 100% 100%;
+  border-radius:3px;
 }
 
 progress:not([value])::-moz-progress-bar {
-	border-radius:3px;
-	background:
-	linear-gradient(-45deg, transparent 33%, rgba(0, 0, 0, 0.2) 33%, rgba(0, 0, 0, 0.2) 66%, transparent 66%) left/2.5em 1.5em;
-
+  border-radius:3px;
+  background: linear-gradient(-45deg, transparent 33%, rgba(0, 0, 0, 0.2) 33%, rgba(0, 0, 0, 0.2) 66%, transparent 66%) left/2.5em 1.5em;
 }
 
 progress.active:not([value])::-moz-progress-bar {
-	background-position: 10%;
-	animation-name: stripes;
-	animation-duration: 3s;
-	animation-timing-function: linear;
-	animation-iteration-count: infinite;
+  background-position: 10%;
+  animation-name: stripes;
+  animation-duration: 3s;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
 }
 
 progress.active:not([value])::-webkit-progress-bar {
-	background-position: 10%;
-	animation-name: stripes;
-	animation-duration: 3s;
-	animation-timing-function: linear;
-	animation-iteration-count: infinite;
+  background-position: 10%;
+  animation-name: stripes;
+  animation-duration: 3s;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
 }
 
 progress.primary[value]::-webkit-progress-value { background-color: #007bff; }
@@ -118,21 +114,19 @@ progress.dark:not([value])::before { background-color: #343a40; }
 progress.dark::-moz-progress-bar { background-color: #343a40; }
 
 progress:not([value])::-webkit-progress-bar {
-	border-radius: 3px;
-	background:
-	linear-gradient(-45deg, transparent 33%, rgba(0, 0, 0, 0.2) 33%, rgba(0, 0, 0, 0.2) 66%, transparent 66%) left/2.5em 1.5em;
+  border-radius: 3px;
+  background: linear-gradient(-45deg, transparent 33%, rgba(0, 0, 0, 0.2) 33%, rgba(0, 0, 0, 0.2) 66%, transparent 66%) left/2.5em 1.5em;
 }
 progress:not([value])::before {
-	content:" ";
-	position:absolute;
-	height: 20px;
-	top:0;
-	left:0;
-	right:0;
-	bottom:0;
-	border-radius: 3px;
-	background:
-	linear-gradient(-45deg, transparent 33%, rgba(0, 0, 0, 0.2) 33%, rgba(0, 0, 0, 0.2) 66%, transparent 66%) left/2.5em 1.5em;
+  content:" ";
+  position:absolute;
+  height: 20px;
+  top:0;
+  left:0;
+  right:0;
+  bottom:0;
+  border-radius: 3px;
+  background: linear-gradient(-45deg, transparent 33%, rgba(0, 0, 0, 0.2) 33%, rgba(0, 0, 0, 0.2) 66%, transparent 66%) left/2.5em 1.5em;
 }
 
 @keyframes stripes {

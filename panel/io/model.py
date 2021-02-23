@@ -24,14 +24,11 @@ def diff(doc, binary=True, events=None):
     if not events or state._hold:
         return None
 
-    # Filter ColumnDataChangedEvents which reference non-existing
-    # columns, later event will include the changes
-    fixed_events = []
+    # Patch ColumnDataChangedEvents which reference non-existing columns
     for e in events:
         if (hasattr(e, 'hint') and isinstance(e.hint, ColumnDataChangedEvent)
             and e.hint.cols is not None):
             e.hint.cols = None
-        fixed_events.append(e)
     msg = Protocol().create("PATCH-DOC", events, use_buffers=binary)
     doc._held_events = [e for e in doc._held_events if e not in events]
     return msg
