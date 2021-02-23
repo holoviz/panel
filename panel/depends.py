@@ -39,7 +39,7 @@ def depends(*args, **kwargs):
     synonym for the underlying parameter. Apart from that extension,
     this decorator otherwise behaves the same as the underlying Param
     depends decorator.
-    
+
     For the Panel version of the decorator, the specified dependencies
     can either be Parameter instances, Panel or ipywidgets widgets,
     or, if a Parameterized method is supplied rather than a function,
@@ -68,7 +68,7 @@ def bind(function, *args, **kwargs):
     allowing the widget to be passed in as a synonym for the
     underlying parameter. Apart from that extension, this function
     otherwise behaves the same as the corresponding Param function.
-    
+
     This function allows dynamically recomputing the output of the
     provided function whenever one of the bound parameters
     changes. For Panel, the parameters are typically values of
@@ -104,7 +104,7 @@ def _param_bind(function, *args, **kwargs):
     whenever the underlying values change and the output will reflect
     those updated values.
 
-    As for functools.partial, arguments can also be bound to constants, 
+    As for functools.partial, arguments can also be bound to constants,
     which allows all of the arguments to be bound, leaving a simple
     callable object.
 
@@ -115,13 +115,19 @@ def _param_bind(function, *args, **kwargs):
     args: object, param.Parameter
         Positional arguments to bind to the function.
     kwargs: object, param.Parameter
-        Keyword arguments to bind to the function.
+        Keyword arguments to bind to the function. The keyword watch is special. If set to True the
+        function is always run.
 
     Returns
     -------
     Returns a new function with the args and kwargs bound to it and
     annotated with all dependencies.
     """
+    if "watch" in kwargs:
+        watch=kwargs.pop("watch")
+    else:
+        watch=False
+
     dependencies = {}
     for i, arg in enumerate(args):
         p = param_value_if_widget(arg)
@@ -132,7 +138,7 @@ def _param_bind(function, *args, **kwargs):
         if isinstance(p, param.Parameter):
             dependencies[kw] = p
 
-    @depends(**dependencies)
+    @depends(**dependencies, watch=watch)
     def wrapped(*wargs, **wkwargs):
         combined_args = []
         for arg in args:
@@ -150,5 +156,6 @@ def _param_bind(function, *args, **kwargs):
             if kw.startswith('__arg'):
                 continue
             combined_kwargs[kw] = arg
+
         return function(*combined_args, **combined_kwargs)
     return wrapped
