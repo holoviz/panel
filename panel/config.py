@@ -87,7 +87,7 @@ class _config(_base_config):
         'arcs', 'bars', 'dots', 'petals'], doc="""
         Loading indicator to use when component loading parameter is set.""")
 
-    loading_color = param.Color(default='#000000', doc="""
+    loading_color = param.Color(default='#c3c3c3', doc="""
         Color of the loading indicator.""")
 
     safe_embed = param.Boolean(default=False, doc="""

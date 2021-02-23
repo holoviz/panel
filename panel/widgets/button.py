@@ -96,6 +96,10 @@ class Button(_ClickButton):
 
     _widget_type = _BkButton
 
+    @property
+    def _linkable_params(self):
+        return super()._linkable_params + ['value']
+
     def jslink(self, target, code=None, args=None, bidirectional=False, **links):
         links = {'event:'+self._event if p == 'value' else p: v for p, v in links.items()}
         super().jslink(target, code, args, bidirectional, **links)
