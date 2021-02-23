@@ -816,7 +816,7 @@ class ParamFunction(ParamMethod):
                 props = {dep.name: 'loading' for dep in group
                          if dep.name in pobj._linkable_params}
                 if props:
-                    link = pobj.jslink(self._inner_layout, **props)
+                    pobj.jslink(self._inner_layout, **props)
             self._callbacks.append(watcher)
 
     #----------------------------------------------------------------
