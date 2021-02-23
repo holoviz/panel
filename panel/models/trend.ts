@@ -5,7 +5,7 @@ import {Line, Step, VArea, VBar} from "@bokehjs/models/glyphs"
 import * as p from "@bokehjs/core/properties"
 import {div} from "@bokehjs/core/dom"
 import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source"
-import {BasicTickFormatter, TickFormatter} from "@bokehjs/models/formatters"
+import {BasicTickFormatter, NumeralTickFormatter, TickFormatter} from "@bokehjs/models/formatters"
 
 const red: string="#d9534f";
 const green: string="#5cb85c";
@@ -169,8 +169,9 @@ export class TrendIndicatorView extends HTMLBoxView {
   }
 
   updateValue2(update_fontsize: boolean = false): void {
-    this._value_change_format = this.model.formatter.doFormat([this.model.value], {loc: 0})[0]
+    this._value_change_format = this.model.change_formatter.doFormat([this.model.value_change], {loc: 0})[0]
     this.value2Div.innerText = this._value_change_format
+    this.updateValueChange()
     if (update_fontsize)
       this.updateTextFontSize()
   }
@@ -214,6 +215,7 @@ export namespace TrendIndicator {
   export type Attrs = p.AttrsOf<Props>
 
   export type Props = HTMLBox.Props & {
+    change_formatter: p.Property<TickFormatter>
     description: p.Property<string>
     formatter: p.Property<TickFormatter>
     layout: p.Property<string>
@@ -239,14 +241,15 @@ export class TrendIndicator extends HTMLBox {
     super(attrs)    
   }
 
-  static __module__ = "panel.models.stats_plot_card"
+  static __module__ = "panel.models.trend"
 
   static init_TrendIndicator(): void {
     this.prototype.default_view = TrendIndicatorView;
 
     this.define<TrendIndicator.Props>(({Number, String, Ref}) => ({
       description:  [ String,              "" ],
-      formatter:    [ Ref(TickFormatter), () => new BasicTickFormatter() ],
+      formatter:        [ Ref(TickFormatter), () => new BasicTickFormatter() ],
+      change_formatter: [ Ref(TickFormatter), () => new NumeralTickFormatter() ],
       layout:       [ String,        "column" ],
       source:       [ Ref(ColumnDataSource)   ],
       plot_x:       [ String,             "x" ],

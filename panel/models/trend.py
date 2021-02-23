@@ -2,7 +2,7 @@
 A Bokeh model indicating trends.
 """
 from bokeh.core.properties import Instance, Float, String
-from bokeh.models import HTMLBox, TickFormatter, BasicTickFormatter
+from bokeh.models import HTMLBox, NumeralTickFormatter, TickFormatter, BasicTickFormatter
 from bokeh.models.sources import ColumnDataSource
 
 
@@ -12,6 +12,7 @@ class TrendIndicator(HTMLBox):
     """
 
     description = String()
+    change_formatter = Instance(TickFormatter, default=lambda: NumeralTickFormatter(format='0.00%'))
     formatter = Instance(TickFormatter, default=lambda: BasicTickFormatter())
     layout = String()
     source = Instance(ColumnDataSource)
