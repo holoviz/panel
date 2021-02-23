@@ -5,7 +5,7 @@ import param
 from bokeh.models import Div
 from panel.layout import Tabs, WidgetBox
 from panel.reactive import Reactive
-from panel.viewable import Layoutable
+from panel.viewable import Viewable
 from panel.widgets import Checkbox, StaticText, TextInput
 
 
@@ -114,7 +114,7 @@ def test_text_input_controls():
     assert value.value == "New value"
 
     assert isinstance(wb2, WidgetBox)
-    assert len(wb2) == len(list(Layoutable.param)) + 1
+    assert len(wb2) == len(list(Viewable.param)) + 1
 
 
 

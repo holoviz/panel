@@ -394,13 +394,25 @@ class JSCallbackGenerator(CallbackGenerator):
 class JSLinkCallbackGenerator(JSCallbackGenerator):
 
     _link_template = """
-    if ('{src_attr}'.startsWith('event:')) {{
-      var value = true
-    }} else {{
-      var value = source['{src_attr}'];
-      value = {src_transform};
-      value = {tgt_transform};
+    var value = source['{src_attr}'];
+    value = {src_transform};
+    value = {tgt_transform};
+    try {{
+      var property = target.properties['{tgt_attr}'];
+      if (property !== undefined) {{ property.validate(value); }}
+    }} catch(err) {{
+      console.log('WARNING: Could not set {tgt_attr} on target, raised error: ' + err);
+      return;
     }}
+    try {{
+      target['{tgt_attr}'] = value;
+    }} catch(err) {{
+      console.log(err)
+    }}
+    """
+
+    _event_link_template = """
+    var value = true
     try {{
       var property = target.properties['{tgt_attr}'];
       if (property !== undefined) {{ property.validate(value); }}
@@ -527,9 +539,15 @@ class JSLinkCallbackGenerator(JSCallbackGenerator):
                 loading_spinner=config.loading_spinner
             )
         else:
-            return self._link_template.format(
-                src_attr=src_spec, tgt_attr=tgt_spec,
-                src_transform=src_transform, tgt_transform=tgt_transform
+            if src_spec.startswith('event:'):
+                template = self._event_link_template
+            else:
+                template = self._link_template
+            return template.format(
+                src_attr=src_spec,
+                tgt_attr=tgt_spec,
+                src_transform=src_transform,
+                tgt_transform=tgt_transform
             )
 
 Callback.register_callback(callback=JSCallbackGenerator)
