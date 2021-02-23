@@ -1,11 +1,15 @@
-"""A Bokeh Model of a Stats Card with a Plot"""
+"""
+A Bokeh model indicating trends.
+"""
 from bokeh.core.properties import Instance, Float, String
 from bokeh.models import HTMLBox, TickFormatter, BasicTickFormatter
 from bokeh.models.sources import ColumnDataSource
 
 
-class StatsPlotCard(HTMLBox):
-    """A Bokeh Model of a Stats Card with a Plot"""
+class TrendIndicator(HTMLBox):
+    """
+    A Bokeh model indicating trends.
+    """
 
     description = String()
     formatter = Instance(TickFormatter, default=lambda: BasicTickFormatter())

@@ -11,8 +11,8 @@ const red: string="#d9534f";
 const green: string="#5cb85c";
 const blue: string="#428bca";
 
-export class StatsPlotCardView extends HTMLBoxView {
-  model: StatsPlotCard
+export class TrendIndicatorView extends HTMLBoxView {
+  model: TrendIndicator
   containerDiv: HTMLDivElement
   textDiv: HTMLDivElement
   titleDiv: HTMLDivElement
@@ -210,7 +210,7 @@ export class StatsPlotCardView extends HTMLBoxView {
   }
 }
 
-export namespace StatsPlotCard {
+export namespace TrendIndicator {
   export type Attrs = p.AttrsOf<Props>
 
   export type Props = HTMLBox.Props & {
@@ -230,21 +230,21 @@ export namespace StatsPlotCard {
   }
 }
 
-export interface StatsPlotCard extends StatsPlotCard.Attrs { }
+export interface TrendIndicator extends TrendIndicator.Attrs { }
 
-export class StatsPlotCard extends HTMLBox {
-  properties: StatsPlotCard.Props
+export class TrendIndicator extends HTMLBox {
+  properties: TrendIndicator.Props
 
-  constructor(attrs?: Partial<StatsPlotCard.Attrs>) {
+  constructor(attrs?: Partial<TrendIndicator.Attrs>) {
     super(attrs)    
   }
 
   static __module__ = "panel.models.stats_plot_card"
 
-  static init_StatsPlotCard(): void {
-    this.prototype.default_view = StatsPlotCardView;
+  static init_TrendIndicator(): void {
+    this.prototype.default_view = TrendIndicatorView;
 
-    this.define<StatsPlotCard.Props>(({Number, String, Ref}) => ({
+    this.define<TrendIndicator.Props>(({Number, String, Ref}) => ({
       description:  [ String,              "" ],
       formatter:    [ Ref(TickFormatter), () => new BasicTickFormatter() ],
       layout:       [ String,        "column" ],

@@ -10,8 +10,8 @@ from .layout import Card # noqa
 from .location import Location # noqa
 from .markup import JSON, HTML # noqa
 from .state import State # noqa
-from .stats_plot_card import StatsPlotCard # noqa
 from .tabulator import DataTabulator # noqa
+from .trend import TrendIndicator # noqa
 from .widgets import ( # noqa
     Audio, FileDownload, Player, Progress, SingleSelect, Video, VideoStream
 )

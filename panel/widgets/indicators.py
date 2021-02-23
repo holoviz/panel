@@ -9,15 +9,15 @@ from bokeh.plotting import figure
 from bokeh.models import ColumnDataSource
 
 from ..models import (
-    HTML, Progress as _BkProgress, StatsPlotCard as _BkStatsPlotCard
+    HTML, Progress as _BkProgress, TrendIndicator as _BkTrendIndicator
 )
 from ..reactive import SyncableData
 from ..util import escape
 from .base import Widget
 
-RED ="#d9534f"
-GREEN="#5cb85c"
-BLUE="#428bca"
+RED   = "#d9534f"
+GREEN = "#5cb85c"
+BLUE  = "#428bca"
 
 
 class Indicator(Widget):
@@ -554,22 +554,22 @@ class Dial(ValueIndicator):
         model.select(name='label_source').data.update(labels)
 
 
-class StatsPlotCard(SyncableData, Indicator):
+class TrendIndicator(SyncableData, Indicator):
     """
-    The StatsPlotCard enables the user to display a Dashboard KPI Card with
+    The TrendIndicator enables the user to display a Dashboard KPI Card with
 
-    The card can be layout out as
+    The card can be layout out as:
 
-    - a column (text and plot on top of each other) or
-    - a row (text and plot after each other)
+    * a column (text and plot on top of each other) or
+    * a row (text and plot after each other)
 
     The text section is responsive and resizes on window resize.
     """
 
-    layout = param.ObjectSelector(default="column", objects=["column", "row"])
-
     data = param.Parameter(doc="""
       The plot data declared as a ColumnDataSource.""")
+
+    layout = param.ObjectSelector(default="column", objects=["column", "row"])
 
     plot_x = param.String(default="x", doc="""
       The name of the key in the plot_data to use on the x-axis.""")
@@ -603,7 +603,7 @@ class StatsPlotCard(SyncableData, Indicator):
 
     _rename = {'data': None, 'selection': None}
 
-    _widget_type = _BkStatsPlotCard
+    _widget_type = _BkTrendIndicator
 
     def _get_data(self):
         if self.data is None:
