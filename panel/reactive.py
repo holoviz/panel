@@ -24,7 +24,7 @@ from .io.notebook import push, push_on_root
 from .io.server import unlocked
 from .io.state import state
 from .util import edit_readonly, updating
-from .viewable import Layoutable, Renderable, Viewable
+from .viewable import Renderable, Viewable
 
 LinkWatcher = namedtuple("Watcher","inst cls fn mode onlychanged parameter_names what queued target links transformed bidirectional_watcher")
 
