@@ -313,7 +313,6 @@ class BaseVTKRenderWindow(AbstractVTK):
         import panel.pane.vtk.synchronizable_serializer as rws
         if exclude_arrays is None:
             exclude_arrays = []
-        store_offscreen_rendering = ren_win.GetOffScreenRendering()
         ren_win.OffScreenRenderingOn() # to not pop a vtk windows
         ren_win.Modified()
         ren_win.Render()
@@ -322,8 +321,6 @@ class BaseVTKRenderWindow(AbstractVTK):
         arrays = {name: context.getCachedDataArray(name, binary=binary, compression=compression)
                     for name in context.dataArrayCache.keys()
                     if name not in exclude_arrays}
-        ren_win.Finalize()
-        ren_win.SetOffScreenRendering(store_offscreen_rendering)
         return scene, arrays
 
     @staticmethod
