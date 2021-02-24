@@ -683,7 +683,7 @@ def genericMapperSerializer(parent, mapper, mapperId, context, depth):
         if context.debugAll:
                 print('This mapper does not have GetInputDataObject method')
     else:
-        for port in range(2): # Glyph3DMapper can define input data objects on 2 ports (input, source)
+        for port in range(mapper.GetNumberOfInputPorts()): # Glyph3DMapper can define input data objects on 2 ports (input, source)
             dataObject = mapper.GetInputDataObject(port, 0)
             if dataObject:
                 dataObjectId = '%s-dataset-%d' % (mapperId, port)
