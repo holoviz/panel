@@ -81,7 +81,7 @@ def poly_data_builder(state, zf, register):
         data_arr = ARRAY_TYPES[dataset['dataType']]()
         fill_array(data_arr, dataset, zf)
         location = getattr(instance, 'Get' + capitalize(dataset['location']))()
-        getattr(location, capitalize(dataset['registration']))(data_arr)
+        getattr(location, capitalize(dataset.get("registration", "addArray")))(data_arr)
 
 def volume_mapper_builder(state, zf, register):
     instance = generic_builder(state, zf, register)
@@ -120,7 +120,10 @@ def generic_builder(state, zf, register=None):
             else:
                 method = METHODS_RENAME[capitalize(call[0])]
             if method is None: continue
-            getattr(instance, method)(*args)
+            if method == "SetInputData" and len(args)==2:
+                getattr(instance, method + "Object")(*args[::-1])
+            else:
+                getattr(instance, method)(*args)
     arrays = state.get('arrays', None)
     if arrays:
         for array_meta in arrays:
@@ -156,7 +159,8 @@ def make_type_handlers():
         'vtkActor': ['vtkOpenGLActor', 'vtkPVLODActor'],
         'vtkLight': ['vtkOpenGLLight', 'vtkPVLight'],
         'vtkTexture': ['vtkOpenGLTexture'],
-        'vtkVolumeMapper': ['vtkFixedPointVolumeRayCastMapper', 'vtkSmartVolumeMapper']
+        'vtkVolumeMapper': ['vtkFixedPointVolumeRayCastMapper', 'vtkSmartVolumeMapper'],
+        "vtkGlyph3DMapper": ["vtkOpenGLGlyph3DMapper"],
     }
 
     type_handlers = {

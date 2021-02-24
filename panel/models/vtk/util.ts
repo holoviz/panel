@@ -87,6 +87,11 @@ if (vtk) {
     vtkns.Follower.newInstance,
     vtkObjectManager.genericUpdater
   )
+  vtkObjectManager.setTypeMapping(
+    "vtkOpenGLGlyph3DMapper",
+    vtkns.Glyph3DMapper.newInstance,
+    vtkObjectManager.genericUpdater
+  )
 }
 
 declare type RGBnode = {
