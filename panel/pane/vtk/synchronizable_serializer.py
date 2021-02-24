@@ -1111,7 +1111,7 @@ def mergeToPolydataSerializer(parent, dataObject, dataObjectId, context, depth):
         gf.Update()
         dataset = gf.GetOutput()
     else:
-        dataset = parent.GetInput()
+        dataset = dataObject
 
     return polydataSerializer(parent, dataset, dataObjectId, context, depth)
 
