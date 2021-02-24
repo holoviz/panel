@@ -20,6 +20,7 @@ from bokeh.resources import Resources as BkResources
 from jinja2 import Environment, Markup, FileSystemLoader
 
 from ..util import url_path
+from .state import state
 
 
 with open(Path(__file__).parent.parent / 'package.json') as f:
@@ -124,6 +125,7 @@ class Resources(BkResources):
         kwargs = {}
         if bkr.mode.startswith("server"):
             kwargs['root_url'] = bkr.root_url
+        state.root_url = bkr.root_url
         return cls(
             mode=bkr.mode, version=bkr.version, minified=bkr.minified,
             legacy=bkr.legacy, log_level=bkr.log_level,

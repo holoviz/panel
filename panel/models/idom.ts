@@ -25,7 +25,7 @@ export function mountLayout(
       />
     `,
     mountElement
-  );
+  )
 }
 
 export default function Layout({ saveUpdateHook, sendEvent, importSourceUrl }: { saveUpdateHook: any, sendEvent: any, importSourceUrl: string } ) {
@@ -43,18 +43,16 @@ export default function Layout({ saveUpdateHook, sendEvent, importSourceUrl }: {
       >
         <${Element} model=${model} />
       <//>
-    `;
-  } else {
-    return html`<div />`;
-  }
+    `
+  } else
+    return html`<div />`
 }
 
 function Element({ model }: { model: any }) {
-  if (model.importSource) {
-    return html`<${ImportedElement} model=${model} />`;
-  } else {
-    return html`<${StandardElement} model=${model} />`;
-  }
+  if (model.importSource)
+    return html`<${ImportedElement} model=${model} />`
+  else
+    return html`<${StandardElement} model=${model} />`
 }
 
 function ImportedElement({ model }: { model: any }) {
@@ -62,7 +60,7 @@ function ImportedElement({ model }: { model: any }) {
   const module = useLazyModule(
     model.importSource.source,
     config.importSourceUrl
-  );
+  )
   if (module) {
     const cmpt = getPathProperty(module, model.tagName);
     const children = elementChildren(model);
@@ -70,14 +68,13 @@ function ImportedElement({ model }: { model: any }) {
     return html`<${cmpt} ...${attributes}>${children}<//>`;
   } else {
     const fallback = model.importSource.fallback;
-    if (!fallback) {
-      return html`<div />`;
-    }
+    if (!fallback)
+      return html`<div />`
     switch (typeof fallback) {
       case "object":
-        return html`<${Element} model=${fallback} />`;
+        return html`<${Element} model=${fallback} />`
       case "string":
-        return html`<div>${fallback}</div>`;
+        return html`<div>${fallback}</div>`
       default:
         return null
     }
@@ -88,87 +85,81 @@ function StandardElement({ model }: { model: any }) {
   const config: any = useContext(LayoutConfigContext);
   const children = elementChildren(model);
   const attributes = elementAttributes(model, config.sendEvent);
-  if (model.children && model.children.length) {
-    return html`<${model.tagName} ...${attributes}>${children}<//>`;
-  } else {
-    return html`<${model.tagName} ...${attributes} />`;
-  }
+  if (model.children && model.children.length)
+    return html`<${model.tagName} ...${attributes}>${children}<//>`
+  else
+    return html`<${model.tagName} ...${attributes} />`
 }
 
 function elementChildren(model: any) {
-  if (!model.children) {
-    return [];
-  } else {
+  if (!model.children)
+    return []
+  else {
     return model.children.map((child: any) => {
       switch (typeof child) {
         case "object":
-          return html`<${Element} model=${child} />`;
+          return html`<${Element} model=${child} />`
         case "string":
-          return child;
+          return child
         default:
-          return null;
+          return null
       }
     });
   }
 }
 
 function elementAttributes(model: any, sendEvent: any) {
-  const attributes = Object.assign({}, model.attributes);
+  const attributes = Object.assign({}, model.attributes)
 
   if (model.eventHandlers) {
     Object.keys(model.eventHandlers).forEach((eventName) => {
-      const eventSpec = model.eventHandlers[eventName];
-      attributes[eventName] = eventHandler(sendEvent, eventSpec);
-    });
+      const eventSpec = model.eventHandlers[eventName]
+      attributes[eventName] = eventHandler(sendEvent, eventSpec)
+    })
   }
 
-  return attributes;
+  return attributes
 }
 
 function eventHandler(sendEvent: any, eventSpec: any) {
   return function (): Promise<void> {
     const data = Array.from(arguments).map((value) => {
       if (typeof value === "object") {
-        if (eventSpec["preventDefault"]) {
+        if (eventSpec["preventDefault"])
           value.preventDefault();
-        }
-        if (eventSpec["stopPropagation"]) {
-          value.stopPropagation();
-        }
-        return serializeEvent(value);
-      } else {
-        return value;
-      }
+        if (eventSpec["stopPropagation"])
+          value.stopPropagation()
+        return serializeEvent(value)
+      } else
+        return value
     });
     return new Promise((resolve: any) => {
       const msg = {
         data: data,
         target: eventSpec["target"],
-      };
-      sendEvent(msg);
-      resolve(msg);
-    });
-  };
+      }
+      sendEvent(msg)
+      resolve(msg)
+    })
+  }
 }
 
 function useLazyModule(source: string, sourceUrlBase: string = "") {
   const [module, setModule] = useState(null);
-  if (!module) {
-    // use eval() to avoid weird build behavior by bundlers like Webpack
-    eval(`import("${joinUrl(sourceUrlBase, source)}")`).then(setModule);
-  }
-  return module;
+  // use eval() to avoid weird build behavior by bundlers like Webpack
+  if (!module)
+    eval(`import('${joinUrl(sourceUrlBase, source)}')`).then((m: any) => {console.log(m); setModule(m) })
+  return module
 }
 
 function getPathProperty(obj: any, prop: string) {
   // properties may be dot seperated strings
-  const path = prop.split(".");
-  const firstProp: any = path.shift();
-  let value = obj[firstProp];
-  for (let i = 0; i < path.length; i++) {
-    value = value[path[i]];
-  }
-  return value;
+  const path = prop.split(".")
+  const firstProp: any = path.shift()
+  let value = obj[firstProp]
+  for (let i = 0; i < path.length; i++)
+    value = value[path[i]]
+  return value
 }
 
 function useInplaceJsonPatch(doc: any) {
@@ -177,19 +168,19 @@ function useInplaceJsonPatch(doc: any) {
 
   const applyPatch = useCallback(
     (path: any, patch: any) => {
-      applyPatchInplace(ref.current, path, patch);
-      forceUpdate();
+      applyPatchInplace(ref.current, path, patch)
+      forceUpdate()
     },
     [ref, forceUpdate]
-  );
+  )
 
   return [ref.current, applyPatch];
 }
 
 function applyPatchInplace(doc: any, path: any, patch: any) {
-  if (!path) {
-    applyPatch(doc, patch);
-  } else {
+  if (!path)
+    applyPatch(doc, patch)
+  else {
     applyPatch(doc, [
       {
         op: "replace",
@@ -201,13 +192,13 @@ function applyPatchInplace(doc: any, path: any, patch: any) {
           false
         ).newDocument,
       },
-    ]);
+    ])
   }
 }
 
 function useForceUpdate() {
-  const [, updateState] = useState({});
-  return useCallback(() => updateState({}), []);
+  const [, updateState] = useState({})
+  return useCallback(() => updateState({}), [])
 }
 
 function joinUrl(base: string, tail: string) {
@@ -219,28 +210,33 @@ function joinUrl(base: string, tail: string) {
 export class IDOMView extends PanelHTMLBoxView {
   model: IDOM
   _update: any
+  _mounted: boolean = false
 
   connect_signals(): void {
     super.connect_signals()
     this.connect(this.model.properties.event.change, () => {
-      this._update(this.model.event.data.path, this.model.event.data.changes);
+      this._update(...this.model.event)
+      this.root.invalidate_layout()
     })
   }
 
   render(): void {
     super.render()
-    mountLayout(
-      this.el,
-      (update: any) => this._save_update(update),
-      (event: any) => this._send(event),
-      this.model.importSourceUrl
-    );
+    if (!this._mounted) {
+      mountLayout(
+	this.el,
+	(update: any) => this._save_update(update),
+	(event: any) => this._send(event),
+	this.model.importSourceUrl
+      )
+      this._mounted = true
+    }
   }
 
   _save_update(update: any): any {
     this._update = update
-    console.log(this.model.event.data)
-    update(this.model.event.data.path, this.model.event.data.changes);
+    update(...this.model.event)
+    this.root.invalidate_layout()
   }
 
   _send(event: any): any {
@@ -271,10 +267,10 @@ export class IDOM extends Markup {
 
   static init_IDOM(): void {
     this.prototype.default_view = IDOMView
-      this.define<IDOM.Props>({
-      importSourceUrl: [ p.String, '' ],
-      event:    [ p.Any, {} ],
-      msg:      [ p.Any, {} ],
-    })
+    this.define<IDOM.Props>(({Any, String}) => ({
+      event:           [ Any,    [] ],
+      importSourceUrl: [ String, '' ],
+      msg:             [ Any,    {} ],
+    }))
   }
 }
