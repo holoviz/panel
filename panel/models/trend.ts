@@ -74,13 +74,12 @@ export class TrendIndicatorView extends HTMLBoxView {
       toolbar_location: null,
     });
 
-    console.log(this.plot)
     var source = this.model.source
     if (this.model.plot_type === "line"){
       var line = new Line({
         x: { field: this.model.plot_x },
         y: { field: this.model.plot_y },
-        line_width: 6,
+        line_width: 4,
         line_color: this.model.plot_color,
       })
       this.plot.add_glyph(line, source)
@@ -88,7 +87,7 @@ export class TrendIndicatorView extends HTMLBoxView {
       var step = new Step({
         x: { field: this.model.plot_x },
         y: { field: this.model.plot_y },
-        line_width: 6,
+        line_width: 3,
         line_color: this.model.plot_color,
       })
       this.plot.add_glyph(step, source)

@@ -12,7 +12,7 @@ from ..models import (
     HTML, Progress as _BkProgress, TrendIndicator as _BkTrendIndicator
 )
 from ..reactive import SyncableData
-from ..util import escape
+from ..util import escape, updating
 from .base import Widget
 
 RED   = "#d9534f"
@@ -554,9 +554,9 @@ class Dial(ValueIndicator):
         model.select(name='label_source').data.update(labels)
 
 
-class TrendIndicator(SyncableData, Indicator):
+class Trend(SyncableData, Indicator):
     """
-    The TrendIndicator enables the user to display a Dashboard KPI Card with
+    The Trend indicator enables the user to display a Dashboard KPI Card.
 
     The card can be layout out as:
 
@@ -567,7 +567,7 @@ class TrendIndicator(SyncableData, Indicator):
     """
 
     data = param.Parameter(doc="""
-      The plot data declared as a ColumnDataSource.""")
+      The plot data declared as a dictionary of arrays or a DataFrame.""")
 
     layout = param.ObjectSelector(default="column", objects=["column", "row"])
 
@@ -591,10 +591,10 @@ class TrendIndicator(SyncableData, Indicator):
 
     title = param.String(doc="""The title or a short description of the card""")
 
-    value = param.Number(doc="""
+    value = param.Parameter(default='auto', doc="""
       The primary value to be displayed.""")
 
-    value_change = param.Number(doc="""
+    value_change = param.Parameter(default='auto', doc="""
       A secondary value. For example the change in percent.""")
 
     _data_params = ['data']
@@ -614,5 +614,40 @@ class TrendIndicator(SyncableData, Indicator):
 
     def _init_params(self):
         props = super()._init_params()
-        props['source'] = ColumnDataSource(data=self._get_data()[1])
+        self._processed, self._data = self._get_data()
+        props['source'] = ColumnDataSource(data=self._data)
         return props
+
+    def _trigger_auto_values(self):
+        trigger = []
+        if self.value == 'auto':
+            trigger.append('value')
+        if self.value_change == 'auto':
+            trigger.append('value_change')
+        if trigger:
+            self.param.trigger(*trigger)
+
+    @updating
+    def _stream(self, stream, rollover=None):
+        self._trigger_auto_values()
+        super()._stream(stream, rollover)
+
+    def _update_cds(self, *events):
+        super()._update_cds(*events)
+        self._trigger_auto_values()
+
+    def _process_param_change(self, msg):
+        msg = super()._process_param_change(msg)
+        ys = self._data.get(self.plot_y, [])
+        if 'value' in msg and msg['value'] == 'auto':
+            if len(ys):
+                msg['value'] = ys[-1]
+            else:
+                msg['value'] = 0
+        if 'value_change' in msg and msg['value_change'] == 'auto':
+            if len(ys) > 1:
+                y1, y2 = self._data.get(self.plot_y)[-2:]
+                msg['value_change'] = y2/y1 - 1
+            else:
+                msg['value_change'] = 0
+        return msg

@@ -320,7 +320,7 @@ class BaseTable(ReactiveData, Widget):
             return list(self.value.index.names)
         return [self.value.index.name or 'index']
 
-    def stream(self, stream_value, reset_index=True):
+    def stream(self, stream_value, rollover=None, reset_index=True):
         """
         Streams (appends) the `stream_value` provided to the existing
         value in an efficient manner.
@@ -329,6 +329,10 @@ class BaseTable(ReactiveData, Widget):
         ---------
         stream_value (Union[pd.DataFrame, pd.Series, Dict])
           The new value(s) to append to the existing value.
+        rollover: int
+           A maximum column size, above which data from the start of
+           the column begins to be discarded. If None, then columns
+           will continue to grow unbounded.
         reset_index (bool, default=True):
           If True and the stream_value is a DataFrame,
           then its index is reset. Helps to keep the
@@ -379,8 +383,11 @@ class BaseTable(ReactiveData, Widget):
             if reset_index:
                 stream_value = stream_value.reset_index(drop=True)
                 stream_value.index += value_index_start
+            combined = pd.concat([self.value, stream_value])
+            if rollover is not None:
+                combined = combined.iloc[-rollover:]
             with param.discard_events(self):
-                self.value = pd.concat([self.value, stream_value])
+                self.value = combined
             try:
                 self._updating = True
                 self.param.trigger('value')
@@ -394,6 +401,9 @@ class BaseTable(ReactiveData, Widget):
                 self._updating = False
         elif isinstance(stream_value, pd.Series):
             self.value.loc[value_index_start] = stream_value
+            if rollover is not None and len(self.value) > rollover:
+                with param.discard_events(self):
+                    self.value = self.value.iloc[-rollover:]
             stream_value = self._filter_dataframe(self.value.iloc[-1:])
             try:
                 self._updating = True
@@ -406,7 +416,7 @@ class BaseTable(ReactiveData, Widget):
                     stream_value = pd.DataFrame(stream_value)
                 except ValueError:
                     stream_value = pd.Series(stream_value)
-                self.stream(stream_value)
+                self.stream(stream_value, rollover)
         else:
             raise ValueError("The stream value provided is not a DataFrame, Series or Dict!")
 

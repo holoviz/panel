@@ -634,6 +634,9 @@ class SyncableData(Reactive):
         data = getattr(self, self._data_params[0])
         data[column] = array
 
+    def _update_data(self, data):
+        self.param.set_param(**{self._data_params[0]: data})
+
     def _manual_update(self, events, model, doc, root, parent, comm):
         for event in events:
             if event.type == 'triggered' and self._updating:
@@ -733,15 +736,15 @@ class SyncableData(Reactive):
             if isinstance(self._processed, dict):
                 self.stream(stream_value.to_dict(), rollover)
                 return
-            value_index_start = self._data.index.max() + 1
+            value_index_start = self._processed.index.max() + 1
             if reset_index:
                 stream_value = stream_value.reset_index(drop=True)
                 stream_value.index += value_index_start
+            combined = pd.concat([self._processed, stream_value])
+            if rollover is not None:
+                combined = combined.iloc[-rollover:]
             with param.discard_events(self):
-                combined = pd.concat([self.value, stream_value])
-                if rollover is not None:
-                    combined = combined.iloc[-rollover:]
-                self.value = combined
+                self._update_data(combined)
             try:
                 self._updating = True
                 self.param.trigger('value')
@@ -756,7 +759,9 @@ class SyncableData(Reactive):
             if isinstance(self._processed, dict):
                 self.stream({k: [v] for k, v in stream_value.to_dict().items()}, rollover)
                 return
-            self.value.loc[value_index_start] = stream_value
+            self._processed.loc[value_index_start] = stream_value
+            with param.discard_events(self):
+                self._update_data(self._processed)
             self._updating = True
             try:
                 self._stream(self.value.iloc[-1:], rollover)
