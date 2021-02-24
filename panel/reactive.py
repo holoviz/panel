@@ -896,6 +896,8 @@ class ReactiveData(SyncableData):
     def _process_events(self, events):
         if 'data' in events:
             data = events.pop('data')
+            if self._updating:
+                data = {}
             _, old_data = self._get_data()
             updated = False
             for k, v in data.items():

@@ -12,7 +12,8 @@ from .indicators import ( # noqa
     Gauge,
     LoadingSpinner,
     Number,
-    Progress
+    Progress,
+    Trend
 )
 from .input import (  # noqa
     ColorPicker,
