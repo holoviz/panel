@@ -8,9 +8,16 @@ import param
 from bokeh.plotting import figure
 from bokeh.models import ColumnDataSource
 
-from ..models import HTML, Progress as _BkProgress
-from ..util import escape
+from ..models import (
+    HTML, Progress as _BkProgress, TrendIndicator as _BkTrendIndicator
+)
+from ..reactive import SyncableData
+from ..util import escape, updating
 from .base import Widget
+
+RED   = "#d9534f"
+GREEN = "#5cb85c"
+BLUE  = "#428bca"
 
 
 class Indicator(Widget):
@@ -127,7 +134,7 @@ class Progress(ValueIndicator):
     @param.depends('max', watch=True)
     def _update_value_bounds(self):
         self.param.value.bounds = (0, self.max)
-               
+
     def __init__(self,**params):
         super().__init__(**params)
         self._update_value_bounds()
@@ -545,3 +552,102 @@ class Dial(ValueIndicator):
         model.select(name='needle_source').data.update(needle)
         model.select(name='threshold_source').data.update(threshold)
         model.select(name='label_source').data.update(labels)
+
+
+class Trend(SyncableData, Indicator):
+    """
+    The Trend indicator enables the user to display a Dashboard KPI Card.
+
+    The card can be layout out as:
+
+    * a column (text and plot on top of each other) or
+    * a row (text and plot after each other)
+
+    The text section is responsive and resizes on window resize.
+    """
+
+    data = param.Parameter(doc="""
+      The plot data declared as a dictionary of arrays or a DataFrame.""")
+
+    layout = param.ObjectSelector(default="column", objects=["column", "row"])
+
+    plot_x = param.String(default="x", doc="""
+      The name of the key in the plot_data to use on the x-axis.""")
+
+    plot_y = param.String(default="y", doc="""
+      The name of the key in the plot_data to use on the y-axis.""")
+
+    plot_color = param.String(default=BLUE, doc="""
+      The color to use in the plot.""")
+
+    plot_type = param.ObjectSelector(default="bar", objects=["line", "step", "area", "bar"], doc="""
+      The plot type to render the plot data as.""")
+
+    pos_color = param.String(GREEN, doc="""
+      The color used to indicate a positive change.""")
+
+    neg_color = param.String(RED, doc="""
+      The color used to indicate a negative change.""")
+
+    title = param.String(doc="""The title or a short description of the card""")
+
+    value = param.Parameter(default='auto', doc="""
+      The primary value to be displayed.""")
+
+    value_change = param.Parameter(default='auto', doc="""
+      A secondary value. For example the change in percent.""")
+
+    _data_params = ['data']
+
+    _manual_params = ['data']
+
+    _rename = {'data': None, 'selection': None}
+
+    _widget_type = _BkTrendIndicator
+
+    def _get_data(self):
+        if self.data is None:
+            return None, {self.plot_x: [], self.plot_y: []}
+        elif isinstance(self.data, dict):
+            return self.data, self.data
+        return self.data, ColumnDataSource.from_df(self.data)
+
+    def _init_params(self):
+        props = super()._init_params()
+        self._processed, self._data = self._get_data()
+        props['source'] = ColumnDataSource(data=self._data)
+        return props
+
+    def _trigger_auto_values(self):
+        trigger = []
+        if self.value == 'auto':
+            trigger.append('value')
+        if self.value_change == 'auto':
+            trigger.append('value_change')
+        if trigger:
+            self.param.trigger(*trigger)
+
+    @updating
+    def _stream(self, stream, rollover=None):
+        self._trigger_auto_values()
+        super()._stream(stream, rollover)
+
+    def _update_cds(self, *events):
+        super()._update_cds(*events)
+        self._trigger_auto_values()
+
+    def _process_param_change(self, msg):
+        msg = super()._process_param_change(msg)
+        ys = self._data.get(self.plot_y, [])
+        if 'value' in msg and msg['value'] == 'auto':
+            if len(ys):
+                msg['value'] = ys[-1]
+            else:
+                msg['value'] = 0
+        if 'value_change' in msg and msg['value_change'] == 'auto':
+            if len(ys) > 1:
+                y1, y2 = self._data.get(self.plot_y)[-2:]
+                msg['value_change'] = y2/y1 - 1
+            else:
+                msg['value_change'] = 0
+        return msg
