@@ -65,14 +65,16 @@ def poly_data_builder(state, zf, register):
     if 'points' in state['properties']:
         points = state['properties']['points']
         vtkpoints = vtk.vtkPoints()
-        data_arr = ARRAY_TYPES[points['dataType']]()
-        fill_array(data_arr, points, zf)
-        vtkpoints.SetData(data_arr)
+        points_data_arr = ARRAY_TYPES[points['dataType']]()
+        fill_array(points_data_arr, points, zf)
+        vtkpoints.SetData(points_data_arr)
         instance.SetPoints(vtkpoints)
     for cell_type in ['verts', 'lines', 'polys', 'strips']:
         if cell_type in state['properties']:
             cell_arr = vtk.vtkCellArray()
-            fill_array(cell_arr.GetData(), state['properties'][cell_type], zf)
+            cell_data_arr = vtk.vtkIdTypeArray()
+            fill_array(cell_data_arr, state['properties'][cell_type], zf)
+            cell_arr.ImportLegacyFormat(cell_data_arr)
             getattr(instance, 'Set' + capitalize(cell_type))(cell_arr)
     
     # datasets
