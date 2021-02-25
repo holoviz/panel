@@ -1,6 +1,6 @@
 import {InputWidget, InputWidgetView} from "@bokehjs/models/widgets/input_widget"
 
-import * as buttons from "@bokehjs/styles/buttons.css"
+import buttons_css, * as buttons from "@bokehjs/styles/buttons.css"
 import {input} from "@bokehjs/core/dom"
 
 import {ButtonType} from "@bokehjs/core/enums"
@@ -111,6 +111,10 @@ export class FileDownloadView extends InputWidgetView {
     this.input_el.addEventListener("change", () => this.change_input())
   }
 
+  styles(): string[] {
+    return [...super.styles(), buttons_css]
+  }
+
   _increment_clicks() : void {
     this.model.clicks = this.model.clicks + 1
   }
@@ -168,15 +172,15 @@ export class FileDownloadView extends InputWidgetView {
     this.anchor_el.textContent = this.model.label
   }
 
-  _update_button_style(): void{
-    if ( !this.anchor_el.hasAttribute("class") ){ // When the widget is rendered.
+  _update_button_style(): void {
+    const btn_type = buttons[`btn_${this.model.button_type}` as const]
+    if (!this.anchor_el.hasAttribute("class") ){ // When the widget is rendered.
       this.anchor_el.classList.add(buttons.btn)
-      this.anchor_el.classList.add(buttons[`btn_${this.model.button_type}` as const])
+      this.anchor_el.classList.add(btn_type)
     } else {  // When the button type is changed.
       const prev_button_type = this.anchor_el.classList.item(1)
-      if ( prev_button_type ) {
-        this.anchor_el.classList.replace(prev_button_type, buttons[`btn_${this.model.button_type}` as const])
-      }
+      if (prev_button_type)
+        this.anchor_el.classList.replace(prev_button_type, btn_type)
     }
   }
 
