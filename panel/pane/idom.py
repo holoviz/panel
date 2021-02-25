@@ -95,6 +95,8 @@ class IDOM(PaneBase):
                 self._idom_layout = None
 
     def _process_property_change(self, msg):
+        if msg['msg'] is None:
+            return {}
         from idom.core.layout import LayoutEvent
         dispatch = self._idom_layout.dispatch(LayoutEvent(**msg['msg']))
         asyncio.run_coroutine_threadsafe(dispatch, loop=self._idom_loop)
