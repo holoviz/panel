@@ -87,7 +87,7 @@ def write_bundled_files(name, files, bundle_dir, explicit_dir=None, ext=None):
         bundle_file = bundle_file.split('?')[0]
         try:
             response = requests.get(bundle_file)
-        except:
+        except Exception:
             try:
                 response = requests.get(bundle_file, verify=False)
             except Exception as e:
@@ -108,7 +108,7 @@ def write_bundled_tarball(name, tarball, bundle_dir, module=False):
     try:
         response = requests.get(tarball['tar'])
     except Exception:
-        response = requests.get(bundle_file, verify=False)
+        response = requests.get(tarball['tar'], verify=False)
     f = io.BytesIO()
     f.write(response.content)
     f.seek(0)
