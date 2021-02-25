@@ -46,6 +46,8 @@ class IDOM(PaneBase):
         self._setup()
 
     def _setup(self):
+        if self.object is None:
+            return
         from idom.core.component import Component
         from idom.core.layout import Layout
         if isinstance(self.object, Layout):
