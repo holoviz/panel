@@ -84,6 +84,7 @@
       {
         type: 'row',
         content: [
+	  {% if nav %}
           {
             type: 'component',
             componentName: 'view',
@@ -94,9 +95,10 @@
             width: 20,
             isClosable: false
           },
+	  {% endif %}
           {
             type: 'stack',
-            width: 80,
+            width: {% if nav %}80{% else %}100{% endif %},
             content: [
               {% for doc in docs %}
               {% for root in doc.roots %}
