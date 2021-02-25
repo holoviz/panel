@@ -121,5 +121,19 @@ def test_accordion_active(document, comm, accordion):
     accordion.active = [0, 1]
     assert not model.children[0].collapsed
     assert not model.children[1].collapsed
-    
 
+
+def test_accordion_set_card_collapsed(document, comm, accordion):
+    model = accordion.get_root(document, comm=comm)
+
+    c1, c2 = accordion._panels.values()
+
+    c1.collapsed = False
+    assert accordion.active == [0]
+
+    c2.collapsed = False
+    assert accordion.active == [0, 1]
+
+    c1.collapsed = True
+    c2.collapsed = True
+    assert accordion.active == []
