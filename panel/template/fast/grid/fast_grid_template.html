@@ -115,7 +115,7 @@
     {% endfor %}
     {% endfor %}
   </div>
-  {% if enable_theme_toggle %}
+  {% if theme_toggle %}
   <div class="pn-toggle-theme">
     <fast-switch style="float: right;" onChange="toggleLightDarkTheme('{{ theme }}')" {% if theme=='default' %}checked{% endif %}>
       <span slot="checked-message">

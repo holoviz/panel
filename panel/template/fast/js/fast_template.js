@@ -39,9 +39,9 @@ function updateURLParameter(url, param, paramVal) {
 function toggleLightDarkTheme(theme){
   var href = window.location.href;
   if (theme==="default"){
-    theme="dark"
+    theme = "dark"
   } else {
-    theme="default"
+    theme = "default"
   }
 
   href = updateURLParameter(href, "theme", theme);

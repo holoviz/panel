@@ -47,6 +47,8 @@ class FastBaseTemplate(BasicTemplate):
                 params['theme'] = THEMES[self._get_theme_from_query_args()]
             else:
                 params["theme"] = DefaultTheme
+        else:
+            params['theme_toggle'] = False
         super().__init__(**params)
         theme = self._get_theme()
         if "header_color" not in params:
@@ -66,6 +68,7 @@ class FastBaseTemplate(BasicTemplate):
         super()._update_vars()
         self._render_variables["style"] = self._get_theme().style
         self._render_variables["theme_toggle"] = self.theme_toggle
+        self._render_variables["theme"] = self.theme.__name__[:-5].lower()
         self._render_variables["sidebar_footer"] = self.sidebar_footer
 
 
