@@ -31,6 +31,8 @@ class IDOM(PaneBase):
 
     priority = None
 
+    _updates = True
+
     _bokeh_model = _BkIDOM
 
     def __init__(self, object=None, **params):
@@ -73,6 +75,8 @@ class IDOM(PaneBase):
         model = self._bokeh_model(
             event=[update.path, update.changes], importSourceUrl=url, **props
         )
+        if root is None:
+            root = model
         self._link_props(model, ['msg'], doc, root, comm)
 
         if root is None:
