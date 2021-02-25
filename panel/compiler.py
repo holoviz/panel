@@ -186,7 +186,7 @@ def bundle_resources():
 
     # Bundle external template dependencies
     for name, template in param.concrete_descendents(BasicTemplate).items():
-        if template._resources('bundle', True):
+        if template._resources.get('bundle', True):
             write_bundled_files(name, list(template._resources.get('css', {}).values()), bundle_dir, 'css')
             write_bundled_files(name, list(template._resources.get('js', {}).values()), bundle_dir, 'js')
             js_modules = []
