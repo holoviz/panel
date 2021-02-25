@@ -83,8 +83,8 @@ def bind(function, *args, watch=False, **kwargs):
     args: object, param.Parameter, panel.widget.Widget, or ipywidget
         Positional arguments to bind to the function.
     watch: boolean
-        Whether the function will be automatically evaluated when one
-        of the parameter dependencies change.
+        Whether to evaluate the function automatically whenever one of
+        the bound parameters changes.
     kwargs: object, param.Parameter, panel.widget.Widget, or ipywidget
         Keyword arguments to bind to the function.
 
@@ -118,8 +118,8 @@ def _param_bind(function, *args, watch=False, **kwargs):
     args: object, param.Parameter
         Positional arguments to bind to the function.
     watch: boolean
-        Whether the function will be automatically evaluated when one
-        of the parameter dependencies change.
+        Whether to evaluate the function automatically whenever one of
+        the bound parameters changes.
     kwargs: object, param.Parameter
         Keyword arguments to bind to the function.
 
