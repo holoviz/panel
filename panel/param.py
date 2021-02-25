@@ -18,7 +18,7 @@ import param
 from param.parameterized import classlist, discard_events
 
 from .io import init_doc, state
-from .layout import Row, Panel, Tabs, Column
+from .layout import Column, Panel, Row, Spacer, Tabs
 from .pane.base import PaneBase, ReplacementPane
 from .util import (
     abbreviated_repr, full_groupby, get_method_owner, is_parameterized,
@@ -724,7 +724,10 @@ class ParamMethod(ReplacementPane):
         if self._evaled:
             self._inner_layout.loading = self.loading_indicator
             try:
-                new_object = self.eval(self.object)
+                if self.object is None:
+                    new_object = Spacer()
+                else:
+                    new_object = self.eval(self.object)
                 self._update_inner(new_object)
             finally:
                 self._inner_layout.loading = False
