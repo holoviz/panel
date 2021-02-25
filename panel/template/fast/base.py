@@ -46,8 +46,10 @@ class FastBaseTemplate(BasicTemplate):
             if params.get("theme_toggle", self.param.theme_toggle.default):
                 params['theme'] = THEMES[self._get_theme_from_query_args()]
             else:
-                params["theme"] = DefaultTheme
+                params['theme'] = DefaultTheme
         else:
+            if isinstance(params['theme'], str):
+                params['theme'] = THEMES[params['theme']]
             params['theme_toggle'] = False
         super().__init__(**params)
         theme = self._get_theme()
