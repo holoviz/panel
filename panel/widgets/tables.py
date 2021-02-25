@@ -320,7 +320,7 @@ class BaseTable(ReactiveData, Widget):
             return list(self.value.index.names)
         return [self.value.index.name or 'index']
 
-    def stream(self, stream_value, reset_index=True):
+    def stream(self, stream_value, rollover=None, reset_index=True):
         """
         Streams (appends) the `stream_value` provided to the existing
         value in an efficient manner.
@@ -329,6 +329,10 @@ class BaseTable(ReactiveData, Widget):
         ---------
         stream_value (Union[pd.DataFrame, pd.Series, Dict])
           The new value(s) to append to the existing value.
+        rollover: int
+           A maximum column size, above which data from the start of
+           the column begins to be discarded. If None, then columns
+           will continue to grow unbounded.
         reset_index (bool, default=True):
           If True and the stream_value is a DataFrame,
           then its index is reset. Helps to keep the
@@ -379,8 +383,11 @@ class BaseTable(ReactiveData, Widget):
             if reset_index:
                 stream_value = stream_value.reset_index(drop=True)
                 stream_value.index += value_index_start
+            combined = pd.concat([self.value, stream_value])
+            if rollover is not None:
+                combined = combined.iloc[-rollover:]
             with param.discard_events(self):
-                self.value = pd.concat([self.value, stream_value])
+                self.value = combined
             try:
                 self._updating = True
                 self.param.trigger('value')
@@ -389,15 +396,18 @@ class BaseTable(ReactiveData, Widget):
             stream_value = self._filter_dataframe(stream_value)
             try:
                 self._updating = True
-                self._stream(stream_value)
+                self._stream(stream_value, rollover)
             finally:
                 self._updating = False
         elif isinstance(stream_value, pd.Series):
             self.value.loc[value_index_start] = stream_value
+            if rollover is not None and len(self.value) > rollover:
+                with param.discard_events(self):
+                    self.value = self.value.iloc[-rollover:]
             stream_value = self._filter_dataframe(self.value.iloc[-1:])
             try:
                 self._updating = True
-                self._stream(stream_value)
+                self._stream(stream_value, rollover)
             finally:
                 self._updating = False
         elif isinstance(stream_value, dict):
@@ -406,7 +416,7 @@ class BaseTable(ReactiveData, Widget):
                     stream_value = pd.DataFrame(stream_value)
                 except ValueError:
                     stream_value = pd.Series(stream_value)
-                self.stream(stream_value)
+                self.stream(stream_value, rollover)
         else:
             raise ValueError("The stream value provided is not a DataFrame, Series or Dict!")
 
@@ -820,17 +830,17 @@ class Tabulator(BaseTable):
             push_on_root(ref)
 
     @updating
-    def _stream(self, stream, follow=True):
+    def _stream(self, stream, rollover=None, follow=True):
         if self.pagination == 'remote':
             length = self._length
             nrows = self.page_size
             max_page = length//nrows + bool(length%nrows)
             if self.page != max_page:
                 return
-        super()._stream(stream)
+        super()._stream(stream, rollover)
         self._update_style()
 
-    def stream(self, stream_value, reset_index=True, follow=True):
+    def stream(self, stream_value, rollover=None, reset_index=True, follow=True):
         for ref, (m, _) in self._models.items():
             m.follow = follow
             push_on_root(ref)
@@ -838,7 +848,7 @@ class Tabulator(BaseTable):
             length = self._length
             nrows = self.page_size
             self.page = length//nrows + bool(length%nrows)
-        super().stream(stream_value, reset_index)
+        super().stream(stream_value, rollover, reset_index)
 
     @updating
     def _patch(self, patch):

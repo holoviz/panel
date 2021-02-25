@@ -24,7 +24,7 @@ from .io.notebook import push, push_on_root
 from .io.server import unlocked
 from .io.state import state
 from .util import edit_readonly, updating
-from .viewable import Layoutable, Renderable, Viewable
+from .viewable import Renderable, Viewable
 
 LinkWatcher = namedtuple("Watcher","inst cls fn mode onlychanged parameter_names what queued target links transformed bidirectional_watcher")
 
@@ -77,9 +77,6 @@ class Syncable(Renderable):
         # A dictionary of current property change events
         self._events = {}
 
-        # All parameter watchers on the component
-        self._callbacks = []
-
         # Any watchers associated with links between two objects
         self._links = []
         self._link_params()
@@ -129,7 +126,7 @@ class Syncable(Renderable):
         transforms.
         """
         return [p for p in self._synced_params if self._rename.get(p, False) is not None
-                and self._source_transforms.get(p, False) is not None]
+                and self._source_transforms.get(p, False) is not None] + ['loading']
 
     @property
     def _synced_params(self):
@@ -428,14 +425,14 @@ class Reactive(Syncable, Viewable):
         if parameters:
             linkable = parameters
         elif jslink:
-            linkable = self._linkable_params
+            linkable = self._linkable_params + ['loading']
         else:
             linkable = list(self.param)
 
-        params = [p for p in linkable if p not in Layoutable.param]
+        params = [p for p in linkable if p not in Viewable.param]
         controls = Param(self.param, parameters=params, default_layout=WidgetBox,
                          name='Controls')
-        layout_params = [p for p in linkable if p in Layoutable.param]
+        layout_params = [p for p in linkable if p in Viewable.param]
         if 'name' not in layout_params and self._rename.get('name', False) is not None and not parameters:
             layout_params.insert(0, 'name')
         style = Param(self.param, parameters=layout_params, default_layout=WidgetBox,
@@ -448,7 +445,7 @@ class Reactive(Syncable, Viewable):
                     widget.serializer = 'json'
             for p in layout_params:
                 widget = style._widgets[p]
-                widget.jslink(self, value=p, bidirectional=True)
+                widget.jslink(self, value=p, bidirectional=p != 'loading')
                 if isinstance(widget, LiteralInput):
                     widget.serializer = 'json'
 
@@ -634,8 +631,11 @@ class SyncableData(Reactive):
         array: numpy.ndarray
           The array data to update the column with.
         """
-        data = getattr(self, self.data_params[0])
+        data = getattr(self, self._data_params[0])
         data[column] = array
+
+    def _update_data(self, data):
+        self.param.set_param(**{self._data_params[0]: data})
 
     def _manual_update(self, events, model, doc, root, parent, comm):
         for event in events:
@@ -661,9 +661,9 @@ class SyncableData(Reactive):
             push_on_root(ref)
 
     @updating
-    def _stream(self, stream):
+    def _stream(self, stream, rollover=None):
         for ref, (m, _) in self._models.items():
-            m.source.stream(stream)
+            m.source.stream(stream, rollover)
             push_on_root(ref)
 
     @updating
@@ -672,19 +672,22 @@ class SyncableData(Reactive):
             m.source.patch(patch)
             push_on_root(ref)
 
-    def stream(self, stream_value, reset_index=True):
+    def stream(self, stream_value, rollover=None, reset_index=True):
         """
         Streams (appends) the `stream_value` provided to the existing
         value in an efficient manner.
 
         Arguments
         ---------
-        stream_value (Union[pd.DataFrame, pd.Series, Dict])
+        stream_value: (Union[pd.DataFrame, pd.Series, Dict])
           The new value(s) to append to the existing value.
+        rollover: int
+           A maximum column size, above which data from the start of
+           the column begins to be discarded. If None, then columns
+           will continue to grow unbounded.
         reset_index (bool, default=True):
-          If True and the stream_value is a DataFrame,
-          then its index is reset. Helps to keep the
-          index unique and named `index`
+          If True and the stream_value is a DataFrame, then its index
+          is reset. Helps to keep the index unique and named `index`.
 
         Raises
         ------
@@ -731,14 +734,17 @@ class SyncableData(Reactive):
             pd = None
         if pd and isinstance(stream_value, pd.DataFrame):
             if isinstance(self._processed, dict):
-                self.stream(stream_value.to_dict())
+                self.stream(stream_value.to_dict(), rollover)
                 return
-            value_index_start = self._data.index.max() + 1
+            value_index_start = self._processed.index.max() + 1
             if reset_index:
                 stream_value = stream_value.reset_index(drop=True)
                 stream_value.index += value_index_start
+            combined = pd.concat([self._processed, stream_value])
+            if rollover is not None:
+                combined = combined.iloc[-rollover:]
             with param.discard_events(self):
-                self.value = pd.concat([self.value, stream_value])
+                self._update_data(combined)
             try:
                 self._updating = True
                 self.param.trigger('value')
@@ -746,17 +752,19 @@ class SyncableData(Reactive):
                 self._updating = False
             try:
                 self._updating = True
-                self._stream(stream_value)
+                self._stream(stream_value, rollover)
             finally:
                 self._updating = False
         elif pd and isinstance(stream_value, pd.Series):
             if isinstance(self._processed, dict):
-                self.stream({k: [v] for k, v in stream_value.to_dict().items()})
+                self.stream({k: [v] for k, v in stream_value.to_dict().items()}, rollover)
                 return
-            self.value.loc[value_index_start] = stream_value
+            self._processed.loc[value_index_start] = stream_value
+            with param.discard_events(self):
+                self._update_data(self._processed)
             self._updating = True
             try:
-                self._stream(self.value.iloc[-1:])
+                self._stream(self.value.iloc[-1:], rollover)
             finally:
                 self._updating = False
         elif isinstance(stream_value, dict):
@@ -765,10 +773,12 @@ class SyncableData(Reactive):
                     raise ValueError("Stream update must append to all columns.")
                 for col, array in stream_value.items():
                     combined = np.concatenate([self._data[col], array])
+                    if rollover is not None:
+                        combined = combined[-rollover:]
                     self._update_column(col, combined)
                 self._updating = True
                 try:
-                    self._stream(stream_value)
+                    self._stream(stream_value, rollover)
                 finally:
                     self._updating = False
             else:
@@ -886,6 +896,8 @@ class ReactiveData(SyncableData):
     def _process_events(self, events):
         if 'data' in events:
             data = events.pop('data')
+            if self._updating:
+                data = {}
             _, old_data = self._get_data()
             updated = False
             for k, v in data.items():

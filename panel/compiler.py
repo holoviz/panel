@@ -86,7 +86,7 @@ def write_bundled_files(name, files, bundle_dir, explicit_dir=None, ext=None):
     for bundle_file in files:
         bundle_file = bundle_file.split('?')[0]
         try:
-            response = requests.get(bundle_file)
+            response = requests.get(bundle_file, verify=False)
         except Exception as e:
             print(f"Failed to fetch {name} dependency: {bundle_file}. Errored with {e}.")
             continue
@@ -102,7 +102,7 @@ def write_bundled_files(name, files, bundle_dir, explicit_dir=None, ext=None):
 
 def write_bundled_tarball(name, tarball, bundle_dir, module=False):
     model_name = name.split('.')[-1].lower()
-    response = requests.get(tarball['tar'])
+    response = requests.get(tarball['tar'], verify=False)
     f = io.BytesIO()
     f.write(response.content)
     f.seek(0)

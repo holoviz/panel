@@ -5,6 +5,7 @@ import param
 import weakref
 import sys
 
+from .config import config
 from .reactive import Reactive
 from .viewable import Viewable
 
@@ -259,7 +260,8 @@ class CallbackGenerator(object):
         src_model = self._resolve_model(root_model, source, src_spec[0])
         ref = root_model.ref['id']
         link_id = id(link)
-        if any(link_id in cb.tags for cbs in src_model.js_property_callbacks.values() for cb in cbs):
+        if (any(link_id in cb.tags for cbs in src_model.js_property_callbacks.values() for cb in cbs) or
+            any(link_id in cb.tags for cbs in src_model.js_event_callbacks.values() for cb in cbs)):
             # Skip registering callback if already registered
             return
         references['source'] = src_model
@@ -409,6 +411,51 @@ class JSLinkCallbackGenerator(JSCallbackGenerator):
     }}
     """
 
+    _event_link_template = """
+    var value = true
+    try {{
+      var property = target.properties['{tgt_attr}'];
+      if (property !== undefined) {{ property.validate(value); }}
+    }} catch(err) {{
+      console.log('WARNING: Could not set {tgt_attr} on target, raised error: ' + err);
+      return;
+    }}
+    try {{
+      target['{tgt_attr}'] = value;
+    }} catch(err) {{
+      console.log(err)
+    }}
+    """
+
+    _loading_link_template = """
+    if ('{src_attr}'.startsWith('event:')) {{
+      var value = true
+    }} else {{
+      var value = source['{src_attr}'];
+      value = {src_transform};
+    }}
+    if (typeof value !== 'boolean') {{
+      value = true
+    }}
+    var css_classes = target.css_classes.slice()
+    var loading_css = ['pn-loading', '{loading_spinner}']
+    if (value) {{
+      for (var css of loading_css) {{
+        if (!(css in css_classes)) {{
+          css_classes.push(css)
+        }}
+      }}
+    }} else {{
+     for (var css of loading_css) {{
+        var index = css_classes.indexOf(css)
+        if (index > -1) {{
+          css_classes.splice(index, 1)
+        }}
+      }}
+    }}
+    target['css_classes'] = css_classes
+    """
+
     def _get_specs(self, link, source, target):
         if link.code:
             return super()._get_specs(link, source, target)
@@ -438,6 +485,8 @@ class JSLinkCallbackGenerator(JSCallbackGenerator):
         if tgt_model and src_spec and tgt_spec:
             src_reverse = {v: k for k, v in getattr(source, '_rename', {}).items()}
             src_param = src_reverse.get(src_spec, src_spec)
+            if src_spec.startswith('event:'):
+                return
             if (hasattr(source, '_process_property_change') and
                 src_param in source.param and hasattr(target, '_process_param_change')):
                 tgt_reverse = {v: k for k, v in target._rename.items()}
@@ -484,10 +533,22 @@ class JSLinkCallbackGenerator(JSCallbackGenerator):
                 tgt_transform = 'value'
         else:
             tgt_transform = 'value'
-        return self._link_template.format(
-            src_attr=src_spec, tgt_attr=tgt_spec,
-            src_transform=src_transform, tgt_transform=tgt_transform
-        )
+        if tgt_spec == 'loading':
+            return self._loading_link_template.format(
+                src_attr=src_spec, src_transform=src_transform,
+                loading_spinner=config.loading_spinner
+            )
+        else:
+            if src_spec.startswith('event:'):
+                template = self._event_link_template
+            else:
+                template = self._link_template
+            return template.format(
+                src_attr=src_spec,
+                tgt_attr=tgt_spec,
+                src_transform=src_transform,
+                tgt_transform=tgt_transform
+            )
 
 Callback.register_callback(callback=JSCallbackGenerator)
 Link.register_callback(callback=JSLinkCallbackGenerator)

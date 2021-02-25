@@ -84,7 +84,8 @@ class Widget(Reactive):
         return model
 
     def _filter_properties(self, properties):
-        return [p for p in properties if p not in Layoutable.param]
+        ignored = list(Layoutable.param)+['loading']
+        return [p for p in properties if p not in ignored]
 
     def _get_embed_state(self, root, values=None, max_opts=3):
         """

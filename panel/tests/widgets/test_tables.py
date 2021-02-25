@@ -422,7 +422,90 @@ def test_tabulator_stream_series(document, comm):
         np.testing.assert_array_equal(values, expected[col])
 
 
-def test_tabulator_stream_scalars(document, comm):
+def test_tabulator_stream_series_rollover(document, comm):
+    df = makeMixedDataFrame()
+    table = Tabulator(df)
+
+    model = table.get_root(document, comm)
+
+    stream_value = pd.Series({'A': 5, 'B': 1, 'C': 'foo6', 'D': dt.datetime(2009, 1, 8)})
+
+    table.stream(stream_value, rollover=5)
+
+    assert len(table.value) == 5
+
+    expected = {
+        'index': np.array([1, 2, 3, 4, 5]),
+        'A': np.array([1, 2, 3, 4, 5]),
+        'B': np.array([1, 0, 1, 0, 1]),
+        'C': np.array(['foo2', 'foo3', 'foo4', 'foo5', 'foo6']),
+        'D': np.array(['2009-01-02T00:00:00.000000000',
+                       '2009-01-05T00:00:00.000000000',
+                       '2009-01-06T00:00:00.000000000',
+                       '2009-01-07T00:00:00.000000000',
+                       '2009-01-08T00:00:00.000000000'],
+                      dtype='datetime64[ns]')
+    }
+    for col, values in model.source.data.items():
+        np.testing.assert_array_equal(values, expected[col])
+
+def test_tabulator_stream_df_rollover(document, comm):
+    df = makeMixedDataFrame()
+    table = Tabulator(df)
+
+    model = table.get_root(document, comm)
+
+    stream_value = pd.Series({'A': 5, 'B': 1, 'C': 'foo6', 'D': dt.datetime(2009, 1, 8)}).to_frame().T
+
+    table.stream(stream_value, rollover=5)
+
+    assert len(table.value) == 5
+
+    expected = {
+        'index': np.array([1, 2, 3, 4, 5]),
+        'A': np.array([1, 2, 3, 4, 5]),
+        'B': np.array([1, 0, 1, 0, 1]),
+        'C': np.array(['foo2', 'foo3', 'foo4', 'foo5', 'foo6']),
+        'D': np.array(['2009-01-02T00:00:00.000000000',
+                       '2009-01-05T00:00:00.000000000',
+                       '2009-01-06T00:00:00.000000000',
+                       '2009-01-07T00:00:00.000000000',
+                       '2009-01-08T00:00:00.000000000'],
+                      dtype='datetime64[ns]')
+    }
+    for col, values in model.source.data.items():
+        np.testing.assert_array_equal(values, expected[col])
+
+
+def test_tabulator_stream_dict_rollover(document, comm):
+    df = makeMixedDataFrame()
+    table = Tabulator(df)
+
+    model = table.get_root(document, comm)
+
+    stream_value = {'A': [5], 'B': [1], 'C': ['foo6'], 'D': [dt.datetime(2009, 1, 8)]}
+
+    table.stream(stream_value, rollover=5)
+
+    assert len(table.value) == 5
+
+    expected = {
+        'index': np.array([1, 2, 3, 4, 5]),
+        'A': np.array([1, 2, 3, 4, 5]),
+        'B': np.array([1, 0, 1, 0, 1]),
+        'C': np.array(['foo2', 'foo3', 'foo4', 'foo5', 'foo6']),
+        'D': np.array(['2009-01-02T00:00:00.000000000',
+                       '2009-01-05T00:00:00.000000000',
+                       '2009-01-06T00:00:00.000000000',
+                       '2009-01-07T00:00:00.000000000',
+                       '2009-01-08T00:00:00.000000000'],
+                      dtype='datetime64[ns]')
+    }
+    for col, values in model.source.data.items():
+        np.testing.assert_array_equal(values, expected[col])
+
+        
+def test_tabulator_patch_scalars(document, comm):
     df = makeMixedDataFrame()
     table = Tabulator(df)
 
@@ -446,7 +529,7 @@ def test_tabulator_stream_scalars(document, comm):
         np.testing.assert_array_equal(values, expected[col])
 
 
-def test_tabulator_stream_ranges(document, comm):
+def test_tabulator_patch_ranges(document, comm):
     df = makeMixedDataFrame()
     table = Tabulator(df)
 

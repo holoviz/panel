@@ -2,11 +2,12 @@
 Defines a custom PlotlyPlot bokeh model to render Plotly plots.
 """
 from bokeh.core.properties import (
-    Any, Dict, Enum, Int, Instance, List, String
+    Any, Dict, Either, Enum, Int, Instance, List, Null, String
 )
 from bokeh.models import LayoutDOM, ColumnDataSource
 
-from ..util import classproperty, bundled_files
+from ..io.resources import bundled_files
+from ..util import classproperty
 
 
 class PlotlyPlot(LayoutDOM):
@@ -46,11 +47,11 @@ class PlotlyPlot(LayoutDOM):
     # Callback properties
     relayout_data = Dict(String, Any)
     restyle_data = List(Any)
-    click_data = Dict(String, Any)
-    hover_data = Dict(String, Any)
-    clickannotation_data = Dict(String, Any)
-    selected_data = Dict(String, Any)
-    viewport = Dict(String, Any)
+    click_data = Either(Dict(String, Any), Null)
+    hover_data = Either(Dict(String, Any), Null)
+    clickannotation_data = Either(Dict(String, Any), Null)
+    selected_data = Either(Dict(String, Any), Null)
+    viewport = Either(Dict(String, Any), Null)
     viewport_update_policy = Enum( "mouseup", "continuous", "throttle")
     viewport_update_throttle = Int()
     _render_count = Int()

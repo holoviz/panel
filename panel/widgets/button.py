@@ -15,10 +15,11 @@ from bokeh.events import (MenuItemClick, ButtonClick)
 from .base import Widget
 
 
+BUTTON_TYPES = ['default', 'primary', 'success', 'warning', 'danger']
+
 class _ButtonBase(Widget):
 
-    button_type = param.ObjectSelector(default='default', objects=[
-        'default', 'primary', 'success', 'warning', 'danger'])
+    button_type = param.ObjectSelector(default='default', objects=BUTTON_TYPES)
 
     _rename = {'name': 'label'}
 
@@ -94,6 +95,16 @@ class Button(_ClickButton):
     _rename = {'clicks': None, 'name': 'label', 'value': None}
 
     _widget_type = _BkButton
+
+    @property
+    def _linkable_params(self):
+        return super()._linkable_params + ['value']
+
+    def jslink(self, target, code=None, args=None, bidirectional=False, **links):
+        links = {'event:'+self._event if p == 'value' else p: v for p, v in links.items()}
+        super().jslink(target, code, args, bidirectional, **links)
+
+    jslink.__doc__ = Widget.jslink.__doc__
 
     def _server_click(self, doc, ref, event):
         processing = bool(self._events)

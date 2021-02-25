@@ -8,7 +8,7 @@ from . import widgets # noqa
 from .config import config, panel_extension as extension, __version__ # noqa
 from .depends import bind, depends # noqa
 from .interact import interact # noqa
-from .io import ipywidget, serve, state # noqa
+from .io import _jupyter_server_extension_paths, ipywidget, serve, state # noqa
 from .layout import ( # noqa
     Accordion, Card, Row, Column, WidgetBox, Tabs, Spacer, 
     GridSpec, GridBox

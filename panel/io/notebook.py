@@ -17,7 +17,6 @@ from bokeh.core.json_encoder import serialize_json
 from bokeh.core.templates import MACROS
 from bokeh.document import Document
 from bokeh.embed import server_document
-from bokeh.embed.bundle import bundle_for_objs_and_resources
 from bokeh.embed.elements import div_for_render_item, script_for_render_items
 from bokeh.embed.util import standalone_docs_json_and_render_items
 from bokeh.embed.wrappers import wrap_in_script_tag
@@ -37,7 +36,7 @@ except Exception:
 from ..compiler import require_components
 from .embed import embed_state
 from .model import add_to_doc, diff
-from .resources import Bundle, Resources, _env
+from .resources import Bundle, Resources, _env, bundle_resources
 from .server import _server_url, _origin_url, get_server
 from .state import state
 
@@ -49,6 +48,10 @@ from .state import state
 LOAD_MIME = 'application/vnd.holoviews_load.v0+json'
 EXEC_MIME = 'application/vnd.holoviews_exec.v0+json'
 HTML_MIME = 'text/html'
+
+def _jupyter_server_extension_paths():
+    return [{"module": "panel.io.jupyter_server_extension"}]
+
 
 def push(doc, comm, binary=True):
     """
@@ -218,8 +221,7 @@ def load_notebook(inline=True, load_timeout=5000):
     user_resources = settings.resources._user_value is not _Unset
     resources = Resources.from_bokeh(resources)
     try:
-        settings.resources = 'inline' if inline else 'cdn'
-        bundle = bundle_for_objs_and_resources(None, resources)
+        bundle = bundle_resources(resources)
         bundle = Bundle.from_bokeh(bundle)
         configs, requirements, exports, skip_imports = require_components()
         ipywidget = 'ipywidgets_bokeh' in sys.modules

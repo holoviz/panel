@@ -83,7 +83,7 @@ class Location(Syncable):
         if self._syncing:
             return
         query_params = self.query_params
-        for p, parameters, _ in self._synced:
+        for p, parameters, _, on_error in self._synced:
             mapping = {v: k for k, v in parameters.items()}
             mapped = {}
             for k, v in query_params.items():
@@ -94,15 +94,24 @@ class Location(Syncable):
                     v = p.param[pname].deserialize(v)
                 except Exception:
                     pass
-                mapped[pname] = v
-            p.param.set_param(**mapped)
+                try:
+                    equal = v == getattr(p, pname)
+                except Exception:
+                    equal = False
+                if not equal:
+                    mapped[pname] = v
+            try:
+                p.param.set_param(**mapped)
+            except Exception:
+                if on_error:
+                    on_error(mapped)
 
     def _update_query(self, *events, query=None):
         if self._syncing:
             return
         serialized = query or {}
         for e in events:
-            matches = [ps for o, ps, _ in self._synced if o in (e.cls, e.obj)]
+            matches = [ps for o, ps, _, _ in self._synced if o in (e.cls, e.obj)]
             if not matches:
                 continue
             owner = e.cls if e.obj is None else e.obj
@@ -128,7 +137,7 @@ class Location(Syncable):
         query.update(kwargs)
         self.search = '?' + urlparse.urlencode(query)
 
-    def sync(self, parameterized, parameters=None):
+    def sync(self, parameterized, parameters=None, on_error=None):
         """
         Syncs the parameters of a Parameterized object with the query
         parameters in the URL. If no parameters are supplied all
@@ -143,12 +152,16 @@ class Location(Syncable):
           If a dictionary is supplied it should define a mapping from
           the Parameterized's parameteres to the names of the query
           parameters.
+        on_error: (callable):
+          Callback when syncing Parameterized with URL parameters
+          fails. The callback is passed a dictionary of parameter
+          values, which could not be applied.
         """
         parameters = parameters or [p for p in parameterized.param if p != 'name']
         if not isinstance(parameters, dict):
             parameters = dict(zip(parameters, parameters))
         watcher = parameterized.param.watch(self._update_query, list(parameters))
-        self._synced.append((parameterized, parameters, watcher))
+        self._synced.append((parameterized, parameters, watcher, on_error))
         self._update_synced()
         query = {}
         for p, name in parameters.items():
@@ -183,14 +196,14 @@ class Location(Syncable):
             raise ValueError(f"Cannot unsync {ptype} object since it "
                              "was never synced in the first place.")
         synced = []
-        for p, params, watcher in self._synced:
+        for p, params, watcher, on_error in self._synced:
             if parameterized is p:
                 parameterized.param.unwatch(watcher)
                 if parameters is not None:
                     new_params = {p: q for p, q in params.items()
                                   if p not in parameters}
                     new_watcher = parameterized.param.watch(watcher.fn, list(new_params))
-                    synced.append((p, new_params, new_watcher))
+                    synced.append((p, new_params, new_watcher, on_error))
             else:
-                synced.append((p, params, watcher))
+                synced.append((p, params, watcher, on_error))
         self._synced = synced

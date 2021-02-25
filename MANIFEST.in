@@ -3,15 +3,16 @@ include LICENSE.txt
 include panel/.version
 include panel/*.json
 include panel/assets/*.gif
+include panel/assets/*.svg
 include panel/index.ts
 include panel/models/*.ts
 include panel/models/vtk/*.ts
 include panel/_templates/*.js
 include panel/_templates/*.html
-include panel/_styles/*.css
 include panel/tests/test_data/*.png
 recursive-include panel/template *.html
 recursive-include panel/template *.css
+recursive-include panel/template *.js
 global-exclude *.py[co]
 global-exclude *~
 global-exclude *.ipynb_checkpoints/*

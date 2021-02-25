@@ -15,12 +15,16 @@ jobs:
       run:
         shell: bash -l {0}
     env:
-      CHANS_DEV: "-c pyviz/label/dev -c conda-forge"
+      CHANS_DEV: "-c pyviz/label/dev -c bokeh -c conda-forge"
       PKG_TEST_PYTHON: "--test-python=py38"
       PYTHON_VERSION: "3.8"
       MPLBACKEND: "Agg"
       CONDA_UPLOAD_TOKEN: ${{ secrets.CONDA_UPLOAD_TOKEN }}
     steps:
+      - name: remove nodejs
+        run: |
+          sudo rm /usr/local/bin/node
+          sudo rm /usr/local/bin/npm
       - uses: actions/checkout@v2
         with:
           fetch-depth: "100"
@@ -30,6 +34,9 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v2
         with:
           miniconda-version: "latest"
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '15'
       - name: Fetch unshallow
         run: git fetch --prune --tags --unshallow -f
       - name: Set output
@@ -46,6 +53,7 @@ jobs:
         run: |
           echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_API_TOKEN }}" > $HOME/.npmrc
           npm whoami
+          npm -v
       - name: dev deploy
         if: (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc'))
         run: |
@@ -76,6 +84,10 @@ jobs:
       PPP: ${{ secrets.PPP }}
       PYPI: "https://upload.pypi.org/legacy/"
     steps:
+      - name: remove nodejs
+        run: |
+          sudo rm /usr/local/bin/node
+          sudo rm /usr/local/bin/npm
       - uses: actions/checkout@v2
         with:
           fetch-depth: "100"
@@ -85,6 +97,9 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v2
         with:
           miniconda-version: "latest"
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '15'
       - name: Fetch unshallow
         run: git fetch --prune --tags --unshallow -f
       - name: conda setup

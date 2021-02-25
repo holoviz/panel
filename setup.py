@@ -97,7 +97,7 @@ except Exception:
 ########## dependencies ##########
 
 install_requires = [
-    'bokeh >=2.3.0dev12',
+    'bokeh >=2.3.0',
     'param >=1.10.0',
     'pyviz_comms >=0.7.4',
     'markdown',
@@ -108,7 +108,7 @@ install_requires = [
 
 _recommended = [
     'notebook >=5.4',
-    'holoviews >=1.13.2',
+    'holoviews >1.14.1',
     'matplotlib',
     'pillow',
     'plotly'
@@ -192,6 +192,13 @@ setup_args = dict(
     cmdclass=_COMMANDS,
     packages=find_packages(),
     include_package_data=True,
+    data_files=[
+        # like `jupyter serverextension enable --sys-prefix`
+        (
+            "etc/jupyter/jupyter_notebook_config.d",
+            ["jupyter-config/jupyter_notebook_config.d/panel-client-jupyter.json"],
+        ),
+    ],
     classifiers=[
         "License :: OSI Approved :: BSD License",
         "Development Status :: 5 - Production/Stable",
@@ -226,6 +233,12 @@ setup_args = dict(
     tests_require=extras_require['tests']
 )
 
+def clean_js_version(version):
+    version = version.replace('-', '')
+    for dev in ('a', 'b', 'rc'):
+        version = version.replace(dev+'.', dev)
+    return version
+
 if __name__ == "__main__":
     example_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 'panel', 'examples')
@@ -242,8 +255,8 @@ if __name__ == "__main__":
         if any(dev in version for dev in ('a', 'b', 'rc')) and not '-' in js_version:
             raise ValueError(f"panel.js dev versions ({js_version}) must "
                              "must separate dev suffix with a dash, e.g. "
-                             "v1.0.0rc1 should be v1.0.0-rc1.")
-        if version != 'None' and version != js_version.replace('-', ''):
+                             "v1.0.0rc1 should be v1.0.0-rc.1.")
+        if version != 'None' and version != clean_js_version(js_version):
             raise ValueError(f"panel.js version ({js_version}) does not match "
                              f"panel version ({version}). Cannot build release.")
 

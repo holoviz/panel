@@ -80,6 +80,16 @@ class _config(_base_config):
         Whether to set custom Signature which allows tab-completion
         in some IDEs and environments.""")
 
+    autoreload = param.Boolean(default=False, doc="""
+        Whether to autoreload server when script changes.""")
+
+    loading_spinner = param.Selector(default='arcs', objects=[
+        'arcs', 'bars', 'dots', 'petals'], doc="""
+        Loading indicator to use when component loading parameter is set.""")
+
+    loading_color = param.Color(default='#c3c3c3', doc="""
+        Color of the loading indicator.""")
+
     safe_embed = param.Boolean(default=False, doc="""
         Ensure all bokeh property changes trigger events which are
         embedded. Useful when only partial updates are made in an

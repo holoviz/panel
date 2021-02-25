@@ -24,6 +24,7 @@ from pyviz_comms import JupyterCommManager
 
 from .config import config, panel_extension
 from .io.embed import embed_state
+from .io.loading import start_loading_spinner, stop_loading_spinner
 from .io.model import add_to_doc, patch_cds_msg
 from .io.notebook import (
     ipywidget, render_mimebundle, render_model, show_embed, show_server
@@ -367,6 +368,7 @@ class Renderable(param.Parameterized):
 
     def __init__(self, **params):
         super().__init__(**params)
+        self._callbacks = []
         self._documents = {}
         self._models = {}
         self._comms = {}
@@ -496,12 +498,25 @@ class Viewable(Renderable, Layoutable, ServableMixin):
     objects to be displayed in the notebook and on bokeh server.
     """
 
+    loading = param.Boolean(doc="""
+        Whether or not the Viewable is loading. If True a loading spinner
+        is shown on top of the Viewable.""")
+
     _preprocessing_hooks = []
 
     def __init__(self, **params):
         hooks = params.pop('hooks', [])
         super().__init__(**params)
         self._hooks = hooks
+        self._update_loading()
+        watcher = self.param.watch(self._update_loading, 'loading')
+        self._callbacks.append(watcher)
+
+    def _update_loading(self, *_):
+        if self.loading:
+            start_loading_spinner(self)
+        else:
+            stop_loading_spinner(self)
 
     def __repr__(self, depth=0):
         return '{cls}({params})'.format(cls=type(self).__name__,
@@ -604,7 +619,9 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         -------
         Cloned Viewable object
         """
-        return type(self)(**dict(self.param.get_param_values(), **params))
+        inherited = {p: v for p, v in self.param.get_param_values()
+                     if not self.param[p].readonly}
+        return type(self)(**dict(inherited, **params))
 
     def pprint(self):
         """

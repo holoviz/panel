@@ -4,7 +4,8 @@ Custom bokeh Widget models.
 from bokeh.core.enums import ButtonType
 
 from bokeh.core.properties import (
-    Int, Float, Override, Enum, Any, Bool, Dict, String, List, Either, Tuple
+    Any, Bool, Dict, Either, Enum, Float, Int, List, Nullable,
+    Override, String, Tuple
 )
 from bokeh.models.layouts import HTMLBox
 from bokeh.models.widgets import InputWidget, Widget
@@ -102,7 +103,7 @@ class VideoStream(HTMLBox):
 
     snapshot = Bool(False, help="""On change generate a snapshot of the current video frame""")
 
-    timeout = Float(None, help="""
+    timeout = Nullable(Int, help="""
         The timeout between snapshots (if None snapshot only generated
         when snapshot property is changed""")
 

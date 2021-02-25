@@ -310,6 +310,8 @@ def initializeSerializers():
         'vtkSmartVolumeMapper', genericVolumeMapperSerializer)
     registerInstanceSerializer(
         'vtkOpenGLImageSliceMapper', imageSliceMapperSerializer)
+    registerInstanceSerializer(
+        'vtkOpenGLGlyph3DMapper', glyph3DMapperSerializer)
 
     # LookupTables/TransferFunctions
     registerInstanceSerializer('vtkLookupTable', lookupTableSerializer)
@@ -677,25 +679,25 @@ def genericMapperSerializer(parent, mapper, mapperId, context, depth):
     calls = []
     dependencies = []
 
-    if hasattr(mapper, 'GetInputDataObject'):
-        dataObject = mapper.GetInputDataObject(0, 0)
-    else:
+    if not hasattr(mapper, 'GetInputDataObject'):
         if context.debugAll:
-            print('This mapper does not have GetInputDataObject method')
-
-    if dataObject:
-        dataObjectId = '%s-dataset' % mapperId
-        if parent.IsA('vtkActor') and not mapper.IsA('vtkTexture'):
-            # vtk-js actors can render only surfacic datasets
-            # => we ensure to convert the dataset in polydata
-            dataObjectInstance = mergeToPolydataSerializer(
-                mapper, dataObject, dataObjectId, context, depth + 1)
-        else:
-            dataObjectInstance = serializeInstance(
-                mapper, dataObject, dataObjectId, context, depth + 1)
-        if dataObjectInstance:
-            dependencies.append(dataObjectInstance)
-            calls.append(['setInputData', [wrapId(dataObjectId)]])
+                print('This mapper does not have GetInputDataObject method')
+    else:
+        for port in range(mapper.GetNumberOfInputPorts()): # Glyph3DMapper can define input data objects on 2 ports (input, source)
+            dataObject = mapper.GetInputDataObject(port, 0)
+            if dataObject:
+                dataObjectId = '%s-dataset-%d' % (mapperId, port)
+                if parent.IsA('vtkActor') and not mapper.IsA('vtkTexture'):
+                    # vtk-js actors can render only surfacic datasets
+                    # => we ensure to convert the dataset in polydata
+                    dataObjectInstance = mergeToPolydataSerializer(
+                        mapper, dataObject, dataObjectId, context, depth + 1)
+                else:
+                    dataObjectInstance = serializeInstance(
+                        mapper, dataObject, dataObjectId, context, depth + 1)
+                if dataObjectInstance:
+                    dependencies.append(dataObjectInstance)
+                    calls.append(['setInputData', [wrapId(dataObjectId), port]])
 
     lookupTable = None
 
@@ -765,6 +767,23 @@ def genericVolumeMapperSerializer(parent, mapper, mapperId, context, depth):
         # 'maximumSamplesPerRay',
         'autoAdjustSampleDistances': mapper.GetAutoAdjustSampleDistances(),
         'blendMode': mapper.GetBlendMode(),
+    })
+    return instance
+
+# -----------------------------------------------------------------------------
+
+
+def glyph3DMapperSerializer(parent, mapper, mapperId, context, depth):
+    instance = genericMapperSerializer(parent, mapper, mapperId, context, depth)
+    
+    if not instance: return
+    instance['type'] = mapper.GetClassName()
+    instance['properties'].update({
+        'orient': mapper.GetOrient(),
+        'orientationMode': mapper.GetOrientationMode(),
+        'scaling': mapper.GetScaling(),
+        'scaleFactor': mapper.GetScaleFactor(),
+        'scaleMode': mapper.GetScaleMode(),
     })
     return instance
 
@@ -1092,7 +1111,7 @@ def mergeToPolydataSerializer(parent, dataObject, dataObjectId, context, depth):
         gf.Update()
         dataset = gf.GetOutput()
     else:
-        dataset = parent.GetInput()
+        dataset = dataObject
 
     return polydataSerializer(parent, dataset, dataObjectId, context, depth)
 

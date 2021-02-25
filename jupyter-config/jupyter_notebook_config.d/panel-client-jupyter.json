@@ -1,0 +1,12 @@
+{
+  "ServerApp": {
+    "jpserver_extensions": {
+      "panel": true
+    }
+  },
+  "NotebookApp": {
+    "nbserver_extensions": {
+      "panel": true
+    }
+  }
+}

@@ -6,13 +6,21 @@ import glob
 import json
 import os
 
+from base64 import b64encode
 from collections import OrderedDict
 from pathlib import Path
 from urllib.parse import urljoin
 
-from bokeh.embed.bundle import Bundle as BkBundle
+from bokeh.embed.bundle import (
+    Bundle as BkBundle, _bundle_extensions, extension_dirs,
+    bundle_models
+)
+
 from bokeh.resources import Resources as BkResources
 from jinja2 import Environment, Markup, FileSystemLoader
+
+from ..util import url_path
+
 
 with open(Path(__file__).parent.parent / 'package.json') as f:
     package_json = json.load(f)
@@ -31,12 +39,82 @@ _env = get_env()
 _env.filters['json'] = lambda obj: Markup(json.dumps(obj))
 _env.filters['conffilter'] = conffilter
 
+# Handle serving of the panel extension before session is loaded
+RESOURCE_MODE = 'server'
+PANEL_DIR = Path(__file__).parent.parent
+DIST_DIR = PANEL_DIR / 'dist'
+ASSETS_DIR = PANEL_DIR / 'assets'
 BASE_TEMPLATE = _env.get_template('base.html')
 DEFAULT_TITLE = "Panel Application"
 JS_RESOURCES = _env.get_template('js_resources.html')
 CDN_DIST = f"https://unpkg.com/@holoviz/panel@{js_version}/dist/"
 LOCAL_DIST = "static/extensions/panel/"
-DIST_DIR = Path(__file__).parent.parent / 'dist'
+
+extension_dirs['panel'] = str(DIST_DIR)
+
+
+def loading_css():
+    from ..config import config
+    with open(ASSETS_DIR / f'{config.loading_spinner}_spinner.svg', encoding='utf-8') as f:
+        svg = f.read().replace('\n', '').format(color=config.loading_color)
+    b64 = b64encode(svg.encode('utf-8')).decode('utf-8')
+    return f"""
+    .bk.pn-loading.{config.loading_spinner}:before {{
+      background-image: url("data:image/svg+xml;base64,{b64}")
+    }}
+    """
+
+
+def bundled_files(model, file_type='javascript'):
+    bdir = os.path.join(PANEL_DIR, 'dist', 'bundled', model.__name__.lower())
+    name = model.__name__.lower()
+
+    files = []
+    for url in getattr(model, f"__{file_type}_raw__", []):
+        filepath = url_path(url)
+        test_filepath = filepath.split('?')[0]
+        if RESOURCE_MODE == 'server' and os.path.isfile(os.path.join(bdir, test_filepath)):
+            files.append(f'static/extensions/panel/bundled/{name}/{filepath}')
+        else:
+            files.append(url)
+    return files
+
+
+def bundle_resources(resources):
+    global RESOURCE_MODE
+    js_resources = css_resources = resources
+    RESOURCE_MODE = mode = js_resources.mode if resources is not None else "inline"
+
+    js_files = []
+    js_raw = []
+    css_files = []
+    css_raw = []
+
+    js_files.extend(js_resources.js_files)
+    js_raw.extend(js_resources.js_raw)
+
+    css_files.extend(css_resources.css_files)
+    css_raw.extend(css_resources.css_raw)
+
+    extensions = _bundle_extensions(None, js_resources)
+    if mode == "inline":
+        js_raw.extend([ Resources._inline(bundle.artifact_path) for bundle in extensions ])
+    elif mode == "server":
+        js_files.extend([ bundle.server_url for bundle in extensions ])
+    elif mode == "cdn":
+        for bundle in extensions:
+            if bundle.cdn_url is not None:
+                js_files.append(bundle.cdn_url)
+            else:
+                js_raw.append(Resources._inline(bundle.artifact_path))
+    else:
+        js_files.extend([ bundle.artifact_path for bundle in extensions ])
+
+    ext = bundle_models(None)
+    if ext is not None:
+        js_raw.append(ext)
+
+    return Bundle.of(js_files, js_raw, css_files, css_raw, js_resources.hashes if js_resources else {})
 
 
 class Resources(BkResources):
@@ -72,6 +150,9 @@ class Resources(BkResources):
                 css_txt = f.read()
             if css_txt not in raw:
                 raw.append(css_txt)
+
+        if config.loading_spinner:
+            raw.append(loading_css())
         return raw + config.raw_css
 
     @property
@@ -121,7 +202,6 @@ class Resources(BkResources):
 
     @property
     def render_js(self):
-        print('>>>>')
         return JS_RESOURCES.render(
             js_raw=self.js_raw, js_files=self.js_files,
             js_modules=self.js_modules, hashes=self.hashes
@@ -131,7 +211,8 @@ class Resources(BkResources):
 class Bundle(BkBundle):
 
     def __init__(self, **kwargs):
-        self.js_modules = kwargs.pop("js_modules", [])
+        from ..config import config
+        self.js_modules = kwargs.pop("js_modules", list(config.js_modules.values()))
         super().__init__(**kwargs)
 
     @classmethod
