@@ -4,7 +4,6 @@ import asyncio
 from functools import partial
 from threading import Thread
 from queue import Queue as SyncQueue
-from urllib.parse import urljoin
 
 from ..io.notebook import push_on_root
 from ..io.resources import DIST_DIR, LOCAL_DIST

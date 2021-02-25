@@ -20,7 +20,6 @@ from bokeh.resources import Resources as BkResources
 from jinja2 import Environment, Markup, FileSystemLoader
 
 from ..util import url_path
-from .state import state
 
 
 with open(Path(__file__).parent.parent / 'package.json') as f:
