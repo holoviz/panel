@@ -15,7 +15,7 @@ jobs:
       run:
         shell: bash -l {0}
     env:
-      CHANS_DEV: "-c pyviz/label/dev -c bokeh/label/dev -c conda-forge"
+      CHANS_DEV: "-c pyviz/label/dev -c bokeh -c conda-forge"
       PKG_TEST_PYTHON: "--test-python=py38"
       PYTHON_VERSION: "3.8"
       MPLBACKEND: "Agg"
@@ -75,7 +75,7 @@ jobs:
       run:
         shell: bash -l {0}
     env:
-      CHANS_DEV: "-c pyviz/label/dev -c bokeh/label/dev -c conda-forge"
+      CHANS_DEV: "-c pyviz/label/dev -c bokeh -c conda-forge"
       PKG_TEST_PYTHON: "--test-python=py38"
       PYTHON_VERSION: "3.8"
       CHANS: "-c pyviz"
