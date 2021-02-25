@@ -1,0 +1,63 @@
+/* fast_root.css */
+:root {
+  --body-font: 'Open Sans';
+  --base-height-multiplier: 10;
+  --base-horizontal-spacing-multiplier: 3;
+  --corner-radius: 3;
+  --density: 0;
+  --design-unit: 4;
+  --disabled-opacity :0.3;
+  --focus-outline-width: 2;
+  --outline-width: 1;
+  --type-ramp-base-font-size: 14px;
+  --type-ramp-base-line-height: 20px;
+  --type-ramp-minus-1-font-size: 12px;
+  --type-ramp-minus-1-line-height: 16px;
+  --type-ramp-minus-2-font-size: 10px;
+  --type-ramp-minus-2-line-height: 16px;
+  --type-ramp-plus-1-font-size: 16px;
+  --type-ramp-plus-1-line-height: 24px;
+  --type-ramp-plus-2-font-size: 20px;
+  --type-ramp-plus-2-line-height: 28px;
+  --type-ramp-plus-3-font-size: 28px;
+  --type-ramp-plus-3-line-height: 36px;
+  --type-ramp-plus-4-font-size: 34px;
+  --type-ramp-plus-4-line-height: 44px;
+  --type-ramp-plus-5-font-size: 46px;
+  --type-ramp-plus-5-line-height: 56px;
+  --type-ramp-plus-6-font-size: 60px;
+  --type-ramp-plus-6-line-height: 72px;
+  --track-width: 2;
+}
+#menu * {
+  width: 100%;
+}
+#menu ul {
+  padding-left: 0px;
+  padding-right: 35px;
+}
+#menu li {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+#menu a {
+  width: 100%;
+  border-radius: calc(var(--corner-radius) * 1px);
+  padding-left: 16px;
+}
+#menu a:hover {
+  background: var(--accent-fill-hover);
+  border-radius: calc(var(--corner-radius) * 1px);
+}
+#menu a:active {
+  background: var(--accent-fill-checked);
+  border-radius: calc(var(--corner-radius) * 1px);
+}
+#menu a[disabled=""] {
+  pointer-events: none;
+  color: var(--neutral-outline-rest)
+}
+h1, h2, h3, h4, h5, h6 {
+  line-height: 1.5em;
+}

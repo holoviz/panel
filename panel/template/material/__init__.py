@@ -11,6 +11,7 @@ from ...layout import Card
 from ..base import BasicTemplate
 from ..theme import DefaultTheme, DarkTheme
 
+
 class MaterialTemplate(BasicTemplate):
     """
     MaterialTemplate is built on top of Material web components.

@@ -1,0 +1,13 @@
+/* fast default.css */
+#header {
+  box-shadow: 2px 2px 10px silver;
+}
+
+#sidebar {
+  background-color: white;
+  box-shadow: 2px 2px 10px silver;
+}
+
+#sidebar-button {
+  color: white;
+}

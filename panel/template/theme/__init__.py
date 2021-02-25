@@ -48,6 +48,7 @@ class DefaultTheme(Theme):
 
     base_css = param.Filename(default=pathlib.Path(__file__).parent / 'default.css')
 
+    __abstract = True
 
 
 BOKEH_DARK = dict(_dark_minimal.json)
@@ -66,3 +67,10 @@ class DarkTheme(Theme):
 
     bokeh_theme = param.ClassSelector(class_=(_BkTheme, str),
                                       default=_BkTheme(json=BOKEH_DARK))
+
+    __abstract = True
+
+THEMES = {
+    'default': DefaultTheme,
+    'dark': DarkTheme
+}
