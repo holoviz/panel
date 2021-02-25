@@ -82,6 +82,7 @@ class Accordion(NamedListPanel):
                     header_css_classes=['accordion-header'],
                     margin=self.margin
                 )
+                card.param.watch(self._set_active, ['collapsed'])
                 self._panels[id(pane)] = card
             card.param.set_param(**params)
             if ref in card._models:
@@ -94,7 +95,6 @@ class Accordion(NamedListPanel):
                         panel.js_on_change('collapsed', cb)
                 except RerenderError:
                     return self._get_objects(model, current_objects[:i], doc, root, comm)
-            
             new_models.append(panel)
         self._update_cards()
         self._update_active()
@@ -105,6 +105,8 @@ class Accordion(NamedListPanel):
             panel._cleanup(root)
         super()._cleanup(root)
 
+    
+
     def _apply_style(self, i):
         if i == 0:
             margin = (5, 5, 0, 5)
@@ -113,6 +115,15 @@ class Accordion(NamedListPanel):
         else:
             margin = (0, 5, 0, 5)
         return dict(margin=margin, collapsed = i not in self.active)
+
+    def _set_active(self, *events):
+        active = []
+        for i, pane in enumerate(self.objects):
+            if id(pane) not in self._panels:
+                continue
+            elif not self._panels[id(pane)].collapsed:
+                active.append(i)
+        self.active = active
 
     def _update_active(self, *events):
         for i, pane in enumerate(self.objects):
