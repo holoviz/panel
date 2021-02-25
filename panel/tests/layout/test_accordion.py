@@ -124,7 +124,7 @@ def test_accordion_active(document, comm, accordion):
 
 
 def test_accordion_set_card_collapsed(document, comm, accordion):
-    model = accordion.get_root(document, comm=comm)
+    accordion.get_root(document, comm=comm)
 
     c1, c2 = accordion._panels.values()
 
