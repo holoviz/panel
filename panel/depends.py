@@ -54,7 +54,7 @@ def depends(*args, **kwargs):
     return param.depends(*updated_args, **updated_kwargs)
 
 
-def bind(function, *args, **kwargs):
+def bind(function, *args, watch=False, **kwargs):
     """
     Given a function, returns a wrapper function that binds the values
     of some or all arguments to Parameter values and expresses Param
@@ -82,6 +82,9 @@ def bind(function, *args, **kwargs):
         The function to bind constant or dynamic args and kwargs to.
     args: object, param.Parameter, panel.widget.Widget, or ipywidget
         Positional arguments to bind to the function.
+    watch: boolean
+        Whether the function will be automatically evaluated when one
+        of the parameter dependencies change.
     kwargs: object, param.Parameter, panel.widget.Widget, or ipywidget
         Keyword arguments to bind to the function.
 
@@ -92,11 +95,11 @@ def bind(function, *args, **kwargs):
     """
     updated_args = [param_value_if_widget(a) for a in args]
     updated_kwargs = {k: param_value_if_widget(v) for k, v in kwargs.items()}
-    return _param_bind(function, *updated_args, **updated_kwargs)
+    return _param_bind(function, *updated_args, watch=watch, **updated_kwargs)
 
 
 # Temporary; to move to Param
-def _param_bind(function, *args, **kwargs):
+def _param_bind(function, *args, watch=False, **kwargs):
     """
     Given a function, returns a wrapper function that binds the values
     of some or all arguments to Parameter values and expresses Param
@@ -114,21 +117,17 @@ def _param_bind(function, *args, **kwargs):
         The function to bind constant or dynamic args and kwargs to.
     args: object, param.Parameter
         Positional arguments to bind to the function.
+    watch: boolean
+        Whether the function will be automatically evaluated when one
+        of the parameter dependencies change.
     kwargs: object, param.Parameter
-        Keyword arguments to bind to the function. The keyword watch is special. If set to True the
-        function is always run when a parameter changes. If not specified (default) or set to False
-        the function is only run automatically when embedded in a panel.
+        Keyword arguments to bind to the function.
 
     Returns
     -------
     Returns a new function with the args and kwargs bound to it and
     annotated with all dependencies.
     """
-    if "watch" in kwargs:
-        watch=kwargs.pop("watch")
-    else:
-        watch=False
-
     dependencies = {}
     for i, arg in enumerate(args):
         p = param_value_if_widget(arg)
