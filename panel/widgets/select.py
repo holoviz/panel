@@ -211,19 +211,29 @@ if bokeh_version < '2.3.0':
 
 class AutocompleteInput(Widget):
 
+    case_sensitive = param.Boolean(default=True, doc="""
+        Enable or disable case sensitivity.""")
+
     min_characters = param.Integer(default=2, doc="""
         The number of characters a user must type before
         completions are presented.""")
 
-    options = param.List(default=[])
+    options = param.List(default=[], doc="""
+        A list of completion strings. This will be used to guide the
+        user upon typing the beginning of a desired value.""")
 
-    placeholder = param.String(default='')
+    placeholder = param.String(default='', doc="""
+        Placeholder for empty input field.""")
 
-    value = param.Parameter(default=None)
-    
-    case_sensitive = param.Boolean(default=True)
+    restrict = param.Boolean(default=True, doc="""
+        Set to False in order to allow users to enter text that is not
+        present in the list of completion strings.""")
 
-    restrict = param.Boolean(default=True)
+    value = param.String(default='', allow_None=True, doc="""
+      Initial or entered text value updated when <enter> key is pressed.""")
+
+    value_input = param.String(default='', allow_None=True, doc="""
+      Initial or entered text value updated on every key press.""")
 
     _widget_type = _BkAutocompleteInput
 
