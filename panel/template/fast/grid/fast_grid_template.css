@@ -13,7 +13,7 @@ body {
   display: flex;
   align-items: center;
   padding: 10px;
-  height: 44px;
+  height: 64px;
 }
 
 #header-items {
@@ -23,8 +23,8 @@ body {
 }
 
 #sidebar-button {
-  font-size:30px;
-  cursor:pointer;
+  font-size: 30px;
+  cursor: pointer;
   opacity: 0.9;
 }
 #sidebar-button:hover {
@@ -43,6 +43,7 @@ a.navbar-brand {
   padding-left: 10px;
   white-space: nowrap;
 }
+
 .title {
   text-decoration: none;
   text-decoration-line: none;
@@ -88,7 +89,7 @@ img.app-logo {
   transition: all 0.2s cubic-bezier(0.945, 0.020, 0.270, 0.665);
   transform-origin: center left; /* Set the transformed position of sidebar to center left side. */
   width: 278px;
-  height: calc(100vh - 76px);
+  height: 100vh;
   overflow-y: scroll;
   padding: 10px;
   margin-right: 12px;

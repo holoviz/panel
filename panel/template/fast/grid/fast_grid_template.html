@@ -55,8 +55,8 @@
 
 <!-- Fast script -->
 <script type="module">
-  import { parseColorHexRGB } from "/{{ template_resources['js_modules']['fast-colors'] }}";
-  import { createColorPalette } from "/{{ template_resources['js_modules']['fast'] }}";
+  import { parseColorHexRGB } from "{{ template_resources['js_modules']['fast-colors'] }}";
+  import { createColorPalette } from "{{ template_resources['js_modules']['fast'] }}";
 
   function setAccentColor(color, selector){
       const accent = color;
