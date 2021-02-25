@@ -16,14 +16,14 @@ COLLAPSED_SVG_ICON = """
   <path d="M9 5.44446V12.5556" stroke-linecap="round" stroke-linejoin="round"></path>
   <path d="M5.44446 9H12.5556" stroke-linecap="round" stroke-linejoin="round"></path>
 </svg>
-"""
+""" # noqa
 
 EXPANDED_SVG_ICON = """
 <svg style="stroke: #E62F63" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" slot="expanded-icon">
   <path d="M15.2222 1H2.77778C1.79594 1 1 1.79594 1 2.77778V15.2222C1 16.2041 1.79594 17 2.77778 17H15.2222C16.2041 17 17 16.2041 17 15.2222V2.77778C17 1.79594 16.2041 1 15.2222 1Z" stroke-linecap="round" stroke-linejoin="round"></path>
   <path d="M5.44446 9H12.5556" stroke-linecap="round" stroke-linejoin="round"></path>
 </svg>
-"""
+""" # noqa
 
 FONT_URL = "//fonts.googleapis.com/css?family=Open+Sans"
 

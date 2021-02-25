@@ -3,8 +3,6 @@ import pathlib
 import panel as pn
 import param
 
-from ...depends import depends
-from ...layout import Card, GridSpec
 from ..base import BasicTemplate
 from ..react import ReactTemplate
 from ..theme import THEMES, DefaultTheme

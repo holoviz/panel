@@ -1,9 +1,4 @@
-# pylint: disable=redefined-outer-name,protected-access
-# pylint: disable=missing-function-docstring,missing-module-docstring,missing-class-docstring
-import holoviews as hv
-import numpy as np
 import panel as pn
-from holoviews import opts
 
 from panel.template.fast import FastListTemplate
 
