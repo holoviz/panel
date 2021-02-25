@@ -52,15 +52,24 @@ export class VTKAxes extends Model {
   }
 
   get xticks(): number[] {
-    return this.xticker.ticks
+    if (this.xticker)
+      return this.xticker.ticks
+    else
+      return []
   }
 
   get yticks(): number[] {
-    return this.yticker.ticks
+    if (this.yticker)
+      return this.yticker.ticks
+    else
+      return []
   }
 
   get zticks(): number[] {
-    return this.zticker.ticks
+    if (this.zticker)
+      return this.zticker.ticks
+    else
+      return []
   }
 
   get xlabels(): string[] {
@@ -141,6 +150,8 @@ export class VTKAxes extends Model {
   }
 
   create_axes(canvas: HTMLCanvasElement): any {
+    if (this.origin == null)
+      return {psActor: null, axesActor: null, gridActor: null}
     const points = ([this.xticks, this.yticks, this.zticks].map((arr, axis) => {
       let coords = null
       switch (axis) {
