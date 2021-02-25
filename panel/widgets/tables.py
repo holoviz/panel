@@ -952,6 +952,7 @@ class Tabulator(BaseTable):
         props['layout'] = self.layout
         props['groupby'] = self.groupby
         props['hidden_columns'] = self.hidden_columns
+        props['editable'] = not self.disabled
         process = {'theme': self.theme, 'frozen_rows': self.frozen_rows}
         props.update(self._process_param_change(process))
         if self.pagination:
