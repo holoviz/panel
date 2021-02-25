@@ -4,7 +4,7 @@ import {html} from 'htm/preact';
 import {applyPatch, getValueByPointer} from 'fast-json-patch';
 
 import * as p from "@bokehjs/core/properties"
-import {Markup} from "@bokehjs/models/widgets/markup"
+import {HTMLBox} from "@bokehjs/models/layouts/html_box"
 import {PanelHTMLBoxView} from "./layout"
 import {serializeEvent} from "./event-to-object"
 
@@ -148,7 +148,7 @@ function useLazyModule(source: string, sourceUrlBase: string = "") {
   const [module, setModule] = useState(null);
   // use eval() to avoid weird build behavior by bundlers like Webpack
   if (!module)
-    eval(`import('${joinUrl(sourceUrlBase, source)}')`).then((m: any) => {console.log(m); setModule(m) })
+    eval(`import('${joinUrl(sourceUrlBase, source)}')`).then(setModule)
   return module
 }
 
@@ -210,33 +210,61 @@ function joinUrl(base: string, tail: string) {
 export class IDOMView extends PanelHTMLBoxView {
   model: IDOM
   _update: any
-  _mounted: boolean = false
 
   connect_signals(): void {
     super.connect_signals()
     this.connect(this.model.properties.event.change, () => {
       this._update(...this.model.event)
-      this.root.invalidate_layout()
-    })
+      setTimeout(() => { requestAnimationFrame(() => this.fix_layout()) })
+   })
   }
 
-  render(): void {
-    super.render()
-    if (!this._mounted) {
-      mountLayout(
-	this.el,
-	(update: any) => this._save_update(update),
-	(event: any) => this._send(event),
-	this.model.importSourceUrl
-      )
-      this._mounted = true
-    }
+  fix_layout(): void {
+    this.update_layout()
+    this.compute_layout()
+    this.invalidate_layout()
+  }
+
+  initialize(): void {
+    super.initialize()
+    mountLayout(
+      this.el,
+      (update: any) => this._save_update(update),
+      (event: any) => this._send(event),
+      this.model.importSourceUrl
+    )
+  }
+
+  async lazy_initialize(): Promise<void> {
+    await super.lazy_initialize()
+    await new Promise((resolve) => {
+      const check_update = () => {
+	if (this._update)
+	  resolve(null)
+	else
+	  setTimeout(check_update, 100);
+      }
+      check_update()
+    })
   }
 
   _save_update(update: any): any {
     this._update = update
-    update(...this.model.event)
-    this.root.invalidate_layout()
+  }
+
+  async render(): Promise<void> {
+    super.render()
+    this._update(...this.model.event)
+    await new Promise((resolve) => {
+      const check_update = () => {
+	if (this.el.children.length) {
+	  setTimeout(() => { requestAnimationFrame(() => this.fix_layout()) })
+	  resolve(null)
+	} else
+	  setTimeout(check_update, 50)
+      }
+      check_update()
+    })
   }
 
   _send(event: any): any {
@@ -247,7 +275,7 @@ export class IDOMView extends PanelHTMLBoxView {
 export namespace IDOM {
   export type Attrs = p.AttrsOf<Props>
 
-  export type Props = Markup.Props & {
+  export type Props = HTMLBox.Props & {
     event: p.Property<any>
     importSourceUrl: p.Property<string>
     msg: p.Property<any>
@@ -256,7 +284,7 @@ export namespace IDOM {
 
 export interface IDOM extends IDOM.Attrs {}
 
-export class IDOM extends Markup {
+export class IDOM extends HTMLBox {
   properties: IDOM.Props
 
   constructor(attrs?: Partial<IDOM.Attrs>) {

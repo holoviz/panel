@@ -1,8 +1,8 @@
 from bokeh.core.properties import Any, Dict, Either, String, Null, Tuple
-from bokeh.models.widgets import Markup
+from bokeh.models import HTMLBox
 
 
-class IDOM(Markup):
+class IDOM(HTMLBox):
 
     importSourceUrl = String()
 

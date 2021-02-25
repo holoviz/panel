@@ -125,7 +125,6 @@ class Resources(BkResources):
         kwargs = {}
         if bkr.mode.startswith("server"):
             kwargs['root_url'] = bkr.root_url
-        state.root_url = bkr.root_url
         return cls(
             mode=bkr.mode, version=bkr.version, minified=bkr.minified,
             legacy=bkr.legacy, log_level=bkr.log_level,
