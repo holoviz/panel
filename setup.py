@@ -146,7 +146,8 @@ extras_require = {
         'ipywidgets',
         'ipywidgets_bokeh',
         'ipyvolume',
-        'ipyleaflet'
+        'ipyleaflet',
+        'idom'
     ],
     'tests': _tests,
     'recommended': _recommended,
