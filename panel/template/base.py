@@ -22,7 +22,7 @@ from pyviz_comms import JupyterCommManager as _JupyterCommManager
 from ..config import _base_config, config, panel_extension
 from ..io.model import add_to_doc
 from ..io.notebook import render_template
-from ..io.resources import CDN_DIST, LOCAL_DIST
+from ..io.resources import CDN_DIST, LOCAL_DIST, DIST_DIR
 from ..io.save import save
 from ..io.state import state
 from ..layout import Column, ListLike, GridSpec
@@ -483,11 +483,12 @@ class BasicTemplate(BaseTemplate):
         js_modules = dict(self._resources.get('js_modules', {}))
         for jsname, js in js_modules.items():
             js_path = url_path(js)
-            if jsname in self._resources.get('tarball'):
+            if jsname in self._resources.get('tarball', {}):
                 js_path += '/index.mjs'
             else:
                 js_path += '.mjs'
-            js_modules[jsname] = dist_path + f'bundled/js/{js_path}'
+            if os.path.isfile(DIST_DIR / 'bundled' / 'js' / js_path.replace('/', os.path.sep)):
+                js_modules[jsname] = dist_path + f'bundled/js/{js_path}'
         js_files.update(self.config.js_files)
         js_modules.update(self.config.js_modules)
         extra_css = list(self.config.css_files)

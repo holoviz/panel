@@ -86,10 +86,13 @@ def write_bundled_files(name, files, bundle_dir, explicit_dir=None, ext=None):
     for bundle_file in files:
         bundle_file = bundle_file.split('?')[0]
         try:
-            response = requests.get(bundle_file, verify=False)
-        except Exception as e:
-            print(f"Failed to fetch {name} dependency: {bundle_file}. Errored with {e}.")
-            continue
+            response = requests.get(bundle_file)
+        except:
+            try:
+                response = requests.get(bundle_file, verify=False)
+            except Exception as e:
+                print(f"Failed to fetch {name} dependency: {bundle_file}. Errored with {e}.")
+                continue
         bundle_path = os.path.join(*os.path.join(*bundle_file.split('//')[1:]).split('/')[1:])
         obj_dir = explicit_dir or model_name
         filename = bundle_dir.joinpath(obj_dir, bundle_path)
@@ -102,7 +105,10 @@ def write_bundled_files(name, files, bundle_dir, explicit_dir=None, ext=None):
 
 def write_bundled_tarball(name, tarball, bundle_dir, module=False):
     model_name = name.split('.')[-1].lower()
-    response = requests.get(tarball['tar'], verify=False)
+    try:
+        response = requests.get(tarball['tar'])
+    except Exception:
+        response = requests.get(bundle_file, verify=False)
     f = io.BytesIO()
     f.write(response.content)
     f.seek(0)
@@ -180,15 +186,16 @@ def bundle_resources():
 
     # Bundle external template dependencies
     for name, template in param.concrete_descendents(BasicTemplate).items():
-        write_bundled_files(name, list(template._resources.get('css', {}).values()), bundle_dir, 'css')
-        write_bundled_files(name, list(template._resources.get('js', {}).values()), bundle_dir, 'js')
-        js_modules = []
-        for tar_name, js_module in template._resources.get('js_modules', {}).items():
-            if tar_name not in template._resources.get('tarball', {}):
-                js_modules.append(js_module)
-        write_bundled_files(name, js_modules, bundle_dir, 'js', ext='mjs')
-        for tarball in template._resources.get('tarball', {}).values():
-            write_bundled_tarball('js', tarball, bundle_dir, module=True)
+        if template._resources('bundle', True):
+            write_bundled_files(name, list(template._resources.get('css', {}).values()), bundle_dir, 'css')
+            write_bundled_files(name, list(template._resources.get('js', {}).values()), bundle_dir, 'js')
+            js_modules = []
+            for tar_name, js_module in template._resources.get('js_modules', {}).items():
+                if tar_name not in template._resources.get('tarball', {}):
+                    js_modules.append(js_module)
+            write_bundled_files(name, js_modules, bundle_dir, 'js', ext='mjs')
+            for tarball in template._resources.get('tarball', {}).values():
+                write_bundled_tarball('js', tarball, bundle_dir, module=True)
         template_dir = pathlib.Path(inspect.getfile(template)).parent
         dest_dir = bundle_dir / name.lower()
         dest_dir.mkdir(parents=True, exist_ok=True)

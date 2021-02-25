@@ -36,14 +36,7 @@ class FastBaseTemplate(BasicTemplate):
             'fast-colors': 'https://unpkg.com/@microsoft/fast-colors@5.1.0',
             'fast': 'https://unpkg.com/@microsoft/fast-components@1.13.0'
         },
-        'tarball': {
-            'fast-colors': {
-                'tar': 'https://registry.npmjs.org/@microsoft/fast-colors/-/fast-colors-5.1.0.tgz',
-                'src': 'package/dist/',
-                'dest': '@microsoft/fast-colors@5.1.0/',
-                'exclude': []
-            }
-        }
+        'bundle': False
     }
 
     __abstract = True
