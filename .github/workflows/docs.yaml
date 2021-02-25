@@ -52,6 +52,7 @@ jobs:
           doit develop_install ${{ env.CHANS_DEV}} -o doc -o examples
           pip install pydeck sphinxcontrib-napoleon pyecharts
           conda install -c conda-forge "nodejs=15.3.0"
+          pip install idom
       - name: opengl
         run: |
           sudo apt-get install libglu1-mesa

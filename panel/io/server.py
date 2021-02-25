@@ -161,6 +161,9 @@ class DocHandler(BkDocHandler):
     @authenticated
     async def get(self, *args, **kwargs):
         session = await self.get_session()
+        r = self.request
+        prefix = '/'.join(r.uri.split('/')[:-1])
+        state.root_url = f"{r.protocol}://{r.host}{prefix}"
         resources = Resources.from_bokeh(self.application.resources())
         page = server_html_page_for_session(
             session, resources=resources, title=session.document.title,
@@ -593,7 +596,8 @@ def get_server(panel, port=0, address=None, websocket_origin=None,
     server = Server(apps, port=port, **opts)
     if verbose:
         address = server.address or 'localhost'
-        print("Launching server at http://%s:%s" % (address, server.port))
+        url = f"http://{address}:{server.port}{server.prefix}"
+        print(f"Launching server at {url}")
 
     state._servers[server_id] = (server, panel, [])
 

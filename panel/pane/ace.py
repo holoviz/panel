@@ -38,7 +38,6 @@ class Ace(PaneBase):
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         AcePlot = lazy_load('panel.models.ace', 'AcePlot', isinstance(comm, JupyterComm))
-        print(AcePlot)
         props = self._process_param_change(self._init_params())
         model = AcePlot(code=self.object or '', **props)
         if root is None:
