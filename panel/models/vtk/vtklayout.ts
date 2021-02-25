@@ -138,6 +138,11 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
     super.invalidate_render()
   }
 
+  resize_layout(): void {
+    if (!this.layout) { return }
+    super.resize_layout()
+  }
+
   remove(): void {
     this._unsubscribe_camera_cb()
     window.removeEventListener("resize", this._vtk_renwin.resize)
@@ -338,9 +343,12 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
         this._axes_canvas
       )
       this._axes = {psActor, axesActor, gridActor}
-      this._vtk_renwin.getRenderer().addActor(psActor)
-      this._vtk_renwin.getRenderer().addActor(axesActor)
-      this._vtk_renwin.getRenderer().addActor(gridActor)
+      if (psActor)
+	this._vtk_renwin.getRenderer().addActor(psActor)
+      if (axesActor)
+	this._vtk_renwin.getRenderer().addActor(axesActor)
+      if (gridActor)
+	this._vtk_renwin.getRenderer().addActor(gridActor)
     }
   }
 
