@@ -25,29 +25,27 @@ from .base import Widget, CompositeWidget
 
 class TextInput(Widget):
 
-    value = param.String(default='', allow_None=True)
+    max_length = param.Integer(default=5000, doc="""
+      Max count of characters in the input field.""")
 
-    placeholder = param.String(default='')
+    placeholder = param.String(default='', doc="""
+      Placeholder for empty input field.""")
+
+    value = param.String(default='', allow_None=True, doc="""
+      Initial or entered text value updated when <enter> key is pressed.""")
+
+    value_input = param.String(default='', allow_None=True, doc="""
+      Initial or entered text value updated on every key press.""")
 
     _widget_type = _BkTextInput
 
 
-class PasswordInput(Widget):
-
-    value = param.String(default='', allow_None=True)
-
-    placeholder = param.String(default='')
+class PasswordInput(TextInput):
 
     _widget_type = _BkPasswordInput
 
 
-class TextAreaInput(Widget):
-
-    value = param.String(default='', allow_None=True)
-
-    placeholder = param.String(default='')
-
-    max_length = param.Integer(default=5000)
+class TextAreaInput(TextInput):
 
     _widget_type = _BkTextAreaInput
 
