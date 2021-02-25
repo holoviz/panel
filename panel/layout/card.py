@@ -49,6 +49,8 @@ class Card(Column):
 
     _bokeh_model = BkCard
     
+    _linked_props = ['collapsed']
+
     _rename = dict(Column._rename, title=None, header=None, title_css_classes=None)
 
     def __init__(self, *objects, **params):
