@@ -5,7 +5,7 @@ import numpy as np
 import panel as pn
 from holoviews import opts
 
-from panel.template.fast.fast_grid_template import FastGridTemplate
+from panel.template.fast import FastGridTemplate
 
 hv.extension("bokeh")
 opts.defaults(opts.Ellipse(line_width=3, color="#DF3874"))
