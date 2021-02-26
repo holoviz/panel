@@ -4,6 +4,7 @@ model state, and rendering panel objects.
 """
 
 import logging
+import sys
 
 from ..config import config
 
@@ -22,3 +23,6 @@ panel_logger = logging.getLogger('panel')
 
 if config.log_level is not None:
     panel_logger.setLevel(config.log_level)
+
+if 'django' in sys.modules:
+    from . import django # noqa

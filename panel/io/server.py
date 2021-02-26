@@ -16,6 +16,7 @@ from collections import OrderedDict
 from contextlib import contextmanager
 from functools import partial, wraps
 from types import FunctionType, MethodType
+from urllib.parse import urlparse
 
 import param
 import bokeh
@@ -26,12 +27,15 @@ from bokeh.application import Application as BkApplication
 from bokeh.application.handlers.code import CodeHandler
 from bokeh.application.handlers.function import FunctionHandler
 from bokeh.command.util import build_single_handler_application
+from bokeh.core.templates import AUTOLOAD_JS
 from bokeh.document.events import ModelChangedEvent
-from bokeh.embed.elements import html_page_for_render_items
+from bokeh.embed.bundle import Script
+from bokeh.embed.elements import html_page_for_render_items, script_for_render_items
 from bokeh.embed.util import RenderItem
 from bokeh.io import curdoc
 from bokeh.server.server import Server
 from bokeh.server.urls import per_app_patterns
+from bokeh.server.views.autoload_js_handler import AutoloadJsHandler as BkAutoloadJsHandler
 from bokeh.server.views.doc_handler import DocHandler as BkDocHandler
 
 # Tornado imports
@@ -145,6 +149,15 @@ def server_html_page_for_session(session, resources, title, template=BASE_TEMPLA
     return html_page_for_render_items(bundle, {}, [render_item], title,
         template=template, template_variables=template_variables)
 
+def autoload_js_script(resources, token, element_id, app_path, absolute_url):
+    resources = Resources.from_bokeh(resources)
+    bundle = bundle_resources(resources)
+
+    render_items = [RenderItem(token=token, elementid=element_id, use_for_title=False)]
+    bundle.add(Script(script_for_render_items({}, render_items, app_path=app_path, absolute_url=absolute_url)))
+
+    return AUTOLOAD_JS.render(bundle=bundle, elementid=element_id)
+
 # Patch Application to handle session callbacks
 class Application(BkApplication):
 
@@ -175,6 +188,36 @@ class DocHandler(BkDocHandler):
         self.write(page)
 
 per_app_patterns[0] = (r'/?', DocHandler)
+
+# Patch Bokeh Autoload handler
+class AutoloadJsHandler(BkAutoloadJsHandler):
+    ''' Implements a custom Tornado handler for the autoload JS chunk
+
+    '''
+
+    async def get(self, *args, **kwargs):
+        session = await self.get_session()
+
+        element_id = self.get_argument("bokeh-autoload-element", default=None)
+        if not element_id:
+            self.send_error(status_code=400, reason='No bokeh-autoload-element query parameter')
+            return
+
+        app_path = self.get_argument("bokeh-app-path", default="/")
+        absolute_url = self.get_argument("bokeh-absolute-url", default=None)
+
+        if absolute_url:
+            server_url = '{uri.scheme}://{uri.netloc}'.format(uri=urlparse(absolute_url))
+        else:
+            server_url = None
+
+        resources = self.application.resources(server_url)
+        js = autoload_js_script(resources, session.token, element_id, app_path, absolute_url)
+
+        self.set_header("Content-Type", 'application/javascript')
+        self.write(js)
+
+per_app_patterns[3] = (r'/autoload.js', AutoloadJsHandler)
 
 def modify_document(self, doc):
     from bokeh.io.doc import set_curdoc as bk_set_curdoc
