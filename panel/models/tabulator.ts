@@ -24,20 +24,8 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   connect_signals(): void {
     super.connect_signals()
 
-    const resize = () => {
-      this.render()
-      this.update_layout()
-      if (this.root == this) {
-        this.compute_viewport()
-        this.compute_layout()
-      } else {
-        this.compute_layout()
-        this.root.resize_layout()
-      }
-    }
-
     const {configuration, layout, columns, theme, theme_url, groupby} = this.model.properties;
-    this.on_change([configuration, layout, columns, groupby], () => resize())
+    this.on_change([configuration, layout, columns, groupby], () => this.invalidate_render())
 
     this.on_change([theme, theme_url], () => this.setCSS())
 
@@ -366,15 +354,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
         parent_node = old_node.parentNode
         parent_node.removeChild(old_node)
       }
-      this.render()
-      this.update_layout()
-      if (this.root == this) {
-        this.compute_viewport()
-        this.compute_layout()
-      } else {
-        this.compute_layout()
-        this.root.resize_layout()
-      }
+      this.invalidate_render()
     }
     parent_node.appendChild(css_node)
     return true
