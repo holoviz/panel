@@ -79,6 +79,7 @@ jobs:
           eval "$(conda shell.bash hook)"
           conda activate test-environment
           nbsite build --what=html --output=builtdocs --org holoviz --project-name panel
+          cp -r ./panel/dist ./builtdocs/panel_dist
       - name: Deploy dev
         uses: peaceiris/actions-gh-pages@v3
         if: (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc'))
