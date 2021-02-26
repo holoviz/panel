@@ -126,7 +126,8 @@ _tests = [
     'ipympl',
     'twine',
     'pandas',
-    'ipython >=7.0'
+    'ipython >=7.0',
+    'holoviews'
 ]
 
 extras_require = {

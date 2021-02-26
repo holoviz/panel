@@ -148,7 +148,7 @@ class IDOM(PaneBase):
         idom.client.manage.APP_DIR = DIST_DIR / 'idom'
         idom.client.manage.BUILD_DIR = DIST_DIR / 'idom' / 'build'
         idom.client.manage.WEB_MODULES_DIR = DIST_DIR / 'idom' / 'build' / 'web_modules'
-        idom.install(packages, ignore_installed, fallback)
+        return idom.install(packages, ignore_installed, fallback)
 
     @classmethod
     def use_param(cls, parameter):
