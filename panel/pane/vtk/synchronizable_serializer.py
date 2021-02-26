@@ -9,6 +9,7 @@ import zipfile
 from vtk.vtkCommonCore import vtkTypeUInt32Array, vtkTypeInt32Array
 from vtk.vtkFiltersGeometry import vtkCompositeDataGeometryFilter, vtkGeometryFilter
 from vtk.vtkRenderingCore import vtkColorTransferFunction
+from vtk.vtkCommonDataModel import vtkDataObject
 
 # -----------------------------------------------------------------------------
 # Python compatibility handling 2.6, 2.7, 3+
@@ -514,6 +515,23 @@ def extractRequiredFields(extractedFields, parent, dataset, context, requestedFi
             arrayMeta['location'] = 'pointData'
             arrayMeta['registration'] = 'setScalars'
             extractedFields.append(arrayMeta)
+        
+    if parent.IsA("vtkGlyph3DMapper") and not context.serializeAllDataArrays:
+        scaleArrayName = parent.GetInputArrayInformation(parent.SCALE).Get(vtkDataObject.FIELD_NAME())
+        if scaleArrayName is not None and scaleArrayName not in [field['name'] for field in extractedFields]:
+            arrayMeta = getArrayDescription(dataset.GetPointData().GetAbstractArray(scaleArrayName), context)
+            if arrayMeta is not None:
+                arrayMeta['location'] = 'pointData'
+                arrayMeta['registration'] = 'addArray'
+                extractedFields.append(arrayMeta)
+
+        scaleOrientationArrayName = parent.GetInputArrayInformation(parent.ORIENTATION).Get(vtkDataObject.FIELD_NAME())
+        if scaleOrientationArrayName is not None and scaleOrientationArrayName not in [field['name'] for field in extractedFields]:
+            arrayMeta = getArrayDescription(dataset.GetPointData().GetAbstractArray(scaleOrientationArrayName), context)
+            if arrayMeta is not None:
+                arrayMeta['location'] = 'pointData'
+                arrayMeta['registration'] = 'addArray'
+                extractedFields.append(arrayMeta)
 
     # Normal handling
     if 'Normals' in requestedFields:
@@ -774,8 +792,8 @@ def genericVolumeMapperSerializer(parent, mapper, mapperId, context, depth):
 
 
 def glyph3DMapperSerializer(parent, mapper, mapperId, context, depth):
-    instance = genericMapperSerializer(parent, mapper, mapperId, context, depth)
-    
+    instance = genericPolyDataMapperSerializer(parent, mapper, mapperId, context, depth)
+
     if not instance: return
     instance['type'] = mapper.GetClassName()
     instance['properties'].update({
@@ -784,6 +802,8 @@ def glyph3DMapperSerializer(parent, mapper, mapperId, context, depth):
         'scaling': mapper.GetScaling(),
         'scaleFactor': mapper.GetScaleFactor(),
         'scaleMode': mapper.GetScaleMode(),
+        'scaleArray': mapper.GetInputArrayInformation(mapper.SCALE).Get(vtkDataObject.FIELD_NAME()),
+        'orientationArray': mapper.GetInputArrayInformation(mapper.ORIENTATION).Get(vtkDataObject.FIELD_NAME()),
     })
     return instance
 
