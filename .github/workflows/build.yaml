@@ -119,7 +119,7 @@ jobs:
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
-          doit ecosystem=pip package_build $PKG_TEST_PYTHON --test-group=unit_deploy
+          doit ecosystem=pip package_build $PKG_TEST_PYTHON --test-group=flakes
       - name: git status
         run: |
           git status
