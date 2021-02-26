@@ -28,9 +28,10 @@ from .reactive import Reactive
 from .viewable import Layoutable, Viewable
 from .widgets import (
     Button, Checkbox, ColorPicker, DataFrame, DatePicker,
-    DatetimeInput, DateRangeSlider, FileSelector, FloatSlider,
-    IntInput, IntSlider, LiteralInput, MultiSelect, RangeSlider,
-    Select, FloatInput, StaticText, TextInput, Toggle, Widget
+    DatetimeInput, DateRangeSlider, DiscreteSlider, FileSelector,
+    FloatSlider, IntInput, IntSlider, LiteralInput, MultiSelect,
+    RangeSlider, Select, FloatInput, StaticText, TextInput, Toggle,
+    Widget
 )
 from .widgets.button import _ButtonBase
 
@@ -912,8 +913,12 @@ def link_param_method(root_view, root_model):
             for cb in method._callbacks:
                 pobj = cb.cls if cb.inst is None else cb.inst
                 if widget._param_pane.object is pobj:
-                    if 'value' in widget._linkable_params:
-                        widget.jslink(method._inner_layout, value='loading')
+                    if isinstance(widget, DiscreteSlider):
+                        w = widget._slider
+                    else:
+                        w = widget
+                    if 'value' in w._linkable_params:
+                        w.jslink(method._inner_layout, value='loading')
 
 
 Viewable._preprocessing_hooks.insert(0, link_param_method)
