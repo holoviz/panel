@@ -27,13 +27,9 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     const resize = () => {
       this.render()
       this.update_layout()
-      if (this.root == this) {
-        this.compute_viewport()
-        this.compute_layout()
-      } else {
-        this.compute_layout()
-        this.root.resize_layout()
-      }
+      this.compute_layout()
+      if (this.root !== this)
+        this.invalidate_layout()
     }
 
     const {configuration, layout, columns, theme, theme_url, groupby} = this.model.properties;
