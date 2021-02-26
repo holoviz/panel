@@ -33,6 +33,8 @@ class IDOM(PaneBase):
 
     _updates = True
 
+    _unpack = True
+
     _bokeh_model = _BkIDOM
 
     def __init__(self, object=None, **params):
@@ -125,8 +127,8 @@ class IDOM(PaneBase):
         if 'idom' in sys.modules:
             if isinstance(object, (Component, Layout)):
                 return 0.8
-            elif callable(object) and isinstance(object(), (Component, Layout)):
-                return 0.8
+            elif callable(object):
+                return None
         return False
 
     @classmethod
