@@ -146,6 +146,8 @@ class BaseTable(ReactiveData, Widget):
                 col_kwargs['width'] = self.widths
             elif str(col) in self.widths:
                 col_kwargs['width'] = self.widths.get(str(col))
+            else:
+                col_kwargs['width'] = 0
 
             title = self.titles.get(col, str(col))
             if col in indexes and len(indexes) > 1 and self.hierarchical:

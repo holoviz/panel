@@ -226,7 +226,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
         tab_column = {field: column.field}
       if (tab_column.title == null)
         tab_column.title = column.title
-      if (tab_column.width == null && column.width != null)
+      if (tab_column.width == null && column.width != null && column.width != 0)
         tab_column.width = column.width
       if (tab_column.formatter == null && column.formatter != null) {
         const formatter: any = column.formatter
