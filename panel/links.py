@@ -434,7 +434,7 @@ class JSLinkCallbackGenerator(JSCallbackGenerator):
       var value = source['{src_attr}'];
       value = {src_transform};
     }}
-    if (typeof value !== 'boolean') {{
+    if (typeof value !== 'boolean' || source.labels !== ['Loading']) {{
       value = true
     }}
     var css_classes = target.css_classes.slice()
@@ -500,7 +500,7 @@ class JSLinkCallbackGenerator(JSCallbackGenerator):
                     value = msg[tgt_spec]
             else:
                 value = getattr(src_model, src_spec)
-            if value:
+            if value and hasattr(tgt_model, tgt_spec):
                 setattr(tgt_model, tgt_spec, value)
         if tgt_model is None and not link.code:
             raise ValueError('Model could not be resolved on target '
