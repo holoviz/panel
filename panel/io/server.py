@@ -16,6 +16,7 @@ from collections import OrderedDict
 from contextlib import contextmanager
 from functools import partial, wraps
 from types import FunctionType, MethodType
+from urllib.parse import urlparse
 
 import param
 import bokeh
@@ -210,7 +211,6 @@ class AutoloadJsHandler(BkAutoloadJsHandler):
         else:
             server_url = None
 
-        resources_param = self.get_argument("resources", "default")
         resources = self.application.resources(server_url)
         js = autoload_js_script(resources, session.token, element_id, app_path, absolute_url)
 

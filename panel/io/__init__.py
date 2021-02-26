@@ -25,4 +25,4 @@ if config.log_level is not None:
     panel_logger.setLevel(config.log_level)
 
 if 'django' in sys.modules:
-    from . import django
+    from . import django # noqa
