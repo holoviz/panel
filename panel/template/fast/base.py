@@ -50,7 +50,6 @@ class FastBaseTemplate(BasicTemplate):
         else:
             if isinstance(params['theme'], str):
                 params['theme'] = THEMES[params['theme']]
-            params['theme_toggle'] = False
         super().__init__(**params)
         theme = self._get_theme()
         if "header_color" not in params:
