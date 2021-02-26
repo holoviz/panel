@@ -1,8 +1,8 @@
 import pathlib
 
-import panel as pn
 import param
 
+from ...io.state import state
 from ..base import BasicTemplate
 from ..react import ReactTemplate
 from ..theme import THEMES, DefaultTheme
@@ -42,14 +42,14 @@ class FastBaseTemplate(BasicTemplate):
     __abstract = True
 
     def __init__(self, **params):
-        if "theme" not in params:
-            if params.get("theme_toggle", self.param.theme_toggle.default):
-                params['theme'] = THEMES[self._get_theme_from_query_args()]
-            else:
-                params['theme'] = DefaultTheme
-        else:
-            if isinstance(params['theme'], str):
-                params['theme'] = THEMES[params['theme']]
+        query_theme = self._get_theme_from_query_args()
+        if query_theme:
+            params['theme'] = THEMES[query_theme]
+        elif "theme" not in params:
+            params['theme'] = DefaultTheme
+        elif isinstance(params['theme'], str):
+            params['theme'] = THEMES[params['theme']]
+
         super().__init__(**params)
         theme = self._get_theme()
         if "header_color" not in params:
@@ -58,12 +58,12 @@ class FastBaseTemplate(BasicTemplate):
             self.header_background = theme.style.header_background
 
     @staticmethod
-    def _get_theme_from_query_args(default: str = "default") -> str:
-        theme_arg = pn.state.session_args.get("theme", default)
-        if isinstance(theme_arg, list):
-            theme_arg = theme_arg[0].decode("utf-8")
-            theme_arg = theme_arg.strip("'").strip('"')
-        return theme_arg
+    def _get_theme_from_query_args():
+        theme_arg = state.session_args.get("theme", None)
+        if not theme_arg:
+            return
+        theme_arg = theme_arg[0].decode("utf-8")
+        return theme_arg.strip("'").strip('"')
 
     def _update_vars(self):
         super()._update_vars()
