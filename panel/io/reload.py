@@ -137,6 +137,8 @@ def _reload_on_update(modify_times):
         # in the standard library), and occasionally this can cause strange
         # failures in getattr.  Just ignore anything that's not an ordinary
         # module.
+        if not module in sys.modules:
+            continue
         module = sys.modules[module_name]
         if not isinstance(module, types.ModuleType):
             continue
