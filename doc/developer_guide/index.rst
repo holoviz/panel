@@ -105,7 +105,7 @@ following:
 
 The above command installs Panel's dependencies using conda, then
 performs a pip editable install of Panel. If it fails, `nodejs>=14.0.0` may be missing
-from your environment, fix it with `conda install nodejs` then rerun above command.
+from your environment, fix it with `conda install -c conda-forge nodejs` then rerun above command.
 
 Developing custom models
 ------------------------
