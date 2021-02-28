@@ -30,6 +30,8 @@ class Perspective(HTMLBox):
 
     source = Instance(ColumnDataSource)
 
+    toggle_config = Bool(True)
+
     theme = String()
 
     # pylint: disable=line-too-long
@@ -42,11 +44,7 @@ class Perspective(HTMLBox):
     ]
 
     __js_skip__ = {
-        "perspective": __javascript__[0:1],
-        "perspective-viewer": __javascript__[1:2],
-        "perspective-viewer-datagrid": __javascript__[2:3],
-        "perspective-viewer-hypergrid": __javascript__[3:4],
-        "perspective-viewer-d3fc": __javascript__[4:5],
+        "perspective": __javascript__,
     }
 
     __js_require__ = {

@@ -25,7 +25,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     super.connect_signals()
 
     const {configuration, layout, columns, theme, theme_url, groupby} = this.model.properties;
-    this.on_change([configuration, layout, columns, groupby], () => this.invalidate_render())
+    this.on_change([configuration, layout, columns, groupby], () => this.render_and_resize())
 
     this.on_change([theme, theme_url], () => this.setCSS())
 
@@ -65,6 +65,14 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     this.connect(this.model.source.patching, () => this.updateOrAddData())
     this.connect(this.model.source.selected.change, () => this.updateSelection())
     this.connect(this.model.source.selected.properties.indices.change, () => this.updateSelection())
+  }
+
+  render_and_resize(): void {
+    this.render()
+    this.update_layout()
+    this.compute_layout()
+    if (this.root !== this)
+      this.invalidate_layout()
   }
 
   render(): void {
@@ -129,9 +137,8 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   }
 
   freezeRows(): void {
-    for (const row of this.model.frozen_rows) {
+    for (const row of this.model.frozen_rows)
       this.tabulator.getRow(row).freeze()
-    }
   }
 
   getLayout(): string {
@@ -354,7 +361,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
         parent_node = old_node.parentNode
         parent_node.removeChild(old_node)
       }
-      this.invalidate_render()
+      this.render_and_resize()
     }
     parent_node.appendChild(css_node)
     return true
