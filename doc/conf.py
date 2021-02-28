@@ -59,6 +59,9 @@ nbsite_gallery_conf = {
                 {'path': 'param',
                  'title': 'Param based apps',
                  'description': 'Using the Param library to express UIs independently of Panel.'},
+                {'path': 'streaming',
+                 'title': 'Streaming',
+                 'description': ('Streaming data to a visual component.')},
                 {'path': 'links',
                  'title': 'Linking',
                  'description': ('Using Javascript based links to define interactivity without '
