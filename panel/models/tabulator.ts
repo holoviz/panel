@@ -404,7 +404,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     let data = transform_cds_to_records(this.model.source, true);
     this.tabulator.setData(data);
     if (this.model.follow) {
-      this.tabulator.scrollToRow((last_row.data._index || 0)+1, "top", false);
+      this.tabulator.scrollToRow((last_row.data._index || 0), "top", false);
     }
     this.freezeRows()
     this.updateSelection()
