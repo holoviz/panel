@@ -45,11 +45,16 @@ export class PerspectiveView extends PanelHTMLBoxView {
   _updating: boolean = false
   _config_listener: any = null
   _event_listener: any = null
+  _loaded: boolean = false
 
   connect_signals(): void {
     super.connect_signals()
 
     this.connect(this.model.source.properties.data.change, () => this.setData());
+    this.connect(this.model.properties.toggle_config.change, () => {
+      this.perspective_element.toggleConfig()
+      this.fix_layout()
+    })
     this.connect(this.model.properties.columns.change, () => {
       this.updateAttribute("columns", this.model.columns, true)
     })
@@ -106,12 +111,22 @@ export class PerspectiveView extends PanelHTMLBoxView {
     set_size(container, this.model)
     container.innerHTML = this.getInnerHTML();
     this.perspective_element = container.children[0]
+    set_size(this.perspective_element, this.model)
+    this.el.appendChild(container)
     this.perspective_element.load(this.table).then(() => {
       this.update_config()
       this._config_listener = () => this.sync_config()
+      if (this.model.toggle_config)
+	this.perspective_element.toggleConfig()
       this.perspective_element.addEventListener("perspective-config-update", this._config_listener)
+      this._loaded = true
     })
-    this.el.appendChild(container)
+  }
+
+  fix_layout(): void {
+    this.update_layout()
+    this.compute_layout()
+    this.invalidate_layout()
   }
 
   sync_config(): void {
@@ -166,14 +181,16 @@ export class PerspectiveView extends PanelHTMLBoxView {
   }
 
   stream(data: any, rollover: any): void {
-    if (rollover == null)
+    if (!this._loaded)
+      return
+    else if (rollover == null)
       this.table.update(data)
     else
       this.table.replace(this.data)
   }
 
   patch(_: any): void {
-    this.setData()
+    this.table.replace(this.data)
   }
 
   private getInnerHTML() {
@@ -184,7 +201,8 @@ export class PerspectiveView extends PanelHTMLBoxView {
   }
 
   setData(): void {
-    this.table.load(this.data)
+    if (this._loaded)
+      this.table.load(this.data)
   }
 
   updateAttribute(attribute: string, value: any, stringify: boolean): void {
@@ -242,6 +260,7 @@ export namespace Perspective {
     plugin_config: p.Property<any>
     row_pivots: p.Property<any[] | null>
     selectable: p.Property<boolean | null>
+    toggle_config: p.Property<boolean>
     sort: p.Property<any[] | null>
     source: p.Property<ColumnDataSource>
     theme: p.Property<any>
@@ -273,6 +292,7 @@ export class Perspective extends HTMLBox {
       plugin_config:    [ Any,                     ],
       row_pivots:       [ Nullable(Array(String)), ],
       selectable:       [ Nullable(Boolean),       ],
+      toggle_config:    [ Boolean,            true ],
       sort:             [ Nullable(Array(Array(String))), ],
       source:           [ Ref(ColumnDataSource),   ],
       theme:            [ String,                  ],

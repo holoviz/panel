@@ -94,12 +94,11 @@ class Perspective(PaneBase, ReactiveData):
     plugin = param.ObjectSelector(default=Plugin.GRID.value, objects=Plugin.options(), doc="""
       The name of a plugin to display the data. For example hypergrid or d3_xy_scatter.""")
 
+    toggle_config = param.Boolean(default=True, doc="""
+      Whether to show the config menu.""")
+
     theme = param.ObjectSelector(default=DEFAULT_THEME, objects=THEMES, doc="""
       The style of the PerspectiveViewer. For example material-dark""")
-
-    # I set this to something > 0. Otherwise the PerspectiveViewer widget will have a height of 0px
-    # It will appear as if it does not work.
-    height = param.Integer(default=300, bounds=(0, None))
 
     _data_params = ['object']
 
@@ -134,6 +133,10 @@ class Perspective(PaneBase, ReactiveData):
     def _get_model(self, doc, root=None, parent=None, comm=None):
         Perspective = lazy_load('panel.models.perspective', 'Perspective', isinstance(comm, JupyterComm))
         properties = self._process_param_change(self._init_params())
+        if properties.get('toggle_config'):
+            properties['height'] = self.height or 300
+        else:
+            properties['height'] = self.height or 150
         model = Perspective(**properties)
         if root is None:
             root = model
