@@ -17,6 +17,7 @@ from .ipywidget import IPyWidget # noqa
 from .image import GIF, JPG, PNG, SVG # noqa
 from .markup import DataFrame, HTML, JSON, Markdown, Str # noqa
 from .media import Audio, Video # noqa
+from .perspective import Perspective # noqa
 from .plotly import Plotly # noqa
 from .plot import Bokeh, Matplotlib, RGGPlot, YT # noqa
 from .streamz import Streamz # noqa

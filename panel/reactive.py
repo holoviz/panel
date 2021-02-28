@@ -736,8 +736,8 @@ class SyncableData(Reactive):
             if isinstance(self._processed, dict):
                 self.stream(stream_value.to_dict(), rollover)
                 return
-            value_index_start = self._processed.index.max() + 1
             if reset_index:
+                value_index_start = self._processed.index.max() + 1
                 stream_value = stream_value.reset_index(drop=True)
                 stream_value.index += value_index_start
             combined = pd.concat([self._processed, stream_value])
@@ -747,7 +747,7 @@ class SyncableData(Reactive):
                 self._update_data(combined)
             try:
                 self._updating = True
-                self.param.trigger('value')
+                self.param.trigger(self._data_params[0])
             finally:
                 self._updating = False
             try:
@@ -759,12 +759,13 @@ class SyncableData(Reactive):
             if isinstance(self._processed, dict):
                 self.stream({k: [v] for k, v in stream_value.to_dict().items()}, rollover)
                 return
+            value_index_start = self._processed.index.max() + 1
             self._processed.loc[value_index_start] = stream_value
             with param.discard_events(self):
                 self._update_data(self._processed)
             self._updating = True
             try:
-                self._stream(self.value.iloc[-1:], rollover)
+                self._stream(self._processed.iloc[-1:], rollover)
             finally:
                 self._updating = False
         elif isinstance(stream_value, dict):
