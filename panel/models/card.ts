@@ -34,14 +34,16 @@ export class CardView extends ColumnView {
     classes(this.el).clear().add(...this.css_classes())
 
     let header_background = this.model.header_background
-    if (!this.model.collapsed && this.model.active_header_background != null)
+    if (!this.model.collapsed && this.model.active_header_background)
       header_background = this.model.active_header_background
     const header = this.child_views[0]
 
+    console.log(header_background)
     let header_el
     if (this.model.collapsible) {
       this.button_el = DOM.createElement("button", {type: "button", class: header_css_classes})
       this.button_el.style.backgroundColor = header_background != null ? header_background : ""
+      header.el.style.backgroundColor = header_background != null ? header_background : ""
       this.button_el.appendChild(header.el)
       const icon = DOM.createElement("p", {class: button_css_classes})
       icon.innerHTML = this.model.collapsed ? "+" : "\u2212"
@@ -53,7 +55,7 @@ export class CardView extends ColumnView {
       header_el.style.backgroundColor = header_background != null ? header_background : ""
       header_el.appendChild(header.el)
     }
-	header_el.style.color = header_color != null ? header_color : ""
+    header_el.style.color = header_color != null ? header_color : ""
 
     this.el.appendChild(header_el)
     header.render()
