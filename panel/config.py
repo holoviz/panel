@@ -433,7 +433,8 @@ class panel_extension(_pyviz_extension):
         'vtk': 'panel.models.vtk',
         'ace': 'panel.models.ace',
         'echarts': 'panel.models.echarts',
-        'ipywidgets': 'ipywidgets_bokeh.widget'
+        'ipywidgets': 'ipywidgets_bokeh.widget',
+        'perspective': 'panel.models.perspective'
     }
 
     # Check whether these are loaded before rendering
