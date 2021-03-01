@@ -1,5 +1,61 @@
 # Releases
 
+## Version 0.11.0
+
+Date: 2021-03-01
+
+The 0.11.0 release brings a number of exciting new features to Panel
+as well as some enhancements and bug fixes. This release is also
+required for Bokeh 2.3 compatibility since a lot of changes to the
+Bokeh property system required updates. Many thanks to the many
+contributors to this release including @MarcSkovMadsen, @xavArtley,
+@hyamanieu, @cloud-rocket, @kcpevey, @kaseyrussell, @miliante,
+@AjayThorve and @philippjfr.
+
+Major features:
+
+- A `Perspective` pane based on the FINOS Perspective library ([#2034](https://github.com/holoviz/panel/issues/2034))
+- Implement `--autoreload` functionality for the Panel server ([#1983](https://github.com/holoviz/panel/issues/1983))
+- Add `--warm` option to panel serve ([#1971](https://github.com/holoviz/panel/issues/1971)) 
+- Add ability to define JS modules and Template specific resources ([#1967](https://github.com/holoviz/panel/issues/1967))
+- Enables serving files and bokeh apps via `panel.serve` ([#1939](https://github.com/holoviz/panel/issues/1939)) 
+- Add a `Trend` indicator ([#1895](https://github.com/holoviz/panel/issues/1895))
+- Add `TextToSpeech` widget ([#1878](https://github.com/holoviz/panel/issues/1878))
+- Add `SpeechToText` Widget ([#1880](https://github.com/holoviz/panel/issues/1880))
+- Add `loading` parameter and spinners to all components ([#1730, [#2026](https://github.com/holoviz/panel/issues/2026))
+- Add `IDOM` pane ([#2004](https://github.com/holoviz/panel/issues/2004))
+- Add `Tabulator` widget ([#1531](https://github.com/holoviz/panel/issues/1531), [#1887](https://github.com/holoviz/panel/issues/1887)) 
+
+Enhancements:
+
+- Add watch argument to `bind` function ([#2000](https://github.com/holoviz/panel/issues/2000))
+- Allow `ParamMethod` and `ParamFunction` to evaluate lazily ([#1966](https://github.com/holoviz/panel/issues/1966))
+- Add `value_input` parameter to TextInput widgets ([#2007](https://github.com/holoviz/panel/issues/2007))
+- Implement `Glyph3dMapper` support for `VTK` panes ([#2002, [#2003](https://github.com/holoviz/panel/issues/2003))
+- Add Jupyter server extension to serve resources ([#1982](https://github.com/holoviz/panel/issues/1982))
+- Enhancements for `DarkTheme` ([#1964](https://github.com/holoviz/panel/issues/1964))
+- Add `refresh` functionality to `FileSelector` ([#1962](https://github.com/holoviz/panel/issues/1962))
+- Add support for Auth0 authentication ([#1934](https://github.com/holoviz/panel/issues/1934))
+- Avoid recursive preprocessing slowing down rendering ([#1852](https://github.com/holoviz/panel/issues/1852))
+- Add support for per-layer tooltips on `DeckGL` pane ([#1846](https://github.com/holoviz/panel/issues/1846))
+
+Bug fixes:
+
+- Fix `Card.header_background` propagation ([#2035](https://github.com/holoviz/panel/issues/2035))
+- Disable `GoldenTemplate` sidebar when empty ([#2017](https://github.com/holoviz/panel/issues/2017))
+- Ensure `Card.collapsed` and `Accordion.active` parameters are synced ([#2009](https://github.com/holoviz/panel/issues/2009))
+- Fix inline resources when saving ([#1956](https://github.com/holoviz/panel/issues/1956))
+- Switch `Param` pane widget type when bounds (un)defined ([#1953](https://github.com/holoviz/panel/issues/1953))
+
+Compatibility:
+
+- Compatibility with Bokeh>=2.3 ([#1948](https://github.com/holoviz/panel/issues/1948), [#1988](https://github.com/holoviz/panel/issues/1988), [#1991](https://github.com/holoviz/panel/issues/1991))
+- Updated `ECharts` pane to 5.0.2 of JS library ([#2016](https://github.com/holoviz/panel/issues/2016))
+
+Documentation:
+
+- Document pn.bind in API user guide ([#1973)
+
 ## Version 0.10.3
 
 Date: 2021-01-18
