@@ -43,7 +43,7 @@ def isfile(path):
 def isurl(obj, formats):
     if not isinstance(obj, string_types):
         return False
-    lower_string = obj.lower()
+    lower_string = obj.lower().split('?')[0].split('#')[0]
     return (
         lower_string.startswith('http://')
         or lower_string.startswith('https://')
