@@ -16,19 +16,19 @@ Major features:
 
 - A `Perspective` pane based on the FINOS Perspective library ([#2034](https://github.com/holoviz/panel/issues/2034))
 - Implement `--autoreload` functionality for the Panel server ([#1983](https://github.com/holoviz/panel/issues/1983))
-- Add `--warm` option to panel serve ([#1971](https://github.com/holoviz/panel/issues/1971)) 
+- Add `--warm` option to panel serve, useful for pre-loading items into the state cache ([#1971](https://github.com/holoviz/panel/issues/1971)) 
 - Add ability to define JS modules and Template specific resources ([#1967](https://github.com/holoviz/panel/issues/1967))
-- Enables serving files and bokeh apps via `panel.serve` ([#1939](https://github.com/holoviz/panel/issues/1939)) 
-- Add a `Trend` indicator ([#1895](https://github.com/holoviz/panel/issues/1895))
+- `panel.serve` now supports serving static files and Bokeh apps, not just Panel apps ([#1939](https://github.com/holoviz/panel/issues/1939)) 
+- Add a `TrendIndicator` for conveniently showing history and value of a numeric quantity ([#1895](https://github.com/holoviz/panel/issues/1895))
 - Add `TextToSpeech` widget ([#1878](https://github.com/holoviz/panel/issues/1878))
 - Add `SpeechToText` Widget ([#1880](https://github.com/holoviz/panel/issues/1880))
 - Add `loading` parameter and spinners to all components ([#1730, [#2026](https://github.com/holoviz/panel/issues/2026))
 - Add `IDOM` pane ([#2004](https://github.com/holoviz/panel/issues/2004))
-- Add `Tabulator` widget ([#1531](https://github.com/holoviz/panel/issues/1531), [#1887](https://github.com/holoviz/panel/issues/1887)) 
+- Add powerful new `Tabulator` widget for flexible and configurable display of tabular data ([#1531](https://github.com/holoviz/panel/issues/1531), [#1887](https://github.com/holoviz/panel/issues/1887)) 
 
 Enhancements:
 
-- Add watch argument to `bind` function ([#2000](https://github.com/holoviz/panel/issues/2000))
+- Add watch argument to `bind` function so that covers all the features of pn.depends ([#2000](https://github.com/holoviz/panel/issues/2000))
 - Allow `ParamMethod` and `ParamFunction` to evaluate lazily ([#1966](https://github.com/holoviz/panel/issues/1966))
 - Add `value_input` parameter to TextInput widgets ([#2007](https://github.com/holoviz/panel/issues/2007))
 - Implement `Glyph3dMapper` support for `VTK` panes ([#2002, [#2003](https://github.com/holoviz/panel/issues/2003))
