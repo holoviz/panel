@@ -38,7 +38,6 @@ export class CardView extends ColumnView {
       header_background = this.model.active_header_background
     const header = this.child_views[0]
 
-    console.log(header_background)
     let header_el
     if (this.model.collapsible) {
       this.button_el = DOM.createElement("button", {type: "button", class: header_css_classes})
