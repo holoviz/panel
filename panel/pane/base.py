@@ -44,6 +44,8 @@ def panel(obj, **kwargs):
     """
     if isinstance(obj, Viewable):
         return obj
+    elif hasattr(obj, '__panel__'):
+        return panel(obj.__panel__())
     if kwargs.get('name', False) is None:
         kwargs.pop('name')
     pane = PaneBase.get_pane_type(obj, **kwargs)(obj, **kwargs)
