@@ -28,7 +28,7 @@ from .util import (
 from .reactive import Reactive
 from .viewable import Layoutable, Viewable
 from .widgets import (
-    Button, Checkbox, ColorPicker, DataFrame, DatePicker,
+    ArrayInput, Button, Checkbox, ColorPicker, DataFrame, DatePicker,
     DatetimeInput, DateRangeSlider, DiscreteSlider, FileSelector,
     FloatSlider, IntInput, IntSlider, LiteralInput, MultiSelect,
     RangeSlider, Select, FloatInput, StaticText, TextInput, Toggle,
@@ -173,6 +173,7 @@ class Param(PaneBase):
         param.Range:             RangeSlider,
         param.Selector:          Select,
         param.String:            TextInput,
+        param.Array:             ArrayInput,
     }
 
     if hasattr(param, 'Event'):

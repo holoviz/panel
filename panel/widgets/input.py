@@ -510,6 +510,21 @@ class LiteralInput(Widget):
         return msg
 
 
+class ArrayInput(LiteralInput):
+
+    def _process_property_change(self, msg):
+        msg = super()._process_property_change(msg)
+        if 'value' in msg and isinstance(msg['value'], list):
+            import numpy as np
+            msg['value'] = np.asarray(msg['value'])
+        return msg
+
+    def _process_param_change(self, msg):
+        if 'value' in msg:
+            msg['value'] = msg['value'].tolist()
+        return super()._process_param_change(msg)
+
+
 class DatetimeInput(LiteralInput):
     """
     DatetimeInput allows declaring Python literals using a text
