@@ -37,3 +37,9 @@ class FastGridDarkTheme(FastDarkTheme):
     css = param.Filename(default=pathlib.Path(__file__).parent / "dark.css")
 
     _template = FastGridTemplate
+
+FastGridTemplate._THEMES = {
+    "default": FastGridDefaultTheme,
+    "dark": FastGridDarkTheme,
+}
+FastGridTemplate._DEFAULT_THEME = FastGridDefaultTheme

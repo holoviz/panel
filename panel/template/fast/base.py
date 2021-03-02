@@ -5,12 +5,14 @@ import param
 from ...io.state import state
 from ..base import BasicTemplate
 from ..react import ReactTemplate
-from .theme import THEMES, DefaultTheme
+from .theme import THEMES, FastDefaultTheme
 
 _ROOT = pathlib.Path(__file__).parent
 
 
 class FastBaseTemplate(BasicTemplate):
+    _THEMES = THEMES
+    _DEFAULT_THEME = FastDefaultTheme
 
     theme_toggle = param.Boolean(default=True, doc="""
         If True a switch to toggle the Theme is shown.""")
@@ -44,11 +46,11 @@ class FastBaseTemplate(BasicTemplate):
     def __init__(self, **params):
         query_theme = self._get_theme_from_query_args()
         if query_theme:
-            params['theme'] = THEMES[query_theme]
+            params['theme'] = self._THEMES[query_theme]
         elif "theme" not in params:
-            params['theme'] = DefaultTheme
+            params['theme'] = self._DEFAULT_THEME
         elif isinstance(params['theme'], str):
-            params['theme'] = THEMES[params['theme']]
+            params['theme'] = self._THEMES[params['theme']]
 
         super().__init__(**params)
         theme = self._get_theme()

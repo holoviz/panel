@@ -22,8 +22,6 @@ class FastListTemplate(FastBaseTemplate):
 
     _template = pathlib.Path(__file__).parent / "fast_list_template.html"
 
-
-
 class FastListDefaultTheme(FastDefaultTheme):
     """The Default Theme of the FastListTemplate"""
 
@@ -38,3 +36,9 @@ class FastListDarkTheme(FastDarkTheme):
     css = param.Filename(default=pathlib.Path(__file__).parent / "dark.css")
 
     _template = FastListTemplate
+
+FastListTemplate._THEMES = {
+    "default": FastListDefaultTheme,
+    "dark": FastListDarkTheme,
+}
+FastListTemplate._DEFAULT_THEME = FastListDefaultTheme
