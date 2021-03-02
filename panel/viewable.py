@@ -773,9 +773,10 @@ class Viewable(Renderable, Layoutable, ServableMixin):
 
 class Viewer(param.Parameterized):
     """
-    A baseclass for custom components which return a Panel object. By
-    implementing the __panel__ method users can make a panel component
-    usable inside Panel without explicitly returning a Panel object.
+    A baseclass for custom components that behave like a Panel object.
+    By implementing __panel__ method an instance of this class will
+    behave like the returned Panel component when placed in a layout,
+    render itself in a notebook and provide show and servable methods.
     """
 
     def __panel__(self):
