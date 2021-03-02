@@ -21,26 +21,30 @@ Major features:
 - `panel.serve` now supports serving static files and Bokeh apps, not just Panel apps ([#1939](https://github.com/holoviz/panel/issues/1939)) 
 - Add a `TrendIndicator` for conveniently showing history and value of a numeric quantity ([#1895](https://github.com/holoviz/panel/issues/1895))
 - Add `TextToSpeech` widget ([#1878](https://github.com/holoviz/panel/issues/1878))
-- Add `SpeechToText` Widget ([#1880](https://github.com/holoviz/panel/issues/1880))
-- Add `loading` parameter and spinners to all components ([#1730, [#2026](https://github.com/holoviz/panel/issues/2026))
-- Add `IDOM` pane ([#2004](https://github.com/holoviz/panel/issues/2004))
+- Add `SpeechToText` widget ([#1880](https://github.com/holoviz/panel/issues/1880))
+- Add `loading` parameter and spinners to all components ([#1730](https://github.com/holoviz/panel/issues/1730), [#2026](https://github.com/holoviz/panel/issues/2026))
+- Add `IDOM` pane to develop interactive HTML components in Python ([#2004](https://github.com/holoviz/panel/issues/2004))
 - Add powerful new `Tabulator` widget for flexible and configurable display of tabular data ([#1531](https://github.com/holoviz/panel/issues/1531), [#1887](https://github.com/holoviz/panel/issues/1887)) 
 
 Enhancements:
 
 - Add watch argument to `bind` function so that covers all the features of pn.depends ([#2000](https://github.com/holoviz/panel/issues/2000))
+- Add `format` parameter to DatetimeRangeInput widget ([#2043](https://github.com/holoviz/panel/issues/2043)) 
 - Allow `ParamMethod` and `ParamFunction` to evaluate lazily ([#1966](https://github.com/holoviz/panel/issues/1966))
 - Add `value_input` parameter to TextInput widgets ([#2007](https://github.com/holoviz/panel/issues/2007))
-- Implement `Glyph3dMapper` support for `VTK` panes ([#2002, [#2003](https://github.com/holoviz/panel/issues/2003))
+- Implement `Glyph3dMapper` support for `VTK` panes ([#2002](https://github.com/holoviz/panel/issues/2002), [#2003](https://github.com/holoviz/panel/issues/2003))
 - Add Jupyter server extension to serve resources ([#1982](https://github.com/holoviz/panel/issues/1982))
 - Enhancements for `DarkTheme` ([#1964](https://github.com/holoviz/panel/issues/1964))
 - Add `refresh` functionality to `FileSelector` ([#1962](https://github.com/holoviz/panel/issues/1962))
 - Add support for Auth0 authentication ([#1934](https://github.com/holoviz/panel/issues/1934))
 - Avoid recursive preprocessing slowing down rendering ([#1852](https://github.com/holoviz/panel/issues/1852))
 - Add support for per-layer tooltips on `DeckGL` pane ([#1846](https://github.com/holoviz/panel/issues/1846))
+- Add `Viewer` baseclass for custom user components ([#2045](https://github.com/holoviz/panel/issues/2045))
 
 Bug fixes:
 
+- Fixed `FileSelector` file icon on selected files ([#2046](https://github.com/holoviz/panel/issues/2046))
+- Drop query args when checking URLs ([#2037](https://github.com/holoviz/panel/issues/2037))
 - Fix `Card.header_background` propagation ([#2035](https://github.com/holoviz/panel/issues/2035))
 - Disable `GoldenTemplate` sidebar when empty ([#2017](https://github.com/holoviz/panel/issues/2017))
 - Ensure `Card.collapsed` and `Accordion.active` parameters are synced ([#2009](https://github.com/holoviz/panel/issues/2009))
