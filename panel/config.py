@@ -84,7 +84,7 @@ class _config(_base_config):
         Whether to autoreload server when script changes.""")
 
     loading_spinner = param.Selector(default='arcs', objects=[
-        'arcs', 'bars', 'dots', 'petals'], doc="""
+        'arc', 'arcs', 'bar', 'dots', 'petal'], doc="""
         Loading indicator to use when component loading parameter is set.""")
 
     loading_color = param.Color(default='#c3c3c3', doc="""
