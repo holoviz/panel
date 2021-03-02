@@ -5,7 +5,7 @@ import {applyPatch, getValueByPointer} from 'fast-json-patch';
 
 import * as p from "@bokehjs/core/properties"
 import {HTMLBox} from "@bokehjs/models/layouts/html_box"
-import {PanelHTMLBoxView} from "./layout"
+import {PanelHTMLBoxView, set_size} from "./layout"
 import {serializeEvent} from "./event-to-object"
 
 const LayoutConfigContext = createContext({});
@@ -223,6 +223,7 @@ export class IDOMView extends PanelHTMLBoxView {
     this.update_layout()
     this.compute_layout()
     this.invalidate_layout()
+    set_size(this.el, this.model)
   }
 
   initialize(): void {
@@ -258,7 +259,7 @@ export class IDOMView extends PanelHTMLBoxView {
     await new Promise((resolve) => {
       const check_update = () => {
 	if (this.el.children.length) {
-	  setTimeout(() => { requestAnimationFrame(() => this.fix_layout()) })
+	  this.fix_layout()
 	  resolve(null)
 	} else
 	  setTimeout(check_update, 50)

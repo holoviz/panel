@@ -816,7 +816,7 @@ class Tabulator(BaseTable):
         styler = df.style
         styler._todo = self.style._todo
         styler._compute()
-        offset = len(self.indexes)
+        offset = len(self.indexes) + int(self.selectable == 'checkbox')
 
         styles = {}
         for (r, c), s in styler.ctx.items():

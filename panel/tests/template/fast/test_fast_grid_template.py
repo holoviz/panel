@@ -5,10 +5,22 @@ import numpy as np
 import panel as pn
 from holoviews import opts
 
-from panel.template.fast import FastGridTemplate
+from panel.template.fast.grid import FastGridTemplate, FastGridDarkTheme
 
 hv.extension("bokeh")
 opts.defaults(opts.Ellipse(line_width=3, color="#DF3874"))
+
+
+
+def test_template_theme_parameter():
+    template = FastGridTemplate(title="Fast", theme="dark")
+    # Not '#3f3f3f' which is for the Vanilla theme
+
+    doc = template.server_doc()
+    assert doc.theme._json['attrs']['Figure']['background_fill_color']=="#181818"
+
+    assert isinstance(template._get_theme(), FastGridDarkTheme)
+
 
 
 COLLAPSED_ICON = """
