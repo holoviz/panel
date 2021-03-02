@@ -145,6 +145,10 @@ def test_app():
 
     return app
 
+def test_template_no_theme_parameter():
+    template = pn.template.FastGridTemplate(title="Fast")
+    assert template.theme==pn.template.fast.grid.FastGridDefaultTheme
+
 def test_template_theme_parameter():
     template = pn.template.FastGridTemplate(title="Fast", theme="dark")
     assert template.theme==pn.template.fast.grid.FastGridDarkTheme
