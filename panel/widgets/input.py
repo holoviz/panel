@@ -451,6 +451,9 @@ class DatetimeRangeInput(CompositeWidget):
 
     end = param.Date(default=None)
 
+    format = param.String(default='%Y-%m-%d %H:%M:%S', doc="""
+        Datetime format used for parsing and formatting the datetime.""")
+
     _composite_type = Column
 
     def __init__(self, **params):
@@ -489,14 +492,14 @@ class DatetimeRangeInput(CompositeWidget):
         finally:
             self._updating = False
 
-    @param.depends('value', 'start', 'end', 'name', watch=True)
+    @param.depends('value', 'start', 'end', 'name', 'format', watch=True)
     def _update_widgets(self):
         if self._updating:
             return
         try:
             self._updating = True
-            self._start.param.set_param(value=self.value[0], start=self.start, end=self.end)
-            self._end.param.set_param(value=self.value[1], start=self.start, end=self.end)
+            self._start.param.set_param(value=self.value[0], start=self.start, end=self.end, format=self.format)
+            self._end.param.set_param(value=self.value[1], start=self.start, end=self.end, format=self.format)
         finally:
             self._updating = False
 
