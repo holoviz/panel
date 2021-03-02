@@ -769,3 +769,35 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         add_to_doc(model, doc)
         if location: self._add_location(doc, location, model)
         return doc
+
+
+class Viewer(param.Parameterized):
+    """
+    A baseclass for custom components that behave like a Panel object.
+    By implementing __panel__ method an instance of this class will
+    behave like the returned Panel component when placed in a layout,
+    render itself in a notebook and provide show and servable methods.
+    """
+
+    def __panel__(self):
+        """
+        Subclasses should return a Panel component to be rendered.
+        """
+        raise NotImplementedError
+
+    def servable(self, title=None, location=True):
+        return self.__panel__().servable(title, location)
+
+    servable.__doc__ = ServableMixin.servable.__doc__
+
+    def show(self, title=None, port=0, address=None, websocket_origin=None,
+             threaded=False, verbose=True, open=True, location=True, **kwargs):
+        return self.__panel__().show(
+            title, port, address, websocket_origin, threaded,
+            verbose, open, location, **kwargs
+        )
+
+    show.__doc__ = ServableMixin.show.__doc__
+
+    def _repr_mimebundle_(self, include=None, exclude=None):
+        return self.__panel__._repr_mimebundle_(include, exclude)
