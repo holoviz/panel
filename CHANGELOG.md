@@ -58,7 +58,7 @@ Compatibility:
 
 Documentation:
 
-- Document pn.bind in API user guide ([#1973)
+- Document pn.bind in API user guide ([#1973](https://github.com/holoviz/panel/issues/1973))
 
 ## Version 0.10.3
 
