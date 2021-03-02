@@ -192,7 +192,7 @@ class FileSelector(CompositeWidget):
             if os.path.isdir(check):
                 dirs.append(s)
             elif os.path.isfile(check):
-                dirs.append(s)
+                files.append(s)
 
         paths = [p for p in sorted(dirs)+sorted(files)
                  if self.show_hidden or not os.path.basename(p).startswith('.')]
