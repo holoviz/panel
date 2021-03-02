@@ -514,6 +514,15 @@ class LiteralInput(Widget):
 
 class ArrayInput(LiteralInput):
 
+    max_array_size = param.Number(default=1000, doc="""
+        maximum number of elements in the array to allow full serialization
+        else only the string representation will be passed to the javascript
+        side and edition capabilities through the widget are lost.
+    """)
+
+    _rename = dict(**LiteralInput._rename, **{'max_array_size': None})
+
+
     def _process_property_change(self, msg):
         msg = super()._process_property_change(msg)
         if 'value' in msg and isinstance(msg['value'], list):
@@ -522,8 +531,12 @@ class ArrayInput(LiteralInput):
 
     def _process_param_change(self, msg):
         if 'value' in msg and msg['value'] is not None:
-            msg['value'] = msg['value'].tolist()
-        return super()._process_param_change(msg)
+            if msg['value'].size <= self.max_array_size:
+                msg['value'] = msg['value'].tolist()
+        msg = super()._process_param_change(msg)
+        if 'value' in msg:
+            msg['value'] = msg['value'].replace(' ', ', ')
+        return msg
 
 
 class DatetimeInput(LiteralInput):
