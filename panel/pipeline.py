@@ -11,6 +11,7 @@ from .pane import HoloViews, Pane, Markdown
 from .widgets import Button, Select
 from .param import Param
 from .util import param_reprs
+from .viewable import ViewableWrapper
 
 
 class PipelineError(RuntimeError):
@@ -102,7 +103,7 @@ def get_breadths(node, graph, depth=0, breadths=None):
 
 
 
-class Pipeline(param.Parameterized):
+class Pipeline(ViewableWrapper):
     """
     A Pipeline represents a directed graph of stages, which each
     return a panel object to render. A pipeline therefore represents
@@ -221,6 +222,9 @@ class Pipeline(param.Parameterized):
                 name, stage, kwargs = stage
             self.add_stage(name, stage, **kwargs)
         self.define_graph(graph)
+
+    def __panel__(self):
+        return self.layout
 
     def _validate(self, stage):
         if any(stage is s for n, (s, kw) in self._stages.items()):
@@ -526,9 +530,6 @@ class Pipeline(param.Parameterized):
             ylim=(0, 1), default_tools=['hover'], toolbar=None, backend='bokeh'
         )
         return plot
-
-    def _repr_mimebundle_(self, include=None, exclude=None):
-        return self.layout._repr_mimebundle_(include, exclude)
 
     #----------------------------------------------------------------
     # Public API
