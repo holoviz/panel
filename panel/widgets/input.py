@@ -8,6 +8,7 @@ import json
 from base64 import b64decode
 from datetime import datetime, date
 
+import numpy as np
 import param
 
 from bokeh.models.formatters import TickFormatter
@@ -16,7 +17,8 @@ from bokeh.models.widgets import (
     DatePicker as _BkDatePicker, Div as _BkDiv, TextInput as _BkTextInput,
     PasswordInput as _BkPasswordInput, Spinner as _BkSpinner,
     FileInput as _BkFileInput, TextAreaInput as _BkTextAreaInput,
-    NumericInput as _BkNumericInput)
+    NumericInput as _BkNumericInput
+)
 
 from ..config import config
 from ..layout import Column
@@ -515,7 +517,6 @@ class ArrayInput(LiteralInput):
     def _process_property_change(self, msg):
         msg = super()._process_property_change(msg)
         if 'value' in msg and isinstance(msg['value'], list):
-            import numpy as np
             msg['value'] = np.asarray(msg['value'])
         return msg
 
