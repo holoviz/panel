@@ -800,4 +800,4 @@ class Viewer(param.Parameterized):
     show.__doc__ = ServableMixin.show.__doc__
 
     def _repr_mimebundle_(self, include=None, exclude=None):
-        return self.__panel__._repr_mimebundle_(include, exclude)
+        return self.__panel__()._repr_mimebundle_(include, exclude)
