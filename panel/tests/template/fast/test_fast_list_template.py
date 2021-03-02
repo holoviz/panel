@@ -27,7 +27,7 @@ def test_app():
 
 def test_template_theme_parameter():
     template = pn.template.FastListTemplate(title="Fast", theme="dark")
-    assert template.theme==pn.template.fast.list.FastListTemplate
+    assert template.theme==pn.template.fast.list.FastListDarkTheme
 
 
 if __name__.startswith("bokeh"):
