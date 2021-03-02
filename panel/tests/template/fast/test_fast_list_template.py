@@ -1,6 +1,6 @@
 import panel as pn
 
-from panel.template.fast import FastListTemplate
+from panel.template.fast.list import FastListTemplate, FastListDarkTheme
 
 from panel.tests.template.fast.test_fast_grid_template import (
     _create_hvplot,
@@ -9,7 +9,16 @@ from panel.tests.template.fast.test_fast_grid_template import (
     INFO,
 )
 
+def test_template_theme_parameter():
+    template = FastListTemplate(title="Fast", theme="dark")
+    # Not '#3f3f3f' which is for the Vanilla theme
 
+    doc = template.server_doc()
+    assert doc.theme._json['attrs']['Figure']['background_fill_color']=="#181818"
+
+    assert isinstance(template._get_theme(), FastListDarkTheme)
+
+    
 def test_app():
     pn.config.sizing_mode = "stretch_width"
     app = FastListTemplate(
