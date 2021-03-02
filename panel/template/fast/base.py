@@ -5,7 +5,7 @@ import param
 from ...io.state import state
 from ..base import BasicTemplate
 from ..react import ReactTemplate
-from ..theme import THEMES, DefaultTheme
+from .theme import THEMES, DefaultTheme
 
 _ROOT = pathlib.Path(__file__).parent
 

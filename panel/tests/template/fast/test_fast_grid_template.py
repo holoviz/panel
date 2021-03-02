@@ -145,6 +145,10 @@ def test_app():
 
     return app
 
+def test_template_theme_parameter():
+    template = pn.template.FastGridTemplate(title="Fast", theme="dark")
+    assert template.theme==pn.template.fast.grid.FastDarkTheme
+
 
 if __name__.startswith("bokeh"):
     test_app().servable()

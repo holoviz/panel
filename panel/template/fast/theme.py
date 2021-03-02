@@ -172,3 +172,8 @@ class FastDarkTheme(DarkTheme):
     @property
     def bokeh_theme(self):
         return _BkTheme(json=self.style.create_bokeh_theme())
+
+THEMES = {
+    'default': FastDefaultTheme,
+    'dark': FastDarkTheme
+}
