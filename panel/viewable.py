@@ -771,7 +771,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         return doc
 
 
-class ViewableWrapper(param.Parameterized):
+class Viewer(param.Parameterized):
     """
     A baseclass for custom components which return a Panel object. By
     implementing the __panel__ method users can make a panel component
@@ -793,7 +793,7 @@ class ViewableWrapper(param.Parameterized):
              threaded=False, verbose=True, open=True, location=True, **kwargs):
         return self.__panel__().show(
             title, port, address, websocket_origin, threaded,
-            verbose, option, location, **kwargs
+            verbose, open, location, **kwargs
         )
 
     show.__doc__ = ServableMixin.show.__doc__

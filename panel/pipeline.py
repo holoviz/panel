@@ -11,7 +11,7 @@ from .pane import HoloViews, Pane, Markdown
 from .widgets import Button, Select
 from .param import Param
 from .util import param_reprs
-from .viewable import ViewableWrapper
+from .viewable import Viewer
 
 
 class PipelineError(RuntimeError):
@@ -103,7 +103,7 @@ def get_breadths(node, graph, depth=0, breadths=None):
 
 
 
-class Pipeline(ViewableWrapper):
+class Pipeline(Viewer):
     """
     A Pipeline represents a directed graph of stages, which each
     return a panel object to render. A pipeline therefore represents
