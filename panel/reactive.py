@@ -958,16 +958,16 @@ class ReactiveHTML(Reactive):
         for name, attrs in self._parser.attrs.items():
             self._attrs[name] = []
             self._callbacks[name] = []
-            for (attr, param) in attrs:
-                if param in self.param:
-                    self._attrs[name].append((attr, param))
+            for (attr, parameter) in attrs:
+                if parameter in self.param:
+                    self._attrs[name].append((attr, parameter))
                 elif hasattr(self, param):
-                    self._callbacks[name].append((attr, param))
-                    cb = getattr(self, param)
+                    self._callbacks[name].append((attr, parameter))
+                    cb = getattr(self, parameter)
                     self.on_event(name, attr, cb)
                     self._inline_callbacks.append((name, attr, cb))
                 else:
-                    matches = difflib.get_close_matches(param, dir(self))
+                    matches = difflib.get_close_matches(parameter, dir(self))
                     raise ValueError("HTML template reference unknown "
                                      f"parameter or method '{param}', "
                                      "similar parameters and methods "
