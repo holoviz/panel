@@ -103,7 +103,8 @@ install_requires = [
     'markdown',
     'requests',
     'tqdm',
-    'pyct >=0.4.4'
+    'pyct >=0.4.4',
+    'bleach'
 ]
 
 _recommended = [

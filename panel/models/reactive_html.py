@@ -63,6 +63,8 @@ PARAM_MAPPING = {
 
 
 def construct_data_model(parameterized, ignore=['name']):
+    import bleach
+
     properties = {}
     for pname in parameterized.param:
         if pname in ignore:
@@ -74,8 +76,13 @@ def construct_data_model(parameterized, ignore=['name']):
             properties[pname] = bp.Any(**kwargs)
         else:
             properties[pname] = prop(p, kwargs)
-    values = {k: v for k, v in parameterized.param.get_param_values()
-              if k not in ignore}
+    values = {}
+    for k, v in parameterized.param.get_param_values():
+        if k in ignore:
+            continue
+        if isinstance(v, str):
+            v = bleach.clean(v)
+        values[k] = v
     return type(parameterized.name, (DataModel,), properties)(**values)
 
 

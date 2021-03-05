@@ -1038,6 +1038,12 @@ class ReactiveHTML(Reactive):
             cb(event)
 
     def _update_model(self, events, msg, root, model, doc, comm):
+        # Bleach all template inputs
+        import bleach
+        msg = {
+            p: bleach.clean(value) if isinstance(value, str) else value
+            for p, value in msg.items()
+        }
         self._changing[root.ref['id']] = [
             attr for attr, value in msg.items()
             if not model.data.lookup(attr).property.matches(getattr(model.data, attr), value)
