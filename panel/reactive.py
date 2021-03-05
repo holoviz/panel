@@ -977,12 +977,14 @@ class ReactiveHTML(Reactive):
         return {p : getattr(self, p) for p in list(Layoutable.param)
                 if getattr(self, p) is not None}
 
-    def _get_data_properties(self):
-        return {p : getattr(self, p) for p in list(self.param)
-                if p not in list(Reactive.param) and getattr(self, p) is not None}
-
     def _get_children(self, doc, root, model, comm):
         html = self._html
+        for attr in self._attrs:
+            html = (
+                html
+                .replace(f"id='{attr}'", f"id='{attr}-${{id}}'")
+                .replace(f'id="{attr}"', f'id="{attr}-${{id}}"')
+            )
         children, child_models = {}, {}
         for parent, child_name in self._parser.children.items():
             child_panes = getattr(self, child_name)

@@ -25,17 +25,18 @@ class ReactiveHTMLParser(HTMLParser):
         attrs = dict(attrs)
         dom_id = attrs.pop('id', None)
         self._current_node = None
-        if not dom_id or not dom_id.endswith('-${id}'):
+        if not dom_id:
             return
 
-        name = '-'.join(dom_id.split('-')[:-1])
-        self._current_node = name
-        self.nodes.append(name)
+        if dom_id in self.nodes:
+            raise ValueError(f'Multiple DOM nodes with id="{dom_id}" found.')
+        self._current_node = dom_id
+        self.nodes.append(dom_id)
         for attr, value in attrs.items():
             if value is None:
                 continue
             if self._template_re.match(value) and not value[2:-1].startswith('model.'):
-                self.attrs[name].append((attr, value[2:-1]))
+                self.attrs[dom_id].append((attr, value[2:-1]))
 
     def handle_endtag(self, tag):
         self._current_node = None
