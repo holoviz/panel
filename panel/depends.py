@@ -131,25 +131,38 @@ def _param_bind(function, *args, watch=False, **kwargs):
     dependencies = {}
     for i, arg in enumerate(args):
         p = param_value_if_widget(arg)
-        if isinstance(p, param.Parameter):
+        if hasattr(p, '_dinfo'):
+            for j, arg in enumerate(p._dinfo['dependencies']):
+                dependencies[f'__arg{i}_arg{j}'] = arg
+            for kw, kwarg in p._dinfo['kw'].items():
+                dependencies[f'__arg{i}_arg_{kw}'] = kwarg
+        elif isinstance(p, param.Parameter):
             dependencies[f'__arg{i}'] = p
     for kw, v in kwargs.items():
         p = param_value_if_widget(v)
-        if isinstance(p, param.Parameter):
+        if hasattr(p, '_dinfo'):
+            for j, arg in enumerate(p._dinfo['dependencies']):
+                dependencies[f'__kwarg_{kw}_arg{j}'] = arg
+            for pkw, kwarg in p._dinfo['kw'].items():
+                dependencies[f'__kwarg_{kw}_{pkw}'] = kwarg
+        elif isinstance(p, param.Parameter):
             dependencies[kw] = p
 
     @depends(**dependencies, watch=watch)
     def wrapped(*wargs, **wkwargs):
         combined_args = []
         for arg in args:
-            if isinstance(arg, param.Parameter):
-                combined_args.append(getattr(arg.owner, arg.name))
-            else:
-                combined_args.append(arg)
+            if hasattr(arg, '_dinfo'):
+                arg = arg()
+            elif isinstance(arg, param.Parameter):
+                arg = getattr(arg.owner, arg.name)
+            combined_args.append(arg)
         combined_args += list(wargs)
         combined_kwargs = {}
         for kw, arg in kwargs.items():
-            if isinstance(arg, param.Parameter):
+            if hasattr(arg, '_dinfo'):
+                arg = arg()
+            elif isinstance(arg, param.Parameter):
                 arg = getattr(arg.owner, arg.name)
             combined_kwargs[kw] = arg
         for kw, arg in wkwargs.items():
