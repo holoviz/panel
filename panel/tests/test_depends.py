@@ -114,3 +114,39 @@ def test_bind_two_widgets_as_kwargs():
         bound_function(1, 2)
 
     assert bound_function(value2=5) == 6
+
+
+def test_bind_bound_function_to_arg():
+    widget = IntSlider(value=1)
+
+    def add1(value):
+        return value + 1
+
+    def divide(value):
+        return value / 2
+    
+    bound_function = bind(divide, bind(add1, widget.param.value))
+
+    assert bound_function() == 1
+
+    widget.value = 3
+    
+    assert bound_function() == 2
+
+    
+def test_bind_bound_function_to_kwarg():
+    widget = IntSlider(value=1)
+
+    def add1(value):
+        return value + 1
+
+    def divide(divisor=2, value=0):
+        return value / divisor
+    
+    bound_function = bind(divide, value=bind(add1, widget.param.value))
+
+    assert bound_function() == 1
+
+    widget.value = 3
+    
+    assert bound_function() == 2
