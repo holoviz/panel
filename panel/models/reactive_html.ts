@@ -2,9 +2,12 @@ import {render} from 'preact';
 import {useCallback} from 'preact/hooks';
 import {html} from 'htm/preact';
 
+import {build_views} from "@bokehjs/core/build_views"
 import * as p from "@bokehjs/core/properties"
 import {Markup} from "@bokehjs/models/widgets/markup"
-import {build_view} from "@bokehjs/core/build_views"
+import {LayoutDOM} from "@bokehjs/models/layouts/layout_dom"
+import {empty, classes} from "@bokehjs/core/dom"
+import {color2css} from "@bokehjs/core/util/color"
 
 import {serializeEvent} from "./event-to-object";
 import {DOMEvent, htmlDecode, runScripts} from "./html"
@@ -34,17 +37,8 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
 
   connect_signals(): void {
     super.connect_signals()
-    const resize = () => {
-      this.render()
-      this.root.compute_layout() // XXX: invalidate_layout?
-    }
-
-    this.connect(this.model.properties.height.change, resize)
-    this.connect(this.model.properties.width.change, resize)
-    this.connect(this.model.properties.height_policy.change, resize)
-    this.connect(this.model.properties.width_policy.change, resize)
-    this.connect(this.model.properties.sizing_mode.change, resize)
-    this.connect(this.model.properties.html.change, resize)
+    this.connect(this.model.properties.html.change, () => this.invalidate_render())
+    this.connect(this.model.properties.models.change, () => this.rebuild())
     this.connect(this.model.properties.scripts.change, () => this._update(null, false, true))
     for (const prop in this.model.data.properties) {
       this.connect(this.model.data.properties[prop].change, () => {
@@ -87,7 +81,25 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
     return new Function("model, data, html", "return `<script>"+js+"</script>`;")(this.model, this.model.data, html)
   }
 
-  async _render_children(id: string): Promise<void> {
+  get child_models(): LayoutDOM[] {
+    const models = []
+    for (const name in this.model.children) {
+      const child_name = this.model.children[name]
+      for (const model of this.model.models[child_name])
+	models.push(model)
+    }
+    return models
+  }
+
+  async build_child_views(): Promise<void> {
+    await build_views(this._child_views, this.child_models, {parent: (null as any)})
+  }
+
+  update_layout(): void {
+    this._update_layout()
+  }
+
+  _render_children(id: string): void {
     for (const name in this.model.children) {
       const el: any = document.getElementById(`${name}-${id}`)
       if (el == null) {
@@ -97,8 +109,8 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
       const child_name = this.model.children[name]
       let child_models = this.model.models[child_name]
       for (const cm of child_models) {
-        const view = await build_view(cm)
-        view.renderTo(el)
+        const view: any = this._child_views.get(cm)
+	view.renderTo(el)
       }
     }
   }
@@ -124,11 +136,9 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
         console.warn(`DOM node '${name}-${id}' could not be found. Cannot subscribe to DOM events.`)
         continue
       }
-      const names = el.id.split('-')
-      const elname = names.slice(0, names.length-1).join('-')
       for (const event_name of this.model.events[name]) {
-        el.addEventListener(event_name, (event: any) => {
-          this.model.trigger_event(new DOMEvent(elname, serializeEvent(event)))
+	el.addEventListener(event_name, (event: any) => {
+	  this._send_event(name, event_name, event)
           if (name in this.model.attrs)
             this._update_model(el, name)
         })
@@ -171,12 +181,17 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
     }
   }
 
-  async render(): Promise<void> {
-    super.render()
+  render(): void {
+    empty(this.el)
+
+    const {background} = this.model
+    this.el.style.backgroundColor = background != null ? color2css(background) : ""
+    classes(this.el).clear().add(...this.css_classes())
+
     this._update()
 
     const id = this.model.data.id
-    await this._render_children(id)
+    this._render_children(id)
     this._setup_mutation_observers(id)
     this._setup_event_listeners(id)
   }

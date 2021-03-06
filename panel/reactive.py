@@ -961,7 +961,7 @@ class ReactiveHTML(Reactive):
             for (attr, parameter) in attrs:
                 if parameter in self.param:
                     self._attrs[name].append((attr, parameter))
-                elif hasattr(self, param):
+                elif hasattr(self, parameter):
                     self._callbacks[name].append((attr, parameter))
                     cb = getattr(self, parameter)
                     self.on_event(name, attr, cb)
@@ -977,9 +977,9 @@ class ReactiveHTML(Reactive):
         return {p : getattr(self, p) for p in list(Layoutable.param)
                 if getattr(self, p) is not None}
 
-    def _get_children(self, doc, root, model, comm):
+    def _get_children(self, doc, models, root, model, comm):
         html = self._html
-        for attr in self._attrs:
+        for attr in list(self._attrs)+list(self._parser.children):
             html = (
                 html
                 .replace(f"id='{attr}'", f"id='{attr}-${{id}}'")
@@ -1004,7 +1004,7 @@ class ReactiveHTML(Reactive):
         if not root:
             root = model
 
-        html, children, models = self._get_children(doc, root, parent, comm)
+        html, children, models = self._get_children(doc, {}, root, parent, comm)
 
         # Populate model
         ignored = list(Reactive.param)+list(children.values())
@@ -1039,21 +1039,36 @@ class ReactiveHTML(Reactive):
         for cb in event_cbs:
             cb(event)
 
+    def _set_on_model(self, msg, root, model):
+        self._changing[root.ref['id']] = [
+            attr for attr, value in msg.items()
+            if not model.lookup(attr).property.matches(getattr(model, attr), value)
+        ]
+        try:
+            model.update(**msg)
+        finally:
+            del self._changing[root.ref['id']]
+
     def _update_model(self, events, msg, root, model, doc, comm):
         # Bleach all template inputs
         import bleach
+        model_msg = {
+            prop: msg.pop(prop) for prop, v in list(msg.items())
+            if prop in model.children.values()
+        }
+        if model_msg:
+            model_msg = {}
+            _, children, models = self._get_children(doc, root, model, comm)
+            model_msg['children'] = children
+            model_msg['models'] = models
+        self._set_on_model(model_msg, root, model)
+        if not msg:
+            return
         msg = {
             p: bleach.clean(value) if isinstance(value, str) else value
             for p, value in msg.items()
         }
-        self._changing[root.ref['id']] = [
-            attr for attr, value in msg.items()
-            if not model.data.lookup(attr).property.matches(getattr(model.data, attr), value)
-        ]
-        try:
-            model.data.update(**msg)
-        finally:
-            del self._changing[root.ref['id']]
+        self._set_on_model(msg, root, model.data)
 
     def on_event(self, node, event, callback):
         """
