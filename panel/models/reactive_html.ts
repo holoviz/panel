@@ -10,7 +10,7 @@ import {empty, classes} from "@bokehjs/core/dom"
 import {color2css} from "@bokehjs/core/util/color"
 
 import {serializeEvent} from "./event-to-object";
-import {DOMEvent, htmlDecode, runScripts} from "./html"
+import {DOMEvent, htmlDecode} from "./html"
 import {PanelHTMLBoxView, set_size} from "./layout"
 
 
@@ -29,29 +29,158 @@ function serialize_attrs(attrs: any): any {
   return serialized
 }
 
-export class ReactiveHTMLView extends PanelHTMLBoxView {
-  model: ReactiveHTML
-  _changing: boolean = false
-  _render_el: any = null
-  _script_els: any = {}
+function escapeRegex(string: string) {
+    return string.replace(/[-\/\\^$*+?.()|[\]]/g, '\\$&');
+}
 
-  connect_signals(): void {
-    super.connect_signals()
-    this.connect(this.model.properties.html.change, () => this.invalidate_render())
-    this.connect(this.model.properties.models.change, () => this.rebuild())
-    this.connect(this.model.properties.scripts.change, () => this._update(null, false, true))
-    for (const prop in this.model.data.properties) {
-      this.connect(this.model.data.properties[prop].change, () => {
-        if (!this._changing)
-          this._update(prop)
-      })
+function extractToken(template: string, str: string, tokens: string[]) {
+  const tokenMapping: any = {}
+  for (const match of tokens)
+    tokenMapping[`{${match}}`] = "(.*)"
+
+  const tokenList = []
+  let regexpTemplate = escapeRegex(template);
+
+  // Find the order of the tokens
+  let i, tokenIndex, tokenEntry;
+  for (const m in tokenMapping) {
+    tokenIndex = template.indexOf(m);
+
+    // Token found
+    if (tokenIndex > -1) {
+      regexpTemplate = regexpTemplate.replace(m, '(' + tokenMapping[m] + ')');
+      tokenEntry = {
+	index: tokenIndex,
+	token: m
+      };
+
+      for (i = 0; i < tokenList.length && tokenList[i].index < tokenIndex; i++);
+
+      // Insert it at index i
+      if (i < tokenList.length)
+	tokenList.splice(i, 0, tokenEntry)
+      else
+	tokenList.push(tokenEntry)
     }
   }
 
-  _send_event(elname: string, attr: string, event: any) {
+  regexpTemplate = regexpTemplate.replace(/\{[^{}]+\}/g, '.*');
+
+  var match = new RegExp(regexpTemplate).exec(str)
+  let result: any = null;
+
+  if (match) {
+    result = {};
+    // Find your token entry
+    for (i = 0; i < tokenList.length; i++)
+      result[tokenList[i].token.slice(1, -1)] = match[i + 1]
+  }
+
+  return result;
+}
+
+
+export class ReactiveHTMLView extends PanelHTMLBoxView {
+  model: ReactiveHTML
+  html: string
+  _changing: boolean = false
+  _event_listeners: any = {}
+  _mutation_observers: MutationObserver[] = []
+
+  initialize(): void {
+    super.initialize()
+    this.html = htmlDecode(this.model.html) || this.model.html
+  }
+
+  connect_signals(): void {
+    super.connect_signals()
+    this.connect(this.model.properties.children.change, () => this.rebuild())
+    for (const prop in this.model.data.properties) {
+      this.connect(this.model.data.properties[prop].change, () => {
+        if (!this._changing) {
+          this._update(prop)
+	  this.invalidate_layout()
+	}
+      })
+    }
+    this.connect(this.model.properties.events.change, () => {
+      this._remove_event_listeners()
+      this._setup_event_listeners()
+    })
+    this.connect_scripts()
+  }
+
+  connect_scripts(): void {
+    const id = this.model.data.id
+    for (const elname in this.model.scripts) {
+      const el_scripts = this.model.scripts[elname]
+      for (const prop in el_scripts) {
+        const script = el_scripts[prop]
+        const decoded_script = htmlDecode(script) || script
+	const script_fn = this._render_script(decoded_script, elname, id)
+	this.connect(this.model.data.properties[prop].change, () => {
+          if (!this._changing)
+            script_fn(this.model, this.model.data)
+	})
+      }
+    }
+  }
+
+  disconnect_signals(): void {
+    super.disconnect_signals()
+    this._remove_event_listeners()
+    this._remove_mutation_observers()
+  }
+
+  get child_models(): LayoutDOM[] {
+    const models = []
+    for (const parent in this.model.children) {
+      for (const model of this.model.children[parent])
+	models.push(model)
+    }
+    return models
+  }
+
+  async build_child_views(): Promise<void> {
+    await build_views(this._child_views, this.child_models, {parent: (null as any)})
+  }
+
+  update_layout(): void {
+    this._update_layout()
+  }
+
+  render(): void {
+    empty(this.el)
+
+    const {background} = this.model
+    this.el.style.backgroundColor = background != null ? color2css(background) : ""
+    classes(this.el).clear().add(...this.css_classes())
+
+    this._update()
+    this._render_children()
+    this._setup_mutation_observers()
+    this._setup_event_listeners()
+  }
+
+  private _send_event(elname: string, attr: string, event: any) {
     let serialized = serializeEvent(event)
     serialized.type = attr
     this.model.trigger_event(new DOMEvent(elname, serialized))
+  }
+
+  private _render_children(): void {
+    const id = this.model.data.id
+    for (const name in this.model.children) {
+      const el: any = document.getElementById(`${name}-${id}`)
+      if (el == null) {
+        console.warn(`DOM node '${name}-${id}' could not be found. Cannot render children.`)
+        continue
+      }
+      for (const cm of this.model.children[name]) {
+        const view: any = this._child_views.get(cm)
+	view.renderTo(el)
+      }
+    }
   }
 
   private _render_html(literal: any): string {
@@ -72,50 +201,37 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
         htm = htm.replace('${'+method, '$--{'+method)
       }
     }
-    htm = htm.replaceAll('${model.', '$-{model.').replaceAll('${', '${data.').replaceAll('$-{model.', '${model.').replaceAll('$--{', '${')
-    return new Function("view, model, data, html, useCallback", callbacks+"return html`"+htm+"`;")(this, this.model, this.model.data, html, useCallback)
+    htm = (
+      htm
+	.replaceAll('${model.', '$-{model.')
+	.replaceAll('${', '${data.')
+	.replaceAll('$-{model.', '${model.')
+	.replaceAll('$--{', '${')
+    )
+    return new Function("view, model, data, html, useCallback", callbacks+"return html`"+htm+"`;")(
+      this, this.model, this.model.data, html, useCallback
+    )
   }
 
-  private _render_script(literal: any): string {
-    let js = literal.replaceAll('${model.', '$-{model.').replaceAll('${', '${data.').replaceAll('$-{model.', '${model.')
-    return new Function("model, data, html", "return `<script>"+js+"</script>`;")(this.model, this.model.data, html)
-  }
-
-  get child_models(): LayoutDOM[] {
-    const models = []
-    for (const name in this.model.children) {
-      const child_name = this.model.children[name]
-      for (const model of this.model.models[child_name])
-	models.push(model)
-    }
-    return models
-  }
-
-  async build_child_views(): Promise<void> {
-    await build_views(this._child_views, this.child_models, {parent: (null as any)})
-  }
-
-  update_layout(): void {
-    this._update_layout()
-  }
-
-  _render_children(id: string): void {
-    for (const name in this.model.children) {
-      const el: any = document.getElementById(`${name}-${id}`)
+  private _render_script(literal: any, elname: string, id: string) {
+    const script = `
+      const el = document.getElementById('${elname}-${id}')
       if (el == null) {
-        console.warn(`DOM node '${name}-${id}' could not be found. Cannot render children.`)
-        continue
+        console.warn("DOM node '${elname}-${id}' could not be found. Cannot execute callback.")
+        return
       }
-      const child_name = this.model.children[name]
-      let child_models = this.model.models[child_name]
-      for (const cm of child_models) {
-        const view: any = this._child_views.get(cm)
-	view.renderTo(el)
-      }
-    }
+      ${literal}
+    `
+    return new Function("model, data", script)
+  }
+  private _remove_mutation_observers(): void {
+    for (const observer of this._mutation_observers)
+      observer.disconnect()
+    this._mutation_observers = []
   }
 
-  _setup_mutation_observers(id: string): void {
+  private _setup_mutation_observers(): void {
+    const id = this.model.data.id
     for (const name in this.model.attrs) {
       const el: any = document.getElementById(`${name}-${id}`)
       if (el == null) {
@@ -126,80 +242,78 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
         this._update_model(el, name)
       })
       observer.observe(el, {attributes: true});
+      this._mutation_observers.push(observer)
     }
   }
 
-  _setup_event_listeners(id: string): void {
-    for (const name in this.model.events) {
-      const el: any = document.getElementById(`${name}-${id}`)
+  private _remove_event_listeners(): void {
+    const id = this.model.data.id
+    for (const node in this._event_listeners) {
+      const el: any = document.getElementById(`${node}-${id}`)
       if (el == null) {
-        console.warn(`DOM node '${name}-${id}' could not be found. Cannot subscribe to DOM events.`)
+        console.warn(`DOM node '${node}-${id}' could not be found. Cannot subscribe to DOM events.`)
         continue
       }
-      for (const event_name of this.model.events[name]) {
-	el.addEventListener(event_name, (event: any) => {
-	  this._send_event(name, event_name, event)
-          if (name in this.model.attrs)
-            this._update_model(el, name)
-        })
+      for (const event_name in this._event_listeners[node]) {
+	const event_callback = this._event_listeners[node][event_name]
+	el.removeEventListener(event_name, event_callback)
       }
     }
+    this._event_listeners = {}
   }
 
-  _update(property: string | null = null, js: boolean = true, html: boolean = true): void {
-    if (html) {
-      const decoded = htmlDecode(this.model.html) || this.model.html
-      if (property == null || (decoded.indexOf(`\${${property}}`) > -1)) {
-        const rendered = this._render_html(decoded)
-        render(rendered, this.el)
-        this._render_el = this.el.children[0]
-        set_size(this._render_el, this.model)
-      }
-    }
-
-    if (js) {
-      for (const script_obj of this.model.scripts) {
-        const name = script_obj[0]
-        if (!(name in this._script_els)) {
-          const script_el = document.createElement('div')
-          this._script_els[name] = script_el
-          this.el.appendChild(script_el)
-        }
-      }
-
-      for (const script_obj of this.model.scripts) {
-        const [name, script] = script_obj
-        const decoded_script = htmlDecode(script) || script
-        const rendered_script = this._render_script(decoded_script)
-
-        const script_el = this._script_els[name]
-        if (script_el.innerHTML !== rendered_script || name === property) {
-          script_el.innerHTML = rendered_script
-          runScripts(script_el)
-        }
-      }
-    }
-  }
-
-  render(): void {
-    empty(this.el)
-
-    const {background} = this.model
-    this.el.style.backgroundColor = background != null ? color2css(background) : ""
-    classes(this.el).clear().add(...this.css_classes())
-
-    this._update()
-
+  private _setup_event_listeners(): void {
     const id = this.model.data.id
-    this._render_children(id)
-    this._setup_mutation_observers(id)
-    this._setup_event_listeners(id)
+    for (const node in this.model.events) {
+      const el: any = document.getElementById(`${node}-${id}`)
+      if (el == null) {
+        console.warn(`DOM node '${node}-${id}' could not be found. Cannot subscribe to DOM events.`)
+        continue
+      }
+      for (const event_name of this.model.events[node]) {
+	const event_callback = (event: any) => {
+	  this._send_event(node, event_name, event)
+          if (node in this.model.attrs)
+            this._update_model(el, node)
+        }
+	el.addEventListener(event_name, event_callback)
+	if (!(node in this._event_listeners))
+	  this._event_listeners[node] = {}
+	this._event_listeners[node][event_name] = event_callback
+      }
+    }
+  }
+
+  private _update(property: string | null = null): void {
+    if (property == null || (this.html.indexOf(`\${${property}}`) > -1)) {
+      const rendered = this._render_html(this.html)
+      render(rendered, this.el)
+      if (this.el.children.length)
+	set_size((this.el.children[0] as any), this.model)
+    }
   }
 
   private _update_model(el: any, name: string): void {
     const attrs: any = {}
-    for (const attr of this.model.attrs[name])
-      attrs[attr[1]] = el[attr[0]]
+    for (const attr_info of this.model.attrs[name]) {
+      const [attr, tokens, template] = attr_info
+      let value = el[attr]
+      if (tokens.length === 1 && (`{${tokens[0]}}` === template))
+        attrs[tokens[0]] = value
+      else if (typeof value === 'string') {
+	value = extractToken(template, value, tokens)
+	if (value == null)
+	  console.warn(`Could not resolve parameters in ${name} element ${attr} attribute value ${value}.`)
+	else {
+	  for (const param in value) {
+	    if (value[param] === undefined)
+	      console.warn(`Could not resolve ${param} in ${name} element ${attr} attribute value ${value}.`)
+	    else
+	      attrs[param] = value[param]
+	  }
+	}
+      }
+    }
     this._changing = true
     this.model.data.setv(serialize_attrs(attrs))
     this._changing = false
@@ -216,8 +330,7 @@ export namespace ReactiveHTML {
     data: p.Property<any>
     events: p.Property<any>
     html: p.Property<string>
-    models: p.Property<any>
-    scripts: p.Property<string[][]>
+    scripts: p.Property<any>
   }
 }
 
@@ -241,8 +354,7 @@ export class ReactiveHTML extends Markup {
       data:    [ p.Any,  ],
       events:   [ p.Any, {}  ],
       html:     [ p.String, "" ],
-      scripts:  [ p.Array, [] ],
-      models:   [ p.Any, {} ]
+      scripts:  [ p.Any, {} ],
     })
   }
 }

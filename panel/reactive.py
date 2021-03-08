@@ -8,13 +8,15 @@ import difflib
 import sys
 import threading
 
-from collections import defaultdict, namedtuple
+from collections import Counter, defaultdict, namedtuple
 from functools import partial
 
+import bleach
 import numpy as np
 import param
 
 from bokeh.models import LayoutDOM
+from param.parameterized import ParameterizedMetaclass
 from tornado import gen
 
 from .config import config
@@ -584,7 +586,7 @@ class SyncableData(Reactive):
     selection = param.List(default=[], doc="""
         The currently selected rows in the data.""")
 
-    # Parameters which when changed require an update of the data 
+    # Parameters which when changed require an update of the data
     _data_params = []
 
     _rename = {'selection': None}
@@ -932,7 +934,136 @@ class ReactiveData(SyncableData):
 
 
 
-class ReactiveHTML(Reactive):
+class ReactiveHTMLMetaclass(ParameterizedMetaclass):
+    """
+    Parses the ReactiveHTML._html template of the class and
+    initializes variables, callbacks and the data model to sync the
+    parameters and HTML attributes.
+    """
+
+    _name_counter = Counter()
+
+    def __init__(mcs, name, bases, dict_):
+        ParameterizedMetaclass.__init__(mcs, name, bases, dict_)
+        mcs._parser = ReactiveHTMLParser()
+        mcs._parser.feed(mcs._html)
+        mcs._attrs, mcs._node_callbacks = {}, {}
+        mcs._inline_callbacks = []
+        for node, attrs in mcs._parser.attrs.items():
+            for (attr, parameters, template) in attrs:
+                param_attrs = []
+                for p in parameters:
+                    if p in mcs.param:
+                        param_attrs.append(p)
+                    elif hasattr(mcs, p):
+                        if node not in mcs._node_callbacks:
+                            mcs._node_callbacks[node] = []
+                        mcs._node_callbacks[node].append((attr, p))
+                        mcs._inline_callbacks.append((node, attr, p))
+                    else:
+                        matches = difflib.get_close_matches(p, dir(mcs))
+                        raise ValueError("HTML template references unknown "
+                                         f"parameter or method '{p}', "
+                                         "similar parameters and methods "
+                                         f"include {matches}.")
+                if node not in mcs._attrs:
+                    mcs._attrs[node] = []
+                mcs._attrs[node].append((attr, param_attrs, template))
+        ignored = list(Reactive.param)+list(mcs._parser.children.values())
+
+        # Create model with unique name
+        ReactiveHTMLMetaclass._name_counter[name] += 1
+        model_name = f'{name}{ReactiveHTMLMetaclass._name_counter[name]}'
+        mcs._data_model = construct_data_model(mcs, name=model_name, ignore=ignored)
+
+
+
+class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
+    """
+    ReactiveHTML provides bi-directional syncing of arbitrary HTML
+    attributes and DOM properties with parameters on the subclass.
+
+    HTML templates
+    ~~~~~~~~~~~~~~
+
+    A ReactiveHTML component is declared by providing an HTML template
+    on the `_html` attribute on the class. Parameters are synced by
+    inserting them as template variables of the form `${parameter}`,
+    e.g.:
+
+        <div class="${div_class}">${children}</div>
+
+    will interpolate the div_class parameter on the class. In addition
+    to providing attributes we can also provide children to an HTML
+    tag. Any child parameter will be treated as other Panel components
+    to render into the containing HTML. This makes it possible to use
+    ReactiveHTML to lay out other components.
+
+    DOM Events
+    ~~~~~~~~~~
+
+    In certain cases it is necessary to explicitly declare event
+    listeners on the DOM node to ensure that changes in their
+    properties are synced when an event is fired. To make this possible
+    the HTML element in question must be given a unique id, e.g.:
+
+        <input id="input"></input>
+
+    Now we can use this name to declare set of `_dom_events` to
+    subscribe to. The following will subscribe to change DOM events
+    on the input element:
+
+       {'input': ['change']}
+
+    Once subscribed the class may also define a method following the
+    `_{node}_{event}` naming convention which will fire when the DOM
+    event triggers, e.g. we could define a `_input_change` method.
+    Any such callback will be given a DOMEvent object as the first and
+    only argument. The DOMEvent contains information about the event
+    on the .data attribute and declares the type of event on the .type
+    attribute.
+
+    Inline callbacks
+    ~~~~~~~~~~~~~~~~
+
+    Instead of declaring explicit DOM events Python callbacks can also
+    be declared inline, e.g.:
+
+        <input id="input" onchange="${_input_change}"></input>
+
+    will look for an `_input_change` method on the ReactiveHTML
+    component and call it when the event is fired.
+
+    Scripts
+    ~~~~~~~
+
+    In addition to declaring callbacks in Python it is also possible
+    to declare Javascript callbacks to execute when any synced
+    attribute changes. Let us say we have declared an input element
+    with a synced value parameter:
+
+        <input id="input" value="${value}"></input>
+
+    We can now declare a set of `_scripts`, which will fire whenever
+    the value updates:
+
+        _scripts = {
+            'input': {
+                'value': ['console.log(model, data)']
+             }
+         }
+
+    The Javascript is provided multiple objects in its namespace
+    including:
+
+      * data : The data model holds the current values of the synced
+               parameters, e.g. data.value will reflect the current
+               value of the input node.
+      * model: The ReactiveHMTL model which holds layout information
+               and information about the children and events.
+      * el   : The DOM node the syncd attribute belongs to, e.g. the
+               input element in this example.
+    """
 
     _bokeh_model = _BkReactiveHTML
 
@@ -942,87 +1073,118 @@ class ReactiveHTML(Reactive):
 
     _scripts = {}
 
+    __abstract = True
+
     def __init__(self, **params):
+        from .pane import panel
+        for children in self._parser.children.values():
+            if children not in params:
+                continue
+            params[children] = [panel(pane) for pane in params[children]]
         super().__init__(**params)
         self._event_callbacks = defaultdict(lambda: defaultdict(list))
-        self._inline_callbacks = []
-        self._update_parser()
 
-    def _update_parser(self, *args):
-        self._parser = ReactiveHTMLParser()
-        self._parser.feed(self._html)
-        self._attrs, self._callbacks = {}, {}
-        for (name, attr, cb) in self._inline_callbacks:
-            self._event_callbacks[name][attr].remove(cb)
-        self._inline_callbacks = []
-        for name, attrs in self._parser.attrs.items():
-            self._attrs[name] = []
-            self._callbacks[name] = []
-            for (attr, parameter) in attrs:
-                if parameter in self.param:
-                    self._attrs[name].append((attr, parameter))
-                elif hasattr(self, parameter):
-                    self._callbacks[name].append((attr, parameter))
-                    cb = getattr(self, parameter)
-                    self.on_event(name, attr, cb)
-                    self._inline_callbacks.append((name, attr, cb))
-                else:
-                    matches = difflib.get_close_matches(parameter, dir(self))
-                    raise ValueError("HTML template reference unknown "
-                                     f"parameter or method '{param}', "
-                                     "similar parameters and methods "
-                                     f"include {matches}.")
+    def _cleanup(self, root):
+        for children_param in self._parser.children.values():
+            for child in getattr(self, children_param):
+                child._cleanup(root)
+        super()._cleanup(root)
 
-    def _get_properties(self):
-        return {p : getattr(self, p) for p in list(Layoutable.param)
-                if getattr(self, p) is not None}
+    def _init_params(self):
+        ignored = list(Reactive.param)+list(self._parser.children.values())
+        params = {
+            p : getattr(self, p) for p in list(Layoutable.param)
+            if getattr(self, p) is not None
+        }
+        data_params = {}
+        for k, v in self.param.get_param_values():
+            if k in ignored:
+                continue
+            if isinstance(v, str):
+                v = bleach.clean(v)
+            data_params[k] = v
+        params['attrs'] = self._attrs
+        params['callbacks'] = self._node_callbacks
+        params['data'] = self._data_model(**data_params)
+        params['events'] = self._get_events()
+        params['html'] = escape(self._get_html())
+        params['scripts'] = {
+            el: {t: [escape(script) for script in scripts]
+                 for t, scripts in triggers.items()}
+            for el, triggers in self._scripts.items()
+        }
+        return params
 
-    def _get_children(self, doc, models, root, model, comm):
-        html = self._html
-        for attr in list(self._attrs)+list(self._parser.children):
-            html = (
-                html
-                .replace(f"id='{attr}'", f"id='{attr}-${{id}}'")
-                .replace(f'id="{attr}"', f'id="{attr}-${{id}}"')
-            )
-        children, child_models = {}, {}
-        for parent, child_name in self._parser.children.items():
-            child_panes = getattr(self, child_name)
-            models = None
-            if isinstance(child_panes, Reactive):
-                models = [child_panes._get_model(doc, root, model, comm)]
-            elif isinstance(child_panes, list) and all(isinstance(c, Reactive) for c in child_panes):
-                models = [c._get_model(doc, root, parent, comm) for c in child_panes]
-            if models:
-                child_models[child_name] = models
-                children[parent] = child_name
-                html = html.replace('${%s}' % child_name, '')
-        return html, children, child_models
-
-    def _get_model(self, doc, root=None, parent=None, comm=None):
-        model = self._bokeh_model()
-        if not root:
-            root = model
-
-        html, children, models = self._get_children(doc, {}, root, parent, comm)
-
-        # Populate model
-        ignored = list(Reactive.param)+list(children.values())
-        data_model = construct_data_model(self, ignore=ignored)
+    def _get_events(self):
         events = dict(self._dom_events)
-        scripts = [(k, escape(v)) for k, v in self._scripts.items()]
         for node, evs in self._event_callbacks.items():
             events[node] = list(events.get(node, set()) | set(evs))
-        model.update(
-            attrs=self._attrs, callbacks=self._callbacks, children=children,
-            data=data_model, events=events, html=escape(html), models=models,
-            scripts=scripts, **self._get_properties()
-        )
+        for (node, attr, _) in self._inline_callbacks:
+            if node not in events:
+                events[node] = []
+            events[node].append(attr)
+        return events
 
-        # Set up callbacks
+    def _get_children(self, doc, root, model, comm, old_children=None):
+        from .pane import panel
+        old_children = old_children or {}
+        old_models = model.children
+        new_models = {parent: [] for parent in self._parser.children}
+
+        for parent, children_param in self._parser.children.items():
+            panes = getattr(self, children_param)
+            for i, pane in enumerate(panes):
+                panes[i] = panel(pane)
+
+        for children_param, old_panes in old_children.items():
+            new_panes = getattr(self, children_param)
+            for old_pane in old_panes:
+                if old_pane not in new_panes:
+                    old_pane._cleanup(root)
+
+        for parent, children_param in self._parser.children.items():
+            new_panes = getattr(self, children_param)
+            if children_param in old_children:
+                # Find existing models
+                old_panes = old_children[children_param]
+                for i, pane in enumerate(new_panes):
+                    if pane in old_panes:
+                        child, _ = pane._models[root.ref['id']]
+                    else:
+                        child = pane._get_model(doc, root, model, comm)
+                    new_models[parent].append(child)
+            elif parent in old_models:
+                # Children parameter unchanged
+                new_models[parent] = old_models[parent]
+            else:
+                new_models[parent] = [
+                    pane._get_model(doc, root, model, comm)
+                    for pane in new_panes
+                ]
+        return new_models
+
+    def _get_html(self):
+        html = self._html
+        for name in list(self._attrs)+list(self._parser.children):
+            html = (
+                html
+                .replace(f"id='{name}'", f"id='{name}-${{id}}'")
+                .replace(f'id="{name}"', f'id="{name}-${{id}}"')
+            )
+        for parent, child_name in self._parser.children.items():
+            html = html.replace('${%s}' % child_name, '')
+        return html
+
+    def _get_model(self, doc, root=None, parent=None, comm=None):
+        properties = self._process_param_change(self._init_params())
+        model = self._bokeh_model(**properties)
+        if not root:
+            root = model
+        model.children = self._get_children(doc, root, model, comm)
         model.on_event('dom_event', self._process_event)
-        linked_properties = [p for ps in self._attrs.values() for _, p in ps]
-        self._link_props(data_model, linked_properties, doc, root, comm)
+
+        linked_properties = [p for pss in self._attrs.values() for _, ps, _ in pss for p in ps]
+        self._link_props(model.data, linked_properties, doc, root, comm)
 
         self._models[root.ref['id']] = (model, parent)
         return model
@@ -1034,8 +1196,12 @@ class ReactiveHTML(Reactive):
         event_type = event.data['type']
         star_cbs = self._event_callbacks.get('*', {})
         node_cbs = self._event_callbacks.get(event.node, {})
-        event_cbs = (node_cbs.get(event_type, []) + node_cbs.get('*', []) +
-                     star_cbs.get(event_type, []) + star_cbs.get('*', []))
+        inline_cbs = {attr: [getattr(self, p)] for _, attr, p in self._inline_callbacks}
+        event_cbs = (
+            node_cbs.get(event_type, []) + node_cbs.get('*', []) +
+            star_cbs.get(event_type, []) + star_cbs.get('*', []) +
+            inline_cbs.get(event_type, [])
+        )
         for cb in event_cbs:
             cb(event)
 
@@ -1050,18 +1216,16 @@ class ReactiveHTML(Reactive):
             del self._changing[root.ref['id']]
 
     def _update_model(self, events, msg, root, model, doc, comm):
-        # Bleach all template inputs
-        import bleach
         model_msg = {
             prop: msg.pop(prop) for prop, v in list(msg.items())
-            if prop in model.children.values()
+            if prop in self._parser.children.values()
         }
         if model_msg:
-            model_msg = {}
-            _, children, models = self._get_children(doc, root, model, comm)
-            model_msg['children'] = children
-            model_msg['models'] = models
-        self._set_on_model(model_msg, root, model)
+            old_children = {key: events[key].old for key in model_msg}
+            model_msg = {
+                'children': self._get_children(doc, root, model, comm, old_children)
+            }
+            self._set_on_model(model_msg, root, model)
         if not msg:
             return
         msg = {
@@ -1075,13 +1239,13 @@ class ReactiveHTML(Reactive):
         Registers a callback to be executed when the specified DOM
         event is triggered on the named node. Note that the named node
         must be declared in the HTML. To create a named node you must
-        give it an id of the form `id=name-${id}`, where `name` will
+        give it an id of the form `id="name"`, where `name` will
         be the node identifier.
 
         Arguments
         ---------
         node: str
-          Named node in the HTML identifiable via id of the form `id=name-${id}`.
+          Named node in the HTML identifiable via id of the form `id="name"`.
         event: str
           Name of the DOM event to add an event listener to.
         callback: callable
@@ -1091,3 +1255,7 @@ class ReactiveHTML(Reactive):
             raise ValueError(f"Named node '{node}' not found. Available "
                              f"nodes include: {self._parser.nodes}.")
         self._event_callbacks[node][event].append(callback)
+        events = self._get_events()
+        for ref, (m, _) in self._models.items():
+            m.events = events
+            push_on_root(ref)

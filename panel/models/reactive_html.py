@@ -12,15 +12,15 @@ from bokeh.events import ModelEvent
 
 
 class ReactiveHTMLParser(HTMLParser):
-    
+
     def __init__(self):
         super().__init__()
         self.attrs = defaultdict(list)
         self.children = {}
         self.nodes = []
-        self._template_re = re.compile('\$\{.+\}$')
+        self._template_re = re.compile('\$\{[^}]+\}')
         self._current_node = None
-    
+
     def handle_starttag(self, tags, attrs):
         attrs = dict(attrs)
         dom_id = attrs.pop('id', None)
@@ -35,8 +35,11 @@ class ReactiveHTMLParser(HTMLParser):
         for attr, value in attrs.items():
             if value is None:
                 continue
-            if self._template_re.match(value) and not value[2:-1].startswith('model.'):
-                self.attrs[dom_id].append((attr, value[2:-1]))
+            matches = []
+            for match in self._template_re.findall(value):
+                if not match[2:-1].startswith('model.'):
+                    matches.append(match[2:-1])
+            self.attrs[dom_id].append((attr, matches, value.replace('${', '{')))
 
     def handle_endtag(self, tag):
         self._current_node = None
@@ -63,9 +66,7 @@ PARAM_MAPPING = {
 }
 
 
-def construct_data_model(parameterized, ignore=['name']):
-    import bleach
-
+def construct_data_model(parameterized, name=None, ignore=['name']):
     properties = {}
     for pname in parameterized.param:
         if pname in ignore:
@@ -77,14 +78,8 @@ def construct_data_model(parameterized, ignore=['name']):
             properties[pname] = bp.Any(**kwargs)
         else:
             properties[pname] = prop(p, kwargs)
-    values = {}
-    for k, v in parameterized.param.get_param_values():
-        if k in ignore:
-            continue
-        if isinstance(v, str):
-            v = bleach.clean(v)
-        values[k] = v
-    return type(parameterized.name, (DataModel,), properties)(**values)
+    name = name or parameterized.name
+    return type(name, (DataModel,), properties)
 
 
 class DOMEvent(ModelEvent):
@@ -99,11 +94,11 @@ class DOMEvent(ModelEvent):
 
 class ReactiveHTML(HTMLBox):
 
-    attrs = bp.Dict(bp.String, bp.List(bp.Tuple(bp.String, bp.String)))
+    attrs = bp.Dict(bp.String, bp.List(bp.Tuple(bp.String, bp.List(bp.String), bp.String)))
 
     callbacks = bp.Dict(bp.String, bp.List(bp.Tuple(bp.String, bp.String)))
 
-    children = bp.Dict(bp.String, bp.String)
+    children = bp.Dict(bp.String, bp.List(bp.Instance(LayoutDOM)))
 
     data = bp.Instance(DataModel)
 
@@ -111,9 +106,7 @@ class ReactiveHTML(HTMLBox):
 
     html = bp.String()
 
-    models = bp.Dict(bp.String, bp.List(bp.Instance(LayoutDOM)))
-
-    scripts = bp.List(bp.Tuple(bp.String, bp.String))
+    scripts = bp.Dict(bp.String, bp.Dict(bp.String, bp.List(bp.String)))
 
     def __init__(self, **props):
         if 'attrs' not in props and 'html' in props:
