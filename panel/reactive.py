@@ -1049,7 +1049,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
 
         _scripts = {
             'input': {
-                'value': ['console.log(model, data)']
+                'value': ['console.log(model, data, el)']
              }
          }
 
@@ -1059,9 +1059,9 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
       * data : The data model holds the current values of the synced
                parameters, e.g. data.value will reflect the current
                value of the input node.
-      * model: The ReactiveHMTL model which holds layout information
+      * model: The ReactiveHTML model which holds layout information
                and information about the children and events.
-      * el   : The DOM node the syncd attribute belongs to, e.g. the
+      * el   : The DOM node the synced attribute belongs to, e.g. the
                input element in this example.
     """
 
