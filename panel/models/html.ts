@@ -34,6 +34,15 @@ export function runScripts(node: any): void {
 
 export class HTMLView extends PanelMarkupView {
   model: HTML
+  _event_listeners: any = {}
+
+  connect_signals(): void {
+    super.connect_signals()
+    this.connect(this.model.properties.events.change, () => {
+      this._remove_event_listeners()
+      this._setup_event_listeners()
+    })
+  }
 
   render(): void {
     super.render()
@@ -44,23 +53,42 @@ export class HTMLView extends PanelMarkupView {
       return;
     }
     this.markup_el.innerHTML = html
-	runScripts(this.markup_el)
-	this._setup_event_listeners()
+    runScripts(this.markup_el)
+    this._setup_event_listeners()
   }
 
-  _setup_event_listeners(): void {
-    for (const name in this.model.events) {
-      const el: any = document.getElementById(name)
+  private _remove_event_listeners(): void {
+    for (const node in this._event_listeners) {
+      const el: any = document.getElementById(node)
       if (el == null) {
-        console.warn(`DOM node '${name}' could not be found. Cannot subscribe to DOM events.`)
+        console.warn(`DOM node '${node}' could not be found. Cannot subscribe to DOM events.`)
         continue
       }
-      for (const event_name of this.model.events[name]) {
-        el.addEventListener(event_name, (event: any) => {
-          this.model.trigger_event(new DOMEvent(name, serializeEvent(event)))
-		})
-	  }
+      for (const event_name in this._event_listeners[node]) {
+	const event_callback = this._event_listeners[node][event_name]
+	el.removeEventListener(event_name, event_callback)
+      }
+    }
+    this._event_listeners = {}
+  }
+
+  private _setup_event_listeners(): void {
+    for (const node in this.model.events) {
+      const el: any = document.getElementById(node)
+      if (el == null) {
+        console.warn(`DOM node '${node}' could not be found. Cannot subscribe to DOM events.`)
+        continue
+      }
+      for (const event_name of this.model.events[node]) {
+	const callback = (event: any) => {
+          this.model.trigger_event(new DOMEvent(node, serializeEvent(event)))
 	}
+        el.addEventListener(event_name, callback)
+	if (!(node in this._event_listeners))
+	  this._event_listeners[node] = {}
+	this._event_listeners[node][event_name] = callback
+      }
+    }
   }
 }
 
@@ -68,7 +96,7 @@ export namespace HTML {
   export type Attrs = p.AttrsOf<Props>
 
   export type Props = Markup.Props & {
-	events: p.Property<any>
+    events: p.Property<any>
   }
 }
 
@@ -85,8 +113,8 @@ export class HTML extends Markup {
 
   static init_HTML(): void {
     this.prototype.default_view = HTMLView
-    this.define<HTML.Props>({
-	  events: [p.Any, {} ]
-	})
+    this.define<HTML.Props>(({Any}) => ({
+      events: [ Any, {} ]
+    }))
   }
 }
