@@ -1,10 +1,11 @@
 from functools import partial
 
+import bokeh.core.properties as bp
 import param
 
 from bokeh.models import Div
 from panel.layout import Tabs, WidgetBox
-from panel.reactive import Reactive
+from panel.reactive import Reactive, ReactiveHTML
 from panel.viewable import Viewable
 from panel.widgets import Checkbox, StaticText, TextInput, IntInput
 
@@ -31,7 +32,7 @@ def test_param_rename():
     class ReactiveRename(Reactive):
 
         a = param.Parameter()
-    
+
         _rename = {'a': 'b'}
 
     obj = ReactiveRename()
@@ -132,7 +133,7 @@ def test_text_input_controls_explicit():
     assert isinstance(controls, WidgetBox)
     assert len(controls) == 3
     name, disabled, placeholder = controls
-    
+
     assert isinstance(name, StaticText)
     assert isinstance(disabled, Checkbox)
     assert isinstance(placeholder, TextInput)
@@ -142,3 +143,136 @@ def test_text_input_controls_explicit():
 
     text_input.placeholder = "Test placeholder..."
     assert placeholder.value == "Test placeholder..."
+
+
+def test_reactive_html_basic():
+
+    class Test(ReactiveHTML):
+
+        int = param.Integer(default=3, doc='An integer')
+
+        float = param.Number(default=3.14, doc='A float')
+
+        _html = '<div id="div" width=${int}></div>'
+
+    data_model = Test._data_model
+    assert data_model.__name__ == 'Test1'
+
+    properties = data_model.properties()
+    assert 'int' in properties
+    assert 'float' in properties
+
+    int_prop = data_model.lookup('int')
+    assert isinstance(int_prop.property, bp.Int)
+    assert int_prop.class_default(data_model) == 3
+
+    float_prop = data_model.lookup('float')
+    assert isinstance(float_prop.property, bp.Float)
+    assert float_prop.class_default(data_model) == 3.14
+
+    assert Test._attrs == {'div': [('width', ['int'], '{int}')]}
+    assert Test._node_callbacks == {}
+
+
+    test = Test()
+    root = test.get_root()
+    assert root.callbacks == {}
+    assert root.events == {}
+
+
+def test_reactive_html_dom_events():
+
+    class TestDOMEvents(ReactiveHTML):
+
+        int = param.Integer(default=3, doc='An integer')
+
+        float = param.Number(default=3.14, doc='A float')
+
+        _html = '<div id="div" width=${int}></div>'
+
+        _dom_events = {'div': ['change']}
+
+    data_model = TestDOMEvents._data_model
+    assert data_model.__name__ == 'TestDOMEvents1'
+
+    properties = data_model.properties()
+    assert 'int' in properties
+    assert 'float' in properties
+
+    int_prop = data_model.lookup('int')
+    assert isinstance(int_prop.property, bp.Int)
+    assert int_prop.class_default(data_model) == 3
+
+    float_prop = data_model.lookup('float')
+    assert isinstance(float_prop.property, bp.Float)
+    assert float_prop.class_default(data_model) == 3.14
+
+    assert TestDOMEvents._attrs == {'div': [('width', ['int'], '{int}')]}
+    assert TestDOMEvents._node_callbacks == {}
+
+    test = TestDOMEvents()
+    root = test.get_root()
+    assert root.callbacks == {}
+    assert root.events == {'div': ['change']}
+
+
+def test_reactive_html_inline():
+    class TestInline(ReactiveHTML):
+
+        int = param.Integer(default=3, doc='An integer')
+
+        _html = '<div id="div" onchange=${_div_change} width=${int}></div>'
+
+        def _div_change(self, event):
+            pass
+
+    data_model = TestInline._data_model
+    assert data_model.__name__ == 'TestInline1'
+
+    properties = data_model.properties()
+    assert 'int' in properties
+
+    int_prop = data_model.lookup('int')
+    assert isinstance(int_prop.property, bp.Int)
+    assert int_prop.class_default(data_model) == 3
+
+    assert TestInline._attrs == {
+        'div': [
+            ('onchange', [], '{_div_change}'),
+            ('width', ['int'], '{int}')
+        ]
+    }
+    assert TestInline._node_callbacks == {'div': [('onchange', '_div_change')]}
+    assert TestInline._inline_callbacks == [('div', 'onchange', '_div_change')]
+
+    test = TestInline()
+    root = test.get_root()
+    assert root.callbacks == {'div': [('onchange', '_div_change')]}
+    assert root.events == {'div': ['onchange']}
+
+    test.on_event('div', 'click', print)
+    assert root.events == {'div': ['click', 'onchange']}
+
+
+def test_reactive_html_children():
+
+    class TestChildren(ReactiveHTML):
+
+        children = param.List(default=[])
+
+        _html = '<div id="div">${children}</div>'
+
+    assert TestChildren._attrs == {}
+    assert TestChildren._node_callbacks == {}
+    assert TestChildren._inline_callbacks == []
+    assert TestChildren._parser.children == {'div': 'children'}
+
+    widget = TextInput()
+    test = TestChildren(children=[widget])
+    root = test.get_root()
+    assert root.children == {'div': [widget._models[root.ref['id']][0]]}
+
+    widget_new = TextInput()
+    test.children = [widget_new]
+    assert len(widget._models) == 0
+    assert root.children == {'div': [widget_new._models[root.ref['id']][0]]}
