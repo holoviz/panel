@@ -56,13 +56,20 @@ def find_attrs(html):
 
 
 PARAM_MAPPING = {
-    pm.String: lambda p, kwargs: bp.String(**kwargs),
     pm.Boolean: lambda p, kwargs: bp.Bool(**kwargs),
-    pm.Integer: lambda p, kwargs: bp.Int(**kwargs),
-    pm.Number: lambda p, kwargs: bp.Float(**kwargs),
-    pm.List: lambda p, kwargs: bp.List(bp.Any, **kwargs),
+    pm.CalendarDate: lambda p, kwargs: bp.Date(**kwargs),
+    pm.CalendarDateRange: lambda p, kwargs: bp.Tuple(bp.Date, bp.Date, **kwargs),
+    pm.Color: lambda p, kwargs: bp.Color(**kwargs),
+    pm.DateRange: lambda p, kwargs: bp.Tuple(bp.Datetime, bp.Datetime, **kwargs),
+    pm.Date: lambda p, kwargs: bp.Datetime(**kwargs),
     pm.Dict: lambda p, kwargs: bp.Dict(bp.String, bp.Any, **kwargs),
-    pm.Tuple: lambda p, kwargs: bp.Tuple(*(bp.Any for p in p.length), **kwargs)
+    pm.Integer: lambda p, kwargs: bp.Int(**kwargs),
+    pm.List: lambda p, kwargs: bp.List(bp.Any, **kwargs),
+    pm.Number: lambda p, kwargs: bp.Float(**kwargs),
+    pm.NumericTuple: lambda p, kwargs: bp.Tuple(*(bp.Float for p in p.length), **kwargs),
+    pm.Range: lambda p, kwargs: bp.Tuple(bp.Float, bp.Float, **kwargs),
+    pm.String: lambda p, kwargs: bp.String(**kwargs),
+    pm.Tuple: lambda p, kwargs: bp.Tuple(*(bp.Any for p in p.length), **kwargs),
 }
 
 
