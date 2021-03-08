@@ -1090,6 +1090,10 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
                 child._cleanup(root)
         super()._cleanup(root)
 
+    @property
+    def _linkable_params(self):
+        return [p for p in super()._linkable_params if p not in self._parser.children.values()]
+
     def _init_params(self):
         ignored = list(Reactive.param)+list(self._parser.children.values())
         params = {
