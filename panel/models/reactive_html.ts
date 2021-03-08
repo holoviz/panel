@@ -347,14 +347,14 @@ export class ReactiveHTML extends Markup {
 
   static init_ReactiveHTML(): void {
     this.prototype.default_view = ReactiveHTMLView
-    this.define<ReactiveHTML.Props>({
-      attrs:    [ p.Any, {} ],
-      callbacks: [ p.Any, {} ],
-      children: [ p.Any, {} ],
-      data:    [ p.Any,  ],
-      events:   [ p.Any, {}  ],
-      html:     [ p.String, "" ],
-      scripts:  [ p.Any, {} ],
-    })
+    this.define<ReactiveHTML.Props>(({Any, String}) => ({
+      attrs:     [ Any,    {} ],
+      callbacks: [ Any,    {} ],
+      children:  [ Any,    {} ],
+      data:      [ Any,       ],
+      events:    [ Any,    {} ],
+      html:      [ String, "" ],
+      scripts:   [ Any,    {} ],
+    }))
   }
 }
