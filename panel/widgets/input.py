@@ -515,12 +515,15 @@ class LiteralInput(Widget):
 class ArrayInput(LiteralInput):
 
     max_array_size = param.Number(default=1000, doc="""
-        maximum number of elements in the array to allow full serialization
-        else only the string representation will be passed to the javascript
-        side and edition capabilities through the widget are lost.
+        Arrays larger than this limit will be allowed in Python but will not
+        be serialized into JavaScript. Although such large arrays will thus
+        not be editable in the widget, such a restriction helps avoid 
+        overwhelming the browser and lets other widgets remain usable.
     """)
 
     _rename = dict(**LiteralInput._rename, **{'max_array_size': None})
+
+    _auto_disabled = False
 
 
     def _process_property_change(self, msg):
@@ -530,13 +533,23 @@ class ArrayInput(LiteralInput):
         return msg
 
     def _process_param_change(self, msg):
+        if 'disabled' in msg and msg['disabled']:
+            self._auto_disabled = False
         if 'value' in msg and msg['value'] is not None:
             if msg['value'].size <= self.max_array_size:
                 msg['value'] = msg['value'].tolist()
-        msg = super()._process_param_change(msg)
-        if 'value' in msg:
-            msg['value'] = msg['value'].replace(' ', ', ')
-        return msg
+                if self.disabled and self._auto_disabled:
+                    self.disabled = False
+                    msg['disabled'] = False
+                    self._auto_disabled = False
+            else:
+                self.param.warning(f"Number of array elements ({msg['value'].size}) exceed  `max_array_size` ({self.max_array_size}), widget edition capabilities will be dropped")
+                msg['value'] = np.array2string(msg['value'], separator=',')
+                if not self.disabled:
+                    self.disabled = True
+                    msg['disabled'] = True
+                    self._auto_disabled = True
+        return super()._process_param_change(msg)
 
 
 class DatetimeInput(LiteralInput):
