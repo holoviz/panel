@@ -543,7 +543,10 @@ class ArrayInput(LiteralInput):
                     msg['disabled'] = False
                     self._auto_disabled = False
             else:
-                self.param.warning(f"Number of array elements ({msg['value'].size}) exceed  `max_array_size` ({self.max_array_size}), widget edition capabilities will be dropped")
+                self.param.warning("".join(
+                    (f"Number of array elements ({msg['value'].size}) exceed  `max_array_size` ({self.max_array_size}), "
+                    "widget edition capabilities will be dropped")
+                ))
                 msg['value'] = np.array2string(msg['value'], separator=',')
                 if not self.disabled:
                     self.disabled = True
