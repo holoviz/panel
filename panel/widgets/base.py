@@ -19,6 +19,9 @@ class Widget(Reactive):
     disabled = param.Boolean(default=False, doc="""
        Whether the widget is disabled.""")
 
+    visible = param.Boolean(default=True, doc="""
+       Whether the widget is visible or not.""")
+
     name = param.String(default='')
 
     height = param.Integer(default=None, bounds=(0, None))
