@@ -1065,8 +1065,6 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
                input element in this example.
     """
 
-    _bokeh_model = _BkReactiveHTML
-
     _dom_events = {}
 
     _html = ""
@@ -1181,7 +1179,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         properties = self._process_param_change(self._init_params())
-        model = self._bokeh_model(**properties)
+        model = _BkReactiveHTML(**properties)
         if not root:
             root = model
         model.children = self._get_children(doc, root, model, comm)
