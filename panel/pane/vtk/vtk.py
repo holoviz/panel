@@ -601,7 +601,7 @@ class VTKVolume(AbstractVTK):
         if ((isinstance(obj, np.ndarray) and obj.ndim == 3) or
             any([isinstance(obj, k) for k in cls._serializers.keys()])):
             return True
-        elif 'vtk' not in sys.modules:
+        elif 'vtk' not in sys.modules and 'vtkmodules' not in sys.modules:
             return False
         else:
             import vtk
