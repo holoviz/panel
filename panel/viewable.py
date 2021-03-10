@@ -41,10 +41,11 @@ class Layoutable(param.Parameterized):
     for all Panel components with a visual representation.
     """
 
-    align = param.ObjectSelector(default='start',
-                                 objects=['start', 'end', 'center'], doc="""
+    align = param.ClassSelector(default='start',
+                                class_=(str, tuple), doc="""
         Whether the object should be aligned with the start, end or
-        center of its container""")
+        center of its container. If set as a tuple it will declare
+        (vertical, horizontal) alignment.""")
 
     aspect_ratio = param.Parameter(default=None, doc="""
         Describes the proportional relationship between component's
