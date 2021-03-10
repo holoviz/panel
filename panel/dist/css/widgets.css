@@ -134,6 +134,10 @@ progress:not([value])::before {
   to {background-position: 100%}
 }
 
+.bk-root .bk.loader {
+  overflow: hidden;
+}
+
 .bk.loader::after {
   content: "";
   border-radius: 50%;
