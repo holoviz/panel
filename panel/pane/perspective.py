@@ -116,11 +116,15 @@ class Perspective(PaneBase, ReactiveData):
 
     def _get_data(self):
         if self.object is None:
-            data = {}
-        elif isinstance(self.object, dict):
+            return {}, {}
+        if isinstance(self.object, dict):
             data = self.object
         else:
             data = ColumnDataSource.from_df(self.object)
+        cols = set(self._as_digit(c) for c in self.object)
+        if len(cols) != len(self.object):
+            raise ValueError("Integer columns must be unique when "
+                             "converted to strings.")
         return self.object, {str(k): v for k, v in data.items()}
 
     def _filter_properties(self, properties):
