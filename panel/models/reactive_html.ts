@@ -3,6 +3,7 @@ import {useCallback} from 'preact/hooks';
 import {html} from 'htm/preact';
 
 import {build_views} from "@bokehjs/core/build_views"
+import {isArray} from "@bokehjs/core/util/types"
 import * as p from "@bokehjs/core/properties"
 import {Markup} from "@bokehjs/models/widgets/markup"
 import {LayoutDOM} from "@bokehjs/models/layouts/layout_dom"
@@ -182,6 +183,33 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
       }
     }
   }
+
+  after_layout(): void {
+    super.after_layout()
+    for (const child_view of this.child_views)
+      this._align_view(child_view)
+  }
+
+  private _align_view(view): void {
+    const {align} = view.model
+    let halign, valign: string
+    if (isArray(align))
+      [halign, valign] = align
+    else
+      halign = valign = align
+    if (halign === 'center') {
+      view.el.style.marginLeft = 'auto';
+      view.el.style.marginRight = 'auto';
+    } else if (halign === 'end')
+      view.el.style.marginLeft = 'auto';
+    if (valign === 'center') {
+      view.el.style.marginTop = 'auto';
+      view.el.style.marginBottom = 'auto';
+    } else if (valign === 'end')
+      view.el.style.marginTop = 'auto';
+    console.log(view.el.style)
+  }
+
 
   private _render_html(literal: any): string {
     let htm = literal
