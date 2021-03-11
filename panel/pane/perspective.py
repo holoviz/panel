@@ -134,9 +134,9 @@ class Perspective(PaneBase, ReactiveData):
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
-        for param in ('columns', 'row_pivots', 'column_pivots'):
-            if msg.get(param):
-                msg[param] = [str(col) for col in msg[param]]
+        for p in ('columns', 'row_pivots', 'column_pivots'):
+            if msg.get(p):
+                msg[p] = [str(col) for col in msg[p]]
         if msg.get('sort'):
             msg['sort'] = [[str(col), d] for col, d in msg['sort']]
         if msg.get('filters'):
