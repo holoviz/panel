@@ -75,6 +75,8 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
         'User-Agent': 'Tornado OAuth'
     }
 
+    _access_token_header = None
+
     _EXTRA_TOKEN_PARAMS = {}
 
     _SCOPE = None
@@ -176,13 +178,16 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
         if 'access_token' not in body:
             return self._on_error(response, body)
 
-        user_response = await http.fetch(
-            '{}{}'.format(
-                self._OAUTH_USER_URL, body['access_token']
-            ),
-            headers=self._API_BASE_HEADERS
-        )
+        user_headers = dict(self._API_BASE_HEADERS)
+        if self._access_token_header:
+            user_url = self._OAUTH_USER_URL
+            user_headers['Authorization'] = self._access_token_header.format(
+                body['access_token']
+            )
+        else:
+            user_url = '{}{}'.format(self._OAUTH_USER_URL, body['access_token'])
 
+        user_response = await http.fetch(user_url, headers=user_headers)
         user = decode_response_body(user_response)
 
         if not user:
@@ -290,7 +295,9 @@ class GithubLoginHandler(OAuthLoginHandler, OAuth2Mixin):
 
     _OAUTH_ACCESS_TOKEN_URL = 'https://github.com/login/oauth/access_token'
     _OAUTH_AUTHORIZE_URL = 'https://github.com/login/oauth/authorize'
-    _OAUTH_USER_URL = 'https://api.github.com/user?access_token='
+    _OAUTH_USER_URL = 'https://api.github.com/user'
+
+    _access_token_header = 'token {}'
 
     _USER_KEY = 'login'
 
@@ -642,6 +649,7 @@ class LogoutHandler(tornado.web.RequestHandler):
         self.clear_cookie("user")
         self.clear_cookie("id_token")
         self.clear_cookie("access_token")
+        self.clear_cookie(STATE_COOKIE_NAME)
         self.redirect("/")
 
 
