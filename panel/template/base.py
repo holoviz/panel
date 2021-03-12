@@ -492,7 +492,9 @@ class BasicTemplate(BaseTemplate):
         raw_css = list(self.config.raw_css)
 
         # CSS files
-        base_css = self._css if isinstance(self._css, list) else [self._css]
+        base_css = self._css
+        if not isinstance(base_css, list):
+            base_css = [base_css] if base_css else []
         for css in base_css:
             tmpl_name = name
             for cls in type(self).__mro__[1:-5]:
@@ -503,7 +505,9 @@ class BasicTemplate(BaseTemplate):
             css_files[f'base_{css}'] = dist_path + f'bundled/{tmpl_name}/{css}'
 
         # JS files
-        base_js = self._js if isinstance(self._js, list) else [self._js]
+        base_js = self._js
+        if not isinstance(base_js, list):
+            base_js = [base_js] if base_js else []
         for js in base_js:
             tmpl_name = name
             for cls in type(self).__mro__[1:-5]:
