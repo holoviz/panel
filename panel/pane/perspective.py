@@ -65,7 +65,7 @@ class Perspective(PaneBase, ReactiveData):
     """
 
     aggregates = param.Dict(None, doc="""
-      How to aggregate. For example {x: "distinct count"}""")
+      How to aggregate. For example {"x": "distinct count"}""")
  
     columns = param.List(default=None, doc="""
         A list of source columns to show as columns. For example ["x", "y"]""")
@@ -116,10 +116,18 @@ class Perspective(PaneBase, ReactiveData):
 
     def _get_data(self):
         if self.object is None:
-            return None, {}
-        elif isinstance(self.object, dict):
-            return self.object, self.object
-        return self.object, ColumnDataSource.from_df(self.object)
+            return {}, {}
+        if isinstance(self.object, dict):
+            ncols = len(self.object)
+            data = self.object
+        else:
+            ncols = len(self.object.columns)
+            data = ColumnDataSource.from_df(self.object)
+        cols = set(self._as_digit(c) for c in self.object)
+        if len(cols) != ncols:
+            raise ValueError("Integer columns must be unique when "
+                             "converted to strings.")
+        return self.object, {str(k): v for k, v in data.items()}
 
     def _filter_properties(self, properties):
         ignored = list(Viewable.param)
@@ -129,6 +137,41 @@ class Perspective(PaneBase, ReactiveData):
         props = super()._init_params()
         props['source'] = ColumnDataSource(data=self._data)
         return props
+
+    def _process_param_change(self, msg):
+        msg = super()._process_param_change(msg)
+        for p in ('columns', 'row_pivots', 'column_pivots'):
+            if msg.get(p):
+                msg[p] = [str(col) for col in msg[p]]
+        if msg.get('sort'):
+            msg['sort'] = [[str(col), d] for col, d in msg['sort']]
+        if msg.get('filters'):
+            msg['filters'] = [[str(col), e, val] for col, e, val in msg['filters']]
+        if msg.get('aggregates'):
+            msg['aggregates'] = {str(col): agg for col, agg in msg['aggregates'].items()}
+        return msg
+
+    def _as_digit(self, col):
+        if self._processed is None:
+            return col
+        elif col in self._processed:
+            return col
+        elif col.isdigit() and int(col) in self._processed:
+            return int(col)
+        return col
+
+    def _process_property_change(self, msg):
+        msg = super()._process_property_change(msg)
+        for prop in ('columns', 'row_pivots', 'column_pivots'):
+            if msg.get(prop):
+                msg[prop] = [self._as_digit(col) for col in msg[prop]]
+        if msg.get('sort'):
+            msg['sort'] = [[self._as_digit(col), d] for col, d in msg['sort']]
+        if msg.get('filters'):
+            msg['filters'] = [[self._as_digit(col), e, val] for col, e, val in msg['filters']]
+        if msg.get('aggregates'):
+            msg['aggregates'] = {self._as_digit(col): agg for col, agg in msg['aggregates'].items()}
+        return msg
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         Perspective = lazy_load('panel.models.perspective', 'Perspective', isinstance(comm, JupyterComm))
