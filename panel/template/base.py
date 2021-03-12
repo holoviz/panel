@@ -477,9 +477,6 @@ class BasicTemplate(BaseTemplate):
         for jsname, js in js_files.items():
             js_path = url_path(js)
             js_files[jsname] = dist_path + f'bundled/js/{js_path}'
-        if self._js:
-            js_file = os.path.basename(self._js)
-            js_files[f'base_{js_file}'] = dist_path + f'bundled/{name}/{js_file}'
         js_modules = dict(self._resources.get('js_modules', {}))
         for jsname, js in js_modules.items():
             js_path = url_path(js)
@@ -498,12 +495,24 @@ class BasicTemplate(BaseTemplate):
         base_css = self._css if isinstance(self._css, list) else [self._css]
         for css in base_css:
             tmpl_name = name
-            for cls in type(self).__mro__[2:-5]:
+            for cls in type(self).__mro__[1:-5]:
                 tmpl_css = cls._css if isinstance(cls._css, list) else [cls._css]
                 if css in tmpl_css:
                     tmpl_name = cls.__name__.lower()
             css = os.path.basename(css)
             css_files[f'base_{css}'] = dist_path + f'bundled/{tmpl_name}/{css}'
+
+        # JS files
+        base_js = self._js if isinstance(self._js, list) else [self._js]
+        for js in base_js:
+            tmpl_name = name
+            for cls in type(self).__mro__[1:-5]:
+                tmpl_js = cls._js if isinstance(cls._js, list) else [cls._js]
+                if js in tmpl_js:
+                    tmpl_name = cls.__name__.lower()
+            js = os.path.basename(js)
+            js_files[f'base_{js}'] = dist_path + f'bundled/{tmpl_name}/{js}'
+
         if self.theme:
             theme = self.theme.find_theme(type(self))
             if theme:
