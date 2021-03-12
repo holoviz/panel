@@ -147,6 +147,7 @@ def bundle_resources():
 
     bundle_dir = pathlib.Path(__file__).parent.joinpath('dist', 'bundled')
 
+    # Extract Model dependencies
     js_files = {}
     css_files = {}
     for name, model in Model.model_class_reverse_map.items():
@@ -175,6 +176,7 @@ def bundle_resources():
                 break
             prev_cls = cls
 
+    # Bundle Model dependencies
     for name, jsfiles in js_files.items():
         if isinstance(jsfiles, dict):
             write_bundled_tarball(name, jsfiles, bundle_dir)
@@ -184,8 +186,9 @@ def bundle_resources():
     for name, cssfiles in css_files.items():
         write_bundled_files(name, cssfiles, bundle_dir)
 
-    # Bundle external template dependencies
+    # Bundle Template resources
     for name, template in param.concrete_descendents(BasicTemplate).items():
+        # Bundle Template._resources
         if template._resources.get('bundle', True):
             write_bundled_files(name, list(template._resources.get('css', {}).values()), bundle_dir, 'css')
             write_bundled_files(name, list(template._resources.get('js', {}).values()), bundle_dir, 'js')
@@ -196,25 +199,40 @@ def bundle_resources():
             write_bundled_files(name, js_modules, bundle_dir, 'js', ext='mjs')
             for tarball in template._resources.get('tarball', {}).values():
                 write_bundled_tarball('js', tarball, bundle_dir, module=True)
+
+        # Bundle CSS files in template dir
         template_dir = pathlib.Path(inspect.getfile(template)).parent
         dest_dir = bundle_dir / name.lower()
         dest_dir.mkdir(parents=True, exist_ok=True)
         for css in glob.glob(str(template_dir / '*.css')):
             shutil.copyfile(css, dest_dir / os.path.basename(css))
+
+        # Bundle Template._css
         template_css = template._css
         if not isinstance(template_css, list):
             template_css = [template_css] if template_css else []
         for css in template_css:
-            tmpl_name = name
-            for cls in template.__mro__[2:-5]:
+            tmpl_name = name.lower()
+            for cls in template.__mro__[1:-5]:
                 tmpl_css = cls._css if isinstance(cls._css, list) else [cls._css]
                 if css in tmpl_css:
                     tmpl_name = cls.__name__.lower()
             tmpl_dest_dir = bundle_dir / tmpl_name
             tmpl_dest_dir.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(css, tmpl_dest_dir / os.path.basename(css))
-        if template._js:
-            shutil.copyfile(template._js, dest_dir / os.path.basename(template._js))
+
+        # Bundle Template._js
+        template_js = template._js
+        if not isinstance(template_js, list):
+            template_js = [template_js] if template_js else []
+        for js in template_js:
+            tmpl_name = name.lower()
+            for cls in template.__mro__[1:-5]:
+                tmpl_js = cls._js if isinstance(cls._js, list) else [cls._js]
+                if js in tmpl_js:
+                    tmpl_name = cls.__name__.lower()
+            tmpl_dest_dir = bundle_dir / tmpl_name
+            shutil.copyfile(js, tmpl_dest_dir / os.path.basename(js))
 
     # Bundle base themes
     dest_dir = bundle_dir / 'theme'
