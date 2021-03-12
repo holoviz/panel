@@ -118,11 +118,13 @@ class Perspective(PaneBase, ReactiveData):
         if self.object is None:
             return {}, {}
         if isinstance(self.object, dict):
+            ncols = len(self.object)
             data = self.object
         else:
+            ncols = len(self.object.columns)
             data = ColumnDataSource.from_df(self.object)
         cols = set(self._as_digit(c) for c in self.object)
-        if len(cols) != len(self.object):
+        if len(cols) != ncols:
             raise ValueError("Integer columns must be unique when "
                              "converted to strings.")
         return self.object, {str(k): v for k, v in data.items()}
