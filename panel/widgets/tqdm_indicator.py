@@ -118,8 +118,8 @@ class TQDM(pn.viewable.Viewer):
                 if indicator.write_to_console:
                     super().display(msg, pos)
 
-                indicator.max = self.total
-                indicator.value = self.n
+                indicator.max = int(self.total) # Can be numpy.int64
+                indicator.value = int(self.n)
                 indicator.text = self._to_text(**self.format_dict)
                 return True
 
@@ -136,6 +136,8 @@ class TQDM(pn.viewable.Viewer):
 
 if __name__.startswith("bokeh"):
     import time
+    import pandas as pd
+    import numpy as np
 
     tqdm = TQDM(layout="row", sizing_mode="stretch_width")
 
@@ -145,8 +147,22 @@ if __name__.startswith("bokeh"):
 
     button = pn.widgets.Button(name="Run Loop", button_type="primary")
     button.on_click(run)
+
+    # Register Pandas. This gives DataFrame.progress_apply method
+    tqdm.tqdm.pandas(desc="my bar!")
+
+    df = pd.DataFrame(np.random.randint(0, 100, (100000, 6)))
+
+    def run_df(*events):
+        df.progress_apply(lambda x: x**2)
+
+    pandas_button = pn.widgets.Button(name="Pandas Apply", button_type="success")
+    pandas_button.on_click(run_df)
+    pandas_button
+
     component = pn.Column(
         button,
+        pandas_button,
         tqdm,
         sizing_mode="stretch_width"
     )
