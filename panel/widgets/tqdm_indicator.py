@@ -5,51 +5,72 @@ import param
 from tqdm.auto import tqdm as _tqdm
 
 
-EMPTY_TEXT = " " # Hack: If set to None or "" the height of the text_pane is too little
+EMPTY_TEXT = " "  # Hack: If set to None or "" the height of the text_pane is too little
 
 MARGIN = {
-    "text_pane": {
-        "column": (5, 10, 0, 10), "row": (0, 10, 0, 10)
-    },
-    "progress_indicator": {
-        "column": (0, 10, 5, 10), "row": (12, 10, 0, 10)
-    }
+    "text_pane": {"column": (5, 10, 0, 10), "row": (0, 10, 0, 10)},
+    "progress_indicator": {"column": (0, 10, 5, 10), "row": (12, 10, 0, 10)},
 }
 
 # I cannot have it inherit from pn.indicators.BaseIndicator as that raises an exception
-class TQDMProgress(pn.viewable.Viewer):
-    text = param.String(default=EMPTY_TEXT)
-    max = param.Integer(default=100, doc="The maximum value of the progress bar.")
-    value = param.Integer(default=0, bounds=(0, None), doc="""
+class TQDM(pn.viewable.Viewer):
+    value = param.Integer(
+        default=0,
+        bounds=(0, None),
+        doc="""
         The current value of the progress bar. If set to None the progress
         bar will be indeterminate and animate depending on the active
-        parameter.""")
-    write_to_console = param.Boolean(default=False, )
+        parameter.""",
+    )
+    max = param.Integer(default=100, doc="The maximum value of the progress bar.")
+    text = param.String(default=EMPTY_TEXT)
+    write_to_console = param.Boolean(
+        default=False,
+    )
 
-    progress_indicator = param.ClassSelector(class_=pn.indicators.Progress, doc="""
+    progress_indicator = param.ClassSelector(
+        class_=pn.indicators.Progress,
+        doc="""
         The Progress indicator to display to. Default is a pn.indicators.Progress
-    """, precedence=-1)
-    text_pane = param.ClassSelector(class_=pn.pane.Str, doc="""
+    """,
+        precedence=-1,
+    )
+    text_pane = param.ClassSelector(
+        class_=pn.pane.Str,
+        doc="""
         The pane to display the text to. Default is a pn.pane.Str
-    """, precedence=-1)
-    panel = param.ClassSelector(class_=(pn.Column, pn.Row), doc="""
+    """,
+        precedence=-1,
+    )
+    panel = param.ClassSelector(
+        class_=(pn.Column, pn.Row),
+        doc="""
         The panel to laying out the text_pane and progress_indicator. Default is a Column.
-    """, precedence=-1)
+    """,
+        precedence=-1,
+    )
 
     tqdm = param.Parameter(precedence=-1)
 
     def __init__(self, layout="column", **params):
         if not "text_pane" in params:
-            params["text_pane"]=pn.pane.Str(self.text, sizing_mode="stretch_width", margin=MARGIN["text_pane"][layout])
+            params["text_pane"] = pn.pane.Str(
+                self.text, min_width=280, sizing_mode="fixed", margin=MARGIN["text_pane"][layout],
+            )
         if not "progress_widget" in params:
-            params["progress_indicator"]=pn.widgets.Progress(active=False, sizing_mode="stretch_width", margin=MARGIN["progress_indicator"][layout])
+            params["progress_indicator"] = pn.widgets.Progress(
+                active=False,
+                sizing_mode="stretch_width",
+                min_width=100,
+                margin=MARGIN["progress_indicator"][layout],
+            )
         if not "tqdm" in params:
-            params["tqdm"]=self._get_tqdm()
+            params["tqdm"] = self._get_tqdm()
 
         layout_params = {}
         for key in params.copy():
-            if hasattr(pn.layout.base.ListPanel,key):
-                layout_params[key]=params.pop(key)
+            if hasattr(pn.layout.base.ListPanel, key):
+                layout_params[key] = params.pop(key)
 
         super().__init__(**params)
 
@@ -57,10 +78,13 @@ class TQDMProgress(pn.viewable.Viewer):
         self.progress_indicator.value = self.value
         self.text_pane = self.text_pane
 
-        if layout=="row":
+        if layout == "row":
             self.panel = pn.Row(self.progress_indicator, self.text_pane, **layout_params)
         else:
             self.panel = pn.Column(self.text_pane, self.progress_indicator, **layout_params)
+
+    def __call__(self, *args, **kwargs):
+        return self.tqdm(*args, **kwargs)
 
     @param.depends("text", watch=True)
     def _update_text(self):
@@ -87,6 +111,7 @@ class TQDMProgress(pn.viewable.Viewer):
 
     def _get_tqdm(self):
         indicator = self
+
         class ptqdm(_tqdm):
             def display(self, msg=None, pos=None, bar_style=None):
                 # display is used in Notebook
@@ -105,19 +130,31 @@ class TQDMProgress(pn.viewable.Viewer):
                 super().close()
                 indicator.reset()
                 return _tqdm
+
         return ptqdm
 
 
 if __name__.startswith("bokeh"):
     import time
-    tqdm = TQDMProgress(width=800, layout="column")
+
+    tqdm = TQDM(layout="row", sizing_mode="stretch_width")
+
     def run(*events):
-        for index in tqdm.tqdm(range(0,10)):
+        for index in tqdm(range(0, 10)):
             time.sleep(0.2)
-    button = pn.widgets.Button(name="run", button_type="success")
+
+    button = pn.widgets.Button(name="Run Loop", button_type="primary")
     button.on_click(run)
-    app = pn.Column(
+    component = pn.Column(
         button,
         tqdm,
-        pn.Param(tqdm),
-    ).servable()
+        sizing_mode="stretch_width"
+    )
+    template = pn.template.FastListTemplate(
+        title="Panel - TQDM Indicator",
+        main=[component],
+        sidebar=[
+            pn.Param(tqdm, sizing_mode="stretch_width"),
+        ],
+    )
+    template.servable()
