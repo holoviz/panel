@@ -12,9 +12,9 @@ class ChartJS(Widget):
     # Rename Panel Parameters -> Bokeh Model properties
     # Parameters like title that does not exist on the Bokeh model should be renamed to None
     _rename = {
-        "title": None,
+        "title": None, "object": "data"
     }
 
     # Parameters to be mapped to Bokeh model properties
-    object = param.String(default="Click Me!")
-    clicks = param.Integer(default=0)
+    object = param.Parameter(default=None, doc="""
+        The ChartJS object being wrapped. Can be any ChartJS dictionary""")

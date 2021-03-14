@@ -14,35 +14,18 @@ export class ChartJSView extends HTMLBoxView {
     connect_signals(): void {
         super.connect_signals()
 
-        this.connect(this.model.properties.object.change, () => {
+        this.connect(this.model.properties.data.change, () => {
             this.render();
         })
     }
 
     render(): void {
         super.render()
-        var object = {
-            type: 'line',
-            data: {
-                labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
-                datasets: [{
-                    label: 'My First dataset',
-                    backgroundColor: 'rgb(255, 99, 132)',
-                    borderColor: 'rgb(255, 99, 132)',
-                    data: [0, 10, 5, 2, 20, 30, 45]
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-            }
-        }
-
         var chartContainer = div({class: "chartjs-container", style: "position: relative; height:400px; width:100%"})
         var chartCanvas = canvas({class: "chartjs"})
         chartContainer.appendChild(chartCanvas)
         var ctx: any = chartCanvas.getContext('2d');
-        new (window as any).Chart(ctx, object);
+        new (window as any).Chart(ctx, this.model.data);
 
         this.el.appendChild(chartContainer)
     }
@@ -51,8 +34,7 @@ export class ChartJSView extends HTMLBoxView {
 export namespace ChartJS {
     export type Attrs = p.AttrsOf<Props>
     export type Props = HTMLBox.Props & {
-        object: p.Property<string>,
-        clicks: p.Property<number>,
+        data: p.Property<any>
     }
 }
 
@@ -71,9 +53,8 @@ export class ChartJS extends HTMLBox {
     static init_ChartJS(): void {
         this.prototype.default_view = ChartJSView;
 
-        this.define<ChartJS.Props>(({Int, String}) => ({
-            object: [String, "Click Me!"],
-            clicks: [Int, 0],
-        }))
+        this.define<ChartJS.Props>(({Any}) => ({
+            data:     [ Any,           {} ]
+          }))
     }
 }

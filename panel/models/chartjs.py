@@ -1,8 +1,7 @@
-from bokeh.core.properties import Int, String
+from bokeh.core.properties import Dict, String, Any
 from bokeh.models import HTMLBox
 
 class ChartJS(HTMLBox):
     """Custom ChartJS Model"""
 
-    object = String()
-    clicks = Int()
+    data = Dict(String, Any)
