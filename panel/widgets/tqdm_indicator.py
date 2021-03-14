@@ -2,7 +2,7 @@
 # believe
 import panel as pn
 import param
-from tqdm.auto import tqdm as _tqdm
+from tqdm.asyncio import tqdm as _tqdm
 
 
 EMPTY_TEXT = " "  # Hack: If set to None or "" the height of the text_pane is too little

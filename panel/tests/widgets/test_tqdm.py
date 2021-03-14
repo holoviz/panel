@@ -55,5 +55,20 @@ def get_tqdm_app():
     )
     return template
 
+def get_tqdm_app_simple():
+    import time
+
+    tqdm = Tqdm(layout="row", sizing_mode="stretch_width")
+
+    def run(*events):
+        for index in tqdm(range(0, 10)):
+            time.sleep(0.2)
+
+    button = pn.widgets.Button(name="Run Loop", button_type="primary")
+    button.on_click(run)
+    return pn.Column(
+        tqdm, button
+    )
+
 if __name__.startswith("bokeh"):
-    get_tqdm_app().servable()
+    get_tqdm_app_simple().servable()
