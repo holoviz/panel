@@ -13,7 +13,7 @@ MARGIN = {
 }
 
 # I cannot have it inherit from pn.indicators.BaseIndicator as that raises an exception
-class TQDM(pn.viewable.Viewer):
+class Tqdm(pn.viewable.Viewer):
     value = param.Integer(
         default=0,
         bounds=(0, None),
@@ -74,8 +74,13 @@ class TQDM(pn.viewable.Viewer):
 
         super().__init__(**params)
 
-        self.progress_indicator.max = self.max
-        self.progress_indicator.value = self.value
+        if self.value==0:
+            # Hack: to give progress the initial look
+            self.progress_indicator.max = 100000
+            self.progress_indicator.value = 1
+        else:
+            self.progress_indicator.max = self.max
+            self.progress_indicator.value = self.value
         self.text_pane = self.text_pane
 
         if layout == "row":
@@ -139,7 +144,7 @@ if __name__.startswith("bokeh"):
     import pandas as pd
     import numpy as np
 
-    tqdm = TQDM(layout="row", sizing_mode="stretch_width")
+    tqdm = Tqdm(layout="row", sizing_mode="stretch_width")
 
     def run(*events):
         for index in tqdm(range(0, 10)):
@@ -167,7 +172,7 @@ if __name__.startswith("bokeh"):
         sizing_mode="stretch_width"
     )
     template = pn.template.FastListTemplate(
-        title="Panel - TQDM Indicator",
+        title="Panel - Tqdm Indicator",
         main=[component],
         sidebar=[
             pn.Param(tqdm, sizing_mode="stretch_width"),
