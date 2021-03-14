@@ -2,10 +2,10 @@
 from tqdm.auto import tqdm as _tqdm
 
 import panel as pn
-from panel.widgets.tqdm_indicator import Tqdm
+from panel.widgets import Tqdm
 
 
-def can_construct_and_use():
+def test_can_construct_and_use():
     tqdm = Tqdm(layout="row", sizing_mode="stretch_width")
 
     for index in tqdm(range(0, 3)):
@@ -71,4 +71,5 @@ def get_tqdm_app_simple():
     )
 
 if __name__.startswith("bokeh"):
-    get_tqdm_app_simple().servable()
+    # get_tqdm_app_simple().servable()
+    get_tqdm_app().servable()
