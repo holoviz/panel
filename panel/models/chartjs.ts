@@ -3,6 +3,7 @@ import { HTMLBox, HTMLBoxView } from "@bokehjs/models/layouts/html_box"
 
 // See https://docs.bokeh.org/en/latest/docs/reference/core/properties.html
 import * as p from "@bokehjs/core/properties"
+import { canvas, div } from "@bokehjs/core/dom";
 
 // The view of the Bokeh extension/ HTML element
 // Here you can define how to render the model as well as react to model changes or View events.
@@ -20,10 +21,30 @@ export class ChartJSView extends HTMLBoxView {
 
     render(): void {
         super.render()
-        this.el.innerHTML = `<button type="button">${this.model.object}</button>`
-        this.objectElement = this.el.firstElementChild
+        var object = {
+            type: 'line',
+            data: {
+                labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
+                datasets: [{
+                    label: 'My First dataset',
+                    backgroundColor: 'rgb(255, 99, 132)',
+                    borderColor: 'rgb(255, 99, 132)',
+                    data: [0, 10, 5, 2, 20, 30, 45]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+            }
+        }
 
-        this.objectElement.addEventListener("click", () => {this.model.clicks+=1;}, false)
+        var chartContainer = div({class: "chartjs-container", style: "position: relative; height:400px; width:100%"})
+        var chartCanvas = canvas({class: "chartjs"})
+        chartContainer.appendChild(chartCanvas)
+        var ctx: any = chartCanvas.getContext('2d');
+        new (window as any).Chart(ctx, object);
+
+        this.el.appendChild(chartContainer)
     }
 }
 

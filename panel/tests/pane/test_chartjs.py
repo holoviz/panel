@@ -11,4 +11,5 @@ def get_app():
     )
 
 if __name__.startswith("bokeh"):
+    pn.config.js_files["chartjs"]="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"
     get_app().servable()
