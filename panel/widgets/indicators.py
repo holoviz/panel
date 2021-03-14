@@ -684,7 +684,6 @@ MARGIN = {
     "progress_indicator": {"column": (0, 10, 5, 10), "row": (12, 10, 0, 10)},
 }
 
-# I cannot have it inherit from pn.indicators.BaseIndicator as that raises an exception
 class Tqdm(Viewer):
     value = param.Integer(default=0, bounds=(0, None), doc="""
         The current value of the progress bar. If set to None the progress
