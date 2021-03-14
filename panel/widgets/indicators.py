@@ -690,35 +690,22 @@ class Tqdm(Viewer):
         The current value of the progress bar. If set to None the progress
         bar will be indeterminate and animate depending on the active
         parameter.""")
-    max = param.Integer(default=100, doc="The maximum value of the progress bar.")
-    text = param.String(default=EMPTY_TEXT)
-    write_to_console = param.Boolean(
-        default=False,
-    )
+    max = param.Integer(default=100, doc="""
+        The maximum value of the progress bar.""")
+    text = param.String(default=EMPTY_TEXT, doc="""
+        The tqdm style progress text""")
+    write_to_console = param.Boolean(default=False, doc="""
+        Whether or not to also write to the console. Default is False.""")
 
-    progress_indicator = param.ClassSelector(
-        class_=Progress,
-        doc="""
-        The Progress indicator to display to. Default is a Progress
-    """,
-        precedence=-1,
-    )
-    text_pane = param.ClassSelector(
-        class_=Str,
-        doc="""
-        The pane to display the text to. Default is a Str
-    """,
-        precedence=-1,
-    )
-    panel = param.ClassSelector(
-        class_=(Column, Row),
-        doc="""
-        The panel to laying out the text_pane and progress_indicator. Default is a Column.
-    """,
-        precedence=-1,
-    )
+    progress_indicator = param.ClassSelector(class_=Progress, precedence=-1, doc="""
+        The Progress indicator to display to. Default is a Progress""",)
+    text_pane = param.ClassSelector(class_=Str, precedence=-1, doc="""
+        The pane to display the text to. Default is a Str""",)
+    panel = param.ClassSelector(class_=(Column, Row), precedence=-1, doc="""
+        The panel to laying out the text_pane and progress_indicator. Default is a Column.""",)
 
-    tqdm = param.Parameter(precedence=-1)
+    tqdm = param.Parameter(precedence=-1, doc="""
+        A Panel version of tqdm.asyncio.tqdm""")
 
     def __init__(self, layout="column", **params):
         if not "text_pane" in params:
