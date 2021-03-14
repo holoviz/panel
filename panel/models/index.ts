@@ -1,6 +1,7 @@
 export {AcePlot} from "./ace"
 export {Audio} from "./audio"
 export {Card} from "./card"
+export {ChartJS} from "./chartjs"
 export {CommManager} from "./comm_manager"
 export {DataTabulator} from "./tabulator"
 export {DeckGLPlot} from "./deckgl"

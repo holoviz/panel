@@ -5,6 +5,7 @@ defined as pairs of Python classes and TypeScript models defined in .ts
 files.
 """
 
+from .chartjs import ChartJS
 from .idom import IDOM # noqa
 from .ipywidget import IPyWidget # noqa
 from .layout import Card # noqa

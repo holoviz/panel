@@ -8,6 +8,7 @@ images, equations etc.
 from .ace import Ace # noqa
 from .alert import Alert # noqa
 from .base import PaneBase, Pane, panel # noqa
+from .chartjs import ChartJS
 from .equation import LaTeX # noqa
 from .deckgl import DeckGL # noqa
 from .echarts import ECharts # noqa
