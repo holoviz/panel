@@ -4,6 +4,9 @@ from panel.widgets.base import Widget
 
 from ..models import ChartJS as _BkChartJS
 
+# Notes
+
+# - The user needs to specify a height and width if sizing_mode="fixed" and not size given to object
 
 class ChartJS(Widget):
     # Set the Bokeh model to use

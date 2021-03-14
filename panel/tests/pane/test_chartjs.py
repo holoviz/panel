@@ -11,19 +11,19 @@ CHARTJS_CONFIG = {
             'data': [0, 10, 5, 2, 20, 30, 45]
         }]
     },
-    'options': {
-        'responsive': True,
-        'maintainAspectRatio': False,
-    }
+    # 'options': {
+    #     'responsive': True,
+    #     'maintainAspectRatio': False,
+    # }
 }
 
 def test_constructor():
     chartjs = pn.pane.ChartJS(object=CHARTJS_CONFIG)
 
 def get_app():
-    chartjs = pn.pane.ChartJS(object=CHARTJS_CONFIG)
+    chartjs = pn.pane.ChartJS(object=CHARTJS_CONFIG, sizing_mode="stretch_both")
     return pn.Column(
-        chartjs, pn.Param(chartjs, parameters=["object"])
+        chartjs, pn.Param(chartjs, parameters=["object", "width", "height", "sizing_mode"]), sizing_mode="stretch_both"
     )
 
 if __name__.startswith("bokeh"):

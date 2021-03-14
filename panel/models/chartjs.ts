@@ -5,6 +5,12 @@ import { HTMLBox, HTMLBoxView } from "@bokehjs/models/layouts/html_box"
 import * as p from "@bokehjs/core/properties"
 import { canvas, div } from "@bokehjs/core/dom";
 
+// Used to set size when no options specified
+const responsiveOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+}
+
 // The view of the Bokeh extension/ HTML element
 // Here you can define how to render the model as well as react to model changes or View events.
 export class ChartJSView extends HTMLBoxView {
@@ -21,11 +27,11 @@ export class ChartJSView extends HTMLBoxView {
 
     render(): void {
         super.render()
-        var chartContainer = div({class: "chartjs-container", style: "position: relative; height:400px; width:100%"})
+        var chartContainer = div({class: "chartjs-container", style: "position: relative; height:100%; width:100%"})
         var chartCanvas = canvas({class: "chartjs"})
         chartContainer.appendChild(chartCanvas)
         var ctx: any = chartCanvas.getContext('2d');
-        new (window as any).Chart(ctx, this.model.data);
+        new (window as any).Chart(ctx, {options: responsiveOptions, ...this.model.data});
 
         this.el.appendChild(chartContainer)
     }
