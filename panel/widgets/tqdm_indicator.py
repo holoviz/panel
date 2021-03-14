@@ -14,14 +14,10 @@ MARGIN = {
 
 # I cannot have it inherit from pn.indicators.BaseIndicator as that raises an exception
 class Tqdm(pn.viewable.Viewer):
-    value = param.Integer(
-        default=0,
-        bounds=(0, None),
-        doc="""
+    value = param.Integer(default=0, bounds=(0, None), doc="""
         The current value of the progress bar. If set to None the progress
         bar will be indeterminate and animate depending on the active
-        parameter.""",
-    )
+        parameter.""")
     max = param.Integer(default=100, doc="The maximum value of the progress bar.")
     text = param.String(default=EMPTY_TEXT)
     write_to_console = param.Boolean(
