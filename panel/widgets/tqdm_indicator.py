@@ -1,8 +1,8 @@
-# I did not put it into the indicators.py file yet as it raises errors due to circular imports I
-# believe
-import panel as pn
 import param
+
 from tqdm.asyncio import tqdm as _tqdm
+
+from ..viewable import Viewer
 
 
 EMPTY_TEXT = " "  # Hack: If set to None or "" the height of the text_pane is too little
