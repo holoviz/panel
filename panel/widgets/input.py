@@ -19,7 +19,7 @@ from bokeh.models.widgets import (
     NumericInput as _BkNumericInput)
 
 from ..layout import Column
-from ..util import as_unicode
+from ..util import param_reprs, as_unicode
 from .base import Widget, CompositeWidget
 
 
@@ -245,6 +245,16 @@ class _SpinnerBase(_NumericInputBase):
             params['value_throttled'] = params['value']
         super().__init__(**params)
 
+    def __repr__(self, depth=0):
+        return '{cls}({params})'.format(cls=type(self).__name__,
+                                        params=', '.join(param_reprs(self, ['value_throttled'])))
+
+    def _update_model(self, events, msg, root, model, doc, comm):
+        if 'value_throttled' in msg:
+            del msg['value_throttled']
+
+        return super()._update_model(events, msg, root, model, doc, comm)
+
 
 class IntInput(_SpinnerBase, _IntInputBase):
 
@@ -252,17 +262,12 @@ class IntInput(_SpinnerBase, _IntInputBase):
 
     value_throttled = param.Integer(default=None, constant=True)
 
-    _rename = dict(_NumericInputBase._rename, value_throttled=None)
-
-
 
 class FloatInput(_SpinnerBase, _FloatInputBase):
 
     step = param.Number(default=0.1)
 
     value_throttled = param.Number(default=None, constant=True)
-
-    _rename = dict(_NumericInputBase._rename, value_throttled=None)
 
 
 class NumberInput(_SpinnerBase):
