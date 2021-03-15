@@ -426,6 +426,8 @@ class DateRangeSlider(_SliderBase):
         msg = super()._process_param_change(msg)
         if msg.get('value') == (None, None):
             del msg['value']
+        if msg.get('value_throttled') == (None, None):
+            del msg['value_throttled']
         return msg
 
     def _process_property_change(self, msg):
