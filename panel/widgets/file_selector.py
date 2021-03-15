@@ -81,6 +81,10 @@ class FileSelector(CompositeWidget):
         If set to non-None value indicates how frequently to refresh
         the directory contents in milliseconds.""")
 
+    root_directory = param.String(default=None, doc="""
+        If set, overrides directory parameter as the root directory
+        beyond which users cannot navigate.""")
+
     value = param.List(default=[], doc="""
         List of selected files.""")
 
@@ -90,6 +94,9 @@ class FileSelector(CompositeWidget):
         from ..pane import Markdown
         if directory is not None:
             params['directory'] = os.path.abspath(os.path.expanduser(directory))
+        if 'root_directory' in params:
+            root = params['root_directory']
+            params['root_directory'] = os.path.abspath(os.path.expanduser(root))
         if params.get('width') and params.get('height') and 'sizing_mode' not in params:
             params['sizing_mode'] = None
 
@@ -146,6 +153,10 @@ class FileSelector(CompositeWidget):
         elif self._periodic.running:
             self._periodic.stop()
 
+    @property
+    def _root_directory(self):
+        return self.root_directory or self.directory
+
     def _update_value(self, event):
         value = [v for v in event.new if not self.only_files or os.path.isfile(v)]
         self._selector.value = value
@@ -153,8 +164,8 @@ class FileSelector(CompositeWidget):
 
     def _dir_change(self, event):
         path = os.path.abspath(os.path.expanduser(self._directory.value))
-        if not path.startswith(self.directory):
-            self._directory.value = self.directory
+        if not path.startswith(self._root_directory):
+            self._directory.value = self._root_directory
             return
         elif path != self._directory.value:
             self._directory.value = path
@@ -179,7 +190,7 @@ class FileSelector(CompositeWidget):
         self._cwd = path
         if not refresh:
             self._go.disabled = True
-        self._up.disabled = path == self.directory
+        self._up.disabled = path == self._root_directory
         if self._position == len(self._stack)-1:
             self._forward.disabled = True
         if 0 <= self._position and len(self._stack) > 1:
@@ -244,5 +255,5 @@ class FileSelector(CompositeWidget):
 
     def _go_up(self, event=None):
         path = self._cwd.split(os.path.sep)
-        self._directory.value = os.path.sep.join(path[:-1])
+        self._directory.value = os.path.sep.join(path[:-1]) or os.path.sep
         self._update_files(True)
