@@ -1,6 +1,37 @@
 Releases
 ========
 
+Version 0.11.1
+--------------
+
+Date: 2021-03-15
+
+The 0.11.1 release is a micro-release addressing a number of smaller
+bugs in the last release. Many thanks to the contributors to this
+release including @Hoxbro, @xavArtley, @Jacob-Barhak and @philippjfr.
+
+Enhancements:
+
+- Allow setting horizontal and vertical alignment separately (`#2072 <https://github.com/holoviz/panel/issues/2072>`__)
+- Expose widgets `visible` property (`#2065 <https://github.com/holoviz/panel/issues/2065>`__)
+- Allow bind to extract dependencies and evaluate other dynamic functions (`#2056 <https://github.com/holoviz/panel/issues/2056>`__)
+- Allow setting `root_directory` on `FileSelector` widget (`#2086 <https://github.com/holoviz/panel/issues/2086()
+
+Bug fixes:
+
+- Fixed loading of jQuery in `BootstrapTemplate` (`#2057 <https://github.com/holoviz/panel/issues/2057>`__)
+- Fix VTK imports to ensure `VTKVolume` pane renders grids (`#2071 <https://github.com/holoviz/panel/issues/2071>`__)
+- Fix loading of template resources from relative paths (`#2067 <https://github.com/holoviz/panel/issues/2067>`__)
+- Fix `Spinner` component overflow (`#2070 <https://github.com/holoviz/panel/issues/2070>`__)
+- Handle integer column names on `Perspective` widget (`#2069 <https://github.com/holoviz/panel/issues/2069>`__)
+- Fix bundling of template resources (`#2076 <https://github.com/holoviz/panel/issues/2076>`__)
+- Fix `value_throttled` in `pn.depends` decorator (`#2085 <https://github.com/holoviz/panel/issues/2085>`__)
+
+Compatibility:
+
+- Switch GitHub OAuth to use header authorization token (`#2073 <https://github.com/holoviz/panel/issues/2073>`__)
+
+
 Version 0.11.0
 --------------
 
