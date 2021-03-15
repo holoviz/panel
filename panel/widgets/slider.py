@@ -16,12 +16,11 @@ from bokeh.models.widgets import (
 
 from ..config import config
 from ..io import state
-from ..util import unicode_repr, value_as_datetime, value_as_date
+from ..util import param_reprs, unicode_repr, value_as_datetime, value_as_date
 from ..viewable import Layoutable
 from .base import Widget, CompositeWidget
 from ..layout import Column
 from .input import StaticText
-
 
 
 class _SliderBase(Widget):
@@ -53,6 +52,10 @@ class _SliderBase(Widget):
         if 'value' in params and 'value_throttled' in self.param:
             params['value_throttled'] = params['value']
         super().__init__(**params)
+
+    def __repr__(self, depth=0):
+        return '{cls}({params})'.format(cls=type(self).__name__,
+                                        params=', '.join(param_reprs(self, ['value_throttled'])))
 
     def _update_model(self, events, msg, root, model, doc, comm):
         if 'value_throttled' in msg:
