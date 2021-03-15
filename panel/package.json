@@ -1,6 +1,6 @@
 {
   "name": "@holoviz/panel",
-  "version": "0.11.0",
+  "version": "0.11.1",
   "description": "A high level dashboarding library for python visualization libraries.",
   "license": "BSD-3-Clause",
   "repository": {
@@ -23,5 +23,5 @@
   "files": [
     "dist/**/*.{js,js.map,d.ts,json,css}"
   ],
-  "main": "dist/panel.js"
+  "main": "dist/panel.min.js"
 }
