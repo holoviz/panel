@@ -213,7 +213,7 @@ def test_reactive_html_dom_events():
     test = TestDOMEvents()
     root = test.get_root()
     assert root.callbacks == {}
-    assert root.events == {'div': ['change']}
+    assert root.events == {'div': {'change': True}}
 
 
 def test_reactive_html_inline():
@@ -248,10 +248,10 @@ def test_reactive_html_inline():
     test = TestInline()
     root = test.get_root()
     assert root.callbacks == {'div': [('onchange', '_div_change')]}
-    assert root.events == {'div': ['onchange']}
+    assert root.events == {}
 
     test.on_event('div', 'click', print)
-    assert root.events == {'div': ['click', 'onchange']}
+    assert root.events == {'div': {'click': False}}
 
 
 def test_reactive_html_children():
