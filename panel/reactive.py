@@ -1222,15 +1222,16 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
             del self._changing[root.ref['id']]
 
     def _update_model(self, events, msg, root, model, doc, comm):
+        child_params = self._parser.children.values()
         model_msg = {
             prop: msg.pop(prop) for prop, v in list(msg.items())
-            if prop in self._parser.children.values()
+            if prop in child_params or prop in Reactive.param
         }
         if model_msg:
-            old_children = {key: events[key].old for key in model_msg}
-            model_msg = {
-                'children': self._get_children(doc, root, model, comm, old_children)
-            }
+            old_children = {key: events[key].old for key in model_msg if key in child_params}
+            children = self._get_children(doc, root, model, comm, old_children)
+            model_msg = {p: model_msg.pop(p) for p in Reactive.param if p in model_msg}
+            model_msg = dict(model_msg, children=children)
             self._set_on_model(model_msg, root, model)
         if not msg:
             return
