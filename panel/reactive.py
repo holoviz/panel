@@ -1048,21 +1048,21 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
     the value updates:
 
         _scripts = {
-            'input': {
-                'value': ['console.log(model, data, el)']
-             }
-         }
+            'value': ['console.log(model, data, input)']
+       }
 
     The Javascript is provided multiple objects in its namespace
     including:
 
-      * data : The data model holds the current values of the synced
-               parameters, e.g. data.value will reflect the current
-               value of the input node.
-      * model: The ReactiveHTML model which holds layout information
-               and information about the children and events.
-      * el   : The DOM node the synced attribute belongs to, e.g. the
-               input element in this example.
+      * data :  The data model holds the current values of the synced
+                parameters, e.g. data.value will reflect the current
+                value of the input node.
+      * model:  The ReactiveHTML model which holds layout information
+                and information about the children and events.
+      * state:  An empty state dictionary which scripts can use to
+                store state for the lifetime of the view.
+      * <node>: All named DOM nodes in the HTML template, e.g. the
+                `input` node in the example above.
     """
 
     _dom_events = {}
@@ -1110,21 +1110,22 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         params['data'] = self._data_model(**data_params)
         params['events'] = self._get_events()
         params['html'] = escape(self._get_html())
+        params['nodes'] = self._parser.nodes
         params['scripts'] = {
-            el: {t: [escape(script) for script in scripts]
-                 for t, scripts in triggers.items()}
-            for el, triggers in self._scripts.items()
+            trigger: [escape(script) for script in scripts]
+            for trigger, scripts in self._scripts.items()
         }
         return params
 
     def _get_events(self):
-        events = dict(self._dom_events)
+        events = {
+            node: {e: True for e in events} for node, events in self._dom_events.items()
+        }
         for node, evs in self._event_callbacks.items():
-            events[node] = list(events.get(node, set()) | set(evs))
-        for (node, attr, _) in self._inline_callbacks:
-            if node not in events:
-                events[node] = []
-            events[node].append(attr)
+            events[node] = node_events = events.get(node, {})
+            for e in evs:
+                if e not in node_events:
+                    node_events[e] = False
         return events
 
     def _get_children(self, doc, root, model, comm, old_children=None):
@@ -1167,7 +1168,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
 
     def _get_html(self):
         html = self._html
-        for name in list(self._attrs)+list(self._parser.children):
+        for name in list(self._parser.nodes):
             html = (
                 html
                 .replace(f"id='{name}'", f"id='{name}-${{id}}'")
