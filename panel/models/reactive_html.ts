@@ -135,7 +135,7 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
 
   disconnect_signals(): void {
     super.disconnect_signals()
-    this._remove_event_listeners()
+    this._event_listeners = {}
     this._remove_mutation_observers()
   }
 
@@ -292,7 +292,7 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
     for (const node in this._event_listeners) {
       const el: any = document.getElementById(`${node}-${id}`)
       if (el == null) {
-        console.warn(`DOM node '${node}-${id}' could not be found. Cannot subscribe to DOM events.`)
+        console.warn(`DOM node '${node}-${id}' could not be found. Cannot remove event listeners.`)
         continue
       }
       for (const event_name in this._event_listeners[node]) {
