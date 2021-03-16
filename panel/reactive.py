@@ -1118,9 +1118,12 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         return params
 
     def _get_events(self):
-        events = {
-            node: {e: True for e in events} for node, events in self._dom_events.items()
-        }
+        events = {}
+        for node, node_events in self._dom_events.items():
+            if isinstance(node_events, list):
+                events[node] = {e: True for e in node_events}
+            else:
+                events[node] = node_events
         for node, evs in self._event_callbacks.items():
             events[node] = node_events = events.get(node, {})
             for e in evs:
