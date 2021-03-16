@@ -6,10 +6,11 @@ import weakref
 import sys
 
 from .config import config
+from .models import ReactiveHTML
 from .reactive import Reactive
 from .viewable import Viewable
 
-from bokeh.models import (CustomJS, Model as BkModel)
+from bokeh.models import CustomJS, Model as BkModel
 
 
 class Callback(param.Parameterized):
@@ -304,6 +305,11 @@ class CallbackGenerator(object):
                     k = 'target_' + k
                     if isinstance(v, BkModel) and k not in references:
                         references[k] = v
+
+        # Handle links with ReactiveHTML DataModel
+        if isinstance(tgt_model, ReactiveHTML):
+            if tgt_spec[1] in tgt_model.data.properties():
+                references['target'] = tgt_model = tgt_model.data
 
         self._initialize_models(link, source, src_model, src_spec[1], target, tgt_model, tgt_spec[1])
         self._process_references(references)

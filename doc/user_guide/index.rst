@@ -57,6 +57,9 @@ when needed.
 `Server Deployment <Server_Deployment.html>`_
  Step-by-step guides for deploying Panel apps locally, on a web server or on common cloud providers.
 
+`Building custom components <Custom_Components.html>`_
+ Learn how to extend Panel by building custom components.
+
 `Asynchronous and Concurrent Processing <Async_and_Concurrency.html>`_
  Learn how leverage asynchronous and concurrent processing to make your app more responsive.
 
@@ -87,6 +90,7 @@ Supplementary guides
     Pipelines <Pipelines>
     Templates <Templates>
     Server Deployment <Server_Deployment>
-	Asynchronous and Concurrent Process <Async_and_Concurrency>
+    Building Custom Components <Custom_Components>
+    Asynchronous and Concurrent Process <Async_and_Concurrency>
     Authentication <Authentication>
     Django Apps <Django_Apps>

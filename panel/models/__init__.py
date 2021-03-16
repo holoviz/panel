@@ -10,6 +10,7 @@ from .ipywidget import IPyWidget # noqa
 from .layout import Card # noqa
 from .location import Location # noqa
 from .markup import JSON, HTML # noqa
+from .reactive_html import ReactiveHTML # noqa
 from .state import State # noqa
 from .tabulator import DataTabulator # noqa
 from .trend import TrendIndicator # noqa

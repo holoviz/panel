@@ -84,7 +84,6 @@ class DataFrame(HTML):
     DataFrame renders pandas, dask and streamz DataFrame types using
     their custom HTML repr. In the case of a streamz DataFrame the
     rendered data will update periodically.
-
     """
 
     bold_rows = param.Boolean(default=True, doc="""
