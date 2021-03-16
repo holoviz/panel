@@ -338,7 +338,7 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
     const attrs: any = {}
     for (const attr_info of this.model.attrs[name]) {
       const [attr, tokens, template] = attr_info
-      let value = el[attr]
+      let value = attr === 'children' ? el.innerHTML : el[attr]
       if (tokens.length === 1 && (`{${tokens[0]}}` === template))
         attrs[tokens[0]] = value
       else if (typeof value === 'string') {
