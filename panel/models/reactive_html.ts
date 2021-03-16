@@ -135,7 +135,7 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
 
   disconnect_signals(): void {
     super.disconnect_signals()
-    this._event_listeners = {}
+    this._remove_event_listeners()
     this._remove_mutation_observers()
   }
 
@@ -291,10 +291,8 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
     const id = this.model.data.id
     for (const node in this._event_listeners) {
       const el: any = document.getElementById(`${node}-${id}`)
-      if (el == null) {
-        console.warn(`DOM node '${node}-${id}' could not be found. Cannot remove event listeners.`)
+      if (el == null)
         continue
-      }
       for (const event_name in this._event_listeners[node]) {
 	const event_callback = this._event_listeners[node][event_name]
 	el.removeEventListener(event_name, event_callback)
@@ -311,10 +309,11 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
         console.warn(`DOM node '${node}-${id}' could not be found. Cannot subscribe to DOM events.`)
         continue
       }
-      for (const event_name of this.model.events[node]) {
+      const node_events = this.model.events[node]
+      for (const event_name in node_events) {
 	const event_callback = (event: any) => {
 	  this._send_event(node, event_name, event)
-          if (node in this.model.attrs)
+          if (node in this.model.attrs && node_events[event_name])
             this._update_model(el, node)
         }
 	el.addEventListener(event_name, event_callback)
@@ -328,13 +327,20 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
   private _update(property: string | null = null): void {
     if (property == null || (this.html.indexOf(`\${${property}}`) > -1)) {
       const rendered = this._render_html(this.html)
-      render(rendered, this.el)
+      try {
+	this._changing = true
+	render(rendered, this.el)
+      } finally {
+	this._changing = false
+      }
       if (this.el.children.length)
 	set_size((this.el.children[0] as any), this.model)
     }
   }
 
   private _update_model(el: any, name: string): void {
+    if (this._changing)
+      return
     const attrs: any = {}
     for (const attr_info of this.model.attrs[name]) {
       const [attr, tokens, template] = attr_info
@@ -342,6 +348,7 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
       if (tokens.length === 1 && (`{${tokens[0]}}` === template))
         attrs[tokens[0]] = value
       else if (typeof value === 'string') {
+	console.log(template, value, tokens)
 	value = extractToken(template, value, tokens)
 	if (value == null)
 	  console.warn(`Could not resolve parameters in ${name} element ${attr} attribute value ${value}.`)
@@ -355,9 +362,12 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
 	}
       }
     }
-    this._changing = true
-    this.model.data.setv(serialize_attrs(attrs))
-    this._changing = false
+    try {
+      this._changing = true
+      this.model.data.setv(serialize_attrs(attrs))
+    } finally {
+      this._changing = false
+    }
   }
 }
 

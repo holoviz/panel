@@ -1118,13 +1118,14 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         return params
 
     def _get_events(self):
-        events = dict(self._dom_events)
+        events = {
+            node: {e: True for e in events} for node, events in self._dom_events.items()
+        }
         for node, evs in self._event_callbacks.items():
-            events[node] = list(events.get(node, set()) | set(evs))
-        for (node, attr, _) in self._inline_callbacks:
-            if node not in events:
-                events[node] = []
-            events[node].append(attr)
+            events[node] = node_events = events.get(node, {})
+            for e in evs:
+                if e not in node_events:
+                    node_events[e] = False
         return events
 
     def _get_children(self, doc, root, model, comm, old_children=None):
