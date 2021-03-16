@@ -16,5 +16,7 @@ class Terminal(Widget):
     }
 
     # Parameters to be mapped to Bokeh model properties
-    object = param.String(default="Click Me!")
-    clicks = param.Integer(default=0)
+    object = param.String(doc="""
+        The text to write in the terminal""")
+    out = param.String(doc="""
+        Any text written by the user in the terminal""")

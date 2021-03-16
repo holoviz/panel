@@ -5,4 +5,4 @@ class Terminal(HTMLBox):
     """Custom Terminal Model"""
 
     object = String()
-    clicks = Int()
+    out = String()
