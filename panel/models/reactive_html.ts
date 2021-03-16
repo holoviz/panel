@@ -40,7 +40,7 @@ function extractToken(template: string, str: string, tokens: string[]) {
     tokenMapping[`{${match}}`] = "(.*)"
 
   const tokenList = []
-  let regexpTemplate = escapeRegex(template);
+  let regexpTemplate = "^" + escapeRegex(template) + "$";
 
   // Find the order of the tokens
   let i, tokenIndex, tokenEntry;
@@ -49,7 +49,7 @@ function extractToken(template: string, str: string, tokens: string[]) {
 
     // Token found
     if (tokenIndex > -1) {
-      regexpTemplate = regexpTemplate.replace(m, '(' + tokenMapping[m] + ')');
+      regexpTemplate = regexpTemplate.replace(m, tokenMapping[m]);
       tokenEntry = {
 	index: tokenIndex,
 	token: m
@@ -348,7 +348,6 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
       if (tokens.length === 1 && (`{${tokens[0]}}` === template))
         attrs[tokens[0]] = value
       else if (typeof value === 'string') {
-	console.log(template, value, tokens)
 	value = extractToken(template, value, tokens)
 	if (value == null)
 	  console.warn(`Could not resolve parameters in ${name} element ${attr} attribute value ${value}.`)
