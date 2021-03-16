@@ -195,8 +195,10 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
 
   after_layout(): void {
     super.after_layout()
-    for (const child_view of this.child_views)
+    for (const child_view of this.child_views) {
+      child_view.resize_layout()
       this._align_view(child_view)
+    }
   }
 
   private _align_view(view: any): void {
