@@ -14,6 +14,7 @@ from .markup import JSON, HTML # noqa
 from .reactive_html import ReactiveHTML # noqa
 from .state import State # noqa
 from .tabulator import DataTabulator # noqa
+from .terminal import Terminal # noqa
 from .trend import TrendIndicator # noqa
 from .widgets import ( # noqa
     Audio, FileDownload, Player, Progress, SingleSelect, Video, VideoStream
