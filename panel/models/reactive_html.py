@@ -48,19 +48,27 @@ class ReactiveHTMLParser(HTMLParser):
         self._current_node = None
 
     def handle_data(self, data):
-        if not (self._current_node and self._template_re.match(data)):
+        matches = self._template_re.findall(data)
+        if not (self._current_node and matches):
             return
         dom_id = self._current_node
-        children_name = data[2:-1]
-        if children_name not in self.cls.param:
-            matches = difflib.get_close_matches(children_name, list(self.cls.param))
-            raise ValueError("HTML template references unknown parameter "
-                             f"'{children_name}', similar parameters include "
-                             f"{matches}.")
-        elif isinstance(self.cls.param[children_name], pm.List):
-            self.children[dom_id] = children_name
-        else:
-            self.attrs[dom_id].append(('children', [children_name], '{%s}' % children_name))
+        match = data[2:-1] if self._template_re.match(data) else None
+        if match in self.cls.param and isinstance(self.cls.param[match], pm.List):
+            self.children[dom_id] = match
+            return
+
+        templates = []
+        for match in matches:
+            match = match[2:-1]
+            if match.startswith('model.'):
+                continue
+            if match not in self.cls.param:
+                params = difflib.get_close_matches(match, list(self.cls.param))
+                raise ValueError("HTML template references unknown parameter "
+                                 f"'{match}', similar parameters include "
+                                 f"{params}.")
+            templates.append(match)
+        self.attrs[dom_id].append(('children', templates, data.replace('${', '{')))
 
 
 
