@@ -1,3 +1,4 @@
+import difflib
 import re
 
 from collections import defaultdict
@@ -13,8 +14,9 @@ from bokeh.events import ModelEvent
 
 class ReactiveHTMLParser(HTMLParser):
 
-    def __init__(self):
+    def __init__(self, cls):
         super().__init__()
+        self.cls = cls
         self.attrs = defaultdict(list)
         self.children = {}
         self.nodes = []
@@ -39,14 +41,27 @@ class ReactiveHTMLParser(HTMLParser):
             for match in self._template_re.findall(value):
                 if not match[2:-1].startswith('model.'):
                     matches.append(match[2:-1])
-            self.attrs[dom_id].append((attr, matches, value.replace('${', '{')))
+            if matches:
+                self.attrs[dom_id].append((attr, matches, value.replace('${', '{')))
 
     def handle_endtag(self, tag):
         self._current_node = None
 
     def handle_data(self, data):
-        if self._current_node and self._template_re.match(data):
-            self.children[self._current_node] = data[2:-1]
+        if not (self._current_node and self._template_re.match(data)):
+            return
+        dom_id = self._current_node
+        children_name = data[2:-1]
+        if children_name not in self.cls.param:
+            matches = difflib.get_close_matches(children_name, list(self.cls.param))
+            raise ValueError("HTML template references unknown parameter "
+                             f"'{children_name}', similar parameters include "
+                             f"{matches}.")
+        elif isinstance(self.cls.param[children_name], pm.List):
+            self.children[dom_id] = children_name
+        else:
+            self.attrs[dom_id].append(('children', [children_name], '{%s}' % children_name))
+
 
 
 def find_attrs(html):

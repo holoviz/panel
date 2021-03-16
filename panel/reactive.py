@@ -945,7 +945,7 @@ class ReactiveHTMLMetaclass(ParameterizedMetaclass):
 
     def __init__(mcs, name, bases, dict_):
         ParameterizedMetaclass.__init__(mcs, name, bases, dict_)
-        mcs._parser = ReactiveHTMLParser()
+        mcs._parser = ReactiveHTMLParser(mcs)
         mcs._parser.feed(mcs._html)
         mcs._attrs, mcs._node_callbacks = {}, {}
         mcs._inline_callbacks = []
