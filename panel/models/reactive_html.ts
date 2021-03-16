@@ -87,6 +87,8 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
   _changing: boolean = false
   _event_listeners: any = {}
   _mutation_observers: MutationObserver[] = []
+  _script_fns: any = {}
+  _state: any = {}
 
   initialize(): void {
     super.initialize()
@@ -113,15 +115,19 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
 
   connect_scripts(): void {
     const id = this.model.data.id
-    for (const elname in this.model.scripts) {
-      const el_scripts = this.model.scripts[elname]
-      for (const prop in el_scripts) {
-        const script = el_scripts[prop]
+    for (const prop in this.model.scripts) {
+      const scripts = this.model.scripts[prop]
+      for (const script of scripts) {
         const decoded_script = htmlDecode(script) || script
-	const script_fn = this._render_script(decoded_script, elname, id)
-	this.connect(this.model.data.properties[prop].change, () => {
+	const script_fn = this._render_script(decoded_script, id)
+	const property = this.model.data.properties[prop]
+	if (property == null) {
+	  this._script_fns[prop] = script_fn
+	  continue
+	}
+	this.connect(property.change, () => {
           if (!this._changing)
-            script_fn(this.model, this.model.data)
+            script_fn(this.model, this.model.data, this._state)
 	})
       }
     }
@@ -161,6 +167,9 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
     this._render_children()
     this._setup_mutation_observers()
     this._setup_event_listeners()
+    const render_script = this._script_fns.render
+    if (render_script != null)
+      render_script(this.model, this.model.data, this._state)
   }
 
   private _send_event(elname: string, attr: string, event: any) {
@@ -190,11 +199,11 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
       this._align_view(child_view)
   }
 
-  private _align_view(view): void {
+  private _align_view(view: any): void {
     const {align} = view.model
     let halign, valign: string
     if (isArray(align))
-      [halign, valign] = align
+      [halign, valign] = (align as any)
     else
       halign = valign = align
     if (halign === 'center') {
@@ -207,7 +216,6 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
       view.el.style.marginBottom = 'auto';
     } else if (valign === 'end')
       view.el.style.marginTop = 'auto';
-    console.log(view.el.style)
   }
 
 
@@ -241,17 +249,22 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
     )
   }
 
-  private _render_script(literal: any, elname: string, id: string) {
-    const script = `
-      const el = document.getElementById('${elname}-${id}')
-      if (el == null) {
-        console.warn("DOM node '${elname}-${id}' could not be found. Cannot execute callback.")
+  private _render_script(literal: any, id: string) {
+    const scripts = []
+    for (const elname of this.model.nodes) {
+      const script = `
+      const ${elname} = document.getElementById('${elname}-${id}')
+      if (${elname} == null) {
+        console.warn("DOM node '${elname}' could not be found. Cannot execute callback.")
         return
       }
-      ${literal}
-    `
-    return new Function("model, data", script)
+      `
+      scripts.push(script)
+    }
+    scripts.push(literal)
+    return new Function("model, data, state", scripts.join('\n'))
   }
+
   private _remove_mutation_observers(): void {
     for (const observer of this._mutation_observers)
       observer.disconnect()
@@ -358,6 +371,7 @@ export namespace ReactiveHTML {
     data: p.Property<any>
     events: p.Property<any>
     html: p.Property<string>
+    nodes: p.Property<string[]>
     scripts: p.Property<any>
   }
 }
@@ -375,13 +389,14 @@ export class ReactiveHTML extends Markup {
 
   static init_ReactiveHTML(): void {
     this.prototype.default_view = ReactiveHTMLView
-    this.define<ReactiveHTML.Props>(({Any, String}) => ({
+    this.define<ReactiveHTML.Props>(({Array, Any, String}) => ({
       attrs:     [ Any,    {} ],
       callbacks: [ Any,    {} ],
       children:  [ Any,    {} ],
       data:      [ Any,       ],
       events:    [ Any,    {} ],
       html:      [ String, "" ],
+      nodes:     [ Array(String), [] ],
       scripts:   [ Any,    {} ],
     }))
   }

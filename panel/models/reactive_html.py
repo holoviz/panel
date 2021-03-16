@@ -78,6 +78,7 @@ PARAM_MAPPING = {
     pm.DateRange: lambda p, kwargs: bp.Tuple(bp.Datetime, bp.Datetime, **kwargs),
     pm.Date: lambda p, kwargs: bp.Datetime(**kwargs),
     pm.Dict: lambda p, kwargs: bp.Dict(bp.String, bp.Any, **kwargs),
+    pm.Event: lambda p, kwargs: bp.Bool(**kwargs),
     pm.Integer: lambda p, kwargs: bp.Int(**kwargs),
     pm.List: lambda p, kwargs: bp.List(bp.Any, **kwargs),
     pm.Number: lambda p, kwargs: bp.Float(**kwargs),
@@ -128,7 +129,9 @@ class ReactiveHTML(HTMLBox):
 
     html = bp.String()
 
-    scripts = bp.Dict(bp.String, bp.Dict(bp.String, bp.List(bp.String)))
+    nodes = bp.List(bp.String)
+
+    scripts = bp.Dict(bp.String, bp.List(bp.String))
 
     def __init__(self, **props):
         if 'attrs' not in props and 'html' in props:
