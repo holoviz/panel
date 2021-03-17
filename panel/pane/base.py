@@ -11,6 +11,7 @@ from bokeh.models.layouts import GridBox as _BkGridBox
 from ..io import init_doc, push, state, unlocked
 from ..layout import Panel, Row
 from ..links import Link
+from ..models import ReactiveHTML as _BkReactiveHTML
 from ..reactive import Reactive
 from ..viewable import Layoutable, Viewable
 from ..util import param_reprs
@@ -159,6 +160,13 @@ class PaneBase(Reactive):
                     else:
                         raise ValueError
                     new_model = (new_model,) + parent.children[index][1:]
+                elif isinstance(parent, _BkReactiveHTML):
+                    for node, children in parent.children.items():
+                        if old_model in children:
+                            index = children.index(old_model)
+                            new_models = list(children)
+                            new_models[index] = new_model
+                            break
                 else:
                     index = parent.children.index(old_model)
             except ValueError:
@@ -168,7 +176,10 @@ class PaneBase(Reactive):
                              'time the panel is being updated.' %
                              (type(self).__name__, old_model, new_model))
             else:
-                parent.children[index] = new_model
+                if isinstance(parent, _BkReactiveHTML):
+                    parent.children[node] = new_models
+                else:
+                    parent.children[index] = new_model
 
         from ..io import state
         ref = root.ref['id']
