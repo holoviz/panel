@@ -57,6 +57,7 @@ class Card(Column):
         self._header_layout = Row(css_classes=['card-header-row'],
                                   sizing_mode='stretch_width')
         super().__init__(*objects, **params)
+        self._header = None
         self.param.watch(self._update_header, ['title', 'header', 'title_css_classes'])
         self._update_header()
 
@@ -76,12 +77,20 @@ class Card(Column):
     def _update_header(self, *events):
         from ..pane import HTML, panel
         if self.header is None:
-            item = HTML('%s' % (self.title or "&#8203;"),
-                        css_classes=self.title_css_classes,
-                        sizing_mode='stretch_width',
-                        margin=(2, 5))
+            params = {
+                'object': '%s' % (self.title or "&#8203;"),
+                'css_classes': self.title_css_classes
+            }
+            if self._header is not None:
+                self._header.param.set_param(**params)
+                return
+            else:
+                self._header = item = HTML(
+                    sizing_mode='stretch_width', margin=(2, 5), **params
+                )
         else:
             item = panel(self.header)
+            self._header = None
         self._header_layout[:] = [item]
 
     def _get_objects(self, model, old_objects, doc, root, comm=None):
