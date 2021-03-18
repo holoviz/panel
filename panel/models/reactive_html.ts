@@ -5,7 +5,7 @@ import {html} from 'htm/preact';
 import {build_views} from "@bokehjs/core/build_views"
 import {isArray} from "@bokehjs/core/util/types"
 import * as p from "@bokehjs/core/properties"
-import {Markup} from "@bokehjs/models/widgets/markup"
+import {HTMLBox} from "@bokehjs/models/layouts/html_box"
 import {LayoutDOM} from "@bokehjs/models/layouts/layout_dom"
 import {empty, classes} from "@bokehjs/core/dom"
 import {color2css} from "@bokehjs/core/util/color"
@@ -375,7 +375,7 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
 export namespace ReactiveHTML {
   export type Attrs = p.AttrsOf<Props>
 
-  export type Props = Markup.Props & {
+  export type Props = HTMLBox.Props & {
     attrs: p.Property<any>
     callbacks: p.Property<any>
     children: p.Property<any>
@@ -389,7 +389,7 @@ export namespace ReactiveHTML {
 
 export interface ReactiveHTML extends ReactiveHTML.Attrs {}
 
-export class ReactiveHTML extends Markup {
+export class ReactiveHTML extends HTMLBox {
   properties: ReactiveHTML.Props
 
   constructor(attrs?: Partial<ReactiveHTML.Attrs>) {
