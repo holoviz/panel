@@ -4,5 +4,7 @@ from bokeh.models import HTMLBox
 class Terminal(HTMLBox):
     """Custom Terminal Model"""
 
-    object = String()
-    out = String()
+    input = String()
+    output = String()
+
+    _clears = Int()

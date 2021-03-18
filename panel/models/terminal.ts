@@ -15,7 +15,8 @@ export class TerminalView extends HTMLBoxView {
     connect_signals(): void {
         super.connect_signals()
 
-        this.connect(this.model.properties.object.change, this.write)
+        this.connect(this.model.properties.output.change, this.write)
+        this.connect(this.model.properties._clears.change, this.clear)
     }
 
     render(): void {
@@ -31,16 +32,21 @@ export class TerminalView extends HTMLBoxView {
 
     write(): void {
         // https://stackoverflow.com/questions/65367607/how-to-handle-new-line-in-xterm-js-while-writing-data-into-the-terminal
-        const cleaned = this.model.object.replace(/\r?\n/g, "\r\n")
+        const cleaned = this.model.output.replace(/\r?\n/g, "\r\n")
         this.term.write(cleaned);
+    }
+    clear(): void {
+        // https://stackoverflow.com/questions/65367607/how-to-handle-new-line-in-xterm-js-while-writing-data-into-the-terminal
+        this.term.clear()
     }
 }
 
 export namespace Terminal {
     export type Attrs = p.AttrsOf<Props>
     export type Props = HTMLBox.Props & {
-        object: p.Property<string>,
-        out: p.Property<string>,
+        output: p.Property<string>,
+        input: p.Property<string>,
+        _clears: p.Property<number>
     }
 }
 
@@ -59,9 +65,10 @@ export class Terminal extends HTMLBox {
     static init_Terminal(): void {
         this.prototype.default_view = TerminalView;
 
-        this.define<Terminal.Props>(({String}) => ({
-            object: [String, ],
-            out: [String, ],
+        this.define<Terminal.Props>(({Int, String}) => ({
+            output: [String, ],
+            input: [String, ],
+            _clears: [Int, 0]
         }))
     }
 }

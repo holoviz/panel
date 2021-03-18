@@ -11,7 +11,8 @@ pn.config.css_files.append("https://unpkg.com/xterm@4.11.0/css/xterm.css")
 # pn.config.js_files["xtermjs-search"]="https://unpkg.com/xterm@4.11.0/lib/addons/search/search.js"
 
 def test_constructor():
-    terminal = pn.pane.Terminal(object="Click Me Now!")
+    terminal = pn.widgets.Terminal()
+    terminal.write("Hello")
 
 def run_print(term):
     # Replace default stdout (terminal) with our Panel Terminal
@@ -33,11 +34,11 @@ def run_process(term):
 
     process = subprocess.Popen(shlex.split(command), stdout=subprocess.PIPE)
 
-    term.object = process.stdout.read().decode("utf8")
+    term.write(process.stdout.read())
 
 
 def get_app():
-    terminal = pn.pane.Terminal(object="Welcome to the Panel Terminal!\n", height=400)
+    terminal = pn.widgets.Terminal(object="Welcome to the Panel Terminal!\n", height=400)
 
     run_print_button = pn.widgets.Button(name="Print", button_type="success")
     run_print_button.on_click(lambda x: run_print(terminal))
@@ -46,7 +47,13 @@ def get_app():
     run_process_button.on_click(lambda x: run_process(terminal))
 
     return pn.Column(
-        terminal, run_print_button, run_process_button, pn.Param(terminal, parameters=["object", "out", "write_to_console"])
+        pn.pane.Markdown("#### Terminal"),
+        terminal,
+        pn.pane.Markdown("#### Parameters"),
+        pn.Param(terminal, parameters=["object", "out", "write_to_console", "clear"]),
+        pn.pane.Markdown("#### Use Cases"),
+        run_print_button,
+        run_process_button,
     )
 
 if __name__.startswith("bokeh"):
