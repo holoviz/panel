@@ -5,6 +5,7 @@ import { HTMLBox, HTMLBoxView } from "@bokehjs/models/layouts/html_box"
 import * as p from "@bokehjs/core/properties"
 import { div } from "@bokehjs/core/dom";
 
+
 // The view of the Bokeh extension/ HTML element
 // Here you can define how to render the model as well as react to model changes or View events.
 export class TerminalView extends HTMLBoxView {
@@ -14,9 +15,7 @@ export class TerminalView extends HTMLBoxView {
     connect_signals(): void {
         super.connect_signals()
 
-        this.connect(this.model.properties.object.change, () => {
-            this.term.write(this.model.object);
-        })
+        this.connect(this.model.properties.object.change, this.write)
     }
 
     render(): void {
@@ -26,8 +25,14 @@ export class TerminalView extends HTMLBoxView {
         const wn = (window as any)
         this.term = new wn.Terminal();
         this.term.open(container);
-        this.term.write(this.model.object);
+        this.write()
         this.el.appendChild(container)
+    }
+
+    write(): void {
+        // https://stackoverflow.com/questions/65367607/how-to-handle-new-line-in-xterm-js-while-writing-data-into-the-terminal
+        const cleaned = this.model.object.replace(/\r?\n/g, "\r\n")
+        this.term.write(cleaned);
     }
 }
 
