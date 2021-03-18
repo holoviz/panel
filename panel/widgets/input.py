@@ -21,6 +21,7 @@ from bokeh.models.widgets import (
 from ..layout import Column
 from ..util import param_reprs, as_unicode
 from .base import Widget, CompositeWidget
+from ..models import DatetimePicker as _bkDatetimePicker
 
 
 class TextInput(Widget):
@@ -157,6 +158,47 @@ class DatePicker(Widget):
         if 'value' in msg:
             if isinstance(msg['value'], string_types):
                 msg['value'] = datetime.date(datetime.strptime(msg['value'], '%Y-%m-%d'))
+        return msg
+
+
+class DatetimePicker(Widget):
+
+    value = param.Date(default=None)
+
+    start = param.CalendarDate(default=None)
+
+    end = param.CalendarDate(default=None)
+
+    disabled_dates = param.List(default=None, class_=(date, str))
+
+    enabled_dates = param.List(default=None, class_=(date, str))
+
+    enable_time = param.Boolean(default=False)
+
+    enable_seconds = param.Boolean(default=False)
+
+    military_time = param.Boolean(default=False)
+
+    _source_transforms = {}
+
+    _rename = {'start': 'min_date', 'end': 'max_date', 'name': 'title'}
+
+    # _widget_type = _BkDatePicker
+    _widget_type = _bkDatetimePicker
+
+    def _process_property_change(self, msg):
+        msg = super()._process_property_change(msg)
+        if 'value' in msg:
+            if isinstance(msg['value'], string_types):
+                msg['value'] = datetime.strptime(msg['value'], r'%Y-%m-%d %H.%M.%S')
+        return msg
+
+    def _process_param_change(self, msg):
+        msg = super()._process_param_change(msg)
+        if "value" in msg:
+            if isinstance(msg['value'], (datetime, date)):
+                msg["value"] = msg["value"].strftime(r'%Y-%m-%d %H.%M.%S')
+
         return msg
 
 

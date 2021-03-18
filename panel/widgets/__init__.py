@@ -20,6 +20,7 @@ from .input import (  # noqa
     Checkbox,
     DatetimeInput,
     DatePicker,
+    DatetimePicker,
     DatetimeRangeInput,
     FileInput,
     LiteralInput,
