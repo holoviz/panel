@@ -75,7 +75,6 @@ export class DatetimePickerView extends InputWidgetView {
       disable: _convert_date_list(this.model.disabled_dates),
       enable: _convert_date_list(this.model.enabled_dates),
       enableTime: this.model.enable_time,
-      // dateFormat: this.model.date_format ?? undefined,
       enableSeconds: this.model.enable_seconds,
       time_24hr: this.model.military_time,
       dateFormat: "Y-m-d H.i.S",
@@ -85,7 +84,6 @@ export class DatetimePickerView extends InputWidgetView {
 
   protected _on_change(_selected_dates: Date[], date_string: string, _instance: flatpickr.Instance): void {
     this.model.value = date_string
-    console.log(date_string)
     this.change_input()
   }
 }
@@ -102,7 +100,6 @@ export namespace DatetimePicker {
     position:       p.Property<CalendarPosition>
     inline:         p.Property<boolean>
     enable_time:    p.Property<boolean>
-    // date_format:    p.Property<string | null>
     enable_seconds: p.Property<boolean>
     military_time:  p.Property<boolean>
   }
@@ -135,7 +132,6 @@ export class DatetimePicker extends InputWidget {
         position:       [ CalendarPosition, "auto" ],
         inline:         [ Boolean, false ],
         enable_time:    [ Boolean, false ],
-        // date_format:    [ Nullable(String), null ],
         enable_seconds: [ Boolean, false ],
         military_time:  [ Boolean, false ],
       }
