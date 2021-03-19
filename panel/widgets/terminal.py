@@ -8,7 +8,18 @@ from ..models import Terminal as _BkTerminal
 
 
 class Terminal(StringIO, Widget):
-    # Set the Bokeh model to use
+    # Parameters to be mapped to Bokeh model properties
+    value = param.String(doc="""
+        User input from the terminal""")
+    object = param.String(doc="""
+        System output to the terminal""")
+    write_to_console = param.Boolean(False, doc="Weather or not to write to the console. Default is False")
+    clear = param.Action()
+
+    _output = param.String()
+    _clears = param.Integer(doc="Sends a signal to clear the terminal")
+
+        # Set the Bokeh model to use
     _widget_type = _BkTerminal
 
     # Rename Panel Parameters -> Bokeh Model properties
@@ -21,17 +32,6 @@ class Terminal(StringIO, Widget):
         "object": None,
         "_output": "output",
     }
-
-    # Parameters to be mapped to Bokeh model properties
-    value = param.String(doc="""
-        User input from the terminal""")
-    object = param.String(doc="""
-        System output to the terminal""")
-    write_to_console = param.Boolean(False, doc="Weather or not to write to the console. Default is False")
-    clear = param.Action()
-
-    _output = param.String()
-    _clears = param.Integer(doc="Sends a signal to clear the terminal")
 
     def __init__(self, **kwargs):
         object = kwargs.get("object", "")

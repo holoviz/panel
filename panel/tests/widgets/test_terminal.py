@@ -3,13 +3,6 @@ import sys
 import subprocess
 import shlex
 
-pn.config.js_files["xtermjs"]="https://unpkg.com/xterm@4.11.0/lib/xterm.js"
-pn.config.css_files.append("https://unpkg.com/xterm@4.11.0/css/xterm.css")
-# pn.config.js_files["xtermjs-fit"]="https://unpkg.com/xterm@4.11.0/lib/addons/fit/fit.js"
-# pn.config.js_files["xtermjs-web-links"]="https://unpkg.com/xterm@4.11.0/lib/addons/webLinks/webLinks.js"
-# pn.config.js_files["xtermjs-fullscreen"]="https://unpkg.com/xterm@4.11.0/lib/addons/fullscreen/fullscreen.js"
-# pn.config.js_files["xtermjs-search"]="https://unpkg.com/xterm@4.11.0/lib/addons/search/search.js"
-
 def test_constructor():
     terminal = pn.widgets.Terminal()
     terminal.write("Hello")
