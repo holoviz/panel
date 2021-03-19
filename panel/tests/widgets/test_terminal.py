@@ -2,6 +2,8 @@ import panel as pn
 import sys
 import subprocess
 import shlex
+import logging
+import uuid
 
 def test_constructor():
     terminal = pn.widgets.Terminal()
@@ -29,25 +31,54 @@ def run_process(term):
 
     term.write(process.stdout.read())
 
+def get_logger(term):
+    logger = logging.getLogger('terminal')
+    logger.setLevel(logging.DEBUG)
+
+    sh = logging.StreamHandler(term)
+    sh.terminator = '  \n'
+    formatter = logging.Formatter('%(asctime)s [%(levelname)s]: %(message)s')
+
+    sh.setFormatter(formatter)
+    sh.setLevel(logging.DEBUG)
+    logger.addHandler(sh)
+    return logger
 
 def get_app():
-    terminal = pn.widgets.Terminal(object="Welcome to the Panel Terminal!\n", height=400)
+    pn.config.sizing_mode="stretch_width"
+    terminal = pn.widgets.Terminal(object="Welcome to the Panel Terminal!\nI'm based on xterm.js\n", height=400)
 
-    run_print_button = pn.widgets.Button(name="Print", button_type="success")
+    run_print_button = pn.widgets.Button(name="Print", button_type="primary")
     run_print_button.on_click(lambda x: run_print(terminal))
 
-    run_process_button = pn.widgets.Button(name="Run Process", button_type="success")
+    run_process_button = pn.widgets.Button(name="Run Process", button_type="primary")
     run_process_button.on_click(lambda x: run_process(terminal))
 
-    return pn.Column(
-        pn.pane.Markdown("#### Terminal"),
-        terminal,
-        pn.pane.Markdown("#### Parameters"),
-        pn.Param(terminal, parameters=["object", "out", "write_to_console", "clear"]),
-        pn.pane.Markdown("#### Use Cases"),
-        run_print_button,
-        run_process_button,
-    )
+    logger = get_logger(terminal)
+    log_button = pn.widgets.Button(name="Log", button_type="primary")
+    log_button.on_click(lambda x: logger.info("Hello Info Logger"))
+
+    stream_button = pn.widgets.Button(name="Log Stream", button_type="primary")
+    stream_button.on_click(lambda x: [logger.info(uuid.uuid4()) for i in range(0,300)])
+
+    template = pn.template.FastListTemplate(title="Panel - Terminal - PR in Progress!")
+
+    template.main[:]=[
+        pn.Column(
+            pn.pane.Markdown("#### Terminal"),
+            terminal,
+            pn.Param(terminal, parameters=["write_to_console", "clear"]),
+        )
+    ]
+    template.sidebar[:]=[
+            pn.pane.Markdown("#### Terminal Use Cases"),
+            run_print_button,
+            run_process_button,
+            log_button,
+            stream_button
+    ]
+    return template
+
 
 if __name__.startswith("bokeh"):
     get_app().servable()
