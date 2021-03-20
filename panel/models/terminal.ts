@@ -25,6 +25,7 @@ export class TerminalView extends HTMLBoxView {
 
         const wn = (window as any)
         this.term = new wn.Terminal();
+        this.term.loadAddon(new wn.WebLinksAddon.WebLinksAddon());
         this.term.open(container);
         this.write()
         this.el.appendChild(container)

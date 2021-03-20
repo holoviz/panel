@@ -16,7 +16,7 @@ class Terminal(HTMLBox):
     __javascript_raw__ = [
         "https://unpkg.com/xterm@4.11.0/lib/xterm.js",
         # "https://unpkg.com/xterm@4.11.0/lib/addons/fit/fit.js",
-        # "https://unpkg.com/xterm@4.11.0/lib/addons/webLinks/webLinks.js",
+        "https://unpkg.com/xterm-addon-web-links@0.4.0/lib/xterm-addon-web-links.js",
         # "https://unpkg.com/xterm@4.11.0/lib/addons/fullscreen/fullscreen.js",
         # "https://unpkg.com/xterm@4.11.0/lib/addons/search/search.js",
     ]

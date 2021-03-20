@@ -44,6 +44,12 @@ def get_logger(term):
     logger.addHandler(sh)
     return logger
 
+def special_characters(term, iterations=1):
+    for _ in range(0,iterations):
+        term.write(f"Danish Characters: æøåÆØÅ\n")
+        term.write(f"Emoji: Python 🐍  Love ❤️  LOL 😊 \n")
+        term.write(f"Links: https://awesome-panel.org\n")
+
 def get_app():
     pn.config.sizing_mode="stretch_width"
     terminal = pn.widgets.Terminal(object="Welcome to the Panel Terminal!\nI'm based on xterm.js\n", height=400)
@@ -58,8 +64,11 @@ def get_app():
     log_button = pn.widgets.Button(name="Log", button_type="primary")
     log_button.on_click(lambda x: logger.info("Hello Info Logger"))
 
-    stream_button = pn.widgets.Button(name="Log Stream", button_type="primary")
+    stream_button = pn.widgets.Button(name="Stream", button_type="primary")
     stream_button.on_click(lambda x: [logger.info(uuid.uuid4()) for i in range(0,300)])
+
+    special_characters_button = pn.widgets.Button(name="Special", button_type="primary")
+    special_characters_button.on_click(lambda x: special_characters(terminal))
 
     template = pn.template.FastListTemplate(title="Panel - Terminal - PR in Progress!")
 
@@ -75,7 +84,8 @@ def get_app():
             run_print_button,
             run_process_button,
             log_button,
-            stream_button
+            stream_button,
+            special_characters_button
     ]
     return template
 
