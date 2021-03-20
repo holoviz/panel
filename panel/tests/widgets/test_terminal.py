@@ -47,12 +47,12 @@ def get_logger(term):
 def special_characters(term, iterations=1):
     for _ in range(0,iterations):
         term.write(f"Danish Characters: æøåÆØÅ\n")
-        term.write(f"Emoji: Python 🐍  Love ❤️  LOL 😊 \n")
+        term.write(f"Emoji: Python 🐍  Panel ❤️  LOL 😊 \n")
         term.write(f"Links: https://awesome-panel.org\n")
 
 def get_app():
     pn.config.sizing_mode="stretch_width"
-    terminal = pn.widgets.Terminal(object="Welcome to the Panel Terminal!\nI'm based on xterm.js\n\n", background="blue", height=400)
+    terminal = pn.widgets.Terminal(object="Welcome to the Panel Terminal!\nI'm based on xterm.js\n\n", background="blue", height=400, width=800, sizing_mode="stretch_width")
 
     run_print_button = pn.widgets.Button(name="Print", button_type="primary")
     run_print_button.on_click(lambda x: run_print(terminal))

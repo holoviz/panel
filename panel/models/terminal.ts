@@ -58,7 +58,7 @@ export class TerminalView extends HTMLBoxView {
         // .fit does not adjust the height. bug?
         // Todo: improve this calculation including finding the fontCharWidth somewhere.
         var height = this.model.height
-        if (height==null || height<=0){
+        if (height==null || height<=0 || this.model.sizing_mode==="stretch_width"){
             height = this.el.getBoundingClientRect().height
         }
         const fontCharWidth = 16
