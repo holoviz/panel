@@ -52,7 +52,7 @@ def special_characters(term, iterations=1):
 
 def get_app():
     pn.config.sizing_mode="stretch_width"
-    terminal = pn.widgets.Terminal(object="Welcome to the Panel Terminal!\nI'm based on xterm.js\n", height=400)
+    terminal = pn.widgets.Terminal(object="Welcome to the Panel Terminal!\nI'm based on xterm.js\n\n", background="blue", height=400)
 
     run_print_button = pn.widgets.Button(name="Print", button_type="primary")
     run_print_button.on_click(lambda x: run_print(terminal))
@@ -76,7 +76,14 @@ def get_app():
         pn.Column(
             pn.pane.Markdown("#### Terminal"),
             terminal,
-            pn.Param(terminal, parameters=["write_to_console", "clear"]),
+            pn.Param(
+                terminal,
+                parameters=["write_to_console", "clear", "width", "height", "sizing_mode"],
+                widgets = {
+                    "width": {"widget_type": pn.widgets.IntSlider, "start": 0, "end": 1000},
+                    "height": {"widget_type": pn.widgets.IntSlider, "start": 0, "end": 1000}
+                }
+            ),
         )
     ]
     template.sidebar[:]=[
