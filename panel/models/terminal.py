@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from bokeh.core.properties import Int, String
+from bokeh.core.properties import Any, Dict, Int, String
 from bokeh.models import HTMLBox
 from ..io.resources import bundled_files
 from ..util import classproperty
@@ -41,7 +41,10 @@ class Terminal(HTMLBox):
         'exports': {"xterm.js": "xtermjs", "xterm.js.web-links": "XTermJSWebLinksAddon", "xterm.js.fit": "XTermJSFit"}
     }
 
+    options = Dict(String, Any)
     input = String()
     output = String()
 
+    line_feeds = Int()
     _clears = Int()
+    _value_repeats = Int()

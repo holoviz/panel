@@ -9,15 +9,20 @@ from ..models import Terminal as _BkTerminal
 
 class Terminal(StringIO, Widget):
     # Parameters to be mapped to Bokeh model properties
-    value = param.String(doc="""
+    value = param.String(label="Input", readonly=True, doc="""
         User input from the terminal""")
-    object = param.String(doc="""
+    object = param.String(label="Output", doc="""
         System output to the terminal""")
-    write_to_console = param.Boolean(False, doc="Weather or not to write to the console. Default is False")
+    line_feeds = param.Integer(readonly=True)
     clear = param.Action()
+    write_to_console = param.Boolean(False, doc="Weather or not to write to the console. Default is False")
 
+    options = param.Dict(doc="""
+        Initial Options for the Terminal Constructor. cf.
+        https://xtermjs.org/docs/api/terminal/interfaces/iterminaloptions/""")
     _output = param.String()
     _clears = param.Integer(doc="Sends a signal to clear the terminal")
+    _value_repeats = param.Integer(doc="Hack: Sends a signal that the value has been repeated.")
 
         # Set the Bokeh model to use
     _widget_type = _BkTerminal
@@ -36,6 +41,7 @@ class Terminal(StringIO, Widget):
     def __init__(self, **kwargs):
         object = kwargs.get("object", "")
         kwargs["_output"]=object
+        kwargs["options"]=kwargs.get("options", {})
         StringIO.__init__(self, object)
         Widget.__init__(self, **kwargs)
 
@@ -51,8 +57,9 @@ class Terminal(StringIO, Widget):
             cleaned = str(s)
 
         if self.object == cleaned:
-            # Hack: for now
+            # Hack for now
             self.object = ""
+
         self.object = cleaned
 
         return StringIO.write(self, cleaned)
@@ -67,6 +74,12 @@ class Terminal(StringIO, Widget):
 
         if self.write_to_console:
             sys.__stdout__.write(self.object)
+
+    @param.depends("_value_repeats", watch=True)
+    def _repeat_value_hack(self):
+        value = self.value
+        self.value = ""
+        self.value = value
 
     def fileno(self):
         return -1

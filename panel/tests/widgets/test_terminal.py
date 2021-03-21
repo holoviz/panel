@@ -4,6 +4,10 @@ import subprocess
 import shlex
 import logging
 import uuid
+import time
+import select
+import pty
+import os
 
 def test_constructor():
     terminal = pn.widgets.Terminal()
@@ -52,7 +56,7 @@ def special_characters(term, iterations=1):
 
 def get_app():
     pn.config.sizing_mode="stretch_width"
-    terminal = pn.widgets.Terminal(object="Welcome to the Panel Terminal!\nI'm based on xterm.js\n\n", background="blue", height=400, width=800, sizing_mode="stretch_width")
+    terminal = pn.widgets.Terminal(object="Welcome to the Panel Terminal!\nI'm based on xterm.js\n\n", height=400, width=800, sizing_mode="stretch_width", options={"cursorBlink": True})
 
     run_print_button = pn.widgets.Button(name="Print", button_type="primary")
     run_print_button.on_click(lambda x: run_print(terminal))
@@ -78,7 +82,7 @@ def get_app():
             terminal,
             pn.Param(
                 terminal,
-                parameters=["write_to_console", "clear", "width", "height", "sizing_mode"],
+                parameters=["value", "object", "write_to_console", "line_feeds", "clear", "width", "height", "sizing_mode"],
                 widgets = {
                     "width": {"widget_type": pn.widgets.IntSlider, "start": 0, "end": 1000},
                     "height": {"widget_type": pn.widgets.IntSlider, "start": 0, "end": 1000}
@@ -96,6 +100,55 @@ def get_app():
     ]
     return template
 
+def get_pty_app():
+    terminal = pn.widgets.Terminal(object="Welcome to the Panel Terminal!\n\nI'm based on Python 🐍  Panel ❤️  and xterm.js 😊 \n\n", height=500, margin=(10,10,35,10), width=800, sizing_mode="stretch_width", options={"cursorBlink": True}, write_to_console=True)
+    config = {"child_pid": None, "fd": None}
+
+    def on_load():
+        cmd = 'bash'
+        cmd = "".join(shlex.quote(c) for c in cmd) # Clean for security reasons
+
+        # A fork is an operation whereby a process creates a copy of itself
+        # The two processes will continue from here as a PARENT and a CHILD process
+        (child_pid, fd) = pty.fork()
+
+        if child_pid == 0:
+            # this is the CHILD process fork.
+            # anything printed here will show up in the pty, including the output
+            # of this subprocess
+            subprocess.run(cmd)
+        else:
+            # this is the PARENT process fork.
+            # store child fd and pid
+            config["child_pid"]=child_pid
+            config["fd"]=fd
+
+            def read_and_forward_pty_output():
+                max_read_bytes = 1024 * 20
+                if fd:
+                    timeout_sec = 0
+                    (data_ready, _, _) = select.select([fd], [], [], timeout_sec)
+                    if data_ready:
+                        output = os.read(fd, max_read_bytes).decode()
+                        terminal.write(output)
+            pn.state.add_periodic_callback(read_and_forward_pty_output, 50)
+
+    @pn.depends(value=terminal.param.value, watch=True)
+    def update_pty(value):
+        print(value.encode())
+        fd = config["fd"]
+        if fd:
+            os.write(fd, value.encode())
+
+    pn.state.onload(on_load)
+
+    template = pn.template.FastListTemplate(title="Panel - Terminal - PR in Progress!", main=[terminal])
+
+    return template
+
+
+
 
 if __name__.startswith("bokeh"):
-    get_app().servable()
+    # get_app().servable()
+    get_pty_app().servable()
