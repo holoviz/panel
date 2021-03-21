@@ -100,6 +100,39 @@ def get_app():
     ]
     return template
 
+def pid_is_running(pid):
+    """ Check For the existence of a unix pid. """
+    try:
+        os.kill(pid, 0)
+    except OSError:
+        return False # It is not running
+    else:
+        return True # It is running
+
+def test_subprocess():
+    command = "bash"
+    terminal = pn.widgets.Terminal()
+
+    subprocess = terminal.subprocess
+    subprocess.command = command
+
+    assert subprocess.terminal == terminal
+    assert subprocess.command == command
+    assert isinstance(subprocess.periodic_callback, pn.callbacks.PeriodicCallback)
+
+    subprocess.run()
+    assert subprocess._child_pid
+    assert subprocess._fd # file descriptor
+    assert subprocess.periodic_callback.running
+    assert pid_is_running(subprocess._child_pid)
+
+    child_pid = subprocess._child_pid
+    subprocess.kill()
+    assert subprocess._child_pid==0
+    assert subprocess._fd==0
+    assert not subprocess.periodic_callback.running
+    # assert not pid_is_running(child_pid)
+
 def get_pty_app():
     terminal = pn.widgets.Terminal(object="Welcome to the Panel Terminal!\n\nI'm based on Python 🐍  Panel ❤️  and xterm.js 😊 \n\n", height=500, margin=(10,10,35,10), width=800, sizing_mode="stretch_width", options={"cursorBlink": True}, write_to_console=True)
     config = {"child_pid": None, "fd": None}
@@ -146,9 +179,14 @@ def get_pty_app():
 
     return template
 
-
+def get_run_app():
+    terminal = pn.widgets.Terminal(object="Welcome to the Panel Terminal!\n\nI'm based on Python 🐍  Panel ❤️  and xterm.js 😊 \n\n", height=500, margin=(10,10,35,10), width=800, sizing_mode="stretch_width", options={"cursorBlink": True}, write_to_console=False)
+    terminal.subprocess.command = "python"
+    # pn.state.onload(terminal.subprocess.run)
+    return pn.Column(terminal, terminal.subprocess.param.run, terminal.subprocess.param.kill, terminal.subprocess.param.running)
 
 
 if __name__.startswith("bokeh"):
     # get_app().servable()
-    get_pty_app().servable()
+    # get_pty_app().servable()
+    get_run_app().servable()
