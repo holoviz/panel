@@ -60,6 +60,8 @@ class _MediaBase(PaneBase):
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         props = self._process_param_change(self._init_params())
+        if self.object is not None:
+            props['value'] = self.object
         model = self._bokeh_model(**props)
         if root is None:
             root = model
