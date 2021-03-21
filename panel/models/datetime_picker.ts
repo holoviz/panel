@@ -77,12 +77,12 @@ export class DatetimePickerView extends InputWidgetView {
       enableTime: this.model.enable_time,
       enableSeconds: this.model.enable_seconds,
       time_24hr: this.model.military_time,
-      onChange: (selected_dates, date_string, instance) => this._on_change(selected_dates, date_string, instance),
       dateFormat: this.model.date_format,
+      onClose: (selected_dates, date_string, instance) => this._on_close(selected_dates, date_string, instance),
     })
   }
 
-  protected _on_change(_selected_dates: Date[], date_string: string, _instance: flatpickr.Instance): void {
+  protected _on_close(_selected_dates: Date[], date_string: string, _instance: flatpickr.Instance): void {
     this.model.value = date_string
     this.change_input()
   }
