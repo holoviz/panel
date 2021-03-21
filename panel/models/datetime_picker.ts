@@ -35,7 +35,7 @@ export class DatetimePickerView extends InputWidgetView {
     super.connect_signals()
 
     const {value, min_date, max_date, disabled_dates, enabled_dates, position, inline,
-      enable_time, enable_seconds, military_time, date_format} = this.model.properties
+      enable_time, enable_seconds, military_time, date_format, mode} = this.model.properties
     this.connect(value.change, () => this._picker?.setDate(this.model.value))
     this.connect(min_date.change, () => this._picker?.set("minDate", this.model.min_date))
     this.connect(max_date.change, () => this._picker?.set("maxDate", this.model.max_date))
@@ -46,6 +46,7 @@ export class DatetimePickerView extends InputWidgetView {
     this.connect(enable_time.change, () => this._picker?.set("enableTime", this.model.enable_time))
     this.connect(enable_seconds.change, () => this._picker?.set("enableSeconds", this.model.enable_seconds))
     this.connect(military_time.change, () => this._picker?.set("time_24hr", this.model.military_time))
+    this.connect(mode.change, () => this._picker?.set("mode", this.model.mode))
     this.connect(date_format.change, () => this._picker?.set("dateFormat", this.model.date_format))
   }
 
@@ -78,6 +79,7 @@ export class DatetimePickerView extends InputWidgetView {
       enableSeconds: this.model.enable_seconds,
       time_24hr: this.model.military_time,
       dateFormat: this.model.date_format,
+      mode: this.model.mode,
       onClose: (selected_dates, date_string, instance) => this._on_close(selected_dates, date_string, instance),
     })
   }
@@ -103,6 +105,7 @@ export namespace DatetimePicker {
     enable_seconds: p.Property<boolean>
     military_time:  p.Property<boolean>
     date_format:    p.Property<string>
+    mode:           p.Property<any>
   }
 }
 
@@ -136,6 +139,7 @@ export class DatetimePicker extends InputWidget {
         enable_seconds: [ Boolean, true ],
         military_time:  [ Boolean, true ],
         date_format:    [ String, "Y-m-d H:i:S" ],
+        mode:           [ String, "single" ],
       }
     })
   }

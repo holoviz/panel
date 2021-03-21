@@ -60,3 +60,6 @@ class DatetimePicker(InputWidget):
     military_time = Bool(default=True)
 
     date_format = String("Y-m-d H:i:S")
+
+    mode = String(default="single", help="""
+    Should either be "single" or "range".""")
