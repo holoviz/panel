@@ -173,11 +173,11 @@ class DatetimePicker(Widget):
 
     enabled_dates = param.List(default=None, class_=(date, str))
 
-    enable_time = param.Boolean(default=False)
+    enable_time = param.Boolean(default=True)
 
-    enable_seconds = param.Boolean(default=False)
+    enable_seconds = param.Boolean(default=True)
 
-    military_time = param.Boolean(default=False)
+    military_time = param.Boolean(default=True)
 
     _source_transforms = {}
 

@@ -54,8 +54,8 @@ class DatetimePicker(InputWidget):
     Whether the calendar sholud be displayed inline.
     """)
 
-    enable_time = Bool(default=False)
+    enable_time = Bool(default=True)
 
-    enable_seconds = Bool(default=False)
+    enable_seconds = Bool(default=True)
 
-    military_time = Bool(default=False)
+    military_time = Bool(default=True)

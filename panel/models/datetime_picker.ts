@@ -131,9 +131,9 @@ export class DatetimePicker extends InputWidget {
         enabled_dates:  [ DatesList, [] ],
         position:       [ CalendarPosition, "auto" ],
         inline:         [ Boolean, false ],
-        enable_time:    [ Boolean, false ],
-        enable_seconds: [ Boolean, false ],
-        military_time:  [ Boolean, false ],
+        enable_time:    [ Boolean, true ],
+        enable_seconds: [ Boolean, true ],
+        military_time:  [ Boolean, true ],
       }
     })
   }
