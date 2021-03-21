@@ -35,7 +35,7 @@ export class DatetimePickerView extends InputWidgetView {
     super.connect_signals()
 
     const {value, min_date, max_date, disabled_dates, enabled_dates, position, inline,
-      enable_time, enable_seconds, military_time} = this.model.properties
+      enable_time, enable_seconds, military_time, date_format} = this.model.properties
     this.connect(value.change, () => this._picker?.setDate(this.model.value))
     this.connect(min_date.change, () => this._picker?.set("minDate", this.model.min_date))
     this.connect(max_date.change, () => this._picker?.set("maxDate", this.model.max_date))
@@ -44,9 +44,9 @@ export class DatetimePickerView extends InputWidgetView {
     this.connect(position.change, () => this._picker?.set("position", this.model.position))
     this.connect(inline.change, () => this._picker?.set("inline", this.model.inline))
     this.connect(enable_time.change, () => this._picker?.set("enableTime", this.model.enable_time))
-    // this.connect(date_format.change, () => this._picker?.set("dateFormat", this.model.date_format))
     this.connect(enable_seconds.change, () => this._picker?.set("enableSeconds", this.model.enable_seconds))
     this.connect(military_time.change, () => this._picker?.set("time_24hr", this.model.military_time))
+    this.connect(date_format.change, () => this._picker?.set("dateFormat", this.model.date_format))
   }
 
   remove(): void {
@@ -77,8 +77,8 @@ export class DatetimePickerView extends InputWidgetView {
       enableTime: this.model.enable_time,
       enableSeconds: this.model.enable_seconds,
       time_24hr: this.model.military_time,
-      dateFormat: "Y-m-d H.i.S",
       onChange: (selected_dates, date_string, instance) => this._on_change(selected_dates, date_string, instance),
+      dateFormat: this.model.date_format,
     })
   }
 
@@ -102,6 +102,7 @@ export namespace DatetimePicker {
     enable_time:    p.Property<boolean>
     enable_seconds: p.Property<boolean>
     military_time:  p.Property<boolean>
+    date_format:    p.Property<string>
   }
 }
 
@@ -134,6 +135,7 @@ export class DatetimePicker extends InputWidget {
         enable_time:    [ Boolean, true ],
         enable_seconds: [ Boolean, true ],
         military_time:  [ Boolean, true ],
+        date_format:    [ String, "Y-m-d H:i:S" ],
       }
     })
   }

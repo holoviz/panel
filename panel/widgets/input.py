@@ -189,14 +189,14 @@ class DatetimePicker(Widget):
         msg = super()._process_property_change(msg)
         if 'value' in msg:
             if isinstance(msg['value'], string_types):
-                msg['value'] = datetime.strptime(msg['value'], r'%Y-%m-%d %H.%M.%S')
+                msg['value'] = datetime.strptime(msg['value'], r'%Y-%m-%d %H:%M:%S')
         return msg
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
         if "value" in msg:
             if isinstance(msg['value'], (datetime, date)):
-                msg["value"] = msg["value"].strftime(r'%Y-%m-%d %H.%M.%S')
+                msg["value"] = msg["value"].strftime(r'%Y-%m-%d %H:%M:%S')
 
         return msg
 

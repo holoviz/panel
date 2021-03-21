@@ -18,7 +18,7 @@ class DatetimePicker(InputWidget):
 
     '''
 
-    value = Either(Datetime, String, help="""
+    value = String(help="""
     The initial or picked date.
     """)
 
@@ -59,3 +59,5 @@ class DatetimePicker(InputWidget):
     enable_seconds = Bool(default=True)
 
     military_time = Bool(default=True)
+
+    date_format = String("Y-m-d H:i:S")
