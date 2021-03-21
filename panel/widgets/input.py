@@ -179,8 +179,6 @@ class DatetimePicker(Widget):
 
     military_time = param.Boolean(default=True)
 
-    date_format = param.String(default="Y-m-d H:i:S")
-
     _source_transforms = {}
 
     _rename = {'start': 'min_date', 'end': 'max_date', 'name': 'title'}
@@ -209,6 +207,13 @@ class DatetimePicker(Widget):
         if 'value' in msg:
             if isinstance(msg['value'], string_types):
                 msg['value'] = datetime.strptime(msg['value'], r'%Y-%m-%d %H:%M:%S')
+
+                # Hour, minute and seconds can be increased after end is reached.
+                # This forces the hours, minute and second to be 0.
+                end = self._date_to_datetime(self.end)
+                if end is not None and msg['value'] > end:
+                    msg['value'] = end
+
         return msg
 
     def _process_param_change(self, msg):
