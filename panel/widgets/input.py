@@ -179,11 +179,30 @@ class DatetimePicker(Widget):
 
     military_time = param.Boolean(default=True)
 
+    date_format = param.String(default="Y-m-d H:i:S")
+
     _source_transforms = {}
 
     _rename = {'start': 'min_date', 'end': 'max_date', 'name': 'title'}
 
     _widget_type = _bkDatetimePicker
+
+    def __init__(self, **params):
+        super().__init__(**params)
+        self._update_value_bounds()
+
+    @staticmethod
+    def _date_to_datetime(x):
+        if isinstance(x, date):
+            return datetime(x.year, x.month, x.day)
+
+    @param.depends('start', 'end', watch=True)
+    def _update_value_bounds(self):
+        self.param.value.bounds = (
+            self._date_to_datetime(self.start),
+            self._date_to_datetime(self.end),
+        )
+        self.param.value._validate(self.value)
 
     def _process_property_change(self, msg):
         msg = super()._process_property_change(msg)
@@ -194,9 +213,9 @@ class DatetimePicker(Widget):
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
-        if "value" in msg:
+        if 'value' in msg:
             if isinstance(msg['value'], (datetime, date)):
-                msg["value"] = msg["value"].strftime(r'%Y-%m-%d %H:%M:%S')
+                msg['value'] = msg['value'].strftime(r'%Y-%m-%d %H:%M:%S')
 
         return msg
 

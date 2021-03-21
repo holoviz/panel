@@ -2,7 +2,6 @@ from bokeh.core.enums import CalendarPosition
 from bokeh.core.properties import (
     Bool,
     Date,
-    Datetime,
     Either,
     Enum,
     List,
