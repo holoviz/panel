@@ -22,6 +22,7 @@ from .input import (  # noqa
     DatePicker,
     DatetimePicker,
     DatetimeRangeInput,
+    DatetimeRangePicker,
     FileInput,
     LiteralInput,
     StaticText,

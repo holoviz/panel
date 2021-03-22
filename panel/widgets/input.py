@@ -161,9 +161,7 @@ class DatePicker(Widget):
         return msg
 
 
-class DatetimePicker(Widget):
-
-    value = param.Date(default=None)
+class _DatetimePickerBase(Widget):
 
     start = param.CalendarDate(default=None)
 
@@ -179,13 +177,13 @@ class DatetimePicker(Widget):
 
     military_time = param.Boolean(default=True)
 
-    mode = param.Selector(objects=["single", "range"], default="single")
-
     _source_transforms = {}
 
     _rename = {'start': 'min_date', 'end': 'max_date', 'name': 'title'}
 
     _widget_type = _bkDatetimePicker
+
+    __abstract = True
 
     def __init__(self, **params):
         super().__init__(**params)
@@ -207,24 +205,77 @@ class DatetimePicker(Widget):
     def _process_property_change(self, msg):
         msg = super()._process_property_change(msg)
         if 'value' in msg:
-            if isinstance(msg['value'], string_types):
-                msg['value'] = datetime.strptime(msg['value'], r'%Y-%m-%d %H:%M:%S')
-
-                # Hour, minute and seconds can be increased after end is reached.
-                # This forces the hours, minute and second to be 0.
-                end = self._date_to_datetime(self.end)
-                if end is not None and msg['value'] > end:
-                    msg['value'] = end
-
+            msg['value'] = self._serialize_value(msg['value'])
         return msg
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
         if 'value' in msg:
-            if isinstance(msg['value'], (datetime, date)):
-                msg['value'] = msg['value'].strftime(r'%Y-%m-%d %H:%M:%S')
-
+            msg['value'] = self._deserialize_value(msg['value'])
         return msg
+
+
+class DatetimePicker(_DatetimePickerBase):
+
+    value = param.Date(default=None)
+
+    mode = param.String('single', constant=True)
+
+    def _serialize_value(self, value):
+        if isinstance(value, string_types) and value:
+            value = datetime.strptime(value, r'%Y-%m-%d %H:%M:%S')
+
+            # Hour, minute and seconds can be increased after end is reached.
+            # This forces the hours, minute and second to be 0.
+            end = self._date_to_datetime(self.end)
+            if end is not None and value > end:
+                value = end
+
+        return value
+
+    def _deserialize_value(self, value):
+        if isinstance(value, (datetime, date)):
+            value = value.strftime(r'%Y-%m-%d %H:%M:%S')
+
+        return value
+
+
+class DatetimeRangePicker(_DatetimePickerBase):
+    value = param.DateRange(default=None)
+
+    mode = param.String('range', constant=True)
+
+    def _serialize_value(self, value):
+        if isinstance(value, string_types) and value:
+            value = [
+                datetime.strptime(value, r'%Y-%m-%d %H:%M:%S')
+                for value in value.split(' to ')
+            ]
+
+            # If the calendar is closed before chosing the second datetime
+            # it will return a single datetime.
+            if len(value) != 2:
+                return None
+
+            # Hour, minute and seconds can be increased after end is reached.
+            # This forces the hours, minute and second to be 0.
+            end = self._date_to_datetime(self.end)
+            if end is not None and value[0] > end:
+                value[0] = end
+            if end is not None and value[1] > end:
+                value[1] = end
+
+            value = tuple(value)
+
+        return value
+
+    def _deserialize_value(self, value):
+        if isinstance(value, tuple):
+            value = " to ".join(v.strftime(r'%Y-%m-%d %H:%M:%S') for v in value)
+        if value is None:
+            value = ""
+
+        return value
 
 
 class ColorPicker(Widget):
