@@ -19,8 +19,8 @@ from ..io import state
 from ..util import param_reprs, unicode_repr, value_as_datetime, value_as_date
 from ..viewable import Layoutable
 from .base import Widget, CompositeWidget
-from ..layout import Column
-from .input import StaticText
+from ..layout import Column, HSpacer, Row
+from .input import IntInput, FloatInput, StaticText
 
 
 class _SliderBase(Widget):
@@ -442,3 +442,160 @@ class DateRangeSlider(_SliderBase):
             v1, v2 = msg['value_throttled']
             msg['value_throttled'] = (value_as_datetime(v1), value_as_datetime(v2))
         return msg
+
+
+class _EditableContinuousSlider(CompositeWidget):
+    """
+    The EditableFloatSlider extends the FloatSlider by adding a text
+    input field to manually edit the value and potentially override
+    the bounds.
+    """
+
+    _slider_widget = None
+    _input_widget = None
+
+    __abstract = True
+
+    def __init__(self, **params):
+        super().__init__(**params)
+        self._slider = self._slider_widget(
+            margin=(0, 0, 5, 0), sizing_mode='stretch_width'
+        )
+        self._value_edit = self._input_widget(width=100, margin=(0, 0, 0, 10), align='end')
+        self._composite.extend([self._slider, self._value_edit])
+        self._slider.jscallback(args={'value': self._value_edit}, value="""
+        value.value = cb_obj.value
+        """)
+        self._value_edit.jscallback(args={'slider': self._slider}, value="""
+        if (cb_obj.value < slider.start) {
+          slider.start = cb_obj.value
+        } else if (cb_obj.value > slider.end) {
+          slider.end = cb_obj.value
+        }
+        slider.value = cb_obj.value
+        """)
+        self._update_slider()
+        self._update_value()
+
+    @param.depends('start', 'end', 'step', 'bar_color', 'direction',
+                   'show_value', 'tooltips', 'name', 'format', watch=True)
+    def _update_slider(self):
+        self._slider.param.set_param(**{
+            'format': self.format,
+            'start': self.start,
+            'end': self.end,
+            'step': self.step,
+            'bar_color': self.bar_color,
+            'direction': self.direction,
+            'show_value': self.show_value,
+            'tooltips': self.tooltips,
+            'name': self.name
+        })
+        self._value_edit.step = self.step
+
+    @param.depends('value', watch=True)
+    def _update_value(self):
+        self._slider.value = self.value
+        self._value_edit.value = self.value
+
+
+class EditableFloatSlider(_EditableContinuousSlider, FloatSlider):
+
+    _slider_widget = FloatSlider
+    _input_widget = FloatInput
+
+
+class EditableIntSlider(_EditableContinuousSlider, IntSlider):
+
+    _slider_widget = IntSlider
+    _input_widget = IntInput
+
+    
+class EditableRangeSlider(CompositeWidget, _SliderBase):
+    """
+    The EditableRangeSlider extends the RangeSlider by adding text
+    input fields to manually edit the range and potentially override
+    the bounds.
+    """
+
+    end = param.Number(default=1., doc="Upper bound of the range.")
+
+    format = param.ClassSelector(class_=string_types+(TickFormatter,), doc="""
+        Allows defining a custom format string or bokeh TickFormatter.""")
+
+    start = param.Number(default=0., doc="Lower bound of the range.")
+
+    step = param.Number(default=0.1, doc="Slider and number input step.")
+
+    value = param.Range(default=(0, 1), doc="Current range value.")
+
+    value_throttled = param.Range(default=None, constant=True)
+
+    width = param.Integer(default=320)
+
+    _composite_type = Column
+
+    def __init__(self, **params):
+        super().__init__(**params)
+        self._slider = RangeSlider(margin=(0, 0, 5, 0))
+        self._start_edit = FloatInput(min_width=80, margin=0)
+        self._end_edit = FloatInput(min_width=80, margin=0)
+        edit = Row(self._start_edit, HSpacer(), self._end_edit,
+                   sizing_mode='stretch_width', margin=0)
+        self._composite.extend([self._slider, edit])
+        self._slider.jscallback(args={'start': self._start_edit, 'end': self._end_edit}, value="""
+        let [min, max] = cb_obj.value
+        start.value = min
+        end.value = max
+        """)
+        self._start_edit.jscallback(args={'slider': self._slider}, value="""
+        if (cb_obj.value < slider.start) {
+          slider.start = cb_obj.value
+        } else if (cb_obj.value > slider.end) {
+          slider.end = cb_obj.value
+        }
+        slider.value = [cb_obj.value, slider.value[1]]
+        """)
+        self._end_edit.jscallback(args={'slider': self._slider}, value="""
+        if (cb_obj.value < slider.start) {
+          slider.start = cb_obj.value
+        } else if (cb_obj.value > slider.end) {
+          slider.end = cb_obj.value
+        }
+        slider.value = [slider.value[0], cb_obj.value]
+        """)
+        self._update_layout()
+        self._update_slider()
+        self._update_value()
+
+    @param.depends('width', 'height', 'sizing_mode', watch=True)
+    def _update_layout(self):
+        self._start_edit.sizing_mode = self.sizing_mode
+        self._end_edit.sizing_mode = self.sizing_mode
+        if self.sizing_mode not in ('stretch_width', 'stretch_both'):
+            w = (self.width or 300)//3
+            self._start_edit.width = w
+            self._end_edit.width = w
+
+    @param.depends('start', 'end', 'step', 'bar_color', 'direction',
+                   'show_value', 'tooltips', 'name', 'format', watch=True)
+    def _update_slider(self):
+        self._slider.param.set_param(**{
+            'format': self.format,
+            'start': self.start,
+            'end': self.end,
+            'step': self.step,
+            'bar_color': self.bar_color,
+            'direction': self.direction,
+            'show_value': self.show_value,
+            'tooltips': self.tooltips,
+            'name': self.name
+        })
+        self._start_edit.step = self.step
+        self._end_edit.step = self.step
+
+    @param.depends('value', watch=True)
+    def _update_value(self):
+        self._slider.value = self.value
+        self._start_edit.value = self.value[0]
+        self._end_edit.value = self.value[1]

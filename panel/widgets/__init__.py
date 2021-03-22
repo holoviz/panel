@@ -35,8 +35,9 @@ from .input import (  # noqa
 from .misc import Audio, FileDownload, VideoStream # noqa
 from .player import DiscretePlayer, Player # noqa
 from .slider import ( # noqa
-    DateSlider, DateRangeSlider, DiscreteSlider, FloatSlider,
-    IntSlider, IntRangeSlider, RangeSlider
+    DateSlider, DateRangeSlider, DiscreteSlider, EditableRangeSlider,
+    EditableFloatSlider, EditableIntSlider, FloatSlider, IntSlider,
+    IntRangeSlider, RangeSlider
 )
 from .select import ( # noqa
     AutocompleteInput, CheckBoxGroup, CheckButtonGroup, CrossSelector,
