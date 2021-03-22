@@ -1,91 +1,135 @@
-from io import StringIO
-import sys
-import param
-import signal
-import shlex
-import pty
-import os
-import select
-import subprocess
+"""The Terminal Widget makes it easy to create Panel Applications with Terminals.
 
-from .base import Widget
+- For example apps which streams the output of processes or logs.
+- For example apps which provide interactive bash, python or ipython terminals"""
+import os
+import pty
+import select
+import shlex
+import signal
+import subprocess
+import sys
+from io import StringIO
+
+import param
+
 from ..io.callbacks import PeriodicCallback
 from ..models import Terminal as _BkTerminal
-import panel as pn
+from .base import Widget
 
-_MAX_READ_BYTES = 1024 * 20
 
 class TerminalSubProcess(param.Parameterized):
-    command = param.String()
-    # Todo: Determine if `start` is a better name
-    run = param.Action(label="Start")
-    # Todo: Determine if `stop` is a better name
-    kill = param.Action(label="Stop")
+    """The TerminalSubProcess is a utility class that makes running subprocesses via the Terminal
+    easy"""
+
+    args = param.ClassSelector(
+        class_=(str, list),
+        doc="""
+        The arguments used to run the subprocess. This may be a string or a list. The string cannot
+        contain spaces. See subprocess.run docs for more details.""",
+    )
+    kwargs = param.Dict(
+        doc="""Any other arguments to run the subprocess
+        See subprocess.run docs for more details"""
+    )
 
     # Todo: Set this to read only
-    running = param.Boolean(False)
+    running = param.Boolean(
+        False,
+        doc="""Whether or not the subprocess is running.
+        Defaults to False""",
+    )
 
-    _periodic_callback = param.ClassSelector(class_=PeriodicCallback)
-    _watcher = param.Parameter()
+    run = param.Action(
+        doc="""Executes subprocess.run in a child process using the args and kwargs
+        parameters. The stdin, stdout and stderr is redirected to the Terminal"""
+    )
+
+    kill = param.Action("""Kills the subprocess if it is running""")
+
     # Todo: Determine how this could be ClassSelector with class_=Terminal
-    terminal = param.Parameter(constant=True)
+    terminal = param.Parameter(
+        constant=True,
+        precedence=-1,
+        doc="""
+        The Terminal to which the subprocess is connected""",
+    )
 
-
-
-    _child_pid = param.Integer(0, doc="""
-        Process id of the child process that is running the command.
-        """)
-    _fd = param.Integer(0, doc="""
-        A file descriptor connected to the controlling terminal of the child process that is
-        running the command""")
+    _periodic_callback = param.ClassSelector(
+        class_=PeriodicCallback,
+        doc="""
+        Watches the subprocess for output""",
+    )
+    _period = param.Integer(50, doc="Period length of _periodic_callback")
+    _watcher = param.Parameter(doc="Watches the subprocess for user input")
+    _child_pid = param.Integer(0, doc="Child process id")
+    _fd = param.Integer(0, doc="Child file descripter")
     _max_read_bytes = param.Integer(1024 * 20)
     _timeout_sec = param.Integer(0)
-    _exit_message = param.String("\nexit")
 
-    def __init__(self, terminal: 'Terminal', **params):
-        params["terminal"]=terminal
+    def __init__(self, terminal: "Terminal", **params):
+        params["terminal"] = terminal
         super().__init__(**params)
 
         self.run = self._run
         self.kill = self._kill
 
-    def _run(self, caller=None, command=None):
-        if not command:
-            command = self.command
-        if not command:
-            raise ValueError("Error. No command provided")
-        if self._child_pid or self._fd or self.running:
-            raise ValueError("Error. A child process is already running. Cannot start another.")
+    @staticmethod
+    def _quote(command):
+        return "".join([shlex.quote(c) for c in command])
 
-        command = "".join(shlex.quote(c) for c in command) # Clean for security reasons
+    def _clean_args(self, args):
+        if isinstance(args, str):
+            return self._quote(args)
+        if isinstance(args, list):
+            return [self._quote(arg) for arg in args]
+        return args
+
+    def _run(self, caller=None, args=None, **kwargs):
+        if not args:
+            args = self.args
+        if not args:
+            raise ValueError("Error. No args provided")
+        if self.running:
+            raise ValueError(
+                "Error. A child process is already running. Cannot start another."
+            )
+
+        args = self._clean_args(args)  # Clean for security reasons
+
+        if self.kwargs:
+            kwargs = {**self.kwargs, **kwargs}
 
         # A fork is an operation whereby a process creates a copy of itself
         # The two processes will continue from here as a PARENT and a CHILD process
         (child_pid, fd) = pty.fork()
 
         if child_pid == 0:
-            # this is the CHILD process fork.
-            # anything printed here will show up in the pty, including the output
+            # This is the CHILD process fork.
+            # Anything printed here will show up in the pty, including the output
             # of this subprocess
+            # The process will end by printing 'CompletedProcess(...)' to signal to the parent
+            # that it finished.
             try:
-                result = subprocess.run(command)
+                result = subprocess.run(args, **kwargs)
                 print(str(result))
             except FileNotFoundError as e:
                 print(str(e) + "\nCompletedProcess('FileNotFoundError')")
-            # Hack: Used to signal to Parent that the process finished
-
         else:
             # this is the PARENT process fork.
-            # store child fd and pid
-            self._child_pid=child_pid
-            self._fd=fd
+            self._child_pid = child_pid
+            self._fd = fd
 
-            # and start running
             # Todo: Determine if it is better to run this is seperate thread?
-            self._periodic_callback = PeriodicCallback(callback=self.read_and_forward_pty_output, period=50)
+            self._periodic_callback = PeriodicCallback(
+                callback=self._forward_subprocess_output_to_terminal,
+                period=self._period,
+            )
             self._periodic_callback.start()
 
-            self._watcher = self.terminal.param.watch(self._update_pty, "value")
+            self._watcher = self.terminal.param.watch(
+                self._forward_terminal_input_to_subprocess, "value"
+            )
             self.running = True
 
     def _kill(self, *events):
@@ -94,7 +138,9 @@ class TerminalSubProcess(param.Parameterized):
 
         if child_pid:
             os.killpg(os.getpgid(child_pid), signal.SIGTERM)
-        self.terminal.write(f"\nThe process {child_pid} was killed\n")
+            self.terminal.write(f"\nThe process {child_pid} was killed\n")
+        else:
+            self.terminal.write("\nNo running process to kill\n")
 
     def _reset(self):
         self._fd = 0
@@ -103,14 +149,15 @@ class TerminalSubProcess(param.Parameterized):
             self._periodic_callback.stop()
             self._periodic_callback = None
         if self._watcher:
+            # Todo: This writes "No such watcher ... in console. Don't understand why."
             self.terminal.param.unwatch(self._watcher)
-        self.running=False
+        self.running = False
 
     @staticmethod
-    def remove_last_line_from_string(s):
-        return s[:s.rfind('CompletedProcess')]
+    def _remove_last_line_from_string(value):
+        return value[: value.rfind("CompletedProcess")]
 
-    def read_and_forward_pty_output(self):
+    def _forward_subprocess_output_to_terminal(self):
         if self._fd:
             (data_ready, _, _) = select.select([self._fd], [], [], self._timeout_sec)
             if data_ready:
@@ -118,49 +165,66 @@ class TerminalSubProcess(param.Parameterized):
                 # If Child Process finished it will signal this by appending "CompletedProcess(...)"
                 if "CompletedProcess" in output:
                     self._reset()
-                    output = self.remove_last_line_from_string(output)
+                    output = self._remove_last_line_from_string(output)
                 self.terminal.write(output)
-            elif not self._pid_is_running():
-                self._reset()
 
-    def _pid_is_running(self):
-        """ Check For the existence of a unix pid. """
-        try:
-            os.kill(self._child_pid, 0)
-        except OSError:
-            return False # It is not running
-        else:
-            return True # It is running
-
-    def _update_pty(self, *events):
+    def _forward_terminal_input_to_subprocess(self, *events):
         if self._fd:
             os.write(self._fd, self.terminal.value.encode())
 
+    @param.depends("args", watch=True)
+    def _validate_args(self):
+        args = self.args
+        if isinstance(args, str) and " " in args:
+            raise ValueError(
+                f"""The args '{args}' provided contains spaces. They must instead be provided as the
+                list {args.split(" ")}"""
+            )
+
+    @param.depends("_period", watch=True)
+    def _update_periodic_callback(self):
+        if self._periodic_callback:
+            self._periodic_callback.period = self._period
+
     def __repr__(self):
-        return "TerminalSubProcess"
+        return f"TerminalSubProcess(args={self.args}, running={self.running})"
 
 
 class Terminal(StringIO, Widget):
-    # Parameters to be mapped to Bokeh model properties
-    value = param.String(label="Input", readonly=True, doc="""
-        User input from the terminal""")
-    object = param.String(label="Output", doc="""
-        System output to the terminal""")
-    line_feeds = param.Integer(readonly=True)
-    clear = param.Action()
-    write_to_console = param.Boolean(False, doc="Weather or not to write to the console. Default is False")
-    options = param.Dict(doc="""
+    """The Terminal Widget makes it easy to create Panel Applications with Terminals.
+
+    - For example apps which streams the output of processes or logs.
+    - For example apps which provide interactive bash, python or ipython terminals"""
+
+    value = param.String(
+        label="Input",
+        readonly=True,
+        doc="""
+        User input received from the Terminal. One Character is sent at the time.""",
+    )
+    object = param.String(
+        label="Output",
+        doc="""
+        System output to write to the Terminal""",
+    )
+
+    clear = param.Action(
+        doc="""
+        Clears the Terminal"""
+    )
+
+    write_to_console = param.Boolean(
+        False,
+        doc="""
+        Weather or not to write to the server console. Default is False""",
+    )
+    options = param.Dict(
+        precedence=-1,
+        doc="""
         Initial Options for the Terminal Constructor. cf.
-        https://xtermjs.org/docs/api/terminal/interfaces/iterminaloptions/""")
-    _output = param.String()
-    _clears = param.Integer(doc="Sends a signal to clear the terminal")
-    _value_repeats = param.Integer(doc="Hack: Sends a signal that the value has been repeated.")
+        https://xtermjs.org/docs/api/terminal/interfaces/iterminaloptions/""",
+    )
 
-        # Set the Bokeh model to use
-    _widget_type = _BkTerminal
-
-    # Rename Panel Parameters -> Bokeh Model properties
-    # Parameters like title that does not exist on the Bokeh model should be renamed to None
     _rename = {
         "title": None,
         "clear": None,
@@ -170,10 +234,20 @@ class Terminal(StringIO, Widget):
         "_output": "output",
     }
 
+    _output = param.String()
+    _clears = param.Integer(doc="Sends a signal to clear the terminal")
+    _value_repeats = param.Integer(
+        doc="""
+        Hack: Sends a signal that the value has been repeated."""
+    )
+
+    # Set the Bokeh model to use
+    _widget_type = _BkTerminal
+
     def __init__(self, **kwargs):
         object = kwargs.get("object", "")
-        kwargs["_output"]=object
-        kwargs["options"]=kwargs.get("options", {})
+        kwargs["_output"] = object
+        kwargs["options"] = kwargs.get("options", {})
         StringIO.__init__(self, object)
         Widget.__init__(self, **kwargs)
         self.clear = self._clear
@@ -182,14 +256,14 @@ class Terminal(StringIO, Widget):
     def write(self, __s):
         cleaned = __s
         if isinstance(__s, str):
-            cleaned=__s
+            cleaned = __s
         elif isinstance(__s, bytes):
-            cleaned=__s.decode("utf8")
+            cleaned = __s.decode("utf8")
         else:
-            cleaned = str(s)
+            cleaned = str(__s)
 
         if self.object == cleaned:
-            # Hack for now
+            # Hack to support writing the same string multiple times in a row
             self.object = ""
 
         self.object = cleaned
@@ -198,7 +272,7 @@ class Terminal(StringIO, Widget):
 
     def _clear(self, *events):
         self.object = ""
-        self._clears +=1
+        self._clears += 1
 
     @param.depends("object", watch=True)
     def _write(self):
@@ -216,11 +290,15 @@ class Terminal(StringIO, Widget):
     def fileno(self):
         return -1
 
+    # Todo: Improve. But need special handling since __repr__ of class with two actions can enter
+    # infinite loop
     def __repr__(self):
-        return "Terminal"
+        return "Terminal()"
 
     @property
     def subprocess(self):
+        """The subprocess enables running commands like 'ls', ['ls', '-l'], 'bash', 'python' and
+        'ipython' in the terminal"""
         if not self._subprocess:
             self._subprocess = TerminalSubProcess(self)
         return self._subprocess
