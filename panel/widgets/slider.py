@@ -451,6 +451,12 @@ class _EditableContinuousSlider(CompositeWidget):
     the bounds.
     """
 
+    editable = param.Boolean(default=True, doc="""
+        Whether the value is editable via the text input.""")
+
+    show_value = param.Boolean(default=False, readonly=True, precedence=-1, doc="""
+        Whether to show the widget value.""")
+
     _slider_widget = None
     _input_widget = None
 
@@ -474,8 +480,13 @@ class _EditableContinuousSlider(CompositeWidget):
         }
         slider.value = cb_obj.value
         """)
+        self._update_editable()
         self._update_slider()
         self._update_value()
+
+    @param.depends('editable')
+    def _update_editable(self):
+        self._value_edit.disabled = not self.editable
 
     @param.depends('start', 'end', 'step', 'bar_color', 'direction',
                    'show_value', 'tooltips', 'name', 'format', watch=True)
@@ -510,7 +521,7 @@ class EditableIntSlider(_EditableContinuousSlider, IntSlider):
     _slider_widget = IntSlider
     _input_widget = IntInput
 
-    
+
 class EditableRangeSlider(CompositeWidget, _SliderBase):
     """
     The EditableRangeSlider extends the RangeSlider by adding text
@@ -518,10 +529,16 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
     the bounds.
     """
 
+    editable = param.Tuple(default=(True, True), doc="""
+        Whether the lower and upper values are editable.""")
+
     end = param.Number(default=1., doc="Upper bound of the range.")
 
     format = param.ClassSelector(class_=string_types+(TickFormatter,), doc="""
         Allows defining a custom format string or bokeh TickFormatter.""")
+
+    show_value = param.Boolean(default=False, readonly=True, precedence=-1, doc="""
+        Whether to show the widget value.""")
 
     start = param.Number(default=0., doc="Lower bound of the range.")
 
@@ -531,13 +548,11 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
 
     value_throttled = param.Range(default=None, constant=True)
 
-    width = param.Integer(default=320)
-
     _composite_type = Column
 
     def __init__(self, **params):
         super().__init__(**params)
-        self._slider = RangeSlider(margin=(0, 0, 5, 0))
+        self._slider = RangeSlider(margin=(0, 0, 5, 0), show_value=False)
         self._start_edit = FloatInput(min_width=80, margin=0)
         self._end_edit = FloatInput(min_width=80, margin=0)
         edit = Row(self._start_edit, HSpacer(), self._end_edit,
@@ -564,9 +579,15 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
         }
         slider.value = [slider.value[0], cb_obj.value]
         """)
+        self._update_editable()
         self._update_layout()
         self._update_slider()
         self._update_value()
+
+    @param.depends('editable')
+    def _update_editable(self):
+        self._start_edit.disabled = not self.editable[0]
+        self._end_edit.disabled = not self.editable[1]
 
     @param.depends('width', 'height', 'sizing_mode', watch=True)
     def _update_layout(self):
