@@ -15,7 +15,7 @@ hvplot==0.5.2
 hyperlink==19.0.0
 idna==2.8
 incremental==17.5.0
-Jinja2==2.10.3
+Jinja2==2.11.3
 Markdown==3.1.1
 MarkupSafe==1.1.1
 numpy==1.18.0
