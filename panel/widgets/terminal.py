@@ -186,7 +186,7 @@ class TerminalSubProcess(param.Parameterized):
         if self._periodic_callback:
             self._periodic_callback.period = self._period
 
-    def __repr__(self):
+    def __repr__(self, depth=None):
         return f"TerminalSubProcess(args={self.args}, running={self.running})"
 
 
@@ -290,7 +290,7 @@ class Terminal(StringIO, Widget):
     def fileno(self):
         return -1
 
-    def __repr__(self):
+    def __repr__(self, depth=None):
         return f"Terminal(id={id(self)})"
 
     @property
