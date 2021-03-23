@@ -318,7 +318,6 @@ class _config(_base_config):
             return _config._oauth_extra_params
 
 
-
 if hasattr(_config.param, 'objects'):
     _params = _config.param.objects()
 else:
@@ -346,7 +345,8 @@ class panel_extension(_pyviz_extension):
         'ace': 'panel.models.ace',
         'echarts': 'panel.models.echarts',
         'ipywidgets': 'ipywidgets_bokeh.widget',
-        'perspective': 'panel.models.perspective'
+        'perspective': 'panel.models.perspective',
+        'terminal': 'panel.models.terminal',
     }
 
     # Check whether these are loaded before rendering
@@ -357,7 +357,8 @@ class panel_extension(_pyviz_extension):
         'mathjax': 'MathJax',
         'plotly': 'Plotly',
         'vega': 'vega',
-        'vtk': 'vtk'
+        'vtk': 'vtk',
+        'terminal': 'xtermjs',
     }
 
     _loaded_extensions = []

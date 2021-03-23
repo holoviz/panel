@@ -70,13 +70,13 @@ def get_logger(term):
     logger = logging.getLogger("terminal")
     logger.setLevel(logging.DEBUG)
 
-    streahm_handler = logging.StreamHandler(term)
-    streahm_handler.terminator = "  \n"
+    stream_handler = logging.StreamHandler(term)
+    stream_handler.terminator = "  \n"
     formatter = logging.Formatter("%(asctime)s [%(levelname)s]: %(message)s")
 
-    streahm_handler.setFormatter(formatter)
-    streahm_handler.setLevel(logging.DEBUG)
-    logger.addHandler(streahm_handler)
+    stream_handler.setFormatter(formatter)
+    stream_handler.setLevel(logging.DEBUG)
+    logger.addHandler(stream_handler)
     return logger
 
 

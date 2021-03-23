@@ -28,22 +28,27 @@ class Terminal(HTMLBox):
     @classproperty
     def __js_skip__(cls):
         return {
-            'xtermjs': cls.__javascript__[:-1],
+            'xtermjs': cls.__javascript__[0:1],
+            'xtermjs-fit': cls.__javascript__[1:2],
+            'xtermjs-weblinks': cls.__javascript__[2:3],
         }
 
     __js_require__ = {
         'paths': OrderedDict([
-            ("xterm.js", "https://unpkg.com/xterm@4.11.0/lib/xterm.js"),
-            ("xterm.js.web-links", "https://unpkg.com/xterm-addon-web-links@0.4.0/lib/xterm-addon-web-links.js"),
-            ("xterm.js.fit", "https://unpkg.com/xterm-addon-fit@0.5.0/lib/xterm-addon-fit.js"),
+            ("xtermjs", "https://unpkg.com/xterm@4.11.0/lib/xterm"),
+            ("xtermjs-fit", "https://unpkg.com/xterm-addon-fit@0.5.0/lib/xterm-addon-fit"),
+            ("xtermjs-weblinks", "https://unpkg.com/xterm-addon-web-links@0.4.0/lib/xterm-addon-web-links"),
         ]),
-        'exports': {"xterm.js": "xtermjs", "xterm.js.web-links": "XTermJSWebLinksAddon", "xterm.js.fit": "XTermJSFit"}
+        'exports': {
+            "xtermjs": "xtermjs",
+            "xtermjs-fit": "xtermjsfit",
+            "xtermjs-weblinks": "xtermjsweblinks",},
+
     }
 
     options = Dict(String, Any)
     input = String()
     output = String()
 
-    line_feeds = Int()
     _clears = Int()
     _value_repeats = Int()

@@ -31,21 +31,49 @@ export class TerminalView extends HTMLBoxView {
         super.render()
         const container = div({id: "terminal-container"})
 
-        const wn = (window as any)
-        console.log("options", this.model.options)
-        this.term = new wn.Terminal(this.model.options);
+        this.term = this.getNewTerminal()
         this.term.onData((value: any) => {this.handleOnData(value)});
-        this.term.onLineFeed((value: any) => {this.model.line_feeds += 1;console.log("line_feed", this.model.line_feeds, value)});
 
-        this.webLinksAddon = new wn.WebLinksAddon.WebLinksAddon()
+        this.webLinksAddon = this.getNewWebLinksAddon()
         this.term.loadAddon(this.webLinksAddon);
-        this.fitAddon = new wn.FitAddon.FitAddon()
+
+        this.fitAddon = this.getNewFitAddon()
         this.term.loadAddon(this.fitAddon);
+
         this.term.open(container);
 
         this.write()
         this.el.appendChild(container)
         this.fit()
+    }
+
+    getNewTerminal(): any {
+        const wn = (window as any)
+        if (wn.Terminal){
+            // Server
+            return new wn.Terminal(this.model.options);
+        } else {
+            // Notebook
+            return new wn.xtermjs.Terminal(this.model.options);
+        }
+    }
+
+    getNewWebLinksAddon(): any {
+        const wn = (window as any)
+        if (wn.WebLinksAddon){
+            return new wn.WebLinksAddon.WebLinksAddon();
+        } else {
+            return new wn.xtermjsweblinks.WebLinksAddon();
+        }
+    }
+
+    getNewFitAddon(): any {
+        const wn = (window as any)
+        if (wn.FitAddon){
+            return new wn.FitAddon.FitAddon()
+        } else {
+            return new wn.xtermjsfit.FitAddon()
+        }
     }
 
     handleOnData(value: string): void {
@@ -70,7 +98,6 @@ export class TerminalView extends HTMLBoxView {
     }
 
     fit(): void {
-        console.log("fit")
         this.fitAddon.fit()
 
         // .fit does not adjust the height. bug?
@@ -96,7 +123,6 @@ export namespace Terminal {
         options: p.Property<any>,
         output: p.Property<string>,
         input: p.Property<string>,
-        line_feeds: p.Property<number>
         _clears: p.Property<number>
         _value_repeats: p.Property<number>
     }
@@ -121,7 +147,6 @@ export class Terminal extends HTMLBox {
             options: [Any, {}],
             output: [String, ],
             input: [String, ],
-            line_feeds: [Int, 0],
             _clears: [Int, 0],
             _value_repeats: [Int, 0],
         }))

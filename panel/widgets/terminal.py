@@ -83,6 +83,8 @@ class TerminalSubProcess(param.Parameterized):
         return args
 
     def _run(self, caller=None, args=None, **kwargs):
+        # Inspiration: https://github.com/cs01/pyxtermjs
+        # Inspiration: https://github.com/jupyter/terminado
         if not args:
             args = self.args
         if not args:
@@ -198,12 +200,12 @@ class Terminal(StringIO, Widget):
         label="Input",
         readonly=True,
         doc="""
-        User input received from the Terminal. One Character is sent at the time.""",
+        User input received from the Terminal. Sent one character at the time.""",
     )
     object = param.String(
         label="Output",
         doc="""
-        System output to write to the Terminal""",
+        System output written to the Terminal""",
     )
 
     clear = param.Action(
