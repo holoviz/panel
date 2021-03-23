@@ -33,9 +33,8 @@ class TerminalSubProcess(param.Parameterized):
         See subprocess.run docs for more details"""
     )
 
-    # Todo: Set this to read only
     running = param.Boolean(
-        False,
+        False, constant=True,
         doc="""Whether or not the subprocess is running.
         Defaults to False""",
     )
@@ -47,10 +46,8 @@ class TerminalSubProcess(param.Parameterized):
 
     kill = param.Action("""Kills the subprocess if it is running""")
 
-    # Todo: Determine how this could be ClassSelector with class_=Terminal
-    terminal = param.Parameter(
+    _terminal = param.Parameter(
         constant=True,
-        precedence=-1,
         doc="""
         The Terminal to which the subprocess is connected""",
     )
@@ -68,7 +65,7 @@ class TerminalSubProcess(param.Parameterized):
     _timeout_sec = param.Integer(0)
 
     def __init__(self, terminal: "Terminal", **params):
-        params["terminal"] = terminal
+        params["_terminal"] = terminal
         super().__init__(**params)
 
         self.run = self._run
@@ -127,10 +124,11 @@ class TerminalSubProcess(param.Parameterized):
             )
             self._periodic_callback.start()
 
-            self._watcher = self.terminal.param.watch(
+            self._watcher = self._terminal.param.watch(
                 self._forward_terminal_input_to_subprocess, "value"
             )
-            self.running = True
+            with param.edit_constant(self):
+                self.running = True
 
     def _kill(self, *events):
         child_pid = self._child_pid
@@ -138,9 +136,9 @@ class TerminalSubProcess(param.Parameterized):
 
         if child_pid:
             os.killpg(os.getpgid(child_pid), signal.SIGTERM)
-            self.terminal.write(f"\nThe process {child_pid} was killed\n")
+            self._terminal.write(f"\nThe process {child_pid} was killed\n")
         else:
-            self.terminal.write("\nNo running process to kill\n")
+            self._terminal.write("\nNo running process to kill\n")
 
     def _reset(self):
         self._fd = 0
@@ -149,9 +147,9 @@ class TerminalSubProcess(param.Parameterized):
             self._periodic_callback.stop()
             self._periodic_callback = None
         if self._watcher:
-            # Todo: This writes "No such watcher ... in console. Don't understand why."
-            self.terminal.param.unwatch(self._watcher)
-        self.running = False
+            self._terminal.param.unwatch(self._watcher)
+        with param.edit_constant(self):
+            self.running = False
 
     @staticmethod
     def _remove_last_line_from_string(value):
@@ -166,11 +164,11 @@ class TerminalSubProcess(param.Parameterized):
                 if "CompletedProcess" in output:
                     self._reset()
                     output = self._remove_last_line_from_string(output)
-                self.terminal.write(output)
+                self._terminal.write(output)
 
     def _forward_terminal_input_to_subprocess(self, *events):
         if self._fd:
-            os.write(self._fd, self.terminal.value.encode())
+            os.write(self._fd, self._terminal.value.encode())
 
     @param.depends("args", watch=True)
     def _validate_args(self):
@@ -290,10 +288,8 @@ class Terminal(StringIO, Widget):
     def fileno(self):
         return -1
 
-    # Todo: Improve. But need special handling since __repr__ of class with two actions can enter
-    # infinite loop
     def __repr__(self):
-        return "Terminal()"
+        return f"Terminal(id={id(self)})"
 
     @property
     def subprocess(self):

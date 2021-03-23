@@ -13,6 +13,8 @@ def test_constructor():
     terminal = pn.widgets.Terminal()
     terminal.write("Hello")
 
+    assert repr(terminal).startswith("Terminal(")
+
 
 def test_subprocess():
     args = "bash"
@@ -21,9 +23,10 @@ def test_subprocess():
     subprocess = terminal.subprocess
     subprocess.args = args
 
-    assert subprocess.terminal == terminal
+    assert subprocess._terminal == terminal
     assert subprocess.args == args
     assert not subprocess.running
+    assert repr(subprocess).startswith("TerminalSubProcess(")
 
     subprocess.run()
     assert subprocess.running

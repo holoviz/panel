@@ -31,7 +31,6 @@ class Terminal(HTMLBox):
             'xtermjs': cls.__javascript__[:-1],
         }
 
-    # Todo: Test and fix if not correct
     __js_require__ = {
         'paths': OrderedDict([
             ("xterm.js", "https://unpkg.com/xterm@4.11.0/lib/xterm.js"),
