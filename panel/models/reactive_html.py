@@ -54,7 +54,7 @@ class ReactiveHTMLParser(HTMLParser):
         dom_id = self._current_node
         match = data[2:-1] if self._template_re.match(data) else None
         config = self.cls._child_config.get(match, {})
-        if match in self.cls.param and config.get('type') != 'literal':
+        if match in self.cls.param and config.get('type') != 'template':
             self.children[dom_id] = match
             return
 

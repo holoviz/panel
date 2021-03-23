@@ -1026,12 +1026,12 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         {'children': {'type': 'model', 'template': '<b></b>'}}
 
     The `type` key can choose whether the parameter values should be
-    treated as a 'model' (i.e. a Panel component), an 'item' which
-    will be templated, or a 'literal'. If the children are of type
-    'model' or 'item' a child template may be supplied, which will be
-    used to wrap the contents. If the type is 'literal' the parameter
-    will be inserted as is and the DOM node's innerHTML will be synced
-    with the child parameter.
+    treated as a 'model' (i.e. a Panel component), a 'literal' which
+    will be inserted as is, or a 'template'. If the children are of
+    type 'model' or 'literal' a child template may be supplied, which
+    will be used to wrap the contents. If the type is 'template' the
+    parameter will be inserted as is and the DOM node's innerHTML will
+    be synced with the child parameter.
 
     DOM Events
     ~~~~~~~~~~
@@ -1189,7 +1189,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
 
         for parent, children_param in self._parser.children.items():
             config = self._child_config.get(children_param, {})
-            if config.get('type') == 'template':
+            if config.get('type') == 'literal':
                 continue
             panes = getattr(self, children_param)
             if not isinstance(panes, (list, dict)):
@@ -1203,7 +1203,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
 
         for children_param, old_panes in old_children.items():
             config = self._child_config.get(children_param, {})
-            if config.get('type') == 'template':
+            if config.get('type') == 'literal':
                 continue
             new_panes = getattr(self, children_param)
             if not isinstance(new_panes, (list, dict)):
@@ -1219,10 +1219,10 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
             if not isinstance(new_panes, (list, dict)):
                 new_panes = [new_panes]
             if isinstance(new_panes, dict):
-                new_panes = new_panes.values()
+                new_panes = (new_panes.values())
             config = self._child_config.get(children_param, {})
-            if config.get('type') == 'template':
-                new_models[parent] = list(new_panes)
+            if config.get('type') == 'literal':
+                new_models[parent] = new_panes
             elif children_param in old_children:
                 # Find existing models
                 old_panes = old_children[children_param]
