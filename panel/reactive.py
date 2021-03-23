@@ -1112,11 +1112,17 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
 
     def __init__(self, **params):
         from .pane import panel
-        for children in self._parser.children.values():
-            config = self._child_config.get(children, {})
-            if children not in params or config.get('type', 'model') != 'model':
+        for children_param in self._parser.children.values():
+            config = self._child_config.get(children_param, {})
+            if children_param not in params or config.get('type', 'model') != 'model':
                 continue
-            params[children] = [panel(pane) for pane in params[children]]
+            children = []
+            for pane in params[children_param]:
+                if isinstance(pane, tuple):
+                    name, pane = pane
+                    children.append((name, panel(pane)))
+                else:
+                    children.append(panel(pane))
         super().__init__(**params)
         self._event_callbacks = defaultdict(lambda: defaultdict(list))
 

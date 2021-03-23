@@ -194,7 +194,7 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
         const cm = children[i]
         let parent: Element
         if (child_template != null) {
-          const name = child_names != null && i < child_names.length ? child_names[i]: null
+          const name = (child_names != null && i < child_names.length) ? child_names[i]: null
 	  child_template = child_template.replace('${name}', '$--{state.name}')
 	  const rendered = this._render_html(child_template, {name})
           const frag = document.createDocumentFragment()
