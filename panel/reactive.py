@@ -948,8 +948,8 @@ class ReactiveHTMLMetaclass(ParameterizedMetaclass):
 
     def __init__(mcs, name, bases, dict_):
         ParameterizedMetaclass.__init__(mcs, name, bases, dict_)
-        for name, config in mcs._child_config.items():
-            child_type = config.get('type', 'model')
+        for name, child_config in mcs._child_config.items():
+            child_type = child_config.get('type', 'model')
             if name not in mcs.param:
                 raise ValueError(f"Config for '{name}' does not match any parameters.")
             elif child_type not in ('model', 'template', 'literal'):
