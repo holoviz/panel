@@ -983,6 +983,7 @@ class ReactiveHTMLMetaclass(ParameterizedMetaclass):
                     mcs._attrs[node] = []
                 mcs._attrs[node].append((attr, param_attrs, template))
         ignored = list(Reactive.param)+list(mcs._parser.children.values())
+        ignored.remove('name')
 
         # Create model with unique name
         ReactiveHTMLMetaclass._name_counter[name] += 1
@@ -1140,7 +1141,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         ignored = list(Reactive.param)+list(self._parser.children.values())
         params = {
             p : getattr(self, p) for p in list(Layoutable.param)
-            if getattr(self, p) is not None
+            if getattr(self, p) is not None and p != 'name'
         }
         data_params = {}
         for k, v in self.param.get_param_values():
