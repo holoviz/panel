@@ -98,7 +98,7 @@ PARAM_MAPPING = {
 }
 
 
-def construct_data_model(parameterized, name=None, ignore=['name']):
+def construct_data_model(parameterized, name=None, ignore=[]):
     properties = {}
     for pname in parameterized.param:
         if pname in ignore:

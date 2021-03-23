@@ -1144,7 +1144,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         }
         data_params = {}
         for k, v in self.param.get_param_values():
-            if k in ignored:
+            if k in ignored and k != 'name':
                 continue
             if isinstance(v, str):
                 v = bleach.clean(v)
