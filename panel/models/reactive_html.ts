@@ -266,7 +266,6 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
         .replaceAll('$-{model.', '${model.')
         .replaceAll('$--{', '${')
     )
-    console.log(htm, state)
     return new Function("view, model, data, state, html, useCallback", callbacks+"return html`"+htm+"`;")(
       this, this.model, this.model.data, state, html, useCallback
     )
