@@ -53,7 +53,8 @@ class ReactiveHTMLParser(HTMLParser):
             return
         dom_id = self._current_node
         match = data[2:-1] if self._template_re.match(data) else None
-        if match in self.cls.param and isinstance(self.cls.param[match], pm.List):
+        config = self.cls._child_config.get(match, {})
+        if match in self.cls.param and config.get('type') != 'literal':
             self.children[dom_id] = match
             return
 
@@ -129,7 +130,11 @@ class ReactiveHTML(HTMLBox):
 
     callbacks = bp.Dict(bp.String, bp.List(bp.Tuple(bp.String, bp.String)))
 
-    children = bp.Dict(bp.String, bp.List(bp.Instance(LayoutDOM)))
+    children = bp.Dict(bp.String, bp.List(bp.Either(bp.Instance(LayoutDOM), bp.String)))
+
+    child_names = bp.Dict(bp.String, bp.List(bp.String))
+
+    child_templates = bp.Dict(bp.String, bp.String)
 
     data = bp.Instance(DataModel)
 
