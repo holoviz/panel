@@ -948,8 +948,7 @@ class ReactiveHTMLMetaclass(ParameterizedMetaclass):
 
     def __init__(mcs, name, bases, dict_):
         ParameterizedMetaclass.__init__(mcs, name, bases, dict_)
-        for name, child_config in mcs._child_config.items():
-            child_type = child_config.get('type', 'model')
+        for name, child_type in mcs._child_config.items():
             if name not in mcs.param:
                 raise ValueError(f"Config for '{name}' does not match any parameters.")
             elif child_type not in ('model', 'template', 'literal'):
@@ -1021,18 +1020,16 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
     DOM node and will, by default, be treated as Panel components to
     insert on the DOM node. However by declaring a `_child_config` we
     can control how the DOM nodes are treated. The `_child_config` is
-    indexed by parameter name and the values must themselves be
-    dictionaries containing `type` and `template` keys, e.g.:
+    indexed by parameter name and may declare one of three rendering
+    modes:
 
-        {'children': {'type': 'model', 'template': '<b></b>'}}
+      - model (default): Create child and render child as a Panel
+        component into it.
+      - literal: Create child and set child as its innerHTML.
+      - template: Set child as innerHTML of the container.
 
-    The `type` key can choose whether the parameter values should be
-    treated as a 'model' (i.e. a Panel component), a 'literal' which
-    will be inserted as is, or a 'template'. If the children are of
-    type 'model' or 'literal' a child template may be supplied, which
-    will be used to wrap the contents. If the type is 'template' the
-    parameter will be inserted as is and the DOM node's innerHTML will
-    be synced with the child parameter.
+    If the type is 'template' the parameter will be inserted as is and
+    the DOM node's innerHTML will be synced with the child parameter.
 
     DOM Events
     ~~~~~~~~~~
@@ -1113,16 +1110,21 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
     def __init__(self, **params):
         from .pane import panel
         for children_param in self._parser.children.values():
-            config = self._child_config.get(children_param, {})
-            if children_param not in params or config.get('type', 'model') != 'model':
+            mode = self._child_config.get(children_param, 'model')
+            if children_param not in params or mode != 'model':
                 continue
-            children = []
-            for pane in params[children_param]:
-                if isinstance(pane, tuple):
-                    name, pane = pane
-                    children.append((name, panel(pane)))
-                else:
-                    children.append(panel(pane))
+            child_value = params[children_param]
+            if isinstance(child_value, list):
+                children = []
+                for pane in child_value:
+                    if isinstance(pane, tuple):
+                        name, pane = pane
+                        children.append((name, panel(pane)))
+                    else:
+                        children.append(panel(pane))
+                params[children_param] = children
+            else:
+                params[children_param] = panel(child_value)
         super().__init__(**params)
         self._event_callbacks = defaultdict(lambda: defaultdict(list))
 
@@ -1140,7 +1142,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
     def _child_names(self):
         return {}
 
-    def _process_children(self, children):
+    def _process_children(self, doc, root, model, comm, children):
         return children
 
     def _init_params(self):
@@ -1159,15 +1161,11 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         reverse = {v: k for k, v in self._parser.children.items()}
         params['attrs'] = self._attrs
         params['callbacks'] = self._node_callbacks
-        params['child_templates'] = {
-            reverse.get(k): v.get('template') for k, v in self._child_config.items()
-            if k in reverse
-        }
-        params['child_names'] = self._child_names
         params['data'] = self._data_model(**self._process_param_change(data_params))
         params['events'] = self._get_events()
         params['html'] = escape(self._get_template())
         params['nodes'] = self._parser.nodes
+        params['looped'] = [node for node, _ in self._parser.looped]
         params['scripts'] = {
             trigger: [escape(script) for script in scripts]
             for trigger, scripts in self._scripts.items()
@@ -1195,8 +1193,8 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         new_models = {parent: [] for parent in self._parser.children}
 
         for parent, children_param in self._parser.children.items():
-            config = self._child_config.get(children_param, {})
-            if config.get('type') == 'literal':
+            mode = self._child_config.get(children_param, 'model')
+            if mode == 'literal':
                 continue
             panes = getattr(self, children_param)
             if not isinstance(panes, (list, dict)):
@@ -1209,8 +1207,8 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
                     panes[i] = panel(pane)
 
         for children_param, old_panes in old_children.items():
-            config = self._child_config.get(children_param, {})
-            if config.get('type') == 'literal':
+            mode = self._child_config.get(children_param, 'model')
+            if mode == 'literal':
                 continue
             new_panes = getattr(self, children_param)
             if not isinstance(new_panes, (list, dict)):
@@ -1227,8 +1225,8 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
                 new_panes = [new_panes]
             if isinstance(new_panes, dict):
                 new_panes = (new_panes.values())
-            config = self._child_config.get(children_param, {})
-            if config.get('type') == 'literal':
+            mode = self._child_config.get(children_param, 'model')
+            if mode == 'literal':
                 new_models[parent] = new_panes
             elif children_param in old_children:
                 # Find existing models
@@ -1247,18 +1245,32 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
                     pane._get_model(doc, root, model, comm)
                     for pane in new_panes
                 ]
-        return self._process_children(new_models)
+        return self._process_children(doc, root, model, comm, new_models)
 
     def _get_template(self):
-        html = self._template
-        for name in list(self._parser.nodes):
+        import jinja2
+        template = jinja2.Template(self._template)
+        child_names = self._child_names
+        context = {}
+        for _, loop_param in self._parser.looped:
+            context[loop_param] = getattr(self, loop_param)
+            if loop_param in child_names:
+                context[f'{loop_param}_names'] = self._child_names[loop_param]
+        html = template.render(context)
+        parser = ReactiveHTMLParser(self.__class__)
+        parser.feed(html)
+        for name in list(parser.nodes):
             html = (
                 html
                 .replace(f"id='{name}'", f"id='{name}-${{id}}'")
                 .replace(f'id="{name}"', f'id="{name}-${{id}}"')
             )
         for parent, child_name in self._parser.children.items():
-            html = html.replace('${%s}' % child_name, '')
+            if (parent, child_name) in self._parser.looped:
+                for i, _ in enumerate(getattr(self, child_name)):
+                    html = html.replace('${%s[%d]}' % (child_name, i), '')
+            else:
+                html = html.replace('${%s}' % child_name, '')
         return html
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
@@ -1318,7 +1330,6 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
                 data_msg[prop] = v
         if new_children:
             old_children = {key: events[key].old for key in new_children}
-            model_msg['child_names'] = self._child_names
             model_msg['children'] = self._get_children(doc, root, model, comm, old_children)
         self._set_on_model(data_msg, root, model.data)
         self._set_on_model(model_msg, root, model)

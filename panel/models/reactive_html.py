@@ -20,13 +20,17 @@ class ReactiveHTMLParser(HTMLParser):
         self.attrs = defaultdict(list)
         self.children = {}
         self.nodes = []
+        self.looped = []
         self._template_re = re.compile('\$\{[^}]+\}')
         self._current_node = None
+        self._node_stack = []
 
-    def handle_starttag(self, tags, attrs):
+    def handle_starttag(self, tag, attrs):
         attrs = dict(attrs)
         dom_id = attrs.pop('id', None)
         self._current_node = None
+        self._node_stack.append((tag, dom_id))
+
         if not dom_id:
             return
 
@@ -45,16 +49,34 @@ class ReactiveHTMLParser(HTMLParser):
                 self.attrs[dom_id].append((attr, matches, value.replace('${', '{')))
 
     def handle_endtag(self, tag):
-        self._current_node = None
+        self._node_stack.pop()
+        self._current_node = self._node_stack[-1][1] if self._node_stack else None
 
     def handle_data(self, data):
-        matches = self._template_re.findall(data)
+        dom_id = self._current_node
+        matches = [
+            '%s}]}' % match if match.endswith('.index0 }') else match
+            for match in self._template_re.findall(data)
+        ]
         if not (self._current_node and matches):
             return
-        dom_id = self._current_node
-        match = data[2:-1] if self._template_re.match(data) else None
-        config = self.cls._child_config.get(match, {})
-        if match in self.cls.param and config.get('type') != 'template':
+        if len(matches) == 1:
+            match = matches[0][2:-1]
+        else:
+            for match in matches:
+                mode = self.cls._child_config.get(match, 'model')
+                if mode != 'template':
+                    raise ValueError(f"Cannot match multiple variables in '{mode}' mode.")
+            match = None
+        if match and '[' in match:
+            match, num = match.split('[')
+            dom_id = dom_id.replace('-{{ loop.index0 }}', '')
+            num = num.rstrip(']')
+            self.looped.append((dom_id, match))
+        else:
+            num = None
+        mode = self.cls._child_config.get(match, 'model')
+        if match in self.cls.param and mode != 'template':
             self.children[dom_id] = match
             return
 
@@ -135,15 +157,13 @@ class ReactiveHTML(HTMLBox):
 
     children = bp.Dict(bp.String, bp.List(bp.Either(bp.Instance(LayoutDOM), bp.String)))
 
-    child_names = bp.Dict(bp.String, bp.List(bp.String))
-
-    child_templates = bp.Dict(bp.String, bp.String)
-
     data = bp.Instance(DataModel)
 
     events = bp.Dict(bp.String, bp.Dict(bp.String, bp.Bool))
 
     html = bp.String()
+
+    looped = bp.List(bp.String)
 
     nodes = bp.List(bp.String)
 

@@ -182,33 +182,35 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
   private _render_children(): void {
     const id = this.model.data.id
     for (const node in this.model.children) {
-      let el: any = document.getElementById(`${node}-${id}`)
-      if (el == null) {
-        console.warn(`DOM node '${node}-${id}' could not be found. Cannot render children.`)
-        continue
-      }
-      let child_template = this.model.child_templates[node]
       const children = this.model.children[node]
-      const child_names = this.model.child_names[node]
-      for (let i = 0; i < children.length; i++) {
-        const cm = children[i]
-        let parent: Element
-        if (child_template != null) {
-          const name = (child_names != null && i < child_names.length) ? child_names[i]: null
-	  child_template = child_template.replace('${name}', '$--{state.name}')
-	  const rendered = this._render_html(child_template, {name})
-          const frag = document.createDocumentFragment()
-          render(rendered, frag)
-          parent = frag.children[0]
-          el.appendChild(parent)
-        } else {
-          parent = el
-        }
-        const view: any = this._child_views.get(cm)
-        if (view == null)
-          parent.innerHTML = cm
-	else
-          view.renderTo(parent)
+      if (this.model.looped.indexOf(node) > -1) {
+	for (let i = 0; i < children.length; i++) {
+	  let el: any = document.getElementById(`${node}-${i}-${id}`)
+	  if (el == null) {
+            console.warn(`DOM node '${node}-${i}-${id}' could not be found. Cannot render children.`)
+            continue
+	  }
+	  const cm = children[i]
+          const view: any = this._child_views.get(cm)
+          if (view == null)
+            el.innerHTML = cm
+	  else
+            view.renderTo(el)
+	}
+      } else {
+	let el: any = document.getElementById(`${node}-${id}`)
+	if (el == null) {
+          console.warn(`DOM node '${node}-${id}' could not be found. Cannot render children.`)
+          continue
+	}
+	for (let i = 0; i < children.length; i++) {
+          const cm = children[i]
+          const view: any = this._child_views.get(cm)
+          if (view == null)
+            el.innerHTML = cm
+	  else
+            view.renderTo(el)
+	}
       }
     }
   }
@@ -398,12 +400,11 @@ export namespace ReactiveHTML {
   export type Props = HTMLBox.Props & {
     attrs: p.Property<any>
     callbacks: p.Property<any>
-    child_templates: p.Property<any>
-    child_names: p.Property<any>
     children: p.Property<any>
     data: p.Property<any>
     events: p.Property<any>
     html: p.Property<string>
+    looped: p.Property<string[]>
     nodes: p.Property<string[]>
     scripts: p.Property<any>
   }
@@ -426,11 +427,10 @@ export class ReactiveHTML extends HTMLBox {
       attrs:     [ Any,    {} ],
       callbacks: [ Any,    {} ],
       children:  [ Any,    {} ],
-      child_names: [ Any,  {} ],
-      child_templates: [ Any, {} ],
       data:      [ Any,       ],
       events:    [ Any,    {} ],
       html:      [ String, "" ],
+      looped:    [ Array(String), [] ],
       nodes:     [ Array(String), [] ],
       scripts:   [ Any,    {} ],
     }))
