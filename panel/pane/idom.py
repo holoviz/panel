@@ -146,10 +146,13 @@ class IDOM(PaneBase):
           The fallback to display while the component is loading
         """
         import idom
-        import idom.client.manage
-        idom.client.manage.APP_DIR = DIST_DIR / 'idom'
-        idom.client.manage.BUILD_DIR = DIST_DIR / 'idom' / 'build'
-        idom.client.manage.WEB_MODULES_DIR = DIST_DIR / 'idom' / 'build' / 'web_modules'
+        from idom.config import IDOM_CLIENT_BUILD_DIR
+        idom_dist_dir = DIST_DIR / "idom"
+        if IDOM_CLIENT_BUILD_DIR.get() != idom_dist_dir:
+            IDOM_CLIENT_BUILD_DIR.set(idom_dist_dir)
+            # just in case packages were already installed but the build hasn't been
+            # copied over to DIST_DIR yet.
+            ignore_installed = True
         return idom.install(packages, ignore_installed, fallback)
 
     @classmethod
