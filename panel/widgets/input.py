@@ -177,7 +177,7 @@ class _DatetimePickerBase(Widget):
 
     military_time = param.Boolean(default=True)
 
-    _source_transforms = {}
+    _source_transforms = {'value': None, 'start': None, 'end': None, 'mode': None}
 
     _rename = {'start': 'min_date', 'end': 'max_date', 'name': 'title'}
 
