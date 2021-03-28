@@ -85,6 +85,8 @@ export class DatetimePickerView extends InputWidgetView {
   }
 
   protected _on_close(_selected_dates: Date[], date_string: string, _instance: flatpickr.Instance): void {
+    if (this.model.mode == "range" && !date_string.includes("to"))
+      return
     this.model.value = date_string
     this.change_input()
   }

@@ -252,11 +252,6 @@ class DatetimeRangePicker(_DatetimePickerBase):
                 for value in value.split(' to ')
             ]
 
-            # If the calendar is closed before chosing the second datetime
-            # it will return a single datetime.
-            if len(value) != 2:
-                return None
-
             # Hour, minute and seconds can be increased after end is reached.
             # This forces the hours, minute and second to be 0.
             end = self._date_to_datetime(self.end)
