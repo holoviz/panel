@@ -41,7 +41,7 @@ def test_audio_url(document, comm):
 def test_progress_bounds():
     progress = Progress()
     progress.max = 200
-    assert progress.param.value.bounds == (0, 200)
+    assert progress.param.value.bounds == (-1, 200)
     progress.value = 120
     assert progress.value == 120
 
