@@ -84,6 +84,7 @@ function extractToken(template: string, str: string, tokens: string[]) {
 export class ReactiveHTMLView extends PanelHTMLBoxView {
   model: ReactiveHTML
   html: string
+  _parent: any = null
   _changing: boolean = false
   _event_listeners: any = {}
   _mutation_observers: MutationObserver[] = []
@@ -97,7 +98,13 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
 
   connect_signals(): void {
     super.connect_signals()
-    this.connect(this.model.properties.children.change, () => this.rebuild())
+
+    this.connect(this.model.properties.children.change, async () => {
+      this.html = htmlDecode(this.model.html) || this.model.html
+      await this.rebuild()
+      if (this._parent != null)
+	this._parent.invalidate_layout()
+    })
     for (const prop in this.model.data.properties) {
       this.connect(this.model.data.properties[prop].change, () => {
         if (!this._changing) {
@@ -143,7 +150,8 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
     const models = []
     for (const parent in this.model.children) {
       for (const model of this.model.children[parent])
-	models.push(model)
+        if (typeof model !== 'string')
+          models.push(model)
     }
     return models
   }
@@ -178,27 +186,47 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
     this.model.trigger_event(new DOMEvent(elname, serialized))
   }
 
+  private _render_child(model: any, el: Element): void {
+    const view: any = this._child_views.get(model)
+    view._parent = this
+    if (view == null)
+      el.innerHTML = model
+    else
+      view.renderTo(el)
+  }
+
   private _render_children(): void {
     const id = this.model.data.id
-    for (const name in this.model.children) {
-      const el: any = document.getElementById(`${name}-${id}`)
-      if (el == null) {
-        console.warn(`DOM node '${name}-${id}' could not be found. Cannot render children.`)
-        continue
-      }
-      for (const cm of this.model.children[name]) {
-        const view: any = this._child_views.get(cm)
-	view.renderTo(el)
+    for (const node in this.model.children) {
+      const children = this.model.children[node]
+      if (this.model.looped.indexOf(node) > -1) {
+	for (let i = 0; i < children.length; i++) {
+	  let el: any = document.getElementById(`${node}-${i}-${id}`)
+	  if (el == null) {
+            console.warn(`DOM node '${node}-${i}-${id}' could not be found. Cannot render children.`)
+            continue
+	  }
+	  this._render_child(children[i], el)
+	}
+      } else {
+	let el: any = document.getElementById(`${node}-${id}`)
+	if (el == null) {
+          console.warn(`DOM node '${node}-${id}' could not be found. Cannot render children.`)
+          continue
+	}
+	for (const child of children)
+	  this._render_child(child, el)
       }
     }
   }
 
   after_layout(): void {
-    super.after_layout()
     for (const child_view of this.child_views) {
       child_view.resize_layout()
       this._align_view(child_view)
+      child_view.after_layout()
     }
+    this._has_finished = true
   }
 
   private _align_view(view: any): void {
@@ -220,8 +248,7 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
       view.el.style.marginTop = 'auto';
   }
 
-
-  private _render_html(literal: any): string {
+  private _render_html(literal: any, state: any={}): any {
     let htm = literal
     let callbacks = ''
     const methods: string[] = []
@@ -241,13 +268,13 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
     }
     htm = (
       htm
-	.replaceAll('${model.', '$-{model.')
-	.replaceAll('${', '${data.')
-	.replaceAll('$-{model.', '${model.')
-	.replaceAll('$--{', '${')
+        .replaceAll('${model.', '$-{model.')
+        .replaceAll('${', '${data.')
+        .replaceAll('$-{model.', '${model.')
+        .replaceAll('$--{', '${')
     )
-    return new Function("view, model, data, html, useCallback", callbacks+"return html`"+htm+"`;")(
-      this, this.model, this.model.data, html, useCallback
+    return new Function("view, model, data, state, html, useCallback", callbacks+"return html`"+htm+"`;")(
+      this, this.model, this.model.data, state, html, useCallback
     )
   }
 
@@ -296,8 +323,8 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
       if (el == null)
         continue
       for (const event_name in this._event_listeners[node]) {
-	const event_callback = this._event_listeners[node][event_name]
-	el.removeEventListener(event_name, event_callback)
+        const event_callback = this._event_listeners[node][event_name]
+        el.removeEventListener(event_name, event_callback)
       }
     }
     this._event_listeners = {}
@@ -313,15 +340,15 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
       }
       const node_events = this.model.events[node]
       for (const event_name in node_events) {
-	const event_callback = (event: any) => {
-	  this._send_event(node, event_name, event)
+        const event_callback = (event: any) => {
+          this._send_event(node, event_name, event)
           if (node in this.model.attrs && node_events[event_name])
             this._update_model(el, node)
         }
-	el.addEventListener(event_name, event_callback)
-	if (!(node in this._event_listeners))
-	  this._event_listeners[node] = {}
-	this._event_listeners[node][event_name] = event_callback
+        el.addEventListener(event_name, event_callback)
+        if (!(node in this._event_listeners))
+          this._event_listeners[node] = {}
+        this._event_listeners[node][event_name] = event_callback
       }
     }
   }
@@ -330,13 +357,13 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
     if (property == null || (this.html.indexOf(`\${${property}}`) > -1)) {
       const rendered = this._render_html(this.html)
       try {
-	this._changing = true
-	render(rendered, this.el)
+        this._changing = true
+        render(rendered, this.el)
       } finally {
-	this._changing = false
+        this._changing = false
       }
       if (this.el.children.length)
-	set_size((this.el.children[0] as any), this.model)
+        set_size((this.el.children[0] as any), this.model)
     }
   }
 
@@ -350,22 +377,25 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
       if (tokens.length === 1 && (`{${tokens[0]}}` === template))
         attrs[tokens[0]] = value
       else if (typeof value === 'string') {
-	value = extractToken(template, value, tokens)
-	if (value == null)
-	  console.warn(`Could not resolve parameters in ${name} element ${attr} attribute value ${value}.`)
-	else {
-	  for (const param in value) {
-	    if (value[param] === undefined)
-	      console.warn(`Could not resolve ${param} in ${name} element ${attr} attribute value ${value}.`)
-	    else
-	      attrs[param] = value[param]
-	  }
-	}
+        value = extractToken(template, value, tokens)
+        if (value == null)
+          console.warn(`Could not resolve parameters in ${name} element ${attr} attribute value ${value}.`)
+        else {
+          for (const param in value) {
+            if (value[param] === undefined)
+              console.warn(`Could not resolve ${param} in ${name} element ${attr} attribute value ${value}.`)
+            else
+              attrs[param] = value[param]
+          }
+        }
       }
     }
+
     try {
       this._changing = true
       this.model.data.setv(serialize_attrs(attrs))
+    } catch {
+      console.log('Could not serialize', attrs)
     } finally {
       this._changing = false
     }
@@ -382,6 +412,7 @@ export namespace ReactiveHTML {
     data: p.Property<any>
     events: p.Property<any>
     html: p.Property<string>
+    looped: p.Property<string[]>
     nodes: p.Property<string[]>
     scripts: p.Property<any>
   }
@@ -407,6 +438,7 @@ export class ReactiveHTML extends HTMLBox {
       data:      [ Any,       ],
       events:    [ Any,    {} ],
       html:      [ String, "" ],
+      looped:    [ Array(String), [] ],
       nodes:     [ Array(String), [] ],
       scripts:   [ Any,    {} ],
     }))
