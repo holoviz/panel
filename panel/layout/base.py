@@ -142,7 +142,6 @@ class Panel(Reactive):
         return objects
 
 
-
 class ListLike(param.Parameterized):
 
     objects = param.List(default=[], doc="""
@@ -331,62 +330,11 @@ class ListLike(param.Parameterized):
         new_objects.reverse()
         self.objects = new_objects
 
-    
 
-class ListPanel(ListLike, Panel):
-    """
-    An abstract baseclass for Panel objects with list-like children.
-    """
-
-    margin = param.Parameter(default=0, doc="""
-        Allows to create additional space around the component. May
-        be specified as a two-tuple of the form (vertical, horizontal)
-        or a four-tuple (top, right, bottom, left).""")
-
-    scroll = param.Boolean(default=False, doc="""
-        Whether to add scrollbars if the content overflows the size
-        of the container.""")
-
-    _source_transforms = {'scroll': None}
-
-    __abstract = True
-
-    def __init__(self, *objects, **params):
-        from ..pane import panel
-        if objects:
-            if 'objects' in params:
-                raise ValueError("A %s's objects should be supplied either "
-                                 "as positional arguments or as a keyword, "
-                                 "not both." % type(self).__name__)
-            params['objects'] = [panel(pane) for pane in objects]
-        elif 'objects' in params:
-            params['objects'] = [panel(pane) for pane in params['objects']]
-        super(Panel, self).__init__(**params)
-
-    def _process_param_change(self, params):
-        scroll = params.pop('scroll', None)
-        css_classes = self.css_classes or []
-        if scroll:
-            params['css_classes'] = css_classes + ['scrollable']
-        elif scroll == False:
-            params['css_classes'] = css_classes
-        return super()._process_param_change(params)
-
-    def _cleanup(self, root):
-        if root.ref['id'] in state._fake_roots:
-            state._fake_roots.remove(root.ref['id'])
-        super()._cleanup(root)
-        for p in self.objects:
-            p._cleanup(root)
-
-
-class NamedListPanel(ListPanel):
-
-    active = param.Integer(default=0, bounds=(0, None), doc="""
-        Index of the currently displayed objects.""")
+class NamedListLike(param.Parameterized):
 
     objects = param.List(default=[], doc="""
-        The list of child objects that make up the tabs.""")
+        The list of child objects that make up the layout.""")
 
     def __init__(self, *items, **params):
         if 'objects' in params:
@@ -394,9 +342,9 @@ class NamedListPanel(ListPanel):
                 raise ValueError('%s objects should be supplied either '
                                  'as positional arguments or as a keyword, '
                                  'not both.' % type(self).__name__)
-            items = params['objects']
-        objects, self._names = self._to_objects_and_names(items)
-        super().__init__(*objects, **params)
+            items = params.pop('objects')
+        params['objects'], self._names = self._to_objects_and_names(items)
+        super().__init__(**params)
         self._panels = defaultdict(dict)
         self.param.watch(self._update_names, 'objects')
         # ALERT: Ensure that name update happens first, should be
@@ -440,6 +388,20 @@ class NamedListPanel(ListPanel):
     #----------------------------------------------------------------
     # Public API
     #----------------------------------------------------------------
+
+    def __getitem__(self, index):
+        return self.objects[index]
+
+    def __len__(self):
+        return len(self.objects)
+
+    def __iter__(self):
+        for obj in self.objects:
+            yield obj
+
+    def __iadd__(self, other):
+        self.extend(other)
+        return self
 
     def __add__(self, other):
         if isinstance(other, NamedListPanel):
@@ -620,6 +582,87 @@ class NamedListPanel(ListPanel):
         self._names.reverse()
         self.objects = new_objects
 
+
+class ListPanel(ListLike, Panel):
+    """
+    An abstract baseclass for Panel objects with list-like children.
+    """
+
+    margin = param.Parameter(default=0, doc="""
+        Allows to create additional space around the component. May
+        be specified as a two-tuple of the form (vertical, horizontal)
+        or a four-tuple (top, right, bottom, left).""")
+
+    scroll = param.Boolean(default=False, doc="""
+        Whether to add scrollbars if the content overflows the size
+        of the container.""")
+
+    _source_transforms = {'scroll': None}
+
+    __abstract = True
+
+    def __init__(self, *objects, **params):
+        from ..pane import panel
+        if objects:
+            if 'objects' in params:
+                raise ValueError("A %s's objects should be supplied either "
+                                 "as positional arguments or as a keyword, "
+                                 "not both." % type(self).__name__)
+            params['objects'] = [panel(pane) for pane in objects]
+        elif 'objects' in params:
+            params['objects'] = [panel(pane) for pane in params['objects']]
+        super(Panel, self).__init__(**params)
+
+    def _process_param_change(self, params):
+        scroll = params.pop('scroll', None)
+        css_classes = self.css_classes or []
+        if scroll:
+            params['css_classes'] = css_classes + ['scrollable']
+        elif scroll == False:
+            params['css_classes'] = css_classes
+        return super()._process_param_change(params)
+
+    def _cleanup(self, root):
+        if root.ref['id'] in state._fake_roots:
+            state._fake_roots.remove(root.ref['id'])
+        super()._cleanup(root)
+        for p in self.objects:
+            p._cleanup(root)
+
+
+class NamedListPanel(NamedListLike, Panel):
+
+    active = param.Integer(default=0, bounds=(0, None), doc="""
+        Index of the currently displayed objects.""")
+
+    margin = param.Parameter(default=0, doc="""
+        Allows to create additional space around the component. May
+        be specified as a two-tuple of the form (vertical, horizontal)
+        or a four-tuple (top, right, bottom, left).""")
+
+    scroll = param.Boolean(default=False, doc="""
+        Whether to add scrollbars if the content overflows the size
+        of the container.""")
+
+    _source_transforms = {'scroll': None}
+
+    __abstract = True
+
+    def _process_param_change(self, params):
+        scroll = params.pop('scroll', None)
+        css_classes = self.css_classes or []
+        if scroll:
+            params['css_classes'] = css_classes + ['scrollable']
+        elif scroll == False:
+            params['css_classes'] = css_classes
+        return super()._process_param_change(params)
+
+    def _cleanup(self, root):
+        if root.ref['id'] in state._fake_roots:
+            state._fake_roots.remove(root.ref['id'])
+        super()._cleanup(root)
+        for p in self.objects:
+            p._cleanup(root)
 
 
 class Row(ListPanel):
