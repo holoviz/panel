@@ -653,8 +653,6 @@ class SyncableData(Reactive):
             push_on_root(ref)
 
     def _update_selected(self, *events, indices=None):
-        if self._updating:
-            return
         indices = self.selection if indices is None else indices
         for ref, (m, _) in self._models.items():
             m.source.selected.indices = indices
