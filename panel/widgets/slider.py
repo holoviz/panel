@@ -19,7 +19,7 @@ from ..io import state
 from ..util import param_reprs, unicode_repr, value_as_datetime, value_as_date
 from ..viewable import Layoutable
 from .base import Widget, CompositeWidget
-from ..layout import Column, HSpacer, Row
+from ..layout import Column, Row
 from .input import IntInput, FloatInput, StaticText
 
 
