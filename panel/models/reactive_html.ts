@@ -84,6 +84,7 @@ function extractToken(template: string, str: string, tokens: string[]) {
 export class ReactiveHTMLView extends PanelHTMLBoxView {
   model: ReactiveHTML
   html: string
+  _parent: any = null
   _changing: boolean = false
   _event_listeners: any = {}
   _mutation_observers: MutationObserver[] = []
@@ -97,7 +98,13 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
 
   connect_signals(): void {
     super.connect_signals()
-    this.connect(this.model.properties.children.change, () => this.rebuild())
+
+    this.connect(this.model.properties.children.change, async () => {
+      this.html = htmlDecode(this.model.html) || this.model.html
+      await this.rebuild()
+      if (this._parent != null)
+	this._parent.invalidate_layout()
+    })
     for (const prop in this.model.data.properties) {
       this.connect(this.model.data.properties[prop].change, () => {
         if (!this._changing) {
@@ -179,6 +186,15 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
     this.model.trigger_event(new DOMEvent(elname, serialized))
   }
 
+  private _render_child(model: any, el: Element): void {
+    const view: any = this._child_views.get(model)
+    view._parent = this
+    if (view == null)
+      el.innerHTML = model
+    else
+      view.renderTo(el)
+  }
+
   private _render_children(): void {
     const id = this.model.data.id
     for (const node in this.model.children) {
@@ -190,12 +206,7 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
             console.warn(`DOM node '${node}-${i}-${id}' could not be found. Cannot render children.`)
             continue
 	  }
-	  const cm = children[i]
-          const view: any = this._child_views.get(cm)
-          if (view == null)
-            el.innerHTML = cm
-	  else
-            view.renderTo(el)
+	  this._render_child(children[i], el)
 	}
       } else {
 	let el: any = document.getElementById(`${node}-${id}`)
@@ -203,24 +214,19 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
           console.warn(`DOM node '${node}-${id}' could not be found. Cannot render children.`)
           continue
 	}
-	for (let i = 0; i < children.length; i++) {
-          const cm = children[i]
-          const view: any = this._child_views.get(cm)
-          if (view == null)
-            el.innerHTML = cm
-	  else
-            view.renderTo(el)
-	}
+	for (const child of children)
+	  this._render_child(child, el)
       }
     }
   }
 
   after_layout(): void {
-    super.after_layout()
     for (const child_view of this.child_views) {
       child_view.resize_layout()
       this._align_view(child_view)
+      child_view.after_layout()
     }
+    this._has_finished = true
   }
 
   private _align_view(view: any): void {
@@ -241,7 +247,6 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
     } else if (valign === 'end')
       view.el.style.marginTop = 'auto';
   }
-
 
   private _render_html(literal: any, state: any={}): any {
     let htm = literal
@@ -385,9 +390,12 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
         }
       }
     }
+
     try {
       this._changing = true
       this.model.data.setv(serialize_attrs(attrs))
+    } catch {
+      console.log('Could not serialize', attrs)
     } finally {
       this._changing = false
     }

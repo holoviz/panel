@@ -126,6 +126,8 @@ def construct_data_model(parameterized, name=None, ignore=[]):
         if pname in ignore:
             continue
         p = parameterized.param[pname]
+        if p.precedence and p.precedence < 0:
+            continue
         prop = PARAM_MAPPING.get(type(p))
         pname = parameterized._rename.get(pname, pname)
         if pname == 'name':

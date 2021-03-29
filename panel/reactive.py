@@ -947,6 +947,7 @@ class ReactiveHTMLMetaclass(ParameterizedMetaclass):
     _name_counter = Counter()
 
     def __init__(mcs, name, bases, dict_):
+        mcs.__original_doc__ = mcs.__doc__
         ParameterizedMetaclass.__init__(mcs, name, bases, dict_)
         for name, child_type in mcs._child_config.items():
             if name not in mcs.param:
@@ -1130,7 +1131,15 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
 
     def _cleanup(self, root):
         for children_param in self._parser.children.values():
-            for child in getattr(self, children_param):
+            children = getattr(self, children_param)
+            mode = self._child_config.get(children_param)
+            if mode != 'model':
+                continue
+            if isinstance(children, dict):
+                children = children.values()
+            elif not isinstance(children, list):
+                children = [children]
+            for child in children:
                 child._cleanup(root)
         super()._cleanup(root)
 
@@ -1153,7 +1162,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         }
         data_params = {}
         for k, v in self.param.get_param_values():
-            if k in ignored and k != 'name':
+            if (k in ignored and k != 'name') or ((self.param[k].precedence or 0) < 0):
                 continue
             if isinstance(v, str):
                 v = bleach.clean(v)
@@ -1213,6 +1222,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
             new_panes = getattr(self, children_param)
             if not isinstance(new_panes, (list, dict)):
                 new_panes = [new_panes]
+                old_panes = [old_panes]
             elif isinstance(new_panes, dict):
                 new_panes = new_panes.values()
             for old_pane in old_panes:
@@ -1231,8 +1241,10 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
             elif children_param in old_children:
                 # Find existing models
                 old_panes = old_children[children_param]
+                if not isinstance(old_panes, (list, dict)):
+                    old_panes = [old_panes]
                 for i, pane in enumerate(new_panes):
-                    if pane in old_panes:
+                    if pane in old_panes and root.ref['id'] in pane._models:
                         child, _ = pane._models[root.ref['id']]
                     else:
                         child = pane._get_model(doc, root, model, comm)
@@ -1250,12 +1262,11 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
     def _get_template(self):
         import jinja2
         template = jinja2.Template(self._template)
-        child_names = self._child_names
-        context = {}
-        for _, loop_param in self._parser.looped:
-            context[loop_param] = getattr(self, loop_param)
-            if loop_param in child_names:
-                context[f'{loop_param}_names'] = self._child_names[loop_param]
+        context = {'param': self.param, '__doc__': self.__original_doc__}
+        for parameter, value in self.param.get_param_values():
+            context[parameter] = value
+            if parameter in self._child_names:
+                context[f'{parameter}_names'] = self._child_names[parameter]
         html = template.render(context)
         parser = ReactiveHTMLParser(self.__class__)
         parser.feed(html)
@@ -1323,16 +1334,24 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
             if prop in child_params:
                 new_children[prop] = prop
             elif prop in Reactive.param:
-                model_msg[prop] = prop
+                model_msg[prop] = v
+            elif prop in self.param and (self.param[prop].precedence or 0) < 0:
+                continue
             elif isinstance(v, str):
                 data_msg[prop] = bleach.clean(v)
             else:
                 data_msg[prop] = v
         if new_children:
             old_children = {key: events[key].old for key in new_children}
-            model_msg['children'] = self._get_children(doc, root, model, comm, old_children)
+            if self._parser.looped:
+                model_msg['html'] = escape(self._get_template())
+            children = self._get_children(doc, root, model, comm, old_children)
+        else:
+            children = None
         self._set_on_model(data_msg, root, model.data)
         self._set_on_model(model_msg, root, model)
+        if children is not None:
+            self._set_on_model({'children': children}, root, model)
 
     def on_event(self, node, event, callback):
         """
