@@ -1,7 +1,7 @@
 """
 Defines custom AcePlot bokeh model to render Ace editor.
 """
-from bokeh.core.properties import String, Override, Dict, Any, List, Bool, Enum
+from bokeh.core.properties import String, Override, Dict, Any, List, Bool, Enum, Nullable
 from bokeh.models import HTMLBox
 
 from ..io.resources import bundled_files
@@ -50,7 +50,7 @@ class AcePlot(HTMLBox):
 
     theme = Enum(ace_themes, default='chrome')
 
-    filename = String()
+    filename = Nullable(String())
 
     language = String()
 

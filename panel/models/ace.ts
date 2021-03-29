@@ -27,7 +27,8 @@ export class AcePlotView extends PanelHTMLBoxView {
       id: ID(),
       style: {
         width: "100%",
-        height: "100%"
+        height: "100%",
+        zIndex: 0,
       }
     })
   }
