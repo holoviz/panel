@@ -457,18 +457,24 @@ class _EditableContinuousSlider(CompositeWidget):
     show_value = param.Boolean(default=False, readonly=True, precedence=-1, doc="""
         Whether to show the widget value.""")
 
+    _composite_type = Column
     _slider_widget = None
     _input_widget = None
-
     __abstract = True
 
     def __init__(self, **params):
+        if not 'width' in params and not 'sizing_mode' in params:
+            params['width'] = 300
         super().__init__(**params)
+        self._label = StaticText(margin=0, align='end')
         self._slider = self._slider_widget(
             margin=(0, 0, 5, 0), sizing_mode='stretch_width'
         )
-        self._value_edit = self._input_widget(width=100, margin=(0, 0, 0, 10), align='end')
-        self._composite.extend([self._slider, self._value_edit])
+        self._value_edit = self._input_widget(
+            margin=0, align='end', css_classes=['slider-edit']
+        )
+        label = Row(self._label, self._value_edit)
+        self._composite.extend([label, self._slider])
         self._slider.jscallback(args={'value': self._value_edit}, value="""
         value.value = cb_obj.value
         """)
@@ -481,15 +487,34 @@ class _EditableContinuousSlider(CompositeWidget):
         slider.value = cb_obj.value
         """)
         self._update_editable()
+        self._update_layout()
+        self._update_name()
         self._update_slider()
         self._update_value()
 
-    @param.depends('editable')
+    @param.depends('width', 'height', 'sizing_mode', watch=True)
+    def _update_layout(self):
+        self._value_edit.sizing_mode = self.sizing_mode
+        if self.sizing_mode not in ('stretch_width', 'stretch_both'):
+            w = (self.width or 300)//4
+            self._value_edit.width = w
+
+    @param.depends('editable', watch=True)
     def _update_editable(self):
         self._value_edit.disabled = not self.editable
 
+    @param.depends('name', watch=True)
+    def _update_name(self):
+        if self.name:
+            label = f'{self.name}:'
+            margin = (0, 10, 0, 0)
+        else:
+            label = ''
+            margin = (0, 0, 0, 0)
+        self._label.param.set_param(**{'margin': margin, 'value': label})
+
     @param.depends('start', 'end', 'step', 'bar_color', 'direction',
-                   'show_value', 'tooltips', 'name', 'format', watch=True)
+                   'show_value', 'tooltips', 'format', watch=True)
     def _update_slider(self):
         self._slider.param.set_param(**{
             'format': self.format,
@@ -499,8 +524,7 @@ class _EditableContinuousSlider(CompositeWidget):
             'bar_color': self.bar_color,
             'direction': self.direction,
             'show_value': self.show_value,
-            'tooltips': self.tooltips,
-            'name': self.name
+            'tooltips': self.tooltips
         })
         self._value_edit.step = self.step
 
@@ -534,7 +558,7 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
 
     end = param.Number(default=1., doc="Upper bound of the range.")
 
-    format = param.ClassSelector(class_=string_types+(TickFormatter,), doc="""
+    format = param.ClassSelector(default='0.0[0000]', class_=string_types+(TickFormatter,), doc="""
         Allows defining a custom format string or bokeh TickFormatter.""")
 
     show_value = param.Boolean(default=False, readonly=True, precedence=-1, doc="""
@@ -551,13 +575,19 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
     _composite_type = Column
 
     def __init__(self, **params):
+        if not 'width' in params and not 'sizing_mode' in params:
+            params['width'] = 300
         super().__init__(**params)
+        self._label = StaticText(margin=0, align='end')
         self._slider = RangeSlider(margin=(0, 0, 5, 0), show_value=False)
-        self._start_edit = FloatInput(min_width=80, margin=0)
-        self._end_edit = FloatInput(min_width=80, margin=0)
-        edit = Row(self._start_edit, HSpacer(), self._end_edit,
+        self._start_edit = FloatInput(min_width=50, margin=0, format=self.format,
+                                      css_classes=['slider-edit'])
+        self._end_edit = FloatInput(min_width=50, margin=(0, 0, 0, 10), format=self.format,
+                                    css_classes=['slider-edit'])
+        sep = StaticText(value='...', margin=(0, 2, 0, 2), align='end')
+        edit = Row(self._label, self._start_edit, sep, self._end_edit,
                    sizing_mode='stretch_width', margin=0)
-        self._composite.extend([self._slider, edit])
+        self._composite.extend([edit, self._slider])
         self._slider.jscallback(args={'start': self._start_edit, 'end': self._end_edit}, value="""
         let [min, max] = cb_obj.value
         start.value = min
@@ -581,20 +611,31 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
         """)
         self._update_editable()
         self._update_layout()
+        self._update_name()
         self._update_slider()
         self._update_value()
 
-    @param.depends('editable')
+    @param.depends('editable', watch=True)
     def _update_editable(self):
         self._start_edit.disabled = not self.editable[0]
         self._end_edit.disabled = not self.editable[1]
+
+    @param.depends('name', watch=True)
+    def _update_name(self):
+        if self.name:
+            label = f'{self.name}:'
+            margin = (0, 10, 0, 0)
+        else:
+            label = ''
+            margin = (0, 0, 0, 0)
+        self._label.param.set_param(**{'margin': margin, 'value': label})
 
     @param.depends('width', 'height', 'sizing_mode', watch=True)
     def _update_layout(self):
         self._start_edit.sizing_mode = self.sizing_mode
         self._end_edit.sizing_mode = self.sizing_mode
         if self.sizing_mode not in ('stretch_width', 'stretch_both'):
-            w = (self.width or 300)//3
+            w = (self.width or 300)//4
             self._start_edit.width = w
             self._end_edit.width = w
 
@@ -610,7 +651,6 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
             'direction': self.direction,
             'show_value': self.show_value,
             'tooltips': self.tooltips,
-            'name': self.name
         })
         self._start_edit.step = self.step
         self._end_edit.step = self.step

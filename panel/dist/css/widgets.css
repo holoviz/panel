@@ -284,3 +284,29 @@ progress:not([value])::before {
 .dot-filled.light div {
   background-color: #f8f9fa;
 }
+
+.slider-edit .bk-input-group .bk-input {
+  border: 0;
+  border-radius: 0;
+  min-height: 0;
+  padding-left: 0;
+  padding-right: 0;
+  font-weight: bold;
+}
+
+.slider-edit .bk-input-group .bk-input:focus {
+  box-shadow: none;
+}
+
+.slider-edit .bk-input-group .bk-spin-wrapper {
+  display: contents;
+}
+
+.slider-edit .bk-input-group .bk-spin-wrapper .bk.bk-spin-btn-up {
+  top: -6px;
+}
+
+.slider-edit .bk-input-group .bk-spin-wrapper .bk.bk-spin-btn-down {
+  bottom: 3px;
+}
+

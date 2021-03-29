@@ -11,6 +11,7 @@ from six import string_types
 
 import param
 
+from bokeh.models.formatters import TickFormatter
 from bokeh.models.widgets import (
     CheckboxGroup as _BkCheckboxGroup, ColorPicker as _BkColorPicker,
     DatePicker as _BkDatePicker, Div as _BkDiv, TextInput as _BkTextInput,
@@ -178,8 +179,8 @@ class _NumericInputBase(Widget):
     placeholder = param.String(default='0', doc="""
         Placeholder for empty input field.""")
 
-    format = param.String(default=None, allow_None=True, doc="""
-        Number formating : http://numbrojs.com/old-format.html .""")
+    format = param.ClassSelector(default=None, class_=string_types+(TickFormatter,), doc="""
+        Allows defining a custom format string or bokeh TickFormatter.""")
 
     _rename = {'name': 'title', 'start': 'low', 'end': 'high'}
 
