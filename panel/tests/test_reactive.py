@@ -153,7 +153,7 @@ def test_reactive_html_basic():
 
         float = param.Number(default=3.14, doc='A float')
 
-        _html = '<div id="div" width=${int}></div>'
+        _template = '<div id="div" width=${int}></div>'
 
     data_model = Test._data_model
     assert data_model.__name__ == 'Test1'
@@ -188,7 +188,7 @@ def test_reactive_html_dom_events():
 
         float = param.Number(default=3.14, doc='A float')
 
-        _html = '<div id="div" width=${int}></div>'
+        _template = '<div id="div" width=${int}></div>'
 
         _dom_events = {'div': ['change']}
 
@@ -221,7 +221,7 @@ def test_reactive_html_inline():
 
         int = param.Integer(default=3, doc='An integer')
 
-        _html = '<div id="div" onchange=${_div_change} width=${int}></div>'
+        _template = '<div id="div" onchange=${_div_change} width=${int}></div>'
 
         def _div_change(self, event):
             pass
@@ -260,7 +260,7 @@ def test_reactive_html_children():
 
         children = param.List(default=[])
 
-        _html = '<div id="div">${children}</div>'
+        _template = '<div id="div">${children}</div>'
 
     assert TestChildren._attrs == {}
     assert TestChildren._node_callbacks == {}
@@ -276,3 +276,35 @@ def test_reactive_html_children():
     test.children = [widget_new]
     assert len(widget._models) == 0
     assert root.children == {'div': [widget_new._models[root.ref['id']][0]]}
+
+
+
+def test_reactive_html_templated_children():
+
+    class TestTemplatedChildren(ReactiveHTML):
+
+        children = param.List(default=[])
+
+        _template = """
+        <select id="select">
+        {% for option in children %}
+        <option id="option-{{ loop.index0 }}">${children[{{ loop.index0 }}]}</option>
+        {% endfor %}
+        </div>
+        """
+
+    assert TestTemplatedChildren._attrs == {}
+    assert TestTemplatedChildren._node_callbacks == {}
+    assert TestTemplatedChildren._inline_callbacks == []
+    assert TestTemplatedChildren._parser.children == {'option': 'children'}
+
+    widget = TextInput()
+    test = TestTemplatedChildren(children=[widget])
+    root = test.get_root()
+    assert root.children == {'option': [widget._models[root.ref['id']][0]]}
+
+    widget_new = TextInput()
+    test.children = [widget_new]
+    assert len(widget._models) == 0
+    assert root.children == {'option': [widget_new._models[root.ref['id']][0]]}
+
