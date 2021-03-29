@@ -389,9 +389,16 @@ class NamedListLike(param.Parameterized):
     # Public API
     #----------------------------------------------------------------
 
+    def __len__(self):
+        return len(self.objects)
+
     def __iter__(self):
         for obj in self.objects:
             yield obj
+
+    def __iadd__(self, other):
+        self.extend(other)
+        return self
 
     def __add__(self, other):
         if isinstance(other, NamedListPanel):
