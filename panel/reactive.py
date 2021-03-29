@@ -1167,7 +1167,6 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
             if isinstance(v, str):
                 v = bleach.clean(v)
             data_params[k] = v
-        reverse = {v: k for k, v in self._parser.children.items()}
         params['attrs'] = self._attrs
         params['callbacks'] = self._node_callbacks
         params['data'] = self._data_model(**self._process_param_change(data_params))
