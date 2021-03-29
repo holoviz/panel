@@ -3,8 +3,9 @@ from datetime import datetime, date
 
 from bokeh.models.widgets import FileInput as BkFileInput
 from panel.widgets import (
-    Checkbox, DatePicker, DatetimeInput, DatetimeRangeInput, FileInput,
-    LiteralInput, TextInput, StaticText
+    Checkbox, DatePicker, DatetimeInput, DatetimePicker,
+    DatetimeRangeInput, DatetimeRangePicker, FileInput,
+    LiteralInput, TextInput, StaticText,
 )
 
 
@@ -50,6 +51,39 @@ def test_date_picker(document, comm):
 
     date_picker.value = date(2018, 9, 4)
     assert widget.value == '2018-09-04'
+
+
+def test_datetime_picker(document, comm):
+    datetime_picker = DatetimePicker(
+        name='DatetimePicker', value=datetime(2018, 9, 2, 1, 5),
+        start=date(2018, 9, 1), end=date(2018, 9, 10)
+    )
+
+    widget = datetime_picker.get_root(document, comm=comm)
+
+    assert isinstance(widget, datetime_picker._widget_type)
+    assert widget.title == 'DatetimePicker'
+    assert widget.value == '2018-09-02 01:05:00'
+    assert widget.min_date == '2018-09-01'
+    assert widget.max_date == '2018-09-10'
+
+    datetime_picker._process_events({'value': '2018-09-03 03:00:01'})
+    assert datetime_picker.value == datetime(2018, 9, 3, 3, 0, 1)
+
+    datetime_picker._process_events({'value': datetime(2018, 9, 5)})
+    assert datetime_picker.value == datetime(2018, 9, 5)
+
+    value = datetime_picker._process_param_change({'value': datetime(2018, 9, 4, 1, 0, 1)})
+    assert value['value'] == '2018-09-04 01:00:01'
+
+    value = datetime(2018, 9, 4, 12, 1)
+    assert datetime_picker._deserialize_value(value) == '2018-09-04 12:01:00'
+    assert datetime_picker._serialize_value(datetime_picker._deserialize_value(value)) == value
+
+    # Check end value
+    datetime_picker._process_events({'value': '2018-09-10 03:00:01'})
+    assert datetime_picker.value == datetime(2018, 9, 10, 0, 0, 0)
+
 
 
 def test_file_input(document, comm):
