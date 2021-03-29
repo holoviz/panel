@@ -389,6 +389,9 @@ class NamedListLike(param.Parameterized):
     # Public API
     #----------------------------------------------------------------
 
+    def __getitem__(self, index):
+        return self.objects[index]
+
     def __len__(self):
         return len(self.objects)
 
