@@ -26,6 +26,8 @@ class Perspective(HTMLBox):
 
     selectable = Nullable(Bool())
 
+    schema = Dict(String, String)
+
     sort = Either(List(List(String)), Null())
 
     source = Instance(ColumnDataSource)

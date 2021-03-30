@@ -106,7 +106,8 @@ export class PerspectiveView extends PanelHTMLBoxView {
   render(): void {
     super.render()
     this.worker = (window as any).perspective.worker();
-    this.table = this.worker.table(this.data);
+    this.table = this.worker.table(this.model.schema);
+    this.table.update(this.data);
     const container = div({class: "pnx-perspective-viewer"})
     set_size(container, this.model)
     container.innerHTML = this.getInnerHTML();
@@ -261,6 +262,7 @@ export namespace Perspective {
     row_pivots: p.Property<any[] | null>
     selectable: p.Property<boolean | null>
     toggle_config: p.Property<boolean>
+    schema: p.Property<any>
     sort: p.Property<any[] | null>
     source: p.Property<ColumnDataSource>
     theme: p.Property<any>
@@ -292,6 +294,7 @@ export class Perspective extends HTMLBox {
       plugin_config:    [ Any,                     ],
       row_pivots:       [ Nullable(Array(String)), ],
       selectable:       [ Nullable(Boolean),       ],
+      schema:           [ Any,                  {} ],
       toggle_config:    [ Boolean,            true ],
       sort:             [ Nullable(Array(Array(String))), ],
       source:           [ Ref(ColumnDataSource),   ],
