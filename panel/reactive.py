@@ -1339,7 +1339,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         for prop, v in list(msg.items()):
             if prop in child_params:
                 new_children[prop] = prop
-            elif prop in Reactive.param:
+            elif prop in list(Reactive.param)+['events']:
                 model_msg[prop] = v
             elif prop in self.param and (self.param[prop].precedence or 0) < 0:
                 continue
@@ -1382,4 +1382,5 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         self._event_callbacks[node][event].append(callback)
         events = self._get_events()
         for ref, (model, _) in self._models.items():
+            print(model)
             self._apply_update([], {'events': events}, model, ref)
