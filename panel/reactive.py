@@ -188,6 +188,8 @@ class Syncable(Renderable):
                     cb()
 
     def _apply_update(self, events, msg, model, ref):
+        if ref not in state._views or ref in state._fake_roots:
+            continue
         viewable, root, doc, comm = state._views[ref]
         if comm or not doc.session_context or state._unblocked(doc):
             with unlocked():
@@ -237,8 +239,6 @@ class Syncable(Renderable):
             return
 
         for ref, (model, parent) in self._models.items():
-            if ref not in state._views or ref in state._fake_roots:
-                continue
             self._apply_update(events, msg, model, ref)
 
     def _process_events(self, events):
@@ -670,6 +670,8 @@ class SyncableData(Reactive):
     @updating
     def _stream(self, stream, rollover=None):
         for ref, (m, _) in self._models.items():
+            if ref not in state._views or ref in state._fake_roots:
+                continue
             viewable, root, doc, comm = state._views[ref]
             if comm or not doc.session_context or state._unblocked(doc):
                 with unlocked():
@@ -683,6 +685,8 @@ class SyncableData(Reactive):
     @updating
     def _patch(self, patch):
         for ref, (m, _) in self._models.items():
+            if ref not in state._views or ref in state._fake_roots:
+                continue
             viewable, root, doc, comm = state._views[ref]
             if comm or not doc.session_context or state._unblocked(doc):
                 with unlocked():
