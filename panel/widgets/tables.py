@@ -15,7 +15,6 @@ from bokeh.models.widgets.tables import (
 )
 
 from ..depends import param_value_if_widget
-from ..io.notebook import push_on_root
 from ..models.tabulator import (
     DataTabulator as _BkTabulator, TABULATOR_THEMES, THEME_URL
 )
@@ -827,9 +826,9 @@ class Tabulator(BaseTable):
 
     def _update_style(self):
         styles = self._get_style_data()
+        msg = {'styles': styles}
         for ref, (m, _) in self._models.items():
-            m.styles = styles
-            push_on_root(ref)
+            self._apply_update([], msg, m, ref)
 
     @updating
     def _stream(self, stream, rollover=None, follow=True):
@@ -843,9 +842,8 @@ class Tabulator(BaseTable):
         self._update_style()
 
     def stream(self, stream_value, rollover=None, reset_index=True, follow=True):
-        for ref, (m, _) in self._models.items():
-            m.follow = follow
-            push_on_root(ref)
+        for ref, (model, _) in self._models.items():
+            self._apply_update([], {'follow': follow}, model, ref)
         if follow and self.pagination:
             length = self._length
             nrows = self.page_size
@@ -885,9 +883,8 @@ class Tabulator(BaseTable):
         nrows = self.page_size
         max_page = length//nrows + bool(length%nrows)
         self.param.page.bounds = (1, max_page)
-        for ref, (m, _) in self._models.items():
-            m.max_page = max_page
-            push_on_root(ref)
+        for ref, (model, _) in self._models.items():
+            self._apply_update([], {'max_page': max_page}, model, ref)
 
     def _update_selected(self, *events, indices=None):
         if self._updating:
@@ -1052,12 +1049,9 @@ class Tabulator(BaseTable):
         filename: str
             The filename to save the table as.
         """
-        for ref, (m, _) in self._models.items():
-            m.filename = m.filename
-            push_on_root(ref)
-        for ref, (m, _) in self._models.items():
-            m.download = not m.download
-            push_on_root(ref)
+        for ref, (model, _) in self._models.items():
+            self._apply_update([], {'filename': filename}, model, ref)
+            self._apply_update([], {'download': not model.download}, model, ref)
 
     def download_menu(self, text_kwargs={}, button_kwargs={}):
         """
