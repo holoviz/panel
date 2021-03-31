@@ -294,10 +294,6 @@ progress:not([value])::before {
   font-weight: bold;
 }
 
-.slider-edit .bk-input-group .bk-input:focus {
-  box-shadow: none;
-}
-
 .slider-edit .bk-input-group .bk-spin-wrapper {
   display: contents;
 }
