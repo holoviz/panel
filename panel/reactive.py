@@ -189,7 +189,7 @@ class Syncable(Renderable):
 
     def _apply_update(self, events, msg, model, ref):
         if ref not in state._views or ref in state._fake_roots:
-            continue
+            return
         viewable, root, doc, comm = state._views[ref]
         if comm or not doc.session_context or state._unblocked(doc):
             with unlocked():
