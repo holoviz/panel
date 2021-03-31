@@ -64,10 +64,15 @@ class IDOM(PaneBase):
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         from idom.core.layout import LayoutUpdate
+        from idom.config import IDOM_CLIENT_IMPORT_SOURCE_URL
+
+        # let the client determine import source location
+        IDOM_CLIENT_IMPORT_SOURCE_URL.set("./")
+
         if comm:
-            url = '/panel_dist/idom/build/web_modules'
+            url = '/panel_dist/idom'
         else:
-            url = '/'+LOCAL_DIST+'idom/build/web_modules'
+            url = '/'+LOCAL_DIST+'idom'
 
         if self._idom_loop is None:
             self._setup()
