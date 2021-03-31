@@ -2,6 +2,7 @@ from bokeh.core.enums import CalendarPosition
 from bokeh.core.properties import (
     Bool,
     Date,
+    Datetime,
     Either,
     Enum,
     List,
@@ -21,15 +22,15 @@ class DatetimePicker(InputWidget):
     The initial or picked date.
     """)
 
-    min_date = Nullable(Date, help="""
+    min_date = Nullable(Either(Date, Datetime), help="""
     Optional earliest allowable date.
     """)
 
-    max_date = Nullable(Date, help="""
+    max_date = Nullable(Either(Date, Datetime), help="""
     Optional latest allowable date.
     """)
 
-    disabled_dates = List(Either(Date, Tuple(Date, Date)), default=[], help="""
+    disabled_dates = List(Either(Date, Datetime, Tuple(Date, Date), Tuple(Datetime, Datetime)), default=[], help="""
     A list of dates of ``(start, end)`` date ranges to make unavailable for
     selection. All other dates will be avalable.
 
@@ -37,7 +38,7 @@ class DatetimePicker(InputWidget):
         Only one of ``disabled_dates`` and ``enabled_dates`` should be specified.
     """)
 
-    enabled_dates = List(Either(Date, Tuple(Date, Date)), default=[], help="""
+    enabled_dates = List(Either(Date, Datetime, Tuple(Date, Date), Tuple(Datetime, Datetime)), default=[], help="""
     A list of dates of ``(start, end)`` date ranges to make available for
     selection. All other dates will be unavailable.
 
