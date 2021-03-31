@@ -22,6 +22,7 @@ from tornado import gen
 from .config import config
 from .io.callbacks import PeriodicCallback
 from .io.model import hold
+from .io.notebook import push
 from .io.server import unlocked
 from .io.state import state
 from .models.reactive_html import (

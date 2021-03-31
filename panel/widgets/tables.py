@@ -1051,7 +1051,7 @@ class Tabulator(BaseTable):
         """
         for ref, (model, _) in self._models.items():
             self._apply_update([], {'filename': filename}, model, ref)
-            self._apply_update([], {'download': not m.download}, model, ref)
+            self._apply_update([], {'download': not model.download}, model, ref)
 
     def download_menu(self, text_kwargs={}, button_kwargs={}):
         """
