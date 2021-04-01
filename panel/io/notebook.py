@@ -346,7 +346,7 @@ def ipywidget(obj, **kwargs):
     -------
     Returns an ipywidget model which renders the Panel object.
     """
-    from jupyter_bokeh import BokehModel
+    from jupyter_bokeh.widgets   import BokehModel
     from ..pane import panel
     model = panel(obj, **kwargs).get_root()
     widget = BokehModel(model, combine_events=True)
@@ -355,7 +355,10 @@ def ipywidget(obj, **kwargs):
         def view_count_changed(change, current=[model]):
             new_model = None
             if change['old'] > 0 and change['new'] == 0 and current:
-                obj._cleanup(current[0])
+                try:
+                    obj._cleanup(current[0])
+                except:
+                    pass
                 current[:] = []
             elif (change['old'] == 0 and change['new'] > 0 and
                   (not current or current[0] is not model)):
