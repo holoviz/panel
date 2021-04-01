@@ -357,7 +357,7 @@ def ipywidget(obj, **kwargs):
             if change['old'] > 0 and change['new'] == 0 and current:
                 try:
                     obj._cleanup(current[0])
-                except:
+                except Exception:
                     pass
                 current[:] = []
             elif (change['old'] == 0 and change['new'] > 0 and
