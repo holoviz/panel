@@ -1,22 +1,27 @@
 # -*- coding: utf-8 -*-
 
-from nbsite.shared_conf import *
-
-project = u'Panel'
-authors = u'Panel contributors'
-copyright = u'2019 ' + authors
-description = 'High-level dashboarding for python visualization libraries'
-
 import param
 
 param.parameterized.docstring_signature = False
 param.parameterized.docstring_describe_params = False
 
+from nbsite.shared_conf import *
+
+project = u'Panel'
+authors = u'Panel contributors'
+copyright = u'2019-2021 ' + authors
+description = 'High-level dashboarding for python visualization libraries'
+
 import panel
 version = release = str(panel.__version__)
 
 html_static_path += ['_static']
-html_theme = 'sphinx_holoviz_theme'
+
+html_css_files = [
+    'css/custom.css',
+    'css/nbsite.css'
+]
+
 html_theme_options = {
     'favicon': 'favicon.ico',
     'logo': 'logo_horizontal.png',
@@ -29,11 +34,42 @@ html_theme_options = {
     'footer': False,
 }
 
-extensions += ['sphinx.ext.napoleon', 'nbsite.gallery']
+html_sidebars = {
+    "index": [],
+    "getting_started": [],
+    "Comparisons": [],
+    "releases": [],
+    "Roadmap": [],
+    "FAQ": [],
+    "about": []
+}
+
+html_theme = "pydata_sphinx_theme"
+
+html_logo = "_static/logo_horizontal.png"
+html_favicon = "_static/favicon.ico"
+
+html_theme_options = {
+    "github_url": "https://github.com/holoviz/panel",
+    "icon_links": [
+        {
+            "name": "Twitter",
+            "url": "https://twitter.com/Panel_Org",
+            "icon": "fab fa-twitter-square",
+        },
+        {
+            "name": "Discourse",
+            "url": "https://https://discourse.holoviz.org/",
+            "icon": "fab fa-discourse",
+        },
+    ]
+}
+
+extensions += ['myst_parser', 'sphinx.ext.napoleon', 'nbsite.gallery']
 napoleon_numpy_docstring = True
 
 nbsite_gallery_conf = {
-    'github_org': 'pyviz',
+    'github_org': 'holoviz',
     'github_project': 'panel',
     'galleries': {
         'gallery': {
@@ -101,22 +137,9 @@ _NAV = (
 templates_path = ['_templates']
 
 html_context.update({
-    'js_includes': [],
-    'PROJECT': project,
-    'DESCRIPTION': description,
-    'AUTHOR': authors,
-    'VERSION': version,
-    'GOOGLE_SEARCH_ID': '017396756996884923145:moq4gmnf37j',
-    'GOOGLE_ANALYTICS_UA': 'UA-154795830-2',
-    'WEBSITE_URL': 'https://panel.holoviz.org',
-    'WEBSITE_SERVER': 'https://panel.holoviz.org',
-    'NAV': _NAV,
-    'LINKS': _NAV,
-    'SOCIAL': (
-        ('Discourse', '//discourse.holoviz.org'),
-        ('Twitter', '//twitter.com/Panel_org'),
-        ('Github', '//github.com/pyviz/panel'),
-    )
+    "github_user": "holoviz",
+    "github_repo": "panel",
+    "google_analytics_id": "UA-154795830-2",
 })
 
 nbbuild_patterns_to_take_along = ["simple.html", "*.json", "json_*"]
