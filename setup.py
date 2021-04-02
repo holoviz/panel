@@ -158,9 +158,8 @@ extras_require = {
         'nbconvert <6.0',
         'sphinx_holoviz_theme',
         'selenium',
-        'phantomjs',
         'graphviz',
-        'lxml',
+        'lxml'
     ]
 }
 
