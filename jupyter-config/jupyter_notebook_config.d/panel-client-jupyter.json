@@ -1,7 +1,7 @@
 {
   "ServerApp": {
     "jpserver_extensions": {
-      "panel": true
+      "panel.io.jupyter_server_extension": true
     }
   },
   "NotebookApp": {
