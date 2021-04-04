@@ -201,8 +201,24 @@ def test_json_pane(document, comm):
     assert model.text == '{"a": 2}'
     assert pane._models[model.ref['id']][0] is model
 
-    pane.object = '{"b": 3}'
+    pane.object = "{'b': 3}"
     assert model.text == '{"b": 3}'
+    assert pane._models[model.ref['id']][0] is model
+
+    pane.object = {"test": "can't show this"}
+    assert model.text == '{"test": "can\'t show this"}'
+    assert pane._models[model.ref['id']][0] is model
+
+    pane.object = ["can't show this"]
+    assert model.text == '["can\'t show this"]'
+    assert pane._models[model.ref['id']][0] is model
+
+    pane.object = "can't show this"
+    assert model.text == '"can\'t show this"'
+    assert pane._models[model.ref['id']][0] is model
+
+    pane.object = "can show this"
+    assert model.text == '"can show this"'
     assert pane._models[model.ref['id']][0] is model
 
     # Cleanup

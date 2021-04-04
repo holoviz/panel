@@ -4,6 +4,7 @@ Markdown, and also regular strings.
 """
 import json
 import textwrap
+from ast import literal_eval
 
 from six import string_types
 
@@ -338,10 +339,11 @@ class JSON(DivPaneBase):
 
     def _get_properties(self):
         properties = super()._get_properties()
-        if isinstance(self.object, string_types):
-            text = self.object
-        else:
-            text = json.dumps(self.object or {}, cls=self.encoder)
+        try:
+            data = literal_eval(self.object)
+        except Exception:
+            data = self.object
+        text = json.dumps(data or {}, cls=self.encoder)
         depth = None if self.depth < 0 else self.depth
         return dict(text=text, theme=self.theme, depth=depth,
                     hover_preview=self.hover_preview, **properties)
