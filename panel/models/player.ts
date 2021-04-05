@@ -343,8 +343,8 @@ export class Player extends Widget {
     this.define<Player.Props>(({Boolean, Int}) => ({
       direction:          [ Int,             0 ],
       interval:           [ Int,           500 ],
-      start:              [ Int                ],
-      end:                [ Int                ],
+      start:              [ Int,             0 ],
+      end:                [ Int,            10 ],
       step:               [ Int,             1 ],
       loop_policy:        [ LoopPolicy, "once" ],
       value:              [ Int,             0 ],

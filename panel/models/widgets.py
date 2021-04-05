@@ -16,9 +16,9 @@ class Player(Widget):
     The Player widget provides controls to play through a number of frames.
     """
 
-    start = Int(help="Lower bound of the Player slider")
+    start = Int(0, help="Lower bound of the Player slider")
 
-    end = Int(help="Upper bound of the Player slider")
+    end = Int(10, help="Upper bound of the Player slider")
 
     value = Int(0, help="Current value of the player app")
 
