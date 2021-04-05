@@ -1,28 +1,33 @@
 :root {
-    --pst-color-primary: #00aa41;
-}
-
-.navbar-light {
-  background-color: #2f2f2f !important;
-  box-shadow: 0 0.125rem 0.25rem 0 rgba(0, 0, 0, 0.11);
-}
-
-.navbar-light .navbar-nav .nav-link {
-    color: lightgray;
-}
-
-.navbar-light .navbar-nav .nav-link:hover {
-    color: white;
-}
-
-.navbar-light .navbar-nav>.active>.nav-link {
-    color: white;
+    --pst-color-primary: 47,47,47;
+    --pst-color-link: 0,170,65;
 }
 
 .nav-link {
     white-space: nowrap;
 }
 
-.navbar {
-    justify-content: end;
+.navbar .container-xl {
+    justify-content: left;
+}
+
+.navbar .container-md {
+    justify-content: left;
+}
+
+.showcase-table {
+    border-spacing: 15px
+}
+
+.showcase-table td {
+    border: 0px;
+    vertical-align: top;
+}
+
+.pl-md-5, .px-md-5 {
+    padding-left: 1rem !important;
+}
+
+.pt-md-5, .py-md-5 {
+    padding-top: 1rem !important;
 }
