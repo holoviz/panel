@@ -201,7 +201,7 @@ def test_json_pane(document, comm):
     assert model.text == '{"a": 2}'
     assert pane._models[model.ref['id']][0] is model
 
-    pane.object = "{'b': 3}"
+    pane.object = '{"b": 3}'
     assert model.text == '{"b": 3}'
     assert pane._models[model.ref['id']][0] is model
 
