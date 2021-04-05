@@ -38,7 +38,7 @@ def dataframe():
     }, index=[1, 2, 3], columns=['int', 'float', 'str'])
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def hv_bokeh():
     import holoviews as hv
     hv.renderer('bokeh')
@@ -48,7 +48,7 @@ def hv_bokeh():
     hv.Store.current_backend = prev_backend
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def get_display_handle():
     cleanup = []
     def display_handle(model):
@@ -62,7 +62,7 @@ def get_display_handle():
             del state._handles[ref]
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def hv_mpl():
     import holoviews as hv
     hv.renderer('matplotlib')
@@ -72,7 +72,7 @@ def hv_mpl():
     hv.Store.current_backend = prev_backend
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def tmpdir(request, tmpdir_factory):
     name = request.node.name
     name = re.sub(r"[\W]", "_", name)
