@@ -15,7 +15,7 @@ export class JSONView extends PanelMarkupView {
 
   render(): void {
     super.render();
-    const text = this.model.text
+    const text = this.model.text.replace(/(\r\n|\n|\r)/gm, "")
     let json;
     try {
       json = window.JSON.parse(text)
