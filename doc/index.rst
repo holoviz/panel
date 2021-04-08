@@ -8,8 +8,7 @@ A high-level app and dashboarding solution for Python
 
 .. raw:: html
 
-   <style>table {border-spacing: 15px} td { border: 1px solid black; vertical-align: top} </style>
-   <table>
+   <table class="showcase-table">
      <tr>
        <td border=1><a href="https://examples.pyviz.org/attractors/attractors_panel.html"><b>Attractors</b></a><br><a href="https://attractors.pyviz.demo.anaconda.com/attractors_panel"><img src="https://assets.holoviews.org/panel/thumbnails/index/attractors.png" /></a></td>
        <td border=1><a href="https://examples.pyviz.org/gapminders/gapminders.html"><b>Gapminders</b></a><br><a href="https://gapminders.pyviz.demo.anaconda.com"><img src="https://assets.holoviews.org/panel/thumbnails/index/gapminders.png" /></a></td>
@@ -52,7 +51,6 @@ Installation
 
 |CondaPyViz|_ |CondaDefaults|_ |PyPI|_ |License|_
 
-
 Panel works with `Python 3 <https://github.com/holoviz/panel/actions?query=workflow%3Apytest>`_ on Linux, Windows, or Mac. The recommended way to install Panel is using the `conda <https://docs.conda.io/projects/conda/en/latest/index.html>`_ command provided by `Anaconda <https://docs.anaconda.com/anaconda/install/>`_ or `Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_::
 
   conda install -c pyviz panel
@@ -83,29 +81,29 @@ Panel can be used in a wide range of development environments:
 Editor + Server
 ===============
 
-You can edit your Panel code as a .py file in any text editor, marking the objects you want to render as `.servable()`, then launch a server with `panel serve my_script.py --show` to open a browser tab showing your app or dashboard and backed by a live Python process.
+You can edit your Panel code as a .py file in any text editor, marking the objects you want to render as ``.servable()``, then launch a server with ``panel serve my_script.py --show`` to open a browser tab showing your app or dashboard and backed by a live Python process.
 
 JupyterLab and Classic notebook
 ===============================
 
-In the classic Jupyter notebook environment and JupyterLab, first make sure to load the `pn.extension()`. Panel objects will then render themselves if they are the last item in a notebook cell. For versions of `jupyterlab>=3.0` the necessary extension is automatically bundled in the `pyviz_comms` package, which must be >=2.0. However note that for version of `jupyterlab<3.0` you must also manually install the JupyterLab extension with:
+In the classic Jupyter notebook environment and JupyterLab, first make sure to load the ``pn.extension()``. Panel objects will then render themselves if they are the last item in a notebook cell. For versions of ``jupyterlab>=3.0`` the necessary extension is automatically bundled in the ``pyviz_comms`` package, which must be >=2.0. However note that for version of ``jupyterlab<3.0`` you must also manually install the JupyterLab extension with::
 
   jupyter labextension install @pyviz/jupyterlab_pyviz
 
 Google Colab
 ============
 
-In Google Colaboratory, rendering for each notebook cell is isolated, which means that every cell must reload the Panel extension code separately. Panel can do this automatically when you first load the extension if you declare that you are running in Colab: `pn.extension(comms='colab')`. Otherwise you will need to put `pn.extension()` in each cell where you want to display Panel output. Either way, you should be able to have access to all of Panel's functionality, though with a larger notebook size than with other notebook technologies that allow display code to be shared across cells.
+In Google Colaboratory, rendering for each notebook cell is isolated, which means that every cell must reload the Panel extension code separately. Panel can do this automatically when you first load the extension if you declare that you are running in Colab: ``pn.extension(comms='colab')``. Otherwise you will need to put ``pn.extension()`` in each cell where you want to display Panel output. Either way, you should be able to have access to all of Panel's functionality, though with a larger notebook size than with other notebook technologies that allow display code to be shared across cells.
 
 VSCode
 ======
 
-Visual Studio Code (VSCode) versions 2020.4.74986 and later support ipywidgets, and Panel objects can be used as ipywidgets since Panel 0.10 thanks to `jupyter_bokeh`, which means that you can now use Panel components interactively in VSCode. Ensure you install `jupyter_bokeh` with `pip install jupyter_bokeh` or `conda install -c bokeh jupyter_bokeh` and then enable the extension with `pn.extension(comms='vscode')`.
+Visual Studio Code (VSCode) versions 2020.4.74986 and later support ipywidgets, and Panel objects can be used as ipywidgets since Panel 0.10 thanks to ``jupyter_bokeh``, which means that you can now use Panel components interactively in VSCode. Ensure you install ``jupyter_bokeh`` with ``pip install jupyter_bokeh`` or ``conda install -c bokeh jupyter_bokeh`` and then enable the extension with ``pn.extension(comms='vscode')``.
 
 nteract and other ipywidgets notebooks
 ======================================
 
-In other notebook environments that support rendering ipywidgets interactively, such as nteract, you can use the same underlying ipywidgets support as for vscode: Install `jupyter_bokeh` and then use `pn.extension(comms='ipywidgets')`.
+In other notebook environments that support rendering ipywidgets interactively, such as nteract, you can use the same underlying ipywidgets support as for vscode: Install ``jupyter_bokeh`` and then use ``pn.extension(comms='ipywidgets')``.
 
 Other environments
 ==================
@@ -124,7 +122,7 @@ The Panel project is grateful for the sponsorship by the organizations and compa
       <td>
         <a href="https://www.anaconda.com/">
           <img src="https://static.bokeh.org/sponsor/anaconda.png"
-             alt="Anaconda Logo" width="200"/>
+             alt="Anaconda Logo" width="300"/>
          </a>
       </td>
       <td colspan="2">
@@ -154,7 +152,6 @@ The Panel project is grateful for the sponsorship by the organizations and compa
    :hidden:
    :maxdepth: 2
 
-   Home <self>
    Getting Started <getting_started/index>
    User Guide <user_guide/index>
    Gallery <gallery/index>
@@ -165,5 +162,4 @@ The Panel project is grateful for the sponsorship by the organizations and compa
    Releases <releases>
    Road Map <Roadmap>
    FAQ
-   Github source <https://github.com/pyviz/panel>
    About <about>
