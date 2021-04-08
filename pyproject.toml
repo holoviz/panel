@@ -9,3 +9,4 @@ requires = [
     "bleach",
     "packaging",
 ]
+build-backend = "setuptools.build_meta"
