@@ -108,7 +108,12 @@ export class PerspectiveView extends PanelHTMLBoxView {
     this.worker = (window as any).perspective.worker();
     this.table = this.worker.table(this.model.schema);
     this.table.update(this.data);
-    const container = div({class: "pnx-perspective-viewer"})
+    const container = div({
+      class: "pnx-perspective-viewer",
+      style: {
+        zIndex: 0,
+      }
+    })
     set_size(container, this.model)
     container.innerHTML = this.getInnerHTML();
     this.perspective_element = container.children[0]
