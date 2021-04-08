@@ -1,6 +1,42 @@
 Releases
 ========
 
+Version 0.11.2
+--------------
+
+Date: 2021-04-08
+
+The 0.11.2 release is a micro-release fixing a number of smaller
+bugs. Many thanks to @Hoxbro, @dhruvbalwada, @rmorshea,
+@MarcSkovMadsen, @fleming79, @OBITURASU and @philippjfr for their
+contributions to this release.
+
+Enhancements:
+
+- Optimize adding of roots to templates to avoid multiple preprocessing cycles (`#2096 <https://github.com/holoviz/panel/issues/2096>`__)
+- Use schema to support date(time) dtypes on ``Perspective`` (`#2130 <https://github.com/holoviz/panel/issues/2130>`__)
+
+Bug fixes:
+
+- Fix regression on ``Video`` pane causing video not to be rendered at all (`#2109 <https://github.com/holoviz/panel/issues/2109>`__)
+- Fix missing closing tag in Fast templates (`#2121 <https://github.com/holoviz/panel/issues/2121>`__)
+- Remove bootstrap CSS from ``FastGridTemplate`` (`#2123 <https://github.com/holoviz/panel/issues/2123>`__)
+- Ensure ``Tabulator`` selection can be set from Python (`#2128 <https://github.com/holoviz/panel/issues/2128>`__)
+- Ensure changes on ReactiveData objects are scheduled correctly on server (`#2134 <https://github.com/holoviz/panel/issues/2134>`__)
+- Fix for ``Player`` widget when start value is 0 (`#2141 <https://github.com/holoviz/panel/issues/2141>`__)
+- Support single quotes on JSON pane (`#2143 <https://github.com/holoviz/panel/issues/2143>`__)
+- Fix divide by zero issues when value_change is computed from zero baseline (`#2148 <https://github.com/holoviz/panel/issues/2148>`__)
+- Ensure ``GridSpec`` handles overrides across multiple cells (`#2150 <https://github.com/holoviz/panel/issues/2150>`__)
+
+Documentation:
+
+- Fix typo in Binder section of server deployment documentation (`#2118 <https://github.com/holoviz/panel/issues/2118>`__)
+- Improve documentation surrounding watch=True in Param user guide (`#2120 <https://github.com/holoviz/panel/issues/2120>`__)
+
+Compatibility:
+
+- Ensure IDOM pane configures paths correctly for latest version (`#2117 <https://github.com/holoviz/panel/issues/2127>`__, `#2132 <https://github.com/holoviz/panel/issues/2132>`__)
+
 Version 0.11.1
 --------------
 
@@ -13,19 +49,19 @@ release including @Hoxbro, @xavArtley, @Jacob-Barhak and @philippjfr.
 Enhancements:
 
 - Allow setting horizontal and vertical alignment separately (`#2072 <https://github.com/holoviz/panel/issues/2072>`__)
-- Expose widgets `visible` property (`#2065 <https://github.com/holoviz/panel/issues/2065>`__)
+- Expose widgets ``visible`` property (`#2065 <https://github.com/holoviz/panel/issues/2065>`__)
 - Allow bind to extract dependencies and evaluate other dynamic functions (`#2056 <https://github.com/holoviz/panel/issues/2056>`__)
-- Allow setting `root_directory` on `FileSelector` widget (`#2086 <https://github.com/holoviz/panel/issues/2086()
+- Allow setting ``root_directory`` on ``FileSelector`` widget (`#2086 <https://github.com/holoviz/panel/issues/2086()
 
 Bug fixes:
 
-- Fixed loading of jQuery in `BootstrapTemplate` (`#2057 <https://github.com/holoviz/panel/issues/2057>`__)
-- Fix VTK imports to ensure `VTKVolume` pane renders grids (`#2071 <https://github.com/holoviz/panel/issues/2071>`__)
+- Fixed loading of jQuery in ``BootstrapTemplate`` (`#2057 <https://github.com/holoviz/panel/issues/2057>`__)
+- Fix VTK imports to ensure ``VTKVolume`` pane renders grids (`#2071 <https://github.com/holoviz/panel/issues/2071>`__)
 - Fix loading of template resources from relative paths (`#2067 <https://github.com/holoviz/panel/issues/2067>`__)
-- Fix `Spinner` component overflow (`#2070 <https://github.com/holoviz/panel/issues/2070>`__)
-- Handle integer column names on `Perspective` widget (`#2069 <https://github.com/holoviz/panel/issues/2069>`__)
+- Fix ``Spinner`` component overflow (`#2070 <https://github.com/holoviz/panel/issues/2070>`__)
+- Handle integer column names on ``Perspective`` widget (`#2069 <https://github.com/holoviz/panel/issues/2069>`__)
 - Fix bundling of template resources (`#2076 <https://github.com/holoviz/panel/issues/2076>`__)
-- Fix `value_throttled` in `pn.depends` decorator (`#2085 <https://github.com/holoviz/panel/issues/2085>`__)
+- Fix ``value_throttled`` in ``pn.depends`` decorator (`#2085 <https://github.com/holoviz/panel/issues/2085>`__)
 
 Compatibility:
 
@@ -41,47 +77,47 @@ The 0.11.0 release brings a number of exciting new features to Panel as well as 
 
 Major features:
 
-- A `Perspective` pane based on the FINOS Perspective library (`#2034 <https://github.com/holoviz/panel/issues/2034>`__)
-- Implement `--autoreload` functionality for the Panel server (`#1983 <https://github.com/holoviz/panel/issues/1983>`__)
-- Add `--warm` option to panel serve, useful for pre-loading items into the state cache (`#1971 <https://github.com/holoviz/panel/issues/1971>`__)
+- A ``Perspective`` pane based on the FINOS Perspective library (`#2034 <https://github.com/holoviz/panel/issues/2034>`__)
+- Implement ``--autoreload`` functionality for the Panel server (`#1983 <https://github.com/holoviz/panel/issues/1983>`__)
+- Add ``--warm`` option to panel serve, useful for pre-loading items into the state cache (`#1971 <https://github.com/holoviz/panel/issues/1971>`__)
 - Add ability to define JS modules and Template specific resources (`#1967 <https://github.com/holoviz/panel/issues/1967>`__)
-- `panel.serve` now supports serving static files and Bokeh apps, not just Panel apps (`#1939 <https://github.com/holoviz/panel/issues/1939>`__) 
-- Add a `TrendIndicator` for conveniently showing history and value of a numeric quantity (`#1895 <https://github.com/holoviz/panel/issues/1895>`__)
-- Add `TextToSpeech` widget (`#1878 <https://github.com/holoviz/panel/issues/1878>`__)
-- Add `SpeechToText` widget (`#1880 <https://github.com/holoviz/panel/issues/1880>`__)
-- Add `loading` parameter and spinners to all components (`#1730 <https://github.com/holoviz/panel/issues/1730>`__, `#2026 <https://github.com/holoviz/panel/issues/2026>`__)
-- Add `IDOM` pane to develop interactive HTML components in Python (`#2004 <https://github.com/holoviz/panel/issues/2004>`__)
-- Add powerful new `Tabulator` widget for flexible and configurable display of tabular data (`#1531 <https://github.com/holoviz/panel/issues/1531>`__, `#1887 <https://github.com/holoviz/panel/issues/1887>`__) 
+- ``panel.serve`` now supports serving static files and Bokeh apps, not just Panel apps (`#1939 <https://github.com/holoviz/panel/issues/1939>`__) 
+- Add a ``TrendIndicator`` for conveniently showing history and value of a numeric quantity (`#1895 <https://github.com/holoviz/panel/issues/1895>`__)
+- Add ``TextToSpeech`` widget (`#1878 <https://github.com/holoviz/panel/issues/1878>`__)
+- Add ``SpeechToText`` widget (`#1880 <https://github.com/holoviz/panel/issues/1880>`__)
+- Add ``loading`` parameter and spinners to all components (`#1730 <https://github.com/holoviz/panel/issues/1730>`__, `#2026 <https://github.com/holoviz/panel/issues/2026>`__)
+- Add ``IDOM`` pane to develop interactive HTML components in Python (`#2004 <https://github.com/holoviz/panel/issues/2004>`__)
+- Add powerful new ``Tabulator`` widget for flexible and configurable display of tabular data (`#1531 <https://github.com/holoviz/panel/issues/1531>`__, `#1887 <https://github.com/holoviz/panel/issues/1887>`__) 
 
 Enhancements:
 
-- Add watch argument to `bind` function so that covers all the features of pn.depends (`#2000 <https://github.com/holoviz/panel/issues/2000>`__)
-- Add `format` parameter to DatetimeRangeInput widget (`#2043 <https://github.com/holoviz/panel/issues/2043>`__) 
-- Allow `ParamMethod` and `ParamFunction` to evaluate lazily (`#1966 <https://github.com/holoviz/panel/issues/1966>`__)
-- Add `value_input` parameter to TextInput widgets (`#2007 <https://github.com/holoviz/panel/issues/2007>`__)
-- Implement `Glyph3dMapper` support for `VTK` panes (`#2002 <https://github.com/holoviz/panel/issues/2002>`__, `#2003 <https://github.com/holoviz/panel/issues/2003>`__)
+- Add watch argument to ``bind`` function so that covers all the features of pn.depends (`#2000 <https://github.com/holoviz/panel/issues/2000>`__)
+- Add ``format`` parameter to DatetimeRangeInput widget (`#2043 <https://github.com/holoviz/panel/issues/2043>`__) 
+- Allow ``ParamMethod`` and ``ParamFunction`` to evaluate lazily (`#1966 <https://github.com/holoviz/panel/issues/1966>`__)
+- Add ``value_input`` parameter to TextInput widgets (`#2007 <https://github.com/holoviz/panel/issues/2007>`__)
+- Implement ``Glyph3dMapper`` support for ``VTK`` panes (`#2002 <https://github.com/holoviz/panel/issues/2002>`__, `#2003 <https://github.com/holoviz/panel/issues/2003>`__)
 - Add Jupyter server extension to serve resources (`#1982 <https://github.com/holoviz/panel/issues/1982>`__)
-- Enhancements for `DarkTheme` (`#1964 <https://github.com/holoviz/panel/issues/1964>`__)
-- Add `refresh` functionality to `FileSelector` (`#1962 <https://github.com/holoviz/panel/issues/1962>`__)
+- Enhancements for ``DarkTheme`` (`#1964 <https://github.com/holoviz/panel/issues/1964>`__)
+- Add ``refresh`` functionality to ``FileSelector`` (`#1962 <https://github.com/holoviz/panel/issues/1962>`__)
 - Add support for Auth0 authentication (`#1934 <https://github.com/holoviz/panel/issues/1934>`__)
 - Avoid recursive preprocessing slowing down rendering (`#1852 <https://github.com/holoviz/panel/issues/1852>`__)
-- Add support for per-layer tooltips on `DeckGL` pane (`#1846 <https://github.com/holoviz/panel/issues/1846>`__)
-- Add `Viewer` baseclass for custom user components (`#2045 <https://github.com/holoviz/panel/issues/2045>`__)
+- Add support for per-layer tooltips on ``DeckGL`` pane (`#1846 <https://github.com/holoviz/panel/issues/1846>`__)
+- Add ``Viewer`` baseclass for custom user components (`#2045 <https://github.com/holoviz/panel/issues/2045>`__)
 
 Bug fixes:
 
-- Fixed `FileSelector` file icon on selected files (`#2046 <https://github.com/holoviz/panel/issues/2046>`__)
+- Fixed ``FileSelector`` file icon on selected files (`#2046 <https://github.com/holoviz/panel/issues/2046>`__)
 - Drop query args when checking URLs (`#2037 <https://github.com/holoviz/panel/issues/2037>`__)
-- Fix `Card.header_background` propagation (`#2035 <https://github.com/holoviz/panel/issues/2035>`__)
-- Disable `GoldenTemplate` sidebar when empty (`#2017 <https://github.com/holoviz/panel/issues/2017>`__)
-- Ensure `Card.collapsed` and `Accordion.active` parameters are synced (`#2009 <https://github.com/holoviz/panel/issues/2009>`__)
+- Fix ``Card.header_background`` propagation (`#2035 <https://github.com/holoviz/panel/issues/2035>`__)
+- Disable ``GoldenTemplate`` sidebar when empty (`#2017 <https://github.com/holoviz/panel/issues/2017>`__)
+- Ensure ``Card.collapsed`` and ``Accordion.active`` parameters are synced (`#2009 <https://github.com/holoviz/panel/issues/2009>`__)
 - Fix inline resources when saving (`#1956 <https://github.com/holoviz/panel/issues/1956>`__)
-- Switch `Param` pane widget type when bounds (un)defined (`#1953 <https://github.com/holoviz/panel/issues/1953>`__)
+- Switch ``Param`` pane widget type when bounds (un)defined (`#1953 <https://github.com/holoviz/panel/issues/1953>`__)
 
 Compatibility:
 
 - Compatibility with Bokeh>=2.3 (`#1948 <https://github.com/holoviz/panel/issues/1948>`__, `#1988 <https://github.com/holoviz/panel/issues/1988>`__, `#1991 <https://github.com/holoviz/panel/issues/1991>`__)
-- Updated `ECharts` pane to 5.0.2 of JS library (`#2016 <https://github.com/holoviz/panel/issues/2016>`__)
+- Updated ``ECharts`` pane to 5.0.2 of JS library (`#2016 <https://github.com/holoviz/panel/issues/2016>`__)
 
 Documentation:
 
@@ -97,9 +133,9 @@ Another micro-release in the 0.10.x series focusing primarily on bug and regress
 Bug fixes:
 
 - Fix inverted axes on HoloViews plots (`#1732 <https://github.com/holoviz/panel/issues/1732>`__)
-- Fix enabling/disabling of FileDownload widget (`#1510 <https://github.com/holoviz/panel/issues/1510>`__, `#1820 <https://github.com/holoviz/panel/issues/1820>`__)
+- Fix enabling/disabling of ``FileDownload`` widget (`#1510 <https://github.com/holoviz/panel/issues/1510>`__, `#1820 <https://github.com/holoviz/panel/issues/1820>`__)
 - Fix issues serving template resources on server with route prefix (`#1821 <https://github.com/holoviz/panel/issues/1821>`__)
-- Fixes for rendering ECharts from pyecharts (`#1874 <https://github.com/holoviz/panel/issues/1874>`__, `#1876 <https://github.com/holoviz/panel/issues/1876>`__)
+- Fixes for rendering ``ECharts`` from pyecharts (`#1874 <https://github.com/holoviz/panel/issues/1874>`__, `#1876 <https://github.com/holoviz/panel/issues/1876>`__)
 - Fix issues with scroll behavior when expanding/collapsing Card/Accordion (`#1833 <https://github.com/holoviz/panel/issues/1833>`__, `#1884 <https://github.com/holoviz/panel/issues/1884>`__)
 - Ensure DiscreSlider label is correctly linked to value (`#1906 <https://github.com/holoviz/panel/issues/1906>`__)
 - Fix support for setting header_color and header_background on all templates (`#1872 <https://github.com/holoviz/panel/issues/1872>`__)
@@ -107,12 +143,12 @@ Bug fixes:
 
 Enhancements:
 
-- Support throttled in Param widget (`#1800 <https://github.com/holoviz/panel/pull/1800>`__)
+- Support throttled in ``Param`` widget (`#1800 <https://github.com/holoviz/panel/pull/1800>`__)
 - Support rendering of hvPlot Interactive objects (`#1824 <https://github.com/holoviz/panel/issues/1824>`__)
 - Allow recording session launch time in server session_info (`#1909 <https://github.com/holoviz/panel/pull/1909>`__)
 - Add Button.value parameter (`#1910 <https://github.com/holoviz/panel/issues/1910>`__)
 - Support upload of multiple parameters on FileInput (`#1911 <https://github.com/holoviz/panel/pull/1911>`__)
-- Improve support for DarkTheme in templates (`#1855 <https://github.com/holoviz/panel/pull/1855>`__, `#1856 <https://github.com/holoviz/panel/pull/1856>`__)
+- Improve support for ``DarkTheme`` in templates (`#1855 <https://github.com/holoviz/panel/pull/1855>`__, `#1856 <https://github.com/holoviz/panel/pull/1856>`__)
 
 Documentation:
 
@@ -131,26 +167,26 @@ Bug fixes:
 
 - Fix various issues with Template CSS (`#1663 <https://github.com/holoviz/panel/pull/1663>`__, `#1742 <https://github.com/holoviz/panel/pull/1742>`__)
 - Fix BytesIO/StringIO buffers as input to image xpanes (`#1711 <https://github.com/holoviz/panel/issues/1711>`__)
-- Fix out-of-bounds errors when assigning to `GridSpec` with fixed ncols (`#1721 <https://github.com/holoviz/panel/pull/1721>`__)
-- Fix deserialization issues for `Plotly.hover_data` (`#1722 <https://github.com/holoviz/panel/pull/>`__)
-- Fixed updating of `Alert` parameters after initialization (`#1725 <https://github.com/holoviz/panel/pull/1725>`__)
+- Fix out-of-bounds errors when assigning to ``GridSpec`` with fixed ``ncols`` (`#1721 <https://github.com/holoviz/panel/pull/1721>`__)
+- Fix deserialization issues for ``Plotly.hover_data`` (`#1722 <https://github.com/holoviz/panel/pull/>`__)
+- Fixed updating of ``Alert`` parameters after initialization (`#1725 <https://github.com/holoviz/panel/pull/1725>`__)
 - Fix ordering of items added to Template areas (`#1736 <https://github.com/holoviz/panel/pull/1736>`__)
 - Fix interactivity for items in Card (`#1750 <https://github.com/holoviz/panel/pull/1750>`__)
 - Ensure onload callbacks are only run once (`#1746 <https://github.com/holoviz/panel/pull/1746>`__)
 - Allow overriding items in grid based templates (`#1741 <https://github.com/holoviz/panel/pull/1741>`__)
-- Ensure `ECharts` and `ipywidget` rerender when in `Card` (`#1765 <https://github.com/holoviz/panel/pull/1765>`__)
+- Ensure ``ECharts`` and ``ipywidget`` rerender when in ``Card`` (`#1765 <https://github.com/holoviz/panel/pull/1765>`__)
 - Ensure template dark theme persists on HoloViews plots (`#1764 <https://github.com/holoviz/panel/pull/1764>`__)
-- Fix responsive height in `Plotly` pane (`#1770 <https://github.com/holoviz/panel/pull/1770>`__)
+- Fix responsive height in ``Plotly`` pane (`#1770 <https://github.com/holoviz/panel/pull/1770>`__)
 - Ensure image panes resize in width and height (`#1777 <https://github.com/holoviz/panel/pull/1777>`_))
-- Fix issues with `Location.sync` serialization (`#1784 <https://github.com/holoviz/panel/pull/1784>`_))
-- Add `throttled` argument to interact (`#1259 <https://github.com/holoviz/panel/pull/1259>`__)
+- Fix issues with ``Location.sync`` serialization (`#1784 <https://github.com/holoviz/panel/pull/1784>`_))
+- Add ``throttled`` argument to interact (`#1259 <https://github.com/holoviz/panel/pull/1259>`__)
 - ECharts pane now loads echarts-gl for 3D support (`#1785 <https://github.com/holoviz/panel/pull/1785>`__)
-- Ensure `CheckBoxGroup` and `CheckButtonGroup` support arbitrary objects as options (`#1793 <https://github.com/holoviz/panel/pull/1793>`_))
+- Ensure ``CheckBoxGroup`` and ``CheckButtonGroup`` support arbitrary objects as options (`#1793 <https://github.com/holoviz/panel/pull/1793>`_))
 
 Enhancements:
 
 - Improved OAuth encryption key validation (`#1762 <https://github.com/holoviz/panel/pull/1762>`__)
-- Add `progress` option to `.save` method (`#1776 <https://github.com/holoviz/panel/pull/1776>`__)
+- Add ``progress`` option to ``.save`` method (`#1776 <https://github.com/holoviz/panel/pull/1776>`__)
 
 Version 0.10.1
 --------------
@@ -167,12 +203,12 @@ Enhancements:
 
 Bug fixes:
 
-- Fix `WidgetBox` CSS (`#855 <https://github.com/holoviz/panel/pull/855>`__)
+- Fix ``WidgetBox`` CSS (`#855 <https://github.com/holoviz/panel/pull/855>`__)
 - Fix CSS load order in Templates (`#1698 <https://github.com/holoviz/panel/pull/1698>`__)
-- Allow setting `DiscreteSlider` orientation (`#1683 <https://github.com/holoviz/panel/pull/1683>`__)
+- Allow setting ``DiscreteSlider`` orientation (`#1683 <https://github.com/holoviz/panel/pull/1683>`__)
 - Ensure JS callbacks and links are only set up once on templates (`#1700 <https://github.com/holoviz/panel/pull/1700>`__)
-- Initialize pipeline only once (`#1705 <https://github.com/holoviz/panel/pull/1705>`__)
-- Allow using `NumberInput` as `Param` pane widget (`#1708 <https://github.com/holoviz/panel/issues/1708>`__)
+- Initialize pipeline only once (`#1705 <https://github.com/holoviz/panel/pull/1705>``__)
+- Allow using ``NumberInput`` as ``Param`` pane widget (`#1708 <https://github.com/holoviz/panel/issues/1708>`__)
 
 Version 0.10.0
 --------------
