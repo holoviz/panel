@@ -647,7 +647,7 @@ class Trend(SyncableData, Indicator):
         if 'value_change' in msg and msg['value_change'] == 'auto':
             if len(ys) > 1:
                 y1, y2 = self._data.get(self.plot_y)[-2:]
-                msg['value_change'] = y2/y1 - 1
+                msg['value_change'] = 0 if y1 == 0 else (y2/y1 - 1)
             else:
                 msg['value_change'] = 0
         return msg
