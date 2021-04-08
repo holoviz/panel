@@ -8,3 +8,4 @@ requires = [
     "requests"
     "packaging",
 ]
+build-backend = "setuptools.build_meta"
