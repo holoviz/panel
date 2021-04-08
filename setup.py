@@ -153,7 +153,7 @@ extras_require = {
     'tests': _tests,
     'recommended': _recommended,
     'doc': _recommended + [
-        'nbsite >=0.6.1',
+        'nbsite >=0.6.8a36',
         'nbconvert <6.0',
         'sphinx_holoviz_theme',
         'selenium',
