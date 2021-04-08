@@ -53,69 +53,6 @@ def test_date_picker(document, comm):
     assert widget.value == '2018-09-04'
 
 
-def test_datetime_picker(document, comm):
-    datetime_picker = DatetimePicker(
-        name='DatetimePicker', value=datetime(2018, 9, 2, 1, 5),
-        start=date(2018, 9, 1), end=date(2018, 9, 10)
-    )
-
-    widget = datetime_picker.get_root(document, comm=comm)
-
-    assert isinstance(widget, datetime_picker._widget_type)
-    assert widget.title == 'DatetimePicker'
-    assert widget.value == '2018-09-02 01:05:00'
-    assert widget.min_date == '2018-09-01'
-    assert widget.max_date == '2018-09-10'
-
-    datetime_picker._process_events({'value': '2018-09-03 03:00:01'})
-    assert datetime_picker.value == datetime(2018, 9, 3, 3, 0, 1)
-
-    datetime_picker._process_events({'value': datetime(2018, 9, 5)})
-    assert datetime_picker.value == datetime(2018, 9, 5)
-
-    value = datetime_picker._process_param_change({'value': datetime(2018, 9, 4, 1, 0, 1)})
-    assert value['value'] == '2018-09-04 01:00:01'
-
-    value = datetime(2018, 9, 4, 12, 1)
-    assert datetime_picker._deserialize_value(value) == '2018-09-04 12:01:00'
-    assert datetime_picker._serialize_value(datetime_picker._deserialize_value(value)) == value
-
-    # Check end value
-    datetime_picker._process_events({'value': '2018-09-10 03:00:01'})
-    assert datetime_picker.value == datetime(2018, 9, 10, 0, 0, 0)
-
-
-def test_datetime_range_picker(document, comm):
-    datetime_range_picker = DatetimeRangePicker(
-        name='DatetimeRangePicker', value=(datetime(2018, 9, 2, 1, 5), datetime(2018, 9, 2, 1, 6)),
-        start=date(2018, 9, 1), end=date(2018, 9, 10)
-    )
-
-    widget = datetime_range_picker.get_root(document, comm=comm)
-
-    assert isinstance(widget, datetime_range_picker._widget_type)
-    assert widget.title == 'DatetimeRangePicker'
-    assert widget.value == '2018-09-02 01:05:00 to 2018-09-02 01:06:00'
-    assert widget.min_date == '2018-09-01'
-    assert widget.max_date == '2018-09-10'
-
-    datetime_range_picker._process_events({'value': '2018-09-03 03:00:01 to 2018-09-04 03:00:01'})
-    assert datetime_range_picker.value == (datetime(2018, 9, 3, 3, 0, 1), datetime(2018, 9, 4, 3, 0, 1))
-
-    value = datetime_range_picker._process_param_change(
-        {'value': (datetime(2018, 9, 4, 1, 0, 1), datetime(2018, 9, 4, 4, 0, 1))}
-    )
-    assert value['value'] == '2018-09-04 01:00:01 to 2018-09-04 04:00:01'
-
-    value = (datetime(2018, 9, 4, 12, 1), datetime(2018, 9, 4, 12, 1, 10))
-    assert datetime_range_picker._deserialize_value(value) == '2018-09-04 12:01:00 to 2018-09-04 12:01:10'
-    assert datetime_range_picker._serialize_value(datetime_range_picker._deserialize_value(value)) == value
-
-    # Check end value
-    datetime_range_picker._process_events({'value': '2018-09-09 03:00:01 to 2018-09-10 03:00:01'})
-    assert datetime_range_picker.value == (datetime(2018, 9, 9, 3, 0, 1), datetime(2018, 9, 10, 0, 0, 0))
-
-
 def test_file_input(document, comm):
     file_input = FileInput(accept='.txt')
 
