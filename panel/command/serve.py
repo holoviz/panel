@@ -146,8 +146,6 @@ class Serve(_BkServe):
             else:
                 files.append(f)
 
-        state.set_prefix(args.prefix)
-
         # Handle tranquilized functions in the supplied functions
         if args.rest_provider in REST_PROVIDERS:
             pattern = REST_PROVIDERS[args.rest_provider](files, args.rest_endpoint)
