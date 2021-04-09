@@ -9,7 +9,6 @@ import os
 from base64 import b64encode
 from collections import OrderedDict
 from pathlib import Path
-from urllib.parse import urljoin
 
 from bokeh.embed.bundle import (
     Bundle as BkBundle, _bundle_extensions, extension_dirs,

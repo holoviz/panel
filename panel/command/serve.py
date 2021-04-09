@@ -18,7 +18,6 @@ from ..io.rest import REST_PROVIDERS
 from ..io.reload import record_modules, watch
 from ..io.server import INDEX_HTML, get_static_routes
 from ..io.state import state
-from ..util import edit_readonly
 
 log = logging.getLogger(__name__)
 

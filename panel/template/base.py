@@ -8,7 +8,6 @@ import uuid
 
 from collections import OrderedDict
 from functools import partial
-from urllib.parse import urljoin
 
 import param
 
