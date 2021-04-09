@@ -503,9 +503,19 @@ class BasicTemplate(BaseTemplate):
                 js_path += '.mjs'
             if os.path.isfile(BUNDLE_DIR / js_path.replace('/', os.path.sep)):
                 js_modules[jsname] = dist_path + f'bundled/js/{js_path}'
-        js_files.update(self.config.js_files)
-        js_modules.update(self.config.js_modules)
-        extra_css = list(self.config.css_files)
+        for name, js in self.config.js_files.items():
+            if not '//' in js and state.rel_path:
+                js = f'{state.rel_path}/{js}'
+            js_files[name] = js
+        for name, js in self.config.js_modules.items():
+            if not '//' in js and state.rel_path:
+                js = f'{state.rel_path}/{js}'
+            js_modules[name] = js
+        extra_css = []
+        for css in list(self.config.css_files):
+            if not '//' in css and state.rel_path:
+                css = f'{state.rel_path}/{css}'
+            extra_css.append(css)
         raw_css = list(self.config.raw_css)
 
         # CSS files
