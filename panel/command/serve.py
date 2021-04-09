@@ -8,7 +8,6 @@ import base64
 import logging # isort:skip
 
 from glob import glob
-from urllib.parse import urljoin
 
 from bokeh.command.subcommands.serve import Serve as _BkServe
 from bokeh.command.util import build_single_handler_applications
@@ -147,11 +146,7 @@ class Serve(_BkServe):
             else:
                 files.append(f)
 
-        prefix = args.prefix or ''
-        if not prefix.endswith('/'):
-            prefix += '/'
-        with edit_readonly(state):
-            state.base_url = urljoin('/', prefix)
+        state.set_prefix(args.prefix)
 
         # Handle tranquilized functions in the supplied functions
         if args.rest_provider in REST_PROVIDERS:

@@ -45,6 +45,7 @@ from tornado.web import RequestHandler, StaticFileHandler, authenticated
 from tornado.wsgi import WSGIContainer
 
 # Internal imports
+from ..util import edit_readonly
 from .reload import autoreload_watcher
 from .resources import BASE_TEMPLATE, Resources, bundle_resources
 from .state import state
@@ -173,10 +174,14 @@ class DocHandler(BkDocHandler):
 
     @authenticated
     async def get(self, *args, **kwargs):
-        session = await self.get_session()
-        r = self.request
-        prefix = '/'.join(r.uri.split('/')[:-1])
-        state.root_url = f"{r.protocol}://{r.host}{prefix}"
+        old_url = state.base_url
+        if getattr(self.application, '_prefix', None):
+            state.set_prefix(self.application._prefix)
+        try:
+            session = await self.get_session()
+        finally:
+            with edit_readonly(state):
+                state.base_url = old_url
         resources = Resources.from_bokeh(self.application.resources())
         page = server_html_page_for_session(
             session, resources=resources, title=session.document.title,
@@ -196,8 +201,14 @@ class AutoloadJsHandler(BkAutoloadJsHandler):
     '''
 
     async def get(self, *args, **kwargs):
-        session = await self.get_session()
-
+        old_url = state.base_url
+        if getattr(self.application, '_prefix', None):
+            state.set_prefix(self.application._prefix)
+        try:
+            session = await self.get_session()
+        finally:
+            with edit_readonly(state):
+                state.base_url = old_url
         element_id = self.get_argument("bokeh-autoload-element", default=None)
         if not element_id:
             self.send_error(status_code=400, reason='No bokeh-autoload-element query parameter')
@@ -211,7 +222,7 @@ class AutoloadJsHandler(BkAutoloadJsHandler):
         else:
             server_url = None
 
-        resources = self.application.resources(server_url)
+        resources = Resources.from_bokeh(self.application.resources(server_url))
         js = autoload_js_script(resources, session.token, element_id, app_path, absolute_url)
 
         self.set_header("Content-Type", 'application/javascript')
