@@ -426,6 +426,7 @@ class Param(PaneBase):
         else:
             widget = widget_class(**kwargs)
         widget._param_pane = self
+        widget._param_name = p_name
 
         watchers = self._callbacks
 
@@ -912,7 +913,7 @@ def link_param_method(root_view, root_model):
         for method in methods:
             for cb in method._callbacks:
                 pobj = cb.cls if cb.inst is None else cb.inst
-                if widget._param_pane.object is pobj:
+                if widget._param_pane.object is pobj and widget._param_name in cb.parameter_names:
                     if isinstance(widget, DiscreteSlider):
                         w = widget._slider
                     else:
