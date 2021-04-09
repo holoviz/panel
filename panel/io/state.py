@@ -16,7 +16,7 @@ from bokeh.io import curdoc as _curdoc
 from pyviz_comms import CommManager as _CommManager
 from tornado.web import decode_signed_value
 
-from ..util import base64url_decode, edit_readonly
+from ..util import base64url_decode
 
 
 class _state(param.Parameterized):
@@ -39,6 +39,9 @@ class _state(param.Parameterized):
     encryption = param.Parameter(default=None, doc="""
        Object with encrypt and decrypt methods to support encryption
        of secret variables including OAuth information.""")
+
+    rel_path = param.String(default='', readonly=True, doc="""
+       Relative path from the current app being served to the root URL.""")
 
     session_info = param.Dict(default={'total': 0, 'live': 0,
                                        'sessions': OrderedDict()}, doc="""
@@ -242,16 +245,6 @@ class _state(param.Parameterized):
         Callback that is triggered when a session is created.
         """
         self._on_session_created.append(callback)
-
-    def set_prefix(self, prefix):
-        """
-        Set the base_url based on the server prefix.
-        """
-        prefix = prefix or ''
-        if not prefix.endswith('/'):
-            prefix += '/'
-        with edit_readonly(self):
-            self.base_url = urljoin('/', prefix)
 
     def publish(self, endpoint, parameterized, parameters=None):
         """

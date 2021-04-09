@@ -465,8 +465,10 @@ class BasicTemplate(BaseTemplate):
         name = type(self).__name__.lower()
         resources = _settings.resources(default="server")
         if resources == 'server':
-            base_url = state.base_url[1:] if state.base_url.startswith('/') else state.base_url        
-            dist_path = '/' + urljoin(base_url, LOCAL_DIST)
+            if state.rel_path:
+                dist_path = f'{state.rel_path}/{LOCAL_DIST}'
+            else:
+                dist_path = LOCAL_DIST
         else:
             dist_path = CDN_DIST
 

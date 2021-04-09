@@ -16,7 +16,7 @@ from collections import OrderedDict
 from contextlib import contextmanager
 from functools import partial, wraps
 from types import FunctionType, MethodType
-from urllib.parse import urlparse
+from urllib.parse import urljoin, urlparse
 
 import param
 import bokeh
@@ -169,46 +169,56 @@ class Application(BkApplication):
 
 bokeh.command.util.Application = Application
 
-# Patch Bokeh DocHandler URL
-class DocHandler(BkDocHandler):
 
-    @authenticated
-    async def get(self, *args, **kwargs):
-        old_url = state.base_url
-        if getattr(self.application, '_prefix', None):
-            state.set_prefix(self.application._prefix)
+class SessionPrefixHandler:
+
+    @contextmanager
+    def _session_prefix(self):
+        prefix = self.request.uri.replace(self.application_context._url, '')
+        if not prefix.endswith('/'):
+            prefix += '/'
+        base_url = urljoin('/', prefix)
+        rel_path = '/'.join(['..'] * self.application_context._url.strip('/').count('/'))
+        old_url, old_rel = state.base_url, state.rel_path
+        with edit_readonly(state):
+            state.base_url = base_url
+            state.rel_path = rel_path
         try:
-            session = await self.get_session()
+            yield
         finally:
             with edit_readonly(state):
                 state.base_url = old_url
-        resources = Resources.from_bokeh(self.application.resources())
-        page = server_html_page_for_session(
-            session, resources=resources, title=session.document.title,
-            template=session.document.template,
-            template_variables=session.document.template_variables
-        )
+                state.rel_path = old_rel
 
+# Patch Bokeh DocHandler URL
+class DocHandler(BkDocHandler, SessionPrefixHandler):
+
+    @authenticated
+    async def get(self, *args, **kwargs):
+        with self._session_prefix():
+            session = await self.get_session()
+            resources = Resources.from_bokeh(self.application.resources())
+            page = server_html_page_for_session(
+                session, resources=resources, title=session.document.title,
+                template=session.document.template,
+                template_variables=session.document.template_variables
+            )
         self.set_header("Content-Type", 'text/html')
         self.write(page)
 
 per_app_patterns[0] = (r'/?', DocHandler)
 
 # Patch Bokeh Autoload handler
-class AutoloadJsHandler(BkAutoloadJsHandler):
+class AutoloadJsHandler(BkAutoloadJsHandler, SessionPrefixHandler):
     ''' Implements a custom Tornado handler for the autoload JS chunk
 
     '''
 
     async def get(self, *args, **kwargs):
-        old_url = state.base_url
-        if getattr(self.application, '_prefix', None):
-            state.set_prefix(self.application._prefix)
-        try:
+        with self._session_prefix():
             session = await self.get_session()
-        finally:
-            with edit_readonly(state):
-                state.base_url = old_url
+            resources = Resources.from_bokeh(self.application.resources(server_url))
+
         element_id = self.get_argument("bokeh-autoload-element", default=None)
         if not element_id:
             self.send_error(status_code=400, reason='No bokeh-autoload-element query parameter')
@@ -222,7 +232,6 @@ class AutoloadJsHandler(BkAutoloadJsHandler):
         else:
             server_url = None
 
-        resources = Resources.from_bokeh(self.application.resources(server_url))
         js = autoload_js_script(resources, session.token, element_id, app_path, absolute_url)
 
         self.set_header("Content-Type", 'application/javascript')
