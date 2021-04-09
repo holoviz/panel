@@ -402,15 +402,27 @@ class BasicTemplate(BaseTemplate):
 
     location = param.Boolean(default=True, readonly=True)
 
+    #############
+    # Resources #
+    #############
+
+    # Resource locations for bundled resources
+    _CDN = CDN_DIST
+    _LOCAL = LOCAL_DIST
+
+    # pathlib.Path pointing to local CSS file(s)
     _css = None
 
+    # pathlib.Path pointing to local JS file(s)
     _js = None
 
+    # pathlib.Path pointing to local Jinja2 template
     _template = None
 
-    _modifiers = {}
-
+    # External resources
     _resources = {'css': {}, 'js': {}, 'js_modules': {}, 'tarball': {}}
+
+    _modifiers = {}
 
     __abstract = True
 
@@ -465,11 +477,11 @@ class BasicTemplate(BaseTemplate):
         resources = _settings.resources(default="server")
         if resources == 'server':
             if state.rel_path:
-                dist_path = f'{state.rel_path}/{LOCAL_DIST}'
+                dist_path = f'{state.rel_path}/{self._LOCAL}'
             else:
-                dist_path = LOCAL_DIST
+                dist_path = self._LOCAL
         else:
-            dist_path = CDN_DIST
+            dist_path = self._CDN
 
         # External resources
         css_files = dict(self._resources.get('css', {}))
