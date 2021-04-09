@@ -22,6 +22,9 @@ Bug fixes:
 - Support single quotes on JSON pane ([#2143](https://github.com/holoviz/panel/issues/2143))
 - Fix divide by zero issues when value_change is computed from zero baseline ([#2148](https://github.com/holoviz/panel/issues/2148))
 - Ensure `GridSpec` handles overrides across multiple cells ([#2150](https://github.com/holoviz/panel/issues/2150))
+- Fix for `loading` parameter widget linking ([#2160](https://github.com/holoviz/panel/issues/2160))
+- Use relative URLs for resource loading to ensure proxied apps work ([#2159](https://github.com/holoviz/panel/issues/2159))
+- Fix `Tabulator` ajax call on empty data ([#2161](https://github.com/holoviz/panel/issues/2161))
 
 Documentation:
 
