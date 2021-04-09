@@ -10,7 +10,9 @@ from panel.config import config
 from panel.io import state
 from panel.models import HTML as BkHTML
 from panel.pane import Markdown
+from panel.io.resources import DIST_DIR
 from panel.io.server import get_server, serve, set_curdoc
+from panel.template import BootstrapTemplate
 from panel.widgets import Button
 
 
@@ -47,20 +49,83 @@ def test_server_static_dirs():
     html = Markdown('# Title')
 
     static = {'tests': os.path.dirname(__file__)}
-    server = serve(html, port=5008, threaded=True, static_dirs=static, show=False)
+    server = serve(html, port=6000, threaded=True, static_dirs=static, show=False)
 
     # Wait for server to start
     time.sleep(1)
 
-    r = requests.get("http://localhost:5008/tests/test_server.py")
-
     try:
+        r = requests.get("http://localhost:6000/tests/test_server.py")
         with open(__file__, encoding='utf-8') as f:
             assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
     finally:
         server.stop()
 
 
+def test_server_template_static_resources():
+    template = BootstrapTemplate()
+
+    server = serve({'template': template}, port=6001, threaded=True, show=False)
+
+    # Wait for server to start
+    time.sleep(1)
+
+    try:
+        r = requests.get("http://localhost:6001/static/extensions/panel/bundled/bootstraptemplate/bootstrap.css")
+        with open(DIST_DIR / 'bundled' / 'bootstraptemplate' / 'bootstrap.css', encoding='utf-8') as f:
+            assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
+    finally:
+        server.stop()
+
+
+def test_server_template_static_resources_with_prefix():
+    template = BootstrapTemplate()
+
+    server = serve({'template': template}, port=6004, threaded=True, show=False, prefix='prefix')
+
+    # Wait for server to start
+    time.sleep(1)
+
+    try:
+        r = requests.get("http://localhost:6004/prefix/static/extensions/panel/bundled/bootstraptemplate/bootstrap.css")
+        with open(DIST_DIR / 'bundled' / 'bootstraptemplate' / 'bootstrap.css', encoding='utf-8') as f:
+            assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
+    finally:
+        server.stop()
+
+
+def test_server_template_static_resources_with_prefix_relative_url():
+    template = BootstrapTemplate()
+
+    server = serve({'template': template}, port=6005, threaded=True, show=False, prefix='prefix')
+
+    # Wait for server to start
+    time.sleep(1)
+
+    try:
+        r = requests.get("http://localhost:6005/prefix/template")
+        content = r.content.decode('utf-8')
+        assert 'href="static/extensions/panel/bundled/bootstraptemplate/bootstrap.css"' in content
+    finally:
+        server.stop()
+
+
+def test_server_template_static_resources_with_subpath_and_prefix_relative_url():
+    template = BootstrapTemplate()
+
+    server = serve({'/subpath/template': template}, port=6005, threaded=True, show=False, prefix='prefix')
+
+    # Wait for server to start
+    time.sleep(1)
+
+    try:
+        r = requests.get("http://localhost:6005/prefix/subpath/template")
+        content = r.content.decode('utf-8')
+        assert 'href="../static/extensions/panel/bundled/bootstraptemplate/bootstrap.css"' in content
+    finally:
+        server.stop()
+
+        
 def test_server_async_callbacks():
     button = Button(name='Click')
 
@@ -75,12 +140,12 @@ def test_server_async_callbacks():
 
     button.on_click(cb)
 
-    server = serve(button, port=5008, threaded=True, show=False)
+    server = serve(button, port=6002, threaded=True, show=False)
 
     # Wait for server to start
     time.sleep(1)
 
-    requests.get("http://localhost:5008/")
+    requests.get("http://localhost:6002/")
 
     doc = list(button._models.values())[0][0].document
     with set_curdoc(doc):
@@ -101,12 +166,12 @@ def test_server_session_info():
     with config.set(session_history=-1):
         html = Markdown('# Title')
 
-        server = serve(html, port=5009, threaded=True, show=False)
+        server = serve(html, port=6003, threaded=True, show=False)
 
         # Wait for server to start
         time.sleep(1)
 
-        requests.get("http://localhost:5009/")
+        requests.get("http://localhost:6003/")
 
         assert state.session_info['total'] == 1
         assert len(state.session_info['sessions']) == 1
