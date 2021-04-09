@@ -158,6 +158,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   }
 
   getConfiguration(): any {
+    const pagination = this.model.pagination == 'remote' ? 'local': (this.model.pagination || false)
     let configuration = {
       ...this.model.configuration,
       index: "_index",
@@ -166,21 +167,22 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       cellEdited: (cell: any) => this.cellEdited(cell),
       columns: this.getColumns(),
       layout: this.getLayout(),
-      ajaxURL: "http://panel.pyviz.org",
       ajaxSorting: true,
-      pagination: this.model.pagination == 'remote' ? 'local': this.model.pagination,
+      pagination: pagination,
       paginationSize: this.model.page_size,
       paginationInitialPage: 1,
     }
-    let data = this.model.source;
-    if (data === null || Object.keys(data.data).length===0)
-      return configuration;
-    else {
-      data = transform_cds_to_records(data, true)
-      return {
-        ...configuration,
-        "data": data,
-      }
+    if (pagination)
+      configuration['ajaxURL'] = "http://panel.pyviz.org"
+    const cds: any = this.model.source;
+    let data: any[]
+    if (cds === null || (cds.columns().length === 0))
+      data = transform_cds_to_records(cds, true)
+    else
+      data = []
+    return {
+      ...configuration,
+      "data": data,
     }
   }
 
