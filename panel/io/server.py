@@ -215,10 +215,6 @@ class AutoloadJsHandler(BkAutoloadJsHandler, SessionPrefixHandler):
     '''
 
     async def get(self, *args, **kwargs):
-        with self._session_prefix():
-            session = await self.get_session()
-            resources = Resources.from_bokeh(self.application.resources(server_url))
-
         element_id = self.get_argument("bokeh-autoload-element", default=None)
         if not element_id:
             self.send_error(status_code=400, reason='No bokeh-autoload-element query parameter')
@@ -232,7 +228,10 @@ class AutoloadJsHandler(BkAutoloadJsHandler, SessionPrefixHandler):
         else:
             server_url = None
 
-        js = autoload_js_script(resources, session.token, element_id, app_path, absolute_url)
+        with self._session_prefix():
+            session = await self.get_session()
+            resources = Resources.from_bokeh(self.application.resources(server_url))
+            js = autoload_js_script(resources, session.token, element_id, app_path, absolute_url)
 
         self.set_header("Content-Type", 'application/javascript')
         self.write(js)
