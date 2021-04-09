@@ -154,7 +154,7 @@ extras_require = {
     'recommended': _recommended,
     'doc': _recommended + [
         'nbsite >=0.6.8a36',
-        'nbconvert ==5.6.1',
+        'nbconvert',
         'sphinx_holoviz_theme',
         'selenium',
         'phantomjs',
