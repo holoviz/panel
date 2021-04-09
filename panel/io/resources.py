@@ -43,6 +43,7 @@ _env.filters['conffilter'] = conffilter
 RESOURCE_MODE = 'server'
 PANEL_DIR = Path(__file__).parent.parent
 DIST_DIR = PANEL_DIR / 'dist'
+BUNDLE_DIR = DIST_DIR / 'bundled'
 ASSETS_DIR = PANEL_DIR / 'assets'
 BASE_TEMPLATE = _env.get_template('base.html')
 DEFAULT_TITLE = "Panel Application"

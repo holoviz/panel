@@ -21,7 +21,7 @@ from pyviz_comms import JupyterCommManager as _JupyterCommManager
 from ..config import _base_config, config, panel_extension
 from ..io.model import add_to_doc
 from ..io.notebook import render_template
-from ..io.resources import CDN_DIST, LOCAL_DIST, DIST_DIR
+from ..io.resources import CDN_DIST, LOCAL_DIST, BUNDLE_DIR
 from ..io.save import save
 from ..io.state import state
 from ..layout import Column, ListLike, GridSpec
@@ -475,11 +475,13 @@ class BasicTemplate(BaseTemplate):
         css_files = dict(self._resources.get('css', {}))
         for cssname, css in css_files.items():
             css_path = url_path(css)
-            css_files[cssname] = dist_path + f'bundled/css/{css_path}'
+            if (BUNDLE_DIR / 'css' / css_path.replace('/', os.path.sep)).is_file():
+                css_files[cssname] = dist_path + f'bundled/css/{css_path}'
         js_files = dict(self._resources.get('js', {}))
         for jsname, js in js_files.items():
             js_path = url_path(js)
-            js_files[jsname] = dist_path + f'bundled/js/{js_path}'
+            if (BUNDLE_DIR / 'js' / js_path.replace('/', os.path.sep)).is_file():
+                js_files[jsname] = dist_path + f'bundled/js/{js_path}'
         js_modules = dict(self._resources.get('js_modules', {}))
         for jsname, js in js_modules.items():
             js_path = url_path(js)
@@ -487,7 +489,7 @@ class BasicTemplate(BaseTemplate):
                 js_path += '/index.mjs'
             else:
                 js_path += '.mjs'
-            if os.path.isfile(DIST_DIR / 'bundled' / 'js' / js_path.replace('/', os.path.sep)):
+            if os.path.isfile(BUNDLE_DIR / js_path.replace('/', os.path.sep)):
                 js_modules[jsname] = dist_path + f'bundled/js/{js_path}'
         js_files.update(self.config.js_files)
         js_modules.update(self.config.js_modules)
@@ -504,8 +506,12 @@ class BasicTemplate(BaseTemplate):
                 tmpl_css = cls._css if isinstance(cls._css, list) else [cls._css]
                 if css in tmpl_css:
                     tmpl_name = cls.__name__.lower()
-            css = os.path.basename(css)
-            css_files[f'base_{css}'] = dist_path + f'bundled/{tmpl_name}/{css}'
+            css_file = os.path.basename(css)
+            if (BUNDLE_DIR / tmpl_name / css_file).is_file():
+                css_files[f'base_{css_file}'] = dist_path + f'bundled/{tmpl_name}/{css_file}'
+            else:
+                with open(css, encoding='utf-8') as f:
+                    raw_css.append(f.read())
 
         # JS files
         base_js = self._js
@@ -518,7 +524,8 @@ class BasicTemplate(BaseTemplate):
                 if js in tmpl_js:
                     tmpl_name = cls.__name__.lower()
             js = os.path.basename(js)
-            js_files[f'base_{js}'] = dist_path + f'bundled/{tmpl_name}/{js}'
+            if (BUNDLE_DIR / tmpl_name / js).is_file():
+                js_files[f'base_{js}'] = dist_path + f'bundled/{tmpl_name}/{js}'
 
         if self.theme:
             theme = self.theme.find_theme(type(self))
@@ -526,10 +533,19 @@ class BasicTemplate(BaseTemplate):
                 if theme.base_css:
                     basename = os.path.basename(theme.base_css)
                     owner = theme.param.base_css.owner.__name__.lower()
-                    css_files['theme_base'] = dist_path + f'bundled/{owner}/{basename}'
+                    if (BUNDLE_DIR / owner / basename).is_file():
+                        css_files['theme_base'] = dist_path + f'bundled/{owner}/{basename}'
+                    else:
+                        with open(theme.base_css, encoding='utf-8') as f:
+                            raw_css.append(f.read())
                 if theme.css:
                     basename = os.path.basename(theme.css)
-                    css_files['theme'] = dist_path + f'bundled/{name}/{basename}'
+                    if (BUNDLE_DIR / name / basename).is_file():
+                        css_files['theme'] = dist_path + f'bundled/{name}/{basename}'
+                    else:
+                        with open(theme.base_css, encoding='utf-8') as f:
+                            raw_css.append(f.read())
+
         return {
             'css': css_files,
             'extra_css': extra_css,
