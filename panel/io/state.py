@@ -40,8 +40,8 @@ class _state(param.Parameterized):
        Object with encrypt and decrypt methods to support encryption
        of secret variables including OAuth information.""")
 
-    root_url = param.String(default=None, doc="""
-       The root URL of the running server.""")
+    rel_path = param.String(default='', readonly=True, doc="""
+       Relative path from the current app being served to the root URL.""")
 
     session_info = param.Dict(default={'total': 0, 'live': 0,
                                        'sessions': OrderedDict()}, doc="""

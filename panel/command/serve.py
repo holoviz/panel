@@ -8,7 +8,6 @@ import base64
 import logging # isort:skip
 
 from glob import glob
-from urllib.parse import urljoin
 
 from bokeh.command.subcommands.serve import Serve as _BkServe
 from bokeh.command.util import build_single_handler_applications
@@ -19,7 +18,6 @@ from ..io.rest import REST_PROVIDERS
 from ..io.reload import record_modules, watch
 from ..io.server import INDEX_HTML, get_static_routes
 from ..io.state import state
-from ..util import edit_readonly
 
 log = logging.getLogger(__name__)
 
@@ -146,12 +144,6 @@ class Serve(_BkServe):
                 files.extend(glob(f))
             else:
                 files.append(f)
-
-        prefix = args.prefix or ''
-        if not prefix.endswith('/'):
-            prefix += '/'
-        with edit_readonly(state):
-            state.base_url = urljoin('/', prefix)
 
         # Handle tranquilized functions in the supplied functions
         if args.rest_provider in REST_PROVIDERS:
