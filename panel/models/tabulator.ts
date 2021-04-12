@@ -167,19 +167,20 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       cellEdited: (cell: any) => this.cellEdited(cell),
       columns: this.getColumns(),
       layout: this.getLayout(),
-      ajaxSorting: true,
       pagination: pagination,
       paginationSize: this.model.page_size,
       paginationInitialPage: 1,
     }
-    if (pagination)
+    if (pagination) {
       configuration['ajaxURL'] = "http://panel.pyviz.org"
+      configuration['ajaxSorting'] = true
+    }
     const cds: any = this.model.source;
     let data: any[]
     if (cds === null || (cds.columns().length === 0))
-      data = transform_cds_to_records(cds, true)
-    else
       data = []
+    else
+      data = transform_cds_to_records(cds, true)
     return {
       ...configuration,
       "data": data,
