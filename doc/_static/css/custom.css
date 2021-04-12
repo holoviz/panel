@@ -31,3 +31,7 @@
 .pt-md-5, .py-md-5 {
     padding-top: 1rem !important;
 }
+
+.cell_output {
+    padding-left: 0;
+}
