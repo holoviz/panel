@@ -10,6 +10,7 @@ from contextlib import contextmanager
 import param
 
 from bokeh.models import CustomJS, LayoutDOM, Model, Spacer as BkSpacer
+from bokeh.themes import Theme
 
 from ..io import remove_root
 from ..io.notebook import push
@@ -45,6 +46,12 @@ class Bokeh(PaneBase):
     """
     Bokeh panes allow including any Bokeh model in a panel.
     """
+
+    theme = param.ClassSelector(default=None,
+                                class_=(Theme, str),
+                                allow_None=True,
+                                doc="""
+        Bokeh theme to apply to the plot.""")
 
     priority = 0.8
 
@@ -109,6 +116,10 @@ class Bokeh(PaneBase):
             remove_root(model, doc)
 
         self._models[ref] = (model, parent)
+
+        if self.theme:
+            doc.theme = self.theme
+
         return model
 
 
