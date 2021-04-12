@@ -19,7 +19,7 @@ html_static_path += ['_static']
 
 html_css_files = [
     'css/custom.css',
-    'css/nbsite.css'
+    'nbsite.css'
 ]
 
 html_theme_options = {
