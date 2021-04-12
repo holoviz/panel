@@ -65,7 +65,7 @@ html_theme_options = {
     ]
 }
 
-extensions += ['myst_parser', 'sphinx.ext.napoleon', 'nbsite.gallery']
+extensions += ['sphinx.ext.napoleon', 'nbsite.gallery']
 napoleon_numpy_docstring = True
 
 nbsite_gallery_conf = {
