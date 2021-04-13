@@ -47,10 +47,7 @@ class Bokeh(PaneBase):
     Bokeh panes allow including any Bokeh model in a panel.
     """
 
-    theme = param.ClassSelector(default=None,
-                                class_=(Theme, str),
-                                allow_None=True,
-                                doc="""
+    theme = param.ClassSelector(default=None, class_=(Theme, str), doc="""
         Bokeh theme to apply to the plot.""")
 
     priority = 0.8
