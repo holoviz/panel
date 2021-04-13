@@ -18,34 +18,11 @@ version = release = str(panel.__version__)
 html_static_path += ['_static']
 
 html_css_files = [
-    'css/custom.css',
-    'nbsite.css'
+    'nbsite.css',
+    'css/custom.css'
 ]
 
-html_theme_options = {
-    'favicon': 'favicon.ico',
-    'logo': 'logo_horizontal.png',
-    'include_logo_text': False,
-    'primary_color': '#00aa41',
-    'primary_color_dark': '#00aa41',
-    'secondary_color': '#5f9df0',
-    'custom_css': 'site.css',
-    'second_nav': True,
-    'footer': False,
-}
-
-html_sidebars = {
-    "index": [],
-    "getting_started": [],
-    "Comparisons": [],
-    "releases": [],
-    "Roadmap": [],
-    "FAQ": [],
-    "about": []
-}
-
 html_theme = "pydata_sphinx_theme"
-
 html_logo = "_static/logo_horizontal.png"
 html_favicon = "_static/favicon.ico"
 
@@ -121,18 +98,6 @@ nbsite_gallery_conf = {
     'thumbnail_url': 'https://assets.holoviews.org/panel/thumbnails',
     'deployment_url': 'https://panel-gallery.pyviz.demo.anaconda.com/'
 }
-
-_NAV = (
-    ('Getting started', 'getting_started/index'),
-    ('User Guide', 'user_guide/index'),
-    ('Gallery', 'gallery/index'),
-    ('Reference Gallery', 'reference/index'),
-    ('Developer Guide', 'developer_guide/index'),
-    ('Releases', 'releases'),
-    ('API', 'api/index'),
-    ('FAQ', 'FAQ'),
-    ('About', 'about')
-)
 
 templates_path = ['_templates']
 

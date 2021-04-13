@@ -5,3 +5,36 @@
   {%- include "docs-navbar.html" %}
 </nav>
 {% endblock %}
+
+{% block docs_sidebar %}
+{% if sidebars %}
+<!-- Only show if we have sidebars configured, else just a small margin  -->
+<div class="col-12 col-md-2 bd-sidebar">
+  {%- for sidebartemplate in sidebars %}
+  {%- include sidebartemplate %}
+  {%- endfor %}
+</div>
+{% else %}
+<div class="col-12 col-md-1 col-xl-2 bd-sidebar no-sidebar"></div>
+{% endif %}
+{% endblock %}
+
+{% block docs_main %}
+{% if sidebars %}
+{% set content_col_class = "col-md-10 col-xl-8" %}
+{% else %}
+{% set content_col_class = "col-md-11 col-xl-8" %}
+{% endif %}
+<main class="col-12 {{ content_col_class }} py-md-5 pl-md-5 pr-md-4 bd-content" role="main">
+  {% block docs_body %}
+  <div>
+    {% block body %} {% endblock %}
+  </div>
+  {% endblock %}
+  {% if theme_show_prev_next %}
+  <div class='prev-next-bottom'>
+    {{ prev_next(prev, next) }}
+  </div>
+  {% endif %}
+</main>
+{% endblock %}

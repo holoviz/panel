@@ -7,14 +7,6 @@
     white-space: nowrap;
 }
 
-.navbar .container-xl {
-    justify-content: left;
-}
-
-.navbar .container-md {
-    justify-content: left;
-}
-
 .showcase-table {
     border-spacing: 15px
 }
@@ -35,3 +27,24 @@
 .cell_output {
     padding-left: 0;
 }
+
+@media (min-width: 1200px) {
+    .container, .container-lg, .container-md, .container-sm, .container-xl {
+	max-width: 1600px;
+    }
+}
+
+#scroller-right {
+    max-width: 14%;
+}
+
+@media (max-width: 1400px) {
+    #scroller-right {
+	position: relative;
+	right: unset;
+	top: unset;
+	max-width: 100%;
+	transform: unset;
+    }
+}
+
