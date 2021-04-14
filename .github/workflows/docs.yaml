@@ -52,7 +52,7 @@ jobs:
           doit develop_install ${{ env.CHANS_DEV}} -o doc -o examples
           pip install pydeck sphinxcontrib-napoleon pyecharts
           conda install -c conda-forge "nodejs=15.3.0"
-          pip install idom pydata_sphinx_theme myst_parser
+          pip install idom pydata_sphinx_theme
       - name: opengl
         run: |
           sudo apt-get install libglu1-mesa
@@ -81,7 +81,9 @@ jobs:
           nbsite build --what=html --output=builtdocs --org holoviz --project-name panel
           cp -r ./panel/dist ./builtdocs/panel_dist
       - name: git status
-        run: git status
+        run: |
+          git status
+          git diff
       - name: Deploy dev
         uses: peaceiris/actions-gh-pages@v3
         if: (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc'))
