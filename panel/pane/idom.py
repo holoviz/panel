@@ -1,4 +1,5 @@
 import sys
+import shutil
 import asyncio
 
 from functools import partial
@@ -80,9 +81,9 @@ class IDOM(PaneBase):
         IDOM_CLIENT_IMPORT_SOURCE_URL.set("./")
 
         if comm:
-            url = '/panel_dist/idom'
+            url = '/panel_dist/idom/build'
         else:
-            url = '/'+LOCAL_DIST+'idom'
+            url = '/'+LOCAL_DIST+'idom/build'
 
         if self._idom_loop is None:
             self._setup()
@@ -163,8 +164,12 @@ class IDOM(PaneBase):
         import idom
         from idom.config import IDOM_CLIENT_BUILD_DIR
         idom_dist_dir = DIST_DIR / "idom"
-        if IDOM_CLIENT_BUILD_DIR.get() != idom_dist_dir:
-            IDOM_CLIENT_BUILD_DIR.set(idom_dist_dir)
+        idom_build_dir = idom_dist_dir / "build"
+        if not idom_build_dir.is_dir():
+            idom_build_dir.mkdir()
+            shutil.copyfile(idom_dist_dir / 'package.json', idom_build_dir / 'package.json')
+        if IDOM_CLIENT_BUILD_DIR.get() != idom_build_dir:
+            IDOM_CLIENT_BUILD_DIR.set(idom_build_dir)
             # just in case packages were already installed but the build hasn't been
             # copied over to DIST_DIR yet.
             ignore_installed = True
