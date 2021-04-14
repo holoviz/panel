@@ -12,6 +12,7 @@ Bug fixes:
 
 - Fix ``Tabulator`` sorting and data initialization (`#2163 <https://github.com/holoviz/panel/issues/2163`__)
 - Improved handling of ``IDOM`` build directory (`#2168 <https://github.com/holoviz/panel/issues/2168>`__)
+- Fix apply of ``bokeh_theme`` in templates (`#2170 <https://github.com/holoviz/panel/issues/2170>`__)
 
 Documentation:
 
@@ -44,9 +45,9 @@ Bug fixes:
 - Support single quotes on JSON pane (`#2143 <https://github.com/holoviz/panel/issues/2143>`__)
 - Fix divide by zero issues when value_change is computed from zero baseline (`#2148 <https://github.com/holoviz/panel/issues/2148>`__)
 - Ensure ``GridSpec`` handles overrides across multiple cells (`#2150 <https://github.com/holoviz/panel/issues/2150>`__)
-- Fix for ``loading`` parameter widget linking (`#2160 <https://github.com/holoviz/panel/issues/2160>`__)
+- Fix for `loading` parameter widget linking (`#2160 <https://github.com/holoviz/panel/issues/2160>`__)
 - Use relative URLs for resource loading to ensure proxied apps work (`#2159 <https://github.com/holoviz/panel/issues/2159>`__)
-- Fix ``Tabulator`` ajax call on empty data (`#2161 <https://github.com/holoviz/panel/issues/2161>`__)
+- Fix `Tabulator` ajax call on empty data (`#2161 <https://github.com/holoviz/panel/issues/2161>`__)
 
 Documentation:
 
@@ -71,7 +72,7 @@ Enhancements:
 - Allow setting horizontal and vertical alignment separately (`#2072 <https://github.com/holoviz/panel/issues/2072>`__)
 - Expose widgets ``visible`` property (`#2065 <https://github.com/holoviz/panel/issues/2065>`__)
 - Allow bind to extract dependencies and evaluate other dynamic functions (`#2056 <https://github.com/holoviz/panel/issues/2056>`__)
-- Allow setting ``root_directory`` on ``FileSelector`` widget (`#2086 <https://github.com/holoviz/panel/issues/2086>`__)
+- Allow setting ``root_directory`` on ``FileSelector`` widget (`#2086 <https://github.com/holoviz/panel/issues/2086()
 
 Bug fixes:
 
@@ -227,7 +228,7 @@ Bug fixes:
 - Fix CSS load order in Templates (`#1698 <https://github.com/holoviz/panel/pull/1698>`__)
 - Allow setting ``DiscreteSlider`` orientation (`#1683 <https://github.com/holoviz/panel/pull/1683>`__)
 - Ensure JS callbacks and links are only set up once on templates (`#1700 <https://github.com/holoviz/panel/pull/1700>`__)
-- Initialize pipeline only once (`#1705 <https://github.com/holoviz/panel/pull/1705>`__)
+- Initialize pipeline only once (`#1705 <https://github.com/holoviz/panel/pull/1705>``__)
 - Allow using ``NumberInput`` as ``Param`` pane widget (`#1708 <https://github.com/holoviz/panel/issues/1708>`__)
 
 Version 0.10.0
@@ -441,7 +442,7 @@ Backwards compatibility:
    (`#1538 <https://github.com/holoviz/panel/pull/1538>`__,
    `#1678 <https://github.com/holoviz/panel/pull/1678>`__)
 -  ``Viewable.add_periodic_callback`` is deprecated; use
-   ``pn.state.add_periodic_callback``
+   `pn.state.add_periodic_callback`
    (`#1542 <https://github.com/holoviz/panel/pull/1542>`__)
 -  Use ``widget_type`` instead of ``type`` to override Param widget type
    in Param pane
@@ -466,20 +467,20 @@ Date: 2020-06-21
 This is a minor bug fix release primarily for compatibility with Bokeh versions >=2.1.0 along with a variety of important bug fixes. Many thanks for the many people who contributed to this release including @mattpap, @kebowen730, @xavArtley, @maximlt, @jbednar, @mycarta, @basnijholt, @jbednar and @philippjfr.
 
 - Compatibility with Bokeh 2.1 (`#1424 <https://github.com/holoviz/panel/pull/1424>`_)
-- Fixes for ``FileDownload`` widget handling of callbacks (`#1246 <https://github.com/holoviz/panel/pull/1246>`_, `#1306 <https://github.com/holoviz/panel/pull/1306>`_)
+- Fixes for `FileDownload` widget handling of callbacks (`#1246 <https://github.com/holoviz/panel/pull/1246>`_, `#1306 <https://github.com/holoviz/panel/pull/1306>`_)
 - Improvements and fixes for Param pane widget mapping (`#1301 <https://github.com/holoviz/panel/pull/1301>`_, `#1342 <https://github.com/holoviz/panel/pull/1342>`_, `#1378 <https://github.com/holoviz/panel/pull/1378>`_)
-- Fixed bugs handling of closed ``Tabs`` (`#1337 <https://github.com/holoviz/panel/pull/1337>`_)
-- Fix bug in layout ``clone`` method (`#1349 <https://github.com/holoviz/panel/pull/1349>`_)
-- Improvements for ``Player`` widget (`#1353 <https://github.com/holoviz/panel/pull/1353>`_, `#1360 <https://github.com/holoviz/panel/pull/1360>`_)
-- Fix for ``jslink`` on Bokeh models (`#1358 <https://github.com/holoviz/panel/pull/1358>`_)
-- Fix for rendering geometries in ``Vega`` pane (`#1359 <https://github.com/holoviz/panel/pull/1359>`_)
-- Fix issue with ``HoloViews`` pane overriding selected renderer (`#1429 <https://github.com/holoviz/panel/pull/1429>`_)
-- Fix issues with ``JSON`` pane depth parameter and rerendering (`#1431 <https://github.com/holoviz/panel/pull/1431>`_)
-- Fixed ``param.Date`` and ``param.CalenderDate`` parameter mappings (`#1433 <https://github.com/holoviz/panel/pull/1433>`_, `#1434 <https://github.com/holoviz/panel/pull/1434>`_)
-- Fixed issue with enabling ``num_procs`` on ``pn.serve`` (`#1436 <https://github.com/holoviz/panel/pull/1436>`_)
+- Fixed bugs handling of closed Tabs (`#1337 <https://github.com/holoviz/panel/pull/1337>`_)
+- Fix bug in layout `clone` method (`#1349 <https://github.com/holoviz/panel/pull/1349>`_)
+- Improvements for `Player` widget (`#1353 <https://github.com/holoviz/panel/pull/1353>`_, `#1360 <https://github.com/holoviz/panel/pull/1360>`_)
+- Fix for `jslink` on Bokeh models (`#1358 <https://github.com/holoviz/panel/pull/1358>`_)
+- Fix for rendering geometries in `Vega` pane (`#1359 <https://github.com/holoviz/panel/pull/1359>`_)
+- Fix issue with `HoloViews` pane overriding selected renderer (`#1429 <https://github.com/holoviz/panel/pull/1429>`_)
+- Fix issues with `JSON` pane depth parameter and rerendering (`#1431 <https://github.com/holoviz/panel/pull/1431>`_)
+- Fixed `param.Date` and `param.CalenderDate` parameter mappings (`#1433 <https://github.com/holoviz/panel/pull/1433>`_, `#1434 <https://github.com/holoviz/panel/pull/1434>`_)
+- Fixed issue with enabling `num_procs` on `pn.serve` (`#1436 <https://github.com/holoviz/panel/pull/1436>`_)
 - Warn if a particular extension could not be loaded (`#1437 <https://github.com/holoviz/panel/pull/1437>`_)
 - Fix issues with garbage collection and potential memory leaks (`#1407 <https://github.com/holoviz/panel/pull/1407>`_)
-- Support recent versions of pydeck in ``DeckGL`` pane (`#1443 <https://github.com/holoviz/panel/pull/1443>`_)
+- Support recent versions of pydeck in `DeckGL` pane (`#1443 <https://github.com/holoviz/panel/pull/1443>`_)
 - Ensure JS callbacks on widget created from Parameters are initialized (`#1439 <https://github.com/holoviz/panel/pull/1439>`_)
 
 
@@ -492,18 +493,18 @@ This release primarily focuses on improvements and additions to the documentatio
 
 Enhancements:
 
-- Add ``Template.save`` with ability to save to HTML and PNG but not embed (`#1224 <https://github.com/holoviz/panel/pull/1224>`_)
+- Add `Template.save` with ability to save to HTML and PNG but not embed (`#1224 <https://github.com/holoviz/panel/pull/1224>`_)
 
 Bug fixes:
 
-- Fixed formatting of datetimes in ``DataFrame`` widget (`#1221 <https://github.com/holoviz/panel/pull/1221>`_)
-- Add ``panel/models/vtk/`` subpackage to MANIFEST to ensure it is shipped with packages
+- Fixed formatting of datetimes in `DataFrame` widget (`#1221 <https://github.com/holoviz/panel/pull/1221>`_)
+- Add `panel/models/vtk/` subpackage to MANIFEST to ensure it is shipped with packages
 
 Documentation:
 
 - Add guidance about developing custom models (`#1220 <https://github.com/holoviz/panel/pull/1220>`_)
 - Add Folium example to gallery (`#1189 <https://github.com/holoviz/panel/pull/1189>`_)
-- Add ``FileDownload`` and ``FileInput`` example to gallery (`#1193 <https://github.com/holoviz/panel/pull/1193>`_)
+- Add `FileDownload` and `FileInput` example to gallery (`#1193 <https://github.com/holoviz/panel/pull/1193>`_)
 
 
 Version 0.9.4
@@ -579,7 +580,7 @@ Features:
 - Added a MultiChoice widget (`#1140 <https://github.com/holoviz/panel/pull/1140>`_)
 - Add FileDownload widget (`#915 <https://github.com/holoviz/panel/pull/915>`_, `#1146 <https://github.com/holoviz/panel/pull/1146>`_)
 - Add ability to define Slider format option (`#1142 <https://github.com/holoviz/panel/pull/1142>`_)
-- Expose ``pn.state.cookies`` and ``pn.state.headers`` to allow accessing HTTP headers and requests from inside an app (`#1143 <https://github.com/holoviz/panel/pull/1143>`_)
+- Expose `pn.state.cookies` and `pn.state.headers` to allow accessing HTTP headers and requests from inside an app (`#1143 <https://github.com/holoviz/panel/pull/1143>`_)
 
 Bug fixes:
 
@@ -587,7 +588,7 @@ Bug fixes:
 
 Removals:
 
-- Slider no longer support ``callback_policy`` and ``callback_throttle`` as they have been replaced by the ``value_throttled`` property in bokeh
+- Slider no longer support `callback_policy` and `callback_throttle` as they have been replaced by the `value_throttled` property in bokeh
 
 
 Version 0.8.1

@@ -10,6 +10,7 @@ Bug fixes:
 
 - Fix `Tabulator` sorting and data initialization ([#2163](https://github.com/holoviz/panel/issues/2163))
 - Improved handling of `IDOM` build directory ([#2168](https://github.com/holoviz/panel/issues/2168))
+- Fix apply of `bokeh_theme` in templates ([#2170](https://github.com/holoviz/panel/issues/2170))
 
 Documentation:
 
