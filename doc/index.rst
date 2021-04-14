@@ -156,10 +156,8 @@ The Panel project is grateful for the sponsorship by the organizations and compa
    User Guide <user_guide/index>
    Gallery <gallery/index>
    Reference Gallery <reference/index>
-   Developer Guide <developer_guide/index>
+   Developers <developer_guide/index>
    API <api/index>
-   Comparisons <Comparisons>
    Releases <releases>
-   Road Map <Roadmap>
    FAQ
-   About <about>
+   About <about/index>

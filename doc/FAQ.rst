@@ -21,6 +21,16 @@ Here is a list of questions we have either been asked by users or potential pitf
 If you want an even richer JavaScript-based representation where that's supported by a library but not yet by Panel, it will be more difficult to add that, but you can see the ``pane.Bokeh`` class and the ``panel.holoviews`` and ``panel.plotly`` modules for examples.
 
 
+**Q: How does Panel compare to other dashboarding libraries?**
+
+For a detailed comparison between Panel and other dashboarding libraries see the `Comparisons page <about/comparisons.html>`__.
+
+
+**Q: What features are on the Panel Roadmap?**
+
+For an outline on any future plans for Panel see the `Roadmap <about/roadmap.html>`__.
+
+
 **Q: How does Panel relate to Bokeh?**
 
 **A:** Panel is built on infrastructure provided by Bokeh, specifically Bokeh's model base classes, layouts, widgets, and (optionally) its server. But Panel does not require using any of Bokeh's plotting support. This way you can make use of a solid, well supported low-level toolkit (Bokeh) to build apps and dashboards for your own plots from any supported library.
@@ -119,9 +129,9 @@ That said, Panel is in no way a clone of Shiny; Panel is a complete solution for
 
 **A:** Of course! Panels can completely reconfigure themselves as needed, so it is possible to build just about anything you can see in a web page. In practice, one of these approaches can probably do what you want:
 
-- Panel `Pipelines <https://panel.pyviz.org/user_guide/Pipelines.html>`__ provide an easy way to build a workflow where users first start on one page, make selections, then move to subsequent pages.  Pipelines can be linear (with one following page each time) or branching (with choices made on one page determining where to go on the next).
-- Panel `Tabs <https://panel.pyviz.org/reference/layouts/Tabs.html>`__ let you provide users with a selection of different panels to choose from in any order, using one at a time.
-- Bokeh/Panel `Templates <https://panel.pyviz.org/user_guide/Templates.html>`__ let you create arbitrary HTML/JS/CSS web pages around your panel components, where you can provide any control mechanism you like (though with a lot more effort than pipelines or tabs, unless you can copy an existing template).
+- Panel `Pipelines <user_guide/Pipelines.html>`__ provide an easy way to build a workflow where users first start on one page, make selections, then move to subsequent pages.  Pipelines can be linear (with one following page each time) or branching (with choices made on one page determining where to go on the next).
+- Panel `Tabs <reference/layouts/Tabs.html>`__ let you provide users with a selection of different panels to choose from in any order, using one at a time.
+- Bokeh/Panel `Templates <user_guide/Templates.html>`__ let you create arbitrary HTML/JS/CSS web pages around your panel components, where you can provide any control mechanism you like (though with a lot more effort than pipelines or tabs, unless you can copy an existing template).
 - `Bokeh embed functions <http://docs.bokeh.org/en/1.3.2/docs/user_guide/embed.html>`__ allow you to embed static or server based Panel objects into your existing website.
 
 **Q: Which server architecture should I use with Panel?**
@@ -153,7 +163,7 @@ Panel works seamlessly with Jupyter notebooks for interactive editing, and it us
 
 **A:** Python has a rich, dynamic, and ever-expanding ecosystem, so any comparison can quickly go out of date. Also, most tools compare to only a small part of what Panel provides, as Panel is designed to support the entire life cycle of working with data: from initial exploration, to adding custom interactivity to make one-off analyses easier, to building a complex dashboard from multiple components, to deploying your polished Python-backed dashboard in a public-facing or on-premises private server, and then iterating by bringing those same components back to the notebook for further exploration and improvement. Other tools support *some* of the same capabilities, but by focusing on only one part of this life cycle they typically require you to start over when you need to use your work in a different way.
 
-The `Comparisons page <Comparisons.html>`__ describes some of these differences in detail, but at a high level:
+The `Comparisons page <about/comparisons.html>`__ describes some of these differences in detail, but at a high level:
 
 +--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+--------------------+
 |                                      | Panel           | ipywidgets           | Bokeh           | Streamlit          | Dash (Plotly)          | Shiny              |
