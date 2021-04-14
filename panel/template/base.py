@@ -469,6 +469,12 @@ class BasicTemplate(BaseTemplate):
                 doc.theme = theme.bokeh_theme
         return doc
 
+    def _apply_hooks(self, viewable, root):
+        BaseTemplate._apply_hooks(viewable, root)
+        for hvpane in viewable.select(HoloViews):
+            if self.theme.bokeh_theme:
+                hvpane.theme = self.theme.bokeh_theme
+
     def _get_theme(self):
         return self.theme.find_theme(type(self))()
 
