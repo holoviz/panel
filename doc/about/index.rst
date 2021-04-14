@@ -8,3 +8,11 @@ Panel is part of the `HoloViz <https://holoviz.org>`_ family of tools. The `holo
 If you have any questions or usage issues visit the `Panel Discourse <https://discourse.holoviz.org/c/panel/>`_ site. If you are interested in contributing to Panel development to help address some of the `open issues <https://github.com/holoviz/panel/issues>`_, see our `developer instructions <https://pyviz-dev.github.io/panel/developer_guide/index.html>`_ to set up your development environment.
 
 If you like Panel and have built something you want to share, tweet a link or screenshot of your latest creation at @Panel_org, along with any other library you used (@HoloViews, @Datashader, @BokehPlots, @Matplotlib, etc.). Thanks!
+
+
+.. toctree::
+   :titlesonly:
+   :maxdepth: 2
+
+   Comparisons <comparisons>
+   Roadmap <roadmap>

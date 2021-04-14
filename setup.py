@@ -154,13 +154,9 @@ extras_require = {
     'tests': _tests,
     'recommended': _recommended,
     'doc': _recommended + [
-        'nbsite >=0.6.1',
-        'nbconvert <6.0',
-        'sphinx_holoviz_theme',
-        'selenium',
-        'phantomjs',
+        'nbsite >=0.7.0a4',
         'graphviz',
-        'lxml',
+        'lxml'
     ]
 }
 
