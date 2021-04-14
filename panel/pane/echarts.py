@@ -35,6 +35,12 @@ class ECharts(ModelPane):
     object = param.Parameter(default=None, doc="""
         The Echarts object being wrapped. Can be an Echarts dictionary or a pyecharts chart""")
 
+    event_config = param.Dict(default=None, doc="""
+        Configuration of the Echarts events""")
+
+    event = param.Dict(default=None, doc="""
+        Events from Echarts output in Python""")
+
     renderer = param.ObjectSelector(default="canvas", objects=["canvas", "svg"], doc="""
        Whether to render as HTML canvas or SVG""")
 
