@@ -1,6 +1,23 @@
 Releases
 ========
 
+Version 0.11.3
+--------------
+
+Date: 2021-04-14
+
+The 0.11.3 release is another micro-release in the 0.11 series primarily focused on updating the documentation theme and a regression in loading ``Tabulator`` data.
+
+Bug fixes:
+
+- Fix ``Tabulator`` sorting and data initialization (`#2163 <https://github.com/holoviz/panel/issues/2163`__)
+- Improved handling of ``IDOM`` build directory (`#2168 <https://github.com/holoviz/panel/issues/2168>`__)
+
+Documentation:
+
+- Switch to PyData Sphinx Theme (`#2139 <https://github.com/holoviz/panel/issues/2139>`__)
+
+
 Version 0.11.2
 --------------
 
