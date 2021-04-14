@@ -1,0 +1,57 @@
+:root {
+    --pst-color-primary: 47,47,47;
+    --pst-color-link: 0,170,65;
+}
+
+.nav-link {
+    white-space: nowrap;
+}
+
+.showcase-table {
+    border-spacing: 15px
+}
+
+.showcase-table td {
+    border: 0px;
+    vertical-align: top;
+}
+
+.pl-md-5, .px-md-5 {
+    padding-left: 1rem !important;
+}
+
+.pt-md-5, .py-md-5 {
+    padding-top: 1rem !important;
+}
+
+.cell_output {
+    padding-left: 0;
+}
+
+@media (min-width: 1200px) {
+    .container, .container-lg, .container-md, .container-sm, .container-xl {
+	max-width: 1600px;
+    }
+}
+
+#scroller-right {
+    max-width: 14%;
+}
+
+@media (max-width: 1400px) {
+    #scroller-right {
+	position: relative;
+	right: unset;
+	top: unset;
+	max-width: 100%;
+	transform: unset;
+    }
+}
+
+#navbar-icon-links i.fa-github-square:before {
+    color: white;
+}
+
+.fa-discourse:before {
+    color: white;
+}

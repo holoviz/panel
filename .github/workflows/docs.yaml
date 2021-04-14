@@ -24,6 +24,10 @@ jobs:
       MOZ_HEADLESS: 1
       DISPLAY: ":99.0"
     steps:
+      - name: remove nodejs
+        run: |
+          sudo rm /usr/local/bin/node
+          sudo rm /usr/local/bin/npm
       - uses: actions/checkout@v2
         with:
           fetch-depth: "100"
@@ -44,6 +48,9 @@ jobs:
           conda install -c pyviz "pyctdev>=0.5"
           doit ecosystem_setup
           doit env_create ${{ env.CHANS_DEV}} --python=3.7
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '15'
       - name: doit develop_install
         run: |
           eval "$(conda shell.bash hook)"
@@ -51,8 +58,7 @@ jobs:
           conda list
           doit develop_install ${{ env.CHANS_DEV}} -o doc -o examples
           pip install pydeck sphinxcontrib-napoleon pyecharts
-          conda install -c conda-forge "nodejs=15.3.0"
-          pip install idom
+          pip install idom pydata_sphinx_theme
       - name: opengl
         run: |
           sudo apt-get install libglu1-mesa
@@ -80,6 +86,10 @@ jobs:
           conda activate test-environment
           nbsite build --what=html --output=builtdocs --org holoviz --project-name panel
           cp -r ./panel/dist ./builtdocs/panel_dist
+      - name: git status
+        run: |
+          git status
+          git diff
       - name: Deploy dev
         uses: peaceiris/actions-gh-pages@v3
         if: (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc'))

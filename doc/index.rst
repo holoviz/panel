@@ -152,16 +152,12 @@ The Panel project is grateful for the sponsorship by the organizations and compa
    :hidden:
    :maxdepth: 2
 
-   Home <self>
    Getting Started <getting_started/index>
    User Guide <user_guide/index>
    Gallery <gallery/index>
    Reference Gallery <reference/index>
-   Developer Guide <developer_guide/index>
+   Developers <developer_guide/index>
    API <api/index>
-   Comparisons <Comparisons>
    Releases <releases>
-   Road Map <Roadmap>
    FAQ
-   Github source <https://github.com/holoviz/panel>
-   About <about>
+   About <about/index>
