@@ -39,12 +39,12 @@ echart_option = {
 }
 
 event_config = {
-    # 'click': 'series.tree', # Tests for Echarts event names with query
+    'click': 'series.tree', # Tests for Echarts event names with query
     # 'click': None, # Tests for Echarts event names without query
     # 'click': {'name': 'Child Clickable'}, # Tests for Echarts event names without query
     # 'click': {'query': 'series.tree', 'base_url': 'https://www.TEST.de/AssetDetail.aspx?AssetId=',
     #     'identifier': 'id'}, # Tests for new browser tab Echarts event
-    'click': {'query': 'series.tree', 'handler': 'e => console.log("I got an event:", e)'}, # Tests for handler Echarts event
+    # 'click': {'query': 'series.tree', 'handler': 'e => console.log("I got an event:", e)'}, # Tests for handler Echarts event
     # 'cluck': 'series.tree', # Tests for wrong Echarts event names
 }
 

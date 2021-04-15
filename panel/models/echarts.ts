@@ -73,36 +73,40 @@ export class EChartsView extends HTMLBoxView {
     for (let key in this.model.event_config) {
       if (all_events.includes(key)) {
         let value = this.model.event_config[key];
+        console.log(value, typeof value);
         if (value == null) {
           console.log("Subscribed to Echarts event:", key, "without query - logging events at console.")
           this._chart.on(key, value, function (params: any) {
             console.log(params);
           });
         } else {
-          if ('query' in value && 'base_url' in value && 'identifier' in value) {
-            console.log("Subscribed with open new browser tab to Echarts event:",
-              key, "with query:", value['query'])
-            this._chart.on(key, value['query'], function (params: any) {
-              if ("data" in params) {
-                if (value['identifier'] in params.data) {
-                  console.log("Opening new brower tab:", value['base_url'] + params.data[value['identifier']]);
-                  window.open(value['base_url'] + params.data[value['identifier']], '_blank')?.focus();
+          if (typeof value === 'object') {
+            if ('query' in value && 'base_url' in value && 'identifier' in value) {
+              console.log("Subscribed with open new browser tab to Echarts event:",
+                key, "with query:", value['query'])
+              this._chart.on(key, value['query'], function (params: any) {
+                if ("data" in params) {
+                  if (value['identifier'] in params.data) {
+                    console.log("Opening new brower tab:", value['base_url'] + params.data[value['identifier']]);
+                    window.open(value['base_url'] + params.data[value['identifier']], '_blank')?.focus();
+                  }
                 }
-              }
-            });
-          } else if ('query' in value && 'handler' in value) {
-            console.log("Subscribed with handler to Echarts event:",
-              key, "with query:", value['query'])
-            this._chart.on(key, value['query'], eval(value['handler']))
+              });
+            } else if ('query' in value && 'handler' in value) {
+              console.log("Subscribed with handler to Echarts event:",
+                key, "with query:", value['query'])
+              this._chart.on(key, value['query'], eval(value['handler']))
+            }
           } else {
             console.log("Subscribed to Echarts event:", key, "with query:", value)
-            this._chart.on(key, value, function (params: any) {
-              console.log(params);
+            this._chart.on(key, value,  (params: any) => {
+              sendEvent({"test": "test"}, this.model);
+              console.log("Send events from patams:", params);
             });
           }
         }
       } else {
-        console.warn("Couldn't subscribe to unknown Echarts event:", key, "- ignoring it.")
+        console.warn("Couldn't subscribe to unknown Echarts event:", key, "- ignoring it.");
       }
     }
   }
@@ -141,4 +145,24 @@ export class ECharts extends HTMLBox {
       renderer:     [String, "canvas"]
     }))
   }
+}
+
+function sendEvent(event: any, model: ECharts): void {
+  const eventData: any = filterEventData(event)
+  // To make sure event gets sent we add a uuid
+  // https://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid
+  eventData.uuid = uuidv4()
+
+  model.event = eventData
+}
+
+function filterEventData(event: any) {
+  return event
+}
+
+function uuidv4() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
 }
