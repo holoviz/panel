@@ -13,13 +13,13 @@ def test_get_markdown_pane_type():
 @pd_available
 def test_get_dataframe_pane_type():
     import pandas as pd
-    df = pd.util.testing.makeDataFrame()
+    df = pd.testing.makeDataFrame()
     assert PaneBase.get_pane_type(df) is DataFrame
 
 @pd_available
 def test_get_series_pane_type():
     import pandas as pd
-    df = pd.util.testing.makeDataFrame()
+    df = pd.testing.makeDataFrame()
     assert PaneBase.get_pane_type(df.iloc[:, 0]) is DataFrame
 
 @streamz_available
@@ -113,7 +113,7 @@ def test_html_pane(document, comm):
 @pd_available
 def test_dataframe_pane_pandas(document, comm):
     import pandas as pd
-    pane = DataFrame(pd.util.testing.makeDataFrame())
+    pane = DataFrame(pd.testing.makeDataFrame())
 
     # Create pane
     model = pane.get_root(document, comm=comm)
@@ -122,7 +122,7 @@ def test_dataframe_pane_pandas(document, comm):
     orig_text = model.text
 
     # Replace Pane.object
-    pane.object = pd.util.testing.makeMixedDataFrame()
+    pane.object = pd.testing.makeMixedDataFrame()
     assert pane._models[model.ref['id']][0] is model
     assert model.text.startswith('&lt;table')
     assert model.text != orig_text
@@ -137,7 +137,7 @@ def test_dataframe_pane_streamz(document, comm):
     from streamz.dataframe import Random
     sdf = Random(interval='200ms', freq='50ms')
     pane = DataFrame(sdf)
-    
+
     assert pane._stream is None
 
     # Create pane

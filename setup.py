@@ -149,7 +149,8 @@ extras_require = {
         'ipywidgets_bokeh',
         'ipyvolume',
         'ipyleaflet',
-        'xarray <0.17'
+        'xarray <0.17',
+        'pydeck',
     ],
     'tests': _tests,
     'recommended': _recommended,
