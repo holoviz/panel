@@ -1,3 +1,4 @@
+import pytest
 import panel as pn
 
 ECHART = {
