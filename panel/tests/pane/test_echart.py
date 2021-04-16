@@ -25,6 +25,33 @@ def manualtest_echart():
     assert pane.object == echart
     return pane
 
+@pytest.mark.parametrize("event_config", 
+    [
+        {'click': 'series.tree'},
+        {'click': None},
+        {'click': {'name': 'Child Clickable'}},
+        {'click': {'query': 'series.tree', 'base_url': 'https://www.TEST.de/AssetDetail.aspx?AssetId=',
+            'identifier': 'id'}},
+        {'click': {'query': 'series.tree', 'handler': 'e => console.log("I got an event:", e)'}},
+        {'cluck': 'series.tree'}
+    ], ids=[
+        "echart_event_simple_query",
+        "echart_event_no_query",
+        "echart_event_complex_query",
+        "echart_event_browser_tab",
+        "echart_event_custom_handler",
+        "echart_event_wrong_event"
+    ]
+)
+def test_echart_event(event_config):
+    echart = ECHART
+    pane = pn.pane.ECharts(echart, event_config=event_config, width=500, height=500)
+    assert pane.object == echart
+    
+    @pn.depends(event=echart.param.event, watch=True)
+    def update_info(event):
+        print(event)
+
 def get_pyechart():
     from pyecharts import options as opts
     from pyecharts.charts import Bar
