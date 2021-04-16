@@ -100,8 +100,7 @@ export class EChartsView extends HTMLBoxView {
           } else {
             console.log("Subscribed to Echarts event:", key, "with query:", value)
             this._chart.on(key, value,  (params: any) => {
-              sendEvent({"test": "test"}, this.model);
-              console.log("Send events from patams:", params);
+              sendEvent(params, this.model);
             });
           }
         }
@@ -148,16 +147,16 @@ export class ECharts extends HTMLBox {
 }
 
 function sendEvent(event: any, model: ECharts): void {
-  const eventData: any = filterEventData(event)
+  const eventData: any = filterEventData(event);
   // To make sure event gets sent we add a uuid
   // https://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid
-  eventData.uuid = uuidv4()
-
-  model.event = eventData
+  eventData.uuid = uuidv4();
+  console.log("sendEvent:", eventData);
+  model.event = eventData;
 }
 
 function filterEventData(event: any) {
-  return event
+  return {'event': event.data};
 }
 
 function uuidv4() {

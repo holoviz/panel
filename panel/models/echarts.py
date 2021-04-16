@@ -2,7 +2,7 @@
 Defines custom ECharts bokeh model to render Vega json plots.
 """
 from bokeh.core.properties import (
-    Any, Dict, Enum, String,
+    Any, Dict, Enum, String, Nullable
 )
 from bokeh.models import LayoutDOM
 
@@ -40,11 +40,11 @@ class ECharts(LayoutDOM):
         'exports': {}
     }
 
-    data = Dict(String, Any)
+    data = Nullable(Dict(String, Any))
 
-    event_config = Dict(String, Any)
+    event_config = Nullable(Dict(String, Any))
 
-    event = Dict(String,Any)
+    event = Nullable(Dict(String, Any))
 
     renderer = Enum("canvas", "svg")
 

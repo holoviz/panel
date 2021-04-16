@@ -2,7 +2,7 @@
 # panel serve panel/tests/test_echarts.py --allow-websocket-origin=localhost:5005 --port=5005
 
 import time
-import pandas as pd
+# import pandas as pd
 import panel as pn
 
 COLOR = "#E1477E"
@@ -57,6 +57,10 @@ def update(event):
     
 btn.on_click(update)
 
+@pn.depends(event=echart.param.event, watch=True)
+def update_info(event):
+    print(event)
+
 react = pn.template.ReactTemplate(
     title="Minimal Echarts Test",
     header_background=COLOR,
@@ -64,7 +68,8 @@ react = pn.template.ReactTemplate(
 )
 
 react.sidebar.append(btn)
-react.main[:2, :6] = pn.Card(echart, title='eChart', sizing_mode="stretch_both", collapsible=False)
+react.main[:2, :4] = pn.Card(echart, title='ECcarts', sizing_mode="stretch_both", collapsible=False)
+react.main[:2, 4:8] = pn.Card(echart.param.event, title='Event', sizing_mode="stretch_both", collapsible=False)
 
 react.servable()
 
