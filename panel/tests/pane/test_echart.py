@@ -49,7 +49,7 @@ def test_echart_event(event_config):
     pane = pn.pane.ECharts(echart, event_config=event_config, width=500, height=500)
     assert pane.object == echart
     
-    @pn.depends(event=echart.param.event, watch=True)
+    @pn.depends(event=pane.param.event, watch=True)
     def update_info(event):
         print(event)
 
