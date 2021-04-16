@@ -151,6 +151,8 @@ extras_require = {
         'ipyleaflet',
         'xarray <0.17',
         'pydeck',
+        'pyecharts',
+        'idom',
     ],
     'tests': _tests,
     'recommended': _recommended,
