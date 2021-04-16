@@ -34,14 +34,20 @@ def manualtest_echart():
         {'click': {'query': 'series.tree', 'base_url': 'https://www.TEST.de/AssetDetail.aspx?AssetId=',
             'identifier': 'id'}},
         {'click': {'query': 'series.tree', 'handler': 'e => console.log("I got an event:", e)'}},
-        {'cluck': 'series.tree'}
+        {'cluck': 'series.tree'},
+        {'click': {'query': 'series.tree', 'select': 'data'}},
+        {'click': {'query': 'series.tree', 'filters': ['children']}},
+        {'click': {'query': 'series.tree', 'select': 'data', 'filters': ['children']}}
     ], ids=[
         "echart_event_simple_query",
         "echart_event_no_query",
         "echart_event_complex_query",
         "echart_event_browser_tab",
         "echart_event_custom_handler",
-        "echart_event_wrong_event"
+        "echart_event_wrong_event",
+        "echart_event_custom_select",
+        "echart_event_custom_filters",
+        "echart_event_custom_select_filters"
     ]
 )
 def test_echart_event(event_config):

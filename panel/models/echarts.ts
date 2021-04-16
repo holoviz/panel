@@ -73,7 +73,6 @@ export class EChartsView extends HTMLBoxView {
     for (let key in this.model.event_config) {
       if (all_events.includes(key)) {
         let value = this.model.event_config[key];
-        console.log(value, typeof value);
         if (value == null) {
           console.log("Subscribed to Echarts event:", key, "without query - logging events at console.")
           this._chart.on(key, value, function (params: any) {
@@ -96,11 +95,22 @@ export class EChartsView extends HTMLBoxView {
               console.log("Subscribed with handler to Echarts event:",
                 key, "with query:", value['query'])
               this._chart.on(key, value['query'], eval(value['handler']))
+            } else if ('query' in value) {
+              console.log("Subscribed to Echarts event:", key, "with query:", value)
+              var select = 'select' in value ? value['select'] : undefined;
+              var filters = 'filters' in value ? value['filters'] : undefined;
+              this._chart.on(key, value, (params: any) => {
+                sendEvent(params, this.model, key, value['query'], select, filters);
+              });
+            } else {
+              this._chart.on(key, value, (params: any) => {
+                sendEvent(params, this.model, key, value);
+              });
             }
           } else {
             console.log("Subscribed to Echarts event:", key, "with query:", value)
-            this._chart.on(key, value,  (params: any) => {
-              sendEvent(params, this.model);
+            this._chart.on(key, value, (params: any) => {
+              sendEvent(params, this.model, key, value);
             });
           }
         }
@@ -146,17 +156,24 @@ export class ECharts extends HTMLBox {
   }
 }
 
-function sendEvent(event: any, model: ECharts): void {
-  const eventData: any = filterEventData(event);
+function sendEvent(event: any, model: ECharts, type: string, query: string,
+  select: string='data', filters: string[]=['children']): void {
+  const eventData: any = filterEventData(event, select, filters);
   // To make sure event gets sent we add a uuid
   // https://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid
   eventData.uuid = uuidv4();
+  eventData.event = type;
+  eventData.query = query;
   console.log("sendEvent:", eventData);
   model.event = eventData;
 }
 
-function filterEventData(event: any) {
-  return {'event': event.data};
+function filterEventData(event: any, select: string, filters: string[]) {
+  var data = {[select]: event[select]}
+  for (const filter of filters) {
+    delete data[select][filter];
+  }
+  return data
 }
 
 function uuidv4() {
