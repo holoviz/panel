@@ -38,7 +38,7 @@ class ECharts(ModelPane):
     event_config = param.Dict(default=None, doc="""
         Configuration of the Echarts events""")
 
-    event = param.Dict(default=None, readonly=True, doc="""
+    event = param.Dict(default=None, doc="""
         Events from Echarts output in Python""")
 
     renderer = param.ObjectSelector(default="canvas", objects=["canvas", "svg"], doc="""

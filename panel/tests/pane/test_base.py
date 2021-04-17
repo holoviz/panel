@@ -85,6 +85,7 @@ def test_pane_clone(pane):
 def test_pane_signature(pane):
     from inspect import Parameter, signature
     parameters = signature(pane).parameters
+    print(parameters)
     assert len(parameters) == 2
     assert 'object' in parameters
     assert parameters['object'] == Parameter('object', Parameter.POSITIONAL_OR_KEYWORD, default=None)

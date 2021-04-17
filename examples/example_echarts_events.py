@@ -1,5 +1,5 @@
 # Minimal echarts test server, start with:
-# panel serve panel/tests/test_echarts.py --allow-websocket-origin=localhost:5005 --port=5005
+# panel serve panel/examples/example_echarts_events.py --allow-websocket-origin=localhost:5005 --port=5005
 
 import time
 # import pandas as pd
