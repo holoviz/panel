@@ -35,7 +35,7 @@ def panel_serve_examples():
         "timeout": 360,
         "launcher_entry": {
             "enabled": True,
-            "title": "App Gallery",
+            "title": "Gallery",
             "icon_path": ICON_PATH,
         },
     }

@@ -1,2 +1,3 @@
+code-server --install-extension ms-python.python
 bokeh sampledata
 panel build panel
