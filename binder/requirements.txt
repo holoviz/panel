@@ -1,1 +1,2 @@
 -e .['all']
+-e binder/jupyter-panel-apps-server/.
