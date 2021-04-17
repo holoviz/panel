@@ -1,3 +1,5 @@
+conda install -c conda-forge code-server
 code-server --install-extension ms-python.python
+code-server --install-extension ms-python.vscode-pylance
 bokeh sampledata
 panel build panel

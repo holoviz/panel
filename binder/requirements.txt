@@ -1,3 +1,4 @@
 -e .['all']
 -e binder/jupyter-panel-apps-server/.
+jupyter_bokeh
 jupyter-vscode-proxy
