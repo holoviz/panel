@@ -1,5 +1,5 @@
-# Minimal echarts test server, start with:
-# panel serve panel/examples/example_echarts_events.py --allow-websocket-origin=localhost:5005 --port=5005
+# Minimal Echarts events example server, start with:
+# panel serve examples/example_echarts_events.py --allow-websocket-origin=localhost:5005 --port=5005
 
 import time
 # import pandas as pd
@@ -62,16 +62,16 @@ btn.on_click(update)
 
 @pn.depends(event=echart.param.event, watch=True)
 def update_info(event):
-    print(event)
+    print("Received Echarts event:", event)
 
 react = pn.template.ReactTemplate(
-    title="Minimal Echarts Test",
+    title="Minimal Echarts Events Example",
     header_background=COLOR,
     header_color="#ffffff",
 )
 
 react.sidebar.append(btn)
-react.main[:2, :4] = pn.Card(echart, title='ECcarts', sizing_mode="stretch_both", collapsible=False)
+react.main[:2, :4] = pn.Card(echart, title='Echarts', sizing_mode="stretch_both", collapsible=False)
 react.main[:2, 4:8] = pn.Card(echart.param.event, title='Event', sizing_mode="stretch_both", collapsible=False)
 
 react.servable()
