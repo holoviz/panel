@@ -457,6 +457,9 @@ class _EditableContinuousSlider(CompositeWidget):
     show_value = param.Boolean(default=False, readonly=True, precedence=-1, doc="""
         Whether to show the widget value.""")
 
+    exceed_bounds = param.Boolean(default=False, doc="""
+        Whether is it possible to exceed the bounds.""")
+
     _composite_type = Column
     _slider_widget = None
     _input_widget = None
@@ -478,6 +481,12 @@ class _EditableContinuousSlider(CompositeWidget):
         )
         self._value_edit.param.watch(self._sync_value, 'value')
         self._value_edit.param.watch(self._sync_value, 'value_throttled')
+        self._value_edit.jscallback(args={'slider': self._slider}, value="""
+        if (cb_obj.value < slider.start)
+          slider.start = cb_obj.value
+        else if (cb_obj.value > slider.end)
+          slider.end = cb_obj.value
+        """)
 
         label = Row(self._label, self._value_edit)
         self._composite.extend([label, self._slider])
@@ -509,7 +518,8 @@ class _EditableContinuousSlider(CompositeWidget):
         self._label.param.set_param(**{'margin': margin, 'value': label})
 
     @param.depends('start', 'end', 'step', 'bar_color', 'direction',
-                   'show_value', 'tooltips', 'format', watch=True)
+                   'show_value', 'tooltips', 'format', 'exceed_bounds',
+                   watch=True)
     def _update_slider(self):
         self._slider.param.set_param(**{
             'format': self.format,
@@ -521,8 +531,13 @@ class _EditableContinuousSlider(CompositeWidget):
             'show_value': self.show_value,
             'tooltips': self.tooltips
         })
-        self._value_edit.start = self.start
-        self._value_edit.end = self.end
+
+        if self.exceed_bounds:
+            self._value_edit.start = None
+            self._value_edit.end = None
+        else:
+            self._value_edit.start = self.start
+            self._value_edit.end = self.end
         self._value_edit.step = self.step
 
     @param.depends('value', watch=True)
