@@ -468,7 +468,7 @@ class _EditableContinuousSlider(CompositeWidget):
         super().__init__(**params)
         self._label = StaticText(margin=0, align='end')
         self._slider = self._slider_widget(
-            margin=(0, 0, 5, 0), sizing_mode='stretch_width'
+            value=self.value, margin=(0, 0, 5, 0), sizing_mode='stretch_width'
         )
         self._slider.param.watch(self._sync_value, 'value')
         self._slider.param.watch(self._sync_value, 'value_throttled')
