@@ -472,22 +472,15 @@ class _EditableContinuousSlider(CompositeWidget):
         )
         self._slider.param.watch(self._sync_value, 'value')
         self._slider.param.watch(self._sync_value, 'value_throttled')
+
         self._value_edit = self._input_widget(
             margin=0, align='end', css_classes=['slider-edit']
         )
+        self._value_edit.param.watch(self._sync_value, 'value')
+        self._value_edit.param.watch(self._sync_value, 'value_throttled')
+
         label = Row(self._label, self._value_edit)
         self._composite.extend([label, self._slider])
-        self._slider.jscallback(args={'value': self._value_edit}, value="""
-        value.value = cb_obj.value
-        """)
-        self._value_edit.jscallback(args={'slider': self._slider}, value="""
-        if (cb_obj.value < slider.start) {
-          slider.start = cb_obj.value
-        } else if (cb_obj.value > slider.end) {
-          slider.end = cb_obj.value
-        }
-        slider.value = cb_obj.value
-        """)
         self._update_editable()
         self._update_layout()
         self._update_name()
@@ -528,6 +521,8 @@ class _EditableContinuousSlider(CompositeWidget):
             'show_value': self.show_value,
             'tooltips': self.tooltips
         })
+        self._value_edit.start = self.start
+        self._value_edit.end = self.end
         self._value_edit.step = self.step
 
     @param.depends('value', watch=True)
