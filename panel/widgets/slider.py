@@ -591,6 +591,9 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
                                       css_classes=['slider-edit'])
         self._end_edit = FloatInput(min_width=50, margin=(0, 0, 0, 10), format=self.format,
                                     css_classes=['slider-edit'])
+        self._start_edit.param.watch(self._sync_start_value, 'value_throttled')
+        self._end_edit.param.watch(self._sync_end_value, 'value_throttled')
+
         sep = StaticText(value='...', margin=(0, 2, 0, 2), align='end')
         edit = Row(self._label, self._start_edit, sep, self._end_edit,
                    sizing_mode='stretch_width', margin=0)
@@ -671,3 +674,15 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
     def _sync_value(self, event):
         with param.edit_constant(self):
             self.param.set_param(**{event.name: event.new})
+
+    def _sync_start_value(self, event):
+        with param.edit_constant(self):
+            self.param.set_param(
+                **{event.name: (event.new, self.value_throttled[1])}
+            )
+
+    def _sync_end_value(self, event):
+        with param.edit_constant(self):
+            self.param.set_param(
+                **{event.name: (self.value_throttled[0], event.new)}
+            )
