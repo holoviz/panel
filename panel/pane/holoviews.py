@@ -289,6 +289,8 @@ class HoloViews(PaneBase):
             params = {}
             if self.theme is not None:
                 params['theme'] = self.theme
+            elif doc.theme and getattr(doc.theme, '_json') != {'attrs': {}}:
+                params['theme'] = doc.theme
             if mode != renderer.mode:
                 params['mode'] = mode
             if params:

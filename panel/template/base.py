@@ -471,9 +471,9 @@ class BasicTemplate(BaseTemplate):
 
     def _apply_hooks(self, viewable, root):
         BaseTemplate._apply_hooks(viewable, root)
-        for hvpane in viewable.select(HoloViews):
-            if self.theme.bokeh_theme:
-                hvpane.theme = self.theme.bokeh_theme
+        theme = self._get_theme()
+        if theme and theme.bokeh_theme and root.document:
+            root.document.theme = theme.bokeh_theme
 
     def _get_theme(self):
         return self.theme.find_theme(type(self))()
