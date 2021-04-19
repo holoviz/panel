@@ -3,6 +3,8 @@ import pytest
 import param
 
 from panel.interact import interactive
+from panel.layout import Row
+from panel.links import CallbackGenerator
 from panel.pane import Pane, PaneBase, Bokeh, HoloViews, IPyWidget, Interactive
 from panel.param import ParamMethod
 from panel.tests.util import check_layoutable_properties, py3_only
@@ -27,6 +29,21 @@ def test_pane_layout_properties(pane, document, comm):
         pytest.skip("Dependent library could not be imported.")
     model = p.get_root(document, comm)
     check_layoutable_properties(p, model)
+
+
+@pytest.mark.parametrize('pane', all_panes+[Bokeh])
+def test_pane_linkable_params(pane):
+    p = pane()
+    controls = p.controls(jslink=True)
+    layout = Row(p, controls)
+
+    try:
+        CallbackGenerator.error = True
+        layout.get_root()
+    except Exception as e:
+        raise e
+    finally:
+        CallbackGenerator.error = False
 
 
 @pytest.mark.parametrize('pane', all_panes)
