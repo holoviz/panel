@@ -67,7 +67,7 @@ jobs:
           conda activate test-environment
           conda list
           doit develop_install ${{ env.CHANS_DEV}} -o examples -o recommended -o tests -o build
-          pip install pyecharts idom
+          pip install pyecharts "idom>=0.24.0"
           bokeh sampledata
           echo "-----"
           git describe
