@@ -15,6 +15,7 @@ function unpress(btn_list: HTMLButtonElement[]): void {
 export class PlayerView extends WidgetView {
   model: Player
 
+  protected buttonEl: HTMLDivElement
   protected groupEl: HTMLDivElement
   protected sliderEl: HTMLInputElement
   protected loop_state: HTMLFormElement
@@ -25,15 +26,25 @@ export class PlayerView extends WidgetView {
 
   connect_signals(): void {
     super.connect_signals()
-    this.connect(this.model.change, () => this.render())
     this.connect(this.model.properties.value.change, () => this.render())
     this.connect(this.model.properties.loop_policy.change, () => this.set_loop_state(this.model.loop_policy))
+    this.connect(this.model.properties.disabled.change, () => this.toggle_disable())
     this.connect(this.model.properties.show_loop_controls.change, () => {
       if (this.model.show_loop_controls && this.loop_state.parentNode != this.groupEl)
         this.groupEl.appendChild(this.loop_state)
       else if (!this.model.show_loop_controls && this.loop_state.parentNode == this.groupEl)
-        this.el.removeChild(this.loop_state)
+        this.groupEl.removeChild(this.loop_state)
     })
+  }
+
+  toggle_disable() {
+    this.sliderEl.disabled = this.model.disabled
+    for (const el of this.buttonEl.children)
+      el.disabled = this.model.disabled
+    for (const el of this.loop_state.children) {
+      if (el.tagName == "input")
+	el.disabled = this.model.disabled
+    }
   }
 
   get_height(): number {
@@ -67,6 +78,7 @@ export class PlayerView extends WidgetView {
 
     // Buttons
     const button_div = div() as any
+    this.buttonEl = button_div
     button_div.style.cssText = "margin: 0 auto; display: flex; padding: 5px; align-items: stretch; width: 100%;"
 
     const button_style_small = "text-align: center; min-width: 20px; flex-grow: 1; margin: 2px";
@@ -187,6 +199,8 @@ export class PlayerView extends WidgetView {
     this.groupEl.appendChild(button_div)
     if (this.model.show_loop_controls)
       this.groupEl.appendChild(this.loop_state)
+
+    this.toggle_disable()
     this.el.appendChild(this.groupEl)
   }
 
