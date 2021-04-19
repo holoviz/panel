@@ -310,9 +310,12 @@ class Perspective(PaneBase, ReactiveData):
         else:
             df, kwargs = deconstruct_pandas(self.object)
             ncols = len(df.columns)
-            data = ColumnDataSource.from_df(df)
+            data = {col: df[col].values for col in df.columns}
             if kwargs:
-                self.param.set_param(**kwargs)
+                self.param.set_param(**{
+                    k: v for k, v in kwargs.items()
+                    if getattr(self, k) is None
+                })
         cols = set(self._as_digit(c) for c in df)
         if len(cols) != ncols:
             raise ValueError("Integer columns must be unique when "
@@ -329,7 +332,7 @@ class Perspective(PaneBase, ReactiveData):
         props['schema'] = schema = {}
         for col, array in self._data.items():
             if not isinstance(array, np.ndarray):
-                continue
+                array = np.asarray(array)
             kind = array.dtype.kind.lower()
             if kind == 'm':
                 schema[col] = 'datetime'
