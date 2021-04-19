@@ -91,14 +91,15 @@ class Callback(param.Parameterized):
         if not linkable:
             return
 
-        found = [(link, src, getattr(link, 'target', None)) for src in linkable
-                 for link in cls.registry.get(src, [])
-                 if not link._requires_target or link.target in linkable]
+        found = [
+            (link, src, getattr(link, 'target', None)) for src in linkable
+            for link in cls.registry.get(src, [])
+            if not link._requires_target or link.target in linkable
+        ]
 
         arg_overrides = {}
         if 'holoviews' in sys.modules:
             from .pane.holoviews import HoloViews, generate_panel_bokeh_map
-
             hv_views = root_view.select(HoloViews)
             map_hve_bk = generate_panel_bokeh_map(root_model, hv_views)
             for src in linkable:
@@ -118,15 +119,16 @@ class Callback(param.Parameterized):
 
         ref = root_model.ref['id']
         callbacks = []
-        for link, src, tgt in found:
+        for (link, src, tgt) in found:
             cb = cls._callbacks[type(link)]
             if ((src is None or ref not in getattr(src, '_models', [ref])) or
                 (getattr(link, '_requires_target', False) and tgt is None) or
                 (tgt is not None and ref not in getattr(tgt, '_models', [ref]))):
                 continue
             overrides = arg_overrides.get(id(link), {})
-            callbacks.append(cb(root_model, link, src, tgt,
-                                arg_overrides=overrides))
+            callbacks.append(
+                cb(root_model, link, src, tgt, arg_overrides=overrides)
+            )
         return callbacks
 
 
@@ -207,7 +209,7 @@ class CallbackGenerator(object):
         self.validate()
         specs = self._get_specs(link, source, target)
         for src_spec, tgt_spec, code in specs:
-            if src_spec[1] and src_spec[1].startswith('event:') and not tgt_spec[1]:
+            if src_spec[1] and target is not None and src_spec[1].startswith('event:') and not tgt_spec[1]:
                 continue
             try:
                 self._init_callback(root_model, link, source, src_spec, target, tgt_spec, code)
@@ -216,7 +218,7 @@ class CallbackGenerator(object):
                     raise
                 else:
                     pass
-                
+
     @classmethod
     def _resolve_model(cls, root_model, obj, model_spec):
         """
