@@ -138,9 +138,9 @@ class IDOM(PaneBase):
 
     @classmethod
     def applies(self, object):
-        from idom.core.component import Component
-        from idom.core.layout import Layout
         if 'idom' in sys.modules:
+            from idom.core.component import Component
+            from idom.core.layout import Layout
             if isinstance(object, (Component, Layout)):
                 return 0.8
             elif callable(object):
