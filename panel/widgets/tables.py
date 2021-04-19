@@ -593,6 +593,8 @@ class DataFrame(BaseTable):
     _aggregators = {'sum': SumAggregator, 'max': MaxAggregator,
                     'min': MinAggregator, 'mean': AvgAggregator}
 
+    _source_transforms = {'hierarchical': None}
+
     @property
     def _widget_type(self):
         return DataCube if self.hierarchical else DataTable
