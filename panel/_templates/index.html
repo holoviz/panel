@@ -29,6 +29,15 @@
   <script type="module" src="https://unpkg.com/@microsoft/fast-colors@5.1.0"></script>
   <script type="module" src="https://unpkg.com/@microsoft/fast-components@1.13.0"></script>
   <script type="text/javascript">
+    function setParamsFromSearch(text){
+        const params = new URLSearchParams(location.search);
+        if (text===""){
+            params.delete("search")
+        } else {
+            params.set('search', text);
+        }
+        window.history.replaceState({}, '', `${location.pathname}?${params}`);
+    }
     function hideCards(text) {
       text=text.toLowerCase();
       const cards = document.getElementsByTagName("li")
@@ -37,14 +46,43 @@
               card.style.display=""
           } else {card.style.display="none"}
       }
+
+      setParamsFromSearch(text)
     }
     function toggleLightDarkTheme(){
         el=document.getElementById("body-design-provider")
-        backgroundColor=el.getAttribute("background-color")
-        if (backgroundColor === "#000000"){
+        const switchEl = document.getElementById("theme-switch")
+        const params = new URLSearchParams(location.search);
+
+        if (switchEl.checked){
             el.setAttribute("background-color", "#ffffff")
+            params.set('theme', "default");
         } else {
             el.setAttribute("background-color", "#000000")
+            params.set('theme', "dark");
+        }
+        window.history.replaceState({}, '', `${location.pathname}?${params}`);
+    }
+    function setSwitchFromParams(){
+        const params = new URLSearchParams(window.location.search)
+        if (params.has('theme')){
+            const theme = params.get('theme')
+            const switchEl = document.getElementById("theme-switch")
+            if (theme==='dark'){
+                switchEl.checked=false
+            } else {
+                switchEl.checked=true
+            }
+            toggleLightDarkTheme()
+        }
+    }
+    function setSearchFromParams(){
+        const params = new URLSearchParams(window.location.search)
+        if (params.has('search')){
+            const search = params.get('search')
+            const searchEl = document.getElementById("search-input")
+            searchEl.value = search
+            hideCards(search)
         }
     }
   </script>
@@ -178,7 +216,6 @@
   }
   #panel-logo {
     width: 300px;
-    margin-top: 25px;
   }
   .card-link {
     text-decoration: none;
@@ -201,11 +238,11 @@
         <fast-tooltip anchor="theme-switch">Click to toggle the Theme</fast-tooltip>
         <div class="header-grid">
         <h1>
-            <fast-anchor id="title" href="https://panel.holoviz.org" appearance="neutral" target="_self"><img id="panel-logo" src="https://panel.holoviz.org/_static/logo_horizontal.png"/><h3>App Gallery</h3></fast-anchor>
+            <fast-anchor id="title" href="https://panel.holoviz.org" appearance="neutral" target="_self"><img id="panel-logo" src="https://panel.holoviz.org/_static/logo_horizontal.png"/></fast-anchor>
             <fast-tooltip anchor="title">Click to visit the Panel web site</fast-tooltip>
         </h1>
         <article>
-            <p>Gallery of Applications running on the server</p>
+            <h2>Applications running on the server</h2>
         </article>
         </div>
         </section>
@@ -240,5 +277,9 @@
         </footer>
         </section>
     </fast-design-system-provider>
+    <script type="text/javascript">
+        setSwitchFromParams()
+        setSearchFromParams()
+    </script>
 </body>
 </html>
