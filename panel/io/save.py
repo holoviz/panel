@@ -26,7 +26,7 @@ from .state import state
 # Private API
 #---------------------------------------------------------------------
 
-def save_png(model, filename, resources=CDN, template=None, template_variables=None, timeout=None):
+def save_png(model, filename, resources=CDN, template=None, template_variables=None, timeout=5):
     """
     Saves a bokeh model to png
 
