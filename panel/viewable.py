@@ -700,7 +700,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
     def save(self, filename, title=None, resources=None, template=None,
              template_variables=None, embed=False, max_states=1000,
              max_opts=3, embed_json=False, json_prefix='', save_path='./',
-             load_path=None, progress=True, embed_states={}):
+             load_path=None, progress=True, embed_states={}, **kwargs):
         """
         Saves Panel objects to file.
 
@@ -738,7 +738,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         return save(self, filename, title, resources, template,
                     template_variables, embed, max_states, max_opts,
                     embed_json, json_prefix, save_path, load_path,
-                    progress, embed_states)
+                    progress, embed_states, **kwargs)
 
     def server_doc(self, doc=None, title=None, location=True):
         """
