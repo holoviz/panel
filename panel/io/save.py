@@ -26,6 +26,23 @@ from .state import state
 # Private API
 #---------------------------------------------------------------------
 
+_WAIT_SCRIPT = """
+// add private window prop to check that render is complete
+window._bokeh_render_complete = false;
+function done() {
+  setTimeout(() => { window._bokeh_render_complete = true; }, 500);
+}
+
+var doc = Bokeh.documents[0];
+
+if (doc.is_idle)
+  done();
+else
+  doc.idle.connect(done);
+"""
+
+bokeh.io.export._WAIT_SCRIPT = _WAIT_SCRIPT
+
 def save_png(model, filename, resources=CDN, template=None, template_variables=None, timeout=5):
     """
     Saves a bokeh model to png
