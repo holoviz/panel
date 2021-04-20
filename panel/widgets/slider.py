@@ -468,25 +468,25 @@ class _EditableContinuousSlider(CompositeWidget):
         super().__init__(**params)
         self._label = StaticText(margin=0, align='end')
         self._slider = self._slider_widget(
-            margin=(0, 0, 5, 0), sizing_mode='stretch_width'
+            value=self.value, margin=(0, 0, 5, 0), sizing_mode='stretch_width'
         )
-        self._slider.param.watch(self._sync_value, ['value', 'value_throttled'])
+        self._slider.param.watch(self._sync_value, 'value')
+        self._slider.param.watch(self._sync_value, 'value_throttled')
+
         self._value_edit = self._input_widget(
             margin=0, align='end', css_classes=['slider-edit']
         )
+        self._value_edit.param.watch(self._sync_value, 'value')
+        self._value_edit.param.watch(self._sync_value, 'value_throttled')
+        self._value_edit.jscallback(args={'slider': self._slider}, value="""
+        if (cb_obj.value < slider.start)
+          slider.start = cb_obj.value
+        else if (cb_obj.value > slider.end)
+          slider.end = cb_obj.value
+        """)
+
         label = Row(self._label, self._value_edit)
         self._composite.extend([label, self._slider])
-        self._slider.jscallback(args={'value': self._value_edit}, value="""
-        value.value = cb_obj.value
-        """)
-        self._value_edit.jscallback(args={'slider': self._slider}, value="""
-        if (cb_obj.value < slider.start) {
-          slider.start = cb_obj.value
-        } else if (cb_obj.value > slider.end) {
-          slider.end = cb_obj.value
-        }
-        slider.value = cb_obj.value
-        """)
         self._update_editable()
         self._update_layout()
         self._update_name()
@@ -535,8 +535,8 @@ class _EditableContinuousSlider(CompositeWidget):
         self._value_edit.value = self.value
 
     def _sync_value(self, event):
-        self.param.set_param(**{event.name: event.new})
-
+        with param.edit_constant(self):
+            self.param.set_param(**{event.name: event.new})
 
 
 class EditableFloatSlider(_EditableContinuousSlider, FloatSlider):
@@ -585,11 +585,15 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
         super().__init__(**params)
         self._label = StaticText(margin=0, align='end')
         self._slider = RangeSlider(margin=(0, 0, 5, 0), show_value=False)
-        self._slider.param.watch(self._sync_value, ['value', 'value_throttled'])
+        self._slider.param.watch(self._sync_value, 'value')
+        self._slider.param.watch(self._sync_value, 'value_throttled')
         self._start_edit = FloatInput(min_width=50, margin=0, format=self.format,
                                       css_classes=['slider-edit'])
         self._end_edit = FloatInput(min_width=50, margin=(0, 0, 0, 10), format=self.format,
                                     css_classes=['slider-edit'])
+        self._start_edit.param.watch(self._sync_start_value, 'value_throttled')
+        self._end_edit.param.watch(self._sync_end_value, 'value_throttled')
+
         sep = StaticText(value='...', margin=(0, 2, 0, 2), align='end')
         edit = Row(self._label, self._start_edit, sep, self._end_edit,
                    sizing_mode='stretch_width', margin=0)
@@ -668,4 +672,17 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
         self._end_edit.value = self.value[1]
 
     def _sync_value(self, event):
-        self.param.set_param(**{event.name: event.new})
+        with param.edit_constant(self):
+            self.param.set_param(**{event.name: event.new})
+
+    def _sync_start_value(self, event):
+        with param.edit_constant(self):
+            self.param.set_param(
+                **{event.name: (event.new, self.value_throttled[1])}
+            )
+
+    def _sync_end_value(self, event):
+        with param.edit_constant(self):
+            self.param.set_param(
+                **{event.name: (self.value_throttled[0], event.new)}
+            )

@@ -146,6 +146,13 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
     this._remove_mutation_observers()
   }
 
+
+  invalidate_layout(): void {
+    super.invalidate_layout()
+    if (this._parent != null)
+      this._parent.invalidate_layout()
+  }
+
   get child_models(): LayoutDOM[] {
     const models = []
     for (const parent in this.model.children) {

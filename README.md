@@ -50,7 +50,7 @@ Panel can be used in a wide range of development environments:
 
 ### Editor + Server
 
-You can edit your Panel code as a .py file in any text editor, marking the objects you want to render as `.servable()`, then launch a server with `panel serve my_script.py --show` to open a browser tab showing your app or dashboard and backed by a live Python process.
+You can edit your Panel code as a .py file in any text editor, marking the objects you want to render as `.servable()`, then launch a server with `panel serve my_script.py --show` to open a browser tab showing your app or dashboard and backed by a live Python process. If you want the server to automatically reload when you save code changes during development, then you should use `panel serve my_script.py --auto --show`.
 
 ### JupyterLab and Classic notebook
 

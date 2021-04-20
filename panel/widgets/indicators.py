@@ -55,9 +55,11 @@ class BooleanStatus(BooleanIndicator):
     value = param.Boolean(default=False, doc="""
         Whether the indicator is active or not.""")
 
-    _widget_type = HTML
-
     _rename = {'color': None}
+
+    _source_transforms = {'value': None}
+
+    _widget_type = HTML
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
@@ -85,9 +87,11 @@ class LoadingSpinner(BooleanIndicator):
     value = param.Boolean(default=False, doc="""
         Whether the indicator is active or not.""")
 
-    _widget_type = HTML
-
     _rename = {'color': None, 'bgcolor': None}
+
+    _source_transforms = {'value': None}
+
+    _widget_type = HTML
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
@@ -161,6 +165,12 @@ class Number(ValueIndicator):
 
     _rename = {}
 
+    _source_transforms = {
+        'value': None, 'colors': None, 'default_color': None,
+        'font_size': None, 'format': None, 'nan_format': None,
+        'title_size': None
+    }
+
     _widget_type = HTML
 
     def _process_param_change(self, msg):
@@ -201,6 +211,10 @@ class String(ValueIndicator):
     value = param.String(default=None, allow_None=True)
 
     _rename = {}
+
+    _source_transforms = {
+        'value': None, 'default_color': None, 'font_size': None, 'title_size': None
+    }
 
     _widget_type = HTML
 
@@ -271,6 +285,14 @@ class Gauge(ValueIndicator):
     width = param.Integer(default=300, bounds=(0, None))
 
     _rename = {}
+
+    _source_transforms = {
+        'annulus_width': None, 'bounds': None, 'colors': None,
+        'custom_opts': None, 'end_angle': None, 'format': None,
+        'num_splits': None, 'show_ticks': None, 'show_labels': None,
+        'start_angle': None, 'tooltip_format': None, 'title_size': None,
+        'value': None
+    }
 
     @property
     def _widget_type(self):

@@ -130,6 +130,8 @@ class Select(SingleSelectBase):
         If set to 1 displays options as dropdown otherwise displays
         scrollable area.""")
 
+    _source_transforms = {'size': None}
+
     @property
     def _widget_type(self):
         return _BkSelect if self.size == 1 else _BkSingleSelect
