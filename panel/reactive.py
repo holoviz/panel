@@ -436,7 +436,7 @@ class Reactive(Syncable, Viewable):
         if parameters:
             linkable = parameters
         elif jslink:
-            linkable = self._linkable_params + ['loading']
+            linkable = self._linkable_params
         else:
             linkable = list(self.param)
 

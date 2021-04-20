@@ -52,6 +52,8 @@ class Bokeh(PaneBase):
 
     priority = 0.8
 
+    _rename = {'theme': None}
+
     @classmethod
     def applies(cls, obj):
         return isinstance(obj, LayoutDOM)

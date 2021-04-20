@@ -94,6 +94,8 @@ class Button(_ClickButton):
 
     _rename = {'clicks': None, 'name': 'label', 'value': None}
 
+    _target_transforms = {'event:button_click': None, 'value': None}
+
     _widget_type = _BkButton
 
     @property

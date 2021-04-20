@@ -75,6 +75,12 @@ class _MediaBase(PaneBase):
         wavfile.write(buffer, self.sample_rate, data)
         return buffer
 
+    def _process_property_change(self, msg):
+        msg = super()._process_property_change(msg)
+        if 'js_property_callbacks' in msg:
+            del msg['js_property_callbacks']
+        return msg
+
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
         if 'value' in msg:

@@ -91,14 +91,15 @@ class Callback(param.Parameterized):
         if not linkable:
             return
 
-        found = [(link, src, getattr(link, 'target', None)) for src in linkable
-                 for link in cls.registry.get(src, [])
-                 if not link._requires_target or link.target in linkable]
+        found = [
+            (link, src, getattr(link, 'target', None)) for src in linkable
+            for link in cls.registry.get(src, [])
+            if not link._requires_target or link.target in linkable
+        ]
 
         arg_overrides = {}
         if 'holoviews' in sys.modules:
             from .pane.holoviews import HoloViews, generate_panel_bokeh_map
-
             hv_views = root_view.select(HoloViews)
             map_hve_bk = generate_panel_bokeh_map(root_model, hv_views)
             for src in linkable:
@@ -118,15 +119,16 @@ class Callback(param.Parameterized):
 
         ref = root_model.ref['id']
         callbacks = []
-        for link, src, tgt in found:
+        for (link, src, tgt) in found:
             cb = cls._callbacks[type(link)]
             if ((src is None or ref not in getattr(src, '_models', [ref])) or
                 (getattr(link, '_requires_target', False) and tgt is None) or
                 (tgt is not None and ref not in getattr(tgt, '_models', [ref]))):
                 continue
             overrides = arg_overrides.get(id(link), {})
-            callbacks.append(cb(root_model, link, src, tgt,
-                                arg_overrides=overrides))
+            callbacks.append(
+                cb(root_model, link, src, tgt, arg_overrides=overrides)
+            )
         return callbacks
 
 
@@ -196,6 +198,8 @@ class Link(Callback):
 
 class CallbackGenerator(object):
 
+    error = False
+
     def __init__(self, root_model, link, source, target=None, arg_overrides={}):
         self.root_model = root_model
         self.link = link
@@ -205,11 +209,16 @@ class CallbackGenerator(object):
         self.validate()
         specs = self._get_specs(link, source, target)
         for src_spec, tgt_spec, code in specs:
+            if src_spec[1] and target is not None and src_spec[1].startswith('event:') and not tgt_spec[1]:
+                continue
             try:
                 self._init_callback(root_model, link, source, src_spec, target, tgt_spec, code)
             except Exception:
-                pass
-                
+                if self.error:
+                    raise
+                else:
+                    pass
+
     @classmethod
     def _resolve_model(cls, root_model, obj, model_spec):
         """
@@ -333,7 +342,14 @@ class CallbackGenerator(object):
             reverse_references['target'] = src_model
             tgt_cb = CustomJS(args=reverse_references, code=code, tags=[link_id])
             changes, events = self._get_triggers(link, tgt_spec)
+            properties = tgt_model.properties()
             for ch in changes:
+                if ch not in properties:
+                    msg = f"Could not link non-existent property '{ch}' on {tgt_model} model"
+                    if self.error:
+                        raise ValueError(msg)
+                    else:
+                        self.param.warning(msg)
                 tgt_model.js_on_change(ch, tgt_cb)
             for ev in events:
                 tgt_model.js_on_event(ev, tgt_cb)
@@ -507,7 +523,8 @@ class JSLinkCallbackGenerator(JSCallbackGenerator):
             else:
                 value = getattr(src_model, src_spec)
             if value and hasattr(tgt_model, tgt_spec):
-                setattr(tgt_model, tgt_spec, value)
+                if tgt_spec != 'value_throttled':
+                    setattr(tgt_model, tgt_spec, value)
         if tgt_model is None and not link.code:
             raise ValueError('Model could not be resolved on target '
                              '%s and no custom code was specified.' %
@@ -545,7 +562,7 @@ class JSLinkCallbackGenerator(JSCallbackGenerator):
                 loading_spinner=config.loading_spinner
             )
         else:
-            if src_spec.startswith('event:'):
+            if src_spec and src_spec.startswith('event:'):
                 template = self._event_link_template
             else:
                 template = self._link_template
