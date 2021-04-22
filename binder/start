@@ -1,4 +1,5 @@
 #!/bin/bash
+export BOKEH_ALLOW_WS_ORIGIN=hub.gke2.mybinder.org
 export DISPLAY=:99.0
 export PYVISTA_OFF_SCREEN=true
 export PYVISTA_USE_IPYVTK=true
