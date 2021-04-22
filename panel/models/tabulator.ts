@@ -471,11 +471,11 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     } else if (e.shiftKey && selected.indices.length) {
       const start = selected.indices[selected.indices.length-1]
       if (index>start) {
-	for (let i = start; i<index; i++)
-	  indices.push(i)
+        for (let i = start; i<index; i++)
+          indices.push(i)
       } else {
-	for (let i = start; i>index; i--)
-	  indices.push(i)
+        for (let i = start; i>index; i--)
+          indices.push(i)
       }
     }
     if (indices.indexOf(index) < 0)
