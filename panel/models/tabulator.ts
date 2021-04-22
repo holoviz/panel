@@ -20,7 +20,6 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   _selection_updating: boolean=false;
   _styled_cells: any[] = []
   _initializing: boolean
-  _tick_select: boolean
 
   connect_signals(): void {
     super.connect_signals()
@@ -160,16 +159,24 @@ export class DataTabulatorView extends PanelHTMLBoxView {
 
   getConfiguration(): any {
     const pagination = this.model.pagination == 'remote' ? 'local': (this.model.pagination || false)
-    const columns = this.getColumns()
+    let selectable: any
+    if (this.model.select_mode === true)
+      selectable = false
+    else if (this.model.select_mode === 'toggle')
+      selectable = true
+    else if (this.model.select_mode === false)
+      selectable = false
+    else
+      selectable = true
     let configuration = {
       ...this.model.configuration,
       index: "_index",
-      selectable: this._tick_select,
+      selectable: selectable,
       renderComplete: () => this.renderComplete(),
       rowSelectionChanged: (data: any, rows: any) => this.rowSelectionChanged(data, rows),
       rowClick: (e: any, row: any) => this.rowClicked(e, row),
       cellEdited: (cell: any) => this.cellEdited(cell),
-      columns: columns,
+      columns: this.getColumns(),
       layout: this.getLayout(),
       pagination: pagination,
       paginationSize: this.model.page_size,
@@ -194,7 +201,6 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   getColumns(): any {
     const config_columns: (any[] | undefined) = this.model.configuration?.columns;
     let columns = []
-    this._tick_select = false
     if (config_columns != null) {
       for (const column of config_columns)
         if (column.columns != null) {
@@ -202,11 +208,8 @@ export class DataTabulatorView extends PanelHTMLBoxView {
           for (const col of column.columns)
             group_columns.push({...col})
           columns.push({...column, columns: group_columns})
-        } else {
-	  if (column.formatter == 'rowSelection')
-	    this._tick_select = true
+        } else
           columns.push({...column})
-        }
     }
     for (const column of this.model.columns) {
       let tab_column: any = null
@@ -466,8 +469,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   // Update model
 
   rowClicked(e: any, row: any) {
-    console.log(this._tick_select)
-    if (this._selection_updating || this._initializing || this._tick_select)
+    if (this._selection_updating || this._initializing || this.model.select_mode !== true)
       return
     let indices: number[] = []
     const selected = this.model.source.selected
@@ -496,7 +498,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   }
 
   rowSelectionChanged(data: any, _: any): void {
-    if (this._selection_updating || this._initializing || !this._tick_select)
+    if (this._selection_updating || this._initializing || (typeof this.model.select_mode) === 'boolean')
       return
     this._selection_updating = true
     const indices: any = data.map((row: any) => row._index)
@@ -533,6 +535,7 @@ export namespace DataTabulator {
     page: p.Property<number>
     page_size: p.Property<number>
     pagination: p.Property<string | null>
+    select_mode: p.Property<any>
     source: p.Property<ColumnDataSource>
     sorters: p.Property<any[]>
     styles: p.Property<any>
@@ -571,6 +574,7 @@ export class DataTabulator extends HTMLBox {
       pagination:     [ Nullable(String),      null ],
       page:           [ Number,                   0 ],
       page_size:      [ Number,                   0 ],
+      select_mode:    [ Any,                   true ],
       source:         [ Ref(ColumnDataSource)       ],
       sorters:        [ Array(Any),              [] ],
       styles:         [ Any,                     {} ],

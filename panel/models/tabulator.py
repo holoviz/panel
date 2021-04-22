@@ -61,6 +61,8 @@ class DataTabulator(HTMLBox):
 
     sorters = List(Dict(String, String))
 
+    select_mode = Any(default=True)
+
     theme = Enum(*TABULATOR_THEMES, default="simple")
 
     theme_url = String(default=THEME_URL)
