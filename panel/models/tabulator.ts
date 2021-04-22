@@ -160,11 +160,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   getConfiguration(): any {
     const pagination = this.model.pagination == 'remote' ? 'local': (this.model.pagination || false)
     let selectable: any
-    if (this.model.select_mode === true)
-      selectable = false
-    else if (this.model.select_mode === 'toggle')
-      selectable = true
-    else if (this.model.select_mode === false)
+    if (typeof this.model.select_mode === 'boolean')
       selectable = false
     else
       selectable = true
