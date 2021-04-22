@@ -1,4 +1,9 @@
 #!/bin/bash
-/sbin/start-stop-daemon --start --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb :99 -ac -screen 0 1280x1024x24
+export DISPLAY=:99.0
+export PYVISTA_OFF_SCREEN=true
+export PYVISTA_USE_IPYVTK=true
+export PYVISTA_PLOT_THEME=document
+which Xvfb
+Xvfb :99 -screen 0 1280x1024x24 > /dev/null 2>&1 &
 sleep 3
 exec "$@"

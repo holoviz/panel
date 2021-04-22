@@ -1,4 +1,4 @@
-conda install -c conda-forge code-server mesalib
+conda install -c conda-forge code-server
 code-server --install-extension ms-python.python
 SERVICE_URL=https://open-vsx.org/vscode/gallery ITEM_URL=https://open-vsx.org/vscode/item code-server --install-extension wesbos.theme-cobalt2
 SERVICE_URL=https://open-vsx.org/vscode/gallery ITEM_URL=https://open-vsx.org/vscode/item code-server --install-extension RandomFractalsInc.vscode-data-preview
