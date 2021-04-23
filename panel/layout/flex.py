@@ -1,7 +1,10 @@
+from pathlib import Path
+
 import param
 
 from ..reactive import ReactiveHTML
 from .base import ListLike
+
 
 class FlexBox(ListLike, ReactiveHTML):
 
@@ -33,15 +36,7 @@ class FlexBox(ListLike, ReactiveHTML):
         'space-evenly', 'start', 'end', 'left', 'right'], doc="""
         Defines the alignment along the main axis.""")
 
-    _template = """
-    <div id="flexbox" style="display: flex; flex-wrap: ${flex_wrap}; justify-content: ${justify_content}; flex-direction: ${flex_direction}; align-content: ${align_content};">
-    {% for obj in objects %}
-      <div id="flex-item-{{ loop.index0 }}">
-       ${objects[{{ loop.index0 }}]}
-      </div>
-    {% endfor %}
-    </div>
-    """
+    _template = (Path(__file__).parent / 'flexbox.html').read_text('utf-8'0)
 
     def __init__(self, *objects, **params):
         if 'sizing_mode' not in params:
@@ -51,4 +46,4 @@ class FlexBox(ListLike, ReactiveHTML):
             else:
                 params['sizing_mode'] = 'stretch_height'
         super().__init__(objects=list(objects), **params)
-    
+
