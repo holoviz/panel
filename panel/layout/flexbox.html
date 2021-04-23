@@ -1,0 +1,7 @@
+<div id="flexbox" style="display: flex; flex-wrap: ${flex_wrap}; justify-content: ${justify_content}; flex-direction: ${flex_direction}; align-content: ${align_content};">
+  {% for obj in objects %}
+  <div id="flex-item-{{ loop.index0 }}">
+    ${objects[{{ loop.index0 }}]}
+  </div>
+  {% endfor %}
+</div>
