@@ -1,4 +1,4 @@
-<img src="https://github.com/holoviz/panel/raw/master/doc/_static/logo_horizontal_ligth_them.png" data-canonical-src="https://github.com/holoviz/panel/raw/master/doc/_static/logo_stacked.png" width="400"/><br>
+<img src="https://github.com/holoviz/panel/raw/master/doc/_static/logo_horizontal_ligth_theme.png" data-canonical-src="https://github.com/holoviz/panel/raw/master/doc/_static/logo_stacked.png" width="400"/><br>
 
 -----------------
 
