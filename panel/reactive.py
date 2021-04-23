@@ -1232,15 +1232,15 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
             mode = self._child_config.get(children_param, 'model')
             if mode == 'literal':
                 continue
-            new_panes = getattr(self, children_param)
-            if not isinstance(new_panes, (list, dict)):
-                new_panes = [new_panes]
+            panes = getattr(self, children_param)
+            if not isinstance(panes, (list, dict)):
+                panes = [panes]
                 old_panes = [old_panes]
-            elif isinstance(new_panes, dict):
-                new_panes = new_panes.values()
+            elif isinstance(panes, dict):
+                panes = panes.values()
                 old_panes = old_panes.values()
             for old_pane in old_panes:
-                if old_pane not in new_panes:
+                if old_pane not in panes:
                     old_pane._cleanup(root)
 
         for parent, child_panes in new_panes.items():
