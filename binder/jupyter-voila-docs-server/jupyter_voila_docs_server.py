@@ -23,9 +23,9 @@ def get_apps():
     ]
 
 
-def panel_serve_examples():
-    """Returns the jupyter-server-proxy configuration for serving the example notebooks as Panel
-    apps.
+def voila_serve_examples():
+    """Returns the jupyter-server-proxy configuration for serving the example notebooks as Voila
+    Apps.
 
     Returns:
         Dict: The configuration dictionary
@@ -36,20 +36,20 @@ def panel_serve_examples():
     # https://github.com/holoviz/jupyter-panel-proxy/blob/master/panel_server/__init__.py
     return {
         "command": [
-            "panel",
-            "serve",
-            *apps,
-            "--allow-websocket-origin=*",
+            "voila", # voila examples/gallery/dynamic --strip_sources=False --base_url
+            "examples",
+            "--no-browser",
+            "--strip_sources=False",
             "--port",
             "{port}",
-            "--prefix",
-            "{base_url}panel",
+            "--base_url",
+            "{base_url}docs/",
         ],
         "absolute_url": True,
         "timeout": 360,
         "launcher_entry": {
             "enabled": True,
-            "title": "Apps",
+            "title": "Docs",
             "icon_path": ICON_PATH,
         },
     }
