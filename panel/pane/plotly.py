@@ -177,15 +177,11 @@ class Plotly(PaneBase):
                     data[idx][key] = arr
         return json
 
-    def _get_model(self, doc, root=None, parent=None, comm=None):
-        """
-        Should return the bokeh model to be rendered.
-        """
-        PlotlyPlot = lazy_load('panel.models.plotly', 'PlotlyPlot', isinstance(comm, JupyterComm))
+    def _init_params(self):
         viewport_params = [p for p in self.param if 'viewport' in p]
-        params = list(Layoutable.param)+viewport_params
-        properties = {p : getattr(self, p) for p in params
-                      if getattr(self, p) is not None}
+        parameters = list(Layoutable.param)+viewport_params
+        params = {p: getattr(self, p) for p in parameters
+                  if getattr(self, p) is not None}
 
         if self.object is None:
             json, sources = {}, []
@@ -194,33 +190,21 @@ class Plotly(PaneBase):
             json = self._plotly_json_wrapper(fig)
             sources = Plotly._get_sources(json)
 
-        data = json.get('data', [])
-        layout = json.get('layout', {})
+        params['_render_count'] = self._render_count
+        params['config'] = self.config or {}
+        params['data'] = json.get('data', [])
+        params['data_sources'] = sources
+        params['layout'] = layout = json.get('layout', {})
         if layout.get('autosize') and self.sizing_mode is self.param.sizing_mode.default:
-            properties['sizing_mode'] = 'stretch_both'
+            params['sizing_mode'] = 'stretch_both'
+        return params
 
-        model = PlotlyPlot(
-            data=data, layout=layout, config=self.config or {},
-            data_sources=sources, _render_count=self._render_count,
-            **properties
-        )
-
+    def _get_model(self, doc, root=None, parent=None, comm=None):
+        PlotlyPlot = lazy_load('panel.models.plotly', 'PlotlyPlot', isinstance(comm, JupyterComm))
+        model = PlotlyPlot(**self._init_params())
         if root is None:
             root = model
-
-        self._link_props(
-            model, [
-                'config', 'relayout_data', 'restyle_data', 'click_data',  'hover_data',
-                'clickannotation_data', 'selected_data', 'viewport',
-                'viewport_update_policy', 'viewport_update_throttle', '_render_count'
-            ],
-            doc,
-            root,
-            comm
-        )
-
-        if root is None:
-            root = model
+        self._link_props(model, self._linkable_params, doc, root, comm)
         self._models[root.ref['id']] = (model, parent)
         return model
 
@@ -259,28 +243,33 @@ class Plotly(PaneBase):
                 try:
                     update_data = (
                         {k: v for k, v in new.items() if k != 'uid'} !=
-                        {k: v for k, v in old.items() if k != 'uid'})
+                        {k: v for k, v in old.items() if k != 'uid'}
+                    )
                 except Exception:
                     update_data = True
                 if update_data:
                     break
 
+        updates = {}
         if self.sizing_mode is self.param.sizing_mode.default and 'autosize' in layout:
             autosize = layout.get('autosize')
             if autosize and model.sizing_mode != 'stretch_both':
-                model.sizing_mode = 'stretch_both'
+                updates['sizing_mode'] = 'stretch_both'
             elif not autosize and model.sizing_mode != 'fixed':
-                model.sizing_mode = 'fixed'
+                updates['sizing_mode'] = 'fixed'
 
         if new_sources:
-            model.data_sources += new_sources
+            updates['data_sources'] = model.data_sources + new_sources
 
         if update_data:
-            model.data = json.get('data')
+            updates['data'] = json.get('data')
 
         if update_layout:
-            model.layout = layout
+            updates['layout'] = layout
+
+        if updates:
+            model.update(**updates)
 
         # Check if we should trigger rendering
-        if new_sources or update_sources or update_data or update_layout:
+        if updates or update_sources:
             model._render_count += 1
