@@ -159,7 +159,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
 
   getConfiguration(): any {
     const pagination = this.model.pagination == 'remote' ? 'local': (this.model.pagination || false)
-    let selectable = !typeof this.model.select_mode === 'boolean'
+    let selectable = !(typeof this.model.select_mode === 'boolean')
     let configuration = {
       ...this.model.configuration,
       index: "_index",
@@ -452,6 +452,9 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       return
 
     const indices = this.model.source.selected.indices;
+    const current_indices: any = this.tabulator.getSelectedData().map((row: any) => row._index)
+    if (JSON.stringify(indices) == JSON.stringify(current_indices))
+      return
     this._selection_updating = true
     this.tabulator.deselectRow()
     this.tabulator.selectRow(indices)

@@ -895,8 +895,6 @@ class Tabulator(BaseTable):
             self._apply_update([], {'max_page': max_page}, model, ref)
 
     def _update_selected(self, *events, indices=None):
-        if self._updating:
-            return
         kwargs = {}
         if self.pagination == 'remote':
             index = self.value.iloc[self.selection].index
@@ -929,6 +927,7 @@ class Tabulator(BaseTable):
     def _update_selection(self, indices):
         if self.pagination != 'remote':
             self.selection = indices
+            return
         nrows = self.page_size
         start = (self.page-1)*nrows
         index = self._processed.iloc[[start+ind for ind in indices]].index
