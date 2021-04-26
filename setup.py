@@ -153,6 +153,8 @@ extras_require = {
         'pydeck',
         'pyecharts',
         'idom',
+        'xlsxwriter',
+        'pyarrow',
     ],
     'tests': _tests,
     'recommended': _recommended,
