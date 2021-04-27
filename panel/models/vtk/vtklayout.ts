@@ -4,9 +4,10 @@ import {div, canvas} from "@bokehjs/core/dom"
 import {HTMLBox} from "@bokehjs/models/layouts/html_box"
 import {clone} from "@bokehjs/core/util/object"
 import {ColorMapper} from "@bokehjs/models/mappers/color_mapper"
+import {Enum} from "@bokehjs/core/kinds"
 
 import {PanelHTMLBoxView, set_size} from "../layout"
-import {vtkns, VolumeType, majorAxis, applyStyle, CSSProperties} from "./util"
+import {vtkns, VolumeType, majorAxis, applyStyle, CSSProperties, Annotation} from "./util"
 import {VTKColorBar} from "./vtkcolorbar"
 import {VTKAxes} from "./vtkaxes"
 
@@ -25,6 +26,8 @@ const INFO_DIV_STYLE: CSSProperties = {
   position: "absolute",
 }
 
+const textPositions = Enum("LowerLeft", "LowerRight", "UpperLeft", "UpperRight", "LowerEdge", "RightEdge", "LeftEdge", "UpperEdge")
+
 export abstract class AbstractVTKView extends PanelHTMLBoxView {
   model: AbstractVTKPlot
   protected _axes: any
@@ -35,6 +38,7 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
   protected _vtk_container: HTMLDivElement
   protected _vtk_renwin: any
   protected _widgetManager: any
+  protected _annotations_container: HTMLDivElement
 
   initialize(): void {
     super.initialize()
@@ -84,6 +88,90 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
 
     info_div.click()
   }
+  
+  _init_annotations_container(): void {
+    if (!this._annotations_container) {
+      this._annotations_container = document.createElement("div")
+      this._annotations_container.style.position = "absolute"
+      this._annotations_container.style.width = "100%"
+      this._annotations_container.style.height = "100%"
+      this._annotations_container.style.top = "0"
+      this._annotations_container.style.left = "0"
+      this._annotations_container.style.pointerEvents = "none"
+    }
+  }
+
+  _clean_annotations(): void {
+    if (this._annotations_container) {
+      while (this._annotations_container.firstElementChild) {
+        this._annotations_container.firstElementChild.remove()
+      }
+    }
+  }
+
+  _add_annotations(): void {
+    this._clean_annotations()
+    const {annotations} = this.model
+    if (annotations != null) {
+      for (let annotation of annotations) {
+        const {viewport, color, fontSize, fontFamily} = annotation
+        textPositions.values.forEach((pos) => {
+            const text = annotation[pos]
+            if (text) {
+              const div = document.createElement("div")
+              div.textContent = text
+              const {style} = div
+              style.position = "absolute"
+              style.color = `rgb(${color.map((val)=>255*val).join(",")})`
+              style.fontSize = `${fontSize}px`
+              style.padding = "5px"
+              style.fontFamily = fontFamily
+              style.width = "fit-content"
+
+              if (pos == "UpperLeft") {
+                style.top = `${(1 - viewport[3])*100}%`
+                style.left = `${viewport[0]*100}%`
+              }
+              if (pos == "UpperRight") {
+                style.top = `${(1 - viewport[3])*100}%`
+                style.right = `${(1-viewport[2])*100}%`
+              }
+              if (pos == "LowerLeft") {
+                style.bottom = `${viewport[1]*100}%`
+                style.left = `${viewport[0]*100}%`
+              }
+              if (pos == "LowerRight") {
+                style.bottom = `${viewport[1]*100}%`
+                style.right = `${(1-viewport[2])*100}%`
+              }
+              if (pos == "UpperEdge") {
+                style.top = `${(1 - viewport[3])*100}%`
+                style.left = `${(viewport[0] + (viewport[2] - viewport[0])/2) *100}%`
+                style.transform = "translateX(-50%)"
+              }
+              if (pos == "LowerEdge") {
+                style.bottom = `${viewport[1]*100}%`
+                style.left = `${(viewport[0] + (viewport[2] - viewport[0])/2) *100}%`
+                style.transform = "translateX(-50%)"
+              }
+              if (pos == "LeftEdge") {
+                style.left = `${viewport[0]*100}%`
+                style.top = `${(1 - viewport[3] + (viewport[3] - viewport[1])/2) *100}%`
+                style.transform = "translateY(-50%)"
+              }
+              if (pos == "RightEdge") {
+                style.right = `${(1-viewport[2])*100}%`
+                style.top = `${(1 - viewport[3] + (viewport[3] - viewport[1])/2) *100}%`
+                style.transform = "translateY(-50%)"
+              }
+              this._annotations_container.appendChild(div)
+            }
+          }
+        )
+      }
+    }
+    console.log(this.model.annotations)
+  }
 
   connect_signals(): void {
     super.connect_signals()
@@ -99,6 +187,7 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
       this._vtk_render()
     })
     this.on_change(this.model.properties.color_mappers, () => this._add_colorbars())
+    this.on_change(this.model.properties.annotations, () => this._add_annotations())
   }
 
   render(): void {
@@ -108,6 +197,7 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
       this._axes = null
       this._vtk_container = div()
       this.init_vtk_renwin()
+      this._init_annotations_container()
       set_size(this._vtk_container, this.model)
       this.el.appendChild(this._vtk_container)
       // update camera model state only at the end of the interaction
@@ -117,6 +207,7 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
       this._bind_key_events()
       this.plot()
       this._add_colorbars()
+      this._add_annotations()
       this.model.renderer_el = this._vtk_renwin
     } else {
       set_size(this._vtk_container, this.model)
@@ -124,6 +215,7 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
       // we must attach them to the new el
       this.el.appendChild(this._vtk_container)
     }
+    this.el.appendChild(this._annotations_container)
   }
 
   after_layout(): void {
@@ -387,13 +479,14 @@ export abstract class AbstractVTKView extends PanelHTMLBoxView {
 export namespace AbstractVTKPlot {
   export type Attrs = p.AttrsOf<Props>
   export type Props = HTMLBox.Props & {
-    axes: p.Property<VTKAxes>
+    axes: p.Property<VTKAxes | null>
     camera: p.Property<any>
     data: p.Property<string | VolumeType | null>
     enable_keybindings: p.Property<boolean>
     orientation_widget: p.Property<boolean>
     color_mappers: p.Property<ColorMapper[]>
     interactive_orientation_widget: p.Property<boolean>
+    annotations: p.Property<Annotation[] | null>
   }
 }
 
@@ -414,13 +507,14 @@ export abstract class AbstractVTKPlot extends HTMLBox {
   }
 
   static init_AbstractVTKPlot(): void {
-    this.define<AbstractVTKPlot.Props>({
-      axes:                           [ p.Instance       ],
-      camera:                         [ p.Instance       ],
-      color_mappers:                  [ p.Array,      [] ],
-      orientation_widget:             [ p.Boolean, false ],
-      interactive_orientation_widget: [ p.Boolean, false ],
-    })
+    this.define<AbstractVTKPlot.Props>(({Any, Ref, Array, Boolean, Nullable}) => ({
+      axes:                           [ Nullable(Ref(VTKAxes)),       null ],
+      camera:                         [ Any                                ],
+      color_mappers:                  [ Array(Ref(ColorMapper)),        [] ],
+      orientation_widget:             [ Boolean,                     false ],
+      interactive_orientation_widget: [ Boolean,                     false ],
+      annotations:                    [ Nullable(Array(Any)),         null ],
+    }))
 
     this.override<AbstractVTKPlot.Props>({
       height: 300,
