@@ -11,6 +11,8 @@ from vtk.vtkFiltersGeometry import vtkCompositeDataGeometryFilter, vtkGeometryFi
 from vtk.vtkRenderingCore import vtkColorTransferFunction
 from vtk.vtkCommonDataModel import vtkDataObject
 
+from .enums import TextPosition
+
 # -----------------------------------------------------------------------------
 # Python compatibility handling 2.6, 2.7, 3+
 # -----------------------------------------------------------------------------
@@ -176,12 +178,31 @@ class SynchronizationContext():
         self.idRoot = id_root
         self.debugSerializers = debug
         self.debugAll = debug
+        self.annotations = {}
 
     def getReferenceId(self, instance):
         if not self.idRoot or (hasattr(instance, 'IsA') and instance.IsA('vtkCamera')):
             return getReferenceId(instance)
         else:
             return self.idRoot + getReferenceId(instance)
+
+    def addAnnotation(self, parent, prop, propId):
+        if prop.GetClassName() == "vtkCornerAnnotation":
+            annotation = {
+                "id": propId,
+                "viewport": parent.GetViewport(),
+                "fontSize": prop.GetLinearFontScaleFactor() * 2,
+                "fontFamily": prop.GetTextProperty().GetFontFamilyAsString(),
+                "color": prop.GetTextProperty().GetColor(),
+                **{pos.name: prop.GetText(pos.value) for pos in TextPosition}
+            }
+            if self.annotations is None:
+                self.annotations = {propId: annotation}
+            else:
+                self.annotations.update({propId: annotation})
+
+    def getAnnotations(self):
+        return list(self.annotations.values())
 
     def setIgnoreLastDependencies(self, force):
         self.ingoreLastDependencies = force
@@ -291,6 +312,9 @@ def serializeInstance(parent, instance, instanceId, context, depth):
 
 
 def initializeSerializers():
+    # Annotations
+    registerInstanceSerializer('vtkCornerAnnotation', annotationSerializer)
+
     # Actors/viewProps
     registerInstanceSerializer('vtkImageSlice', genericProp3DSerializer)
     registerInstanceSerializer('vtkVolume', genericProp3DSerializer)
@@ -556,6 +580,14 @@ def extractRequiredFields(extractedFields, parent, dataset, context, requestedFi
 # -----------------------------------------------------------------------------
 # Concrete instance serializers
 # -----------------------------------------------------------------------------
+
+def annotationSerializer(parent, prop, propId, context, depth):
+    if context.debugSerializers:
+        print('%s!!!Annotations are not handled directly by vtk.js but by bokeh model' % pad(depth))
+
+    context.addAnnotation(parent, prop, propId)
+
+    return None 
 
 def genericPropSerializer(parent, prop, popId, context, depth):
     # This kind of actor has two "children" of interest, a property and a

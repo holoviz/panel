@@ -1,4 +1,15 @@
+from enum import Enum
 from collections import namedtuple
+
+class TextPosition(Enum):
+    LowerLeft = 0 
+    LowerRight = 1  
+    UpperLeft = 2 
+    UpperRight = 3  
+    LowerEdge = 4 
+    RightEdge = 5  
+    LeftEdge = 6  
+    UpperEdge = 7   
 
 SCALAR_MODE = namedtuple("SCALAR_MODE",
     "Default UsePointData UseCellData UsePointFieldData UseCellFieldData UseFieldData"
