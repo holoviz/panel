@@ -896,7 +896,7 @@ class Tabulator(BaseTable):
 
     def _update_selected(self, *events, indices=None):
         kwargs = {}
-        if self.pagination == 'remote':
+        if self.pagination == 'remote' and self.value is not None:
             index = self.value.iloc[self.selection].index
             indices = []
             for v in index.values:
