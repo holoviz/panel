@@ -316,13 +316,9 @@ class ServableMixin(object):
                 if isinstance(handler, logging.StreamHandler):
                     handler.setLevel(logging.WARN)
             if config.template:
-                if state.template:
-                    template = state.template
-                    if template.title == template.param.title.default and title:
-                        template.title = title
-                else:
-                    params = {'title': title} if title else {}
-                    state.template = template = config.template(theme=config.theme, **params)
+                template = state.template
+                if template.title == template.param.title.default and title:
+                    template.title = title
                 if area == 'main':
                     template.main.append(self)
                 elif area == 'sidebar':

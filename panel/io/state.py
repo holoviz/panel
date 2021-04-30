@@ -351,14 +351,13 @@ class _state(param.Parameterized):
 
     @property
     def template(self):
+        from ..config import config
         if self.curdoc in self._templates:
-            return self._templates[self.curdoc]
-
-    @template.setter
-    def template(self, template):
-        if self.curdoc is None:
-            raise ValueError("Can not set template when state.curdoc is None.")
-        self._templates[self.curdoc] = template
+            template = self._templates[self.curdoc]
+        else:
+            template = config.template(theme=config.theme)
+            self._templates[self.curdoc] = template
+        return template
 
     @property
     def user(self):
