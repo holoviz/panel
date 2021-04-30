@@ -233,7 +233,7 @@ function resize_layout(obj, old_, new_, p, e, element) {
 }
 
 function resize_layout_stop(obj, old_, new_, p, e, element) {
-  setTimeout(function(){
+  setTimeout(function() {
     window.dispatchEvent(new Event("resize"))
   }, 50);
 }
@@ -284,6 +284,7 @@ addFullScreenToggle()
 </script>
 
 {{ embed(roots.js_area) }}
+{{ embed(roots.actions) }}
 {{ embed(roots.location) }}
 
 {% endblock %}
