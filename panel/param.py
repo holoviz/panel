@@ -459,8 +459,12 @@ class Param(PaneBase):
             if change.what == 'constant':
                 updates['disabled'] = change.new
             elif change.what == 'precedence':
-                if (change.new < self.display_threshold and
-                    widget in self._widget_box.objects):
+                if change.new is change.old:
+                    return
+                elif change.new is None:
+                    self._rerender()
+                elif (change.new < self.display_threshold and
+                      widget in self._widget_box.objects):
                     self._widget_box.pop(widget)
                 elif change.new >= self.display_threshold:
                     self._rerender()
