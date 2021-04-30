@@ -290,7 +290,7 @@ class ServableMixin(object):
     # Public API
     #----------------------------------------------------------------
 
-    def servable(self, title=None, location=True):
+    def servable(self, title=None, location=True, area='main'):
         """
         Serves the object if in a `panel serve` context and returns
         the Panel object to allow it to display itself in a notebook
@@ -302,6 +302,9 @@ class ServableMixin(object):
         location : boolean or panel.io.location.Location
           Whether to create a Location component to observe and
           set the URL location.
+        area: str
+          The area of a template to add the component too. Only has an
+          effect if pn.config.template has been set.
 
         Returns
         -------
@@ -312,7 +315,25 @@ class ServableMixin(object):
             for handler in logger.handlers:
                 if isinstance(handler, logging.StreamHandler):
                     handler.setLevel(logging.WARN)
-            self.server_doc(title=title, location=True)
+            if config.template:
+                if state.template:
+                    template = state.template
+                    if template.title is None:
+                        template.title  = title
+                else:
+                    params = {'title': title} if title else {}
+                    state.template = template = config.template(**params)
+                if area == 'main':
+                    template.main.append(self)
+                elif area == 'sidebar':
+                    template.sidebar.append(self)
+                elif area == 'modal':
+                    template.modal.append(self)
+                elif area == 'header':
+                    template.header.append(self)
+                print(state.curdoc)
+            else:
+                self.server_doc(title=title, location=location)
         return self
 
     def show(self, title=None, port=0, address=None, websocket_origin=None,
