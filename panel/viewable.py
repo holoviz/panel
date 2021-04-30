@@ -318,11 +318,11 @@ class ServableMixin(object):
             if config.template:
                 if state.template:
                     template = state.template
-                    if template.title is None:
-                        template.title  = title
+                    if template.title == template.param.title.default and title:
+                        template.title = title
                 else:
                     params = {'title': title} if title else {}
-                    state.template = template = config.template(**params)
+                    state.template = template = config.template(theme=config.theme, **params)
                 if area == 'main':
                     template.main.append(self)
                 elif area == 'sidebar':
@@ -331,7 +331,6 @@ class ServableMixin(object):
                     template.modal.append(self)
                 elif area == 'header':
                     template.header.append(self)
-                print(state.curdoc)
             else:
                 self.server_doc(title=title, location=location)
         return self

@@ -110,9 +110,11 @@ class _config(_base_config):
         'scale_width', 'scale_height', 'scale_both', None], doc="""
         Specify the default sizing mode behavior of panels.""")
 
-    template = param.ObjectSelector(
-        default=None, doc="""
+    template = param.ObjectSelector(default=None, doc="""
         The default template to render served applications into.""")
+
+    theme = param.ObjectSelector(default='default', objects=['default', 'dark'], doc="""
+        The theme to apply to the selected global template.""")
 
     throttled = param.Boolean(default=False, doc="""
         If sliders and inputs should be throttled until release of mouse.""")
@@ -237,6 +239,11 @@ class _config(_base_config):
 
     def _console_output_hook(self, value):
         return value if value else 'disable'
+
+    def _template_hook(self, value):
+        if isinstance(value, str):
+            return self.param.template.names[value]
+        return value
 
     @property
     def _doc_build(self):
@@ -390,8 +397,6 @@ class panel_extension(_pyviz_extension):
                 getattr(config, k).extend(v)
             elif k == 'js_files':
                 getattr(config, k).update(v)
-            elif k == 'template':
-                config.template = config.param.template.names[v]
             else:
                 setattr(config, k, v)
 
