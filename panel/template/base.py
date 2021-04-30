@@ -4,6 +4,7 @@ documents.
 """
 import os
 import sys
+import uuid
 
 from collections import OrderedDict
 from functools import partial
