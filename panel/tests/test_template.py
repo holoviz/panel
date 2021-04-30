@@ -179,7 +179,7 @@ def test_list_template_insert_order(template_class):
 
     template.main.extend([2, 3])
 
-    objs = list(template._render_items.values())[2:]
+    objs = list(template._render_items.values())[3:]
     ((obj1, tag1), (obj2, tag2), (obj3, tag3), (obj4, tag4)) = objs
 
     assert tag1 == tag2 == tag3 == tag4 == ['main']
@@ -208,7 +208,7 @@ def test_grid_template_override():
     template.main[0, 0] = item
     template.main[0, 0] = override
 
-    objs = list(template._render_items.values())[2:]
+    objs = list(template._render_items.values())[3:]
     assert len(objs) == 1
     ((obj, tags),) = objs
 

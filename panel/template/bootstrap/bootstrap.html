@@ -59,11 +59,11 @@
     {% endfor %}
     {% endfor %}
     {% if busy %}
-	</div>
-	<div class="pn-busy-container">
-	  {{ embed(roots.busy_indicator) | indent(6) }}
-	</div>
-	{% endif %}
+    </div>
+    <div class="pn-busy-container">
+      {{ embed(roots.busy_indicator) | indent(6) }}
+    </div>
+    {% endif %}
   </nav>
 
   <div class="row overflow-hidden" id="content">
@@ -83,7 +83,7 @@
 
     <div class="col mh-100 float-left" id="main">
       {% if main_max_width %}
-        <div style="margin-left: auto; margin-right: auto;max-width: {{main_max_width}}">
+      <div style="margin-left: auto; margin-right: auto;max-width: {{main_max_width}}">
       {% endif %}
           {% for doc in docs %}
           {% for root in doc.roots %}
@@ -93,20 +93,25 @@
           {% endfor %}
           {% endfor %}
       {% if main_max_width %}
-        </div>
+      </div>
       {% endif %}
-	  <div id="pn-Modal" class="pn-modal mdc-top-app-bar--fixed-adjust">
-		<div class="pn-modal-content">
-		  <span class="pn-modalclose" id="pn-closeModal">&times;</span>
-		  {% for doc in docs %}
-		  {% for root in doc.roots %}
-		  {% if "modal" in root.tags %}
-		  {{ embed(root) | indent(6) }}
-		  {% endif %}
-		  {% endfor %}
-		  {% endfor %}
-		</div>
-	  </div>
+    </div>
+  </div>
+
+  <div id="pn-Modal" class="modal pn-modal" role="dialog" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content pn-modal-content">
+	<button class="pn-modal-close" id="pn-closeModal">&times;</button>
+	<div class="modal-body">
+	{% for doc in docs %}
+	{% for root in doc.roots %}
+	{% if "modal" in root.tags %}
+	{{ embed(root) | indent(6) }}
+	{% endif %}
+	{% endfor %}
+	{% endfor %}
+	</div>
+      </div>
     </div>
   </div>
 </div>
@@ -136,6 +141,7 @@
 </script>
 
 {{ embed(roots.js_area) }}
+{{ embed(roots.actions) }}
 {{ embed(roots.location) }}
 
 {% endblock %}

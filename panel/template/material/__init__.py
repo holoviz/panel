@@ -8,14 +8,29 @@ import param
 from bokeh.themes import Theme as _BkTheme
 
 from ...layout import Card
-from ..base import BasicTemplate
+from ..base import BasicTemplate, TemplateActions
 from ..theme import DefaultTheme, DarkTheme
+
+
+
+class MaterialTemplateActions(TemplateActions):
+
+    _scripts = {
+        'open_modal': ["""
+        modal.open();
+        setTimeout(function() {{ window.dispatchEvent(new Event('resize')); }}, 200);
+        """],
+        'close_modal': ["modal.close()"]
+    }
+
 
 
 class MaterialTemplate(BasicTemplate):
     """
     MaterialTemplate is built on top of Material web components.
     """
+
+    _actions = param.ClassSelector(default=MaterialTemplateActions(), class_=TemplateActions)
 
     _css = pathlib.Path(__file__).parent / 'material.css'
 
@@ -40,6 +55,7 @@ class MaterialTemplate(BasicTemplate):
             'material': "https://unpkg.com/material-components-web@7.0.0/dist/material-components-web.min.js"
         }
     }
+
 
 
 MATERIAL_FONT = "Roboto, sans-serif, Verdana"
