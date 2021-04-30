@@ -87,13 +87,6 @@ export class DataTabulatorView extends PanelHTMLBoxView {
 
     this.tabulator = new Tabulator(container, configuration)
 
-    // Patch the ajax request method
-    this.tabulator.modules = {...this.tabulator.modules}
-    const ajax = this.tabulator.modules.ajax
-    this.tabulator.modules.ajax.sendRequest = () => {
-      this.requestPage(ajax.params.page, ajax.params.sorters)
-    }
-
     // Swap pagination mode
     if (this.model.pagination === 'remote') {
       this.tabulator.options.pagination = this.model.pagination
@@ -114,12 +107,23 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     this.el.appendChild(container)
   }
 
+  tableInit(view: DataTabulatorView, tabulator: any): void {
+    // Patch the ajax request and page data parsing methods
+    const ajax = tabulator.modules.ajax
+    ajax.sendRequest = () => {
+      return view.requestPage(ajax.params.page, ajax.params.sorters)
+    }
+    tabulator.modules.page._parseRemoteData = (data: any) => {}
+  }
+
   requestPage(page: number, sorters: any[]): Promise<void> {
     return new Promise((resolve: any, reject: any) => {
       try {
-        this.model.page = page || 1
-        this.model.sorters = sorters
-        resolve({data: [], last_page: this.model.max_page})
+	if (page != null && sorters != null) {
+          this.model.page = page || 1
+          this.model.sorters = sorters
+	}
+        resolve([])
       } catch(err) {
         reject(err)
       }
@@ -159,11 +163,13 @@ export class DataTabulatorView extends PanelHTMLBoxView {
 
   getConfiguration(): any {
     const pagination = this.model.pagination == 'remote' ? 'local': (this.model.pagination || false)
-    let selectable = !typeof this.model.select_mode === 'boolean'
+    let selectable = !(typeof this.model.select_mode === 'boolean')
+    const that = this
     let configuration = {
       ...this.model.configuration,
       index: "_index",
       selectable: selectable,
+      tableBuilding: function() { that.tableInit(that, this) },
       renderComplete: () => this.renderComplete(),
       rowSelectionChanged: (data: any, rows: any) => this.rowSelectionChanged(data, rows),
       rowClick: (e: any, row: any) => this.rowClicked(e, row),
@@ -452,6 +458,9 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       return
 
     const indices = this.model.source.selected.indices;
+    const current_indices: any = this.tabulator.getSelectedData().map((row: any) => row._index)
+    if (JSON.stringify(indices) == JSON.stringify(current_indices))
+      return
     this._selection_updating = true
     this.tabulator.deselectRow()
     this.tabulator.selectRow(indices)

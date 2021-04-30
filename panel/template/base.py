@@ -28,8 +28,8 @@ from ..layout import Column, ListLike, GridSpec
 from ..models.comm_manager import CommManager
 from ..pane import panel as _panel, HTML, Str, HoloViews
 from ..pane.image import ImageBase
+from ..reactive import ReactiveHTML
 from ..util import url_path
-
 from ..viewable import ServableMixin, Viewable
 from ..widgets import Button
 from ..widgets.indicators import BooleanIndicator, LoadingSpinner
@@ -313,6 +313,24 @@ class BaseTemplate(param.Parameterized, ServableMixin):
 
 
 
+class TemplateActions(ReactiveHTML):
+    """
+    A component added to templates that allows triggering events such
+    as opening and closing a modal.
+    """
+
+    open_modal = param.Integer(default=0)
+
+    close_modal = param.Integer(default=0)
+
+    _template = "<div></div>"
+
+    _scripts = {
+        'open_modal': ["document.getElementById('pn-Modal').style.display = 'block'"],
+        'close_modal': ["document.getElementById('pn-Modal').style.display = 'none'"],
+    }
+
+
 class BasicTemplate(BaseTemplate):
     """
     BasicTemplate provides a baseclass for templates with a basic
@@ -402,6 +420,8 @@ class BasicTemplate(BaseTemplate):
 
     location = param.Boolean(default=True, readonly=True)
 
+    _actions = param.ClassSelector(default=TemplateActions(), class_=TemplateActions)
+
     #############
     # Resources #
     #############
@@ -448,7 +468,10 @@ class BasicTemplate(BaseTemplate):
         if self.busy_indicator:
             state.sync_busy(self.busy_indicator)
         self._js_area = HTML(margin=0, width=0, height=0)
-        self._render_items['js_area'] = (self._js_area, [])
+        if '{{ embed(roots.js_area) }}' in template:
+            self._render_items['js_area'] = (self._js_area, [])
+        if '{{ embed(roots.actions) }}' in template:
+            self._render_items['actions'] = (self._actions, [])
         self._update_busy()
         self.main.param.watch(self._update_render_items, ['objects'])
         self.modal.param.watch(self._update_render_items, ['objects'])
@@ -667,25 +690,13 @@ class BasicTemplate(BaseTemplate):
         """
         Opens the modal area
         """
-        self._js_area.object = """
-        <script>
-          var modal = document.getElementById("pn-Modal");
-          modal.style.display = "block";
-        </script>
-        """
-        self._js_area.object = ""
+        self._actions.open_modal += 1
 
     def close_modal(self):
         """
         Closes the modal area
         """
-        self._js_area.object = """
-        <script>
-          var modal = document.getElementById("pn-Modal");
-          modal.style.display = "none";
-        </script>
-        """
-        self._js_area.object = ""
+        self._actions.close_modal += 1
 
     @staticmethod
     def _get_favicon_type(favicon):

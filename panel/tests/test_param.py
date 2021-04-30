@@ -406,6 +406,9 @@ def test_param_precedence(document, comm):
     a_param.precedence = 1
     assert test_pane._widgets['a'] in test_pane._widget_box.objects
 
+    a_param.precedence = None
+    assert test_pane._widgets['a'] in test_pane._widget_box.objects
+
 
 def test_param_label(document, comm):
     class Test(param.Parameterized):

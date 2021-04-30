@@ -78,6 +78,9 @@ class AbstractVTKPlot(HTMLBox):
 
     width = Override(default=300)
 
+    annotations = List(Dict(String, Any))
+
+
 
 class VTKSynchronizedPlot(AbstractVTKPlot):
     """

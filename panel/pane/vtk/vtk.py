@@ -296,12 +296,13 @@ class BaseVTKRenderWindow(AbstractVTK):
             filename += '.synch'
         import panel.pane.vtk.synchronizable_serializer as rws
         context = rws.SynchronizationContext(serialize_all_data_arrays=all_data_arrays, debug=self._debug_serializer)
-        scene, arrays = self._serialize_ren_win(self.object, context, binary=True, compression=False)
+        scene, arrays, annotations = self._serialize_ren_win(self.object, context, binary=True, compression=False)
 
         with zipfile.ZipFile(filename, mode='w') as zf:
             zf.writestr('index.json', json.dumps(scene))
             for name, data in arrays.items():
                 zf.writestr('data/%s' % name, data, zipfile.ZIP_DEFLATED)
+            zf.writestr('annotations.json', json.dumps(annotations))
         return filename
 
     def _update_color_mappers(self):
@@ -321,7 +322,8 @@ class BaseVTKRenderWindow(AbstractVTK):
         arrays = {name: context.getCachedDataArray(name, binary=binary, compression=compression)
                     for name in context.dataArrayCache.keys()
                     if name not in exclude_arrays}
-        return scene, arrays
+        annotations = context.getAnnotations()
+        return scene, arrays, annotations
 
     @staticmethod
     def _rgb2hex(r, g, b):
@@ -379,14 +381,12 @@ class VTKRenderWindow(BaseVTKRenderWindow):
             serialize_all_data_arrays=self.serialize_all_data_arrays,
             debug=self._debug_serializer
         )
-        self._scene, self._arrays = self._serialize_ren_win(
+        self._scene, self._arrays, self._annotations = self._serialize_ren_win(
             self.object,
             context,
         )
         if model is not None:
-            model.update(rebuild=True)
-            model.update(arrays=self._arrays)
-            model.update(scene=self._scene)
+            model.update(rebuild=True, arrays=self._arrays, scene=self._scene, annotations=self._annotations)
 
 
 class VTKRenderWindowSynchronized(BaseVTKRenderWindow, SyncHelpers):
@@ -427,10 +427,10 @@ class VTKRenderWindowSynchronized(BaseVTKRenderWindow, SyncHelpers):
             serialize_all_data_arrays=self.serialize_all_data_arrays,
             debug=self._debug_serializer
         )
-        scene, arrays = self._serialize_ren_win(self.object, context)
+        scene, arrays, annotations = self._serialize_ren_win(self.object, context)
         self._update_color_mappers()
         props = self._process_param_change(self._init_params())
-        props.update(scene=scene, arrays=arrays, color_mappers=self.color_mappers)
+        props.update(scene=scene, arrays=arrays, annotations=annotations, color_mappers=self.color_mappers)
         model = VTKSynchronizedPlot(**props)
 
         if root is None:
@@ -450,14 +450,13 @@ class VTKRenderWindowSynchronized(BaseVTKRenderWindow, SyncHelpers):
 
     def _update(self, ref=None, model=None):
         context = self._contexts[model.id]
-        scene, arrays = self._serialize_ren_win(
+        scene, arrays, annotations = self._serialize_ren_win(
             self.object,
             context,
             exclude_arrays=model.arrays_processed
         )
         context.checkForArraysToRelease()
-        model.update(arrays=arrays)
-        model.update(scene=scene)
+        model.update(arrays=arrays, scene=scene, annotations=annotations)
 
     def synchronize(self):
         self.param.trigger('object')

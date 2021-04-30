@@ -167,34 +167,31 @@
       <div style="margin-left: auto; margin-right: auto;max-width: {{ main_max_width }}">
       {% endif %}
       <div id="responsive-grid"></div>
-      <section>
-      <footer id="made-with-panel">
-          <p>Made with &#x1f40d;, &#10084;&#65039;, <fast-anchor href="https://fast.design" appearance="hypertext" target="_blank">Fast</fast-anchor> and <fast-anchor href="https://panel.holoviz.org" appearance="hypertext" target="_blank">Panel</fast-anchor></p>
-      </footer>
-      </section>
       {% if main_max_width %}
       </div>
       {% endif %}
 
-      <div id="pn-Modal" class="pn-modal header-adjust">
-        <div class="pn-modal-content">
-          <span class="pn-modalclose" id="pn-closeModal">&times;</span>
-          {% for doc in docs %}
-          {% for root in doc.roots %}
-          {% if "modal" in root.tags %}
-          {{ embed(root) | indent(10) }}
-          {% endif %}
-          {% endfor %}
-          {% endfor %}
-        </div>
-      </div>
+      <fast-dialog id="pn-Modal" hidden="true" style="--dialog-width: 80%; --dialog-height: auto; --background-color: var(--neutral-fill-hover);">
+        <fast-button class="pn-modalclose" id="pn-closeModal">&times;</fast-button>
+	<div>
+        {% for doc in docs %}
+        {% for root in doc.roots %}
+        {% if "modal" in root.tags %}
+        {{ embed(root) | indent(10) }}
+        {% endif %}
+        {% endfor %}
+        {% endfor %}
+	</div>
+      </fast-dialog>
   </div>
   </div>
 </div>
 </fast-design-system-provider>
+
 <script>
   {{ js }}
 </script>
+
 <script>
   function openNav() {
     document.getElementById("sidebar").style.left = 0;
@@ -236,7 +233,7 @@ function resize_layout(obj, old_, new_, p, e, element) {
 }
 
 function resize_layout_stop(obj, old_, new_, p, e, element) {
-  setTimeout(function(){
+  setTimeout(function() {
     window.dispatchEvent(new Event("resize"))
   }, 50);
 }
@@ -287,6 +284,7 @@ addFullScreenToggle()
 </script>
 
 {{ embed(roots.js_area) }}
+{{ embed(roots.actions) }}
 {{ embed(roots.location) }}
 
 {% endblock %}

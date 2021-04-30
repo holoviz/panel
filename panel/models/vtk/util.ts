@@ -111,6 +111,22 @@ export type ColorMapper = {
 export const Interpolation = Enum("fast_linear", "linear", "nearest")
 export type Interpolation = typeof Interpolation["__type__"]
 
+export type Annotation = {
+  id: string
+  viewport: number[]
+  fontSize: number
+  fontFamily: string
+  color: number[]
+  LowerLeft?: string
+  LowerRight?: string
+  UpperLeft?: string
+  UpperRight?: string
+  LowerEdge?: string
+  RightEdge?: string
+  LeftEdge?: string
+  UpperEdge?: string
+}
+
 export declare type CSSProperties = {[key: string]: string}
 
 export declare type VolumeType = {
