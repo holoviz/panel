@@ -667,25 +667,27 @@ class BasicTemplate(BaseTemplate):
         """
         Opens the modal area
         """
-        self._js_area.object = """
+        uid = uuid.uuid4().hex
+        self._js_area.object = f"""
+        <!--- { uid } --->
         <script>
           var modal = document.getElementById("pn-Modal");
           modal.style.display = "block";
         </script>
         """
-        self._js_area.object = ""
 
     def close_modal(self):
         """
         Closes the modal area
         """
-        self._js_area.object = """
+        uid = uuid.uuid4().hex
+        self._js_area.object = f"""
+        <!--- { uid } --->
         <script>
           var modal = document.getElementById("pn-Modal");
           modal.style.display = "none";
         </script>
         """
-        self._js_area.object = ""
 
     @staticmethod
     def _get_favicon_type(favicon):

@@ -2,6 +2,7 @@
 Material template based on the material web components library.
 """
 import pathlib
+import uuid
 
 import param
 
@@ -40,6 +41,32 @@ class MaterialTemplate(BasicTemplate):
             'material': "https://unpkg.com/material-components-web@7.0.0/dist/material-components-web.min.js"
         }
     }
+
+    def open_modal(self):
+        """
+        Opens the modal area
+        """
+        uid = uuid.uuid4().hex
+        self._js_area.object = f"""
+        <!--- { uid } --->
+        <script>
+          modal.open();
+          setTimeout(function() {{ window.dispatchEvent(new Event('resize')); }}, 200);
+        </script>
+        """
+
+    def close_modal(self):
+        """
+        Closes the modal area
+        """
+        uid = uuid.uuid4().hex
+        self._js_area.object = f"""
+        <!--- { uid } --->
+        <script>
+          modal.close();
+        </script>
+        """
+
 
 
 MATERIAL_FONT = "Roboto, sans-serif, Verdana"

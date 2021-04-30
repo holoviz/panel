@@ -78,33 +78,29 @@ p.bk.card-button {
 }
 
 .pn-modal {
-  overflow-y: scroll;
-  width: 100%;
-  display: none;
-  position: absolute;
-  top: 0;
-  left: 0;
+  overflow-y: auto;
 }
 
 .pn-modal-content {
-  background-color: #fefefe;
-  margin: auto;
-  margin-top: 25px;
-  margin-bottom: 25px;
-  padding: 15px 20px 20px 20px;
-  border: 1px solid #888;
-  width: 80% !important;
+  display: block;
 }
 
 .pn-modal-close {
-  position: absolute;
-  right: 25px;
+  position: relative;
+  float: right;
   z-index: 100;
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+  border: 1px solid rgba(0,0,0,.2);
+  padding: 0px;
+  background: transparent;
+  border-top: 0;
+  border-right: 0;
 }
 
 .pn-modal-close:hover,
 .pn-modal-close:focus {
-  color: #000;
   text-decoration: none;
   cursor: pointer;
 }
@@ -116,3 +112,8 @@ p.bk.card-button {
   margin-left: auto;
 }
 
+@media (min-width: 576px) {
+    .modal-dialog {
+	max-width: 80%;
+    }
+}

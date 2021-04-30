@@ -164,25 +164,6 @@ img.app-logo {
   padding-inline-start: 0px;
 }
 
-.pn-modal {
-  overflow-y: scroll;
-  width: 100%;
-  position: absolute;
-  display: none;
-  top: 0;
-  left: 0;
-}
-
-.pn-modal-content {
-  background-color: #fefefe;
-  margin: auto;
-  margin-top: 25px;
-  margin-bottom: 25px;
-  padding: 15px 20px 20px 20px;
-  border: 1px solid #888;
-  width: 80% !important;
-}
-
 .pn-modal-close {
   position: absolute;
   right: 25px;
@@ -191,7 +172,6 @@ img.app-logo {
 
 .pn-modal-close:hover,
 .pn-modal-close:focus {
-  color: #000;
   text-decoration: none;
   cursor: pointer;
 }
