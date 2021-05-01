@@ -18,9 +18,8 @@ def test_template_theme_parameter():
 
     assert isinstance(template._get_theme(), FastListDarkTheme)
 
-    
+
 def test_app():
-    pn.config.sizing_mode = "stretch_width"
     app = FastListTemplate(
         title="FastListTemplate",
     )
@@ -36,4 +35,5 @@ def test_app():
 
 
 if __name__.startswith("bokeh"):
+    pn.extension(sizing_mode="stretch_width")
     test_app().servable()
