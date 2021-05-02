@@ -10,5 +10,5 @@ setuptools.setup(
             "docs = jupyter_voila_docs_server:voila_serve_examples",
         ]
     },
-    install_requires=["jupyter-server-proxy", "voila>=0.2"],
+    install_requires=["jupyter-server-proxy", "voila"],
 )
