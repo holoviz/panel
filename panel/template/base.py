@@ -381,6 +381,9 @@ class BasicTemplate(BaseTemplate):
         The name of the site. Will be shown in the header and link to the
         root of the site. Default is '', i.e. not shown.""")
 
+    site_url = param.String(default="/", doc="""
+        The url of the site. Will be used if `site` is not ''. Default is '/'.""")
+
     meta_description = param.String(doc="""
         A meta description to add to the document head for search
         engine optimization. For example 'P.A. Nelson'.""")
@@ -609,6 +612,7 @@ class BasicTemplate(BaseTemplate):
         self._render_variables['app_title'] = self.title
         self._render_variables['meta_name'] = self.title
         self._render_variables['site_title'] = self.site
+        self._render_variables['site_url'] = self.site_url
         self._render_variables['meta_description'] = self.meta_description
         self._render_variables['meta_keywords'] = self.meta_keywords
         self._render_variables['meta_author'] = self.meta_author

@@ -40,8 +40,8 @@
 <header class="app-bar" id="header" style="{% if header_background %}background-color: {{ header_background }} !important;{% endif %}{% if header_color %}color: {{ header_color }} !important;{% endif %}">
   <div style="display: contents;">
     <div class="app-header">
-      {% if app_logo %}<a href="/"><img src="{{ app_logo }}" class="app-logo"></a>{% endif %}
-      {% if site_title %}<a class="title" href="/" >{{ site_title }}</a>{% endif %}
+      {% if app_logo %}<a href="{{ site_url }}"><img src="{{ app_logo }}" class="app-logo"></a>{% endif %}
+      {% if site_title %}<a class="title" href="{{ site_url }}" >{{ site_title }}</a>{% endif %}
       {% if site_title and app_title%}<span class="title">&nbsp;-&nbsp;</span>{% endif %}
       {% if app_title %}<a class="title" href="" >{{ app_title }}</a>{% endif %}
     </div>

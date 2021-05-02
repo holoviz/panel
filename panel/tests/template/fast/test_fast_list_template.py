@@ -18,11 +18,13 @@ def test_template_theme_parameter():
 
     assert isinstance(template._get_theme(), FastListDarkTheme)
 
-    
+
 def test_app():
     pn.config.sizing_mode = "stretch_width"
     app = FastListTemplate(
         title="FastListTemplate",
+        site="Panel",
+        site_url="https://panel.holoviz.org",
     )
     app.main[:] = [
         pn.pane.Markdown(INFO, sizing_mode="stretch_both"),
