@@ -100,8 +100,8 @@
     {% endif %}
     <div class="app-header">
       <div>
-      {% if app_logo %}<a class="navbar-brand app-logo" href="/"><img src="{{ app_logo }}" class="app-logo"></a>{% endif %}
-      {% if site_title %}<a class="title" href="/" >&nbsp;{{ site_title }}</a>{% endif %}
+      {% if app_logo %}<a class="navbar-brand app-logo" href="{{ site_url }}"><img src="{{ app_logo }}" class="app-logo"></a>{% endif %}
+      {% if site_title %}<a class="title" href="{{ site_url }}" >&nbsp;{{ site_title }}</a>{% endif %}
       {% if site_title and app_title%}<span class="title">&nbsp;-</span>{% endif %}
       {% if app_title %}<a class="title" href="" >{{ app_title }}</a>{% endif %}
       </div>
@@ -164,7 +164,7 @@
     {% endif %}
     >
       {% if main_max_width %}
-      <div style="margin-left: auto; margin-right: auto;max-width: {{ main_max_width }}">
+      <div style="margin-left: auto; margin-right: auto; max-width: {{ main_max_width }}">
       {% endif %}
       {% for doc in docs %}
       {% for root in doc.roots %}
@@ -180,27 +180,22 @@
       {% endif %}
       {% endfor %}
       {% endfor %}
-      <section>
-      <footer id="made-with-panel">
-          <p>Made with &#x1f40d;, &#10084;&#65039;, <fast-anchor href="https://fast.design" appearance="hypertext" target="_blank">Fast</fast-anchor> and <fast-anchor href="https://panel.holoviz.org" appearance="hypertext" target="_blank">Panel</fast-anchor>.</p>
-      </footer>
-      </section>
       {% if main_max_width %}
       </div>
       {% endif %}
 
-      <div id="pn-Modal" class="pn-modal header-adjust">
-        <div class="pn-modal-content">
-          <span class="pn-modalclose" id="pn-closeModal">&times;</span>
-          {% for doc in docs %}
-          {% for root in doc.roots %}
-          {% if "modal" in root.tags %}
-          {{ embed(root) | indent(10) }}
-          {% endif %}
-          {% endfor %}
-          {% endfor %}
-        </div>
-      </div>
+      <fast-dialog id="pn-Modal" hidden style="--dialog-width: 80%; --dialog-height: auto; --background-color: var(--neutral-layer-floating);">
+        <fast-button class="pn-modal-close" id="pn-closeModal">&times;</fast-button>
+	<div>
+        {% for doc in docs %}
+        {% for root in doc.roots %}
+        {% if "modal" in root.tags %}
+        {{ embed(root) | indent(10) }}
+        {% endif %}
+        {% endfor %}
+        {% endfor %}
+	</div>
+      </fast-dialog>
   </div>
   </div>
 </div>
@@ -240,6 +235,7 @@
 </script>
 
 {{ embed(roots.js_area) }}
+{{ embed(roots.actions) }}
 {{ embed(roots.location) }}
 
 {% endblock %}

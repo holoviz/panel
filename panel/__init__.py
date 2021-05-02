@@ -10,8 +10,8 @@ from .depends import bind, depends # noqa
 from .interact import interact # noqa
 from .io import _jupyter_server_extension_paths, ipywidget, serve, state # noqa
 from .layout import ( # noqa
-    Accordion, Card, Row, Column, WidgetBox, Tabs, Spacer, 
-    GridSpec, GridBox
+    Accordion, Card, Column, GridSpec, GridBox, FlexBox, Tabs, Row,
+    Spacer, WidgetBox
 )
 from .pane import panel, Pane # noqa
 from .param import Param # noqa

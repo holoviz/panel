@@ -11,7 +11,7 @@ from bokeh.document.document import Document
 from bokeh.embed.bundle import bundle_for_objs_and_resources
 from bokeh.embed.elements import html_page_for_render_items
 from bokeh.embed.util import OutputDocumentFor, standalone_docs_json_and_render_items
-from bokeh.io.export import export_png
+from bokeh.io.export import get_screenshot_as_png
 from bokeh.model import Model
 from bokeh.resources import CDN, INLINE
 from pyviz_comms import Comm
@@ -26,7 +26,24 @@ from .state import state
 # Private API
 #---------------------------------------------------------------------
 
-def save_png(model, filename, template=None, template_variables=None):
+_WAIT_SCRIPT = """
+// add private window prop to check that render is complete
+window._bokeh_render_complete = false;
+function done() {
+  setTimeout(() => { window._bokeh_render_complete = true; }, 500);
+}
+
+var doc = Bokeh.documents[0];
+
+if (doc.is_idle)
+  done();
+else
+  doc.idle.connect(done);
+"""
+
+bokeh.io.export._WAIT_SCRIPT = _WAIT_SCRIPT
+
+def save_png(model, filename, resources=CDN, template=None, template_variables=None, timeout=5):
     """
     Saves a bokeh model to png
 
@@ -40,6 +57,8 @@ def save_png(model, filename, template=None, template_variables=None):
       template file, as used by bokeh.file_html. If None will use bokeh defaults
     template_variables:
       template_variables file dict, as used by bokeh.file_html
+    timeout: int
+      The maximum amount of time (in seconds) to wait for
     """
     from bokeh.io.webdriver import webdriver_control
     if not state.webdriver:
@@ -47,17 +66,39 @@ def save_png(model, filename, template=None, template_variables=None):
 
     webdriver = state.webdriver
 
+    if template is None:
+        template = r"""\
+        {% block preamble %}
+        <style>
+        html, body {
+        box-sizing: border-box;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            border: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        </style>
+        {% endblock %}
+        """
+
     try:
-        if template:
-            def get_layout_html(obj, resources, width, height):
-                return file_html(
-                    obj, resources, title="", template=template,
-                    template_variables=template_variables,
-                    suppress_callback_warning=True, _always_new=True
-                )
-            old_layout_fn = bokeh.io.export.get_layout_html
-            bokeh.io.export.get_layout_html = get_layout_html
-        export_png(model, filename=filename, webdriver=webdriver)
+        def get_layout_html(obj, resources, width, height, **kwargs):
+            resources = Resources.from_bokeh(resources)
+            return file_html(
+                obj, resources, title="", template=template,
+                template_variables=template_variables or {},
+                _always_new=True
+            )
+        old_layout_fn = bokeh.io.export.get_layout_html
+        bokeh.io.export.get_layout_html = get_layout_html
+        img = get_screenshot_as_png(model, driver=webdriver, timeout=timeout, resources=resources)
+
+        if img.width == 0 or img.height == 0:
+            raise ValueError("unable to save an empty image")
+
+        img.save(filename)
     except Exception:
         raise
     finally:
@@ -79,7 +120,7 @@ def _title_from_models(models, title):
     return DEFAULT_TITLE
 
 def file_html(models, resources, title=None, template=BASE_TEMPLATE,
-              template_variables={}, theme=None):
+              template_variables={}, theme=None, _always_new=False):
     models_seq = []
     if isinstance(models, Model):
         models_seq = [models]
@@ -88,7 +129,7 @@ def file_html(models, resources, title=None, template=BASE_TEMPLATE,
     else:
         models_seq = models
 
-    with OutputDocumentFor(models_seq, apply_theme=theme, always_new=False):
+    with OutputDocumentFor(models_seq, apply_theme=theme, always_new=_always_new):
         (docs_json, render_items) = standalone_docs_json_and_render_items(
             models_seq, suppress_callback_warning=True
         )
@@ -107,7 +148,7 @@ def file_html(models, resources, title=None, template=BASE_TEMPLATE,
 def save(panel, filename, title=None, resources=None, template=None,
          template_variables=None, embed=False, max_states=1000,
          max_opts=3, embed_json=False, json_prefix='', save_path='./',
-         load_path=None, progress=True, embed_states={}):
+         load_path=None, progress=True, embed_states={}, **kwargs):
     """
     Saves Panel objects to file.
 
@@ -174,15 +215,6 @@ def save(panel, filename, title=None, resources=None, template=None,
             else:
                 add_to_doc(model, doc, True)
 
-    if as_png:
-        return save_png(model, filename=filename, template=template,
-                        template_variables=template_variables)
-    elif isinstance(filename, string_types) and not filename.endswith('.html'):
-        filename = filename + '.html'
-
-    kwargs = {}
-    if title is None:
-        title = 'Panel'
     if resources is None:
         resources = CDN
     elif isinstance(resources, str):
@@ -193,6 +225,18 @@ def save(panel, filename, title=None, resources=None, template=None,
         else:
             raise ValueError("Resources %r not recognized, specify one "
                              "of 'CDN' or 'INLINE'." % resources)
+
+    if as_png:
+        return save_png(
+            model, resources=resources, filename=filename, template=template,
+            template_variables=template_variables, **kwargs
+        )
+    elif isinstance(filename, string_types) and not filename.endswith('.html'):
+        filename = filename + '.html'
+
+    kwargs = {}
+    if title is None:
+        title = 'Panel'
 
     if template:
         kwargs['template'] = template

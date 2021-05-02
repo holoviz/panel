@@ -1131,6 +1131,11 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
                     else:
                         children.append(panel(pane))
                 params[children_param] = children
+            elif isinstance(child_value, dict):
+                children = {}
+                for key, pane in child_value.items():
+                    children[key] = panel(pane)
+                params[children_param] = children
             else:
                 params[children_param] = panel(child_value)
         super().__init__(**params)
@@ -1206,50 +1211,51 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         old_children = old_children or {}
         old_models = model.children
         new_models = {parent: [] for parent in self._parser.children}
+        new_panes = {}
 
         for parent, children_param in self._parser.children.items():
             mode = self._child_config.get(children_param, 'model')
             if mode == 'literal':
                 continue
             panes = getattr(self, children_param)
-            if not isinstance(panes, (list, dict)):
-                panes = [panes]
             if isinstance(panes, dict):
                 for key, value in panes.items():
                     panes[key] = panel(value)
-            else:
+            elif isinstance(panes, list):
                 for i, pane in enumerate(panes):
                     panes[i] = panel(pane)
+            else:
+                panes = [panel(panes)]
+            new_panes[parent] = panes
 
         for children_param, old_panes in old_children.items():
             mode = self._child_config.get(children_param, 'model')
             if mode == 'literal':
                 continue
-            new_panes = getattr(self, children_param)
-            if not isinstance(new_panes, (list, dict)):
-                new_panes = [new_panes]
+            panes = getattr(self, children_param)
+            if not isinstance(panes, (list, dict)):
+                panes = [panes]
                 old_panes = [old_panes]
-            elif isinstance(new_panes, dict):
-                new_panes = new_panes.values()
+            elif isinstance(panes, dict):
+                panes = panes.values()
+                old_panes = old_panes.values()
             for old_pane in old_panes:
-                if old_pane not in new_panes:
+                if old_pane not in panes:
                     old_pane._cleanup(root)
 
-        for parent, children_param in self._parser.children.items():
-            new_panes = getattr(self, children_param)
-            if not isinstance(new_panes, (list, dict)):
-                new_panes = [new_panes]
-            if isinstance(new_panes, dict):
-                new_panes = (new_panes.values())
+        for parent, child_panes in new_panes.items():
+            children_param = self._parser.children[parent]
+            if isinstance(child_panes, dict):
+                child_panes = child_panes.values()
             mode = self._child_config.get(children_param, 'model')
             if mode == 'literal':
-                new_models[parent] = new_panes
+                new_models[parent] = child_panes
             elif children_param in old_children:
                 # Find existing models
                 old_panes = old_children[children_param]
                 if not isinstance(old_panes, (list, dict)):
                     old_panes = [old_panes]
-                for i, pane in enumerate(new_panes):
+                for i, pane in enumerate(child_panes):
                     if pane in old_panes and root.ref['id'] in pane._models:
                         child, _ = pane._models[root.ref['id']]
                     else:
@@ -1261,7 +1267,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
             else:
                 new_models[parent] = [
                     pane._get_model(doc, root, model, comm)
-                    for pane in new_panes
+                    for pane in child_panes
                 ]
         return self._process_children(doc, root, model, comm, new_models)
 

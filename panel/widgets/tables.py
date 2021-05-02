@@ -714,11 +714,15 @@ class Tabulator(BaseTable):
         The height of each table row.""")
 
     selectable = param.ObjectSelector(
-        default=True, objects=[True, False, 'checkbox'], doc="""
-        Whether a table's rows can be selected or not. Multiple
-        selection is allowed and can be achieved by either clicking
-        multiple checkboxes (if enabled) or using Shift + click on
-        rows.""")
+        default=True, objects=[True, False, 'checkbox', 'toggle'], doc="""
+        Defines the selection mode of the Tabulator.
+
+          - True: Selects rows on click. To select multiple use
+                  Ctrl-select, to select a range use Shift-select
+          - checkbox: Adds a column of checkboxes to toggle selections
+          - toggle: Selection toggles when clicked
+          - False: Disables selection
+        """)
 
     sorters = param.List(default=[], doc="""
         A list of sorters to apply during pagination.""")
@@ -734,6 +738,8 @@ class Tabulator(BaseTable):
     _config_params = ['frozen_columns', 'groups', 'selectable']
 
     _manual_params = BaseTable._manual_params + _config_params
+
+    _rename = {'disabled': 'editable', 'selection': None, 'selectable': 'select_mode'}
 
     def __init__(self, value=None, **params):
         configuration = params.pop('configuration', {})
@@ -889,10 +895,8 @@ class Tabulator(BaseTable):
             self._apply_update([], {'max_page': max_page}, model, ref)
 
     def _update_selected(self, *events, indices=None):
-        if self._updating:
-            return
         kwargs = {}
-        if self.pagination == 'remote':
+        if self.pagination == 'remote' and self.value is not None:
             index = self.value.iloc[self.selection].index
             indices = []
             for v in index.values:
@@ -923,6 +927,7 @@ class Tabulator(BaseTable):
     def _update_selection(self, indices):
         if self.pagination != 'remote':
             self.selection = indices
+            return
         nrows = self.page_size
         start = (self.page-1)*nrows
         index = self._processed.iloc[[start+ind for ind in indices]].index
@@ -954,6 +959,7 @@ class Tabulator(BaseTable):
         props['groupby'] = self.groupby
         props['hidden_columns'] = self.hidden_columns
         props['editable'] = not self.disabled
+        props['select_mode'] = self.selectable
         process = {'theme': self.theme, 'frozen_rows': self.frozen_rows}
         props.update(self._process_param_change(process))
         if self.pagination:
