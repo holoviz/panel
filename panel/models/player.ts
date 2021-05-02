@@ -40,15 +40,14 @@ export class PlayerView extends WidgetView {
   toggle_disable() {
     this.sliderEl.disabled = this.model.disabled
     for (const el of this.buttonEl.children){
-      // Fixes: panel/models/player.ts:43:10 - error TS2339: Property 'disabled' does not exist on type 'Element'.
-      const elAny: any = el;
-      elAny.disabled = this.model.disabled
+      const anyEl = <any>el
+      anyEl.disabled = this.model.disabled
     }
 
     for (const el of this.loop_state.children) {
       if (el.tagName == "input"){
-        const elAny: any = el;
-        elAny.disabled = this.model.disabled
+        const anyEl = <any>el
+        anyEl.disabled = this.model.disabled
       }
     }
   }

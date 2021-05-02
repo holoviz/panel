@@ -113,7 +113,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     ajax.sendRequest = () => {
       return view.requestPage(ajax.params.page, ajax.params.sorters)
     }
-    tabulator.modules.page._parseRemoteData = (data: any) => {}
+    tabulator.modules.page._parseRemoteData = () => {}
   }
 
   requestPage(page: number, sorters: any[]): Promise<void> {
