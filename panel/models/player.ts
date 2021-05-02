@@ -39,11 +39,16 @@ export class PlayerView extends WidgetView {
 
   toggle_disable() {
     this.sliderEl.disabled = this.model.disabled
-    for (const el of this.buttonEl.children)
-      el.disabled = this.model.disabled
+    for (const el of this.buttonEl.children){
+      const anyEl = <any>el
+      anyEl.disabled = this.model.disabled
+    }
+
     for (const el of this.loop_state.children) {
-      if (el.tagName == "input")
-	el.disabled = this.model.disabled
+      if (el.tagName == "input"){
+        const anyEl = <any>el
+        anyEl.disabled = this.model.disabled
+      }
     }
   }
 

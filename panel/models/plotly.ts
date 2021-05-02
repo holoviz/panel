@@ -150,7 +150,7 @@ export class PlotlyPlotView extends PanelHTMLBoxView {
     this.plot()
   }
 
-  _trace_data(): void {
+  _trace_data(): any {
     const data = [];
     for (let i = 0; i < this.model.data.length; i++) {
       data.push(this._get_trace(i, false));
@@ -199,7 +199,7 @@ export class PlotlyPlotView extends PanelHTMLBoxView {
     this._layout_wrapper.on('plotly_restyle', (eventData: any) => {
       this.model.restyle_data = filterEventData(
         this._layout_wrapper, eventData, 'restyle');
-      
+
       this._updateViewportProperty();
     });
 
