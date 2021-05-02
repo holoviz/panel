@@ -367,7 +367,7 @@ class BasicTemplate(BaseTemplate):
 
     logo = param.String(constant=True, doc="""
         URI of logo to add to the header (if local file, logo is
-        base64 encoded as URI).""")
+        base64 encoded as URI). Default is '', i.e. not shown.""")
 
     favicon = param.String(default=FAVICON_URL, constant=True, doc="""
         URI of favicon to add to the document head (if local file, favicon is
@@ -378,11 +378,11 @@ class BasicTemplate(BaseTemplate):
         meta settings and as the browser tab title.""")
 
     site = param.String(default="", doc="""
-        The name of the site. Will be shown in the header and link to the
-        root of the site. Default is '', i.e. not shown.""")
+        Name of the site. Will be shown in the header and link to the
+        'site_url'. Default is '', i.e. not shown.""")
 
     site_url = param.String(default="/", doc="""
-        The url of the site. Will be used if `site` is not ''. Default is '/'.""")
+        Url of the site and logo. Default is '/'.""")
 
     meta_description = param.String(doc="""
         A meta description to add to the document head for search
