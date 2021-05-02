@@ -44,6 +44,8 @@ def voila_serve_examples():
             "{port}",
             "--base_url",
             "{base_url}docs/",
+            "--VoilaConfiguration.file_whitelist",
+            "'*.*'",
         ],
         "absolute_url": True,
         "timeout": 360,
