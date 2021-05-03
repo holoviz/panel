@@ -30,7 +30,6 @@ def voila_serve_examples():
     Returns:
         Dict: The configuration dictionary
     """
-    apps = get_apps()
     # See:
     # https://jupyter-server-proxy.readthedocs.io/en/latest/server-process.html
     # https://github.com/holoviz/jupyter-panel-proxy/blob/master/panel_server/__init__.py
