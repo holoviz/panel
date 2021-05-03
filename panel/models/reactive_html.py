@@ -24,6 +24,8 @@ class ReactiveHTMLParser(HTMLParser):
         self._template_re = re.compile('\$\{[^}]+\}')
         self._current_node = None
         self._node_stack = []
+        self._open_for = False
+        self.loop_map = {}
 
     def handle_starttag(self, tag, attrs):
         attrs = dict(attrs)
@@ -58,8 +60,28 @@ class ReactiveHTMLParser(HTMLParser):
             '%s}]}' % match if match.endswith('.index0 }') else match
             for match in self._template_re.findall(data)
         ]
+
+        # Detect templated for loops
+        if '{% for ' in data:
+            start_idx = data.index('{% for ')
+            end_idx = start_idx + data[start_idx:].index('%}')
+            objs = data[start_idx+7:end_idx].split(' ')
+            for_string = data[start_idx:end_idx]
+            if len(objs) < 3:
+                raise SyntaxError(f"Template for loop '{for_string}' malformed in:\n {data}.")
+            if ',' in objs[0] and '.items()' in for_string:
+                var, obj = objs[1], objs[3]
+            else:
+                var, obj = objs[0], objs[2]
+            obj = obj.split('.')[0]
+            self.loop_map[var] = obj
+            self._open_for = True
+        elif '{% endfor %}' in data:
+            self._open_for = False
+
         if not (self._current_node and matches):
             return
+
         if len(matches) == 1:
             match = matches[0][2:-1]
         else:
@@ -68,13 +90,19 @@ class ReactiveHTMLParser(HTMLParser):
                 if mode != 'template':
                     raise ValueError(f"Cannot match multiple variables in '{mode}' mode.")
             match = None
-        if match and '[' in match:
-            match, num = match.split('[')
+
+        # Handle looped variables
+        if match:
             dom_id = dom_id.replace('-{{ loop.index0 }}', '')
-            num = num.rstrip(']')
-            self.looped.append((dom_id, match))
-        else:
-            num = None
+            loop = False
+            if match in self.loop_map:
+                matches[matches.index('${%s}' % match)] = '${%s}' % self.loop_map[match]
+                match = self.loop_map[match]
+                self.looped.append((dom_id, match))
+            elif '[' in match:
+                match, _ = match.split('[')
+                self.looped.append((dom_id, match))
+
         mode = self.cls._child_config.get(match, 'model')
         if match in self.cls.param and mode != 'template':
             self.children[dom_id] = match

@@ -967,6 +967,9 @@ class ReactiveHTMLMetaclass(ParameterizedMetaclass):
 
         mcs._parser = ReactiveHTMLParser(mcs)
         mcs._parser.feed(mcs._template)
+        if mcs._parser._open_for:
+            raise ValueError("Template contains for loop without closing {% endfor %} statement.")
+
         mcs._attrs, mcs._node_callbacks = {}, {}
         mcs._inline_callbacks = []
         for node, attrs in mcs._parser.attrs.items():
@@ -1273,13 +1276,26 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
 
     def _get_template(self):
         import jinja2
-        template = jinja2.Template(self._template)
+
+        # Replace loop variables with indexed child parameter e.g.:
+        #   {% for obj in objects %} ${obj} {% endfor %}
+        # becomes:
+        #   {% for obj in objects %} ${objects[{{ loop.index0 }}]} {% endfor %}
+        template_string = self._template
+        for var, obj in self._parser.loop_map.items():
+            template_string = template_string.replace(
+                '${%s}' % var, '${%s[{{ loop.index0 }}]}' % obj)
+
+        # Render Jinja template
+        template = jinja2.Template(template_string)
         context = {'param': self.param, '__doc__': self.__original_doc__}
         for parameter, value in self.param.get_param_values():
             context[parameter] = value
             if parameter in self._child_names:
                 context[f'{parameter}_names'] = self._child_names[parameter]
         html = template.render(context)
+
+        # Parse templated HTML and replace names
         parser = ReactiveHTMLParser(self.__class__)
         parser.feed(html)
         for name in list(parser.nodes):
