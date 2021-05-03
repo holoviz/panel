@@ -27,6 +27,11 @@ class ReactTemplate(BasicTemplate):
 
     row_height = param.Integer(default=150)
 
+    dimensions = param.Dict(default={'minW': 0, 'maxW': 'Infinity', 'minH': 0, 'maxH': 'Infinity'},
+                            doc="""A dictonary of minimum/maximum width/height in grid units.""")
+
+    prevent_collision = param.Boolean(default=False, doc="Prevent collisions between items.")
+
     _css = pathlib.Path(__file__).parent / 'react.css'
 
     _template = pathlib.Path(__file__).parent / 'react.html'
@@ -67,16 +72,19 @@ class ReactTemplate(BasicTemplate):
             if x1 is None: x1 = 12
             if y0 is None: y0 = 0
             if y1 is None: y1 = self.main.nrows
-            layouts.append({'x': x0, 'y': y0, 'w': x1-x0, 'h': y1-y0, 'i': str(i+1)})
+            elem = {'x': x0, 'y': y0, 'w': x1-x0, 'h': y1-y0, 'i': str(i+1)}
+            elem.update(self.dimensions)
+            layouts.append(elem)
         self._render_variables['layouts'] = {'lg': layouts, 'md': layouts}
 
-    @depends('cols', 'breakpoints', 'row_height', 'compact', watch=True)
+    @depends('cols', 'breakpoints', 'row_height', 'compact', 'dimensions', 'prevent_collision', watch=True)
     def _update_render_vars(self):
         self._render_variables['breakpoints'] = self.breakpoints
         self._render_variables['cols'] = self.cols
         self._render_variables['rowHeight'] = self.row_height
         self._render_variables['compact'] = self.compact
-
+        self._render_variables['dimensions'] = self.dimensions
+        self._render_variables['preventCollision'] = self.prevent_collision
 
 class ReactDefaultTheme(DefaultTheme):
 
