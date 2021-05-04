@@ -301,6 +301,7 @@ def test_reactive_html_templated_children():
     widget = TextInput()
     test = TestTemplatedChildren(children=[widget])
     root = test.get_root()
+    assert root.looped == ['option']
     assert root.children == {'option': [widget._models[root.ref['id']][0]]}
 
     widget_new = TextInput()
@@ -308,3 +309,77 @@ def test_reactive_html_templated_children():
     assert len(widget._models) == 0
     assert root.children == {'option': [widget_new._models[root.ref['id']][0]]}
 
+
+
+def test_reactive_html_templated_children_add_loop_id():
+
+    class TestTemplatedChildren(ReactiveHTML):
+
+        children = param.List(default=[])
+
+        _template = """
+        <select id="select">
+        {% for option in children %}
+          <option id="option">${children[{{ loop.index0 }}]}</option>
+        {% endfor %}
+        </select>
+        """
+
+    assert TestTemplatedChildren._attrs == {}
+    assert TestTemplatedChildren._node_callbacks == {}
+    assert TestTemplatedChildren._inline_callbacks == []
+    assert TestTemplatedChildren._parser.children == {'option': 'children'}
+
+    test = TestTemplatedChildren(children=['A', 'B', 'C'])
+
+    assert test._get_template() == """
+        <select id="select-${id}">
+        
+          <option id="option-0-${id}"></option>
+        
+          <option id="option-1-${id}"></option>
+        
+          <option id="option-2-${id}"></option>
+        
+        </select>
+        """
+
+    model = test.get_root()
+    assert model.looped == ['option']
+
+
+
+def test_reactive_html_templated_children_add_loop_id_and_for_loop_var():
+
+    class TestTemplatedChildren(ReactiveHTML):
+
+        children = param.List(default=[])
+
+        _template = """
+        <select id="select">
+        {% for option in children %}
+          <option id="option">${option}</option>
+        {% endfor %}
+        </select>
+        """
+
+    assert TestTemplatedChildren._attrs == {}
+    assert TestTemplatedChildren._node_callbacks == {}
+    assert TestTemplatedChildren._inline_callbacks == []
+    assert TestTemplatedChildren._parser.children == {'option': 'children'}
+
+    test = TestTemplatedChildren(children=['A', 'B', 'C'])
+
+    assert test._get_template() == """
+        <select id="select-${id}">
+        
+          <option id="option-0-${id}"></option>
+        
+          <option id="option-1-${id}"></option>
+        
+          <option id="option-2-${id}"></option>
+        
+        </select>
+        """
+    model = test.get_root()
+    assert model.looped == ['option']

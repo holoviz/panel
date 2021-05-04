@@ -12,10 +12,17 @@ from bokeh.model import DataModel
 from bokeh.events import ModelEvent
 
 
+endfor = '{% endfor %}'
+list_iter_re = '{% for (\s*[A-Za-z_]\w*\s*) in (\s*[A-Za-z_]\w*\s*) %}'
+items_iter_re = '{% for \s*[A-Za-z_]\w*\s*, (\s*[A-Za-z_]\w*\s*) in (\s*[A-Za-z_]\w*\s*)\.items\(\) %}'
+values_iter_re = '{% for \s*[A-Za-z_]\w*\s*, (\s*[A-Za-z_]\w*\s*) in (\s*[A-Za-z_]\w*\s*)\.values\(\) %}'
+
+
 class ReactiveHTMLParser(HTMLParser):
 
-    def __init__(self, cls):
+    def __init__(self, cls, template=True):
         super().__init__()
+        self.template = template
         self.cls = cls
         self.attrs = defaultdict(list)
         self.children = {}
@@ -55,28 +62,30 @@ class ReactiveHTMLParser(HTMLParser):
         self._current_node = self._node_stack[-1][1] if self._node_stack else None
 
     def handle_data(self, data):
+        if not self.template:
+            return
+
         dom_id = self._current_node
         matches = [
             '%s}]}' % match if match.endswith('.index0 }') else match
             for match in self._template_re.findall(data)
         ]
 
-        # Detect templated for loops
-        if '{% for ' in data:
-            start_idx = data.index('{% for ')
-            end_idx = start_idx + data[start_idx:].index('%}')
-            objs = data[start_idx+7:end_idx].split(' ')
-            for_string = data[start_idx:end_idx]
-            if len(objs) < 3:
-                raise SyntaxError(f"Template for loop '{for_string}' malformed in:\n {data}.")
-            if ',' in objs[0] and '.items()' in for_string:
-                var, obj = objs[1], objs[3]
-            else:
-                var, obj = objs[0], objs[2]
-            obj = obj.split('.')[0]
+        # Detect templating for loops
+        list_loop = re.findall(list_iter_re, data)
+        values_loop = re.findall(values_iter_re, data)
+        items_loop = re.findall(items_iter_re, data)
+        nloops = len(list_loop) + len(values_loop) + len(items_loop)
+        if nloops > 1 and nloops and self._open_for:
+            raise ValueError('Nested for loops currently not supported in templates.')
+        elif nloops:
+            loop = [loop for loop in (list_loop, values_loop, items_loop)][0]
+            var, obj = loop[0]
             self.loop_map[var] = obj
+
+        if '{% for ' in data:
             self._open_for = True
-        elif '{% endfor %}' in data:
+        if endfor in data and (not nloops or data.index(endfor) > data.index('{% for ')):
             self._open_for = False
 
         if not (self._current_node and matches):
@@ -92,16 +101,14 @@ class ReactiveHTMLParser(HTMLParser):
             match = None
 
         # Handle looped variables
-        if match:
-            dom_id = dom_id.replace('-{{ loop.index0 }}', '')
-            loop = False
+        if match and (match in self.loop_map or '[' in match) and self._open_for:
             if match in self.loop_map:
                 matches[matches.index('${%s}' % match)] = '${%s}' % self.loop_map[match]
                 match = self.loop_map[match]
-                self.looped.append((dom_id, match))
             elif '[' in match:
                 match, _ = match.split('[')
-                self.looped.append((dom_id, match))
+            dom_id = dom_id.replace('-{{ loop.index0 }}', '')
+            self.looped.append((dom_id, match))
 
         mode = self.cls._child_config.get(match, 'model')
         if match in self.cls.param and mode != 'template':

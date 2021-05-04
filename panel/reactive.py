@@ -1278,13 +1278,27 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         import jinja2
 
         # Replace loop variables with indexed child parameter e.g.:
-        #   {% for obj in objects %} ${obj} {% endfor %}
+        #   {% for obj in objects %}
+        #     ${obj}
+        #   {% endfor %}
         # becomes:
-        #   {% for obj in objects %} ${objects[{{ loop.index0 }}]} {% endfor %}
+        #   {% for obj in objects %}
+        #     ${objects[{{ loop.index0 }}]}
+        #  {% endfor %}
         template_string = self._template
         for var, obj in self._parser.loop_map.items():
             template_string = template_string.replace(
                 '${%s}' % var, '${%s[{{ loop.index0 }}]}' % obj)
+
+        # Add index to templated loop node ids
+        for dom_node, _ in self._parser.looped:
+            replacement = 'id="%s-{{ loop.index0 }}"' % dom_node
+            if f'id="{dom_node}"' in template_string:
+                template_string = template_string.replace(
+                    f'id="{dom_node}"', replacement)
+            else:
+                template_string = template_string.replace(
+                    f"id='{dom_node}'", replacement)
 
         # Render Jinja template
         template = jinja2.Template(template_string)
@@ -1295,15 +1309,19 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
                 context[f'{parameter}_names'] = self._child_names[parameter]
         html = template.render(context)
 
-        # Parse templated HTML and replace names
-        parser = ReactiveHTMLParser(self.__class__)
+        # Parse templated HTML
+        parser = ReactiveHTMLParser(self.__class__, template=False)
         parser.feed(html)
+
+        # Add node ids to all parsed nodes
         for name in list(parser.nodes):
             html = (
                 html
                 .replace(f"id='{name}'", f"id='{name}-${{id}}'")
                 .replace(f'id="{name}"', f'id="{name}-${{id}}"')
             )
+
+        # Remove child node template syntax
         for parent, child_name in self._parser.children.items():
             if (parent, child_name) in self._parser.looped:
                 for i, _ in enumerate(getattr(self, child_name)):
