@@ -600,7 +600,9 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
                                       css_classes=['slider-edit'])
         self._end_edit = FloatInput(min_width=50, margin=(0, 0, 0, 10), format=self.format,
                                     css_classes=['slider-edit'])
+        self._start_edit.param.watch(self._sync_start_value, 'value')
         self._start_edit.param.watch(self._sync_start_value, 'value_throttled')
+        self._end_edit.param.watch(self._sync_end_value, 'value')
         self._end_edit.param.watch(self._sync_end_value, 'value_throttled')
 
         sep = StaticText(value='...', margin=(0, 2, 0, 2), align='end')
@@ -618,7 +620,6 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
         } else if (cb_obj.value > slider.end) {
           slider.end = cb_obj.value
         }
-        slider.value = [cb_obj.value, slider.value[1]]
         """)
         self._end_edit.jscallback(args={'slider': self._slider}, value="""
         if (cb_obj.value < slider.start) {
@@ -626,7 +627,6 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
         } else if (cb_obj.value > slider.end) {
           slider.end = cb_obj.value
         }
-        slider.value = [slider.value[0], cb_obj.value]
         """)
         self._update_editable()
         self._update_layout()
@@ -685,13 +685,15 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
             self.param.set_param(**{event.name: event.new})
 
     def _sync_start_value(self, event):
+        end = self.value[1] if event.name == 'value' else self.value_throttled[1]
         with param.edit_constant(self):
             self.param.set_param(
-                **{event.name: (event.new, self.value_throttled[1])}
+                **{event.name: (event.new, end)}
             )
 
     def _sync_end_value(self, event):
+        start = self.value[0] if event.name == 'value' else self.value_throttled[0]
         with param.edit_constant(self):
             self.param.set_param(
-                **{event.name: (self.value_throttled[0], event.new)}
+                **{event.name: (start, event.new)}
             )
