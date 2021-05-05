@@ -569,7 +569,8 @@ class panel_extension(_pyviz_extension):
                 for kws in reversed(keyword_groups) for name in kws
                 if name not in sig.parameters
             ]
-            parameters.append(Parameter('kwargs', Parameter.VAR_KEYWORD))
+            kwarg_name = '_kwargs' if 'kwargs' in processed_kws else 'kwargs'
+            parameters.append(Parameter(kwarg_name, Parameter.VAR_KEYWORD))
             cls.__init__.__signature__ = Signature(
                 parameters, return_annotation=sig.return_annotation
             )
