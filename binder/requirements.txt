@@ -1,5 +1,10 @@
 -e .['all']
 -e binder/jupyter-panel-apps-server/.
 -e binder/jupyter-voila-docs-server/.
+pydeck
+pyecharts
+idom
+xlsxwriter
+pyarrow
 jupyter_bokeh
 jupyter-vscode-proxy
