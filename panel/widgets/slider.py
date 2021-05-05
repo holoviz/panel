@@ -57,6 +57,15 @@ class _SliderBase(Widget):
         return '{cls}({params})'.format(cls=type(self).__name__,
                                         params=', '.join(param_reprs(self, ['value_throttled'])))
 
+    def _process_property_change(self, msg):
+        if config.throttled:
+            if "value" in msg:
+                del msg["value"]
+            if "value_throttled" in msg:
+                msg["value"] = msg["value_throttled"]
+                del msg["value_throttled"]
+        return super()._process_property_change(msg)
+
     def _update_model(self, events, msg, root, model, doc, comm):
         if 'value_throttled' in msg:
             del msg['value_throttled']
@@ -143,7 +152,7 @@ class IntSlider(ContinuousSlider):
     _rename = {'name': 'title'}
 
     def _process_property_change(self, msg):
-        msg = super(_SliderBase, self)._process_property_change(msg)
+        msg = super()._process_property_change(msg)
         if 'value' in msg:
             msg['value'] = msg['value'] if msg['value'] is None else int(msg['value'])
         if 'value_throttled' in msg:
@@ -174,7 +183,7 @@ class DateSlider(_SliderBase):
         super().__init__(**params)
 
     def _process_property_change(self, msg):
-        msg = super(_SliderBase, self)._process_property_change(msg)
+        msg = super()._process_property_change(msg)
         if 'value' in msg:
             msg['value'] = value_as_date(msg['value'])
         if 'value_throttled' in msg:
@@ -390,7 +399,7 @@ class IntRangeSlider(RangeSlider):
     step = param.Integer(default=1)
 
     def _process_property_change(self, msg):
-        msg = super(RangeSlider, self)._process_property_change(msg)
+        msg = super()._process_property_change(msg)
         if 'value' in msg:
             msg['value'] = tuple([v if v is None else int(v)
                                   for v in msg['value']])
