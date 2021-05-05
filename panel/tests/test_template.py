@@ -162,12 +162,17 @@ def test_react_template(document, comm):
     markdown2 = Markdown('# Some title')
     tmplt.main[:4, 6:] = markdown2
 
-    assert tvars['layouts'] == {
-        'lg': [{'h': 4, 'i': '1', 'w': 6, 'x': 0, 'y': 0},
-               {'h': 4, 'i': '2', 'w': 6, 'x': 6, 'y': 0}],
-        'md': [{'h': 4, 'i': '1', 'w': 6, 'x': 0, 'y': 0},
-               {'h': 4, 'i': '2', 'w': 6, 'x': 6, 'y': 0}]
-    }
+    layouts = {'lg': [{'h': 4, 'i': '1', 'w': 6, 'x': 0, 'y': 0},
+                      {'h': 4, 'i': '2', 'w': 6, 'x': 6, 'y': 0}],
+               'md': [{'h': 4, 'i': '1', 'w': 6, 'x': 0, 'y': 0},
+                      {'h': 4, 'i': '2', 'w': 6, 'x': 6, 'y': 0}]
+               }
+
+    for size in layouts:
+        for layout in layouts[size]:
+            layout.update({'minW': 0, 'minH': 0, 'maxW': 'Infinity', 'maxH': 'Infinity'})
+
+    assert tvars['layouts'] == layouts
 
 @pytest.mark.parametrize(["template_class"], [(t,) for t in LIST_TEMPLATES])
 def test_list_template_insert_order(template_class):
