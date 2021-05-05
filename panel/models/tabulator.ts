@@ -168,6 +168,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     let configuration = {
       ...this.model.configuration,
       index: "_index",
+      nestedFieldSeparator: false,
       selectable: selectable,
       tableBuilding: function() { that.tableInit(that, this) },
       renderComplete: () => this.renderComplete(),
