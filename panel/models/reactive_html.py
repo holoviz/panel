@@ -15,7 +15,7 @@ from bokeh.events import ModelEvent
 endfor = '{% endfor %}'
 list_iter_re = '{% for (\s*[A-Za-z_]\w*\s*) in (\s*[A-Za-z_]\w*\s*) %}'
 items_iter_re = '{% for \s*[A-Za-z_]\w*\s*, (\s*[A-Za-z_]\w*\s*) in (\s*[A-Za-z_]\w*\s*)\.items\(\) %}'
-values_iter_re = '{% for \s*[A-Za-z_]\w*\s*, (\s*[A-Za-z_]\w*\s*) in (\s*[A-Za-z_]\w*\s*)\.values\(\) %}'
+values_iter_re = '{% for (\s*[A-Za-z_]\w*\s*) in (\s*[A-Za-z_]\w*\s*)\.values\(\) %}'
 
 
 class ReactiveHTMLParser(HTMLParser):
@@ -79,7 +79,7 @@ class ReactiveHTMLParser(HTMLParser):
         if nloops > 1 and nloops and self._open_for:
             raise ValueError('Nested for loops currently not supported in templates.')
         elif nloops:
-            loop = [loop for loop in (list_loop, values_loop, items_loop)][0]
+            loop = [loop for loop in (list_loop, values_loop, items_loop) if loop][0]
             var, obj = loop[0]
             self.loop_map[var] = obj
 
@@ -122,9 +122,9 @@ class ReactiveHTMLParser(HTMLParser):
                 continue
             if match not in self.cls.param:
                 params = difflib.get_close_matches(match, list(self.cls.param))
-                raise ValueError("HTML template references unknown parameter "
-                                 f"'{match}', similar parameters include "
-                                 f"{params}.")
+                raise ValueError(f"{self.cls.__name__} HTML template references "
+                                 f"unknown parameter '{match}', similar parameters "
+                                 f"include {params}.")
             templates.append(match)
         self.attrs[dom_id].append(('children', templates, data.replace('${', '{')))
 
