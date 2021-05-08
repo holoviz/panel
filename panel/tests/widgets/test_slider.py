@@ -327,7 +327,7 @@ def test_discrete_slider_with_numpy64_options2():
 def test_discrete_slider_with_numpy64_options():
     options = [np.int64(1), np.int64(1)]
     slider = DiscreteSlider(value=options[-1], options=options)
-    assert slider.formatter == '0,.0f'
+    assert slider.formatter == INT_FORMATTER
 
 def test_format_as_value():
     assert DiscreteSlider._format_value(2, '0,.0f')=='2'
