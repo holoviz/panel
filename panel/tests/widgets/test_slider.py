@@ -1,11 +1,14 @@
-from datetime import datetime, date
 from collections import OrderedDict
+from datetime import date, datetime
+
+import numpy as np
 
 from bokeh.models import Div as BkDiv, Slider as BkSlider, Column as BkColumn
 
 from panel import config
-from panel.widgets import (DateSlider, DateRangeSlider, DiscreteSlider,
+from panel.widgets import (DateRangeSlider, DateSlider, DiscreteSlider,
                            FloatSlider, IntSlider, RangeSlider)
+from panel.widgets.slider import INT_FORMATTER, FLOAT_FORMATTER
 
 
 def test_float_slider(document, comm):
@@ -314,3 +317,31 @@ def test_discrete_slider_options_dict(document, comm):
 
         discrete_slider.value = options['1']
         assert widget.value == 1
+
+def test_discrete_slider_with_numpy64_options2():
+    options = [np.int64(1), np.int64(1)]
+    slider = DiscreteSlider(value=options[-1], options=options)
+    assert slider.formatter != '%.3g'
+
+
+def test_discrete_slider_with_numpy64_options():
+    options = [np.int64(1), np.int64(1)]
+    slider = DiscreteSlider(value=options[-1], options=options)
+    assert slider.formatter == '0,.0f'
+
+def test_format_as_value():
+    assert DiscreteSlider._format_value(2, '0,.0f')=='2'
+    assert DiscreteSlider._format_value(2, '0.2f')=='2.00'
+    assert DiscreteSlider._format_value(2000, '0,.0f')=='2,000'
+    assert DiscreteSlider._format_value(2000, '%.3g')=='2e+03'
+    assert DiscreteSlider._format_value(2000, '.3g')=='2e+03'
+
+
+def test_default_formatters():
+    assert INT_FORMATTER == '0,.0f'
+    assert FLOAT_FORMATTER == '.3g'
+
+def test_determine_formatter():
+    assert DiscreteSlider._determine_formatter([0,1,2])==INT_FORMATTER
+    assert DiscreteSlider._determine_formatter([np.int64(0),np.int64(1),np.int64(2)])==INT_FORMATTER
+    assert DiscreteSlider._determine_formatter([2.01, 2.02, 2.03])==DiscreteSlider.param.formatter.default

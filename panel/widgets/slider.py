@@ -22,6 +22,8 @@ from .base import Widget, CompositeWidget
 from ..layout import Column, Row
 from .input import IntInput, FloatInput, StaticText
 
+INT_FORMATTER = '0,.0f'
+FLOAT_FORMATTER = '.3g'
 
 class _SliderBase(Widget):
 
@@ -198,7 +200,7 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
 
     value_throttled = param.Parameter(constant=True)
 
-    formatter = param.String(default='%.3g')
+    formatter = param.String(default=FLOAT_FORMATTER)
 
     _source_transforms = {'value': None, 'value_throttled': None, 'options': None}
 
@@ -216,8 +218,8 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
     def __init__(self, **params):
         self._syncing = False
         super().__init__(**params)
-        if 'formatter' not in params and all(isinstance(v, (int, np.int_)) for v in self.values):
-            self.formatter = '%d'
+        if 'formatter' not in params:
+            self.formatter = self._determine_formatter(self.values)
         if self.value is None and None not in self.values and self.options:
             self.value = self.values[0]
         elif self.value not in self.values:
@@ -234,6 +236,13 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
         self.param.watch(self._update_value, 'value')
         self.param.watch(self._update_value, 'value_throttled')
         self.param.watch(self._update_style, self._style_params)
+
+    @classmethod
+    def _determine_formatter(cls, values):
+        if all(isinstance(v, (int, np.integer)) for v in values):
+            return INT_FORMATTER
+        else:
+            return cls.param.formatter.default
 
     def _update_options(self, *events):
         values, labels = self.values, self.labels
@@ -338,14 +347,19 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
                              "in the %s widgets' values list." % type(self).__name__)
         return self, model, values, lambda x: x.value, 'value', 'cb_obj.value'
 
+    @staticmethod
+    def _format_value(value, formatter):
+        if formatter.startswith("%"):
+            return formatter % value
+        return f'{{:{formatter}}}'.format(value)
+
     @property
     def labels(self):
         title = (self.name + ': ' if self.name else '')
-        if isinstance(self.options, dict):
-            return [title + ('<b>%s</b>' % o) for o in self.options]
-        else:
-            return [title + ('<b>%s</b>' % (o if isinstance(o, string_types) else (self.formatter % o)))
-                    for o in self.options]
+        return [title + ('<b>%s</b>' % (o if isinstance(o, string_types)
+            else self._format_value(o, self.formatter)))
+            for o in self.options]
+
     @property
     def values(self):
         return list(self.options.values()) if isinstance(self.options, dict) else self.options
