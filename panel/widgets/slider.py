@@ -200,7 +200,10 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
 
     value_throttled = param.Parameter(constant=True)
 
-    formatter = param.String(default=FLOAT_FORMATTER)
+    formatter = param.String(default=FLOAT_FORMATTER, doc=f"""
+    Allows setting a string formatter, default is '{FLOAT_FORMATTER}'. If the options specified
+    are integers this is changed to '{INT_FORMATTER}'.
+    """)
 
     _source_transforms = {'value': None, 'value_throttled': None, 'options': None}
 
