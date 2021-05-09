@@ -32,6 +32,9 @@ class ReactTemplate(BasicTemplate):
 
     prevent_collision = param.Boolean(default=False, doc="Prevent collisions between items.")
 
+    sidebar_width = param.Integer(350, doc="""
+        The width of the sidebar in pixels. Default is 350.""")
+
     _css = pathlib.Path(__file__).parent / 'react.css'
 
     _template = pathlib.Path(__file__).parent / 'react.html'
