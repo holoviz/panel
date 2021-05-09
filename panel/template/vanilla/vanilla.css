@@ -91,14 +91,11 @@ img.app-logo {
 #sidebar {
   transition: all 0.2s cubic-bezier(0.945, 0.020, 0.270, 0.665);
   transform-origin: center left; /* Set the transformed position of sidebar to center left side. */
-  width: 290px;
   height: calc(100vh - 101px);
+  padding-left: 5px;
+  padding-right: 10px;
   padding-top: 10px;
   padding-bottom: 20px;
-}
-
-#sidebar.active {
-  margin-left: -300px;
 }
 
 #main {
@@ -106,7 +103,6 @@ img.app-logo {
   overflow-y: scroll;
   width: 100vw;
   height: calc(100vh - 101px);
-  margin-left: 300px;
   padding-right: 20px;
   padding-bottom: 20px;
   padding-top: 10px;
