@@ -362,6 +362,9 @@ class BasicTemplate(BaseTemplate):
     sidebar = param.ClassSelector(class_=ListLike, constant=True, doc="""
         A list-like container which populates the sidebar.""")
 
+    sidebar_width = param.Integer(330, doc="""
+        The width of the sidebar in pixels. Default is 320.""")
+
     modal = param.ClassSelector(class_=ListLike, constant=True, doc="""
         A list-like container which populates the modal""")
 
@@ -644,6 +647,7 @@ class BasicTemplate(BaseTemplate):
         self._render_variables['header_background'] = self.header_background
         self._render_variables['header_color'] = self.header_color
         self._render_variables['main_max_width'] = self.main_max_width
+        self._render_variables['sidebar_width'] = self.sidebar_width
 
     def _update_busy(self):
         if self.busy_indicator:
