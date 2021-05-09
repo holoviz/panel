@@ -81,7 +81,7 @@
         {% for doc in docs %}
         {% for root in doc.roots %}
         {% if "nav" in root.tags %}
-        {{ embed(root) | indent(8) }}
+          {{ embed(root) | indent(8) }}
         {% endif %}
         {% endfor %}
         {% endfor %}

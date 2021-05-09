@@ -26,6 +26,12 @@
 </style>
 {% endfor %}
 
+<style>
+  #sidebar {
+    width: {{ sidebar_width }}px;
+  }
+</style>
+
 <!-- Template JS -->
 {% for src in template_resources['js'].values() %}
 <script src="{{ src }}"></script>
@@ -68,9 +74,9 @@
 
   <div class="row overflow-hidden" id="content">
     {% if nav %}
-    <div class="col-2 mh-100 border-right py-2" id="sidebar">
+    <div class="sidenav" id="sidebar">
       <ul class="nav flex-column">
-        {% for doc in docs %}
+      {% for doc in docs %}
 	    {% for root in doc.roots %}
 	    {% if "nav" in root.tags %}
         {{ embed(root) | indent(8) }}

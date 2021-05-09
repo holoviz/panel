@@ -363,7 +363,7 @@ class BasicTemplate(BaseTemplate):
         A list-like container which populates the sidebar.""")
 
     sidebar_width = param.Integer(330, doc="""
-        The width of the sidebar in pixels. Default is 320.""")
+        The width of the sidebar in pixels. Default is 330.""")
 
     modal = param.ClassSelector(class_=ListLike, constant=True, doc="""
         A list-like container which populates the modal""")
