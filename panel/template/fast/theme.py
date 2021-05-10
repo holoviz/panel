@@ -33,18 +33,6 @@ class FastStyle(param.Parameterized):
     to style the Fast Templates.
     """
 
-    accent_fill_active = param.Color(default="#E45A8C")
-    accent_fill_hover = param.Color(default="#DF3874")
-    accent_fill_rest = param.Color(default="#A01346")
-    accent_foreground_active = param.Color(default="#BA1651")
-    accent_foreground_cut = param.Color(default="#000000")
-    accent_foreground_hover = param.Color(default="#7A0F35")
-    accent_foreground_rest = param.Color(default="#A01346")
-
-    neutral_outline_active = param.Color(default="#D6D6D6")
-    neutral_outline_hover = param.Color(default="#979797")
-    neutral_outline_rest = param.Color(default="#BEBEBE")
-
     accent_base_color = param.Color(default="#A01346")
     background_color = param.Color(default="#ffffff")
     collapsed_icon = param.String(default=COLLAPSED_SVG_ICON)
@@ -128,21 +116,11 @@ class FastStyle(param.Parameterized):
 
 DEFAULT_STYLE = FastStyle()
 DARK_STYLE = FastStyle(
-    header_background="#313131",
-    header_color="#ffffff",
-    accent_fill_active="#DC2567",
-    accent_fill_hover="#E1477E",
-    accent_fill_rest="#C01754",
-    accent_foreground_active="#DF3874",
-    accent_foreground_cut="#000000",
-    accent_foreground_hover="#E55E8E",
-    accent_foreground_rest="#E1477E",
-    neutral_outline_active="#424242",
-    neutral_outline_hover="#808080",
-    neutral_outline_rest="#5A5A5A",
     accent_base_color="#E1477E",
     background_color="#181818",
     color="#ffffff",
+    header_background="#313131",
+    header_color="#ffffff",
     neutral_fill_card_rest="#212121",
     neutral_focus="#717171",
     neutral_foreground_rest="#e5e5e5",
