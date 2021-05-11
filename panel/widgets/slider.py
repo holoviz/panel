@@ -63,7 +63,6 @@ class _SliderBase(Widget):
                 del msg["value"]
             if "value_throttled" in msg:
                 msg["value"] = msg["value_throttled"]
-                del msg["value_throttled"]
         return super()._process_property_change(msg)
 
     def _update_model(self, events, msg, root, model, doc, comm):
