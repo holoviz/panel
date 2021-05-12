@@ -5,7 +5,7 @@ import numpy as np
 
 try:
     import pandas as pd
-    from pandas.util.testing import (
+    from pandas._testing import (
         makeCustomDataframe, makeMixedDataFrame, makeTimeDataFrame
     )
 except ImportError:
@@ -504,7 +504,7 @@ def test_tabulator_stream_dict_rollover(document, comm):
     for col, values in model.source.data.items():
         np.testing.assert_array_equal(values, expected[col])
 
-        
+
 def test_tabulator_patch_scalars(document, comm):
     df = makeMixedDataFrame()
     table = Tabulator(df)

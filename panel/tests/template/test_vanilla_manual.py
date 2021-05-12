@@ -22,8 +22,6 @@ Inspect the app and verify that the issues of [Issue 1641]\
         logo=LOGO,
     )
 
-    pn.config.sizing_mode = "stretch_width"
-
     xs = np.linspace(0, np.pi)
     freq = pn.widgets.FloatSlider(name="Frequency", start=0, end=10, value=2)
     phase = pn.widgets.FloatSlider(name="Phase", start=0, end=np.pi)
@@ -84,8 +82,6 @@ Inspect the app and verify that the issues of [Issue 1641]\
         favicon="https://raw.githubusercontent.com/MarcSkovMadsen/awesome-panel/2781d86d4ed141889d633748879a120d7d8e777a/assets/images/favicon.ico",
     )
 
-    pn.config.sizing_mode = "stretch_width"
-
     xs = np.linspace(0, np.pi)
     freq = pn.widgets.FloatSlider(name="Frequency", start=0, end=10, value=2)
     phase = pn.widgets.FloatSlider(name="Phase", start=0, end=np.pi)
@@ -127,5 +123,6 @@ Inspect the app and verify that the issues of [Issue 1641]\
 
 
 if __name__.startswith("bokeh"):
+    pn.extension(sizing_mode="stretch_width")
     test_vanilla_with_sidebar().servable()
     # test_vanilla_with_no_sidebar().servable()

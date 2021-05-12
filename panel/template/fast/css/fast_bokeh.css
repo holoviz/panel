@@ -1036,7 +1036,7 @@
   border-radius: calc(var(--corner-radius) * 1px);
 }
 
-input[type=file] {
+.bk-root input[type=file] {
     background: transparent;
     width: 100%;
     height: 100px;
@@ -1045,15 +1045,15 @@ input[type=file] {
     text-align: center;
     margin: auto;
 }
-input[type=file][disabled]:hover {
+.bk-root input[type=file][disabled]:hover {
   cursor: not-allowed;
   border-color: var(--neutral-outline-rest);
 }
-input[type=file]:hover {
+.bk-root input[type=file]:hover {
   border-color: var(--neutral-outline-hover);
 }
 
-input[type=file]:active {
+.bk-root input[type=file]:active {
   border: 3px dashed var(--neutral-outline-active);
 }
 

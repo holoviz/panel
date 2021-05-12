@@ -296,5 +296,5 @@ def test_get_app():
 
 
 if __name__.startswith("bokeh"):
-    pn.config.sizing_mode = "stretch_width"
+    pn.extension(sizing_mode="stretch_width")
     test_get_app().servable()
