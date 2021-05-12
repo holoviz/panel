@@ -19,7 +19,6 @@ jobs:
       PKG_TEST_PYTHON: "--test-python=py38"
       PYTHON_VERSION: "3.8"
       MPLBACKEND: "Agg"
-      CONDA_UPLOAD_TOKEN: ${{ secrets.CONDA_UPLOAD_TOKEN }}
     steps:
       - name: remove nodejs
         run: |
@@ -58,14 +57,14 @@ jobs:
       - name: dev deploy
         if: (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc'))
         run: |
-          doit package_upload --token=$CONDA_UPLOAD_TOKEN --label=dev
+          doit package_upload --token=${{ secrets.CONDA_UPLOAD_TOKEN }} --label=dev
           python setup.py develop
           cd ./panel
           npm publish --tag dev
       - name: main deploy
         if: (!(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
         run: |
-          doit package_upload --token=$CONDA_UPLOAD_TOKEN --label=dev --label=main
+          doit package_upload --token=${{ secrets.CONDA_UPLOAD_TOKEN }} --label=dev --label=main
           python setup.py develop
           cd ./panel
           npm publish --tag latest
@@ -81,8 +80,6 @@ jobs:
       PYTHON_VERSION: "3.8"
       CHANS: "-c pyviz"
       MPLBACKEND: "Agg"
-      PPU: ${{ secrets.PPU }}
-      PPP: ${{ secrets.PPP }}
       PYPI: "https://upload.pypi.org/legacy/"
     steps:
       - name: remove nodejs
@@ -129,4 +126,4 @@ jobs:
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
-          doit ecosystem=pip package_upload -u $PPU -p $PPP -r $PYPI
+          doit ecosystem=pip package_upload -u ${{ secrets.PPU }} -p ${{ secrets.PPP }} -r $PYPI

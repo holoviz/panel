@@ -175,6 +175,7 @@ function ResponsiveGrid(props) {
           {% elif compact is none %}
           verticalCompact={false}
           {% endif %}
+          preventCollision={ {{preventCollision and 'true' or 'false'}} }
         >
           {% set count = [] %}
           {% for doc in docs %}{% for root in doc.roots %}{% if "main" in root.tags %}

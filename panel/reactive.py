@@ -410,7 +410,7 @@ class Reactive(Syncable, Viewable):
         self._links.append(link)
         return cb
 
-    def controls(self, parameters=[], jslink=True):
+    def controls(self, parameters=[], jslink=True, **kwargs):
         """
         Creates a set of widgets which allow manipulating the parameters
         on this instance. By default all parameters which support
@@ -424,6 +424,9 @@ class Reactive(Syncable, Viewable):
         jslink: bool
            Whether to use jslinks instead of Python based links.
            This does not allow using all types of parameters.
+        kwargs: dict
+           Additional kwargs to pass to the Param pane(s) used to
+           generate the controls widgets.
 
         Returns
         -------
@@ -442,12 +445,12 @@ class Reactive(Syncable, Viewable):
 
         params = [p for p in linkable if p not in Viewable.param]
         controls = Param(self.param, parameters=params, default_layout=WidgetBox,
-                         name='Controls')
+                         name='Controls', **kwargs)
         layout_params = [p for p in linkable if p in Viewable.param]
         if 'name' not in layout_params and self._rename.get('name', False) is not None and not parameters:
             layout_params.insert(0, 'name')
         style = Param(self.param, parameters=layout_params, default_layout=WidgetBox,
-                      name='Layout')
+                      name='Layout', **kwargs)
         if jslink:
             for p in params:
                 widget = controls._widgets[p]
@@ -967,6 +970,9 @@ class ReactiveHTMLMetaclass(ParameterizedMetaclass):
 
         mcs._parser = ReactiveHTMLParser(mcs)
         mcs._parser.feed(mcs._template)
+        if mcs._parser._open_for:
+            raise ValueError("Template contains for loop without closing {% endfor %} statement.")
+
         mcs._attrs, mcs._node_callbacks = {}, {}
         mcs._inline_callbacks = []
         for node, attrs in mcs._parser.attrs.items():
@@ -1273,21 +1279,52 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
 
     def _get_template(self):
         import jinja2
-        template = jinja2.Template(self._template)
+
+        # Replace loop variables with indexed child parameter e.g.:
+        #   {% for obj in objects %}
+        #     ${obj}
+        #   {% endfor %}
+        # becomes:
+        #   {% for obj in objects %}
+        #     ${objects[{{ loop.index0 }}]}
+        #  {% endfor %}
+        template_string = self._template
+        for var, obj in self._parser.loop_map.items():
+            template_string = template_string.replace(
+                '${%s}' % var, '${%s[{{ loop.index0 }}]}' % obj)
+
+        # Add index to templated loop node ids
+        for dom_node, _ in self._parser.looped:
+            replacement = 'id="%s-{{ loop.index0 }}"' % dom_node
+            if f'id="{dom_node}"' in template_string:
+                template_string = template_string.replace(
+                    f'id="{dom_node}"', replacement)
+            else:
+                template_string = template_string.replace(
+                    f"id='{dom_node}'", replacement)
+
+        # Render Jinja template
+        template = jinja2.Template(template_string)
         context = {'param': self.param, '__doc__': self.__original_doc__}
         for parameter, value in self.param.get_param_values():
             context[parameter] = value
             if parameter in self._child_names:
                 context[f'{parameter}_names'] = self._child_names[parameter]
         html = template.render(context)
-        parser = ReactiveHTMLParser(self.__class__)
+
+        # Parse templated HTML
+        parser = ReactiveHTMLParser(self.__class__, template=False)
         parser.feed(html)
+
+        # Add node ids to all parsed nodes
         for name in list(parser.nodes):
             html = (
                 html
                 .replace(f"id='{name}'", f"id='{name}-${{id}}'")
                 .replace(f'id="{name}"', f'id="{name}-${{id}}"')
             )
+
+        # Remove child node template syntax
         for parent, child_name in self._parser.children.items():
             if (parent, child_name) in self._parser.looped:
                 for i, _ in enumerate(getattr(self, child_name)):
