@@ -5,7 +5,7 @@ import numpy as np
 
 try:
     import pandas as pd
-    from pandas.testing import (
+    from pandas._testing import (
         makeCustomDataframe, makeMixedDataFrame, makeTimeDataFrame
     )
 except ImportError:
