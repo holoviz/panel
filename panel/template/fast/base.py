@@ -78,8 +78,9 @@ class FastBaseTemplate(BasicTemplate):
         super()._update_vars()
         style = self._get_theme().style
         style.accent_base_color = self.accent_base_color
-        style.header_accent_base_color = self.header_accent_base_color
         style.header_color = self.header_color
+        style.header_background = self.header_background
+        style.header_accent_base_color = self.header_accent_base_color
         self._render_variables["style"] = style
         self._render_variables["theme_toggle"] = self.theme_toggle
         self._render_variables["theme"] = self.theme.__name__[:-5].lower()

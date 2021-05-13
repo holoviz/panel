@@ -33,18 +33,18 @@ class FastStyle(param.Parameterized):
     to style the Fast Templates.
     """
 
-    accent_base_color = param.Color(default="#A01346")
-    background_color = param.Color(default="#ffffff")
+    accent_base_color = param.String(default="#A01346")
+    background_color = param.String(default="#ffffff")
     collapsed_icon = param.String(default=COLLAPSED_SVG_ICON)
     expanded_icon = param.String(default=EXPANDED_SVG_ICON)
-    color = param.Color(default="#00aa41")
-    neutral_fill_card_rest = param.Color(default="#F7F7F7")
-    neutral_focus = param.Color(default="#888888")
-    neutral_foreground_rest = param.Color(default="#2B2B2B")
+    color = param.String(default="#00aa41")
+    neutral_fill_card_rest = param.String(default="#F7F7F7")
+    neutral_focus = param.String(default="#888888")
+    neutral_foreground_rest = param.String(default="#2B2B2B")
 
-    header_background = param.Color(default="#00aa41")
-    header_color = param.Color(default="#ffffff")
-    header_accent_base_color = param.Color(default="#A01346")
+    header_background = param.String(default="#00aa41")
+    header_color = param.String(default="#ffffff")
+    header_accent_base_color = param.String(default="#A01346")
     font = param.String(default="Open Sans, sans-serif")
     font_url = param.String(default=FONT_URL)
 

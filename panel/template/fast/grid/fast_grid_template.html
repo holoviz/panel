@@ -91,7 +91,14 @@
     neutralOutlineRestBehavior
   } from "{{ template_resources['js_modules']['fast'] }}";
 
+  function standardize_color(str){
+    var ctx = document.createElement('canvas').getContext('2d');
+    ctx.fillStyle = str;
+    return ctx.fillStyle;
+  }
+
   function setAccentColor(color, selector){
+      color = standardize_color(color);
       const accent = color;
       const palette = createColorPalette(parseColorHexRGB(accent));
       const provider = document.querySelector(selector);
@@ -102,6 +109,7 @@
   setAccentColor("{{ style.header_accent_base_color }}", "#header-design-provider");
 
   function setNeutralColor(color, selector){
+      color = standardize_color(color);
       const palette = createColorPalette(parseColorHexRGB(color));
       const provider = document.querySelector(selector);
 
@@ -109,6 +117,14 @@
   }
   setNeutralColor("#ffffff", "#header-design-provider");
   setNeutralColor("#000000", "#body-design-provider");
+
+  function setBackgroundColor(color, selector){
+    color = standardize_color(color);
+    const provider = document.querySelector(selector);
+    provider.backgroundColor=color;
+  }
+  setBackgroundColor("{{ style.header_background }}", "#header-design-provider");
+  setBackgroundColor("{{ style.background_color }}", "#body-design-provider");
 
   function registerCSSCustomProperties(selector)  {
     const provider = document.querySelector(selector);
@@ -146,14 +162,13 @@
 
 <!-- goes in body -->
 {% block contents %}
-<fast-design-system-provider id="body-design-provider" use-defaults
-  {% if style.background_color %}background-color="{{ style.background_color }}"{% endif %}
-  {% if style.accent_base_color %}accent-base-color="{{ style.accent_base_color }}"{% endif %}
-  accent-foreground-cut-rest="#FFFFFF"
+<fast-design-system-provider id="body-design-provider" use-defaults accent-foreground-cut-rest="#FFFFFF"
+  {% if style.background_color and style.background_color.startswith("#") %}background-color="{{ style.background_color }}"{% endif %}
+  {% if style.accent_base_color and style.accent_base_color.startswith("#") %}accent-base-color="{{ style.accent_base_color }}"{% endif %}
   >
   <div id="container">
   <fast-design-system-provider id="header-design-provider"
-    {% if header_background %}background-color="{{ header_background }}"{% endif %}
+  {% if style.header_background and style.header_background.startswith('#') %}background-color="{{ style.header_background }}"{% endif %}
   >
   <nav id="header">
     {% if nav or sidebar_footer %}
@@ -252,11 +267,9 @@
   </div>
 </div>
 </fast-design-system-provider>
-
 <script>
   {{ js }}
 </script>
-
 <script>
   function openNav() {
     document.getElementById("sidebar").style.left = 0;

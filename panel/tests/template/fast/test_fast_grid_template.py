@@ -8,7 +8,7 @@ from holoviews import opts
 from panel.template.fast.grid import FastGridTemplate, FastGridDarkTheme
 
 hv.extension("bokeh")
-ACCENT_COLOR = "#f63366"
+ACCENT_COLOR = "lightblue"
 
 opts.defaults(opts.Ellipse(line_width=3, color=ACCENT_COLOR))
 
@@ -151,9 +151,9 @@ def test_app():
     app = FastGridTemplate(
         title="FastGridTemplate w. #LIT colors",
         site="Panel",
-        accent_base_color="#f63366",
-        header_background="#f63366",
-        header_color="#FFFFFF",
+        accent_base_color=ACCENT_COLOR,
+        header_background=ACCENT_COLOR,
+        header_color="#000000",
         header_accent_base_color="#FFFFFF",
         row_height=50,
     )
