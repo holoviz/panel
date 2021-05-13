@@ -9,6 +9,8 @@ from panel.tests.template.fast.test_fast_grid_template import (
     INFO,
 )
 
+ACCENT_COLOR = "#4099da"
+
 def test_template_theme_parameter():
     template = FastListTemplate(title="Fast", theme="dark")
     # Not '#3f3f3f' which is for the Vanilla theme
@@ -19,12 +21,18 @@ def test_template_theme_parameter():
     assert isinstance(template._get_theme(), FastListDarkTheme)
 
 
+#Todo: header_color must be rgb or #
+
 def test_app():
     pn.config.sizing_mode = "stretch_width"
     app = FastListTemplate(
         title="FastListTemplate",
         site="Panel",
         site_url="https://panel.holoviz.org",
+        accent_base_color=ACCENT_COLOR,
+        header_background=ACCENT_COLOR,
+        header_color="#FFFFFF",
+        header_accent_base_color="#FFFFFF",
     )
     app.main[:] = [
         pn.pane.Markdown(INFO, sizing_mode="stretch_both"),

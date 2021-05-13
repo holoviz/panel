@@ -37,11 +37,17 @@
   :root {
     --body-font: {{ style.font }};
   }
-  .title {
-    color: {% if header_color %}{{ header_color }}{% else %}#ffffff{% endif %};
+  #header a {
+    color: currentColor;
   }
   :not(:defined) {
     visibility: hidden;
+  }
+  #theme-switch {
+    --accent-fill-active: {{ style.header_color }};
+  }
+  #header-design-provider {
+    --neutral-foreground-rest: {{ style.header_color }}
   }
 </style>
 
@@ -53,7 +59,7 @@
 <script src="{{ src }}" type="module"></script>
 {% endfor %}
 
-<!-- Fast script -->
+<!-- Fast Script -->
 <script type="module">
   import { parseColorHexRGB } from "{{ template_resources['js_modules']['fast-colors'] }}";
   import {
@@ -93,7 +99,7 @@
       provider.accentPalette = palette;
   }
   setAccentColor("{{ style.accent_base_color }}", "#body-design-provider");
-  setAccentColor("#ffffff", "#header-design-provider");
+  setAccentColor("{{ style.header_accent_base_color }}", "#header-design-provider");
 
   function setNeutralColor(color, selector){
       const palette = createColorPalette(parseColorHexRGB(color));
@@ -176,7 +182,7 @@
   </div>
   {% if theme_toggle %}
   <div class="pn-toggle-theme">
-    <fast-switch style="float: right;" onChange="toggleLightDarkTheme('{{ theme }}')" {% if theme=='default' %}checked{% endif %}>
+    <fast-switch id="theme-switch" style="float: right;" onChange="toggleLightDarkTheme('{{ theme }}')" {% if theme=='default' %}checked{% endif %}>
       <span slot="checked-message">
         <svg class="theme-toggle-icon" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25 25"><path d="M0 0h24v24H0z" fill="none"/><path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.79 1.42-1.41zM4 10.5H1v2h3v-2zm9-9.95h-2V3.5h2V.55zm7.45 3.91l-1.41-1.41-1.79 1.79 1.41 1.41 1.79-1.79zm-3.21 13.7l1.79 1.8 1.41-1.41-1.8-1.79-1.4 1.4zM20 10.5v2h3v-2h-3zm-8-5c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm-1 16.95h2V19.5h-2v2.95zm-7.45-3.91l1.41 1.41 1.79-1.8-1.41-1.41-1.79 1.8z"/></svg>
       </span>
@@ -206,7 +212,7 @@
         {{ embed(root) | indent(8) }}
 	    {% endif %}
 	    {% endfor %}
-	    {% endfor %}
+      {% endfor %}
       {% endif %}
       {% if sidebar_footer %}
       {{ sidebar_footer }}
@@ -223,14 +229,14 @@
     {% endif %}
     >
       {% if main_max_width %}
-      <div style="margin-left: auto; margin-right: auto;max-width: {{ main_max_width }}">
+      <div style="margin-left: auto; margin-right: auto; max-width: {{ main_max_width }}">
       {% endif %}
       <div id="responsive-grid"></div>
       {% if main_max_width %}
       </div>
       {% endif %}
 
-      <fast-dialog id="pn-Modal" hidden="true" style="--dialog-width: 80%; --dialog-height: auto; --background-color: var(--neutral-fill-hover);">
+      <fast-dialog id="pn-Modal" hidden style="--dialog-width: 80%; --dialog-height: auto; --background-color: var(--neutral-fill-hover);">
         <fast-button class="pn-modalclose" id="pn-closeModal">&times;</fast-button>
 	<div>
         {% for doc in docs %}

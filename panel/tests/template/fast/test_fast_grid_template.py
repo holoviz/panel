@@ -8,7 +8,10 @@ from holoviews import opts
 from panel.template.fast.grid import FastGridTemplate, FastGridDarkTheme
 
 hv.extension("bokeh")
-opts.defaults(opts.Ellipse(line_width=3, color="#DF3874"))
+ACCENT_COLOR = "#f63366"
+
+opts.defaults(opts.Ellipse(line_width=3, color=ACCENT_COLOR))
+
 
 
 
@@ -24,7 +27,7 @@ def test_template_theme_parameter():
 
 
 COLLAPSED_ICON = """
-<svg style="stroke: #E62F63" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" slot="collapsed-icon">
+<svg style="stroke: var(--accent-fill-rest);" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" slot="collapsed-icon">
             <path d="M15.2222 1H2.77778C1.79594 1 1 1.79594 1 2.77778V15.2222C1 16.2041 1.79594 17 2.77778 17H15.2222C16.2041 17 17 16.2041 17 15.2222V2.77778C17 1.79594 16.2041 1 15.2222 1Z" stroke-linecap="round" stroke-linejoin="round"></path>
             <path d="M9 5.44446V12.5556" stroke-linecap="round" stroke-linejoin="round"></path>
             <path d="M5.44446 9H12.5556" stroke-linecap="round" stroke-linejoin="round"></path>
@@ -32,7 +35,7 @@ COLLAPSED_ICON = """
 """ # noqa
 
 EXPANDED_ICON = """
-<svg style="stroke: #E62F63" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" slot="expanded-icon">
+<svg style="stroke: var(--accent-fill-rest);" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" slot="expanded-icon">
     <path d="M15.2222 1H2.77778C1.79594 1 1 1.79594 1 2.77778V15.2222C1 16.2041 1.79594 17 2.77778 17H15.2222C16.2041 17 17 16.2041 17 15.2222V2.77778C17 1.79594 16.2041 1 15.2222 1Z" stroke-linecap="round" stroke-linejoin="round"></path>
     <path d="M5.44446 9H12.5556" stroke-linecap="round" stroke-linejoin="round"></path>
 </svg>
@@ -148,11 +151,16 @@ def test_app():
     pn.config.sizing_mode = "stretch_width"
     app = FastGridTemplate(
         title="FastGridTemplate",
+        accent_base_color="#f63366",
+        header_background="#f63366",
+        header_color="#FFFFFF",
+        header_accent_base_color="#FFFFFF",
+        row_height=50,
     )
-    app.main[0:6, 0:6] = pn.pane.Markdown(INFO, sizing_mode="stretch_both")
-    app.main[0:6, 6:12] = pn.pane.HoloViews(_create_hvplot(), sizing_mode="stretch_both")
-    app.main[6:18, 0:3] = _fast_button_card()
-    app.main[6:12, 6:12] = pn.pane.HoloViews(_create_hvplot(), sizing_mode="stretch_both")
+    app.main[0:7, 0:6] = pn.pane.Markdown(INFO, sizing_mode="stretch_both")
+    app.main[0:7, 6:12] = pn.pane.HoloViews(_create_hvplot(), sizing_mode="stretch_both")
+    app.main[7:18, 0:6] = _fast_button_card()
+    app.main[7:13, 6:12] = pn.pane.HoloViews(_create_hvplot(), sizing_mode="stretch_both")
     app.sidebar.extend(_sidebar_items())
 
     return app
