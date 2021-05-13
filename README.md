@@ -11,8 +11,8 @@
 | Latest dev release | [![Github tag](https://img.shields.io/github/v/tag/holoviz/panel.svg?label=tag&colorB=11ccbb)](https://github.com/holoviz/panel/tags) [![dev-site](https://img.shields.io/website-up-down-green-red/https/pyviz-dev.github.io/panel.svg?label=dev%20website)](https://pyviz-dev.github.io/panel/) |
 | Latest release | [![Github release](https://img.shields.io/github/release/holoviz/panel.svg?label=tag&colorB=11ccbb)](https://github.com/holoviz/panel/releases) [![PyPI version](https://img.shields.io/pypi/v/panel.svg?colorB=cc77dd)](https://pypi.python.org/pypi/panel) [![panel version](https://img.shields.io/conda/v/pyviz/panel.svg?colorB=4488ff&style=flat)](https://anaconda.org/pyviz/panel) [![conda-forge version](https://img.shields.io/conda/v/conda-forge/panel.svg?label=conda%7Cconda-forge&colorB=4488ff)](https://anaconda.org/conda-forge/panel) [![defaults version](https://img.shields.io/conda/v/anaconda/panel.svg?label=conda%7Cdefaults&style=flat&colorB=4488ff)](https://anaconda.org/anaconda/panel) |
 | Docs | [![gh-pages](https://img.shields.io/github/last-commit/holoviz/panel/gh-pages.svg)](https://github.com/holoviz/panel/tree/gh-pages) [![site](https://img.shields.io/website-up-down-green-red/https/panel.holoviz.org.svg)](https://panel.holoviz.org) |
+| Binder | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/holoviz/panel/binder?urlpath=lab/tree/examples) |
 | Support | [![Discourse](https://img.shields.io/discourse/status?server=https%3A%2F%2Fdiscourse.holoviz.org)](https://discourse.holoviz.org/) |
-
 
 ## What is it?
 
@@ -50,7 +50,7 @@ Panel can be used in a wide range of development environments:
 
 ### Editor + Server
 
-You can edit your Panel code as a .py file in any text editor, marking the objects you want to render as `.servable()`, then launch a server with `panel serve my_script.py --show` to open a browser tab showing your app or dashboard and backed by a live Python process.
+You can edit your Panel code as a .py file in any text editor, marking the objects you want to render as `.servable()`, then launch a server with `panel serve my_script.py --show` to open a browser tab showing your app or dashboard and backed by a live Python process. If you want the server to automatically reload when you save code changes during development, then you should use `panel serve my_script.py --auto --show`.
 
 ### JupyterLab and Classic notebook
 

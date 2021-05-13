@@ -148,7 +148,6 @@ def _fast_button_card():
 
 
 def test_app():
-    pn.config.sizing_mode = "stretch_width"
     app = FastGridTemplate(
         title="FastGridTemplate w. #LIT colors",
         site="Panel",
@@ -168,4 +167,5 @@ def test_app():
 
 
 if __name__.startswith("bokeh"):
+    pn.extension(sizing_mode="stretch_width")
     test_app().servable()
