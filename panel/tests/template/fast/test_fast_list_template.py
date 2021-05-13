@@ -1,15 +1,12 @@
 import panel as pn
-
-from panel.template.fast.list import FastListTemplate, FastListDarkTheme
-
+from holoviews import opts
+from panel.template.fast.list import FastListDarkTheme, FastListTemplate
 from panel.tests.template.fast.test_fast_grid_template import (
-    _create_hvplot,
-    _fast_button_card,
-    _sidebar_items,
-    INFO,
-)
+    INFO, _create_hvplot, _fast_button_card, _sidebar_items)
 
 ACCENT_COLOR = "#4099da"
+
+opts.defaults(opts.Ellipse(line_width=3, color=ACCENT_COLOR))
 
 def test_template_theme_parameter():
     template = FastListTemplate(title="Fast", theme="dark")
@@ -26,9 +23,8 @@ def test_template_theme_parameter():
 def test_app():
     pn.config.sizing_mode = "stretch_width"
     app = FastListTemplate(
-        title="FastListTemplate",
+        title="FastListTemplate w. #ORSOME colors",
         site="Panel",
-        site_url="https://panel.holoviz.org",
         accent_base_color=ACCENT_COLOR,
         header_background=ACCENT_COLOR,
         header_color="#FFFFFF",
