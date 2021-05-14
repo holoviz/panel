@@ -43,6 +43,9 @@
   :not(:defined) {
     visibility: hidden;
   }
+  #sidebar {
+    width: {{ sidebar_width }}px;
+  }
 </style>
 
 <!-- Template JS -->
@@ -158,7 +161,7 @@
 
     <div class="main" id="main"
     {% if nav or sidebar_footer %}
-    style="margin-left: 300px;"
+    style="margin-left: {{ sidebar_width + 30 }}px;"
     {% else %}
     style="margin-left: 0px;"
     {% endif %}
@@ -195,14 +198,14 @@
 <script>
   function openNav() {
     document.getElementById("sidebar").style.left = 0;
-    document.getElementById("main").style.marginLeft = "300px";
+    document.getElementById("main").style.marginLeft = "{{ sidebar_width + 30 }}px";
     document.getElementById("sidebar-button").onclick = closeNav;
     var interval = setInterval(function () { window.dispatchEvent(new Event('resize')); }, 10);
     setTimeout(function () { clearInterval(interval) }, 210)
   }
 
   function closeNav() {
-    document.getElementById("sidebar").style.left = "-300px";
+    document.getElementById("sidebar").style.left = "-{{ sidebar_width + 30 }}px";
     document.getElementById("main").style.marginLeft = 0;
     document.getElementById("sidebar-button").onclick = openNav;
     var interval = setInterval(function () { window.dispatchEvent(new Event('resize')); }, 10);

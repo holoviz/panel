@@ -29,6 +29,15 @@
 <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css?family=Material+Icons&display=block" rel="stylesheet">
 
+<style>
+.mdc-drawer {
+  width: {{ sidebar_width }}px !important;
+}
+.mdc-drawer.mdc-drawer--open:not(.mdc-drawer--closing)+.mdc-drawer-app-content {
+  margin-left: {{ sidebar_width }}px !important;
+}
+</style>
+
 <!-- Template JS -->
 {% for src in template_resources['js'].values() %}
 <script src="{{ src }}"></script>
