@@ -26,7 +26,7 @@ def test_alert_type_change(alert_type, document, comm):
     assert set(alert.css_classes) == {"alert", f"alert-{alert_type}"}
     assert set(model.css_classes) == {"alert", f"alert-{alert_type}", "markdown"}
 
-    
+
 def test_existing_css_classes():
     """Test that an alert can change alert_type"""
     alert = Alert(text="This is some text", css_classes=["important"])
@@ -62,6 +62,6 @@ def test_all_view():
 
 
 if __name__.startswith("bokeh"):
-    pn.config.sizing_mode="stretch_width"
+    pn.extension(sizing_mode="stretch_width")
     test_all_view().servable()
     print("served")

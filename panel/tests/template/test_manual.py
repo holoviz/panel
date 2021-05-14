@@ -39,7 +39,6 @@ Inspect the app and verify that the issues of [Issue 1641]\
         theme=theme
     )
     vanilla.site="My Site"
-    pn.config.sizing_mode = "stretch_both"
 
 
     xs = np.linspace(0, np.pi)
@@ -115,7 +114,6 @@ Inspect the app and verify that the issues of [Issue 1641]\
         theme=theme
     )
     vanilla.main_max_width="1100px"
-    pn.config.sizing_mode = "stretch_both"
 
     xs = np.linspace(0, np.pi)
     freq = pn.widgets.FloatSlider(name="Frequency", start=0, end=10, value=2)
@@ -204,5 +202,6 @@ def _get_app():
     return template_func(template_class=template_class, theme=theme)
 
 if __name__.startswith("bokeh"):
+    pn.extension(sizing_mode="stretch_width")
     _get_app().servable()
     # test_template_with_no_sidebar().servable()
