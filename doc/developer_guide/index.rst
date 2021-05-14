@@ -88,7 +88,7 @@ created you can activate it with:
 .. code-block:: sh
 
     conda activate panel_dev
-    
+
 
 .. _devguide_python_setup:
 
@@ -142,6 +142,16 @@ Next Steps
 You will likely want to check out the :ref:`devguide_testing` guide. Meanwhile,
 if you have any problems with the steps here, please `contact the developers`_.
 
+Useful Links
+------------
+
+-  `Dev version of Panel Site`_
+    -  Use this to explore not released features and docs
+-  `Panel master branch on Binder`_
+    -  Use this to quickly explore and manually test in a fresh environment with all requirements installed.
+    -  Replace ``master`` with ``name-of-other-branch`` for other branches.
+
+
 .. _Anaconda: https://anaconda.com/downloads
 .. _contact the developers: https://gitter.im/pyviz/pyviz
 .. _conda package manager: https://conda.io/docs/intro.html
@@ -152,6 +162,8 @@ if you have any problems with the steps here, please `contact the developers`_.
 .. _Installing Git: https://git-scm.com/book/en/v2/Getting-Started-Installing-Git
 .. _Pro Git Book: https://git-scm.com/book/en/v2
 .. _Bokeh developer guide: https://docs.bokeh.org/en/latest/docs/dev_guide/setup.html
+.. _Dev version of Panel Site: https://pyviz-dev.github.io/panel
+.. _Panel master branch on Binder: https://mybinder.org/v2/gh/holoviz/panel/master?urlpath=lab/tree/examples
 
 
 .. toctree::
