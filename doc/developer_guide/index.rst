@@ -148,7 +148,7 @@ Useful Links
 -  `Dev version of Panel Site`_
     -  Use this to explore new, not yet released features and docs
 -  `Panel master branch on Binder`_
-    -  Use this to quickly explore and manually test in a fresh environment with all requirements installed.
+    -  Use this to quickly explore and manually test the newest panel features in a fresh environment with all requirements installed.
     -  Replace ``master`` with ``name-of-other-branch`` for other branches.
 
 
