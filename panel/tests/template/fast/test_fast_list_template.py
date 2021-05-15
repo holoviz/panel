@@ -21,9 +21,8 @@ def test_template_theme_parameter():
 
 def test_app():
     app = FastListTemplate(
-        title="FastListTemplate",
         site="Panel",
-        site_url="https://panel.holoviz.org",
+        title="FastListTemplate",
     )
     app.main[:] = [
         pn.pane.Markdown(INFO, sizing_mode="stretch_both"),

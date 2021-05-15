@@ -18,6 +18,7 @@ from jinja2.environment import Template as _Template
 from six import string_types
 from pyviz_comms import JupyterCommManager as _JupyterCommManager
 
+from ..application import Application
 from ..config import _base_config, config, panel_extension
 from ..io.model import add_to_doc
 from ..io.notebook import render_template
@@ -330,8 +331,7 @@ class TemplateActions(ReactiveHTML):
         'close_modal': ["document.getElementById('pn-Modal').style.display = 'none'"],
     }
 
-
-class BasicTemplate(BaseTemplate):
+class BasicTemplate(Application, BaseTemplate):
     """
     BasicTemplate provides a baseclass for templates with a basic
     organization including a header, sidebar and main area. Unlike the
@@ -557,9 +557,10 @@ class BasicTemplate(BaseTemplate):
         for css in base_css:
             tmpl_name = name
             for cls in type(self).__mro__[1:-5]:
-                tmpl_css = cls._css if isinstance(cls._css, list) else [cls._css]
-                if css in tmpl_css:
-                    tmpl_name = cls.__name__.lower()
+                if hasattr(cls, "_css"):
+                    tmpl_css = cls._css if isinstance(cls._css, list) else [cls._css]
+                    if css in tmpl_css:
+                        tmpl_name = cls.__name__.lower()
             css_file = os.path.basename(css)
             if (BUNDLE_DIR / tmpl_name / css_file).is_file():
                 css_files[f'base_{css_file}'] = dist_path + f'bundled/{tmpl_name}/{css_file}'
@@ -574,9 +575,10 @@ class BasicTemplate(BaseTemplate):
         for js in base_js:
             tmpl_name = name
             for cls in type(self).__mro__[1:-5]:
-                tmpl_js = cls._js if isinstance(cls._js, list) else [cls._js]
-                if js in tmpl_js:
-                    tmpl_name = cls.__name__.lower()
+                if hasattr(cls, "_js"):
+                    tmpl_js = cls._js if isinstance(cls._js, list) else [cls._js]
+                    if js in tmpl_js:
+                        tmpl_name = cls.__name__.lower()
             js = os.path.basename(js)
             if (BUNDLE_DIR / tmpl_name / js).is_file():
                 js_files[f'base_{js}'] = dist_path + f'bundled/{tmpl_name}/{js}'

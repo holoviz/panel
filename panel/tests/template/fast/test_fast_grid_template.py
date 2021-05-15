@@ -146,7 +146,9 @@ def _fast_button_card():
 
 def test_app():
     app = FastGridTemplate(
+        site="Panel",
         title="FastGridTemplate",
+        thumbnail="https://panel.holoviz.org/_static/logo_horizontal.png",
     )
     app.main[0:6, 0:6] = pn.pane.Markdown(INFO, sizing_mode="stretch_both")
     app.main[0:6, 6:12] = pn.pane.HoloViews(_create_hvplot(), sizing_mode="stretch_both")

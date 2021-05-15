@@ -2,7 +2,9 @@
 These that verify Templates are working correctly.
 """
 from distutils.version import LooseVersion
+from panel.layout.base import ListLike
 from panel.layout.grid import GridSpec
+from panel.application import Application, User
 
 try:
     import holoviews as hv
@@ -18,16 +20,16 @@ latest_param = pytest.mark.skipif(LooseVersion(param.__version__) < '1.10.0a4',
 from panel.layout import Row
 from panel.pane import HoloViews, Markdown
 from panel.template import (
-    BootstrapTemplate, GoldenTemplate, MaterialTemplate, ReactTemplate,
+    BootstrapTemplate, FastListTemplate, FastGridTemplate, GoldenTemplate, MaterialTemplate, ReactTemplate,
     Template, VanillaTemplate
 )
-from panel.template.base import BasicTemplate
+from panel.template.base import BaseTemplate, BasicTemplate
 from panel.widgets import FloatSlider
 
 from .util import hv_available
 
-TEMPLATES = [BootstrapTemplate, GoldenTemplate, MaterialTemplate, ReactTemplate, VanillaTemplate]
-LIST_TEMPLATES = [item for item in TEMPLATES if item is not ReactTemplate]
+TEMPLATES = [BootstrapTemplate, GoldenTemplate, MaterialTemplate, ReactTemplate, VanillaTemplate, FastListTemplate, FastGridTemplate]
+LIST_TEMPLATES = [item for item in TEMPLATES if item not in [ReactTemplate, FastGridTemplate]]
 
 template = """
 {% extends base %}
@@ -199,6 +201,23 @@ def test_constructor(template_class):
     items = [item]
     template_class(header=item, sidebar=item, main=item)
     template_class(header=items, sidebar=items, main=items)
+
+@pytest.mark.parametrize(["template_class"], [(item,) for item in TEMPLATES])
+def test_template_is_application_and_base_template(template_class):
+    assert issubclass(template_class, Application)
+    assert issubclass(template_class, BaseTemplate)
+
+    # When
+    template = template_class(
+        title = "App",
+        author = "Philipp"
+    )
+    # Then
+    assert isinstance(template.author, User)
+    assert template.author.name=="Philipp"
+
+    assert isinstance(template.header, ListLike)
+    assert template.title=="App"
 
 def test_constructor_grid_spec():
     item = Markdown("Hello World")
