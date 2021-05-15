@@ -34,7 +34,14 @@
         import { parseColorHexRGB } from "https://unpkg.com/@microsoft/fast-colors@5.1.0";
         import { createColorPalette } from "https://unpkg.com/@microsoft/fast-components@1.13.0";
 
+        function standardize_color(str){
+            var ctx = document.createElement('canvas').getContext('2d');
+            ctx.fillStyle = str;
+            return ctx.fillStyle;
+          }
+
         function setAccentColor(color, selector){
+            color = standardize_color(color);
             const accent = color;
             const palette = createColorPalette(parseColorHexRGB(accent));
             const provider = document.querySelector(selector);
