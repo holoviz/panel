@@ -17,7 +17,7 @@ body {
     font-size: 16px;
     line-height: normal;
     font-family: aktiv-grotesk, "Segoe UI", Arial, Helvetica, sans-serif;
-    overflow-y: scroll;
+    overflow-y: auto;
 }
 
 .header {
@@ -130,3 +130,11 @@ footer {
     text-align: center;
     font-size: .75rem;
 }
+
+::-webkit-scrollbar { width: 12px; height: 3px;}
+::-webkit-scrollbar-button {  background-color: var( --neutral-fill-rest); }
+::-webkit-scrollbar-track {  background-color: var( --neutral-fill-rest);}
+::-webkit-scrollbar-track-piece { background-color: var(--background-color)}
+::-webkit-scrollbar-thumb { height: 50px; background-color: var( --neutral-fill-rest); border-radius: var(--corner-radius);}
+::-webkit-scrollbar-corner { background-color: var();}
+::-webkit-resizer { background-color: var( --neutral-fill-rest);}

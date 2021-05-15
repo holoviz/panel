@@ -70,7 +70,7 @@ def test_get_manual_test_app():
         # background_image_url="https://ih1.redbubble.net/image.875683605.8623/ur,mug_lifestyle,tall_portrait,750x1000.jpg",
         resources=_get_applications(),
         target="_blank",
-        accent_base_color="orange",
+        accent_base_color="green",
         footer="Made with &#x1f40d;, &#10084;&#65039; and <fast-anchor href='https://panel.holoviz.org' appearance='hypertext' target='_blank'>Panel</fast-anchor>."
     )
 
