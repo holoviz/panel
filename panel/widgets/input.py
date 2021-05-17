@@ -19,6 +19,7 @@ from bokeh.models.widgets import (
     FileInput as _BkFileInput, TextAreaInput as _BkTextAreaInput,
     NumericInput as _BkNumericInput)
 
+from ..config import config
 from ..layout import Column
 from ..util import param_reprs, as_unicode
 from .base import Widget, CompositeWidget
@@ -368,6 +369,14 @@ class _SpinnerBase(_NumericInputBase):
             del msg['value_throttled']
 
         return super()._update_model(events, msg, root, model, doc, comm)
+
+    def _process_property_change(self, msg):
+        if config.throttled:
+            if "value" in msg:
+                del msg["value"]
+            if "value_throttled" in msg:
+                msg["value"] = msg["value_throttled"]
+        return super()._process_property_change(msg)
 
 
 class IntInput(_SpinnerBase, _IntInputBase):

@@ -57,6 +57,14 @@ class _SliderBase(Widget):
         return '{cls}({params})'.format(cls=type(self).__name__,
                                         params=', '.join(param_reprs(self, ['value_throttled'])))
 
+    def _process_property_change(self, msg):
+        if config.throttled:
+            if "value" in msg:
+                del msg["value"]
+            if "value_throttled" in msg:
+                msg["value"] = msg["value_throttled"]
+        return super()._process_property_change(msg)
+
     def _update_model(self, events, msg, root, model, doc, comm):
         if 'value_throttled' in msg:
             del msg['value_throttled']
@@ -143,7 +151,7 @@ class IntSlider(ContinuousSlider):
     _rename = {'name': 'title'}
 
     def _process_property_change(self, msg):
-        msg = super(_SliderBase, self)._process_property_change(msg)
+        msg = super()._process_property_change(msg)
         if 'value' in msg:
             msg['value'] = msg['value'] if msg['value'] is None else int(msg['value'])
         if 'value_throttled' in msg:
@@ -174,7 +182,7 @@ class DateSlider(_SliderBase):
         super().__init__(**params)
 
     def _process_property_change(self, msg):
-        msg = super(_SliderBase, self)._process_property_change(msg)
+        msg = super()._process_property_change(msg)
         if 'value' in msg:
             msg['value'] = value_as_date(msg['value'])
         if 'value_throttled' in msg:
@@ -390,7 +398,7 @@ class IntRangeSlider(RangeSlider):
     step = param.Integer(default=1)
 
     def _process_property_change(self, msg):
-        msg = super(RangeSlider, self)._process_property_change(msg)
+        msg = super()._process_property_change(msg)
         if 'value' in msg:
             msg['value'] = tuple([v if v is None else int(v)
                                   for v in msg['value']])
@@ -591,7 +599,9 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
                                       css_classes=['slider-edit'])
         self._end_edit = FloatInput(min_width=50, margin=(0, 0, 0, 10), format=self.format,
                                     css_classes=['slider-edit'])
+        self._start_edit.param.watch(self._sync_start_value, 'value')
         self._start_edit.param.watch(self._sync_start_value, 'value_throttled')
+        self._end_edit.param.watch(self._sync_end_value, 'value')
         self._end_edit.param.watch(self._sync_end_value, 'value_throttled')
 
         sep = StaticText(value='...', margin=(0, 2, 0, 2), align='end')
@@ -609,7 +619,6 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
         } else if (cb_obj.value > slider.end) {
           slider.end = cb_obj.value
         }
-        slider.value = [cb_obj.value, slider.value[1]]
         """)
         self._end_edit.jscallback(args={'slider': self._slider}, value="""
         if (cb_obj.value < slider.start) {
@@ -617,7 +626,6 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
         } else if (cb_obj.value > slider.end) {
           slider.end = cb_obj.value
         }
-        slider.value = [slider.value[0], cb_obj.value]
         """)
         self._update_editable()
         self._update_layout()
@@ -676,13 +684,15 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
             self.param.set_param(**{event.name: event.new})
 
     def _sync_start_value(self, event):
+        end = self.value[1] if event.name == 'value' else self.value_throttled[1]
         with param.edit_constant(self):
             self.param.set_param(
-                **{event.name: (event.new, self.value_throttled[1])}
+                **{event.name: (event.new, end)}
             )
 
     def _sync_end_value(self, event):
+        start = self.value[0] if event.name == 'value' else self.value_throttled[0]
         with param.edit_constant(self):
             self.param.set_param(
-                **{event.name: (self.value_throttled[0], event.new)}
+                **{event.name: (start, event.new)}
             )
