@@ -29,6 +29,8 @@ class MaterialTemplate(BasicTemplate):
     """
     MaterialTemplate is built on top of Material web components.
     """
+    sidebar_width = param.Integer(370, doc="""
+        The width of the sidebar in pixels. Default is 370.""")
 
     _actions = param.ClassSelector(default=MaterialTemplateActions(), class_=TemplateActions)
 
@@ -170,7 +172,7 @@ class MaterialDarkTheme(DarkTheme):
     """
 
     css = param.Filename(default=pathlib.Path(__file__).parent / 'dark.css')
-    
+
     bokeh_theme = param.ClassSelector(class_=(_BkTheme, str),
                                       default=_BkTheme(json=MATERIAL_DARK_THEME))
 

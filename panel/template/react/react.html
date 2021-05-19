@@ -32,6 +32,12 @@
 {% for src in template_resources['js_modules'].values() %}
 <script src="{{ src }}" type="module"></script>
 {% endfor %}
+
+<style>
+#sidebar {
+  width: {{ sidebar_width }}px;
+}
+</style>
 {% endblock %}
 
 <!-- goes in body -->
@@ -88,7 +94,7 @@
     </div>
     {% endif %}
 
-    <div class="main" id="main"{% if nav %} style="margin-left: 300px;"{% endif %}>
+    <div class="main" id="main"{% if nav %} style="margin-left: {{ sidebar_width }}px;"{% endif %}>
       {% if main_max_width %}
       <div style="margin-left: auto; margin-right: auto;max-width: {{main_max_width}}">
       {% endif %}
@@ -116,14 +122,14 @@
 <script>
   function openNav() {
     document.getElementById("sidebar").style.left = 0;
-    document.getElementById("main").style.marginLeft = "300px";
+    document.getElementById("main").style.marginLeft = "{{ sidebar_width + 30 }}px";
     document.getElementById("sidebar-button").onclick = closeNav;
     var interval = setInterval(function () { window.dispatchEvent(new Event('resize')); }, 10);
     setTimeout(function () { clearInterval(interval) }, 210)
   }
 
   function closeNav() {
-    document.getElementById("sidebar").style.left = "-300px";
+    document.getElementById("sidebar").style.left = "-{{ sidebar_width + 30 }}px";
     document.getElementById("main").style.marginLeft = 0;
     document.getElementById("sidebar-button").onclick = openNav;
     var interval = setInterval(function () { window.dispatchEvent(new Event('resize')); }, 10);

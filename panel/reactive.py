@@ -410,7 +410,7 @@ class Reactive(Syncable, Viewable):
         self._links.append(link)
         return cb
 
-    def controls(self, parameters=[], jslink=True):
+    def controls(self, parameters=[], jslink=True, **kwargs):
         """
         Creates a set of widgets which allow manipulating the parameters
         on this instance. By default all parameters which support
@@ -424,6 +424,9 @@ class Reactive(Syncable, Viewable):
         jslink: bool
            Whether to use jslinks instead of Python based links.
            This does not allow using all types of parameters.
+        kwargs: dict
+           Additional kwargs to pass to the Param pane(s) used to
+           generate the controls widgets.
 
         Returns
         -------
@@ -442,12 +445,12 @@ class Reactive(Syncable, Viewable):
 
         params = [p for p in linkable if p not in Viewable.param]
         controls = Param(self.param, parameters=params, default_layout=WidgetBox,
-                         name='Controls')
+                         name='Controls', **kwargs)
         layout_params = [p for p in linkable if p in Viewable.param]
         if 'name' not in layout_params and self._rename.get('name', False) is not None and not parameters:
             layout_params.insert(0, 'name')
         style = Param(self.param, parameters=layout_params, default_layout=WidgetBox,
-                      name='Layout')
+                      name='Layout', **kwargs)
         if jslink:
             for p in params:
                 widget = controls._widgets[p]

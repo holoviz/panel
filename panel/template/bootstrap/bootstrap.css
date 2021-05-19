@@ -12,20 +12,25 @@ body {
 }
 
 #sidebar {
-  padding: 15px;
+  padding-top: 15px;
+  padding-bottom: 15px;
+  padding-left: 5px;
+  padding-right: 10px;
   transition: all 0.2s cubic-bezier(0.945, 0.020, 0.270, 0.665);
   transform-origin: center left; /* Set the transformed position of sidebar to center left side. */
   overflow-y: scroll;
 }
-
 #sidebar.active {
-  margin-left: -16.7%;
+  width: 0px;
+  overflow-y: hidden;
 }
 
 #main {
   overflow-y: scroll;
+  padding-right: 20px;
   padding-bottom: 20px;
-  padding-right: 30px;
+  padding-top: 10px;
+  padding-left: 10px;
 }
 
 #sidebarCollapse {
@@ -64,6 +69,11 @@ a.navbar-brand {
 .app-header {
   display: contents;
   padding-left: 10px;
+}
+
+.app-header a.title:hover {
+  text-decoration: none;
+  color: white;
 }
 
 img.app-logo {

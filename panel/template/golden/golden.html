@@ -92,13 +92,13 @@
               title: "Sidebar",
               model: '<div class="sidebar-contents">{% for doc in docs %}{% for root in doc.roots %}{% if "nav" in root.tags %} {{ embed(root) }} {% endif %}{% endfor %}{% endfor %}</div>'
             },
-            width: 20,
+            width: {{ sidebar_width }},
             isClosable: false
           },
 	  {% endif %}
           {
             type: 'stack',
-            width: {% if nav %}80{% else %}100{% endif %},
+            width: {% if nav %}100-{{ sidebar_width }}{% else %}100{% endif %},
             content: [
               {% for doc in docs %}
               {% for root in doc.roots %}

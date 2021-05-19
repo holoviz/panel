@@ -26,7 +26,7 @@ def test_perspective_int_cols():
     assert model.sort == [['0', 'desc']]
 
     psp2 = Perspective(data)
-    
+
     psp2._process_events({
         'columns': ['0'],
         'row_pivots': ['0'],
@@ -42,3 +42,36 @@ def test_perspective_int_cols():
     assert psp2.aggregates == {0: 'mean'}
     assert psp2.sort == [[0, 'desc']]
     assert psp2.filters == [[0, '==', 'None']]
+
+def test_perspective_can_drag_to_filter():
+    # Given
+    msg = {'filters': [['Curve', '==', None, 'integer', 'sum']]}
+    # When
+    actual = Perspective()._process_property_change(msg)
+    # Then
+    assert actual == msg
+
+def test_perspective_can_filter_to_value():
+    # Given
+    msg = {'filters': [['Curve', '==', 4]]}
+    # When
+    actual = Perspective()._process_property_change(msg)
+    # Then
+    assert actual == msg
+
+def test_perspective_can_drag_to_sort():
+    # Given
+    msg = {'sort': [['Curve']]}
+    # When
+    actual = Perspective()._process_property_change(msg)
+    # Then
+    assert actual == msg
+
+def test_perspective_can_sort_desc():
+    # Given
+    msg = {'sort': [['Curve', 'desc']]}
+    # When
+    actual = Perspective()._process_property_change(msg)
+    # Then
+    assert actual == msg
+

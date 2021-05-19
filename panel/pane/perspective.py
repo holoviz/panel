@@ -391,9 +391,9 @@ class Perspective(PaneBase, ReactiveData):
             if msg.get(prop):
                 msg[prop] = [self._as_digit(col) for col in msg[prop]]
         if msg.get('sort'):
-            msg['sort'] = [[self._as_digit(col), d] for col, d in msg['sort']]
+            msg['sort'] = [[self._as_digit(col), *args] for col, *args in msg['sort']]
         if msg.get('filters'):
-            msg['filters'] = [[self._as_digit(col), e, val] for col, e, val in msg['filters']]
+            msg['filters'] = [[self._as_digit(col), *args] for col, *args in msg['filters']]
         if msg.get('aggregates'):
             msg['aggregates'] = {self._as_digit(col): agg for col, agg in msg['aggregates'].items()}
         return msg
