@@ -164,7 +164,7 @@
      let ls = {};
      if (window.localStorage) {
          try {
-             ls = JSON.parse(window.localStorage.getItem("rgl-7")) || {};
+             ls = JSON.parse(window.localStorage.getItem(window.location)) || {};
          } catch (e) {
              /*Ignore*/
          }
@@ -176,7 +176,7 @@
      if (window.localStorage) {
 
          window.localStorage.setItem(
-             "rgl-7",
+             window.location,
              JSON.stringify({
                  [key]: value
              })
