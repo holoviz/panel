@@ -170,7 +170,7 @@
      let ls = {};
      if (window.localStorage) {
          try {
-             ls = JSON.parse(window.localStorage.getItem(window.location)) || {};
+             ls = JSON.parse(window.localStorage.getItem(window.location.href)) || {};
          } catch (e) {
              /*Ignore*/
          }
@@ -182,7 +182,7 @@
      if (window.localStorage) {
 
          window.localStorage.setItem(
-             window.location,
+             window.location.href,
              JSON.stringify({
                  [key]: value
              })
