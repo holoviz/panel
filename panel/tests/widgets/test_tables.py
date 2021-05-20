@@ -194,6 +194,8 @@ def test_hierarchical_index(document, comm):
     assert isinstance(agg2, MinAggregator)
 
 
+
+
 def test_none_table(document, comm):
     table = DataFrame(value=None)
     assert table.indexes == []
@@ -392,6 +394,19 @@ def test_tabulator_styling(document, comm):
         3: {1: ['color: red']},
         4: {1: ['color: red']}
     }
+
+def test_tabulator_empty_table(document, comm):
+    value_df = makeMixedDataFrame()
+    empty_df = pd.DataFrame([], columns=value_df.columns)
+    table = Tabulator(empty_df)
+
+    model = table.get_root(document, comm)
+
+    assert table.value.shape == empty_df.shape
+
+    table.stream(value_df, follow=True)
+
+    assert table.value.shape == value_df.shape
 
 def test_tabulator_stream_series(document, comm):
     df = makeMixedDataFrame()
