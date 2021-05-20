@@ -1,7 +1,14 @@
-"""The site module contains definitions of models like User and Application."""
+"""The site module contains definitions of models like User and Application.
+
+The models defined in this module can for example be used for
+
+- Galleries
+- Menus
+- Governance. I.e. restricting access to certain applications for specific users.
+- And much more.
+"""
 import uuid
 
-import toml
 import yaml
 
 import param
