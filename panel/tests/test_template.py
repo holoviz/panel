@@ -2,7 +2,6 @@
 These that verify Templates are working correctly.
 """
 from distutils.version import LooseVersion
-from panel.layout.base import ListLike
 from panel.layout.grid import GridSpec
 
 try:
@@ -22,7 +21,7 @@ from panel.template import (
     BootstrapTemplate, FastListTemplate, FastGridTemplate, GoldenTemplate, MaterialTemplate, ReactTemplate,
     Template, VanillaTemplate
 )
-from panel.template.base import BaseTemplate, BasicTemplate
+from panel.template.base import BasicTemplate
 from panel.widgets import FloatSlider
 
 from .util import hv_available
