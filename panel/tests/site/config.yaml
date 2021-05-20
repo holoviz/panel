@@ -1,3 +1,4 @@
+---
 variables:
   BOKEH_LOG_LEVEL: debug
   SCRIPT: setup.py

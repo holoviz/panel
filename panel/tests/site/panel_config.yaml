@@ -1,3 +1,4 @@
+---
 panel:
   variables:
     BOKEH_LOG_LEVEL: debug
