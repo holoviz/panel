@@ -1310,7 +1310,14 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
             context[parameter] = value
             if parameter in self._child_names:
                 context[f'{parameter}_names'] = self._child_names[parameter]
-        html = template.render(context)
+        try:
+            html = template.render(context)
+        except Exception as e:
+            raise RuntimeError(
+                f"{type(self).__name__} could not render "
+                f"template, errored with:\n\n{type(e).__name__}: {e}.\n"
+                f"Full template:\n\n{template_string}"
+            )
 
         # Parse templated HTML
         parser = ReactiveHTMLParser(self.__class__, template=False)

@@ -81,6 +81,10 @@ class ReactiveHTMLParser(HTMLParser):
         elif nloops:
             loop = [loop for loop in (list_loop, values_loop, items_loop) if loop][0]
             var, obj = loop[0]
+            if var in self.cls.param:
+                raise ValueError(f'Loop variable {var} clashes with parameter name. '
+                                 'Ensure loop variables have a unique name. Relevant '
+                                 f'template section:\n\n{data}')
             self.loop_map[var] = obj
 
         if '{% for ' in data:
