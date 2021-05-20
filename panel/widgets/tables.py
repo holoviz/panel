@@ -28,10 +28,6 @@ from .input import TextInput
 
 class BaseTable(ReactiveData, Widget):
 
-    alignment = param.ClassSelector(default={}, class_=(dict, str), doc="""
-        A mapping from column name to alignment or a fixed column
-        alignment, which should be one of 'left', 'center', 'right'.""")
-
     editors = param.Dict(default={}, doc="""
         Bokeh CellEditor to use for a particular column
         (overrides the default chosen based on the type).""")
@@ -48,6 +44,10 @@ class BaseTable(ReactiveData, Widget):
 
     show_index = param.Boolean(default=True, doc="""
         Whether to show the index column.""")
+
+    text_align = param.ClassSelector(default={}, class_=(dict, str), doc="""
+        A mapping from column name to alignment or a fixed column
+        alignment, which should be one of 'left', 'center', 'right'.""")
 
     titles = param.Dict(default={}, doc="""
         A mapping from column name to a title to override the name with.""")
@@ -133,10 +133,10 @@ class BaseTable(ReactiveData, Widget):
                 formatter = StringFormatter()
                 editor = StringEditor()
 
-            if isinstance(self.alignment, str):
-                formatter.text_align = self.alignment
-            elif col in self.alignment:
-                formatter.text_align = self.alignment[col]
+            if isinstance(self.text_align, str):
+                formatter.text_align = self.text_align
+            elif col in self.text_align:
+                formatter.text_align = self.text_align[col]
 
             if col in self.editors and not isinstance(self.editors[col], (dict, str)):
                 editor = self.editors[col]
@@ -1014,10 +1014,10 @@ class Tabulator(BaseTable):
             ]
             col_dict = {'field': column.field}
 
-            if isinstance(self.alignment, str):
-                col_dict['hozAlign'] = self.alignment
-            elif column.field in self.alignment:
-                col_dict['hozAlign'] = self.alignment[column.field]
+            if isinstance(self.text_align, str):
+                col_dict['hozAlign'] = self.text_align
+            elif column.field in self.text_align:
+                col_dict['hozAlign'] = self.text_align[column.field]
             formatter = self.formatters.get(column.field)
             if isinstance(formatter, str):
                 col_dict['formatter'] = formatter
