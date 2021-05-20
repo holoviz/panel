@@ -201,23 +201,6 @@ def test_constructor(template_class):
     template_class(header=item, sidebar=item, main=item)
     template_class(header=items, sidebar=items, main=items)
 
-@pytest.mark.parametrize(["template_class"], [(item,) for item in TEMPLATES])
-def test_template_is_application_and_base_template(template_class):
-    assert issubclass(template_class, Application)
-    assert issubclass(template_class, BaseTemplate)
-
-    # When
-    template = template_class(
-        title = "App",
-        author = "Philipp"
-    )
-    # Then
-    assert isinstance(template.author, User)
-    assert template.author.name=="Philipp"
-
-    assert isinstance(template.header, ListLike)
-    assert template.title=="App"
-
 def test_constructor_grid_spec():
     item = Markdown("Hello World")
     grid = GridSpec(ncols=12)
