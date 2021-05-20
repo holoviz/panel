@@ -4,7 +4,6 @@ These that verify Templates are working correctly.
 from distutils.version import LooseVersion
 from panel.layout.base import ListLike
 from panel.layout.grid import GridSpec
-from panel.application import Application, User
 
 try:
     import holoviews as hv

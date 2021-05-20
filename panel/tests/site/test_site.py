@@ -1,4 +1,9 @@
-from panel.application import _BaseModel, User, Application
+import pathlib
+
+from panel.site import Application, User, _BaseModel
+
+ROOT = pathlib.Path(__file__).parent
+SITE_YAML = ROOT.parent.parent.parent/"examples"/"site.yaml"
 
 def test_base_model():
     model = _BaseModel()
@@ -11,18 +16,18 @@ def test_base_model_with_arguments():
     # Given
     uid = "uid"
     name="model"
-    category = "Application"
+    area = ["Apps"]
     tags = ["holoviz", "panel"]
     resources = {
         "github": "https://panel.holoviz.org"
     }
     # When
-    model = _BaseModel(uid=uid, name=name, category=category, tags=tags, resources=resources)
+    model = _BaseModel(uid=uid, name=name, area=area, tags=tags, resources=resources)
 
     # Then
     assert model.uid == uid
     assert model.name == name
-    assert model.category == category
+    assert model.area == area
     assert model.tags == tags
     assert model.resources == resources
 
@@ -88,3 +93,7 @@ def test_can_create_application_with_arguments():
         resources = {"github": "https://github.com/holoviz/panel"},
         tags = ["awesome", "analytics", "apps"],
     )
+
+def test_can_read_example_site_yaml():
+    applications = Application.read(SITE_YAML)
+    assert applications

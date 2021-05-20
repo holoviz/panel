@@ -104,7 +104,9 @@ https://codepen.io/andybelldesign/pen/vMMYKJ */
     margin-right: 10px;
     fill: var(--neutral-foreground-rest);
 }
-
+.card-action.github-action svg {
+    color: var(--neutral-foreground-rest);
+}
 .card-image {
     height: 200px;
     width: 100%;

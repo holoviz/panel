@@ -18,7 +18,6 @@ from jinja2.environment import Template as _Template
 from six import string_types
 from pyviz_comms import JupyterCommManager as _JupyterCommManager
 
-from ..application import Application
 from ..config import _base_config, config, panel_extension
 from ..io.model import add_to_doc
 from ..io.notebook import render_template
@@ -331,7 +330,7 @@ class TemplateActions(ReactiveHTML):
         'close_modal': ["document.getElementById('pn-Modal').style.display = 'none'"],
     }
 
-class BasicTemplate(Application, BaseTemplate):
+class BasicTemplate(BaseTemplate):
     """
     BasicTemplate provides a baseclass for templates with a basic
     organization including a header, sidebar and main area. Unlike the

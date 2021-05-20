@@ -1,0 +1,58 @@
+panel:
+  variables:
+    BOKEH_LOG_LEVEL: debug
+    SCRIPT: setup.py
+  config:
+    users:
+      - uid: panel
+        name: HoloViz Panel
+        url: https://panel.holoviz.org
+        avatar: https://panel.holoviz.org/_static/logo_stacked.png
+      - uid: marcskovmadsen
+        name: Marc Skov Madsen
+        url: https://datamodelsanalytics.com
+        email: marc.skov.madsen@gmail.com
+        avatar: https://avatars.githubusercontent.com/u/42288570
+        resources:
+          github: https://github.com/MarcSkovMadsen
+          discourse: https://discourse.holoviz.org/u/marc
+      - uid: philippjfr
+        name: Philipp Rudiger
+        url: https://github.com/philippjfr
+        avatar: https://avatars.githubusercontent.com/u/1550771
+        resources:
+          github: https://github.com/philippjfr
+          discourse: https://discourse.holoviz.org/u/philippjfr
+    applications:
+        - uid: stocks_altair
+          name: Stocks Altair
+          servable: examples/gallery/apis/stocks_altair.ipynb
+          url: stocks-altair
+          author: philippjfr
+          owner: panel
+          description: An interactive stock price visualization app using Altair and YFinance
+          thumbnail: https://panel.holoviz.org/_images/stocks_altair.png
+          tags:
+            - Altair
+            - YFinance
+          resources:
+            github: https://github.com/holoviz/panel/blob/master/examples/gallery/apis/stocks_altair.ipynb
+            download: https://raw.githubusercontent.com/holoviz/panel/master/examples/gallery/apis/stocks_altair.ipynb
+            binder: https://mybinder.org/v2/gh/holoviz/panel/master?urlpath=lab/tree/examples/gallery/apis/stocks_altair.ipynb
+            documentation: https://panel.holoviz.org/gallery/apis/stocks_altair.html#apis-gallery-stocks-altair
+        - uid: stocks_hvplot
+          name: Stocks HvPlot
+          servable: examples/gallery/apis/stocks_hvplot.ipynb
+          url: stocks-hvplot
+          author: philippjfr
+          owner: panel
+          description: An interactive stock price visualization app using HvPlot and YFinance
+          thumbnail: https://panel.holoviz.org/_images/stocks_hvplot.png
+          tags:
+            - HvPlot
+            - YFinance
+          resources:
+            github: https://github.com/holoviz/panel/blob/master/examples/gallery/apis/stocks_hvplot.ipynb
+            download: https://raw.githubusercontent.com/holoviz/panel/master/examples/gallery/apis/stocks_hvplot.ipynb
+            binder: https://mybinder.org/v2/gh/holoviz/panel/master?urlpath=lab/tree/examples/gallery/apis/stocks_hvplot.ipynb
+            documentation: https://panel.holoviz.org/gallery/apis/stocks_altair.html#apis-gallery-stocks-hvplot
