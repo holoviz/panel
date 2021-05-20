@@ -82,14 +82,6 @@ class _BaseModel(param.Parameterized):
     ):
         return f"{self.__class__.name}(name='{self.name}')"
 
-    @classmethod
-    def create_from_toml(cls, path, clean_func=None):
-        """Returns a Dictionary of Models from the toml file specified by the path"""
-        config = toml.load(path)
-        if not clean_func:
-            clean_func = lambda x: x
-        return {key: cls(uid=key, **clean_func(value)) for key, value in config.items()}
-
 
 class User(_BaseModel):
     """A Model of a User
