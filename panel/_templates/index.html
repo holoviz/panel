@@ -87,7 +87,7 @@
     }
   </script>
   <style>
-    html {
+  html {
       height:100%;
   }
   html, #body-design-provider {
@@ -108,10 +108,15 @@
       font-family: aktiv-grotesk, "Segoe UI", Arial, Helvetica, sans-serif;
       overflow-y: scroll;
   }
-
+  .gallery-item:hover {
+      box-shadow: 0 1px 5px var(--neutral-focus);
+  }
+  .gallery-item {
+      cursor: pointer;
+  }
   .header {
     /* Photo by mnm.all on Unsplash */
-    background-image: url('https://preview.redd.it/9oi428ohy7t21.png?auto=webp&s=5051b77d33e85446b6492a1e02725c6729777d4f');
+    background-image: url('static/extensions/panel/images/index_background.png');
     background-size: cover;
     background-repeat: no-repeat;
     background-position: center;
@@ -255,7 +260,7 @@
         {% for item in sorted(items, key=lambda item: item[1:].replace("_", " ").title()) %}
         <li class="card">
             <a class="card-link" href=".{{ item }}" id="{{ item }}">
-            <fast-card>
+            <fast-card class="gallery-item">
                 <svg class="card-image" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-window" viewBox="0 0 16 16">
                   <path d="M2.5 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zm2-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm1 .5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
                   <path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2zm13 2v2H1V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zM2 14a1 1 0 0 1-1-1V6h14v7a1 1 0 0 1-1 1H2z"/>
