@@ -6,7 +6,7 @@ from bokeh.command.util import build_single_handler_application
 from bokeh.embed.bundle import extension_dirs
 from bokeh.embed.server import server_html_page_for_session
 from bokeh.protocol import Protocol
-from bokeh.protocol.exceptions import MessageError, ProtocolError, ValidationError
+from bokeh.protocol.exceptions import ProtocolError
 from bokeh.protocol.receiver import Receiver
 from bokeh.server.connection import ServerConnection
 from bokeh.server.contexts import ApplicationContext
@@ -16,8 +16,8 @@ from bokeh.server.views.multi_root_static_handler import MultiRootStaticHandler
 from bokeh.server.views.static_handler import StaticHandler
 from bokeh.server.views.ws import WSHandler
 from bokeh.server.auth_provider import NullAuth
-from bokeh.util.token import get_session_id, get_token_payload
-from tornado.web import StaticFileHandler, RequestHandler
+from bokeh.util.token import get_session_id
+from tornado.web import StaticFileHandler
 
 from ..config import config
 from ..util import edit_readonly
@@ -113,7 +113,6 @@ class PanelWSHandler(WSHandler):
             self.close()
             raise ProtocolError("No token received in subprotocol header")
 
-        payload = get_token_payload(token)
         session_id = get_session_id(token)
 
         await context.create_session_if_needed(session_id, self.request, token)
