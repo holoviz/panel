@@ -16,48 +16,69 @@ from bokeh.server.views.multi_root_static_handler import MultiRootStaticHandler
 from bokeh.server.views.static_handler import StaticHandler
 from bokeh.server.views.ws import WSHandler
 from bokeh.server.auth_provider import NullAuth
+from bokeh.util.token import get_session_id, get_token_payload
 from tornado.web import StaticFileHandler, RequestHandler
 
+from ..config import config
 from ..util import edit_readonly
 from .state import state
 from .resources import DIST_DIR, Resources
 
+_RESOURCES = None
 
-_sessions = {
+_APPS = {
+
 }
 
-_RESOURCES = None
+
+class ServerApplicationProxy:
+    """
+    A wrapper around the jupyter_server.serverapp.ServerWebApplication
+    to make it compatible with the expected BokehTornado application
+    API.
+    """
+
+    auth_provider = NullAuth()
+    generate_session_ids = True
+    sign_sessions = False
+    include_headers = None
+    include_cookies = None
+    exclude_headers = None
+    exclude_cookies = None
+    session_token_expiration = 300
+    secret_key = None
+    websocket_origins = '*'
+
+    def __init__(self, app, **kw):
+        self._app = app
+
+    def __getattr__(self, key):
+        return getattr(self._app, key)
 
 
 class PanelHandler(DocHandler):
 
-    def __init__(self, *args, **kw):
+    def __init__(self, app, request, *args, **kw):
         kw['application_context'] = None
         kw['bokeh_websocket_path'] = None
-        super().__init__(*args, **kw)
-        app = self.application
-        app.auth_provider = NullAuth()
-        app.generate_session_ids = True
-        app.sign_sessions = False
-        app.include_headers = None
-        app.include_cookies = None
-        app.exclude_headers = None
-        app.exclude_cookies = None
-        app.session_token_expiration = 300
-        app.secret_key = None
+        proxy = ServerApplicationProxy(app)
+        super().__init__(proxy, request, *args, **kw)
 
     def initialize(self, *args, **kws):
         pass
 
-    async def get(self, *args, **kwargs):
-        path = self.request.path.split('panel-preview/render/')[-1]
+    async def get(self, path, *args, **kwargs):
+        if path in _APPS:
+            app, context = _APPS[path]
+        else:
+            app = build_single_handler_application(path)
+            context = ApplicationContext(app, url=path)
+            context._loop = tornado.ioloop.IOLoop.current()
+            _APPS[path] = (app, context)
 
-        app = build_single_handler_application(path)
-        context = ApplicationContext(app, url=path)
-        context._loop = tornado.ioloop.IOLoop.current()
         self.application_context = context
 
-        _sessions[path] = session = await self.get_session()
+        session = await self.get_session()
 
         page = server_html_page_for_session(
             session,
@@ -73,23 +94,36 @@ class PanelHandler(DocHandler):
 
 class PanelWSHandler(WSHandler):
 
-    def __init__(self, *args, **kw):
+    def __init__(self, app, request, *args, **kw):
         kw['application_context'] = None
-        super().__init__(*args, **kw)
-        app = self.application
-        self.application.websocket_origins = '*'
+        proxy = ServerApplicationProxy(app)
+        super().__init__(proxy, request, *args, **kw)
 
-    def initialize(self, *args, **kws):
-        print(args)
+    def initialize(self, *args, **kwargs):
+        pass
 
-    async def open(self, *args, **kwargs):
+    async def open(self, path, *args, **kwargs):
+        _, context = _APPS[path]
+
+        token = self._token
+        if self.selected_subprotocol != 'bokeh':
+            self.close()
+            raise ProtocolError("Subprotocol header is not 'bokeh'")
+        elif token is None:
+            self.close()
+            raise ProtocolError("No token received in subprotocol header")
+
+        payload = get_token_payload(token)
+        session_id = get_session_id(token)
+
+        await context.create_session_if_needed(session_id, self.request, token)
+        session = context.get_session(session_id)
+
         try:
-            session = list(_sessions.values())[0] # FIX
             protocol = Protocol()
             self.receiver = Receiver(protocol)
             self.handler = ProtocolHandler()
-            self.connection = self.new_connection(
-                protocol, self.application_context, session)
+            self.connection = self.new_connection(protocol, context, session)
         except ProtocolError as e:
             self.close()
             raise e
@@ -104,37 +138,38 @@ class PanelWSHandler(WSHandler):
     def on_close(self):
         if self.connection is not None:
             self.connection.detach_session()
-        
+
 
 def _load_jupyter_server_extension(notebook_app):
     global RESOURCES
 
     base_url = notebook_app.web_app.settings["base_url"]
-    render_route = urljoin(base_url, r"panel-preview/render/(.*)\.ipynb")
-    ws_route = urljoin(base_url, r"panel-preview/render/(.*)/ws")
-    ext_route = urljoin(base_url, r"panel-preview/static/extensions/(.*)")
-    static_route = urljoin(base_url, r"panel-preview/static/(.*)") 
-    dist_route = urljoin(base_url, r"panel_dist/(.*)")
-    
+
+    # Configure Panel
     RESOURCES = Resources(
         mode="server", root_url=urljoin(base_url, 'panel-preview'),
         path_versioner=StaticHandler.append_version
     )
-
+    config.autoreload = True
     with edit_readonly(state):
         state.base_url = '/panel-preview/'
         state.rel_path = '/panel-preview'
 
-    print(extension_dirs)
 
+    # Set up handlers
     notebook_app.web_app.add_handlers(
         host_pattern=r".*$",
         host_handlers=[
-            (ext_route, MultiRootStaticHandler, dict(root=extension_dirs)),
-            (static_route, StaticHandler),
-            (ws_route, PanelWSHandler),
-            (render_route, PanelHandler, {}),
-            (dist_route, StaticFileHandler, dict(path=DIST_DIR))
+            (urljoin(base_url, r"panel-preview/static/extensions/(.*)"),
+             MultiRootStaticHandler, dict(root=extension_dirs)),
+            (urljoin(base_url, r"panel-preview/static/(.*)"),
+             StaticHandler),
+            (urljoin(base_url, r"panel-preview/render/(.*)/ws"),
+             PanelWSHandler),
+            (urljoin(base_url, r"panel-preview/render/(.*)"),
+             PanelHandler, {}),
+            (urljoin(base_url, r"panel_dist/(.*)"),
+             StaticFileHandler, dict(path=DIST_DIR))
         ]
     )
 
