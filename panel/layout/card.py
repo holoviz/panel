@@ -86,7 +86,7 @@ class Card(Column):
                 return
             else:
                 self._header = item = HTML(
-                    sizing_mode='stretch_width', margin=(2, 5), **params
+                    sizing_mode='stretch_width', **params
                 )
         else:
             item = panel(self.header)
