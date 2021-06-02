@@ -24,7 +24,7 @@
 .bk.card-button {
   background-color: transparent;
   position: absolute;
-  left: 6px;
+  left: 0.5em;
 }
 .bk.card-header-row {
   position: relative !important;
