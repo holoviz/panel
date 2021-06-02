@@ -389,7 +389,7 @@ class BaseTable(ReactiveData, Widget):
         """
         import pandas as pd
 
-        if self.value.index.max() is np.nan: # or self.value.size
+        if not np.isfinite(self.value.index.max()):
             value_index_start = 1
         else:
             value_index_start = self.value.index.max() + 1
