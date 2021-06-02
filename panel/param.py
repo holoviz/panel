@@ -455,6 +455,8 @@ class Param(PaneBase):
 
         def link(change, watchers=[watcher]):
             updates = {}
+            if p_name not in self._widgets:
+                return
             widget = self._widgets[p_name]
             if change.what == 'constant':
                 updates['disabled'] = change.new
