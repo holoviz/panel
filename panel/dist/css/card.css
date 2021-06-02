@@ -11,7 +11,6 @@
   border-radius: 0.25rem;
   display: flex;
   justify-content: space-between;
-  padding: 0 1.25rem 0 0;
   width: 100%;
 }
 .bk.accordion-header {
@@ -20,15 +19,12 @@
   border-radius: 0;
   display: flex;
   justify-content: space-between;
-  padding: 0 1.25rem 0 0;
   width: 100%;
 }
-p.bk.card-button {
+.bk.card-button {
   background-color: transparent;
-  font-size: 1.25rem;
-  font-weight: 700;
-  margin: 0;
-  margin-left: -15px;
+  position: absolute;
+  left: 6px;
 }
 .bk.card-header-row {
   position: relative !important;
@@ -38,6 +34,5 @@ p.bk.card-button {
   display: flex !important;
   font-size: 1.4em;
   font-weight: bold;
-  padding: 0.25em;
   position: relative !important;
 }
