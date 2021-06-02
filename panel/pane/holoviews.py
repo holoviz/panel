@@ -654,7 +654,11 @@ def link_axes(root_view, root_model):
 
             for sp in plots:
                 for callback in sp.callbacks:
-                    if not any(c in callback.models or c in callback.extra_models for c in changed):
+                    models = callback.models
+                    if hasattr(callback, 'extra_models'):
+                        # No more extra_models in HoloViews 2.0
+                        models += callback.extra_models
+                    if not any(c in models for c in changed):
                         continue
                     if 'x_range' in changed:
                         sp.handles['x_range'] = p.handles['x_range']
