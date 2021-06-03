@@ -42,7 +42,7 @@ export class CardView extends ColumnView {
     if (this.model.collapsible) {
       this.button_el = DOM.createElement("button", {type: "button", class: header_css_classes})
       const icon = DOM.createElement("div", {class: button_css_classes})
-      icon.innerHTML = this.model.collapsed ? "\u25b2" : "\u25bc"
+      icon.innerHTML = this.model.collapsed ? "\u25ba" : "\u25bc"
       this.button_el.appendChild(icon)
       this.button_el.style.backgroundColor = header_background != null ? header_background : ""
       header.el.style.backgroundColor = header_background != null ? header_background : ""
