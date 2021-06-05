@@ -3,6 +3,7 @@ from collections import OrderedDict
 
 from bokeh.models import Div as BkDiv, Slider as BkSlider, Column as BkColumn
 
+from panel import config
 from panel.widgets import (DateSlider, DateRangeSlider, DiscreteSlider,
                            FloatSlider, IntSlider, RangeSlider)
 
@@ -27,6 +28,16 @@ def test_float_slider(document, comm):
 
     slider.value = 0.3
     assert widget.value == 0.3
+
+    # Testing throttled mode
+    with config.set(throttled=True):
+        slider._process_events({'value': 0.4})
+        assert slider.value == 0.3  # no change
+        slider._process_events({'value_throttled': 0.4})
+        assert slider.value == 0.4
+
+        slider.value = 0.5
+        assert widget.value == 0.5
 
 
 def test_int_slider(document, comm):
@@ -55,6 +66,16 @@ def test_int_slider(document, comm):
     widget_2 = slider_2.get_root(document, comm=comm)
     assert widget_2.value == widget_2.start
 
+    # Testing throttled mode
+    with config.set(throttled=True):
+        slider._process_events({'value': 1})
+        assert slider.value == 0  # no change
+        slider._process_events({'value_throttled': 1})
+        assert slider.value == 1
+
+        slider.value = 2
+        assert widget.value == 2
+
 
 def test_range_slider(document, comm):
 
@@ -76,6 +97,16 @@ def test_range_slider(document, comm):
 
     slider.value = (0, 1)
     assert widget.value == (0, 1)
+
+    # Testing throttled mode
+    with config.set(throttled=True):
+        slider._process_events({'value': (1, 2)})
+        assert slider.value == (0, 1)  # no change
+        slider._process_events({'value_throttled': (1, 2)})
+        assert slider.value == (1, 2)
+
+        slider.value = (2, 3)
+        assert widget.value == (2, 3)
 
 
 def test_date_slider(document, comm):
@@ -107,6 +138,17 @@ def test_date_slider(document, comm):
     date_slider.value = date(2018, 9, 6)
     assert widget.value == 1536192000000
 
+    # Testing throttled mode
+    epoch_time = lambda dt: (dt - epoch).total_seconds() * 1000
+    with config.set(throttled=True):
+        date_slider._process_events({'value': epoch_time(datetime(2021, 5, 15))})
+        assert date_slider.value == date(2018, 9, 6)  # no change
+        date_slider._process_events({'value_throttled': epoch_time(datetime(2021, 5, 15))})
+        assert date_slider.value == date(2021, 5, 15)
+
+        date_slider.value = date(2021, 5, 12)
+        assert widget.value == 1620777600000
+
 
 def test_date_range_slider(document, comm):
     date_slider = DateRangeSlider(name='DateRangeSlider',
@@ -134,6 +176,22 @@ def test_date_range_slider(document, comm):
     date_slider.value = (datetime(2018, 9, 4), datetime(2018, 9, 6))
     assert widget.value == (1536019200000, 1536192000000)
 
+    # Testing throttled mode
+    epoch_time = lambda dt: (dt - epoch).total_seconds() * 1000
+    epoch_times = lambda *dts: tuple(map(epoch_time, dts))
+    with config.set(throttled=True):
+        date_slider._process_events(
+            {'value': epoch_times(datetime(2021, 2, 15), datetime(2021, 5, 15))}
+        )
+        assert date_slider.value == (datetime(2018, 9, 4), datetime(2018, 9, 6))  # no change
+        date_slider._process_events(
+            {'value_throttled': epoch_times(datetime(2021, 2, 15), datetime(2021, 5, 15))}
+        )
+        assert date_slider.value == (datetime(2021, 2, 15), datetime(2021, 5, 15))
+
+        date_slider.value = (datetime(2021, 2, 12), datetime(2021, 5, 12))
+        assert widget.value == (1613088000000, 1620777600000)
+
 
 def test_discrete_slider(document, comm):
     discrete_slider = DiscreteSlider(name='DiscreteSlider', value=1,
@@ -151,7 +209,7 @@ def test_discrete_slider(document, comm):
     assert widget.step == 1
     assert label.text == 'DiscreteSlider: <b>1</b>'
 
-    widget.value = 2
+    # widget.value = 2
     discrete_slider._slider._process_events({'value': 2})
     assert discrete_slider.value == 10
     discrete_slider._slider._process_events({'value_throttled': 2})
@@ -159,6 +217,16 @@ def test_discrete_slider(document, comm):
 
     discrete_slider.value = 100
     assert widget.value == 3
+
+    # Testing throttled mode
+    with config.set(throttled=True):
+        discrete_slider._slider._process_events({'value': 0.1})
+        assert discrete_slider.value == 100  # no change
+        discrete_slider._slider._process_events({'value_throttled': 0.1})
+        assert discrete_slider.value == 0.1
+
+        discrete_slider.value = 1
+        assert widget.value == 1
 
 
 def test_discrete_slider_label_update(document, comm):
@@ -191,7 +259,7 @@ def test_discrete_date_slider(document, comm):
     assert widget.step == 1
     assert label.text == 'DiscreteSlider: <b>2016-01-02</b>'
 
-    widget.value = 2
+    # widget.value = 2
     discrete_slider._slider._process_events({'value': 2})
     assert discrete_slider.value == dates['2016-01-03']
     discrete_slider._slider._process_events({'value_throttled': 2})
@@ -199,6 +267,16 @@ def test_discrete_date_slider(document, comm):
 
     discrete_slider.value = dates['2016-01-01']
     assert widget.value == 0
+
+    # Testing throttled mode
+    with config.set(throttled=True):
+        discrete_slider._slider._process_events({'value': 2})
+        assert discrete_slider.value == dates['2016-01-01']  # no change
+        discrete_slider._slider._process_events({'value_throttled': 2})
+        assert discrete_slider.value == dates['2016-01-03']
+
+        discrete_slider.value = dates['2016-01-02']
+        assert widget.value == 1
 
 
 def test_discrete_slider_options_dict(document, comm):
@@ -218,7 +296,7 @@ def test_discrete_slider_options_dict(document, comm):
     assert widget.step == 1
     assert label.text == 'DiscreteSlider: <b>1</b>'
 
-    widget.value = 2
+    # widget.value = 2
     discrete_slider._slider._process_events({'value': 2})
     assert discrete_slider.value == 10
     discrete_slider._slider._process_events({'value_throttled': 2})
@@ -226,3 +304,13 @@ def test_discrete_slider_options_dict(document, comm):
 
     discrete_slider.value = 100
     assert widget.value == 3
+
+    # Testing throttled mode
+    with config.set(throttled=True):
+        discrete_slider._slider._process_events({'value': 2})
+        assert discrete_slider.value == options['100']  # no change
+        discrete_slider._slider._process_events({'value_throttled': 2})
+        assert discrete_slider.value == options['10']
+
+        discrete_slider.value = options['1']
+        assert widget.value == 1

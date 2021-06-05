@@ -288,9 +288,10 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
   private _render_script(literal: any, id: string) {
     const scripts = []
     for (const elname of this.model.nodes) {
+      const elvar = elname.replace('-', '_')
       const script = `
-      const ${elname} = document.getElementById('${elname}-${id}')
-      if (${elname} == null) {
+      const ${elvar} = document.getElementById('${elname}-${id}')
+      if (${elvar} == null) {
         console.warn("DOM node '${elname}' could not be found. Cannot execute callback.")
         return
       }

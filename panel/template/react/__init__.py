@@ -32,6 +32,11 @@ class ReactTemplate(BasicTemplate):
 
     prevent_collision = param.Boolean(default=False, doc="Prevent collisions between items.")
 
+    save_layout = param.Boolean(default=False, doc="Save layout to local storage.")
+
+    sidebar_width = param.Integer(350, doc="""
+        The width of the sidebar in pixels. Default is 350.""")
+
     _css = pathlib.Path(__file__).parent / 'react.css'
 
     _template = pathlib.Path(__file__).parent / 'react.html'
@@ -77,7 +82,8 @@ class ReactTemplate(BasicTemplate):
             layouts.append(elem)
         self._render_variables['layouts'] = {'lg': layouts, 'md': layouts}
 
-    @depends('cols', 'breakpoints', 'row_height', 'compact', 'dimensions', 'prevent_collision', watch=True)
+    @depends('cols', 'breakpoints', 'row_height', 'compact', 'dimensions', 'prevent_collision',
+             'save_layout', watch=True)
     def _update_render_vars(self):
         self._render_variables['breakpoints'] = self.breakpoints
         self._render_variables['cols'] = self.cols
@@ -85,6 +91,7 @@ class ReactTemplate(BasicTemplate):
         self._render_variables['compact'] = self.compact
         self._render_variables['dimensions'] = self.dimensions
         self._render_variables['preventCollision'] = self.prevent_collision
+        self._render_variables['saveLayout'] = self.save_layout
 
 class ReactDefaultTheme(DefaultTheme):
 

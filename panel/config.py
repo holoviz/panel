@@ -106,6 +106,9 @@ class _config(_base_config):
         'scale_width', 'scale_height', 'scale_both', None], doc="""
         Specify the default sizing mode behavior of panels.""")
 
+    throttled = param.Boolean(default=False, doc="""
+        If sliders and inputs should be throttled until release of mouse.""")
+
     _comms = param.ObjectSelector(
         default='default', objects=['default', 'ipywidgets', 'vscode', 'colab'], doc="""
         Whether to render output in Jupyter with the default Jupyter

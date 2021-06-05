@@ -4,9 +4,4 @@
       "panel.io.jupyter_server_extension": true
     }
   },
-  "NotebookApp": {
-    "nbserver_extensions": {
-      "panel": true
-    }
-  }
 }
