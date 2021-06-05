@@ -11,6 +11,11 @@ _ROOT = pathlib.Path(__file__).parent
 
 
 class FastBaseTemplate(BasicTemplate):
+    accent_base_color = param.String(doc="""
+        Accent color override.""")
+
+    header_accent_base_color = param.String(doc="""
+        Optional header accent color override.""")
 
     theme_toggle = param.Boolean(default=True, doc="""
         If True a switch to toggle the Theme is shown.""")
@@ -52,8 +57,12 @@ class FastBaseTemplate(BasicTemplate):
 
         super().__init__(**params)
         theme = self._get_theme()
+        if "accent_base_color" not in params:
+            self.accent_base_color = theme.style.accent_base_color
         if "header_color" not in params:
             self.header_color = theme.style.header_color
+        if "header_accent_base_color" not in params:
+            self.header_accent_base_color = theme.style.header_accent_base_color
         if "header_background" not in params:
             self.header_background = theme.style.header_background
 
@@ -67,7 +76,12 @@ class FastBaseTemplate(BasicTemplate):
 
     def _update_vars(self):
         super()._update_vars()
-        self._render_variables["style"] = self._get_theme().style
+        style = self._get_theme().style
+        style.accent_base_color = self.accent_base_color
+        style.header_color = self.header_color
+        style.header_background = self.header_background
+        style.header_accent_base_color = self.header_accent_base_color
+        self._render_variables["style"] = style
         self._render_variables["theme_toggle"] = self.theme_toggle
         self._render_variables["theme"] = self.theme.__name__[:-5].lower()
         self._render_variables["sidebar_footer"] = self.sidebar_footer

@@ -11,7 +11,7 @@ from ..theme import DarkTheme, DefaultTheme
 _ROOT = pathlib.Path(__file__).parent / "css"
 
 COLLAPSED_SVG_ICON = """
-<svg style="stroke: #E62F63" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" slot="collapsed-icon">
+<svg style="stroke: var(--accent-fill-rest);" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" slot="collapsed-icon">
   <path d="M15.2222 1H2.77778C1.79594 1 1 1.79594 1 2.77778V15.2222C1 16.2041 1.79594 17 2.77778 17H15.2222C16.2041 17 17 16.2041 17 15.2222V2.77778C17 1.79594 16.2041 1 15.2222 1Z" stroke-linecap="round" stroke-linejoin="round"></path>
   <path d="M9 5.44446V12.5556" stroke-linecap="round" stroke-linejoin="round"></path>
   <path d="M5.44446 9H12.5556" stroke-linecap="round" stroke-linejoin="round"></path>
@@ -19,7 +19,7 @@ COLLAPSED_SVG_ICON = """
 """ # noqa
 
 EXPANDED_SVG_ICON = """
-<svg style="stroke: #E62F63" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" slot="expanded-icon">
+<svg style="stroke: var(--accent-fill-rest);" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" slot="expanded-icon">
   <path d="M15.2222 1H2.77778C1.79594 1 1 1.79594 1 2.77778V15.2222C1 16.2041 1.79594 17 2.77778 17H15.2222C16.2041 17 17 16.2041 17 15.2222V2.77778C17 1.79594 16.2041 1 15.2222 1Z" stroke-linecap="round" stroke-linejoin="round"></path>
   <path d="M5.44446 9H12.5556" stroke-linecap="round" stroke-linejoin="round"></path>
 </svg>
@@ -33,29 +33,18 @@ class FastStyle(param.Parameterized):
     to style the Fast Templates.
     """
 
-    accent_fill_active = param.Color(default="#E45A8C")
-    accent_fill_hover = param.Color(default="#DF3874")
-    accent_fill_rest = param.Color(default="#A01346")
-    accent_foreground_active = param.Color(default="#BA1651")
-    accent_foreground_cut = param.Color(default="#000000")
-    accent_foreground_hover = param.Color(default="#7A0F35")
-    accent_foreground_rest = param.Color(default="#A01346")
-
-    neutral_outline_active = param.Color(default="#D6D6D6")
-    neutral_outline_hover = param.Color(default="#979797")
-    neutral_outline_rest = param.Color(default="#BEBEBE")
-
-    accent_base_color = param.Color(default="#A01346")
-    background_color = param.Color(default="#ffffff")
+    accent_base_color = param.String(default="#A01346")
+    background_color = param.String(default="#ffffff")
     collapsed_icon = param.String(default=COLLAPSED_SVG_ICON)
     expanded_icon = param.String(default=EXPANDED_SVG_ICON)
-    color = param.Color(default="#00aa41")
-    neutral_fill_card_rest = param.Color(default="#F7F7F7")
-    neutral_focus = param.Color(default="#888888")
-    neutral_foreground_rest = param.Color(default="#2B2B2B")
+    color = param.String(default="#00aa41")
+    neutral_fill_card_rest = param.String(default="#F7F7F7")
+    neutral_focus = param.String(default="#888888")
+    neutral_foreground_rest = param.String(default="#2B2B2B")
 
-    header_background = param.Color(default="#00aa41")
-    header_color = param.Color(default="#ffffff")
+    header_background = param.String(default="#00aa41")
+    header_color = param.String(default="#ffffff")
+    header_accent_base_color = param.String(default="#A01346")
     font = param.String(default="Open Sans, sans-serif")
     font_url = param.String(default=FONT_URL)
 
@@ -128,21 +117,11 @@ class FastStyle(param.Parameterized):
 
 DEFAULT_STYLE = FastStyle()
 DARK_STYLE = FastStyle(
-    header_background="#313131",
-    header_color="#ffffff",
-    accent_fill_active="#DC2567",
-    accent_fill_hover="#E1477E",
-    accent_fill_rest="#C01754",
-    accent_foreground_active="#DF3874",
-    accent_foreground_cut="#000000",
-    accent_foreground_hover="#E55E8E",
-    accent_foreground_rest="#E1477E",
-    neutral_outline_active="#424242",
-    neutral_outline_hover="#808080",
-    neutral_outline_rest="#5A5A5A",
     accent_base_color="#E1477E",
     background_color="#181818",
     color="#ffffff",
+    header_background="#313131",
+    header_color="#ffffff",
     neutral_fill_card_rest="#212121",
     neutral_focus="#717171",
     neutral_foreground_rest="#e5e5e5",

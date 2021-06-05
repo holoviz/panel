@@ -37,12 +37,17 @@
   :root {
     --body-font: {{ style.font }};
   }
-  .title {
-    color: {% if header_color %}{{ header_color }}{% else %}#ffffff{% endif %};
+  #header a {
+    color: currentColor;
   }
   :not(:defined) {
     visibility: hidden;
   }
+  #theme-switch {
+    --accent-fill-active: {{ style.header_color }};
+  }
+  #header-design-provider {
+    --neutral-foreground-rest: {{ style.header_color }}
   #sidebar {
     width: {{ sidebar_width }}px;
   }
@@ -56,12 +61,46 @@
 <script src="{{ src }}" type="module"></script>
 {% endfor %}
 
-<!-- Fast script -->
+<!-- Fast Script -->
 <script type="module">
   import { parseColorHexRGB } from "{{ template_resources['js_modules']['fast-colors'] }}";
-  import { createColorPalette } from "{{ template_resources['js_modules']['fast'] }}";
+  import {
+    createColorPalette,
+    accentFillActiveBehavior,
+    accentFillHoverBehavior,
+    accentFillRestBehavior,
+    accentForegroundActiveBehavior,
+    accentForegroundCutRestBehavior,
+    accentForegroundFocusBehavior,
+    accentForegroundHoverBehavior,
+    accentForegroundRestBehavior,
+    neutralDividerRestBehavior,
+    neutralFillHoverBehavior,
+    neutralFillInputActiveBehavior,
+    neutralFillInputHoverBehavior,
+    neutralFillInputRestBehavior,
+    neutralFillRestBehavior,
+    neutralFillStealthActiveBehavior,
+    neutralFillStealthHoverBehavior,
+    neutralFillStealthRestBehavior,
+    neutralFocusBehavior,
+    neutralFocusInnerAccentBehavior,
+    neutralForegroundActiveBehavior,
+    neutralForegroundHoverBehavior,
+    neutralLayerFloatingBehavior,
+    neutralOutlineActiveBehavior,
+    neutralOutlineHoverBehavior,
+    neutralOutlineRestBehavior
+  } from "{{ template_resources['js_modules']['fast'] }}";
+
+  function standardize_color(str){
+    var ctx = document.createElement('canvas').getContext('2d');
+    ctx.fillStyle = str;
+    return ctx.fillStyle;
+  }
 
   function setAccentColor(color, selector){
+      color = standardize_color(color);
       const accent = color;
       const palette = createColorPalette(parseColorHexRGB(accent));
       const provider = document.querySelector(selector);
@@ -69,9 +108,10 @@
       provider.accentPalette = palette;
   }
   setAccentColor("{{ style.accent_base_color }}", "#body-design-provider");
-  setAccentColor("#ffffff", "#header-design-provider");
+  setAccentColor("{{ style.header_accent_base_color }}", "#header-design-provider");
 
   function setNeutralColor(color, selector){
+      color = standardize_color(color);
       const palette = createColorPalette(parseColorHexRGB(color));
       const provider = document.querySelector(selector);
 
@@ -79,19 +119,58 @@
   }
   setNeutralColor("#ffffff", "#header-design-provider");
   setNeutralColor("#000000", "#body-design-provider");
+
+  function setBackgroundColor(color, selector){
+    color = standardize_color(color);
+    const provider = document.querySelector(selector);
+    provider.backgroundColor=color;
+  }
+  setBackgroundColor("{{ style.header_background }}", "#header-design-provider");
+  setBackgroundColor("{{ style.background_color }}", "#body-design-provider");
+
+  function registerCSSCustomProperties(selector)  {
+    const provider = document.querySelector(selector);
+    provider.registerCSSCustomProperty(accentFillActiveBehavior)
+    provider.registerCSSCustomProperty(neutralFillRestBehavior)
+    provider.registerCSSCustomProperty(accentFillHoverBehavior)
+    provider.registerCSSCustomProperty(accentFillRestBehavior)
+    provider.registerCSSCustomProperty(accentForegroundActiveBehavior)
+    provider.registerCSSCustomProperty(accentForegroundCutRestBehavior)
+    provider.registerCSSCustomProperty(accentForegroundFocusBehavior)
+    provider.registerCSSCustomProperty(accentForegroundHoverBehavior)
+    provider.registerCSSCustomProperty(accentForegroundRestBehavior)
+    provider.registerCSSCustomProperty(neutralDividerRestBehavior)
+    provider.registerCSSCustomProperty(neutralFillHoverBehavior)
+    provider.registerCSSCustomProperty(neutralFillInputActiveBehavior)
+    provider.registerCSSCustomProperty(neutralFillInputHoverBehavior)
+    provider.registerCSSCustomProperty(neutralFillInputRestBehavior)
+    provider.registerCSSCustomProperty(neutralFillRestBehavior)
+    provider.registerCSSCustomProperty(neutralFillStealthActiveBehavior)
+    provider.registerCSSCustomProperty(neutralFillStealthHoverBehavior)
+    provider.registerCSSCustomProperty(neutralFillStealthRestBehavior)
+    provider.registerCSSCustomProperty(neutralFocusBehavior)
+    provider.registerCSSCustomProperty(neutralFocusInnerAccentBehavior)
+    provider.registerCSSCustomProperty(neutralForegroundActiveBehavior)
+    provider.registerCSSCustomProperty(neutralForegroundHoverBehavior)
+    provider.registerCSSCustomProperty(neutralLayerFloatingBehavior)
+    provider.registerCSSCustomProperty(neutralOutlineActiveBehavior)
+    provider.registerCSSCustomProperty(neutralOutlineHoverBehavior)
+    provider.registerCSSCustomProperty(neutralOutlineRestBehavior)
+  }
+  registerCSSCustomProperties("#header-design-provider")
+  registerCSSCustomProperties("#body-design-provider")
 </script>
 {% endblock %}
 
 <!-- goes in body -->
 {% block contents %}
-<fast-design-system-provider id="body-design-provider" use-defaults
-  {% if style.background_color %}background-color="{{ style.background_color }}"{% endif %}
-  {% if style.accent_base_color %}accent-base-color="{{ style.accent_base_color }}"{% endif %}
-  accent-foreground-cut-rest="#FFFFFF"
+<fast-design-system-provider id="body-design-provider" use-defaults accent-foreground-cut-rest="#FFFFFF"
+  {% if style.background_color and style.background_color.startswith("#") %}background-color="{{ style.background_color }}"{% endif %}
+  {% if style.accent_base_color and style.accent_base_color.startswith("#") %}accent-base-color="{{ style.accent_base_color }}"{% endif %}
   >
   <div id="container">
   <fast-design-system-provider id="header-design-provider"
-    {% if header_background %}background-color="{{ header_background }}"{% endif %}
+  {% if style.header_background and style.header_background.startswith('#') %}background-color="{{ style.header_background }}"{% endif %}
   >
   <nav id="header">
     {% if nav or sidebar_footer %}
@@ -120,7 +199,7 @@
   </div>
   {% if theme_toggle %}
   <div class="pn-toggle-theme">
-    <fast-switch style="float: right;" onChange="toggleLightDarkTheme('{{ theme }}')" {% if theme=='default' %}checked{% endif %}>
+    <fast-switch id="theme-switch" style="float: right;" onChange="toggleLightDarkTheme('{{ theme }}')" {% if theme=='default' %}checked{% endif %}>
       <span slot="checked-message">
         <svg class="theme-toggle-icon" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25 25"><path d="M0 0h24v24H0z" fill="none"/><path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.79 1.42-1.41zM4 10.5H1v2h3v-2zm9-9.95h-2V3.5h2V.55zm7.45 3.91l-1.41-1.41-1.79 1.79 1.41 1.41 1.79-1.79zm-3.21 13.7l1.79 1.8 1.41-1.41-1.8-1.79-1.4 1.4zM20 10.5v2h3v-2h-3zm-8-5c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm-1 16.95h2V19.5h-2v2.95zm-7.45-3.91l1.41 1.41 1.79-1.8-1.41-1.41-1.79 1.8z"/></svg>
       </span>
@@ -150,7 +229,7 @@
         {{ embed(root) | indent(8) }}
 	    {% endif %}
 	    {% endfor %}
-	    {% endfor %}
+      {% endfor %}
       {% endif %}
       {% if sidebar_footer %}
       {{ sidebar_footer }}
@@ -167,14 +246,14 @@
     {% endif %}
     >
       {% if main_max_width %}
-      <div style="margin-left: auto; margin-right: auto;max-width: {{ main_max_width }}">
+      <div style="margin-left: auto; margin-right: auto; max-width: {{ main_max_width }}">
       {% endif %}
       <div id="responsive-grid"></div>
       {% if main_max_width %}
       </div>
       {% endif %}
 
-      <fast-dialog id="pn-Modal" hidden="true" style="--dialog-width: 80%; --dialog-height: auto; --background-color: var(--neutral-fill-hover);">
+      <fast-dialog id="pn-Modal" hidden style="--dialog-width: 80%; --dialog-height: auto; --background-color: var(--neutral-fill-hover);">
         <fast-button class="pn-modalclose" id="pn-closeModal">&times;</fast-button>
 	<div>
         {% for doc in docs %}
@@ -190,11 +269,9 @@
   </div>
 </div>
 </fast-design-system-provider>
-
 <script>
   {{ js }}
 </script>
-
 <script>
   function openNav() {
     document.getElementById("sidebar").style.left = 0;

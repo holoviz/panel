@@ -13,7 +13,7 @@ body {
   display: flex;
   align-items: center;
   padding: 10px;
-  height: 64px;
+  height: 44px;
 }
 
 #header-items {
@@ -62,10 +62,14 @@ img.app-logo {
   max-width: inherit;
 }
 
+.bk-root .bk.loader.light::after {
+  background-color: var(--neutral-foreground-rest);
+}
+
 .pn-bar {
   width: 20px;
   height: 2px;
-  background-color: white;
+  background-color: var(--neutral-foreground-rest);
   margin: 4px 0;
 }
 
