@@ -8,7 +8,7 @@ from holoviews import opts
 from panel.template.fast.grid import FastGridTemplate, FastGridDarkTheme
 
 hv.extension("bokeh")
-ACCENT_COLOR = "lightblue"
+ACCENT_COLOR = "#f63366" # "lightblue"
 
 opts.defaults(opts.Ellipse(line_width=3, color=ACCENT_COLOR))
 
@@ -149,13 +149,15 @@ def _fast_button_card():
 
 def test_app():
     app = FastGridTemplate(
-        title="FastGridTemplate w. #LIT colors",
+        title="FastGridTemplate w. Layout Persistence",
         site="Panel",
         accent_base_color=ACCENT_COLOR,
         header_background=ACCENT_COLOR,
-        header_color="#000000",
+        # header_color="#000000",
         header_accent_base_color="#FFFFFF",
         row_height=50,
+        prevent_collision=True,
+        save_layout=True,
     )
     app.main[0:7, 0:6] = pn.pane.Markdown(INFO, sizing_mode="stretch_both")
     app.main[0:7, 6:12] = pn.pane.HoloViews(_create_hvplot(), sizing_mode="stretch_both")
