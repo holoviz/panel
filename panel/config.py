@@ -198,7 +198,7 @@ class _config(_base_config):
 
     def __setattr__(self, attr, value):
         from .io.state import state
-        if not getattr(self, 'initialized', False) or (attr.startswith('_') and attr.endswith('_')):
+        if not getattr(self, 'initialized', False) or (attr.startswith('_') and attr.endswith('_')) or attr == '_validating':
             return super().__setattr__(attr, value)
         value = getattr(self, f'_{attr}_hook', lambda x: x)(value)
         if state.curdoc:
@@ -206,6 +206,8 @@ class _config(_base_config):
                 validate_config(self, attr, value)
             elif f'_{attr}' in self.param:
                 validate_config(self, f'_{attr}', value)
+            else:
+                raise AttributeError(f'{attr!r} is not a valid config parameter.')
             if state.curdoc not in self._session_config:
                 self._session_config[state.curdoc] = {}
             self._session_config[state.curdoc][attr] = value
