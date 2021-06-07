@@ -68,6 +68,7 @@ class _state(param.Parameterized):
 
     # Templates
     _templates = WeakKeyDictionary() # Server templates indexed by document
+    _template = None
 
     # An index of all currently active views
     _views = {}
@@ -353,9 +354,13 @@ class _state(param.Parameterized):
     def template(self):
         from ..config import config
         if self.curdoc in self._templates:
-            template = self._templates[self.curdoc]
+            return self._templates[self.curdoc]
+        elif self.curdoc is None and self._template:
+            return self._template
+        template = config.template(theme=config.theme)
+        if self.curdoc is None:
+            self._template = template
         else:
-            template = config.template(theme=config.theme)
             self._templates[self.curdoc] = template
         return template
 
