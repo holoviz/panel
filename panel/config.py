@@ -3,19 +3,19 @@ The config module supplies the global config object and the extension
 which provides convenient support for  loading and configuring panel
 components.
 """
-from __future__ import absolute_import, division, unicode_literals
-
 import ast
 import inspect
 import os
 import sys
 
 from contextlib import contextmanager
+from weakref import WeakKeyDictionary
 
 import param
 
-from pyviz_comms import (JupyterCommManager as _JupyterCommManager,
-                         extension as _pyviz_extension)
+from pyviz_comms import (
+    JupyterCommManager as _JupyterCommManager, extension as _pyviz_extension
+)
 
 from .io.notebook import load_notebook
 from .io.state import state
@@ -36,6 +36,9 @@ def validate_config(config, parameter, value):
     """
     Validates parameter setting on a hidden config parameter.
     """
+    if config._validating:
+        return
+    config._validating = True
     orig = getattr(config, parameter)
     try:
         setattr(config, parameter, value)
@@ -43,6 +46,7 @@ def validate_config(config, parameter, value):
         raise e
     finally:
         setattr(config, parameter, orig)
+        config._validating = False
 
 
 class _base_config(param.Parameterized):
@@ -170,8 +174,11 @@ class _config(_base_config):
 
     _truthy = ['True', 'true', '1', True, 1]
 
+    _session_config = WeakKeyDictionary()
+
     def __init__(self, **params):
         super().__init__(**params)
+        self._validating = False
         for p in self.param:
             if p.startswith('_'):
                 setattr(self, p+'_', None)
@@ -189,226 +196,126 @@ class _config(_base_config):
             for k, v in overrides:
                 setattr(self, k+'_', v)
 
+    def __setattr__(self, attr, value):
+        from .io.state import state
+        if not getattr(self, 'initialized', False) or (attr.startswith('_') and attr.endswith('_')):
+            return super().__setattr__(attr, value)
+        value = getattr(self, f'_{attr}_hook', lambda x: x)(value)
+        if state.curdoc:
+            if attr in self.param:
+                validate_config(self, attr, value)
+            elif f'_{attr}' in self.param:
+                validate_config(self, f'_{attr}', value)
+            if state.curdoc not in self._session_config:
+                self._session_config[state.curdoc] = {}
+            self._session_config[state.curdoc][attr] = value
+        elif f'_{attr}' in self.param and hasattr(self, f'_{attr}_'):
+            validate_config(self, f'_{attr}', value)
+            super().__setattr__(f'_{attr}_', value)
+        else:
+            super().__setattr__(attr, value)
+
+    def __getattribute__(self, attr):
+        from .io.state import state
+        init = super().__getattribute__('initialized')
+        if init and not attr.startswith('__'):
+            params = super().__getattribute__('param')
+        else:
+            params = []
+        session_config = super().__getattribute__('_session_config')
+        if state.curdoc and state.curdoc in session_config and attr in session_config[state.curdoc]:
+            return session_config[state.curdoc][attr]
+        elif f'_{attr}' in params and getattr(self, f'_{attr}_') is not None:
+            return super().__getattribute__(f'_{attr}_')
+        return super().__getattribute__(attr)
+
+    def _console_output_hook(self, value):
+        return value if value else 'disable'
+
     @property
     def _doc_build(self):
         return os.environ.get('PANEL_DOC_BUILD')
 
     @property
     def console_output(self):
-        if self._console_output_ is not None:
-            return 'disable' if not self._console_output_ else self._console_output_
-        elif self._doc_build:
+        if self._doc_build:
             return 'disable'
         else:
             return os.environ.get('PANEL_CONSOLE_OUTPUT', _config._console_output)
 
-    @console_output.setter
-    def console_output(self, value):
-        validate_config(self, '_console_output', value)
-        self._console_output_ = value
-
     @property
     def embed(self):
-        if self._embed_ is not None:
-            return self._embed_
-        else:
-            return os.environ.get('PANEL_EMBED', _config._embed) in self._truthy
-
-    @embed.setter
-    def embed(self, value):
-        validate_config(self, '_embed', value)
-        self._embed_ = value
+        return os.environ.get('PANEL_EMBED', _config._embed) in self._truthy
 
     @property
     def comms(self):
-        if self._comms_ is not None:
-            return self._comms_
-        else:
-            return os.environ.get('PANEL_COMMS', _config._comms)
-
-    @comms.setter
-    def comms(self, value):
-        validate_config(self, '_comms', value)
-        self._comms_ = value
+        return os.environ.get('PANEL_COMMS', _config._comms)
 
     @property
     def embed_json(self):
-        if self._embed_json_ is not None:
-            return self._embed_json_
-        else:
-            return os.environ.get('PANEL_EMBED_JSON', _config._embed_json) in self._truthy
-
-    @embed_json.setter
-    def embed_json(self, value):
-        validate_config(self, '_embed_json', value)
-        self._embed_json_ = value
+        return os.environ.get('PANEL_EMBED_JSON', _config._embed_json) in self._truthy
 
     @property
     def embed_json_prefix(self):
-        if self._embed_json_prefix_ is not None:
-            return self._embed_json_prefix_
-        else:
-            return os.environ.get('PANEL_EMBED_JSON_PREFIX', _config._embed_json_prefix)
-
-    @embed_json_prefix.setter
-    def embed_json_prefix(self, value):
-        validate_config(self, '_embed_json_prefix', value)
-        self._embed_json_prefix_ = value
+        return os.environ.get('PANEL_EMBED_JSON_PREFIX', _config._embed_json_prefix)
 
     @property
     def embed_save_path(self):
-        if self._embed_save_path_ is not None:
-            return self._embed_save_path_
-        else:
-            return os.environ.get('PANEL_EMBED_SAVE_PATH', _config._embed_save_path)
-
-    @embed_save_path.setter
-    def embed_save_path(self, value):
-        validate_config(self, '_embed_save_path', value)
-        self._embed_save_path_ = value
+        return os.environ.get('PANEL_EMBED_SAVE_PATH', _config._embed_save_path)
 
     @property
     def embed_load_path(self):
-        if self._embed_load_path_ is not None:
-            return self._embed_load_path_
-        else:
-            return os.environ.get('PANEL_EMBED_LOAD_PATH', _config._embed_load_path)
-
-    @embed_load_path.setter
-    def embed_load_path(self, value):
-        validate_config(self, '_embed_load_path', value)
-        self._embed_load_path_ = value
+        return os.environ.get('PANEL_EMBED_LOAD_PATH', _config._embed_load_path)
 
     @property
     def inline(self):
-        if self._inline_ is not None:
-            return self._inline_
-        else:
-            return os.environ.get('PANEL_INLINE', _config._inline) in self._truthy
-
-    @inline.setter
-    def inline(self, value):
-        validate_config(self, '_inline', value)
-        self._inline_ = value
+        return os.environ.get('PANEL_INLINE', _config._inline) in self._truthy
 
     @property
     def log_level(self):
-        if self._log_level_ is not None:
-            return self._log_level_
-        elif 'PANEL_LOG_LEVEL' in os.environ:
-            return os.environ['PANEL_LOG_LEVEL'].upper()
-        else:
-            return self._log_level
-
-    @log_level.setter
-    def log_level(self, value):
-        validate_config(self, '_log_level', value)
-        self._log_level_ = value
+        log_level = os.environ.get('PANEL_LOG_LEVEL', self._log_level)
+        return log_level.upper() if log_level else None
 
     @property
     def oauth_provider(self):
-        if self._oauth_provider_ is not None:
-            return self._oauth_provider_
-        else:
-            provider = os.environ.get('PANEL_OAUTH_PROVIDER', _config._oauth_provider)
-            return provider.lower() if provider else None
-
-    @oauth_provider.setter
-    def oauth_provider(self, value):
-        validate_config(self, '_oauth_provider', value.lower())
-        self._oauth_provider_ = value.lower()
+        provider = os.environ.get('PANEL_OAUTH_PROVIDER', _config._oauth_provider)
+        return provider.lower() if provider else None
 
     @property
     def oauth_key(self):
-        if self._oauth_key_ is not None:
-            return self._oauth_key_
-        else:
-            return os.environ.get('PANEL_OAUTH_KEY', _config._oauth_key)
-
-    @oauth_key.setter
-    def oauth_key(self, value):
-        validate_config(self, '_oauth_key', value)
-        self._oauth_key_ = value
+        return os.environ.get('PANEL_OAUTH_KEY', _config._oauth_key)
 
     @property
     def cookie_secret(self):
-        if self._cookie_secret_ is not None:
-            return self._cookie_secret_
-        else:
-            return os.environ.get(
-                'PANEL_COOKIE_SECRET',
-                os.environ.get('BOKEH_COOKIE_SECRET', _config._cookie_secret)
-            )
-
-    @cookie_secret.setter
-    def cookie_secret(self, value):
-        validate_config(self, '_cookie_secret', value)
-        self._cookie_secret_ = value
+        return os.environ.get(
+            'PANEL_COOKIE_SECRET',
+            os.environ.get('BOKEH_COOKIE_SECRET', _config._cookie_secret)
+        )
 
     @property
     def oauth_secret(self):
-        if self._oauth_secret_ is not None:
-            return self._oauth_secret_
-        else:
-            return os.environ.get('PANEL_OAUTH_SECRET', _config._oauth_secret)
-
-    @oauth_secret.setter
-    def oauth_secret(self, value):
-        validate_config(self, '_oauth_secret', value)
-        self._oauth_secret_ = value
+        return os.environ.get('PANEL_OAUTH_SECRET', _config._oauth_secret)
 
     @property
     def oauth_redirect_uri(self):
-        if self._oauth_redirect_uri_ is not None:
-            return self._oauth_redirect_uri_
-        else:
-            return os.environ.get('PANEL_OAUTH_REDIRECT_URI', _config._oauth_redirect_uri)
-
-    @oauth_redirect_uri.setter
-    def oauth_redirect_uri(self, value):
-        validate_config(self, '_oauth_redirect_uri', value)
-        self._oauth_redirect_uri_ = value
+        return os.environ.get('PANEL_OAUTH_REDIRECT_URI', _config._oauth_redirect_uri)
 
     @property
     def oauth_jwt_user(self):
-        if self._oauth_jwt_user_ is not None:
-            return self._oauth_jwt_user_
-        else:
-            return os.environ.get('PANEL_OAUTH_JWT_USER', _config._oauth_jwt_user)
-
-    @oauth_jwt_user.setter
-    def oauth_jwt_user(self, value):
-        validate_config(self, '_oauth_jwt_user', value)
-        self._oauth_jwt_user_ = value
+        return os.environ.get('PANEL_OAUTH_JWT_USER', _config._oauth_jwt_user)
 
     @property
     def oauth_encryption_key(self):
-        if self._oauth_encryption_key_ is not None:
-            return self._oauth_encryption_key_
-        else:
-            return os.environ.get('PANEL_OAUTH_ENCRYPTION', _config._oauth_encryption_key)
-
-    @oauth_encryption_key.setter
-    def oauth_encryption_key(self, value):
-        validate_config(self, '_oauth_encryption_key', value)
-        self._oauth_encryption_key_ = value
+        return os.environ.get('PANEL_OAUTH_ENCRYPTION', _config._oauth_encryption_key)
 
     @property
     def oauth_extra_params(self):
-        if self._oauth_extra_params_ is not None:
-            return self._oauth_extra_params_
+        if 'PANEL_OAUTH_EXTRA_PARAMS' in os.environ:
+            return ast.literal_eval(os.environ['PANEL_OAUTH_EXTRA_PARAMS'])
         else:
-            if 'PANEL_OAUTH_EXTRA_PARAMS' in os.environ:
-                return ast.literal_eval(os.environ['PANEL_OAUTH_EXTRA_PARAMS'])
-            else:
-                return _config._oauth_extra_params
+            return _config._oauth_extra_params
 
-    @oauth_extra_params.setter
-    def oauth_extra_params(self, value):
-        validate_config(self, '_oauth_extra_params', value)
-        self._oauth_extra_params_ = value
 
-        
 
 if hasattr(_config.param, 'objects'):
     _params = _config.param.objects()
