@@ -146,6 +146,14 @@ def multiple_apps_server_sessions():
             continue  # tests may already close this
 
 
+@pytest.fixture
+def with_curdoc():
+    old_curdoc = state.curdoc
+    state.curdoc = Document()
+    yield
+    state.curdoc = old_curdoc
+        
+
 @contextmanager
 def set_env_var(env_var, value):
     old_value = os.environ.get(env_var)
@@ -155,4 +163,3 @@ def set_env_var(env_var, value):
         del os.environ[env_var]
     else:
         os.environ[env_var] = old_value
-

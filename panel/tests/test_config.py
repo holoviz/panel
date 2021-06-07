@@ -1,6 +1,8 @@
 """
 Tests pn.config variables
 """
+import pytest
+
 from panel import config, state
 from panel.pane import HTML
 
@@ -27,6 +29,16 @@ def test_config_set_console_output():
     with config.set(console_output='disable'):
         with config.set(console_output='accumulate'):
             assert config.console_output == 'accumulate'
+
+
+@pytest.mark.usefixtures("with_curdoc")
+def test_session_override():
+    config.sizing_mode = 'stretch_width'
+    assert config.sizing_mode == 'stretch_width'
+    assert state.curdoc in config._session_config
+    assert config._session_config[state.curdoc] == {'sizing_mode': 'stretch_width'}
+    state.curdoc = None
+    assert config.sizing_mode is None
 
 
 def test_console_output_replace_stdout(document, comm, get_display_handle):
