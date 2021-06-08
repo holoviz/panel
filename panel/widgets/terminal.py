@@ -18,58 +18,44 @@ from ..models import Terminal as _BkTerminal
 from .base import Widget
 
 
-class TerminalSubProcess(param.Parameterized):
-    """The TerminalSubProcess is a utility class that makes running subprocesses via the Terminal
-    easy"""
+class TerminalSubprocess(param.Parameterized):
+    """
+    The TerminalSubProcess is a utility class that makes running
+    subprocesses via the Terminal easy.
+    """
 
-    args = param.ClassSelector(
-        class_=(str, list),
-        doc="""
-        The arguments used to run the subprocess. This may be a string or a list. The string cannot
-        contain spaces. See subprocess.run docs for more details.""",
-    )
-    kwargs = param.Dict(
-        doc="""Any other arguments to run the subprocess
-        See subprocess.run docs for more details"""
-    )
+    args = param.ClassSelector(class_=(str, list), doc="""
+        The arguments used to run the subprocess. This may be a string
+        or a list. The string cannot contain spaces. See subprocess.run
+        docs for more details.""")
 
-    running = param.Boolean(
-        False, constant=True,
-        doc="""Whether or not the subprocess is running.
-        Defaults to False""",
-    )
+    kwargs = param.Dict(doc="""
+        Any other arguments to run the subprocess. See subprocess.run
+        docs for more details.""" )
 
-    run = param.Action(
-        doc="""Executes subprocess.run in a child process using the args and kwargs
-        parameters. The stdin, stdout and stderr is redirected to the Terminal"""
-    )
+    running = param.Boolean(default=False, constant=True, doc="""
+        Whether or not the subprocess is running.""")
 
-    kill = param.Action("""Kills the subprocess if it is running""")
-
-    _terminal = param.Parameter(
-        constant=True,
-        doc="""
-        The Terminal to which the subprocess is connected""",
-    )
-
-    _periodic_callback = param.ClassSelector(
-        class_=PeriodicCallback,
-        doc="""
-        Watches the subprocess for output""",
-    )
-    _period = param.Integer(50, doc="Period length of _periodic_callback")
-    _watcher = param.Parameter(doc="Watches the subprocess for user input")
     _child_pid = param.Integer(0, doc="Child process id")
-    _fd = param.Integer(0, doc="Child file descripter")
+
+    _fd = param.Integer(0, doc="Child file descriptor.")
+
     _max_read_bytes = param.Integer(1024 * 20)
+
+    _periodic_callback = param.ClassSelector(class_=PeriodicCallback, doc="""
+        Watches the subprocess for output""")
+
+    _period = param.Integer(50, doc="Period length of _periodic_callback")
+
+    _terminal = param.Parameter(constant=True, doc="""
+        The Terminal to which the subprocess is connected.""")
+
     _timeout_sec = param.Integer(0)
 
-    def __init__(self, terminal: "Terminal", **params):
-        params["_terminal"] = terminal
-        super().__init__(**params)
+    _watcher = param.Parameter(doc="Watches the subprocess for user input")
 
-        self.run = self._run
-        self.kill = self._kill
+    def __init__(self, terminal, **kwargs):
+        super().__init__(_terminal=terminal, **kwargs)
 
     @staticmethod
     def _quote(command):
@@ -82,7 +68,10 @@ class TerminalSubProcess(param.Parameterized):
             return [self._quote(arg) for arg in args]
         return args
 
-    def _run(self, caller=None, args=None, **kwargs):
+    def run(self, *args, **kwargs):
+        """
+        Runs a subprocess command.
+        """
         # Inspiration: https://github.com/cs01/pyxtermjs
         # Inspiration: https://github.com/jupyter/terminado
         if not args:
@@ -132,7 +121,10 @@ class TerminalSubProcess(param.Parameterized):
             with param.edit_constant(self):
                 self.running = True
 
-    def _kill(self, *events):
+    def kill(self):
+        """
+        Kills the subprocess.
+        """
         child_pid = self._child_pid
         self._reset()
 
@@ -187,70 +179,53 @@ class TerminalSubProcess(param.Parameterized):
             self._periodic_callback.period = self._period
 
     def __repr__(self, depth=None):
-        return f"TerminalSubProcess(args={self.args}, running={self.running})"
+        return f"TerminalSubprocess(args={self.args}, running={self.running})"
 
 
 class Terminal(StringIO, Widget):
-    """The Terminal Widget makes it easy to create Panel Applications with Terminals.
+    """
+    The Terminal widget renders a live terminal in the browser using
+    the xterm.js library making it possible to display logs or even
+    provide an interactive terminal in a Panel application.
+    """
 
-    - For example apps which streams the output of processes or logs.
-    - For example apps which provide interactive bash, python or ipython terminals"""
-
-    value = param.String(
-        label="Input",
-        readonly=True,
-        doc="""
-        User input received from the Terminal. Sent one character at the time.""",
-    )
-    object = param.String(
-        label="Output",
-        doc="""
-        System output written to the Terminal""",
-    )
-
-    clear = param.Action(
-        doc="""
-        Clears the Terminal"""
-    )
-
-    write_to_console = param.Boolean(
-        False,
-        doc="""
-        Weather or not to write to the server console. Default is False""",
-    )
-    options = param.Dict(
-        precedence=-1,
-        doc="""
+    options = param.Dict(default={}, precedence=-1, doc="""
         Initial Options for the Terminal Constructor. cf.
-        https://xtermjs.org/docs/api/terminal/interfaces/iterminaloptions/""",
-    )
+        https://xtermjs.org/docs/api/terminal/interfaces/iterminaloptions/""")
 
-    _rename = {
-        "title": None,
-        "clear": None,
-        "write_to_console": None,
-        "value": "input",
-        "object": None,
-        "_output": "output",
-    }
+    output = param.String(default="", doc="""
+        System output written to the Terminal""")
 
-    _output = param.String()
+    value = param.String(label="Input", readonly=True, doc="""
+        User input received from the Terminal. Sent one character at the time.""")
+
+    write_to_console = param.Boolean(default=False, doc="""
+        Weather or not to write to the server console. Default is False""")
+
     _clears = param.Integer(doc="Sends a signal to clear the terminal")
+
+    _output = param.String(default="")
+    
     _value_repeats = param.Integer(
         doc="""
         Hack: Sends a signal that the value has been repeated."""
     )
 
+    _rename = {
+        "clear": None,
+        "output": None,
+        "_output": "output",
+        "value": "input",
+        "write_to_console": None,
+    }
+
     # Set the Bokeh model to use
     _widget_type = _BkTerminal
 
-    def __init__(self, **kwargs):
-        object = kwargs.get("object", "")
-        kwargs["_output"] = object
-        kwargs["options"] = kwargs.get("options", {})
-        StringIO.__init__(self, object)
-        Widget.__init__(self, **kwargs)
-        self.clear = self._clear
+    def __init__(self, output=None, **kwargs):
+        output = output or ""
+        StringIO.__init__(self, output)
+        Widget.__init__(self, output=output, _output=output, **kwargs)
         self._subprocess = None
 
     def write(self, __s):
@@ -262,30 +237,35 @@ class Terminal(StringIO, Widget):
         else:
             cleaned = str(__s)
 
-        if self.object == cleaned:
+        if self.output == cleaned:
             # Hack to support writing the same string multiple times in a row
-            self.object = ""
+            self._output = ""
 
-        self.object = cleaned
+        self._output = cleaned
+        self.output += cleaned
 
         return StringIO.write(self, cleaned)
 
-    def _clear(self, *events):
-        self.object = ""
+    def _get_model(self, doc, root=None, parent=None, comm=None):
+        model = super()._get_model(doc, root, parent, comm)
+        model.output = self.output
+        return model
+
+    def clear(self):
+        """
+        Clears all output on the terminal.
+        """
+        self.output = ""
         self._clears += 1
 
-    @param.depends("object", watch=True)
+    @param.depends("_output", watch=True)
     def _write(self):
-        self._output = self.object
-
         if self.write_to_console:
-            sys.__stdout__.write(self.object)
+            sys.__stdout__.write(self._output)
 
     @param.depends("_value_repeats", watch=True)
     def _repeat_value_hack(self):
-        value = self.value
-        self.value = ""
-        self.value = value
+        self.param.trigger('value')
 
     def fileno(self):
         return -1
@@ -295,8 +275,10 @@ class Terminal(StringIO, Widget):
 
     @property
     def subprocess(self):
-        """The subprocess enables running commands like 'ls', ['ls', '-l'], 'bash', 'python' and
-        'ipython' in the terminal"""
+        """
+        The subprocess enables running commands like 'ls', ['ls',
+        '-l'], 'bash', 'python' and 'ipython' in the terminal.
+        """
         if not self._subprocess:
-            self._subprocess = TerminalSubProcess(self)
+            self._subprocess = TerminalSubprocess(self)
         return self._subprocess

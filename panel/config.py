@@ -351,14 +351,14 @@ class panel_extension(_pyviz_extension):
 
     # Check whether these are loaded before rendering
     _globals = {
-        'deckgl': 'deck',
-        'echarts': 'echarts',
-        'katex': 'katex',
-        'mathjax': 'MathJax',
-        'plotly': 'Plotly',
-        'vega': 'vega',
-        'vtk': 'vtk',
-        'terminal': 'xtermjs',
+        'deckgl': ['deck'],
+        'echarts': ['echarts'],
+        'katex': ['katex'],
+        'mathjax': ['MathJax'],
+        'plotly': ['Plotly'],
+        'vega': ['vega'],
+        'vtk': ['vtk'],
+        'terminal': ['Terminal', 'xtermjs'],
     }
 
     _loaded_extensions = []
