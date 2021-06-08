@@ -1,7 +1,9 @@
-"""The Terminal Widget makes it easy to create Panel Applications with Terminals.
+"""
+The Terminal Widget makes it easy to create Panel Applications with Terminals.
 
 - For example apps which streams the output of processes or logs.
-- For example apps which provide interactive bash, python or ipython terminals"""
+- For example apps which provide interactive bash, python or ipython terminals
+"""
 import os
 import pty
 import select
@@ -9,6 +11,7 @@ import shlex
 import signal
 import subprocess
 import sys
+
 from io import StringIO
 
 import param
@@ -184,7 +187,7 @@ class TerminalSubprocess(param.Parameterized):
         return f"TerminalSubprocess(args={self.args}, running={self.running})"
 
 
-class Terminal(StringIO, Widget):
+class Terminal(Widget):
     """
     The Terminal widget renders a live terminal in the browser using
     the xterm.js library making it possible to display logs or even
@@ -228,8 +231,7 @@ class Terminal(StringIO, Widget):
 
     def __init__(self, output=None, **params):
         params['_output'] = output = output or ""
-        StringIO.__init__(self, output)
-        Widget.__init__(self, output=output, clear=self._clear, **params)
+        super().__init__(output=output, clear=self._clear, **params)
         self._subprocess = None
 
     def write(self, __s):
@@ -247,8 +249,7 @@ class Terminal(StringIO, Widget):
 
         self._output = cleaned
         self.output += cleaned
-
-        return StringIO.write(self, cleaned)
+        return len(self.output)
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         model = super()._get_model(doc, root, parent, comm)
@@ -271,9 +272,6 @@ class Terminal(StringIO, Widget):
     def _repeat_value_hack(self):
         self.param.trigger('value')
 
-    def fileno(self):
-        return -1
-
     def __repr__(self, depth=None):
         return f"Terminal(id={id(self)})"
 
@@ -286,3 +284,43 @@ class Terminal(StringIO, Widget):
         if not self._subprocess:
             self._subprocess = TerminalSubprocess(self)
         return self._subprocess
+
+    # File API
+
+    @property
+    def closed(self):
+        return False
+
+    def fileno(self):
+        return -1
+
+    def getvalue(self):
+        return self.output
+
+    def readable(self):
+        return True
+
+    def read(self, size=-1):
+        if size == -1:
+            return self.output
+        return self.output[:size]
+
+    def readlines(self, hint=-1):
+        lines = []
+        size = 0
+        for line in self.output.split('\n'):
+            if hint > -1 and size > hint:
+                size += sys.getsizeof(line)
+                break
+            lines.append(line)
+        return lines
+
+    def seekable(self):
+        return False
+
+    def writable(self):
+        return True
+
+    def writelines(self, lines):
+        for line in lines:
+            self.write(line)
