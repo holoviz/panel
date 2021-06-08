@@ -318,7 +318,6 @@ class _config(_base_config):
             return _config._oauth_extra_params
 
 
-
 if hasattr(_config.param, 'objects'):
     _params = _config.param.objects()
 else:
@@ -346,18 +345,20 @@ class panel_extension(_pyviz_extension):
         'ace': 'panel.models.ace',
         'echarts': 'panel.models.echarts',
         'ipywidgets': 'ipywidgets_bokeh.widget',
-        'perspective': 'panel.models.perspective'
+        'perspective': 'panel.models.perspective',
+        'terminal': 'panel.models.terminal',
     }
 
     # Check whether these are loaded before rendering
     _globals = {
-        'deckgl': 'deck',
-        'echarts': 'echarts',
-        'katex': 'katex',
-        'mathjax': 'MathJax',
-        'plotly': 'Plotly',
-        'vega': 'vega',
-        'vtk': 'vtk'
+        'deckgl': ['deck'],
+        'echarts': ['echarts'],
+        'katex': ['katex'],
+        'mathjax': ['MathJax'],
+        'plotly': ['Plotly'],
+        'vega': ['vega'],
+        'vtk': ['vtk'],
+        'terminal': ['Terminal', 'xtermjs'],
     }
 
     _loaded_extensions = []

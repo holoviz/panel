@@ -5,15 +5,19 @@ from panel.io import block_comm
 from panel.layout import Row
 from panel.links import CallbackGenerator
 from panel.widgets import (
-    CompositeWidget, Dial, FileDownload, FloatSlider, TextInput, ToggleGroup, Widget
+    CompositeWidget, Dial, FileDownload, FloatSlider, TextInput,
+    Terminal, ToggleGroup, Widget
 )
 from panel.widgets.tables import BaseTable
 from panel.tests.util import check_layoutable_properties
 
+excluded = (
+    BaseTable, CompositeWidget, Dial, FileDownload, ToggleGroup, Terminal
+)
+
 all_widgets = [
     w for w in param.concrete_descendents(Widget).values()
-    if not w.__name__.startswith('_') and
-    not issubclass(w, (CompositeWidget, BaseTable, FileDownload, ToggleGroup, Dial))
+    if not w.__name__.startswith('_') and not issubclass(w, excluded)
 ]
 
 @pytest.mark.parametrize('widget', all_widgets)
