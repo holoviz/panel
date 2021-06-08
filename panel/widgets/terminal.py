@@ -5,7 +5,6 @@ The Terminal Widget makes it easy to create Panel Applications with Terminals.
 - For example apps which provide interactive bash, python or ipython terminals
 """
 import os
-import pty
 import select
 import shlex
 import signal
@@ -77,6 +76,7 @@ class TerminalSubprocess(param.Parameterized):
         """
         Runs a subprocess command.
         """
+        import pty
         # Inspiration: https://github.com/cs01/pyxtermjs
         # Inspiration: https://github.com/jupyter/terminado
         if not args:
