@@ -14,8 +14,10 @@ import sys
 
 import param
 
+from pyviz_comms import JupyterComm
+
 from ..io.callbacks import PeriodicCallback
-from ..models import Terminal as _BkTerminal
+from ..util import lazy_load
 from .base import Widget
 
 
@@ -224,9 +226,6 @@ class Terminal(Widget):
         "write_to_console": None,
     }
 
-    # Set the Bokeh model to use
-    _widget_type = _BkTerminal
-
     def __init__(self, output=None, **params):
         params['_output'] = output = output or ""
         params['clear'] = self._clear
@@ -251,6 +250,10 @@ class Terminal(Widget):
         return len(self.output)
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
+        if self._widget_type is None:
+            self._widget_type = lazy_load(
+                'panel.models.terminal', 'Terminal', isinstance(comm, JupyterComm)
+            )
         model = super()._get_model(doc, root, parent, comm)
         model.output = self.output
         return model
