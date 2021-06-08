@@ -10,38 +10,39 @@ export class TerminalView extends PanelHTMLBoxView {
   term: any // Element
   fitAddon: any
   webLinksAddon: any
+  container: HTMLDivElement
+  _rendered: boolean
 
   connect_signals(): void {
     super.connect_signals()
-
     this.connect(this.model.properties.output.change, this.write)
     this.connect(this.model.properties._clears.change, this.clear)
-
-    this.connect(this.model.properties.height.change, this.fit)
-    this.connect(this.model.properties.width.change, this.fit)
-    this.connect(this.model.properties.height_policy.change, this.fit)
-    this.connect(this.model.properties.width_policy.change, this.fit)
-    this.connect(this.model.properties.sizing_mode.change, this.fit)
   }
 
   render(): void {
     super.render()
-    const container = div({class: "terminal-container"})
-    set_size(container, this.model)
+    this.container = div({class: "terminal-container"})
+    set_size(this.container, this.model)
 
     this.term = this.getNewTerminal()
-    this.term.onData((value: any) => {this.handleOnData(value)});
+    this.term.onData((value: any) => {
+      this.handleOnData(value)
+    });
 
     this.webLinksAddon = this.getNewWebLinksAddon()
     this.term.loadAddon(this.webLinksAddon);
 
-    this.fitAddon = this.getNewFitAddon()
-    this.term.loadAddon(this.fitAddon);
+    this.term.open(this.container)
 
-    this.term.open(container);
+    this.term.onRender(() => {
+      if (!this._rendered) {
+	this.fit()
+      }
+    })
 
     this.write()
-    this.el.appendChild(container)
+
+    this.el.appendChild(this.container)
   }
 
   getNewTerminal(): any {
@@ -92,11 +93,29 @@ export class TerminalView extends PanelHTMLBoxView {
   }
 
   fit(): void {
-    this.fitAddon.fit()
+    const width = this.layout.inner_bbox.width
+    const height = this.layout.inner_bbox.height
+    const renderer = this.term._core._renderService
+    const cell_width = renderer.dimensions.actualCellWidth
+    const cell_height = renderer.dimensions.actualCellHeight
+    if (cell_width === 0 || cell_height === 0)
+      return
+    const cols = Math.max(2, Math.floor(width / cell_width))
+    const rows = Math.max(1, Math.floor(height / cell_height))
+    if (this.term.rows !== rows || this.term.cols !== cols) {
+      renderer.clear();
+      this.term.resize(cols, rows)
+    }
+    this._rendered = true
   }
 
-  after_layout(): void{
+  after_layout(): void {
     super.after_layout()
+    this.fit()
+  }
+
+  resize_layout(): void {
+    super.resize_layout()
     this.fit()
   }
 }

@@ -29,6 +29,8 @@ class TerminalSubprocess(param.Parameterized):
         or a list. The string cannot contain spaces. See subprocess.run
         docs for more details.""")
 
+    kill = param.Action(doc="Kills the running process", constant=True)
+
     kwargs = param.Dict(doc="""
         Any other arguments to run the subprocess. See subprocess.run
         docs for more details.""" )
@@ -55,7 +57,7 @@ class TerminalSubprocess(param.Parameterized):
     _watcher = param.Parameter(doc="Watches the subprocess for user input")
 
     def __init__(self, terminal, **kwargs):
-        super().__init__(_terminal=terminal, **kwargs)
+        super().__init__(_terminal=terminal, kill=self._kill, **kwargs)
 
     @staticmethod
     def _quote(command):
@@ -121,7 +123,7 @@ class TerminalSubprocess(param.Parameterized):
             with param.edit_constant(self):
                 self.running = True
 
-    def kill(self):
+    def _kill(self, *events):
         """
         Kills the subprocess.
         """
@@ -189,6 +191,8 @@ class Terminal(StringIO, Widget):
     provide an interactive terminal in a Panel application.
     """
 
+    clear = param.Action(doc="Clears the Terminal.", constant=True)
+
     options = param.Dict(default={}, precedence=-1, doc="""
         Initial Options for the Terminal Constructor. cf.
         https://xtermjs.org/docs/api/terminal/interfaces/iterminaloptions/""")
@@ -225,7 +229,7 @@ class Terminal(StringIO, Widget):
     def __init__(self, output=None, **params):
         params['_output'] = output = output or ""
         StringIO.__init__(self, output)
-        Widget.__init__(self, output=output, **params)
+        Widget.__init__(self, output=output, clear=self._clear, **params)
         self._subprocess = None
 
     def write(self, __s):
@@ -251,7 +255,7 @@ class Terminal(StringIO, Widget):
         model.output = self.output
         return model
 
-    def clear(self):
+    def _clear(self, *events):
         """
         Clears all output on the terminal.
         """

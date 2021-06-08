@@ -8,7 +8,6 @@ from ..util import classproperty
 
 
 XTERM_JS = "https://unpkg.com/xterm@4.11.0/lib/xterm.js"
-XTERM_FIT_JS = "https://unpkg.com/xterm-addon-fit@0.5.0/lib/xterm-addon-fit.js"
 XTERM_LINKS_JS = "https://unpkg.com/xterm-addon-web-links@0.4.0/lib/xterm-addon-web-links.js"
 
 
@@ -28,7 +27,7 @@ class Terminal(HTMLBox):
     def __css__(cls):
         return bundled_files(cls, 'css')
 
-    __javascript_raw__ = [XTERM_JS, XTERM_FIT_JS, XTERM_LINKS_JS]
+    __javascript_raw__ = [XTERM_JS, XTERM_LINKS_JS]
 
     @classproperty
     def __javascript__(cls):
@@ -38,18 +37,15 @@ class Terminal(HTMLBox):
     def __js_skip__(cls):
         return {
             'xtermjs': cls.__javascript__[0:1],
-            'xtermjs-fit': cls.__javascript__[1:2],
             'xtermjs-weblinks': cls.__javascript__[2:3],
         }
 
     __js_require__ = {
         'paths': OrderedDict([
             ("xtermjs", XTERM_JS[:-3]),
-            ("xtermjs-fit", XTERM_FIT_JS[:-3]),
             ("xtermjs-weblinks", XTERM_LINKS_JS[:-3]),
         ]),
         'exports': {
             "xtermjs": "xtermjs",
-            "xtermjs-fit": "xtermjsfit",
             "xtermjs-weblinks": "xtermjsweblinks",},
     }
