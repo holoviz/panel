@@ -9,11 +9,29 @@ import pytest
 import panel as pn
 
 
-def test_constructor():
+def test_terminal_constructor():
     terminal = pn.widgets.Terminal()
     terminal.write("Hello")
 
     assert repr(terminal).startswith("Terminal(")
+
+
+def test_terminal():
+    terminal = pn.widgets.Terminal("Hello")
+    terminal.write(" World!")
+
+    model = terminal.get_root()
+
+    assert model.output == "Hello World!"
+
+    terminal.clear()
+
+    assert model._clears == 1
+    assert terminal.output == ""
+
+    model2 = terminal.get_root()
+
+    assert model2.output == ""
 
 
 def test_subprocess():
@@ -26,7 +44,7 @@ def test_subprocess():
     assert subprocess._terminal == terminal
     assert subprocess.args == args
     assert not subprocess.running
-    assert repr(subprocess).startswith("TerminalSubProcess(")
+    assert repr(subprocess).startswith("TerminalSubprocess(")
 
     subprocess.run()
     assert subprocess.running
@@ -128,14 +146,14 @@ def get_app():
         name="Run ls -l in subprocess", button_type="primary"
     )
     run_ls_l_in_subprocess_button.on_click(
-        lambda x: terminal.subprocess.run(args=["ls", "-l"])
+        lambda x: terminal.subprocess.run("ls", "-l")
     )
 
     run_bash_in_subprocess_button = pn.widgets.Button(
         name="Run bash in subprocess", button_type="primary"
     )
     run_bash_in_subprocess_button.on_click(
-        lambda x: terminal.subprocess.run(args="bash")
+        lambda x: terminal.subprocess.run("bash")
     )
 
     template = pn.template.FastListTemplate(title="Panel - Terminal - PR in Progress!")

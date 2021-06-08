@@ -222,10 +222,10 @@ class Terminal(StringIO, Widget):
     # Set the Bokeh model to use
     _widget_type = _BkTerminal
 
-    def __init__(self, output=None, **kwargs):
-        output = output or ""
+    def __init__(self, output=None, **params):
+        params['_output'] = output = output or ""
         StringIO.__init__(self, output)
-        Widget.__init__(self, output=output, _output=output, **kwargs)
+        Widget.__init__(self, output=output, **params)
         self._subprocess = None
 
     def write(self, __s):
