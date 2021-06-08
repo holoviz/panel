@@ -229,7 +229,8 @@ class Terminal(Widget):
 
     def __init__(self, output=None, **params):
         params['_output'] = output = output or ""
-        super().__init__(output=output, clear=self._clear, **params)
+        params['clear'] = self._clear
+        super().__init__(output=output, **params)
         self._subprocess = None
 
     def write(self, __s):
