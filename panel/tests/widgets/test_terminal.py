@@ -60,6 +60,7 @@ def test_subprocess():
     assert subprocess._fd == 0
 
 
+@not_windows
 def test_run_list_args():
     terminal = pn.widgets.Terminal()
     subprocess = terminal.subprocess
