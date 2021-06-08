@@ -71,7 +71,13 @@ class PanelHandler(DocHandler):
         if path in _APPS:
             app, context = _APPS[path]
         else:
-            app = build_single_handler_application(path)
+            if path.endswith('yml') or path.endswith('.yaml'):
+                from lumen.config import config
+                from lumen.command import build_single_handler_application as build_lumen
+                config.dev = True
+                app = build_lumen(path, argv=None)
+            else:
+                app = build_single_handler_application(path)
             context = ApplicationContext(app, url=path)
             context._loop = tornado.ioloop.IOLoop.current()
             _APPS[path] = (app, context)
@@ -153,7 +159,6 @@ def _load_jupyter_server_extension(notebook_app):
     with edit_readonly(state):
         state.base_url = '/panel-preview/'
         state.rel_path = '/panel-preview'
-
 
     # Set up handlers
     notebook_app.web_app.add_handlers(
