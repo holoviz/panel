@@ -12,8 +12,6 @@ import signal
 import subprocess
 import sys
 
-from io import StringIO
-
 import param
 
 from ..io.callbacks import PeriodicCallback
