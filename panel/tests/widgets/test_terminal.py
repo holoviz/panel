@@ -8,6 +8,8 @@ import pytest
 
 import panel as pn
 
+not_windows = pytest.mark.skipif(sys.platform == 'win32', reason="Does not work on Windows")
+
 
 def test_terminal_constructor():
     terminal = pn.widgets.Terminal()
@@ -34,6 +36,7 @@ def test_terminal():
     assert model2.output == ""
 
 
+@not_windows
 def test_subprocess():
     args = "bash"
     terminal = pn.widgets.Terminal()

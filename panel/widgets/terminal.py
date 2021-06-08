@@ -232,7 +232,7 @@ class Terminal(Widget):
         super().__init__(output=output, **params)
         self._subprocess = None
 
-    def write(self, __s):
+    def write(self, __s, ):
         cleaned = __s
         if isinstance(__s, str):
             cleaned = __s
@@ -295,6 +295,9 @@ class Terminal(Widget):
 
     def fileno(self):
         return -1
+
+    def flush(self):
+        pass
 
     def getvalue(self):
         return self.output
