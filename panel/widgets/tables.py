@@ -13,14 +13,12 @@ from bokeh.models.widgets.tables import (
     AvgAggregator, MaxAggregator, MinAggregator, SumAggregator,
     CheckboxEditor
 )
+from pyviz_comms import JupyterComm
 
 from ..depends import param_value_if_widget
-from ..models.tabulator import (
-    DataTabulator as _BkTabulator, TABULATOR_THEMES, THEME_URL
-)
 from ..reactive import ReactiveData
 from ..viewable import Layoutable
-from ..util import isdatetime, updating
+from ..util import isdatetime, lazy_load, updating
 from .base import Widget
 from .button import Button
 from .input import TextInput
@@ -737,10 +735,11 @@ class Tabulator(BaseTable):
         A list of sorters to apply during pagination.""")
 
     theme = param.ObjectSelector(
-        default="simple", objects=TABULATOR_THEMES, doc="""
+        default="simple", objects=[
+            'default', 'site', 'simple', 'midnight', 'modern', 'bootstrap',
+            'bootstrap4', 'materialize', 'bulma', 'semantic-ui'
+        ], doc="""
         Tabulator CSS theme to apply to table.""")
-
-    _widget_type = _BkTabulator
 
     _data_params = ['value', 'page', 'page_size', 'pagination', 'sorters']
 
@@ -772,6 +771,7 @@ class Tabulator(BaseTable):
             msg['frozen_rows'] = [length+r if r < 0 else r
                                   for r in msg['frozen_rows']]
         if 'theme' in msg:
+            from ..models.tabulator import THEME_URL
             if 'bootstrap' in self.theme:
                 msg['theme_url'] = THEME_URL + 'bootstrap/'
             elif 'materialize' in self.theme:
@@ -783,7 +783,7 @@ class Tabulator(BaseTable):
             else:
                 msg['theme_url'] = THEME_URL
             theme = 'tabulator' if self.theme == 'default' else 'tabulator_'+self.theme 
-            _BkTabulator.__css__ = [msg['theme_url'] + theme + '.min.css']
+            self._widget_type.__css__ = [msg['theme_url'] + theme + '.min.css']
         return msg
 
     def _update_columns(self, event, model):
@@ -977,6 +977,10 @@ class Tabulator(BaseTable):
         return props
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
+        if self._widget_type is None:
+            self._widget_type = lazy_load(
+                'panel.models.tabulator', 'DataTabulator', isinstance(comm, JupyterComm)
+            )
         model = super()._get_model(doc, root, parent, comm)
         if root is None:
             root = model
