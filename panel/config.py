@@ -347,9 +347,12 @@ class panel_extension(_pyviz_extension):
         'ipywidgets': 'ipywidgets_bokeh.widget',
         'perspective': 'panel.models.perspective',
         'terminal': 'panel.models.terminal',
+        'tabulator': 'panel.models.tabulator'
     }
 
-    # Check whether these are loaded before rendering
+    # Check whether these are loaded before rendering (if any item
+    # in the list is available the extension will be confidered as
+    # loaded)
     _globals = {
         'deckgl': ['deck'],
         'echarts': ['echarts'],
@@ -359,6 +362,7 @@ class panel_extension(_pyviz_extension):
         'vega': ['vega'],
         'vtk': ['vtk'],
         'terminal': ['Terminal', 'xtermjs'],
+        'tabulator': ['Tabulator']
     }
 
     _loaded_extensions = []
