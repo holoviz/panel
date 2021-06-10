@@ -160,6 +160,19 @@
   }
   registerCSSCustomProperties("#header-design-provider")
   registerCSSCustomProperties("#body-design-provider")
+
+  class FastStyle {
+    setAccentColor(value, element){
+      setAccentColor(value, element);
+    }
+    setNeutralColor(value){
+      setNeutralColor(value, element);
+    }
+    setBackgroundColor(value, element){
+      setBackgroundColor(value, element)
+    }
+  }
+  window.fastStyle = new FastStyle()
 </script>
 {% endblock %}
 
