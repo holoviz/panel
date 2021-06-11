@@ -9,8 +9,8 @@
   align-items: center;
   background-color: rgba(0, 0, 0, 0.03);
   border-radius: 0.25rem;
-  display: flex;
-  justify-content: space-between;
+  display: inline-flex;
+  justify-content: start;
   width: 100%;
 }
 .bk.accordion-header {
@@ -18,21 +18,23 @@
   background-color: rgba(0, 0, 0, 0.03);
   border-radius: 0;
   display: flex;
-  justify-content: space-between;
+  justify-content: start;
   width: 100%;
 }
 .bk.card-button {
   background-color: transparent;
-  position: absolute;
-  left: 0.5em;
+  margin-left: 0.5em;
 }
 .bk.card-header-row {
   position: relative !important;
 }
 .bk.card-title {
   align-items: center;
-  display: flex !important;
   font-size: 1.4em;
   font-weight: bold;
-  position: relative !important;
+  overflow-wrap: break-word;
+}
+.bk.card-header-row > .bk {
+  padding-right: 1.5em !important;
+  overflow-wrap: break-word;
 }
