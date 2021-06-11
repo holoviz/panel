@@ -12,16 +12,37 @@ _ROOT = pathlib.Path(__file__).parent
 
 class FastBaseTemplate(BasicTemplate):
     accent_base_color = param.String(doc="""
-        Accent color override.""")
+        Optional body accent color override.""")
 
     header_accent_base_color = param.String(doc="""
         Optional header accent color override.""")
+
+    neutral_color = param.String(
+        doc="""
+        Optional body neutral color override.""")
+
+    header_neutral_color = param.String(
+        doc="""
+        Optional header neutral color override.""")
+
+    corner_radius = param.Integer(doc="""
+        The corner radius applied to controls.
+    """)
 
     theme_toggle = param.Boolean(default=True, doc="""
         If True a switch to toggle the Theme is shown.""")
 
     sidebar_footer = param.String("", doc="""
         A HTML string appended to the sidebar""")
+
+    font = param.String(doc="""
+        The font to use""")
+    font_url = param.String(doc="""
+        A font url to import""")
+    shadow = param.String(
+        doc="""A value for the shadow of the header and sidebar. For example '2px 2px 10px silver'
+        or 'none."""
+    )
 
     _css = [
         _ROOT / "css/fast_root.css",
@@ -65,6 +86,18 @@ class FastBaseTemplate(BasicTemplate):
             self.header_accent_base_color = theme.style.header_accent_base_color
         if "header_background" not in params:
             self.header_background = theme.style.header_background
+        if "neutral_color" not in params:
+            self.neutral_color = theme.style.neutral_color
+        if "header_neutral_color" not in params:
+            self.header_neutral_color = theme.style.header_neutral_color
+        if "corner_radius" not in params:
+            self.corner_radius = theme.style.corner_radius
+        if "font" not in params:
+            self.font = theme.style.font
+        if "font_url" not in params:
+            self.font_url = theme.style.font_url
+        if "shadow" not in params:
+            self.shadow = theme.style.shadow
 
     @staticmethod
     def _get_theme_from_query_args():
@@ -81,6 +114,12 @@ class FastBaseTemplate(BasicTemplate):
         style.header_color = self.header_color
         style.header_background = self.header_background
         style.header_accent_base_color = self.header_accent_base_color
+        style.neutral_color = self.neutral_color
+        style.header_neutral_color = self.header_neutral_color
+        style.corner_radius = self.corner_radius
+        style.font = self.font
+        style.font_url = self.font_url
+        style.shadow = self.shadow
         self._render_variables["style"] = style
         self._render_variables["theme_toggle"] = self.theme_toggle
         self._render_variables["theme"] = self.theme.__name__[:-5].lower()

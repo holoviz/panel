@@ -1,5 +1,5 @@
 from panel.widgets import Widget
-from ...models.fast_style import FastStyle as _BkFastStyle
+from ...models.fast_design_provider import FastDesignProvider as _BkFastDesignProvider
 import param
 
 READ_ONLY_COLORS = [
@@ -17,13 +17,13 @@ READ_ONLY_COLORS = [
     "neutral_foreground_rest",
 ]
 
-class FastStyle(Widget):
+class FastDesignProvider(Widget):
     """
 
     See https://www.fast.design/docs/api/fast-components.fastdesignsystemprovider and
     https://color.fast.design/
     """
-    _widget_type = _BkFastStyle
+    _widget_type = _BkFastDesignProvider
     _rename = {
         "title": None
     }
@@ -34,14 +34,14 @@ class FastStyle(Widget):
         doc="""This is the contextual color used by the design system to determine what color it
         is rendering on"""
     )
-    accent_base_color = param.Color(
-        doc="""Defines the base color the accent palette and all accent colors are derived from"""
-    )
     neutral_color = param.Color(
         doc="""Defines the base color the neutral palette and all netral colors are derived from"""
     )
-    body_font = param.String()
+    accent_base_color = param.Color(
+        doc="""Defines the base color the accent palette and all accent colors are derived from"""
+    )
     corner_radius = param.Integer(bounds=(0,25))
+    body_font = param.String()
 
     # Accent recipes use the accent palette and are intended to bring attention or otherwise
     # distinguish the element on the page.
@@ -97,9 +97,9 @@ class FastStyle(Widget):
 
     def to_html(self) -> str:
         """Returns html displaying the parameters"""
-        if not self.accent_fill_active:
-            return "Nothing"
+        # if not self.accent_fill_active:
+        #     return "Nothing"
         html = ""
-
-        html += "".join([self._add_color(color) for color in READ_ONLY_COLORS])
+        colors = [color for color in READ_ONLY_COLORS if getattr(self, color)]
+        html += "".join([self._add_color(color) for color in colors])
         return html

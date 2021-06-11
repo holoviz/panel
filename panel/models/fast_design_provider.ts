@@ -4,8 +4,8 @@ import * as p from "@bokehjs/core/properties"
 
 const win=<any>window;
 
-export class FastStyleView extends HTMLBoxView {
-    model: FastStyle
+export class FastDesignProviderView extends HTMLBoxView {
+    model: FastDesignProvider
     provider: any;
 
     connect_signals(): void {
@@ -37,18 +37,18 @@ export class FastStyleView extends HTMLBoxView {
     }
     setBackgroundColor(): void {
         if (this.model.background_color){
-            win.fastStyle.setBackgroundColor(this.model.background_color, "#" + this.model.provider)
+            win.fastDesignProvider.setBackgroundColor(this.model.background_color, "#" + this.model.provider)
         }
     }
     setAccentColor(): void {
         if (this.model.accent_base_color){
-            win.fastStyle.setAccentColor(this.model.accent_base_color, "#" + this.model.provider)
+            win.fastDesignProvider.setAccentColor(this.model.accent_base_color, "#" + this.model.provider)
         }
     }
     setNeutralColor(): void {
         if (this.model.neutral_color){
-            console.log(this.model.neutral_color)
-            win.fastStyle.setNeutralColor(this.model.neutral_color, "#" + this.model.provider)
+            console.log("setNeutralColor", this.model.neutral_color)
+            win.fastDesignProvider.setNeutralColor(this.model.neutral_color, "#" + this.model.provider)
             console.log("neutralColor set")
         }
     }
@@ -99,12 +99,17 @@ export class FastStyleView extends HTMLBoxView {
         value=window.getComputedStyle(provider).getPropertyValue('--neutral-foreground-rest').trim()
         if (value!==""){model.neutral_foreground_rest = value}
         console.log("--neutral-foreground-rest", value, model.neutral_foreground_rest)
-
+        console.log("corner_radius", this.provider.cornerRadius)
+        if (this.provider.cornerRadius!==undefined){
+            this.model.corner_radius = this.provider.cornerRadius
+        } else {
+            this.model.corner_radius=3
+        }
         this.model.updates +=1;
     }
 }
 
-export namespace FastStyle {
+export namespace FastDesignProvider {
     export type Attrs = p.AttrsOf<Props>
     export type Props = HTMLBox.Props & {
         provider: p.Property<string>,
@@ -135,22 +140,22 @@ export namespace FastStyle {
     }
 }
 
-export interface FastStyle extends FastStyle.Attrs { }
+export interface FastDesignProvider extends FastDesignProvider.Attrs { }
 
 // The Bokeh .ts model corresponding to the Bokeh .py model
-export class FastStyle extends HTMLBox {
-    properties: FastStyle.Props
+export class FastDesignProvider extends HTMLBox {
+    properties: FastDesignProvider.Props
 
-    constructor(attrs?: Partial<FastStyle.Attrs>) {
+    constructor(attrs?: Partial<FastDesignProvider.Attrs>) {
         super(attrs)
     }
 
-    static __module__ = "panel.models.fast_style"
+    static __module__ = "panel.models.fast_design_provider"
 
-    static init_FastStyle(): void {
-        this.prototype.default_view = FastStyleView;
+    static init_FastDesignProvider(): void {
+        this.prototype.default_view = FastDesignProviderView;
 
-        this.define<FastStyle.Props>({
+        this.define<FastDesignProvider.Props>({
             provider: [p.String, ],
 
             background_color: [p.String, ],

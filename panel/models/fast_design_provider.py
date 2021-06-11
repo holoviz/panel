@@ -1,8 +1,9 @@
 from bokeh.core.properties import String, Int
+from bokeh.core.property.nullable import Nullable
 from bokeh.models import HTMLBox
 
-class FastStyle(HTMLBox):
-    """Example implementation of a Custom Bokeh Model"""
+class FastDesignProvider(HTMLBox):
+    """The FastDesignProvider enables controlling the style of Fast.Design"""
     provider = String()
 
     background_color = String()

@@ -1,10 +1,12 @@
-from panel.template.fast import FastStyle
+from panel.template.fast.theme import FastStyle
+import param
+from panel.template.fast import FastDesignProvider
 from panel.template import FastListTemplate
 import panel as pn
 
 
 def test_constructor():
-    FastStyle(
+    FastDesignProvider(
         background="#000000",
         neutral_color="#ffffff",
         accent_color="#aabbcc",
@@ -16,19 +18,87 @@ PALETTE_SVG = """
 """
 
 GEAR_SVG = """
-<svg xmlns="http://www.w3.org/2000/svg" width="1em" fill="currentColor" class="bi bi-gear" viewBox="0 0 16 16">
+<svg xmlns="http://www.w3.org/2000/svg" width="1.3em" style="display: inline-block;vertical-align: middle;" fill="currentColor" class="bi bi-gear" viewBox="0 0 16 16">
   <path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492zM5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0z"/>
   <path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52l-.094-.319zm-2.633.283c.246-.835 1.428-.835 1.674 0l.094.319a1.873 1.873 0 0 0 2.693 1.115l.291-.16c.764-.415 1.6.42 1.184 1.185l-.159.292a1.873 1.873 0 0 0 1.116 2.692l.318.094c.835.246.835 1.428 0 1.674l-.319.094a1.873 1.873 0 0 0-1.115 2.693l.16.291c.415.764-.42 1.6-1.185 1.184l-.291-.159a1.873 1.873 0 0 0-2.693 1.116l-.094.318c-.246.835-1.428.835-1.674 0l-.094-.319a1.873 1.873 0 0 0-2.692-1.115l-.292.16c-.764.415-1.6-.42-1.184-1.185l.159-.291A1.873 1.873 0 0 0 1.945 8.93l-.319-.094c-.835-.246-.835-1.428 0-1.674l.319-.094A1.873 1.873 0 0 0 3.06 4.377l-.16-.292c-.415-.764.42-1.6 1.185-1.184l.292.159a1.873 1.873 0 0 0 2.692-1.115l.094-.319z"/>
 </svg>
 """
 
+class FastSettings(pn.viewable.Viewer):
+    body_provider = param.Parameter()
+    header_provider = param.Parameter()
+
+    shadow = param.Boolean(True)
+
+    def __init__(self, **params):
+        super().__init__(**params)
+        self.body_provider = FastDesignProvider(provider="body-design-provider")
+        self.header_provider = FastDesignProvider(provider="header-design-provider")
+        body_settings = pn.Param(
+            self.body_provider,
+            parameters=[
+                "background_color",
+                "neutral_color",
+                "accent_base_color",
+                "corner_radius",
+                "body_font",
+            ],
+            name="Body",
+            sizing_mode="stretch_width",
+        )
+        header_settings = pn.Param(
+            self.header_provider,
+            parameters=[
+                "background_color",
+                "accent_base_color",
+            ],
+            name="Header",
+            sizing_mode="stretch_width",
+        )
+        self.other_styles = pn.pane.HTML(width=0, height=0, sizing_mode="fixed", margin=0)
+        self.layout = pn.Column(
+            pn.pane.HTML(f"<h3>{GEAR_SVG} Fast Template Settings</h3>", margin=(0, 10, 0, 10)),
+            body_settings,
+            self.param.shadow,
+            header_settings,
+            self.body_provider,
+            self.header_provider,
+            self.other_styles,
+        sizing_mode="stretch_width")
+
+    @param.depends("shadow", watch=True)
+    def _update_other_styles(self):
+        html = "<style>"
+        if self.shadow:
+            html += """
+        #sidebar, #header {
+            box-shadow: 2px 2px 10px silver;
+        }
+        """
+        else:
+            html += """
+        #sidebar, #header {
+            box-shadow: none;
+        }
+        """
+        html += "</style>"
+        self.other_styles.object = html
+        print(self.other_styles.object)
+
+    def __panel__(self):
+        return self.layout
+
 
 def test_styler_app():
     template = FastListTemplate(
         site="Awesome Panel",
-        title="Fast Template Style")
-    style = FastStyle()
-    html_pane = pn.pane.HTML(sizing_mode="stretch_width", height=200)
+            title="Fast Template Style",
+            font="Comic Sans MS",
+        )
+
+
+    body_pane = pn.pane.HTML(sizing_mode="stretch_width", height=200)
+    header_pane = pn.pane.HTML(sizing_mode="stretch_width", height=200)
     panel_widgets_panel = pn.Column(
         pn.pane.Markdown("## Panel Buttons"),
         pn.Row(
@@ -40,33 +110,25 @@ def test_styler_app():
         ),
         name="Panel Widgets",
     )
+    fast_settings = FastSettings()
 
-    @pn.depends(style.param.updates, watch=True)
+    @pn.depends(fast_settings.body_provider.param.updates, watch=True)
     def _update_html(*_):
         print("update html")
-        html_pane.object = f"<h2>{PALETTE_SVG} Colors </h2>\n\n" + style.to_html()
+        body_pane.object = f"<h2>{PALETTE_SVG} Body Colors </h2>\n\n" + fast_settings.body_provider.to_html()
+
+    @pn.depends(fast_settings.header_provider.param.updates, watch=True)
+    def _update_html(*_):
+        print("update html")
+        header_pane.object = f"<h2>{PALETTE_SVG} Header Colors </h2>\n\n" + fast_settings.header_provider.to_html()
 
     _update_html()
-    styler_settings = pn.Param(
-        style,
-        parameters=[
-            "provider",
-            "background_color",
-            "neutral_color",
-            "accent_base_color",
-            "corner_radius",
-            "body_font",
-        ],
-        sizing_mode="stretch_width",
-        margin=0,
-    )
     template.sidebar[:] = [
-        pn.pane.HTML(f"<h2>{GEAR_SVG} Settings</h2>", margin=(0, 10, 0, 10)),
-        styler_settings,
-        style,
+        fast_settings,
     ]
     template.main[:] = [
-        html_pane,
+        header_pane,
+        body_pane,
         panel_widgets_panel,
     ]
     return template
