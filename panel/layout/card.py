@@ -79,7 +79,8 @@ class Card(Column):
         if self.header is None:
             params = {
                 'object': '%s' % (self.title or "&#8203;"),
-                'css_classes': self.title_css_classes
+                'css_classes': self.title_css_classes,
+                'margin': (5, 0)
             }
             if self._header is not None:
                 self._header.param.set_param(**params)
