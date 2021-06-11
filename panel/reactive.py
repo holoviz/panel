@@ -5,6 +5,7 @@ models rendered on the frontend.
 """
 
 import difflib
+import re
 import sys
 import threading
 
@@ -1340,6 +1341,14 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
                 html = html.replace('${%s}' % child_name, '')
         return html
 
+    def _linked_properties(self):
+        linked_properties = [p for pss in self._attrs.values() for _, ps, _ in pss for p in ps]
+        for scripts in self._scripts.values():
+            for script in scripts:
+                linked_properties += re.findall('data.([a-zA-Z_]\S+) =', script)
+                linked_properties += re.findall('data.([a-zA-Z_]\S+)=', script)
+        return linked_properties
+
     def _get_model(self, doc, root=None, parent=None, comm=None):
         properties = self._process_param_change(self._init_params())
         model = _BkReactiveHTML(**properties)
@@ -1348,8 +1357,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         model.children = self._get_children(doc, root, model, comm)
         model.on_event('dom_event', self._process_event)
 
-        linked_properties = [p for pss in self._attrs.values() for _, ps, _ in pss for p in ps]
-        self._link_props(model.data, linked_properties, doc, root, comm)
+        self._link_props(model.data, self._linked_properties(), doc, root, comm)
 
         self._models[root.ref['id']] = (model, parent)
         return model
@@ -1432,5 +1440,4 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         self._event_callbacks[node][event].append(callback)
         events = self._get_events()
         for ref, (model, _) in self._models.items():
-            print(model)
             self._apply_update([], {'events': events}, model, ref)
