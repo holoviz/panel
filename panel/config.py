@@ -347,7 +347,8 @@ class panel_extension(_pyviz_extension):
         'ipywidgets': 'ipywidgets_bokeh.widget',
         'perspective': 'panel.models.perspective',
         'terminal': 'panel.models.terminal',
-        'tabulator': 'panel.models.tabulator'
+        'tabulator': 'panel.models.tabulator',
+        'gridstack': 'panel.layout.gridstack'
     }
 
     # Check whether these are loaded before rendering (if any item

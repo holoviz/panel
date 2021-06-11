@@ -1306,7 +1306,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
 
         # Render Jinja template
         template = jinja2.Template(template_string)
-        context = {'param': self.param, '__doc__': self.__original_doc__}
+        context = {'param': self.param, '__doc__': self.__original_doc__, 'id': id}
         for parameter, value in self.param.get_param_values():
             context[parameter] = value
             if parameter in self._child_names:

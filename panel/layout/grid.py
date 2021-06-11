@@ -202,7 +202,7 @@ class GridSpec(Panel):
     @param.depends('nrows', watch=True)
     def _update_nrows(self):
         if not self._updating:
-            self._rows_fixed = self.nrows is not None
+            self._rows_fixed = bool(self.nrows)
 
     @param.depends('ncols', watch=True)
     def _update_ncols(self):
@@ -371,7 +371,7 @@ class GridSpec(Panel):
         if isinstance(subgrid, np.ndarray):
             params = dict(self.param.get_param_values())
             params['objects'] = OrderedDict([list(o)[0] for o in subgrid.flatten()])
-            gspec = GridSpec(**params)
+            gspec = type(self)(**params)
             xoff, yoff = gspec._xoffset, gspec._yoffset
             adjusted = []
             for (y0, x0, y1, x1), obj in gspec.objects.items():
