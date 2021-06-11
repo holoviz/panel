@@ -2,9 +2,7 @@ from collections import OrderedDict
 
 import param
 
-from ..config import config
 from ..io.resources import bundled_files
-
 from ..reactive import ReactiveHTML
 from ..util import classproperty
 from .grid import GridSpec
@@ -22,7 +20,9 @@ class GridStack(ReactiveHTML, GridSpec):
     allow_drag = param.Boolean(default=True, doc="""
         Allow dragging the grid cells.""")
 
-    state = param.List()
+    state = param.List(doc="""
+        Current state of the grid (updated as items are resized and
+        dragged).""")
 
     width = param.Integer(default=None)
 
@@ -31,12 +31,12 @@ class GridStack(ReactiveHTML, GridSpec):
     _template = """
     <div id="grid" class="grid-stack">
     {% for key, obj in objects.items() %}
-      <div class="grid-stack-item" gs-h="{{ (key[2] or nrows)-(key[0] or 0) }}" gs-w="{{ (key[3] or ncols)-(key[1] or 0) }}" gs-y="{{ (key[0] or 0) }}" gs-x="{{ (key[1] or 0) }}">
+      <div data-id="{{ id(obj) }}" class="grid-stack-item" gs-h="{{ (key[2] or nrows)-(key[0] or 0) }}" gs-w="{{ (key[3] or ncols)-(key[1] or 0) }}" gs-y="{{ (key[0] or 0) }}" gs-x="{{ (key[1] or 0) }}">
         <div id="content" class="grid-stack-item-content">${obj}</div>
       </div>
     {% endfor %}
     </div>
-    """
+    """ # noqa
 
     _scripts = {
         'render': ["""
@@ -54,7 +54,7 @@ class GridStack(ReactiveHTML, GridSpec):
         function sync_state() {
           const items = []
           for (const node of gridstack.engine.nodes) {
-            items.push({x0: node.x, y0: node.y, x1: node.x+node.w, y1: node.y+node.h})
+            items.push({id: node.el.getAttribute('data-id'), x0: node.x, y0: node.y, x1: node.x+node.w, y1: node.y+node.h})
           }
           data.state = items
         }
@@ -102,10 +102,12 @@ class GridStack(ReactiveHTML, GridSpec):
     @param.depends('state', watch=True)
     def _update_objects(self):
         objects = OrderedDict()
-        for p, obj in zip(self.state, self):
-            objects[(p['y0'], p['x0'], p['y1'], p['x1'])] = obj
+        object_ids = {str(id(obj)): obj for obj in self}
+        for p in self.state:
+            objects[(p['y0'], p['x0'], p['y1'], p['x1'])] = object_ids[p['id']]
         self.objects.clear()
         self.objects.update(objects)
+        self._update_sizing()
 
     @param.depends('objects', watch=True)
     def _update_sizing(self):
@@ -119,13 +121,12 @@ class GridStack(ReactiveHTML, GridSpec):
         else:
             height = 0
 
-        children = []
         for i, ((y0, x0, y1, x1), obj) in enumerate(self.objects.items()):
             x0 = 0 if x0 is None else x0
             x1 = (self.ncols) if x1 is None else x1
             y0 = 0 if y0 is None else y0
             y1 = (self.nrows) if y1 is None else y1
-            r, c, h, w = (y0, x0, y1-y0, x1-x0)
+            h, w = y1-y0, x1-x0
 
             if self.sizing_mode in ['fixed', None]:
                 properties = {'width': w*width, 'height': h*height}
