@@ -171,9 +171,12 @@ def construct_data_model(parameterized, name=None, ignore=[]):
         pname = parameterized._rename.get(pname, pname)
         if pname == 'name' or pname is None:
             continue
+        nullable = getattr(p, 'allow_None', False)
         kwargs = {'default': p.default, 'help': p.doc}
         if prop is None:
             properties[pname] = bp.Any(**kwargs)
+        elif nullable:
+            properties[pname] = bp.Nullable(prop(p, {}), **kwargs)
         else:
             properties[pname] = prop(p, kwargs)
     name = name or parameterized.name

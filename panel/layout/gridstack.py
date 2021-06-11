@@ -22,12 +22,6 @@ class GridStack(ReactiveHTML, GridSpec):
     allow_drag = param.Boolean(default=True, doc="""
         Allow dragging the grid cells.""")
 
-    ncols = param.Integer(default=12, doc="""
-        The number of columns in the grid.""")
-
-    nrows = param.Integer(default=0, doc="""
-        The number of columns in the grid.""")
-
     state = param.List()
 
     width = param.Integer(default=None)
