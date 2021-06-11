@@ -10,6 +10,8 @@ from base64 import b64encode
 from collections import OrderedDict
 from pathlib import Path
 
+import param
+
 from bokeh.embed.bundle import (
     Bundle as BkBundle, _bundle_extensions, extension_dirs,
     bundle_models
@@ -159,7 +161,14 @@ class Resources(BkResources):
     @property
     def js_files(self):
         from ..config import config
+        from ..reactive import ReactiveHTML
+
         files = super(Resources, self).js_files
+
+        for model in param.concrete_descendents(ReactiveHTML).values():
+            if hasattr(model, '__javascript__'):
+                files += model.__javascript__
+
         js_files = []
         for js_file in files:
             if (js_file.startswith(state.base_url) or js_file.startswith('static/')):
@@ -196,8 +205,14 @@ class Resources(BkResources):
     @property
     def css_files(self):
         from ..config import config
+        from ..reactive import ReactiveHTML
 
         files = super(Resources, self).css_files
+
+        for model in param.concrete_descendents(ReactiveHTML).values():
+            if hasattr(model, '__css__'):
+                files += model.__css__
+
         for cssf in config.css_files:
             if os.path.isfile(cssf) or cssf in files:
                 continue
