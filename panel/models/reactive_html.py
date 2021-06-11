@@ -169,7 +169,7 @@ def construct_data_model(parameterized, name=None, ignore=[]):
             continue
         prop = PARAM_MAPPING.get(type(p))
         pname = parameterized._rename.get(pname, pname)
-        if pname == 'name':
+        if pname == 'name' or pname is None:
             continue
         kwargs = {'default': p.default, 'help': p.doc}
         if prop is None:
