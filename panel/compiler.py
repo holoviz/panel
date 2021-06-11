@@ -138,6 +138,7 @@ def write_bundled_tarball(name, tarball, bundle_dir, module=False):
             
 def bundle_resources():
     from .config import panel_extension
+    from .reactive import ReactiveHTML
     from .template.base import BasicTemplate
     from .template.theme import Theme
 
@@ -150,7 +151,12 @@ def bundle_resources():
     # Extract Model dependencies
     js_files = {}
     css_files = {}
-    for name, model in Model.model_class_reverse_map.items():
+    reactive = param.concrete_descendents(ReactiveHTML).values()
+    models = (
+        list(Model.model_class_reverse_map.items()) +
+        [(f'{m.__module__}.{m.__name__}', m) for m in reactive]
+    )
+    for name, model in models:
         if not name.startswith('panel.'):
             continue
         prev_jsfiles = getattr(model, '__javascript_raw__', None)
