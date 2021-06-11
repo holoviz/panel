@@ -2,6 +2,7 @@ import {render} from 'preact';
 import {useCallback} from 'preact/hooks';
 import {html} from 'htm/preact';
 
+import {position} from "@bokehjs/core/dom"
 import {build_views} from "@bokehjs/core/build_views"
 import {isArray} from "@bokehjs/core/util/types"
 import * as p from "@bokehjs/core/properties"
@@ -146,7 +147,6 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
     this._remove_mutation_observers()
   }
 
-
   invalidate_layout(): void {
     super.invalidate_layout()
     if (this._parent != null)
@@ -227,10 +227,32 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
     }
   }
 
-  after_layout(): void {
+  get is_layout_root(): boolean {
+    return (this.is_root || (this.parent == null)) && (this._parent == null)
+  }
+
+  update_position(): void {
+    this.el.style.display = this.model.visible ? "block" : "none"
+
+    let margin = undefined
+    if (this.is_layout_root && this._parent == null)
+      margin = this.layout.sizing.margin
+    position(this.el, this.layout.bbox, margin)
+
     for (const child_view of this.child_views) {
-      child_view.resize_layout()
+      if (child_view.layout == null)
+	child_view.update_layout()
+      child_view.update_position()
+    }
+  }
+
+  after_layout(): void {
+    this.compute_viewport()
+    this.layout.compute(this._viewport)
+    this.update_position()
+    for (const child_view of this.child_views) {
       this._align_view(child_view)
+      child_view.resize_layout()
       child_view.after_layout()
     }
     this._has_finished = true
@@ -288,6 +310,8 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
   private _render_script(literal: any, id: string) {
     const scripts = []
     for (const elname of this.model.nodes) {
+      if (elname in this.model.children)
+        continue
       const elvar = elname.replace('-', '_')
       const script = `
       const ${elvar} = document.getElementById('${elname}-${id}')
