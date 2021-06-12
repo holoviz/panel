@@ -23,6 +23,12 @@ class FastBaseTemplate(BasicTemplate):
     sidebar_footer = param.String("", doc="""
         A HTML string appended to the sidebar""")
 
+    # Might be extended to accordion or tabs in the future
+    main_wrapper = param.Selector(default="card", objects=["", "card"], doc="""
+        What to wrap the main components into. Options are '' (i.e. none) and 'card' (Default).
+        Could be extended to Accordion, Tab etc. in the future
+    """)
+
     _css = [
         _ROOT / "css/fast_root.css",
         _ROOT / "css/fast_bokeh.css",
@@ -85,6 +91,7 @@ class FastBaseTemplate(BasicTemplate):
         self._render_variables["theme_toggle"] = self.theme_toggle
         self._render_variables["theme"] = self.theme.__name__[:-5].lower()
         self._render_variables["sidebar_footer"] = self.sidebar_footer
+        self._render_variables["main_wrapper"] = self.main_wrapper
 
 
 class FastGridBaseTemplate(FastBaseTemplate, ReactTemplate):
