@@ -16,7 +16,6 @@ export class FastDesignProviderView extends HTMLBoxView {
         this.connect(this.model.properties.neutral_color.change, () => {this.setNeutralColor();this.getProperties();console.log("neutral_color")})
         this.connect(this.model.properties.accent_base_color.change, () => {this.setAccentColor();this.getProperties();console.log("background_color");})
         this.connect(this.model.properties.corner_radius.change, () => {this.provider.cornerRadius=this.model.corner_radius;console.log("corner_radius");})
-        this.connect(this.model.properties.body_font.change, () => {this.setBodyFont();this.getProperties();console.log("body_font");})
     }
 
     render(): void {
@@ -52,9 +51,6 @@ export class FastDesignProviderView extends HTMLBoxView {
             console.log("neutralColor set")
         }
     }
-    setBodyFont(): void {
-        document.getElementsByTagName("body")[0].style.setProperty("--body-font", this.model.body_font)
-    }
 
     getProperties(): void {
         console.log("getProperties")
@@ -81,12 +77,8 @@ export class FastDesignProviderView extends HTMLBoxView {
         if (provider.accentForegroundRestDelta!==undefined){model.accent_foreground_rest = palette[index+provider.accentForegroundRestDelta]}
 
         let value: string
-        value=window.getComputedStyle(provider).getPropertyValue('--body-font').trim()
-        if (value!==""){model.body_font = value}
-
         value=window.getComputedStyle(provider).getPropertyValue('--accent-foreground-cut-rest').trim()
         if (value!==""){model.accent_foreground_cut_rest = value}
-
         value=window.getComputedStyle(provider).getPropertyValue('--neutral-outline-active').trim()
         if (value!==""){model.neutral_outline_active = value}
         value=window.getComputedStyle(provider).getPropertyValue('--neutral-outline-hover').trim()
@@ -118,7 +110,6 @@ export namespace FastDesignProvider {
         neutral_color: p.Property<string>,
         accent_base_color: p.Property<string>,
         corner_radius: p.Property<number>,
-        body_font: p.Property<string>,
 
         accent_fill_active: p.Property<string>,
         accent_fill_hover: p.Property<string>,
@@ -162,7 +153,6 @@ export class FastDesignProvider extends HTMLBox {
             neutral_color: [p.String, ],
             accent_base_color: [p.String, ],
             corner_radius: [p.Int, ],
-            body_font: [p.String, ],
 
             accent_fill_active: [p.String, ],
             accent_fill_hover: [p.String, ],

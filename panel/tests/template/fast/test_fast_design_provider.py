@@ -1,3 +1,4 @@
+from panel.template.fast.base import FastBaseTemplate
 from panel.template.fast.theme import FastStyle
 import param
 from panel.template.fast import FastDesignProvider
@@ -24,34 +25,80 @@ GEAR_SVG = """
 </svg>
 """
 
+
 class FastSettings(pn.viewable.Viewer):
     body_provider = param.Parameter()
     header_provider = param.Parameter()
 
-    shadow = param.Boolean(True)
+    template = param.Parameter()
+    template_constructor = param.String()
 
-    def __init__(self, **params):
+    def __init__(self, template: FastBaseTemplate, **params):
+        params["body_provider"] = FastDesignProvider(provider="body-design-provider")
+        params["header_provider"] = FastDesignProvider(provider="header-design-provider")
+        params["template"] = template
+
         super().__init__(**params)
-        self.body_provider = FastDesignProvider(provider="body-design-provider")
-        self.header_provider = FastDesignProvider(provider="header-design-provider")
+
+        self._create_layout()
+        self._update_template_constructor()
+
+    @param.depends("template.background_color", watch=True)
+    def _sync_background_color(self):
+        self.body_provider.background_color = self.template.background_color
+
+    @param.depends("template.accent_base_color", watch=True)
+    def _sync_accent_base_color(self):
+        self.body_provider.accent_base_color = self.template.accent_base_color
+
+    @param.depends("template.neutral_color", watch=True)
+    def _sync_neutral_color(self):
+        self.body_provider.neutral_color = self.template.neutral_color
+
+    @param.depends("template.corner_radius", watch=True)
+    def _sync_corner_radius(self):
+        self.body_provider.corner_radius = self.template.corner_radius
+
+    @param.depends("template.header_background", watch=True)
+    def _sync_header_background_color(self):
+        self.header_provider.background_color = self.template.header_background
+
+    @param.depends("template.header_accent_base_color", watch=True)
+    def _sync_header_accent_base_color(self):
+        self.header_provider.accent_base_color = self.template.header_accent_base_color
+
+    def _create_layout(self):
         body_settings = pn.Param(
-            self.body_provider,
+            self.template,
             parameters=[
                 "background_color",
                 "neutral_color",
                 "accent_base_color",
                 "corner_radius",
-                "body_font",
+                "font",
+                "shadow",
+                "main_layout",
             ],
+            widgets={
+                "background_color": pn.widgets.ColorPicker,
+                "neutral_color": pn.widgets.ColorPicker,
+                "accent_base_color": pn.widgets.ColorPicker,
+            },
             name="Body",
             sizing_mode="stretch_width",
         )
         header_settings = pn.Param(
-            self.header_provider,
+            self.template,
             parameters=[
-                "background_color",
-                "accent_base_color",
+                "header_background",
+                "header_color",
+                "header_accent_base_color",
             ],
+            widgets={
+                "header_background": pn.widgets.ColorPicker,
+                "header_color": pn.widgets.ColorPicker,
+                "header_accent_base_color": pn.widgets.ColorPicker,
+            },
             name="Header",
             sizing_mode="stretch_width",
         )
@@ -59,17 +106,23 @@ class FastSettings(pn.viewable.Viewer):
         self.layout = pn.Column(
             pn.pane.HTML(f"<h3>{GEAR_SVG} Fast Template Settings</h3>", margin=(0, 10, 0, 10)),
             body_settings,
-            self.param.shadow,
             header_settings,
             self.body_provider,
             self.header_provider,
             self.other_styles,
-        sizing_mode="stretch_width")
+            sizing_mode="stretch_width",
+        )
 
-    @param.depends("shadow", watch=True)
+    @param.depends(
+        "template.shadow",
+        "template.font",
+        "template.main_layout",
+        "template.header_color",
+        watch=True,
+    )
     def _update_other_styles(self):
         html = "<style>"
-        if self.shadow:
+        if self.template.shadow:
             html += """
         #sidebar, #header {
             box-shadow: 2px 2px 10px silver;
@@ -81,9 +134,53 @@ class FastSettings(pn.viewable.Viewer):
             box-shadow: none;
         }
         """
+
+        if self.template.font:
+            html += f""":root {{
+    --body-font: { self.template.font };
+}}"""
+
+        if self.template.main_layout == "":
+            html += ".pn-wrapper {display: contents;}"
+
+        if self.template.header_color:
+            html += f"""
+#header-design-provider {{
+    --neutral-foreground-rest: { self.template.header_color };
+}}
+"""
+
         html += "</style>"
         self.other_styles.object = html
         print(self.other_styles.object)
+
+    @param.depends(
+        "template.background_color",
+        "template.neutral_color",
+        "template.accent_base_color",
+        "template.corner_radius",
+        "template.font",
+        "template.main_layout",
+        "template.header_background",
+        "template.header_color",
+        "template.header_accent_base_color",
+        watch=True,
+    )
+    def _update_template_constructor(self):
+        tmp = self.template
+        self.template_constructor = f"""template=FastListTemplate(
+    site='{tmp.site}',
+    title='{tmp.title}',
+    main_layout='{tmp.main_layout}',
+    background_color='{tmp.background_color}',
+    neutral_color='{tmp.neutral_color}',
+    accent_base_color='{tmp.accent_base_color}',
+    font='{tmp.font}',
+    corner_radius={tmp.corner_radius},
+    header_background='{tmp.header_background}',
+    header_color='{tmp.header_color}',
+    header_accent_base_color='{tmp.header_accent_base_color}',
+)"""
 
     def __panel__(self):
         return self.layout
@@ -92,13 +189,12 @@ class FastSettings(pn.viewable.Viewer):
 def test_styler_app():
     template = FastListTemplate(
         site="Awesome Panel",
-            title="Fast Template Style",
-            font="Comic Sans MS",
-        )
+        title="Fast Template Style",
+        font="Comic Sans MS",
+    )
 
-
-    body_pane = pn.pane.HTML(sizing_mode="stretch_width", height=200)
-    header_pane = pn.pane.HTML(sizing_mode="stretch_width", height=200)
+    body_pane = pn.pane.HTML(sizing_mode="stretch_width", height=130)
+    header_pane = pn.pane.HTML(sizing_mode="stretch_width", height=130)
     panel_widgets_panel = pn.Column(
         pn.pane.Markdown("## Panel Buttons"),
         pn.Row(
@@ -110,26 +206,41 @@ def test_styler_app():
         ),
         name="Panel Widgets",
     )
-    fast_settings = FastSettings()
+    fast_settings = FastSettings(template)
 
     @pn.depends(fast_settings.body_provider.param.updates, watch=True)
     def _update_html(*_):
-        print("update html")
-        body_pane.object = f"<h2>{PALETTE_SVG} Body Colors </h2>\n\n" + fast_settings.body_provider.to_html()
+        body_pane.object = (
+            f"<h2>{PALETTE_SVG} Body Colors </h2>\n\n" + fast_settings.body_provider.to_html()
+        )
 
     @pn.depends(fast_settings.header_provider.param.updates, watch=True)
     def _update_html(*_):
-        print("update html")
-        header_pane.object = f"<h2>{PALETTE_SVG} Header Colors </h2>\n\n" + fast_settings.header_provider.to_html()
+        header_pane.object = (
+            f"<h2>{PALETTE_SVG} Header Colors </h2>\n\n" + fast_settings.header_provider.to_html()
+        )
 
     _update_html()
     template.sidebar[:] = [
         fast_settings,
     ]
     template.main[:] = [
-        header_pane,
         body_pane,
+        header_pane,
         panel_widgets_panel,
+        pn.Param(
+            fast_settings,
+            parameters=["template_constructor"],
+            widgets={
+                "template_constructor": {
+                    "type": pn.widgets.TextAreaInput,
+                    "height": 300,
+                    "disabled": True,
+                    "name": ""
+                }
+            },
+            name="Template Constructor"
+        ),
     ]
     return template
 

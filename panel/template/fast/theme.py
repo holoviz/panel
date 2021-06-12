@@ -50,7 +50,7 @@ class FastStyle(param.Parameterized):
     font = param.String(default="Open Sans, sans-serif")
     font_url = param.String(default=FONT_URL)
     corner_radius = param.Integer(default=3)
-    shadow = param.String("box-shadow: 2px 2px 10px silver")
+    shadow = param.Boolean(default=True)
 
     def create_bokeh_theme(self):
         """Returns a custom bokeh theme based on the style parameters
@@ -129,7 +129,7 @@ DARK_STYLE = FastStyle(
     neutral_fill_card_rest="#212121",
     neutral_focus="#717171",
     neutral_foreground_rest="#e5e5e5",
-    shadow = "",
+    shadow = False,
 )
 
 class FastDefaultTheme(DefaultTheme):
