@@ -114,6 +114,7 @@ class FastSettings(pn.viewable.Viewer):
         )
 
     @param.depends(
+        "template.background_color",
         "template.shadow",
         "template.font",
         "template.main_layout",
@@ -121,7 +122,11 @@ class FastSettings(pn.viewable.Viewer):
         watch=True,
     )
     def _update_other_styles(self):
-        html = "<style>"
+        html = f"""<style>
+body {{
+    background: {self.template.background_color}
+}}
+"""
         if self.template.shadow:
             html += """
         #sidebar, #header {
