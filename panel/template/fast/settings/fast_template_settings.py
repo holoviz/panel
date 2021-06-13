@@ -271,11 +271,12 @@ body {{
             title="FastGridTemplate Designer",
             font="Comic Sans MS",
             row_height=10,
+            prevent_collision=True,
+            save_layout=True,
         )
         fast_template_settings = cls(template)
 
         template.sidebar[:] = [
-            HTML(f"<h3>{GEAR_SVG} Template Settings</h3>", margin=(0, 10, 0, 10)),
             fast_template_settings,
         ]
 
