@@ -90,6 +90,14 @@ class FastDesignProvider(Widget):
         parameter might be much more efficient than watching all colors and reacting to each
         individual change."""
     )
+    def __init__(self, **params):
+        params["sizing_mode"]="fixed"
+        params["width"]=0
+        params["height"]=0
+        params["margin"]=0
+        params["background"]="blue"
+        super().__init__(**params)
+
 
     def _add_color(self, name):
         color = getattr(self, name)

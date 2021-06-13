@@ -1,8 +1,7 @@
 from panel.template.fast.base import FastBaseTemplate
-from panel.template.fast.theme import FastStyle
 import param
 from panel.template.fast import FastDesignProvider
-from panel.template import FastListTemplate
+from panel.template import FastListTemplate, FastGridTemplate
 import panel as pn
 
 
@@ -26,17 +25,55 @@ GEAR_SVG = """
 """
 
 
-class FastSettings(pn.viewable.Viewer):
-    body_provider = param.Parameter()
-    header_provider = param.Parameter()
+class FastTemplateSettings(pn.viewable.Viewer):
+    template = param.ClassSelector(
+        class_=FastBaseTemplate,
+        constant=True,
+        doc="""
+        The Fast Template to edit""",
+    )
+    template_constructor = param.String(
+        constant=True,
+        doc="""
+        The Python code needed to construct a Template with the same parameter settings""",
+    )
+    editor = param.ClassSelector(
+        class_=pn.Column,
+        constant=True,
+        doc="""
+        A Column containing the settings components. You would need to also include the `comms` in
+        your app to enable bidirectional communication
+        """,
+    )
+    comms = param.ClassSelector(
+        class_=pn.Column,
+        constant=True,
+        doc="""
+        Include this in your app if you want to enable changing Template settings dynamically.
 
-    template = param.Parameter()
-    template_constructor = param.String()
+        The component is a Column containing the `body_provider`, `header_provider` and
+        `style_panel`. You can also add these individually.
+        """,
+    )
 
-    def __init__(self, template: FastBaseTemplate, **params):
-        params["body_provider"] = FastDesignProvider(provider="body-design-provider")
-        params["header_provider"] = FastDesignProvider(provider="header-design-provider")
+    def __init__(self, template):
+        """The FastTemplateSettings widget enables you to change the look and feel of the
+        FastListTemplate and FastGridTemplate dynamically on a live app.
+
+        Add it to the sidebar of your template to dynamically change the settings of the Template.
+
+        If you need more control you can add the `comms` and `editor` components individually
+        instead."""
+
+        params = {}
         params["template"] = template
+        params["editor"] = pn.Column(sizing_mode="stretch_width", margin=0)
+        params["comms"] = pn.Column(
+            sizing_mode="fixed",
+            height=0,
+            width=0,
+            margin=0,
+        )
 
         super().__init__(**params)
 
@@ -45,30 +82,30 @@ class FastSettings(pn.viewable.Viewer):
 
     @param.depends("template.background_color", watch=True)
     def _sync_background_color(self):
-        self.body_provider.background_color = self.template.background_color
+        self._body_provider.background_color = self.template.background_color
 
     @param.depends("template.accent_base_color", watch=True)
     def _sync_accent_base_color(self):
-        self.body_provider.accent_base_color = self.template.accent_base_color
+        self._body_provider.accent_base_color = self.template.accent_base_color
 
     @param.depends("template.neutral_color", watch=True)
     def _sync_neutral_color(self):
-        self.body_provider.neutral_color = self.template.neutral_color
+        self._body_provider.neutral_color = self.template.neutral_color
 
     @param.depends("template.corner_radius", watch=True)
     def _sync_corner_radius(self):
-        self.body_provider.corner_radius = self.template.corner_radius
+        self._body_provider.corner_radius = self.template.corner_radius
 
     @param.depends("template.header_background", watch=True)
     def _sync_header_background_color(self):
-        self.header_provider.background_color = self.template.header_background
+        self._header_provider.background_color = self.template.header_background
 
     @param.depends("template.header_accent_base_color", watch=True)
     def _sync_header_accent_base_color(self):
-        self.header_provider.accent_base_color = self.template.header_accent_base_color
+        self._header_provider.accent_base_color = self.template.header_accent_base_color
 
     def _create_layout(self):
-        body_settings = pn.Param(
+        self._body_settings = pn.Param(
             self.template,
             parameters=[
                 "background_color",
@@ -87,7 +124,7 @@ class FastSettings(pn.viewable.Viewer):
             name="Body",
             sizing_mode="stretch_width",
         )
-        header_settings = pn.Param(
+        self._header_settings = pn.Param(
             self.template,
             parameters=[
                 "header_background",
@@ -102,15 +139,21 @@ class FastSettings(pn.viewable.Viewer):
             name="Header",
             sizing_mode="stretch_width",
         )
-        self.other_styles = pn.pane.HTML(width=0, height=0, sizing_mode="fixed", margin=0)
+        self.editor[:] = [self._body_settings, self._header_settings]
+
+        self._body_provider = FastDesignProvider(provider="body-design-provider")
+        self._header_provider = FastDesignProvider(provider="header-design-provider")
+        self._styles = pn.pane.HTML(width=0, height=0, sizing_mode="fixed", margin=0)
+        self.comms[:] = [self._body_provider, self._header_provider, self._styles]
+
         self.layout = pn.Column(
-            pn.pane.HTML(f"<h3>{GEAR_SVG} Fast Template Settings</h3>", margin=(0, 10, 0, 10)),
-            body_settings,
-            header_settings,
-            self.body_provider,
-            self.header_provider,
-            self.other_styles,
+            self._body_settings,
+            self._header_settings,
+            self._body_provider,
+            self._header_provider,
+            self._styles,
             sizing_mode="stretch_width",
+            margin=0,
         )
 
     @param.depends(
@@ -121,7 +164,7 @@ class FastSettings(pn.viewable.Viewer):
         "template.header_color",
         watch=True,
     )
-    def _update_other_styles(self):
+    def _update_styles(self):
         html = f"""<style>
 body {{
     background: {self.template.background_color}
@@ -156,8 +199,7 @@ body {{
 """
 
         html += "</style>"
-        self.other_styles.object = html
-        print(self.other_styles.object)
+        self.style_panel.object = html
 
     @param.depends(
         "template.background_color",
@@ -173,7 +215,8 @@ body {{
     )
     def _update_template_constructor(self):
         tmp = self.template
-        self.template_constructor = f"""template=FastListTemplate(
+        with param.edit_constant(self):
+            self.template_constructor = f"""template=FastListTemplate(
     site='{tmp.site}',
     title='{tmp.title}',
     main_layout='{tmp.main_layout}',
@@ -190,66 +233,122 @@ body {{
     def __panel__(self):
         return self.layout
 
+    @classmethod
+    def create_fastlisttemplate_app(cls):
+        template = FastListTemplate(
+            site="Awesome Panel",
+            title="Fast Template Settings",
+            font="Comic Sans MS",
+        )
+        fast_template_settings = cls(template)
 
-def test_styler_app():
-    template = FastListTemplate(
-        site="Awesome Panel",
-        title="Fast Template Style",
-        font="Comic Sans MS",
-    )
+        template.sidebar[:] = [
+            pn.pane.HTML(f"<h3>{GEAR_SVG} Template Settings</h3>", margin=(0, 10, 0, 10)),
+            fast_template_settings,
+        ]
 
-    body_pane = pn.pane.HTML(sizing_mode="stretch_width", height=130)
-    header_pane = pn.pane.HTML(sizing_mode="stretch_width", height=130)
-    panel_widgets_panel = pn.Column(
-        pn.pane.Markdown("## Panel Buttons"),
-        pn.Row(
-            pn.widgets.Button(name="DEFAULT", button_type="default"),
-            pn.widgets.Button(name="PRIMARY", button_type="primary"),
-            pn.widgets.Button(name="SUCCESS", button_type="success"),
-            pn.widgets.Button(name="WARNING", button_type="warning"),
-            pn.widgets.Button(name="DANGER", button_type="danger"),
-        ),
-        name="Panel Widgets",
-    )
-    fast_settings = FastSettings(template)
+        (
+            body_colors_panel,
+            header_colors_panel,
+            panel_buttons_panel,
+            template_constructor_panel,
+        ) = FastTemplateSettings._create_main_app_components(fast_template_settings)
+        template.main[:] = [
+            body_colors_panel,
+            header_colors_panel,
+            panel_buttons_panel,
+            template_constructor_panel,
+        ]
+        return template
 
-    @pn.depends(fast_settings.body_provider.param.updates, watch=True)
-    def _update_html(*_):
-        body_pane.object = (
-            f"<h2>{PALETTE_SVG} Body Colors </h2>\n\n" + fast_settings.body_provider.to_html()
+    @classmethod
+    def create_fastgridtemplate_app(cls):
+        template = FastGridTemplate(
+            site="Awesome Panel",
+            title="Fast Template Settings",
+            font="Comic Sans MS",
+        )
+        fast_template_settings = cls(template)
+
+        template.sidebar[:] = [
+            pn.pane.HTML(f"<h3>{GEAR_SVG} Template Settings</h3>", margin=(0, 10, 0, 10)),
+            fast_template_settings,
+        ]
+
+        (
+            body_colors_panel,
+            header_colors_panel,
+            panel_buttons_panel,
+            template_constructor_panel,
+        ) = FastTemplateSettings._create_main_app_components(fast_template_settings)
+        template.main[0:2,:] = body_colors_panel
+        #     body_colors_panel,
+        #     header_colors_panel,
+        #     panel_buttons_panel,
+        #     template_constructor_panel,
+        # ]
+        return template
+
+    @staticmethod
+    def _create_main_app_components(fast_template_settings):
+        body_colors_panel = pn.pane.HTML(sizing_mode="stretch_width", height=130)
+        header_colors_panel = pn.pane.HTML(sizing_mode="stretch_width", height=130)
+        panel_buttons_panel = pn.Column(
+            pn.pane.Markdown("## Panel Buttons"),
+            pn.Row(
+                pn.widgets.Button(name="DEFAULT", button_type="default"),
+                pn.widgets.Button(name="PRIMARY", button_type="primary"),
+                pn.widgets.Button(name="SUCCESS", button_type="success"),
+                pn.widgets.Button(name="WARNING", button_type="warning"),
+                pn.widgets.Button(name="DANGER", button_type="danger"),
+            ),
+            name="Panel Widgets",
         )
 
-    @pn.depends(fast_settings.header_provider.param.updates, watch=True)
-    def _update_html(*_):
-        header_pane.object = (
-            f"<h2>{PALETTE_SVG} Header Colors </h2>\n\n" + fast_settings.header_provider.to_html()
-        )
+        @pn.depends(fast_template_settings._body_provider.param.updates, watch=True)
+        def _update_body_html(*_):
+            body_colors_panel.object = (
+                f"<h2>{PALETTE_SVG} Body Colors </h2>\n\n"
+                + fast_template_settings._body_provider.to_html()
+            )
 
-    _update_html()
-    template.sidebar[:] = [
-        fast_settings,
-    ]
-    template.main[:] = [
-        body_pane,
-        header_pane,
-        panel_widgets_panel,
-        pn.Param(
-            fast_settings,
+        _update_body_html()
+
+        @pn.depends(fast_template_settings._header_provider.param.updates, watch=True)
+        def _update_header_html(*_):
+            header_colors_panel.object = (
+                f"<h2>{PALETTE_SVG} Header Colors </h2>\n\n"
+                + fast_template_settings._header_provider.to_html()
+            )
+
+        _update_header_html()
+
+        template_constructor_panel = pn.Param(
+            fast_template_settings,
             parameters=["template_constructor"],
             widgets={
                 "template_constructor": {
                     "type": pn.widgets.TextAreaInput,
                     "height": 300,
                     "disabled": True,
-                    "name": ""
+                    "name": "",
                 }
             },
-            name="Template Constructor"
-        ),
-    ]
-    return template
+            name="Template Constructor",
+        )
+        return (
+            body_colors_panel,
+            header_colors_panel,
+            panel_buttons_panel,
+            template_constructor_panel,
+        )
+
+
+def test_create_fastlisttemplate_app():
+    FastTemplateSettings.create_fastlisttemplate_app()
 
 
 if __name__.startswith("bokeh"):
     pn.config.sizing_mode = "stretch_width"
-    test_styler_app().servable()
+    # FastTemplateSettings.create_fastlisttemplate_app().servable()
+    FastTemplateSettings.create_fastgridtemplate_app().servable()
