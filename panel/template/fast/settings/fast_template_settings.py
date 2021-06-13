@@ -45,23 +45,20 @@ class FastTemplateSettings(Viewer):
         class_=Column,
         constant=True,
         doc="""
-        A Column containing the settings components. You would need to also include the `comms` in
-        your app to enable bidirectional communication
+        A Column containing the settings editor. You would need to also include the `comms` in
+        your app to enable bidirectional communication.
         """,
     )
     comms = param.ClassSelector(
         class_=Column,
         constant=True,
-        doc="""
-        Include this in your app if you want to enable changing Template settings dynamically.
-
-        The component is a Column containing the `body_provider`, `header_provider` and
-        `style_panel`. You can also add these individually.
-        """,
+        doc="""The component that provides bidirectional communication to set and get the style
+        values. Include this in your app if you want to enable changing Template settings
+        dynamically.""",
     )
 
     def __init__(self, template):
-        """The FastTemplateSettings widget enables you to change the look and feel of the
+        """The FastTemplateSettings component enables you to change the look and feel of the
         FastListTemplate and FastGridTemplate dynamically on a live app.
 
         Add it to the sidebar of your template to dynamically change the settings of the Template.
@@ -151,6 +148,7 @@ class FastTemplateSettings(Viewer):
         self.comms[:] = [self._body_provider, self._header_provider, self._styles]
 
         self.layout = Column(
+            HTML(f"<h3>{GEAR_SVG} Template Settings</h3>", margin=(0, 10, 0, 10)),
             self._body_settings,
             self._header_settings,
             self._body_provider,
@@ -212,6 +210,7 @@ body {{
         "template.corner_radius",
         "template.font",
         "template.main_layout",
+        "template.shadow",
         "template.header_background",
         "template.header_color",
         "template.header_accent_base_color",
@@ -223,12 +222,13 @@ body {{
             self.template_constructor = f"""template={type(tmp).name}(
     site='{tmp.site}',
     title='{tmp.title}',
-    main_layout='{tmp.main_layout}',
     background_color='{tmp.background_color}',
     neutral_color='{tmp.neutral_color}',
     accent_base_color='{tmp.accent_base_color}',
-    font='{tmp.font}',
     corner_radius={tmp.corner_radius},
+    font='{tmp.font}',
+    main_layout='{tmp.main_layout}',
+    shadow={tmp.shadow},
     header_background='{tmp.header_background}',
     header_color='{tmp.header_color}',
     header_accent_base_color='{tmp.header_accent_base_color}',
@@ -247,7 +247,6 @@ body {{
         fast_template_settings = cls(template)
 
         template.sidebar[:] = [
-            HTML(f"<h3>{GEAR_SVG} Template Settings</h3>", margin=(0, 10, 0, 10)),
             fast_template_settings,
         ]
 

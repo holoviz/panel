@@ -12,10 +12,10 @@ export class FastDesignProviderView extends HTMLBoxView {
         super.connect_signals()
 
         this.connect(this.model.properties.provider.change, () => {this.setProvider(), this.getProperties()})
-        this.connect(this.model.properties.background_color.change, () => {this.setBackgroundColor();this.getProperties();console.log("background_color")})
-        this.connect(this.model.properties.neutral_color.change, () => {this.setNeutralColor();this.getProperties();console.log("neutral_color")})
-        this.connect(this.model.properties.accent_base_color.change, () => {this.setAccentColor();this.getProperties();console.log("background_color");})
-        this.connect(this.model.properties.corner_radius.change, () => {this.provider.cornerRadius=this.model.corner_radius;console.log("corner_radius");})
+        this.connect(this.model.properties.background_color.change, () => {this.setBackgroundColor();this.getProperties()})
+        this.connect(this.model.properties.neutral_color.change, () => {this.setNeutralColor();this.getProperties()})
+        this.connect(this.model.properties.accent_base_color.change, () => {this.setAccentColor();this.getProperties()})
+        this.connect(this.model.properties.corner_radius.change, () => {this.provider.cornerRadius=this.model.corner_radius;})
     }
 
     render(): void {
@@ -29,10 +29,7 @@ export class FastDesignProviderView extends HTMLBoxView {
         this.getProperties();
     }
     setProvider(): void {
-        console.log("set provider")
-        console.log(this.model.provider)
         this.provider = <HTMLElement>document.getElementById(this.model.provider);
-        console.log(this.provider)
     }
     setBackgroundColor(): void {
         if (this.model.background_color){
@@ -46,20 +43,16 @@ export class FastDesignProviderView extends HTMLBoxView {
     }
     setNeutralColor(): void {
         if (this.model.neutral_color){
-            console.log("setNeutralColor", this.model.neutral_color)
             win.fastDesignProvider.setNeutralColor(this.model.neutral_color, "#" + this.model.provider)
-            console.log("neutralColor set")
         }
     }
 
     getProperties(): void {
-        console.log("getProperties")
         const model = this.model;
         const provider = <any>this.provider;
-
-        console.log(provider.backgroundColor, model.background_color)
+        if (provider===null){return}
         if (provider.backgroundColor && model.background_color!==provider.backgroundColor){
-            model.background_color = provider.backgroundColor;console.log("set background")
+            model.background_color = provider.backgroundColor;
         }
         if (provider.accentBaseColor && model.accent_base_color!==provider.accentBaseColor){
             model.accent_base_color = provider.accentBaseColor
@@ -87,11 +80,8 @@ export class FastDesignProviderView extends HTMLBoxView {
         if (value!==""){model.neutral_outline_rest = value}
         value= window.getComputedStyle(provider).getPropertyValue('--neutral-focus').trim()
         if (value!==""){model.neutral_focus = value}
-        console.log("neutral_focus", value, model.neutral_focus)
         value=window.getComputedStyle(provider).getPropertyValue('--neutral-foreground-rest').trim()
         if (value!==""){model.neutral_foreground_rest = value}
-        console.log("--neutral-foreground-rest", value, model.neutral_foreground_rest)
-        console.log("corner_radius", this.provider.cornerRadius)
         if (this.provider.cornerRadius!==undefined){
             this.model.corner_radius = this.provider.cornerRadius
         } else {
