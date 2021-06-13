@@ -240,8 +240,8 @@ body {{
     @classmethod
     def create_list_designer(cls):
         template = FastListTemplate(
-            site="Awesome Panel",
-            title="FastListTemplate Settings",
+            site="Panel",
+            title="FastListTemplate Designer",
             font="Comic Sans MS",
         )
         fast_template_settings = cls(template)
@@ -267,8 +267,8 @@ body {{
     @classmethod
     def create_grid_designer(cls):
         template = FastGridTemplate(
-            site="Awesome Panel",
-            title="FastGridTemplate Settings",
+            site="Panel",
+            title="FastGridTemplate Designer",
             font="Comic Sans MS",
             row_height=10,
         )
