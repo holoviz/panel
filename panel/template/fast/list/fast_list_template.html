@@ -135,7 +135,6 @@
   setBackgroundColor("{{ style.background_color }}", "#body-design-provider");
 
   document.querySelector("#body-design-provider").cornerRadius={{ style.corner_radius }};
-  console.log("corner_radius", {{ style.corner_radius }})
 
   function registerCSSCustomProperties(selector)  {
     const provider = document.querySelector(selector);
@@ -201,6 +200,9 @@
       <div class="pn-bar"></div>
       <div class="pn-bar"></div>
 	  </span>
+    <fast-tooltip anchor="sidebar-button" position="right">
+      Toggle the Sidebar
+    </fast-tooltip>
     {% endif %}
     <div class="app-header">
       <div>
@@ -229,12 +231,18 @@
         <svg class="theme-toggle-icon" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25 25"><path d="M0 0h24v24H0z" fill="none"/><path d="M10 2c-1.82 0-3.53.5-5 1.35C7.99 5.08 10 8.3 10 12s-2.01 6.92-5 8.65C6.47 21.5 8.18 22 10 22c5.52 0 10-4.48 10-10S15.52 2 10 2z"/></svg>
       </span>
     </fast-switch>
+    <fast-tooltip anchor="theme-switch" position="bottom">
+      Toggle the Theme
+    </fast-tooltip>
   </div>
   {% endif %}
 	{% if busy %}
-	<div class="pn-busy-container">
+	<div class="pn-busy-container" id="busy-container">
 	  {{ embed(roots.busy_indicator) | indent(6) }}
 	</div>
+  <fast-tooltip anchor="busy-container" position="left">
+    Busy Indicator
+  </fast-tooltip>
 	{% endif %}
 
   </nav>

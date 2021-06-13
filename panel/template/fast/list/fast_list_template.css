@@ -27,10 +27,9 @@ body {
   width: 25px;
   margin-top: 5px;
 }
-
 #sidebar-button {
-  font-size:30px;
-  cursor:pointer;
+  font-size: 30px;
+  cursor: pointer;
   opacity: 0.9;
 }
 #sidebar-button:hover {

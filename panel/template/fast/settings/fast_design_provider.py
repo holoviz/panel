@@ -1,6 +1,8 @@
-from panel.widgets import Widget
-from ...models.fast_design_provider import FastDesignProvider as _BkFastDesignProvider
 import param
+
+from ....models.fast_design_provider import \
+    FastDesignProvider as _BkFastDesignProvider
+from ....widgets import Widget
 
 READ_ONLY_COLORS = [
     "accent_fill_active",

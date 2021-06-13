@@ -1,4 +1,4 @@
 /* fast default.css */
 .react-grid-item{
-  background-color:  white !important;
+  background-color:  var(--background-color) !important;
 }

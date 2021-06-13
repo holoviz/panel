@@ -22,6 +22,11 @@ body {
   padding-left: 10px;
 }
 
+.theme-toggle-icon {
+  height: 25px;
+  width: 25px;
+  margin-top: 5px;
+}
 #sidebar-button {
   font-size: 30px;
   cursor: pointer;
@@ -43,7 +48,6 @@ a.navbar-brand {
   padding-left: 10px;
   white-space: nowrap;
 }
-
 .title {
   text-decoration: none;
   text-decoration-line: none;
@@ -197,12 +201,6 @@ html {
 
 #header-items {
   color: var(--neutral-foreground-rest);
-}
-
-.theme-toggle-icon {
-  height: 25px;
-  width: 25px;
-  margin-top: 5px;
 }
 
 #made-with-panel {
