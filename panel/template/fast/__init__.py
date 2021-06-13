@@ -5,4 +5,3 @@ Panel based on the https://fast.design framework.
 
 from .grid import FastGridTemplate # noqa
 from .list import FastListTemplate # noqa
-from .settings import FastTemplateSettings # noqa

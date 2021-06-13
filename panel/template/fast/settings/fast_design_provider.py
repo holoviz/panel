@@ -103,7 +103,7 @@ class FastDesignProvider(Widget):
 
     def _add_color(self, name):
         color = getattr(self, name)
-        return f"<span style='white-space: nowrap;width:300px;display:inline-block'><div style='background: {color};height:1em;width:1em;display: inline-block;'></div><span style=''>&nbsp;{name} {color}</span></span> "
+        return f"<span style='white-space: nowrap;width:300px;display:inline-block'><div style='background: {color};height:1em;width:1em;display: inline-block;'></div><span style=''>&nbsp;{name} {color}</span></span> " # noqa: E501
 
     def to_html(self) -> str:
         """Returns html displaying the parameters"""

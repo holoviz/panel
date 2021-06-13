@@ -1,5 +1,4 @@
 from bokeh.core.properties import String, Int
-from bokeh.core.property.nullable import Nullable
 from bokeh.models import HTMLBox
 
 class FastDesignProvider(HTMLBox):
