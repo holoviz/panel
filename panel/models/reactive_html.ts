@@ -156,12 +156,6 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
     this._remove_mutation_observers()
   }
 
-  invalidate_layout(): void {
-    super.invalidate_layout()
-    if (this._parent != null)
-      this._parent.invalidate_layout()
-  }
-
   get child_models(): LayoutDOM[] {
     const models = []
     for (const parent in this.model.children) {
@@ -176,9 +170,63 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
     await build_views(this._child_views, this.child_models, {parent: (null as any)})
   }
 
+  get is_layout_root(): boolean {
+    return (this.is_root || (this.parent == null)) && (this._parent == null)
+  }
+
+  invalidate_layout(): void {
+    if (this._parent === this)
+      return
+    else if (this._parent != null)
+      this._parent.invalidate_layout()
+    else if (this.root === this)
+      return
+    else
+      super.invalidate_layout()
+  }
+
   update_layout(): void {
+    for (const child_view of this.child_views) {
+      this._align_view(child_view)
+      child_view.update_layout()
+    }
     this._update_layout()
   }
+
+  update_position(): void {
+    this.el.style.display = this.model.visible ? "block" : "none"
+
+    let margin = undefined
+    if (this.is_layout_root && this._parent == null)
+      margin = this.layout.sizing.margin
+    position(this.el, this.layout.bbox, margin)
+
+    for (const child_view of this.child_views) {
+      console.log(child_view, child_view.root)
+      child_view.resize_layout()
+    }
+  }
+
+  private _align_view(view: any): void {
+    const {align} = view.model
+    let halign, valign: string
+    if (isArray(align))
+      [halign, valign] = (align as any)
+    else
+      halign = valign = align
+    if (halign === 'center') {
+      view.el.style.marginLeft = 'auto';
+      view.el.style.marginRight = 'auto';
+    } else if (halign === 'end')
+      view.el.style.marginLeft = 'auto';
+    if (valign === 'center') {
+      view.el.style.marginTop = 'auto';
+      view.el.style.marginBottom = 'auto';
+    } else if (valign === 'end')
+      view.el.style.marginTop = 'auto';
+  }
+
+
 
   render(): void {
     empty(this.el)
@@ -244,46 +292,6 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
       }
       this._render_node(node, children)
     }
-  }
-
-  get is_layout_root(): boolean {
-    return (this.is_root || (this.parent == null)) && (this._parent == null)
-  }
-
-  update_position(): void {
-    this.el.style.display = this.model.visible ? "block" : "none"
-
-    let margin = undefined
-    if (this.is_layout_root && this._parent == null)
-      margin = this.layout.sizing.margin
-    position(this.el, this.layout.bbox, margin)
-
-    for (const child_view of this.child_views) {
-      this._align_view(child_view)
-      if (child_view.layout == null)
-        child_view.update_layout()
-      child_view.update_position()
-      child_view.resize_layout()
-    }
-  }
-
-  private _align_view(view: any): void {
-    const {align} = view.model
-    let halign, valign: string
-    if (isArray(align))
-      [halign, valign] = (align as any)
-    else
-      halign = valign = align
-    if (halign === 'center') {
-      view.el.style.marginLeft = 'auto';
-      view.el.style.marginRight = 'auto';
-    } else if (halign === 'end')
-      view.el.style.marginLeft = 'auto';
-    if (valign === 'center') {
-      view.el.style.marginTop = 'auto';
-      view.el.style.marginBottom = 'auto';
-    } else if (valign === 'end')
-      view.el.style.marginTop = 'auto';
   }
 
   private _render_html(literal: any, state: any={}): any {
