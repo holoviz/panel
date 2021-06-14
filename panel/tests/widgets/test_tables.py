@@ -400,7 +400,7 @@ def test_tabulator_empty_table(document, comm):
     empty_df = pd.DataFrame([], columns=value_df.columns)
     table = Tabulator(empty_df)
 
-    model = table.get_root(document, comm)
+    table.get_root(document, comm)
 
     assert table.value.shape == empty_df.shape
 
