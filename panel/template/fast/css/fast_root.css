@@ -1,4 +1,7 @@
 /* fast_root.css */
+:root {
+  --track-width: 2;
+}
 #menu * {
   width: 100%;
 }
