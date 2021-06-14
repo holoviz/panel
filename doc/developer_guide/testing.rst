@@ -79,20 +79,20 @@ Continuous Integration
 ----------------------
 
 Every push to the `master` branch or any Pull Request branch on GitHub
-automatically triggers a full test build on the `TravisCI`_ continuous
+automatically triggers a full test build on the `GitHub Actions`_ continuous
 integration service. This is most often useful for running the full Panel
 test suite continuously, but also triggers automated scripts for publishing
 releases when a tagged branch is pushed.
 
 You can see the list of all current and previous builds at this URL:
-https://travis-ci.org/pyviz/panel
+https://github.com/holoviz/panel/actions
 
 Configuration
 ~~~~~~~~~~~~~
 
 There are a number of files that affect the build configuration:
 
-* `.travis.yml`
+* `.github/worksflows/test.yaml`
     Defines the build matrix and global configurations for the stages
     described below.
 
@@ -109,25 +109,16 @@ There are a number of files that affect the build configuration:
 Etiquette
 ~~~~~~~~~
 
-TravisCI provides five free build workers to Open Source projects. A few
+GitHub Actions provides free build workers to Open Source projects. A few
 considerations will help you be considerate of others needing these limited
 resources:
 
 * Group commits into meaningful chunks of work before pushing to GitHub (i.e.
   don't push on every commit).
 
-* If you must make multiple commits in succession, navigate to TravisCI and
+* If you must make multiple commits in succession, navigate to GitHub Actions and
   cancel all but the last build, in order to free up build workers.
-
-* If expensive ``examples`` tests are not needed (e.g. for a docs-only Pull
-  Request), they may be disabled by adding the text
-
-  .. code-block:: none
-
-    [ci disable examples]
-
-  to your commit message.
 
 .. _contact the developers: https://gitter.im/pyviz/pyviz
 .. _pytest: https://docs.pytest.org
-.. _TravisCI: https://travis-ci.org/
+.. _GitHub Actions: https://github.com/features/actions

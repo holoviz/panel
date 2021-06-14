@@ -104,37 +104,37 @@ following:
     doit develop_install -c pyviz/label/dev -c conda-forge -c bokeh -o build -o tests -o recommended
 
 The above command installs Panel's dependencies using conda, then
-performs a pip editable install of Panel. If it fails, `nodejs>=14.0.0` may be missing
-from your environment, fix it with `conda install -c conda-forge nodejs` then rerun above command.
+performs a pip editable install of Panel. If it fails, ``nodejs>=14.0.0`` may be missing
+from your environment, fix it with ``conda install -c conda-forge nodejs`` then rerun above command.
 
 Developing custom models
 ------------------------
 
 Panel ships with a number of custom Bokeh models, which have both
 Python and Javascript components. When developing Panel these custom
-models have to be compiled. This happens automatically with `pip
-install -e .` or `python setup.py develop`, however when runnning
-actively developing you can rebuild the extension with `panel build
-panel`. The `build` command is just an alias for `bokeh build`; see
+models have to be compiled. This happens automatically with ``pip
+install -e .`` or ``python setup.py develop``, however when runnning
+actively developing you can rebuild the extension with ``panel build
+panel``. The ``build`` command is just an alias for ``bokeh build``; see
 the `Bokeh developer guide`_ for more information about developing
 bokeh models.
 
 Just like any other Javascript (or Typescript) library Panel defines a
-`package.json` and `package-lock.json` files. When adding, updating or
+``package.json`` and ``package-lock.json`` files. When adding, updating or
 removing a dependency in the package.json file ensure you commit the
-changes to the `package-lock.json` after running `npm install`.
+changes to the ``package-lock.json`` after running ``npm install``.
 
 Bundling resources
 ------------------
 
 Panel bundles external resources required for custom models and templates
-into the `panel/dist` directory. The bundled resources have to be collected
-whenever they change, so rerun `pip
-install -e .` or `python setup.py develop` whenever you change one of the following:
+into the ``panel/dist`` directory. The bundled resources have to be collected
+whenever they change, so rerun ``pip
+install -e .`` or ``python setup.py develop`` whenever you change one of the following:
 
-* A new model is added with a `__javascript_raw__` declaration or an existing model is updated
-* A new template with a `_resources` declaration is added or an existing template is updated
-* A CSS file in one of template directories (`panel/template/*/`) is added or modified
+* A new model is added with a ``__javascript_raw__`` declaration or an existing model is updated
+* A new template with a ``_resources`` declaration is added or an existing template is updated
+* A CSS file in one of template directories (``panel/template/*/``) is added or modified
 
 Next Steps
 ----------
