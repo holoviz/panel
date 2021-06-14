@@ -103,14 +103,21 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
     this.connect(this.model.properties.children.change, async () => {
       this.html = htmlDecode(this.model.html) || this.model.html
       await this.rebuild()
-      if (this._parent != null)
-	this._parent.invalidate_layout()
+      this.invalidate_layout()
     })
     for (const prop in this.model.data.properties) {
       this.connect(this.model.data.properties[prop].change, () => {
-        if (!this._changing) {
-          this._update(prop)
-	  this.invalidate_layout()
+	for (const node in this.model.children) {
+	  if (this.model.children[node] == prop) {
+	    let children = this.model.data[prop]
+	    if (!isArray(children))
+              children = [children]
+            this._render_node(node, children)
+            this.invalidate_layout()
+          } else if (!this._changing) {
+            this._update(prop)
+            this.invalidate_layout()
+	  }
 	}
       })
     }
@@ -195,35 +202,42 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
 
   private _render_child(model: any, el: Element): void {
     const view: any = this._child_views.get(model)
-    view._parent = this
     if (view == null)
       el.innerHTML = model
-    else
+    else {
+      view._parent = view
       view.renderTo(el)
+    }
+  }
+
+  _render_node(node: any, children: any[]): void {
+    const id = this.model.data.id
+    if (this.model.looped.indexOf(node) > -1) {
+      for (let i = 0; i < children.length; i++) {
+	let el: any = document.getElementById(`${node}-${i}-${id}`)
+	if (el == null) {
+          console.warn(`DOM node '${node}-${i}-${id}' could not be found. Cannot render children.`)
+          continue
+	}
+	this._render_child(children[i], el)
+      }
+    } else {
+      let el: any = document.getElementById(`${node}-${id}`)
+      if (el == null) {
+        console.warn(`DOM node '${node}-${id}' could not be found. Cannot render children.`)
+        return
+      }
+      for (const child of children)
+	this._render_child(child, el)
+    }
   }
 
   private _render_children(): void {
-    const id = this.model.data.id
     for (const node in this.model.children) {
-      const children = this.model.children[node]
-      if (this.model.looped.indexOf(node) > -1) {
-	for (let i = 0; i < children.length; i++) {
-	  let el: any = document.getElementById(`${node}-${i}-${id}`)
-	  if (el == null) {
-            console.warn(`DOM node '${node}-${i}-${id}' could not be found. Cannot render children.`)
-            continue
-	  }
-	  this._render_child(children[i], el)
-	}
-      } else {
-	let el: any = document.getElementById(`${node}-${id}`)
-	if (el == null) {
-          console.warn(`DOM node '${node}-${id}' could not be found. Cannot render children.`)
-          continue
-	}
-	for (const child of children)
-	  this._render_child(child, el)
-      }
+      let children = this.model.data[prop]
+      if (!isArray(children))
+        children = [children]
+      this._render_node(node, children)
     }
   }
 

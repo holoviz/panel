@@ -159,7 +159,7 @@ PARAM_MAPPING = {
 }
 
 
-def construct_data_model(parameterized, name=None, ignore=[]):
+def construct_data_model(parameterized, name=None, ignore=[], types={}):
     properties = {}
     for pname in parameterized.param:
         if pname in ignore:
@@ -167,7 +167,8 @@ def construct_data_model(parameterized, name=None, ignore=[]):
         p = parameterized.param[pname]
         if p.precedence and p.precedence < 0:
             continue
-        prop = PARAM_MAPPING.get(type(p))
+        ptype = types.get(pname, type(p))
+        prop = PARAM_MAPPING.get(ptype)
         pname = parameterized._rename.get(pname, pname)
         if pname == 'name' or pname is None:
             continue
@@ -199,7 +200,7 @@ class ReactiveHTML(HTMLBox):
 
     callbacks = bp.Dict(bp.String, bp.List(bp.Tuple(bp.String, bp.String)))
 
-    children = bp.Dict(bp.String, bp.List(bp.Either(bp.Instance(LayoutDOM), bp.String)))
+    children = bp.Dict(bp.String, bp.Either(bp.List(bp.Either(bp.Instance(LayoutDOM), bp.String)), bp.String))
 
     data = bp.Instance(DataModel)
 
