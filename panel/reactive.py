@@ -996,13 +996,21 @@ class ReactiveHTMLMetaclass(ParameterizedMetaclass):
                 if node not in mcs._attrs:
                     mcs._attrs[node] = []
                 mcs._attrs[node].append((attr, param_attrs, template))
-        ignored = list(Reactive.param)+list(mcs._parser.children.values())
+        ignored = list(Reactive.param)
+        types = {}
+        for child in mcs._parser.children.values():
+            if mcs._child_config.get(child) == 'literal':
+                types[child] = param.String
+            else:
+                ignored.append(child)
         ignored.remove('name')
 
         # Create model with unique name
         ReactiveHTMLMetaclass._name_counter[name] += 1
         model_name = f'{name}{ReactiveHTMLMetaclass._name_counter[name]}'
-        mcs._data_model = construct_data_model(mcs, name=model_name, ignore=ignored)
+        mcs._data_model = construct_data_model(
+            mcs, name=model_name, ignore=ignored, types=types
+        )
 
 
 
@@ -1174,7 +1182,10 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         return children
 
     def _init_params(self):
-        ignored = list(Reactive.param)+list(self._parser.children.values())
+        ignored = list(Reactive.param)
+        for child in self._parser.children.values():
+            if self._child_config.get(child) != 'literal':
+                ignored.append(child)
         params = {
             p : getattr(self, p) for p in list(Layoutable.param)
             if getattr(self, p) is not None and p != 'name'
@@ -1223,6 +1234,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         for parent, children_param in self._parser.children.items():
             mode = self._child_config.get(children_param, 'model')
             if mode == 'literal':
+                new_panes[parent] = None
                 continue
             panes = getattr(self, children_param)
             if isinstance(panes, dict):
@@ -1256,7 +1268,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
                 child_panes = child_panes.values()
             mode = self._child_config.get(children_param, 'model')
             if mode == 'literal':
-                new_models[parent] = child_panes
+                new_models[parent] = children_param
             elif children_param in old_children:
                 # Find existing models
                 old_panes = old_children[children_param]
@@ -1397,6 +1409,8 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         for prop, v in list(msg.items()):
             if prop in child_params:
                 new_children[prop] = prop
+                if self._child_config.get(prop) == 'literal':
+                    data_msg[prop] = bleach.clean(v)
             elif prop in list(Reactive.param)+['events']:
                 model_msg[prop] = v
             elif prop in self.param and (self.param[prop].precedence or 0) < 0:
