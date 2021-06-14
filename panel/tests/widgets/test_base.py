@@ -4,6 +4,7 @@ import pytest
 from panel.io import block_comm
 from panel.layout import Row
 from panel.links import CallbackGenerator
+from panel.template.fast.settings.fast_design_provider import FastDesignProvider
 from panel.widgets import (
     CompositeWidget, Dial, FileDownload, FloatSlider, TextInput,
     Terminal, ToggleGroup, Widget
@@ -15,9 +16,15 @@ excluded = (
     BaseTable, CompositeWidget, Dial, FileDownload, ToggleGroup, Terminal
 )
 
+non_visible_widgets = (FastDesignProvider,)
+
 all_widgets = [
     w for w in param.concrete_descendents(Widget).values()
     if not w.__name__.startswith('_') and not issubclass(w, excluded)
+]
+
+all_visible_widgets = [
+    w for w in all_widgets if not issubclass(w, non_visible_widgets)
 ]
 
 @pytest.mark.parametrize('widget', all_widgets)
@@ -67,7 +74,7 @@ def test_widget_clone(widget):
             [(k, v) for k, v in sorted(clone.param.get_param_values()) if k != 'name'])
 
 
-@pytest.mark.parametrize('widget', all_widgets)
+@pytest.mark.parametrize('widget', all_visible_widgets)
 def test_widget_clone_override(widget):
     w = widget()
     clone = w.clone(width=50)
