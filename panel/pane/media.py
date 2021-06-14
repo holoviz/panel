@@ -43,6 +43,8 @@ class _MediaBase(PaneBase):
 
     _rename = {'name': None, 'sample_rate': None, 'object': 'value'}
 
+    _rerender_params = []
+
     _updates = True
 
     __abstract = True
@@ -60,8 +62,6 @@ class _MediaBase(PaneBase):
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         props = self._process_param_change(self._init_params())
-        if self.object is not None:
-            props['value'] = self.object
         model = self._bokeh_model(**props)
         if root is None:
             root = model
@@ -99,11 +99,8 @@ class _MediaBase(PaneBase):
             elif not value:
                 data, fmt = b'', self._default_mime
             else:
-                raise ValueError('Object should be either path to a sound file or numpy array')
-            template = 'data:audio/{mime};base64,{data}'
-            msg['value'] = template.format(data=data.decode('utf-8'),
-                                           mime=fmt)
-            
+                raise ValueError(f'Object should be either path to a {self._media_type} file or numpy array.')
+            msg['value'] = f"data:{self._media_type}/{fmt};base64,{data.decode('utf-8')}"
         return msg
 
 
