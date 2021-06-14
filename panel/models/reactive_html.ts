@@ -175,14 +175,15 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
   }
 
   invalidate_layout(): void {
-    if (this._parent === this)
-      return
-    else if (this._parent != null)
+    super.invalidate_layout()
+    if (this._parent != null && this._parent !== this)
       this._parent.invalidate_layout()
-    else if (this.root === this)
-      return
-    else
-      super.invalidate_layout()
+  }
+
+  resize_layout(): void {
+    super.resize_layout()
+    if (this._parent != null && this._parent !== this)
+      this._parent.resize_layout()
   }
 
   update_layout(): void {
@@ -202,8 +203,8 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
     position(this.el, this.layout.bbox, margin)
 
     for (const child_view of this.child_views) {
-      console.log(child_view, child_view.root)
       child_view.resize_layout()
+      child_view.update_position()
     }
   }
 
@@ -225,8 +226,6 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
     } else if (valign === 'end')
       view.el.style.marginTop = 'auto';
   }
-
-
 
   render(): void {
     empty(this.el)
