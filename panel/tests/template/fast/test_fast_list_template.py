@@ -35,7 +35,7 @@ def test_app():
         header_background=ACCENT_COLOR,
         header_accent_base_color="#FFFFFF",
         main_layout="",
-        shadow="none",
+        shadow=False,
     )
     app.main[:] = [
         pn.pane.Markdown(INFO, sizing_mode="stretch_both"),
