@@ -85,6 +85,7 @@ class _MediaBase(PaneBase):
         msg = super()._process_param_change(msg)
         if 'value' in msg:
             value = msg['value']
+            fmt = self._default_mime
             if isinstance(value, np.ndarray):
                 fmt = 'wav'
                 buffer = self._from_numpy(value)
@@ -96,8 +97,8 @@ class _MediaBase(PaneBase):
                 data = b64encode(data)
             elif value.lower().startswith('http'):
                 return msg
-            elif not value:
-                data, fmt = b'', self._default_mime
+            elif not value or value == f'data:{self._media_type}/{fmt};base64,':
+                data = b''
             else:
                 raise ValueError(f'Object should be either path to a {self._media_type} file or numpy array.')
             msg['value'] = f"data:{self._media_type}/{fmt};base64,{data.decode('utf-8')}"
