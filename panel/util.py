@@ -189,10 +189,16 @@ def param_reprs(parameterized, skip=None):
         default = parameterized.param[p].default
         equal = v is default
         if not equal:
-            try:
-                equal = bool(v==default)
-            except Exception:
-                equal = False
+            if isinstance(v, np.ndarray):
+                if isinstance(default, np.ndarray):
+                    equal = np.array_equal(v, default, equal_nan=True)
+                else:
+                    equal = False
+            else:
+                try:
+                    equal = bool(v==default)
+                except Exception:
+                    equal = False
 
         if equal: continue
         elif v is None: continue
