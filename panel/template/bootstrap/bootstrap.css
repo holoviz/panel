@@ -18,15 +18,17 @@ body {
   padding-right: 10px;
   transition: all 0.2s cubic-bezier(0.945, 0.020, 0.270, 0.665);
   transform-origin: center left; /* Set the transformed position of sidebar to center left side. */
-  overflow-y: scroll;
+  overflow-y: auto;
+  height: 100%;
 }
+
 #sidebar.active {
   width: 0px;
   overflow-y: hidden;
 }
 
 #main {
-  overflow-y: scroll;
+  overflow-y: auto;
   padding-right: 20px;
   padding-bottom: 20px;
   padding-top: 10px;
