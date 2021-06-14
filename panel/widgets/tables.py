@@ -386,7 +386,12 @@ class BaseTable(ReactiveData, Widget):
         {'x': [1, 2, 3, 4], 'y': ['a', 'b', 'c', 'd']}
         """
         import pandas as pd
-        value_index_start = self.value.index.max() + 1
+
+        if not np.isfinite(self.value.index.max()):
+            value_index_start = 1
+        else:
+            value_index_start = self.value.index.max() + 1
+
         if isinstance(stream_value, pd.DataFrame):
             if reset_index:
                 stream_value = stream_value.reset_index(drop=True)
