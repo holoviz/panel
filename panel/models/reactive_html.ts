@@ -52,17 +52,17 @@ function extractToken(template: string, str: string, tokens: string[]) {
     if (tokenIndex > -1) {
       regexpTemplate = regexpTemplate.replace(m, tokenMapping[m]);
       tokenEntry = {
-	index: tokenIndex,
-	token: m
+        index: tokenIndex,
+        token: m
       };
 
       for (i = 0; i < tokenList.length && tokenList[i].index < tokenIndex; i++);
 
       // Insert it at index i
       if (i < tokenList.length)
-	tokenList.splice(i, 0, tokenEntry)
+        tokenList.splice(i, 0, tokenEntry)
       else
-	tokenList.push(tokenEntry)
+        tokenList.push(tokenEntry)
     }
   }
 
@@ -107,20 +107,20 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
     })
     for (const prop in this.model.data.properties) {
       this.connect(this.model.data.properties[prop].change, () => {
-	for (const node in this.model.children) {
-	  if (this.model.children[node] == prop) {
-	    let children = this.model.data[prop]
-	    if (!isArray(children))
+        for (const node in this.model.children) {
+          if (this.model.children[node] == prop) {
+            let children = this.model.data[prop]
+            if (!isArray(children))
               children = [children]
             this._render_node(node, children)
             this.invalidate_layout()
-	    return
-	  }
-	}
-	if (!this._changing) {
+            return
+          }
+        }
+        if (!this._changing) {
           this._update(prop)
           this.invalidate_layout()
-	}
+        }
       })
     }
     this.connect(this.model.properties.events.change, () => {
@@ -136,16 +136,16 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
       const scripts = this.model.scripts[prop]
       for (const script of scripts) {
         const decoded_script = htmlDecode(script) || script
-	const script_fn = this._render_script(decoded_script, id)
-	const property = this.model.data.properties[prop]
-	if (property == null) {
-	  this._script_fns[prop] = script_fn
-	  continue
-	}
-	this.connect(property.change, () => {
+        const script_fn = this._render_script(decoded_script, id)
+        const property = this.model.data.properties[prop]
+        if (property == null) {
+          this._script_fns[prop] = script_fn
+          continue
+        }
+        this.connect(property.change, () => {
           if (!this._changing)
             script_fn(this.model, this.model.data, this._state)
-	})
+        })
       }
     }
   }
@@ -216,12 +216,12 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
     const id = this.model.data.id
     if (this.model.looped.indexOf(node) > -1) {
       for (let i = 0; i < children.length; i++) {
-	let el: any = document.getElementById(`${node}-${i}-${id}`)
-	if (el == null) {
+        let el: any = document.getElementById(`${node}-${i}-${id}`)
+        if (el == null) {
           console.warn(`DOM node '${node}-${i}-${id}' could not be found. Cannot render children.`)
           continue
-	}
-	this._render_child(children[i], el)
+        }
+        this._render_child(children[i], el)
       }
     } else {
       let el: any = document.getElementById(`${node}-${id}`)
@@ -230,7 +230,7 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
         return
       }
       for (const child of children)
-	this._render_child(child, el)
+        this._render_child(child, el)
     }
   }
 
@@ -238,8 +238,8 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
     for (const node in this.model.children) {
       let children = this.model.children[node]
       if (typeof children == "string") {
-	children = this.model.data[children]
-	if (!isArray(children))
+        children = this.model.data[children]
+        if (!isArray(children))
           children = [children]
       }
       this._render_node(node, children)
@@ -261,7 +261,7 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
     for (const child_view of this.child_views) {
       this._align_view(child_view)
       if (child_view.layout == null)
-	child_view.update_layout()
+        child_view.update_layout()
       child_view.update_position()
       child_view.resize_layout()
     }
@@ -320,7 +320,7 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
     const scripts = []
     for (const elname of this.model.nodes) {
       if (elname in this.model.children && typeof this.model.children[elname] !== "string")
-	continue
+        continue
       const elvar = elname.replace('-', '_')
       const script = `
       const ${elvar} = document.getElementById('${elname}-${id}')
