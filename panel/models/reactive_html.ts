@@ -114,10 +114,12 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
               children = [children]
             this._render_node(node, children)
             this.invalidate_layout()
-          } else if (!this._changing) {
-            this._update(prop)
-            this.invalidate_layout()
+	    return
 	  }
+	}
+	if (!this._changing) {
+          this._update(prop)
+          this.invalidate_layout()
 	}
       })
     }
@@ -234,9 +236,12 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
 
   private _render_children(): void {
     for (const node in this.model.children) {
-      let children = this.model.data[prop]
-      if (!isArray(children))
-        children = [children]
+      let children = this.model.children[node]
+      if (typeof children == "string") {
+	children = this.model.data[children]
+	if (!isArray(children))
+          children = [children]
+      }
       this._render_node(node, children)
     }
   }
@@ -254,22 +259,12 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
     position(this.el, this.layout.bbox, margin)
 
     for (const child_view of this.child_views) {
+      this._align_view(child_view)
       if (child_view.layout == null)
 	child_view.update_layout()
       child_view.update_position()
-    }
-  }
-
-  after_layout(): void {
-    this.compute_viewport()
-    this.layout.compute(this._viewport)
-    this.update_position()
-    for (const child_view of this.child_views) {
-      this._align_view(child_view)
       child_view.resize_layout()
-      child_view.after_layout()
     }
-    this._has_finished = true
   }
 
   private _align_view(view: any): void {
@@ -324,8 +319,8 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
   private _render_script(literal: any, id: string) {
     const scripts = []
     for (const elname of this.model.nodes) {
-      if (elname in this.model.children)
-        continue
+      if (elname in this.model.children && typeof this.model.children[elname] !== "string")
+	continue
       const elvar = elname.replace('-', '_')
       const script = `
       const ${elvar} = document.getElementById('${elname}-${id}')
