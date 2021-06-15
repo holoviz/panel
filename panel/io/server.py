@@ -243,12 +243,11 @@ class RootHandler(BkRootHandler):
 
     @authenticated
     async def get(self, *args, **kwargs):
-        from ..config import config
-        if not config.default_app:
-            return super().get(*args, **kwargs)
-        prefix = "" if self.prefix is None else self.prefix
-        redirect_to = prefix + config.default_app
-        self.redirect(redirect_to)
+        if self.index and not self.index.endswith('.html'):
+            prefix = "" if self.prefix is None else self.prefix
+            redirect_to = prefix + '.'.join(self.index.split('.')[:-1])
+            return self.redirect(redirect_to)
+        return super().get(*args, **kwargs)
 
 toplevel_patterns[0] = (r'/?', RootHandler)
 bokeh.server.tornado.RootHandler = RootHandler

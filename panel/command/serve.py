@@ -6,7 +6,6 @@ ways.
 import ast
 import base64
 import logging # isort:skip
-import os
 
 from glob import glob
 
@@ -51,12 +50,6 @@ def parse_vars(items):
 class Serve(_BkServe):
 
     args = _BkServe.args + (
-        ('--default-app', dict(
-            action = 'store',
-            type   = str,
-            help   = ("The app to redirect to from the root. When enabled"
-                      "no index is served.")
-        )),
         ('--static-dirs', dict(
             metavar="KEY=VALUE",
             nargs='+',
@@ -152,11 +145,12 @@ class Serve(_BkServe):
             else:
                 files.append(f)
 
-        if args.default_app:
-            if not any(f.endswith(args.default_app) for f in files):
-                raise ValueError("Specified default_app is not one of the applications"
-                                 "being served.")
-            config.default_app = '.'.join(os.path.basename(args.default_app).split('.')[:-1])
+        if args.index and not args.index.endswith('.html') and not any(f.endswith(args.index) for f in files):
+            raise ValueError("The --index argument must either specify a jinja2 "
+                             "template with a .html file extension or select one "
+                             "of the applications being served as the default. "
+                             f"The specified application {args.index!r} could "
+                             "not be found.")
 
         # Handle tranquilized functions in the supplied functions
         if args.rest_provider in REST_PROVIDERS:
