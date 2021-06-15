@@ -243,7 +243,6 @@ class RootHandler(BkRootHandler):
 
     @authenticated
     async def get(self, *args, **kwargs):
-        from ..config import config
         if self.index and not self.index.endswith('.html'):
             prefix = "" if self.prefix is None else self.prefix
             redirect_to = prefix + '.'.join(self.index.split('.')[:-1])

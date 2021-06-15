@@ -6,7 +6,6 @@ ways.
 import ast
 import base64
 import logging # isort:skip
-import os
 
 from glob import glob
 
