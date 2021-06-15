@@ -982,6 +982,10 @@ class ReactiveHTMLMetaclass(ParameterizedMetaclass):
                 for p in parameters:
                     if p in mcs.param:
                         param_attrs.append(p)
+                    elif p.startswith('run_script('):
+                        if node not in mcs._node_callbacks:
+                            mcs._node_callbacks[node] = []
+                        mcs._node_callbacks[node].append((attr, p))
                     elif hasattr(mcs, p):
                         if node not in mcs._node_callbacks:
                             mcs._node_callbacks[node] = []

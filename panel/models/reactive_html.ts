@@ -311,13 +311,26 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
         const [cb, method] = callback;
         if (methods.indexOf(method) > -1)
           continue
-        methods.push(method)
-        callbacks = callbacks + `
-        const ${method} = (event) => {
-          view._send_event("${elname}", "${cb}", event)
-        }
-        `
+	let definition: string
         htm = htm.replace('${'+method, '$--{'+method)
+	if (method.startsWith('run_script(')) {
+	  const meth = method.replace("('", "_").replace("')", "").replace('("', "_").replace('")', "")
+	  const script_name = meth.replace("run_script_", "")
+	  htm = htm.replace(method, meth)
+          definition = `
+          const ${meth} = (event) => {
+            view.run_script("${script_name}")
+          }
+          `
+	} else {
+	  definition = `
+          const ${method} = (event) => {
+            view._send_event("${elname}", "${cb}", event)
+          }
+          `
+        }
+        methods.push(method)
+        callbacks = callbacks + definition
       }
     }
     htm = (
