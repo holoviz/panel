@@ -87,10 +87,6 @@ class _config(_base_config):
     autoreload = param.Boolean(default=False, doc="""
         Whether to autoreload server when script changes.""")
 
-    default_app = param.String(default=None, doc="""
-        When serving from the commandline this indicates the default
-        application to redirect to from the root of the server.""")
-
     loading_spinner = param.Selector(default='arcs', objects=[
         'arc', 'arcs', 'bar', 'dots', 'petal'], doc="""
         Loading indicator to use when component loading parameter is set.""")
