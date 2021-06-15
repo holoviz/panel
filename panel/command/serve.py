@@ -150,7 +150,7 @@ class Serve(_BkServe):
             raise ValueError("The --index argument must either specify a jinja2 "
                              "template with a .html file extension or select one "
                              "of the applications being served as the default. "
-                             f"The specified applications {args.index!r} could "
+                             f"The specified application {args.index!r} could "
                              "not be found.")
 
         # Handle tranquilized functions in the supplied functions
