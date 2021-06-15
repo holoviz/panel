@@ -1100,7 +1100,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
     This will invoke the following script if it is defined on the class:
 
         _scripts = {
-            'some_script': ['console.log(model, data, input, view)']
+            'some_script': 'console.log(model, data, input, view)'
        }
 
     Scripts
@@ -1117,7 +1117,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
     the value updates:
 
         _scripts = {
-            'value': ['console.log(model, data, input)']
+            'value': 'console.log(model, data, input)'
        }
 
     The Javascript is provided multiple objects in its namespace
