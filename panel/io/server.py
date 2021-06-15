@@ -34,9 +34,10 @@ from bokeh.embed.elements import html_page_for_render_items, script_for_render_i
 from bokeh.embed.util import RenderItem
 from bokeh.io import curdoc
 from bokeh.server.server import Server
-from bokeh.server.urls import per_app_patterns
+from bokeh.server.urls import per_app_patterns, toplevel_patterns
 from bokeh.server.views.autoload_js_handler import AutoloadJsHandler as BkAutoloadJsHandler
 from bokeh.server.views.doc_handler import DocHandler as BkDocHandler
+from bokeh.server.views.root_handler import RootHandler as BkRootHandler
 
 # Tornado imports
 from tornado.ioloop import IOLoop
@@ -237,6 +238,20 @@ class AutoloadJsHandler(BkAutoloadJsHandler, SessionPrefixHandler):
         self.write(js)
 
 per_app_patterns[3] = (r'/autoload.js', AutoloadJsHandler)
+
+class RootHandler(BkRootHandler):
+
+    @authenticated
+    async def get(self, *args, **kwargs):
+        from ..config import config
+        if not config.default_app:
+            return super().get(*args, **kwargs)
+        prefix = "" if self.prefix is None else self.prefix
+        redirect_to = prefix + config.default_app
+        self.redirect(redirect_to)
+
+toplevel_patterns[0] = (r'/?', RootHandler)
+bokeh.server.tornado.RootHandler = RootHandler
 
 def modify_document(self, doc):
     from bokeh.io.doc import set_curdoc as bk_set_curdoc
