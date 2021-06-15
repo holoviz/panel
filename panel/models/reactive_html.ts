@@ -144,10 +144,19 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
         }
         this.connect(property.change, () => {
           if (!this._changing)
-            script_fn(this.model, this.model.data, this._state)
+            script_fn(this.model, this.model.data, this._state, this)
         })
       }
     }
+  }
+
+  run_script(property: string): void {
+    const script_fn = this._script_fns[property]
+    if (script_fn === undefined) {
+      console.log(`Script '${property}' couldd not be found.`)
+      return
+    }
+    script_fn(this.model, this.model.data, this._state, this)
   }
 
   disconnect_signals(): void {
@@ -339,7 +348,7 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
       scripts.push(script)
     }
     scripts.push(literal)
-    return new Function("model, data, state", scripts.join('\n'))
+    return new Function("model, data, state, view", scripts.join('\n'))
   }
 
   private _remove_mutation_observers(): void {

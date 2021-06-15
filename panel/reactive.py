@@ -1116,6 +1116,10 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
                 and information about the children and events.
       * state:  An empty state dictionary which scripts can use to
                 store state for the lifetime of the view.
+      * view:   The Bokeh View class responsible for rendering the
+                component. This provides access to method like
+                `invalidate_layout` and `run_script` which allows
+                invoking other scripts.
       * <node>: All named DOM nodes in the HTML template, e.g. the
                 `input` node in the example above.
     """
@@ -1205,7 +1209,8 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         params['nodes'] = self._parser.nodes
         params['looped'] = [node for node, _ in self._parser.looped]
         params['scripts'] = {
-            trigger: [escape(script) for script in scripts]
+            trigger: ([escape(script) for script in scripts]
+                      if isinstance(scripts, list) else [escape(scripts)])
             for trigger, scripts in self._scripts.items()
         }
         return params
@@ -1356,6 +1361,8 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
     def _linked_properties(self):
         linked_properties = [p for pss in self._attrs.values() for _, ps, _ in pss for p in ps]
         for scripts in self._scripts.values():
+            if not isinstance(scripts, list):
+                scripts = [scripts]
             for script in scripts:
                 linked_properties += re.findall('data.([a-zA-Z_]\S+) =', script)
                 linked_properties += re.findall('data.([a-zA-Z_]\S+)=', script)
