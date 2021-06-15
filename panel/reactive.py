@@ -1093,6 +1093,16 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
     will look for an `_input_change` method on the ReactiveHTML
     component and call it when the event is fired.
 
+    Additionally we can invoke pure JS scripts defined on the class, e.g.:
+
+        <input id="input" onchange="${run_script('some_script')}"></input>
+
+    This will invoke the following script if it is defined on the class:
+
+        _scripts = {
+            'some_script': ['console.log(model, data, input, view)']
+       }
+
     Scripts
     ~~~~~~~
 
