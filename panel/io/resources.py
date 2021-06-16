@@ -117,7 +117,12 @@ def bundle_resources(resources):
     if ext is not None:
         js_raw.append(ext)
 
-    return Bundle.of(js_files, js_raw, css_files, css_raw, js_resources.hashes if js_resources else {})
+    hashes = js_resources.hashes if js_resources else {}
+
+    return Bundle(
+        js_files=js_files, js_raw=js_raw, css_files=css_files,
+        css_raw=css_raw, hashes=hashes
+    )
 
 
 class Resources(BkResources):
@@ -202,14 +207,13 @@ class Resources(BkResources):
     @property
     def js_modules(self):
         from ..config import config
+        from ..reactive import ReactiveHTML
         modules = list(config.js_modules.values())
-
         for model in param.concrete_descendents(ReactiveHTML).values():
             if hasattr(model, '__javascript_modules__'):
                 for jsmodule in model.__javascript_modules__:
-                    if jsmodule not in modulesfiles:
+                    if jsmodule not in modules:
                         modules.append(jsmodule)
-
         return modules
 
     @property
@@ -266,7 +270,6 @@ class Bundle(BkBundle):
 
     @classmethod
     def from_bokeh(cls, bk_bundle):
-        from ..config import config
         return cls(
             js_files=bk_bundle.js_files,
             js_raw=bk_bundle.js_raw,
