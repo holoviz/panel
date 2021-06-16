@@ -921,6 +921,8 @@ class ReactiveData(SyncableData):
             old_raw, old_data = self._get_data()
             if hasattr(old_raw, 'copy'):
                 old_raw = old_raw.copy()
+            elif isinstance(old_raw, dict):
+                old_raw = dict(old_raw)
             updated = False
             for k, v in data.items():
                 if k in self.indexes:
