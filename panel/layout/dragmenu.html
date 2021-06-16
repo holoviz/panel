@@ -1,0 +1,19 @@
+<div class="drag_menu" id='drag_menu'>          
+          
+    <div class='drag_icon' id='drag_icon'> 
+        ${icon} 
+        {% if label|length %}
+            <span class="tooltiptext" style="color:${color}; background-color:${background_color}; width:120px">${label}</span>
+        {% endif %}   
+    </div>
+
+    <div class='drag_content' id='drag_content ' style="color:${color}; background-color:${background_color};">
+        <span class='drag-handle' id='drag_title'></span>    
+        {% for obj in objects %}
+            <div id='drag_item'>
+            ${objects[{{ loop.index0 }}]}
+            </div>
+        {% endfor %}
+    </div>   
+
+</div>
