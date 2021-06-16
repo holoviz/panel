@@ -7,6 +7,7 @@ models rendered on the frontend.
 import difflib
 import re
 import sys
+import textwrap
 import threading
 
 from collections import Counter, defaultdict, namedtuple
@@ -957,22 +958,37 @@ class ReactiveHTMLMetaclass(ParameterizedMetaclass):
 
     _name_counter = Counter()
 
+    _script_regex = r"script\([\"|'](.*)[\"|']\)"
+
     def __init__(mcs, name, bases, dict_):
         mcs.__original_doc__ = mcs.__doc__
         ParameterizedMetaclass.__init__(mcs, name, bases, dict_)
+        cls_name = mcs.__name__
+
+        # Validate _child_config
         for name, child_type in mcs._child_config.items():
             if name not in mcs.param:
-                raise ValueError(f"Config for '{name}' does not match any parameters.")
+                raise ValueError(
+                    f"{cls_name}._child_config for {name!r} does not "
+                    "match any parameters. Ensure the name of each "
+                    "child config matches one of the parameters."
+                )
             elif child_type not in ('model', 'template', 'literal'):
-                raise ValueError(f"Config for {name} child parameter declares "
-                                 f"unknown type '{child_type}'. Children must "
-                                 "declare either 'model', 'template' or 'literal'"
-                                 "type.")
+                raise ValueError(
+                    f"{cls_name}._child_config for {name!r} child "
+                    "parameter declares unknown type {child_type!r}. "
+                    f"The '_child_config' mode must be one of 'model', "
+                    "'template' or 'literal'."
+                )
 
         mcs._parser = ReactiveHTMLParser(mcs)
         mcs._parser.feed(mcs._template)
+
+        # Ensure syntactically valid jinja2 for loops
         if mcs._parser._open_for:
-            raise ValueError("Template contains for loop without closing {% endfor %} statement.")
+            raise ValueError(
+                "Template contains for loop without closing {% endfor %} statement."
+            )
 
         mcs._attrs, mcs._node_callbacks = {}, {}
         mcs._inline_callbacks = []
@@ -982,6 +998,18 @@ class ReactiveHTMLMetaclass(ParameterizedMetaclass):
                 for p in parameters:
                     if p in mcs.param:
                         param_attrs.append(p)
+                    elif re.match(mcs._script_regex, p):
+                        name = re.findall(mcs._script_regex, p)[0]
+                        if name not in mcs._scripts:
+                            raise ValueError(
+                                f"{cls_name}._template inline callback "
+                                f"references unknown script {name!r}, "
+                                "ensure the referenced script is declared"
+                                "in the _scripts dictionary."
+                            )
+                        if node not in mcs._node_callbacks:
+                            mcs._node_callbacks[node] = []
+                        mcs._node_callbacks[node].append((attr, p))
                     elif hasattr(mcs, p):
                         if node not in mcs._node_callbacks:
                             mcs._node_callbacks[node] = []
@@ -989,10 +1017,11 @@ class ReactiveHTMLMetaclass(ParameterizedMetaclass):
                         mcs._inline_callbacks.append((node, attr, p))
                     else:
                         matches = difflib.get_close_matches(p, dir(mcs))
-                        raise ValueError("HTML template references unknown "
-                                         f"parameter or method '{p}', "
-                                         "similar parameters and methods "
-                                         f"include {matches}.")
+                        raise ValueError(
+                            f"{cls_name}._template references unknown "
+                            f"parameter or method '{p}', similar parameters "
+                            f"and methods include {matches}."
+                        )
                 if node not in mcs._attrs:
                     mcs._attrs[node] = []
                 mcs._attrs[node].append((attr, param_attrs, template))
@@ -1089,6 +1118,16 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
     will look for an `_input_change` method on the ReactiveHTML
     component and call it when the event is fired.
 
+    Additionally we can invoke pure JS scripts defined on the class, e.g.:
+
+        <input id="input" onchange="${run_script('some_script')}"></input>
+
+    This will invoke the following script if it is defined on the class:
+
+        _scripts = {
+            'some_script': 'console.log(model, data, input, view)'
+       }
+
     Scripts
     ~~~~~~~
 
@@ -1103,7 +1142,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
     the value updates:
 
         _scripts = {
-            'value': ['console.log(model, data, input)']
+            'value': 'console.log(model, data, input)'
        }
 
     The Javascript is provided multiple objects in its namespace
@@ -1116,6 +1155,10 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
                 and information about the children and events.
       * state:  An empty state dictionary which scripts can use to
                 store state for the lifetime of the view.
+      * view:   The Bokeh View class responsible for rendering the
+                component. This provides access to method like
+                `invalidate_layout` and `run_script` which allows
+                invoking other scripts.
       * <node>: All named DOM nodes in the HTML template, e.g. the
                 `input` node in the example above.
     """
@@ -1197,17 +1240,22 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
             if isinstance(v, str):
                 v = bleach.clean(v)
             data_params[k] = v
-        params['attrs'] = self._attrs
-        params['callbacks'] = self._node_callbacks
-        params['data'] = self._data_model(**self._process_param_change(data_params))
-        params['events'] = self._get_events()
-        params['html'] = escape(self._get_template())
-        params['nodes'] = self._parser.nodes
-        params['looped'] = [node for node, _ in self._parser.looped]
-        params['scripts'] = {
-            trigger: [escape(script) for script in scripts]
-            for trigger, scripts in self._scripts.items()
-        }
+        params.update({
+            'attrs': self._attrs,
+            'callbacks': self._node_callbacks,
+            'data': self._data_model(**self._process_param_change(data_params)),
+            'events': self._get_events(),
+            'html': escape(textwrap.dedent(self._get_template())),
+            'nodes': self._parser.nodes,
+            'looped': [node for node, _ in self._parser.looped],
+            'scripts': {}
+        })
+        for trigger, scripts in self._scripts.items():
+            if not isinstance(scripts, list):
+                scripts = [scripts]
+            params['scripts'][trigger] = [
+                escape(textwrap.dedent(script).strip()) for script in scripts
+            ]
         return params
 
     def _get_events(self):
@@ -1356,6 +1404,8 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
     def _linked_properties(self):
         linked_properties = [p for pss in self._attrs.values() for _, ps, _ in pss for p in ps]
         for scripts in self._scripts.values():
+            if not isinstance(scripts, list):
+                scripts = [scripts]
             for script in scripts:
                 linked_properties += re.findall('data.([a-zA-Z_]\S+) =', script)
                 linked_properties += re.findall('data.([a-zA-Z_]\S+)=', script)
