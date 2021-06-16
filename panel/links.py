@@ -316,6 +316,10 @@ class CallbackGenerator(object):
                         references[k] = v
 
         # Handle links with ReactiveHTML DataModel
+        if isinstance(src_model, ReactiveHTML):
+            if src_spec[1] in src_model.data.properties():
+                references['source'] = src_model = src_model.data
+
         if isinstance(tgt_model, ReactiveHTML):
             if tgt_spec[1] in tgt_model.data.properties():
                 references['target'] = tgt_model = tgt_model.data
