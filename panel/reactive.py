@@ -918,7 +918,9 @@ class ReactiveData(SyncableData):
             data = events.pop('data')
             if self._updating:
                 data = {}
-            _, old_data = self._get_data()
+            old_raw, old_data = self._get_data()
+            if hasattr(old_raw, 'copy'):
+                old_raw = old_raw.copy()
             updated = False
             for k, v in data.items():
                 if k in self.indexes:
@@ -936,7 +938,13 @@ class ReactiveData(SyncableData):
             if updated:
                 self._updating = True
                 try:
-                    self.param.trigger('value')
+                    if old_raw is self.value:
+                        data = self.value
+                        with param.discard_events(self):
+                            self.value = old_raw
+                        self.value = data
+                    else:
+                        self.param.trigger('value')
                 finally:
                     self._updating = False
         if 'indices' in events:
