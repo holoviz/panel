@@ -144,7 +144,7 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
         }
         this.connect(property.change, () => {
           if (!this._changing)
-            script_fn(this.model, this.model.data, this._state, this)
+            script_fn(this.model, this.model.data, this._state, this, this.run_script)
         })
       }
     }
@@ -156,7 +156,7 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
       console.log(`Script '${property}' couldd not be found.`)
       return
     }
-    script_fn(this.model, this.model.data, this._state, this)
+    script_fn(this.model, this.model.data, this._state, this, this.run_script)
   }
 
   disconnect_signals(): void {
@@ -249,7 +249,7 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
     this._setup_event_listeners()
     const render_script = this._script_fns.render
     if (render_script != null)
-      render_script(this.model, this.model.data, this._state)
+      render_script(this.model, this.model.data, this._state, this, this.run_script)
   }
 
   private _send_event(elname: string, attr: string, event: any) {
@@ -313,13 +313,20 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
           continue
 	let definition: string
         htm = htm.replace('${'+method, '$--{'+method)
-	if (method.startsWith('run_script(')) {
-	  const meth = method.replace("('", "_").replace("')", "").replace('("', "_").replace('")', "")
-	  const script_name = meth.replace("run_script_", "")
+	if (method.startsWith('script(')) {
+	  const meth = (
+	    method
+	      .replace("('", "_").replace("')", "")
+	      .replace('("', "_").replace('")', "")
+	      .replace('-', '_')
+	  )
+	  const script_name = meth.replace("script_", "")
 	  htm = htm.replace(method, meth)
           definition = `
           const ${meth} = (event) => {
+            view._state.event = event
             view.run_script("${script_name}")
+            delete view._state.event
           }
           `
 	} else {
@@ -361,7 +368,7 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
       scripts.push(script)
     }
     scripts.push(literal)
-    return new Function("model, data, state, view", scripts.join('\n'))
+    return new Function("model, data, state, view, script", scripts.join('\n'))
   }
 
   private _remove_mutation_observers(): void {
