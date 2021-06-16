@@ -190,6 +190,8 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
   }
 
   resize_layout(): void {
+    if (this.layout == null)
+      this.update_layout()
     super.resize_layout()
     if (this._parent != null && this._parent !== this)
       this._parent.resize_layout()

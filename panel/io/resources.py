@@ -167,7 +167,9 @@ class Resources(BkResources):
 
         for model in param.concrete_descendents(ReactiveHTML).values():
             if hasattr(model, '__javascript__'):
-                files += model.__javascript__
+                for jsfile in model.__javascript__:
+                    if jsfile not in files:
+                        files.append(jsfile)
 
         js_files = []
         for js_file in files:
@@ -200,7 +202,15 @@ class Resources(BkResources):
     @property
     def js_modules(self):
         from ..config import config
-        return list(config.js_modules.values())
+        modules = list(config.js_modules.values())
+
+        for model in param.concrete_descendents(ReactiveHTML).values():
+            if hasattr(model, '__javascript_modules__'):
+                for jsmodule in model.__javascript_modules__:
+                    if jsmodule not in modulesfiles:
+                        modules.append(jsmodule)
+
+        return modules
 
     @property
     def css_files(self):
@@ -211,7 +221,9 @@ class Resources(BkResources):
 
         for model in param.concrete_descendents(ReactiveHTML).values():
             if hasattr(model, '__css__'):
-                files += model.__css__
+                for css_file in model.__css__:
+                    if css_file not in files:
+                        files.append(css_file)
 
         for cssf in config.css_files:
             if os.path.isfile(cssf) or cssf in files:
@@ -242,7 +254,14 @@ class Bundle(BkBundle):
 
     def __init__(self, **kwargs):
         from ..config import config
-        self.js_modules = kwargs.pop("js_modules", list(config.js_modules.values()))
+        from ..reactive import ReactiveHTML
+        js_modules = list(config.js_modules.values())
+        for model in param.concrete_descendents(ReactiveHTML).values():
+            if hasattr(model, '__javascript_modules__'):
+                for js_module in model.__javascript_modules__:
+                    if js_module not in js_modules:
+                        js_modules.append(js_module)
+        self.js_modules = kwargs.pop("js_modules", js_modules)
         super().__init__(**kwargs)
 
     @classmethod
@@ -250,7 +269,6 @@ class Bundle(BkBundle):
         from ..config import config
         return cls(
             js_files=bk_bundle.js_files,
-            js_modules=list(config.js_modules.values()),
             js_raw=bk_bundle.js_raw,
             css_files=bk_bundle.css_files,
             css_raw=bk_bundle.css_raw,
