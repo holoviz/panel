@@ -997,7 +997,16 @@ class ReactiveHTMLMetaclass(ParameterizedMetaclass):
         # Ensure syntactically valid jinja2 for loops
         if mcs._parser._open_for:
             raise ValueError(
-                "Template contains for loop without closing {% endfor %} statement."
+                f"{cls_name}._template contains for loop without closing {{% endfor %}} statement."
+            )
+
+        # Ensure there are no open tags
+        if mcs._parser._node_stack:
+            raise ValueError(
+                f"{cls_name}._template contains tags which were never "
+                "closed. Ensure all tags in your template have a "
+                "matching closing tag, e.g. if there is a tag <div>, "
+                "ensure there is a matching </div> tag."
             )
 
         mcs._attrs, mcs._node_callbacks = {}, {}

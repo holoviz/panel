@@ -3,7 +3,7 @@ import {useCallback} from 'preact/hooks';
 import {html} from 'htm/preact';
 
 import {build_views} from "@bokehjs/core/build_views"
-import {isArray} from "@bokehjs/core/util/types"
+import {isArray, isNumber} from "@bokehjs/core/util/types"
 import * as p from "@bokehjs/core/properties"
 import {HTMLBox} from "@bokehjs/models/layouts/html_box"
 import {LayoutDOM} from "@bokehjs/models/layouts/layout_dom"
@@ -178,6 +178,11 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
     await build_views(this._child_views, this.child_models, {parent: (null as any)})
   }
 
+  compute_layout(): void {
+    if (this.root != this)
+      super.compute_layout()
+  }
+
   update_layout(): void {
     for (const child_view of this.child_views) {
       this._align_view(child_view)
@@ -185,7 +190,8 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
       child_view.update_layout()
       child_view.compute_layout()
     }
-    this._update_layout()
+    if (this.root != this)
+      this._update_layout()
   }
 
   private _align_view(view: any): void {
@@ -242,24 +248,40 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
   resize_layout(): void {
     if (this._parent != null)
       this._parent.resize_layout()
-    super.resize_layout()
+    if (this.root != this)
+      super.resize_layout()
   }
 
   invalidate_layout(): void {
     if (this._parent != null)
       this._parent.invalidate_layout()
-    super.invalidate_layout()
+    if (this.root != this)
+      super.invalidate_layout()
   }
 
   update_position(): void {
+    if (this.root != this) {
+      super.update_position()
+      return
+    }
     this.el.style.display = this.model.visible ? "block" : "none"
     set_size(this.el, this.model)
 
-    const margin = this.layout.sizing.margin
+    let {margin} = this.model
+    let margin_spec = null
     if (margin == null)
       this.el.style.margin = ""
     else {
-      const {top, right, bottom, left} = margin
+      if (isNumber(margin))
+        margin_spec = {top: margin, right: margin, bottom: margin, left: margin}
+      else if (margin.length == 2) {
+        const [vertical, horizontal] = margin
+        margin_spec = {top: vertical, right: horizontal, bottom: vertical, left: horizontal}
+      } else {
+        const [top, right, bottom, left] = margin
+        margin_spec = {top, right, bottom, left}
+      }
+      const {top, right, bottom, left} = margin_spec
       this.el.style.padding = `${top}px ${right}px ${bottom}px ${left}px`
     }
 
