@@ -239,6 +239,18 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
     }
   }
 
+  resize_layout(): void {
+    if (this._parent != null)
+      this._parent.resize_layout()
+    super.resize_layout()
+  }
+
+  invalidate_layout(): void {
+    if (this._parent != null)
+      this._parent.invalidate_layout()
+    super.invalidate_layout()
+  }
+
   update_position(): void {
     this.el.style.display = this.model.visible ? "block" : "none"
     set_size(this.el, this.model)
@@ -296,11 +308,9 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
     for (const elname in this.model.callbacks) {
       for (const callback of this.model.callbacks[elname]) {
         const [cb, method] = callback;
-        if (methods.indexOf(method) > -1)
-          continue
 	let definition: string
         htm = htm.replace('${'+method, '$--{'+method)
-	if (method.startsWith('script(')) {
+        if (method.startsWith('script(')) {
 	  const meth = (
 	    method
 	      .replace("('", "_").replace("')", "")
@@ -323,7 +333,9 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
           }
           `
         }
-        methods.push(method)
+        if (methods.indexOf(method) > -1)
+          continue
+	methods.push(method)
         callbacks = callbacks + definition
       }
     }
