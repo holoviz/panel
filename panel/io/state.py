@@ -66,6 +66,10 @@ class _state(param.Parameterized):
     _location = None # Global location, e.g. for notebook context
     _locations = WeakKeyDictionary() # Server locations indexed by document
 
+    # Templates
+    _templates = WeakKeyDictionary() # Server templates indexed by document
+    _template = None
+
     # An index of all currently active views
     _views = {}
 
@@ -345,6 +349,20 @@ class _state(param.Parameterized):
     @property
     def session_args(self):
         return self.curdoc.session_context.request.arguments if self.curdoc else {}
+
+    @property
+    def template(self):
+        from ..config import config
+        if self.curdoc in self._templates:
+            return self._templates[self.curdoc]
+        elif self.curdoc is None and self._template:
+            return self._template
+        template = config.template(theme=config.theme)
+        if self.curdoc is None:
+            self._template = template
+        else:
+            self._templates[self.curdoc] = template
+        return template
 
     @property
     def user(self):

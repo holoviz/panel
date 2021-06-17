@@ -168,6 +168,12 @@ class Application(BkApplication):
             cb(session_context)
         await super().on_session_created(session_context)
 
+    def initialize_document(self, doc):
+        super().initialize_document(doc)
+        if doc in state._templates:
+            template = state._templates[doc]
+            template.server_doc(title=template.title, location=True, doc=doc)
+
 bokeh.command.util.Application = Application
 
 
