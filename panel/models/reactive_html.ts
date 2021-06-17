@@ -2,7 +2,6 @@ import {render} from 'preact';
 import {useCallback} from 'preact/hooks';
 import {html} from 'htm/preact';
 
-import {position} from "@bokehjs/core/dom"
 import {build_views} from "@bokehjs/core/build_views"
 import {isArray} from "@bokehjs/core/util/types"
 import * as p from "@bokehjs/core/properties"
@@ -179,44 +178,14 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
     await build_views(this._child_views, this.child_models, {parent: (null as any)})
   }
 
-  get is_layout_root(): boolean {
-    return (this.is_root || (this.parent == null)) && (this._parent == null)
-  }
-
-  invalidate_layout(): void {
-    super.invalidate_layout()
-    if (this._parent != null && this._parent !== this)
-      this._parent.invalidate_layout()
-  }
-
-  resize_layout(): void {
-    if (this.layout == null)
-      this.update_layout()
-    super.resize_layout()
-    if (this._parent != null && this._parent !== this)
-      this._parent.resize_layout()
-  }
-
   update_layout(): void {
     for (const child_view of this.child_views) {
       this._align_view(child_view)
+      child_view.compute_viewport()
       child_view.update_layout()
+      child_view.compute_layout()
     }
     this._update_layout()
-  }
-
-  update_position(): void {
-    this.el.style.display = this.model.visible ? "block" : "none"
-
-    let margin = undefined
-    if (this.is_layout_root && this._parent == null)
-      margin = this.layout.sizing.margin
-    position(this.el, this.layout.bbox, margin)
-
-    for (const child_view of this.child_views) {
-      child_view.resize_layout()
-      child_view.update_position()
-    }
   }
 
   private _align_view(view: any): void {
@@ -265,9 +234,25 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
     if (view == null)
       el.innerHTML = model
     else {
-      view._parent = view
+      view._parent = this
       view.renderTo(el)
     }
+  }
+
+  update_position(): void {
+    this.el.style.display = this.model.visible ? "block" : "none"
+    set_size(this.el, this.model)
+
+    const margin = this.layout.sizing.margin
+    if (margin == null)
+      this.el.style.margin = ""
+    else {
+      const {top, right, bottom, left} = margin
+      this.el.style.padding = `${top}px ${right}px ${bottom}px ${left}px`
+    }
+
+    for (const child_view of this.child_views)
+      child_view.update_position()
   }
 
   _render_node(node: any, children: any[]): void {
@@ -360,6 +345,8 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
       if (elname in this.model.children && typeof this.model.children[elname] !== "string")
         continue
       const elvar = elname.replace('-', '_')
+      if (literal.indexOf(elvar) === -1)
+        continue
       const script = `
       const ${elvar} = document.getElementById('${elname}-${id}')
       if (${elvar} == null) {
@@ -441,8 +428,6 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
       } finally {
         this._changing = false
       }
-      if (this.el.children.length)
-        set_size((this.el.children[0] as any), this.model)
     }
   }
 
