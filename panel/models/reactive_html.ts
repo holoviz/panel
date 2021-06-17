@@ -252,6 +252,10 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
   }
 
   update_position(): void {
+    if (this.root != this) {
+      super.update_position()
+      return
+    }
     this.el.style.display = this.model.visible ? "block" : "none"
     set_size(this.el, this.model)
 
