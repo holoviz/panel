@@ -10,11 +10,10 @@ from .vanilla import VanillaTemplate # noqa
 
 templates = {
     'bootstrap' : BootstrapTemplate,
+    'fast'      : FastListTemplate,
     'fast-list' : FastListTemplate,
-    'fast-grid' : FastGridTemplate,
     'material'  : MaterialTemplate,
     'golden'    : GoldenTemplate,
-    'react-grid': ReactTemplate,
     'vanilla'   : VanillaTemplate
 }
 
