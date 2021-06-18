@@ -10,7 +10,8 @@ import {LayoutDOM} from "@bokehjs/models/layouts/layout_dom"
 import {empty, classes} from "@bokehjs/core/dom"
 import {color2css} from "@bokehjs/core/util/color"
 
-import {serializeEvent} from "./event-to-object";
+import {dict_to_records} from "./data"
+import {serializeEvent} from "./event-to-object"
 import {DOMEvent, htmlDecode} from "./html"
 import {PanelHTMLBoxView, set_size} from "./layout"
 
@@ -136,26 +137,42 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
       for (const script of scripts) {
         const decoded_script = htmlDecode(script) || script
         const script_fn = this._render_script(decoded_script, id)
+        this._script_fns[prop] = script_fn
         const property = this.model.data.properties[prop]
-        if (property == null) {
-          this._script_fns[prop] = script_fn
+        if (property == null)
           continue
-        }
         this.connect(property.change, () => {
           if (!this._changing)
-            script_fn(this.model, this.model.data, this._state, this, this.run_script)
+            this.run_script(prop)
         })
       }
     }
   }
 
-  run_script(property: string): void {
+  run_script(property: string, silent: boolean=false): void {
     const script_fn = this._script_fns[property]
     if (script_fn === undefined) {
-      console.log(`Script '${property}' couldd not be found.`)
+      if (!silent)
+        console.log(`Script '${property}' could not be found.`)
       return
     }
-    script_fn(this.model, this.model.data, this._state, this, this.run_script)
+    const this_obj: any = {
+      get_records: (property: string, index: boolean) => this.get_records(property, index)
+    }
+    for (const name in this._script_fns)
+      this_obj[name] = () => this.run_script(name)
+    return script_fn(
+      this.model,
+      this.model.data,
+      this._state,
+      this,
+      (s: any) => this.run_script(s),
+      this_obj
+    )
+  }
+
+  get_records(property: string, index: boolean=true): any[] {
+    return dict_to_records(this.model.data[property], index)
   }
 
   disconnect_signals(): void {
@@ -181,7 +198,21 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
   compute_layout(): void {
     if (this.root != this)
       super.compute_layout()
+    else {
+      this.update_position()
+      this.after_layout()
+    }
   }
+
+
+  after_layout(): void {
+    for (const child_view of this.child_views)
+      child_view.after_layout()
+
+    this.run_script('after_layout', true)
+    this._has_finished = true
+  }
+
 
   update_layout(): void {
     for (const child_view of this.child_views) {
@@ -224,9 +255,7 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
     this._render_children()
     this._setup_mutation_observers()
     this._setup_event_listeners()
-    const render_script = this._script_fns.render
-    if (render_script != null)
-      render_script(this.model, this.model.data, this._state, this, this.run_script)
+    this.run_script('render', true)
   }
 
   private _send_event(elname: string, attr: string, event: any) {
@@ -330,17 +359,17 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
     for (const elname in this.model.callbacks) {
       for (const callback of this.model.callbacks[elname]) {
         const [cb, method] = callback;
-	let definition: string
+        let definition: string
         htm = htm.replace('${'+method, '$--{'+method)
         if (method.startsWith('script(')) {
-	  const meth = (
-	    method
-	      .replace("('", "_").replace("')", "")
-	      .replace('("', "_").replace('")', "")
-	      .replace('-', '_')
-	  )
-	  const script_name = meth.replace("script_", "")
-	  htm = htm.replace(method, meth)
+          const meth = (
+            method
+              .replace("('", "_").replace("')", "")
+              .replace('("', "_").replace('")', "")
+              .replace('-', '_')
+          )
+          const script_name = meth.replace("script_", "")
+          htm = htm.replace(method, meth)
           definition = `
           const ${meth} = (event) => {
             view._state.event = event
@@ -348,8 +377,8 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
             delete view._state.event
           }
           `
-	} else {
-	  definition = `
+        } else {
+          definition = `
           const ${method} = (event) => {
             view._send_event("${elname}", "${cb}", event)
           }
@@ -357,7 +386,7 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
         }
         if (methods.indexOf(method) > -1)
           continue
-	methods.push(method)
+        methods.push(method)
         callbacks = callbacks + definition
       }
     }
@@ -390,8 +419,14 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
       `
       scripts.push(script)
     }
+    const event = `
+    if (state.event !== undefined) {
+      const event = state.event
+    }
+    `
+    scripts.push(event)
     scripts.push(literal)
-    return new Function("model, data, state, view, script", scripts.join('\n'))
+    return new Function("model, data, state, view, script, self", scripts.join('\n'))
   }
 
   private _remove_mutation_observers(): void {
