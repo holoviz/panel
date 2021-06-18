@@ -10,7 +10,8 @@ import {LayoutDOM} from "@bokehjs/models/layouts/layout_dom"
 import {empty, classes} from "@bokehjs/core/dom"
 import {color2css} from "@bokehjs/core/util/color"
 
-import {serializeEvent} from "./event-to-object";
+import {dict_to_records} from "./data"
+import {serializeEvent} from "./event-to-object"
 import {DOMEvent, htmlDecode} from "./html"
 import {PanelHTMLBoxView, set_size} from "./layout"
 
@@ -136,11 +137,10 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
       for (const script of scripts) {
         const decoded_script = htmlDecode(script) || script
         const script_fn = this._render_script(decoded_script, id)
+        this._script_fns[prop] = script_fn
         const property = this.model.data.properties[prop]
-        if (property == null) {
-          this._script_fns[prop] = script_fn
+        if (property == null)
           continue
-        }
         this.connect(property.change, () => {
           if (!this._changing)
             this.run_script(prop)
@@ -156,7 +156,9 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
         console.log(`Script '${property}' could not be found.`)
       return
     }
-    const this_obj: any = {}
+    const this_obj: any = {
+      get_records: (property: string, index: boolean) => this.get_records(property, index)
+    }
     for (const name in this._script_fns)
       this_obj[name] = () => this.run_script(name)
     return script_fn(
@@ -167,6 +169,10 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
       (s: any) => this.run_script(s),
       this_obj
     )
+  }
+
+  get_records(property: string, index: boolean=true): any[] {
+    return dict_to_records(this.model.data[property], index)
   }
 
   disconnect_signals(): void {

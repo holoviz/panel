@@ -141,7 +141,7 @@ def find_attrs(html):
 
 
 PARAM_MAPPING = {
-    pm.Array: lambda p, kwargs: bp.Array(**kwargs),
+    pm.Array: lambda p, kwargs: bp.Array(bp.Any, **kwargs),
     pm.Boolean: lambda p, kwargs: bp.Bool(**kwargs),
     pm.CalendarDate: lambda p, kwargs: bp.Date(**kwargs),
     pm.CalendarDateRange: lambda p, kwargs: bp.Tuple(bp.Date, bp.Date, **kwargs),
