@@ -143,19 +143,30 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
         }
         this.connect(property.change, () => {
           if (!this._changing)
-            script_fn(this.model, this.model.data, this._state, this, this.run_script)
+            this.run_script(prop)
         })
       }
     }
   }
 
-  run_script(property: string): void {
+  run_script(property: string, silent: boolean=false): void {
     const script_fn = this._script_fns[property]
     if (script_fn === undefined) {
-      console.log(`Script '${property}' couldd not be found.`)
+      if (!silent)
+        console.log(`Script '${property}' could not be found.`)
       return
     }
-    script_fn(this.model, this.model.data, this._state, this, this.run_script)
+    const this_obj: any = {}
+    for (const name in this._script_fns)
+      this_obj[name] = () => this.run_script(name)
+    return script_fn(
+      this.model,
+      this.model.data,
+      this._state,
+      this,
+      (s: any) => this.run_script(s),
+      this_obj
+    )
   }
 
   disconnect_signals(): void {
@@ -181,7 +192,21 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
   compute_layout(): void {
     if (this.root != this)
       super.compute_layout()
+    else {
+      this.update_position()
+      this.after_layout()
+    }
   }
+
+
+  after_layout(): void {
+    for (const child_view of this.child_views)
+      child_view.after_layout()
+
+    this.run_script('after_layout', true)
+    this._has_finished = true
+  }
+
 
   update_layout(): void {
     for (const child_view of this.child_views) {
@@ -224,9 +249,7 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
     this._render_children()
     this._setup_mutation_observers()
     this._setup_event_listeners()
-    const render_script = this._script_fns.render
-    if (render_script != null)
-      render_script(this.model, this.model.data, this._state, this, this.run_script)
+    this.run_script('render', true)
   }
 
   private _send_event(elname: string, attr: string, event: any) {
@@ -330,17 +353,17 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
     for (const elname in this.model.callbacks) {
       for (const callback of this.model.callbacks[elname]) {
         const [cb, method] = callback;
-	let definition: string
+        let definition: string
         htm = htm.replace('${'+method, '$--{'+method)
         if (method.startsWith('script(')) {
-	  const meth = (
-	    method
-	      .replace("('", "_").replace("')", "")
-	      .replace('("', "_").replace('")', "")
-	      .replace('-', '_')
-	  )
-	  const script_name = meth.replace("script_", "")
-	  htm = htm.replace(method, meth)
+          const meth = (
+            method
+              .replace("('", "_").replace("')", "")
+              .replace('("', "_").replace('")', "")
+              .replace('-', '_')
+          )
+          const script_name = meth.replace("script_", "")
+          htm = htm.replace(method, meth)
           definition = `
           const ${meth} = (event) => {
             view._state.event = event
@@ -348,8 +371,8 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
             delete view._state.event
           }
           `
-	} else {
-	  definition = `
+        } else {
+          definition = `
           const ${method} = (event) => {
             view._send_event("${elname}", "${cb}", event)
           }
@@ -357,7 +380,7 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
         }
         if (methods.indexOf(method) > -1)
           continue
-	methods.push(method)
+        methods.push(method)
         callbacks = callbacks + definition
       }
     }
@@ -390,8 +413,14 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
       `
       scripts.push(script)
     }
+    const event = `
+    if (state.event !== undefined) {
+      const event = state.event
+    }
+    `
+    scripts.push(event)
     scripts.push(literal)
-    return new Function("model, data, state, view, script", scripts.join('\n'))
+    return new Function("model, data, state, view, script, self", scripts.join('\n'))
   }
 
   private _remove_mutation_observers(): void {
