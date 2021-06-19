@@ -201,9 +201,9 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
     else {
       this.update_position()
       this.after_layout()
+      this.notify_finished()
     }
   }
-
 
   after_layout(): void {
     for (const child_view of this.child_views)
@@ -212,7 +212,6 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
     this.run_script('after_layout', true)
     this._has_finished = true
   }
-
 
   update_layout(): void {
     for (const child_view of this.child_views) {
