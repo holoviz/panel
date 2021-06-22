@@ -198,6 +198,25 @@ def _key(obj):
         return id(obj)
     return _INDETERMINATE
 
+def _cleanup_cache(cache, max_items, ttl, time):
+    """
+    Deletes items in the cache if the exceed the number of items or
+    their TTL (time-to-live) has expired.
+    """
+    while len(func_cache) >= max_items:
+        if policy.lower() == 'fifo':
+            key = list(func_cache.keys())[0]
+        elif policy.lower() == 'lru':
+            key = sorted(((key, time-t) for k, (_, _, _, t) in func_cache.items()),
+                         key=lambda o: o[1])[0][0]
+        elif policy.lower() == 'lfu':
+            key = sorted(func_cache.items(), key=lambda o: o[1][2])[0][0]
+        del func_cache[key]
+    if ttl is not None:
+        for key, (_, ts, _, _) in list(func_cache.items()):
+            if (time-ts) > ttl:
+                del func_cache[key]
+
 #---------------------------------------------------------------------
 # Public API
 #---------------------------------------------------------------------
@@ -264,6 +283,8 @@ def cache(func=None, hash_funcs=None, max_items=None, policy='LRU', ttl=None):
             ttl=ttl
         )
 
+    lock = threading.RLock()
+
     @functools.wraps(func)
     def wrapped_func(*args, **kwargs):
         # Handle param.depends method by adding parameters to arguments
@@ -277,28 +298,25 @@ def cache(func=None, hash_funcs=None, max_items=None, policy='LRU', ttl=None):
             hash_args = dinfo['dependencies'] + args[1:]
             hash_kwargs = dict(dinfo['kw'], **kwargs)
         hash_value = compute_hash(func, *hash_args, **hash_kwargs)
-        time = _TIME_FN()
-        if func in state._memoize_cache and hash_value in state._memoize_cache[func]:
-            ret, ts, count, _ = state._memoize_cache[func][hash_value]
-            state._memoize_cache[func][hash_value] = (ret, ts, count+1, time)
-            return ret
 
-        if func not in state._memoize_cache:
-            state._memoize_cache[func] = collections.OrderedDict()
-        elif max_items is not None:
-            cache_dict = state._memoize_cache[func]
-            while len(cache_dict) >= max_items:
-                if policy.lower() == 'fifo':
-                    key = list(cache_dict.keys())[0]
-                elif policy.lower() == 'lru':
-                    key = sorted(((key, time-t) for k, (_, _, _, t) in cache_dict.items()),
-                                 key=lambda o: o[1])[0][0]
-                elif policy.lower() == 'lfu':
-                    key = sorted(cache_dict.items(), key=lambda o: o[1][2])[0][0]
-                del cache_dict[key]
+
+        time = _TIME_FN()
+        func_cache = state._memoize_cache.get(func)
+        if func_cache is None:
+            state._memoize_cache[func] = func_cache = collections.OrderedDict()
+        else hash_value in func_cache:
+            with lock:
+                ret, ts, count, _ = func_cache[hash_value]
+                func_cache[hash_value] = (ret, ts, count+1, time)
+                return ret
+
+        if max_items is not None:
+            with lock:
+                _cleanup_cache(cache, max_items, ttl, time)
 
         ret = func(*args, **kwargs)
-        state._memoize_cache[func][hash_value] = (ret, time, 0, time)
+        with lock:
+            func_cache[hash_value] = (ret, time, 0, time)
         return ret
 
     try:
