@@ -163,7 +163,7 @@ def _generate_hash(obj, hash_funcs={}):
         if isinstance(otype, str):
             if otype == fqn_type:
                 return hash_func(obj)
-        
+
         elif inspect.isfunction(otype):
             if otype(obj):
                 return hash_func(obj)
@@ -202,6 +202,33 @@ def _key(obj):
 # Public API
 #---------------------------------------------------------------------
 
+def compute_hash(func, *args, **kwargs):
+    """
+    Computes a hash given a function and its arguments.
+
+    Arguments
+    ---------
+    func: callable
+        The function to cache.
+    args: tuple
+        Arguments to hash
+    kwargs: dict
+        Keyword arguments to hash
+    """
+    key = (func, _key(args), _key(kwargs))
+    if _INDETERMINATE not in key and key in _HASH_MAP:
+        return _HASH_MAP[key]
+    hasher = hashlib.new("md5")
+    if args:
+        hasher.update(_generate_hash(hash_args, hash_funcs))
+    if kwargs:
+        hasher.update(_generate_hash(hash_kwargs, hash_funcs))
+    hash_value = hasher.hexdigest()
+    if _INDETERMINATE not in key:
+        _HASH_MAP[key] = hash_value
+    return hash_value
+
+
 def cache(func=None, hash_funcs=None, max_items=None, policy='LRU', ttl=None):
     """
     Decorator to memoize functions with options to configure the
@@ -214,7 +241,7 @@ def cache(func=None, hash_funcs=None, max_items=None, policy='LRU', ttl=None):
 
     hash_funcs: dict or None
         A dictionary mapping from a type to a function which returns
-        a hash for an object of that type. If provided this will 
+        a hash for an object of that type. If provided this will
         override the default hashing function provided by Panel.
 
     policy: str
@@ -222,12 +249,12 @@ def cache(func=None, hash_funcs=None, max_items=None, policy='LRU', ttl=None):
           - FIFO: First in - First out
           - LRU: Least recently used
           - LFU: Least frequently used
-  
+
     ttl : float or None
         The number of seconds to keep an item in the cache, or None if
         the cache should not expire. The default is None.
     """
-    
+
     hash_funcs = hash_funcs or {}
     if func is None:
         return lambda f: cache(
@@ -239,6 +266,17 @@ def cache(func=None, hash_funcs=None, max_items=None, policy='LRU', ttl=None):
 
     @functools.wraps(func)
     def wrapped_func(*args, **kwargs):
+        # Handle param.depends method by adding parameters to arguments
+        hash_args, hash_kwargs = args, kwargs
+        if (
+            args and
+            isinstance(args[0], param.Parameterized) and
+            getattr(type(args[0]), func.__name__) is wrapped_func
+        ):
+            dinfo = getattr(wrapped_func, '_dinfo')
+            hash_args = dinfo['dependencies'] + args[1:]
+            hash_kwargs = dict(dinfo['kw'], **kwargs)
+        hash_value = compute_hash(func, *hash_args, **hash_kwargs)
         time = _TIME_FN()
         if func in state._memoize_cache and hash_value in state._memoize_cache[func]:
             ret, ts, count, _ = state._memoize_cache[func][hash_value]
