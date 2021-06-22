@@ -24,10 +24,6 @@ from .state import state
 
 _CYCLE_PLACEHOLDER = b"panel-93KZ39Q-floatingdangeroushomechose-CYCLE"
 
-_NATIVE_TYPES = (
-    bytes, str, float, int, bool, bytearray, type(None)
-)
-
 _FFI_TYPE_NAMES = ("_cffi_backend.FFI", "builtins.CompiledFFI",)
 
 _HASH_MAP = dict()
@@ -35,6 +31,18 @@ _HASH_MAP = dict()
 _HASH_STACKS = weakref.WeakKeyDictionary()
 
 _INDETERMINATE = type('INDETERMINATE', (object,), {})()
+
+_NATIVE_TYPES = (
+    bytes, str, float, int, bool, bytearray, type(None)
+)
+
+_NP_SIZE_LARGE = 100_000
+
+_NP_SAMPLE_SIZE = 100_000
+
+_PANDAS_ROWS_LARGE = 100_000
+
+_PANDAS_SAMPLE_SIZE = 100_000
 
 _TIME_FN = time.monotonic
 
@@ -139,13 +147,7 @@ _hash_funcs = {
 for name in _FFI_TYPE_NAMES:
     _hash_funcs[name] = b'0'
 
-
-def _generate_hash(obj, hash_funcs={}):
-    # Break recursive cycles.
-    hash_stack = state._current_stack
-    if obj in hash_stack:
-        return _CYCLE_PLACEHOLDER
-    hash_stack.push(obj)
+def _generate_hash_inner(obj, hash_funcs={}):
 
     fqn_type = _get_fqn(obj)
     if fqn_type in hash_funcs:
@@ -163,7 +165,6 @@ def _generate_hash(obj, hash_funcs={}):
         if isinstance(otype, str):
             if otype == fqn_type:
                 return hash_func(obj)
-
         elif inspect.isfunction(otype):
             if otype(obj):
                 return hash_func(obj)
@@ -179,6 +180,18 @@ def _generate_hash(obj, hash_funcs={}):
             h.update(_generate_hash(item))
         return h.digest()
     return _int_to_bytes(id(obj))
+
+def _generate_hash(obj, hash_funcs={}):
+    # Break recursive cycles.
+    hash_stack = state._current_stack
+    if obj in hash_stack:
+        return _CYCLE_PLACEHOLDER
+    hash_stack.push(obj)
+    try:
+        hash_value = _generate_hash_inner(obj, hash_funcs)
+    finally:
+        hash_stack.pop()
+    return hash_value
 
 def _key(obj):
     if obj is None:
@@ -198,30 +211,30 @@ def _key(obj):
         return id(obj)
     return _INDETERMINATE
 
-def _cleanup_cache(cache, max_items, ttl, time):
+def _cleanup_cache(cache, policy, max_items, ttl, time):
     """
     Deletes items in the cache if the exceed the number of items or
     their TTL (time-to-live) has expired.
     """
-    while len(func_cache) >= max_items:
+    while len(cache) >= max_items:
         if policy.lower() == 'fifo':
-            key = list(func_cache.keys())[0]
+            key = list(cache.keys())[0]
         elif policy.lower() == 'lru':
-            key = sorted(((key, time-t) for k, (_, _, _, t) in func_cache.items()),
+            key = sorted(((key, time-t) for k, (_, _, _, t) in cache.items()),
                          key=lambda o: o[1])[0][0]
         elif policy.lower() == 'lfu':
-            key = sorted(func_cache.items(), key=lambda o: o[1][2])[0][0]
-        del func_cache[key]
+            key = sorted(cache.items(), key=lambda o: o[1][2])[0][0]
+        del cache[key]
     if ttl is not None:
-        for key, (_, ts, _, _) in list(func_cache.items()):
+        for key, (_, ts, _, _) in list(cache.items()):
             if (time-ts) > ttl:
-                del func_cache[key]
+                del cache[key]
 
 #---------------------------------------------------------------------
 # Public API
 #---------------------------------------------------------------------
 
-def compute_hash(func, *args, **kwargs):
+def compute_hash(func, hash_funcs, args, kwargs):
     """
     Computes a hash given a function and its arguments.
 
@@ -229,6 +242,8 @@ def compute_hash(func, *args, **kwargs):
     ---------
     func: callable
         The function to cache.
+    hash_funcs: dict
+        A dictionary of custom hash functions indexed by type
     args: tuple
         Arguments to hash
     kwargs: dict
@@ -239,9 +254,9 @@ def compute_hash(func, *args, **kwargs):
         return _HASH_MAP[key]
     hasher = hashlib.new("md5")
     if args:
-        hasher.update(_generate_hash(hash_args, hash_funcs))
+        hasher.update(_generate_hash(args, hash_funcs))
     if kwargs:
-        hasher.update(_generate_hash(hash_kwargs, hash_funcs))
+        hasher.update(_generate_hash(kwargs, hash_funcs))
     hash_value = hasher.hexdigest()
     if _INDETERMINATE not in key:
         _HASH_MAP[key] = hash_value
@@ -295,16 +310,15 @@ def cache(func=None, hash_funcs=None, max_items=None, policy='LRU', ttl=None):
             getattr(type(args[0]), func.__name__) is wrapped_func
         ):
             dinfo = getattr(wrapped_func, '_dinfo')
-            hash_args = dinfo['dependencies'] + args[1:]
+            hash_args = tuple(getattr(args[0], d) for d in dinfo['dependencies']) + args[1:]
             hash_kwargs = dict(dinfo['kw'], **kwargs)
-        hash_value = compute_hash(func, *hash_args, **hash_kwargs)
-
+        hash_value = compute_hash(func, hash_funcs, hash_args, hash_kwargs)
 
         time = _TIME_FN()
         func_cache = state._memoize_cache.get(func)
         if func_cache is None:
             state._memoize_cache[func] = func_cache = collections.OrderedDict()
-        else hash_value in func_cache:
+        elif hash_value in func_cache:
             with lock:
                 ret, ts, count, _ = func_cache[hash_value]
                 func_cache[hash_value] = (ret, ts, count+1, time)
@@ -312,7 +326,7 @@ def cache(func=None, hash_funcs=None, max_items=None, policy='LRU', ttl=None):
 
         if max_items is not None:
             with lock:
-                _cleanup_cache(cache, max_items, ttl, time)
+                _cleanup_cache(cache, policy, max_items, ttl, time)
 
         ret = func(*args, **kwargs)
         with lock:
