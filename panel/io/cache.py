@@ -219,8 +219,7 @@ def cache(func=None, hash_funcs=None, max_items=None, policy='LRU', ttl=None):
 
     policy: str
         A caching policy when max_items is set, must be one of:
-          - LIFO: Last-in-first-out
-          - FIFO: First-in-first-out
+          - FIFO: First in - First out
           - LRU: Least recently used
           - LFU: Least frequently used
   
@@ -240,32 +239,6 @@ def cache(func=None, hash_funcs=None, max_items=None, policy='LRU', ttl=None):
 
     @functools.wraps(func)
     def wrapped_func(*args, **kwargs):
-        key = (func, _key(args), _key(kwargs))
-
-        if _INDETERMINATE not in key and key in _HASH_MAP:
-            hash_value = _HASH_MAP[key]
-        else:
-            hasher = hashlib.new("md5")
-
-            # Handle param.depends method
-            hash_args, kwargs = args, kwargs
-            if (
-                args and
-                isinstance(args[0], param.Parameterized) and
-                getattr(type(args[0]), func.__name__) is wrapped_func
-            ):
-                dinfo = getattr(wrapped_func, '_dinfo')
-                hash_args = dinfo['dependencies'] + args[1:]
-                hash_kwargs = dict(dinfo['kw'], **kwargs)
-
-            if args:
-                hasher.update(_generate_hash(hash_args, hash_funcs))
-            if kwargs:
-                hasher.update(_generate_hash(hash_kwargs, hash_funcs))
-            hash_value = hasher.hexdigest()
-            if _INDETERMINATE not in key:
-                _HASH_MAP[key] = hash_value
-
         time = _TIME_FN()
         if func in state._memoize_cache and hash_value in state._memoize_cache[func]:
             ret, ts, count, _ = state._memoize_cache[func][hash_value]
@@ -279,8 +252,6 @@ def cache(func=None, hash_funcs=None, max_items=None, policy='LRU', ttl=None):
             while len(cache_dict) >= max_items:
                 if policy.lower() == 'fifo':
                     key = list(cache_dict.keys())[0]
-                elif policy.lower() == 'lifo':
-                    key = list(cache_dict.keys())[-1]
                 elif policy.lower() == 'lru':
                     key = sorted(((key, time-t) for k, (_, _, _, t) in cache_dict.items()),
                                  key=lambda o: o[1])[0][0]
