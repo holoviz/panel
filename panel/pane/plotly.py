@@ -5,12 +5,12 @@ bokeh model.
 import numpy as np
 import param
 
-from bokeh.models import ColumnDataSource
+from bokeh.models import ColumnDataSource, CustomJS, Tabs
 from pyviz_comms import JupyterComm
 
 from .base import PaneBase
 from ..util import isdatetime, lazy_load
-from ..viewable import Layoutable
+from ..viewable import Layoutable, Viewable
 
 
 
@@ -206,6 +206,8 @@ class Plotly(PaneBase):
             root = model
         self._link_props(model, self._linkable_params, doc, root, comm)
         self._models[root.ref['id']] = (model, parent)
+        if _patch_tabs_plotly not in Viewable._preprocessing_hooks:
+            Viewable._preprocessing_hooks.append(_patch_tabs_plotly)
         return model
 
     def _update(self, ref=None, model=None):
@@ -273,3 +275,42 @@ class Plotly(PaneBase):
         # Check if we should trigger rendering
         if updates or update_sources:
             model._render_count += 1
+
+
+def _patch_tabs_plotly(viewable, root):
+    """
+    A preprocessing hook which ensures that any Plotly panes rendered
+    inside Tabs are only visible when the tab they are in is active.
+    This is a workaround for https://github.com/holoviz/panel/issues/804.
+    """
+    from ..models.plotly import PlotlyPlot
+
+    tabs_models = list(root.select({'type': Tabs}))
+    plotly_models = root.select({'type': PlotlyPlot})
+
+    for model in plotly_models:
+        parent_tabs = []
+        for tabs in tabs_models:
+            if tabs.select_one({'id': model.id}):
+                parent_tabs.append(tabs)
+        parent_tab = None
+        for tabs in parent_tabs:
+            if not any(tabs.select_one(pt) for pt in parent_tabs if pt is not tabs):
+                parent_tab = tabs
+                break
+        if parent_tab is None:
+            return
+        for i, tab in enumerate(parent_tab.tabs):
+            if tab.select_one({'id': model.id}):
+                break
+        updated = False
+        code = "model.visible = cb_obj.active == i;"
+        for cb in parent_tab.js_property_callbacks.get('change:active', []):
+            if cb.code == code and cb.args.get('model') is model:
+                cb.args['i'] = i
+                updated = True
+        if updated:
+            continue
+        callback = CustomJS(args={'model': model, 'i': i, 'margin': model.margin}, code=code)
+        parent_tab.js_on_change('active', callback)
+        model.visible = parent_tab.active == i
