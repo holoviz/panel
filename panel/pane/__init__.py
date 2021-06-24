@@ -5,7 +5,6 @@ objects are one of three main components in panel the other two being
 layouts and widgets. Panes may render anything including plots, text,
 images, equations etc.
 """
-from .ace import Ace # noqa
 from .alert import Alert # noqa
 from .base import PaneBase, Pane, panel # noqa
 from .equation import LaTeX # noqa
