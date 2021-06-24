@@ -3,12 +3,9 @@ Miscellaneous widgets which do not fit into the other main categories.
 """
 import os
 
-from io import BytesIO
 from base64 import b64encode
-from six import string_types
 
 import param
-import numpy as np
 
 from ..io.notebook import push
 from ..io.state import state
