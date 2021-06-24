@@ -252,8 +252,8 @@ class RootHandler(BkRootHandler):
         if self.index and not self.index.endswith('.html'):
             prefix = "" if self.prefix is None else self.prefix
             redirect_to = prefix + '.'.join(self.index.split('.')[:-1])
-            return self.redirect(redirect_to)
-        return super().get(*args, **kwargs)
+            self.redirect(redirect_to)
+        await super().get(*args, **kwargs)
 
 toplevel_patterns[0] = (r'/?', RootHandler)
 bokeh.server.tornado.RootHandler = RootHandler
