@@ -612,10 +612,10 @@ class SyncableData(Reactive):
         if self._data_params:
             self.param.watch(self._update_cds, self._data_params)
         self.param.watch(self._update_selected, 'selection')
-        self._validate(None)
+        self._validate()
         self._update_cds()
 
-    def _validate(self, event):
+    def _validate(self, *events):
         """
         Allows implementing validation for the data parameters.
         """

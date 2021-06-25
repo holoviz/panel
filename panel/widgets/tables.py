@@ -69,7 +69,7 @@ class BaseTable(ReactiveData, Widget):
         self._filters = []
         super().__init__(value=value, **params)
 
-    def _validate(self, event):
+    def _validate(self, *events):
         if self.value is None:
             return
         cols = self.value.columns
@@ -760,8 +760,8 @@ class Tabulator(BaseTable):
         super().__init__(value=value, **params)
         self._configuration = configuration
 
-    def _validate(self, event):
-        super()._validate(event)
+    def _validate(self, *events):
+        super()._validate(*events)
         if self.value is not None:
             todo = []
             if self.style is not None:
