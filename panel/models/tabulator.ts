@@ -180,6 +180,10 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       pagination: pagination,
       paginationSize: this.model.page_size,
       paginationInitialPage: 1,
+      selectableCheck: (row: any) => {
+	const selectable = this.model.selectable_rows
+	return (selectable == null) || (selectable.indexOf(row._row.data._index) >= 0)
+      }
     }
     if (pagination) {
       configuration['ajaxURL'] = "http://panel.pyviz.org"
@@ -492,19 +496,31 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       indices.push(index)
     else
       indices.splice(indices.indexOf(index), 1)
+    const filtered = this._filter_selected(indices)
     this.tabulator.deselectRow()
-    this.tabulator.selectRow(indices)
+    this.tabulator.selectRow(filtered)
     this._selection_updating = true
-    selected.indices = indices
+    selected.indices = filtered
     this._selection_updating = false
+  }
+
+  _filter_selected(indices: number[]): number[] {
+    const filtered = []
+    for (const ind of indices) {
+      if (this.model.selectable_rows == null ||
+	  this.model.selectable_rows.indexOf(ind) >= 0)
+	filtered.push(ind)
+    }
+    return filtered
   }
 
   rowSelectionChanged(data: any, _: any): void {
     if (this._selection_updating || this._initializing || (typeof this.model.select_mode) === 'boolean')
       return
-    this._selection_updating = true
-    const indices: any = data.map((row: any) => row._index)
-    this.model.source.selected.indices = indices;
+    const indices: number[] = data.map((row: any) => row._index)
+    const filtered = this._filter_selected(indices)
+    this._selection_updating = indices.length === filtered.length
+    this.model.source.selected.indices = filtered;
     this._selection_updating = false
   }
 
@@ -538,6 +554,7 @@ export namespace DataTabulator {
     page_size: p.Property<number>
     pagination: p.Property<string | null>
     select_mode: p.Property<any>
+    selectable_rows: p.Property<number[] | null>
     source: p.Property<ColumnDataSource>
     sorters: p.Property<any[]>
     styles: p.Property<any>
@@ -577,6 +594,7 @@ export class DataTabulator extends HTMLBox {
       page:           [ Number,                   0 ],
       page_size:      [ Number,                   0 ],
       select_mode:    [ Any,                   true ],
+      selectable_rows: [ Nullable(Array(Number)), null ],
       source:         [ Ref(ColumnDataSource)       ],
       sorters:        [ Array(Any),              [] ],
       styles:         [ Any,                     {} ],

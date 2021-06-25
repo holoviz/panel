@@ -726,15 +726,25 @@ class Tabulator(BaseTable):
         The height of each table row.""")
 
     selectable = param.ObjectSelector(
-        default=True, objects=[True, False, 'checkbox', 'toggle'], doc="""
+        default=True, objects=[True, False, 'checkbox', 'checkbox-single', 'toggle'], doc="""
         Defines the selection mode of the Tabulator.
 
-          - True: Selects rows on click. To select multiple use
-                  Ctrl-select, to select a range use Shift-select
-          - checkbox: Adds a column of checkboxes to toggle selections
-          - toggle: Selection toggles when clicked
-          - False: Disables selection
+          - True
+              Selects rows on click. To select multiple use Ctrl-select,
+              to select a range use Shift-select
+          - False
+              Disables selection
+          - 'checkbox'
+              Adds a column of checkboxes to toggle selections
+          - 'checkbox-single'
+              Same as 'checkbox' but header does not alllow select/deselect all
+          - 'toggle'
+              Selection toggles when clicked
         """)
+
+    selectable_rows = param.Callable(default=None, doc="""
+        A function which given a DataFrame should return a list of
+        rows by integer index, which are selectable.""")
 
     sorters = param.List(default=[], doc="""
         A list of sorters to apply during pagination.""")
@@ -789,6 +799,8 @@ class Tabulator(BaseTable):
                 msg['theme_url'] = THEME_URL
             theme = 'tabulator' if self.theme == 'default' else 'tabulator_'+self.theme 
             self._widget_type.__css__ = [msg['theme_url'] + theme + '.min.css']
+        if msg.get('select_mode') == 'checkbox-single':
+            msg['select_mode'] = 'checkbox'
         return msg
 
     def _update_columns(self, event, model):
@@ -827,17 +839,11 @@ class Tabulator(BaseTable):
     def _get_style_data(self):
         if self.value is None:
             return {}
-        if self.pagination == 'remote':
-            nrows = self.page_size
-            start = (self.page-1)*nrows
-            df = self.value.iloc[start: start+nrows]
-        else:
-            df = self.value
-
+        df = self._processed
         styler = df.style
         styler._todo = self.style._todo
         styler._compute()
-        offset = len(self.indexes) + int(self.selectable == 'checkbox')
+        offset = len(self.indexes) + int(self.selectable in ('checkbox', 'checkbox-single'))
 
         styles = {}
         for (r, c), s in styler.ctx.items():
@@ -845,6 +851,11 @@ class Tabulator(BaseTable):
                 styles[int(r)] = {}
             styles[int(r)][offset+int(c)] = s
         return styles
+
+    def _get_selectable(self):
+        if self.value is None or self.selectable_rows is None:
+            return None
+        return self.selectable_rows(self._processed)
 
     def _update_style(self):
         styles = self._get_style_data()
@@ -899,6 +910,12 @@ class Tabulator(BaseTable):
             self._update_max_page()
             self._update_selected()
         self._update_style()
+        self._update_selectable()
+
+    def _update_selectable(self):
+        selectable = self._get_selectable()
+        for ref, (model, _) in self._models.items():
+            self._apply_update([], {'selectable_rows': selectable}, model, ref)
 
     def _update_max_page(self):
         length = self._length
@@ -962,18 +979,26 @@ class Tabulator(BaseTable):
             length = self._length
         if props.get('height', None) is None:
             props['height'] = length * self.row_height + 30
-        props['source'] = source
-        props['styles'] = self._get_style_data()
-        props['columns'] = columns = self._get_columns()
-        props['configuration'] = self._get_configuration(columns)
-        props['page'] = self.page
-        props['pagination'] = self.pagination
-        props['page_size'] = self.page_size
-        props['layout'] = self.layout
-        props['groupby'] = self.groupby
-        props['hidden_columns'] = self.hidden_columns
-        props['editable'] = not self.disabled
-        props['select_mode'] = self.selectable
+        columns = self._get_columns()
+        if self.selectable == 'checkbox-single':
+            selectable = 'checkbox'
+        else:
+            selectable = self.selectable
+        props.update({
+            'source': source,
+            'styles': self._get_style_data(),
+            'columns': columns,
+            'configuration': self._get_configuration(columns),
+            'page': self.page,
+            'pagination': self.pagination,
+            'page_size': self.page_size,
+            'layout': self.layout,
+            'groupby': self.groupby,
+            'hidden_columns': self.hidden_columns,
+            'editable': not self.disabled,
+            'select_mode': selectable,
+            'selectable_rows': self._get_selectable()
+        })
         process = {'theme': self.theme, 'frozen_rows': self.frozen_rows}
         props.update(self._process_param_change(process))
         if self.pagination:
@@ -996,10 +1021,12 @@ class Tabulator(BaseTable):
         column_objs = list(column_objs)
         groups = {}
         columns = []
-        if self.selectable == 'checkbox':
+        selectable = self.selectable
+        if isinstance(selectable, str) and selectable.startswith('checkbox'):
+            title = "" if selectable.endswith('-single') else "rowSelection"
             columns.append({
                 "formatter": "rowSelection",
-                "titleFormatter": "rowSelection",
+                "titleFormatter": title,
                 "hozAlign": "center",
                 "headerSort": False,
                 "frozen": True
