@@ -840,6 +840,10 @@ class Tabulator(BaseTable):
         if self.value is None:
             return {}
         df = self._processed
+        if self.pagination == 'remote':
+            nrows = self.page_size
+            start = (self.page-1)*nrows
+            df = df.iloc[start:(start+nrows)]
         styler = df.style
         styler._todo = self.style._todo
         styler._compute()
@@ -855,7 +859,12 @@ class Tabulator(BaseTable):
     def _get_selectable(self):
         if self.value is None or self.selectable_rows is None:
             return None
-        return self.selectable_rows(self._processed)
+        df = self._processed
+        if self.pagination == 'remote':
+            nrows = self.page_size
+            start = (self.page-1)*nrows
+            df = df.iloc[start:(start+nrows)]
+        return self.selectable_rows(df)
 
     def _update_style(self):
         styles = self._get_style_data()
@@ -873,6 +882,7 @@ class Tabulator(BaseTable):
                 return
         super()._stream(stream, rollover)
         self._update_style()
+        self._update_selectable()
 
     def stream(self, stream_value, rollover=None, reset_index=True, follow=True):
         for ref, (model, _) in self._models.items():
@@ -899,6 +909,7 @@ class Tabulator(BaseTable):
         if not patch:
             return
         super()._patch(patch)
+        self._update_selectable()
         if self.pagination == 'remote':
             self._update_style()
 
@@ -1062,6 +1073,8 @@ class Tabulator(BaseTable):
                 col_dict['formatter'] = formatter.pop('type')
                 col_dict['formatterParams'] = formatter
             editor = self.editors.get(column.field)
+            if column.field in self.editors and editor is None:
+                col_dict['editable'] = False
             if isinstance(editor, str):
                 col_dict['editor'] = editor
             elif isinstance(editor, dict):
