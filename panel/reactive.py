@@ -675,6 +675,7 @@ class SyncableData(Reactive):
 
     @updating
     def _stream(self, stream, rollover=None):
+        self._processed, _ = self._get_data()
         for ref, (m, _) in self._models.items():
             if ref not in state._views or ref in state._fake_roots:
                 continue

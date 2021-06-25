@@ -306,6 +306,15 @@ def test_tabulator_frozen_rows(document, comm):
     assert model.frozen_rows == [1, 3]
 
 
+def test_tabulator_selectable_rows(document, comm):
+    df = makeMixedDataFrame()
+    table = Tabulator(df, selectable_rows=lambda df: list(df[df.A>2].index.values))
+
+    model = table.get_root(document, comm)
+
+    assert model.selectable_rows == [3, 4]
+
+
 def test_tabulator_pagination(document, comm):
     df = makeMixedDataFrame()
     table = Tabulator(df, pagination='remote', page_size=2)
@@ -375,6 +384,23 @@ def test_tabulator_pagination_selection(document, comm):
 
     assert model.source.selected.indices == [0, 1]
 
+
+def test_tabulator_pagination_selectable_rows(document, comm):
+    df = makeMixedDataFrame()
+    table = Tabulator(
+        df, pagination='remote', page_size=3,
+        selectable_rows=lambda df: list(df.index.values[::2])
+    )
+
+    model = table.get_root(document, comm)
+
+    print(table._processed)
+    assert model.selectable_rows == [0, 2]
+
+    table.page = 2
+
+    assert model.selectable_rows == [3]
+    
 
 def test_tabulator_styling(document, comm):
     df = makeMixedDataFrame()
@@ -854,6 +880,28 @@ def test_tabulator_stream_dataframe_with_filter(document, comm):
     }
     for col, values in model.source.data.items():
         np.testing.assert_array_equal(values, expected[col])
+
+
+def test_tabulator_stream_dataframe_selectable_rows(document, comm):
+    df = makeMixedDataFrame()
+    table = Tabulator(df, selectable_rows=lambda df: list(range(0, len(df), 2)))
+
+    model = table.get_root(document, comm)
+
+    assert model.selectable_rows == [0, 2, 4]
+
+    stream_value = pd.DataFrame({
+        'A': [5, 6],
+        'B': [1, 0],
+        'C': ['foo6', 'foo7'],
+        'D': [dt.datetime(2009, 1, 8), dt.datetime(2009, 1, 9)]
+    })
+
+    table.stream(stream_value)
+
+    print(len(table._processed))
+
+    assert model.selectable_rows == [0, 2, 4, 6]
 
 
 def test_tabulator_dataframe_replace_data(document, comm):
