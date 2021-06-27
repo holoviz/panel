@@ -15,6 +15,7 @@ p.bk.card-button {
 .bk.card-header {
   color: var(--neutral-foreground-rest);
   background-color: var(--neutral-fill-active) !important;
+  height: unset;
 }
 .bk.pn-loading:before {
   position: absolute;
