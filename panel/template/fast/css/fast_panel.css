@@ -1,9 +1,6 @@
 .codehilite {
   background: var(--neutral-fill-active);
 }
-.bk.card button.bk.card-header {
-  height: 55px;
-}
 p.bk.card-button {
   display: block;
   padding-right: 1em;
