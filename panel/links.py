@@ -236,6 +236,7 @@ class Callback(param.Parameterized):
             (link, src, getattr(link, 'target', None)) for src in linkable
             for link in cls.registry.get(src, [])
             if not link._requires_target or link.target in linkable
+            or isinstance(link.target, param.Parameterized)
         ]
 
         arg_overrides = {}
