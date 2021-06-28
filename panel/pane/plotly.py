@@ -271,13 +271,10 @@ class Plotly(PaneBase):
 
             update_sources = self._update_data_sources(cds, trace) or update_sources
 
-        if self._event is None:
-            try:
-                update_layout = model.layout != layout
-            except Exception:
-                update_layout = True
-        else:
-            update_layout = self._event in ('update', 'relayout')
+        try:
+            update_layout = model.layout != layout
+        except Exception:
+            update_layout = True
 
         # Determine if model needs updates
         if (len(model.data) != len(traces)):
