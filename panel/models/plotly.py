@@ -2,7 +2,7 @@
 Defines a custom PlotlyPlot bokeh model to render Plotly plots.
 """
 from bokeh.core.properties import (
-    Any, Dict, Either, Enum, Int, Instance, List, Null, String
+    Any, Dict, Either, Enum, Int, Instance, List, Null, Nullable, String
 )
 from bokeh.models import LayoutDOM, ColumnDataSource
 
@@ -43,6 +43,10 @@ class PlotlyPlot(LayoutDOM):
     config = Dict(String, Any)
 
     data_sources = List(Instance(ColumnDataSource))
+
+    relayout = Nullable(Dict(String, Any))
+
+    restyle = Nullable(Dict(String, Any))
 
     # Callback properties
     relayout_data = Dict(String, Any)

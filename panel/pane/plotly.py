@@ -69,6 +69,7 @@ class Plotly(PaneBase):
     def __init__(self, object=None, **params):
         super().__init__(object, **params)
         self._figure = None
+        self._event = None
         self._update_figure()
 
     def _to_figure(self, obj):
@@ -116,23 +117,60 @@ class Plotly(PaneBase):
     def _update_figure(self):
         import plotly.graph_objs as go
 
-        if (self.object is None or
-                type(self.object) is not go.Figure or
-                self.object is self._figure):
+        if (self.object is None or type(self.object) is not go.Figure or
+            self.object is self._figure):
             return
 
         # Monkey patch the message stubs used by FigureWidget.
         # We only patch `Figure` objects (not subclasses like FigureWidget) so
         # we don't interfere with subclasses that override these methods.
         fig = self.object
-        fig._send_addTraces_msg = lambda *_, **__: self.param.trigger('object')
-        fig._send_moveTraces_msg = lambda *_, **__: self.param.trigger('object')
-        fig._send_deleteTraces_msg = lambda *_, **__: self.param.trigger('object')
-        fig._send_restyle_msg = lambda *_, **__: self.param.trigger('object')
-        fig._send_relayout_msg = lambda *_, **__: self.param.trigger('object')
-        fig._send_update_msg = lambda *_, **__: self.param.trigger('object')
-        fig._send_animate_msg = lambda *_, **__: self.param.trigger('object')
+        fig._send_addTraces_msg = lambda *_, **__: self._update_from_figure('add')
+        fig._send_moveTraces_msg = lambda *_, **__: self._update_from_figure('move')
+        fig._send_deleteTraces_msg = lambda *_, **__: self._update_from_figure('delete')
+        fig._send_restyle_msg = self._send_restyle_msg
+        fig._send_relayout_msg = self._send_relayout_msg
+        fig._send_update_msg = self._send_update_msg
+        fig._send_animate_msg = lambda *_, **__: self._update_from_figure('animate')
         self._figure = fig
+
+    def _send_relayout_msg(self, relayout_data, source_view_id=None):
+        self._send_update_msg({}, relayout_data, None, source_view_id)
+
+    def _send_restyle_msg(self, restyle_data, trace_indexes=None, source_view_id=None):
+        self._send_update_msg(restyle_data, {}, trace_indexes, source_view_id)
+
+    @param.depends('restyle_data', watch=True)
+    def _update_figure_style(self):
+        if self._figure is None or self.restyle_data is None:
+            return
+        self._figure.plotly_restyle(*self.restyle_data)
+
+    @param.depends('relayout_data', watch=True)
+    def _update_figure_layout(self):
+        if self._figure is None or self.relayout_data is None:
+            return
+        self._figure.plotly_relayout(self.relayout_data)
+
+    def _send_update_msg(
+        self, restyle_data, relayout_data, trace_indexes=None, source_view_id=None
+    ):
+        if source_view_id:
+            return
+        trace_indexes = self._figure._normalize_trace_indexes(trace_indexes)
+        print(relayout_data)
+        for (model, parent) in self._models.values():
+            if relayout_data:
+                model.relayout = relayout_data
+            if restyle_data:
+                model.restyle = {'data': restyle_data, 'traces': trace_indexes}
+
+    def _update_from_figure(self, event, *args, **kwargs):
+        self._event = event
+        try:
+            self.param.trigger('object')
+        finally:
+            self._event = None
 
     def _update_data_sources(self, cds, trace):
         trace_arrays = {}
@@ -231,10 +269,14 @@ class Plotly(PaneBase):
                 new_sources.append(cds)
 
             update_sources = self._update_data_sources(cds, trace) or update_sources
-        try:
-            update_layout = model.layout != layout
-        except Exception:
-            update_layout = True
+
+        if self._event is None:
+            try:
+                update_layout = model.layout != layout
+            except Exception:
+                update_layout = True
+        else:
+            update_layout = self._event in ('update', 'relayout')
 
         # Determine if model needs updates
         if (len(model.data) != len(traces)):
