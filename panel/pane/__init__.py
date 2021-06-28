@@ -13,7 +13,7 @@ from .echarts import ECharts # noqa
 from .holoviews import HoloViews, Interactive # noqa
 from .idom import IDOM # noqa0
 from .ipywidget import IPyWidget # noqa
-from .image import GIF, JPG, PNG, SVG # noqa
+from .image import GIF, JPG, PDF, PNG, SVG # noqa
 from .markup import DataFrame, HTML, JSON, Markdown, Str # noqa
 from .media import Audio, Video # noqa
 from .perspective import Perspective # noqa
