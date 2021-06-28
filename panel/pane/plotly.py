@@ -158,12 +158,13 @@ class Plotly(PaneBase):
         if source_view_id:
             return
         trace_indexes = self._figure._normalize_trace_indexes(trace_indexes)
-        print(relayout_data)
-        for (model, parent) in self._models.values():
-            if relayout_data:
-                model.relayout = relayout_data
-            if restyle_data:
-                model.restyle = {'data': restyle_data, 'traces': trace_indexes}
+        msg = {}
+        if relayout_data:
+            msg['relayout'] = relayout_data
+        if restyle_data:
+            msg['restyle'] = {'data': restyle_data, 'traces': trace_indexes}
+        for ref, (m, _) in self._models.items():
+            self._apply_update([], msg, m, ref)
 
     def _update_from_figure(self, event, *args, **kwargs):
         self._event = event
