@@ -4,7 +4,7 @@ import pytest
 
 from base64 import b64decode, b64encode
 
-from panel.pane import GIF, JPG, PNG, SVG
+from panel.pane import GIF, JPG, PDF, PNG, SVG
 from panel.pane.markup import escape
 from io import BytesIO, StringIO
 
@@ -70,7 +70,7 @@ def test_load_from_byteio():
         memory.write(image_file.read())
 
     image_pane = PNG(memory)
-    image_data = image_pane._img()
+    image_data = image_pane._data()
     assert b'PNG' in image_data
 
 @pytest.mark.skipif(sys.version_info.major <= 2, reason="Doesn't work with python 2")
@@ -83,7 +83,7 @@ def test_load_from_stringio():
         memory.write(str(image_file.read()))
 
     image_pane = PNG(memory)
-    image_data = image_pane._img()
+    image_data = image_pane._data()
     assert 'PNG' in image_data
 
 def test_loading_a_image_from_url():
@@ -92,7 +92,7 @@ def test_loading_a_image_from_url():
           '1700_CE_world_map.PNG'
 
     image_pane = PNG(url)
-    image_data = image_pane._img()
+    image_data = image_pane._data()
     assert b'PNG' in image_data
 
 
@@ -116,3 +116,18 @@ def test_image_link_url(document, comm):
     model = image_pane.get_root(document, comm)
 
     assert model.text.startswith('&lt;a href=&quot;http://anaconda.org&quot;')
+
+
+def test_pdf_embed(document, comm):
+    pdf_pane = PDF('https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf')
+    model = pdf_pane.get_root(document, comm)
+
+    assert model.text.startswith("&lt;embed src=&quot;data:application/pdf;base64,")
+    
+
+def test_pdf_no_embed(document, comm):
+    url = 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf'
+    pdf_pane = PDF(url, embed=False)
+    model = pdf_pane.get_root(document, comm)
+
+    assert model.text.startswith(f"&lt;embed src=&quot;{url}")
