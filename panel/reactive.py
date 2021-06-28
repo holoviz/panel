@@ -22,7 +22,6 @@ from param.parameterized import ParameterizedMetaclass
 from tornado import gen
 
 from .config import config
-from .io.callbacks import PeriodicCallback
 from .io.model import hold
 from .io.notebook import push
 from .io.server import unlocked
