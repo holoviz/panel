@@ -285,6 +285,7 @@ progress:not([value])::before {
   background-color: #f8f9fa;
 }
 
+/* Slider editor */
 .slider-edit .bk-input-group .bk-input {
   border: 0;
   border-radius: 0;
@@ -306,3 +307,7 @@ progress:not([value])::before {
   bottom: 3px;
 }
 
+/* JSON Pane */
+.bk-root .json-formatter-row .json-formatter-string, .bk-root .json-formatter-row .json-formatter-stringifiable {
+  white-space: pre-wrap;
+}
