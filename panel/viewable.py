@@ -203,6 +203,10 @@ class Layoutable(param.Parameterized):
             provided aspect ratio.
     """)
 
+    visible = param.Boolean(default=True, doc="""
+        Whether the component is visible. Setting visible to false will
+        hide the component entirely.""")
+
     __abstract = True
 
     def __init__(self, **params):
