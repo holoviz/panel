@@ -612,10 +612,10 @@ class SyncableData(Reactive):
         if self._data_params:
             self.param.watch(self._update_cds, self._data_params)
         self.param.watch(self._update_selected, 'selection')
-        self._validate(None)
+        self._validate()
         self._update_cds()
 
-    def _validate(self, event):
+    def _validate(self, *events):
         """
         Allows implementing validation for the data parameters.
         """
@@ -675,6 +675,7 @@ class SyncableData(Reactive):
 
     @updating
     def _stream(self, stream, rollover=None):
+        self._processed, _ = self._get_data()
         for ref, (m, _) in self._models.items():
             if ref not in state._views or ref in state._fake_roots:
                 continue
@@ -918,7 +919,11 @@ class ReactiveData(SyncableData):
             data = events.pop('data')
             if self._updating:
                 data = {}
-            _, old_data = self._get_data()
+            old_raw, old_data = self._get_data()
+            if hasattr(old_raw, 'copy'):
+                old_raw = old_raw.copy()
+            elif isinstance(old_raw, dict):
+                old_raw = dict(old_raw)
             updated = False
             for k, v in data.items():
                 if k in self.indexes:
@@ -936,7 +941,13 @@ class ReactiveData(SyncableData):
             if updated:
                 self._updating = True
                 try:
-                    self.param.trigger('value')
+                    if old_raw is self.value:
+                        data = self.value
+                        with param.discard_events(self):
+                            self.value = old_raw
+                        self.value = data
+                    else:
+                        self.param.trigger('value')
                 finally:
                     self._updating = False
         if 'indices' in events:
@@ -987,7 +998,16 @@ class ReactiveHTMLMetaclass(ParameterizedMetaclass):
         # Ensure syntactically valid jinja2 for loops
         if mcs._parser._open_for:
             raise ValueError(
-                "Template contains for loop without closing {% endfor %} statement."
+                f"{cls_name}._template contains for loop without closing {{% endfor %}} statement."
+            )
+
+        # Ensure there are no open tags
+        if mcs._parser._node_stack:
+            raise ValueError(
+                f"{cls_name}._template contains tags which were never "
+                "closed. Ensure all tags in your template have a "
+                "matching closing tag, e.g. if there is a tag <div>, "
+                "ensure there is a matching </div> tag."
             )
 
         mcs._attrs, mcs._node_callbacks = {}, {}

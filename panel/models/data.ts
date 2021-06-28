@@ -23,3 +23,15 @@ export function transform_cds_to_records(cds: ColumnDataSource, addId: boolean =
   }
   return data
 }
+
+export function dict_to_records(data: any, index: boolean=true): any[] {
+  const records: any[] = []
+  for (let i = 0; i < data.index.length; i++) {
+    const record: any = {}
+    for (const col of data) {
+      if (index || col !== "index")
+        record[col] = data[col][i]
+    }
+  }
+  return records
+}

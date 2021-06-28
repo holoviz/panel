@@ -33,7 +33,7 @@ from ..util import url_path
 from ..viewable import ServableMixin, Viewable
 from ..widgets import Button
 from ..widgets.indicators import BooleanIndicator, LoadingSpinner
-from .theme import DefaultTheme, Theme
+from .theme import THEMES, DefaultTheme, Theme
 
 _server_info = (
     '<b>Running server:</b> <a target="_blank" href="https://localhost:{port}">'
@@ -470,6 +470,8 @@ class BasicTemplate(BaseTemplate):
             params['modal'] = ListLike()
         else:
             params['modal'] = self._get_params(params['modal'], self.param.modal.class_)
+        if 'theme' in params and isinstance(params['theme'], str):
+            params['theme'] = THEMES[params['theme']]
         super().__init__(template=template, **params)
         if self.busy_indicator:
             state.sync_busy(self.busy_indicator)

@@ -2,16 +2,16 @@ import {render} from 'preact';
 import {useCallback} from 'preact/hooks';
 import {html} from 'htm/preact';
 
-import {position} from "@bokehjs/core/dom"
 import {build_views} from "@bokehjs/core/build_views"
-import {isArray} from "@bokehjs/core/util/types"
+import {isArray, isNumber} from "@bokehjs/core/util/types"
 import * as p from "@bokehjs/core/properties"
 import {HTMLBox} from "@bokehjs/models/layouts/html_box"
 import {LayoutDOM} from "@bokehjs/models/layouts/layout_dom"
 import {empty, classes} from "@bokehjs/core/dom"
 import {color2css} from "@bokehjs/core/util/color"
 
-import {serializeEvent} from "./event-to-object";
+import {dict_to_records} from "./data"
+import {serializeEvent} from "./event-to-object"
 import {DOMEvent, htmlDecode} from "./html"
 import {PanelHTMLBoxView, set_size} from "./layout"
 
@@ -137,26 +137,42 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
       for (const script of scripts) {
         const decoded_script = htmlDecode(script) || script
         const script_fn = this._render_script(decoded_script, id)
+        this._script_fns[prop] = script_fn
         const property = this.model.data.properties[prop]
-        if (property == null) {
-          this._script_fns[prop] = script_fn
+        if (property == null)
           continue
-        }
         this.connect(property.change, () => {
           if (!this._changing)
-            script_fn(this.model, this.model.data, this._state, this, this.run_script)
+            this.run_script(prop)
         })
       }
     }
   }
 
-  run_script(property: string): void {
+  run_script(property: string, silent: boolean=false): void {
     const script_fn = this._script_fns[property]
     if (script_fn === undefined) {
-      console.log(`Script '${property}' couldd not be found.`)
+      if (!silent)
+        console.log(`Script '${property}' could not be found.`)
       return
     }
-    script_fn(this.model, this.model.data, this._state, this, this.run_script)
+    const this_obj: any = {
+      get_records: (property: string, index: boolean) => this.get_records(property, index)
+    }
+    for (const name in this._script_fns)
+      this_obj[name] = () => this.run_script(name)
+    return script_fn(
+      this.model,
+      this.model.data,
+      this._state,
+      this,
+      (s: any) => this.run_script(s),
+      this_obj
+    )
+  }
+
+  get_records(property: string, index: boolean=true): any[] {
+    return dict_to_records(this.model.data[property], index)
   }
 
   disconnect_signals(): void {
@@ -179,42 +195,33 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
     await build_views(this._child_views, this.child_models, {parent: (null as any)})
   }
 
-  get is_layout_root(): boolean {
-    return (this.is_root || (this.parent == null)) && (this._parent == null)
+  compute_layout(): void {
+    if (this.root != this)
+      super.compute_layout()
+    else {
+      this.update_position()
+      this.after_layout()
+      this.notify_finished()
+    }
   }
 
-  invalidate_layout(): void {
-    super.invalidate_layout()
-    if (this._parent != null && this._parent !== this)
-      this._parent.invalidate_layout()
-  }
+  after_layout(): void {
+    for (const child_view of this.child_views)
+      child_view.after_layout()
 
-  resize_layout(): void {
-    super.resize_layout()
-    if (this._parent != null && this._parent !== this)
-      this._parent.resize_layout()
+    this.run_script('after_layout', true)
+    this._has_finished = true
   }
 
   update_layout(): void {
     for (const child_view of this.child_views) {
       this._align_view(child_view)
+      child_view.compute_viewport()
       child_view.update_layout()
+      child_view.compute_layout()
     }
-    this._update_layout()
-  }
-
-  update_position(): void {
-    this.el.style.display = this.model.visible ? "block" : "none"
-
-    let margin = undefined
-    if (this.is_layout_root && this._parent == null)
-      margin = this.layout.sizing.margin
-    position(this.el, this.layout.bbox, margin)
-
-    for (const child_view of this.child_views) {
-      child_view.resize_layout()
-      child_view.update_position()
-    }
+    if (this.root != this)
+      this._update_layout()
   }
 
   private _align_view(view: any): void {
@@ -247,9 +254,7 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
     this._render_children()
     this._setup_mutation_observers()
     this._setup_event_listeners()
-    const render_script = this._script_fns.render
-    if (render_script != null)
-      render_script(this.model, this.model.data, this._state, this, this.run_script)
+    this.run_script('render', true)
   }
 
   private _send_event(elname: string, attr: string, event: any) {
@@ -263,9 +268,53 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
     if (view == null)
       el.innerHTML = model
     else {
-      view._parent = view
+      view._parent = this
       view.renderTo(el)
     }
+  }
+
+  resize_layout(): void {
+    if (this._parent != null)
+      this._parent.resize_layout()
+    if (this.root != this)
+      super.resize_layout()
+  }
+
+  invalidate_layout(): void {
+    if (this._parent != null)
+      this._parent.invalidate_layout()
+    if (this.root != this)
+      super.invalidate_layout()
+  }
+
+  update_position(): void {
+    if (this.root != this) {
+      super.update_position()
+      return
+    }
+    this.el.style.display = this.model.visible ? "block" : "none"
+    set_size(this.el, this.model)
+
+    let {margin} = this.model
+    let margin_spec = null
+    if (margin == null)
+      this.el.style.margin = ""
+    else {
+      if (isNumber(margin))
+        margin_spec = {top: margin, right: margin, bottom: margin, left: margin}
+      else if (margin.length == 2) {
+        const [vertical, horizontal] = margin
+        margin_spec = {top: vertical, right: horizontal, bottom: vertical, left: horizontal}
+      } else {
+        const [top, right, bottom, left] = margin
+        margin_spec = {top, right, bottom, left}
+      }
+      const {top, right, bottom, left} = margin_spec
+      this.el.style.padding = `${top}px ${right}px ${bottom}px ${left}px`
+    }
+
+    for (const child_view of this.child_views)
+      child_view.update_position()
   }
 
   _render_node(node: any, children: any[]): void {
@@ -309,19 +358,17 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
     for (const elname in this.model.callbacks) {
       for (const callback of this.model.callbacks[elname]) {
         const [cb, method] = callback;
-        if (methods.indexOf(method) > -1)
-          continue
-	let definition: string
+        let definition: string
         htm = htm.replace('${'+method, '$--{'+method)
-	if (method.startsWith('script(')) {
-	  const meth = (
-	    method
-	      .replace("('", "_").replace("')", "")
-	      .replace('("', "_").replace('")', "")
-	      .replace('-', '_')
-	  )
-	  const script_name = meth.replace("script_", "")
-	  htm = htm.replace(method, meth)
+        if (method.startsWith('script(')) {
+          const meth = (
+            method
+              .replace("('", "_").replace("')", "")
+              .replace('("', "_").replace('")', "")
+              .replace('-', '_')
+          )
+          const script_name = meth.replace("script_", "")
+          htm = htm.replace(method, meth)
           definition = `
           const ${meth} = (event) => {
             view._state.event = event
@@ -329,13 +376,15 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
             delete view._state.event
           }
           `
-	} else {
-	  definition = `
+        } else {
+          definition = `
           const ${method} = (event) => {
             view._send_event("${elname}", "${cb}", event)
           }
           `
         }
+        if (methods.indexOf(method) > -1)
+          continue
         methods.push(method)
         callbacks = callbacks + definition
       }
@@ -358,6 +407,8 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
       if (elname in this.model.children && typeof this.model.children[elname] !== "string")
         continue
       const elvar = elname.replace('-', '_')
+      if (literal.indexOf(elvar) === -1)
+        continue
       const script = `
       const ${elvar} = document.getElementById('${elname}-${id}')
       if (${elvar} == null) {
@@ -367,8 +418,14 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
       `
       scripts.push(script)
     }
+    const event = `
+    if (state.event !== undefined) {
+      const event = state.event
+    }
+    `
+    scripts.push(event)
     scripts.push(literal)
-    return new Function("model, data, state, view, script", scripts.join('\n'))
+    return new Function("model, data, state, view, script, self", scripts.join('\n'))
   }
 
   private _remove_mutation_observers(): void {
@@ -439,8 +496,6 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
       } finally {
         this._changing = false
       }
-      if (this.el.children.length)
-        set_size((this.el.children[0] as any), this.model)
     }
   }
 

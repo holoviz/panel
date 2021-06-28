@@ -168,6 +168,12 @@ class Application(BkApplication):
             cb(session_context)
         await super().on_session_created(session_context)
 
+    def initialize_document(self, doc):
+        super().initialize_document(doc)
+        if doc in state._templates:
+            template = state._templates[doc]
+            template.server_doc(title=template.title, location=True, doc=doc)
+
 bokeh.command.util.Application = Application
 
 
@@ -246,8 +252,8 @@ class RootHandler(BkRootHandler):
         if self.index and not self.index.endswith('.html'):
             prefix = "" if self.prefix is None else self.prefix
             redirect_to = prefix + '.'.join(self.index.split('.')[:-1])
-            return self.redirect(redirect_to)
-        return super().get(*args, **kwargs)
+            self.redirect(redirect_to)
+        await super().get(*args, **kwargs)
 
 toplevel_patterns[0] = (r'/?', RootHandler)
 bokeh.server.tornado.RootHandler = RootHandler

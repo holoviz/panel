@@ -14,6 +14,7 @@ plotly_available = pytest.mark.skipif(plotly is None, reason="requires plotly")
 import numpy as np
 
 from panel.models.plotly import PlotlyPlot
+from panel.layout import Tabs
 from panel.pane import PaneBase, Plotly
 
 
@@ -181,3 +182,32 @@ def test_plotly_autosize(document, comm):
     model.sizing_mode == 'fixed'
 
     pane._cleanup(model)
+
+
+@plotly_available
+def test_plotly_tabs(document, comm):
+    trace = go.Scatter(x=[0, 1], y=[2, 3])
+    
+    pane1 = Plotly(dict(data=[trace], layout={'autosize': True}))
+    pane2 = Plotly(dict(data=[trace], layout={'autosize': True}))
+
+    tabs = Tabs(pane1, pane2)
+
+    root = tabs.get_root(document, comm)
+
+    model1 = pane1._models[root.id][0]
+    model2 = pane2._models[root.id][0]
+
+    cb1, cb2 = root.js_property_callbacks['change:active']
+    if cb1.args['model'] is model2:
+        cb1, cb2 = cb2, cb1
+    assert model1.visible
+    assert cb1.args['model'] is model1
+    assert cb1.args['i'] == 0
+    assert not model2.visible
+    assert cb2.args['model'] is model2
+    assert cb2.args['i'] == 1
+
+    tabs.insert(0, 'Blah')
+    assert cb1.args['i'] == 1
+    assert cb2.args['i'] == 2
