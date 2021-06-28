@@ -210,15 +210,23 @@ class Layoutable(param.Parameterized):
     __abstract = True
 
     def __init__(self, **params):
-        if (params.get('width', None) is not None and
-            params.get('height', None) is not None and
+        if (params.get('width') is not None and
+            params.get('height') is not None and
             params.get('width_policy') is None and
             params.get('height_policy') is None and
             'sizing_mode' not in params):
             params['sizing_mode'] = 'fixed'
         elif (not (self.param.sizing_mode.constant or self.param.sizing_mode.readonly) and
-              type(self).sizing_mode is None):
-            params['sizing_mode'] = params.get('sizing_mode', config.sizing_mode)
+              type(self).sizing_mode is None and 'sizing_mode' not in params):
+            if config.sizing_mode == 'stretch_both':
+                if params.get('height') is not None:
+                    params['sizing_mode'] = 'stretch_width'
+                elif params.get('width') is not None:
+                    params['sizing_mode'] = 'stretch_height'
+                else:
+                    params['sizing_mode'] = config.sizing_mode
+            else:
+                params['sizing_mode'] = config.sizing_mode
         super().__init__(**params)
 
 
