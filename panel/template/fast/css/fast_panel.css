@@ -1,12 +1,12 @@
 .codehilite {
   background: var(--neutral-fill-active);
 }
-.bk.card button.bk.card-header {
-  height: 55px;
-}
 p.bk.card-button {
   display: block;
   padding-right: 1em;
+}
+.bk-root .bk.card-button {
+  margin-left: 0.5em;
 }
 .bk.card {
   color: var(--neutral-foreground-rest);
@@ -15,6 +15,7 @@ p.bk.card-button {
 .bk.card-header {
   color: var(--neutral-foreground-rest);
   background-color: var(--neutral-fill-active) !important;
+  height: unset;
 }
 .bk.pn-loading:before {
   position: absolute;
