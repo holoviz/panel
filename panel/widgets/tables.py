@@ -780,8 +780,11 @@ class Tabulator(BaseTable):
             todo = []
             if self.style is not None:
                 todo = self.style._todo
-            self.style = self.value.style
-            self.style._todo = todo
+            try:
+                self.style = self.value.style
+                self.style._todo = todo
+            except:
+                pass
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
@@ -848,7 +851,10 @@ class Tabulator(BaseTable):
             nrows = self.page_size
             start = (self.page-1)*nrows
             df = df.iloc[start:(start+nrows)]
-        styler = df.style
+        try:
+            styler = df.style
+        except:
+            return {}
         styler._todo = self.style._todo
         styler._compute()
         offset = len(self.indexes) + int(self.selectable in ('checkbox', 'checkbox-single'))
