@@ -16,10 +16,12 @@ from bokeh.models.widgets import (
 
 from ..config import config
 from ..io import state
-from ..util import param_reprs, unicode_repr, value_as_datetime, value_as_date
+from ..util import (
+    edit_readonly, param_reprs, unicode_repr, value_as_datetime, value_as_date
+)
 from ..viewable import Layoutable
-from .base import Widget, CompositeWidget
 from ..layout import Column, Row
+from .base import Widget, CompositeWidget
 from .input import IntInput, FloatInput, StaticText
 
 
@@ -351,12 +353,49 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
         return list(self.options.values()) if isinstance(self.options, dict) else self.options
 
 
-class RangeSlider(_SliderBase):
+
+class _RangeSliderBase(_SliderBase):
+
+    value = param.Tuple(length=2)
+
+    value_start = param.Parameter()
+
+    value_end = param.Parameter()
+
+    __abstract = True
+
+    def __init__(self, **params):
+        if 'value' not in params:
+            params['value'] = (params.get('start', self.start),
+                               params.get('end', self.end))
+        params['value_start'], params['value_end'] = params['value']
+        super().__init__(**params)
+
+    @param.depends('value', watch=True)
+    def _sync_values(self):
+        vs, ve = self.value
+        with edit_readonly(self):
+            self.param.set_param(value_start=vs, value_end=ve)
+
+    def _process_property_change(self, msg):
+        msg = super()._process_property_change(msg)
+        if 'value' in msg:
+            msg['value'] = tuple(msg['value'])
+        if 'value_throttled' in msg:
+            msg['value_throttled'] = tuple(msg['value_throttled'])
+        return msg
+
+
+class RangeSlider(_RangeSliderBase):
 
     format = param.ClassSelector(class_=string_types+(TickFormatter,), doc="""
         Allows defining a custom format string or bokeh TickFormatter.""")
 
     value = param.Range(default=(0, 1))
+
+    value_start = param.Number(default=0, constant=True)
+
+    value_end = param.Number(default=1, constant=True)
 
     value_throttled = param.Range(default=None, constant=True)
 
@@ -366,27 +405,16 @@ class RangeSlider(_SliderBase):
 
     step = param.Number(default=0.1)
 
-    _rename = {'name': 'title'}
+    _rename = {'name': 'title', 'value_start': None, 'value_end': None}
 
     _widget_type = _BkRangeSlider
 
     def __init__(self, **params):
-        if 'value' not in params:
-            params['value'] = (params.get('start', self.start),
-                               params.get('end', self.end))
         super().__init__(**params)
         values = [self.value[0], self.value[1], self.start, self.end]
         if (all(v is None or isinstance(v, int) for v in values) and
             'step' not in params):
             self.step = 1
-
-    def _process_property_change(self, msg):
-        msg = super()._process_property_change(msg)
-        if 'value' in msg:
-            msg['value'] = tuple(msg['value'])
-        if 'value_throttled' in msg:
-            msg['value_throttled'] = tuple(msg['value_throttled'])
-        return msg
 
 
 class IntRangeSlider(RangeSlider):
@@ -408,9 +436,13 @@ class IntRangeSlider(RangeSlider):
         return msg
 
 
-class DateRangeSlider(_SliderBase):
+class DateRangeSlider(_RangeSliderBase):
 
     value = param.Tuple(default=(None, None), length=2)
+
+    value_start = param.Date(default=None)
+
+    value_end = param.Date(default=None)
 
     value_throttled = param.Tuple(default=None, length=2, constant=True)
 
@@ -423,15 +455,9 @@ class DateRangeSlider(_SliderBase):
     _source_transforms = {'value': None, 'value_throttled': None,
                          'start': None, 'end': None, 'step': None}
 
-    _rename = {'name': 'title'}
+    _rename = {'name': 'title', 'value_start': None, 'value_end': None}
 
     _widget_type = _BkDateRangeSlider
-
-    def __init__(self, **params):
-        if 'value' not in params:
-            params['value'] = (params.get('start', self.start),
-                               params.get('end', self.end))
-        super().__init__(**params)
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
