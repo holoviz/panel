@@ -204,12 +204,16 @@ class DocHandler(BkDocHandler, SessionPrefixHandler):
     async def get(self, *args, **kwargs):
         with self._session_prefix():
             session = await self.get_session()
-            resources = Resources.from_bokeh(self.application.resources())
-            page = server_html_page_for_session(
-                session, resources=resources, title=session.document.title,
-                template=session.document.template,
-                template_variables=session.document.template_variables
-            )
+            state.curdoc = session.document
+            try:
+                resources = Resources.from_bokeh(self.application.resources())
+                page = server_html_page_for_session(
+                    session, resources=resources, title=session.document.title,
+                    template=session.document.template,
+                    template_variables=session.document.template_variables
+                )
+            finally:
+                state.curdoc = None
         self.set_header("Content-Type", 'text/html')
         self.write(page)
 
@@ -237,8 +241,12 @@ class AutoloadJsHandler(BkAutoloadJsHandler, SessionPrefixHandler):
 
         with self._session_prefix():
             session = await self.get_session()
-            resources = Resources.from_bokeh(self.application.resources(server_url))
-            js = autoload_js_script(resources, session.token, element_id, app_path, absolute_url)
+            state.curdoc = session.document
+            try:
+                resources = Resources.from_bokeh(self.application.resources(server_url))
+                js = autoload_js_script(resources, session.token, element_id, app_path, absolute_url)
+            finally:
+                state.curdoc = None
 
         self.set_header("Content-Type", 'application/javascript')
         self.write(js)

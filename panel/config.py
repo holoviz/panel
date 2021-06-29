@@ -207,7 +207,7 @@ class _config(_base_config):
         if not getattr(self, 'initialized', False) or (attr.startswith('_') and attr.endswith('_')) or attr == '_validating':
             return super().__setattr__(attr, value)
         value = getattr(self, f'_{attr}_hook', lambda x: x)(value)
-        if state.curdoc:
+        if state.curdoc is not None:
             if attr in self.param:
                 validate_config(self, attr, value)
             elif f'_{attr}' in self.param:
@@ -231,6 +231,14 @@ class _config(_base_config):
         else:
             params = []
         session_config = super().__getattribute__('_session_config')
+        if state.curdoc and state.curdoc not in session_config:
+            session_config[state.curdoc] = {}
+        if (attr in ('raw_css', 'css_files', 'js_files', 'js_modules') and
+            state.curdoc and attr not in session_config[state.curdoc]):
+            if 'css' in attr:
+                setattr(self, attr, [])
+            else:
+                setattr(self, attr, {})
         if state.curdoc and state.curdoc in session_config and attr in session_config[state.curdoc]:
             return session_config[state.curdoc][attr]
         elif f'_{attr}' in params and getattr(self, f'_{attr}_') is not None:
