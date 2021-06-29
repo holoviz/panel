@@ -7,11 +7,11 @@ import param
 
 from bokeh.models import ColumnDataSource
 from bokeh.models.widgets.tables import (
-    DataTable, DataCube, TableColumn, GroupingInfo, RowAggregator,
-    NumberEditor, NumberFormatter, DateFormatter, CellEditor,
-    DateEditor, StringFormatter, StringEditor, IntEditor,
-    AvgAggregator, MaxAggregator, MinAggregator, SumAggregator,
-    CheckboxEditor, CellFormatter, CellEditor
+    AvgAggregator, CellEditor, CellFormatter, CheckboxEditor,
+    DataCube, DataTable, DateEditor, DateFormatter, GroupingInfo,
+    IntEditor, MaxAggregator, MinAggregator, NumberEditor,
+    NumberFormatter, RowAggregator, StringEditor, StringFormatter, 
+    SumAggregator, TableColumn
 )
 from pyviz_comms import JupyterComm
 

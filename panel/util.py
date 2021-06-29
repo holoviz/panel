@@ -383,4 +383,4 @@ def clone_model(bokeh_model, include_defaults=False, include_undefined=False):
     properties = bokeh_model.properties_with_values(
         include_defaults=include_defaults, include_undefined=include_undefined
     )
-    return type(formatter)(**properties)
+    return type(bokeh_model)(**properties)
