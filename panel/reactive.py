@@ -27,7 +27,7 @@ from .io.notebook import push
 from .io.server import unlocked
 from .io.state import state
 from .models.reactive_html import (
-    ReactiveHTML as _BkReactiveHTML, ReactiveHTMLParser, construct_data_model
+    ReactiveHTML as _BkReactiveHTML, ReactiveHTMLParser
 )
 from .util import edit_readonly, escape, updating
 from .viewable import Layoutable, Renderable, Viewable
@@ -936,6 +936,8 @@ class ReactiveHTMLMetaclass(ParameterizedMetaclass):
     _script_regex = r"script\([\"|'](.*)[\"|']\)"
 
     def __init__(mcs, name, bases, dict_):
+        from .links import construct_data_model
+
         mcs.__original_doc__ = mcs.__doc__
         ParameterizedMetaclass.__init__(mcs, name, bases, dict_)
         cls_name = mcs.__name__
