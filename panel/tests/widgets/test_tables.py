@@ -85,14 +85,20 @@ def test_dataframe_editors(dataframe, document, comm):
     table = DataFrame(dataframe, editors={'str': editor})
     model = table.get_root(document, comm)
 
-    assert model.columns[-1].editor is editor
+    model_editor = model.columns[-1].editor
+    assert isinstance(model_editor, SelectEditor) is not editor
+    assert isinstance(model_editor, SelectEditor)
+    assert model_editor.options == ['A', 'B', 'C']
 
 
 def test_dataframe_formatter(dataframe, document, comm):
     formatter = NumberFormatter(format='0.0000')
     table = DataFrame(dataframe, formatters={'float': formatter})
     model = table.get_root(document, comm)
-    assert model.columns[2].formatter is formatter
+    model_formatter = model.columns[2].formatter
+    assert model_formatter is not formatter
+    assert isinstance(model_formatter, NumberFormatter)
+    assert model_formatter.format == formatter.format
 
 
 def test_dataframe_triggers(dataframe):

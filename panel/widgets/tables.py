@@ -7,18 +7,18 @@ import param
 
 from bokeh.models import ColumnDataSource
 from bokeh.models.widgets.tables import (
-    DataTable, DataCube, TableColumn, GroupingInfo, RowAggregator,
-    NumberEditor, NumberFormatter, DateFormatter, CellEditor,
-    DateEditor, StringFormatter, StringEditor, IntEditor,
-    AvgAggregator, MaxAggregator, MinAggregator, SumAggregator,
-    CheckboxEditor
+    AvgAggregator, CellEditor, CellFormatter, CheckboxEditor,
+    DataCube, DataTable, DateEditor, DateFormatter, GroupingInfo,
+    IntEditor, MaxAggregator, MinAggregator, NumberEditor,
+    NumberFormatter, RowAggregator, StringEditor, StringFormatter, 
+    SumAggregator, TableColumn
 )
 from pyviz_comms import JupyterComm
 
 from ..depends import param_value_if_widget
 from ..reactive import ReactiveData
 from ..viewable import Layoutable
-from ..util import isdatetime, lazy_load, updating
+from ..util import clone_model, isdatetime, lazy_load, updating
 from .base import Widget
 from .button import Button
 from .input import TextInput
@@ -138,12 +138,16 @@ class BaseTable(ReactiveData, Widget):
 
             if col in self.editors and not isinstance(self.editors[col], (dict, str)):
                 editor = self.editors[col]
+                if isinstance(editor, CellEditor):
+                    editor = clone_model(editor)
 
             if col in indexes or editor is None:
                 editor = CellEditor()
 
             if col in self.formatters and not isinstance(self.formatters[col], (dict, str)):
                 formatter = self.formatters[col]
+                if isinstance(formatter, CellFormatter):
+                    formatter = clone_model(formatter)
 
             if str(col) != col:
                 self._renamed_cols[str(col)] = col
