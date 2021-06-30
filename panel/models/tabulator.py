@@ -10,6 +10,8 @@ from bokeh.models import ColumnDataSource
 from bokeh.models.layouts import HTMLBox
 from bokeh.models.widgets.tables import TableColumn
 
+from ..io.resources import bundled_files
+from ..util import classproperty
 
 JS_SRC = "https://unpkg.com/tabulator-tables@4.9.3/dist/js/tabulator.js"
 MOMENT_SRC = "https://unpkg.com/moment@2.27.0/moment.js"
@@ -69,12 +71,28 @@ class DataTabulator(HTMLBox):
 
     theme_url = String(default=THEME_URL)
 
-    __css__ = [THEME_URL+'tabulator_simple.min.css']
+    __css_raw__ = [
+        f'{THEME_URL}tabulator.min.css' if theme == 'default' else f'{THEME_URL}tabulator_{theme}.min.css'
+        for theme in TABULATOR_THEMES
+    ]
 
-    __javascript__ = [
+    @classproperty
+    def __css__(cls):
+        cls.__css_raw__ = [url for url in cls.__css_raw__ if 'simple' in url]
+        return bundled_files(cls)
+
+    __javascript_raw__ = [
         JS_SRC,
         MOMENT_SRC
     ]
+
+    @classproperty
+    def __javascript__(cls):
+        return bundled_files(cls)
+
+    @classproperty
+    def __js_skip__(cls):
+        return {'Tabulator': cls.__javascript__[:1]}
 
     __js_require__ = {
         'paths': {
@@ -82,5 +100,3 @@ class DataTabulator(HTMLBox):
         },
         'exports': {'tabulator': 'Tabulator'}
     }
-
-    __js_skip__ = {'tabulator': __javascript__}
