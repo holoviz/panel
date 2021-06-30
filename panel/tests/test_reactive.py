@@ -93,12 +93,11 @@ def test_text_input_controls():
     assert len(controls) == 2
     wb1, wb2 = controls
     assert isinstance(wb1, WidgetBox)
-    assert len(wb1) == 7
-    name, disabled, visible, *(ws) = wb1
+    assert len(wb1) == 6
+    name, disabled, *(ws) = wb1
 
     assert isinstance(name, StaticText)
     assert isinstance(disabled, Checkbox)
-    assert isinstance(visible, Checkbox)
 
     not_checked = []
     for w in ws:

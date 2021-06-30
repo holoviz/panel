@@ -13,13 +13,61 @@ from .markup import escape, DivPaneBase
 from ..util import isfile, isurl
 
 
-class ImageBase(DivPaneBase):
+class FileBase(DivPaneBase):
+
+    embed = param.Boolean(default=True, doc="""
+        Whether to embed the file as base64.""")
+
+    _rerender_params = ['embed', 'object', 'style', 'width', 'height']
+
+    __abstract = True
+
+    def _type_error(self, object):
+        if isinstance(object, string_types):
+            raise ValueError("%s pane cannot parse string that is not a filename "
+                             "or URL." % type(self).__name__)
+        super()._type_error(object)
+
+    @classmethod
+    def applies(cls, obj):
+        filetype = cls.filetype
+        if hasattr(obj, '_repr_{}_'.format(filetype)):
+            return True
+        if isinstance(obj, string_types):
+            if isfile(obj) and obj.endswith('.'+filetype):
+                return True
+            if isurl(obj, [cls.filetype]):
+                return True
+            elif isurl(obj, None):
+                return 0
+        if hasattr(obj, 'read'):  # Check for file like object
+            return True
+        return False
+
+    def _data(self):
+        if hasattr(self.object, '_repr_{}_'.format(self.filetype)):
+            return getattr(self.object, '_repr_' + self.filetype + '_')()
+        if isinstance(self.object, string_types):
+            if isfile(self.object):
+                with open(self.object, 'rb') as f:
+                    return f.read()
+        if hasattr(self.object, 'read'):
+            if hasattr(self.object, 'seek'):
+                self.object.seek(0)
+            return self.object.read()
+        if isurl(self.object, None):
+            import requests
+            r = requests.request(url=self.object, method='GET')
+            return r.content
+
+
+class ImageBase(FileBase):
     """
     Encodes an image as base64 and wraps it in a Bokeh Div model.
     This is an abstract base class that needs the image type
     to be specified and specific code for determining the image shape.
 
-    The imgtype determines the filetype, extension, and MIME type for
+    The filetype determines the filetype, extension, and MIME type for
     this image. Each image type (png,jpg,gif) has a base class that
     supports anything with a `_repr_X_` method (where X is `png`,
     `gif`, etc.), a local file with the given file extension, or a
@@ -35,10 +83,7 @@ class ImageBase(DivPaneBase):
         A link URL to make the image clickable and link to some other
         website.""")
 
-    embed = param.Boolean(default=True, doc="""
-        Whether to embed the image as base64.""")
-
-    imgtype = 'None'
+    filetype = 'None'
 
     _rerender_params = ['alt_text', 'link_url', 'embed', 'object', 'style', 'width', 'height']
 
@@ -46,50 +91,12 @@ class ImageBase(DivPaneBase):
 
     __abstract = True
 
-    @classmethod
-    def applies(cls, obj):
-        imgtype = cls.imgtype
-        if hasattr(obj, '_repr_{}_'.format(imgtype)):
-            return True
-        if isinstance(obj, string_types):
-            if isfile(obj) and obj.endswith('.'+imgtype):
-                return True
-            if isurl(obj, [cls.imgtype]):
-                return True
-            elif isurl(obj, None):
-                return 0
-        if hasattr(obj, 'read'):  # Check for file like object
-            return True
-        return False
-
-    def _type_error(self, object):
-        if isinstance(object, string_types):
-            raise ValueError("%s pane cannot parse string that is not a filename "
-                             "or URL." % type(self).__name__)
-        super()._type_error(object)
-
-    def _img(self):
-        if hasattr(self.object, '_repr_{}_'.format(self.imgtype)):
-            return getattr(self.object, '_repr_' + self.imgtype + '_')()
-        if isinstance(self.object, string_types):
-            if isfile(self.object):
-                with open(self.object, 'rb') as f:
-                    return f.read()
-        if hasattr(self.object, 'read'):
-            if hasattr(self.object, 'seek'):
-                self.object.seek(0)
-            return self.object.read()
-        if isurl(self.object, None):
-            import requests
-            r = requests.request(url=self.object, method='GET')
-            return r.content
-
     def _b64(self):
-        data = self._img()
+        data = self._data()
         if not isinstance(data, bytes):
             data = data.encode('utf-8')
         b64 = base64.b64encode(data).decode("utf-8")
-        return "data:image/"+self.imgtype+f";base64,{b64}"
+        return "data:image/"+self.filetype+f";base64,{b64}"
 
     def _imgshape(self, data):
         """Calculate and return image width,height"""
@@ -99,7 +106,7 @@ class ImageBase(DivPaneBase):
         p = super()._get_properties()
         if self.object is None:
             return dict(p, text='<img></img>')
-        data = self._img()
+        data = self._data()
         if not isinstance(data, bytes):
             data = base64.b64decode(data)
         width, height = self._imgshape(data)
@@ -116,7 +123,7 @@ class ImageBase(DivPaneBase):
             src = self.object
         else:
             b64 = base64.b64encode(data).decode("utf-8")
-            src = "data:image/"+self.imgtype+";base64,{b64}".format(b64=b64)
+            src = "data:image/"+self.filetype+";base64,{b64}".format(b64=b64)
 
         smode = self.sizing_mode
         if smode in ['fixed', None]:
@@ -144,7 +151,7 @@ class ImageBase(DivPaneBase):
 
 class PNG(ImageBase):
 
-    imgtype = 'png'
+    filetype = 'png'
 
     @classmethod
     def _imgshape(cls, data):
@@ -155,7 +162,7 @@ class PNG(ImageBase):
 
 class GIF(ImageBase):
 
-    imgtype = 'gif'
+    filetype = 'gif'
 
     @classmethod
     def _imgshape(cls, data):
@@ -166,7 +173,7 @@ class GIF(ImageBase):
 
 class JPG(ImageBase):
 
-    imgtype = 'jpg'
+    filetype = 'jpg'
 
     @classmethod
     def _imgshape(cls, data):
@@ -193,7 +200,7 @@ class SVG(ImageBase):
         Whether to enable base64 encoding of the SVG, base64 encoded
         SVGs do not support links.""")
 
-    imgtype = 'svg'
+    filetype = 'svg'
 
     _rerender_params = ImageBase._rerender_params + ['encode']
 
@@ -208,14 +215,14 @@ class SVG(ImageBase):
                              "URL or a SVG XML contents." % type(self).__name__)
         super()._type_error(object)
 
-    def _img(self):
+    def _data(self):
         if (isinstance(self.object, string_types) and
             self.object.lstrip().startswith('<svg')):
             return self.object
-        return super()._img()
+        return super()._data()
 
     def _b64(self):
-        data = self._img()
+        data = self._data()
         if not isinstance(data, bytes):
             data = data.encode('utf-8')
         b64 = base64.b64encode(data).decode("utf-8")
@@ -228,7 +235,7 @@ class SVG(ImageBase):
         p = super(ImageBase, self)._get_properties()
         if self.object is None:
             return dict(p, text='<img></img>')
-        data = self._img()
+        data = self._data()
         width, height = self._imgshape(data)
         if not isinstance(data, bytes):
             data = data.encode('utf-8')
@@ -242,3 +249,24 @@ class SVG(ImageBase):
         else:
             html = data.decode("utf-8")
         return dict(p, width=width, height=height, text=escape(html))
+
+
+class PDF(FileBase):
+
+    filetype = 'pdf'
+
+    def _get_properties(self):
+        p = super()._get_properties()
+        if self.object is None:
+            return dict(p, text='<embed></embed>')
+        if self.embed:
+            data = self._data()
+            if not isinstance(data, bytes):
+                data = data.encode('utf-8')
+            base64_pdf = base64.b64encode(data).decode("utf-8")
+            src = f"data:application/pdf;base64,{base64_pdf}"
+        else:
+            src = self.object
+        w, h = self.width or '100%', self.height or '100%'
+        html = f'<embed src="{src}" width={w!r} height={h!r} type="application/pdf">'
+        return dict(p, text=escape(html))

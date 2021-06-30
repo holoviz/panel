@@ -75,6 +75,22 @@ def push_on_root(ref):
     if comm and 'embedded' not in root.tags:
         push(doc, comm)
 
+
+def push_notebook(*objs):
+    """
+    A utility for pushing updates to the frontend given a Panel
+    object.  This is required when modifying any Bokeh object directly
+    in a notebook session.
+
+    Arguments
+    ---------
+    objs: panel.viewable.Viewable
+    """
+    for obj in objs:
+        for ref in obj._models:
+            push_on_root(ref)
+
+
 DOC_NB_JS = _env.get_template("doc_nb_js.js")
 AUTOLOAD_NB_JS = _env.get_template("autoload_panel_js.js")
 NB_TEMPLATE_BASE = _env.get_template('nb_template.html')

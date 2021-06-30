@@ -16,7 +16,7 @@ from .resources import Resources # noqa
 from .server import get_server, init_doc, serve, unlocked, with_lock # noqa
 from .notebook import ( # noqa
     block_comm, ipywidget, _jupyter_server_extension_paths,
-    load_notebook, push
+    load_notebook, push, push_notebook
 )
 
 panel_logger = logging.getLogger('panel')
