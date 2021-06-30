@@ -325,32 +325,75 @@ def _patch_tabs_plotly(viewable, root):
     """
     from ..models.plotly import PlotlyPlot
 
-    tabs_models = list(root.select({'type': Tabs}))
-    plotly_models = root.select({'type': PlotlyPlot})
+    # Clear args on old callback so references aren't picked up
+    old_callbacks = {}
+    for tmodel in root.select({'type': Tabs}):
+        old_callbacks[tmodel] = {
+            k: [cb for cb in cbs] for k, cbs in tmodel.js_property_callbacks.items()
+        }
+        for cb in tmodel.js_property_callbacks.get('change:active', []):
+            if any(tag.startswith('plotly_tab_fix') for tag in cb.tags):
+                # Have to unset owners so property is not notified
+                owners = cb.args._owners
+                cb.args._owners = set()
+                cb.args.clear()
+                cb.args._owners = owners
 
+    tabs_models = list(root.select({'type': Tabs}))
+    plotly_models = list(root.select({'type': PlotlyPlot}))
+
+    tab_callbacks = {}
     for model in plotly_models:
-        parent_tabs = []
-        for tabs in tabs_models:
-            if tabs.select_one({'id': model.id}):
-                parent_tabs.append(tabs)
-        parent_tab = None
+        parent_tabs = [tmodel for tmodel in tabs_models if tmodel.select_one({'id': model.id})]
+        active = True
+        args = {'model': model}
+        tag = f'plotly_tab_fix{model.id}'
+
+        # Generate condition that determines whether tab containing
+        # the plot is active
+        condition = ''
+        for tabs in list(parent_tabs):
+            # Find tab that contains plot
+            found = False
+            for i, tab in enumerate(tabs.tabs):
+                if tab.select_one({'id': model.id}):
+                    found = True
+                    break
+            if not found:
+                parent_tabs.remove(tabs)
+                continue
+            if condition:
+                condition += ' && '
+            condition += f"(tabs_{tabs.id}.active == {i})"
+            args.update({f'tabs_{tabs.id}': tabs})
+            active &= tabs.active == i
+
+        model.visible = active
+        code = f'model.visible = {condition};'
         for tabs in parent_tabs:
-            if not any(tabs.select_one(pt) for pt in parent_tabs if pt is not tabs):
-                parent_tab = tabs
-                break
-        if parent_tab is None:
-            return
-        for i, tab in enumerate(parent_tab.tabs):
-            if tab.select_one({'id': model.id}):
-                break
-        updated = False
-        code = "model.visible = cb_obj.active == i;"
-        for cb in parent_tab.js_property_callbacks.get('change:active', []):
-            if cb.code == code and cb.args.get('model') is model:
-                cb.args['i'] = i
-                updated = True
-        if updated:
-            continue
-        callback = CustomJS(args={'model': model, 'i': i, 'margin': model.margin}, code=code)
-        parent_tab.js_on_change('active', callback)
-        model.visible = parent_tab.active == i
+            tab_key = f'tabs_{tabs.id}'
+            cb_args = dict(args)
+            cb_code = code.replace(tab_key, 'cb_obj')
+            cb_args.pop(tab_key)
+            callback = CustomJS(args=cb_args, code=cb_code, tags=[tag])
+            if tabs not in tab_callbacks:
+                tab_callbacks[tabs] = []
+            tab_callbacks[tabs].append(callback)
+
+    for tabs, callbacks in tab_callbacks.items():
+        new_cbs = []
+        for cb in callbacks:
+            found = False
+            for old_cb in tabs.js_property_callbacks.get('change:active', []):
+                if cb.tags[0] in old_cb.tags:
+                    found = True
+                    old_cb.update(code=cb.code)
+                    # Reapply args without notifying property system
+                    owners = old_cb.args._owners
+                    old_cb.args._owners = set()
+                    old_cb.args.update(cb.args)
+                    old_cb.args._owners = owners
+            if not found:
+                new_cbs.append(cb)
+        if new_cbs:
+            tabs.js_on_change('active', *new_cbs)
