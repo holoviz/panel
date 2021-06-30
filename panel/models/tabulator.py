@@ -16,11 +16,30 @@ from ..util import classproperty
 JS_SRC = "https://unpkg.com/tabulator-tables@4.9.3/dist/js/tabulator.js"
 MOMENT_SRC = "https://unpkg.com/moment@2.27.0/moment.js"
 
-THEME_URL = "https://unpkg.com/tabulator-tables@4.9.3/dist/css/"
+THEME_PATH = "tabulator-tables@4.9.3/dist/css/"
+THEME_URL = f"https://unpkg.com/{THEME_PATH}"
 TABULATOR_THEMES = [
     'default', 'site', 'simple', 'midnight', 'modern', 'bootstrap',
     'bootstrap4', 'materialize', 'bulma', 'semantic-ui'
 ]
+
+CSS_URLS = []
+for theme in TABULATOR_THEMES:
+    _url = THEME_URL
+    if 'bootstrap' in theme:
+        _url += 'bootstrap/'
+    elif 'materialize' in theme:
+        _url += 'materialize/'
+    elif 'semantic-ui' in theme:
+        _url += 'semantic-ui/'
+    elif 'bulma' in theme:
+        _url += 'bulma/'
+    if theme == 'default':
+        _url += f'tabulator.min.css'
+    else:
+        _url += f'tabulator_{theme}.min.css'
+    CSS_URLS.append(_url)
+
 
 class DataTabulator(HTMLBox):
     """A Bokeh Model that enables easy use of Tabulator tables
@@ -71,10 +90,7 @@ class DataTabulator(HTMLBox):
 
     theme_url = String(default=THEME_URL)
 
-    __css_raw__ = [
-        f'{THEME_URL}tabulator.min.css' if theme == 'default' else f'{THEME_URL}tabulator_{theme}.min.css'
-        for theme in TABULATOR_THEMES
-    ]
+    __css_raw__ = CSS_URLS
 
     @classproperty
     def __css__(cls):

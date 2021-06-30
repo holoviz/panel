@@ -350,8 +350,9 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     let old_node: any = null
     const links = document.getElementsByTagName("link")
     const dist_index = this.model.theme_url.indexOf('dist/')
+    const start_url = this.model.theme_url.slice(0, dist_index)
     for (const link of links) {
-      if (link.href.startsWith(this.model.theme_url.slice(0, dist_index))) {
+      if (link.href.indexOf(start_url) >= 0) {
         old_node = link
         break
       }
@@ -359,7 +360,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
 
     let parent_node = document.getElementsByTagName("head")[0]
     if (old_node != null) {
-      if (old_node.href == css)
+      if (old_node.href.endsWith(css))
         return false
       if (old_node.parentNode != null)
         parent_node = old_node.parentNode
@@ -386,7 +387,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     for (const cell_el of this._styled_cells)
       cell_el.cssText = ""
     this._styled_cells = []
-    if (this.model.styles == null || this.tabulator.getDataCount() == 0)
+    if (this.model.styles == null || this.tabulator == null || this.tabulator.getDataCount() == 0)
       return
     for (const r in this.model.styles) {
       const row_style = this.model.styles[r]

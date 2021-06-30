@@ -10,12 +10,15 @@ from bokeh.models.widgets.tables import (
     AvgAggregator, CellEditor, CellFormatter, CheckboxEditor,
     DataCube, DataTable, DateEditor, DateFormatter, GroupingInfo,
     IntEditor, MaxAggregator, MinAggregator, NumberEditor,
-    NumberFormatter, RowAggregator, StringEditor, StringFormatter, 
+    NumberFormatter, RowAggregator, StringEditor, StringFormatter,
     SumAggregator, TableColumn
 )
+from bokeh.settings import settings as _settings
 from pyviz_comms import JupyterComm
 
 from ..depends import param_value_if_widget
+from ..io.resources import LOCAL_DIST
+from ..io.state import state
 from ..reactive import ReactiveData
 from ..viewable import Layoutable
 from ..util import clone_model, isdatetime, lazy_load, updating
@@ -171,7 +174,8 @@ class BaseTable(ReactiveData, Widget):
     def _get_model(self, doc, root=None, parent=None, comm=None):
         source = ColumnDataSource(data=self._data)
         source.selected.indices = self.selection
-        model = self._widget_type(**self._get_properties(source))
+        properties = self._get_properties(source)
+        model = self._widget_type(**properties)
         if root is None:
             root = model
         self._link_props(model.source, ['data'], doc, root, comm)
@@ -793,18 +797,26 @@ class Tabulator(BaseTable):
             msg['frozen_rows'] = [length+r if r < 0 else r
                                   for r in msg['frozen_rows']]
         if 'theme' in msg:
-            from ..models.tabulator import THEME_URL
-            if 'bootstrap' in self.theme:
-                msg['theme_url'] = THEME_URL + 'bootstrap/'
-            elif 'materialize' in self.theme:
-                msg['theme_url'] = THEME_URL + 'materialize/'
-            elif 'semantic-ui' in self.theme:
-                msg['theme_url'] = THEME_URL + 'semantic-ui/'
-            elif 'bulma' in self.theme:
-                msg['theme_url'] = THEME_URL + 'bulma/'
+            from ..models.tabulator import THEME_PATH, THEME_URL
+            resources = _settings.resources(default="server")
+            if resources == 'server':
+                if state.rel_path:
+                    theme_url = f'{state.rel_path}/{LOCAL_DIST}bundled/datatabulator/{THEME_PATH}'
+                else:
+                    theme_url = f'{LOCAL_DIST}bundled/datatabulator/{THEME_PATH}'
             else:
-                msg['theme_url'] = THEME_URL
-            theme = 'tabulator' if self.theme == 'default' else 'tabulator_'+self.theme 
+                theme_url = THEME_URL
+            if 'bootstrap' in self.theme:
+                msg['theme_url'] = theme_url + 'bootstrap/'
+            elif 'materialize' in self.theme:
+                msg['theme_url'] = theme_url + 'materialize/'
+            elif 'semantic-ui' in self.theme:
+                msg['theme_url'] = theme_url + 'semantic-ui/'
+            elif 'bulma' in self.theme:
+                msg['theme_url'] = theme_url + 'bulma/'
+            else:
+                msg['theme_url'] = theme_url
+            theme = 'tabulator' if self.theme == 'default' else 'tabulator_'+self.theme
             self._widget_type.__css__ = [msg['theme_url'] + theme + '.min.css']
         if msg.get('select_mode') == 'checkbox-single':
             msg['select_mode'] = 'checkbox'
