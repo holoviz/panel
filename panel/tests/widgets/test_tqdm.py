@@ -5,19 +5,40 @@ import panel as pn
 from panel.widgets import Tqdm
 
 
-def test_can_construct_and_use():
+def test_tqdm():
     tqdm = Tqdm(layout="row", sizing_mode="stretch_width")
 
     for index in tqdm(range(0, 3)):
         pass
 
+    assert tqdm.value == 3
+    assert tqdm.max == 3
+    assert tqdm.text.startswith('100% 3/3')
+    
+    assert isinstance(tqdm.progress, pn.widgets.indicators.Progress)
+    assert isinstance(tqdm.text_pane, pn.pane.Str)
+    assert isinstance(tqdm.layout, pn.Row)
+
+
+def test_tqdm_leave_false():
+    tqdm = Tqdm(layout="row", sizing_mode="stretch_width")
+
+    for index in tqdm(range(0, 3), leave=False):
+        pass
+
     assert tqdm.value == 0
     assert tqdm.max == 3
-    assert tqdm.text == "" or tqdm.text == " "
-    assert isinstance(tqdm.progress_indicator, pn.widgets.indicators.Progress)
-    assert isinstance(tqdm.text_pane, pn.pane.Str)
-    assert isinstance(tqdm.panel, pn.Row)
-    assert issubclass(tqdm.tqdm, _tqdm)
+    assert tqdm.text == ''
+
+
+def test_tqdm_color():
+    tqdm = Tqdm()
+
+    for index in tqdm(range(0, 3), colour='red'):
+        pass
+
+    assert tqdm.text_pane.style == {'color': 'red'}
+
 
 def get_tqdm_app():
     import time

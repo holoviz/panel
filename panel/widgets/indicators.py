@@ -747,8 +747,11 @@ class Tqdm(Indicator):
     write_to_console = param.Boolean(default=False, doc="""
         Whether or not to also write to the console.""")
 
+    _layouts = {Row: 'row', Column: 'column'}
+
     def __init__(self, **params):
         layout = params.pop('layout', 'column')
+        layout = self._layouts.get(layout, layout) 
         if "text_pane" not in params:
             sizing_mode = 'stretch_width' if layout == 'column' else 'fixed'
             params["text_pane"] = Str(
@@ -820,7 +823,7 @@ class Tqdm(Indicator):
 
     def pandas(self, *args, **kwargs):
         kwargs['indicator'] = self
-        if not self.write_to_console:
+        if not self.write_to_console and 'file' not in kwargs:
             f = open(os.devnull, 'w')
             kwargs['file'] = f
         return ptqdm.pandas(*args, **kwargs)
