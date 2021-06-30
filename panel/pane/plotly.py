@@ -325,8 +325,18 @@ def _patch_tabs_plotly(viewable, root):
     """
     from ..models.plotly import PlotlyPlot
 
+    # Clear old callbacks
+    old_callbacks = {}
+    for tmodel in root.select({'type': Tabs}):
+        old_callbacks[tmodel] = {
+            k: [cb for cb in cbs] for k, cbs in tmodel.js_property_callbacks.items()
+        }
+        for cb in tmodel.js_property_callbacks.get('change:active', []):
+            if any(tag.startswith('plotly_tab_fix') for tag in cb.tags):
+                cb.args.clear()
+
     tabs_models = list(root.select({'type': Tabs}))
-    plotly_models = root.select({'type': PlotlyPlot})
+    plotly_models = list(root.select({'type': PlotlyPlot}))
 
     tab_callbacks = {}
     for model in plotly_models:
@@ -335,17 +345,10 @@ def _patch_tabs_plotly(viewable, root):
         args = {'model': model}
         tag = f'plotly_tab_fix{model.id}'
 
-        # Remove old callbacks
-        for tmodel in parent_tabs:
-            tmodel.js_property_callbacks['change:active'] = [
-                cb for cb in tmodel.js_property_callbacks.get('change:active', [])
-                if not (cb.args.get('model') is model and tag in cb.tags)
-            ]
-
         # Generate condition that determines whether tab containing
         # the plot is active
         condition = ''
-        for tabs in parent_tabs:
+        for tabs in list(parent_tabs):
             # Find tab that contains plot
             found = False
             for i, tab in enumerate(tabs.tabs):
@@ -353,20 +356,35 @@ def _patch_tabs_plotly(viewable, root):
                     found = True
                     break
             if not found:
+                parent_tabs.remove(tabs)
                 continue
             if condition:
                 condition += ' && '
-            condition += f"(tabs_{tabs.id}.active == i_{tabs.id})"
-            args.update({f'i_{tabs.id}': i, f'tabs_{tabs.id}': tabs})
+            condition += f"(tabs_{tabs.id}.active == {i})"
+            args.update({f'tabs_{tabs.id}': tabs})
             active &= tabs.active == i
 
         model.visible = active
         code = f'model.visible = {condition};'
         for tabs in parent_tabs:
-            callback = CustomJS(args=args, code=code, tags=[tag])
+            tab_key = f'tabs_{tabs.id}'
+            cb_args = dict(args)
+            cb_code = code.replace(tab_key, 'cb_obj')
+            cb_args.pop(tab_key)
+            callback = CustomJS(args=cb_args, code=cb_code, tags=[tag])
             if tabs not in tab_callbacks:
                 tab_callbacks[tabs] = []
             tab_callbacks[tabs].append(callback)
+
     for tabs, callbacks in tab_callbacks.items():
-        for callback in callbacks:
-            tabs.js_on_change('active', callback)
+        new_cbs = []
+        for cb in callbacks:
+            found = False
+            for old_cb in tabs.js_property_callbacks.get('change:active', []):
+                if cb.tags[0] in old_cb.tags:
+                    found = True
+                    old_cb.update(code=cb.code, args=cb.args)
+            if not found:
+                new_cbs.append(cb)
+        if new_cbs:
+            tabs.js_on_change('active', *new_cbs)
