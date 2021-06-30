@@ -1,3 +1,4 @@
+import os
 import sys
 
 from math import pi
@@ -16,7 +17,7 @@ from ..models import (
 from ..pane.markup import Str
 from ..reactive import SyncableData
 from ..util import escape, updating
-from ..viewable import Viewer
+from ..viewable import Viewable
 from .base import Widget
 
 RED   = "#d9534f"
@@ -677,73 +678,121 @@ class Trend(SyncableData, Indicator):
                 msg['value_change'] = 0
         return msg
 
-EMPTY_TEXT = " "  # Hack: If set to None or "" the height of the text_pane is too little
 
 MARGIN = {
     "text_pane": {"column": (5, 10, 0, 10), "row": (0, 10, 0, 10)},
-    "progress_indicator": {"column": (0, 10, 5, 10), "row": (12, 10, 0, 10)},
+    "progress": {"column": (0, 10, 5, 10), "row": (12, 10, 0, 10)},
 }
 
-class Tqdm(Viewer):
+
+
+class ptqdm(_tqdm):
+
+    def __init__(self, *args, **kwargs):
+        self._indicator = kwargs.pop('indicator')
+        super().__init__(*args, **kwargs)
+
+    def display(self, msg=None, pos=None, bar_style=None):
+        super().display(msg, pos)
+        style = self._indicator.text_pane.style or {}
+        color = self.colour or 'black'
+        self._indicator.text_pane.style = dict(style, color=color)
+        if self.total is not None and self.n is not None:
+            self._indicator.max = int(self.total) # Can be numpy.int64
+            self._indicator.value = int(self.n)
+            self._indicator.text = self._to_text(**self.format_dict)
+        return True
+
+    def _to_text(self, n, total, **kwargs):
+        return self.format_meter(n, total, **{**kwargs, "ncols": 0})
+
+    def close(self):
+        super().close()
+        if not self.leave:
+            self._indicator.reset()
+        return _tqdm
+
+
+class Tqdm(Indicator):
+
+    layout = param.ClassSelector(class_=(Column, Row), precedence=-1, constant=True, doc="""
+        The layout for the text and progress indicator.""",)
+
+    max = param.Integer(default=100, doc="""
+        The maximum value of the progress indicator.""")
+
+    progress = param.ClassSelector(class_=Progress, precedence=-1, doc="""
+        The Progress indicator used to display the progress.""",)
+
+    text = param.String(default='', doc="""
+        The current tqdm style progress text.""")
+
+    text_pane = param.ClassSelector(class_=Str, precedence=-1, doc="""
+        The pane to display the text to.""")
+
     value = param.Integer(default=0, bounds=(0, None), doc="""
         The current value of the progress bar. If set to None the progress
         bar will be indeterminate and animate depending on the active
         parameter.""")
-    max = param.Integer(default=100, doc="""
-        The maximum value of the progress bar.""")
-    text = param.String(default=EMPTY_TEXT, doc="""
-        The tqdm style progress text""")
+
+    margin = param.Parameter(default=0, doc="""
+        Allows to create additional space around the component. May
+        be specified as a two-tuple of the form (vertical, horizontal)
+        or a four-tuple (top, right, bottom, left).""")
+
+    width = param.Integer(default=400, bounds=(0, None), doc="""
+        The width of the component (in pixels). This can be either
+        fixed or preferred width, depending on width sizing policy.""")
+
     write_to_console = param.Boolean(default=False, doc="""
-        Whether or not to also write to the console. Default is False.""")
+        Whether or not to also write to the console.""")
 
-    progress_indicator = param.ClassSelector(class_=Progress, precedence=-1, doc="""
-        The Progress indicator to display to. Default is a Progress""",)
-    text_pane = param.ClassSelector(class_=Str, precedence=-1, doc="""
-        The pane to display the text to. Default is a Str""",)
-    panel = param.ClassSelector(class_=(Column, Row), precedence=-1, doc="""
-        The panel to laying out the text_pane and progress_indicator. Default is a Column.""",)
-
-    tqdm = param.Parameter(precedence=-1, doc="""
-        A Panel version of tqdm.asyncio.tqdm""")
-
-    def __init__(self, layout="column", **params):
-        if not "text_pane" in params:
+    def __init__(self, **params):
+        layout = params.pop('layout', 'column')
+        if "text_pane" not in params:
+            sizing_mode = 'stretch_width' if layout == 'column' else 'fixed'
             params["text_pane"] = Str(
-                self.text, min_width=280, sizing_mode="fixed", margin=MARGIN["text_pane"][layout],
+                None, min_height=20, min_width=280, sizing_mode=sizing_mode,
+                margin=MARGIN["text_pane"][layout],
             )
-        if not "progress_widget" in params:
-            params["progress_indicator"] = Progress(
+        if "progress" not in params:
+            params["progress"] = Progress(
                 active=False,
                 sizing_mode="stretch_width",
                 min_width=100,
-                margin=MARGIN["progress_indicator"][layout],
+                margin=MARGIN["progress"][layout],
             )
-        if not "tqdm" in params:
-            params["tqdm"] = self._get_tqdm()
 
-        layout_params = {}
-        for key in params.copy():
-            if hasattr(ListPanel, key):
-                layout_params[key] = params.pop(key)
-
+        layout_params = {p: params.get(p, getattr(self, p))  for p in Viewable.param}
+        if layout == 'row' or layout is Row:
+            params['layout'] = Row(
+                params['progress'], params['text_pane'], **layout_params
+            )
+        else:
+            params['layout'] = Column(
+                params['text_pane'], params['progress'], **layout_params
+            )
         super().__init__(**params)
 
-        if self.value==0:
+        self.param.watch(self._update_layout, list(Viewable.param))
+
+        if self.value == 0:
             # Hack: to give progress the initial look
-            self.progress_indicator.max = 100000
-            self.progress_indicator.value = 1
+            self.progress.max = 100000
+            self.progress.value = 1
         else:
-            self.progress_indicator.max = self.max
-            self.progress_indicator.value = self.value
-        self.text_pane = self.text_pane
+            self.progress.max = self.max
+            self.progress.value = self.value
+        self.text_pane.object = self.text
 
-        if layout == "row":
-            self.panel = Row(self.progress_indicator, self.text_pane, **layout_params)
-        else:
-            self.panel = Column(self.text_pane, self.progress_indicator, **layout_params)
+    def _get_model(self, doc, root=None, parent=None, comm=None):
+        return self.layout._get_model(doc, root, parent, comm)
 
-    def __call__(self, *args, **kwargs):
-        return self.tqdm(*args, **kwargs)
+    def _cleanup(self, root):
+        self.layout._cleanup(root)
+
+    def _update_layout(self, *events):
+        self.layout.param.set_param(**{event.name: event.new for event in events})
 
     @param.depends("text", watch=True)
     def _update_text(self):
@@ -752,42 +801,31 @@ class Tqdm(Viewer):
 
     @param.depends("value", watch=True)
     def _update_value(self):
-        if self.progress_indicator:
-            self.progress_indicator.value = self.value
+        if self.progress:
+            self.progress.value = self.value
 
     @param.depends("max", watch=True)
     def _update_max(self):
-        if self.progress_indicator:
-            self.progress_indicator.max = self.max
+        if self.progress:
+            self.progress.max = self.max
 
-    def __panel__(self):
-        return self.panel
+    def __call__(self, *args, **kwargs):
+        kwargs['indicator'] = self
+        if not self.write_to_console:
+            f = open(os.devnull, 'w')
+            kwargs['file'] = f
+        return ptqdm(*args, **kwargs)
+
+    __call__.__doc__ = ptqdm.__doc__
+
+    def pandas(self, *args, **kwargs):
+        kwargs['indicator'] = self
+        if not self.write_to_console:
+            f = open(os.devnull, 'w')
+            kwargs['file'] = f
+        return ptqdm.pandas(*args, **kwargs)
 
     def reset(self):
         """Resets the parameters"""
         self.value = self.param.value.default
         self.text = self.param.text.default
-
-    def _get_tqdm(self):
-        indicator = self
-
-        class ptqdm(_tqdm):
-            def display(self, msg=None, pos=None, bar_style=None):
-                # display is used in Notebook
-                if indicator.write_to_console:
-                    super().display(msg, pos)
-
-                indicator.max = int(self.total) # Can be numpy.int64
-                indicator.value = int(self.n)
-                indicator.text = self._to_text(**self.format_dict)
-                return True
-
-            def _to_text(self, n, total, **kwargs):
-                return self.format_meter(n, total, **{**kwargs, "ncols": 0})
-
-            def close(self):
-                super().close()
-                indicator.reset()
-                return _tqdm
-
-        return ptqdm
