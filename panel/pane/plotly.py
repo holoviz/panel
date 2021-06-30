@@ -325,7 +325,7 @@ def _patch_tabs_plotly(viewable, root):
     """
     from ..models.plotly import PlotlyPlot
 
-    # Clear old callbacks
+    # Clear args on old callback so references aren't picked up
     old_callbacks = {}
     for tmodel in root.select({'type': Tabs}):
         old_callbacks[tmodel] = {
@@ -333,7 +333,11 @@ def _patch_tabs_plotly(viewable, root):
         }
         for cb in tmodel.js_property_callbacks.get('change:active', []):
             if any(tag.startswith('plotly_tab_fix') for tag in cb.tags):
+                # Have to unset owners so property is not notified
+                owners = cb.args._owners
+                cb.args._owners = set()
                 cb.args.clear()
+                cb.args._owners = owners
 
     tabs_models = list(root.select({'type': Tabs}))
     plotly_models = list(root.select({'type': PlotlyPlot}))
@@ -383,7 +387,12 @@ def _patch_tabs_plotly(viewable, root):
             for old_cb in tabs.js_property_callbacks.get('change:active', []):
                 if cb.tags[0] in old_cb.tags:
                     found = True
-                    old_cb.update(code=cb.code, args=cb.args)
+                    old_cb.update(code=cb.code)
+                    # Reapply args without notifying property system
+                    owners = old_cb.args._owners
+                    old_cb.args._owners = set()
+                    old_cb.args.update(cb.args)
+                    old_cb.args._owners = owners
             if not found:
                 new_cbs.append(cb)
         if new_cbs:
