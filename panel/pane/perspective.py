@@ -11,7 +11,6 @@ from pyviz_comms import JupyterComm
 
 from ..reactive import ReactiveData
 from ..util import lazy_load
-from ..viewable import Viewable
 from .base import PaneBase
 
 DEFAULT_THEME = "material"
