@@ -23,17 +23,20 @@ TABULATOR_THEMES = [
     'bootstrap4', 'materialize', 'bulma', 'semantic-ui'
 ]
 
+def _get_theme_url(url, theme):
+    if 'bootstrap' in theme:
+        url += 'bootstrap/'
+    elif 'materialize' in theme:
+        url += 'materialize/'
+    elif 'semantic-ui' in theme:
+        url += 'semantic-ui/'
+    elif 'bulma' in theme:
+        url += 'bulma/'
+    return url
+
 CSS_URLS = []
 for theme in TABULATOR_THEMES:
-    _url = THEME_URL
-    if 'bootstrap' in theme:
-        _url += 'bootstrap/'
-    elif 'materialize' in theme:
-        _url += 'materialize/'
-    elif 'semantic-ui' in theme:
-        _url += 'semantic-ui/'
-    elif 'bulma' in theme:
-        _url += 'bulma/'
+    _url = _get_theme_url(THEME_URL, theme)
     if theme == 'default':
         _url += f'tabulator.min.css'
     else:
@@ -94,8 +97,11 @@ class DataTabulator(HTMLBox):
 
     @classproperty
     def __css__(cls):
-        cls.__css_raw__ = [url for url in cls.__css_raw__ if 'simple' in url]
-        return bundled_files(cls)
+        cls.__css_raw__ = [
+            url for url in cls.__css_raw__ if 'simple' in url or
+            len(cls.__css_raw__) == 1
+        ]
+        return bundled_files(cls, 'css')
 
     __javascript_raw__ = [
         JS_SRC,

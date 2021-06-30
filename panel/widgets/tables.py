@@ -797,27 +797,18 @@ class Tabulator(BaseTable):
             msg['frozen_rows'] = [length+r if r < 0 else r
                                   for r in msg['frozen_rows']]
         if 'theme' in msg:
-            from ..models.tabulator import THEME_PATH, THEME_URL
-            resources = _settings.resources(default="server")
-            if resources == 'server':
+            from ..io.resources import RESOURCE_MODE
+            from ..models.tabulator import _get_theme_url, THEME_PATH, THEME_URL
+            if RESOURCE_MODE == 'server':
+                theme_url = f'{LOCAL_DIST}bundled/datatabulator/{THEME_PATH}'
                 if state.rel_path:
-                    theme_url = f'{state.rel_path}/{LOCAL_DIST}bundled/datatabulator/{THEME_PATH}'
-                else:
-                    theme_url = f'{LOCAL_DIST}bundled/datatabulator/{THEME_PATH}'
+                    theme_url = f'{state.rel_path}/{theme_url}'
             else:
                 theme_url = THEME_URL
-            if 'bootstrap' in self.theme:
-                msg['theme_url'] = theme_url + 'bootstrap/'
-            elif 'materialize' in self.theme:
-                msg['theme_url'] = theme_url + 'materialize/'
-            elif 'semantic-ui' in self.theme:
-                msg['theme_url'] = theme_url + 'semantic-ui/'
-            elif 'bulma' in self.theme:
-                msg['theme_url'] = theme_url + 'bulma/'
-            else:
-                msg['theme_url'] = theme_url
+            cdn_url = _get_theme_url(THEME_URL, msg['theme'])
+            msg['theme_url'] = _get_theme_url(theme_url, msg['theme'])
             theme = 'tabulator' if self.theme == 'default' else 'tabulator_'+self.theme
-            self._widget_type.__css__ = [msg['theme_url'] + theme + '.min.css']
+            self._widget_type.__css_raw__ = [f'{cdn_url}{theme}.min.css']
         if msg.get('select_mode') == 'checkbox-single':
             msg['select_mode'] = 'checkbox'
         return msg
