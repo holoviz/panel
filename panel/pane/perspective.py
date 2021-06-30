@@ -322,10 +322,6 @@ class Perspective(PaneBase, ReactiveData):
                              "converted to strings.")
         return df, {str(k): v for k, v in data.items()}
 
-    def _filter_properties(self, properties):
-        ignored = list(Viewable.param)
-        return [p for p in properties if p not in ignored]
-
     def _init_params(self):
         props = super()._init_params()
         props['source'] = ColumnDataSource(data=self._data)

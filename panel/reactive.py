@@ -160,6 +160,12 @@ class Syncable(Renderable):
         if config.embed:
             return
 
+        properties = list(properties)
+        if isinstance(model, LayoutDOM):
+            properties += [
+                p for p in ('css_classes', 'visible') if p not in properties
+            ]
+
         for p in properties:
             if isinstance(p, tuple):
                 _, p = p
