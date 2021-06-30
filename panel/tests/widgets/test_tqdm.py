@@ -1,7 +1,6 @@
 """Tests of the Tqdm indicator"""
-from tqdm.auto import tqdm as _tqdm
-
 import panel as pn
+
 from panel.widgets import Tqdm
 
 
