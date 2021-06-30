@@ -22,15 +22,22 @@ class Panel(Reactive):
     Abstract baseclass for a layout of Viewables.
     """
 
+    # Used internally to optimize updates
+    _batch_update = False
+
+    # Bokeh model used to render this Panel
     _bokeh_model = None
 
-    __abstract = True
-
-    _rename = {'objects': 'children'}
-
+    # Properties that should sync JS -> Python
     _linked_props = []
 
-    _batch_update = False
+    # Parameters which require the preprocessors to be re-run
+    _preprocess_params = []
+
+    # Parameter -> Bokeh property renaming
+    _rename = {'objects': 'children'}
+
+    __abstract = True
 
     def __repr__(self, depth=0, max_depth=10):
         if depth > max_depth:
@@ -57,6 +64,8 @@ class Panel(Reactive):
 
     def _update_model(self, events, msg, root, model, doc, comm=None):
         msg = dict(msg)
+        inverse = {v: k for k, v in self._rename.items() if v is not None}
+        preprocess = any(inverse.get(k, k) in self._preprocess_params for k in msg)
         if self._rename['objects'] in msg:
             old = events['objects'].old
             msg[self._rename['objects']] = self._get_objects(model, old, doc, root, comm)
@@ -70,7 +79,7 @@ class Panel(Reactive):
                     return
                 from ..io import state
                 ref = root.ref['id']
-                if ref in state._views:
+                if ref in state._views and preprocess:
                     state._views[ref][0]._preprocess(root)
             finally:
                 Panel._batch_update = update
@@ -146,7 +155,9 @@ class ListLike(param.Parameterized):
 
     objects = param.List(default=[], doc="""
         The list of child objects that make up the layout.""")
-    
+
+    _preprocess_params = ['objects']
+
     def __getitem__(self, index):
         return self.objects[index]
 
@@ -335,6 +346,8 @@ class NamedListLike(param.Parameterized):
 
     objects = param.List(default=[], doc="""
         The list of child objects that make up the layout.""")
+
+    _preprocess_params = ['objects']
 
     def __init__(self, *items, **params):
         if 'objects' in params:
@@ -701,7 +714,7 @@ class WidgetBox(ListPanel):
         Whether the widget is disabled.""")
 
     horizontal = param.Boolean(default=False, doc="""
-        Whether to lay out the widgets in a Row layout as opposed 
+        Whether to lay out the widgets in a Row layout as opposed
         to a Column layout.""")
 
     margin = param.Parameter(default=5, doc="""
