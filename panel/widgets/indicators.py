@@ -10,7 +10,7 @@ from bokeh.plotting import figure
 from bokeh.models import ColumnDataSource
 from tqdm.asyncio import tqdm as _tqdm
 
-from ..layout import Column, ListPanel, Row
+from ..layout import Column, Row
 from ..models import (
     HTML, Progress as _BkProgress, TrendIndicator as _BkTrendIndicator
 )
