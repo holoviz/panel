@@ -24,10 +24,10 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   connect_signals(): void {
     super.connect_signals()
 
-    const {configuration, layout, columns, theme, theme_url, groupby} = this.model.properties;
+    const {configuration, layout, columns, theme, groupby} = this.model.properties;
     this.on_change([configuration, layout, columns, groupby], () => this.render_and_resize())
 
-    this.on_change([theme, theme_url], () => this.setCSS())
+    this.on_change([theme], () => this.setCSS())
 
     this.connect(this.model.properties.download.change, () => {
       const ftype = this.model.filename.endsWith('.json') ? "json" : "csv"

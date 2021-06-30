@@ -3,7 +3,6 @@ Defines utilities to save panel objects to files as HTML or PNG.
 """
 import io
 
-from contextlib import contextmanager
 from six import string_types
 
 import bokeh
@@ -15,14 +14,12 @@ from bokeh.embed.util import OutputDocumentFor, standalone_docs_json_and_render_
 from bokeh.io.export import get_screenshot_as_png
 from bokeh.model import Model
 from bokeh.resources import CDN, INLINE
-from bokeh.settings import settings as _settings
 from pyviz_comms import Comm
 
 from ..config import config
-from . import resources as resource_module
 from .embed import embed_state
 from .model import add_to_doc
-from .resources import BASE_TEMPLATE, DEFAULT_TITLE, Bundle, Resources
+from .resources import BASE_TEMPLATE, DEFAULT_TITLE, Bundle, Resources, set_resource_mode
 from .state import state
 
 #---------------------------------------------------------------------
@@ -148,18 +145,6 @@ def file_html(models, resources, title=None, template=BASE_TEMPLATE,
 # Public API
 #---------------------------------------------------------------------
 
-@contextmanager
-def _set_resource_mode(mode):
-    old_resources = _settings.resources._user_value
-    old_mode = resource_module.RESOURCE_MODE
-    _settings.resources = resource_module.RESOURCE_MODE = mode
-    try:
-        yield
-    finally:
-        resource_module.RESOURCE_MODE = old_mode
-        _settings.resources.set_value(old_resources)
-
-
 def save(panel, filename, title=None, resources=None, template=None,
          template_variables=None, embed=False, max_states=1000,
          max_opts=3, embed_json=False, json_prefix='', save_path='./',
@@ -232,7 +217,7 @@ def save(panel, filename, title=None, resources=None, template=None,
         if isinstance(panel, Document):
             model = panel
         elif isinstance(panel, BaseTemplate):
-            with _set_resource_mode(mode):
+            with set_resource_mode(mode):
                 panel._init_doc(doc, title=title)
             model = doc
         else:
@@ -265,7 +250,7 @@ def save(panel, filename, title=None, resources=None, template=None,
     resources = Resources.from_bokeh(resources)
 
     # Set resource mode
-    with _set_resource_mode(mode):
+    with set_resource_mode(mode):
         html = file_html(doc, resources, title, **kwargs)
     if hasattr(filename, 'write'):
         if isinstance(filename, io.BytesIO):

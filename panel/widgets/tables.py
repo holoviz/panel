@@ -17,7 +17,7 @@ from bokeh.settings import settings as _settings
 from pyviz_comms import JupyterComm
 
 from ..depends import param_value_if_widget
-from ..io.resources import LOCAL_DIST
+from ..io.resources import LOCAL_DIST, set_resource_mode
 from ..io.state import state
 from ..reactive import ReactiveData
 from ..viewable import Layoutable
@@ -790,25 +790,31 @@ class Tabulator(BaseTable):
             except Exception:
                 pass
 
+    def _get_theme(self, theme, resources=None):
+        from ..io.resources import RESOURCE_MODE
+        from ..models.tabulator import _get_theme_url, THEME_PATH, THEME_URL
+        if RESOURCE_MODE == 'server' and resources in (None, 'server'):
+            theme_url = f'{LOCAL_DIST}bundled/datatabulator/{THEME_PATH}'
+            if state.rel_path:
+                theme_url = f'{state.rel_path}/{theme_url}'
+        else:
+            theme_url = THEME_URL
+        # Ensure theme_url updates before theme
+        cdn_url = _get_theme_url(THEME_URL, theme)
+        theme_url = _get_theme_url(theme_url, theme)
+        fname = 'tabulator' if self.theme == 'default' else 'tabulator_'+self.theme
+        self._widget_type.__css_raw__ = [f'{cdn_url}{fname}.min.css']
+        return theme_url, theme
+
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
         if 'frozen_rows' in msg:
             length = self._length
-            msg['frozen_rows'] = [length+r if r < 0 else r
-                                  for r in msg['frozen_rows']]
+            msg['frozen_rows'] = [
+                length+r if r < 0 else r for r in msg['frozen_rows']
+            ]
         if 'theme' in msg:
-            from ..io.resources import RESOURCE_MODE
-            from ..models.tabulator import _get_theme_url, THEME_PATH, THEME_URL
-            if RESOURCE_MODE == 'server':
-                theme_url = f'{LOCAL_DIST}bundled/datatabulator/{THEME_PATH}'
-                if state.rel_path:
-                    theme_url = f'{state.rel_path}/{theme_url}'
-            else:
-                theme_url = THEME_URL
-            cdn_url = _get_theme_url(THEME_URL, msg['theme'])
-            msg['theme_url'] = _get_theme_url(theme_url, msg['theme'])
-            theme = 'tabulator' if self.theme == 'default' else 'tabulator_'+self.theme
-            self._widget_type.__css_raw__ = [f'{cdn_url}{theme}.min.css']
+            msg['theme_url'], msg['theme'] = self._get_theme(msg.pop('theme'))
         if msg.get('select_mode') == 'checkbox-single':
             msg['select_mode'] = 'checkbox'
         return msg
@@ -1035,11 +1041,22 @@ class Tabulator(BaseTable):
             self._widget_type = lazy_load(
                 'panel.models.tabulator', 'DataTabulator', isinstance(comm, JupyterComm)
             )
-        model = super()._get_model(doc, root, parent, comm)
+        if comm:
+            with set_resource_mode('inline'):
+                model = super()._get_model(doc, root, parent, comm)
+        else:
+            model = super()._get_model(doc, root, parent, comm)
         if root is None:
             root = model
         self._link_props(model, ['page', 'sorters'], doc, root, comm)
         return model
+
+    def _update_model(self, events, msg, root, model, doc, comm):
+        if comm and 'theme_url' in msg:
+            msg['theme_url'], msg['theme'] = self._get_theme(
+                msg.pop('theme'), 'inline'
+            )
+        super()._update_model(events, msg, root, model, doc, comm)
 
     def _config_columns(self, column_objs):
         column_objs = list(column_objs)
