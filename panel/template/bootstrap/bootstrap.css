@@ -25,6 +25,7 @@ body {
 #sidebar.active {
   width: 0px;
   overflow-y: hidden;
+  padding: 0px;
 }
 
 #main {
