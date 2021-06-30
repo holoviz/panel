@@ -505,6 +505,7 @@ class Param(PaneBase):
                 return
             elif kw_widget.get('throttled', False) and hasattr(widget, 'value_throttled'):
                 updates['value_throttled'] = change.new
+                updates['value'] = change.new
             elif isinstance(widget, Row) and len(widget) == 2:
                 updates['value'] = change.new
                 widget = widget[0]
