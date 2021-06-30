@@ -182,12 +182,10 @@
 	  </span>
     {% endif %}
     <div class="app-header">
-      <div>
       {% if app_logo %}<a class="navbar-brand app-logo" href="{{ site_url }}"><img src="{{ app_logo }}" class="app-logo"></a>{% endif %}
       {% if site_title %}<a class="title" href="{{ site_url }}" >&nbsp;{{ site_title }}</a>{% endif %}
       {% if site_title and app_title%}<span class="title">&nbsp;-</span>{% endif %}
       {% if app_title %}<a class="title" href="" >{{ app_title }}</a>{% endif %}
-      </div>
     </div>
     <div id="header-items">
     {% for doc in docs %}
@@ -210,11 +208,11 @@
     </fast-switch>
   </div>
   {% endif %}
-	{% if busy %}
-	<div class="pn-busy-container">
-	  {{ embed(roots.busy_indicator) | indent(6) }}
-	</div>
-	{% endif %}
+  {% if busy %}
+  <div class="pn-busy-container">
+    {{ embed(roots.busy_indicator) | indent(6) }}
+  </div>
+  {% endif %}
 
   </nav>
   </fast-design-system-provider>
