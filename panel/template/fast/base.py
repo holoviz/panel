@@ -11,39 +11,42 @@ _ROOT = pathlib.Path(__file__).parent
 
 
 class FastBaseTemplate(BasicTemplate):
-    background_color = param.String(
-        doc="""
-        Optional body background color override."""
-    )
-    neutral_color = param.String(
-        doc="""
-        Optional body neutral color override.""")
+
     accent_base_color = param.String(doc="""
         Optional body accent color override.""")
-    header_neutral_color = param.String(
-        doc="""
+
+    background_color = param.String(doc="""
+        Optional body background color override.""")
+
+    corner_radius = param.Integer(default=3, bounds=(0,25), doc="""
+        The corner radius applied to controls.""")
+
+    font = param.String(doc="The font to use.")
+
+    font_url = param.String(doc="A font url to import.")
+
+    header_neutral_color = param.String(doc="""
         Optional header neutral color override.""")
+
     header_accent_base_color = param.String(doc="""
         Optional header accent color override.""")
-    corner_radius = param.Integer(default=3, bounds=(0,25), doc="""
-        The corner radius applied to controls.
-    """)
+
+    neutral_color = param.String(doc="""
+        Optional body neutral color override.""")
+
     theme_toggle = param.Boolean(default=True, doc="""
         If True a switch to toggle the Theme is shown.""")
+
+    shadow = param.Boolean(doc="""
+        Optional shadow override. Whether or not to apply shadow.""")
+
     sidebar_footer = param.String("", doc="""
         A HTML string appended to the sidebar""")
-    font = param.String(doc="""
-        The font to use""")
-    font_url = param.String(doc="""
-        A font url to import""")
+
     # Might be extended to accordion or tabs in the future
     main_layout = param.Selector(default="card", label="Layout", objects=["", "card"], doc="""
         What to wrap the main components into. Options are '' (i.e. none) and 'card' (Default).
-        Could be extended to Accordion, Tab etc. in the future
-    """)
-    shadow = param.Boolean(
-        doc="""Optional shadow override. Whether or not to apply shadow."""
-    )
+        Could be extended to Accordion, Tab etc. in the future.""")
 
     _css = [
         _ROOT / "css/fast_root.css",

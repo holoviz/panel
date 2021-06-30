@@ -1,10 +1,14 @@
-"""The FastTemplateSettings widget enables you to change the look and feel of the
-FastListTemplate and FastGridTemplate dynamically on a live app.
+"""
+The FastTemplateSettings widget enables you to change the look and
+feel of the FastListTemplate and FastGridTemplate dynamically on a
+live app.
 
-Add it to the sidebar of your template to dynamically change the settings of the Template.
+Add it to the sidebar of your template to dynamically change the
+settings of the Template.
 
-If you need more control you can add the `comms` and `editor` components individually
-instead."""
+If you need more control you can add the `comms` and `editor`
+components individually instead.
+"""
 import param
 
 from ....layout import Column, Row
@@ -30,42 +34,36 @@ GEAR_SVG = """
 
 
 class FastTemplateSettings(Viewer):
-    template = param.ClassSelector(
-        class_=FastBaseTemplate,
-        constant=True,
-        doc="""
-        The Fast Template to edit""",
-    )
-    template_constructor = param.String(
-        constant=True,
-        doc="""
-        The Python code needed to construct a Template with the same parameter settings""",
-    )
-    editor = param.ClassSelector(
-        class_=Column,
-        constant=True,
-        doc="""
-        A Column containing the settings editor. You would need to also include the `comms` in
-        your app to enable bidirectional communication.
-        """,
-    )
-    comms = param.ClassSelector(
-        class_=Column,
-        constant=True,
-        doc="""The component that provides bidirectional communication to set and get the style
-        values. Include this in your app if you want to enable changing Template settings
-        dynamically.""",
-    )
+    """
+    The FastTemplateSettings component enables you to change the look
+    and feel of the FastListTemplate and FastGridTemplate dynamically
+    on a live app.
+
+    Add it to the sidebar of your template to dynamically change the
+    settings of the Template.
+
+    If you need more control you can add the `comms` and `editor`
+    components individually instead.
+    """
+
+    comms = param.ClassSelector(class_=Column, constant=True, doc="""
+        The component that provides bidirectional communication to set
+        and get the style values. Include this in your app if you want
+        to enable changing Template settings dynamically.""")
+
+    template = param.ClassSelector(class_=FastBaseTemplate, constant=True, doc="""
+        The Fast Template to edit""")
+
+    template_constructor = param.String(constant=True, doc="""
+        The Python code needed to construct a Template with the
+        same parameter settings.""")
+
+    editor = param.ClassSelector(class_=Column, constant=True, doc="""
+        A Column containing the settings editor. You would need to
+        also include the `comms` in your app to enable bidirectional
+        communication.""")
 
     def __init__(self, template):
-        """The FastTemplateSettings component enables you to change the look and feel of the
-        FastListTemplate and FastGridTemplate dynamically on a live app.
-
-        Add it to the sidebar of your template to dynamically change the settings of the Template.
-
-        If you need more control you can add the `comms` and `editor` components individually
-        instead."""
-
         params = {}
         params["template"] = template
         params["editor"] = Column(sizing_mode="stretch_width", margin=0)
@@ -219,20 +217,21 @@ body {{
     def _update_template_constructor(self):
         tmp = self.template
         with param.edit_constant(self):
-            self.template_constructor = f"""template={type(tmp).name}(
-    site='{tmp.site}',
-    title='{tmp.title}',
-    background_color='{tmp.background_color}',
-    neutral_color='{tmp.neutral_color}',
-    accent_base_color='{tmp.accent_base_color}',
-    corner_radius={tmp.corner_radius},
-    font='{tmp.font}',
-    main_layout='{tmp.main_layout}',
-    shadow={tmp.shadow},
-    header_background='{tmp.header_background}',
-    header_color='{tmp.header_color}',
-    header_accent_base_color='{tmp.header_accent_base_color}',
-)"""
+            self.template_constructor = f"""
+              template={type(tmp).name}(
+              site='{tmp.site}',
+              title='{tmp.title}',
+              background_color='{tmp.background_color}',
+              neutral_color='{tmp.neutral_color}',
+              accent_base_color='{tmp.accent_base_color}',
+              corner_radius={tmp.corner_radius},
+              font='{tmp.font}',
+              main_layout='{tmp.main_layout}',
+              shadow={tmp.shadow},
+              header_background='{tmp.header_background}',
+              header_color='{tmp.header_color}',
+              header_accent_base_color='{tmp.header_accent_base_color}',
+            )"""
 
     def __panel__(self):
         return self.layout
