@@ -3,6 +3,7 @@ Defines utilities to save panel objects to files as HTML or PNG.
 """
 import io
 
+from contextlib import contextmanager
 from six import string_types
 
 import bokeh
@@ -14,6 +15,7 @@ from bokeh.embed.util import OutputDocumentFor, standalone_docs_json_and_render_
 from bokeh.io.export import get_screenshot_as_png
 from bokeh.model import Model
 from bokeh.resources import CDN, INLINE
+from bokeh.settings import settings as _settings
 from pyviz_comms import Comm
 
 from ..config import config
@@ -146,6 +148,18 @@ def file_html(models, resources, title=None, template=BASE_TEMPLATE,
 # Public API
 #---------------------------------------------------------------------
 
+@contextmanager
+def _set_resource_mode(mode):
+    old_resources = _settings.resources._user_value
+    old_mode = resource_module.RESOURCE_MODE
+    _settings.resources = resource_module.RESOURCE_MODE = mode
+    try:
+        yield
+    finally:
+        resource_module.RESOURCE_MODE = old_mode
+        _settings.resources.set_value(old_resources)
+
+
 def save(panel, filename, title=None, resources=None, template=None,
          template_variables=None, embed=False, max_states=1000,
          max_opts=3, embed_json=False, json_prefix='', save_path='./',
@@ -187,7 +201,7 @@ def save(panel, filename, title=None, resources=None, template=None,
       A dictionary specifying the widget values to embed for each widget
     """
     from ..pane import PaneBase
-    from ..template import Template
+    from ..template import BaseTemplate
 
     if isinstance(panel, PaneBase) and len(panel.layout) > 1:
         panel = panel.layout
@@ -198,24 +212,7 @@ def save(panel, filename, title=None, resources=None, template=None,
         doc = panel
     else:
         doc = Document()
-
-    comm = Comm()
-    with config.set(embed=embed):
-        if isinstance(panel, Document):
-            model = panel
-        elif isinstance(panel, Template):
-            panel._init_doc(doc, title=title)
-            model = doc
-        else:
-            model = panel.get_root(doc, comm)
-            if embed:
-                embed_state(
-                    panel, model, doc, max_states, max_opts, embed_json,
-                    json_prefix, save_path, load_path, progress, embed_states
-                )
-            else:
-                add_to_doc(model, doc, True)
-
+        
     if resources is None:
         resources = CDN
         mode = 'cdn'
@@ -229,6 +226,24 @@ def save(panel, filename, title=None, resources=None, template=None,
         else:
             raise ValueError("Resources %r not recognized, specify one "
                              "of 'CDN' or 'INLINE'." % resources)
+
+    comm = Comm()
+    with config.set(embed=embed):
+        if isinstance(panel, Document):
+            model = panel
+        elif isinstance(panel, BaseTemplate):
+            with _set_resource_mode(mode):
+                panel._init_doc(doc, title=title)
+            model = doc
+        else:
+            model = panel.get_root(doc, comm)
+            if embed:
+                embed_state(
+                    panel, model, doc, max_states, max_opts, embed_json,
+                    json_prefix, save_path, load_path, progress, embed_states
+                )
+            else:
+                add_to_doc(model, doc, True)
 
     if as_png:
         return save_png(
@@ -250,12 +265,8 @@ def save(panel, filename, title=None, resources=None, template=None,
     resources = Resources.from_bokeh(resources)
 
     # Set resource mode
-    old_mode = resource_module.RESOURCE_MODE
-    resource_module.RESOURCE_MODE = mode
-    try:
+    with _set_resource_mode(mode):
         html = file_html(doc, resources, title, **kwargs)
-    finally:
-        resource_module.RESOURCE_MODE = old_mode
     if hasattr(filename, 'write'):
         if isinstance(filename, io.BytesIO):
             html = html.encode('utf-8')
