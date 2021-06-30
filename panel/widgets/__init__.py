@@ -13,7 +13,8 @@ from .indicators import ( # noqa
     LoadingSpinner,
     Number,
     Progress,
-    Trend
+    Trend,
+    Tqdm,
 )
 from .input import (  # noqa
     ColorPicker,

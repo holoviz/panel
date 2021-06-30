@@ -783,7 +783,7 @@ class Tabulator(BaseTable):
             try:
                 self.style = self.value.style
                 self.style._todo = todo
-            except:
+            except Exception:
                 pass
 
     def _process_param_change(self, msg):
@@ -853,7 +853,7 @@ class Tabulator(BaseTable):
             df = df.iloc[start:(start+nrows)]
         try:
             styler = df.style
-        except:
+        except Exception:
             return {}
         styler._todo = self.style._todo
         styler._compute()
