@@ -789,9 +789,14 @@ class Tqdm(Indicator):
         self.text_pane.object = self.text
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
-        return self.layout._get_model(doc, root, parent, comm)
+        model = self.layout._get_model(doc, root, parent, comm)
+        if root is None:
+            root = model
+        self._models[root.ref['id']] = (model, parent)
+        return model
 
     def _cleanup(self, root):
+        super()._cleanup(root)
         self.layout._cleanup(root)
 
     def _update_layout(self, *events):
