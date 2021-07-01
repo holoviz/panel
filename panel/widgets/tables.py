@@ -913,7 +913,8 @@ class Tabulator(BaseTable):
 
     def _update_column(self, column, array):
         if self.pagination != 'remote':
-            self.value[column] = array
+            index = self._processed.index.values
+            self.value.loc[index, column] = array
             return
         nrows = self.page_size
         start = (self.page-1)*nrows
