@@ -173,7 +173,8 @@ extras_require['build'] = [
     'setuptools >=30.3.0',
     'bokeh >=2.0.0',
     'pyviz_comms >=0.6.0',
-    'bleach'
+    'bleach',
+    'tqdm'
 ]
 
 setup_args = dict(
