@@ -8,6 +8,7 @@ import os
 
 from base64 import b64encode
 from collections import OrderedDict
+from contextlib import contextmanager
 from pathlib import Path
 
 import param
@@ -18,6 +19,7 @@ from bokeh.embed.bundle import (
 )
 
 from bokeh.resources import Resources as BkResources
+from bokeh.settings import settings as _settings
 from jinja2 import Environment, Markup, FileSystemLoader
 
 from ..util import url_path
@@ -54,6 +56,18 @@ CDN_DIST = f"https://unpkg.com/@holoviz/panel@{js_version}/dist/"
 LOCAL_DIST = "static/extensions/panel/"
 
 extension_dirs['panel'] = str(DIST_DIR)
+
+@contextmanager
+def set_resource_mode(mode):
+    global RESOURCE_MODE
+    old_resources = _settings.resources._user_value
+    old_mode = RESOURCE_MODE
+    _settings.resources = RESOURCE_MODE = mode
+    try:
+        yield
+    finally:
+        RESOURCE_MODE = old_mode
+        _settings.resources.set_value(old_resources)
 
 
 def loading_css():
