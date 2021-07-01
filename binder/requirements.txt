@@ -8,3 +8,5 @@ xlsxwriter
 pyarrow
 jupyter_bokeh
 jupyter-vscode-proxy
+tqdm
+bleach
