@@ -19,6 +19,21 @@
 {% endif %}
 {% endblock %}
 
+{% block docs_toc %}
+<div class="d-none d-xl-block col-xl-2 bd-toc">
+  {% if meta is defined and not (meta is not none and 'notoc' in meta) %}
+  {% for toc_item in theme_page_sidebar_items %}
+  <div class="toc-item">
+    {% include toc_item %}
+  </div>
+  {% endfor %}
+  {% endif %}
+  {% if ('gallery' in pagename or 'reference' in pagename or 'user_guide' in pagename) and not pagename.endswith('index') %}
+  <a href="https://mybinder.org/v2/gh/holoviz/panel/master?urlpath=lab/tree/examples/{{ pagename }}">Open this example in Binder</a>
+  {% endif %}
+</div>
+{% endblock %}
+
 {% block docs_main %}
 {% if sidebars %}
 {% set content_col_class = "col-md-10 col-xl-8" %}
