@@ -13,7 +13,6 @@ from bokeh.models.widgets.tables import (
     NumberFormatter, RowAggregator, StringEditor, StringFormatter,
     SumAggregator, TableColumn
 )
-from bokeh.settings import settings as _settings
 from pyviz_comms import JupyterComm
 
 from ..depends import param_value_if_widget

@@ -38,7 +38,7 @@ CSS_URLS = []
 for theme in TABULATOR_THEMES:
     _url = _get_theme_url(THEME_URL, theme)
     if theme == 'default':
-        _url += f'tabulator.min.css'
+        _url += 'tabulator.min.css'
     else:
         _url += f'tabulator_{theme}.min.css'
     CSS_URLS.append(_url)
