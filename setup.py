@@ -134,7 +134,7 @@ _tests = [
 extras_require = {
     'examples': [
         'hvplot',
-        'plotly',
+        'plotly >=4.0',
         'altair',
         'streamz',
         'vega_datasets',

@@ -2,6 +2,7 @@
 # pylint: disable=missing-function-docstring,protected-access
 import logging
 import sys
+import time
 import uuid
 
 import pytest
@@ -66,6 +67,7 @@ def test_run_list_args():
     subprocess = terminal.subprocess
     subprocess.args = ["ls", "-l"]
     subprocess.run()
+    time.sleep(0.5)
     assert subprocess.running
 
 
