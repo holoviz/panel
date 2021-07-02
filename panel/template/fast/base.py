@@ -3,7 +3,6 @@ import pathlib
 import param
 
 from ...io.state import state
-from ...widgets import Tabulator
 from ..base import BasicTemplate
 from ..react import ReactTemplate
 from ..theme import THEMES, DefaultTheme
@@ -12,17 +11,44 @@ _ROOT = pathlib.Path(__file__).parent
 
 
 class FastBaseTemplate(BasicTemplate):
+
     accent_base_color = param.String(doc="""
-        Accent color override.""")
+        Optional body accent color override.""")
+
+    background_color = param.String(doc="""
+        Optional body background color override.""")
+
+    corner_radius = param.Integer(default=3, bounds=(0,25), doc="""
+        The corner radius applied to controls.""")
+
+    font = param.String(doc="""
+        The font to use.""")
+
+    font_url = param.String(doc="""
+        A font url to import.""")
+
+    header_neutral_color = param.String(doc="""
+        Optional header neutral color override.""")
 
     header_accent_base_color = param.String(doc="""
         Optional header accent color override.""")
 
+    neutral_color = param.String(doc="""
+        Optional body neutral color override.""")
+
     theme_toggle = param.Boolean(default=True, doc="""
         If True a switch to toggle the Theme is shown.""")
 
+    shadow = param.Boolean(doc="""
+        Optional shadow override. Whether or not to apply shadow.""")
+
     sidebar_footer = param.String("", doc="""
         A HTML string appended to the sidebar""")
+
+    # Might be extended to accordion or tabs in the future
+    main_layout = param.Selector(default="card", label="Layout", objects=["", "card"], doc="""
+        What to wrap the main components into. Options are '' (i.e. none) and 'card' (Default).
+        Could be extended to Accordion, Tab etc. in the future.""")
 
     _css = [
         _ROOT / "css/fast_root.css",
@@ -45,12 +71,6 @@ class FastBaseTemplate(BasicTemplate):
         'bundle': False
     }
 
-    _modifiers = {
-        Tabulator: {
-            'theme': 'fast'
-        }
-    }
-
     __abstract = True
 
     def __init__(self, **params):
@@ -64,6 +84,8 @@ class FastBaseTemplate(BasicTemplate):
 
         super().__init__(**params)
         theme = self._get_theme()
+        if "background_color" not in params:
+            self.background_color = theme.style.background_color
         if "accent_base_color" not in params:
             self.accent_base_color = theme.style.accent_base_color
         if "header_color" not in params:
@@ -72,6 +94,18 @@ class FastBaseTemplate(BasicTemplate):
             self.header_accent_base_color = theme.style.header_accent_base_color
         if "header_background" not in params:
             self.header_background = theme.style.header_background
+        if "neutral_color" not in params:
+            self.neutral_color = theme.style.neutral_color
+        if "header_neutral_color" not in params:
+            self.header_neutral_color = theme.style.header_neutral_color
+        if "corner_radius" not in params:
+            self.corner_radius = theme.style.corner_radius
+        if "font" not in params:
+            self.font = theme.style.font
+        if "font_url" not in params:
+            self.font_url = theme.style.font_url
+        if "shadow" not in params:
+            self.shadow = theme.style.shadow
 
     @staticmethod
     def _get_theme_from_query_args():
@@ -84,14 +118,22 @@ class FastBaseTemplate(BasicTemplate):
     def _update_vars(self):
         super()._update_vars()
         style = self._get_theme().style
+        style.background_color = self.background_color
         style.accent_base_color = self.accent_base_color
         style.header_color = self.header_color
         style.header_background = self.header_background
         style.header_accent_base_color = self.header_accent_base_color
+        style.neutral_color = self.neutral_color
+        style.header_neutral_color = self.header_neutral_color
+        style.corner_radius = self.corner_radius
+        style.font = self.font
+        style.font_url = self.font_url
+        style.shadow = self.shadow
         self._render_variables["style"] = style
         self._render_variables["theme_toggle"] = self.theme_toggle
         self._render_variables["theme"] = self.theme.__name__[:-5].lower()
         self._render_variables["sidebar_footer"] = self.sidebar_footer
+        self._render_variables["main_layout"] = self.main_layout
 
 
 class FastGridBaseTemplate(FastBaseTemplate, ReactTemplate):
