@@ -92,10 +92,8 @@ function requestFullScreen(element){
 function toggleFullScreen(caller){
   if (isFullScreen()) {
     exitFullScreen();
-    caller.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 18 18"><path d="M4.5 11H3v4h4v-1.5H4.5V11zM3 7h1.5V4.5H7V3H3v4zm10.5 6.5H11V15h4v-4h-1.5v2.5zM11 3v1.5h2.5V7H15V3h-4z"/></svg>'
   } else {
     requestFullScreen(caller.parentElement);
-    caller.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 18 18"><path d="M3 12.5h2.5V15H7v-4H3v1.5zm2.5-7H3V7h4V3H5.5v2.5zM11 15h1.5v-2.5H15V11h-4v4zm1.5-9.5V3H11v4h4V5.5h-2.5z"/></svg>'
   }
 }
 
@@ -105,3 +103,11 @@ function addFullScreenToggle(){
     element.setAttribute("onclick", "toggleFullScreen(this)")
   }
 }
+document.addEventListener("fullscreenchange", function(e) {
+  const button = e.target.getElementsByClassName("fullscreen-button")[0]
+  if (isFullScreen()){
+    button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 18 18"><path d="M3 12.5h2.5V15H7v-4H3v1.5zm2.5-7H3V7h4V3H5.5v2.5zM11 15h1.5v-2.5H15V11h-4v4zm1.5-9.5V3H11v4h4V5.5h-2.5z"/></svg>'
+  } else {
+    button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 18 18"><path d="M4.5 11H3v4h4v-1.5H4.5V11zM3 7h1.5V4.5H7V3H3v4zm10.5 6.5H11V15h4v-4h-1.5v2.5zM11 3v1.5h2.5V7H15V3h-4z"/></svg>'
+  }
+});
