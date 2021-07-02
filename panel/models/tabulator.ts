@@ -358,13 +358,16 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       }
     }
 
-    let parent_node = document.getElementsByTagName("head")[0]
     if (old_node != null) {
       if (old_node.href.endsWith(css))
         return false
-      if (old_node.parentNode != null)
-        parent_node = old_node.parentNode
+      else {
+        old_node.href = css
+        setTimeout(() => this.render_and_resize(), 100)
+        return true
+      }
     }
+    let parent_node = document.getElementsByTagName("head")[0]
 
     const css_node: any = document.createElement('link')
     css_node.type = 'text/css'
@@ -373,10 +376,6 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     css_node.href = css
 
     css_node.onload = () => {
-      if (old_node != null && old_node.parentNode != null) {
-        parent_node = old_node.parentNode
-        parent_node.removeChild(old_node)
-      }
       this.render_and_resize()
     }
     parent_node.appendChild(css_node)

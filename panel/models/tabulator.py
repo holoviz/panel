@@ -18,9 +18,10 @@ MOMENT_SRC = "https://unpkg.com/moment@2.27.0/moment.js"
 
 THEME_PATH = "tabulator-tables@4.9.3/dist/css/"
 THEME_URL = f"https://unpkg.com/{THEME_PATH}"
+PANEL_CDN = f'https://cdn.jsdelivr.net/npm/@holoviz/panel/dist/bundled/{THEME_PATH}'
 TABULATOR_THEMES = [
     'default', 'site', 'simple', 'midnight', 'modern', 'bootstrap',
-    'bootstrap4', 'materialize', 'bulma', 'semantic-ui'
+    'bootstrap4', 'materialize', 'bulma', 'semantic-ui', 'fast'
 ]
 
 def _get_theme_url(url, theme):
@@ -32,6 +33,10 @@ def _get_theme_url(url, theme):
         url += 'semantic-ui/'
     elif 'bulma' in theme:
         url += 'bulma/'
+    elif 'fast' in theme:
+        if url.startswith(THEME_URL):
+            url = url.replace(THEME_URL, PANEL_CDN)
+        url += 'fast/'
     return url
 
 CSS_URLS = []

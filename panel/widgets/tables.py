@@ -759,7 +759,7 @@ class Tabulator(BaseTable):
     theme = param.ObjectSelector(
         default="simple", objects=[
             'default', 'site', 'simple', 'midnight', 'modern', 'bootstrap',
-            'bootstrap4', 'materialize', 'bulma', 'semantic-ui'
+            'bootstrap4', 'materialize', 'bulma', 'semantic-ui', 'fast'
         ], doc="""
         Tabulator CSS theme to apply to table.""")
 

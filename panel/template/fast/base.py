@@ -3,6 +3,7 @@ import pathlib
 import param
 
 from ...io.state import state
+from ...widgets import Tabulator
 from ..base import BasicTemplate
 from ..react import ReactTemplate
 from ..theme import THEMES, DefaultTheme
@@ -42,6 +43,12 @@ class FastBaseTemplate(BasicTemplate):
             'fast': 'https://unpkg.com/@microsoft/fast-components@1.13.0'
         },
         'bundle': False
+    }
+
+    _modifiers = {
+        Tabulator: {
+            'theme': 'fast'
+        }
     }
 
     __abstract = True
