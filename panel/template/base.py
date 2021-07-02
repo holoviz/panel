@@ -503,7 +503,7 @@ class BasicTemplate(BaseTemplate):
         return doc
 
     def _apply_hooks(self, viewable, root):
-        BaseTemplate._apply_hooks(viewable, root)
+        super()._apply_hooks(viewable, root)
         theme = self._get_theme()
         if theme and theme.bokeh_theme and root.document:
             root.document.theme = theme.bokeh_theme
