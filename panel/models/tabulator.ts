@@ -411,6 +411,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
         }
       }
     }
+    this.model.styles = {}
   }
 
   addData(): void {
