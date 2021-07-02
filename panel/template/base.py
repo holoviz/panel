@@ -147,7 +147,7 @@ class BaseTemplate(param.Parameterized, ServableMixin):
         preprocess_root = col.get_root(doc, comm)
         col._hooks.append(self._apply_hooks)
         ref = preprocess_root.ref['id']
-        objs = []
+        objs, models = [], []
 
         for name, (obj, tags) in self._render_items.items():
             if self._apply_hooks not in obj._hooks:
@@ -169,12 +169,14 @@ class BaseTemplate(param.Parameterized, ServableMixin):
             self._apply_root(name, model, tags)
             add_to_doc(model, doc, hold=bool(comm))
             objs.append(obj)
+            models.append(model)
 
         # Here we ensure that the preprocessor is run across all roots
         # and set up session cleanup hooks for the fake root.
-        state._fake_roots.append(ref)
+        state._fake_roots.append(ref) # Ensure no update is run
         state._views[ref] = (col, preprocess_root, doc, comm)
         col.objects = objs
+        preprocess_root.children[:] = models
         col._preprocess(preprocess_root)
         col._documents[doc] = preprocess_root
         doc.on_session_destroyed(col._server_destroy)
