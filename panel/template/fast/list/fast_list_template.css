@@ -231,3 +231,7 @@ html {
 .fullscreen-button:focus {
   opacity: 1;
 }
+div.pn-wrapper {
+  position: relative;
+  background: var(--background-color)
+}
