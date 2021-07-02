@@ -363,10 +363,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
         return false
       else {
         old_node.href = css
-        const render_and_resize = this.render_and_resize
-        setTimeout(function () {
-          render_and_resize()
-        }, 100)
+        setTimeout(() => this.render_and_resize(), 100)
         return true
       }
     }
