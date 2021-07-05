@@ -1,5 +1,10 @@
 .codehilite {
   background: var(--neutral-fill-active);
+  padding-top: 1px;
+  padding-bottom: 1px;
+  padding-left: 1em;
+  padding-right: 1em;
+  border-radius: calc(var(--corner-radius) * 1px);
 }
 p.bk.card-button {
   display: block;
