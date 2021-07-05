@@ -10,9 +10,10 @@ class DragMenu(ListLike, ReactiveHTML):
     clicks = param.Integer(default=0)
     icon = param.Parameter()
     label = param.String(default='')
-    orientation = param.ObjectSelector(default="bottom_left", objects=["bottom_left", 
-                "bottom_right", "top_left","top_right"], doc="""
-                Defines the position of the objects container relative to the control button.""")
+    orientation = param.ObjectSelector(default="bl", objects=["bl","br","tl","tr"], 
+        doc=""" Defines the position of the objects container relative to the control button.""")
+    position = param.ObjectSelector(default="out", objects=["out","in"],
+        doc=""" Render the element outside or inside the icon object""")
     color = param.Color(default='white')
     background_color = param.Color(default='#808080')
     theme = param.ObjectSelector(default="default", objects=["default", "dark"])  
