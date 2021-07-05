@@ -157,12 +157,13 @@ def test_app():
         header_accent_base_color="#FFFFFF",
         row_height=50,
         prevent_collision=True,
+        # main_layout="",
         save_layout=True,
     )
     app.main[0:7, 0:6] = pn.pane.Markdown(INFO, sizing_mode="stretch_both")
     app.main[0:7, 6:12] = pn.pane.HoloViews(_create_hvplot(), sizing_mode="stretch_both")
     app.main[7:18, 0:6] = _fast_button_card()
-    app.main[7:13, 6:12] = pn.pane.HoloViews(_create_hvplot(), sizing_mode="stretch_both")
+    app.main[7:14, 6:12] = pn.pane.HoloViews(_create_hvplot(), sizing_mode="stretch_both")
     app.sidebar.extend(_sidebar_items())
 
     return app

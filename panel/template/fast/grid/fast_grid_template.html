@@ -29,13 +29,13 @@
 {% endif %}
 
 <style>
+  :root {
+    --body-font: {{ style.font }};
+  }
   body {
     color: {{ style.color }};
     background-color: {{ style.background_color }};
-    font-family: {{ style.font }};
-  }
-  :root {
-    --body-font: {{ style.font }};
+    font-family: var(--body-font);
   }
   #header a {
     color: currentColor;
@@ -43,15 +43,20 @@
   :not(:defined) {
     visibility: hidden;
   }
-  #theme-switch {
-    --accent-fill-active: {{ style.header_color }};
-  }
   #header-design-provider {
     --neutral-foreground-rest: {{ style.header_color }};
   }
   #sidebar {
     width: {{ sidebar_width }}px;
   }
+  {% if style.shadow %}
+  #header {
+      box-shadow: 2px 2px 10px silver;
+  }
+  #sidebar {
+      box-shadow: 2px 2px 10px silver;
+  }
+  {% endif %}
 </style>
 
 <!-- Template JS -->
@@ -118,8 +123,8 @@
 
       provider.neutralPalette = palette;
   }
-  setNeutralColor("#ffffff", "#header-design-provider");
-  setNeutralColor("#000000", "#body-design-provider");
+  setNeutralColor("{{ style.header_neutral_color }}", "#header-design-provider");
+  setNeutralColor("{{ style.neutral_color }}", "#body-design-provider");
 
   function setBackgroundColor(color, selector){
     color = standardize_color(color);
@@ -128,6 +133,8 @@
   }
   setBackgroundColor("{{ style.header_background }}", "#header-design-provider");
   setBackgroundColor("{{ style.background_color }}", "#body-design-provider");
+
+  document.querySelector("#body-design-provider").cornerRadius={{ style.corner_radius }};
 
   function registerCSSCustomProperties(selector)  {
     const provider = document.querySelector(selector);
@@ -160,6 +167,19 @@
   }
   registerCSSCustomProperties("#header-design-provider")
   registerCSSCustomProperties("#body-design-provider")
+
+  class FastDesignProvider {
+    setAccentColor(value, element){
+      setAccentColor(value, element);
+    }
+    setNeutralColor(value, element){
+      setNeutralColor(value, element);
+    }
+    setBackgroundColor(value, element){
+      setBackgroundColor(value, element)
+    }
+  }
+  window.fastDesignProvider = new FastDesignProvider()
 </script>
 {% endblock %}
 
@@ -179,16 +199,18 @@
       <div class="pn-bar"></div>
       <div class="pn-bar"></div>
       <div class="pn-bar"></div>
-    </span>
+	  </span>
     <fast-tooltip anchor="sidebar-button" position="right">
       Toggle the Sidebar
     </fast-tooltip>
     {% endif %}
     <div class="app-header">
+      <div>
       {% if app_logo %}<a class="navbar-brand app-logo" href="{{ site_url }}"><img src="{{ app_logo }}" class="app-logo"></a>{% endif %}
       {% if site_title %}<a class="title" href="{{ site_url }}" >&nbsp;{{ site_title }}</a>{% endif %}
       {% if site_title and app_title%}<span class="title">&nbsp;-</span>{% endif %}
       {% if app_title %}<a class="title" href="" >{{ app_title }}</a>{% endif %}
+      </div>
     </div>
     <div id="header-items">
     {% for doc in docs %}
@@ -222,14 +244,14 @@
     </fast-tooltip>
   </div>
   {% endif %}
-  {% if busy %}
-  <div class="pn-busy-container" id="busy-container">
-    {{ embed(roots.busy_indicator) | indent(6) }}
-  </div>
+	{% if busy %}
+	<div class="pn-busy-container" id="busy-container">
+	  {{ embed(roots.busy_indicator) | indent(6) }}
+	</div>
   <fast-tooltip anchor="busy-container" position="left">
     Busy Indicator
   </fast-tooltip>
-  {% endif %}
+	{% endif %}
 
   </nav>
   </fast-design-system-provider>
@@ -407,13 +429,13 @@ class ResponsiveGrid extends React.PureComponent
             {% set count = [] %}
             {% for doc in docs %}{% for root in doc.roots %}{% if "main" in root.tags %}
               <div className="card-margin" key="{{count|length + 1 }}" style={divStyle} >
-                <fast-card>
+                {% if main_layout %}<fast-card class="pn-wrapper">{% else %}<div class="pn-wrapper">{% endif %}
                 <span className="drag-handle"></span>
                 <span className="fullscreen-button">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 18 18"><path d="M4.5 11H3v4h4v-1.5H4.5V11zM3 7h1.5V4.5H7V3H3v4zm10.5 6.5H11V15h4v-4h-1.5v2.5zM11 3v1.5h2.5V7H15V3h-4z"/></svg>
                 </span>
                 {{ embed(root) | indent(4) | replace("class", "className") }}
-                </fast-card>
+                {% if main_layout %}</fast-card>{% else %}</div>{% endif %}
               </div>
               {% set __ = count.append(1) %}
             {% endif %}{% endfor %}{% endfor %}
