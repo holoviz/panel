@@ -244,6 +244,7 @@ class Syncable(Renderable):
             self._apply_update(events, msg, model, ref)
 
     def _process_events(self, events):
+        busy = state.busy
         with edit_readonly(state):
             state.busy = True
         try:
@@ -251,7 +252,7 @@ class Syncable(Renderable):
                 self.param.set_param(**self._process_property_change(events))
         finally:
             with edit_readonly(state):
-                state.busy = False
+                state.busy = busy
 
     @gen.coroutine
     def _change_coroutine(self, doc=None):
@@ -904,9 +905,9 @@ class ReactiveData(SyncableData):
                     updated = True
             if updated:
                 self._updating = True
+                old_data = getattr(self, self._data_params[0])
                 try:
                     if old_raw is self.value:
-                        data = self.value
                         with param.discard_events(self):
                             self.value = old_raw
                         self.value = data
@@ -914,6 +915,10 @@ class ReactiveData(SyncableData):
                         self.param.trigger('value')
                 finally:
                     self._updating = False
+                # Ensure that if the data was changed in a user
+                # callback, we still send the updated data 
+                if old_data is not self.value:
+                    self._update_cds()
         if 'indices' in events:
             self._updating = True
             try:
