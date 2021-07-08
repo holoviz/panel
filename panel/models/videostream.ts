@@ -33,7 +33,7 @@ export class VideoStreamView extends PanelHTMLBoxView {
         this.timer = null;
       }
       this.videoEl.pause()
-    }
+    } else this.videoEl.play()
     this.set_timeout()
   }
 
