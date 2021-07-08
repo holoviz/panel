@@ -52,9 +52,9 @@ class Perspective(HTMLBox):
     def __javascript__(cls):
         return bundled_files(cls)
 
-    __js_skip__ = {
-        "perspective": __javascript__,
-    }
+    @classproperty
+    def __js_skip__(cls):
+        return {"perspective": cls.__javascript__}
 
     __js_require__ = {
         "paths": {
