@@ -14,11 +14,11 @@
         embed_document(root);
       } else if (document.readyState == "complete") {
         attempts++;
-        if (attempts > 100) {
+        if (attempts > 200) {
           clearInterval(timer);
           console.log("Bokeh: ERROR: Unable to run BokehJS code because BokehJS library is missing");
         }
       }
-    }, 10, root)
+    }, 25, root)
   }
 })(window);
