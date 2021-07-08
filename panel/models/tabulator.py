@@ -4,7 +4,8 @@ Implementation of the Tabulator model.
 See http://tabulator.info/
 """
 from bokeh.core.properties import (
-    Any, Bool, Dict, Enum, Instance, Int, List, Nullable, String
+    Any, Bool, Dict, Either, Enum, Instance, Int, List, Nullable,
+    String, Tuple
 )
 from bokeh.models import ColumnDataSource
 from bokeh.models.layouts import HTMLBox
@@ -78,7 +79,7 @@ class DataTabulator(HTMLBox):
 
     source = Instance(ColumnDataSource)
 
-    styles = Dict(Int, Dict(Int, List(String)))
+    styles = Dict(Int, Dict(Int, List(Either(String, Tuple(String, String)))))
 
     pagination = Nullable(String)
 

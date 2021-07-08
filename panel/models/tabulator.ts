@@ -1,3 +1,4 @@
+import {isArray} from "@bokehjs/core/util/types"
 import {HTMLBox} from "@bokehjs/models/layouts/html_box"
 import {div} from "@bokehjs/core/dom"
 import {Enum} from "@bokehjs/core/kinds"
@@ -403,9 +404,13 @@ export class DataTabulatorView extends PanelHTMLBoxView {
         this._styled_cells.push(element)
         element.cssText = ""
         for (const s of style) {
-          if (!s.includes(':'))
+	  let prop, value
+          if (isArray(s))
+            [prop, value] = s
+          else if (!s.includes(':'))
             continue
-          const [prop, value] = s.split(':')
+          else
+            [prop, value] = s.split(':')
           element.style.setProperty(prop, value.trimLeft())
         }
       }
