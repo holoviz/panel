@@ -119,11 +119,16 @@ class DataTabulator(HTMLBox):
 
     @classproperty
     def __js_skip__(cls):
-        return {'Tabulator': cls.__javascript__[:1]}
+        return {'Tabulator': cls.__javascript__[:1], 'moment': cls.__javascript__[1:]}
 
     __js_require__ = {
         'paths': {
-            'tabulator': JS_SRC[:-3]
+            'tabulator': JS_SRC[:-3],
+            'moment': MOMENT_SRC[:-3]
         },
-        'exports': {'tabulator': 'Tabulator'}
+        'exports': {
+            'tabulator': 'Tabulator',
+            'moment': 'moment'
+        }
     }
+
