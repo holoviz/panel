@@ -420,11 +420,11 @@ def test_tabulator_styling(document, comm):
     model = table.get_root(document, comm)
 
     assert model.styles == {
-        0: {1: ['color: black']},
-        1: {1: ['color: black']},
-        2: {1: ['color: black']},
-        3: {1: ['color: red']},
-        4: {1: ['color: red']}
+        0: {1: [('color', 'black')]},
+        1: {1: [('color', 'black')]},
+        2: {1: [('color', 'black')]},
+        3: {1: [('color', 'red')]},
+        4: {1: [('color', 'red')]}
     }
 
 def test_tabulator_empty_table(document, comm):
