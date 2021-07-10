@@ -369,9 +369,9 @@ class Perspective(PaneBase, ReactiveData):
             if msg.get(p):
                 msg[p] = [str(col) for col in msg[p]]
         if msg.get('sort'):
-            msg['sort'] = [[str(col), d] for col, d in msg['sort']]
+            msg['sort'] = [[str(col), *args] for col, *args in msg['sort']]
         if msg.get('filters'):
-            msg['filters'] = [[str(col), e, val] for col, e, val in msg['filters']]
+            msg['filters'] = [[str(col), *args] for col, *args in msg['filters']]
         if msg.get('aggregates'):
             msg['aggregates'] = {str(col): agg for col, agg in msg['aggregates'].items()}
         return msg
