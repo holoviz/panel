@@ -358,9 +358,9 @@ class Perspective(PaneBase, ReactiveData):
                     elif isinstance(value, (int, np.int)):
                         schema[col] = 'float'
                     else:
-                        schema[col] = 'str'
+                        schema[col] = 'string'
                 else:
-                    schema[col] = 'str'
+                    schema[col] = 'string'
         return props
 
     def _process_param_change(self, msg):
