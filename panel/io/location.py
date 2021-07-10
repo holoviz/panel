@@ -169,7 +169,7 @@ class Location(Syncable):
             if v is None:
                 continue
             try:
-                parameterized.param[p].serialize(v)
+                v = parameterized.param[p].serialize(v)
             except Exception:
                 pass
             if not isinstance(v, str):
