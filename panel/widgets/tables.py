@@ -802,7 +802,8 @@ class Tabulator(BaseTable):
         cdn_url = _get_theme_url(THEME_URL, theme)
         theme_url = _get_theme_url(theme_url, theme)
         fname = 'tabulator' if self.theme == 'default' else 'tabulator_'+self.theme
-        self._widget_type.__css_raw__ = [f'{cdn_url}{fname}.min.css']
+        if self._widget_type is not None:
+            self._widget_type.__css_raw__ = [f'{cdn_url}{fname}.min.css']
         return theme_url, theme
 
     def _process_param_change(self, msg):
