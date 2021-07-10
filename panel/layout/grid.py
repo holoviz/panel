@@ -142,6 +142,7 @@ class GridBox(ListPanel):
         from ..io import state
 
         msg = dict(msg)
+        preprocess = any(self._rename.get(k, k) in self._preprocess_params for k in msg)
         if self._rename['objects'] in msg or 'ncols' in msg or 'nrows' in msg:
             if 'objects' in events:
                 old = events['objects'].old
@@ -160,7 +161,7 @@ class GridBox(ListPanel):
                 if update:
                     return
                 ref = root.ref['id']
-                if ref in state._views:
+                if ref in state._views and preprocess:
                     state._views[ref][0]._preprocess(root)
             finally:
                 Panel._batch_update = update
@@ -189,6 +190,8 @@ class GridSpec(Panel):
     _source_transforms = {'objects': None, 'mode': None}
 
     _rename = {'objects': 'children', 'mode': None, 'ncols': None, 'nrows': None}
+
+    _preprocess_params = ['objects']
 
     def __init__(self, **params):
         if 'objects' not in params:

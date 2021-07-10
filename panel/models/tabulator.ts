@@ -1,3 +1,4 @@
+import {isArray} from "@bokehjs/core/util/types"
 import {HTMLBox} from "@bokehjs/models/layouts/html_box"
 import {div} from "@bokehjs/core/dom"
 import {Enum} from "@bokehjs/core/kinds"
@@ -24,10 +25,10 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   connect_signals(): void {
     super.connect_signals()
 
-    const {configuration, layout, columns, theme, theme_url, groupby} = this.model.properties;
+    const {configuration, layout, columns, theme, groupby} = this.model.properties;
     this.on_change([configuration, layout, columns, groupby], () => this.render_and_resize())
 
-    this.on_change([theme, theme_url], () => this.setCSS())
+    this.on_change([theme], () => this.setCSS())
 
     this.connect(this.model.properties.download.change, () => {
       const ftype = this.model.filename.endsWith('.json') ? "json" : "csv"
@@ -350,20 +351,24 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     let old_node: any = null
     const links = document.getElementsByTagName("link")
     const dist_index = this.model.theme_url.indexOf('dist/')
+    const start_url = this.model.theme_url.slice(0, dist_index)
     for (const link of links) {
-      if (link.href.startsWith(this.model.theme_url.slice(0, dist_index))) {
+      if (link.href.indexOf(start_url) >= 0) {
         old_node = link
         break
       }
     }
 
-    let parent_node = document.getElementsByTagName("head")[0]
     if (old_node != null) {
-      if (old_node.href == css)
+      if (old_node.href.endsWith(css))
         return false
-      if (old_node.parentNode != null)
-        parent_node = old_node.parentNode
+      else {
+        old_node.href = css
+        setTimeout(() => this.render_and_resize(), 100)
+        return true
+      }
     }
+    let parent_node = document.getElementsByTagName("head")[0]
 
     const css_node: any = document.createElement('link')
     css_node.type = 'text/css'
@@ -372,10 +377,6 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     css_node.href = css
 
     css_node.onload = () => {
-      if (old_node != null && old_node.parentNode != null) {
-        parent_node = old_node.parentNode
-        parent_node.removeChild(old_node)
-      }
       this.render_and_resize()
     }
     parent_node.appendChild(css_node)
@@ -386,7 +387,7 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     for (const cell_el of this._styled_cells)
       cell_el.cssText = ""
     this._styled_cells = []
-    if (this.model.styles == null || this.tabulator.getDataCount() == 0)
+    if (this.model.styles == null || this.tabulator == null || this.tabulator.getDataCount() == 0)
       return
     for (const r in this.model.styles) {
       const row_style = this.model.styles[r]
@@ -403,13 +404,18 @@ export class DataTabulatorView extends PanelHTMLBoxView {
         this._styled_cells.push(element)
         element.cssText = ""
         for (const s of style) {
-          if (!s.includes(':'))
+	  let prop, value
+          if (isArray(s))
+            [prop, value] = s
+          else if (!s.includes(':'))
             continue
-          const [prop, value] = s.split(':')
+          else
+            [prop, value] = s.split(':')
           element.style.setProperty(prop, value.trimLeft())
         }
       }
     }
+    this.model.styles = {}
   }
 
   addData(): void {

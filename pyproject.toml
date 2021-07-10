@@ -8,4 +8,5 @@ requires = [
     "requests",
     "bleach",
     "packaging",
+    "tqdm"
 ]

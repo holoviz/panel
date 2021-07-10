@@ -60,6 +60,10 @@ class Tabs(NamedListPanel):
         if root.ref['id'] in self._panels:
             del self._panels[root.ref['id']]
 
+    @property
+    def _preprocess_params(self):
+        return NamedListPanel._preprocess_params + (['active'] if self.dynamic else [])
+
     #----------------------------------------------------------------
     # Callback API
     #----------------------------------------------------------------

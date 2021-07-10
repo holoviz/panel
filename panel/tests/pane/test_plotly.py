@@ -176,7 +176,7 @@ def test_plotly_autosize(document, comm):
     model.sizing_mode == 'fixed'
 
     pane._cleanup(model)
-    
+
     pane = Plotly(dict(data=[trace], layout={'autosize': True}), sizing_mode='fixed')
     model = pane.get_root(document, comm=comm)
     model.sizing_mode == 'fixed'
@@ -203,11 +203,11 @@ def test_plotly_tabs(document, comm):
         cb1, cb2 = cb2, cb1
     assert model1.visible
     assert cb1.args['model'] is model1
-    assert cb1.args['i'] == 0
+    assert cb1.code == 'model.visible = (cb_obj.active == 0);'
     assert not model2.visible
     assert cb2.args['model'] is model2
-    assert cb2.args['i'] == 1
-
+    assert cb2.code == 'model.visible = (cb_obj.active == 1);'
+    
     tabs.insert(0, 'Blah')
-    assert cb1.args['i'] == 1
-    assert cb2.args['i'] == 2
+    assert cb1.code == 'model.visible = (cb_obj.active == 1);'
+    assert cb2.code == 'model.visible = (cb_obj.active == 2);'

@@ -37,7 +37,10 @@ def decode_response_body(response):
     Decoded response content
     """
     # Fix GitHub response.
-    body = codecs.decode(response.body, 'ascii')
+    try:
+        body = codecs.decode(response.body, 'ascii')
+    except Exception:
+        body = codecs.decode(response.body, 'utf-8')
     body = re.sub('"', '\"', body)
     body = re.sub("'", '"', body)
     body = json.loads(body)

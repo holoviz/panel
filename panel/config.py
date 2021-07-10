@@ -236,9 +236,9 @@ class _config(_base_config):
         if (attr in ('raw_css', 'css_files', 'js_files', 'js_modules') and
             state.curdoc and attr not in session_config[state.curdoc]):
             if 'css' in attr:
-                setattr(self, attr, [])
+                setattr(self, attr, super().__getattribute__(attr))
             else:
-                setattr(self, attr, {})
+                setattr(self, attr, super().__getattribute__(attr))
         if state.curdoc and state.curdoc in session_config and attr in session_config[state.curdoc]:
             return session_config[state.curdoc][attr]
         elif f'_{attr}' in params and getattr(self, f'_{attr}_') is not None:

@@ -505,6 +505,7 @@ class Param(PaneBase):
                 return
             elif kw_widget.get('throttled', False) and hasattr(widget, 'value_throttled'):
                 updates['value_throttled'] = change.new
+                updates['value'] = change.new
             elif isinstance(widget, Row) and len(widget) == 2:
                 updates['value'] = change.new
                 widget = widget[0]
@@ -824,8 +825,8 @@ class ParamFunction(ParamMethod):
     priority = 0.6
 
     def _link_object_params(self):
-        deps = self.object._dinfo
-        dep_params = list(deps['dependencies']) + list(deps.get('kw', {}).values())
+        deps = getattr(self.object, '_dinfo', {})
+        dep_params = list(deps.get('dependencies', [])) + list(deps.get('kw', {}).values())
         grouped = defaultdict(list)
         for dep in dep_params:
             grouped[id(dep.owner)].append(dep)
@@ -845,7 +846,11 @@ class ParamFunction(ParamMethod):
 
     @classmethod
     def applies(cls, obj):
-        return isinstance(obj, types.FunctionType) and hasattr(obj, '_dinfo')
+        if isinstance(obj, types.FunctionType):
+            if hasattr(obj, '_dinfo'):
+                return True
+            return None
+        return False
 
 
 class JSONInit(param.Parameterized):

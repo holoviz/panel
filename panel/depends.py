@@ -166,9 +166,8 @@ def _param_bind(function, *args, watch=False, **kwargs):
                 arg = getattr(arg.owner, arg.name)
             combined_kwargs[kw] = arg
         for kw, arg in wkwargs.items():
-            if kw.startswith('__arg'):
+            if kw.startswith('__arg') or kw.startswith('__kwarg'):
                 continue
             combined_kwargs[kw] = arg
-
         return function(*combined_args, **combined_kwargs)
     return wrapped

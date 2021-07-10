@@ -27,7 +27,7 @@ export class TrendIndicatorView extends HTMLBoxView {
   initialize(): void {
     super.initialize()
     this.containerDiv = div({style: "height:100%; width:100%;"})
-    this.titleDiv = div({style: "font-size: 1em"})
+    this.titleDiv = div({style: "font-size: 1em; word-wrap: break-word;"})
     this.valueDiv = div({style: "font-size: 2em"})
     this.value2Div = div({style: "font-size: 1em; opacity: 0.5; display: inline"})
     this.changeDiv = div({style: "font-size: 1em; opacity: 0.5; display: inline"})

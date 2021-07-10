@@ -10,12 +10,14 @@ from bokeh.models.widgets.tables import (
     AvgAggregator, CellEditor, CellFormatter, CheckboxEditor,
     DataCube, DataTable, DateEditor, DateFormatter, GroupingInfo,
     IntEditor, MaxAggregator, MinAggregator, NumberEditor,
-    NumberFormatter, RowAggregator, StringEditor, StringFormatter, 
+    NumberFormatter, RowAggregator, StringEditor, StringFormatter,
     SumAggregator, TableColumn
 )
 from pyviz_comms import JupyterComm
 
 from ..depends import param_value_if_widget
+from ..io.resources import LOCAL_DIST, set_resource_mode
+from ..io.state import state
 from ..reactive import ReactiveData
 from ..viewable import Layoutable
 from ..util import clone_model, isdatetime, lazy_load, updating
@@ -171,7 +173,8 @@ class BaseTable(ReactiveData, Widget):
     def _get_model(self, doc, root=None, parent=None, comm=None):
         source = ColumnDataSource(data=self._data)
         source.selected.indices = self.selection
-        model = self._widget_type(**self._get_properties(source))
+        properties = self._get_properties(source)
+        model = self._widget_type(**properties)
         if root is None:
             root = model
         self._link_props(model.source, ['data'], doc, root, comm)
@@ -756,7 +759,7 @@ class Tabulator(BaseTable):
     theme = param.ObjectSelector(
         default="simple", objects=[
             'default', 'site', 'simple', 'midnight', 'modern', 'bootstrap',
-            'bootstrap4', 'materialize', 'bulma', 'semantic-ui'
+            'bootstrap4', 'materialize', 'bulma', 'semantic-ui', 'fast'
         ], doc="""
         Tabulator CSS theme to apply to table.""")
 
@@ -783,29 +786,34 @@ class Tabulator(BaseTable):
             try:
                 self.style = self.value.style
                 self.style._todo = todo
-            except:
+            except Exception:
                 pass
+
+    def _get_theme(self, theme, resources=None):
+        from ..io.resources import RESOURCE_MODE
+        from ..models.tabulator import _get_theme_url, THEME_PATH, THEME_URL
+        if RESOURCE_MODE == 'server' and resources in (None, 'server'):
+            theme_url = f'{LOCAL_DIST}bundled/datatabulator/{THEME_PATH}'
+            if state.rel_path:
+                theme_url = f'{state.rel_path}/{theme_url}'
+        else:
+            theme_url = THEME_URL
+        # Ensure theme_url updates before theme
+        cdn_url = _get_theme_url(THEME_URL, theme)
+        theme_url = _get_theme_url(theme_url, theme)
+        fname = 'tabulator' if self.theme == 'default' else 'tabulator_'+self.theme
+        self._widget_type.__css_raw__ = [f'{cdn_url}{fname}.min.css']
+        return theme_url, theme
 
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
         if 'frozen_rows' in msg:
             length = self._length
-            msg['frozen_rows'] = [length+r if r < 0 else r
-                                  for r in msg['frozen_rows']]
+            msg['frozen_rows'] = [
+                length+r if r < 0 else r for r in msg['frozen_rows']
+            ]
         if 'theme' in msg:
-            from ..models.tabulator import THEME_URL
-            if 'bootstrap' in self.theme:
-                msg['theme_url'] = THEME_URL + 'bootstrap/'
-            elif 'materialize' in self.theme:
-                msg['theme_url'] = THEME_URL + 'materialize/'
-            elif 'semantic-ui' in self.theme:
-                msg['theme_url'] = THEME_URL + 'semantic-ui/'
-            elif 'bulma' in self.theme:
-                msg['theme_url'] = THEME_URL + 'bulma/'
-            else:
-                msg['theme_url'] = THEME_URL
-            theme = 'tabulator' if self.theme == 'default' else 'tabulator_'+self.theme 
-            self._widget_type.__css__ = [msg['theme_url'] + theme + '.min.css']
+            msg['theme_url'], msg['theme'] = self._get_theme(msg.pop('theme'))
         if msg.get('select_mode') == 'checkbox-single':
             msg['select_mode'] = 'checkbox'
         return msg
@@ -853,7 +861,7 @@ class Tabulator(BaseTable):
             df = df.iloc[start:(start+nrows)]
         try:
             styler = df.style
-        except:
+        except Exception:
             return {}
         styler._todo = self.style._todo
         styler._compute()
@@ -965,7 +973,8 @@ class Tabulator(BaseTable):
 
     def _update_column(self, column, array):
         if self.pagination != 'remote':
-            self.value[column] = array
+            index = self._processed.index.values
+            self.value.loc[index, column] = array
             return
         nrows = self.page_size
         start = (self.page-1)*nrows
@@ -1032,11 +1041,22 @@ class Tabulator(BaseTable):
             self._widget_type = lazy_load(
                 'panel.models.tabulator', 'DataTabulator', isinstance(comm, JupyterComm)
             )
-        model = super()._get_model(doc, root, parent, comm)
+        if comm:
+            with set_resource_mode('inline'):
+                model = super()._get_model(doc, root, parent, comm)
+        else:
+            model = super()._get_model(doc, root, parent, comm)
         if root is None:
             root = model
         self._link_props(model, ['page', 'sorters'], doc, root, comm)
         return model
+
+    def _update_model(self, events, msg, root, model, doc, comm):
+        if comm and 'theme_url' in msg:
+            msg['theme_url'], msg['theme'] = self._get_theme(
+                msg.pop('theme'), 'inline'
+            )
+        super()._update_model(events, msg, root, model, doc, comm)
 
     def _config_columns(self, column_objs):
         column_objs = list(column_objs)

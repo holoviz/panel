@@ -358,9 +358,9 @@ class _RangeSliderBase(_SliderBase):
 
     value = param.Tuple(length=2)
 
-    value_start = param.Parameter()
+    value_start = param.Parameter(readonly=True)
 
-    value_end = param.Parameter()
+    value_end = param.Parameter(readonly=True)
 
     __abstract = True
 
@@ -369,7 +369,8 @@ class _RangeSliderBase(_SliderBase):
             params['value'] = (params.get('start', self.start),
                                params.get('end', self.end))
         params['value_start'], params['value_end'] = params['value']
-        super().__init__(**params)
+        with edit_readonly(self):
+            super().__init__(**params)
 
     @param.depends('value', watch=True)
     def _sync_values(self):
@@ -393,9 +394,9 @@ class RangeSlider(_RangeSliderBase):
 
     value = param.Range(default=(0, 1))
 
-    value_start = param.Number(default=0, constant=True)
+    value_start = param.Number(default=0, readonly=True)
 
-    value_end = param.Number(default=1, constant=True)
+    value_end = param.Number(default=1, readonly=True)
 
     value_throttled = param.Range(default=None, constant=True)
 
@@ -440,9 +441,9 @@ class DateRangeSlider(_RangeSliderBase):
 
     value = param.Tuple(default=(None, None), length=2)
 
-    value_start = param.Date(default=None)
+    value_start = param.Date(default=None, readonly=True)
 
-    value_end = param.Date(default=None)
+    value_end = param.Date(default=None, readonly=True)
 
     value_throttled = param.Tuple(default=None, length=2, constant=True)
 

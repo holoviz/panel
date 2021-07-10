@@ -392,3 +392,7 @@ html {
 .react-grid-item > fast-card {
   margin: 0px;
 }
+div.pn-wrapper {
+  position: relative;
+  background: var(--background-color)
+}
