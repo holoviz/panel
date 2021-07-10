@@ -166,7 +166,7 @@ img.app-logo {
 
 .pn-modal-close {
   position: absolute;
-  right: 25px;
+  right: 10%;
   z-index: 100;
 }
 
