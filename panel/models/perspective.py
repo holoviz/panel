@@ -3,9 +3,6 @@ from bokeh.core.properties import (
 )
 from bokeh.models import ColumnDataSource, HTMLBox
 
-from ..io.resources import bundled_files
-from ..util import classproperty
-
 
 class Perspective(HTMLBox):
 
@@ -40,7 +37,7 @@ class Perspective(HTMLBox):
     theme = String()
 
     # pylint: disable=line-too-long
-    __javascript_raw__ = [
+    __javascript__ = [
         "https://unpkg.com/@finos/perspective@0.5.2/dist/umd/perspective.js",
         "https://unpkg.com/@finos/perspective-viewer@0.5.2/dist/umd/perspective-viewer.js",
         "https://unpkg.com/@finos/perspective-viewer-datagrid@0.5.2/dist/umd/perspective-viewer-datagrid.js",
@@ -48,13 +45,9 @@ class Perspective(HTMLBox):
         "https://unpkg.com/@finos/perspective-viewer-d3fc@0.5.2/dist/umd/perspective-viewer-d3fc.js",
     ]
 
-    @classproperty
-    def __javascript__(cls):
-        return bundled_files(cls)
-
-    @classproperty
-    def __js_skip__(cls):
-        return {"perspective": cls.__javascript__}
+    __js_skip__ = {
+        "perspective": __javascript__,
+    }
 
     __js_require__ = {
         "paths": {
@@ -73,8 +66,4 @@ class Perspective(HTMLBox):
         },
     }
 
-    __css_raw__ = ["https://unpkg.com/@finos/perspective-viewer@0.5.2/dist/umd/all-themes.css"]
-
-    @classproperty
-    def __css__(cls):
-        return bundled_files(cls, 'css')
+    __css__ = ["https://unpkg.com/@finos/perspective-viewer@0.5.2/dist/umd/all-themes.css"]
