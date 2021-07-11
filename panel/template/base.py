@@ -370,11 +370,11 @@ class BasicTemplate(BaseTemplate):
     modal = param.ClassSelector(class_=ListLike, constant=True, doc="""
         A list-like container which populates the modal""")
 
-    logo = param.String(constant=True, doc="""
+    logo = param.String(doc="""
         URI of logo to add to the header (if local file, logo is
         base64 encoded as URI). Default is '', i.e. not shown.""")
 
-    favicon = param.String(default=FAVICON_URL, constant=True, doc="""
+    favicon = param.String(default=FAVICON_URL, doc="""
         URI of favicon to add to the document head (if local file, favicon is
         base64 encoded as URI).""")
 
