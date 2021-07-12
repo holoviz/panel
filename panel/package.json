@@ -1,6 +1,6 @@
 {
   "name": "@holoviz/panel",
-  "version": "0.12.0-rc.10",
+  "version": "0.12.0-rc.11",
   "description": "A high level dashboarding library for python visualization libraries.",
   "license": "BSD-3-Clause",
   "repository": {
