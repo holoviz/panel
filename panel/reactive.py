@@ -1046,9 +1046,11 @@ class ReactiveHTMLMetaclass(ParameterizedMetaclass):
             if mcs._child_config.get(child) == 'literal':
                 types[child] = param.String
             elif (type(cparam) not in PARAM_MAPPING or
+                  isinstance(cparam, (param.List, param.Dict, param.Tuple)) or
                   (isinstance(cparam, param.ClassSelector) and
                    isinstance(cparam.class_, type) and
-                   issubclass(cparam.class_, Reactive))):
+                   (not issubclass(cparam.class_, param.Parameterized) or
+                    issubclass(cparam.class_, Reactive)))):
                 # Any parameter which can be consistently serialized
                 # (except) Panel Reactive objects can be reflected
                 # on the data model
