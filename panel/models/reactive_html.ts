@@ -202,6 +202,7 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
     super.disconnect_signals()
     this._remove_event_listeners()
     this._remove_mutation_observers()
+    this.run_script('remove', true)
   }
 
   get child_models(): LayoutDOM[] {
