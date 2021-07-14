@@ -475,6 +475,20 @@ class panel_extension(_pyviz_extension):
             load_notebook(config.inline)
         panel_extension._loaded = True
 
+        if 'comms' in params:
+            return
+
+        # Try to detect environment so that we can enable comms
+        try:
+            import google.colab
+            config.comms = "colab"
+            return
+        except ImportError:
+            pass
+
+        # Check if we're running in VSCode
+        if "VSCODE_PID" in os.environ:
+            config.comms = "vscode"
 
     def _apply_signatures(self):
         from inspect import Parameter, Signature
