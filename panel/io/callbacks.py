@@ -8,6 +8,8 @@ import param
 from ..util import edit_readonly
 from .state import state
 
+import logging
+log = logging.getLogger('panel.callbacks')
 
 class PeriodicCallback(param.Parameterized):
     """
@@ -68,6 +70,8 @@ class PeriodicCallback(param.Parameterized):
             state.busy = True
         try:
             self.callback()
+        except:
+            log.exception('Periodic callback failed.')
         finally:
             with edit_readonly(state):
                 state.busy = False

@@ -34,6 +34,9 @@ from .viewable import Layoutable, Renderable, Viewable
 
 LinkWatcher = namedtuple("Watcher","inst cls fn mode onlychanged parameter_names what queued target links transformed bidirectional_watcher")
 
+import logging
+from pprint import pformat
+log = logging.getLogger('panel.callbacks')
 
 class Syncable(Renderable):
     """
@@ -245,11 +248,20 @@ class Syncable(Renderable):
 
     def _process_events(self, events):
         busy = state.busy
+        changed_properties = self._process_property_change(events)
         with edit_readonly(state):
             state.busy = True
         try:
             with edit_readonly(self):
-                self.param.set_param(**self._process_property_change(events))
+                self.param.set_param(**changed_properties)
+        except:
+            if len(changed_properties)>1:
+                msg_end = f" changing properties {pformat(changed_properties)} \n"
+            elif len(changed_properties)==1:
+                msg_end = f" changing property {pformat(changed_properties)} \n"
+            else:
+                msg_end = "\n"
+            log.exception(f'Callback failed for object named "{self.name}"{msg_end}')
         finally:
             with edit_readonly(state):
                 state.busy = busy
