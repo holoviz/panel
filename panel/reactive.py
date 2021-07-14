@@ -167,10 +167,12 @@ class Syncable(Renderable):
                 *subpath, p = p.split('.')
                 for sp in subpath:
                     m = getattr(m, sp)
-            if comm:
-                m.on_change(p, partial(self._comm_change, doc, ref, comm))
             else:
-                m.on_change(p, partial(self._server_change, doc, ref))
+                subpath = None
+            if comm:
+                m.on_change(p, partial(self._comm_change, doc, ref, comm, subpath))
+            else:
+                m.on_change(p, partial(self._server_change, doc, ref, subpath))
 
     def _manual_update(self, events, model, doc, root, parent, comm):
         """
@@ -253,9 +255,20 @@ class Syncable(Renderable):
         busy = state.busy
         with edit_readonly(state):
             state.busy = True
+        events = self._process_property_change(events)
         try:
             with edit_readonly(self):
-                self.param.set_param(**self._process_property_change(events))
+                self_events = {k: v for k, v in events.items() if '.' not in k}
+                self.param.set_param(**self_events)
+            for k, v in self_events.items():
+                if '.' not in k:
+                    continue
+                *subpath, p = k.split('.')
+                obj = self
+                for sp in subpath:
+                    obj = getattr(obj, sp)
+                with edit_readonly(obj):
+                    obj.param.set_param(**{p: v})
         finally:
             with edit_readonly(state):
                 state.busy = busy
@@ -277,7 +290,9 @@ class Syncable(Renderable):
             state.curdoc = None
             state._thread_id = None
 
-    def _comm_change(self, doc, ref, comm, attr, old, new):
+    def _comm_change(self, doc, ref, comm, subpath, attr, old, new):
+        if subpath:
+            attr = f'{subpath}.{attr}'
         if attr in self._changing.get(ref, []):
             self._changing[ref].remove(attr)
             return
@@ -285,7 +300,9 @@ class Syncable(Renderable):
         with hold(doc, comm=comm):
             self._process_events({attr: new})
 
-    def _server_change(self, doc, ref, attr, old, new):
+    def _server_change(self, doc, ref, subpath, attr, old, new):
+        if subpath:
+            attr = f'{subpath}.{attr}'
         if attr in self._changing.get(ref, []):
             self._changing[ref].remove(attr)
             return
@@ -1304,7 +1321,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
                 panes = panes.values()
                 old_panes = old_panes.values()
             for old_pane in old_panes:
-                if old_pane not in panes:
+                if old_pane not in panes and hasattr(old_pane, '_cleanup'):
                     old_pane._cleanup(root)
 
         for parent, child_panes in new_panes.items():

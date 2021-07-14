@@ -146,13 +146,23 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
 
   connect_scripts(): void {
     const id = this.model.data.id
-    for (const prop in this.model.scripts) {
+    for (let prop in this.model.scripts) {
       const scripts = this.model.scripts[prop]
+      let data_model = this.model.data
+      let attr: string
+      if (prop.indexOf('.') >= 0) {
+        const path = prop.split('.')
+        attr = path[path.length-1]
+        for (const p of path.slice(0, -1))
+          data_model = data_model[p]
+      } else {
+        attr = prop
+      }
       for (const script of scripts) {
         const decoded_script = htmlDecode(script) || script
         const script_fn = this._render_script(decoded_script, id)
         this._script_fns[prop] = script_fn
-        const property = this.model.data.properties[prop]
+        const property = data_model.properties[attr]
         if (property == null)
           continue
         this.connect(property.change, () => {
