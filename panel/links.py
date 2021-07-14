@@ -47,7 +47,8 @@ PARAM_MAPPING = {
     pm.CalendarDateRange: lambda p, kwargs: bp.Tuple(bp.Date, bp.Date, **kwargs),
     pm.ClassSelector: lambda p, kwargs: (
         (bp.Instance(DataModel, **kwargs), [(Parameterized, create_linked_datamodel)])
-        if issubclass(p.class_, param.Parameterized) else bp.Any(**kwargs)
+        if isinstance(p.class_, type) and issubclass(p.class_, param.Parameterized) else
+        bp.Any(**kwargs)
     ),
     pm.Color: lambda p, kwargs: bp.Color(**kwargs),
     pm.DataFrame: lambda p, kwargs: (

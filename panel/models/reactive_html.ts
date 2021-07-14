@@ -97,7 +97,7 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
     this.html = htmlDecode(this.model.html) || this.model.html
   }
 
-  _recursive_connect(model: any, children: boolean, path: string): void {
+  _recursive_connect(model: any, update_children: boolean, path: string): void {
     for (const prop in model.properties) {
       let subpath: string
       if (path.length)
@@ -108,7 +108,7 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
       if (obj.properties != null)
 	this._recursive_connect(obj, true, subpath)
       this.connect(model.properties[prop].change, () => {
-	if (children) {
+	if (update_children) {
           for (const node in this.model.children) {
             if (this.model.children[node] == prop) {
               let children = model[prop]
@@ -130,7 +130,6 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
 
   connect_signals(): void {
     super.connect_signals()
-
     this.connect(this.model.properties.children.change, async () => {
       this.html = htmlDecode(this.model.html) || this.model.html
       await this.rebuild()
@@ -166,7 +165,7 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
         if (property == null)
           continue
         this.connect(property.change, () => {
-          if (!this._changing)
+	  if (!this._changing)
             this.run_script(prop)
         })
       }

@@ -964,7 +964,7 @@ class ReactiveHTMLMetaclass(ParameterizedMetaclass):
     _script_regex = r"script\([\"|'](.*)[\"|']\)"
 
     def __init__(mcs, name, bases, dict_):
-        from .links import construct_data_model
+        from .links import PARAM_MAPPING, construct_data_model
 
         mcs.__original_doc__ = mcs.__doc__
         ParameterizedMetaclass.__init__(mcs, name, bases, dict_)
@@ -1042,9 +1042,16 @@ class ReactiveHTMLMetaclass(ParameterizedMetaclass):
         ignored = list(Reactive.param)
         types = {}
         for child in mcs._parser.children.values():
+            cparam = mcs.param[child]
             if mcs._child_config.get(child) == 'literal':
                 types[child] = param.String
-            else:
+            elif (type(cparam) not in PARAM_MAPPING or
+                  (isinstance(cparam, param.ClassSelector) and
+                   isinstance(cparam.class_, type) and
+                   issubclass(cparam.class_, Reactive))):
+                # Any parameter which can be consistently serialized
+                # (except) Panel Reactive objects can be reflected
+                # on the data model
                 ignored.append(child)
         ignored.remove('name')
 
@@ -1428,6 +1435,9 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
                 for p in attrs:
                     if p not in linked_properties:
                         linked_properties.append(p)
+        for children_param in self._parser.children.values():
+            if children_param in self._data_model.properties():
+                linked_properties.append(children_param)
         return linked_properties
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
@@ -1465,6 +1475,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
     def _set_on_model(self, msg, root, model):
         if not msg:
             return
+        old = self._changing.get(root.ref['id'], [])
         self._changing[root.ref['id']] = [
             attr for attr, value in msg.items()
             if not model.lookup(attr).property.matches(getattr(model, attr), value)
@@ -1472,7 +1483,10 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         try:
             model.update(**msg)
         finally:
-            del self._changing[root.ref['id']]
+            if old:
+                self._chaning[root.ref['id']] = old
+            else:
+                del self._changing[root.ref['id']]
 
     def _update_model(self, events, msg, root, model, doc, comm):
         child_params = self._parser.children.values()
@@ -1482,6 +1496,8 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
                 new_children[prop] = prop
                 if self._child_config.get(prop) == 'literal':
                     data_msg[prop] = bleach.clean(v)
+                elif prop in model.data.properties():
+                    data_msg[prop] = v
             elif prop in list(Reactive.param)+['events']:
                 model_msg[prop] = v
             elif prop in self.param and (self.param[prop].precedence or 0) < 0:
@@ -1497,10 +1513,10 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
             children = self._get_children(doc, root, model, comm, old_children)
         else:
             children = None
-        self._set_on_model(data_msg, root, model.data)
-        self._set_on_model(model_msg, root, model)
         if children is not None:
-            self._set_on_model({'children': children}, root, model)
+            model_msg['children'] = children
+        self._set_on_model(model_msg, root, model)
+        self._set_on_model(data_msg, root, model.data)
 
     def on_event(self, node, event, callback):
         """
