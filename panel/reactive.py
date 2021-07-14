@@ -18,6 +18,7 @@ import numpy as np
 import param
 
 from bokeh.models import LayoutDOM
+from bokeh.model import DataModel
 from param.parameterized import ParameterizedMetaclass
 from tornado import gen
 
@@ -161,10 +162,15 @@ class Syncable(Renderable):
         for p in properties:
             if isinstance(p, tuple):
                 _, p = p
+            m = model
+            if '.' in p:
+                *subpath, p = p.split('.')
+                for sp in subpath:
+                    m = getattr(m, sp)
             if comm:
-                model.on_change(p, partial(self._comm_change, doc, ref, comm))
+                m.on_change(p, partial(self._comm_change, doc, ref, comm))
             else:
-                model.on_change(p, partial(self._server_change, doc, ref))
+                m.on_change(p, partial(self._server_change, doc, ref))
 
     def _manual_update(self, events, model, doc, root, parent, comm):
         """
@@ -987,7 +993,7 @@ class ReactiveHTMLMetaclass(ParameterizedMetaclass):
             for (attr, parameters, template) in attrs:
                 param_attrs = []
                 for p in parameters:
-                    if p in mcs.param:
+                    if p in mcs.param or '.' in p:
                         param_attrs.append(p)
                     elif re.match(mcs._script_regex, p):
                         name = re.findall(mcs._script_regex, p)[0]
@@ -1398,8 +1404,13 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
             if not isinstance(scripts, list):
                 scripts = [scripts]
             for script in scripts:
-                linked_properties += re.findall('data.([a-zA-Z_]\S+) =', script)
-                linked_properties += re.findall('data.([a-zA-Z_]\S+)=', script)
+                attrs = (
+                    list(re.findall('data.([a-zA-Z_]\S+)=', script)) +
+                    list(re.findall('data.([a-zA-Z_]\S+) =', script))
+                )
+                for p in attrs:
+                    if p not in linked_properties:
+                        linked_properties.append(p)
         return linked_properties
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
@@ -1407,11 +1418,13 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         model = _BkReactiveHTML(**properties)
         if not root:
             root = model
+        for p, v in model.data.properties_with_values().items():
+            if isinstance(v, DataModel):
+                v.tags.append(f"__ref:{root.ref['id']}")
         model.children = self._get_children(doc, root, model, comm)
         model.on_event('dom_event', self._process_event)
 
         self._link_props(model.data, self._linked_properties(), doc, root, comm)
-
         self._models[root.ref['id']] = (model, parent)
         return model
 

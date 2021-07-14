@@ -7,6 +7,7 @@ import sys
 
 import bokeh.core.properties as bp
 import param as pm
+import bokeh
 
 from bokeh.model import DataModel
 from bokeh.models import ColumnDataSource, CustomJS, Model as BkModel
@@ -18,6 +19,25 @@ from .reactive import Reactive, Syncable
 from .viewable import Viewable
 
 
+class Parameterized(bokeh.core.property.bases.Property):
+    """ Accept a Parameterized object.
+
+    This property only exists to support type validation, e.g. for "accepts"
+    clauses. It is not serializable itself, and is not useful to add to
+    Bokeh models directly.
+
+    """
+    def validate(self, value, detail=True):
+        super().validate(value, detail)
+
+        if isinstance(value, param.Parameterized):
+            return
+
+        msg = "" if not detail else f"expected param.Parameterized, got {value!r}"
+        raise ValueError(msg)
+
+
+
 _DATA_MODELS = weakref.WeakKeyDictionary()
 
 PARAM_MAPPING = {
@@ -25,6 +45,10 @@ PARAM_MAPPING = {
     pm.Boolean: lambda p, kwargs: bp.Bool(**kwargs),
     pm.CalendarDate: lambda p, kwargs: bp.Date(**kwargs),
     pm.CalendarDateRange: lambda p, kwargs: bp.Tuple(bp.Date, bp.Date, **kwargs),
+    pm.ClassSelector: lambda p, kwargs: (
+        (bp.Instance(DataModel, **kwargs), [(Parameterized, create_linked_datamodel)])
+        if issubclass(p.class_, param.Parameterized) else bp.Any(**kwargs)
+    ),
     pm.Color: lambda p, kwargs: bp.Color(**kwargs),
     pm.DataFrame: lambda p, kwargs: (
         bp.ColumnData(bp.Any, bp.Seq(bp.Any), **kwargs),
@@ -105,7 +129,7 @@ def create_linked_datamodel(obj, root=None):
     ---------
     obj: param.Parameterized
        The Parameterized class to create a linked DataModel for.
-    
+
     Returns
     -------
     DataModel instance linked to the Parameterized object.
@@ -122,7 +146,7 @@ def create_linked_datamodel(obj, root=None):
         _DATA_MODELS[cls] = model = construct_data_model(obj)
     model = model(**dict(obj.param.get_param_values()))
     _changing = []
-    
+
     def cb_bokeh(attr, old, new):
         if attr in _changing:
             return
@@ -131,7 +155,7 @@ def create_linked_datamodel(obj, root=None):
             obj.param.set_param(**{attr: new})
         finally:
             _changing.remove(attr)
-        
+
     def cb_param(*events):
         update = {
             event.name: event.new for event in events
@@ -140,15 +164,19 @@ def create_linked_datamodel(obj, root=None):
         try:
             _changing.extend(list(update))
             model.update(**update)
+            tags = [tag for tag in model.tags if tag.startswith('__ref:')]
             if root:
                 push_on_root(root.ref['id'])
+            elif tags:
+                ref = tags[0].split('__ref:')[-1]
+                push_on_root(ref)
         finally:
             for attr in update:
                 _changing.remove(attr)
 
     for p in obj.param:
         model.on_change(p, cb_bokeh)
-        
+
     obj.param.watch(cb_param, list(obj.param))
 
     return model

@@ -123,7 +123,7 @@ class ReactiveHTMLParser(HTMLParser):
             match = match[2:-1]
             if match.startswith('model.'):
                 continue
-            if match not in self.cls.param:
+            if match not in self.cls.param and '.' not in match:
                 params = difflib.get_close_matches(match, list(self.cls.param))
                 raise ValueError(f"{self.cls.__name__} HTML template references "
                                  f"unknown parameter '{match}', similar parameters "

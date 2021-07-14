@@ -97,6 +97,37 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
     this.html = htmlDecode(this.model.html) || this.model.html
   }
 
+  _recursive_connect(model: any, children: boolean, path: string): void {
+    for (const prop in model.properties) {
+      let subpath: string
+      if (path.length)
+	subpath = `${path}.${prop}`
+      else
+	subpath = prop
+      const obj = model[prop]
+      if (obj.properties != null)
+	this._recursive_connect(obj, true, subpath)
+      this.connect(model.properties[prop].change, () => {
+	if (children) {
+          for (const node in this.model.children) {
+            if (this.model.children[node] == prop) {
+              let children = model[prop]
+              if (!isArray(children))
+		children = [children]
+              this._render_node(node, children)
+              this.invalidate_layout()
+              return
+            }
+          }
+	}
+        if (!this._changing) {
+          this._update(subpath)
+          this.invalidate_layout()
+        }
+      })
+    }
+  }
+
   connect_signals(): void {
     super.connect_signals()
 
@@ -105,24 +136,7 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
       await this.rebuild()
       this.invalidate_layout()
     })
-    for (const prop in this.model.data.properties) {
-      this.connect(this.model.data.properties[prop].change, () => {
-        for (const node in this.model.children) {
-          if (this.model.children[node] == prop) {
-            let children = this.model.data[prop]
-            if (!isArray(children))
-              children = [children]
-            this._render_node(node, children)
-            this.invalidate_layout()
-            return
-          }
-        }
-        if (!this._changing) {
-          this._update(prop)
-          this.invalidate_layout()
-        }
-      })
-    }
+    this._recursive_connect(this.model.data, true, '')
     this.connect(this.model.properties.events.change, () => {
       this._remove_event_listeners()
       this._setup_event_listeners()
