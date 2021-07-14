@@ -88,8 +88,7 @@ def test_load_from_stringio():
 
 def test_loading_a_image_from_url():
     """Tests the loading of a image from a url"""
-    url = 'https://upload.wikimedia.org/wikipedia/commons/7/71/' \
-          '1700_CE_world_map.PNG'
+    url = 'https://file-examples-com.github.io/uploads/2017/10/file_example_PNG_500kB.png'
 
     image_pane = PNG(url)
     image_data = image_pane._data()
@@ -98,8 +97,7 @@ def test_loading_a_image_from_url():
 
 def test_image_alt_text(document, comm):
     """Tests the loading of a image from a url"""
-    url = 'https://upload.wikimedia.org/wikipedia/commons/7/71/' \
-          '1700_CE_world_map.PNG'
+    url = 'https://file-examples-com.github.io/uploads/2017/10/file_example_PNG_500kB.png'
 
     image_pane = PNG(url, embed=False, alt_text="Some alt text")
     model = image_pane.get_root(document, comm)
@@ -109,8 +107,7 @@ def test_image_alt_text(document, comm):
 
 def test_image_link_url(document, comm):
     """Tests the loading of a image from a url"""
-    url = 'https://upload.wikimedia.org/wikipedia/commons/7/71/' \
-          '1700_CE_world_map.PNG'
+    url = 'https://file-examples-com.github.io/uploads/2017/10/file_example_PNG_500kB.png'
 
     image_pane = PNG(url, embed=False, link_url="http://anaconda.org")
     model = image_pane.get_root(document, comm)
