@@ -101,25 +101,25 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
     for (const prop in model.properties) {
       let subpath: string
       if (path.length)
-	subpath = `${path}.${prop}`
+        subpath = `${path}.${prop}`
       else
-	subpath = prop
+        subpath = prop
       const obj = model[prop]
       if (obj.properties != null)
-	this._recursive_connect(obj, true, subpath)
+        this._recursive_connect(obj, true, subpath)
       this.connect(model.properties[prop].change, () => {
-	if (update_children) {
+        if (update_children) {
           for (const node in this.model.children) {
             if (this.model.children[node] == prop) {
               let children = model[prop]
               if (!isArray(children))
-		children = [children]
+                children = [children]
               this._render_node(node, children)
               this.invalidate_layout()
               return
             }
           }
-	}
+        }
         if (!this._changing) {
           this._update(subpath)
           this.invalidate_layout()
@@ -165,7 +165,7 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
         if (property == null)
           continue
         this.connect(property.change, () => {
-	  if (!this._changing)
+          if (!this._changing)
             this.run_script(prop)
         })
       }
