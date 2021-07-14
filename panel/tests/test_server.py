@@ -42,7 +42,7 @@ def test_server_change_io_state(html_server_session):
         assert state.curdoc is session.document
 
     html.param.watch(handle_event, 'object')
-    html._server_change(session.document, None, 'text', '<h1>Title</h1>', '<h1>New Title</h1>')
+    html._server_change(session.document, None, None, 'text', '<h1>Title</h1>', '<h1>New Title</h1>')
 
 
 def test_server_static_dirs():

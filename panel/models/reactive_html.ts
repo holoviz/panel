@@ -97,32 +97,45 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
     this.html = htmlDecode(this.model.html) || this.model.html
   }
 
+  _recursive_connect(model: any, update_children: boolean, path: string): void {
+    for (const prop in model.properties) {
+      let subpath: string
+      if (path.length)
+        subpath = `${path}.${prop}`
+      else
+        subpath = prop
+      const obj = model[prop]
+      if (obj.properties != null)
+        this._recursive_connect(obj, true, subpath)
+      this.connect(model.properties[prop].change, () => {
+        if (update_children) {
+          for (const node in this.model.children) {
+            if (this.model.children[node] == prop) {
+              let children = model[prop]
+              if (!isArray(children))
+                children = [children]
+              this._render_node(node, children)
+              this.invalidate_layout()
+              return
+            }
+          }
+        }
+        if (!this._changing) {
+          this._update(subpath)
+          this.invalidate_layout()
+        }
+      })
+    }
+  }
+
   connect_signals(): void {
     super.connect_signals()
-
     this.connect(this.model.properties.children.change, async () => {
       this.html = htmlDecode(this.model.html) || this.model.html
       await this.rebuild()
       this.invalidate_layout()
     })
-    for (const prop in this.model.data.properties) {
-      this.connect(this.model.data.properties[prop].change, () => {
-        for (const node in this.model.children) {
-          if (this.model.children[node] == prop) {
-            let children = this.model.data[prop]
-            if (!isArray(children))
-              children = [children]
-            this._render_node(node, children)
-            this.invalidate_layout()
-            return
-          }
-        }
-        if (!this._changing) {
-          this._update(prop)
-          this.invalidate_layout()
-        }
-      })
-    }
+    this._recursive_connect(this.model.data, true, '')
     this.connect(this.model.properties.events.change, () => {
       this._remove_event_listeners()
       this._setup_event_listeners()
@@ -132,13 +145,23 @@ export class ReactiveHTMLView extends PanelHTMLBoxView {
 
   connect_scripts(): void {
     const id = this.model.data.id
-    for (const prop in this.model.scripts) {
+    for (let prop in this.model.scripts) {
       const scripts = this.model.scripts[prop]
+      let data_model = this.model.data
+      let attr: string
+      if (prop.indexOf('.') >= 0) {
+        const path = prop.split('.')
+        attr = path[path.length-1]
+        for (const p of path.slice(0, -1))
+          data_model = data_model[p]
+      } else {
+        attr = prop
+      }
       for (const script of scripts) {
         const decoded_script = htmlDecode(script) || script
         const script_fn = this._render_script(decoded_script, id)
         this._script_fns[prop] = script_fn
-        const property = this.model.data.properties[prop]
+        const property = data_model.properties[attr]
         if (property == null)
           continue
         this.connect(property.change, () => {
