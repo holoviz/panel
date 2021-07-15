@@ -116,6 +116,7 @@ def _reload(module=None):
     for cb in _callbacks.values():
         cb.stop()
     _callbacks.clear()
+    state.location.reload = True
     for loc in state._locations.values():
         loc.reload = True
 
