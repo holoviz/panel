@@ -475,6 +475,8 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     this._selection_updating = true
     this.tabulator.deselectRow()
     this.tabulator.selectRow(indices)
+    // This actually places the selected row at the top of the table
+    this.tabulator.scrollToRow(indices[0], "bottom", false)
     this._selection_updating = false
   }
 
