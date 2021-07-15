@@ -480,7 +480,7 @@ class panel_extension(_pyviz_extension):
 
         # Try to detect environment so that we can enable comms
         try:
-            import google.colab
+            import google.colab # noqa
             config.comms = "colab"
             return
         except ImportError:
