@@ -1,4 +1,5 @@
 import {Column, ColumnView} from "@bokehjs/models/layouts/column"
+import {BBox} from "@bokehjs/core/util/bbox"
 import * as DOM from "@bokehjs/core/dom"
 import {classes, empty} from "@bokehjs/core/dom"
 import {Column as ColumnLayout} from "@bokehjs/core/layout/grid"
@@ -23,6 +24,22 @@ export class CardView extends ColumnView {
     this.layout.rows = this.model.rows
     this.layout.spacing = [this.model.spacing, 0]
     this.layout.set_sizing(this.box_sizing())
+  }
+
+  update_position(): void {
+    if (this.model.collapsible) {
+      const header = this.child_views[0]
+      const obbox = header.layout.bbox
+      const ibbox = header.layout.inner_bbox
+      if (obbox.x1 != 0) {
+	const icon_style = getComputedStyle(this.button_el.children[0])
+	const offset = parseFloat(icon_style.width) + parseFloat(icon_style.marginLeft)
+	const outer = new BBox({x0: obbox.x0, x1: obbox.x1-offset, y0: obbox.y0, y1: obbox.y1})
+	const inner = new BBox({x0: ibbox.x0, x1: ibbox.x1-offset, y0: ibbox.y0, y1: ibbox.y1})
+	header.layout.set_geometry(outer, inner)
+      }
+    }
+    super.update_position()
   }
 
   render(): void {
