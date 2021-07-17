@@ -89,8 +89,10 @@ class CheckFilter(logging.Filter):
 
         """
         
-        if state.curdoc.session_context:
+        if state.curdoc:
             session_id = state.curdoc.session_context.id
+        else:
+            return True
         
         if hasattr(self,'debugger'):
             self.debugger.number_of_errors += 1
