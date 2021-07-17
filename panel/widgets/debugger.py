@@ -159,7 +159,7 @@ class Debugger(Card):
                 
     def update_log_counts(self, event):
         if self.number_of_errors:
-            self.title = f'<p><span style="color:rgb(190,0,0);">errors: </span> {self.number_of_errors}</p>'
+            self.title = f'<span style="color:rgb(190,0,0);">errors: </span> {self.number_of_errors}'
         else:
             self.title = ''
         
