@@ -92,11 +92,11 @@ class CheckFilter(logging.Filter):
         if state.curdoc:
             session_id = state.curdoc.session_context.id
         else:
+            self.debugger.number_of_errors += 1
             return True
         
         if hasattr(self,'debugger'):
             self.debugger.number_of_errors += 1
-            self.debugger.unread_errors = True
             widget_session_ids = set(m.document.session_context.id 
                               for m in sum(self.debugger._models.values(),tuple()))
             if session_id not in widget_session_ids:
@@ -106,18 +106,23 @@ class CheckFilter(logging.Filter):
     
     
 class Debugger(Card):
-    unread_errors = param.Boolean(doc="On if there is a new error. Off once acknowledge",
-                                  default = False)
     
     number_of_errors = param.Integer(doc="Number of logged messages since last acknowledged", 
                                       bounds=(0, None))
     
     _rename = Card._rename.copy()
-    _rename.update({'unread_errors': None,
-                    'number_of_errors': None})
+    _rename.update({'number_of_errors': None})
     
     def __init__(self, *args,only_last=True,level=logging.ERROR, **kwargs):
         super().__init__( *args, **kwargs)
+        #change default css
+        self.button_css_classes = ['debugger-card-button']
+        self.css_classes = ['debugger-card']
+        self.header_css_classes = ['debugger-card-header']
+        self.title_css_classes = ['debugger-card-title']
+        
+        
+        
         terminal = Terminal(height = self.height - 50 if self.height else None,
                             sizing_mode='stretch_width')
         stream_handler = logging.StreamHandler(terminal)
@@ -138,13 +143,7 @@ class Debugger(Card):
         logger.addHandler(stream_handler)
         
         #header
-        self.unread_errors_pane = BooleanStatus.from_param(self.param.unread_errors,
-                                                           color='danger',
-                                                           align=('center','start'))
-        self.log_counts = Str(0,
-                              align=('center','start'))
         self.param.watch(self.update_log_counts,'number_of_errors')
-        self.header = Row(self.unread_errors_pane,self.log_counts)
         
         #body
         self.ackn_btn = Button(name='Acknowledge errors')
@@ -159,11 +158,15 @@ class Debugger(Card):
         self.collapsed = True
                 
     def update_log_counts(self, event):
-        self.log_counts.object = self.number_of_errors
+        if self.number_of_errors:
+            self.title = f'<p><span style="color:rgb(190,0,0);">errors: </span> {self.number_of_errors}</p>'
+        else:
+            self.title = ''
         
         
     def acknowledge_errors(self,event):
         self.number_of_errors = 0
-        self.unread_errors = False
         self.terminal.clear()
+        
+    
         
