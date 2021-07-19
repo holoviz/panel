@@ -22,7 +22,7 @@ from bokeh.models.widgets.tables import (
 from panel.depends import bind
 from panel.widgets import DataFrame, Tabulator, TextInput
 
-pd_old = pytest.mark.skipif(LooseVersion(pandas.__version__) < '1.3',
+pd_old = pytest.mark.skipif(LooseVersion(pd.__version__) < '1.3',
                           reason="Requires latest pandas")
 
 
