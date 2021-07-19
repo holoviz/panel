@@ -57,6 +57,7 @@ Enhancements:
 - Scroll on ``Tabulator`` selection (`2503 <https://github.com/holoviz/panel/issues/2503>`__)
 - Increase notebook resource load timeout (`2515 <https://github.com/holoviz/panel/issues/2515>`__)
 - Auto-detect VSCode and Colab comms (`2536 <https://github.com/holoviz/panel/issues/2536>`__)
+- Add tooltip to ``Tabulator`` cells to see unformatted value (`#2543 <https://github.com/holoviz/panel/issues/2543>`__)
 
 Bug fixes:
 
