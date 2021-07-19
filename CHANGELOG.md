@@ -1,5 +1,135 @@
 # Releases
 
+## Version 0.12.0
+
+Date: 2021-07-18
+
+Blog post: https://blog.holoviz.org/panel_0.12.0.html
+
+The 0.12.0 release is a minor release with a lot of exciting and a huge amount of bug fixes. We are very excited about the growing community and the many contributions we received. In particular we would like to thank @douglas-raillard-arm, @mathrick, @jlstevens, @hyamanieu, @Liam-Deacon, @Stubatiger, @ablythed, @syamajala, @Hoxbro, @jbednar, @brl0, @OBITORASU, @fleming79, dhruvbalwada and @rmorshea for contributing various fixes and improvements and the core developers @xavArtley, @MarcSkovMadsen and @philippjfr for continuing to push the development of Panel.
+
+Features:
+
+- Add `ReactiveHTML` ([#1894](https://github.com/holoviz/panel/issues/1894), [#2091](https://github.com/holoviz/panel/issues/2091), [#2092](https://github.com/holoviz/panel/issues/2092), [#2098](https://github.com/holoviz/panel/issues/2098), [#2115](https://github.com/holoviz/panel/issues/2115), [#2210](https://github.com/holoviz/panel/issues/2210), [#2287](https://github.com/holoviz/panel/issues/2287), [#2290](https://github.com/holoviz/panel/issues/2290), [#2332](https://github.com/holoviz/panel/issues/2332), [#2345](https://github.com/holoviz/panel/issues/2345), [#2372](https://github.com/holoviz/panel/issues/2372), [#2373](https://github.com/holoviz/panel/issues/2373), [#2374](https://github.com/holoviz/panel/issues/2374), [#2383](https://github.com/holoviz/panel/issues/2383), [#2384](https://github.com/holoviz/panel/issues/2384), [#2393](https://github.com/holoviz/panel/issues/2393), [#2397](https://github.com/holoviz/panel/issues/2397), [#2399](https://github.com/holoviz/panel/issues/2399), [#2400](https://github.com/holoviz/panel/issues/2400), [#2401 [#2402](https://github.com/holoviz/panel/issues/2402), [#2404](https://github.com/holoviz/panel/issues/2404), [#2533](https://github.com/holoviz/panel/issues/2533), [#2535](https://github.com/holoviz/panel/issues/2535))
+- Add `Terminal` Widget based on xterm.js ([#2090](https://github.com/holoviz/panel/issues/2090))
+- Adding a `DatetimePicker` widget ([#2107](https://github.com/holoviz/panel/issues/2107), [#2135](https://github.com/holoviz/panel/issues/2135))
+- Add editable sliders ([#2111](https://github.com/holoviz/panel/issues/2111), [#2133](https://github.com/holoviz/panel/issues/2133), [#2208](https://github.com/holoviz/panel/issues/2208))
+- Add `FlexBox` layout ([#2233](https://github.com/holoviz/panel/issues/2233), [#2511](https://github.com/holoviz/panel/issues/2511))
+- Add ability to configure global template ([#2271](https://github.com/holoviz/panel/issues/2271))
+- Add `GridStack` layout ([#2375](https://github.com/holoviz/panel/issues/2375))
+- Add `PDF` pane ([#2444](https://github.com/holoviz/panel/issues/2444))
+- Add `/panel-preview` endpoint for Jupyter server extension ([#2341](https://github.com/holoviz/panel/issues/2341), [#2361](https://github.com/holoviz/panel/issues/2361))
+- Add `Tqdm` Indicator ([#2079](https://github.com/holoviz/panel/issues/2079))
+
+Enhancements:
+
+- Add empty `Progress` bar ([#2088](https://github.com/holoviz/panel/issues/2088))
+- Optimize initialization of templates ([#2096](https://github.com/holoviz/panel/issues/2096))
+- Serialize `Perspective` schema ([#2130](https://github.com/holoviz/panel/issues/2130))
+- Updated `JSON` pane to accept single quote and wrap properly ([#2143](https://github.com/holoviz/panel/issues/2143), [#2443](https://github.com/holoviz/panel/issues/2443))
+- Improvements for `Perspective` ([#2153](https://github.com/holoviz/panel/issues/2153))
+- Improve handling of server prefix and proxied deployment scenarios ([#2159](https://github.com/holoviz/panel/issues/2159), [#2162](https://github.com/holoviz/panel/issues/2162))
+- Add support for setting bokeh theme ([#2164](https://github.com/holoviz/panel/issues/2164), [#2166](https://github.com/holoviz/panel/issues/2166), [#2170](https://github.com/holoviz/panel/issues/2170))
+- Completely overhauled the default index template ([#2198](https://github.com/holoviz/panel/issues/2198), [#2340](https://github.com/holoviz/panel/issues/2340))
+- Enhancements for `Template` modals ([#2269](https://github.com/holoviz/panel/issues/2269), [#2523](https://github.com/holoviz/panel/issues/2523))
+- Make the Template sidebar width configurable ([#2301](https://github.com/holoviz/panel/issues/2301))
+- Improve look and feel and styling of Fast templates ([#2303](https://github.com/holoviz/panel/issues/2303), [#2469](https://github.com/holoviz/panel/issues/2469), [#2484](https://github.com/holoviz/panel/issues/2484), [#2488](https://github.com/holoviz/panel/issues/2488))
+- Allow setting kwargs in `Reactive.controls` ([#2304](https://github.com/holoviz/panel/issues/2304))
+- Add global configuration variable to always throttle sliders ([#2306](https://github.com/holoviz/panel/issues/2306))
+- Add support for controlling text alignment in `DataFrame` and `Tabulator` ([#2331](https://github.com/holoviz/panel/issues/2331))
+- Add `Tabulator` theme for Fast Templates ([#2425](https://github.com/holoviz/panel/issues/2425))
+- Add ability to make only certain `Tabulator` rows selectable ([#2433](https://github.com/holoviz/panel/issues/2433))
+- Add `visible` parameter to all components ([#2440](https://github.com/holoviz/panel/issues/2440))
+- Send `Plotly` restyle and relayout events rather than full updates ([#2445](https://github.com/holoviz/panel/issues/2445))
+- Add `push_notebook` helper function for syncing bokeh property changes in notebooks ([#2447](https://github.com/holoviz/panel/issues/2447))
+- Improve visual styling of `Card` ([#2343](https://github.com/holoviz/panel/issues/2343), [#2348](https://github.com/holoviz/panel/issues/2348), [#2376](https://github.com/holoviz/panel/issues/2376), [#2437](https://github.com/holoviz/panel/issues/2437), [#2527](https://github.com/holoviz/panel/issues/2437))
+- Ensure `config` variables are configured per user session ([#2358](https://github.com/holoviz/panel/issues/2358), [#2455](https://github.com/holoviz/panel/issues/2455), [#2481](https://github.com/holoviz/panel/issues/2481))
+- Add `save_layout` and `prevent_collision` to `ReactTemplate` and `FastGridTemplate` ([#2296](https://github.com/holoviz/panel/issues/2296), [#2357](https://github.com/holoviz/panel/issues/2357))
+- Add ability to declare root application from `panel serve` ([#2392](https://github.com/holoviz/panel/issues/2392))
+- Support jslinking Parameterized class ([#2441](https://github.com/holoviz/panel/issues/2441))
+- Improve `config.sizing_mode` behavior ([#2442](https://github.com/holoviz/panel/issues/2442))
+- Add separate `RangeSlider` `value_start` and `value_end` parameters ([#2457](https://github.com/holoviz/panel/issues/2457), [#2468](https://github.com/holoviz/panel/issues/2468))
+- Allow saving Templates ([#2461](https://github.com/holoviz/panel/issues/))
+- Bundle `Tabulator` resources to allow usage in airgapped environment ([#2471](https://github.com/holoviz/panel/issues/2471))
+- Ensure `Trend` indicator title wraps ([#2483](https://github.com/holoviz/panel/issues/2483))
+- Scroll on `Tabulator` selection ([#2503](https://github.com/holoviz/panel/issues/2503))
+- Increase notebook resource load timeout ([#2515](https://github.com/holoviz/panel/issues/2515))
+- Auto-detect VSCode and Colab comms ([#2536](https://github.com/holoviz/panel/issues/2536))
+
+Bug fixes:
+
+- Fix missing video in `Video` ([#2109](https://github.com/holoviz/panel/issues/2109))
+- use idom.config to set dist dir ([#2117](https://github.com/holoviz/panel/issues/2117))
+- Remove bootstrap CSS from `FastGridTemplate` ([#2123](https://github.com/holoviz/panel/issues/2123))
+- Fix issues with `Ace` z-index ([#2126](https://github.com/holoviz/panel/issues/2126))
+- Fix updating of `Tabulator` selection property ([#2128](https://github.com/holoviz/panel/issues/2128))
+- Ensure changes on ReactiveData source are scheduled correctly ([#2134](https://github.com/holoviz/panel/issues/2134))
+- Fixed `Player` looping when start is 0 ([#2141](https://github.com/holoviz/panel/issues/2141))
+- Fix divide by zero issues on Trend indicator ([#2148](https://github.com/holoviz/panel/issues/2148))
+- Ensure `GridSpec` override handles duplicate matches ([#2150](https://github.com/holoviz/panel/issues/2150))
+- Fix for `loading` parameter widget linking ([#2160](https://github.com/holoviz/panel/issues/2160))
+- Fix `Tabulator` ajax call on empty data ([#2161](https://github.com/holoviz/panel/issues/2161))
+- Fix `Tabulator` sorting and data initialization ([#2163](https://github.com/holoviz/panel/issues/2163))
+- Fix editing `Tabulator` with filters applied ([#2165](https://github.com/holoviz/panel/issues/2165))
+- Fix theming on `HoloViews` plot updates ([#2209](https://github.com/holoviz/panel/issues/2209))
+- Fixed data handling on `Perspective` pane ([#2212](https://github.com/holoviz/panel/issues/2212))
+- Improve template and resource management for png export ([#2221](https://github.com/holoviz/panel/issues/2221))
+- Improve and standardize selection behavior of `Tabulator` ([#2230](https://github.com/holoviz/panel/issues/2230))
+- Ensure JS changes to `Plotly` pane are applied if not explicitly triggered ([#2251](https://github.com/holoviz/panel/issues/2251))
+- Fix server-side Tabulator selection changes ([#2252](https://github.com/holoviz/panel/issues/2252))
+- Fix update of `Param` subobjects ([#2255](https://github.com/holoviz/panel/issues/2255))
+- Add support for `vtkCornerAnnotations` ([#2257](https://github.com/holoviz/panel/issues/2257))
+- Improve request handling for remote pagination on `Tabulator` ([#2265](https://github.com/holoviz/panel/issues/2265))
+- Allow setting `Param` precedence to None ([#2266](https://github.com/holoviz/panel/issues/2266))
+- Disable nested field separators on `Tabulator` ([#2289](https://github.com/holoviz/panel/issues/2289))
+- Fix errors when applying `Perspective` filters ([#2300](https://github.com/holoviz/panel/issues/2300), [#2521](https://github.com/holoviz/panel/issues/2521))
+- Ensure `Param` pane handles changes to unknown parameter ([#2346](https://github.com/holoviz/panel/issues/2346))
+- Fix issues with local `Audio` and `Video` ([#2380](https://github.com/holoviz/panel/issues/2380))
+- Ensure `ReactiveData` emits correct old data in event ([#2398](https://github.com/holoviz/panel/issues/2398))
+- Ensure `Plotly` interactivity works when `Plotly` panes are displayed in tabs ([#2418](https://github.com/holoviz/panel/issues/2418), [#2463](https://github.com/holoviz/panel/issues/))
+- Fix `Ace` widget disabled parameter ([#2449](https://github.com/holoviz/panel/issues/2449))
+- Ensure external resources are configured correctly on save ([#2452](https://github.com/holoviz/panel/issues/2452))
+- Ensure table formatters and editors are copied on render to avoid bokeh errors ([#2453](https://github.com/holoviz/panel/issues/2453))
+- Allow unicode auth response body ([#2462](https://github.com/holoviz/panel/issues/2462))
+- Workaround TypeError for non-string json keys on `Plotly` pane ([#2465](https://github.com/holoviz/panel/issues/2465))
+- Fix issue with throttled updates on Param ([#2470](https://github.com/holoviz/panel/issues/2470))
+- Ensure `Tabulator` style is applied while streaming ([#2478](https://github.com/holoviz/panel/issues/2478))
+- Fix issues setting resources on save ([#2492](https://github.com/holoviz/panel/issues/2492))
+- Fix `VideoStream` unpause ([#2508](https://github.com/holoviz/panel/issues/2508))
+- Ensure `DataFrame` and `Tabulator` widget data can be updated in callback ([#2510](https://github.com/holoviz/panel/issues/2510))
+- Fix chaining of `bind` functions ([#2513](https://github.com/holoviz/panel/issues/2513))
+- Fix broken serialisation when syncing url parameters ([#2520](https://github.com/holoviz/panel/issues/2520))
+- Fix `Perspective` for string types ([#2525](https://github.com/holoviz/panel/issues/2525))
+- Fix race condition in `--autoreload` ([#2539](https://github.com/holoviz/panel/issues/2539))
+
+Documentation:
+
+- Update `Server_Deployment.ipynb` ([#2118](https://github.com/holoviz/panel/issues/2118))
+- Expand description of `watch=True` in `Param.ipynb` ([#2120](https://github.com/holoviz/panel/issues/2120))
+- Switch to PyData Sphinx Theme ([#2139](https://github.com/holoviz/panel/issues/2139))
+- Replace altair iris example with penguins ([#2213](https://github.com/holoviz/panel/issues/2213))
+- Enable Binder ([#2198](https://github.com/holoviz/panel/issues/2198))
+- Updates and fixes for Developer Guide ([#2381](https://github.com/holoviz/panel/issues/2381))
+- Fixed `Tabs` documentation ([#2448](https://github.com/holoviz/panel/issues/2448))
+- Added basic description and example of the `Tabulator.configuration` parameter ([#2412](https://github.com/holoviz/panel/issues/2412))
+- Add parameters to `Plotly` reference guide ([#2385](https://github.com/holoviz/panel/issues/2385))
+- Add useful links to developer docs ([#2319](https://github.com/holoviz/panel/issues/2319))
+- Add documentation about parameterized components ([#2454](https://github.com/holoviz/panel/issues/2454))
+- Demonstrate how to lazily load tabs ([#2479](https://github.com/holoviz/panel/issues/2479))
+
+Compatibility:
+
+- Compatibility with HoloViews 2.0 ([#2344](https://github.com/holoviz/panel/issues/2344))
+- Fix Tabulator styling with pandas 1.3 ([#2512](https://github.com/holoviz/panel/issues/2512))
+
+Deprecations:
+
+- Remove add_periodic_callback method ([#2439](https://github.com/holoviz/panel/issues/2439))
+- Remove deprecated panel.callbacks modules
+- Remove deprecated Ace pane and Audio Widget ([#2427](https://github.com/holoviz/panel/issues/2427))
+- Remove Progress widget docs ([#2451](https://github.com/holoviz/panel/issues/2451))
+- Tabulator no longer loaded by default, must be initialized with `pn.extension('tabulator'](https://github.com/holoviz/panel/issues/))` ([#2364](https://github.com/holoviz/panel/issues/2364))
+
 ## Version 0.11.3
 
 Date: 2021-04-14
