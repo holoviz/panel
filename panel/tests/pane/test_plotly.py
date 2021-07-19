@@ -92,7 +92,7 @@ def test_plotly_pane_datetime_array_transform(document, comm):
     pane = Plotly(fig)
 
     model = pane.get_root(document, comm)
-    assert model.data_sources[0].data['x'][0].dtype.kind in 'SU'
+    assert all(isinstance(v, str) for v in model.data[0]['x'])
 
 
 @plotly_available
