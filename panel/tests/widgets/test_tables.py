@@ -1,6 +1,8 @@
 import datetime as dt
 import pytest
 
+from distutils.version import LooseVersion
+
 import numpy as np
 
 try:
@@ -19,6 +21,9 @@ from bokeh.models.widgets.tables import (
 
 from panel.depends import bind
 from panel.widgets import DataFrame, Tabulator, TextInput
+
+pd_old = pytest.mark.skipif(LooseVersion(pd.__version__) < '1.3',
+                          reason="Requires latest pandas")
 
 
 def test_dataframe_widget(dataframe, document, comm):
@@ -390,7 +395,6 @@ def test_tabulator_pagination_selection(document, comm):
 
     assert model.source.selected.indices == [0, 1]
 
-
 def test_tabulator_pagination_selectable_rows(document, comm):
     df = makeMixedDataFrame()
     table = Tabulator(
@@ -406,8 +410,8 @@ def test_tabulator_pagination_selectable_rows(document, comm):
     table.page = 2
 
     assert model.selectable_rows == [3]
-    
 
+@pd_old
 def test_tabulator_styling(document, comm):
     df = makeMixedDataFrame()
     table = Tabulator(df)

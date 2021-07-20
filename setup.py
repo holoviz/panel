@@ -126,7 +126,7 @@ _tests = [
     'folium',
     'ipympl',
     'twine',
-    'pandas',
+    'pandas >=1.3',
     'ipython >=7.0',
     'holoviews'
 ]

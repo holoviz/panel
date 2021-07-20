@@ -113,11 +113,12 @@ def _reload(module=None):
     if module is not None:
         for module in _modules:
             del sys.modules[module]
-    if state.curdoc in _callbacks:
-        _callbacks[state.curdoc].stop()
-        del _callbacks[state.curdoc]
-    if state.location:
-        state.location.reload = True
+    for cb in _callbacks.values():
+        cb.stop()
+    _callbacks.clear()
+    state.location.reload = True
+    for loc in state._locations.values():
+        loc.reload = True
 
 def _check_file(modify_times, path, module=None):
     try:

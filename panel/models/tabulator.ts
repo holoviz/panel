@@ -184,7 +184,10 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       selectableCheck: (row: any) => {
 	const selectable = this.model.selectable_rows
 	return (selectable == null) || (selectable.indexOf(row._row.data._index) >= 0)
-      }
+      },
+      tooltips: (cell: any) => {
+        return  cell.getColumn().getField() + ": " + cell.getValue();
+      },
     }
     if (pagination) {
       configuration['ajaxURL'] = "http://panel.pyviz.org"
@@ -475,6 +478,8 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     this._selection_updating = true
     this.tabulator.deselectRow()
     this.tabulator.selectRow(indices)
+    // This actually places the selected row at the top of the table
+    this.tabulator.scrollToRow(indices[0], "bottom", false)
     this._selection_updating = false
   }
 
