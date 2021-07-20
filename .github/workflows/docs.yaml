@@ -24,6 +24,7 @@ jobs:
       MPLBACKEND: "Agg"
       MOZ_HEADLESS: 1
       DISPLAY: ":99.0"
+      PANEL_IPYWIDGET: 1
     steps:
       - name: remove nodejs
         run: |
