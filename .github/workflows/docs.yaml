@@ -20,7 +20,7 @@ jobs:
         shell: bash -l {0}
     env:
       DESC: "Documentation build"
-      CHANS_DEV: "-c pyviz/label/dev -c conda-forge"
+      CHANS_DEV: "-c pyviz/label/dev -c bokeh -c conda-forge"
       MPLBACKEND: "Agg"
       MOZ_HEADLESS: 1
       DISPLAY: ":99.0"
