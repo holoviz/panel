@@ -87,14 +87,13 @@ calls it with the rendered model.
 
     var skip = [];
     if (window.requirejs) {
-      {%- for conf in configs %}
-      window.requirejs.config({{ conf|conffilter }});
-      {%- endfor %}
-      require({{ requirements|json }}, function({%- for e in exports -%}{{ e }},{%- endfor -%}) {
-        {%- for exp in exports %}
-        window.{{ exp }} = {{ exp }};
-        {%- endfor %}
+      window.requirejs.config({{ config|conffilter }});
+      {% for r in requirements %}
+      require(["{{ r }}"], function({{ exports[loop.index0] }}) {
+	console.log("{{ exports[loop.index0] }}", {{ exports[loop.index0] }})
+	window.{{ exports[loop.index0] }} = {{ exports[loop.index0] }}
       })
+      {% endfor %}
     }
     {%- for lib, urls in skip_imports.items() %}
     if (((window['{{ lib }}'] !== undefined) && (!(window['{{ lib }}'] instanceof HTMLElement))) || window.requirejs) {

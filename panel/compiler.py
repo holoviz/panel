@@ -24,6 +24,7 @@ def require_components():
     notebook using REQUIRE JS.
     """
     from .config import config
+    from .reactive import ReactiveHTML
 
     configs, requirements, exports = [], [], []
     js_requires = []
@@ -35,6 +36,8 @@ def require_components():
         # The Bokeh models do not have "." in the qual_name
         if "." in qual_name:
             js_requires.append(model)
+
+    js_requires += list(param.concrete_descendents(ReactiveHTML).values())
 
     for export, js in config.js_files.items():
         name = js.split('/')[-1].replace('.min', '').split('.')[-2]
@@ -52,7 +55,7 @@ def require_components():
         if isinstance(model, dict):
             model_require = model
         else:
-            model_require = model.__js_require__
+            model_require = dict(model.__js_require__)
 
         model_exports = model_require.pop('exports', {})
         if not any(model_require == config for config in configs):

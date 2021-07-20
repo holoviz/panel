@@ -89,6 +89,26 @@ class GridStack(ReactiveHTML, GridSpec):
         'https://cdn.jsdelivr.net/npm/gridstack@4.2.5/dist/gridstack-h5.js'
     ]
 
+    __js_require__ = {
+        'paths': {
+            'gridstack': 'https://cdn.jsdelivr.net/npm/gridstack@4.2.5/dist/gridstack-h5'
+        },
+        'exports': {
+            'gridstack': 'GridStack'
+        },
+        'shim': {
+            'gridstack': {
+                'exports': 'GridStack'
+            }
+        }
+    }
+
+    @classproperty
+    def __js_skip__(cls):
+        return {
+            'GridStack': cls.__javascript__[0:1],
+        }
+
     _rename = {}
 
     @classproperty
