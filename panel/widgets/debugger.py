@@ -3,17 +3,17 @@ The Debugger Widget is an uneditable Card that gives you feedback on errors
 thrown by your Panel callbacks.
 """
 import param
+import logging
 
 #relative imports
 from .terminal import Terminal
 from .button import Button
 from ..layout.card import Card
-from ..layout import Row
-from ..pane.markup import Str
-
-from .indicators import BooleanStatus
-import logging
+from ..reactive import ReactiveHTML
 from ..io.state import state
+
+
+
 
 
 
@@ -113,7 +113,17 @@ class CheckFilter(logging.Filter):
         
         return True
     
+class TermButton(ReactiveHTML):
+    clicks = param.Integer(default=0)
+    title = param.String(doc="Text shown on button", default='Clear')
+    #Note: using name instead of title will thrown an error.
+    _template = """<button id="clear" onclick='${_input_change}' 
+                           style="width: ${model.width}px;height: 25px;background-color: black;color: white">Clear</button>"""
     
+    def _input_change(self, event):
+        self.clicks += 1
+
+
 class Debugger(Card):
     """
     A uneditable Card layout holding a terminal printing out logs from your 
@@ -155,7 +165,8 @@ class Debugger(Card):
         
         
         
-        terminal = Terminal(height = self.height - 50 if self.height else None,
+        terminal = Terminal(min_height=200,
+                            min_width=400,
                             sizing_mode='stretch_width')
         stream_handler = logging.StreamHandler(terminal)
         stream_handler.terminator = "  \n"
@@ -180,11 +191,13 @@ class Debugger(Card):
         self.param.watch(self.update_log_counts,'_number_of_infos')
         
         #body
-        self.ackn_btn = Button(name='Acknowledge errors')
-        self.ackn_btn.on_click(self.acknowledge_errors)
+        self.ackn_btn = TermButton(width=terminal.width)#setting title directly will throw a ValueError
+        #as it gets converted to a .pane.markup.Markdown object.
+        self.ackn_btn.title='Acknowledge errors'
+        self.ackn_btn.param.watch(self.acknowledge_errors, ['clicks'])
         self.terminal = terminal
-        self.append(terminal)
         self.append(self.ackn_btn)
+        self.append(terminal)
         
         #make it an uneditable card
         self.param['objects'].constant = True
