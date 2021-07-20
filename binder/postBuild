@@ -7,4 +7,4 @@ SERVICE_URL=https://open-vsx.org/vscode/gallery ITEM_URL=https://open-vsx.org/vs
 SERVICE_URL=https://open-vsx.org/vscode/gallery ITEM_URL=https://open-vsx.org/vscode/item code-server --install-extension ritwickdey.liveserver
 bokeh sampledata
 panel build panel
-jupyter serverextension enable panel.io.serverextension
+jupyter serverextension enable panel.io.jupyter_server_extension
