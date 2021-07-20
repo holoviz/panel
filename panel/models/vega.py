@@ -33,11 +33,10 @@ class VegaPlot(LayoutDOM):
         }
 
     __js_require__ = {
-        'baseUrl': 'https://cdn.jsdelivr.net/npm/',
         'paths': {
-            "vega-embed":  "vega-embed@6/build/vega-embed.min",
-            "vega-lite": "vega-lite@4/build/vega-lite.min",
-            "vega": "vega@5/build/vega.min"
+            "vega-embed":  "https://cdn.jsdelivr.net/npm/vega-embed@6/build/vega-embed.min",
+            "vega-lite": "https://cdn.jsdelivr.net/npm/vega-lite@4/build/vega-lite.min",
+            "vega": "https://cdn.jsdelivr.net/npm/vega@5/build/vega.min"
         },
         'exports': {'vega-embed': 'vegaEmbed', 'vega': 'vega', 'vega-lite': 'vl'}
     }

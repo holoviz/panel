@@ -90,7 +90,6 @@ calls it with the rendered model.
       window.requirejs.config({{ config|conffilter }});
       {% for r in requirements %}
       require(["{{ r }}"], function({{ exports[loop.index0] }}) {
-	console.log("{{ exports[loop.index0] }}", {{ exports[loop.index0] }})
 	window.{{ exports[loop.index0] }} = {{ exports[loop.index0] }}
       })
       {% endfor %}
