@@ -82,38 +82,70 @@ class CheckFilter(logging.Filter):
         """
         self.debugger = debugger
     
+    def _update_debugger(self, record):
+        if not hasattr(self, 'debugger'):
+            return
+        if record.levelno >= 40:
+            self.debugger._number_of_errors += 1
+        elif 40 > record.levelno >= 30:
+            self.debugger._number_of_warnings += 1
+        elif record.levelno < 30:
+            self.debugger._number_of_infos += 1
+            
+    
     def filter(self,record):
         """
         Will filter out messages coming from a different bokeh document than
-        the document where the debugger is embedded.
+        the document where the debugger is embedded in server mode.
+        Returns True if no debugger was added.
 
-        """
-        
-        if state.curdoc:
-            session_id = state.curdoc.session_context.id
-        else:
-            self.debugger.number_of_errors += 1
-            return True
-        
-        if hasattr(self,'debugger'):
-            self.debugger.number_of_errors += 1
-            widget_session_ids = set(m.document.session_context.id 
-                              for m in sum(self.debugger._models.values(),tuple()))
-            if session_id not in widget_session_ids:
-                return False
+        """        
+        if hasattr(self,'debugger'):#
+            if state.curdoc:
+                session_id = state.curdoc.session_context.id                
+                widget_session_ids = set(m.document.session_context.id 
+                                  for m in sum(self.debugger._models.values(),
+                                               tuple()))
+                if session_id not in widget_session_ids:
+                    return False                        
+            self._update_debugger(record)
+            
         
         return True
     
     
 class Debugger(Card):
+    """
+    A uneditable Card layout holding a terminal printing out logs from your 
+    callbacks. By default, it will only print exceptions. If you want to add
+    your own log, use the `panel.callbacks` logger within your callbacks:
+    `logger = logging.getLogger('panel.callbacks')`
+    """
     
-    number_of_errors = param.Integer(doc="Number of logged messages since last acknowledged", 
-                                      bounds=(0, None))
-    
+    _number_of_errors = param.Integer(doc="Number of logged errors since last acknowledged", 
+                                      bounds=(0, None),
+                                      precedence=-1)
+    _number_of_warnings = param.Integer(doc="Number of logged warnings since last acknowledged", 
+                                      bounds=(0, None),
+                                      precedence=-1)
+    _number_of_infos = param.Integer(doc="Number of logged informations since last acknowledged", 
+                                      bounds=(0, None),
+                                      precedence=-1)
+    only_last = param.Boolean(doc="Whether only the last stack is printed or the full",
+                              default=True)
+    level = param.Integer(doc=("Logging level to print in the debugger terminal. "
+                               "Unless you explicitely use the `panel.callbacks` "
+                               "logger within your callbacks, "
+                               "Only exceptions (errors) are caught for the moment."),
+                          default = logging.ERROR)
     _rename = Card._rename.copy()
-    _rename.update({'number_of_errors': None})
+    _rename.update({'_number_of_errors': None,
+                    '_number_of_warning': None,
+                    '_number_of_infos': None,
+                    'only_last': None,
+                    'level': None})
     
-    def __init__(self, *args,only_last=True,level=logging.ERROR, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__( *args, **kwargs)
         #change default css
         self.button_css_classes = ['debugger-card-button']
@@ -129,10 +161,10 @@ class Debugger(Card):
         stream_handler.terminator = "  \n"
         
         formatter = TermFormatter("%(asctime)s [%(levelname)s]: %(message)s",
-                          only_last=True)
+                          only_last=self.only_last)
 
         stream_handler.setFormatter(formatter)
-        stream_handler.setLevel(level)
+        stream_handler.setLevel(self.level)
         curr_filter = CheckFilter()
         
         curr_filter.add_debugger(self)
@@ -143,7 +175,9 @@ class Debugger(Card):
         logger.addHandler(stream_handler)
         
         #header
-        self.param.watch(self.update_log_counts,'number_of_errors')
+        self.param.watch(self.update_log_counts,'_number_of_errors')
+        self.param.watch(self.update_log_counts,'_number_of_warnings')
+        self.param.watch(self.update_log_counts,'_number_of_infos')
         
         #body
         self.ackn_btn = Button(name='Acknowledge errors')
@@ -155,18 +189,26 @@ class Debugger(Card):
         #make it an uneditable card
         self.param['objects'].constant = True
         
+        #by default it should be collapsed and small.
         self.collapsed = True
-                
+          
+    
     def update_log_counts(self, event):
-        if self.number_of_errors:
-            self.title = f'<span style="color:rgb(190,0,0);">errors: </span> {self.number_of_errors}'
-        else:
-            self.title = ''
+        title = []
+        
+        if self._number_of_errors:
+            title.append(f'<span style="color:rgb(190,0,0);">errors: </span>{self._number_of_errors}')
+        if self._number_of_warnings:
+            title.append(f'<span style="color:rgb(190,160,20);">w: </span>{self._number_of_warnings}')
+        if self._number_of_infos:
+            title.append(f'i: {self._number_of_infos}')
+            
+        self.title = ', '.join(title)
         
         
     def acknowledge_errors(self,event):
-        self.number_of_errors = 0
+        self._number_of_errors = 0
+        self._number_of_warnings = 0
+        self._number_of_infos = 0
         self.terminal.clear()
-        
-    
         
