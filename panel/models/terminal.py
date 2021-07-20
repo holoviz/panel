@@ -36,16 +36,17 @@ class Terminal(HTMLBox):
     @classproperty
     def __js_skip__(cls):
         return {
-            'xtermjs': cls.__javascript__[0:1],
-            'xtermjs-weblinks': cls.__javascript__[2:3],
+            'xtermjs': cls.__javascript__[0:2],
         }
 
     __js_require__ = {
         'paths': OrderedDict([
             ("xtermjs", XTERM_JS[:-3]),
-            ("xtermjs-weblinks", XTERM_LINKS_JS[:-3]),
+            ("xtermjsweblinks", XTERM_LINKS_JS[:-3]),
         ]),
         'exports': {
             "xtermjs": "xtermjs",
-            "xtermjs-weblinks": "xtermjsweblinks",},
+            "xtermjsweblinks": "WebLinksAddon"
+        },
+        'shim': {'xtermjsweblinks': {'exports': 'WebLinksAddon', 'deps': ['xtermjs']}}
     }

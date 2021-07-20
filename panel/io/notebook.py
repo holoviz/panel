@@ -96,11 +96,15 @@ AUTOLOAD_NB_JS = _env.get_template("autoload_panel_js.js")
 NB_TEMPLATE_BASE = _env.get_template('nb_template.html')
 
 def _autoload_js(bundle, configs, requirements, exports, skip_imports, ipywidget, load_timeout=5000):
+    config = {'paths': {}, 'shim': {}}
+    for conf in configs:
+        for key, c in conf.items():
+            config[key].update(c)
     return AUTOLOAD_NB_JS.render(
         bundle    = bundle,
         force     = True,
         timeout   = load_timeout,
-        configs   = configs,
+        config    = config,
         requirements = requirements,
         exports   = exports,
         skip_imports = skip_imports,

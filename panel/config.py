@@ -382,7 +382,8 @@ class panel_extension(_pyviz_extension):
         'vega': ['vega'],
         'vtk': ['vtk'],
         'terminal': ['Terminal', 'xtermjs'],
-        'tabulator': ['Tabulator']
+        'tabulator': ['Tabulator'],
+        'gridstack': ['GridStack']
     }
 
     _loaded_extensions = []
