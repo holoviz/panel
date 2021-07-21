@@ -279,6 +279,7 @@ class Syncable(Renderable):
             else:
                 msg_end = "\n"
             log.exception(f'Callback failed for object named "{self.name}"{msg_end}')
+            raise
         finally:
             with edit_readonly(state):
                 state.busy = busy

@@ -105,7 +105,7 @@ class CheckFilter(logging.Filter):
                 session_id = state.curdoc.session_context.id                
                 widget_session_ids = set(m.document.session_context.id 
                                   for m in sum(self.debugger._models.values(),
-                                               tuple()))
+                                               tuple()) if m.document.session_context)
                 if session_id not in widget_session_ids:
                     return False                        
             self._update_debugger(record)

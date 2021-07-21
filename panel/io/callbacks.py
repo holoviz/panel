@@ -72,6 +72,7 @@ class PeriodicCallback(param.Parameterized):
             self.callback()
         except:
             log.exception('Periodic callback failed.')
+            raise
         finally:
             with edit_readonly(state):
                 state.busy = False
