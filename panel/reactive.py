@@ -18,9 +18,9 @@ import numpy as np
 import param
 
 from bokeh.models import LayoutDOM
+from bokeh.model import DataModel
 from param.parameterized import ParameterizedMetaclass
 from tornado import gen
-
 import logging
 from pprint import pformat
 
@@ -36,7 +36,6 @@ from .util import edit_readonly, escape, updating
 from .viewable import Layoutable, Renderable, Viewable
 
 LinkWatcher = namedtuple("Watcher","inst cls fn mode onlychanged parameter_names what queued target links transformed bidirectional_watcher")
-
 log = logging.getLogger('panel.callbacks')
 
 class Syncable(Renderable):
@@ -44,7 +43,6 @@ class Syncable(Renderable):
     Syncable is an extension of the Renderable object which can not
     only render to a bokeh model but also sync the parameters on the
     object with the properties on the model.
-
     In order to bi-directionally link parameters with bokeh model
     instances the _link_params and _link_props methods define
     callbacks triggered when either the parameter or bokeh property
@@ -165,10 +163,17 @@ class Syncable(Renderable):
         for p in properties:
             if isinstance(p, tuple):
                 _, p = p
-            if comm:
-                model.on_change(p, partial(self._comm_change, doc, ref, comm))
+            m = model
+            if '.' in p:
+                *subpath, p = p.split('.')
+                for sp in subpath:
+                    m = getattr(m, sp)
             else:
-                model.on_change(p, partial(self._server_change, doc, ref))
+                subpath = None
+            if comm:
+                m.on_change(p, partial(self._comm_change, doc, ref, comm, subpath))
+            else:
+                m.on_change(p, partial(self._server_change, doc, ref, subpath))
 
     def _manual_update(self, events, model, doc, root, parent, comm):
         """
@@ -252,9 +257,20 @@ class Syncable(Renderable):
         changed_properties = self._process_property_change(events)
         with edit_readonly(state):
             state.busy = True
+        events = self._process_property_change(events)
         try:
             with edit_readonly(self):
-                self.param.set_param(**changed_properties)
+                self_events = {k: v for k, v in events.items() if '.' not in k}
+                self.param.set_param(**self_events)
+            for k, v in self_events.items():
+                if '.' not in k:
+                    continue
+                *subpath, p = k.split('.')
+                obj = self
+                for sp in subpath:
+                    obj = getattr(obj, sp)
+                with edit_readonly(obj):
+                    obj.param.set_param(**{p: v})
         except:
             if len(changed_properties)>1:
                 msg_end = f" changing properties {pformat(changed_properties)} \n"
@@ -284,7 +300,9 @@ class Syncable(Renderable):
             state.curdoc = None
             state._thread_id = None
 
-    def _comm_change(self, doc, ref, comm, attr, old, new):
+    def _comm_change(self, doc, ref, comm, subpath, attr, old, new):
+        if subpath:
+            attr = f'{subpath}.{attr}'
         if attr in self._changing.get(ref, []):
             self._changing[ref].remove(attr)
             return
@@ -292,7 +310,9 @@ class Syncable(Renderable):
         with hold(doc, comm=comm):
             self._process_events({attr: new})
 
-    def _server_change(self, doc, ref, attr, old, new):
+    def _server_change(self, doc, ref, subpath, attr, old, new):
+        if subpath:
+            attr = f'{subpath}.{attr}'
         if attr in self._changing.get(ref, []):
             self._changing[ref].remove(attr)
             return
@@ -315,7 +335,6 @@ class Reactive(Syncable, Viewable):
     Reactive is a Viewable object that also supports syncing between
     the objects parameters and the underlying bokeh model either via
     the defined pyviz_comms.Comm type or using bokeh server.
-
     In addition it defines various methods which make it easy to link
     the parameters to other objects.
     """
@@ -332,7 +351,6 @@ class Reactive(Syncable, Viewable):
         provide a dictionary of callbacks which maps from the source
         parameter to a callback which is triggered when the parameter
         changes.
-
         Arguments
         ---------
         target: object
@@ -396,7 +414,6 @@ class Reactive(Syncable, Viewable):
         on this instance. By default all parameters which support
         linking are exposed, but an explicit list of parameters can
         be provided.
-
         Arguments
         ---------
         parameters: list(str)
@@ -407,7 +424,6 @@ class Reactive(Syncable, Viewable):
         kwargs: dict
            Additional kwargs to pass to the Param pane(s) used to
            generate the controls widgets.
-
         Returns
         -------
         A layout of the controls
@@ -455,7 +471,6 @@ class Reactive(Syncable, Viewable):
         changes on the source object. The keyword arguments define the
         properties that trigger a callback and the JS code that gets
         executed.
-
         Arguments
         ----------
         args: dict
@@ -463,7 +478,6 @@ class Reactive(Syncable, Viewable):
         **callbacks: dict
           A mapping between properties on the source model and the code
           to execute when that property changes
-
         Returns
         -------
         callback: Callback
@@ -483,7 +497,6 @@ class Reactive(Syncable, Viewable):
         keywords or provide a dictionary of JS code snippets which
         maps from the source parameter to a JS code snippet which is
         executed when the property changes.
-
         Arguments
         ----------
         target: HoloViews object or bokeh Model or panel Viewable
@@ -496,7 +509,6 @@ class Reactive(Syncable, Viewable):
         **links: dict
           A mapping between properties on the source model and the
           target model property to link it to.
-
         Returns
         -------
         link: GenericLink
@@ -602,7 +614,6 @@ class SyncableData(Reactive):
         """
         Implemented by subclasses converting data parameter(s) into
         a ColumnDataSource compatible data dictionary.
-
         Returns
         -------
         processed: object
@@ -616,7 +627,6 @@ class SyncableData(Reactive):
         """
         Implemented by subclasses converting changes in columns to
         changes in the data parameter.
-
         Parameters
         ----------
         column: str
@@ -686,7 +696,6 @@ class SyncableData(Reactive):
         """
         Streams (appends) the `stream_value` provided to the existing
         value in an efficient manner.
-
         Arguments
         ---------
         stream_value: (Union[pd.DataFrame, pd.Series, Dict])
@@ -698,14 +707,11 @@ class SyncableData(Reactive):
         reset_index (bool, default=True):
           If True and the stream_value is a DataFrame, then its index
           is reset. Helps to keep the index unique and named `index`.
-
         Raises
         ------
         ValueError: Raised if the stream_value is not a supported type.
-
         Examples
         --------
-
         Stream a Series to a DataFrame
         >>> value = pd.DataFrame({"x": [1, 2], "y": ["a", "b"]})
         >>> obj = DataComponent(value)
@@ -713,7 +719,6 @@ class SyncableData(Reactive):
         >>> obj.stream(stream_value)
         >>> obj.value.to_dict("list")
         {'x': [1, 2, 4], 'y': ['a', 'b', 'd']}
-
         Stream a Dataframe to a Dataframe
         >>> value = pd.DataFrame({"x": [1, 2], "y": ["a", "b"]})
         >>> obj = DataComponent(value)
@@ -721,7 +726,6 @@ class SyncableData(Reactive):
         >>> obj.stream(stream_value)
         >>> obj.value.to_dict("list")
         {'x': [1, 2, 3, 4], 'y': ['a', 'b', 'c', 'd']}
-
         Stream a Dictionary row to a DataFrame
         >>> value = pd.DataFrame({"x": [1, 2], "y": ["a", "b"]})
         >>> tabulator = DataComponent(value)
@@ -729,7 +733,6 @@ class SyncableData(Reactive):
         >>> obj.stream(stream_value)
         >>> obj.value.to_dict("list")
         {'x': [1, 2, 4], 'y': ['a', 'b', 'd']}
-
         Stream a Dictionary of Columns to a Dataframe
         >>> value = pd.DataFrame({"x": [1, 2], "y": ["a", "b"]})
         >>> obj = DataComponent(value)
@@ -792,19 +795,15 @@ class SyncableData(Reactive):
     def patch(self, patch_value):
         """
         Efficiently patches (updates) the existing value with the `patch_value`.
-
         Arguments
         ---------
         patch_value: (Union[pd.DataFrame, pd.Series, Dict])
           The value(s) to patch the existing value with.
-
         Raises
         ------
         ValueError: Raised if the patch_value is not a supported type.
-
         Examples
         --------
-
         Patch a DataFrame with a Dictionary row.
         >>> value = pd.DataFrame({"x": [1, 2], "y": ["a", "b"]})
         >>> obj = DataComponent(value)
@@ -812,7 +811,6 @@ class SyncableData(Reactive):
         >>> obj.patch(patch_value)
         >>> obj.value.to_dict("list")
         {'x': [3, 2], 'y': ['a', 'b']}
-
         Patch a Dataframe with a Dictionary of Columns.
         >>> value = pd.DataFrame({"x": [1, 2], "y": ["a", "b"]})
         >>> obj = DataComponent(value)
@@ -820,7 +818,6 @@ class SyncableData(Reactive):
         >>> obj.patch(patch_value)
         >>> obj.value.to_dict("list")
         {'x': [3, 4], 'y': ['a', 'd']}
-
         Patch a DataFrame with a Series. Please note the index is used in the update.
         >>> value = pd.DataFrame({"x": [1, 2], "y": ["a", "b"]})
         >>> obj = DataComponent(value)
@@ -828,7 +825,6 @@ class SyncableData(Reactive):
         >>> obj.patch(patch_value)
         >>> obj.value.to_dict("list")
         {'x': [1, 4], 'y': ['a', 'd']}
-
         Patch a Dataframe with a Dataframe. Please note the index is used in the update.
         >>> value = pd.DataFrame({"x": [1, 2], "y": ["a", "b"]})
         >>> obj = DataComponent(value)
@@ -954,7 +950,7 @@ class ReactiveHTMLMetaclass(ParameterizedMetaclass):
     _script_regex = r"script\([\"|'](.*)[\"|']\)"
 
     def __init__(mcs, name, bases, dict_):
-        from .links import construct_data_model
+        from .links import PARAM_MAPPING, construct_data_model
 
         mcs.__original_doc__ = mcs.__doc__
         ParameterizedMetaclass.__init__(mcs, name, bases, dict_)
@@ -1000,7 +996,7 @@ class ReactiveHTMLMetaclass(ParameterizedMetaclass):
             for (attr, parameters, template) in attrs:
                 param_attrs = []
                 for p in parameters:
-                    if p in mcs.param:
+                    if p in mcs.param or '.' in p:
                         param_attrs.append(p)
                     elif re.match(mcs._script_regex, p):
                         name = re.findall(mcs._script_regex, p)[0]
@@ -1032,9 +1028,18 @@ class ReactiveHTMLMetaclass(ParameterizedMetaclass):
         ignored = list(Reactive.param)
         types = {}
         for child in mcs._parser.children.values():
+            cparam = mcs.param[child]
             if mcs._child_config.get(child) == 'literal':
                 types[child] = param.String
-            else:
+            elif (type(cparam) not in PARAM_MAPPING or
+                  isinstance(cparam, (param.List, param.Dict, param.Tuple)) or
+                  (isinstance(cparam, param.ClassSelector) and
+                   isinstance(cparam.class_, type) and
+                   (not issubclass(cparam.class_, param.Parameterized) or
+                    issubclass(cparam.class_, Reactive)))):
+                # Any parameter which can be consistently serialized
+                # (except) Panel Reactive objects can be reflected
+                # on the data model
                 ignored.append(child)
         ignored.remove('name')
 
@@ -1051,58 +1056,44 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
     """
     ReactiveHTML provides bi-directional syncing of arbitrary HTML
     attributes and DOM properties with parameters on the subclass.
-
     HTML templates
     ~~~~~~~~~~~~~~
-
     A ReactiveHTML component is declared by providing an HTML template
     on the `_template` attribute on the class. Parameters are synced by
     inserting them as template variables of the form `${parameter}`,
     e.g.:
-
         <div class="${div_class}">${children}</div>
-
     will interpolate the div_class parameter on the class. In addition
     to providing attributes we can also provide children to an HTML
     tag. By default any parameter referenced as a child will be
     treated as a Panel components to be rendered into the containing
     HTML. This makes it possible to use ReactiveHTML to lay out other
     components.
-
     Children
     ~~~~~~~~
-
     As mentioned above parameters may be referenced as children of a
     DOM node and will, by default, be treated as Panel components to
     insert on the DOM node. However by declaring a `_child_config` we
     can control how the DOM nodes are treated. The `_child_config` is
     indexed by parameter name and may declare one of three rendering
     modes:
-
       - model (default): Create child and render child as a Panel
         component into it.
       - literal: Create child and set child as its innerHTML.
       - template: Set child as innerHTML of the container.
-
     If the type is 'template' the parameter will be inserted as is and
     the DOM node's innerHTML will be synced with the child parameter.
-
     DOM Events
     ~~~~~~~~~~
-
     In certain cases it is necessary to explicitly declare event
     listeners on the DOM node to ensure that changes in their
     properties are synced when an event is fired. To make this possible
     the HTML element in question must be given a unique id, e.g.:
-
         <input id="input"></input>
-
     Now we can use this name to declare set of `_dom_events` to
     subscribe to. The following will subscribe to change DOM events
     on the input element:
-
        {'input': ['change']}
-
     Once subscribed the class may also define a method following the
     `_{node}_{event}` naming convention which will fire when the DOM
     event triggers, e.g. we could define a `_input_change` method.
@@ -1110,48 +1101,33 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
     only argument. The DOMEvent contains information about the event
     on the .data attribute and declares the type of event on the .type
     attribute.
-
     Inline callbacks
     ~~~~~~~~~~~~~~~~
-
     Instead of declaring explicit DOM events Python callbacks can also
     be declared inline, e.g.:
-
         <input id="input" onchange="${_input_change}"></input>
-
     will look for an `_input_change` method on the ReactiveHTML
     component and call it when the event is fired.
-
     Additionally we can invoke pure JS scripts defined on the class, e.g.:
-
         <input id="input" onchange="${run_script('some_script')}"></input>
-
     This will invoke the following script if it is defined on the class:
-
         _scripts = {
             'some_script': 'console.log(model, data, input, view)'
        }
-
     Scripts
     ~~~~~~~
-
     In addition to declaring callbacks in Python it is also possible
     to declare Javascript callbacks to execute when any synced
     attribute changes. Let us say we have declared an input element
     with a synced value parameter:
-
         <input id="input" value="${value}"></input>
-
     We can now declare a set of `_scripts`, which will fire whenever
     the value updates:
-
         _scripts = {
             'value': 'console.log(model, data, input)'
        }
-
     The Javascript is provided multiple objects in its namespace
     including:
-
       * data :  The data model holds the current values of the synced
                 parameters, e.g. data.value will reflect the current
                 value of the input node.
@@ -1311,7 +1287,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
                 panes = panes.values()
                 old_panes = old_panes.values()
             for old_pane in old_panes:
-                if old_pane not in panes:
+                if old_pane not in panes and hasattr(old_pane, '_cleanup'):
                     old_pane._cleanup(root)
 
         for parent, child_panes in new_panes.items():
@@ -1411,8 +1387,16 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
             if not isinstance(scripts, list):
                 scripts = [scripts]
             for script in scripts:
-                linked_properties += re.findall('data.([a-zA-Z_]\S+) =', script)
-                linked_properties += re.findall('data.([a-zA-Z_]\S+)=', script)
+                attrs = (
+                    list(re.findall('data.([a-zA-Z_]\S+)=', script)) +
+                    list(re.findall('data.([a-zA-Z_]\S+) =', script))
+                )
+                for p in attrs:
+                    if p not in linked_properties:
+                        linked_properties.append(p)
+        for children_param in self._parser.children.values():
+            if children_param in self._data_model.properties():
+                linked_properties.append(children_param)
         return linked_properties
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
@@ -1420,11 +1404,13 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         model = _BkReactiveHTML(**properties)
         if not root:
             root = model
+        for p, v in model.data.properties_with_values().items():
+            if isinstance(v, DataModel):
+                v.tags.append(f"__ref:{root.ref['id']}")
         model.children = self._get_children(doc, root, model, comm)
         model.on_event('dom_event', self._process_event)
 
         self._link_props(model.data, self._linked_properties(), doc, root, comm)
-
         self._models[root.ref['id']] = (model, parent)
         return model
 
@@ -1448,6 +1434,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
     def _set_on_model(self, msg, root, model):
         if not msg:
             return
+        old = self._changing.get(root.ref['id'], [])
         self._changing[root.ref['id']] = [
             attr for attr, value in msg.items()
             if not model.lookup(attr).property.matches(getattr(model, attr), value)
@@ -1455,7 +1442,10 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         try:
             model.update(**msg)
         finally:
-            del self._changing[root.ref['id']]
+            if old:
+                self._chaning[root.ref['id']] = old
+            else:
+                del self._changing[root.ref['id']]
 
     def _update_model(self, events, msg, root, model, doc, comm):
         child_params = self._parser.children.values()
@@ -1465,6 +1455,8 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
                 new_children[prop] = prop
                 if self._child_config.get(prop) == 'literal':
                     data_msg[prop] = bleach.clean(v)
+                elif prop in model.data.properties():
+                    data_msg[prop] = v
             elif prop in list(Reactive.param)+['events']:
                 model_msg[prop] = v
             elif prop in self.param and (self.param[prop].precedence or 0) < 0:
@@ -1480,10 +1472,10 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
             children = self._get_children(doc, root, model, comm, old_children)
         else:
             children = None
-        self._set_on_model(data_msg, root, model.data)
-        self._set_on_model(model_msg, root, model)
         if children is not None:
-            self._set_on_model({'children': children}, root, model)
+            model_msg['children'] = children
+        self._set_on_model(model_msg, root, model)
+        self._set_on_model(data_msg, root, model.data)
 
     def on_event(self, node, event, callback):
         """
@@ -1492,7 +1484,6 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         must be declared in the HTML. To create a named node you must
         give it an id of the form `id="name"`, where `name` will
         be the node identifier.
-
         Arguments
         ---------
         node: str
