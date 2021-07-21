@@ -43,6 +43,7 @@ class Syncable(Renderable):
     Syncable is an extension of the Renderable object which can not
     only render to a bokeh model but also sync the parameters on the
     object with the properties on the model.
+
     In order to bi-directionally link parameters with bokeh model
     instances the _link_params and _link_props methods define
     callbacks triggered when either the parameter or bokeh property
@@ -254,7 +255,6 @@ class Syncable(Renderable):
 
     def _process_events(self, events):
         busy = state.busy
-        changed_properties = self._process_property_change(events)
         with edit_readonly(state):
             state.busy = True
         events = self._process_property_change(events)
@@ -272,10 +272,10 @@ class Syncable(Renderable):
                 with edit_readonly(obj):
                     obj.param.set_param(**{p: v})
         except:
-            if len(changed_properties)>1:
-                msg_end = f" changing properties {pformat(changed_properties)} \n"
-            elif len(changed_properties)==1:
-                msg_end = f" changing property {pformat(changed_properties)} \n"
+            if len(events)>1:
+                msg_end = f" changing properties {pformat(events)} \n"
+            elif len(events)==1:
+                msg_end = f" changing property {pformat(events)} \n"
             else:
                 msg_end = "\n"
             log.exception(f'Callback failed for object named "{self.name}"{msg_end}')
@@ -335,6 +335,7 @@ class Reactive(Syncable, Viewable):
     Reactive is a Viewable object that also supports syncing between
     the objects parameters and the underlying bokeh model either via
     the defined pyviz_comms.Comm type or using bokeh server.
+
     In addition it defines various methods which make it easy to link
     the parameters to other objects.
     """
@@ -351,6 +352,7 @@ class Reactive(Syncable, Viewable):
         provide a dictionary of callbacks which maps from the source
         parameter to a callback which is triggered when the parameter
         changes.
+
         Arguments
         ---------
         target: object
@@ -414,6 +416,7 @@ class Reactive(Syncable, Viewable):
         on this instance. By default all parameters which support
         linking are exposed, but an explicit list of parameters can
         be provided.
+
         Arguments
         ---------
         parameters: list(str)
@@ -424,6 +427,7 @@ class Reactive(Syncable, Viewable):
         kwargs: dict
            Additional kwargs to pass to the Param pane(s) used to
            generate the controls widgets.
+
         Returns
         -------
         A layout of the controls
@@ -471,6 +475,7 @@ class Reactive(Syncable, Viewable):
         changes on the source object. The keyword arguments define the
         properties that trigger a callback and the JS code that gets
         executed.
+
         Arguments
         ----------
         args: dict
@@ -478,6 +483,7 @@ class Reactive(Syncable, Viewable):
         **callbacks: dict
           A mapping between properties on the source model and the code
           to execute when that property changes
+
         Returns
         -------
         callback: Callback
@@ -497,6 +503,7 @@ class Reactive(Syncable, Viewable):
         keywords or provide a dictionary of JS code snippets which
         maps from the source parameter to a JS code snippet which is
         executed when the property changes.
+
         Arguments
         ----------
         target: HoloViews object or bokeh Model or panel Viewable
@@ -509,6 +516,7 @@ class Reactive(Syncable, Viewable):
         **links: dict
           A mapping between properties on the source model and the
           target model property to link it to.
+
         Returns
         -------
         link: GenericLink
@@ -614,6 +622,7 @@ class SyncableData(Reactive):
         """
         Implemented by subclasses converting data parameter(s) into
         a ColumnDataSource compatible data dictionary.
+
         Returns
         -------
         processed: object
@@ -627,6 +636,7 @@ class SyncableData(Reactive):
         """
         Implemented by subclasses converting changes in columns to
         changes in the data parameter.
+
         Parameters
         ----------
         column: str
@@ -696,6 +706,7 @@ class SyncableData(Reactive):
         """
         Streams (appends) the `stream_value` provided to the existing
         value in an efficient manner.
+
         Arguments
         ---------
         stream_value: (Union[pd.DataFrame, pd.Series, Dict])
@@ -707,11 +718,14 @@ class SyncableData(Reactive):
         reset_index (bool, default=True):
           If True and the stream_value is a DataFrame, then its index
           is reset. Helps to keep the index unique and named `index`.
+
         Raises
         ------
         ValueError: Raised if the stream_value is not a supported type.
+
         Examples
         --------
+
         Stream a Series to a DataFrame
         >>> value = pd.DataFrame({"x": [1, 2], "y": ["a", "b"]})
         >>> obj = DataComponent(value)
@@ -719,6 +733,7 @@ class SyncableData(Reactive):
         >>> obj.stream(stream_value)
         >>> obj.value.to_dict("list")
         {'x': [1, 2, 4], 'y': ['a', 'b', 'd']}
+
         Stream a Dataframe to a Dataframe
         >>> value = pd.DataFrame({"x": [1, 2], "y": ["a", "b"]})
         >>> obj = DataComponent(value)
@@ -726,6 +741,7 @@ class SyncableData(Reactive):
         >>> obj.stream(stream_value)
         >>> obj.value.to_dict("list")
         {'x': [1, 2, 3, 4], 'y': ['a', 'b', 'c', 'd']}
+
         Stream a Dictionary row to a DataFrame
         >>> value = pd.DataFrame({"x": [1, 2], "y": ["a", "b"]})
         >>> tabulator = DataComponent(value)
@@ -733,6 +749,7 @@ class SyncableData(Reactive):
         >>> obj.stream(stream_value)
         >>> obj.value.to_dict("list")
         {'x': [1, 2, 4], 'y': ['a', 'b', 'd']}
+
         Stream a Dictionary of Columns to a Dataframe
         >>> value = pd.DataFrame({"x": [1, 2], "y": ["a", "b"]})
         >>> obj = DataComponent(value)
@@ -795,15 +812,19 @@ class SyncableData(Reactive):
     def patch(self, patch_value):
         """
         Efficiently patches (updates) the existing value with the `patch_value`.
+
         Arguments
         ---------
         patch_value: (Union[pd.DataFrame, pd.Series, Dict])
           The value(s) to patch the existing value with.
+
         Raises
         ------
         ValueError: Raised if the patch_value is not a supported type.
+
         Examples
         --------
+
         Patch a DataFrame with a Dictionary row.
         >>> value = pd.DataFrame({"x": [1, 2], "y": ["a", "b"]})
         >>> obj = DataComponent(value)
@@ -811,6 +832,7 @@ class SyncableData(Reactive):
         >>> obj.patch(patch_value)
         >>> obj.value.to_dict("list")
         {'x': [3, 2], 'y': ['a', 'b']}
+
         Patch a Dataframe with a Dictionary of Columns.
         >>> value = pd.DataFrame({"x": [1, 2], "y": ["a", "b"]})
         >>> obj = DataComponent(value)
@@ -818,6 +840,7 @@ class SyncableData(Reactive):
         >>> obj.patch(patch_value)
         >>> obj.value.to_dict("list")
         {'x': [3, 4], 'y': ['a', 'd']}
+
         Patch a DataFrame with a Series. Please note the index is used in the update.
         >>> value = pd.DataFrame({"x": [1, 2], "y": ["a", "b"]})
         >>> obj = DataComponent(value)
@@ -825,6 +848,7 @@ class SyncableData(Reactive):
         >>> obj.patch(patch_value)
         >>> obj.value.to_dict("list")
         {'x': [1, 4], 'y': ['a', 'd']}
+
         Patch a Dataframe with a Dataframe. Please note the index is used in the update.
         >>> value = pd.DataFrame({"x": [1, 2], "y": ["a", "b"]})
         >>> obj = DataComponent(value)
@@ -1056,44 +1080,58 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
     """
     ReactiveHTML provides bi-directional syncing of arbitrary HTML
     attributes and DOM properties with parameters on the subclass.
+
     HTML templates
     ~~~~~~~~~~~~~~
+
     A ReactiveHTML component is declared by providing an HTML template
     on the `_template` attribute on the class. Parameters are synced by
     inserting them as template variables of the form `${parameter}`,
     e.g.:
+
         <div class="${div_class}">${children}</div>
+
     will interpolate the div_class parameter on the class. In addition
     to providing attributes we can also provide children to an HTML
     tag. By default any parameter referenced as a child will be
     treated as a Panel components to be rendered into the containing
     HTML. This makes it possible to use ReactiveHTML to lay out other
     components.
+
     Children
     ~~~~~~~~
+
     As mentioned above parameters may be referenced as children of a
     DOM node and will, by default, be treated as Panel components to
     insert on the DOM node. However by declaring a `_child_config` we
     can control how the DOM nodes are treated. The `_child_config` is
     indexed by parameter name and may declare one of three rendering
     modes:
+
       - model (default): Create child and render child as a Panel
         component into it.
       - literal: Create child and set child as its innerHTML.
       - template: Set child as innerHTML of the container.
+
     If the type is 'template' the parameter will be inserted as is and
     the DOM node's innerHTML will be synced with the child parameter.
+
     DOM Events
     ~~~~~~~~~~
+
     In certain cases it is necessary to explicitly declare event
     listeners on the DOM node to ensure that changes in their
     properties are synced when an event is fired. To make this possible
     the HTML element in question must be given a unique id, e.g.:
+
         <input id="input"></input>
+
     Now we can use this name to declare set of `_dom_events` to
     subscribe to. The following will subscribe to change DOM events
     on the input element:
+
        {'input': ['change']}
+
     Once subscribed the class may also define a method following the
     `_{node}_{event}` naming convention which will fire when the DOM
     event triggers, e.g. we could define a `_input_change` method.
@@ -1101,33 +1139,48 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
     only argument. The DOMEvent contains information about the event
     on the .data attribute and declares the type of event on the .type
     attribute.
+
     Inline callbacks
     ~~~~~~~~~~~~~~~~
+
     Instead of declaring explicit DOM events Python callbacks can also
     be declared inline, e.g.:
+
         <input id="input" onchange="${_input_change}"></input>
+
     will look for an `_input_change` method on the ReactiveHTML
     component and call it when the event is fired.
+
     Additionally we can invoke pure JS scripts defined on the class, e.g.:
+
         <input id="input" onchange="${run_script('some_script')}"></input>
+
     This will invoke the following script if it is defined on the class:
+
         _scripts = {
             'some_script': 'console.log(model, data, input, view)'
        }
+
     Scripts
     ~~~~~~~
+
     In addition to declaring callbacks in Python it is also possible
     to declare Javascript callbacks to execute when any synced
     attribute changes. Let us say we have declared an input element
     with a synced value parameter:
+
         <input id="input" value="${value}"></input>
+
     We can now declare a set of `_scripts`, which will fire whenever
     the value updates:
+
         _scripts = {
             'value': 'console.log(model, data, input)'
        }
+
     The Javascript is provided multiple objects in its namespace
     including:
+
       * data :  The data model holds the current values of the synced
                 parameters, e.g. data.value will reflect the current
                 value of the input node.
@@ -1484,6 +1537,7 @@ class ReactiveHTML(Reactive, metaclass=ReactiveHTMLMetaclass):
         must be declared in the HTML. To create a named node you must
         give it an id of the form `id="name"`, where `name` will
         be the node identifier.
+
         Arguments
         ---------
         node: str
