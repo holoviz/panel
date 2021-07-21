@@ -70,7 +70,7 @@ class PeriodicCallback(param.Parameterized):
             state.busy = True
         try:
             self.callback()
-        except:
+        except Exception:
             log.exception('Periodic callback failed.')
             raise
         finally:

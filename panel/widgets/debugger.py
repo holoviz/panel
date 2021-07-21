@@ -7,7 +7,6 @@ import logging
 
 #relative imports
 from .terminal import Terminal
-from .button import Button
 from ..layout.card import Card
 from ..reactive import ReactiveHTML
 from ..io.state import state

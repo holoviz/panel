@@ -271,7 +271,7 @@ class Syncable(Renderable):
                     obj = getattr(obj, sp)
                 with edit_readonly(obj):
                     obj.param.set_param(**{p: v})
-        except:
+        except Exception:
             if len(events)>1:
                 msg_end = f" changing properties {pformat(events)} \n"
             elif len(events)==1:
