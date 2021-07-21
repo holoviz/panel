@@ -55,18 +55,7 @@ export class TerminalView extends PanelHTMLBoxView {
 
   getNewWebLinksAddon(): any {
     const wn = (window as any)
-    if (wn.WebLinksAddon)
-      return new wn.WebLinksAddon.WebLinksAddon()
-    else
-      return new wn.xtermjsweblinks.WebLinksAddon()
-  }
-
-  getNewFitAddon(): any {
-    const wn = (window as any)
-    if (wn.FitAddon)
-      return new wn.FitAddon.FitAddon()
-    else
-      return new wn.xtermjsfit.FitAddon()
+    return new wn.WebLinksAddon.WebLinksAddon()
   }
 
   handleOnData(value: string): void {
