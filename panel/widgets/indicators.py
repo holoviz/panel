@@ -749,6 +749,8 @@ class Tqdm(Indicator):
 
     _layouts = {Row: 'row', Column: 'column'}
 
+    _rename = {'value': None, 'min': None, 'max': None, 'text': None}
+
     def __init__(self, **params):
         layout = params.pop('layout', 'column')
         layout = self._layouts.get(layout, layout) 
