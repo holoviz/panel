@@ -10,7 +10,7 @@ from .terminal import Terminal
 from ..layout.card import Card
 from ..reactive import ReactiveHTML
 from ..io.state import state
-
+from ..layout import Row, HSpacer
 
 
 
@@ -112,17 +112,31 @@ class CheckFilter(logging.Filter):
         
         return True
     
-class TermButton(ReactiveHTML):
+class _SpecialButton(ReactiveHTML):
     clicks = param.Integer(default=0)
-    title = param.String(doc="Text shown on button", default='Clear')
-    #Note: using name instead of title will thrown an error.
-    _template = """<button id="clear" onclick='${_input_change}' 
-                           style="width: ${model.width}px;height: 25px;background-color: black;color: white">Clear</button>"""
     
     def _input_change(self, event):
         self.clicks += 1
 
-
+class ClearButton(_SpecialButton):
+    _template = """<button class='special_btn clear_btn' 
+                           id="clear_btn" 
+                           onclick='${_input_change}' 
+                           style="width: ${model.width}px;">
+                           <span class="shown">☐</span>
+                           <span class="tooltiptext">Acknowledge logs and clear</span>
+                           </button>"""
+    
+class SaveButton(_SpecialButton):
+    _template = """<button class='special_btn' 
+                           id="save_btn" 
+                           onclick='${_input_change}' 
+                           style="width: ${model.width}px;">
+                              💾
+                                <span class="tooltiptext">Save logs</span>
+                    </button>"""
+    
+    
 class Debugger(Card):
     """
     A uneditable Card layout holding a terminal printing out logs from your 
@@ -166,7 +180,8 @@ class Debugger(Card):
         
         terminal = Terminal(min_height=200,
                             min_width=400,
-                            sizing_mode='stretch_width')
+                            sizing_mode='stretch_width',
+                            name=self.name)
         stream_handler = logging.StreamHandler(terminal)
         stream_handler.terminator = "  \n"
         
@@ -184,18 +199,48 @@ class Debugger(Card):
         logger=  logging.getLogger('panel.callbacks')
         logger.addHandler(stream_handler)
         
-        #header
+        #callbacks for header
         self.param.watch(self.update_log_counts,'_number_of_errors')
         self.param.watch(self.update_log_counts,'_number_of_warnings')
         self.param.watch(self.update_log_counts,'_number_of_infos')
         
-        #body
-        self.ackn_btn = TermButton(width=terminal.width)#setting title directly will throw a ValueError
-        #as it gets converted to a .pane.markup.Markdown object.
-        self.ackn_btn.title='Acknowledge errors'
+        #buttons
+        self.ackn_btn = ClearButton()
+        self.save_btn = SaveButton()
         self.ackn_btn.param.watch(self.acknowledge_errors, ['clicks'])
+        
+        js_cb = """
+        function saveTerminalToFile() {
+                    var filename = terminal.name+'.txt'
+                    console.log(filename)
+                    var blob = new Blob([terminal.output],
+                        { type: "text/plain;charset=utf-8" });
+                    if (navigator.msSaveBlob) {
+                        navigator.msSaveBlob(blob, filename);
+                    } else {
+                        var link = document.createElement('a');
+                        var url = URL.createObjectURL(blob);
+                        link.href = url;
+                        link.download = filename;                
+                        document.body.appendChild(link);
+                        link.click();
+                        setTimeout(function() {
+                            document.body.removeChild(link);
+                            window.URL.revokeObjectURL(url);  
+                        }, 0); 
+                    }
+                }
+        saveTerminalToFile();
+        """
+        
+        self.save_btn.jscallback(clicks=js_cb, args={'terminal':terminal})
+        
+        #set header
+        self.title = ''    
+        
+        #body
         self.terminal = terminal
-        self.append(self.ackn_btn)
+        self.append(Row(self.name, HSpacer(),self.ackn_btn,self.save_btn, align=('end','start')))
         self.append(terminal)
         
         #make it an uneditable card
@@ -204,6 +249,7 @@ class Debugger(Card):
         #by default it should be collapsed and small.
         self.collapsed = True
           
+        
     
     def update_log_counts(self, event):
         title = []
