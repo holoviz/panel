@@ -392,6 +392,7 @@ class ResponsiveGrid extends React.PureComponent
         this.setState({
             layouts: {{ layouts }}
         });
+        window.location.href = window.location.protocol + "//" + window.location.host + window.location.pathname + window.location.search;
     }
     onLayoutChange(layout, layouts)
     {
