@@ -63,6 +63,7 @@ jobs:
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
+          conda install ${{ env.CHANS_DEV }} "pip<21.2.1" 
           conda list
           doit develop_install ${{ env.CHANS_DEV}} -o examples -o recommended -o tests -o build
           pip install pyecharts idom
