@@ -154,7 +154,11 @@
  const divStyle = {borderRadius: '5px'};
 
  const ResponsiveGridLayout = ReactGridLayout.WidthProvider(ReactGridLayout.Responsive);
+ {% if saveLayout %}
  const originalLayout = getFromLS("layouts") || {{ layouts }};
+ {% else %}
+ const originalLayout = {{ layouts }};
+ {% endif %}
 
  function resize_layout(obj, old_, new_, p, e, element) {
      window.dispatchEvent(new Event("resize"))
