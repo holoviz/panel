@@ -5,7 +5,7 @@
   border-radius: 0rem;
 }
 .bk.debugger-card-header {
-  align-items: left;
+  align-items: center;
   text-align: left;
   background-color: rgba(0, 0, 0, 1)!important;
   color: rgba(255, 255, 255, 1);
@@ -20,7 +20,7 @@
   margin-left: 0.5em;
 }
 .bk.debugger-card-title {
-  align-items: left;
+  align-items: center;
   text-align: left;
   color: rgba(255, 255, 255, 1);
   font-size: 1em;

@@ -112,30 +112,57 @@ class CheckFilter(logging.Filter):
         
         return True
     
-class _SpecialButton(ReactiveHTML):
-    clicks = param.Integer(default=0)
+class DebuggerButtons(ReactiveHTML):
     
-    def _input_change(self, event):
-        self.clicks += 1
-
-class ClearButton(_SpecialButton):
-    _template = """<button class='special_btn clear_btn' 
+    terminal_output = param.String()
+    
+    debug_name = param.String()
+    
+    clears = param.Integer(default=0)
+    
+    _template = """<div class="bk" style="display: flex;"><button class='special_btn clear_btn' 
                            id="clear_btn" 
-                           onclick='${_input_change}' 
+                           onclick="${script('click_clear')}"  
                            style="width: ${model.width}px;">
                            <span class="shown">☐</span>
                            <span class="tooltiptext">Acknowledge logs and clear</span>
-                           </button>"""
-    
-class SaveButton(_SpecialButton):
-    _template = """<button class='special_btn' 
+                   </button>
+                   <button class='special_btn' 
                            id="save_btn" 
-                           onclick='${_input_change}' 
+                           onclick="${script('click')}" 
                            style="width: ${model.width}px;">
                               💾
                                 <span class="tooltiptext">Save logs</span>
-                    </button>"""
+                    </button>
+                    </div>"""
     
+    
+    js_cb = """
+        var filename = data.debug_name+'.txt'
+        console.log('saving debugger terminal output to '+filename)
+        var blob = new Blob([data.terminal_output],
+            { type: "text/plain;charset=utf-8" });
+        if (navigator.msSaveBlob) {
+            navigator.msSaveBlob(blob, filename);
+        } else {
+            var link = document.createElement('a');
+            var url = URL.createObjectURL(blob);
+            link.href = url;
+            link.download = filename;                
+            document.body.appendChild(link);
+            link.click();
+            setTimeout(function() {
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);  
+            }, 0); 
+        }
+        """
+    
+    _scripts = {'click': js_cb,
+                'click_clear': "data.clears += 1"}
+    
+    
+    _dom_events = {'clear_btn': ['click']}
     
 class Debugger(Card):
     """
@@ -163,7 +190,7 @@ class Debugger(Card):
                           default = logging.ERROR)
     _rename = Card._rename.copy()
     _rename.update({'_number_of_errors': None,
-                    '_number_of_warning': None,
+                    '_number_of_warnings': None,
                     '_number_of_infos': None,
                     'only_last': None,
                     'level': None})
@@ -199,48 +226,34 @@ class Debugger(Card):
         logger=  logging.getLogger('panel.callbacks')
         logger.addHandler(stream_handler)
         
+        
+        self.terminal = terminal
+        
         #callbacks for header
         self.param.watch(self.update_log_counts,'_number_of_errors')
         self.param.watch(self.update_log_counts,'_number_of_warnings')
         self.param.watch(self.update_log_counts,'_number_of_infos')
         
         #buttons
-        self.ackn_btn = ClearButton()
-        self.save_btn = SaveButton()
-        self.ackn_btn.param.watch(self.acknowledge_errors, ['clicks'])
-        
-        js_cb = """
-        function saveTerminalToFile() {
-                    var filename = terminal.name+'.txt'
-                    console.log(filename)
-                    var blob = new Blob([terminal.output],
-                        { type: "text/plain;charset=utf-8" });
-                    if (navigator.msSaveBlob) {
-                        navigator.msSaveBlob(blob, filename);
-                    } else {
-                        var link = document.createElement('a');
-                        var url = URL.createObjectURL(blob);
-                        link.href = url;
-                        link.download = filename;                
-                        document.body.appendChild(link);
-                        link.click();
-                        setTimeout(function() {
-                            document.body.removeChild(link);
-                            window.URL.revokeObjectURL(url);  
-                        }, 0); 
-                    }
-                }
-        saveTerminalToFile();
+        self.btns = DebuggerButtons()
+        inc = """
+        target.data.terminal_output += source.output
         """
+        clr = """
+        target.data.terminal_output = ''
+        """
+        self.terminal.jslink(self.btns,code={'_output': inc})
+        self.terminal.jslink(self.btns,code={'_clears': clr})
+        self.btns.jslink(self.terminal,clears='_clears')
+        self.terminal.param.watch(self.acknowledge_errors, ['_clears'])      
         
-        self.save_btn.jscallback(clicks=js_cb, args={'terminal':terminal})
+        self.jslink(self.btns,name='debug_name')
         
         #set header
         self.title = ''    
         
         #body
-        self.terminal = terminal
-        self.append(Row(self.name, HSpacer(),self.ackn_btn,self.save_btn, align=('end','start')))
+        self.append(Row(self.name, HSpacer(),self.btns, align=('end','start')))
         self.append(terminal)
         
         #make it an uneditable card
@@ -268,5 +281,4 @@ class Debugger(Card):
         self._number_of_errors = 0
         self._number_of_warnings = 0
         self._number_of_infos = 0
-        self.terminal.clear()
         
