@@ -110,6 +110,7 @@ jobs:
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
+          conda install ${{ env.CHANS_DEV }} "pip<21.2.1" 
           doit develop_install $CHANS_DEV -o build
           pip uninstall -y panel
           doit pip_on_conda
