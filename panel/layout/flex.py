@@ -38,6 +38,14 @@ class FlexBox(ListLike, ReactiveHTML):
 
     _template = (Path(__file__).parent / 'flexbox.html').read_text('utf-8')
 
+    _scripts = {'after_layout': """
+    if (view.parent != null && view._has_finished && !state.resizing) {
+      state.resizing = true
+      view.parent.invalidate_layout()
+      state.resizing = false
+    }
+    """}
+
     def __init__(self, *objects, **params):
         if 'sizing_mode' not in params:
             direction = params.get('flex_direction', self.flex_direction)
