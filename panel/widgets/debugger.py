@@ -195,8 +195,8 @@ class Debugger(Card):
                     'only_last': None,
                     'level': None})
     
-    def __init__(self, *args, **kwargs):
-        super().__init__( *args, **kwargs)
+    def __init__(self, **params):
+        super().__init__(**params)
         #change default css
         self.button_css_classes = ['debugger-card-button']
         self.css_classes = ['debugger-card']
