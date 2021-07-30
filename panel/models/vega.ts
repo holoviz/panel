@@ -1,10 +1,24 @@
 import * as p from "@bokehjs/core/properties"
+import {ModelEvent, JSON} from "@bokehjs/core/bokeh_events"
 import {isArray} from "@bokehjs/core/util/types"
 import {HTMLBox, HTMLBoxView} from "@bokehjs/models/layouts/html_box"
+
+export class VegaEvent extends ModelEvent {
+  event_name: string = "vega_event"
+
+  constructor(readonly data: any) {
+    super()
+  }
+
+  protected _to_json(): JSON {
+    return {model: this.origin, data: this.data}
+  }
+}
 
 export class VegaPlotView extends HTMLBoxView {
   model: VegaPlot
   vega_view: any
+  _callbacks: string[]
   _connected: string[]
 
   connect_signals(): void {
@@ -14,6 +28,14 @@ export class VegaPlotView extends HTMLBoxView {
       this._plot()
     })
     this.connect(this.model.properties.data_sources.change, () => this._connect_sources())
+    this.connect(this.model.properties.events.change, () => {
+      for (const event of this.model.events) {
+	if (this._callbacks.indexOf(event) > -1)
+	  continue
+	this._callbacks.push(event)
+	this._vega_view.addSignalListener(event, (name: string, value: any) => this._dispatch_event(name, value))
+      }
+    })
     this._connected = []
     this._connect_sources()
   }
@@ -26,6 +48,10 @@ export class VegaPlotView extends HTMLBoxView {
         this._connected.push(ds)
       }
     }
+  }
+
+  _dispatch_event(name: string, value: any): void {
+    this.model.trigger_event(new VegaEvent({type: name, value: value}))
   }
 
   _fetch_datasets() {
@@ -48,6 +74,7 @@ export class VegaPlotView extends HTMLBoxView {
 
   render(): void {
     super.render()
+    this._callbacks = []
     this._plot()
   }
 
@@ -79,6 +106,12 @@ export class VegaPlotView extends HTMLBoxView {
       if (this.vega_view._viewHeight <= 0 || this.vega_view._viewWidth <= 0) {
 	(window as any).dispatchEvent(new Event('resize'));
       }
+      for (const event of this.model.events) {
+	this._callbacks.push(event)
+	this.vega_view.addSignalListener(event, (name: string, value: any) => {
+	  this._dispatch_event(name, value)
+	})
+      }
     })
   }
 
@@ -108,6 +141,7 @@ export namespace VegaPlot {
   export type Props = HTMLBox.Props & {
     data: p.Property<any>
     data_sources: p.Property<any>
+    events: p.Property<string[]>
     show_actions: p.Property<boolean>
     theme: p.Property<string | null>
   }
@@ -127,11 +161,12 @@ export class VegaPlot extends HTMLBox {
   static init_VegaPlot(): void {
     this.prototype.default_view = VegaPlotView
 
-    this.define<VegaPlot.Props>(({Any, Boolean, String}) => ({
-      data:         [ Any,        {} ],
-      data_sources: [ Any,        {} ],
-      show_actions: [ Boolean, false ],
-      theme:        [ String,        ]
+    this.define<VegaPlot.Props>(({Any, Array, Boolean, String}) => ({
+      data:         [ Any,           {} ],
+      data_sources: [ Any,           {} ],
+      events:       [ Array(String), [] ],
+      show_actions: [ Boolean,    false ],
+      theme:        [ String,           ]
     }))
   }
 }

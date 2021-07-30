@@ -1,5 +1,7 @@
 import sys
 
+from collections import defaultdict
+
 import param
 import numpy as np
 
@@ -51,6 +53,10 @@ class Vega(PaneBase):
     priority = 0.8
 
     _updates = True
+
+    def __init__(self, object=None, **params):
+        super().__init__(object, **params)
+        self._event_callbacks = defaultdict(list)
 
     @classmethod
     def is_altair(cls, obj):
@@ -144,6 +150,11 @@ class Vega(PaneBase):
         elif responsive_height:
             props['sizing_mode'] = 'stretch_height'
 
+    def _process_event(self, event):
+        cbs = self._event_callbacks.get(event.data['type'], [])
+        for cb in cbs:
+            cb(event)
+            
     def _get_model(self, doc, root=None, parent=None, comm=None):
         VegaPlot = lazy_load('panel.models.vega', 'VegaPlot', isinstance(comm, JupyterComm), root)
         sources = {}
@@ -153,8 +164,10 @@ class Vega(PaneBase):
             json = self._to_json(self.object)
             self._get_sources(json, sources)
         props = self._process_param_change(self._init_params())
+        events = list(self._event_callbacks)
         self._get_dimensions(json, props)
-        model = VegaPlot(data=json, data_sources=sources, **props)
+        model = VegaPlot(data=json, data_sources=sources, events=events, **props)
+        model.on_event('vega_event', self._process_event)
         if root is None:
             root = model
         self._models[root.ref['id']] = (model, parent)
@@ -171,3 +184,19 @@ class Vega(PaneBase):
         self._get_dimensions(json, props)
         props['data'] = json
         model.update(**props)
+
+    def on_event(self, event, callback):
+        """
+        Registers a callback to be executed when a particular event
+        fires.
+
+        Arguments
+        ---------
+        event: str
+          Name of the DOM event to add an event listener to.
+        callback: callable
+          A callable which will be given the VegaEvent object.
+        """
+        self._event_callbacks[event].append(callback)
+        for ref, (model, _) in self._models.items():
+            self._apply_update([], {'events': list(self._event_callbacks)}, model, ref)
