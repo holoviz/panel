@@ -102,7 +102,7 @@ def write_bundled_files(name, files, bundle_dir, explicit_dir=None, ext=None):
         except Exception:
             try:
                 map_response = requests.get(map_file, verify=False)
-            except Exception as e:
+            except Exception:
                 map_response = None
         bundle_path = os.path.join(*os.path.join(*bundle_file.split('//')[1:]).split('/')[1:])
         obj_dir = explicit_dir or model_name
