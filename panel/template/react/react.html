@@ -213,7 +213,7 @@
          this.setState({
              layouts: {{ layouts }}
          });
-         window.location.href = window.location.href
+         window.dispatchEvent(new Event("resize"))
      }
 
      onLayoutChange(layout, layouts)
