@@ -4,7 +4,7 @@ model state, and rendering panel objects.
 """
 import sys
 
-from .callbacks import PeriodicCallback # noqa
+from .callbacks import PeriodicCallback, debounce, throttle # noqa
 from .embed import embed_state # noqa
 from .logging import panel_logger # noqa
 from .model import add_to_doc, remove_root, diff # noqa

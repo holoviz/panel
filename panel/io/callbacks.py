@@ -13,6 +13,9 @@ from bokeh.io import curdoc as _curdoc
 
 from ..util import edit_readonly, function_name
 from .logging import LOG_PERIODIC_START, LOG_PERIODIC_END
+from functools import partial, wraps
+
+from ..util import edit_readonly
 from .state import state
 
 _periodic_logger = logging.getLogger(f'{__name__}.PeriodicCallback')
@@ -162,3 +165,51 @@ class PeriodicCallback(param.Parameterized):
                 if cb is not self._cleanup
             }
             self._doc = None
+
+
+def _throttle(*args, timeout=100, policy='debounce'):
+    """
+    Decorator which allows throttling a callback function.
+
+    Parameters
+    ----------
+    timeout: int
+      Debounce timeout in milliseconds
+    policy: str
+      Allows switching between throttling and debouncing behavior
+    """
+    state = {}
+    def wrapper(func):
+        def execute():
+            if 'expiry' not in state:
+                return
+            expiry = state['expiry']
+            now = time.monotonic()
+            if now < expiry:
+                period = int((expiry-now)*1000)
+                PeriodicCallback(
+                    callback=execute, period=period, count=1
+                ).start()
+                return
+            func(*state['args'], **state['kwargs'])
+            state.clear()
+        @wraps(func)
+        def inner(*args, **kwargs):
+            expiry = state.get('expiry')
+            now = time.monotonic()
+            state['args'] = args
+            state['kwargs'] = kwargs
+            if policy == 'debounce':
+                state['expiry'] = now + (timeout/1000.)
+            if expiry is None:
+                PeriodicCallback(callback=execute, period=timeout, count=1).start()
+                if policy == 'throttle':
+                    state['expiry'] = now + (timeout/1000.)
+        return inner
+    if args:
+        return wrapper(*args)
+    return wrapper
+
+
+throttle = partial(_throttle, policy='throttle')
+debounce = partial(_throttle, policy='debounce')

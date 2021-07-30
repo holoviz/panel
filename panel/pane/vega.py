@@ -1,4 +1,5 @@
 import sys
+import time
 
 from collections import defaultdict
 
@@ -8,6 +9,7 @@ import numpy as np
 from bokeh.models import ColumnDataSource
 from pyviz_comms import JupyterComm
 
+from ..io.callbacks import PeriodicCallback, debounce as _debounce
 from ..viewable import Layoutable
 from ..util import lazy_load, string_types
 from .base import PaneBase
@@ -57,6 +59,7 @@ class Vega(PaneBase):
     def __init__(self, object=None, **params):
         super().__init__(object, **params)
         self._event_callbacks = defaultdict(list)
+        self._event_state = {}
 
     @classmethod
     def is_altair(cls, obj):
@@ -151,10 +154,12 @@ class Vega(PaneBase):
             props['sizing_mode'] = 'stretch_height'
 
     def _process_event(self, event):
-        cbs = self._event_callbacks.get(event.data['type'], [])
+        event_type = event.data['type']
+        self._event_state[event_type] = event
+        cbs = self._event_callbacks.get(event_type, [])
         for cb in cbs:
             cb(event)
-            
+
     def _get_model(self, doc, root=None, parent=None, comm=None):
         VegaPlot = lazy_load('panel.models.vega', 'VegaPlot', isinstance(comm, JupyterComm), root)
         sources = {}
@@ -185,7 +190,7 @@ class Vega(PaneBase):
         props['data'] = json
         model.update(**props)
 
-    def on_event(self, event, callback):
+    def on_event(self, event, callback, debounce=100):
         """
         Registers a callback to be executed when a particular event
         fires.
@@ -196,7 +201,11 @@ class Vega(PaneBase):
           Name of the DOM event to add an event listener to.
         callback: callable
           A callable which will be given the VegaEvent object.
+        debounce: int or None
+          Debounce duration
         """
+        if debounce:
+            callback = _debounce(callback, timeout=debounce)
         self._event_callbacks[event].append(callback)
         for ref, (model, _) in self._models.items():
             self._apply_update([], {'events': list(self._event_callbacks)}, model, ref)

@@ -30,10 +30,10 @@ export class VegaPlotView extends HTMLBoxView {
     this.connect(this.model.properties.data_sources.change, () => this._connect_sources())
     this.connect(this.model.properties.events.change, () => {
       for (const event of this.model.events) {
-	if (this._callbacks.indexOf(event) > -1)
-	  continue
-	this._callbacks.push(event)
-	this._vega_view.addSignalListener(event, (name: string, value: any) => this._dispatch_event(name, value))
+        if (this._callbacks.indexOf(event) > -1)
+          continue
+        this._callbacks.push(event)
+        this._vega_view.addSignalListener(event, (name: string, value: any) => this._dispatch_event(name, value))
       }
     })
     this._connected = []
