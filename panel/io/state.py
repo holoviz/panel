@@ -68,6 +68,7 @@ class _state(param.Parameterized):
 
     # Used to ensure that events are not scheduled from the wrong thread
     _thread_id = None
+    _thread_pool = None
 
     _comm_manager = _CommManager
 
