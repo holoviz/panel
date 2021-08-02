@@ -217,6 +217,7 @@
          this.setState({
              layouts: {{ layouts }}
          });
+         window.dispatchEvent(new Event("resize"))
      }
 
      onLayoutChange(layout, layouts)
