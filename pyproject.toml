@@ -8,5 +8,5 @@ requires = [
     "requests",
     "bleach",
     "packaging",
-    "tqdm"
+    "tqdm >=4.48.0"
 ]

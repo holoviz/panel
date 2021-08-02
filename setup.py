@@ -102,7 +102,7 @@ install_requires = [
     'pyviz_comms >=0.7.4',
     'markdown',
     'requests',
-    'tqdm',
+    'tqdm >=4.48.0',
     'pyct >=0.4.4',
     'bleach'
 ]
