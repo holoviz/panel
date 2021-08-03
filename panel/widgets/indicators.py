@@ -193,10 +193,10 @@ class Number(ValueIndicator):
         if value is None:
             value = float('nan')
         value = format.format(value=value).replace('nan', nan_format)
-        text = f'<div style="font-size: {font_size}; color: {color}">{value}</div>'
+        text = f'<div style="font-size: {font_size}; color: {color};line-height:1.42857">{value}</div>'
         if self.name:
             title_font_size = msg.pop('title_size', self.title_size)
-            text = f'<div style="font-size: {title_font_size}; color: {color}">{name}</div>\n{text}'
+            text = f'<div style="font-size: {title_font_size}; color: {color};line-height:1.42857">{name}</div>\n{text}'
         msg['text'] = escape(text)
         return msg
 
@@ -753,7 +753,7 @@ class Tqdm(Indicator):
 
     def __init__(self, **params):
         layout = params.pop('layout', 'column')
-        layout = self._layouts.get(layout, layout) 
+        layout = self._layouts.get(layout, layout)
         if "text_pane" not in params:
             sizing_mode = 'stretch_width' if layout == 'column' else 'fixed'
             params["text_pane"] = Str(
