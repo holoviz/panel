@@ -127,8 +127,9 @@ class _config(_base_config):
         The theme to apply to the selected global template.""")
 
     nthreads = param.Integer(default=0, doc="""
-        Whether to launch a thread-pool which will be tasked with
-        handling user requests.""")
+        When set to a non-None value a thread pool will be started.
+        Whenever an event arrives from the frontend it will be
+        dispatched to the thread pool to be processed.""")
 
     throttled = param.Boolean(default=False, doc="""
         If sliders and inputs should be throttled until release of mouse.""")
@@ -212,15 +213,16 @@ class _config(_base_config):
 
     @param.depends('nthreads', watch=True)
     def _set_thread_pool(self):
-        if self.nthreads == 0:
+        if self.nthreads is None:
             if state._thread_pool is not None:
                 state._thread_pool.shutdown(wait=False)
-            state.thread_pool = None
+            state._thread_pool = None
             return
         from .io.state import state
         if state._thread_pool:
             raise RuntimeError("Thread pool already running")
-        state._thread_pool = ThreadPoolExecutor(max_workers=self.nthreads)
+        threads = self.nthreads if self.nthreads else None
+        state._thread_pool = ThreadPoolExecutor(max_workers=threads)
 
     @contextmanager
     def set(self, **kwargs):
