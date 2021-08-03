@@ -5,7 +5,7 @@ on a running bokeh server.
 import time
 import param
 
-from bokeh.io import curdoc
+from bokeh.io import curdoc as _curdoc
 
 from ..util import edit_readonly
 from .state import state
@@ -111,7 +111,10 @@ class PeriodicCallback(param.Parameterized):
             from tornado.ioloop import PeriodicCallback
             self._cb = PeriodicCallback(self._periodic_callback, self.period)
             self._cb.start()
-        state.on_session_destroyed(self._cleanup)
+        try:
+            state.on_session_destroyed(self._cleanup)
+        except Exception:
+            pass
 
     def stop(self):
         """
