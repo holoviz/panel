@@ -178,7 +178,6 @@ class Serve(_BkServe):
         if args.warm or args.autoreload:
             argvs = {f: args.args for f in files}
             applications = build_single_handler_applications(files, argvs)
-            docs = []
             if args.autoreload:
                 with record_modules():
                     for app in applications.values():
