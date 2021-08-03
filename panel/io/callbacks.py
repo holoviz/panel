@@ -5,6 +5,8 @@ on a running bokeh server.
 import time
 import param
 
+from bokeh.io import curdoc as _curdoc
+
 from ..util import edit_readonly
 from .state import state
 
@@ -86,6 +88,9 @@ class PeriodicCallback(param.Parameterized):
         """
         return self._counter
 
+    def _cleanup(self, session_context):
+        self.stop()
+
     def start(self):
         """
         Starts running the periodic callback.
@@ -99,13 +104,17 @@ class PeriodicCallback(param.Parameterized):
             finally:
                 self._updating = False
         self._start_time = time.time()
-        if state.curdoc and state.curdoc.session_context:
+        if state.curdoc:
             self._doc = state.curdoc
             self._cb = self._doc.add_periodic_callback(self._periodic_callback, self.period)
         else:
             from tornado.ioloop import PeriodicCallback
             self._cb = PeriodicCallback(self._periodic_callback, self.period)
             self._cb.start()
+        try:
+            state.on_session_destroyed(self._cleanup)
+        except Exception:
+            pass
 
     def stop(self):
         """
@@ -124,3 +133,10 @@ class PeriodicCallback(param.Parameterized):
         else:
             self._cb.stop()
         self._cb = None
+        doc = self._doc or _curdoc()
+        if doc:
+            doc.session_destroyed_callbacks = {
+                cb for cb in doc.session_destroyed_callbacks
+                if cb is not self._cleanup
+            }
+            self._doc = None

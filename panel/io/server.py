@@ -302,6 +302,11 @@ def modify_document(self, doc):
     try:
         def post_check():
             newdoc = curdoc()
+            # Do not let curdoc track modules when autoreload is enabled
+            # otherwise it will erroneously complain that there is
+            # a memory leak
+            if config.autoreload:
+                newdoc._modules = []
             # script is supposed to edit the doc not replace it
             if newdoc is not doc:
                 raise RuntimeError("%s at '%s' replaced the output document" % (self._origin, self._runner.path))

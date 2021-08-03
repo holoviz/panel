@@ -216,9 +216,9 @@ class _state(param.Parameterized):
         Return a PeriodicCallback object with start and stop methods.
         """
         from .callbacks import PeriodicCallback
-
-        cb = PeriodicCallback(callback=callback, period=period,
-                              count=count, timeout=timeout)
+        cb = PeriodicCallback(
+            callback=callback, period=period, count=count, timeout=timeout
+        )
         if start:
             cb.start()
         return cb
@@ -249,6 +249,19 @@ class _state(param.Parameterized):
         Callback that is triggered when a session is created.
         """
         self._on_session_created.append(callback)
+
+    def on_session_destroyed(self, callback):
+        """
+        Callback that is triggered when a session is destroyed.
+        """
+        doc = self._curdoc or _curdoc()
+        if doc:
+            doc.on_session_destroyed(callback)
+        else:
+            raise RuntimeError(
+                "Could not add session destroyed callback since no "
+                "document to attach it to could be found."
+            )
 
     def publish(self, endpoint, parameterized, parameters=None):
         """
