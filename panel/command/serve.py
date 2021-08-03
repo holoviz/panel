@@ -22,6 +22,16 @@ from ..io.state import state
 log = logging.getLogger(__name__)
 
 
+def _cleanup_doc(doc):
+    for callback in doc.session_destroyed_callbacks:
+        try:
+            callback(None)
+        except Exception:
+            pass
+    doc._callbacks[None] = {}
+    doc.destroy(None)
+
+
 def parse_var(s):
     """
     Parse a key, value pair, separated by '='
@@ -173,20 +183,12 @@ class Serve(_BkServe):
                 with record_modules():
                     for app in applications.values():
                         doc = app.create_document()
-                        docs.append(doc)
+                        _cleanup_doc(doc)
             else:
                 for app in applications.values():
                     doc = app.create_document()
-                    docs.append(doc)
-            for doc in docs:
-                for callback in doc.session_destroyed_callbacks:
-                    try:
-                        callback(None)
-                    except Exception:
-                        pass
-                doc._callbacks[None] = {}
-                doc.destroy(None)
-
+                    _cleanup_doc(doc)
+                    
         config.session_history = args.session_history
         if args.rest_session_info:
             pattern = REST_PROVIDERS['param'](files, 'rest')
