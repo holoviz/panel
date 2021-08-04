@@ -45,6 +45,7 @@ jobs:
       - name: conda setup
         run: |
           conda config --set always_yes True
+          conda install "pip<21.2.1" 
           conda install -c pyviz "pyctdev>=0.5"
           doit ecosystem_setup
       - name: conda build
