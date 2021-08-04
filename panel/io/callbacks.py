@@ -130,7 +130,7 @@ class PeriodicCallback(param.Parameterized):
         self._timeout = None
         if self._doc:
             self._doc.remove_periodic_callback(self._cb)
-        else:
+        elif self._cb:
             self._cb.stop()
         self._cb = None
         doc = self._doc or _curdoc()
