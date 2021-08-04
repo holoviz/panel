@@ -45,7 +45,7 @@ class FastStyle(param.Parameterized):
 
     header_background = param.String(default="#00aa41")
     header_neutral_color = param.String(default="#ffffff")
-    header_accent_base_color = param.String(default="#A01346")
+    header_accent_base_color = param.String(default="#ffffff")
     header_color = param.String(default="#ffffff")
     font = param.String(default="Open Sans, sans-serif")
     font_url = param.String(default=FONT_URL)
