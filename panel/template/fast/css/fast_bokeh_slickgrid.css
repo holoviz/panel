@@ -42,7 +42,9 @@
   border-color: black;
   border-style: solid;
 }
-
+.bk-root .slick-cell.bk-cell-index {
+  background: transparent;
+}
 .bk-root .slick-reorder-proxy {
   background: blue;
   opacity: 0.15;
