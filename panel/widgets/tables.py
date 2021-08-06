@@ -36,6 +36,9 @@ class BaseTable(ReactiveData, Widget):
         Bokeh CellFormatter to use for a particular column
         (overrides the default chosen based on the type).""")
 
+    hierarchical = param.Boolean(default=False, constant=True, doc="""
+        Whether to generate a hierachical index.""")
+
     row_height = param.Integer(default=40, doc="""
         The height of each table row.""")
 
@@ -91,7 +94,7 @@ class BaseTable(ReactiveData, Widget):
 
         indexes = self.indexes
         col_names = list(self.value.columns)
-        if len(indexes) == 1:
+        if not self.hierarchical or len(indexes) == 1:
             col_names = indexes + col_names
         else:
             col_names = indexes[-1:] + col_names
@@ -162,7 +165,7 @@ class BaseTable(ReactiveData, Widget):
                 col_kwargs['width'] = 0
 
             title = self.titles.get(col, str(col))
-            if col in indexes and len(indexes) > 1 and self.hierarchical:
+            if col in indexes and len(indexes) > 1 and getattr(self, 'hierarchical', False):
                 title = 'Index: %s' % ' | '.join(indexes)
             column = TableColumn(field=str(col), title=title,
                                  editor=editor, formatter=formatter,
@@ -575,9 +578,6 @@ class DataFrame(BaseTable):
         ``"none"``
           Do not automatically compute column widths.""")
 
-    hierarchical = param.Boolean(default=False, constant=True, doc="""
-        Whether to generate a hierachical index.""")
-
     fit_columns = param.Boolean(default=None, doc="""
         Whether columns should expand to the available width. This
         results in no horizontal scrollbar showing up, but data can
@@ -765,11 +765,13 @@ class Tabulator(BaseTable):
 
     _data_params = ['value', 'page', 'page_size', 'pagination', 'sorters']
 
-    _config_params = ['frozen_columns', 'groups', 'selectable']
+    _config_params = ['frozen_columns', 'groups', 'selectable', 'hierarchical']
 
     _manual_params = BaseTable._manual_params + _config_params
 
-    _rename = {'disabled': 'editable', 'selection': None, 'selectable': 'select_mode'}
+    _rename = {
+        'disabled': 'editable', 'selection': None, 'selectable': 'select_mode'
+    }
 
     def __init__(self, value=None, **params):
         configuration = params.pop('configuration', {})
@@ -1035,6 +1037,7 @@ class Tabulator(BaseTable):
         if self.pagination:
             length = 0 if self._processed is None else len(self._processed)
             props['max_page'] = length//self.page_size + bool(length%self.page_size)
+        props['indexes'] = self.indexes
         return props
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
@@ -1140,6 +1143,7 @@ class Tabulator(BaseTable):
             raise ValueError("Groups must be defined either explicitly "
                              "or via the configuration, not both.")
         configuration['columns'] = self._config_columns(columns)
+        configuration['dataTree'] = self.hierarchical
         return configuration
 
     def download(self, filename='table.csv'):

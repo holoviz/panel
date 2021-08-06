@@ -75,6 +75,8 @@ class DataTabulator(HTMLBox):
 
     hidden_columns = List(String)
 
+    indexes = List(String)
+
     layout = Enum('fit_data', 'fit_data_fill', 'fit_data_stretch', 'fit_data_table', 'fit_columns', default="fit_data")
 
     source = Instance(ColumnDataSource)

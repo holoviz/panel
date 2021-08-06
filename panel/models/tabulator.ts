@@ -12,6 +12,45 @@ import {PanelHTMLBoxView, set_size} from "./layout"
 
 declare const Tabulator: any;
 
+function find_group(key: any, value: string, records: any[]): any {
+  for (const record of records) {
+    if (record[key] == value)
+      return record
+  }
+  return null
+}
+
+function group_data(records: any[], columns: any[], indexes: string[]): any[] {
+  const grouped = []
+  const index_field = columns[0].field
+  for (const record of records) {
+    const key = indexes[0]
+    const value = record[indexes[0]]
+    let group = find_group(key, value, grouped)
+    if (group == null) {
+      group = {_children: []}
+      group[index_field] = value
+      grouped.push(group)
+    }
+    let subgroup = group
+    for (const index of indexes.slice(1)) {
+      for (const column of columns.slice(1))
+	group[column.field] = ""
+      subgroup = find_group(index, record[index], subgroup._children)
+      if (subgroup == null) {
+	subgroup = {_children: []}
+	subgroup[index_field] = record[index]
+      }
+      group._children.push(subgroup)
+      group = subgroup
+    }
+    for (const column of columns.slice(1))
+      subgroup[column.field] = record[column.field]
+  }
+  return grouped
+}
+
+
 // The view of the Bokeh extension/ HTML element
 // Here you can define how to render the model as well as react to model changes or View events.
 export class DataTabulatorView extends PanelHTMLBoxView {
@@ -199,6 +238,8 @@ export class DataTabulatorView extends PanelHTMLBoxView {
       data = []
     else
       data = transform_cds_to_records(cds, true)
+    if (configuration.dataTree)
+      data = group_data(data, this.model.columns, this.model.indexes)
     return {
       ...configuration,
       "data": data,
@@ -250,7 +291,10 @@ export class DataTabulatorView extends PanelHTMLBoxView {
           tab_column.formatter = "tickCross"
         else {
           tab_column.formatter = (cell: any) => {
-            return column.formatter.doFormat(cell.getRow(), cell, cell.getValue(), null, null)
+            const formatted = column.formatter.doFormat(cell.getRow(), cell, cell.getValue(), null, null)
+	    const node = div()
+	    node.innerHTML = formatted
+	    return node.children[0].innerHTML
           }
         }
       }
@@ -318,7 +362,9 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   // Update table
 
   setData(): void {
-    const data = transform_cds_to_records(this.model.source, true);
+    let data = transform_cds_to_records(this.model.source, true);
+    if (this.model.configuration.dataTree)
+      data = group_data(data, this.model.columns, this.model.indexes)
     if (this.model.pagination != null)
       this.tabulator.rowManager.setData(data, true, false)
     else
@@ -559,6 +605,7 @@ export namespace DataTabulator {
     frozen_rows: p.Property<number[]>
     groupby: p.Property<string[]>
     hidden_columns: p.Property<string[]>
+    indexes: p.Property<string[]>
     layout: p.Property<typeof TableLayout["__type__"]>
     max_page: p.Property<number>
     page: p.Property<number>
@@ -599,6 +646,7 @@ export class DataTabulator extends HTMLBox {
       frozen_rows:    [ Array(Number),           [] ],
       groupby:        [ Array(String),           [] ],
       hidden_columns: [ Array(String),           [] ],
+      indexes:        [ Array(String),           [] ],
       layout:         [ TableLayout,     "fit_data" ],
       max_page:       [ Number,                   0 ],
       pagination:     [ Nullable(String),      null ],
