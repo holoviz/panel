@@ -28,6 +28,13 @@ from .input import TextInput
 
 class BaseTable(ReactiveData, Widget):
 
+    aggregators = param.Dict(default={}, doc="""
+        A dictionary mapping from index name to an aggregator to
+        be used for hierarchical multi-indexes (valid aggregators
+        include 'min', 'max', 'mean' and 'sum'). If separate
+        aggregators for different columns are required the dictionary
+        may be nested as `{index_name: {column_name: aggregator}}`""")
+
     editors = param.Dict(default={}, doc="""
         Bokeh CellEditor to use for a particular column
         (overrides the default chosen based on the type).""")
@@ -35,6 +42,9 @@ class BaseTable(ReactiveData, Widget):
     formatters = param.Dict(default={}, doc="""
         Bokeh CellFormatter to use for a particular column
         (overrides the default chosen based on the type).""")
+
+    hierarchical = param.Boolean(default=False, constant=True, doc="""
+        Whether to generate a hierachical index.""")
 
     row_height = param.Integer(default=40, doc="""
         The height of each table row.""")
@@ -91,7 +101,7 @@ class BaseTable(ReactiveData, Widget):
 
         indexes = self.indexes
         col_names = list(self.value.columns)
-        if len(indexes) == 1:
+        if not self.hierarchical or len(indexes) == 1:
             col_names = indexes + col_names
         else:
             col_names = indexes[-1:] + col_names
@@ -541,13 +551,6 @@ class BaseTable(ReactiveData, Widget):
 
 class DataFrame(BaseTable):
 
-    aggregators = param.Dict(default={}, doc="""
-        A dictionary mapping from index name to an aggregator to
-        be used for hierarchical multi-indexes (valid aggregators
-        include 'min', 'max', 'mean' and 'sum'). If separate
-        aggregators for different columns are required the dictionary
-        may be nested as `{index_name: {column_name: aggregator}}`""")
-
     auto_edit = param.Boolean(default=False, doc="""
         Whether clicking on a table cell automatically starts edit mode.""")
 
@@ -574,9 +577,6 @@ class DataFrame(BaseTable):
 
         ``"none"``
           Do not automatically compute column widths.""")
-
-    hierarchical = param.Boolean(default=False, constant=True, doc="""
-        Whether to generate a hierachical index.""")
 
     fit_columns = param.Boolean(default=None, doc="""
         Whether columns should expand to the available width. This
@@ -765,11 +765,13 @@ class Tabulator(BaseTable):
 
     _data_params = ['value', 'page', 'page_size', 'pagination', 'sorters']
 
-    _config_params = ['frozen_columns', 'groups', 'selectable']
+    _config_params = ['frozen_columns', 'groups', 'selectable', 'hierarchical']
 
     _manual_params = BaseTable._manual_params + _config_params
 
-    _rename = {'disabled': 'editable', 'selection': None, 'selectable': 'select_mode'}
+    _rename = {
+        'disabled': 'editable', 'selection': None, 'selectable': 'select_mode'
+    }
 
     def __init__(self, value=None, **params):
         configuration = params.pop('configuration', {})
@@ -1016,6 +1018,7 @@ class Tabulator(BaseTable):
         else:
             selectable = self.selectable
         props.update({
+            'aggregators': self.aggregators,
             'source': source,
             'styles': self._get_style_data(),
             'columns': columns,
@@ -1035,6 +1038,7 @@ class Tabulator(BaseTable):
         if self.pagination:
             length = 0 if self._processed is None else len(self._processed)
             props['max_page'] = length//self.page_size + bool(length%self.page_size)
+        props['indexes'] = self.indexes
         return props
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
@@ -1091,7 +1095,6 @@ class Tabulator(BaseTable):
                 if column.field in group_cols
             ]
             col_dict = {'field': column.field}
-
             if isinstance(self.text_align, str):
                 col_dict['hozAlign'] = self.text_align
             elif column.field in self.text_align:
@@ -1140,6 +1143,7 @@ class Tabulator(BaseTable):
             raise ValueError("Groups must be defined either explicitly "
                              "or via the configuration, not both.")
         configuration['columns'] = self._config_columns(columns)
+        configuration['dataTree'] = self.hierarchical
         return configuration
 
     def download(self, filename='table.csv'):

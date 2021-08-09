@@ -55,6 +55,8 @@ class DataTabulator(HTMLBox):
     See http://tabulator.info/
     """
 
+    aggregators = Dict(String, String)
+
     configuration = Dict(String, Any)
 
     columns = List(Instance(TableColumn), help="""
@@ -74,6 +76,8 @@ class DataTabulator(HTMLBox):
     groupby = List(String)
 
     hidden_columns = List(String)
+
+    indexes = List(String)
 
     layout = Enum('fit_data', 'fit_data_fill', 'fit_data_stretch', 'fit_data_table', 'fit_columns', default="fit_data")
 

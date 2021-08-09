@@ -929,7 +929,8 @@ def test_tabulator_dataframe_replace_data(document, comm):
     assert c3.field == 'C_l0_g1'
     assert model.configuration == {
         'columns': [{'field': 'R0'}, {'field': 'C_l0_g0'}, {'field': 'C_l0_g1'}],
-        'selectable': True
+        'selectable': True,
+        'dataTree': False
     }
     expected = {
         'C_l0_g0': np.array(['R0C0', 'R1C0'], dtype=object),
