@@ -55,6 +55,8 @@ class DataTabulator(HTMLBox):
     See http://tabulator.info/
     """
 
+    aggregators = Dict(String, String)
+
     configuration = Dict(String, Any)
 
     columns = List(Instance(TableColumn), help="""

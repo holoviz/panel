@@ -28,6 +28,13 @@ from .input import TextInput
 
 class BaseTable(ReactiveData, Widget):
 
+    aggregators = param.Dict(default={}, doc="""
+        A dictionary mapping from index name to an aggregator to
+        be used for hierarchical multi-indexes (valid aggregators
+        include 'min', 'max', 'mean' and 'sum'). If separate
+        aggregators for different columns are required the dictionary
+        may be nested as `{index_name: {column_name: aggregator}}`""")
+
     editors = param.Dict(default={}, doc="""
         Bokeh CellEditor to use for a particular column
         (overrides the default chosen based on the type).""")
@@ -544,13 +551,6 @@ class BaseTable(ReactiveData, Widget):
 
 class DataFrame(BaseTable):
 
-    aggregators = param.Dict(default={}, doc="""
-        A dictionary mapping from index name to an aggregator to
-        be used for hierarchical multi-indexes (valid aggregators
-        include 'min', 'max', 'mean' and 'sum'). If separate
-        aggregators for different columns are required the dictionary
-        may be nested as `{index_name: {column_name: aggregator}}`""")
-
     auto_edit = param.Boolean(default=False, doc="""
         Whether clicking on a table cell automatically starts edit mode.""")
 
@@ -1018,6 +1018,7 @@ class Tabulator(BaseTable):
         else:
             selectable = self.selectable
         props.update({
+            'aggregators': self.aggregators,
             'source': source,
             'styles': self._get_style_data(),
             'columns': columns,
@@ -1094,7 +1095,6 @@ class Tabulator(BaseTable):
                 if column.field in group_cols
             ]
             col_dict = {'field': column.field}
-
             if isinstance(self.text_align, str):
                 col_dict['hozAlign'] = self.text_align
             elif column.field in self.text_align:
