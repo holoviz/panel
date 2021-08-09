@@ -172,7 +172,7 @@ class BaseTable(ReactiveData, Widget):
                 col_kwargs['width'] = 0
 
             title = self.titles.get(col, str(col))
-            if col in indexes and len(indexes) > 1 and getattr(self, 'hierarchical', False):
+            if col in indexes and len(indexes) > 1 and self.hierarchical:
                 title = 'Index: %s' % ' | '.join(indexes)
             column = TableColumn(field=str(col), title=title,
                                  editor=editor, formatter=formatter,
