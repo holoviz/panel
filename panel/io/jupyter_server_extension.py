@@ -21,6 +21,7 @@ from tornado.web import StaticFileHandler
 
 from ..config import config
 from ..util import edit_readonly
+from . import resources
 from .state import state
 from .resources import DIST_DIR, Resources
 
@@ -170,8 +171,8 @@ def _load_jupyter_server_extension(notebook_app):
     )
     config.autoreload = True
     with edit_readonly(state):
-        state.base_url = '/panel-preview/'
-        state.rel_path = '/panel-preview'
+        state.base_url = urljoin(base_url, '/panel-preview/')
+        state.rel_path = urljoin(base_url, '/panel-preview/')
 
     # Set up handlers
     notebook_app.web_app.add_handlers(
