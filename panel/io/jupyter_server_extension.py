@@ -171,8 +171,8 @@ def _load_jupyter_server_extension(notebook_app):
     )
     config.autoreload = True
     with edit_readonly(state):
-        state.base_url = urljoin(base_url, '/panel-preview/')
-        state.rel_path = urljoin(base_url, '/panel-preview/')
+        state.base_url = url_path_join(base_url, '/panel-preview')
+        state.rel_path = url_path_join(base_url, '/panel-preview')
 
     # Set up handlers
     notebook_app.web_app.add_handlers(
