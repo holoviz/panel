@@ -21,7 +21,6 @@ from tornado.web import StaticFileHandler
 
 from ..config import config
 from ..util import edit_readonly
-from . import resources
 from .state import state
 from .resources import DIST_DIR, Resources
 
