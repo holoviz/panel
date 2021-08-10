@@ -2,26 +2,31 @@
 
 ## Version 0.12.1
 
-Date: 2021-08-03
+Date: 2021-08-10
 
 This is a patch release with a small number of fixes following the 0.12.0 release. Many thanks to the maintainers @MarcSkovMadsen and @philippjfr for the fixes in this release.
 
 Enhancements:
 
 - Bundle .map files during build to allow source mapping ([#2591](https://github.com/holoviz/panel/issues/2591))
+- Various style improvements for Fast templates ([#2604](https://github.com/holoviz/panel/issues/2604), [#2609](https://github.com/holoviz/panel/issues/2609), [#2611](https://github.com/holoviz/panel/issues/2611), [#2615](https://github.com/holoviz/panel/issues/2615))
+- Implement hierarchical aggregation for `Tabulator` ([#2624](https://github.com/holoviz/panel/issues/2624))
 
 Bug fixes:
 
 - Fix logo on Fast templates ([#2184](https://github.com/holoviz/panel/issues/2184))
+- Fix height responsiveness of Folium pane ([#2231](https://github.com/holoviz/panel/issues/2231))
 - Fix bug updating `Tqdm` indicator ([#2554](https://github.com/holoviz/panel/issues/2554))
 - Ensure `--autoreload` doesn't error on cleaned up session ([#2570](https://github.com/holoviz/panel/issues/2570))
 - Don't use persisted layout if `save_layout=False` ([#2579](https://github.com/holoviz/panel/issues/2579))
 - Pin version of tqdm with asyncio support ([#2595](https://github.com/holoviz/panel/issues/2595))
 - Reset layout when resetting grid template layout ([#2576](https://github.com/holoviz/panel/issues/2576))
+- Fix line-height issues in Fast templates ([#2600](https://github.com/holoviz/panel/issues/2600))
 - Clean up sessions after warmup and ensure periodic callbacks are cleaned up ([#2601](https://github.com/holoviz/panel/issues/2601))
 
 Documentation:
 
+- Enable JupyterLab preview button on binder ([#2545](https://github.com/holoviz/panel/issues/2545))
 - Update theme toggle documentation for Fast templates ([#2560](https://github.com/holoviz/panel/issues/2560))
 - Update Fast template documentation and enable full screen ([#2577](https://github.com/holoviz/panel/issues/2577))
 - Fix binder links on website ([#2590](https://github.com/holoviz/panel/issues/2590))
