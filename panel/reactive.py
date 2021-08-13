@@ -248,7 +248,7 @@ class Syncable(Renderable):
         if not msg:
             return
 
-        for ref, (model, _) in list(self._models.items()):
+        for ref, (model, _) in self._models.copy().items():
             self._apply_update(events, msg, model, ref)
 
     def _process_events(self, events):
