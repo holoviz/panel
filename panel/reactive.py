@@ -248,7 +248,7 @@ class Syncable(Renderable):
         if not msg:
             return
 
-        for ref, (model, parent) in self._models.items():
+        for ref, (model, _) in self._models.copy().items():
             self._apply_update(events, msg, model, ref)
 
     def _process_events(self, events):
@@ -939,7 +939,7 @@ class ReactiveData(SyncableData):
                 finally:
                     self._updating = False
                 # Ensure that if the data was changed in a user
-                # callback, we still send the updated data 
+                # callback, we still send the updated data
                 if old_data is not self.value:
                     self._update_cds()
         if 'indices' in events:
