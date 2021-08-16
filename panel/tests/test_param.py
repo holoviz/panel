@@ -410,6 +410,22 @@ def test_param_precedence(document, comm):
     assert test_pane._widgets['a'] in test_pane._widget_box.objects
 
 
+def test_hide_constant(document, comm):
+    class Test(param.Parameterized):
+        a = param.Number(default=1.2, bounds=(0, 5), constant=True)
+
+    test = Test()
+    test_pane = Pane(test, parameters=['a'], hide_constant=True)
+    model = test_pane.get_root(document, comm=comm)
+
+    slider = model.children[1]
+    assert not slider.visible
+
+    test.param.a.constant = False
+
+    assert slider.visible
+
+
 def test_param_label(document, comm):
     class Test(param.Parameterized):
         a = param.Number(default=1.2, bounds=(0, 5), label='A')
