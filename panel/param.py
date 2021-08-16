@@ -115,6 +115,9 @@ class Param(PaneBase):
     height = param.Integer(default=None, bounds=(0, None), doc="""
         Height of widgetbox the parameter widgets are displayed in.""")
 
+    hide_constant = param.Boolean(default=False, doc="""
+        Whether to hide widgets of constant parameters.""")
+
     initializer = param.Callable(default=None, doc="""
         User-supplied function that will be called on initialization,
         usually to update the default Parameter values of the
@@ -384,6 +387,8 @@ class Param(PaneBase):
         else:
             label = p_obj.label
         kw = dict(disabled=p_obj.constant, name=label)
+        if self.hide_constant:
+            kw['visible'] = not p_obj.constant
 
         value = getattr(self.object, p_name)
         if value is not None:
@@ -460,6 +465,8 @@ class Param(PaneBase):
             widget = self._widgets[p_name]
             if change.what == 'constant':
                 updates['disabled'] = change.new
+                if self.hide_constant:
+                    updates['visible'] = not change.new
             elif change.what == 'precedence':
                 if change.new is change.old:
                     return
