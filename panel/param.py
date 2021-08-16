@@ -216,7 +216,8 @@ class Param(PaneBase):
                              type(layout).__name__)
         self.param.watch(self._update_widgets, [
             'object', 'parameters', 'name', 'display_threshold', 'expand_button',
-            'expand', 'expand_layout', 'widgets', 'show_labels', 'show_name'])
+            'expand', 'expand_layout', 'widgets', 'show_labels', 'show_name',
+            'hide_constant'])
         self._update_widgets()
 
     def __repr__(self, depth=0):
