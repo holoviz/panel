@@ -202,10 +202,10 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     return new Promise((resolve: any, reject: any) => {
       try {
         if (page != null && sorters != null) {
-	  if (this._data_updating)
-	    this._data_updating = false
-	  else
-	    this.model.sorters = sorters
+          if (this._data_updating)
+            this._data_updating = false
+          else
+            this.model.sorters = sorters
           this.model.page = page || 1
         }
         resolve([])
