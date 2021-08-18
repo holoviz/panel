@@ -46,7 +46,7 @@ from tornado.web import RequestHandler, StaticFileHandler, authenticated
 from tornado.wsgi import WSGIContainer
 
 # Internal imports
-from ..util import edit_readonly
+from ..util import bokeh_version, edit_readonly
 from .reload import autoreload_watcher
 from .resources import BASE_TEMPLATE, Resources, bundle_resources
 from .state import state
@@ -289,11 +289,17 @@ def modify_document(self, doc):
     # stored modules are used to provide correct paths to
     # custom models resolver.
     sys.modules[module.__name__] = module
-    doc._modules.append(module)
+    if bokeh_version >= '2.4.0':
+        doc.modules._modules.append(module)
+
+    else:
+        doc._modules.append(module)
 
     old_doc = curdoc()
     bk_set_curdoc(doc)
-    old_io = self._monkeypatch_io()
+
+    if bokeh_version < '2.4.0':
+        self._monkeypatch_io()
 
     if config.autoreload:
         set_curdoc(doc)
@@ -306,7 +312,11 @@ def modify_document(self, doc):
             # otherwise it will erroneously complain that there is
             # a memory leak
             if config.autoreload:
-                newdoc._modules = []
+                if bokeh_version >= '2.4.0':
+                    newdoc.modules._modules = []
+                else:
+                    newdoc._modules = []
+
             # script is supposed to edit the doc not replace it
             if newdoc is not doc:
                 raise RuntimeError("%s at '%s' replaced the output document" % (self._origin, self._runner.path))
@@ -317,7 +327,11 @@ def modify_document(self, doc):
 
             # Clean up
             del sys.modules[module.__name__]
-            doc._modules.remove(module)
+
+            if hasattr(doc, 'modules'):
+                doc.modules._modules.remove(module)
+            else:
+                doc._modules.remove(module)
             bokeh.application.handlers.code_runner.handle_exception = handle_exception
             tb = html.escape(traceback.format_exc())
 
@@ -329,9 +343,17 @@ def modify_document(self, doc):
 
         if config.autoreload:
             bokeh.application.handlers.code_runner.handle_exception = handle_exception
-        self._runner.run(module, post_check)
+
+        if bokeh_version >= '2.4.0':
+            from bokeh.application.handlers.code import _monkeypatch_io, patch_curdoc
+            with _monkeypatch_io(self._loggers):
+                with patch_curdoc(doc):
+                    self._runner.run(module, post_check)
+        else:
+            self._runner.run(module, post_check)
     finally:
-        self._unmonkeypatch_io(old_io)
+        if bokeh_version < '2.4.0':
+            self._unmonkeypatch_io()
         bk_set_curdoc(old_doc)
 
 CodeHandler.modify_document = modify_document
