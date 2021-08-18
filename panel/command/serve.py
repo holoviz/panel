@@ -12,6 +12,10 @@ from glob import glob
 from bokeh.command.subcommands.serve import Serve as _BkServe
 from bokeh.command.util import build_single_handler_applications
 
+from bokeh.application import Application
+from bokeh.application.handlers.function import FunctionHandler
+from bokeh.server.contexts import ApplicationContext
+
 from ..auth import OAuthProvider
 from ..config import config
 from ..io.rest import REST_PROVIDERS
@@ -126,6 +130,10 @@ class Serve(_BkServe):
             action  = 'store_true',
             help    = "Whether to execute scripts on startup to warm up the server."
         )),
+        ('--profile', dict(
+            action  = 'store_true',
+            help    = "Whether to execute scripts on startup to warm up the server."
+        )),
         ('--autoreload', dict(
             action  = 'store_true',
             help    = "Whether to autoreload source when script changes."
@@ -187,7 +195,34 @@ class Serve(_BkServe):
                 for app in applications.values():
                     doc = app.create_document()
                     _cleanup_doc(doc)
-                    
+
+        if args.profile:
+            from ..io.admin import admin_panel
+            from ..io.server import per_app_patterns
+            config.profile = args.profile
+            app = Application(FunctionHandler(admin_panel))
+            state.admin_context = app_ctx = ApplicationContext(app, url='/admin')
+            app_patterns = []
+            for p in per_app_patterns:
+                route = '/admin' + p[0]
+                context = {"application_context": app_ctx}
+                route = (args.prefix or '') + route
+                app_patterns.append((route, p[1], context))
+
+            from tornado.ioloop import IOLoop
+            app_ctx._loop = IOLoop.current()
+
+            websocket_path = None
+            for r in app_patterns:
+                if r[0].endswith("/ws"):
+                    websocket_path = r[0]
+            if not websocket_path:
+                raise RuntimeError("Couldn't find websocket path")
+            for r in app_patterns:
+                r[2]["bokeh_websocket_path"] = websocket_path
+            patterns.extend(app_patterns)
+
+        print(patterns)
         config.session_history = args.session_history
         if args.rest_session_info:
             pattern = REST_PROVIDERS['param'](files, 'rest')

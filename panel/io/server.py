@@ -344,6 +344,11 @@ def modify_document(self, doc):
         if config.autoreload:
             bokeh.application.handlers.code_runner.handle_exception = handle_exception
 
+        if config.profile:
+            from pyinstrument import Profiler
+            prof = Profiler()
+            prof.start()
+
         if bokeh_version >= '2.4.0':
             from bokeh.application.handlers.code import _monkeypatch_io, patch_curdoc
             with _monkeypatch_io(self._loggers):
@@ -352,6 +357,8 @@ def modify_document(self, doc):
         else:
             self._runner.run(module, post_check)
     finally:
+        if config.profile:
+            state._sessions.append(prof.stop())
         if bokeh_version < '2.4.0':
             self._unmonkeypatch_io()
         bk_set_curdoc(old_doc)
