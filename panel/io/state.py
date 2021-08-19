@@ -5,7 +5,7 @@ import datetime as dt
 import json
 import threading
 
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from weakref import WeakKeyDictionary, WeakSet
 from urllib.parse import urljoin
 
@@ -24,6 +24,8 @@ class _state(param.Parameterized):
     Holds global state associated with running apps, allowing running
     apps to indicate their state to a user.
     """
+
+    admin_context = param.Parameter()
 
     base_url = param.String(default='/', readonly=True, doc="""
        Base URL for all server paths.""")
@@ -91,6 +93,9 @@ class _state(param.Parameterized):
 
     # Indicators listening to the busy state
     _indicators = []
+
+    # Profilers
+    _sessions = defaultdict(list)
 
     # Endpoints
     _rest_endpoints = {}

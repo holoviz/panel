@@ -114,13 +114,14 @@ def _initialize_session_info(session_context):
     from ..config import config
     session_id = session_context.id
     sessions = state.session_info['sessions']
-    if config.session_history == 0 or session_id in sessions:
+    history = -1 if config.profile else config.session_history
+    if not config.profile and (history == 0 or session_id in sessions):
         return
 
     state.session_info['total'] += 1
-    if config.session_history > 0 and len(sessions) >= config.session_history:
+    if history > 0 and len(sessions) >= history:
         old_history = list(sessions.items())
-        sessions = OrderedDict(old_history[-(config.session_history-1):])
+        sessions = OrderedDict(old_history[-(history-1):])
         state.session_info['sessions'] = sessions
     sessions[session_id] = {
         'launched': dt.datetime.now().timestamp(),
@@ -299,7 +300,7 @@ def modify_document(self, doc):
     bk_set_curdoc(doc)
 
     if bokeh_version < '2.4.0':
-        self._monkeypatch_io()
+        old_io = self._monkeypatch_io()
 
     if config.autoreload:
         set_curdoc(doc)
@@ -358,9 +359,12 @@ def modify_document(self, doc):
             self._runner.run(module, post_check)
     finally:
         if config.profile:
-            state._sessions.append(prof.stop())
+            try:
+                state._sessions[doc.session_context.request.path].append(prof.stop())
+            except Exception:
+                pass
         if bokeh_version < '2.4.0':
-            self._unmonkeypatch_io()
+            self._unmonkeypatch_io(old_io)
         bk_set_curdoc(old_doc)
 
 CodeHandler.modify_document = modify_document
