@@ -4,6 +4,7 @@ which provides convenient support for  loading and configuring panel
 components.
 """
 import ast
+import copy
 import inspect
 import os
 import sys
@@ -235,10 +236,8 @@ class _config(_base_config):
             session_config[state.curdoc] = {}
         if (attr in ('raw_css', 'css_files', 'js_files', 'js_modules') and
             state.curdoc and attr not in session_config[state.curdoc]):
-            if 'css' in attr:
-                setattr(self, attr, super().__getattribute__(attr))
-            else:
-                setattr(self, attr, super().__getattribute__(attr))
+            new_obj = copy.copy(super().__getattribute__(attr))
+            setattr(self, attr, new_obj)
         if state.curdoc and state.curdoc in session_config and attr in session_config[state.curdoc]:
             return session_config[state.curdoc][attr]
         elif f'_{attr}' in params and getattr(self, f'_{attr}_') is not None:
