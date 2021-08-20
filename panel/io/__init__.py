@@ -12,7 +12,7 @@ from .callbacks import PeriodicCallback # noqa
 from .embed import embed_state # noqa
 from .state import state # noqa
 from .model import add_to_doc, remove_root, diff # noqa
-from .profile import profile
+from .profile import profile # noqa
 from .resources import Resources # noqa
 from .server import get_server, init_doc, serve, unlocked, with_lock # noqa
 from .notebook import ( # noqa

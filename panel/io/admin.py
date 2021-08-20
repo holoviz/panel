@@ -10,8 +10,8 @@ import pandas as pd
 import param
 
 from ..models import terminal # noqa
-from ..pane import Markdown, HTML
-from ..layout import Accordion, Card, Column, Row, Tabs, FlexBox
+from ..pane import HTML
+from ..layout import Accordion, Column, Row, Tabs, FlexBox
 from ..template import FastListTemplate
 from ..util import escape
 from ..widgets import Checkbox, MultiSelect, Terminal, TextInput
@@ -23,7 +23,7 @@ from .state import state
 try:
     import psutil
     process = psutil.Process(os.getpid())
-except:
+except Exception:
     process = None
 
 log_sessions = []
@@ -214,7 +214,6 @@ def overview():
 
 
 def log_component():
-    sessions = sorted(set(id(v[2]) for v in state._views.values()))
     return Column(
         Accordion(
             ('Filters', Row(
