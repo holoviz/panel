@@ -20,10 +20,21 @@ from .notebook import ( # noqa
     load_notebook, push, push_notebook
 )
 
-panel_logger = logging.getLogger('panel')
-
-if config.log_level is not None:
-    panel_logger.setLevel(config.log_level)
-
 if 'django' in sys.modules:
     from . import django # noqa
+
+panel_logger = logging.getLogger('panel')
+panel_logger.propagate = False
+
+def _setup_logging():
+    panel_logger.setLevel(logging.DEBUG)
+    panel_logger.handlers.clear()
+    panel_log_handler = logging.StreamHandler()
+    panel_log_handler.setStream(sys.stdout)
+    formatter = logging.Formatter('%(asctime)s %(levelname)s: %(name)s - %(message)s')
+    panel_log_handler.setFormatter(formatter)
+    panel_logger.addHandler(panel_log_handler)
+    if config.log_level is not None:
+        panel_log_handler.setLevel(config.log_level)
+
+_setup_logging()

@@ -44,6 +44,7 @@ class LogFilter(logging.Filter):
 
 # Set up logging
 log_handler = logging.StreamHandler()
+log_handler.setLevel('DEBUG')
 panel_logger.addHandler(log_handler)
 
 log_filter = LogFilter()

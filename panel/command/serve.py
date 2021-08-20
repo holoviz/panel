@@ -130,9 +130,9 @@ class Serve(_BkServe):
             action  = 'store_true',
             help    = "Whether to execute scripts on startup to warm up the server."
         )),
-        ('--profile', dict(
+        ('--admin', dict(
             action  = 'store_true',
-            help    = "Whether to execute scripts on startup to warm up the server."
+            help    = "Whether to add an admin panel."
         )),
         ('--autoreload', dict(
             action  = 'store_true',
@@ -196,12 +196,12 @@ class Serve(_BkServe):
                     doc = app.create_document()
                     _cleanup_doc(doc)
 
-        if args.profile:
+        if args.admin:
             from ..io.admin import admin_panel
             from ..io.server import per_app_patterns
-            config.profile = args.profile
+            config.profile = args.admin
             app = Application(FunctionHandler(admin_panel))
-            state.admin_context = app_ctx = ApplicationContext(app, url='/admin')
+            app_ctx = ApplicationContext(app, url='/admin')
             app_patterns = []
             for p in per_app_patterns:
                 route = '/admin' + p[0]

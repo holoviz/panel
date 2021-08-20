@@ -153,7 +153,7 @@ class _config(_base_config):
         Where to save json files for embedded state.""")
 
     _log_level = param.Selector(
-        default=None, objects=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+        default='WARNING', objects=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
         doc="Log level of Panel loggers")
 
     _oauth_provider = param.ObjectSelector(
