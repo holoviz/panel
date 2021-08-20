@@ -95,7 +95,9 @@ class _state(param.Parameterized):
     _indicators = []
 
     # Profilers
-    _sessions = defaultdict(list)
+    _launching = []
+    _user_profiles = param.Dict(defaultdict(list))
+    _launch_profiles = param.Dict(defaultdict(list))
 
     # Endpoints
     _rest_endpoints = {}
@@ -123,14 +125,17 @@ class _state(param.Parameterized):
     def _init_session(self, event):
         if not self.curdoc.session_context:
             return
+        from .server import logger
         session_id = self.curdoc.session_context.id
         session_info = self.session_info['sessions'].get(session_id, {})
         if session_info.get('rendered') is not None:
             return
+        logger.info('Session %s rendered', id(self.curdoc))
         self.session_info['live'] += 1
         session_info.update({
             'rendered': dt.datetime.now().timestamp()
         })
+        self.param.trigger('session_info')
 
     def _get_callback(self, endpoint):
         _updating = {}

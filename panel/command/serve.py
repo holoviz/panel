@@ -222,7 +222,6 @@ class Serve(_BkServe):
                 r[2]["bokeh_websocket_path"] = websocket_path
             patterns.extend(app_patterns)
 
-        print(patterns)
         config.session_history = args.session_history
         if args.rest_session_info:
             pattern = REST_PROVIDERS['param'](files, 'rest')

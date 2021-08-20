@@ -4,6 +4,7 @@ Utilities for creating bokeh Server instances.
 import datetime as dt
 import html
 import inspect
+import logging
 import os
 import pathlib
 import signal
@@ -17,6 +18,7 @@ from contextlib import contextmanager
 from functools import partial, wraps
 from types import FunctionType, MethodType
 from urllib.parse import urljoin, urlparse
+from functools import wraps
 
 import param
 import bokeh
@@ -50,6 +52,8 @@ from ..util import bokeh_version, edit_readonly
 from .reload import autoreload_watcher
 from .resources import BASE_TEMPLATE, Resources, bundle_resources
 from .state import state
+
+logger = logging.getLogger(__name__)
 
 #---------------------------------------------------------------------
 # Private API
@@ -130,6 +134,7 @@ def _initialize_session_info(session_context):
         'ended': None,
         'user_agent': session_context.request.headers.get('User-Agent')
     }
+    state.param.trigger('session_info')
 
 state.on_session_created(_initialize_session_info)
 
@@ -206,6 +211,7 @@ class DocHandler(BkDocHandler, SessionPrefixHandler):
         with self._session_prefix():
             session = await self.get_session()
             state.curdoc = session.document
+            logger.info('Session %s created', id(session.document))
             try:
                 resources = Resources.from_bokeh(self.application.resources())
                 page = server_html_page_for_session(
@@ -270,6 +276,8 @@ bokeh.server.tornado.RootHandler = RootHandler
 def modify_document(self, doc):
     from bokeh.io.doc import set_curdoc as bk_set_curdoc
     from ..config import config
+
+    logger.info('Session %s launching', id(doc))
 
     if config.autoreload:
         path = self._runner.path
@@ -356,11 +364,15 @@ def modify_document(self, doc):
                 with patch_curdoc(doc):
                     self._runner.run(module, post_check)
         else:
+            state._launching.append(doc)
             self._runner.run(module, post_check)
     finally:
+        state._launching.remove(doc)
         if config.profile:
             try:
-                state._sessions[doc.session_context.request.path].append(prof.stop())
+                path = doc.session_context.request.path
+                state._launch_profiles[path].append(prof.stop())
+                state.param.trigger('_launch_profiles')
             except Exception:
                 pass
         if bokeh_version < '2.4.0':
