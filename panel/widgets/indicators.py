@@ -662,6 +662,11 @@ class Trend(SyncableData, Indicator):
         super()._update_cds(*events)
         self._trigger_auto_values()
 
+    def _update_data(self, data):
+        if isinstance(data, _BkTrendIndicator):
+            return
+        super()._update_data(data)
+
     def _process_param_change(self, msg):
         msg = super()._process_param_change(msg)
         ys = self._data.get(self.plot_y, [])
