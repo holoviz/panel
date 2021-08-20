@@ -18,7 +18,6 @@ from contextlib import contextmanager
 from functools import partial, wraps
 from types import FunctionType, MethodType
 from urllib.parse import urljoin, urlparse
-from functools import wraps
 
 import param
 import bokeh
