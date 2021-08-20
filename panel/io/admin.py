@@ -31,6 +31,8 @@ log_sessions = []
 class LogFilter(logging.Filter):
 
     def filter(self, record):
+        if 'Session ' not in record.msg:
+            return True
         session_id = record.args[0]
         if session_id in log_sessions:
             return False
