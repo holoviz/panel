@@ -162,9 +162,7 @@ def bundle_resources(roots, resources):
     css_files = []
     css_raw = []
 
-<<<<<<< HEAD
     use_mathjax = (_use_mathjax(roots) or 'mathjax' in ext._loaded_extensions) if roots else True
-
     if js_resources:
         js_resources = copy.deepcopy(js_resources)
         if not use_mathjax and "bokeh-mathjax" in js_resources.js_components:
@@ -173,10 +171,6 @@ def bundle_resources(roots, resources):
         js_files.extend(js_resources.js_files)
         js_raw.extend(js_resources.js_raw)
 
-=======
-    js_files.extend(js_resources.js_files)
-    js_raw.extend(js_resources.js_raw)
->>>>>>> add first version of fix for jupyter preview
     css_files.extend(css_resources.css_files)
     css_raw.extend(css_resources.css_raw)
 
@@ -374,18 +368,6 @@ class Bundle(BkBundle):
         )
 
     def _render_js(self):
-<<<<<<< HEAD
-=======
-        js_files = []
-        for js_file in self.js_files:
-            if (js_file.startswith(state.base_url) or js_file.startswith('static/')):
-                if js_file.startswith(state.base_url):
-                    js_file = js_file[len(state.base_url):]
-
-                if state.rel_path:
-                    js_file = f'{state.rel_path}/{js_file}'
-            js_files.append(js_file)
->>>>>>> add first version of fix for jupyter preview
         return JS_RESOURCES.render(
             js_raw=self.js_raw, js_files=self.js_files,
             js_modules=self.js_modules, hashes=self.hashes
