@@ -1,28 +1,23 @@
 import datetime as dt
 import logging
 import os
-import re
 import sys
 import time
-
-from pstats import Stats
 
 import bokeh
 import numpy as np
 import pandas as pd
 import param
 
-from tornado.template import Template
-
 from ..config import config
 from ..models import terminal # noqa
 from ..pane import HTML
 from ..layout import Accordion, Column, Row, Tabs, FlexBox
 from ..template import FastListTemplate
-from ..util import escape
-from ..widgets import Checkbox, MultiSelect, Terminal, TextInput
+from ..widgets import MultiSelect, Terminal, TextInput
 from ..widgets.indicators import Trend
 from . import panel_logger
+from .profile import profiling_tabs
 from .server import set_curdoc
 from .state import state
 
@@ -31,14 +26,6 @@ try:
     process = psutil.Process(os.getpid())
 except Exception:
     process = None
-
-try:
-    import snakeviz
-    SNAKEVIZ_PATH = os.path.join(os.path.dirname(snakeviz.__file__), 'templates', 'viz.html')
-    with open(SNAKEVIZ_PATH) as f:
-        SNAKEVIZ_TEMPLATE = Template(f.read())
-except Exception as e:
-    SNAKEVIZ_TEMPLATE = None
 
 log_sessions = []
 
@@ -67,90 +54,11 @@ log_filter = LogFilter()
 log_handler.addFilter(log_filter)
 formatter = logging.Formatter('%(asctime)s %(levelname)s: %(name)s - %(message)s')
 log_handler.setFormatter(formatter)
-log_terminal = Terminal(sizing_mode='stretch_both')
+log_terminal = Terminal(sizing_mode='stretch_both', min_height=400)
 log_handler.setStream(log_terminal)
 
 session_filter = MultiSelect(name='Filter by session', options=[])
 name_filter = TextInput(name='Filter by component')
-
-
-def render_pyinstrument(sessions, timeline=False, show_all=False):
-    from pyinstrument.session import Session
-    from pyinstrument.renderers import HTMLRenderer
-    r = HTMLRenderer(timeline=timeline, show_all=show_all)
-    session = sessions[0]
-    if not timeline:
-        for s in sessions[1:]:
-            session = Session.combine(session, s)
-    return escape(r.render(session)), ""
-
-
-def render_snakeviz(name, sessions):
-    from snakeviz.stats import json_stats, table_rows
-    pstats = Stats(sessions[0])
-    for session in sessions[1:]:
-        pstats.add(session)
-    rendered = SNAKEVIZ_TEMPLATE.generate(
-        profile_name=name, table_rows=table_rows(pstats), callees=json_stats(pstats)
-    ).decode('utf-8').replace('/static/', '/snakeviz/static/')
-    return escape(rendered), "background-color: white;"
-
-
-def get_profiles(profilers, **kwargs):
-    profiles = []
-    for (path, engine), sessions in profilers.items():
-        print(path, engine, sessions)
-        if not sessions:
-            continue
-        if engine == 'pyinstrument':
-            src, style = render_pyinstrument(sessions, **kwargs)
-        elif engine == 'snakeviz':
-            src, style = render_snakeviz(path, sessions)
-        html = HTML(
-            f'<iframe srcdoc="{src}" width="100%" height="100%" frameBorder="0" style="{style}"></iframe>',
-            sizing_mode='stretch_both',
-            margin=0
-        )
-        profiles.append((path, html))
-    if not profiles:
-        profiles.append(('', 'No profiling output available'))
-    return profiles
-
-
-def get_sessions(allow=None, deny=None):
-    return {(name, e): ps for (name, e), ps in state._profiles.items()
-            if (not allow or re.match(allow, name)) and (not deny or not re.match(deny, name))}
-
-
-def profiling_tabs(allow=None, deny=[]):
-    tabs = Tabs(
-        *get_profiles(get_sessions(allow, deny)),
-        margin=(0, 5),
-        sizing_mode='stretch_width'
-    )
-    def update_profiles(*args):
-        tabs[:] = get_profiles(
-            get_sessions(allow, deny),
-            timeline=timeline.value,
-            show_all=show_all.value
-        )
-    state.param.watch(update_profiles, '_profiles')
-    timeline = Checkbox(name='Enable timeline', margin=(5, 0))
-    timeline.param.watch(update_profiles, 'value')
-    show_all = Checkbox(name='Show All', margin=(5, 0))
-    show_all.param.watch(update_profiles, 'value')
-    return Column(
-        Accordion(
-            ('Config', Row(timeline, show_all)),
-            active=[],
-            active_header_background='#444444',
-            header_background='#333333',
-            sizing_mode='stretch_width',
-            margin=0
-        ),
-        tabs,
-        sizing_mode='stretch_width'
-    )
 
 def get_mem():
     return pd.DataFrame([(time.time(), process.memory_info().rss/1024/1024)], columns=['time', 'memory'])
@@ -279,10 +187,10 @@ def admin_panel(doc):
     )
     if config.profiler:
         tabs.append(
-            ('Launch Profiling', profiling_tabs(r'^\/.*', None))
+            ('Launch Profiling', profiling_tabs(state, r'^\/.*', None))
         )
     tabs.extend([
-        ('User Profiling', profiling_tabs(None, r'^\/.*')),
+        ('User Profiling', profiling_tabs(state, None, r'^\/.*')),
         ('Logs', log_component())
     ])
     template.main.append(tabs)

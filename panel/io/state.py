@@ -2,6 +2,7 @@
 Various utilities for recording and embedding state in a rendered app.
 """
 import datetime as dt
+import logging
 import json
 import threading
 
@@ -17,6 +18,9 @@ from pyviz_comms import CommManager as _CommManager
 from tornado.web import decode_signed_value
 
 from ..util import base64url_decode
+
+_state_logger = logging.getLogger('panel.state')
+
 
 
 class _state(param.Parameterized):
@@ -232,14 +236,50 @@ class _state(param.Parameterized):
             cb.start()
         return cb
 
+    def get_profile(self, profile):
+        """
+        Returns the requested profiling output.
+
+        Arguments
+        ---------
+        profile: str
+          The name of the profiling output to return.
+
+        Returns
+        -------
+        Profiling output wrapped in a pane.
+        """
+        from .profile import get_profiles
+        return get_profiles({(n, e): ps for (n, e), ps in state._profiles.items()
+                             if n == profile})[0][1]
+
     def kill_all_servers(self):
-        """Stop all servers and clear them from the current state."""
+        """
+        Stop all servers and clear them from the current state.
+        """
         for server_id in self._servers:
             try:
                 self._servers[server_id][0].stop()
             except AssertionError:  # can't stop a server twice
                 pass
         self._servers = {}
+
+    def log(self, msg, level='info'):
+        """
+        Logs user messages to the Panel logger.
+
+        Arguments
+        ---------
+        msg: str
+          Log message
+        level: int or str
+          Log level as a string, i.e. 'debug', 'info', 'warning' or 'error'.
+        """
+        args = ()
+        if self.curdoc:
+            args = (id(self.curdoc),)
+            msg = f'Session %s {msg}'
+        getattr(_state_logger, level.lower())(msg, *args)
 
     def onload(self, callback):
         """
@@ -367,6 +407,11 @@ class _state(param.Parameterized):
             return self._location
         else:
             return self._locations.get(self.curdoc) if self.curdoc else None
+
+    @property
+    def log_terminal(self):
+        from .admin import log_terminal
+        return log_terminal
 
     @property
     def session_args(self):
