@@ -66,7 +66,7 @@ when needed.
 `Authentication <Authentication.html>`_
  Learn how to add an authentication component in front of your application.
 
-`Profiling and Debugging <Profiling_and_Debugging.html>`_
+`Profiling and Debugging <Performance_and_Debugging.html>`_
  Learn how to speed up your application and find issues.
  
  
