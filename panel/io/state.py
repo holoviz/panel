@@ -155,7 +155,7 @@ class _state(param.Parameterized):
                 return
             _updating[id(obj)] = list(values)
             for parameterized in parameterizeds:
-                if parameterized in _updating:
+                if id(parameterized) in _updating:
                     continue
                 try:
                     parameterized.param.set_param(**values)
@@ -164,7 +164,10 @@ class _state(param.Parameterized):
                 finally:
                     if id(obj) in _updating:
                         not_updated = [p for p in _updating[id(obj)] if p not in values]
-                        _updating[id(obj)] = not_updated
+                        if not_updated:
+                            _updating[id(obj)] = not_updated
+                        else:
+                            del _updating[id(obj)]
         return link
 
     def _on_load(self, event):
