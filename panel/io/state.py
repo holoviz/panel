@@ -96,8 +96,7 @@ class _state(param.Parameterized):
 
     # Profilers
     _launching = []
-    _user_profiles = param.Dict(defaultdict(list))
-    _launch_profiles = param.Dict(defaultdict(list))
+    _profiles = param.Dict(defaultdict(list))
 
     # Endpoints
     _rest_endpoints = {}

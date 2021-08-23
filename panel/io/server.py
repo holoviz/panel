@@ -48,6 +48,7 @@ from tornado.wsgi import WSGIContainer
 
 # Internal imports
 from ..util import bokeh_version, edit_readonly
+from .profile import profile_ctx
 from .reload import autoreload_watcher
 from .resources import BASE_TEMPLATE, Resources, bundle_resources
 from .state import state
@@ -117,8 +118,8 @@ def _initialize_session_info(session_context):
     from ..config import config
     session_id = session_context.id
     sessions = state.session_info['sessions']
-    history = -1 if config.profile else config.session_history
-    if not config.profile and (history == 0 or session_id in sessions):
+    history = -1 if config._admin else config.session_history
+    if not config._admin and (history == 0 or session_id in sessions):
         return
 
     state.session_info['total'] += 1
@@ -313,6 +314,8 @@ def modify_document(self, doc):
         set_curdoc(doc)
         state.onload(autoreload_watcher)
 
+    sessions = []
+
     try:
         def post_check():
             newdoc = curdoc()
@@ -352,26 +355,23 @@ def modify_document(self, doc):
         if config.autoreload:
             bokeh.application.handlers.code_runner.handle_exception = handle_exception
 
-        if config.profile:
-            from pyinstrument import Profiler
-            prof = Profiler()
-            prof.start()
-
+        state._launching.append(doc)
         if bokeh_version >= '2.4.0':
             from bokeh.application.handlers.code import _monkeypatch_io, patch_curdoc
             with _monkeypatch_io(self._loggers):
                 with patch_curdoc(doc):
-                    self._runner.run(module, post_check)
+                    with profile_ctx(config.profiler) as sessions:
+                        self._runner.run(module, post_check)
         else:
-            state._launching.append(doc)
-            self._runner.run(module, post_check)
+            with profile_ctx(config.profiler) as sessions:
+                self._runner.run(module, post_check)
     finally:
         state._launching.remove(doc)
-        if config.profile:
+        if config.profiler:
             try:
                 path = doc.session_context.request.path
-                state._launch_profiles[path].append(prof.stop())
-                state.param.trigger('_launch_profiles')
+                state._profiles[(path, config.profiler)] += sessions
+                state.param.trigger('_profiles')
             except Exception:
                 pass
         if bokeh_version < '2.4.0':

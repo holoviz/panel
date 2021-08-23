@@ -6,6 +6,7 @@ ways.
 import ast
 import base64
 import logging # isort:skip
+import os
 
 from glob import glob
 
@@ -15,6 +16,7 @@ from bokeh.command.util import build_single_handler_applications
 from bokeh.application import Application
 from bokeh.application.handlers.function import FunctionHandler
 from bokeh.server.contexts import ApplicationContext
+from tornado.web import StaticFileHandler
 
 from ..auth import OAuthProvider
 from ..config import config
@@ -134,6 +136,11 @@ class Serve(_BkServe):
             action  = 'store_true',
             help    = "Whether to add an admin panel."
         )),
+        ('--profiler', dict(
+            action  = 'store',
+            type    = str,
+            help    = "The profiler to use by default, e.g. pyinstrument or snakeviz."
+        )),
         ('--autoreload', dict(
             action  = 'store_true',
             help    = "Whether to autoreload source when script changes."
@@ -196,10 +203,11 @@ class Serve(_BkServe):
                     doc = app.create_document()
                     _cleanup_doc(doc)
 
+        config.profiler = args.profiler
         if args.admin:
             from ..io.admin import admin_panel
             from ..io.server import per_app_patterns
-            config.profile = args.admin
+            config._admin = True
             app = Application(FunctionHandler(admin_panel))
             app_ctx = ApplicationContext(app, url='/admin')
             app_patterns = []
@@ -220,7 +228,16 @@ class Serve(_BkServe):
                 raise RuntimeError("Couldn't find websocket path")
             for r in app_patterns:
                 r[2]["bokeh_websocket_path"] = websocket_path
+            try:
+                import snakeviz
+                SNAKEVIZ_PATH = os.path.join(os.path.dirname(snakeviz.__file__), 'static')
+                app_patterns.append(
+                    ('/snakeviz/static/(.*)', StaticFileHandler, dict(path=SNAKEVIZ_PATH))
+                )
+            except Exception:
+                pass
             patterns.extend(app_patterns)
+
 
         config.session_history = args.session_history
         if args.rest_session_info:
