@@ -150,6 +150,7 @@ extras_require = {
         'ipyvolume',
         'ipyleaflet',
         'xarray <0.17',
+        'pyinstrument'
     ],
     'tests': _tests,
     'recommended': _recommended,
