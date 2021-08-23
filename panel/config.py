@@ -95,6 +95,9 @@ class _config(_base_config):
     loading_color = param.Color(default='#c3c3c3', doc="""
         Color of the loading indicator.""")
 
+    profiler = param.Selector(default=None, objects=['pyinstrument', 'snakeviz'], doc="""
+        The profiler to enable.""")
+
     safe_embed = param.Boolean(default=False, doc="""
         Ensure all bokeh property changes trigger events which are
         embedded. Useful when only partial updates are made in an
@@ -150,7 +153,7 @@ class _config(_base_config):
         Where to save json files for embedded state.""")
 
     _log_level = param.Selector(
-        default=None, objects=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+        default='WARNING', objects=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
         doc="Log level of Panel loggers")
 
     _oauth_provider = param.ObjectSelector(
@@ -178,6 +181,8 @@ class _config(_base_config):
     _inline = param.Boolean(default=_LOCAL_DEV_VERSION, allow_None=True, doc="""
         Whether to inline JS and CSS resources. If disabled, resources
         are loaded from CDN if one is available.""")
+
+    _admin = param.Boolean(default=False, doc="Whether the admin panel was enabled.")
 
     _truthy = ['True', 'true', '1', True, 1]
 

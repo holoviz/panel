@@ -252,6 +252,7 @@ class Syncable(Renderable):
             self._apply_update(events, msg, model, ref)
 
     def _process_events(self, events):
+        self._log('received events %s', events)
         busy = state.busy
         with edit_readonly(state):
             state.busy = True

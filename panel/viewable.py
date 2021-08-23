@@ -403,6 +403,10 @@ class Renderable(param.Parameterized):
         self._comms = {}
         self._kernels = {}
         self._found_links = set()
+        self._logger = logging.getLogger(f'{__name__}.{type(self).__name__}')
+
+    def _log(self, msg, *args, level='debug'):
+        getattr(self._logger, level)(f'Session %s {msg}', id(state.curdoc), *args)
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         """
@@ -479,6 +483,7 @@ class Renderable(param.Parameterized):
             if session['rendered'] is not None:
                 state.session_info['live'] -= 1
             session['ended'] = dt.datetime.now().timestamp()
+            state.param.trigger('session_info')
         doc = session_context._document
         root = self._documents[doc]
         ref = root.ref['id']

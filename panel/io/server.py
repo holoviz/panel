@@ -4,6 +4,7 @@ Utilities for creating bokeh Server instances.
 import datetime as dt
 import html
 import inspect
+import logging
 import os
 import pathlib
 import signal
@@ -47,9 +48,12 @@ from tornado.wsgi import WSGIContainer
 
 # Internal imports
 from ..util import bokeh_version, edit_readonly
+from .profile import profile_ctx
 from .reload import autoreload_watcher
 from .resources import BASE_TEMPLATE, Resources, bundle_resources
 from .state import state
+
+logger = logging.getLogger(__name__)
 
 #---------------------------------------------------------------------
 # Private API
@@ -114,13 +118,14 @@ def _initialize_session_info(session_context):
     from ..config import config
     session_id = session_context.id
     sessions = state.session_info['sessions']
-    if config.session_history == 0 or session_id in sessions:
+    history = -1 if config._admin else config.session_history
+    if not config._admin and (history == 0 or session_id in sessions):
         return
 
     state.session_info['total'] += 1
-    if config.session_history > 0 and len(sessions) >= config.session_history:
+    if history > 0 and len(sessions) >= history:
         old_history = list(sessions.items())
-        sessions = OrderedDict(old_history[-(config.session_history-1):])
+        sessions = OrderedDict(old_history[-(history-1):])
         state.session_info['sessions'] = sessions
     sessions[session_id] = {
         'launched': dt.datetime.now().timestamp(),
@@ -129,6 +134,7 @@ def _initialize_session_info(session_context):
         'ended': None,
         'user_agent': session_context.request.headers.get('User-Agent')
     }
+    state.param.trigger('session_info')
 
 state.on_session_created(_initialize_session_info)
 
@@ -205,6 +211,7 @@ class DocHandler(BkDocHandler, SessionPrefixHandler):
         with self._session_prefix():
             session = await self.get_session()
             state.curdoc = session.document
+            logger.info('Session %s created', id(session.document))
             try:
                 resources = Resources.from_bokeh(self.application.resources())
                 page = server_html_page_for_session(
@@ -270,6 +277,8 @@ def modify_document(self, doc):
     from bokeh.io.doc import set_curdoc as bk_set_curdoc
     from ..config import config
 
+    logger.info('Session %s launching', id(doc))
+
     if config.autoreload:
         path = self._runner.path
         argv = self._runner._argv
@@ -299,11 +308,13 @@ def modify_document(self, doc):
     bk_set_curdoc(doc)
 
     if bokeh_version < '2.4.0':
-        self._monkeypatch_io()
+        old_io = self._monkeypatch_io()
 
     if config.autoreload:
         set_curdoc(doc)
         state.onload(autoreload_watcher)
+
+    sessions = []
 
     try:
         def post_check():
@@ -344,16 +355,27 @@ def modify_document(self, doc):
         if config.autoreload:
             bokeh.application.handlers.code_runner.handle_exception = handle_exception
 
+        state._launching.append(doc)
         if bokeh_version >= '2.4.0':
             from bokeh.application.handlers.code import _monkeypatch_io, patch_curdoc
             with _monkeypatch_io(self._loggers):
                 with patch_curdoc(doc):
-                    self._runner.run(module, post_check)
+                    with profile_ctx(config.profiler) as sessions:
+                        self._runner.run(module, post_check)
         else:
-            self._runner.run(module, post_check)
+            with profile_ctx(config.profiler) as sessions:
+                self._runner.run(module, post_check)
     finally:
+        state._launching.remove(doc)
+        if config.profiler:
+            try:
+                path = doc.session_context.request.path
+                state._profiles[(path, config.profiler)] += sessions
+                state.param.trigger('_profiles')
+            except Exception:
+                pass
         if bokeh_version < '2.4.0':
-            self._unmonkeypatch_io()
+            self._unmonkeypatch_io(old_io)
         bk_set_curdoc(old_doc)
 
 CodeHandler.modify_document = modify_document

@@ -2,10 +2,11 @@
 Various utilities for recording and embedding state in a rendered app.
 """
 import datetime as dt
+import logging
 import json
 import threading
 
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from weakref import WeakKeyDictionary, WeakSet
 from urllib.parse import urljoin
 
@@ -18,12 +19,17 @@ from tornado.web import decode_signed_value
 
 from ..util import base64url_decode
 
+_state_logger = logging.getLogger('panel.state')
+
+
 
 class _state(param.Parameterized):
     """
     Holds global state associated with running apps, allowing running
     apps to indicate their state to a user.
     """
+
+    admin_context = param.Parameter()
 
     base_url = param.String(default='/', readonly=True, doc="""
        Base URL for all server paths.""")
@@ -92,6 +98,10 @@ class _state(param.Parameterized):
     # Indicators listening to the busy state
     _indicators = []
 
+    # Profilers
+    _launching = []
+    _profiles = param.Dict(defaultdict(list))
+
     # Endpoints
     _rest_endpoints = {}
 
@@ -118,14 +128,17 @@ class _state(param.Parameterized):
     def _init_session(self, event):
         if not self.curdoc.session_context:
             return
+        from .server import logger
         session_id = self.curdoc.session_context.id
         session_info = self.session_info['sessions'].get(session_id, {})
         if session_info.get('rendered') is not None:
             return
+        logger.info('Session %s rendered', id(self.curdoc))
         self.session_info['live'] += 1
         session_info.update({
             'rendered': dt.datetime.now().timestamp()
         })
+        self.param.trigger('session_info')
 
     def _get_callback(self, endpoint):
         _updating = {}
@@ -142,7 +155,7 @@ class _state(param.Parameterized):
                 return
             _updating[id(obj)] = list(values)
             for parameterized in parameterizeds:
-                if parameterized in _updating:
+                if id(parameterized) in _updating:
                     continue
                 try:
                     parameterized.param.set_param(**values)
@@ -151,7 +164,10 @@ class _state(param.Parameterized):
                 finally:
                     if id(obj) in _updating:
                         not_updated = [p for p in _updating[id(obj)] if p not in values]
-                        _updating[id(obj)] = not_updated
+                        if not_updated:
+                            _updating[id(obj)] = not_updated
+                        else:
+                            del _updating[id(obj)]
         return link
 
     def _on_load(self, event):
@@ -223,14 +239,50 @@ class _state(param.Parameterized):
             cb.start()
         return cb
 
+    def get_profile(self, profile):
+        """
+        Returns the requested profiling output.
+
+        Arguments
+        ---------
+        profile: str
+          The name of the profiling output to return.
+
+        Returns
+        -------
+        Profiling output wrapped in a pane.
+        """
+        from .profile import get_profiles
+        return get_profiles({(n, e): ps for (n, e), ps in state._profiles.items()
+                             if n == profile})[0][1]
+
     def kill_all_servers(self):
-        """Stop all servers and clear them from the current state."""
+        """
+        Stop all servers and clear them from the current state.
+        """
         for server_id in self._servers:
             try:
                 self._servers[server_id][0].stop()
             except AssertionError:  # can't stop a server twice
                 pass
         self._servers = {}
+
+    def log(self, msg, level='info'):
+        """
+        Logs user messages to the Panel logger.
+
+        Arguments
+        ---------
+        msg: str
+          Log message
+        level: int or str
+          Log level as a string, i.e. 'debug', 'info', 'warning' or 'error'.
+        """
+        args = ()
+        if self.curdoc:
+            args = (id(self.curdoc),)
+            msg = f'Session %s {msg}'
+        getattr(_state_logger, level.lower())(msg, *args)
 
     def onload(self, callback):
         """
@@ -358,6 +410,11 @@ class _state(param.Parameterized):
             return self._location
         else:
             return self._locations.get(self.curdoc) if self.curdoc else None
+
+    @property
+    def log_terminal(self):
+        from .admin import log_terminal
+        return log_terminal
 
     @property
     def session_args(self):

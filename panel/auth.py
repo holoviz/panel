@@ -125,7 +125,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
             params['scope'] = self._SCOPE
         if 'scope' in config.oauth_extra_params:
             params['scope'] = config.oauth_extra_params['scope']
-        log.debug("%s making authorize request" % type(self).__name__)
+        log.debug("%s making authorize request", type(self).__name__)
         self.authorize_redirect(**params)
 
     async def _fetch_access_token(self, code, redirect_uri, client_id, client_secret):
@@ -149,7 +149,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
         if not client_secret:
             raise ValueError('The client secret is undefined.')
 
-        log.debug("%s making access token request." % type(self).__name__)
+        log.debug("%s making access token request.", type(self).__name__)
 
         params = {
             'code':          code,
@@ -196,7 +196,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
         if not user:
             return
 
-        log.debug("%s received user information." % type(self).__name__)
+        log.debug("%s received user information.", type(self).__name__)
         return self._on_auth(user, body['access_token'])
 
     def get_state_cookie(self):
@@ -214,7 +214,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
         self.set_secure_cookie(STATE_COOKIE_NAME, state, expires_days=1, httponly=True)
 
     async def get(self):
-        log.debug("%s received login request" % type(self).__name__)
+        log.debug("%s received login request", type(self).__name__)
         if config.oauth_redirect_uri:
             redirect_uri = config.oauth_redirect_uri
         else:
@@ -249,7 +249,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler):
             user = await self.get_authenticated_user(**params)
             if user is None:
                 raise HTTPError(403)
-            log.debug("%s authorized user, redirecting to app." % type(self).__name__)
+            log.debug("%s authorized user, redirecting to app.", type(self).__name__)
             self.redirect('/')
         else:
             # Redirect for user authentication
@@ -407,7 +407,7 @@ class GitLabLoginHandler(OAuthLoginHandler, OAuth2Mixin):
         if not client_secret:
             raise ValueError('The client secret is undefined.')
 
-        log.debug("%s making access token request." % type(self).__name__)
+        log.debug("%s making access token request.", type(self).__name__)
 
         http = self.get_auth_http_client()
 
@@ -441,7 +441,7 @@ class GitLabLoginHandler(OAuthLoginHandler, OAuth2Mixin):
         if 'access_token' not in body:
             return self._on_error(response, body)
 
-        log.debug("%s granted access_token." % type(self).__name__)
+        log.debug("%s granted access_token.", type(self).__name__)
 
         headers = dict(self._API_BASE_HEADERS, **{
             "Authorization": "Bearer {}".format(body['access_token']),
@@ -458,7 +458,7 @@ class GitLabLoginHandler(OAuthLoginHandler, OAuth2Mixin):
         if not user:
             return
 
-        log.debug("%s received user information." % type(self).__name__)
+        log.debug("%s received user information.", type(self).__name__)
 
         return self._on_auth(user, body['access_token'])
 
@@ -496,7 +496,7 @@ class OAuthIDTokenLoginHandler(OAuthLoginHandler):
         if not client_secret:
             raise ValueError('The client secret are undefined.')
 
-        log.debug("%s making access token request." % type(self).__name__)
+        log.debug("%s making access token request.", type(self).__name__)
 
         http = self.get_auth_http_client()
 
@@ -529,7 +529,7 @@ class OAuthIDTokenLoginHandler(OAuthLoginHandler):
         if 'access_token' not in body:
             return self._on_error(response, body)
 
-        log.debug("%s granted access_token." % type(self).__name__)
+        log.debug("%s granted access_token.", type(self).__name__)
 
         access_token = body['access_token']
         id_token = body['id_token']
@@ -541,8 +541,8 @@ class OAuthIDTokenLoginHandler(OAuthLoginHandler):
         if user_key in decoded:
             user = decoded[user_key]
         else:
-            log.error("%s token payload did not contain expected '%s'." %
-                      (type(self).__name__, user_key))
+            log.error("%s token payload did not contain expected %r.",
+                      type(self).__name__, user_key)
             raise HTTPError(400, "OAuth token payload missing user information")
         self.set_secure_cookie('user', user)
         if state.encryption:
