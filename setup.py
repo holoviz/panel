@@ -141,7 +141,7 @@ extras_require = {
         'vtk ==9.0.1',
         'scikit-learn',
         'datashader',
-        'jupyter_bokeh>=3.0.2',
+        'jupyter_bokeh >=3.0.2',
         'django',
         'channels',
         'pyvista',
@@ -150,7 +150,7 @@ extras_require = {
         'ipyvolume',
         'ipyleaflet',
         'xarray <0.17',
-        'pyinstrument'
+        'pyinstrument >=4.0'
     ],
     'tests': _tests,
     'recommended': _recommended,
