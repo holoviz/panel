@@ -97,8 +97,9 @@ function group_data(records: any[], columns: any[], indexes: string[], aggregato
 export class DataTabulatorView extends PanelHTMLBoxView {
   model: DataTabulator;
   tabulator: any;
-  _tabulator_cell_updating: boolean=false;
-  _selection_updating: boolean=false;
+  _tabulator_cell_updating: boolean=false
+  _data_updating: boolean = true
+  _selection_updating: boolean =false
   _styled_cells: any[] = []
   _initializing: boolean
 
@@ -201,8 +202,11 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     return new Promise((resolve: any, reject: any) => {
       try {
         if (page != null && sorters != null) {
+          if (this._data_updating)
+            this._data_updating = false
+          else
+            this.model.sorters = sorters
           this.model.page = page || 1
-          this.model.sorters = sorters
         }
         resolve([])
       } catch(err) {
@@ -406,10 +410,13 @@ export class DataTabulatorView extends PanelHTMLBoxView {
     let data = transform_cds_to_records(this.model.source, true);
     if (this.model.configuration.dataTree)
       data = group_data(data, this.model.columns, this.model.indexes, this.model.aggregators)
+    this._data_updating = true
     if (this.model.pagination != null)
       this.tabulator.rowManager.setData(data, true, false)
-    else
-      this.tabulator.setData(data);
+    else {
+      this.tabulator.setData(data)
+      this._data_updating = false
+    }
     this.freezeRows()
     this.updateSelection()
   }
@@ -542,12 +549,12 @@ export class DataTabulatorView extends PanelHTMLBoxView {
   }
 
   setMaxPage(): void {
-    this.tabulator.setMaxPage(Math.max(this.model.page, this.model.max_page))
+    this.tabulator.setMaxPage(this.model.max_page)
     this.tabulator.modules.page._setPageButtons()
   }
 
   setPage(): void {
-    this.tabulator.setPage(this.model.page)
+    this.tabulator.setPage(Math.min(this.model.max_page, this.model.page))
   }
 
   setPageSize(): void {
