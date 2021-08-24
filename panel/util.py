@@ -387,3 +387,17 @@ def function_name(func):
     if hasattr(func, '__name__'):
         return func.__name__
     return str(func)
+
+
+_period_regex = re.compile(r'((?P<weeks>\d+?)w)?((?P<days>\d+?)d)?((?P<hours>\d+?)h)?((?P<minutes>\d+?)m)?((?P<seconds>\d+?)s)?')
+
+def parse_timedelta(time_str):
+    parts = _period_regex.match(time_str)
+    if not parts:
+        return
+    parts = parts.groupdict()
+    time_params = {}
+    for (name, p) in parts.items():
+        if p:
+            time_params[name] = int(p)
+    return dt.timedelta(**time_params)

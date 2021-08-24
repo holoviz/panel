@@ -9,17 +9,19 @@ import time
 
 from collections import OrderedDict, defaultdict
 from contextlib import contextmanager
-from weakref import WeakKeyDictionary
+from functools import partial
 from urllib.parse import urljoin
+from weakref import WeakKeyDictionary, WeakSet
 
 import param
 
 from bokeh.document import Document
 from bokeh.io import curdoc as _curdoc
 from pyviz_comms import CommManager as _CommManager
+from tornado.ioloop import IOLoop
 from tornado.web import decode_signed_value
 
-from ..util import base64url_decode
+from ..util import base64url_decode, parse_timedelta
 from .logging import LOG_SESSION_RENDERED, LOG_USER_MSG
 
 _state_logger = logging.getLogger('panel.state')
@@ -111,6 +113,9 @@ class _state(param.Parameterized):
     # Dictionary of callbacks to be triggered on app load
     _onload = WeakKeyDictionary()
     _on_session_created = []
+
+    # Scheduled callbacks
+    _scheduled = {}
 
     # Indicators listening to the busy state
     _indicators = []
@@ -221,6 +226,21 @@ class _state(param.Parameterized):
             path = doc.session_context.request.path
             self._profiles[(path+':on_load', config.profiler)] += sessions
             self.param.trigger('_profiles')
+
+    def _scheduled_cb(self, name):
+        if name not in self._scheduled:
+            return
+        diter, cb = self._scheduled[name]
+        try:
+            at = next(diter)
+        except StopIteration:
+            at = None
+        if at is not None:
+            ioloop = IOLoop.current()
+            now = dt.datetime.now().timestamp()
+            call_time_seconds = (at - now)
+            ioloop.call_later(delay=call_time_seconds, callback=partial(self._scheduled_cb, name))
+        cb()
 
     #----------------------------------------------------------------
     # Public Methods
@@ -422,6 +442,63 @@ class _state(param.Parameterized):
             cb = self._get_callback(endpoint)
             self._rest_endpoints[endpoint] = ([parameterized], parameters, cb)
         parameterized.param.watch(cb, parameters)
+
+    def schedule(self, name, callback, at=None, period=None, cron=None):
+        """
+        Schedule a callback periodically at a specific
+        time. Scheduling is idempotent, i.e. if a callback has already
+        been scheduled under the same name subsequent calls will have
+        no effect. By default the starting time is immediate but may
+        be overridden with the `at` keyword argument. The period may
+        be declared using the `period` argument or a cron expression
+        (which requires the `croniter` library).
+
+        Arguments
+        ---------
+        name: str
+          Name of the scheduled task
+        callback: callable
+          Callback to schedule
+        at: datetime.datetime
+          Datetime to schedule the task at
+        period: str or datetime.timedelta
+          The period between executions, may be expressed as a timedelta
+          or a string:
+
+            - Week:   '1w'
+            - Day:    '1d'
+            - Hour:   '1h'
+            - Minute: '1m'
+            - Second: '1s'
+
+        cron: str
+          A cron expression (requires croniter to parse)
+        """
+        if name in self._scheduled:
+            return
+        ioloop = IOLoop.current()
+        if not ioloop.asyncio_loop.is_running():
+            raise RuntimeError("Cannot schedule task, event loop is not running.")
+        if cron is None:
+            if isinstance(period, str):
+                period = parse_timedelta(period)
+            def dgen():
+                if period is None:
+                    yield at
+                    raise StopIteration
+                new_time = at or dt.datetime.now()
+                while True:
+                    yield new_time.timestamp()
+                    new_time += period
+            diter = dgen()
+        else:
+            import croniter
+            base = dt.datetime.now() if at is None else at
+            diter = croniter(cron, base)
+        now = dt.datetime.now().timestamp()
+        call_time_seconds = (next(diter) - now)
+        self._scheduled[name] = (diter, callback)
+        ioloop.call_later(delay=call_time_seconds, callback=partial(self._scheduled_cb, name))
 
     def sync_busy(self, indicator):
         """
