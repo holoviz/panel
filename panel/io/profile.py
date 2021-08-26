@@ -117,8 +117,12 @@ def profile_ctx(engine='pyinstrument'):
     """
     if engine == 'pyinstrument':
         from pyinstrument import Profiler
-        prof = Profiler()
-        prof.start()
+        try:
+            prof = Profiler()
+            prof.start()
+        except RuntimeError:
+            prof = Profiler(async_mode='disabled')
+            prof.start()
     elif engine == 'snakeviz':
         prof = Profile()
         prof.enable()
